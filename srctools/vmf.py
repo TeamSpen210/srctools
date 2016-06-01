@@ -15,7 +15,6 @@ from typing import (
 
 from srctools import Property, Vec
 import srctools
-import utils
 
 # Used to set the defaults for versioninfo
 CURRENT_HAMMER_VERSION = 400

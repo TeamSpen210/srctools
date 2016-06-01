@@ -1,5 +1,5 @@
-import utils
 import re
+import sys
 
 from typing import (
     Optional, Union, Any,
@@ -33,8 +33,8 @@ PROP_FLAGS = {
     'gameconsole': False,
 
     'win32': True,  # Not actually windows, it actually means 'PC'
-    'osx': utils.MAC,
-    'linux': utils.LINUX,
+    'osx': sys.platform.startswith('darwin'),
+    'linux': sys.platform.startswith('linux'),
 }
 
 
