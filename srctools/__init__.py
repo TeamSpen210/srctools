@@ -1,4 +1,5 @@
 import string as _string
+from collections import abc
 
 from typing import Union
 
@@ -116,3 +117,60 @@ def conv_int(val: str, default=0):
         return int(val)
     except (ValueError, TypeError):
         return default
+
+
+class EmptyMapping(abc.MutableMapping):
+    """A Mapping class which is always empty.
+
+    Any modifications will be ignored.
+    This is used for default arguments, since it then ensures any changes
+    won't be kept, as well as allowing default.items() calls and similar.
+    """
+    __slots__ = []
+
+    def __call__(self):
+        # Just in case someone tries to instantiate this
+        return self
+
+    def __getitem__(self, item):
+        raise KeyError
+
+    def __contains__(self, item):
+        return False
+
+    def get(self, item, default=None):
+        return default
+
+    def __bool__(self):
+        return False
+
+    def __next__(self):
+        raise StopIteration
+
+    def __len__(self):
+        return 0
+
+    def __iter__(self):
+        return self
+
+    items = values = keys = __iter__
+
+    # Mutable functions
+    setdefault = get
+
+    def update(*args, **kwds):
+        pass
+
+    __setitem__ = __delitem__ = clear = update
+
+    __marker = object()
+
+    def pop(self, key, default=__marker):
+        if default is self.__marker:
+            raise KeyError
+        return default
+
+    def popitem(self):
+        raise KeyError
+
+EmptyMapping = EmptyMapping() # We only want the one instance
