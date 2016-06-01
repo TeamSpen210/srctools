@@ -13,7 +13,7 @@ from typing import (
     Dict, List, Tuple, Set, Iterable, Iterator
 )
 
-from srctools import Property, Vec
+from srctools import Property, Vec, EmptyMapping
 import srctools
 
 # Used to set the defaults for versioninfo
@@ -198,7 +198,7 @@ class VMF:
     """
     def __init__(
             self,
-            map_info=utils.EmptyMapping,
+            map_info=EmptyMapping,
             spawn=None,
             entities=None,
             brushes=None,
@@ -489,7 +489,7 @@ class VMF:
             else:
                 yield ent
 
-    def iter_ents_tags(self, vals=utils.EmptyMapping, tags=utils.EmptyMapping):
+    def iter_ents_tags(self, vals=EmptyMapping, tags=EmptyMapping):
         """Iterate through all entities.
 
         The returned entities must have exactly the given keyvalue values,
@@ -811,7 +811,7 @@ class Solid:
         self.editor = editor or {}
         self.hidden = hidden
 
-    def copy(self, des_id=-1, map=None, side_mapping=utils.EmptyMapping):
+    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
         """Duplicate this brush."""
         editor = {}
         for key in ('color', 'groupid', 'visgroupshown', 'visgroupautoshown'):
@@ -1130,7 +1130,7 @@ class Side:
                 tree['smoothing_groups', '0']),
         )
 
-    def copy(self, des_id=-1, map=None, side_mapping=utils.EmptyMapping):
+    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
         """Duplicate this brush side.
 
         des_id is the id which is desired for the new side.
@@ -1332,7 +1332,7 @@ class Entity:
     def __init__(
             self,
             vmf_file: VMF,
-            keys=utils.EmptyMapping,
+            keys=EmptyMapping,
             fixup=(),
             ent_id=-1,
             outputs=None,
@@ -1365,7 +1365,7 @@ class Entity:
         if 'color' not in self.editor:
             self.editor['color'] = '255 255 255'
 
-    def copy(self, des_id=-1, map=None, side_mapping=utils.EmptyMapping):
+    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
         """Duplicate this entity entirely, including solids and outputs."""
         new_keys = {}
         new_fixup = self.fixup.copy_values()
