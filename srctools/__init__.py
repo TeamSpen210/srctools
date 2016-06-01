@@ -5,6 +5,7 @@ from typing import Union
 # __all__ imports
 from srctools.vec import Vec, Vec_tuple, parse_vec_str
 from srctools.property_parser import NoKeyError, KeyValError, Property
+from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
