@@ -1,8 +1,30 @@
+"""A 3D vector class which matches Valve conventions.
+
+    >>> Vec(1, 2, 3)
+    Vec(1, 2, 3)
+    >>> Vec(1, 2, 3) * 2
+    Vec(2, 4, 6)
+    >>> Vec.from_str('<4 2 -45>')
+    Vec(4, 2, -45)
+
+Vectors support arithmetic with scalars, applying the operation to the three
+components.
+Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
+dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
+when used in math operations and comparing values.
+
+Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
+
+
+"""
 import collections
 import math
 from collections import abc
 
-from typing import Union, Tuple, SupportsFloat, Iterator
+from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
+
+
+__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
 
 
 def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[int, int, int]:
@@ -41,7 +63,7 @@ Vec_tuple = collections.namedtuple('Vec_tuple', ['x', 'y', 'z'])
 # Use template code to reduce duplication in the various magic number methods.
 
 _VEC_ADDSUB_TEMP = '''
-def __{func}__(self, other):
+def __{func}__(self, other: Union['Vec', tuple, float]):
     """{op} operation.
 
     This additionally works on scalars (adds to all axes).
@@ -66,7 +88,7 @@ def __{func}__(self, other):
     else:
         return Vec(x, y, z)
 
-def __r{func}__(self, other):
+def __r{func}__(self, other: Union['Vec', tuple, float]):
     """{op} operation with reversed operands.
 
     This additionally works on scalars (adds to all axes).
@@ -91,7 +113,7 @@ def __r{func}__(self, other):
     else:
         return Vec(x, y, z)
 
-def __i{func}__(self, other):
+def __i{func}__(self, other: Union['Vec', tuple, float]):
     """{op}= operation.
 
     Like the normal one except without duplication.
@@ -122,7 +144,7 @@ def __i{func}__(self, other):
 # instead.
 
 _VEC_MULDIV_TEMP = '''
-def __{func}__(self, other):
+def __{func}__(self, other: float):
     """Vector {op} scalar operation."""
     if isinstance(other, Vec):
         raise TypeError("Cannot {pretty} 2 Vectors.")
@@ -136,7 +158,7 @@ def __{func}__(self, other):
         except TypeError:
             return NotImplemented
 
-def __r{func}__(self, other):
+def __r{func}__(self, other: float):
     """scalar {op} Vector operation."""
     if isinstance(other, Vec):
         raise TypeError("Cannot {pretty} 2 Vectors.")
@@ -151,7 +173,7 @@ def __r{func}__(self, other):
             return NotImplemented
 
 
-def __i{func}__(self, other):
+def __i{func}__(self, other: float):
     """{op}= operation.
 
     Like the normal one except without duplication.
@@ -183,15 +205,18 @@ class Vec:
         ('x', 'y'): 'z',
     }
 
-    def __init__(self, x=0.0, y=0.0, z=0.0):
+    def __init__(
+            self,
+            x: Union[int, float, 'Vec', Iterable[Union[int, float]]]=0.0,
+            y: Union[int, float]=0.0,
+            z: Union[int, float]=0.0,
+    ):
         """Create a Vector.
 
         All values are converted to Floats automatically.
         If no value is given, that axis will be set to 0.
-        A sequence can be passed in (as the x argument), which will use
-        the three args as x/y/z.
-
-        :type x: int | float | Vec | list[str | int | float]
+        An iterable can be passed in (as the x argument), which will be
+        used for x, y, and z.
         """
         if isinstance(x, (int, float)):
             self.x = float(x)
@@ -203,7 +228,8 @@ class Vec:
             self.y = float(next(it, y))
             self.z = float(next(it, z))
 
-    def copy(self):
+    def copy(self) -> 'Vec':
+        """Create a duplicate of this vector."""
         return Vec(self.x, self.y, self.z)
 
     @classmethod
@@ -212,7 +238,7 @@ class Vec:
 
          If the string is unparsable, this uses the defaults (x,y,z).
          The string can start with any of the (), {}, [], <> bracket
-         types.
+         types, or none.
 
          If the value is already a vector, a copy will be returned.
          """
@@ -220,10 +246,14 @@ class Vec:
         x, y, z = parse_vec_str(val, x, y, z)
         return cls(x, y, z)
 
-    def mat_mul(self, matrix):
+    def mat_mul(self, matrix) -> None:
         """Multiply this vector by a 3x3 rotation matrix.
 
         Used for Vec.rotate().
+        The matrix should be a 9-tuple, following the pattern:
+        [ a b c ]
+        [ d e f ]
+        [ g h i ]
         """
         a, b, c, d, e, f, g, h, i = matrix
         x, y, z = self.x, self.y, self.z
@@ -232,7 +262,7 @@ class Vec:
         self.y = (x * d) + (y * e) + (z * f)
         self.z = (x * g) + (y * h) + (z * i)
 
-    def rotate(self, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
+    def rotate(self, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector by a Source rotational angle.
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
@@ -285,7 +315,10 @@ class Vec:
         return self
 
     def rotate_by_str(self, ang, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
-        """Rotate a vector, using a string instead of a vector."""
+        """Rotate a vector, using a string instead of a vector.
+
+        If the string cannot be parsed, use the passed in values instead.
+        """
         pitch, yaw, roll = parse_vec_str(ang, pitch, yaw, roll)
         return self.rotate(
             pitch,
@@ -299,6 +332,7 @@ class Vec:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
+        Returns a (min, max) tuple.
         """
         if len(points) == 1:  # Allow passing a single iterable
             (first, *points), = points
@@ -311,7 +345,7 @@ class Vec:
             bbox_max.max(point)
         return bbox_min, bbox_max
 
-    def axis(self):
+    def axis(self) -> str:
         """For a normal vector, return the axis it is on.
 
         This will not function correctly if not a on-axis normal vector!
@@ -322,8 +356,14 @@ class Vec:
             'z'
         )
 
-    def to_angle(self, roll=0):
-        """Convert a normal to a Source Engine angle."""
+    def to_angle(self, roll=0) -> 'Vec':
+        """Convert a normal to a Source Engine angle.
+
+        A +x axis vector will result in a 0, 0, 0 angle. The roll is not
+        affected by the direction of the face.
+
+        The inverse of this is `Vec(1, 0, 0).rotate(pitch, yaw, roll)`.
+        """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.sqrt(self.x ** 2 + self.y ** 2)
         return Vec(
@@ -605,6 +645,7 @@ class Vec:
         """Return the values, separated by spaces.
 
         This is the main format in Valve's file formats.
+        This strips off the .0 if no decimal portion exists.
         """
         return "{:g} {:g} {:g}".format(self.x, self.y, self.z)
 
@@ -723,8 +764,10 @@ class Vec:
             origin: Union['Vec', tuple],
             angles: Union['Vec', tuple]=None,
     ):
-        """Shift this point to be local to the given position and angles
+        """Shift this point to be local to the given position and angles.
 
+        This effectively translates local-space offsets to a global location,
+        given the parent's origin and angles.
         """
         if angles is not None:
             self.rotate(angles[0], angles[1], angles[2])

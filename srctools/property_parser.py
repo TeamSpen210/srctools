@@ -1,3 +1,62 @@
+"""Reads and parses Valve's KeyValues files.
+
+These files follow the following general format:
+    "Name"
+        {
+        "Name" "Value" // Comment
+        "Name"
+            {
+            "Name" "Value"
+            }
+        "Name" "Value"
+        "SecondName" "ps3-only value" [ps3]
+        "Third_Name" "never on Linux" [!linux]
+        "Name" "multi-line values
+are supported like this.
+They end with a quote."
+        }
+
+    The names are usually case-insensitive.
+    Call 'Property(name, value) to get a property object, or
+    Property.parse(file, 'name') to parse a file.
+
+    This will perform a round-trip file read:
+    >>> with open('filename.txt', 'r') as f:
+    ...     props = Property.parse(f, 'filename.txt')
+    >>> with open('filename_2.txt', 'w') as f:
+    ...     for line in props.export():
+                f.write(line)
+
+    Property values should be either a string, or a list of children Properties.
+    Names will be converted to lowercase automatically; use Prop.real_name to
+    obtain the original spelling. To allow multiple root blocks in a file, the
+    returned property from Property.parse() has a name of None - this property
+    type will export with un-indented children.
+
+    Properties with children can be indexed by their names, or by a
+    ('name', default) tuple:
+
+    >>> props = Property('Top', [
+    ...     Property('child1', '1'),
+    ...     Property('child2', '0'),
+    ... ])
+    ... props['child1']
+    '1'
+    >>> props['child3']
+    Traceback (most recent call last):
+        ...
+    IndexError: No key child3!
+    >>> props['child3', 'default']
+    'default'
+    >>> props['child4', object()]
+    <object object ax 0x...>
+    >>> del props['child2']
+    >>> props['child3'] = 'new value'
+    >>> props
+    Property('Top', [Property('child1', '1'), Property('child3', 'new value')])
+
+    \n, \t, and \\ will be converted in Property values.
+"""
 import re
 import sys
 
