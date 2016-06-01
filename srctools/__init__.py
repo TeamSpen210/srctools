@@ -1,13 +1,20 @@
 import string as _string
-from collections import abc
+from collections import abc as _abc
 
-from typing import Union
+from typing import Union as _Union
 
-# __all__ imports
-from srctools.vec import Vec, Vec_tuple, parse_vec_str
-from srctools.property_parser import NoKeyError, KeyValError, Property
-from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
+__all__ = [
+    'Vec', 'Vec_tuple', 'parse_vec_str',
 
+    'NoKeyError', 'KeyValError', 'Property',
+
+    'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
+
+    'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
+    'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
+
+    'EmptyMapping',
+]
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
 
@@ -82,7 +89,7 @@ BOOL_LOOKUP = {
 }
 
 
-def conv_bool(val: Union[str, bool, None], default=False):
+def conv_bool(val: _Union[str, bool, None], default=False):
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
@@ -119,7 +126,7 @@ def conv_int(val: str, default=0):
         return default
 
 
-class EmptyMapping(abc.MutableMapping):
+class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
     Any modifications will be ignored.
@@ -173,4 +180,11 @@ class EmptyMapping(abc.MutableMapping):
     def popitem(self):
         raise KeyError
 
-EmptyMapping = EmptyMapping() # We only want the one instance
+EmptyMapping = EmptyMapping()  # We only want the one instance
+
+
+# Import these, so people can reference 'srctools.Vec' instead of
+# 'srctools.vec.Vec'.
+from srctools.vec import Vec, Vec_tuple, parse_vec_str
+from srctools.property_parser import NoKeyError, KeyValError, Property
+from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
