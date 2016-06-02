@@ -151,7 +151,7 @@ class BSP:
         self.map_revision = -1  # The map's revision count
         self.lumps = {}
         self.header_off = 0
-        self.version=version
+        self.version = version
 
     def read_header(self):
         """Read through the BSP header to find the lumps.
@@ -163,7 +163,7 @@ class BSP:
             magic_name, bsp_version = get_struct(file, '4si')
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
-            assert bsp_version == self.version, 'Different BSP version!'
+            assert bsp_version == self.version.value, 'Different BSP version!'
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
@@ -207,7 +207,7 @@ class BSP:
     def write_header(self, file):
         """Write the BSP file header into the given file."""
         file.write(BSP_MAGIC)
-        file.write(struct.pack('i', self.version))
+        file.write(struct.pack('i', self.version.value))
         for lump_name in BSP_LUMPS:
             # Write each header
             lump = self.lumps[lump_name]
