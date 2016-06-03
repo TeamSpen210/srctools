@@ -214,6 +214,34 @@ class BSP:
             file.write(lump.as_bytes())
         # The map revision would follow, but we never change that value!
 
+    # Lump-specific commands:
+
+    def iter_texture_names(self):
+        """Iterate through all brush textures in the map."""
+        tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
+        tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
+        # tex_table is an array of int offsets into tex_data. tex_data is a
+        # null-terminated block of strings.
+
+        table_offsets = struct.unpack(
+            # The number of ints + i, for the repetitions in the struct.
+            str(len(tex_table) // struct.calcsize('i')) + 'i',
+            tex_table,
+        )
+
+        for off in table_offsets:
+            # Look for the NULL at the end - strings are limited to 128 chars.
+            str_off = 0
+            for str_off in range(off, off + 128):
+                if tex_data[str_off] == 0:
+                    yield tex_data[off: str_off].decode('ascii')
+                    break
+            else:
+                # Reached the 128 char limit without finding a null.
+                raise ValueError('Bad string at', off, 'in BSP! ("{}")'.format(
+                    tex_data[off:str_off]
+                ))
+
 
 class Lump:
     """Represents a lump header in a BSP file.
@@ -264,34 +292,3 @@ class Lump:
             )
         )
 
-
-if __name__ == '__main__':
-    from zipfile import ZipFile
-    from io import BytesIO
-    test_file = BSP(
-        r'F:\SteamLibrary\Steam'
-        r'Apps\common\Portal 2\portal2_'
-        r'dlc2\maps\sp_a2_crushed_gel.bsp'
-    )
-    test_file.read_header()
-    print('Read header')
-
-    zip_data = BytesIO()
-    zip_data.write(test_file.get_lump(BSP_LUMPS.PAKFILE))
-    with ZipFile(zip_data, mode='a') as zipfile:
-        zipfile.testzip()
-        print('Read zip')
-        zipfile.write(
-            r'F:\SteamLibrary\SteamApps\common\Portal 2\bee2_'
-            r'dev\scripts\vscripts\BEE2\video_splitter_rand.nut',
-            arcname=r'scripts\vscripts\BEE2\video_splitter_rand.nut',
-        )
-        print('Added file')
-    with open(r'C:\packfile.zip', 'wb') as zip:
-        zip.write(zip_data.getvalue())
-
-    test_file.replace_lump(
-        r'C:\new_crushed_gel.bsp',
-        BSP_LUMPS.PAKFILE,
-        zip_data.getvalue(),
-    )
