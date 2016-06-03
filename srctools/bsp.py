@@ -216,7 +216,7 @@ class BSP:
 
     # Lump-specific commands:
 
-    def iter_texture_names(self):
+    def read_texture_names(self):
         """Iterate through all brush textures in the map."""
         tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
         tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
@@ -241,6 +241,29 @@ class BSP:
                 raise ValueError('Bad string at', off, 'in BSP! ("{}")'.format(
                     tex_data[off:str_off]
                 ))
+
+    def read_ent_data(self):
+        """Iterate through the entities in a map.
+
+        This yields a series of keyvalue dictionaries. The first is WorldSpawn.
+        """
+        ent_data = self.get_lump(BSP_LUMPS.ENTITIES).decode('ascii')
+        cur_dict = None  # None = waiting for '{'
+
+        # This code is similar to property_parser, but simpler since there's
+        # no nesting, comments, or whitespace, except between key and value.
+        for line in ent_data.splitlines():
+            if line == '{':
+                cur_dict = {}
+            elif line == '}':
+                yield cur_dict
+                cur_dict = None
+            elif line == '\x00':
+                return
+            else:
+                # Line is of the form <"key" "val">
+                key, value = line.split('" "')
+                cur_dict[key[1:]] = value[:-1]
 
 
 class Lump:
@@ -291,4 +314,3 @@ class Lump:
                 s=self
             )
         )
-
