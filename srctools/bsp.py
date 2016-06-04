@@ -151,6 +151,7 @@ class BSP:
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps = {}
+        self.game_lumps = {}
         self.header_off = 0
         self.version = version
 
@@ -215,6 +216,30 @@ class BSP:
             file.write(lump.as_bytes())
         # The map revision would follow, but we never change that value!
 
+    def read_game_lumps(self):
+        """Read in the game-lump's header, so we can get those values."""
+        game_lump = BytesIO(self.get_lump(BSP_LUMPS.GAME_LUMP))
+
+        self.game_lumps.clear()
+        lump_count = get_struct(game_lump, 'i')[0]
+
+        for _ in range(lump_count):
+            (
+                lump_id,
+                flags,
+                version,
+                file_off,
+                file_len,
+            ) = get_struct(game_lump, '<4s HH ii')
+            self.game_lumps[lump_id] = (flags, version, file_off, file_len)
+
+    def get_game_lump(self, lump_id):
+        """Get a given game-lump, given the 4-character byte ID."""
+        flags, version, file_off, file_len = self.game_lumps[lump_id]
+        with open(self.filename, 'rb') as file:
+            file.seek(file_off)
+            return file.read(file_len)
+
     # Lump-specific commands:
 
     def read_texture_names(self):
@@ -266,7 +291,6 @@ class BSP:
                 key, value = line.split('" "')
                 cur_dict[key[1:]] = value[:-1]
 
-
     def write_ent_data(self, ent_dicts):
         """Generate the entity data lump, given a list of dictionaries."""
         out = BytesIO()
@@ -278,6 +302,21 @@ class BSP:
         out.write(b'\x00')
 
         return out.getvalue()
+
+    def read_static_prop_models(self):
+        """Get a list of all model names used by static props."""
+        static_lump = BytesIO(self.get_game_lump(b'prps'))
+        dict_num = get_struct(static_lump, 'i')[0]
+
+        model_dict = []
+        for _ in range(dict_num):
+            padded_name = get_struct(static_lump, '128s')[0]
+            # Strip null chars off the end, and convert to a str.
+            model_dict.append(
+                padded_name.rstrip(b'\x00').decode('ascii')
+            )
+
+        return model_dict
 
 
 class Lump:
