@@ -2,6 +2,7 @@
 
 """
 from enum import Enum
+from io import BytesIO
 from srctools import AtomicWriter
 import struct
 
@@ -264,6 +265,19 @@ class BSP:
                 # Line is of the form <"key" "val">
                 key, value = line.split('" "')
                 cur_dict[key[1:]] = value[:-1]
+
+
+    def write_ent_data(self, ent_dicts):
+        """Generate the entity data lump, given a list of dictionaries."""
+        out = BytesIO()
+        for keyvals in ent_dicts:
+            out.write(b'{\n')
+            for key, value in keyvals.items():
+                out.write('"{}" "{}"'.format(key, value).encode('ascii'))
+            out.write(b'}\n')
+        out.write(b'\x00')
+
+        return out.getvalue()
 
 
 class Lump:
