@@ -58,6 +58,34 @@ def blacklist(string, invalid_chars='', rep_char='_'):
     return ''.join(chars)
 
 
+def escape_quote_split(line):
+    """Split quote values on a line, handling \\" correctly."""
+    out_strings = []
+    was_backslash = False  # Last character was a backslash
+    cur_part = []  # The current chunk of text
+
+    for char in line:
+        if char == '\\':
+            was_backslash = True
+            cur_part.append('\\')
+            continue
+
+        if char == '"':
+            if was_backslash:
+                cur_part.pop()  # Consume the backslash, then drop to append it.
+            else:
+                out_strings.append(''.join(cur_part))
+                cur_part.clear()
+                continue
+        # Backslash only applies for character..
+        was_backslash = False
+        cur_part.append(char)
+
+    # Part after the last quotation
+    out_strings.append(''.join(cur_part))
+    return out_strings
+
+
 def bool_as_int(val):
     """Convert a True/False value into '1' or '0'.
 
