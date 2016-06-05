@@ -740,7 +740,8 @@ class Property:
                 for prop in self.value:
                     yield from prop.export()
             else:
-                yield '"' + self.real_name + '"\n\t{\n'
+                yield '"' + self.real_name + '"\n'
+                yield '\t{\n'
                 yield from (
                     '\t' + line
                     for prop in self.value
