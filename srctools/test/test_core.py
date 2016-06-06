@@ -1,4 +1,4 @@
-"""Test core functionality."""
+"""Test functionality in srctools.__init__."""
 import unittest
 
 import srctools
