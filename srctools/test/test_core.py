@@ -120,31 +120,31 @@ class TestConvFunc(unittest.TestCase):
 
 class TestEmptyMapping(unittest.TestCase):
     """Test the EmptyMapping singleton."""
-    
+
     def test_methods(self):
         # It should be possible to 'construct' an instance..
         self.assertIs(EmptyMapping(), EmptyMapping)
-        
+
         # Must be passable to dict()
         self.assertEqual(dict(EmptyMapping), {})
-        
+
         # EmptyMapping['x'] raises
         self.assertRaises(KeyError, operator.getitem, EmptyMapping, 'x')
         self.assertRaises(KeyError, operator.delitem, EmptyMapping, 'x')
-        EmptyMapping['x'] = 4 # Shouldn't fail
+        EmptyMapping['x'] = 4  # Shouldn't fail
         self.assertNotIn('x', EmptyMapping)
-        
+
         self.check_empty_iterable(EmptyMapping, 'EmptyMapping')
         self.check_empty_iterable(EmptyMapping.keys(), 'keys()')
         self.check_empty_iterable(EmptyMapping.values(), 'values()')
-        self.check_empty_iterable(EmptyMapping.items(), 'items()')
-    
+        self.check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
+
     def check_dict_methods(self):
-        
+
         marker = object()
-        
+
         self.assertFalse(EmptyMapping.has_key('x'))
-        
+
         self.assertIs(EmptyMapping.get('x'), None)
         self.assertIs(EmptyMapping.setdefault('x'), None)
         self.assertIs(EmptyMapping.get('x', marker), marker)
@@ -152,21 +152,22 @@ class TestEmptyMapping(unittest.TestCase):
         self.assertIs(EmptyMapping.pop('x', marker), marker)
         self.assertRaises(KeyError, EmptyMapping.popitem)
         self.assertRaises(KeyError, EmptyMapping.pop, 'x')
-        
+
     def check_abc(self):
         from collections import abc
         self.assertIsInstance(EmptyMapping, abc.Container)
         self.assertIsInstance(EmptyMapping, abc.Sized)
         self.assertIsInstance(EmptyMapping, abc.Mapping)
         self.assertIsInstance(EmptyMapping, abc.MutableMapping)
-        
-    def check_empty_iterable(self, obj, name):
+
+    def check_empty_iterable(self, obj, name, item: object='x'):
         """Check the given object is iterable, and is empty."""
         try:
             iterator = iter(obj)
         except TypeError:
             self.fail(name + ' is not iterable!')
         else:
+            self.assertNotIn(item, obj)
             self.assertRaises(StopIteration, next, iterator)
             self.assertRaises(StopIteration, next, iterator)
 

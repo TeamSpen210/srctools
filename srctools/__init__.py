@@ -165,50 +165,67 @@ class EmptyMapping(_abc.MutableMapping):
     """
     __slots__ = []
 
+    def __init__(self):
+        pass
+
     def __call__(self):
         # Just in case someone tries to instantiate this
         return self
 
-    def __getitem__(self, item):
-        raise KeyError
+    def __getitem__(self, key):
+        """All key acesses fail."""
+        raise KeyError(key)
 
-    def __contains__(self, item):
+    def __setitem__(self, key, value):
+        """All key setting suceeds."""
+        pass
+
+    def __delitem__(self, key):
+        """All key deletions fail."""
+        raise KeyError(key)
+
+    def __contains__(self, key):
+        """EmptyMapping does not have any keys."""
         return False
 
-    def get(self, item, default=None):
+    def get(self, key, default=None):
+        """get() or setdefault() always returns the default item."""
         return default
 
     def __bool__(self):
+        """EmptyMapping is falsey."""
         return False
 
-    def __next__(self):
-        raise StopIteration
-
     def __len__(self):
+        """EmptyMapping is 0 long."""
         return 0
 
     def __iter__(self):
-        return self
+        """Iteration yields no values."""
+        return iter(())
 
-    items = values = keys = __iter__
 
     # Mutable functions
     setdefault = get
 
-    def update(*args, **kwds):
-        pass
-
-    __setitem__ = __delitem__ = clear = update
+    def update(*args, **kargs):
+        """Runs {}.update() on arguments."""
+        # Check arguments are correct, and raise appropriately.
+        # Also consume args[0] if an iterator.
+        {}.update(*args, **kargs)
 
     __marker = object()
 
     def pop(self, key, default=__marker):
+        """Returns the default value, or raises KeyError if not present."""
         if default is self.__marker:
-            raise KeyError
+            raise KeyError(key)
         return default
 
+
     def popitem(self):
-        raise KeyError
+        """Popitem() raises, since no items are in EmptyMapping."""
+        raise KeyError('EmptyMapping is empty')
 
 EmptyMapping = EmptyMapping()  # We only want the one instance
 
