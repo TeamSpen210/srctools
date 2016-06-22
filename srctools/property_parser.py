@@ -352,6 +352,13 @@ class Property:
                     cur_block.append(Property(name, ''))
                     requires_block = True
                     continue
+                # Check there isn't text between name and value!
+                elif line_contents[2].strip():
+                    raise KeyValError(
+                        "Extra text (" + line_contents[2] + ") in line!",
+                        filename,
+                        line_num
+                    )
 
                 if len(line_contents) < 5:
                     # It's a multiline value - no ending quote!
