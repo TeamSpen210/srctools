@@ -2014,7 +2014,8 @@ class Output:
         """Extranct the instance name from values of the form:
 
         'instance:local_name;Command'
-        If not of this form, the
+        This then returns a local_name, command tuple.
+        If not of this form, the first value will be None.
         """
         if name.casefold().startswith('instance:'):
             try:
