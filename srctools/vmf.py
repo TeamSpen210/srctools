@@ -2014,7 +2014,8 @@ class Output:
         """Extranct the instance name from values of the form:
 
         'instance:local_name;Command'
-        If not of this form, the
+        This then returns a local_name, command tuple.
+        If not of this form, the first value will be None.
         """
         if name.casefold().startswith('instance:'):
             try:
@@ -2075,21 +2076,18 @@ class Output:
 
     def export(self, buffer, ind=''):
         """Generate the text required to define this output in the VMF."""
-        buffer.write(ind + '"' + self.exp_out())
-
-        sep = ',' if self.comma_sep else OUTPUT_SEP
-
         buffer.write(
-            '" "' +
-            sep.join((
-                self.target,
-                self.exp_in(),
-                self.params,
-                # Strip the trailing 0 if it's really an integer.
-                str(self.delay).replace('.0', ''),
-                str(self.times),
-            )) +
-            '"\n'
+            '{ind}"{output}" "{targ}{sep}{input}{sep}{params}'
+            '{sep}{delay:g}{sep}{times}"\n'.format(
+                ind=ind,
+                output=self.exp_out(),
+                targ=self.target,
+                input=self.exp_in(),
+                params=self.params,
+                delay=self.delay,
+                times=self.times,
+                sep=',' if self.comma_sep else OUTPUT_SEP,
+            )
         )
 
     def copy(self):

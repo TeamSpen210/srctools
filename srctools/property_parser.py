@@ -59,6 +59,7 @@ They end with a quote."
 """
 import re
 import sys
+import srctools
 
 from typing import (
     Optional, Union, Any,
@@ -68,12 +69,12 @@ from typing import (
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
 # various escape sequences that we allow
-REPLACE_CHARS = {
-    r'\n':  '\n',
-    r'\t':  '\t',
-    '\\\\': '\\',
-    r'\/':   '/',
-}
+REPLACE_CHARS = [
+    (r'\n',  '\n'),
+    (r'\t',  '\t'),
+    (r'\/',  '/'),
+    ('\\\\', '\\'),
+]
 
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = object()
@@ -328,14 +329,22 @@ class Property:
                     )
 
             if freshline[0] == '"':   # data string
-                line_contents = freshline.split('"')
+                if '\\"' in freshline:
+                    # There's escaped double-quotes in here - handle that
+                    # split slowly but properly.
+                    line_contents = srctools.escape_quote_split(freshline)
+                else:
+                    # Just call split normally.
+                    line_contents = freshline.split('"')
+                # Line_contents = [indent, name, space, value, flags/comments]
+
                 name = line_contents[1]
                 try:
                     value = line_contents[3]
                 except IndexError:  # It doesn't have a value - it's a block.
                     cur_block.append(Property(name, ''))
                     requires_block = True  # Ensure the next token must be a '{'.
-                    continue  # Ensure we skip the check for the above value
+                    continue  # Skip to next line
 
                 # Special case - comment between name/value sections -
                 # it's a name block then.
@@ -343,17 +352,24 @@ class Property:
                     cur_block.append(Property(name, ''))
                     requires_block = True
                     continue
-                else:
-                    if len(line_contents) < 5:
-                        # It's a multiline value - no ending quote!
-                        value += read_multiline_value(
-                            file_iter,
-                            line_num,
-                            filename,
-                        )
-                    if value and '\\' in value:
-                        for orig, new in REPLACE_CHARS.items():
-                            value = value.replace(orig, new)
+                # Check there isn't text between name and value!
+                elif line_contents[2].strip():
+                    raise KeyValError(
+                        "Extra text (" + line_contents[2] + ") in line!",
+                        filename,
+                        line_num
+                    )
+
+                if len(line_contents) < 5:
+                    # It's a multiline value - no ending quote!
+                    value += read_multiline_value(
+                        file_iter,
+                        line_num,
+                        filename,
+                    )
+                if value and '\\' in value:
+                    for orig, new in REPLACE_CHARS:
+                        value = value.replace(orig, new)
 
                 # Line_contents[4] is the start of the comment, check for [] flags.
                 if len(line_contents) >= 5:
@@ -740,5 +756,7 @@ class Property:
                 )
                 yield '\t}\n'
         else:
-            # The should be a string!
-            yield '"' + self.real_name + '" "' + self.value + '"\n'
+            yield '"{}" "{}"\n'.format(
+                self.real_name,
+                self.value.replace('"', '\\"')
+            )

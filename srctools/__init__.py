@@ -1,4 +1,6 @@
+import os as _os
 import string as _string
+import tempfile as _tempfile
 from collections import abc as _abc
 
 from typing import Union as _Union
@@ -13,7 +15,7 @@ __all__ = [
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
     'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
 
-    'EmptyMapping',
+    'EmptyMapping', 'AtomicWriter',
 ]
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
@@ -54,6 +56,34 @@ def blacklist(string, invalid_chars='', rep_char='_'):
         if char in invalid_chars:
             chars[ind] = rep_char
     return ''.join(chars)
+
+
+def escape_quote_split(line):
+    """Split quote values on a line, handling \\" correctly."""
+    out_strings = []
+    was_backslash = False  # Last character was a backslash
+    cur_part = []  # The current chunk of text
+
+    for char in line:
+        if char == '\\':
+            was_backslash = True
+            cur_part.append('\\')
+            continue
+
+        if char == '"':
+            if was_backslash:
+                cur_part.pop()  # Consume the backslash, then drop to append it.
+            else:
+                out_strings.append(''.join(cur_part))
+                cur_part.clear()
+                continue
+        # Backslash only applies for character..
+        was_backslash = False
+        cur_part.append(char)
+
+    # Part after the last quotation
+    out_strings.append(''.join(cur_part))
+    return out_strings
 
 
 def bool_as_int(val):
@@ -135,52 +165,127 @@ class EmptyMapping(_abc.MutableMapping):
     """
     __slots__ = []
 
+    def __init__(self):
+        pass
+
     def __call__(self):
         # Just in case someone tries to instantiate this
         return self
 
-    def __getitem__(self, item):
-        raise KeyError
+    def __getitem__(self, key):
+        """All key acesses fail."""
+        raise KeyError(key)
 
-    def __contains__(self, item):
+    def __setitem__(self, key, value):
+        """All key setting suceeds."""
+        pass
+
+    def __delitem__(self, key):
+        """All key deletions fail."""
+        raise KeyError(key)
+
+    def __contains__(self, key):
+        """EmptyMapping does not have any keys."""
         return False
 
-    def get(self, item, default=None):
+    def get(self, key, default=None):
+        """get() or setdefault() always returns the default item."""
         return default
 
     def __bool__(self):
+        """EmptyMapping is falsey."""
         return False
 
-    def __next__(self):
-        raise StopIteration
-
     def __len__(self):
+        """EmptyMapping is 0 long."""
         return 0
 
     def __iter__(self):
-        return self
+        """Iteration yields no values."""
+        return iter(())
 
-    items = values = keys = __iter__
 
     # Mutable functions
     setdefault = get
 
-    def update(*args, **kwds):
-        pass
-
-    __setitem__ = __delitem__ = clear = update
+    def update(*args, **kargs):
+        """Runs {}.update() on arguments."""
+        # Check arguments are correct, and raise appropriately.
+        # Also consume args[0] if an iterator.
+        {}.update(*args, **kargs)
 
     __marker = object()
 
     def pop(self, key, default=__marker):
+        """Returns the default value, or raises KeyError if not present."""
         if default is self.__marker:
-            raise KeyError
+            raise KeyError(key)
         return default
 
+
     def popitem(self):
-        raise KeyError
+        """Popitem() raises, since no items are in EmptyMapping."""
+        raise KeyError('EmptyMapping is empty')
 
 EmptyMapping = EmptyMapping()  # We only want the one instance
+
+
+class AtomicWriter:
+    """Atomically overwrite a file.
+
+    Use as a context manager - the returned temporary file
+    should be written to. When cleanly exiting, the file will be transfered.
+    If an exception occurs in the body, the temporary data will be discarded.
+
+    This is not reentrant, but can be repeated - starting the context manager
+    clears the file.
+    """
+    def __init__(self, filename, is_bytes=False):
+        """Create an AtomicWriter.
+        is_bytes sets text or bytes writing mode. The file is always writable.
+        """
+        self.filename = filename
+        self.dir = _os.path.dirname(filename)
+        self.is_bytes = is_bytes
+        self.temp = None
+
+    def make_tempfile(self):
+        """Create the temporary file object."""
+        if self.temp is not None:
+            # Already open - close and delete the current file.
+            self.temp.close()
+            _os.remove(self.temp.name)
+
+        # Create folders if needed..
+        _os.makedirs(self.dir, exist_ok=True)
+
+        self.temp = _tempfile.NamedTemporaryFile(
+            mode='wb' if self.is_bytes else 'wt',
+            dir=self.dir,
+            delete=False,
+        )
+
+    def __enter__(self):
+        """Delagate to the underlying temporary file handler."""
+        self.make_tempfile()
+        return self.temp.__enter__()
+
+    def __exit__(self, exc_type, exc_value, tback):
+        # Pass to tempfile, which also closes().
+        temp_path = self.temp.name
+        self.temp.__exit__(exc_type, exc_value, tback)
+        self.temp = None
+        if exc_type is not None:
+            # An exception occured, clean up.
+            try:
+                _os.remove(temp_path)
+            except FileNotFoundError:
+                pass
+        else:
+            # No exception, commit changes
+            _os.replace(temp_path, self.filename)
+
+        return False  # Don't cancel the exception.
 
 
 # Import these, so people can reference 'srctools.Vec' instead of

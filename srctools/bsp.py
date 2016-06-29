@@ -2,6 +2,7 @@
 
 """
 from enum import Enum
+from io import BytesIO
 from srctools import AtomicWriter
 import struct
 
@@ -150,8 +151,9 @@ class BSP:
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps = {}
+        self.game_lumps = {}
         self.header_off = 0
-        self.version=version
+        self.version = version
 
     def read_header(self):
         """Read through the BSP header to find the lumps.
@@ -163,7 +165,7 @@ class BSP:
             magic_name, bsp_version = get_struct(file, '4si')
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
-            assert bsp_version == self.version, 'Different BSP version!'
+            assert bsp_version == self.version.value, 'Different BSP version!'
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
@@ -207,12 +209,114 @@ class BSP:
     def write_header(self, file):
         """Write the BSP file header into the given file."""
         file.write(BSP_MAGIC)
-        file.write(struct.pack('i', self.version))
+        file.write(struct.pack('i', self.version.value))
         for lump_name in BSP_LUMPS:
             # Write each header
             lump = self.lumps[lump_name]
             file.write(lump.as_bytes())
         # The map revision would follow, but we never change that value!
+
+    def read_game_lumps(self):
+        """Read in the game-lump's header, so we can get those values."""
+        game_lump = BytesIO(self.get_lump(BSP_LUMPS.GAME_LUMP))
+
+        self.game_lumps.clear()
+        lump_count = get_struct(game_lump, 'i')[0]
+
+        for _ in range(lump_count):
+            (
+                lump_id,
+                flags,
+                version,
+                file_off,
+                file_len,
+            ) = get_struct(game_lump, '<4s HH ii')
+            self.game_lumps[lump_id] = (flags, version, file_off, file_len)
+
+    def get_game_lump(self, lump_id):
+        """Get a given game-lump, given the 4-character byte ID."""
+        flags, version, file_off, file_len = self.game_lumps[lump_id]
+        with open(self.filename, 'rb') as file:
+            file.seek(file_off)
+            return file.read(file_len)
+
+    # Lump-specific commands:
+
+    def read_texture_names(self):
+        """Iterate through all brush textures in the map."""
+        tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
+        tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
+        # tex_table is an array of int offsets into tex_data. tex_data is a
+        # null-terminated block of strings.
+
+        table_offsets = struct.unpack(
+            # The number of ints + i, for the repetitions in the struct.
+            str(len(tex_table) // struct.calcsize('i')) + 'i',
+            tex_table,
+        )
+
+        for off in table_offsets:
+            # Look for the NULL at the end - strings are limited to 128 chars.
+            str_off = 0
+            for str_off in range(off, off + 128):
+                if tex_data[str_off] == 0:
+                    yield tex_data[off: str_off].decode('ascii')
+                    break
+            else:
+                # Reached the 128 char limit without finding a null.
+                raise ValueError('Bad string at', off, 'in BSP! ("{}")'.format(
+                    tex_data[off:str_off]
+                ))
+
+    def read_ent_data(self):
+        """Iterate through the entities in a map.
+
+        This yields a series of keyvalue dictionaries. The first is WorldSpawn.
+        """
+        ent_data = self.get_lump(BSP_LUMPS.ENTITIES).decode('ascii')
+        cur_dict = None  # None = waiting for '{'
+
+        # This code is similar to property_parser, but simpler since there's
+        # no nesting, comments, or whitespace, except between key and value.
+        for line in ent_data.splitlines():
+            if line == '{':
+                cur_dict = {}
+            elif line == '}':
+                yield cur_dict
+                cur_dict = None
+            elif line == '\x00':
+                return
+            else:
+                # Line is of the form <"key" "val">
+                key, value = line.split('" "')
+                cur_dict[key[1:]] = value[:-1]
+
+    def write_ent_data(self, ent_dicts):
+        """Generate the entity data lump, given a list of dictionaries."""
+        out = BytesIO()
+        for keyvals in ent_dicts:
+            out.write(b'{\n')
+            for key, value in keyvals.items():
+                out.write('"{}" "{}"'.format(key, value).encode('ascii'))
+            out.write(b'}\n')
+        out.write(b'\x00')
+
+        return out.getvalue()
+
+    def read_static_prop_models(self):
+        """Get a list of all model names used by static props."""
+        static_lump = BytesIO(self.get_game_lump(b'prps'))
+        dict_num = get_struct(static_lump, 'i')[0]
+
+        model_dict = []
+        for _ in range(dict_num):
+            padded_name = get_struct(static_lump, '128s')[0]
+            # Strip null chars off the end, and convert to a str.
+            model_dict.append(
+                padded_name.rstrip(b'\x00').decode('ascii')
+            )
+
+        return model_dict
 
 
 class Lump:
@@ -263,35 +367,3 @@ class Lump:
                 s=self
             )
         )
-
-
-if __name__ == '__main__':
-    from zipfile import ZipFile
-    from io import BytesIO
-    test_file = BSP(
-        r'F:\SteamLibrary\Steam'
-        r'Apps\common\Portal 2\portal2_'
-        r'dlc2\maps\sp_a2_crushed_gel.bsp'
-    )
-    test_file.read_header()
-    print('Read header')
-
-    zip_data = BytesIO()
-    zip_data.write(test_file.get_lump(BSP_LUMPS.PAKFILE))
-    with ZipFile(zip_data, mode='a') as zipfile:
-        zipfile.testzip()
-        print('Read zip')
-        zipfile.write(
-            r'F:\SteamLibrary\SteamApps\common\Portal 2\bee2_'
-            r'dev\scripts\vscripts\BEE2\video_splitter_rand.nut',
-            arcname=r'scripts\vscripts\BEE2\video_splitter_rand.nut',
-        )
-        print('Added file')
-    with open(r'C:\packfile.zip', 'wb') as zip:
-        zip.write(zip_data.getvalue())
-
-    test_file.replace_lump(
-        r'C:\new_crushed_gel.bsp',
-        BSP_LUMPS.PAKFILE,
-        zip_data.getvalue(),
-    )
