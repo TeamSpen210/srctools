@@ -291,7 +291,8 @@ class BSP:
                 key, value = line.split('" "')
                 cur_dict[key[1:]] = value[:-1]
 
-    def write_ent_data(self, ent_dicts):
+    @staticmethod
+    def write_ent_data(ent_dicts):
         """Generate the entity data lump, given a list of dictionaries."""
         out = BytesIO()
         for keyvals in ent_dicts:
