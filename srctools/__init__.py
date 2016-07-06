@@ -266,7 +266,7 @@ class AtomicWriter:
         )
 
     def __enter__(self):
-        """Delagate to the underlying temporary file handler."""
+        """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
         return self.temp.__enter__()
 
@@ -276,7 +276,7 @@ class AtomicWriter:
         self.temp.__exit__(exc_type, exc_value, tback)
         self.temp = None
         if exc_type is not None:
-            # An exception occured, clean up.
+            # An exception occurred, clean up.
             try:
                 _os.remove(temp_path)
             except FileNotFoundError:

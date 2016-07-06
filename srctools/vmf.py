@@ -145,6 +145,7 @@ def make_overlay(
 
         material=material,
         sides=' '.join(str(side.id) for side in surfaces),
+        renderOrder=render_order,
 
         startU='0',
         startV='0',
