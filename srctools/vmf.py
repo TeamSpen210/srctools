@@ -65,6 +65,24 @@ class IDMan(set):
                 return poss_id
 
 
+class NullIDMan(IDMan):
+    """An alternate Id manager which allows repeated IDs."""
+    __slots__ = ()
+
+    def get_id(self, desired=-1):
+        """Get a valid ID.
+
+        If no desired one is passed, a unique one will be found.
+        If a desired ID is set, it will be passed through unchanged.
+        """
+
+        if desired == -1:
+            return super().get_id()
+        else:
+            self.add(desired)
+            return desired
+
+
 def find_empty_id(used_id, desired=-1):
         """Ensure this item has a unique ID.
 
@@ -198,18 +216,27 @@ class VMF:
     of entities with the given class or targetname.
     """
     def __init__(
-            self,
-            map_info=EmptyMapping,
-            spawn=None,
-            entities=None,
-            brushes=None,
-            cameras=None,
-            cordons=None,
-            visgroups=None):
-        self.solid_id = IDMan()  # All occupied solid ids
-        self.face_id = IDMan()  # Ditto for faces
-        self.ent_id = IDMan()  # Same for entities
-        self.group_id = IDMan()  # Group IDs (not visgroups)
+        self,
+        map_info=EmptyMapping,
+        spawn=None,
+        entities=None,
+        brushes=None,
+        cameras=None,
+        cordons=None,
+        visgroups=None,
+        preserve_ids=False,
+    ):
+        """Create a VMF.
+
+        If preserve_ids is False (default), various IDs will be changed to
+        ensure they are unique when adding items to the VMF. If True they will
+        stay as default.
+        """
+        id_man = NullIDMan if preserve_ids else IDMan
+        self.solid_id = id_man()  # All occupied solid ids
+        self.face_id = id_man()  # Ditto for faces
+        self.ent_id = id_man()  # Same for entities
+        self.group_id = id_man()  # Group IDs (not visgroups)
 
         # Allow quick searching for particular groups, without checking
         # the whole map
@@ -228,7 +255,6 @@ class VMF:
         self.spawn = spawn or Entity(self)
         self.spawn.solids = self.brushes
         self.spawn.hidden_brushes = self.brushes
-
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion'))
@@ -309,7 +335,7 @@ class VMF:
         return ent
 
     @staticmethod
-    def parse(tree: Union[Property, str]):
+    def parse(tree: Union[Property, str], preserve_ids=False):
         """Convert a property_parser tree into VMF classes.
         """
         if not isinstance(tree, Property):
@@ -352,7 +378,10 @@ class VMF:
             (cam_props['activecamera', '']), -1)
         map_info['quickhide'] = tree.find_key('quickhide', [])['count', '']
 
-        map_obj = VMF(map_info=map_info)
+        # We have to create an incomplete map before parsing any data.
+        # This ensures the IDman objects have been created, so we can
+        # ensure unique IDs in brushes, entities and faces.
+        map_obj = VMF(map_info=map_info, preserve_ids=preserve_ids)
 
         for c in cam_props:
             if c.name != 'activecamera':
@@ -383,7 +412,7 @@ class VMF:
             map_obj.brushes = map_obj.spawn.solids
 
         return map_obj
-    pass
+
 
     def export(self, dest_file=None, inc_version=True, minimal=False):
         """Serialises the object's contents into a VMF file.
@@ -1164,7 +1193,7 @@ class Side:
             lightmap=self.lightmap,
             disp_data=disp_data,
         )
-        side_mapping[str(self.id)] = str(copy.id)
+        side_mapping[self.id] = copy.id
         return copy
 
     def export(self, buffer, ind=''):
