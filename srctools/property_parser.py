@@ -61,6 +61,8 @@ import re
 import sys
 import srctools
 
+from srctools import BOOL_LOOKUP, Vec as _Vec
+
 from typing import (
     Optional, Union, Any,
     Dict, List, Tuple, Iterator,
@@ -140,7 +142,7 @@ class KeyValError(Exception):
         return mess
 
 
-class NoKeyError(Exception):
+class NoKeyError(LookupError):
     """Raised if a key is not found when searching from find_key().
 
     key = The missing key that was asked for.
@@ -436,10 +438,11 @@ class Property:
                     yield prop
 
     def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND):
-        """Obtain the value of the child Property with a given name.
+        """Obtain the child Property with a given name.
 
         - If no child is found with the given name, this will return the
-          default value, or raise NoKeyError if none is provided.
+          default value wrapped in a Property, or raise NoKeyError if
+          none is provided.
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
@@ -452,10 +455,77 @@ class Property:
             return Property(key, def_)
             # We were given a default, return it wrapped in a Property.
 
-    def set_key(self, path, value):
-        """Set the value of a key deep in the tree hierachy.
+    def _get_value(self, key, def_=_NO_KEY_FOUND):
+        """Obtain the value of the child Property with a given name.
 
-        -If any of the hierachy do not exist (or do not have children),
+        - If no child is found with the given name, this will return the
+          default value, or raise NoKeyError if none is provided.
+        - This prefers keys located closer to the end of the value list.
+        """
+        key = key.casefold()
+        for prop in reversed(self.value):  # type: Property
+            if prop._folded_name == key:
+                return prop.value
+        if def_ is _NO_KEY_FOUND:
+            raise NoKeyError(key)
+        else:
+            return def_
+
+    def int(self, key: str, def_: Any=0) -> int:
+        """Return the value of an integer key.
+
+        Equivalent to int(prop[key]), but with a default value if missing or
+        invalid.
+        If multiple keys with the same name are present, this will use the
+        last only.
+        """
+        try:
+            return int(self._get_value(key))
+        except (NoKeyError, ValueError, TypeError):
+            return def_
+
+    def float(self, key: str, def_: Any=0.0) -> float:
+        """Return the value of an integer key.
+
+        Equivalent to float(prop[key]), but with a default value if missing or
+        invalid.
+        If multiple keys with the same name are present, this will use the
+        last only.
+        """
+        try:
+            return float(self._get_value(key))
+        except (NoKeyError, ValueError, TypeError):
+            return def_
+
+    def bool(self, key: str, def_: Any=False) -> bool:
+        """Return the value of an boolean key.
+
+        The value may be case-insensitively 'true', 'false', '1', '0', 'T',
+        'F', 'y', 'n', 'yes', or 'no'.
+        If multiple keys with the same name are present, this will use the
+        last only.
+        """
+        try:
+            return BOOL_LOOKUP[self._get_value(key).casefold()]
+        except LookupError:  # base for NoKeyError, KeyError
+            return def_
+
+    def vec(self, key, x=0.0, y=0.0, z=0.0) -> _Vec:
+        """Return the given property, converted to a vector.
+
+        If multiple keys with the same name are present, this will use the
+        last only.
+        """
+        try:
+            return _Vec.from_str(self._get_value(key), x, y, z)
+        except LookupError:  # base for NoKeyError, KeyError
+            return _Vec(x, y, z)
+
+
+    def set_key(self, path, value):
+        """Set the value of a key deep in the tree hierarchy.
+
+        -If any of the hierarchy do not exist (or do not have children),
           blank properties will be added automatically
         - path should be a tuple of names, or a single string.
         """
@@ -606,10 +676,10 @@ class Property:
             else:
                 if isinstance(index, tuple):
                     # With default value
-                    return self.find_key(index[0], def_=index[1]).value
+                    return self._get_value(index[0], def_=index[1])
                 else:
                     try:
-                        return self.find_key(index).value
+                        return self._get_value(index)
                     except NoKeyError as no_key:
                         raise IndexError(no_key) from no_key
         else:
