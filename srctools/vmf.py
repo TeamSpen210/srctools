@@ -374,8 +374,7 @@ class VMF:
         map_info['cordons_on'] = cordons['active', '0']
 
         cam_props = tree.find_key('cameras', [])
-        map_info['active_cam'] = srctools.conv_int(
-            (cam_props['activecamera', '']), -1)
+        map_info['active_cam'] = cam_props.int('activecamera', -1)
         map_info['quickhide'] = tree.find_key('quickhide', [])['count', '']
 
         # We have to create an incomplete map before parsing any data.
@@ -786,10 +785,10 @@ class Cordon:
     @staticmethod
     def parse(vmf_file, tree):
         name = tree['name', 'cordon']
-        is_active = srctools.conv_bool(tree['active', '0'], False)
+        is_active = tree.bool('active', False)
         bounds = tree.find_key('box', [])
-        min_ = Vec.from_str(bounds['mins', '(0 0 0)'])
-        max_ = Vec.from_str(bounds['maxs', '(128 128 128)'], 128, 128, 128)
+        min_ = bounds.vec('mins', 0, 0, 0)
+        max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
 
     def export(self, buffer, ind=''):
@@ -865,7 +864,7 @@ class Solid:
     @staticmethod
     def parse(vmf_file, tree, hidden=False):
         """Parse a Property tree into a Solid object."""
-        solid_id = srctools.conv_int(tree["id", '-1'], -1)
+        solid_id = tree.int('id', -1)
         sides = []
         for side in tree.find_all("side"):
             sides.append(Side.parse(vmf_file, side))
@@ -1109,7 +1108,7 @@ class Side:
         """Parse the property tree into a Side object."""
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
-        side_id = srctools.conv_int(tree["id", '-1'])
+        side_id = tree.int('id', -1)
         planes = [0, 0, 0]
         for i, v in enumerate(verts):
             if i > 3:
@@ -1152,12 +1151,9 @@ class Side:
             mat=tree['material', ''],
             uaxis=UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
             vaxis=UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
-            rotation=srctools.conv_int(
-                tree['rotation', '0']),
-            lightmap=srctools.conv_int(
-                tree['lightmapscale', '16'], 16),
-            smoothing=srctools.conv_int(
-                tree['smoothing_groups', '0']),
+            rotation=tree.float('rotation', 0),
+            lightmap=tree.int('lightmapscale', 16),
+            smoothing=tree.int('smoothing_groups', 0),
         )
 
     def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
@@ -1907,12 +1903,8 @@ class EntityGroup:
         return cls(
             vmf_file,
             props['id'],
-            vis_shown=srctools.conv_bool(
-                editor_block['visgroupshown', None], True
-            ),
-            vis_auto_shown=srctools.conv_bool(
-                editor_block['visgroupsautoshown', None], True
-            ),
+            vis_shown=editor_block.bool('visgroupshown', True),
+            vis_auto_shown=editor_block.bool('visgroupsautoshown', True),
         )
 
     def copy(self, map=None):
@@ -2041,7 +2033,7 @@ class Output:
 
     @staticmethod
     def parse_name(name: str) -> Tuple[Optional[str], str]:
-        """Extranct the instance name from values of the form:
+        """Extract the instance name from values of the form:
 
         'instance:local_name;Command'
         This then returns a local_name, command tuple.
