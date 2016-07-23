@@ -278,6 +278,9 @@ class Property:
         filename, if set should be the source of the text for debug purposes.
         file_contents should be an iterable of strings
         """
+        if not filename:
+            # Try to pull the name off the file, if it's a file object.
+            filename = getattr(file_contents, 'name', '')
 
         file_iter = enumerate(file_contents, start=1)
 
