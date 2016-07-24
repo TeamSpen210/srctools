@@ -345,6 +345,25 @@ class Vec:
             bbox_max.max(point)
         return bbox_min, bbox_max
 
+    @classmethod
+    def iter_grid(
+        cls,
+        min_pos: 'Vec',
+        max_pos: 'Vec',
+        stride: int=1,
+    ) -> Iterator['Vec']:
+        """Loop over points in a bounding box. All coordinates should be integers.
+
+        Both borders will be included.
+        """
+        min_x, min_y, min_z = map(int, min_pos)
+        max_x, max_y, max_z = map(int, max_pos)
+        for x in range(min_x, max_x + 1, stride):
+            for y in range(min_y, max_y + 1, stride):
+                for z in range(min_z, max_z + 1, stride):
+                    yield cls(x, y, z)
+
+
     def axis(self) -> str:
         """For a normal vector, return the axis it is on.
 
