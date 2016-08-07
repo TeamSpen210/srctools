@@ -363,6 +363,27 @@ class Vec:
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
+    def iter_line(self, end: 'Vec', stride: int=1):
+        """Yield points between this point and 'end' (including both endpoints).
+
+        Stride specifies the distance between each point.
+        If the distance is less than the stride, only end-points will be yielded.
+        If they are the same, that point will be yielded.
+        """
+        offset = end - self
+        length = offset.mag()
+        if length < stride:
+            # Not enough room, yield both
+            yield self.copy()
+            if self != end:
+                yield end.copy()
+            return
+
+        direction = offset.norm()
+        for pos in range(0, int(length), int(stride)):
+            yield self + direction * pos
+        yield end.copy()  # Directly yield - ensures no rounding errors.
+
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on.
