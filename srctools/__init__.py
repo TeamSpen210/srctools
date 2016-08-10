@@ -259,10 +259,9 @@ class AtomicWriter:
         # Create folders if needed..
         _os.makedirs(self.dir, exist_ok=True)
 
-        self.temp = _tempfile.NamedTemporaryFile(
-            mode='wb' if self.is_bytes else 'wt',
-            dir=self.dir,
-            delete=False,
+        self.temp = open(
+            self.filename,
+            'wb' if self.is_bytes else 'wt',
         )
 
     def __enter__(self):
