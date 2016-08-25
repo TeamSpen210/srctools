@@ -1639,6 +1639,8 @@ class Entity:
         - It is case-insensitive, so it will overwrite a key which only
           differs by case.
         """
+        if isinstance(val, bool):
+            val = '1' if val else '0'
         key_fold = key.casefold()
         for k in self.keys:
             if k.casefold() == key_fold:
@@ -1811,6 +1813,10 @@ class EntityFixup:
         """
         if var[0] == '$':
             var = var[1:]
+
+        if isinstance(val, bool):
+            val = '1' if val else '0'
+
         folded_var = var.casefold()
         if folded_var not in self._fixup:
             # Insert a new value. Use the lowest unused index.
