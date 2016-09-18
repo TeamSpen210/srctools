@@ -10,6 +10,7 @@ from typing import Union
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
 
+
 class OpenModes(Enum):
     """Modes for opening VPK files."""
     READ = 'r'
@@ -31,10 +32,12 @@ def checksum(data: bytes, prior=0):
 
 EMPTY_CHECKSUM = checksum(b'') # Checksum of empty bytes - 0.
 
+
 def struct_file_read(fmt, file):
     """Read struct data from a file."""
     return struct.unpack(fmt, file.read(struct.calcsize(fmt)))
- 
+
+
 def iter_nullstr(file):
     """Read a null-terminated ASCII string from the file.
     
@@ -58,7 +61,8 @@ def iter_nullstr(file):
             raise Exception('Reached EOF without null-terminator in {}!'.format(bytes(chars)))
         else:
             chars.extend(char)
-    
+
+
 def _write_nullstring(file, string):
     """Write a null-terminated ASCII string back to the file."""
     if string:
@@ -66,6 +70,7 @@ def _write_nullstring(file, string):
     else:
         # Empty strings are written as a space.
         file.write(b' \x00')
+
 
 def _get_arch_filename(prefix='pak01', index: int=None):
     """Generate the name for a VPK file.
@@ -77,7 +82,8 @@ def _get_arch_filename(prefix='pak01', index: int=None):
         return prefix + '_dir.vpk'
     else:
         return '{}_{!s:>03}.vpk'.format(prefix, index)
-        
+
+
 def _get_file_parts(value):
         """Get folder, name, ext parts from a string/tuple.
         
@@ -103,13 +109,15 @@ def _get_file_parts(value):
             
         return path, filename, ext
 
+
 def _join_file_parts(path, filename, ext):
     """Join together path components to the full path.
     
     Any of the segments can be blank, to skip them.
     """
     return (path + '/' if path else '') + filename + ('.' + ext if ext else '')
-                
+
+
 class FileInfo:
     """Represents a file stored inside a VPK."""
     def __init__(self, vpk, name, crc, start_data=b'', offset=0, arch_len=0, arch_index=None):
@@ -190,6 +198,7 @@ class FileInfo:
             # Only stored in the main index
             self.arch_index = None
             self.offset = 0
+
 
 class VPK:
     """Represents a VPK file set in a directory."""
@@ -320,7 +329,9 @@ class VPK:
             file.write(struct.pack('<III', VPK_SIG, self.version, 0))
             header_len = file.tell()
             key_getter = operator.itemgetter(0)
-            
+
+            # Write in sorted order - not required, but this ensures multiple
+            # saves are deterministic.
             for ext, folders in sorted(self.fileinfo.items(), key=key_getter):
                 _write_nullstring(file, ext)
                 for folder, files in sorted(folders.items(), key=key_getter):
@@ -328,10 +339,8 @@ class VPK:
                     for filename, info in sorted(files.items(), key=key_getter):
                         _write_nullstring(file, filename)
                         if info.arch_index is None:
-                            #offset = info.offset - self.header_len
                             arch_ind = DIR_ARCH_INDEX
                         else:
-                            #offset = info.offset
                             arch_ind = info.arch_index
                         file.write(struct.pack(
                             '<IHHIIH',
@@ -343,16 +352,19 @@ class VPK:
                             0xffff,
                         ))
                         file.write(info.start_data)
+                        # Each block is terminated by an empty null-terminated
+                        # string -> one null byte.
                     file.write(b'\x00')
                 file.write(b'\x00')
             file.write(b'\x00')
-                
+
+            # Calculate the length of the header..
             dir_len = file.tell() - header_len
                 
             file.write(self.footer_data)
                 
             # Write the directory size now we know it.
-            file.seek(struct.calcsize('<II'))
+            file.seek(struct.calcsize('<II'))  # Skip signature and version
             file.write(struct.pack('<I', dir_len))
                 
     def __enter__(self):
