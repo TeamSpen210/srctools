@@ -2,10 +2,23 @@
 import os
 import struct
 import operator
+from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
+
+from typing import Union
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
+
+class OpenModes(Enum):
+    """Modes for opening VPK files."""
+    READ = 'r'
+    WRITE = 'w'
+    APPEND = 'a'
+
+    @property
+    def writable(self):
+        return self.value in 'wa'
 
 
 def checksum(data: bytes, prior=0):
@@ -157,6 +170,9 @@ class FileInfo:
         For this reason VPK writes should be done once per file if possible.
         """
         # Split the file based on a certain limit.
+        if not self.vpk.mode.writable:
+            raise ValueError("Can't write with this mode!")
+
         self.crc = checksum(data)
         
         self.start_data = data[:self.vpk.dir_limit]
@@ -177,14 +193,21 @@ class FileInfo:
 
 class VPK:
     """Represents a VPK file set in a directory."""
-    def __init__(self, dir_file, *, write=False, dir_data_limit: int=1024):
+    def __init__(
+        self,
+        dir_file,
+        *,
+        mode: Union[OpenModes, str]='r',
+        dir_data_limit: int=1024
+    ):
         """Create a VPK file.
         
         Parameters:
             dir_file: The path to the directory file. This must end in '_dir.vpk'.
-            write: Open in read or write 'mode'. 
+            write: Open in (r)ead, (w)rite or (a)ppend mode.
                In read mode, the file will not be modified and it must exist. 
-               Write mode will create the directory if needed. 
+               Write mode will create the directory if needed.
+               Append mode will also create the directory, but not wipe the file.
             dir_data_limit: The maximum amount of data for files saved to the dir file.
                None = no limit, and 0=save all to a data file.
         """
@@ -196,7 +219,7 @@ class VPK:
         # fileinfo[extension][directory][filename]
         self.fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
         
-        self.can_write = write
+        self.mode = OpenModes(mode)
         self.dir_limit = dir_data_limit
         
         self.footer_data = b''
@@ -208,16 +231,26 @@ class VPK:
         
         This erases all changes in the file.
         """
+        if self.mode is OpenModes.WRITE:
+            # Erase the directory file, we ignore current contents.
+            open(
+                os.path.join(self.folder, self.file_prefix + '_dir.vpk'),
+                'wb',
+            ).close()
+            self.version = 1
+            return
+
         try:
             dirfile = open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'rb')
         except FileNotFoundError:
-            if self.can_write:
+            if self.mode is OpenModes.APPEND:
                 # No directory file - generate a blank file.
                 open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb').close()
                 self.version = 1
                 return
             else:
-                raise # In read mode, don't overwrite and error when reading.
+                raise  # In read mode, don't overwrite and error when reading.
+
         with dirfile:
             vpk_sig, self.version, tree_length = struct_file_read('<III', dirfile)
             
@@ -278,6 +311,9 @@ class VPK:
         
         This must be performed after writing to the VPK.
         """
+        if not self.mode.writable:
+            raise ValueError("Can't write with this mode!")
+
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
         with open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb') as file:
@@ -377,6 +413,8 @@ class VPK:
         
         FileExistsError will be raised if the file is already present.
         """
+        if not self.mode.writable:
+            raise ValueError("Can't write with this mode!")
         
         path, name, ext = _get_file_parts(filename)
         
@@ -424,6 +462,9 @@ class VPK:
         
         If prefix is set, the folders will be written to that subfolder.
         """
+        if not self.mode.writable:
+            raise ValueError("Can't write with this mode!")
+
         if prefix:
             prefix = prefix.replace('\\', '/')
         
@@ -440,7 +481,3 @@ class VPK:
     def verify_all(self):
         """Check all files have a correct checksum."""
         return all(file.verify() for file in self)
-
-if __name__ == '__main__':
-    vpk = VPK('F:/SteamLibrary/SteamApps\common/Portal 2/portal2/pak01_dir.vpk')
-    print('OK: ', vpk.verify_all())
