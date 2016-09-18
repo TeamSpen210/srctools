@@ -481,11 +481,14 @@ class VPK:
             prefix = prefix.replace('\\', '/')
         
         for subfolder, _, filenames, in os.walk(folder):
-            vpk_path = os.path.relpath(subfolder, folder)
-            if vpk_path not in ('', '.'):
-                vpk_path = os.path.join(prefix, vpk_path)
-            else:
-                vpk_path = prefix
+            # Prefix + subfolder relative to the folder.
+            # normpath removes '.' and similar values from the beginning
+            vpk_path = os.path.normpath(
+                os.path.join(
+                    prefix,
+                    os.path.relpath(subfolder, folder)
+                )
+            )
             for filename in filenames:
                 with open(os.path.join(subfolder, filename), 'rb') as f:
                     self.add_file((vpk_path, filename), f.read())
