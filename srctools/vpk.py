@@ -128,9 +128,9 @@ class FileInfo:
                 'VPK filenames are required to be in ASCII format!'
             )
         self.vpk = vpk
-        self.name = name # Full filename
+        self.name = name  # Full filename
         self.crc = crc
-        self.arch_index = arch_index # pack_01_000.vpk file to use, or None for _dir.
+        self.arch_index = arch_index  # pack_01_000.vpk file to use, or None for _dir.
         self.offset = offset  # Offset into the archive file, including directory data if in _dir
         self.arch_len = arch_len  # Number of bytes in archive files
         self.start_data = start_data  # The bytes saved into the directory header
@@ -232,6 +232,9 @@ class VPK:
         self.dir_limit = dir_data_limit
         
         self.footer_data = b''
+
+        self.version = 1
+        self.header_len = 0
         
         self.load_dirfile()
         
@@ -467,7 +470,7 @@ class VPK:
         
         FileExistsError will be raised if the file is already present.
         """
-        self.new_file(filename).write(data, arch_index)
+        self.new_file(filename, root).write(data, arch_index)
         
     def add_folder(self, folder, prefix=''):
         """Write all files in a folder to the VPK. 
