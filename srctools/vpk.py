@@ -5,7 +5,7 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union
+from typing import Union, Dict
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
@@ -213,7 +213,7 @@ class VPK:
         
         Parameters:
             dir_file: The path to the directory file. This must end in '_dir.vpk'.
-            write: Open in (r)ead, (w)rite or (a)ppend mode.
+            mode: Open in (r)ead, (w)rite or (a)ppend mode.
                In read mode, the file will not be modified and it must exist. 
                Write mode will create the directory if needed.
                Append mode will also create the directory, but not wipe the file.
