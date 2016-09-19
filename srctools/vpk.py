@@ -179,7 +179,7 @@ class FileInfo:
         """
         self.vpk._check_writable()
         # Split the file based on a certain limit.
-
+        
         self.crc = checksum(data)
         
         self.start_data = data[:self.vpk.dir_limit]
@@ -326,8 +326,8 @@ class VPK:
         
         This must be performed after writing to the VPK.
         """
-
         self._check_writable()
+        
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
         with open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb') as file:
@@ -487,7 +487,7 @@ class VPK:
         )
         
         return info
-        
+
     def add_file(self, filename, data: bytes, root=None, arch_index=0):
         """Add the given data to the VPK. 
         
@@ -499,17 +499,17 @@ class VPK:
         FileExistsError will be raised if the file is already present.
         """
         self.new_file(filename, root).write(data, arch_index)
-        
+
     def add_folder(self, folder, prefix=''):
         """Write all files in a folder to the VPK. 
-
+        
         If prefix is set, the folders will be written to that subfolder.
         """
         self._check_writable()
 
         if prefix:
             prefix = prefix.replace('\\', '/')
-
+        
         for subfolder, _, filenames, in os.walk(folder):
             # Prefix + subfolder relative to the folder.
             # normpath removes '.' and similar values from the beginning
