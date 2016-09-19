@@ -177,9 +177,8 @@ class FileInfo:
         If this file already exists in the VPK, the old data is not removed. 
         For this reason VPK writes should be done once per file if possible.
         """
+        self.vpk._check_writable()
         # Split the file based on a certain limit.
-        if not self.vpk.mode.writable:
-            raise ValueError("Can't write with this mode!")
 
         self.crc = checksum(data)
         
@@ -237,6 +236,11 @@ class VPK:
         self.header_len = 0
         
         self.load_dirfile()
+        
+    def _check_writable(self):
+        """Verify that this is writable."""
+        if not self.mode.writable:
+            raise ValueError("Can't write with this mode!")
         
     def load_dirfile(self):
         """Read in the directory file to get all filenames.
@@ -322,9 +326,8 @@ class VPK:
         
         This must be performed after writing to the VPK.
         """
-        if not self.mode.writable:
-            raise ValueError("Can't write with this mode!")
 
+        self._check_writable()
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
         with open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb') as file:
@@ -427,8 +430,7 @@ class VPK:
         
         FileExistsError will be raised if the file is already present.
         """
-        if not self.mode.writable:
-            raise ValueError("Can't write with this mode!")
+        self._check_writable()
         
         path, name, ext = _get_file_parts(filename)
         
@@ -476,8 +478,7 @@ class VPK:
 
         If prefix is set, the folders will be written to that subfolder.
         """
-        if not self.mode.writable:
-            raise ValueError("Can't write with this mode!")
+        self._check_writable()
 
         if prefix:
             prefix = prefix.replace('\\', '/')
