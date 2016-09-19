@@ -104,8 +104,9 @@ def _get_file_parts(value):
         
         if not ext and '.' in filename:
             filename, ext = filename.rsplit('.', 1)
-            
-        path = path.rstrip('/')
+
+        # Strip '/' off the end, and './' from the beginning.
+        path = os.path.normpath(path).rstrip('/')
             
         return path, filename, ext
 
