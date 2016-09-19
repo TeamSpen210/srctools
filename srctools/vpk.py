@@ -377,7 +377,7 @@ class VPK:
     
     def __exit__(self, exc_type, exc_value, exc_trace):
         """When exiting a context sucessfully, the index will be saved."""
-        if exc_type is None:
+        if exc_type is None and self.mode.writable:
             self.write_dirfile()
        
     def __getitem__(self, item):
