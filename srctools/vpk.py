@@ -191,7 +191,7 @@ class FileInfo:
         if self.arch_len:
             self.arch_index = arch_index
             arch_file = _get_arch_filename(self.vpk.file_prefix, arch_index)
-            with open(arch_file, 'ab') as file:
+            with open(os.path.join(self.vpk.folder, arch_file), 'ab') as file:
                 self.offset = file.seek(0, os.SEEK_END)
                 file.write(arch_data)
         else:
