@@ -398,6 +398,26 @@ class VPK:
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
+    def __delitem__(self, item):
+        """Delete a file.
+        
+        Possible arguments:
+            del vpk['folders/name.ext']
+            del vpk['folders', 'name.ext']
+            del vpk['folders', 'name', 'ext']
+        """
+        self._check_writable()
+        
+        path, filename, ext = _get_file_parts(item)
+        
+        try:
+            info = self._fileinfo[ext][path].pop(filename)
+        except KeyError:
+            raise KeyError(
+                'No file "{}"!'.format(
+                    _join_file_parts(path, filename, ext)
+                )) from None
+                
     def __iter__(self):
         """Yield all FileInfo objects."""
         for ext, folders in self._fileinfo.items():
@@ -405,6 +425,13 @@ class VPK:
                 for file, info in files.items():
                     yield info
                     
+    def filenames(self):
+        """Yield all filenames in this VPK."""
+        for ext, folders in self._fileinfo.items():
+            for folder, files in folders.items():
+                for file, info in files.items():
+                    yield info.name
+
     def __len__(self):
         """Returns the number of files we have."""
         count = 0
