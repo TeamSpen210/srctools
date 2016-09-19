@@ -226,7 +226,7 @@ class VPK:
             raise Exception('Must create with a _dir VPK file!')
         self.file_prefix = filename[:-8]
         # fileinfo[extension][directory][filename]
-        self.fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
+        self._fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
         
         self.mode = OpenModes(mode)
         self.dir_limit = dir_data_limit
@@ -278,12 +278,12 @@ class VPK:
                 
             self.header_len = dirfile.tell() + tree_length
             
-            self.fileinfo.clear()
+            self._fileinfo.clear()
             
             # Read directory contents
             # These are in a tree of extension, directory, file. '' terminates a part.
             for ext in iter_nullstr(dirfile):
-                ext_dict = self.fileinfo.setdefault(ext, {})
+                ext_dict = self._fileinfo.setdefault(ext, {})
                 for directory in iter_nullstr(dirfile):
                     dir_dict = ext_dict.setdefault(directory, {})
                     for file in iter_nullstr(dirfile):
@@ -297,7 +297,6 @@ class VPK:
                             offset = 0
                         
                         if end != 0xffff:
-                            print(self.fileinfo)
                             raise Exception('"{}" has bad terminator! {}'.format(
                                 filename, 
                                 (crc, index_len, arch_ind, offset, arch_len, end),
@@ -335,7 +334,7 @@ class VPK:
 
             # Write in sorted order - not required, but this ensures multiple
             # saves are deterministic.
-            for ext, folders in sorted(self.fileinfo.items(), key=key_getter):
+            for ext, folders in sorted(self._fileinfo.items(), key=key_getter):
                 _write_nullstring(file, ext)
                 for folder, files in sorted(folders.items(), key=key_getter):
                     _write_nullstring(file, folder)
@@ -389,7 +388,7 @@ class VPK:
         path, filename, ext = _get_file_parts(item)
         
         try:
-            return self.fileinfo[ext][path][filename]
+            return self._fileinfo[ext][path][filename]
         except KeyError:
             raise KeyError(
                 'No file "{}"!'.format(
@@ -398,7 +397,7 @@ class VPK:
                 
     def __iter__(self):
         """Yield all FileInfo objects."""
-        for ext, folders in self.fileinfo.items():
+        for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info
@@ -406,20 +405,20 @@ class VPK:
     def __len__(self):
         """Returns the number of files we have."""
         count = 0
-        for folders in self.fileinfo.values():
+        for folders in self._fileinfo.values():
             for files in folders.values():
                 count += len(files)
         return count
-        
+
     def extract_all(self, dest_dir):
         """Extract the contents of this VPK to a directory."""
-        for ext, folders in self.fileinfo.items():
+        for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 os.makedirs(os.path.join(dest_dir, folder), exist_ok=True)
                 for file, info in files.items():
                     with open(os.path.join(dest_dir, info.name), 'wb') as f:
                         f.write(info.read())
-                        
+
     def new_file(self, filename: str, root: str=None) -> FileInfo:
         """Create the given file, making it empty by default.
         
@@ -439,9 +438,9 @@ class VPK:
         filename = _join_file_parts(path, name, ext)
         
         try:
-            ext_infos = self.fileinfo[ext]
+            ext_infos = self._fileinfo[ext]
         except KeyError:
-            ext_infos = self.fileinfo[ext] = {}
+            ext_infos = self._fileinfo[ext] = {}
         try:
             dir_infos = ext_infos[path]
         except KeyError:
@@ -474,7 +473,7 @@ class VPK:
         
     def add_folder(self, folder, prefix=''):
         """Write all files in a folder to the VPK. 
-        
+
         If prefix is set, the folders will be written to that subfolder.
         """
         if not self.mode.writable:
@@ -482,7 +481,7 @@ class VPK:
 
         if prefix:
             prefix = prefix.replace('\\', '/')
-        
+
         for subfolder, _, filenames, in os.walk(folder):
             # Prefix + subfolder relative to the folder.
             # normpath removes '.' and similar values from the beginning
