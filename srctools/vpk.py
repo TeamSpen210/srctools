@@ -441,6 +441,14 @@ class VPK:
                 count += len(files)
         return count
 
+    def __contains__(self, item):
+        path, filename, ext = _get_file_parts(item)
+
+        try:
+            return filename in self._fileinfo[ext][path]
+        except KeyError:
+            return False
+
     def extract_all(self, dest_dir):
         """Extract the contents of this VPK to a directory."""
         for ext, folders in self._fileinfo.items():
