@@ -94,9 +94,7 @@ def _get_file_parts(value):
         """
         ext = path = ''
         if isinstance(value, str):
-            filename = value.replace('\\', '/')
-            if '/' in filename:
-                path, filename = filename.rsplit('/', 1)
+            path, filename = os.path.split(value)
         elif len(value) == 2:
             path, filename = value
         else:
@@ -106,7 +104,7 @@ def _get_file_parts(value):
             filename, ext = filename.rsplit('.', 1)
 
         # Strip '/' off the end, and './' from the beginning.
-        path = os.path.normpath(path).rstrip('/')
+        path = os.path.normpath(path).replace('\\', '/').rstrip('/')
             
         return path, filename, ext
 
