@@ -42,6 +42,7 @@ PrismFace = namedtuple(
 # The character used to separate output values.
 OUTPUT_SEP = chr(27)
 
+
 class IDMan(set):
     """Allocate and manage a set of unique IDs."""
     __slots__ = ()
@@ -223,7 +224,7 @@ class VMF:
         brushes=None,
         cameras=None,
         cordons=None,
-        visgroups=None,
+        vis_tree=None,
         preserve_ids=False,
     ):
         """Create a VMF.
@@ -237,6 +238,7 @@ class VMF:
         self.face_id = id_man()  # Ditto for faces
         self.ent_id = id_man()  # Same for entities
         self.group_id = id_man()  # Group IDs (not visgroups)
+        self.vis_id = id_man()  # VisGroup IDs
 
         # Allow quick searching for particular groups, without checking
         # the whole map
@@ -248,7 +250,7 @@ class VMF:
         self.brushes = brushes or []  # type: List[Solid]
         self.cameras = cameras or []  # type: List[Camera]
         self.cordons = cordons or []  # type: List[Cordon]
-        self.visgroups = visgroups or []
+        self.vis_tree = vis_tree or []  # type: List[VisGroup]
 
         # mapspawn entity, which is the entity world brushes are saved
         # to.
@@ -382,6 +384,9 @@ class VMF:
         # ensure unique IDs in brushes, entities and faces.
         map_obj = VMF(map_info=map_info, preserve_ids=preserve_ids)
 
+        for vis in tree.find_all('visgroups', 'visgroup'):
+            map_obj.vis_tree.append(VisGroup.parse(map_obj, vis))
+
         for c in cam_props:
             if c.name != 'activecamera':
                 Camera.parse(map_obj, c)
@@ -443,7 +448,9 @@ class VMF:
         dest_file.write('\t"prefab" "' +
                         srctools.bool_as_int(self.is_prefab) + '"\n}\n')
 
-        # TODO: Visgroups
+        if self.vis_tree:
+            for vis in self.vis_tree:
+                vis.export(dest_file)
 
         if not minimal:
             dest_file.write('viewsettings\n{\n')
@@ -823,6 +830,74 @@ class Cordon:
         """Remove this cordon from the map."""
         self.map.cordons.remove(self)
 
+class VisGroup:
+    """Defines one visgroup."""
+    def __init__(
+        self,
+        vmf: VMF,
+        vis_id: int,
+        name: str,
+        color: Vec,
+        children: List['VisGroup']=(),
+    ):
+        self.vmf = vmf
+        self.name = name
+        self.color = color
+        self.child_groups = list(children)
+        self.id = vmf.vis_id.get_id(vis_id)
+
+    @classmethod
+    def parse(cls, vmf: VMF, props: Property):
+        vis_id = props.int('visgroupid', -1)
+        name = props['name', 'VisGroup_{}'.format(vis_id)]
+        color = props.vec('color', 255, 255, 255)
+
+        children = [
+            cls.parse(vmf, child)
+            for child in
+            props.find_all('visgroup')
+        ]
+
+        return cls(
+            vmf,
+            vis_id,
+            name,
+            color,
+            children,
+        )
+
+    def export(self, buffer, ind=''):
+        buffer.write(ind + 'visgroup\n')
+        buffer.write(ind + '{\n')
+        buffer.write(ind + '\t"name" "{}"\n'.format(self.name))
+        buffer.write(ind + '\t"visgroupid" "{}"\n'.format(self.id))
+        buffer.write(ind + '\t"color" "{}"\n'.format(self.color))
+        for child in self.child_groups:
+            child.export(buffer, ind + '\t')
+        buffer.write('}\n')
+
+    def set_visible(self, target):
+        """Find all objects with this ID, and set them to the given visibility."""
+        for ent in self.child_ents():
+            ent.vis_shown = ent.hidden = target
+            for solid in ent.solids:
+                solid.vis_shown = solid.hidden = target
+
+        for solid in self.child_solids():
+            solid.vis_shown = solid.hidden = target
+
+    def child_ents(self) -> Iterator['Entity']:
+        """Yields Entities in this visgroup."""
+        for ent in self.vmf.entities:
+            if self.id in ent.visgroup_ids:
+                yield ent
+
+    def child_solids(self) -> Iterator['Solid']:
+        """Yields Solids in this visgroup."""
+        for solid in self.vmf.brushes:
+            if self.id in solid.visgroup_ids:
+                yield solid
+
 
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
@@ -831,34 +906,44 @@ class Solid:
             vmf_file: VMF,
             des_id=-1,
             sides=None,
-            editor=None,
+            visgroup_ids=(),
             hidden=False,
+            group_id=None,
+            vis_shown=True,
+            vis_auto_shown=True,
+            is_cordon_solid=False,
+            editor_color: Vec=(255, 255, 255),
             ):
         self.map = vmf_file
         self.sides = sides or []  # type: List[Side]
         self.id = vmf_file.solid_id.get_id(des_id)
-        self.editor = editor or {}
         self.hidden = hidden
+        self.is_cordon_solid = is_cordon_solid
+        self.vis_shown = vis_shown
+        self.vis_auto_shown = vis_auto_shown
+        self.editor_color = Vec(editor_color)
+        self.group_id = group_id
+        self.visgroup_ids = set(visgroup_ids)
 
     def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
         """Duplicate this brush."""
-        editor = {}
-        for key in ('color', 'groupid', 'visgroupshown', 'visgroupautoshown'):
-            if key in self.editor:
-                editor[key] = self.editor[key]
-        if 'visgroup' in self.editor:
-            editor['visgroup'] = self.editor['visgroup'][:]
         sides = [
             s.copy(map=map, side_mapping=side_mapping)
             for s in
             self.sides
         ]
+
         return Solid(
             map or self.map,
-            des_id=des_id,
-            sides=sides,
-            editor=editor,
-            hidden=self.hidden,
+            des_id,
+            sides,
+            self.visgroup_ids,
+            self.hidden,
+            self.group_id,
+            self.vis_shown,
+            self.vis_auto_shown,
+            self.is_cordon_solid,
+            self.editor_color,
         )
 
     @staticmethod
@@ -869,26 +954,39 @@ class Solid:
         for side in tree.find_all("side"):
             sides.append(Side.parse(vmf_file, side))
 
-        editor = {}
+        visgroups = []
+        group_id = None
+        vis_shown = vis_auto_shown = True
+        is_cordon_solid = False
+        editor_color = (255, 255, 255)
+
         for v in tree.find_key("editor", []):
-            if v.name in ('visgroupshown', 'visgroupautoshown', 'cordonsolid'):
-                editor[v.name] = srctools.conv_bool(v.value, default=True)
-            elif v.name == 'color' and ' ' in v.value:
-                editor['color'] = v.value
+            if v.name == "visgroupshown":
+                vis_shown = srctools.conv_bool(v.value, default=True)
+            elif v.name == "visgroupautoshown":
+                vis_auto_shown = srctools.conv_bool(v.value, default=True)
+            elif v.name == "cordonsolid":
+                is_cordon_solid = srctools.conv_bool(v.value, default=True)
+            elif v.name == 'color':
+                editor_color = Vec.from_str(v.value, 255, 255, 255)
             elif v.name == 'group':
-                editor[v.name] = srctools.conv_int(v.value, default=-1)
-                if editor[v.name] == -1:
-                    del editor[v.name]
+                group_id = int(v.value)
             elif v.name == 'visgroupid':
                 val = srctools.conv_int(v.value, default=-1)
                 if val:
-                    editor.setdefault('visgroup', []).append(val)
+                    visgroups.append(val)
+
         return Solid(
             vmf_file,
-            des_id=solid_id,
-            sides=sides,
-            editor=editor,
-            hidden=hidden,
+            solid_id,
+            sides,
+            visgroups,
+            hidden,
+            group_id,
+            vis_shown,
+            vis_auto_shown,
+            is_cordon_solid,
+            editor_color,
         )
 
     def export(self, buffer, ind=''):
@@ -904,22 +1002,26 @@ class Solid:
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
-        if 'color' in self.editor:
-            buffer.write(
-                ind + '\t\t"color" "' +
-                self.editor['color'] + '"\n')
-        if 'groupid' in self.editor:
-            buffer.write(ind + '\t\t"groupid" "' +
-                         self.editor['groupid'] + '"\n')
-        for vis_id in self.editor.get('visgroup', []):
-            buffer.write(ind + '\t\t"groupid" "' + str(vis_id) + '"\n')
-        for key in ('visgroupshown', 'visgroupautoshown', 'cordonsolid'):
-            if key in self.editor:
-                buffer.write(
-                    ind + '\t\t"' + key + '" "' +
-                    srctools.bool_as_int(self.editor[key]) +
-                    '"\n'
-                    )
+        buffer.write('{}\t\t"color" "{}"\n'.format(ind, self.editor_color))
+        if self.group_id is not None:
+            buffer.write('{}\t\t"groupid" "{}"\n'.format(ind, self.group_id))
+
+        for group in self.visgroup_ids:
+            buffer.write('{}\t\t"visgroupid" "{}"\n'.format(ind, group))
+
+        buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
+            ind,
+            srctools.bool_as_int(self.vis_shown),
+        ))
+        buffer.write('{}\t\t"visgroupautoshown" "{}"\n'.format(
+            ind,
+            srctools.bool_as_int(self.vis_auto_shown),
+        ))
+        buffer.write('{}\t\t"cordonsolid" "{}"\n'.format(
+            ind,
+            srctools.bool_as_int(self.is_cordon_solid),
+        ))
+
         buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
@@ -1356,16 +1458,22 @@ class Entity:
     To read instance $replace values operate on entity.fixup[]
     """
     def __init__(
-            self,
-            vmf_file: VMF,
-            keys=EmptyMapping,
-            fixup=(),
-            ent_id=-1,
-            outputs=None,
-            solids=None,
-            editor=None,
-            hidden=False,
-            groups=()):
+        self,
+        vmf_file: VMF,
+        keys=EmptyMapping,
+        fixup=(),
+        ent_id=-1,
+        outputs=None,
+        solids=None,
+        hidden=False,
+        groups=(),
+        vis_ids=(),
+        vis_shown=True,
+        vis_auto_shown=True,
+        logical_pos: str=None,
+        editor_color: Vec=(255, 255, 255),
+        comments='',
+    ):
         self.map = vmf_file
         self.keys = {
             # Ensure all values are strings. This allows passing ints and Vecs
@@ -1379,30 +1487,21 @@ class Entity:
         self.solids = solids or []  # type: List[Solid]
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
-        self.editor = editor or {'visgroup': []}
         self.groups = list(groups)
 
-        if 'logicalpos' not in self.editor:
-            self.editor['logicalpos'] = '[0 ' + str(self.id) + ']'
-        if 'visgroupshown' not in self.editor:
-            self.editor['visgroupshown'] = '1'
-        if 'visgroupautoshown' not in self.editor:
-            self.editor['visgroupautoshown'] = '1'
-        if 'color' not in self.editor:
-            self.editor['color'] = '255 255 255'
+        self.visgroup_ids = set(vis_ids)
+        self.vis_shown = vis_shown
+        self.vis_auto_shown = vis_auto_shown
+        self.editor_color = Vec(editor_color)
+        self.logical_pos = logical_pos or '[0 {}]'.format(self.id)
+        self.comments = comments
 
     def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
         """Duplicate this entity entirely, including solids and outputs."""
         new_keys = {}
         new_fixup = self.fixup.copy_values()
-        new_editor = {}
         for key, value in self.keys.items():
             new_keys[key] = value
-
-        for key, value in self.editor.items():
-            if key != 'visgroup':
-                new_editor[key] = value
-        new_editor['visgroup'] = self.editor['visgroup'][:]
 
         new_solids = [
             solid.copy(map=map, side_mapping=side_mapping)
@@ -1420,9 +1519,15 @@ class Entity:
             ent_id=des_id,
             outputs=outs,
             solids=new_solids,
-            editor=new_editor,
             hidden=self.hidden,
             groups=new_groups,
+
+            editor_color=self.editor_color,
+            logical_pos=self.logical_pos,
+            vis_shown=self.vis_shown,
+            vis_auto_shown=self.vis_auto_shown,
+            vis_ids=self.visgroup_ids,
+            comments=self.comments,
         )
 
     @staticmethod
@@ -1432,9 +1537,13 @@ class Entity:
         solids = []
         keys = {}
         outputs = []
-        editor = {'visgroup': []}
         fixup = []
         groups = []
+        visgroups = []
+        vis_shown = vis_auto_shown = True
+        logical_pos = None
+        comment = ''
+        editor_color = Vec()
         for item in tree_list:
             name = item.name
             if name == "id" and item.value.isnumeric():
@@ -1466,26 +1575,22 @@ class Entity:
                 groups.append(EntityGroup.parse(vmf_file, item))
             elif name == "editor" and item.has_children():
                 for v in item:
-                    if v.name in ("visgroupshown", "visgroupautoshown"):
-                        editor[v.name] = srctools.conv_bool(v.value, default=True)
-                    elif v.name == 'color' and ' ' in v.value:
-                        editor['color'] = v.value
-                    elif (
-                            v.name == 'logicalpos' and
-                            v.value.startswith('[') and
-                            v.value.endswith(']')
-                            ):
-                        editor['logicalpos'] = v.value
+                    if v.name == "visgroupshown":
+                        vis_shown = srctools.conv_bool(v.value, default=True)
+                    elif v.name == "visgroupautoshown":
+                        vis_auto_shown = srctools.conv_bool(v.value, default=True)
+                    elif v.name == 'color':
+                        editor_color = Vec.from_str(v.value, 255, 255, 255)
+                    elif v.name == 'logicalpos':
+                        logical_pos = v.value
                     elif v.name == 'comments':
-                        editor['comments'] = v.value
+                        comment = v.value
                     elif v.name == 'group':
-                        editor[v.name] = srctools.conv_int(v.value, default=-1)
-                        if editor[v.name] == -1:
-                            del editor[v.name]
+                        groups.append(int(v.value))
                     elif v.name == 'visgroupid':
                         val = srctools.conv_int(v.value, default=-1)
                         if val:
-                            editor['visgroup'].append(val)
+                            visgroups.append(val)
             else:
                 keys[item.name] = item.value
 
@@ -1496,9 +1601,14 @@ class Entity:
             ent_id,
             outputs,
             solids,
-            editor,
             hidden,
             groups,
+            visgroups,
+            vis_shown,
+            vis_auto_shown,
+            logical_pos,
+            editor_color,
+            comment,
         )
 
     def is_brush(self):
@@ -1539,35 +1649,24 @@ class Entity:
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
-        if 'color' in self.editor:
-            buffer.write(
-                ind +
-                '\t\t"color" "' +
-                self.editor['color'] +
-                '"\n'
-            )
-        if 'groupid' in self.editor:
-            buffer.write(
-                ind +
-                '\t\t"groupid" "' +
-                self.editor['groupid'] +
-                '"\n'
-            )
-        if 'visgroup' in self.editor:
-            for vis_id in self.editor['visgroup']:
-                buffer.write(ind + '\t\t"groupid" "' + str(vis_id) + '"\n')
-        for key in ('visgroupshown', 'visgroupautoshown'):
-            if key in self.editor:
-                buffer.write(
-                    ind + '\t\t"' + key + '" "' +
-                    srctools.bool_as_int(self.editor[key]) + '"\n'
-                )
-        for key in ('logicalpos', 'comments'):
-            if key in self.editor:
-                buffer.write(
-                    ind +
-                    '\t\t"{}" "{}"\n'.format(key, self.editor[key])
-                )
+        buffer.write('{}\t\t"color" "{}"\n'.format(ind, self.editor_color))
+
+        for group in self.groups:
+            buffer.write('{}\t\t"groupid" "{}"\n'.format(ind, group))
+
+        for group in self.visgroup_ids:
+            buffer.write('{}\t\t"visgroupid" "{}"\n'.format(ind, group))
+
+        buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
+            ind,
+            srctools.bool_as_int(self.vis_shown),
+        ))
+        buffer.write('{}\t\t"visgroupautoshown" "{}"\n'.format(
+            ind,
+            srctools.bool_as_int(self.vis_auto_shown),
+        ))
+        buffer.write('{}\t\t"logicalpos" "{}"\n'.format(ind, self.logical_pos))
+        buffer.write('{}\t\t"comments" "{}"\n'.format(ind, self.comments))
         buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
@@ -1730,7 +1829,7 @@ class Entity:
             bbox_min, bbox_max = self.get_bbox()
             return (bbox_min+bbox_max)/2
         else:
-            return Vec(self['origin'].split(" "))
+            return Vec.from_str(self['origin'])
 
 FixupTuple = namedtuple('FixupTuple', 'var value id')
 
@@ -2131,14 +2230,3 @@ class Output:
             inst_in=self.inst_in,
             comma_sep=self.comma_sep,
         )
-
-if __name__ == '__main__':
-    # Test the VMF parser by duplicating a test file
-    print('parsing...')
-    map_file = VMF.parse('test.vmf')
-
-    print('saving...')
-
-    with open('test_out.vmf', 'w') as test_file:
-        map_file.export(test_file)
-    print('done!')
