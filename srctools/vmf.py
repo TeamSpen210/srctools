@@ -911,14 +911,14 @@ class Solid:
             group_id=None,
             vis_shown=True,
             vis_auto_shown=True,
-            is_cordon_solid=False,
+            cordon_solid=None,
             editor_color: Vec=(255, 255, 255),
             ):
         self.map = vmf_file
         self.sides = sides or []  # type: List[Side]
         self.id = vmf_file.solid_id.get_id(des_id)
         self.hidden = hidden
-        self.is_cordon_solid = is_cordon_solid
+        self.cordon_solid = cordon_solid
         self.vis_shown = vis_shown
         self.vis_auto_shown = vis_auto_shown
         self.editor_color = Vec(editor_color)
@@ -942,7 +942,7 @@ class Solid:
             self.group_id,
             self.vis_shown,
             self.vis_auto_shown,
-            self.is_cordon_solid,
+            self.cordon_solid,
             self.editor_color,
         )
 
@@ -957,7 +957,7 @@ class Solid:
         visgroups = []
         group_id = None
         vis_shown = vis_auto_shown = True
-        is_cordon_solid = False
+        cordon_solid = None
         editor_color = (255, 255, 255)
 
         for v in tree.find_key("editor", []):
@@ -966,7 +966,7 @@ class Solid:
             elif v.name == "visgroupautoshown":
                 vis_auto_shown = srctools.conv_bool(v.value, default=True)
             elif v.name == "cordonsolid":
-                is_cordon_solid = srctools.conv_bool(v.value, default=True)
+                cordon_solid = srctools.conv_int(v.value, default=None)
             elif v.name == 'color':
                 editor_color = Vec.from_str(v.value, 255, 255, 255)
             elif v.name == 'group':
@@ -985,7 +985,7 @@ class Solid:
             group_id,
             vis_shown,
             vis_auto_shown,
-            is_cordon_solid,
+            cordon_solid,
             editor_color,
         )
 
@@ -1017,10 +1017,11 @@ class Solid:
             ind,
             srctools.bool_as_int(self.vis_auto_shown),
         ))
-        buffer.write('{}\t\t"cordonsolid" "{}"\n'.format(
-            ind,
-            srctools.bool_as_int(self.is_cordon_solid),
-        ))
+        if self.cordon_solid is not None:
+            buffer.write('{}\t\t"cordonsolid" "{}"\n'.format(
+                ind,
+                self.cordon_solid,
+            ))
 
         buffer.write(ind + '\t}\n')
 
