@@ -845,12 +845,12 @@ class VisGroup:
         vmf: VMF,
         vis_id: int,
         name: str,
-        color: Vec,
+        color: Vec=(255, 255, 255),
         children: List['VisGroup']=(),
     ):
         self.vmf = vmf
         self.name = name
-        self.color = color
+        self.color = Vec(color)
         self.child_groups = list(children)
         self.id = vmf.vis_id.get_id(vis_id)
 
@@ -933,7 +933,7 @@ class Solid:
         self.group_id = group_id
         self.visgroup_ids = set(visgroup_ids)
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
+    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
         """Duplicate this brush."""
         sides = [
             s.copy(map=map, side_mapping=side_mapping)
@@ -945,11 +945,11 @@ class Solid:
             map or self.map,
             des_id,
             sides,
-            self.visgroup_ids,
-            self.hidden,
+            self.visgroup_ids if keep_vis else (),
+            self.hidden if keep_vis else False,
             self.group_id,
-            self.vis_shown,
-            self.vis_auto_shown,
+            self.vis_shown if keep_vis else True,
+            self.vis_auto_shown if keep_vis else True,
             self.cordon_solid,
             self.editor_color,
         )
@@ -1505,7 +1505,7 @@ class Entity:
         self.logical_pos = logical_pos or '[0 {}]'.format(self.id)
         self.comments = comments
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
+    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
         """Duplicate this entity entirely, including solids and outputs."""
         new_keys = {}
         new_fixup = self.fixup.copy_values()
@@ -1528,14 +1528,14 @@ class Entity:
             ent_id=des_id,
             outputs=outs,
             solids=new_solids,
-            hidden=self.hidden,
+            hidden=self.hidden if keep_vis else False,
             groups=new_groups,
 
             editor_color=self.editor_color,
             logical_pos=self.logical_pos,
-            vis_shown=self.vis_shown,
-            vis_auto_shown=self.vis_auto_shown,
-            vis_ids=self.visgroup_ids,
+            vis_shown=self.vis_shown if keep_vis else True,
+            vis_auto_shown=self.vis_auto_shown if keep_vis else True,
+            vis_ids=self.visgroup_ids if keep_vis else (),
             comments=self.comments,
         )
 
