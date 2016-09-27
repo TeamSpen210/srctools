@@ -327,7 +327,7 @@ class VMF:
             self.add_ent(i)
 
     def create_ent(self, **kargs) -> 'Entity':
-        """Quick method to allow creating point entities.
+        """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
         it.
@@ -335,6 +335,12 @@ class VMF:
         ent = Entity(self, keys=kargs)
         self.add_ent(ent)
         return ent
+
+    def create_visgroup(self, name, color=(255, 255, 255)) -> 'VisGroup':
+        """Convenience method for creating visgroups."""
+        vis = VisGroup(self, -1, name, color)
+        self.vis_tree.append(vis)
+        return vis
 
     @staticmethod
     def parse(tree: Union[Property, str], preserve_ids=False):
@@ -449,8 +455,10 @@ class VMF:
                         srctools.bool_as_int(self.is_prefab) + '"\n}\n')
 
         if self.vis_tree:
+            dest_file.write('visgroups\n{\n')
             for vis in self.vis_tree:
-                vis.export(dest_file)
+                vis.export(dest_file, ind='\t')
+            dest_file.write('}\n')
 
         if not minimal:
             dest_file.write('viewsettings\n{\n')
