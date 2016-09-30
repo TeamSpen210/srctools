@@ -1717,6 +1717,9 @@ class Entity:
         for k, v in self.keys.items():
             if not isinstance(v, list):
                 st += "\t " + k + ' = "' + v + '"\n'
+        for k, v in self.fixup.items():
+            st += "\t $" + k + ' = "' + v + '"\n'
+
         for out in self.outputs:
             st += '\t' + str(out) + '\n'
         st += "}\n"
@@ -1832,11 +1835,11 @@ class Entity:
             # the bounding box is 0x0 large for a point ent basically
             return origin, origin.copy()
 
-    def get_origin(self):
+    def get_origin(self) -> Vec:
         """Return a vector representing the center of this entity's brushes."""
         if self.is_brush():
             bbox_min, bbox_max = self.get_bbox()
-            return (bbox_min+bbox_max)/2
+            return (bbox_min + bbox_max) / 2
         else:
             return Vec.from_str(self['origin'])
 
