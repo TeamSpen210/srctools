@@ -420,7 +420,7 @@ class Property:
         return open_properties[0]
 
     def find_all(self, *keys) -> Iterator['Property']:
-        """Search through a tree to obtain all properties that match a particular path.
+        """Search through the tree, yielding all properties that match a particular path.
 
         """
         depth = len(keys)
@@ -439,6 +439,13 @@ class Property:
                         yield from Property.find_all(prop, *keys[1:])
                 else:
                     yield prop
+
+    def find_children(self, *keys) -> Iterator['Property']:
+        """Search through the tree, yielding children of properties in a path.
+
+        """
+        for block in self.find_all(*keys):
+            yield from block
 
     def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND):
         """Obtain the child Property with a given name.
