@@ -208,10 +208,11 @@ class EmptyMapping(_abc.MutableMapping):
     # Mutable functions
     setdefault = get
 
+    @staticmethod
     def update(*args, **kargs):
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
-        # Also consume args[0] if an iterator.
+        # Also consume args[0] if an iterator - this raises if args > 1.
         {}.update(*args, **kargs)
 
     __marker = object()
