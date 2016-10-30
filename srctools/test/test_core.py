@@ -139,11 +139,9 @@ class TestEmptyMapping(unittest.TestCase):
         self.check_empty_iterable(EmptyMapping.values(), 'values()')
         self.check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
 
-    def check_dict_methods(self):
+    def test_empty_dict_methods(self):
 
         marker = object()
-
-        self.assertFalse(EmptyMapping.has_key('x'))
 
         self.assertIs(EmptyMapping.get('x'), None)
         self.assertIs(EmptyMapping.setdefault('x'), None)
@@ -152,8 +150,14 @@ class TestEmptyMapping(unittest.TestCase):
         self.assertIs(EmptyMapping.pop('x', marker), marker)
         self.assertRaises(KeyError, EmptyMapping.popitem)
         self.assertRaises(KeyError, EmptyMapping.pop, 'x')
+        self.assertFalse(EmptyMapping)
+        self.assertEqual(len(EmptyMapping), 0)
+        EmptyMapping.update({1: 23, 'test': 34,})
+        EmptyMapping.update(other=5, a=1, b=3)
+        # Can't give more than one item..
+        self.assertRaises(TypeError, lambda: EmptyMapping.update({3: 4}, {1: 2}))
 
-    def check_abc(self):
+    def test_abc(self):
         from collections import abc
         self.assertIsInstance(EmptyMapping, abc.Container)
         self.assertIsInstance(EmptyMapping, abc.Sized)
@@ -170,6 +174,26 @@ class TestEmptyMapping(unittest.TestCase):
             self.assertNotIn(item, obj)
             self.assertRaises(StopIteration, next, iterator)
             self.assertRaises(StopIteration, next, iterator)
+
+    def test_quote_escape(self):
+        self.assertEqual(
+            srctools.escape_quote_split('abcdef'),
+            ['abcdef'],
+        )
+        # No escapes, equivalent to str.split
+        self.assertEqual(
+            srctools.escape_quote_split('"abcd"ef""  " test'),
+            '"abcd"ef""  " test'.split('"'),
+        )
+
+        self.assertEqual(
+            srctools.escape_quote_split(r'"abcd"ef\""  " test'),
+            ['', 'abcd', 'ef"', '  ', ' test'],
+        )
+        self.assertEqual(
+            srctools.escape_quote_split(r'"test\"\"" blah"'),
+            ['', 'test""', ' blah', ''],
+        )
 
 if __name__ == '__main__':
     unittest.main()

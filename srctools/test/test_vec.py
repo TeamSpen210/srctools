@@ -52,6 +52,7 @@ class VecTest(unittest.TestCase):
             self.assertVec(Vec(x, y, z), x, y, z)
             self.assertVec(Vec(x, y), x, y, 0)
             self.assertVec(Vec(x), x, 0, 0)
+            self.assertVec(Vec(), 0, 0, 0)
 
             self.assertVec(Vec([x, y, z]), x, y, z)
             self.assertVec(Vec([x, y], z=z), x, y, z)
@@ -59,6 +60,8 @@ class VecTest(unittest.TestCase):
             self.assertVec(Vec([x]), x, 0, 0)
             self.assertVec(Vec([x, y]), x, y, 0)
             self.assertVec(Vec([x, y, z]), x, y, z)
+            # Check copying keeps the same values..
+            self.assertVec(Vec(x, y, z).copy(), x, y, z)
 
     def test_scalar(self):
         """Check that Vec() + 5, -5, etc does the correct thing.
@@ -282,6 +285,19 @@ class VecTest(unittest.TestCase):
                 test(num, num, num, 0, num2, num2)
                 test(num, num, num, num, 0, num2)
                 test(num, num, num, num, num, 0)
+
+    def test_axis(self):
+        """Test the Vec.axis() function."""
+        self.assertEqual(Vec(1, 0, 0).axis(), 'x')
+        self.assertEqual(Vec(-1, 0, 0).axis(), 'x')
+        self.assertEqual(Vec(0, 1, 0).axis(), 'y')
+        self.assertEqual(Vec(0, -1, 0).axis(), 'y')
+        self.assertEqual(Vec(0, 0, 1).axis(), 'z')
+        self.assertEqual(Vec(0, 0, -1).axis(), 'z')
+
+    def test_abs(self):
+        for x, y, z in iter_vec(VALID_ZERONUMS):
+            self.assertVec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
 
 
 if __name__ == '__main__':
