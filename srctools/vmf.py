@@ -1054,6 +1054,10 @@ class Solid:
         if self.id in self.map.solid_id:
             self.map.solid_id.remove(self.id)
 
+    def remove(self):
+        """Remove this brush from the map."""
+        self.map.remove_brush(self)
+
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this brush takes up."""
         bbox_min, bbox_max = self.sides[0].get_bbox()
