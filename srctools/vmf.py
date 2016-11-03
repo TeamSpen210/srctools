@@ -9,11 +9,11 @@ from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union,
+    Optional, Union, Any,
     Dict, List, Tuple, Set, Iterable, Iterator
 )
 
-from srctools import Property, Vec, EmptyMapping
+from srctools import Property, BOOL_LOOKUP, Vec, EmptyMapping
 import srctools
 
 # Used to set the defaults for versioninfo
@@ -2000,6 +2000,43 @@ class EntityFixup:
         )
         return self.__class__.__name__ + '([' + items + '])'
 
+    def int(self, key: str, def_: Any=0) -> int:
+        """Return the value of an integer key.
+
+        Equivalent to int(fixup[key]), but with a default value if missing or
+        invalid.
+        """
+        try:
+            return int(self.get(key))
+        except (ValueError, TypeError):
+            return def_
+
+    def float(self, key: str, def_: Any=0.0) -> float:
+        """Return the value of an integer key.
+
+        Equivalent to float(fixup[key]), but with a default value if missing or
+        invalid.
+        """
+        try:
+            return float(self.get(key))
+        except (ValueError, TypeError):
+            return def_
+
+    def bool(self, key: str, def_: Any=False) -> bool:
+        """Return a fixup interpreted as a boolean.
+
+        The value may be case-insensitively 'true', 'false', '1', '0', 'T',
+        'F', 'y', 'n', 'yes', or 'no'.
+        """
+        try:
+            return BOOL_LOOKUP[self.get(key).casefold()]
+        except KeyError:
+            return def_
+
+    def vec(self, key, x=0.0, y=0.0, z=0.0) -> Vec:
+        """Return the given fixup, converted to a vector."""
+        return Vec.from_str(self.get(key), x, y, z)
+
 
 class EntityGroup:
     """Represents the 'group' blocks in entities.
@@ -2092,7 +2129,7 @@ class Output:
     def __init__(
         self,
         out: str,
-        targ: str,
+        targ: Union[Entity, str],
         inp: str,
         param='',
         delay=0.0,
@@ -2105,7 +2142,10 @@ class Output:
     ):
         self.output = out
         self.inst_out = inst_out
-        self.target = targ
+        if isinstance(targ, Entity):
+            self.target = targ['targetname']
+        else:
+            self.target = targ
         self.input = inp
         self.inst_in = inst_in
         self.params = param
@@ -2246,3 +2286,27 @@ class Output:
             inst_in=self.inst_in,
             comma_sep=self.comma_sep,
         )
+
+    def gen_addoutput(self, delim=','):
+        """Return the parameter needed to create this output via AddOutput.
+
+        This assumes the target instance uses Prefix fixup, if inst_in is set.
+        """
+        if self.inst_out:
+            raise ValueError('Inst_out is not useable in AddOutput.')
+
+        if self.inst_in:
+            target = self.target + '-' + self.inst_in
+        else:
+            target = self.target
+
+        return '{out} {name}{d}{inp}{d}{param}{d}{time}{d}{rep}'.format(
+            d=delim,
+            out=self.output,
+            name=target,
+            inp=self.input,
+            param=self.params,
+            time=self.delay,
+            rep=self.times,
+        )
+
