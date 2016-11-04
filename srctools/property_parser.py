@@ -642,6 +642,13 @@ class Property:
             return len(self.value)
         raise ValueError("{!r} has no children!".format(self))
 
+    def __bool__(self):
+        """Properties are true if we have children, or have a value."""
+        if self.has_children():
+            return len(self.value) > 0
+        else:
+            return bool(self.value)
+
     def __iter__(self) -> Iterator['Property']:
         """Iterate through the value list.
 
