@@ -253,6 +253,34 @@ class Vec:
         x, y, z = parse_vec_str(val, x, y, z)
         return cls(x, y, z)
 
+    @classmethod
+    def with_axes(
+            cls,
+            axis1: str,
+            val1: Union[float, 'Vec'],
+            axis2: str=None,
+            val2: Union[float, 'Vec']=None,
+            axis3: str=None,
+            val3: Union[float, 'Vec']=None
+    ) -> 'Vec':
+        """Create a Vector, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            vec = Vec()
+            vec[axis1] = val1
+            vec[axis2] = val2
+            vec[axis3] = val3
+        The magnitudes can also be Vectors, in which case the matching
+        axis will be used from the vector.
+        """
+        vec = cls()
+        vec[axis1] = val1[axis1] if isinstance(val1, Vec) else val1
+        if axis2 is not None:
+            vec[axis2] = val2[axis2] if isinstance(val2, Vec) else val2
+            if axis3 is not None:
+                vec[axis3] = val3[axis3] if isinstance(val3, Vec) else val3
+        return vec
+
     def mat_mul(self, matrix) -> None:
         """Multiply this vector by a 3x3 rotation matrix.
 
@@ -407,9 +435,9 @@ class Vec:
         """Convert a normal to a Source Engine angle.
 
         A +x axis vector will result in a 0, 0, 0 angle. The roll is not
-        affected by the direction of the face.
+        affected by the direction of the normal.
 
-        The inverse of this is `Vec(1, 0, 0).rotate(pitch, yaw, roll)`.
+        The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.sqrt(self.x ** 2 + self.y ** 2)
@@ -418,6 +446,28 @@ class Vec:
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
         )
+
+
+    def to_angle_roll(self, z_norm: 'Vec', stride: int=90) -> 'Vec':
+        """Produce a Source Engine angle with roll.
+
+        The z_normal should point in +z, and must be at right angles to this
+        vector. Stride determines the angles chosen - the normal must point
+        in one of these.
+        """
+        angle = self.to_angle()
+        for roll in range(0, 360, stride):
+            result = Vec(z=1).rotate(angle.x, angle.y, roll)
+            if result == z_norm:
+                angle.z = roll
+                return angle
+        else:
+            raise ValueError(
+                'Normal of {} does not have a valid angle'
+                ' in ({}, {}, z) at increments of {}'.format(
+                    z_norm, angle.x, angle.y, stride,
+                )
+            )
 
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""
