@@ -204,6 +204,13 @@ class Vec:
         ('x', 'z'): 'y',
         ('x', 'y'): 'z',
     }
+    # Vectors pointing in all cardinal directions
+    N = north = y_pos = Vec_tuple(0, 1, 0)
+    S = south = y_neg = Vec_tuple(0, -1, 0)
+    E = east = x_pos = Vec_tuple(1, 0, 0)
+    W = west = x_neg = Vec_tuple(-1, 0, 0)
+    T = top = z_pos = Vec_tuple(0, 0, 1)
+    B = bottom = z_neg = Vec_tuple(0, 0, -1)
 
     def __init__(
             self,
