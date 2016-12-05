@@ -196,6 +196,43 @@ class KeyValError(Exception):
         return mess
 
 
+class FileParseProgress:
+    """Tracks line number when reading files.
+
+    This allows easily raising errors with the line number and filename.
+    """
+    def __init__(self, file, filename: _Optional[str]):
+        self.filename = filename
+        self.file = iter(file)
+        self.line_num = 0
+        self._repeat = None
+
+    def __iter__(self):
+        return self
+
+    def repeat(self, line: str):
+        """On next iteration, repeat a line."""
+        self._repeat = line
+
+    def __next__(self) -> str:
+        if self._repeat:
+            rep = self._repeat
+            self._repeat = None
+            return rep
+
+        next_line = next(self.file)
+        self.line_num += 1
+        return next_line
+
+    def error(self, message: str, *args):
+        """Return a KeyValueError, with the current line number."""
+        return KeyValError(
+            message.format(*args),
+            self.filename,
+            self.line_num,
+        )
+
+
 class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
