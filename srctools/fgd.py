@@ -36,8 +36,8 @@ class ValueTypes(Enum):
     STR_MODEL = 'studio'  # Model
 
     # More complex
-    VEC_LINE = 'vecline' # Absolute vector, with line drawn from origin to point
-    COLOR_1 = 'color1' # RGB 0-1 + extra
+    VEC_LINE = 'vecline'  # Absolute vector, with line drawn from origin to point
+    COLOR_1 = 'color1'  # RGB 0-1 + extra
     COLOR_255 = 'color255'  # RGB 0-255 + extra
     SIDE_LIST = 'sidelist'  # Space-seperated list of sides.
 
@@ -96,6 +96,7 @@ class FGD:
             return
 
         self._parse_list.append(file)
+
     def __getitem__(self, classname) -> EntityDef:
         try:
             return self.entities[classname.casefold()]
