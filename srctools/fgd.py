@@ -2,7 +2,11 @@
 from enum import Enum
 import os.path
 
-from typing import List, Tuple, Dict, Iterator
+from typing import List, Tuple, Dict, Iterator, Iterable, Callable
+
+# Reuse this error for FGD files too.
+from srctools import KeyValError
+
 
 class ValueTypes(Enum):
     """Types which can be applied to a KeyValue."""
@@ -56,15 +60,22 @@ class EntityDef:
     def __init__(self, type: EntityTypes):
         self.type = type
 
+    @classmethod
+    def parse(cls, fgd: 'FGD', file_iter, first_line: str, filename, start_num=0):
+        """Parse an entity definition."""
+
+
 class FGD:
     """A FGD set for a game. May be composed of several files."""
-    def __init__(self):
+    def __init__(self, directory):
         """Create a FGD."""
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
         self._parse_list = []
         # Entity definitions
         self.entities = {}  # type: Dict[str, EntityDef]
+
+        self.root = directory
 
     @classmethod
     def parse(
@@ -86,16 +97,55 @@ class FGD:
         fgd._parse_file(file, read_func)
         return fgd
 
-    def _parse_file(self, file: str, read_func):
+    def _parse_file(self, file: str, read_func: Callable[[str], Iterable[str]]):
         """Parse one file (recursively if needed)."""
         file = file.replace('\\', '/')
         if not file.endswith('.fgd'):
             file += '.fgd'
+        full_path = os.path.join(self.root, file)
+        print('Reading "{}"'.format(full_path))
 
         if file in self._parse_list:
             return
 
         self._parse_list.append(file)
+
+        with read_func(full_path) as f:
+            # Keep the iterator, so other functions can consume it too.
+            file_iter = iter(f)
+            for line_num, indented_line in enumerate(file_iter):
+                line = indented_line.lstrip()
+                if not line or line[:2] == '//':
+                    continue
+
+                if line.startswith('@include'):
+                    if '"' in line:
+                        include_file = line.split('"')[1]
+                        if line.rstrip()[-1] != '"':
+                            raise KeyValError(
+                                'Include missing end quote!',
+                                full_path,
+                                line_num,
+                            )
+                    else:
+                        include_file = line[8:].strip()
+                    try:
+                        self._parse_file(include_file, read_func)
+                    except FileNotFoundError:
+                        raise KeyValError(
+                            'Cannot include "{}"!'.format(include_file),
+                            full_path,
+                            line_num,
+                        )
+                # Entity definition...
+                elif line[0] == '@':
+                    EntityDef.parse(self, file_iter, line, full_path, line_num)
+                else:
+                    raise KeyValError(
+                        'Unexpected line "{}"'.format(line),
+                        full_path,
+                        line_num,
+                    )
 
     def __getitem__(self, classname) -> EntityDef:
         try:
