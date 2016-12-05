@@ -1,9 +1,7 @@
 import os as _os
 import string as _string
-import tempfile as _tempfile
 from collections import abc as _abc
-
-from typing import Union as _Union
+from typing import Union as _Union, Optional as _Optional
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
@@ -156,6 +154,48 @@ def conv_int(val: str, default=0):
         return default
 
 
+class KeyValError(Exception):
+    """An error that occurred when parsing a Valve KeyValues file.
+
+    mess = The error message that occurred.
+    file = The filename that is being read, if known
+    line_num = The line where the error occurred.
+    """
+    def __init__(
+            self,
+            message: str,
+            file: _Optional[str],
+            line: _Optional[int]
+            ) -> None:
+        super().__init__()
+        self.mess = message
+        self.file = file
+        self.line_num = line
+
+    def __repr__(self):
+        return 'KeyValError({!r}, {!r}, {!r})'.format(
+            self.mess,
+            self.file,
+            self.line_num,
+            )
+
+    def __str__(self):
+        """Generate the complete error message.
+
+        This includes the line number and file, if available.
+        """
+        mess = self.mess
+        if self.line_num:
+            mess += '\nError occurred on line ' + str(self.line_num)
+            if self.file:
+                mess += ', with file'
+        if self.file:
+            if not self.line_num:
+                mess += '\nError occurred with file'
+            mess += ' "' + self.file + '"'
+        return mess
+
+
 class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
@@ -292,6 +332,6 @@ class AtomicWriter:
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 from srctools.vec import Vec, Vec_tuple, parse_vec_str
-from srctools.property_parser import NoKeyError, KeyValError, Property
+from srctools.property_parser import NoKeyError, Property
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
