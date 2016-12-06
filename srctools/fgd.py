@@ -1,11 +1,31 @@
 """Parse FGD files, used to describe Hammer entities."""
 from enum import Enum
 import os.path
+import re
 
 from typing import List, Tuple, Dict, Iterator, Iterable, Callable
 
-# Reuse this error for FGD files too.
-from srctools import KeyValError
+from srctools import KeyValError, FileParseProgress, Vec, clean_line
+
+__all__ = [
+    'ValueTypes', 'EntityTypes'
+    'KeyValError', 'FGD', 'EntityDef',
+]
+
+# "text" +
+_RE_DOC_LINE = re.compile('\s*"([^"])*"\s*(\+)?\s*(=)?')
+
+_RE_KEYVAL_LINE = re.compile(
+    r''' (input | output)? \s* # Input or output name
+    (\w+)\((\w+)\) # Name, (type)
+    \s* : \s* \"([^"]*)\"\s* # Display name
+    (?::([^:]+)  # Default
+        (?::([^:]+)  # Docs
+        )?
+    )?
+    ''',
+    re.VERBOSE
+)
 
 
 class ValueTypes(Enum):
@@ -21,11 +41,11 @@ class ValueTypes(Enum):
     INT = 'int'
     FLOAT = 'float'
     VEC = 'vector'  # Offset or the like
-    ANGLES = 'angles'  # Rotation
+    ANGLES = 'angle'  # Rotation
 
     # String targetname values (need fixups)
     TARG_DEST = 'target_destination' # A targetname of another ent.
-    TARG_DEST_CLASS = 'target_destination_or_class' # Above + classnames.
+    TARG_DEST_CLASS = 'target_destination_or_class'  # Above + classnames.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
     TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
     TARG_POINT_CLASS = 'pointentityclass' # targetnames filtered to point enitites.
@@ -41,6 +61,7 @@ class ValueTypes(Enum):
 
     # More complex
     VEC_LINE = 'vecline'  # Absolute vector, with line drawn from origin to point
+    VEC_ORIGIN = 'origin'  # Used for 'origin' keyvalue
     COLOR_1 = 'color1'  # RGB 0-1 + extra
     COLOR_255 = 'color255'  # RGB 0-255 + extra
     SIDE_LIST = 'sidelist'  # Space-seperated list of sides.
@@ -54,15 +75,172 @@ class EntityTypes(Enum):
     TRACK = 'moveclass'  # Used for path_track etc
     FILTER = 'filterclass'  # Used for filters
 
+def read_multiline_doc(file: FileParseProgress, first_line):
+    """Read a docstring from the file.
+
+    These are a quoted string, which can be joined across lines
+    via a '+':
+    "line 1" +
+    "line 2" +
+    "line 3"
+    This returns a list of lines, and whether the last is followed by an
+    equals sign (used by 'choice' keyvalues).
+    """
+    if first_line is None:
+        return '', False
+
+    match = _RE_DOC_LINE.fullmatch(first_line)
+    has_equal = False
+    if match:
+        first_line, has_multi, has_equal = match.groups()
+        doc_lines = [first_line]
+    elif not first_line:
+        has_multi = True
+        doc_lines = []
+    else:
+        return first_line, False
+
+    if has_multi:
+        if has_equal:
+            raise file.error('Invalid character after documentation!')
+        for line in file:
+            match = _RE_DOC_LINE.fullmatch(line)
+            if match:
+                line, has_multi, has_equal = match.groups()
+                doc_lines.append(line)
+            else:
+                raise file.error(
+                    "Documentation line expected, but none found!",
+                )
+            if not has_multi:
+                break
+
+            if has_equal:
+                raise file.error('Invalid character after documentation!')
+
+    return '\n'.join(doc_lines), has_equal
+
+
+class KeyValues:
+    """Represents a generic keyvalue type."""
+    def __init__(self, name, val_type, default, doc):
+        self.name = name
+        self.type = val_type
+        self.default = default
+        self.doc = doc
+
 
 class EntityDef:
     """A definition for an entity."""
     def __init__(self, type: EntityTypes):
         self.type = type
+        self.classname = ''
+        self.keyvalues = {}
+        self.inputs = {}
+        self.outputs = {}
+        # Base type names - base()
+        self.bases = []
+        # line(), studio(), etc in the header
+        # this is a func, args tuple.
+        self.helpers = []
+        self.docs = []
 
     @classmethod
-    def parse(cls, fgd: 'FGD', file_iter, first_line: str, filename, start_num=0):
+    def parse(
+        cls,
+        fgd: 'FGD',
+        file: FileParseProgress,
+        first_line: str,
+    ):
         """Parse an entity definition."""
+        ent_type, first_line = first_line.split(None, 1)
+        try:
+            ent_type = EntityTypes(ent_type[1:].casefold())
+        except ValueError:
+            raise file.error(
+                'Invalid Entity type "{}"!',
+                ent_type[:1],
+            )
+
+        start_line_num = file.line_num
+
+        entity = cls(ent_type)
+
+        helpers = []
+
+        ent_name = None
+        file.repeat(first_line)
+        for line in file:
+            if '=' in line:
+                line, ent_name = line.split('=', 1)
+
+            helpers.append(line)
+
+            if ent_name is not None:
+                if ':' in ent_name:
+                    entity.classname, doc = ent_name.split(':', 1)
+                    entity.docs = read_multiline_doc(file, doc)[0]
+                else:
+                    entity.classname = ent_name
+                break
+        else:
+            raise KeyValError(
+                'Entity header never ended!',
+                file.filename,
+                start_line_num,
+            )
+
+        try:
+            brace_start = next(file)
+        except StopIteration:
+            raise file.error(
+                'EOF after entity header!',
+            )
+        if brace_start.strip() != '[':
+            raise file.error(
+                'Entity header not followed by "["!'
+            )
+
+        # Now parse keyvalues, and input/outputs
+        for line in file:
+            # Most are only one line, plus docstring - other than flags
+            # or choices.
+            line = clean_line(line)
+            if not line:
+                continue
+
+            if line == ']':
+                break
+
+            match = _RE_KEYVAL_LINE.match(line)
+            if match is None:
+                raise file.error('Unrecognised line! ({!r})', line)
+            io_type, name, val_typ, disp_name, default, doc = match.groups()
+
+            try:
+                val_typ = ValueTypes(val_typ)
+            except ValueError:
+                raise file.error('Unknown keyvalue type "{}"!', val_typ)
+
+            if io_type:
+                if doc or default:
+                    raise file.error('Too many values for input or output!')
+                doc = read_multiline_doc(file, disp_name)
+                io_type = io_type.casefold()
+                if io_type == 'input':
+                    entity.inputs[name] = (val_typ, doc)
+                elif io_type == 'output':
+                    entity.inputs[name] = (val_typ, doc)
+                else:
+                    raise file.error('"{}" must be input, or output!', io_type)
+            else:
+                doc, has_equal = read_multiline_doc(file, doc)
+                entity.keyvalues[name] = KeyValues(
+                    val_typ,
+                    disp_name,
+                    default,
+                    doc,
+                )
 
 
 class FGD:
@@ -74,6 +252,9 @@ class FGD:
         self._parse_list = []
         # Entity definitions
         self.entities = {}  # type: Dict[str, EntityDef]
+        # maximum bounding box of map
+        self.map_size_min = 0
+        self.map_size_max = 0
 
         self.root = directory
 
@@ -97,54 +278,60 @@ class FGD:
         fgd._parse_file(file, read_func)
         return fgd
 
-    def _parse_file(self, file: str, read_func: Callable[[str], Iterable[str]]):
+    def _parse_file(self, filename: str, read_func: Callable[[str], Iterable[str]]):
         """Parse one file (recursively if needed)."""
-        file = file.replace('\\', '/')
-        if not file.endswith('.fgd'):
-            file += '.fgd'
-        full_path = os.path.join(self.root, file)
+        filename = filename.replace('\\', '/')
+        if not filename.endswith('.fgd'):
+            filename += '.fgd'
+        full_path = os.path.join(self.root, filename)
         print('Reading "{}"'.format(full_path))
 
-        if file in self._parse_list:
+        if filename in self._parse_list:
             return
 
-        self._parse_list.append(file)
+        self._parse_list.append(filename)
 
         with read_func(full_path) as f:
             # Keep the iterator, so other functions can consume it too.
-            file_iter = iter(f)
-            for line_num, indented_line in enumerate(file_iter):
-                line = indented_line.lstrip()
-                if not line or line[:2] == '//':
+            file = FileParseProgress(f, full_path)
+            for indented_line in file:
+                line = clean_line(indented_line)
+                if not line:
                     continue
+                folded_line = line.casefold()
 
-                if line.startswith('@include'):
+                if folded_line.startswith('@include'):
                     if '"' in line:
                         include_file = line.split('"')[1]
                         if line.rstrip()[-1] != '"':
-                            raise KeyValError(
-                                'Include missing end quote!',
-                                full_path,
-                                line_num,
-                            )
+                            file.error('@include missing end quote!')
                     else:
                         include_file = line[8:].strip()
                     try:
                         self._parse_file(include_file, read_func)
                     except FileNotFoundError:
-                        raise KeyValError(
-                            'Cannot include "{}"!'.format(include_file),
-                            full_path,
-                            line_num,
+                        raise file.error(
+                            'Cannot include "{}"!',
+                            include_file,
+                        )
+                elif folded_line.startswith('@mapsize'):
+                    # Max/min map size definition
+                    try:
+                        min_size, max_size = folded_line[9:].split(',')
+                        self.map_size_min = int(min_size)
+                        self.map_size_min = int(max_size.strip('\n )'))
+                    except ValueError:
+                        raise file.error(
+                            'Invalid @MapSize! ("")',
+                            line,
                         )
                 # Entity definition...
                 elif line[0] == '@':
-                    EntityDef.parse(self, file_iter, line, full_path, line_num)
+                    EntityDef.parse(self, file, line)
                 else:
-                    raise KeyValError(
-                        'Unexpected line "{}"'.format(line),
-                        full_path,
-                        line_num,
+                    raise file.error(
+                        'Unexpected line "{}"',
+                        line,
                     )
 
     def __getitem__(self, classname) -> EntityDef:
@@ -155,3 +342,5 @@ class FGD:
 
     def __iter__(self) -> Iterator[EntityDef]:
         return iter(self.entities.values())
+
+f = FGD.parse(r'F:\Git\HammerAddons\bin\portal2.fgd')

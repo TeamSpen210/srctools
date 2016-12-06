@@ -6,14 +6,14 @@ from typing import Union as _Union, Optional as _Optional
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
 
-    'NoKeyError', 'KeyValError', 'Property',
+    'NoKeyError', 'Property',
 
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
 
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
     'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
 
-    'EmptyMapping', 'AtomicWriter',
+    'KeyValError', 'FileParseProgress', 'EmptyMapping', 'AtomicWriter',
 ]
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
@@ -368,7 +368,9 @@ class AtomicWriter:
 # Import these, so people can reference 'srctools.Vec' instead of
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
+# Not all classes are imported, just most-used ones.
 from srctools.vec import Vec, Vec_tuple, parse_vec_str
 from srctools.property_parser import NoKeyError, Property
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
+from srctools.fgd import FGD
