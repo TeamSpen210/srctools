@@ -232,6 +232,22 @@ class FileParseProgress:
             self.line_num,
         )
 
+    def expect(self, next_line, comment=True):
+        """Skip the next line, which is expected to match a value."""
+        for orig_line in self:
+            line = orig_line
+            if comment and '//' in line:
+                line = line.split('//', 1)[0]
+            line = line.strip()
+            if not line:  # Blank, skip...
+                continue
+            if line.strip() == next_line:
+                return
+            else:
+                raise self.error('Expected "{}", "{}" found!', next_line, orig_line)
+        else:
+            raise self.error('Expected "{}" but hit EOF!', next_line)
+
 
 class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
