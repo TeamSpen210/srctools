@@ -28,8 +28,14 @@ _RE_KEYVAL_LINE = re.compile(
     )? # Optional for spawnflags..
     \s* (=)? # Has equal sign?
     ''',
-    re.VERBOSE
+    re.VERBOSE,
 )
+
+_RE_HELPERS = re.compile(
+    r'''(\w+)\s* \( \s* ([^)]*) \s* \)''',
+    re.VERBOSE,
+)
+_RE_HELPER_ARGS = re.compile(r'\s*\,\s*')
 
 
 class ValueTypes(Enum):
@@ -105,6 +111,40 @@ class EntityTypes(Enum):
     NPC = 'npcclass'  # An NPC
 
 
+class HelperTypes(Enum):
+    """Types of functions in the entity header."""
+    INHERIT = 'base'
+
+    # Simple helpers
+    CUBE = 'size'  # Sets size of purple cube
+    BBOX = 'bbox'  # Sets bounding box of entity
+    TINT = 'color'
+    SPHERE = 'sphere'
+    LINE = 'line'
+    FRUSTUM = 'frustum'
+    CYLINDER = 'cylinder'
+    BRUSH_SIDES = 'sidelist'
+    BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
+
+    # Complex helpers using resources
+    SPRITE = 'iconsprite'
+    MODEL = 'studio'
+    MODEL_PROP = 'studioprop'
+    MODEL_NEG_PITCH = 'lightprop'  # Uses separate pitch keyvalue
+
+    # Specialty for certain ents
+    ENT_SPRITE = 'sprite'
+    ENT_INSTANCE = 'instance'
+    ENT_DECAL = 'decal'
+    ENT_OVERLAY = 'overlay'
+    ENT_OVERLAY_WATER = 'overlay_transition'
+    ENT_LIGHT = 'light'
+    ENT_LIGHT_CONE = 'lightcone'
+    ENT_ROPE = 'keyframe'
+    ENT_TRACK = 'animator'
+    ENT_BREAKABLE_SURF = 'quadbounds' # Sets the 4 corners on save
+
+
 def read_multiline_desc(file: FileParseProgress, first_line) -> str:
     """Read a docstring from the file.
 
@@ -165,12 +205,14 @@ def read_value_list(file: FileParseProgress):
     else:
         raise file.error('EOF when reading value list!')
 
+
 class KeyValues:
     """Represents a generic keyvalue type."""
-    def __init__(self, name, val_type, default, doc, val_list, is_readonly):
+    def __init__(self, name, val_type, disp_name, default, doc, val_list, is_readonly):
         self.name = name
         self.type = val_type
         self.default = default
+        self.disp_name = disp_name
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
@@ -236,10 +278,11 @@ class EntityDef:
 
             if ent_name is not None:
                 if ':' in ent_name:
-                    entity.classname, desc = ent_name.split(':', 1)
+                    classname, desc = ent_name.split(':', 1)
                     entity.desc = read_multiline_desc(file, desc.strip() or '')
                 else:
-                    entity.classname = ent_name
+                    classname = ent_name
+                entity.classname = classname.strip()
                 break
         else:
             raise KeyValError(
@@ -247,6 +290,25 @@ class EntityDef:
                 file.filename,
                 start_line_num,
             )
+
+        helpers = _RE_HELPERS.findall(''.join(helpers))
+        for help_type, args in helpers:
+            try:
+                help_type = HelperTypes(help_type)
+            except ValueError:
+                raise file.error('Unknown HelperType "{}"!', help_type)
+
+            args = _RE_HELPER_ARGS.split(args)
+
+            if help_type is HelperTypes.INHERIT:
+                for base in args:
+                    base = base.casefold()
+                    if base not in entity.bases:
+                        entity.bases.append(base.strip())
+                continue
+            entity.helpers.append((help_type, args))
+
+        fgd.entities[entity.classname.casefold()] = entity
 
         file.expect('[')
 
@@ -313,7 +375,8 @@ class EntityDef:
                 else:
                     val_list = None
 
-                entity.keyvalues[name] = KeyValues(
+                entity.keyvalues[name.casefold()] = KeyValues(
+                    name,
                     val_typ,
                     disp_name,
                     default,
@@ -321,6 +384,12 @@ class EntityDef:
                     val_list,
                     is_readonly == 'readonly',
                 )
+
+    def __repr__(self):
+        if self.type is EntityTypes.BASE:
+            return '<Entity Base "{}">'.format(self.classname)
+        else:
+            return '<Entity {}>'.format(self.classname)
 
 class FGD:
     """A FGD set for a game. May be composed of several files."""
@@ -355,6 +424,20 @@ class FGD:
         dirname, file = os.path.split(filename)
         fgd = cls(dirname)
         fgd._parse_file(file, read_func)
+
+        for ent in fgd:
+            new_bases, orig_bases = ent.bases, orig_bases = [], ent.bases
+            for base in orig_bases:
+                try:
+                    new_bases.append(fgd.entities[base])
+                except KeyError:
+                    raise ValueError(
+                        'Unknown base ({}) for {}'.format(
+                            base,
+                            ent.classname,
+                        )
+                    )
+
         return fgd
 
     def _parse_file(self, filename: str, read_func: Callable[[str], Iterable[str]]):
@@ -363,7 +446,6 @@ class FGD:
         if not filename.endswith('.fgd'):
             filename += '.fgd'
         full_path = os.path.join(self.root, filename)
-        print('Reading "{}"'.format(full_path))
 
         if filename in self._parse_list:
             return
@@ -421,5 +503,3 @@ class FGD:
 
     def __iter__(self) -> Iterator[EntityDef]:
         return iter(self.entities.values())
-
-f = FGD.parse(r'F:\Git\HammerAddons\bin\portal2.fgd')
