@@ -13,16 +13,20 @@ __all__ = [
 ]
 
 # "text" +
-_RE_DOC_LINE = re.compile('\s*"([^"])*"\s*(\+)?\s*(=)?')
+_RE_DOC_LINE = re.compile(r'\s*"([^"]*)"\s*(\+)?\s*')
 
 _RE_KEYVAL_LINE = re.compile(
     r''' (input | output)? \s* # Input or output name
-    (\w+)\((\w+)\) # Name, (type)
-    \s* : \s* \"([^"]*)\"\s* # Display name
-    (?::([^:]+)  # Default
-        (?::([^:]+)  # Docs
+    (\w+)\s*\(\s*(\w+)\s*\) # Name, (type)
+    \s* (report | readonly)?  # Flags for the text
+    (?: \s* : \s* \"([^"]*)\"\s* # Display name
+        (\+)? \s* # IO only - plus for continued description
+        (?::([^:]+)  # Default
+            (?::([^:]+)  # Docs
+            )?
         )?
-    )?
+    )? # Optional for spawnflags..
+    \s* (=)? # Has equal sign?
     ''',
     re.VERBOSE
 )
@@ -37,34 +41,58 @@ class ValueTypes(Enum):
 
     # Simple values
     STRING = 'string'
-    BOOLEAN = 'boolean'
-    INT = 'int'
+    BOOL = 'boolean'
+    INT = 'integer'
     FLOAT = 'float'
     VEC = 'vector'  # Offset or the like
     ANGLES = 'angle'  # Rotation
 
     # String targetname values (need fixups)
-    TARG_DEST = 'target_destination' # A targetname of another ent.
-    TARG_DEST_CLASS = 'target_destination_or_class'  # Above + classnames.
+    TARG_DEST = 'target_destination'  # A targetname of another ent.
+    TARG_DEST_CLASS = 'target_name_or_class'  # Above + classnames.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
     TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
-    TARG_POINT_CLASS = 'pointentityclass' # targetnames filtered to point enitites.
+    TARG_POINT_CLASS = 'pointentityclass'  # targetnames filtered to point entities.
     TARG_FILTER_NAME = 'filterclass'  # targetnames of filters.
-    TARG_NODE = 'node_dest'  # Node entities
+    TARG_NODE_DEST = 'node_dest'  # name of a node
+    TARG_NODE_SOURCE = 'node_id'  # name of us
 
     # Strings, don't need fixups
     STR_SCENE = 'scene'  # VCD files
     STR_SOUND = 'sound'  # WAV & SoundScript
+    STR_PARTICLE = 'particlesystem'  # Particles
     STR_SPRITE = 'sprite'  # Sprite materials
+    STR_DECAL = 'decal'  # Sprite materials
     STR_MATERIAL = 'material'  # Materials
     STR_MODEL = 'studio'  # Model
+    STR_VSCIPT = 'scriptlist'  # List of vscripts
 
     # More complex
+    ANGLE_NEG_PITCH = 'angle_negative_pitch'  # Inverse pitch of 'angles'
     VEC_LINE = 'vecline'  # Absolute vector, with line drawn from origin to point
     VEC_ORIGIN = 'origin'  # Used for 'origin' keyvalue
+    VEC_AXIS = 'axis'
     COLOR_1 = 'color1'  # RGB 0-1 + extra
     COLOR_255 = 'color255'  # RGB 0-255 + extra
     SIDE_LIST = 'sidelist'  # Space-seperated list of sides.
+
+    # Instances
+    INST_FILE = 'instance_file'  # File of func_instance
+    INST_VAR_DEF = 'instance_parm'  # $fixup definition
+    INST_VAR_REP = 'instance_variable'  # $fixup usage
+
+    @property
+    def has_list(self):
+        """Is this a flag or choices value, and needs a [] list?"""
+        return self.value in ('choices', 'flags')
+
+VALUE_TYPE_LOOKUP = {
+    typ.value: typ
+    for typ in ValueTypes
+}
+# These have two names pointing to the same type...
+VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
+VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
 
 
 class EntityTypes(Enum):
@@ -74,8 +102,10 @@ class EntityTypes(Enum):
     ROPES = 'keyframeclass'  # Used for move_rope etc
     TRACK = 'moveclass'  # Used for path_track etc
     FILTER = 'filterclass'  # Used for filters
+    NPC = 'npcclass'  # An NPC
 
-def read_multiline_doc(file: FileParseProgress, first_line):
+
+def read_multiline_desc(file: FileParseProgress, first_line) -> str:
     """Read a docstring from the file.
 
     These are a quoted string, which can be joined across lines
@@ -87,26 +117,23 @@ def read_multiline_doc(file: FileParseProgress, first_line):
     equals sign (used by 'choice' keyvalues).
     """
     if first_line is None:
-        return '', False
+        return ''
 
-    match = _RE_DOC_LINE.fullmatch(first_line)
-    has_equal = False
+    match = _RE_DOC_LINE.match(first_line)
     if match:
-        first_line, has_multi, has_equal = match.groups()
+        first_line, has_multi = match.groups()
         doc_lines = [first_line]
     elif not first_line:
         has_multi = True
         doc_lines = []
     else:
-        return first_line, False
+        return first_line
 
     if has_multi:
-        if has_equal:
-            raise file.error('Invalid character after documentation!')
         for line in file:
-            match = _RE_DOC_LINE.fullmatch(line)
+            match = _RE_DOC_LINE.match(line)
             if match:
-                line, has_multi, has_equal = match.groups()
+                line, has_multi = match.groups()
                 doc_lines.append(line)
             else:
                 raise file.error(
@@ -115,19 +142,45 @@ def read_multiline_doc(file: FileParseProgress, first_line):
             if not has_multi:
                 break
 
-            if has_equal:
-                raise file.error('Invalid character after documentation!')
+    return '\n'.join(doc_lines)
 
-    return '\n'.join(doc_lines), has_equal
 
+def read_value_list(file: FileParseProgress):
+    """Read the [...] list used for spawnflags or choices keyvalues."""
+    values = []
+    file.expect('[')
+    for line in file:
+        line = clean_line(line)
+        if not line:
+            continue
+        if line == ']':
+            return values
+
+        if ':' in line:
+            key, desc = line.split(':', 1)
+            desc = read_multiline_desc(file, desc)
+            values.append((key.strip(), desc))
+        else:
+            raise file.error('No ":" in values list!')
+    else:
+        raise file.error('EOF when reading value list!')
 
 class KeyValues:
     """Represents a generic keyvalue type."""
-    def __init__(self, name, val_type, default, doc):
+    def __init__(self, name, val_type, default, doc, val_list, is_readonly):
         self.name = name
         self.type = val_type
         self.default = default
-        self.doc = doc
+        self.desc = doc
+        self.val_list = val_list
+        self.readonly = is_readonly
+
+class IODef:
+    """Represents an input or output for an entity."""
+    def __init__(self, name, val_type: ValueTypes, description: str):
+        self.name = name
+        self.type = val_type
+        self.desc = description
 
 
 class EntityDef:
@@ -143,7 +196,7 @@ class EntityDef:
         # line(), studio(), etc in the header
         # this is a func, args tuple.
         self.helpers = []
-        self.docs = []
+        self.desc = []
 
     @classmethod
     def parse(
@@ -153,13 +206,18 @@ class EntityDef:
         first_line: str,
     ):
         """Parse an entity definition."""
-        ent_type, first_line = first_line.split(None, 1)
+        try:
+            ent_type, first_line = first_line.split(None, 1)
+        except ValueError:
+            # The entity type might be on its own line..
+            ent_type = first_line
+            first_line = next(file)
         try:
             ent_type = EntityTypes(ent_type[1:].casefold())
         except ValueError:
             raise file.error(
                 'Invalid Entity type "{}"!',
-                ent_type[:1],
+                ent_type[1:],
             )
 
         start_line_num = file.line_num
@@ -178,8 +236,8 @@ class EntityDef:
 
             if ent_name is not None:
                 if ':' in ent_name:
-                    entity.classname, doc = ent_name.split(':', 1)
-                    entity.docs = read_multiline_doc(file, doc)[0]
+                    entity.classname, desc = ent_name.split(':', 1)
+                    entity.desc = read_multiline_desc(file, desc.strip() or '')
                 else:
                     entity.classname = ent_name
                 break
@@ -190,16 +248,7 @@ class EntityDef:
                 start_line_num,
             )
 
-        try:
-            brace_start = next(file)
-        except StopIteration:
-            raise file.error(
-                'EOF after entity header!',
-            )
-        if brace_start.strip() != '[':
-            raise file.error(
-                'Entity header not followed by "["!'
-            )
+        file.expect('[')
 
         # Now parse keyvalues, and input/outputs
         for line in file:
@@ -215,33 +264,63 @@ class EntityDef:
             match = _RE_KEYVAL_LINE.match(line)
             if match is None:
                 raise file.error('Unrecognised line! ({!r})', line)
-            io_type, name, val_typ, disp_name, default, doc = match.groups()
+            (
+                io_type,
+                name,
+                val_typ,
+                is_readonly,
+                disp_name,
+                io_continuation,
+                default,
+                desc,
+                has_equal,
+            ) = match.groups()
 
             try:
-                val_typ = ValueTypes(val_typ)
-            except ValueError:
+                val_typ = VALUE_TYPE_LOOKUP[val_typ.casefold()]
+            except KeyError:
                 raise file.error('Unknown keyvalue type "{}"!', val_typ)
 
             if io_type:
-                if doc or default:
+                if desc or default:
                     raise file.error('Too many values for input or output!')
-                doc = read_multiline_doc(file, disp_name)
+                if is_readonly:
+                    raise file.error('Inputs/outputs cannot be readonly!')
+                if val_typ.has_list:
+                    raise file.error(
+                        '"{}" value type is not valid for an input or output!',
+                        val_typ.value,
+                    )
+                if has_equal:
+                    raise file.error('Unexpected "=" in input or output!')
+
+                desc = read_multiline_desc(
+                    file,
+                    '"{}"{}'.format(disp_name, io_continuation or ''),
+                )
                 io_type = io_type.casefold()
                 if io_type == 'input':
-                    entity.inputs[name] = (val_typ, doc)
+                    entity.inputs[name] = IODef(name, val_typ, desc)
                 elif io_type == 'output':
-                    entity.inputs[name] = (val_typ, doc)
+                    entity.inputs[name] = IODef(name, val_typ, desc)
                 else:
                     raise file.error('"{}" must be input, or output!', io_type)
             else:
-                doc, has_equal = read_multiline_doc(file, doc)
+                desc = read_multiline_desc(file, desc)
+                if val_typ.has_list:
+                    # It's a flags or choices value - read in the list following
+                    val_list = read_value_list(file)
+                else:
+                    val_list = None
+
                 entity.keyvalues[name] = KeyValues(
                     val_typ,
                     disp_name,
                     default,
-                    doc,
+                    desc,
+                    val_list,
+                    is_readonly == 'readonly',
                 )
-
 
 class FGD:
     """A FGD set for a game. May be composed of several files."""
