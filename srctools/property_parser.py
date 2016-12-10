@@ -415,7 +415,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop
         if def_ is _NO_KEY_FOUND:
@@ -432,7 +432,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop.value
         if def_ is _NO_KEY_FOUND:
@@ -623,7 +623,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
-            for prop in self.value:  # type: Property
+            for prop in self.value:
                 if prop._folded_name == key:
                     return True
             return False
@@ -636,7 +636,7 @@ class Property:
                 str,
                 int,
                 slice,
-                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]],
+                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]]
             ],
             ) -> str:
         """Allow indexing the children directly.
@@ -753,7 +753,7 @@ class Property:
             names
         }
         if self.has_children():
-            for item in self.value[:]:  # type: Property
+            for item in self.value[:]:
                 if item._folded_name in folded_names:
                     merge[item._folded_name].value.extend(item.value)
                 else:

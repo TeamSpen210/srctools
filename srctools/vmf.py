@@ -1825,7 +1825,7 @@ class Entity:
         if self.id in self.map.ent_id:
             self.map.ent_id.remove(self.id)
 
-    def get_bbox(self) -> (Vec, Vec):
+    def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
         if self.is_brush():
             bbox_min, bbox_max = self.solids[0].get_bbox()

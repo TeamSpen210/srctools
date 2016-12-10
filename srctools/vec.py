@@ -21,13 +21,13 @@ import collections
 import math
 from collections import abc
 
-from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
+from typing import Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple
 
 
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
 
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[int, int, int]:
+def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
@@ -58,7 +58,7 @@ def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[int, int
         return x, y, z
 
 
-Vec_tuple = collections.namedtuple('Vec_tuple', ['x', 'y', 'z'])
+Vec_tuple = NamedTuple('Vec_tuple', [('x', float), ('y', float), ('z', float)])
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -217,7 +217,7 @@ class Vec:
             x: Union[int, float, 'Vec', Iterable[Union[int, float]]]=0.0,
             y: Union[int, float]=0.0,
             z: Union[int, float]=0.0,
-    ):
+    ) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -562,7 +562,7 @@ class Vec:
 
     def __ne__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
             ) -> bool:
         """!= test.
 
@@ -586,7 +586,7 @@ class Vec:
 
     def __lt__(
             self,
-            other: Union['Vec', abc.Sequence, SupportsFloat],
+            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
             ) -> bool:
         """A<B test.
 
@@ -614,7 +614,7 @@ class Vec:
 
     def __le__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
             ) -> bool:
         """A<=B test.
 
@@ -642,7 +642,7 @@ class Vec:
 
     def __gt__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
             ) -> bool:
         """A>B test.
 
@@ -670,7 +670,7 @@ class Vec:
 
     def __ge__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
     ) -> bool:
         """A>=B test.
 
@@ -793,16 +793,17 @@ class Vec:
             return self.x, self.z
         if axis == 'z':
             return self.x, self.y
+        raise KeyError('Bad axis "{}"'.format(axis))
 
-    def as_tuple(self):
+    def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         return Vec_tuple(self.x, self.y, self.z)
 
-    def len_sq(self):
+    def len_sq(self) -> float:
         """Return the magnitude squared, which is slightly faster."""
         return self.x**2 + self.y**2 + self.z**2
 
-    def __len__(self):
+    def __len__(self) -> int:
         """The len() of a vector is the number of non-zero axes."""
         return (
             (self.x != 0) +
@@ -810,16 +811,16 @@ class Vec:
             (self.z != 0)
         )
 
-    def __contains__(self, val):
+    def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value.
         """
         return val == self.x or val == self.y or val == self.z
 
-    def __neg__(self):
+    def __neg__(self) -> 'Vec':
         """The inverted form of a Vector has inverted axes."""
         return Vec(-self.x, -self.y, -self.z)
 
-    def __pos__(self):
+    def __pos__(self) -> 'Vec':
         """+ on a Vector simply copies it."""
         return Vec(self.x, self.y, self.z)
 
@@ -840,7 +841,7 @@ class Vec:
             val += 0
             return val
 
-    def dot(self, other):
+    def dot(self, other: Union['Vec', Vec_tuple]) -> float:
         """Return the dot product of both Vectors."""
         return (
             self.x * other.x +
@@ -848,7 +849,7 @@ class Vec:
             self.z * other.z
         )
 
-    def cross(self, other):
+    def cross(self, other: Union['Vec', Vec_tuple]) -> 'Vec':
         """Return the cross product of both Vectors."""
         return Vec(
             self.y * other.z - self.z * other.y,
@@ -860,7 +861,7 @@ class Vec:
             self,
             origin: Union['Vec', tuple],
             angles: Union['Vec', tuple]=None,
-    ):
+    ) -> None:
         """Shift this point to be local to the given position and angles.
 
         This effectively translates local-space offsets to a global location,
@@ -876,8 +877,8 @@ class Vec:
         If the normal is axis-aligned, this will zero out the other axes.
         If not axis-aligned, it will do the equivalent.
         """
-        normal = normal.norm()
-        return normal * self.dot(normal)
+        norm = normal.norm()
+        return norm * self.dot(norm)
 
     len = mag
     mag_sq = len_sq

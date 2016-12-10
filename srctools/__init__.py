@@ -249,6 +249,8 @@ class FileParseProgress:
             raise self.error('Expected "{}" but hit EOF!', next_line)
 
 
+# We only want one instance
+@object.__new__
 class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
@@ -257,9 +259,9 @@ class EmptyMapping(_abc.MutableMapping):
     won't be kept, as well as allowing default.items() calls and similar.
     """
     __slots__ = []
-
-    def __init__(self):
-        pass
+    
+    def __new__(self):
+        raise AssertionError('Cannot instantiate more than one EmptyMapping!')
 
     def __call__(self):
         # Just in case someone tries to instantiate this
@@ -320,8 +322,6 @@ class EmptyMapping(_abc.MutableMapping):
     def popitem(self):
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
-
-EmptyMapping = EmptyMapping()  # We only want the one instance
 
 
 class AtomicWriter:
