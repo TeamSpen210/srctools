@@ -326,12 +326,14 @@ class VMF:
         for i in item:
             self.add_ent(i)
 
-    def create_ent(self, **kargs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs) -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
         it.
+        A classname must be passed!
         """
+        kargs['classname'] = classname
         ent = Entity(self, keys=kargs)
         self.add_ent(ent)
         return ent
