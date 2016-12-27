@@ -1103,7 +1103,8 @@ class UVAxis:
         self.scale = scale
 
     @staticmethod
-    def parse(value):
+    def parse(value: str) -> 'UVAxis':
+        """Parse a UV axis from a string."""
         vals = value.split()
         return UVAxis(
             x=float(vals[0].lstrip('[')),
@@ -1113,7 +1114,8 @@ class UVAxis:
             scale=float(vals[4]),
         )
 
-    def copy(self):
+    def copy(self) -> 'UVAxis':
+        """Return a duplicate of this axis."""
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1121,6 +1123,10 @@ class UVAxis:
             offset=self.offset,
             scale=self.scale,
         )
+
+    def vec(self) -> Vec:
+        """Return the axis as a vector."""
+        return Vec(self.x, self.y, self.z)
 
     def __str__(self):
         """Generate the text form for this UV data."""
