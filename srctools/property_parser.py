@@ -806,10 +806,14 @@ class Property:
 
         self.value = new_list
 
-    def ensure_exists(self, key):
-        """Ensure a Property group exists with this name."""
-        if key not in self:
-            self.value.append(Property(key, []))
+    def ensure_exists(self, key) -> 'Property':
+        """Ensure a Property group exists with this name, and return it."""
+        try:
+            return self.find_key(key)
+        except NoKeyError:
+            prop = Property(key, [])
+            self.value.append(prop)
+            return prop
 
     def has_children(self):
         """Does this have child properties?"""
