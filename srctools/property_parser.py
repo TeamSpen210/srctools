@@ -531,7 +531,6 @@ class Property:
         except LookupError:  # base for NoKeyError, KeyError
             return _Vec(x, y, z)
 
-
     def set_key(self, path, value):
         """Set the value of a key deep in the tree hierarchy.
 
@@ -682,13 +681,13 @@ class Property:
             ) -> str:
         """Allow indexing the children directly.
 
-        - If given an index or slice, it will search by position.
+        - If given an index, it will search by position.
         - If given a string, it will find the last Property with that name.
           (Default can be chosen by passing a 2-tuple like Prop[key, default])
         - If none are found, it raises IndexError.
         """
         if self.has_children():
-            if isinstance(index, int) or isinstance(index, slice):
+            if isinstance(index, int):
                 return self.value[index]
             else:
                 if isinstance(index, tuple):
@@ -709,17 +708,34 @@ class Property:
             ):
         """Allow setting the values of the children directly.
 
-        - If given an index or slice, it will search by position.
+        If the value is a Property, this will be inserted under the given
+        name or index.
+        - If given an index, it will search by position.
         - If given a string, it will set the last Property with that name.
         - If none are found, it appends the value to the tree.
         - If given a tuple of strings, it will search through that path,
           and set the value of the last matching Property.
         """
         if self.has_children():
-            if isinstance(index, int) or isinstance(index, slice):
+            if isinstance(index, int):
                 self.value[index] = value
             else:
-                self.set_key(index, value)
+                if isinstance(value, Property):
+                    # We don't want to assign properties, we want to add them under
+                    # this name!
+                    value.name = index
+                    try:
+                        # Replace at the same location..
+                        index = self.value.index(self.find_key(index))
+                    except NoKeyError:
+                        self.value.append(value)
+                    else:
+                        self.value[index] = value
+                else:
+                    try:
+                        self.find_key(index).value = value
+                    except NoKeyError:
+                        self.value.append(Property(index, value))
         else:
             raise IndexError("Can't index a Property without children!")
 
@@ -739,6 +755,13 @@ class Property:
                     raise IndexError(no_key) from no_key
         else:
             raise IndexError("Can't index a Property without children!")
+
+    def clear(self):
+        """Delete the contents of a block."""
+        if self.has_children():
+            self.value.clear()
+        else:
+            raise Exception("Can't clear a Property without children!")
 
     def __add__(self, other):
         """Allow appending other properties to this one.
