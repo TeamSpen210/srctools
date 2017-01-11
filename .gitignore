@@ -29,3 +29,8 @@ Icon
 *.log
 *.prt
 *.filelist.txt
+
+# Disttools
+build/
+dist/
+srctools.egg-info/
