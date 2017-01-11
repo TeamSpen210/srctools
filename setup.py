@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='srctools',
-    version='1.0.3',
+    version='1.2.0',
     description="Modules for working with Valve's Source Engine file formats.",
     url='https://github.com/TeamSpen210/srctools',
 
