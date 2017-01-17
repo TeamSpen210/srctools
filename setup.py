@@ -19,9 +19,4 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     packages=['srctools'],
-    install_requires=[
-        # Only needed in 3.4, it's in stdlib
-        # for future versions.
-        'typing; python_version<"3.5"',
-    ],
 )
