@@ -469,6 +469,17 @@ class Vec:
                 )
             )
 
+    def rotation_around(self, rot=90):
+        """For an axis-aligned normal, return the angles which rotate around it."""
+        if self.x:
+            return Vec(z=self.x * rot)
+        elif self.y:
+            return Vec(x=self.y * rot)
+        elif self.z:
+            return Vec(y=self.z * rot)
+        else:
+            raise ValueError('Zero vector!')
+
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""
         return Vec(
