@@ -882,7 +882,7 @@ class VisGroup:
         buffer.write(ind + '\t"color" "{}"\n'.format(self.color))
         for child in self.child_groups:
             child.export(buffer, ind + '\t')
-        buffer.write('}\n')
+        buffer.write(ind + '}\n')
 
     def set_visible(self, target):
         """Find all objects with this ID, and set them to the given visibility."""
