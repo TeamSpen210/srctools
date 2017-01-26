@@ -659,6 +659,31 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
+    def iter_tree(self, blocks=False) -> Iterator['Property']:
+        """Iterate through all properties in this tree.
+
+        This goes through properties in the same order that they will serialise
+        into.
+        If blocks is True, the property blocks will be returned as well as
+        keyvalues. If false, only keyvalues will be yielded.
+        """
+        if self.has_children():
+            return self._iter_tree(blocks)
+        else:
+            raise ValueError(
+                "Can't iterate through {!r} without children!".format(self)
+            )
+
+    def _iter_tree(self, blocks):
+        """Implementation of iter_tree(). This assumes self has children."""
+        for prop in self.value:  # type: Property
+            if prop.has_children():
+                if blocks:
+                    yield prop
+                yield from prop._iter_tree(blocks)
+            else:
+                yield prop
+
     def __contains__(self, key):
         """Check to see if a name is present in the children."""
         key = key.casefold()
