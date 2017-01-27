@@ -167,9 +167,21 @@ def read_multiline_value(file, line_num, filename):
             # Decode bytes using utf-8
             line = line.decode('utf-8')
         line = line.strip()
-        if line.endswith('"'):
-            lines.append(line[:-1])
-            return '\n'.join(lines)
+        if '"' in line:
+            # Split the line, handling \" inside
+            line_parts = srctools.escape_quote_split(line)
+            # A correct line will result in ['blah', '  ']
+            if len(line_parts) > 1:
+                comment = line_parts[1].lstrip()
+                # Non-whitespace after the quote, or multiple quotes.
+                if comment and not comment.startswith('//') or len(line_parts) > 2:
+                    raise KeyValError(
+                        'Extra characters after string end!',
+                        filename,
+                        line_num,
+                    )
+                lines.append(line[:0])
+                return '\n'.join(lines)
         lines.append(line)
     else:
         # We hit EOF!
