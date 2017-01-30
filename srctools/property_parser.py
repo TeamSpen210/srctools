@@ -428,6 +428,13 @@ class Property:
                     line_num,
                 )
 
+        if requires_block:
+            raise KeyValError(
+                "Block opening ('{') required, but hit EOF!",
+                filename,
+                line=None,
+            )
+        
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.',
