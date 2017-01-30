@@ -22,13 +22,29 @@ def assert_tree(first, second):
 def test_constructor():
     Property(None, [])
     Property('Test', 'value with spaces and ""')
-    Property('Test_block', [
-        Property('Test', 'value'),
+    block = Property('Test_block', [
+        Property('Test', 'value\0'),
         Property('Test', [
             Property('leaf', 'data'),
         ]),
         Property('Test2', 'other'),
+        Property('Block', []),
     ])
+    assert_equal(block.real_name, 'Test_block')
+    children = list(block)
+    assert_equal(children[0].real_name, 'Test')
+    assert_equal(children[1].real_name, 'Test')
+    assert_equal(children[2].real_name, 'Test2')
+    assert_equal(children[3].real_name, 'Block')
+
+    assert_equal(children[0].value, 'value\0')
+    assert_equal(children[2].value, 'other')
+    assert_equal(list(children[3].value), [])
+
+    sub_children = list(children[1])
+    assert_equal(sub_children[0].real_name, 'leaf')
+    assert_equal(sub_children[0].value, 'data'),
+    assert_equal(len(sub_children), 1)
 
 
 def test_names():
