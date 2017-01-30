@@ -166,7 +166,6 @@ def read_multiline_value(file, line_num, filename):
         if isinstance(line, bytes):
             # Decode bytes using utf-8
             line = line.decode('utf-8')
-        line = line.strip()
         if '"' in line:
             # Split the line, handling \" inside
             line_parts = srctools.escape_quote_split(line)
@@ -176,12 +175,18 @@ def read_multiline_value(file, line_num, filename):
                 # Non-whitespace after the quote, or multiple quotes.
                 if comment and not comment.startswith('//') or len(line_parts) > 2:
                     raise KeyValError(
-                        'Extra characters after string end!',
+                        'Extra characters after string end! ' + repr(line_parts),
                         filename,
                         line_num,
                     )
-                lines.append(line[:0])
+                lines.append(line_parts[0])
                 return '\n'.join(lines)
+            elif len(line_parts) == 1:
+                # No actual quote here, continue.
+                lines.append(line_parts[0])
+                continue  # Don't write the original
+            else:
+                assert 0, 'escape_quote_split() returned nothing!'
         lines.append(line)
     else:
         # We hit EOF!
