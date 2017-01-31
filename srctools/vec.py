@@ -27,7 +27,7 @@ from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
 
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[int, int, int]:
+def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
