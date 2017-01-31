@@ -395,7 +395,9 @@ class Property:
 
                 # Line_contents[4] is the start of the comment, check for [] flags.
                 if len(line_contents) >= 5:
-                    if read_flag(line_contents[4], filename, line_num):
+                    # Pass along all the parts after, so this can validate
+                    # them (for extra quotes.)
+                    if read_flag('"'.join(line_contents[4:]), filename, line_num):
                         cur_block.append(Property(name, value))
                 else:
                     # No flag, add unconditionally
