@@ -12,7 +12,6 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
-
 def iter_vec(nums):
     for x in nums:
         for y in nums:
@@ -33,7 +32,7 @@ def assert_vec(vec, x, y, z, msg=''):
 
 
 def test_construction():
-    """Check various parts of the construction."""
+    """Check various parts of the constructor - Vec(), Vec.from_str()."""
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(Vec(x, y, z), x, y, z)
         assert_vec(Vec(x, y), x, y, 0)
@@ -48,6 +47,48 @@ def test_construction():
         assert_vec(Vec([x, y, z]), x, y, z)
         # Check copying keeps the same values..
         assert_vec(Vec(x, y, z).copy(), x, y, z)
+
+        # Test Vec.from_str()
+        assert_vec(Vec.from_str('{} {} {}'.format(x, y, z)), x, y, z)
+        assert_vec(Vec.from_str('<{} {} {}>'.format(x, y, z)), x, y, z)
+        # {x y z}
+        assert_vec(Vec.from_str('{{{} {} {}}}'.format(x, y, z)), x, y, z)
+        assert_vec(Vec.from_str('({} {} {})'.format(x, y, z)), x, y, z)
+        assert_vec(Vec.from_str('[{} {} {}]'.format(x, y, z)), x, y, z)
+
+        # Test converting a converted Vec
+        orig = Vec(x, y, z)
+        new = Vec.from_str(Vec(x, y, z))
+        assert_vec(new, x, y, z)
+        assert_is_not(orig, new)  # It must be a copy
+
+    # Check failures in Vec.from_str()
+    # Note - does not pass through unchanged, they're converted to floats!
+    for val in VALID_ZERONUMS:
+        assert_equal(
+            Vec.from_str('', x=val).x,
+            val,
+        )
+        assert_equal(
+            Vec.from_str('blah 4 2', y=val).y,
+            val,
+        )
+        assert_equal(
+            Vec.from_str('2 hi 2', x=val).x,
+            val,
+        )
+        assert_equal(
+            Vec.from_str('2 6 gh', z=val).z,
+            val,
+        )
+        assert_equal(
+            Vec.from_str('1.2 3.4', x=val).x,
+            val,
+        )
+        assert_equal(
+            Vec.from_str('34.5 38.4 -23 -38', z=val).z,
+            val,
+        )
 
 
 def test_scalar():
@@ -290,4 +331,3 @@ def test_axis():
 def test_abs():
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
-
