@@ -201,6 +201,7 @@ def read_flag(line_end, filename, line_num):
     """Read a potential [] flag."""
     flag = line_end.lstrip()
     if flag[:1] == '[':
+        flag = flag[1:]
         if ']' not in flag:
             raise KeyValError(
                 'Unterminated [flag] on '
