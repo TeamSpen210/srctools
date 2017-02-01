@@ -85,7 +85,7 @@ parse_test = '''
   {
  bare
     {
-            "block" "here"
+            "block" "he\\tre"
           }
             }
        }
@@ -123,7 +123,7 @@ def test_parse():
             ]),
             P('Block', [
                 P('bare', [
-                    P('block', 'here'),
+                    P('block', 'he\tre'),
                 ]),
             ]),
         ]),
@@ -153,46 +153,104 @@ def test_parse():
 
 
 def test_parse_fails():
-    def t(text):
+    def t(line_num, text):
         """Test a string to ensure it fails parsing."""
         try:
             result = Property.parse(text.splitlines())
-        except KeyValError:
-            pass
+        except KeyValError as e:
+            assert_equal(e.line_num, line_num)
         else:
             raise AssertionError("Successfully parsed bad text {!r}".format(
                 result
             ))
-    
-    t('''\
+    # Bare text at end of file
+    t(None, '''\
 regular text. with sentences.
     ''')
-    t('''\
+    # Bare text in the middle
+    t(2, '''\
+regular text. with sentences.
+    "blah" "value"
+    ''')
+    t(4, '''\
 "Ok block"
     {
     "missing" //value
     }
 ''')
 
-    t('''\
+    # Test block without a block
+    t(2, '''\
 "block1"
 "no_block" 
 ''')
 
-    t('''
+    # Test characters before a keyvalue
+    t(1, '''\
 bbhf  "text before"
+    "key" "value
 ''')
-    t('''
+    t(2, '''
   "text" bl "between"
+    "key" "value
 ''')
-
-    t('''
+    # Test text after the keyvalue
+    t(1, '''\
+    "text" "value" blah
+    "key" "value
+    ''')
+    # Test quotes after the keyvalue
+    t(2, '''
     "text" "with extra" "
 ''')
 
-    t('''
+    t(5, '''
     "multi" "line
 text with
   multiple
   quotes" "
 ''')
+
+    # Test a flag without ] at end
+    t(2, '''
+    "Name" "value" [flag
+    ''')
+
+    # Test a flag with values after the bracket.
+    t(2, '''
+    "Name" "value" [flag ] hi
+    ''')
+
+    # Test too many closing brackets
+    t(9, '''
+    "Block"
+        {
+        "Opened"
+            {
+            "Closed" "value"
+            }
+            }
+        }
+    "More text" "value"
+    ''')
+
+    # Test property with a value and block
+    t(3, '''
+    "Block" "value"
+        {
+        "Name" "value"
+        }
+    ''')
+
+    # Test too many open brackets
+    t(6, '''\
+    "Block"
+        {
+        "Key" "Value"
+        "Block"
+            {
+            {
+            "Key" "value"
+            }
+        }
+    ''')
