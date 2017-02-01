@@ -271,3 +271,32 @@ text with
     which is multi-line
     and no ending.
     ''')
+
+
+def test_edit():
+    """Check functionality of Property.edit()"""
+    test_prop = Property('Name', 'Value')
+
+    def check(prop: Property, name, value):
+        """Check the property was edited, and has the given value."""
+        nonlocal test_prop
+        assert_is(prop, test_prop)
+        assert_equal(prop.real_name, name)
+        assert_equal(prop.value, value)
+        test_prop = Property('Name', 'Value')
+
+    check(test_prop.edit(), 'Name', 'Value')
+    check(test_prop.edit(name='new_name',), 'new_name', 'Value')
+    check(test_prop.edit(value='new_value'), 'Name', 'new_value')
+
+    # Check converting a block into a keyvalue
+    test_prop = Property('Name', [
+        Property('Name', 'Value')
+    ])
+    check(test_prop.edit(value='Blah'), 'Name', 'Blah')
+
+    # Check converting a keyvalue into a block.
+    child_1 = Property('Key', 'Value')
+    new_prop = test_prop.edit(value=[child_1, Property('Key2', 'Value')])
+    assert_is(test_prop, new_prop)
+    assert_is(list(test_prop)[0], child_1)
