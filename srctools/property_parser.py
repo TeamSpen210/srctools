@@ -82,7 +82,7 @@ REPLACE_CHARS = [
 _NO_KEY_FOUND = object()
 
 # We allow bare identifiers on lines, but they can't contain quotes or brackets.
-_RE_IDENTIFIER = re.compile('[^]"\'{}<>();:[]+')
+_RE_IDENTIFIER = re.compile('^[^"\'{}<>();:\[\]]+\w*$')
 
 _Prop_Value = Union[List['Property'], str]
 
