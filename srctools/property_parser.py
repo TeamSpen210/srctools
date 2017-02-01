@@ -752,7 +752,7 @@ class Property:
                     except NoKeyError as no_key:
                         raise IndexError(no_key) from no_key
         else:
-            raise IndexError("Can't index a Property without children!")
+            raise ValueError("Can't index a Property without children!")
 
     def __setitem__(
             self,
@@ -790,7 +790,7 @@ class Property:
                     except NoKeyError:
                         self.value.append(Property(index, value))
         else:
-            raise IndexError("Can't index a Property without children!")
+            raise ValueError("Can't index a Property without children!")
 
     def __delitem__(self, index):
         """Delete the given property index.
@@ -814,7 +814,7 @@ class Property:
         if self.has_children():
             self.value.clear()
         else:
-            raise Exception("Can't clear a Property without children!")
+            raise ValueError("Can't clear a Property without children!")
 
     def __add__(self, other):
         """Allow appending other properties to this one.

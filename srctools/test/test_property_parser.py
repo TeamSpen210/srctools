@@ -300,3 +300,13 @@ def test_edit():
     new_prop = test_prop.edit(value=[child_1, Property('Key2', 'Value')])
     assert_is(test_prop, new_prop)
     assert_is(list(test_prop)[0], child_1)
+
+
+def test_bool():
+    """Check bool(Property)."""
+    assert_is(bool(Property('Name', '')), False)
+    assert_is(bool(Property('Name', 'value')), True)
+    assert_is(bool(Property('Name', [])), False)
+    assert_is(bool(Property('Name', [
+        Property('Key', 'Value')
+    ])), True)
