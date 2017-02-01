@@ -254,3 +254,20 @@ text with
             }
         }
     ''')
+
+    # Too many open blocks.
+    t(None, '''\
+    "Block"
+        {
+        "Key" "Value"
+        "Block2"
+            {
+            "Key" "Value"
+            }
+    ''')
+
+    t(None, '''\
+    "Key" "value
+    which is multi-line
+    and no ending.
+    ''')
