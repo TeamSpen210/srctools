@@ -291,6 +291,3 @@ def test_abs():
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
 
-
-if __name__ == '__main__':
-    unittest.main()
