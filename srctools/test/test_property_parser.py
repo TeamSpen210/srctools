@@ -102,7 +102,11 @@ text"
     "CommentChecks"
         {
         "after " "value" //comment [ ] ""
-        
+        "FlagBlocks" "This" [test_disabled]
+        "Flag" "allowed" [!test_disabled]
+        "FlagAllows" "This" [test_enabled]
+        "Flag" "blocksthis" [!test_enabled]
+
         }
 '''
 
@@ -129,11 +133,23 @@ def test_parse():
               'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
               ),
         ]),
+        P('CommentChecks', [
+            P('after ', 'value'),
+            P('Flag', 'allowed'),
+            P('FlagAllows', 'This'),
+        ])
     ])
-    
+
+    # Check active and inactive flags are correctly treated.
+    PROP_FLAGS['test_enabled'] = True
+    PROP_FLAGS['test_disabled'] = False
+
     # iter() ensures sequence methods aren't used anywhere.
     result = Property.parse(iter(parse_test.splitlines()))
     assert_tree(result, expected)
+
+    del PROP_FLAGS['test_enabled']
+    del PROP_FLAGS['test_disabled']
 
 
 def test_parse_fails():
