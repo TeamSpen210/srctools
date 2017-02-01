@@ -257,12 +257,14 @@ class Property:
         """Create a new property instance.
 
         """
-        self.real_name = name  # type: Optional[str]
+        if name is None:
+            self._folded_name = self.real_name = None  # type: Optional[str]
+        else:
+            self.real_name = sys.intern(name)  # type: Optional[str]
+            self._folded_name = sys.intern(name.casefold())  # type: Optional[str]
+
+        self.name = name
         self.value = value  # type: _Prop_Value
-        self._folded_name = (
-            None if name is None
-            else name.casefold()
-        )  # type: Optional[str]
 
     @property
     def name(self) -> Optional[str]:
@@ -275,11 +277,12 @@ class Property:
 
     @name.setter
     def name(self, new_name):
-        self.real_name = new_name
         if new_name is None:
-            self._folded_name = None
+            self._folded_name = self.real_name = None
         else:
-            self._folded_name = new_name.casefold()
+            # Intern names to help reduce duplicates in memory.
+            self.real_name = sys.intern(new_name)
+            self._folded_name = sys.intern(new_name.casefold())
 
     def edit(self, name=None, value=None):
         """Simultaneously modify the name and value."""
