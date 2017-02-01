@@ -193,7 +193,7 @@ def read_multiline_value(file, line_num, filename):
         raise KeyValError(
             "Reached EOF without ending quote!",
             filename,
-            line_num,
+            None,
         )
 
 
@@ -288,6 +288,7 @@ class Property:
             self._folded_name = name.casefold()
         if value is not None:
             self.value = value
+        return self
 
     @staticmethod
     def parse(file_contents, filename='') -> "Property":
