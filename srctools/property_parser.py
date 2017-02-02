@@ -270,7 +270,7 @@ class Property:
     def name(self) -> Optional[str]:
         """Name automatically casefolds() any given names.
 
-        This ensures comparisons are always case-sensitive.
+        This ensures comparisons are always case-insensitive.
         Read .real_name to get the original value.
         """
         return self._folded_name

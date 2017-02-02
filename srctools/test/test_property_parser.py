@@ -14,12 +14,11 @@ def assert_tree(first, second):
         for child1, child2 in zip(first, second):
             assert_tree(child1, child2)
     else:
-        if '"' in first.value:
-            print(repr(first), '\n', repr(second))
         assert_equal(first.value, second.value)
 
 
 def test_constructor():
+    """Test the constructor for Property objects."""
     Property(None, [])
     Property('Test', 'value with spaces and ""')
     block = Property('Test_block', [
@@ -48,6 +47,7 @@ def test_constructor():
 
 
 def test_names():
+    """Test the behaviour of Property.name."""
     prop = Property('Test1', 'value')
     
     # Property.name casefolds the argument.
