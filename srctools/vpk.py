@@ -30,7 +30,7 @@ def checksum(data: bytes, prior=0):
     """
     return crc32(data, prior)
 
-EMPTY_CHECKSUM = checksum(b'') # Checksum of empty bytes - 0.
+EMPTY_CHECKSUM = checksum(b'')  # Checksum of empty bytes - 0.
 
 
 def struct_file_read(fmt, file):
@@ -51,10 +51,10 @@ def iter_nullstr(file):
             string = chars.decode('ascii')
             chars.clear()
             
-            if string == ' ': # Blank strings are saved as ' '
+            if string == ' ':  # Blank strings are saved as ' '
                 yield ''
             elif string == '':
-                return # Actual blanks end the array.
+                return  # Actual blanks end the array.
             else:
                 yield string
         elif char == b'':
@@ -88,15 +88,16 @@ def _get_file_parts(value):
         """Get folder, name, ext parts from a string/tuple.
         
         Possible arguments:
-            'folders/name.ext'
-            ('folders', name.ext)
-            ('folders', 'name', 'ext')
+            'fold/ers/name.ext'
+            ('fold/ers', 'name.ext')
+            ('fold/ers', 'name', 'ext')
         """
-        ext = path = ''
         if isinstance(value, str):
             path, filename = os.path.split(value)
+            ext = ''
         elif len(value) == 2:
             path, filename = value
+            ext = ''
         else:
             path, filename, ext = value
         
@@ -122,7 +123,7 @@ class FileInfo:
 
     __slots__ = (
         'vpk',
-        'name',
+        'dir', '_filename', 'ext',
         'crc',
         'arch_index',
         'start_data',
@@ -130,23 +131,50 @@ class FileInfo:
         'arch_len',
     )
 
-    def __init__(self, vpk, name, crc, start_data=b'', offset=0, arch_len=0, arch_index=None):
+    def __init__(
+        self,
+        vpk: 'VPK',
+        directory: str,
+        file: str,
+        ext: str,
+        crc: int,
+        start_data: bytes=b'',
+        offset: int=0,
+        arch_len: int=0,
+        arch_index: int=None,
+    ):
+        """This should only be called by VPK internally."""
+
+        # Assert the path is ASCII.
         try:
-            name.encode('ascii')
+            directory.encode('ascii')
+            file.encode('ascii')
+            ext.encode('ascii')
         except UnicodeError:
             raise ValueError(
                 'VPK filenames are required to be in ASCII format!'
             )
+
         self.vpk = vpk
-        self.name = name  # Full filename
+        self.dir = directory
+        self._filename = file
+        self.ext = ext
         self.crc = crc
         self.arch_index = arch_index  # pack_01_000.vpk file to use, or None for _dir.
         self.offset = offset  # Offset into the archive file, including directory data if in _dir
         self.arch_len = arch_len  # Number of bytes in archive files
         self.start_data = start_data  # The bytes saved into the directory header
+
+    @property
+    def filename(self) -> str:
+        """The full filename for this file."""
+        return _join_file_parts(self.dir, self._filename, self.ext)
+    name = filename
         
     def __repr__(self):
-        return '<VPK File: "{}">'.format(self.name)
+        return '<VPK File: "{}">'.format(
+            _join_file_parts(self.dir, self._filename, self.ext),
+        )
         
     def read(self):
         """Return the contents for this file."""
@@ -301,7 +329,6 @@ class VPK:
                 for directory in iter_nullstr(dirfile):
                     dir_dict = ext_dict.setdefault(directory, {})
                     for file in iter_nullstr(dirfile):
-                        filename = _join_file_parts(directory, file, ext)
                         crc, index_len, arch_ind, offset, arch_len, end = struct_file_read('<IHHIIH', dirfile)
                         if arch_ind == DIR_ARCH_INDEX:
                             arch_ind = None
@@ -312,12 +339,14 @@ class VPK:
                         
                         if end != 0xffff:
                             raise Exception('"{}" has bad terminator! {}'.format(
-                                filename, 
+                                _join_file_parts(directory, file, ext),
                                 (crc, index_len, arch_ind, offset, arch_len, end),
                             ))
                         dir_dict[file] = FileInfo(
-                            self, 
-                            filename,
+                            self,
+                            directory,
+                            file,
+                            ext,
                             crc=crc,
                             offset=offset,
                             start_data=dirfile.read(index_len),
@@ -440,7 +469,7 @@ class VPK:
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
-                    yield info.name
+                    yield info.filename
 
     def __len__(self):
         """Returns the number of files we have."""
@@ -464,7 +493,7 @@ class VPK:
             for folder, files in folders.items():
                 os.makedirs(os.path.join(dest_dir, folder), exist_ok=True)
                 for file, info in files.items():
-                    with open(os.path.join(dest_dir, info.name), 'wb') as f:
+                    with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 
     def new_file(self, filename: str, root: str=None) -> FileInfo:
@@ -481,9 +510,7 @@ class VPK:
         
         if root is not None:
             path = os.path.relpath(path, root)
-            
-        filename = _join_file_parts(path, name, ext)
-        
+
         try:
             ext_infos = self._fileinfo[ext]
         except KeyError:
@@ -495,12 +522,14 @@ class VPK:
             
         if name in dir_infos:
             raise FileExistsError(
-                'Filename already exists! ({!r})'.format(filename)
+                'Filename already exists! ({!r})'.format(_join_file_parts(path, name, ext))
             )
         
         dir_infos[name] = info = FileInfo(
             self, 
-            filename, 
+            path,
+            name,
+            ext,
             EMPTY_CHECKSUM,
         )
         
