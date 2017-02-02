@@ -119,6 +119,17 @@ def _join_file_parts(path, filename, ext):
 
 class FileInfo:
     """Represents a file stored inside a VPK."""
+
+    __slots__ = (
+        'vpk',
+        'name',
+        'crc',
+        'arch_index',
+        'start_data',
+        'offset',
+        'arch_len',
+    )
+
     def __init__(self, vpk, name, crc, start_data=b'', offset=0, arch_len=0, arch_index=None):
         try:
             name.encode('ascii')
