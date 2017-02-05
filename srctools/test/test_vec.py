@@ -98,6 +98,9 @@ def test_scalar():
         ('%', op.mod, op.imod, VALID_NUMS),
     ]
 
+    # Doesn't implement float(x), and no other operators..
+    obj = object()
+
     for op_name, op_func, op_ifunc, domain in operators:
         for x, y, z in iter_vec(domain):
             for num in domain:
@@ -418,3 +421,35 @@ def test_round():
         assert round(Vec(val, 0, 0)) == Vec(round(val), 0, 0)
         assert round(Vec(0, val, 0)) == Vec(0, round(val), 0)
         assert round(Vec(0, 0, val)) == Vec(0, 0, round(val))
+
+MINMAX_VALUES = [
+    (0, 0),
+    (1, 0),
+    (-5, -5),
+    (0.3, 0.4),
+    (-0.3, -0.2),
+]
+MINMAX_VALUES += [(b, a) for a,b in MINMAX_VALUES]
+
+
+def test_minmax():
+    """Test Vec.min() and Vec.max()."""
+    vec_a = Vec()
+    vec_b = Vec()
+
+    for a, b in MINMAX_VALUES:
+        max_val = max(a, b)
+        min_val = min(a, b)
+        for axis in 'xyz':
+            vec_a.x = vec_a.y = vec_a.z = 0
+            vec_b.x = vec_b.y = vec_b.z = 0
+
+            vec_a[axis] = a
+            vec_b[axis] = b
+            assert vec_a.min(vec_b) is None, (a, b, axis, min_val)
+            assert vec_a[axis] == min_val, (a, b, axis, min_val)
+
+            vec_a[axis] = a
+            vec_b[axis] = b
+            assert vec_a.max(vec_b) is None, (a, b, axis, max_val)
+            assert vec_a[axis] == max_val, (a, b, axis, max_val)
