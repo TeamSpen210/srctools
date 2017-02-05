@@ -319,11 +319,28 @@ def test_bool():
         # Any number in any axis makes it True.
         assert Vec(val, -0, 0)
         assert Vec(0, val, 0)
-        assert Vec(0, 0, val)
+        assert Vec(-0, 0, val)
         assert Vec(0, val, val)
-        assert Vec(val, 0, val)
+        assert Vec(val, -0, val)
         assert Vec(val, val, 0)
         assert Vec(val, val, val)
+
+
+def test_len():
+    """Test len(Vec)."""
+    # len(Vec) is the number of non-zero axes.
+
+    assert len(Vec(0, 0, 0)) == 0
+    assert len(Vec(-0, -0, -0)) == 0
+
+    for val in VALID_NUMS:
+        assert len(Vec(val, 0, -0)) == 1
+        assert len(Vec(0, val, 0)) == 1
+        assert len(Vec(0, -0, val)) == 1
+        assert len(Vec(0, val, val)) == 2
+        assert len(Vec(val, 0, val)) == 2
+        assert len(Vec(val, val, -0)) == 2
+        assert len(Vec(val, val, val)) == 3
 
 
 def test_vec_constants():
