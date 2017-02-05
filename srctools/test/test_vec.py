@@ -297,5 +297,45 @@ def test_axis():
 
 
 def test_abs():
+    """Test the function of abs(Vec)."""
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
+
+
+def test_bool():
+    """Test bool() applied to Vec."""
+    # Empty vector is False
+    assert not Vec(0, 0, 0)
+    assert not Vec(-0, -0, -0)
+    for val in VALID_NUMS:
+        # Any number in any axis makes it True.
+        assert Vec(val, 0, 0)
+        assert Vec(0, val, 0)
+        assert Vec(0, 0, val)
+        assert Vec(0, val, val)
+        assert Vec(val, 0, val)
+        assert Vec(val, val, 0)
+        assert Vec(val, val, val)
+
+
+def test_vec_constants():
+    """Check some of the constants assigned to Vec."""
+    assert Vec.N == Vec.north == Vec(y=1)
+    assert Vec.S == Vec.south == Vec(y=-1)
+    assert Vec.E == Vec.east == Vec(x=1)
+    assert Vec.W == Vec.west == Vec(x=-1)
+
+    assert Vec.T == Vec.top == Vec(z=1)
+    assert Vec.B == Vec.bottom == Vec(z=-1)
+
+    assert set(Vec.INV_AXIS['x']) == {'y', 'z'}
+    assert set(Vec.INV_AXIS['y']) == {'x', 'z'}
+    assert set(Vec.INV_AXIS['z']) == {'x', 'y'}
+
+    assert Vec.INV_AXIS['x', 'y'] == 'z'
+    assert Vec.INV_AXIS['y', 'z'] == 'x'
+    assert Vec.INV_AXIS['x', 'z'] == 'y'
+
+    assert Vec.INV_AXIS['y', 'x'] == 'z'
+    assert Vec.INV_AXIS['z', 'y'] == 'x'
+    assert Vec.INV_AXIS['z', 'x'] == 'y'
