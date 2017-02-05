@@ -339,3 +339,57 @@ def test_vec_constants():
     assert Vec.INV_AXIS['y', 'x'] == 'z'
     assert Vec.INV_AXIS['z', 'y'] == 'x'
     assert Vec.INV_AXIS['z', 'x'] == 'y'
+
+# Copied from CPython's round() tests.
+ROUND_VALS = [
+    (1.0, 1.0),
+    (10.0, 10.0),
+    (1000000000.0, 1000000000.0),
+    (1e20, 1e20),
+
+    (-1.0, -1.0),
+    (-10.0, -10.0),
+    (-1000000000.0, -1000000000.0),
+    (-1e20, -1e20),
+
+    (0.1, 0.0),
+    (1.1, 1.0),
+    (10.1, 10.0),
+    (1000000000.1, 1000000000.0),
+
+    (-1.1, -1.0),
+    (-10.1, -10.0),
+    (-1000000000.1, -1000000000.0),
+
+    (0.9, 1.0),
+    (9.9, 10.0),
+    (999999999.9, 1000000000.0),
+
+    (-0.9, -1.0),
+    (-9.9, -10.0),
+    (-999999999.9, -1000000000.0),
+
+    # Even/odd rounding behaviour..
+    (5.5, 6),
+    (6.5, 6),
+    (-5.5, -6),
+    (-6.5, -6),
+
+    (5e15 - 1, 5e15 - 1),
+    (5e15, 5e15),
+    (5e15 + 1, 5e15 + 1),
+    (5e15 + 2, 5e15 + 2),
+    (5e15 + 3, 5e15 + 3),
+]
+
+
+def test_round():
+    """Test round(Vec)."""
+    for from_val, to_val in ROUND_VALS:
+        assert round(Vec(from_val, from_val, from_val)) == Vec(to_val, to_val, to_val)
+
+    # Check it doesn't mix up orders..
+    for val in VALID_NUMS:
+        assert round(Vec(val, 0, 0)) == Vec(round(val), 0, 0)
+        assert round(Vec(0, val, 0)) == Vec(0, round(val), 0)
+        assert round(Vec(0, 0, val)) == Vec(0, 0, round(val))
