@@ -108,6 +108,14 @@ def test_scalar():
                     op_func(z, num),
                 )
 
+                # Check forward and reverse fails.
+                with pytest.raises(TypeError, message='forward ' + op_name):
+                    op_func(targ, obj)
+                with pytest.raises(TypeError, message='backward ' + op_name):
+                    op_func(obj, targ)
+                with pytest.raises(TypeError, message='inplace ' + op_name):
+                    op_ifunc(targ, obj)
+
                 assert_vec(
                     op_func(targ, num),
                     rx, ry, rz,
@@ -309,7 +317,7 @@ def test_bool():
     assert not Vec(-0, -0, -0)
     for val in VALID_NUMS:
         # Any number in any axis makes it True.
-        assert Vec(val, 0, 0)
+        assert Vec(val, -0, 0)
         assert Vec(0, val, 0)
         assert Vec(0, 0, val)
         assert Vec(0, val, val)
