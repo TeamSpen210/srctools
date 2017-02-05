@@ -104,7 +104,6 @@ BOOL_LOOKUP = {
     '0': False,
     'no': False,
     'false': False,
-    'FALSE': False,
     'n': False,
     'f': False,
 
@@ -113,7 +112,6 @@ BOOL_LOOKUP = {
     '1': True,
     'yes': True,
     'true': True,
-    'TRUE': True,
     'y': True,
     't': True,
 }
