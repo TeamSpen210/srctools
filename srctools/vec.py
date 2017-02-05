@@ -203,6 +203,10 @@ class Vec:
         ('y', 'z'): 'x',
         ('x', 'z'): 'y',
         ('x', 'y'): 'z',
+
+        ('z', 'y'): 'x',
+        ('z', 'x'): 'y',
+        ('y', 'x'): 'z',
     }
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
