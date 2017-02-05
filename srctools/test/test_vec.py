@@ -1,5 +1,5 @@
 """Test the Vector object."""
-from nose.tools import *  # assert_equal, assert_is, etc
+import pytest
 import operator as op
 
 from srctools import Vec_tuple, Vec
@@ -21,14 +21,24 @@ def iter_vec(nums):
 
 def assert_vec(vec, x, y, z, msg=''):
     """Asserts that Vec is equal to (x,y,z)."""
-    _skip_me = True
-    new_msg = '{!r} != ({}, {}, {})'.format(vec, x, y, z)
+    # Don't show in pytest tracebacks.
+    __tracebackhide__ = True
+
+    # Ignore slight variations
+    if not vec.x == pytest.approx(x):
+        failed = 'x'
+    elif not vec.y == pytest.approx(y):
+        failed = 'y'
+    elif not vec.z == pytest.approx(z):
+        failed = 'z'
+    else:
+        # Success!
+        return
+
+    new_msg = "{!r} != ({}, {}, {})".format(vec, failed, x, y, z)
     if msg:
         new_msg += ': ' + msg
-
-    assert_almost_equal(vec.x, x, msg=new_msg)
-    assert_almost_equal(vec.y, y, msg=new_msg)
-    assert_almost_equal(vec.z, z, msg=new_msg)
+    pytest.fail(new_msg)
 
 
 def test_construction():
@@ -60,35 +70,17 @@ def test_construction():
         orig = Vec(x, y, z)
         new = Vec.from_str(Vec(x, y, z))
         assert_vec(new, x, y, z)
-        assert_is_not(orig, new)  # It must be a copy
+        assert orig is not new  # It must be a copy
 
     # Check failures in Vec.from_str()
     # Note - does not pass through unchanged, they're converted to floats!
     for val in VALID_ZERONUMS:
-        assert_equal(
-            Vec.from_str('', x=val).x,
-            val,
-        )
-        assert_equal(
-            Vec.from_str('blah 4 2', y=val).y,
-            val,
-        )
-        assert_equal(
-            Vec.from_str('2 hi 2', x=val).x,
-            val,
-        )
-        assert_equal(
-            Vec.from_str('2 6 gh', z=val).z,
-            val,
-        )
-        assert_equal(
-            Vec.from_str('1.2 3.4', x=val).x,
-            val,
-        )
-        assert_equal(
-            Vec.from_str('34.5 38.4 -23 -38', z=val).z,
-            val,
-        )
+        assert val == Vec.from_str('', x=val).x
+        assert val == Vec.from_str('blah 4 2', y=val).y
+        assert val == Vec.from_str('2 hi 2', x=val).x
+        assert val == Vec.from_str('2 6 gh', z=val).z
+        assert val == Vec.from_str('1.2 3.4', x=val).x
+        assert val == Vec.from_str('34.5 38.4 -23 -38', z=val).z
 
 
 def test_scalar():
@@ -274,37 +266,13 @@ def test_order():
                     x1, y1, z1, op_func.__name__, x2, y2, z2
                 )
             )
-            assert_equal(
-                op_func(vec1, vec2),
-                corr_result,
-                comp.format('Vec')
-            )
-            assert_equal(
-                op_func(vec1, Vec_tuple(x2, y2, z2)),
-                corr_result,
-                comp.format('Vec_tuple')
-            )
-            assert_equal(
-                op_func(vec1, (x2, y2, z2)),
-                corr_result,
-                comp.format('tuple')
-            )
+            assert op_func(vec1, vec2) == corr_result, comp.format('Vec')
+            assert op_func(vec1, Vec_tuple(x2, y2, z2)) == corr_result, comp.format('Vec_tuple')
+            assert op_func(vec1, (x2, y2, z2)) == corr_result, comp.format('tuple')
             # Bare numbers compare magnitude..
-            assert_equal(
-                op_func(vec1, x2),
-                op_func(vec1.mag(), x2),
-                comp.format('x')
-            )
-            assert_equal(
-                op_func(vec1, y2),
-                op_func(vec1.mag(), y2),
-                comp.format('y')
-            )
-            assert_equal(
-                op_func(vec1, z2),
-                op_func(vec1.mag(), z2),
-                comp.format('z')
-            )
+            assert op_func(vec1, x2) == op_func(vec1.mag(), x2), comp.format('x')
+            assert op_func(vec1, y2) == op_func(vec1.mag(), y2), comp.format('y')
+            assert op_func(vec1, z2) == op_func(vec1.mag(), z2), comp.format('z')
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:
@@ -320,12 +288,12 @@ def test_order():
 
 def test_axis():
     """Test the Vec.axis() function."""
-    assert_equal(Vec(1, 0, 0).axis(), 'x')
-    assert_equal(Vec(-1, 0, 0).axis(), 'x')
-    assert_equal(Vec(0, 1, 0).axis(), 'y')
-    assert_equal(Vec(0, -1, 0).axis(), 'y')
-    assert_equal(Vec(0, 0, 1).axis(), 'z')
-    assert_equal(Vec(0, 0, -1).axis(), 'z')
+    assert Vec(1, 0, 0).axis() == 'x'
+    assert Vec(-1, 0, 0).axis() == 'x'
+    assert Vec(0, 1, 0).axis() == 'y'
+    assert Vec(0, -1, 0).axis() == 'y'
+    assert Vec(0, 0, 1).axis() == 'z'
+    assert Vec(0, 0, -1).axis() == 'z'
 
 
 def test_abs():

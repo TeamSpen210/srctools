@@ -1,6 +1,5 @@
 """Test functionality in srctools.__init__."""
-from nose.tools import *  # assert_equal, assert_is, etc
-import operator
+import pytest
 
 from srctools import EmptyMapping
 import srctools
@@ -71,85 +70,90 @@ def check_empty_iterable(obj, name, item: object='x'):
     except TypeError:
         raise AssertionError(name + ' is not iterable!')
     else:
-        assert_not_in(item, obj)
-        assert_raises(StopIteration, next, iterator)
-        assert_raises(StopIteration, next, iterator)
+        assert item not in obj
+        with pytest.raises(StopIteration):
+            next(iterator)
+        with pytest.raises(StopIteration):
+            next(iterator)
 
 
 def test_bool_as_int():
+    """Test result of srctools.bool_as_int."""
     for val in true_vals:
-        assert_equal(srctools.bool_as_int(val), '1', repr(val))
+        assert srctools.bool_as_int(val) == '1', repr(val)
     for val in false_vals:
-        assert_equal(srctools.bool_as_int(val), '0', repr(val))
+        assert srctools.bool_as_int(val) == '0', repr(val)
 
 
 def test_conv_int():
     for string, result in ints:
-        assert_equal(srctools.conv_int(string), result)
+        assert srctools.conv_int(string) == result, string
 
-
-def test_conv_int_fails_on_float():
     # Check that float values fail
     marker = object()
     for string, result in floats:
         if isinstance(string, str):  # We don't want to check float-rounding
-            assert_is(
-                srctools.conv_int(string, marker),
-                marker,
-                msg=string,
-            )
+            assert srctools.conv_int(string, marker) is marker, repr(string)
 
-
-def test_conv_int_fails_on_str():
+    # Check non-integers return the default.
     for string in non_ints:
-        assert_equal(srctools.conv_int(string), 0)
+        assert srctools.conv_int(string) == 0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert_is(srctools.conv_int(string, default), default)
+            assert srctools.conv_int(string, default) is default, repr(string)
 
 
 def test_conv_bool():
+    """Test srctools.conv_bool()"""
     for val in true_strings:
-        assert_true(srctools.conv_bool(val))
+        assert srctools.conv_bool(val)
     for val in false_strings:
-        assert_false(srctools.conv_bool(val))
+        assert not srctools.conv_bool(val)
 
     # Check that bools pass through
-    assert_true(srctools.conv_bool(True))
-    assert_false(srctools.conv_bool(False))
+    assert srctools.conv_bool(True)
+    assert not srctools.conv_bool(False)
 
     # None passes through the default
     for val in def_vals:
-        assert_is(srctools.conv_bool(None, val), val)
+        assert srctools.conv_bool(None, val) is val
 
 
 def test_conv_float():
     # Float should convert integers too
     for string, result in ints:
-        assert_equal(srctools.conv_float(string), float(result))
-        assert_equal(srctools.conv_float(string), result)
+        assert srctools.conv_float(string) == float(result)
+        assert srctools.conv_float(string) == result
 
     for string in non_floats:
-        assert_equal(srctools.conv_float(string), 0)
+        # Default default value
+        assert srctools.conv_float(string) == 0.0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert_is(srctools.conv_float(string, default), default)
+            assert srctools.conv_float(string, default) is default
 
 
 def test_EmptyMapping():
     marker = object()
     
     # It should be possible to 'construct' an instance..
-    assert_is(EmptyMapping(), EmptyMapping)
+    assert EmptyMapping() is EmptyMapping
 
     # Must be passable to dict()
-    assert_equal(dict(EmptyMapping), {})
+    assert dict(EmptyMapping) == {}
 
-    # EmptyMapping['x'] raises
-    assert_raises(KeyError, operator.getitem, EmptyMapping, 'x')
-    assert_raises(KeyError, operator.delitem, EmptyMapping, 'x')
+    # EmptyMapping['x'] raises in various forms.
+    assert 'x' not in EmptyMapping
+    with pytest.raises(KeyError):
+        EmptyMapping['x']
+    with pytest.raises(KeyError):
+        del EmptyMapping['x']
+
     EmptyMapping['x'] = 4  # Shouldn't fail
-    assert_not_in('x', EmptyMapping) # but it's a no-op
+
+    assert 'x' not in EmptyMapping  # but it's a no-op
+    with pytest.raises(KeyError):
+        EmptyMapping['x']
 
     # Check it's all empty
     check_empty_iterable(EmptyMapping, 'EmptyMapping')
@@ -158,46 +162,54 @@ def test_EmptyMapping():
     check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
 
     # Dict methods 
-    assert_is(EmptyMapping.get('x'), None)
-    assert_is(EmptyMapping.setdefault('x'), None)
-    assert_is(EmptyMapping.get('x', marker), marker)
-    assert_is(EmptyMapping.setdefault('x', marker), marker)
-    assert_is(EmptyMapping.pop('x', marker), marker)
-    assert_raises(KeyError, EmptyMapping.popitem)
-    assert_raises(KeyError, EmptyMapping.pop, 'x')
-    assert_false(EmptyMapping)
-    assert_equal(len(EmptyMapping), 0)
-    EmptyMapping.update({1: 23, 'test': 34,})
-    EmptyMapping.update(other=5, a=1, b=3)
-    # Can't give more than one item..
-    assert_raises(TypeError, lambda: EmptyMapping.update({3: 4}, {1: 2}))
+    assert EmptyMapping.get('x') is None
+    assert EmptyMapping.setdefault('x') is None
+
+    assert EmptyMapping.get('x', marker) is marker
+    assert EmptyMapping.setdefault('x', marker) is marker
+    assert EmptyMapping.pop('x', marker) is marker
+
+    with pytest.raises(KeyError):
+        EmptyMapping.popitem()
+    with pytest.raises(KeyError):
+        EmptyMapping.pop('x')
+
+    assert not EmptyMapping
+
+    assert len(EmptyMapping) == 0
+
+    # Should work, but do nothing and return None.
+    assert EmptyMapping.update({1: 23, 'test': 34, }) is None
+    assert EmptyMapping.update(other=5, a=1, b=3) is None
+
+    # Can't give more than one mapping as a positional argument,
+    # though.
+    with pytest.raises(TypeError):
+        EmptyMapping.update({3: 4}, {1: 2})
 
     # Check it's registered in ABCs.
     from collections import abc
-    assert_is_instance(EmptyMapping, abc.Container)
-    assert_is_instance(EmptyMapping, abc.Sized)
-    assert_is_instance(EmptyMapping, abc.Mapping)
-    assert_is_instance(EmptyMapping, abc.MutableMapping)
+    assert isinstance(EmptyMapping, abc.Container)
+    assert isinstance(EmptyMapping, abc.Sized)
+    assert isinstance(EmptyMapping, abc.Mapping)
+    assert isinstance(EmptyMapping, abc.MutableMapping)
 
 
 def test_quote_escape():
     """Test escaping various quotes"""
-    assert_equal(
-        srctools.escape_quote_split('abcdef'),
-        ['abcdef'],
-    )
+    assert srctools.escape_quote_split('abcdef') ==['abcdef']
     # No escapes, equivalent to str.split
-    assert_equal(
-        srctools.escape_quote_split('"abcd"ef""  " test'),
-        '"abcd"ef""  " test'.split('"'),
+    assert (
+        srctools.escape_quote_split('"abcd"ef""  " test') ==
+        '"abcd"ef""  " test'.split('"')
     )
 
-    assert_equal(
-        srctools.escape_quote_split(r'"abcd"ef\""  " test'),
-        ['', 'abcd', 'ef"', '  ', ' test'],
+    assert (
+        srctools.escape_quote_split(r'"abcd"ef\""  " test') ==
+        ['', 'abcd', 'ef"', '  ', ' test']
     )
     # Check double-quotes next to others, and real quotes
-    assert_equal(
-        srctools.escape_quote_split(r'"test\"\"" blah"'),
-        ['', 'test""', ' blah', ''],
+    assert (
+        srctools.escape_quote_split(r'"test\"\"" blah"') ==
+        ['', 'test""', ' blah', '']
     )

@@ -1,5 +1,3 @@
-from nose.tools import *  # assert_equal, assert_is, etc
-
 import srctools
 
 from srctools.property_parser import Property, KeyValError, NoKeyError, PROP_FLAGS
@@ -7,14 +5,14 @@ from srctools.property_parser import Property, KeyValError, NoKeyError, PROP_FLA
 
 def assert_tree(first, second):
     """Check that two property trees match exactly (including case)."""
-    assert_equal(first.name, second.name)
-    assert_equal(first.real_name, second.real_name)
-    assert_equal(first.has_children(), second.has_children())
+    assert first.name == second.name
+    assert first.real_name == second.real_name
+    assert first.has_children() == second.has_children()
     if first.has_children():
         for child1, child2 in zip(first, second):
             assert_tree(child1, child2)
     else:
-        assert_equal(first.value, second.value)
+        assert first.value == second.value
 
 
 def test_constructor():
@@ -29,21 +27,21 @@ def test_constructor():
         Property('Test2', 'other'),
         Property('Block', []),
     ])
-    assert_equal(block.real_name, 'Test_block')
+    assert block.real_name == 'Test_block'
     children = list(block)
-    assert_equal(children[0].real_name, 'Test')
-    assert_equal(children[1].real_name, 'Test')
-    assert_equal(children[2].real_name, 'Test2')
-    assert_equal(children[3].real_name, 'Block')
+    assert children[0].real_name == 'Test'
+    assert children[1].real_name == 'Test'
+    assert children[2].real_name == 'Test2'
+    assert children[3].real_name == 'Block'
 
-    assert_equal(children[0].value, 'value\0')
-    assert_equal(children[2].value, 'other')
-    assert_equal(list(children[3].value), [])
+    assert children[0].value == 'value\0'
+    assert children[2].value, 'other'
+    assert list(children[3]) == []
 
     sub_children = list(children[1])
-    assert_equal(sub_children[0].real_name, 'leaf')
-    assert_equal(sub_children[0].value, 'data'),
-    assert_equal(len(sub_children), 1)
+    assert sub_children[0].real_name == 'leaf'
+    assert sub_children[0].value == 'data'
+    assert len(sub_children) == 1
 
 
 def test_names():
@@ -51,18 +49,17 @@ def test_names():
     prop = Property('Test1', 'value')
     
     # Property.name casefolds the argument.
-    assert_equal(prop.name, 'test1')
-    assert_equal(prop.real_name, 'Test1')
+    assert prop.name == 'test1'
+    assert prop.real_name == 'Test1'
     
     # Editing name modifies both values
     prop.name = 'SECOND_test'
-    assert_equal(prop.name, 'second_test')
-    assert_equal(prop.real_name, 'SECOND_test')
+    assert prop.name == 'second_test'
+    assert prop.real_name == 'SECOND_test'
     
     # It can also be set to None.
     prop.name = None
-    assert_is(prop.name, None)
-    assert_is(prop.real_name, None)
+    assert prop.name is prop.real_name is None
     
 parse_test = '''
 
@@ -112,6 +109,7 @@ text"
 
 
 def test_parse():
+    """Test parsing strings."""
     P = Property
     
     expected = P(None, [
@@ -153,12 +151,13 @@ def test_parse():
 
 
 def test_parse_fails():
+    """Test various forms of invalid syntax to ensure they indeed fail."""
     def t(line_num, text):
         """Test a string to ensure it fails parsing."""
         try:
             result = Property.parse(text.splitlines())
         except KeyValError as e:
-            assert_equal(e.line_num, line_num)
+            assert e.line_num == line_num
         else:
             raise AssertionError("Successfully parsed bad text {!r}".format(
                 result
@@ -280,9 +279,9 @@ def test_edit():
     def check(prop: Property, name, value):
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
-        assert_is(prop, test_prop)
-        assert_equal(prop.real_name, name)
-        assert_equal(prop.value, value)
+        assert prop is test_prop
+        assert prop.real_name == name
+        assert prop.value == value
         test_prop = Property('Name', 'Value')
 
     check(test_prop.edit(), 'Name', 'Value')
@@ -298,15 +297,15 @@ def test_edit():
     # Check converting a keyvalue into a block.
     child_1 = Property('Key', 'Value')
     new_prop = test_prop.edit(value=[child_1, Property('Key2', 'Value')])
-    assert_is(test_prop, new_prop)
-    assert_is(list(test_prop)[0], child_1)
+    assert test_prop is new_prop
+    assert list(test_prop)[0] is child_1
 
 
 def test_bool():
     """Check bool(Property)."""
-    assert_is(bool(Property('Name', '')), False)
-    assert_is(bool(Property('Name', 'value')), True)
-    assert_is(bool(Property('Name', [])), False)
-    assert_is(bool(Property('Name', [
+    assert bool(Property('Name', '')) is False
+    assert bool(Property('Name', 'value')) is True
+    assert bool(Property('Name', [])) is False
+    assert bool(Property('Name', [
         Property('Key', 'Value')
-    ])), True)
+    ])) is True
