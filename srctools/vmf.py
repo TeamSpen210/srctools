@@ -1853,14 +1853,18 @@ class Entity:
         else:
             return Vec.from_str(self['origin'])
 
+# One $fixup variable with replacement.
 FixupTuple = namedtuple('FixupTuple', 'var value id')
 
 
 class EntityFixup:
-    """A speciallised mapping which keeps track of the variable indexes.
+    """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
     writing variables with $ signs in front.
+
+    Additionally, lookups never fail - returning '' instead. Pass in a non-string
+    default or use `in` to distinguish,.
     """
     __slots__ = ['_fixup']
 
@@ -1868,6 +1872,7 @@ class EntityFixup:
         self._fixup = {}
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
+        # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
         used_indexes = set()
@@ -1935,8 +1940,11 @@ class EntityFixup:
         if var[0] == '$':
             var = var[1:]
 
-        if isinstance(val, bool):
-            val = '1' if val else '0'
+            val = (
+                ('1' if val else '0')
+                if isinstance(val, bool)
+                else str(val)
+            )
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
