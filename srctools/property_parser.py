@@ -265,6 +265,8 @@ class Property:
                     "Block opening ('{{') required!",
                 )
 
+            if token_type is Token.NEWLINE:
+                continue
             if token_type is Token.STRING:   # data string
                 prop_type, prop_value = tokenizer()
 
@@ -278,7 +280,7 @@ class Property:
                     if requires_block:
                         raise tokenizer.error('Keyvalue split across lines!')
 
-                    cur_block.append(Property(token_value, prop_value))
+                    keyvalue = Property(token_value, prop_value)
                     # Check for flags.
 
                     flag_token, flag_val = tokenizer()
@@ -286,11 +288,15 @@ class Property:
                         flag_inv = flag_val[:1] == '!'
                         if flag_inv:
                             flag_val = flag_val[1:]
-                        # XOR - flag fails.
-                        if flag_inv is PROP_FLAGS.get(flag_val.casefold(), True):
-                            cur_block.pop()
+                        # If flag succeeds
+                        if flag_inv is not PROP_FLAGS.get(flag_val.casefold(), True):
+                            cur_block.append(keyvalue)
+                    elif flag_token is Token.NEWLINE:
+                        # Normal, unconditionally add
+                        cur_block.append(keyvalue)
+                    # Otherwise it must be a new line.
                     else:
-                        tokenizer.expect(Token.NEWLINE)
+                        raise tokenizer.error(flag_token)
                     continue
             elif token_type is Token.BRACE_CLOSE:
                 # Move back a block

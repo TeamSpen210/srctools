@@ -125,7 +125,7 @@ class Tokenizer:
         self.line_num = 1
 
         # If a file-like object, this is automatic.
-        if filename is None and hasattr(data, 'name'):
+        if not filename and hasattr(data, 'name'):
             self.filename = data.name
 
     def error(self, message: Union[str, Token], *args):
@@ -198,6 +198,8 @@ class Tokenizer:
                     next_char = self._next_char()
                     if next_char == '\n' or next_char is None:
                         break
+                # We want to produce the token for the end character.
+                self.char_index -= 1
 
             # Strings
             elif next_char == '"':
@@ -217,7 +219,8 @@ class Tokenizer:
                             if escape is None:
                                 raise self.error('Unterminated string!')
                             else:
-                                raise self.error('Unknown escape "\\{}"!', escape)
+                                next_char = escape
+                                # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
                     elif next_char is None:
                         raise self.error('Unterminated string!')
                     value_chars.append(next_char)
