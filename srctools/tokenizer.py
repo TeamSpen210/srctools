@@ -68,7 +68,6 @@ class Token(Enum):
     BRACK_OPEN = 11  # only if above is not used
     BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG
 
-    DOLLAR = '$'
     COLON = ':'
 
 
@@ -219,7 +218,7 @@ class Tokenizer:
                             if escape is None:
                                 raise self.error('Unterminated string!')
                             else:
-                                next_char = escape
+                                next_char = '\\' + escape
                                 # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
                     elif next_char is None:
                         raise self.error('Unterminated string!')
