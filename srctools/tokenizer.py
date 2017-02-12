@@ -1,6 +1,13 @@
+"""Parses text into groups of tokens.
+
+This is used internally for parsing files.
+"""
+from enum import Enum
+
 from typing import (
     Union, Optional,
     Callable, Iterable,
+    Tuple
 )
 
 
@@ -44,3 +51,208 @@ class TokenSyntaxError(Exception):
                 mess += '\nError occurred with file'
             mess += ' "' + self.file + '"'
         return mess
+
+
+class Token(Enum):
+    """A token type produced by the tokenizer."""
+    EOF = 0  # Ran out of text.
+    STRING = 1  # Quoted or unquoted text
+    NEWLINE = 2  # \n
+    BRACE_OPEN = '{'
+    BRACE_CLOSE = '}'
+
+    PAREN_OPEN = '('
+    PAREN_CLOSE = ')'
+
+    PROP_FLAG = 10  # [!flag]
+    BRACK_OPEN = 11  # only if above is not used
+    BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG
+
+    DOLLAR = '$'
+    COLON = ':'
+
+
+OPERATORS = {
+    token.value: token
+    for token in Token
+    if isinstance(token.value, str)
+}
+
+# Returned when no more characters...
+OPERATORS[None] = Token.EOF
+
+ESCAPES = {
+    'n': '\n',
+    't': '\t',
+    # Escape function of the following
+    '"': '"',
+    '/': '/',
+    '\\': '\\',
+
+    # \ at end of line to ignore the newline.
+    '\n': '',
+}
+
+
+class Tokenizer:
+    """Processes text data into groups of tokens.
+
+    This mainly groups strings and removes comments.
+    """
+    def __init__(
+        self,
+        data: Union[str, Iterable[str]],
+        filename: str=None,
+        error: Callable[
+            [str, Optional[int], Optional[str]],
+            TokenSyntaxError,
+        ]=TokenSyntaxError,
+        string_bracket=False,
+    ):
+        if isinstance(data, str):
+            self.cur_chunk = data
+            self.chunk_iter = iter(())
+        else:
+            self.cur_chunk = ''
+            self.chunk_iter = iter(data)
+        self.char_index = -1
+        self.filename = filename
+        self.error_type = error
+        self.string_bracket = string_bracket
+        self.line_num = 1
+
+        # If a file-like object, this is automatic.
+        if filename is None and hasattr(data, 'name'):
+            self.filename = data.name
+
+    def error(self, message: Union[str, Token], *args):
+        """Raise a syntax error exception.
+
+        This returns the TokenSyntaxError instance, with
+        line number and filename attributes filled in.
+        The message can be a Token to indicate a wrong token,
+        or a string which will be formatted with the positional args.
+        """
+        if isinstance(message, Token):
+            message = 'Unexpected token {}!'.format(message.name)
+        else:
+            message = message.format(*args)
+        return self.error_type(
+            message,
+            self.filename,
+            self.line_num,
+        )
+
+    def _next_char(self) -> Optional[str]:
+        """Return the next character, or None if no more characters are there."""
+        self.char_index += 1
+        try:
+            return self.cur_chunk[self.char_index]
+        except IndexError:
+            # Retrieve a chunk from the iterable.
+            try:
+                self.cur_chunk = next(self.chunk_iter)
+            except StopIteration:
+                # Out of characters
+                return None
+            self.char_index = 0
+            try:
+                return self.cur_chunk[0]
+            except IndexError:
+                # Skip empty chunks (shouldn't be there.)
+                for chunk in self.chunk_iter:
+                    if chunk:
+                        self.cur_chunk = chunk
+                        return chunk[0]
+                # Out of characters after empty chunks
+                return None
+
+    def __call__(self) -> Tuple[Token, str]:
+        """Return the next token, value pair."""
+        while True:
+            next_char = self._next_char()
+            # First try simple operators & EOF.
+            try:
+                return OPERATORS[next_char], next_char
+            except KeyError:
+                pass
+            if next_char == '\n':
+                self.line_num += 1
+                return Token.NEWLINE, '\n'
+
+            elif next_char in ' \t':
+                # Ignore whitespace..
+                continue
+
+            # Comments
+            elif next_char == '/':
+                # The next must be another slash! (//)
+                comment_next = self._next_char()
+                if comment_next != '/':
+                    raise self.error('Single slash found!')
+                # Skip to end of line
+                while True:
+                    next_char = self._next_char()
+                    if next_char == '\n' or next_char is None:
+                        break
+
+            # Strings
+            elif next_char == '"':
+                string_text = []
+                while True:
+                    next_char = self._next_char()
+                    if next_char == '"':
+                        break
+                    elif next_char == '\n':
+                        self.filename += 1
+                    elif next_char == '\\':
+                        # Escape text
+                        escape = self._next_char()
+                        try:
+                            next_char = ESCAPES[escape]
+                        except KeyError:
+                            if escape is None:
+                                raise self.error('Unterminated string!')
+                            else:
+                                raise self.error('Unknown escape "\\{}"!', escape)
+                    elif next_char is None:
+                        raise self.error('Unterminated string!')
+                    string_text.append(next_char)
+                return Token.STRING, ''.join(string_text)
+
+            elif next_char == '[':
+                # FGDs use [] for grouping, Properties use it for flags.
+                if not self.string_bracket:
+                    return Token.BRACK_OPEN, '['
+
+                string_text = []
+                while True:
+                    next_char = self._next_char()
+                    if next_char == ']':
+                        return Token.PROP_FLAG, ''.join(string_text)
+                    # Must be one line!
+                    elif next_char == '\n':
+                        raise self.error(Token.NEWLINE)
+                    elif next_char is None:
+                        raise self.error('Unterminated property flag!')
+                    string_text.append(next_char)
+
+            else:
+                raise self.error('Unexpected character "{}"!', next_char)
+
+    def __iter__(self):
+        # Call ourselves until EOF is returned
+        return iter(self, (Token.EOF, None))
+
+    def expect(self, token: Token):
+        """Consume the next token, which should be the given type.
+
+        If it is not, this raises an error.
+        """
+        next_token, value = self()
+        if next_token is not token:
+            raise self.error(
+                'Expected {}, but got {}!',
+                token,
+                next_token,
+            )
