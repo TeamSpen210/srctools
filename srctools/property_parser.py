@@ -62,7 +62,7 @@ import sys
 import srctools
 
 from srctools import BOOL_LOOKUP, Vec as _Vec
-from srctools.tokenizer import TokenSyntaxError
+from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
 
 from typing import (
     Optional, Union, Any,
@@ -165,46 +165,6 @@ def read_multiline_value(file, line_num, filename):
         )
 
 
-def read_flag(line_end, filename, line_num):
-    """Read a potential [] flag."""
-    flag = line_end.lstrip()
-    if flag[:1] == '[':
-        flag = flag[1:]
-        if ']' not in flag:
-            raise KeyValError(
-                'Unterminated [flag] on '
-                'line: "{}"'.format(line_end),
-                filename,
-                line_num,
-            )
-        flag, comment = flag.split(']', 1)
-        # Parse the flag
-        if flag[:1] == '!':
-            inv = True
-            flag = flag[1:]
-        else:
-            inv = False
-    else:
-        comment = flag
-        flag = inv = None
-
-    # Check for unexpected text at the end of a line..
-    comment = comment.lstrip()
-    if comment and not comment.startswith('//'):
-        raise KeyValError(
-            'Extra text after '
-            'line: "{}"'.format(line_end),
-            filename,
-            line_num,
-        )
-
-    if flag:
-        # If inv is False, we need True flags.
-        # If inv is True, we need False flags.
-        return inv is not PROP_FLAGS.get(flag.casefold(), True)
-    return True
-
-
 class Property:
     """Represents Property found in property files, like those used by Valve.
 
@@ -262,18 +222,12 @@ class Property:
         return self
 
     @staticmethod
-    def parse(file_contents, filename='') -> "Property":
+    def parse(file_contents: Union[str, Iterator[str]], filename='') -> "Property":
         """Returns a Property tree parsed from given text.
 
         filename, if set should be the source of the text for debug purposes.
-        file_contents should be an iterable of strings
+        file_contents should be an iterable of strings or a single string.
         """
-        if not filename:
-            # Try to pull the name off the file, if it's a file object.
-            filename = getattr(file_contents, 'name', '')
-
-        file_iter = enumerate(file_contents, start=1)
-
         # The block we are currently adding to.
 
         # The special name 'None' marks it as the root property, which
@@ -285,135 +239,86 @@ class Property:
         # A queue of the properties we are currently in (outside to inside).
         open_properties = [cur_block]
 
+        tokenizer = Tokenizer(
+            file_contents,
+            filename,
+            KeyValError,
+            string_bracket=True,
+        )
+
         # Do we require a block to be opened next? ("name"\n must have { next.)
         requires_block = False
 
-        is_identifier = _RE_IDENTIFIER.match
-
-        for line_num, line in file_iter:
-            if isinstance(line, bytes):
-                # Decode bytes using utf-8
-                line = line.decode('utf-8')
-            freshline = line.strip()
-
-            if not freshline or freshline[:2] == '//':
-                # Skip blank lines and comments!
-                continue
-
-            if freshline[0] == '{':
+        for token_type, token_value in tokenizer:
+            if token_type is Token.BRACE_OPEN:
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
-                    raise KeyValError(
+                    tokenizer.error(
                         'Property cannot have sub-section if it already '
                         'has an in-line value.',
-                        filename,
-                        line_num,
                     )
                 requires_block = False
                 cur_block = cur_block[-1]
                 cur_block.value = []
                 open_properties.append(cur_block)
                 continue
-            else:
-                # A "name" line was found, but it wasn't followed by '{'!
-                if requires_block:
-                    raise KeyValError(
-                        "Block opening ('{') required!",
-                        filename,
-                        line_num,
-                    )
+            # Something else, but followed by '{'
+            elif requires_block and token_type is not Token.NEWLINE:
+                raise tokenizer.error(
+                    "Block opening ('{') required!",
+                )
 
-            if freshline[0] == '"':   # data string
-                if '\\"' in freshline:
-                    # There's escaped double-quotes in here - handle that
-                    # split slowly but properly.
-                    line_contents = srctools.escape_quote_split(freshline)
-                else:
-                    # Just call split normally.
-                    line_contents = freshline.split('"')
-                # Line_contents = [indent, name, space, value, flags/comments]
+            if token_type is Token.STRING:   # data string
+                prop_type, prop_value = tokenizer()
 
-                name = line_contents[1]
-                try:
-                    value = line_contents[3]
-                except IndexError:  # It doesn't have a value - it's a block.
-                    cur_block.append(Property(name, ''))
-                    requires_block = True  # Ensure the next token must be a '{'.
-                    continue  # Skip to next line
-
-                # Special case - comment between name/value sections -
-                # it's a name block then.
-                if line_contents[2].lstrip().startswith('//'):
-                    cur_block.append(Property(name, ''))
+                if prop_type is Token.NEWLINE:
+                    # It's a block...
                     requires_block = True
+                    cur_block.append(Property(token_value, ''))
                     continue
-                # Check there isn't text between name and value!
-                elif line_contents[2].strip():
-                    raise KeyValError(
-                        "Extra text (" + line_contents[2] + ") in line!",
-                        filename,
-                        line_num
-                    )
+                elif prop_type is Token.STRING:
+                    # A value..
+                    if requires_block:
+                        raise tokenizer.error('Keyvalue split across lines!')
 
-                if len(line_contents) < 5:
-                    # It's a multiline value - no ending quote!
-                    value += read_multiline_value(
-                        file_iter,
-                        line_num,
-                        filename,
-                    )
-                if value and '\\' in value:
-                    for orig, new in REPLACE_CHARS:
-                        value = value.replace(orig, new)
+                    cur_block.append(Property(token_value, prop_value))
+                    # Check for flags.
 
-                # Line_contents[4] is the start of the comment, check for [] flags.
-                if len(line_contents) >= 5:
-                    # Pass along all the parts after, so this can validate
-                    # them (for extra quotes.)
-                    if read_flag('"'.join(line_contents[4:]), filename, line_num):
-                        cur_block.append(Property(name, value))
-                else:
-                    # No flag, add unconditionally
-                    cur_block.append(Property(name, value))
-            elif freshline[0] == '}':
+                    flag_token, flag_val = tokenizer()
+                    if flag_token is Token.PROP_FLAG:
+                        flag_inv = flag_val[:1] == '!'
+                        if flag_inv:
+                            flag_val = flag_val[1:]
+                        # XOR - flag fails.
+                        if flag_inv is PROP_FLAGS.get(flag_val.casefold(), True):
+                            cur_block.pop()
+                    else:
+                        tokenizer.expect(Token.NEWLINE)
+                    continue
+            elif token_type is Token.BRACE_CLOSE:
                 # Move back a block
                 open_properties.pop()
                 try:
                     cur_block = open_properties[-1].value
                 except IndexError:
                     # No open blocks!
-                    raise KeyValError(
+                    raise tokenizer.error(
                         'Too many closing brackets.',
-                        filename,
-                        line_num,
                     )
-
-            # Handle name bare on one line - it's a name block. This is used
-            # in VMF files...
-            elif is_identifier(freshline):
-                cur_block.append(Property(freshline, ''))
-                requires_block = True  # Ensure the next token must be a '{'.
-                continue
             else:
-                raise KeyValError(
-                    "Unexpected beginning character '"
-                    + freshline[0]
-                    + '"!',
-                    filename,
-                    line_num,
-                )
+                raise tokenizer.error(token_type)
 
         if requires_block:
             raise KeyValError(
                 "Block opening ('{') required, but hit EOF!",
-                filename,
+                tokenizer.filename,
                 line=None,
             )
         
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.',
-                filename,
+                tokenizer.filename,
                 line=None,
             )
         return open_properties[0]
