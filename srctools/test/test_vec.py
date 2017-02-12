@@ -12,6 +12,17 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
+
+@pytest.fixture(params=[Vec])
+def py_c_vec(request):
+    """Run the test twice, for the Python and C versions."""
+    global Vec
+    orig_vec = Vec
+    Vec = request.param
+    yield None
+    Vec = orig_vec
+
+
 def iter_vec(nums):
     for x in nums:
         for y in nums:
