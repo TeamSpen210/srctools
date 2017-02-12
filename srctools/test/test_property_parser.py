@@ -1,5 +1,4 @@
-import srctools
-
+import pytest
 from srctools.property_parser import Property, KeyValError, NoKeyError, PROP_FLAGS
 
 
@@ -152,26 +151,27 @@ def test_parse():
 
 def test_parse_fails():
     """Test various forms of invalid syntax to ensure they indeed fail."""
-    def t(line_num, text):
+    def t(text):
         """Test a string to ensure it fails parsing."""
         try:
-            result = Property.parse(text.splitlines())
-        except KeyValError as e:
-            assert e.line_num == line_num
+            result = Property.parse(text)
+        except KeyValError:
+            pass
         else:
-            raise AssertionError("Successfully parsed bad text {!r}".format(
-                result
+            pytest.fail("Successfully parsed bad text ({!r}) to {!r}".format(
+                text,
+                result,
             ))
     # Bare text at end of file
-    t(None, '''\
+    t('''\
 regular text. with sentences.
     ''')
     # Bare text in the middle
-    t(2, '''\
+    t('''\
 regular text. with sentences.
     "blah" "value"
     ''')
-    t(4, '''\
+    t('''\
 "Ok block"
     {
     "missing" //value
@@ -179,31 +179,31 @@ regular text. with sentences.
 ''')
 
     # Test block without a block
-    t(2, '''\
+    t('''\
 "block1"
 "no_block" 
 ''')
 
     # Test characters before a keyvalue
-    t(1, '''\
+    t('''\
 bbhf  "text before"
     "key" "value
 ''')
-    t(2, '''
+    t('''
   "text" bl "between"
     "key" "value
 ''')
     # Test text after the keyvalue
-    t(1, '''\
+    t('''\
     "text" "value" blah
     "key" "value
     ''')
     # Test quotes after the keyvalue
-    t(2, '''
+    t('''
     "text" "with extra" "
 ''')
 
-    t(5, '''
+    t('''
     "multi" "line
 text with
   multiple
@@ -211,17 +211,17 @@ text with
 ''')
 
     # Test a flag without ] at end
-    t(2, '''
+    t('''
     "Name" "value" [flag
     ''')
 
     # Test a flag with values after the bracket.
-    t(2, '''
+    t('''
     "Name" "value" [flag ] hi
     ''')
 
     # Test too many closing brackets
-    t(9, '''
+    t('''
     "Block"
         {
         "Opened"
@@ -234,7 +234,7 @@ text with
     ''')
 
     # Test property with a value and block
-    t(3, '''
+    t('''
     "Block" "value"
         {
         "Name" "value"
@@ -242,7 +242,7 @@ text with
     ''')
 
     # Test too many open brackets
-    t(6, '''\
+    t('''\
     "Block"
         {
         "Key" "Value"
@@ -255,7 +255,7 @@ text with
     ''')
 
     # Too many open blocks.
-    t(None, '''\
+    t('''\
     "Block"
         {
         "Key" "Value"
@@ -265,7 +265,7 @@ text with
             }
     ''')
 
-    t(None, '''\
+    t('''\
     "Key" "value
     which is multi-line
     and no ending.
