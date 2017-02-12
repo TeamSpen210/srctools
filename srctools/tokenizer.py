@@ -93,6 +93,9 @@ ESCAPES = {
     '\n': '',
 }
 
+# Characters not allowed for bare names on a line.
+BARE_DISALLOWED = '"\'{}<>();:[]'
+
 
 class Tokenizer:
     """Processes text data into groups of tokens.
@@ -198,13 +201,13 @@ class Tokenizer:
 
             # Strings
             elif next_char == '"':
-                string_text = []
+                value_chars = []
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
-                        break
+                        return Token.STRING, ''.join(value_chars)
                     elif next_char == '\n':
-                        self.filename += 1
+                        self.line_num += 1
                     elif next_char == '\\':
                         # Escape text
                         escape = self._next_char()
@@ -217,25 +220,42 @@ class Tokenizer:
                                 raise self.error('Unknown escape "\\{}"!', escape)
                     elif next_char is None:
                         raise self.error('Unterminated string!')
-                    string_text.append(next_char)
-                return Token.STRING, ''.join(string_text)
+                    value_chars.append(next_char)
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.string_bracket:
                     return Token.BRACK_OPEN, '['
 
-                string_text = []
+                value_chars = []
                 while True:
                     next_char = self._next_char()
                     if next_char == ']':
-                        return Token.PROP_FLAG, ''.join(string_text)
+                        return Token.PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
                     elif next_char == '\n':
                         raise self.error(Token.NEWLINE)
                     elif next_char is None:
                         raise self.error('Unterminated property flag!')
-                    string_text.append(next_char)
+                    value_chars.append(next_char)
+
+            # Bare names
+            elif next_char not in BARE_DISALLOWED:
+                value_chars = [next_char]
+                while True:
+                    next_char = self._next_char()
+                    if next_char in BARE_DISALLOWED:
+                        raise self.error('Unexpected character "{}"!', next_char)
+                    elif next_char in ' \t\n':
+                        # We need to repeat this so we return the newline.
+                        self.char_index -= 1
+                        return Token.STRING, ''.join(value_chars)
+                    elif next_char is None:
+                        # Bare names at the end are actually fine.
+                        # It could be a value for the last prop.
+                        return Token.STRING, ''.join(value_chars)
+                    else:
+                        value_chars.append(next_char)
 
             else:
                 raise self.error('Unexpected character "{}"!', next_char)

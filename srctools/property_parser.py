@@ -82,9 +82,6 @@ REPLACE_CHARS = [
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = object()
 
-# We allow bare identifiers on lines, but they can't contain quotes or brackets.
-_RE_IDENTIFIER = re.compile('^[^"\'{}<>();:\[\]]+\w*$')
-
 _Prop_Value = Union[List['Property'], str]
 
 # Various [flags] used after property names in some Valve files.
@@ -265,7 +262,7 @@ class Property:
             # Something else, but followed by '{'
             elif requires_block and token_type is not Token.NEWLINE:
                 raise tokenizer.error(
-                    "Block opening ('{') required!",
+                    "Block opening ('{{') required!",
                 )
 
             if token_type is Token.STRING:   # data string
