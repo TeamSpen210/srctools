@@ -62,6 +62,7 @@ import sys
 import srctools
 
 from srctools import BOOL_LOOKUP, Vec as _Vec
+from srctools.tokenizer import TokenSyntaxError
 
 from typing import (
     Optional, Union, Any,
@@ -100,46 +101,13 @@ PROP_FLAGS = {
 }
 
 
-class KeyValError(Exception):
-    """An error that occured when parsing a Valve KeyValues file.
+class KeyValError(TokenSyntaxError):
+    """An error that occurred when parsing a Valve KeyValues file.
 
-    mess = The error message that occured.
+    mess = The error message that occurred.
     file = The filename passed to Property.parse(), if it exists
-    line_num = The line where the error occured.
+    line_num = The line where the error occurred.
     """
-    def __init__(
-            self,
-            message: str,
-            file: Optional[str],
-            line: Optional[int]
-            ) -> None:
-        super().__init__()
-        self.mess = message
-        self.file = file
-        self.line_num = line
-
-    def __repr__(self):
-        return 'KeyValError({!r}, {!r}, {!r})'.format(
-            self.mess,
-            self.file,
-            self.line_num,
-            )
-
-    def __str__(self):
-        """Generate the complete error message.
-
-        This includes the line number and file, if avalible.
-        """
-        mess = self.mess
-        if self.line_num:
-            mess += '\nError occured on line ' + str(self.line_num)
-            if self.file:
-                mess += ', with file'
-        if self.file:
-            if not self.line_num:
-                mess += '\nError occured with file'
-            mess += ' "' + self.file + '"'
-        return mess
 
 
 class NoKeyError(LookupError):
