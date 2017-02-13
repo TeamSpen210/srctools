@@ -264,7 +264,7 @@ class Tokenizer:
 
     def __iter__(self):
         # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, None))
+        return iter(self, (Py_Token.EOF, None))
 
     def expect(self, token: Token):
         """Consume the next token, which should be the given type.
@@ -278,3 +278,16 @@ class Tokenizer:
                 token,
                 next_token,
             )
+
+# These are available as both C and Python versions, plus the unprefixed
+# best version.
+Py_Token = Token
+Py_Tokenizer = Tokenizer
+try:
+    # noinspection all
+    from srctools._tokenizer import Token, Tokenizer, eat_all
+except ImportError:
+    C_Token = C_Tokenizer = None
+else:
+    C_Token = Token
+    C_Tokenizer = Tokenizer

@@ -34,3 +34,9 @@ Icon
 build/
 dist/
 srctools.egg-info/
+
+srctools/_tokenizer\.html
+
+srctools/_tokenizer\.c
+
+srctools/_tokenizer\.pyd

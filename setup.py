@@ -1,5 +1,13 @@
 from setuptools import setup
 
+try:
+    from Cython.Build import cythonize
+    modules = cythonize("srctools/_tokenizer.pyx")
+except ImportError:
+    print('Cython not installed, not compiling Cython modules.')
+    modules = []
+    cythonize = None
+
 setup(
     name='srctools',
     version='1.2.0',
@@ -19,4 +27,5 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
     ],
     packages=['srctools'],
+    ext_modules=modules,
 )
