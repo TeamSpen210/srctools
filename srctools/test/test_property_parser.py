@@ -1,5 +1,5 @@
 import pytest
-from srctools.property_parser import Property, KeyValError, NoKeyError, PROP_FLAGS
+from srctools.property_parser import Property, KeyValError, NoKeyError
 
 
 def assert_tree(first, second):
@@ -137,16 +137,26 @@ def test_parse():
         ])
     ])
 
-    # Check active and inactive flags are correctly treated.
-    PROP_FLAGS['test_enabled'] = True
-    PROP_FLAGS['test_disabled'] = False
-
-    # iter() ensures sequence methods aren't used anywhere.
-    result = Property.parse(iter(parse_test.splitlines()))
+    result = Property.parse(
+        # iter() ensures sequence methods aren't used anywhere.
+        iter(parse_test.splitlines()),
+        # Check active and inactive flags are correctly treated.
+        flags={
+            'test_enabled': True,
+            'test_disabled': False,
+        }
+    )
     assert_tree(result, expected)
 
-    del PROP_FLAGS['test_enabled']
-    del PROP_FLAGS['test_disabled']
+    # Test the whole string can be passed too.
+    result = Property.parse(
+        parse_test,
+        flags={
+            'test_enabled': True,
+            'test_disabled': False,
+        },
+    )
+    assert_tree(result, expected)
 
 
 def test_parse_fails():

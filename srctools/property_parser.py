@@ -60,7 +60,7 @@ They end with a quote."
 import sys
 import srctools
 
-from srctools import BOOL_LOOKUP, Vec as _Vec
+from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
 from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
 
 from typing import (
@@ -85,7 +85,7 @@ _Prop_Value = Union[List['Property'], str]
 
 # Various [flags] used after property names in some Valve files.
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/tier1/KeyValues.cpp#L2055
-PROP_FLAGS = {
+PROP_FLAGS_DEFAULT = {
     # We know we're not on a console...
     'x360': False,
     'ps3': False,
@@ -218,11 +218,17 @@ class Property:
         return self
 
     @staticmethod
-    def parse(file_contents: Union[str, Iterator[str]], filename='') -> "Property":
+    def parse(
+        file_contents: Union[str, Iterator[str]],
+        filename='',
+        flags: Dict[str, bool]=EmptyMapping,
+    ) -> "Property":
         """Returns a Property tree parsed from given text.
 
         filename, if set should be the source of the text for debug purposes.
         file_contents should be an iterable of strings or a single string.
+        flags should be a mapping for additional flags to accept
+        (which overrides defaults).
         """
         # The block we are currently adding to.
 
@@ -295,8 +301,13 @@ class Property:
                         flag_inv = flag_val[:1] == '!'
                         if flag_inv:
                             flag_val = flag_val[1:]
+                        flag_val = flag_val.casefold()
+                        try:
+                            flag_result = bool(flags[flag_val])
+                        except KeyError:
+                            flag_result = PROP_FLAGS_DEFAULT.get(flag_val, True)
                         # If flag succeeds
-                        if flag_inv is not PROP_FLAGS.get(flag_val.casefold(), True):
+                        if flag_inv is not flag_result:
                             cur_block.append(keyvalue)
                     elif flag_token is NEWLINE:
                         # Normal, unconditionally add
