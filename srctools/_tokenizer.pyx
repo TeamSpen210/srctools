@@ -182,7 +182,6 @@ cdef class Tokenizer:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated string!')
-                    next_char = next_char
                     if next_char == '"':
                         return self._tok_STRING, ''.join(value_chars)
                     elif next_char == '\n':
@@ -220,7 +219,6 @@ cdef class Tokenizer:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated property flag!')
-                    next_char = next_char
                     if next_char == ']':
                         return self._tok_PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
@@ -237,7 +235,6 @@ cdef class Tokenizer:
                         # Bare names at the end are actually fine.
                         # It could be a value for the last prop.
                         return self._tok_STRING, ''.join(value_chars)
-                    next_char = next_char
 
                     if next_char in BARE_DISALLOWED:
                         raise self._error(f'Unexpected character "{next_char}"!')
