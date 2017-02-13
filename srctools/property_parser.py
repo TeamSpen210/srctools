@@ -57,7 +57,6 @@ They end with a quote."
 
     \n, \t, and \\ will be converted in Property values.
 """
-import re
 import sys
 import srctools
 
@@ -257,7 +256,7 @@ class Property:
             if token_type is BRACE_OPEN:
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
-                    tokenizer.error(
+                    raise tokenizer.error(
                         'Property cannot have sub-section if it already '
                         'has an in-line value.',
                     )
@@ -280,12 +279,13 @@ class Property:
                 if prop_type is NEWLINE:
                     # It's a block...
                     requires_block = True
-                    cur_block.append(Property(token_value, ''))
+                    cur_block.append(Property(token_value, []))
                     continue
                 elif prop_type is STRING:
                     # A value..
                     if requires_block:
                         raise tokenizer.error('Keyvalue split across lines!')
+                    requires_block = False
 
                     keyvalue = Property(token_value, prop_value)
                     # Check for flags.
@@ -309,7 +309,7 @@ class Property:
                 # Move back a block
                 open_properties.pop()
                 try:
-                    cur_block = open_properties[-1].value
+                    cur_block = open_properties[-1]
                 except IndexError:
                     # No open blocks!
                     raise tokenizer.error(
