@@ -91,7 +91,7 @@ cdef class Tokenizer:
         if isinstance(message, Token):
             message = f'Unexpected token {message.name}!'
         else:
-            message = message.forget(*args)
+            message = message.format(*args)
         return self._error(message)
 
     cdef _error(self, str message):
