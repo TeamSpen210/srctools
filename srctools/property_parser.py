@@ -236,6 +236,13 @@ class Property:
         # A queue of the properties we are currently in (outside to inside).
         open_properties = [cur_block]
 
+        # Grab a reference to the token values, so we avoid global lookups.
+        STRING = Token.STRING
+        PROP_FLAG = Token.PROP_FLAG
+        NEWLINE = Token.NEWLINE
+        BRACE_OPEN = Token.BRACE_OPEN
+        BRACE_CLOSE = Token.BRACE_CLOSE
+
         tokenizer = Tokenizer(
             file_contents,
             filename,
@@ -247,7 +254,7 @@ class Property:
         requires_block = False
 
         for token_type, token_value in tokenizer:
-            if token_type is Token.BRACE_OPEN:
+            if token_type is BRACE_OPEN:
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
                     tokenizer.error(
@@ -260,22 +267,22 @@ class Property:
                 open_properties.append(cur_block)
                 continue
             # Something else, but followed by '{'
-            elif requires_block and token_type is not Token.NEWLINE:
+            elif requires_block and token_type is not NEWLINE:
                 raise tokenizer.error(
                     "Block opening ('{{') required!",
                 )
 
-            if token_type is Token.NEWLINE:
+            if token_type is NEWLINE:
                 continue
-            if token_type is Token.STRING:   # data string
+            if token_type is STRING:   # data string
                 prop_type, prop_value = tokenizer()
 
-                if prop_type is Token.NEWLINE:
+                if prop_type is NEWLINE:
                     # It's a block...
                     requires_block = True
                     cur_block.append(Property(token_value, ''))
                     continue
-                elif prop_type is Token.STRING:
+                elif prop_type is STRING:
                     # A value..
                     if requires_block:
                         raise tokenizer.error('Keyvalue split across lines!')
@@ -284,21 +291,21 @@ class Property:
                     # Check for flags.
 
                     flag_token, flag_val = tokenizer()
-                    if flag_token is Token.PROP_FLAG:
+                    if flag_token is PROP_FLAG:
                         flag_inv = flag_val[:1] == '!'
                         if flag_inv:
                             flag_val = flag_val[1:]
                         # If flag succeeds
                         if flag_inv is not PROP_FLAGS.get(flag_val.casefold(), True):
                             cur_block.append(keyvalue)
-                    elif flag_token is Token.NEWLINE:
+                    elif flag_token is NEWLINE:
                         # Normal, unconditionally add
                         cur_block.append(keyvalue)
                     # Otherwise it must be a new line.
                     else:
                         raise tokenizer.error(flag_token)
                     continue
-            elif token_type is Token.BRACE_CLOSE:
+            elif token_type is BRACE_CLOSE:
                 # Move back a block
                 open_properties.pop()
                 try:
