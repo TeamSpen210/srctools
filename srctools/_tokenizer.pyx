@@ -34,9 +34,9 @@ cdef class Tokenizer:
     # Class to call when errors occur..
     cdef object error_type
 
-    cdef readonly str filename
-    cdef readonly int line_num
-    cdef readonly bint string_bracket
+    cdef public str filename
+    cdef public int line_num
+    cdef public bint string_bracket
 
     cdef object _tok_EOF
     cdef object _tok_STRING
@@ -134,7 +134,7 @@ cdef class Tokenizer:
         """Return the next token, value pair."""
         return self._next_token()
 
-    cdef _next_token(self):
+    cdef tuple _next_token(self):
         cdef:
             list value_chars
             Py_UCS4 next_char
@@ -144,6 +144,7 @@ cdef class Tokenizer:
             next_char = self._next_char()
             if next_char == -1:
                 return self._tok_EOF
+
 
             elif next_char == '{':
                 return self._tok_BRACE_OPEN
@@ -221,34 +222,35 @@ cdef class Tokenizer:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated property flag!')
-                    if next_char == ']':
+                    elif next_char == ']':
                         return self._tok_PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
                     elif next_char == '\n':
                         raise self.error(self._tok_NEWLINE)
                     value_chars.append(next_char)
 
-            # Bare names
-            elif next_char not in BARE_DISALLOWED:
-                value_chars = [next_char]
-                while True:
-                    next_char = self._next_char()
-                    if next_char == -1:
-                        # Bare names at the end are actually fine.
-                        # It could be a value for the last prop.
-                        return self._tok_STRING, ''.join(value_chars)
+            else: # Not-in can't be in a switch, so we need to nest this.
+                # Bare names
+                if next_char not in BARE_DISALLOWED:
+                    value_chars = ['6']
+                    while True:
+                        next_char = self._next_char()
+                        if next_char == -1:
+                            # Bare names at the end are actually fine.
+                            # It could be a value for the last prop.
+                            return self._tok_STRING, ''.join(value_chars)
 
-                    if next_char in BARE_DISALLOWED:
-                        raise self._error(f'Unexpected character "{next_char}"!')
-                    elif next_char in ' \t\n':
-                        # We need to repeat this so we return the newline.
-                        self.char_index -= 1
-                        return self._tok_STRING, ''.join(value_chars)
-                    else:
-                        value_chars.append(next_char)
+                        elif next_char in BARE_DISALLOWED:
+                            raise self._error(f'Unexpected character "{next_char}"!')
+                        elif next_char in ' \t\n':
+                            # We need to repeat this so we return the newline.
+                            self.char_index -= 1
+                            return self._tok_STRING, ''.join(value_chars)
+                        else:
+                            value_chars.append(next_char)
 
-            else:
-                raise self._error(f'Unexpected character "{next_char}"!')
+                else:
+                    raise self._error(f'Unexpected character "{next_char}"!')
 
     def __iter__(self):
         # Call ourselves until EOF is returned
