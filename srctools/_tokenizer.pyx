@@ -1,4 +1,4 @@
-#cython: language_level=3
+#cython: language_level=3, embedsignature=True
 """Cython version of the Tokenizer class."""
 from enum import Enum
 
@@ -55,7 +55,13 @@ cdef class Tokenizer:
             self.cur_chunk = ''
             self.chunk_iter = iter(data)
         self.char_index = -1
-        self.filename = filename
+
+        if filename:
+            self.filename = str(filename)
+        else:
+            # If a file-like object, automatically set to the filename.
+            self.filename = str(data.name) if hasattr(data, 'name') else ''
+
         if error is None:
             from srctools.tokenizer import TokenSyntaxError
             self.error_type = TokenSyntaxError
@@ -64,9 +70,6 @@ cdef class Tokenizer:
         self.string_bracket = string_bracket
         self.line_num = 1
 
-        # If a file-like object, this is automatic.
-        if not filename and hasattr(data, 'name'):
-            self.filename = data.name
 
         self._tok_STRING = Token.STRING
         self._tok_PROP_FLAG = Token.PROP_FLAG
@@ -99,8 +102,8 @@ cdef class Tokenizer:
             self.line_num,
         )
 
-    cdef str _next_char(self):
-        """Return the next character, or None if no more characters are there."""
+    cdef Py_UCS4 _next_char(self) except -2:
+        """Return the next character, or -1 if no more characters are there."""
         cdef str chunk
 
         self.char_index += 1
@@ -110,7 +113,7 @@ cdef class Tokenizer:
         # Retrieve a chunk from the iterable.
         chunk = next(self.chunk_iter, None)
         if chunk is None:
-            return None
+            return -1
         self.cur_chunk = chunk
         self.char_index = 0
 
@@ -123,7 +126,7 @@ cdef class Tokenizer:
                 self.cur_chunk = chunk
                 return chunk[0]
         # Out of characters after empty chunks
-        return None
+        return -1
 
     def __call__(self):
         """Return the next token, value pair."""
@@ -131,24 +134,27 @@ cdef class Tokenizer:
 
     cdef _next_token(self):
         cdef:
-            str next_char
+            list value_chars
+            Py_UCS4 next_char
+            Py_UCS4 escape_char
 
         while True:
             next_char = self._next_char()
-            if next_char is None:
+            if next_char == -1:
                 return self._tok_EOF
-            if next_char == '{':
+
+            elif next_char == '{':
                 return self._tok_BRACE_OPEN
-            if next_char == '}':
+            elif next_char == '}':
                 return self._tok_BRACE_CLOSE
-            if next_char == ':':
+            elif next_char == ':':
                 return self._tok_COLON
-            if next_char == ']':
+            elif next_char == ']':
                 return self._tok_BRACK_CLOSE
 
             # First try simple operators & EOF.
 
-            if next_char == '\n':
+            elif next_char == '\n':
                 self.line_num += 1
                 return self._tok_NEWLINE, '\n'
 
@@ -164,7 +170,7 @@ cdef class Tokenizer:
                 # Skip to end of line
                 while True:
                     next_char = self._next_char()
-                    if next_char is None or next_char == '\n':
+                    if next_char == -1 or next_char == '\n':
                         break
                 # We want to produce the token for the end character.
                 self.char_index -= 1
@@ -174,31 +180,34 @@ cdef class Tokenizer:
                 value_chars = []
                 while True:
                     next_char = self._next_char()
+                    if next_char == -1:
+                        raise self._error('Unterminated string!')
+                    next_char = next_char
                     if next_char == '"':
                         return self._tok_STRING, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
                     elif next_char == '\\':
                         # Escape text
-                        escape = self._next_char()
-                        if escape == 'n':
+                        escape_char = self._next_char()
+                        if escape_char == -1:
+                            raise self._error('Unterminated string!')
+
+                        elif escape_char == 'n':
                             next_char = '\n'
-                        elif escape == 't':
+                        elif escape_char == 't':
                             next_char = '\t'
-                        elif escape in '"\\/':
-                            # This actually escapes the functions of these..
-                            next_char = escape
-                        elif escape == '\n':
-                            # \ at end of line to ignore the newline.
-                            next_char = ''
+                        elif escape_char == '\n':
+                            # \ at end of line ignores the newline.
+                            continue
+                        elif escape_char in '"\\/':
+                            # This actually escape_chars the functions of these..
+                            next_char = escape_char
                         else:
-                            if escape is None:
-                                raise self._error('Unterminated string!')
-                            else:
-                                next_char = '\\' + escape
-                                # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
-                    elif next_char is None:
-                        raise self._error('Unterminated string!')
+                            # For unknown escape_chars, escape_char the \ automatically.
+                            value_chars.append('\\' + escape_char)
+                            continue
+                            # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self.cur_chunk)
                     value_chars.append(next_char)
 
             elif next_char == '[':
@@ -209,13 +218,14 @@ cdef class Tokenizer:
                 value_chars = []
                 while True:
                     next_char = self._next_char()
+                    if next_char == -1:
+                        raise self._error('Unterminated property flag!')
+                    next_char = next_char
                     if next_char == ']':
                         return self._tok_PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
                     elif next_char == '\n':
                         raise self.error(self._tok_NEWLINE)
-                    elif next_char is None:
-                        raise self._error('Unterminated property flag!')
                     value_chars.append(next_char)
 
             # Bare names
@@ -223,15 +233,17 @@ cdef class Tokenizer:
                 value_chars = [next_char]
                 while True:
                     next_char = self._next_char()
+                    if next_char == -1:
+                        # Bare names at the end are actually fine.
+                        # It could be a value for the last prop.
+                        return self._tok_STRING, ''.join(value_chars)
+                    next_char = next_char
+
                     if next_char in BARE_DISALLOWED:
                         raise self._error(f'Unexpected character "{next_char}"!')
                     elif next_char in ' \t\n':
                         # We need to repeat this so we return the newline.
                         self.char_index -= 1
-                        return self._tok_STRING, ''.join(value_chars)
-                    elif next_char is None:
-                        # Bare names at the end are actually fine.
-                        # It could be a value for the last prop.
                         return self._tok_STRING, ''.join(value_chars)
                     else:
                         value_chars.append(next_char)
