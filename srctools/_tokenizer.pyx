@@ -47,7 +47,7 @@ cdef class Tokenizer:
     cdef object _tok_BRACK_OPEN
     cdef object _tok_BRACK_CLOSE
 
-    def __init__(self, data, filename, error=None, bint string_bracket=False):
+    def __init__(self, data, filename=None, error=None, bint string_bracket=False):
         if isinstance(data, str):
             self.cur_chunk = data
             self.chunk_iter = iter(())
@@ -62,10 +62,12 @@ cdef class Tokenizer:
             # If a file-like object, automatically set to the filename.
             self.filename = str(data.name) if hasattr(data, 'name') else ''
 
+        from srctools.tokenizer import TokenSyntaxError
         if error is None:
-            from srctools.tokenizer import TokenSyntaxError
             self.error_type = TokenSyntaxError
         else:
+            if not issubclass(error, TokenSyntaxError):
+                raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
             self.error_type = error
         self.string_bracket = string_bracket
         self.line_num = 1
@@ -212,7 +214,7 @@ cdef class Tokenizer:
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.string_bracket:
-                    return self._tok_BRACE_OPEN
+                    return self._tok_BRACK_OPEN
 
                 value_chars = []
                 while True:
