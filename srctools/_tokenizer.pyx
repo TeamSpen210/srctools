@@ -89,7 +89,7 @@ cdef class Tokenizer:
         or a string which will be formatted with the positional args.
         """
         if isinstance(message, Token):
-            message = 'Unexpected token {}!'.format(message.name)
+            message = f'Unexpected token {message.name}!'
         else:
             message = message.forget(*args)
         return self._error(message)
@@ -260,6 +260,6 @@ cdef class Tokenizer:
 
         If it is not, this raises an error.
         """
-        cdef tuple next_token = self._next_token()
-        if next_token[0] is not token:
-            raise self._error(f'Expected {token}, but got {next_token[0]}!')
+        next_token = self._next_token()[0]
+        if next_token is not token:
+            raise self._error(f'Expected {token}, but got {next_token}!')
