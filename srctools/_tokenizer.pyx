@@ -47,7 +47,7 @@ cdef class Tokenizer:
     cdef object _tok_BRACK_OPEN
     cdef object _tok_BRACK_CLOSE
 
-    def __init__(self, data, filename=None, error=None, bint string_bracket=False):
+    def __init__(self, data not None, filename=None, error=None, bint string_bracket=False):
         if isinstance(data, str):
             self.cur_chunk = data
             self.chunk_iter = iter(())
@@ -116,6 +116,8 @@ cdef class Tokenizer:
         chunk = next(self.chunk_iter, None)
         if chunk is None:
             return -1
+        if not isinstance(chunk, str):
+            raise ValueError("Data was not a string!")
         self.cur_chunk = chunk
         self.char_index = 0
 
@@ -232,7 +234,7 @@ cdef class Tokenizer:
             else: # Not-in can't be in a switch, so we need to nest this.
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
-                    value_chars = ['6']
+                    value_chars = [next_char]
                     while True:
                         next_char = self._next_char()
                         if next_char == -1:
