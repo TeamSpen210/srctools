@@ -187,7 +187,6 @@ class Property:
             self.real_name = sys.intern(name)  # type: Optional[str]
             self._folded_name = sys.intern(name.casefold())  # type: Optional[str]
 
-        self.name = name
         self.value = value  # type: _Prop_Value
 
     @property
