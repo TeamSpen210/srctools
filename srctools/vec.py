@@ -27,7 +27,7 @@ from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
 
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
+def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
@@ -126,17 +126,13 @@ def __i{func}__(self, other: Union['Vec', tuple, float]):
         self.x {op}= other[0]
         self.y {op}= other[1]
         self.z {op}= other[2]
-    else:
+    elif isinstance(other, (int, float)):
         orig = self.x, self.y, self.z
-        try:
-            self.x {op}= other
-            self.y {op}= other
-            self.z {op}= other
-        except TypeError as e:
-            self.x, self.y, self.z = orig
-            raise TypeError(
-                'Cannot add {{}} to Vector!'.format(type(other))
-            ) from e
+        self.x {op}= other
+        self.y {op}= other
+        self.z {op}= other
+    else:
+        return NotImplemented
     return self
 '''
 
