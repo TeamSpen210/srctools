@@ -251,6 +251,27 @@ text with
         }
     ''')
 
+    # Test '/' in text by itself (not a comment!)
+    t('''\
+    "Block"
+        {
+        "Name" / "Value"
+            {
+            }
+        }
+    ''')
+
+    # Test unterminated strings
+    t('''\
+    "Block"
+        {
+        "blah
+        }
+    ''')
+
+    # Test unterminated string with '\' at the end
+    t('''"Blah \\''')
+
     # Test too many open brackets
     t('''\
     "Block"

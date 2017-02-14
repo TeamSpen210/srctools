@@ -100,8 +100,15 @@ def test_prop_tokens(py_c_token):
 
     tok = Tokenizer(prop_parse_test, '', string_bracket=True)
     check_tokens(tok, tokens)
+
     # Test a list of lines.
-    tok = Tokenizer(prop_parse_test.splitlines(keepends=True), '', string_bracket=True)
+    test_list = prop_parse_test.splitlines(keepends=True)
+    # Break this line up semi-randomly, to help test the chunk code.
+    test_list[27:28] = [''] + list(test_list[27].partition('"')) + ['', '', '']
+    # They should be the same text though!
+    assert ''.join(test_list) == prop_parse_test, "Bad test code!"
+
+    tok = Tokenizer(test_list, '', string_bracket=True)
     check_tokens(tok, tokens)
 
 
