@@ -70,14 +70,6 @@ from typing import (
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
-# various escape sequences that we allow
-REPLACE_CHARS = [
-    (r'\n',  '\n'),
-    (r'\t',  '\t'),
-    (r'\/',  '/'),
-    ('\\\\', '\\'),
-]
-
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = object()
 
@@ -120,45 +112,6 @@ class NoKeyError(LookupError):
 
     def __str__(self):
         return "No key " + self.key + "!"
-
-
-def read_multiline_value(file, line_num, filename):
-    """Pull lines out until a quote character is reached."""
-    lines = ['']  # We return with a beginning newline
-    # Re-looping over the same iterator means we don't repeat lines
-    for line_num, line in file:
-        if isinstance(line, bytes):
-            # Decode bytes using utf-8
-            line = line.decode('utf-8')
-        if '"' in line:
-            # Split the line, handling \" inside
-            line_parts = srctools.escape_quote_split(line)
-            # A correct line will result in ['blah', '  ']
-            if len(line_parts) > 1:
-                comment = line_parts[1].lstrip()
-                # Non-whitespace after the quote, or multiple quotes.
-                if comment and not comment.startswith('//') or len(line_parts) > 2:
-                    raise KeyValError(
-                        'Extra characters after string end! ' + repr(line_parts),
-                        filename,
-                        line_num,
-                    )
-                lines.append(line_parts[0])
-                return '\n'.join(lines)
-            elif len(line_parts) == 1:
-                # No actual quote here, continue.
-                lines.append(line_parts[0])
-                continue  # Don't write the original
-            else:
-                assert 0, 'escape_quote_split() returned nothing!'
-        lines.append(line)
-    else:
-        # We hit EOF!
-        raise KeyValError(
-            "Reached EOF without ending quote!",
-            filename,
-            None,
-        )
 
 
 class Property:
