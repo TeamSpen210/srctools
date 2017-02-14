@@ -530,35 +530,6 @@ class Property:
         else:
             return self.value != other # Just compare values
 
-    def __lt__(self, other):
-        """Less-Than comparison. This ignores names.
-        """
-        if isinstance(other, Property):
-            return self.value < other.value
-        else:
-            return self.value < other
-
-    def __gt__(self, other):
-        "Greater-Than comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value > other.value
-        else:
-            return self.value > other
-
-    def __le__(self, other):
-        "Less-Than or Equal To comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value <= other.value
-        else:
-            return self.value <= other
-
-    def __ge__(self, other):
-        "Greater-Than or Equal To comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value >= other.value
-        else:
-            return self.value >= other
-
     def __len__(self):
         """Determine the number of child properties."""
         if self.has_children():
