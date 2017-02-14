@@ -22,17 +22,26 @@ def py_c_token(request):
 del parms, ids
 
 
-def check_tokens(tokenizer, *tokens):
+def check_tokens(tokenizer, tokens):
     """Check the tokenizer produces the given tokens.
 
     The arguments are either (token, value) tuples or tokens.
     """
     sentinel = object()
-    for i, (token, comp_token) in enumerate(zip_longest(tokenizer, tokens, fillvalue=sentinel), start=1):
+    tokenizer_iter = iter(tokenizer)
+    tok_test_iter = iter(tokens)
+    for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=sentinel), start=1):
+        # Check if either is too short - we need zip_longest() for that.
         if token is sentinel:
-            pytest.fail('Tokenizer ended early!')
-        if token is comp_token:
-            pytest.fail('Tokenizer had too many values!')
+            pytest.fail('{}: Tokenizer ended early - needed {}!'.format(
+                i,
+                [comp_token] + list(tok_test_iter),
+            ))
+        if comp_token is sentinel:
+            pytest.fail('{}: Tokenizer had too many values - extra = {}!'.format(
+                i,
+                [token] + list(tokenizer_iter),
+            ))
         assert len(token) == 2
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
@@ -46,9 +55,7 @@ def check_tokens(tokenizer, *tokens):
 def test_prop_tokens(py_c_token):
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     T, Tokenizer = py_c_token
-    tok = Tokenizer(prop_parse_test, '', string_bracket=True)
-    check_tokens(
-        tok,
+    tokens = [
         T.NEWLINE,
         T.NEWLINE,
         T.NEWLINE,
@@ -89,9 +96,17 @@ def test_prop_tokens(py_c_token):
         (T.STRING, "Flag"), (T.STRING, "blocksthis"), (T.PROP_FLAG, "!test_enabled"), T.NEWLINE,
         T.NEWLINE,
         T.BRACE_CLOSE, T.NEWLINE,
-    )
+    ]
+
+    tok = Tokenizer(prop_parse_test, '', string_bracket=True)
+    check_tokens(tok, tokens)
+    # Test a list of lines.
+    tok = Tokenizer(prop_parse_test.splitlines(keepends=True), '', string_bracket=True)
+    check_tokens(tok, tokens)
+
 
 def test_constructor(py_c_token):
+    """Test various argument syntax for the tokenizer."""
     Token, Tokenizer = py_c_token
 
     Tokenizer('blah')
