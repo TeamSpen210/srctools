@@ -40,3 +40,5 @@ srctools/_tokenizer\.html
 srctools/_tokenizer\.c
 
 srctools/_tokenizer\.pyd
+
+.cache
