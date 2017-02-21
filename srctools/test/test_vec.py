@@ -46,9 +46,9 @@ def assert_vec(vec, x, y, z, msg=''):
         # Success!
         return
 
-    new_msg = "{!r} != ({}, {}, {})".format(vec, failed, x, y, z)
+    new_msg = "{!r} != ({:g}, {:g}, {:g})".format(vec, x, y, z)
     if msg:
-        new_msg += ': ' + msg
+        new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
 
 

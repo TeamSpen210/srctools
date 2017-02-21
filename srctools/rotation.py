@@ -30,19 +30,19 @@ class RotationMatrix:
 
     def __init__(
         self,
-        a: float=1.0, b: float=0.0, c: float=0.0,
-        d: float=0.0, e: float=1.0, f: float=0.0,
-        g: float=0.0, h: float=0.0, i: float=1.0,
+        aa: float=1.0, ab: float=0.0, ac: float=0.0,
+        ba: float=0.0, bb: float=1.0, bc: float=0.0,
+        ca: float=0.0, cb: float=0.0, cc: float=1.0,
     ):
-        self.aa = a
-        self.ab = b
-        self.ac = c
-        self.ba = d
-        self.bb = e
-        self.bc = f
-        self.ca = g
-        self.cb = h
-        self.cc = i
+        self.aa = aa
+        self.ab = ab
+        self.ac = ac
+        self.ba = ba
+        self.bb = bb
+        self.bc = bc
+        self.ca = ca
+        self.cb = cb
+        self.cc = cc
 
     def copy(self):
         return RotationMatrix(
@@ -76,53 +76,55 @@ class RotationMatrix:
         vec.z = round((x * self.ca) + (y * self.cb) + (z * self.cc), 3)
 
     def rotate_by_mat(self, other: 'RotationMatrix'):
+        """Multiply ourselves by another rotation matrix."""
+
         # We don't use A row after the first 3, so we can re-assign.
+        # 3-tuple unpacking is optimised.
         self.aa, self.ab, self.ac = (
-            self.aa * other.aa + self.ab * other.ab + self.ac * other.ac,
-            self.aa * other.ba + self.ab * other.bb + self.ac * other.bc,
-            self.aa * other.ca + self.ab * other.cb + self.ac * other.cc,
+            self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
+            self.aa * other.ab + self.ab * other.bb + self.ac * other.cb,
+            self.aa * other.ac + self.ab * other.bc + self.ac * other.cc,
         )
 
         self.ba, self.bb, self.bc = (
-            self.ba * other.aa + self.bb * other.ab + self.bc * other.ac,
-            self.ba * other.ba + self.bb * other.bb + self.bc * other.bc,
-            self.ba * other.ca + self.bb * other.cb + self.bc * other.cc,
+            self.ba * other.aa + self.bb * other.ba + self.bc * other.ca,
+            self.ba * other.ab + self.bb * other.bb + self.bc * other.cb,
+            self.ba * other.ac + self.bb * other.bc + self.bc * other.cc,
         )
 
         self.ca, self.cb, self.cc = (
-            self.ca * other.aa + self.cb * other.ab + self.cc * other.ac,
-            self.ca * other.ba + self.cb * other.bb + self.cc * other.bc,
-            self.ca * other.ca + self.cb * other.cb + self.cc * other.cc,
+            self.ca * other.aa + self.cb * other.ba + self.cc * other.ca,
+            self.ca * other.ab + self.cb * other.bb + self.cc * other.cb,
+            self.ca * other.ac + self.cb * other.bc + self.cc * other.cc,
         )
 
     @classmethod
     def pitch(cls, pitch):
-        """Return the rotation matrix rotating around pitch/x."""
-        rp = math.radians(pitch)
+        """Return the rotation matrix rotating around pitch/y."""
+        ang = math.radians(pitch)
         return cls(
-            math.cos(rp), 0, math.sin(rp),
+            math.cos(ang), 0, math.sin(ang),
             0, 1, 0,
-            -math.sin(rp), 0, math.cos(rp),
+            -math.sin(ang), 0, math.cos(ang),
         )
-
     @classmethod
     def yaw(cls, yaw):
         """Return the rotation matrix rotating around yaw/z."""
-        ry = math.radians(yaw)
+        ang = math.radians(yaw)
         return cls(
-            math.cos(ry), -math.sin(ry), 0,
-            math.sin(ry), math.cos(ry), 0,
+            math.cos(ang), -math.sin(ang), 0,
+            math.sin(ang), math.cos(ang), 0,
             0, 0, 1,
         )
 
     @classmethod
     def roll(cls, roll):
-        """Return the rotation matrix rotating around roll/y."""
-        rr = math.radians(roll)
+        """Return the rotation matrix rotating around roll/x."""
+        ang = math.radians(roll)
         return cls(
             1, 0, 0,
-            0, math.cos(rr), -math.sin(rr),
-            0, math.sin(rr), math.cos(rr),
+            0, math.cos(ang), -math.sin(ang),
+            0, math.sin(ang), math.cos(ang),
         )
 
     def rotate_by_angle(self, ang: 'Angle'):
@@ -131,9 +133,12 @@ class RotationMatrix:
         # yaw is the z axis
         # roll is the x axis
         # Need to do transformations in roll, pitch, yaw order
-        self.rotate_by_mat(RotationMatrix.roll(ang.roll))  # X
-        self.rotate_by_mat(RotationMatrix.pitch(ang.pitch))  # Z
-        self.rotate_by_mat(RotationMatrix.yaw(ang.yaw))  # Y
+        if ang.roll:
+            self.rotate_by_mat(RotationMatrix.roll(ang.roll))  # X
+        if ang.pitch:
+            self.rotate_by_mat(RotationMatrix.pitch(ang.pitch))  # Z
+        if ang.yaw:
+            self.rotate_by_mat(RotationMatrix.yaw(ang.yaw))  # Y
 
     def to_angle(self) -> 'Angle':
         """Convert this to a pitch-yaw-roll angle."""
