@@ -159,6 +159,86 @@ class FileSystem:
         raise NotImplementedError
 
 
+class FileSystemChain(FileSystem):
+    """Chains several filesystem into one prioritised whole."""
+
+    def __init__(self, *systems: Union[FileSystem, Tuple[str, FileSystem]]):
+        super().__init__('')
+        self.systems = []  # type: List[Tuple[FileSystem, str]]
+        for sys in systems:
+            if isinstance(sys, tuple):
+                prefix, sys = sys
+                self.add_sys(sys, prefix)
+            self.add_sys(sys)
+
+    @staticmethod
+    def get_system(file: File) -> FileSystem:
+        """Retrieve the system for a File, if it was produced from a FileSystemChain."""
+        if not isinstance(file.sys, FileSystemChain):
+            raise ValueError('File is not from a FileSystemChain..')
+        return file._data.sys
+
+    def add_sys(self, sys: FileSystem, prefix=''):
+        """Add a filesystem to the list."""
+        self.systems.append((sys, prefix))
+
+    def _get_file(self, name: str) -> File:
+        """Search for a file on each filesystem in turn."""
+        for sys, prefix in self.systems:
+            full_name = os.path.join(prefix, name).replace('\\', '/')
+            try:
+                file_info = sys._get_file(full_name)
+            except FileNotFoundError:
+                pass
+            else:
+                # Pass the original file instance, so we can open
+                # from the original system.
+                return File(self, full_name, file_info)
+        raise FileNotFoundError(name)
+
+    def open_str(self, name: str, encoding='utf8'):
+        """Open a file in unicode mode or raise FileNotFoundError.
+
+        This should be closed when done.
+        """
+        if isinstance(name, File):
+            return name.open_str(encoding)
+        return self._get_file(name).open_str(encoding)
+
+    def open_bin(self, name: str):
+        """Open a file in bytes mode or raise FileNotFoundError.
+
+        This should be closed when done.
+        """
+        if isinstance(name, File):
+            return name.open_bin()
+        return self._get_file(name).open_bin()
+
+    def walk_folder(self, folder: str):
+        done = set()
+
+        for sys, prefix in self.systems:
+            full_folder = os.path.join(prefix, folder).replace('\\', '/')
+            for file in sys.walk_folder(full_folder):
+                folded = file.path.casefold()
+                if folded in done:
+                    continue
+                done.add(folded)
+                yield File(self, os.path.relpath(file.path, prefix), file)
+
+    def _delete_ref(self) -> None:
+        """Creating and deleting refs affects the underlying systems."""
+        for sys, prefix in self.systems:
+            sys.close_ref()
+        self._ref = None
+
+    def _create_ref(self) -> None:
+        """Creating and deleting refs affects the underlying systems."""
+        for sys, prefix in self.systems:
+            sys.open_ref()
+        self._ref = True
+
+
 class RawFileSystem(FileSystem):
     """Accesses files in a real folder.
 
