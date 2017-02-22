@@ -182,7 +182,7 @@ class FileSystemChain(FileSystem):
         """Add a filesystem to the list."""
         self.systems.append((sys, prefix))
         # If we're currently open, apply that to the added systems.
-        if self._ref > 0:
+        if self._ref_count > 0:
             sys.open_ref()
 
     def _get_file(self, name: str) -> File:
