@@ -181,6 +181,9 @@ class FileSystemChain(FileSystem):
     def add_sys(self, sys: FileSystem, prefix=''):
         """Add a filesystem to the list."""
         self.systems.append((sys, prefix))
+        # If we're currently open, apply that to the added systems.
+        if self._ref > 0:
+            sys.open_ref()
 
     def _get_file(self, name: str) -> File:
         """Search for a file on each filesystem in turn."""
