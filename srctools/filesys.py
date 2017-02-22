@@ -2,14 +2,28 @@
 
 This allows accessing raw files, zips and VPKs in the same way.
 """
-from zipfile import ZipFile, ZipInfo
+from zipfile import ZipFile
 import io
 import os.path
 
 from srctools.vpk import VPK, FileInfo as VPKFile
+from srctools.property_parser import Property
 
 from typing import Iterator
 
+def get_filesystem(path: str) -> 'FileSystem':
+    """Return a filesystem given a path.
+
+    If the path is a directory this returns a RawFileSystem.
+    Otherwise it returns a VPK or zip, depending on extension.
+    """
+    if os.path.isdir(path):
+        return RawFileSystem(path)
+    if path[-4:] == '.zip':
+        return ZipFileSystem(path)
+    if path[-8:] == '_dir.vpk':
+        return VPKFileSystem(path)
+    raise ValueError('Unrecognised filesystem for "{}"'.format(path))
 
 class File:
     """Represents a file in a system. Should not be created directly."""
@@ -59,6 +73,17 @@ class FileSystem:
             raise ValueError('Closed too many times!')
         if self._ref_count == 0 and self._ref is not None:
             self._delete_ref()
+
+    def read_prop(self, path: str, encoding='utf8') -> Property:
+        """Read a Property file from the filesystem.
+
+        This handles opening and closing files.
+        """
+        with self, self.open_str(path, encoding) as file:
+            return Property.parse(
+                file,
+                self.path + ':' + path,
+            )
 
     def _check_open(self):
         """Ensure self._ref is valid."""
