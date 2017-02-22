@@ -223,7 +223,7 @@ class ZipFileSystem(FileSystem):
         try:
             return self._ref.open(name)
         except KeyError:
-            raise FileNotFoundError(name) from None
+            raise FileNotFoundError(self.path + ':' + name) from None
 
     def open_str(self, name: str, encoding='utf8'):
         """Open a file in unicode mode or raise FileNotFoundError.
@@ -236,7 +236,7 @@ class ZipFileSystem(FileSystem):
         try:
             return io.TextIOWrapper(self._ref.open(name), encoding)
         except KeyError:
-            raise FileNotFoundError(name) from None
+            raise FileNotFoundError(self.path + ':' + name) from None
 
     def _file_exists(self, name: str) -> bool:
         self._check_open()
