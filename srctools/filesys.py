@@ -41,8 +41,8 @@ class File:
 
 class FileSystem:
     """Base class for different systems defining the interface."""
-    def __init__(self):
-        # We can keep a reference to
+    def __init__(self, path: str):
+        self.path = path
         self._ref = None
         self._ref_count = 0
 
@@ -110,14 +110,13 @@ class FileSystem:
         raise NotImplementedError
 
 
-class RawSystem(FileSystem):
+class RawFileSystem(FileSystem):
     """Accesses files in a real folder.
 
     This prohibits access to folders above the root.
     """
     def __init__(self, path: str):
-        self.path = os.path.abspath(path)
-        super().__init__()
+        super().__init__(os.path.abspath(path))
 
     def _resolve_path(self, path: str) -> str:
         """Get the absolute path."""
@@ -162,12 +161,11 @@ class RawSystem(FileSystem):
         self._ref = True
 
 
-class ZipSystem(FileSystem):
+class ZipFileSystem(FileSystem):
     """Accesses files in a zip file."""
     def __init__(self, path: str):
-        self.path = path
         self._ref = None  # type: ZipFile
-        super().__init__()
+        super().__init__(path)
 
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
@@ -216,12 +214,11 @@ class ZipSystem(FileSystem):
         self._ref = ZipFile(self.path)
 
 
-class VPKSystem(FileSystem):
+class VPKFileSystem(FileSystem):
     """Accesses files in a VPK file."""
-    def __init__(self, path:str):
-        self.path = path
+    def __init__(self, path: str):
         self._ref = None  # type: VPK
-        super().__init__()
+        super().__init__(path)
 
     def _create_ref(self):
         self._ref = VPK(self.path)
