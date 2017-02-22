@@ -111,6 +111,9 @@ class FileSystem:
     def __iter__(self) -> Iterator[File]:
         return self.walk_folder('')
 
+    def __contains__(self, name: str):
+        return self._file_exists(name)
+
     def _file_exists(self, name: str) -> bool:
         """Check that a file exists."""
         raise NotImplementedError
