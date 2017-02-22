@@ -11,6 +11,13 @@ from srctools.property_parser import Property
 
 from typing import Iterator
 
+__all__ = [
+    'File', 'FileSystem', 'get_filesystem',
+
+    'RawFileSystem', 'VPKFileSystem', 'ZipFileSystem',
+]
+
+
 def get_filesystem(path: str) -> 'FileSystem':
     """Return a filesystem given a path.
 
@@ -27,16 +34,16 @@ def get_filesystem(path: str) -> 'FileSystem':
 
 class File:
     """Represents a file in a system. Should not be created directly."""
-    def __init__(self, system: 'FileSystem', name: str, data=None):
+    def __init__(self, system: 'FileSystem', path: str, data=None):
         """Create a File.
 
         system should be the filesystem which matches.
-        name is the filename for the file.
+        path is the relative path for the file.
         data is a filesystem-specific data, used to pass to open_bin() and open_str().
         """
         self.sys = system
-        self.name = name
-        self._data = name if data is None else data
+        self.path = path
+        self._data = path if data is None else data
 
     def open_bin(self):
         """Return a file-like object in bytes mode.
@@ -155,9 +162,13 @@ class RawFileSystem(FileSystem):
         path = self._resolve_path(folder)
         for dirpath, dirnames, filenames in os.walk(path):
             for file in filenames:
+                rel_path = os.path.relpath(
+                    os.path.join(dirpath, file),
+                    self.path,
+                )
                 yield File(
                     self,
-                    os.path.join(dirpath, file),
+                    rel_path.replace('\\', '/'),
                 )
 
     def open_str(self, name: str, encoding='utf8'):
@@ -195,10 +206,10 @@ class ZipFileSystem(FileSystem):
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
         self._check_open()
+        # \\ is not allowed in zips.
         folder = folder.replace('\\', '/')
         for fileinfo in self._ref.infolist():
-            tidy_path = fileinfo.filename.replace('\\', '/')
-            if tidy_path.startswith(folder):
+            if fileinfo.filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
     def open_bin(self, name: str):
@@ -207,6 +218,8 @@ class ZipFileSystem(FileSystem):
         The filesystem needs to be open while accessing this.
         """
         self._check_open()
+        # \\ is not allowed in zips.
+        name = name.replace('\\', '/')
         try:
             return self._ref.open(name)
         except KeyError:
@@ -218,6 +231,8 @@ class ZipFileSystem(FileSystem):
         The filesystem needs to be open while accessing this.
         """
         self._check_open()
+        # \\ is not allowed in zips.
+        name = name.replace('\\', '/')
         try:
             return io.TextIOWrapper(self._ref.open(name), encoding)
         except KeyError:
@@ -226,7 +241,7 @@ class ZipFileSystem(FileSystem):
     def _file_exists(self, name: str) -> bool:
         self._check_open()
         try:
-            self._ref.getinfo(name)
+            self._ref.getinfo(name.replace('\\', '/'))
             return True
         except KeyError:
             return False
