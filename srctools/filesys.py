@@ -1,6 +1,7 @@
 """Implements a consistent interface for accessing files.
 
 This allows accessing raw files, zips and VPKs in the same way.
+Files are case-insensitive, and both slashes are converted to '/'.
 """
 from zipfile import ZipFile, ZipInfo
 import io
@@ -9,7 +10,7 @@ import os.path
 from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
-from typing import Iterator
+from typing import Iterator, Union, List, Tuple
 
 __all__ = [
     'File', 'FileSystem', 'get_filesystem',
@@ -111,10 +112,23 @@ class FileSystem:
     def __iter__(self) -> Iterator[File]:
         return self.walk_folder('')
 
+    def __getitem__(self, name: str):
+        try:
+            return self._get_file(name)
+        except FileNotFoundError:
+            raise KeyError
+
     def __contains__(self, name: str):
-        return self._file_exists(name)
+        return self._get_file(name)
 
     def _file_exists(self, name: str) -> bool:
+        try:
+            self._get_file(name)
+            return True
+        except FileNotFoundError:
+            return False
+
+    def _get_file(self, name: str) -> File:
         """Check that a file exists."""
         raise NotImplementedError
 
@@ -189,7 +203,12 @@ class RawFileSystem(FileSystem):
         return open(self._resolve_path(name), mode='rb')
 
     def _file_exists(self, name: str) -> bool:
-        return os.path.exists(self._resolve_path(name))
+        return os.path.isfile(self._resolve_path(name))
+
+    def _get_file(self, name: str):
+        if os.path.isfile(self._resolve_path(name)):
+            return File(self, name.replace('\\', '/'))
+        raise FileNotFoundError(name)
 
     def _delete_ref(self) -> None:
         """The raw filesystem doesn't need a reference to anything."""
@@ -204,15 +223,16 @@ class ZipFileSystem(FileSystem):
     """Accesses files in a zip file."""
     def __init__(self, path: str):
         self._ref = None  # type: ZipFile
+        self._name_to_info = {}
         super().__init__(path)
 
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
         self._check_open()
         # \\ is not allowed in zips.
-        folder = folder.replace('\\', '/')
+        folder = folder.replace('\\', '/').casefold()
         for fileinfo in self._ref.infolist():
-            if fileinfo.filename.startswith(folder):
+            if fileinfo.filename.casefold().startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
     def open_bin(self, name: str):
@@ -221,42 +241,50 @@ class ZipFileSystem(FileSystem):
         The filesystem needs to be open while accessing this.
         """
         self._check_open()
-        # \\ is not allowed in zips.
-        if not isinstance(name, ZipInfo):
+
+        # We need the zipinfo object.
+        if isinstance(name, ZipInfo):
+            info = name
+        else:
             name = name.replace('\\', '/')
-        try:
-            return self._ref.open(name)
-        except KeyError:
-            raise FileNotFoundError(self.path + ':' + name) from None
+            try:
+                info = self._name_to_info[name.casefold()]
+            except KeyError:
+                raise FileNotFoundError('{}:{}'.format(self.path, name)) from None
+
+        return self._ref.open(info)
 
     def open_str(self, name: str, encoding='utf8'):
         """Open a file in unicode mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
         """
+        # Zips only open in binary, so just open that, then wrap to decode.
+        return io.TextIOWrapper(self.open_bin(name), encoding)
+
+    def _get_file(self, name: str) -> File:
+        name = name.replace('\\', '/')
         self._check_open()
-        # \\ is not allowed in zips.
-        if not isinstance(name, ZipInfo):
-            name = name.replace('\\', '/')
         try:
-            return io.TextIOWrapper(self._ref.open(name), encoding)
+            info = self._name_to_info[name.casefold()]
         except KeyError:
-            raise FileNotFoundError(self.path + ':' + name) from None
+            raise FileNotFoundError('{}:{}'.format(self.path, name))
+        return File(self, name, info)
 
     def _file_exists(self, name: str) -> bool:
         self._check_open()
-        try:
-            self._ref.getinfo(name.replace('\\', '/'))
-            return True
-        except KeyError:
-            return False
+        return name.replace('\\', '/').casefold() in self._name_to_info
 
     def _delete_ref(self) -> None:
         self._ref.close()
+        self._name_to_info.clear()
         self._ref = None
 
     def _create_ref(self) -> None:
-        self._ref = ZipFile(self.path)
+        self._ref = zipfile = ZipFile(self.path)
+        self._name_to_info.clear()
+        for info in zipfile.infolist():
+            self._name_to_info[info.filename.casefold()] = info
 
 
 class VPKFileSystem(FileSystem):
@@ -275,6 +303,13 @@ class VPKFileSystem(FileSystem):
     def _file_exists(self, name: str):
         if self._ref is None:
             return name in self._ref
+
+    def _get_file(self, name: str):
+        try:
+            file = self._ref[name]
+        except KeyError:
+            raise FileNotFoundError(name) from None
+        return File(self, name.replace('\\', '/'), file)
 
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
