@@ -2,7 +2,7 @@
 
 This allows accessing raw files, zips and VPKs in the same way.
 """
-from zipfile import ZipFile
+from zipfile import ZipFile, ZipInfo
 import io
 import os.path
 
@@ -219,7 +219,8 @@ class ZipFileSystem(FileSystem):
         """
         self._check_open()
         # \\ is not allowed in zips.
-        name = name.replace('\\', '/')
+        if not isinstance(name, ZipInfo):
+            name = name.replace('\\', '/')
         try:
             return self._ref.open(name)
         except KeyError:
@@ -232,7 +233,8 @@ class ZipFileSystem(FileSystem):
         """
         self._check_open()
         # \\ is not allowed in zips.
-        name = name.replace('\\', '/')
+        if not isinstance(name, ZipInfo):
+            name = name.replace('\\', '/')
         try:
             return io.TextIOWrapper(self._ref.open(name), encoding)
         except KeyError:
