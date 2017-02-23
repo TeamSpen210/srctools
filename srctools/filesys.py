@@ -218,16 +218,29 @@ class FileSystemChain(FileSystem):
         return self._get_file(name).open_bin()
 
     def walk_folder(self, folder: str):
+        """Walk folders, not repeating files."""
         done = set()
+        for file in self.walk_folder_repeat(folder):
+            folded = file.path.casefold()
+            if folded in done:
+                continue
+            done.add(folded)
+            yield file
 
+    def walk_folder_repeat(self, folder: str=''):
+        """Walk folders, but allow repeating files.
+
+        If a file is contained in multiple systems, it will be yielded
+        for each. The first is the highest-priority.
+        """
         for sys, prefix in self.systems:
             full_folder = os.path.join(prefix, folder).replace('\\', '/')
             for file in sys.walk_folder(full_folder):
-                folded = file.path.casefold()
-                if folded in done:
-                    continue
-                done.add(folded)
-                yield File(self, os.path.relpath(file.path, prefix), file)
+                yield File(
+                    self,
+                    os.path.relpath(file.path, prefix).replace('\\', '/'),
+                    file,
+                )
 
     def _delete_ref(self) -> None:
         """Creating and deleting refs affects the underlying systems."""
