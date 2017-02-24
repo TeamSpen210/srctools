@@ -293,7 +293,6 @@ class Property:
                         if _read_flag(flags, flag_val):
                             # Special function - if the last prop was a
                             # keyvalue with this name, replace it instead.
-                            print('Flag: ', flag_val, cur_block.value[-1:], keyvalue)
                             if (
                                 can_flag_replace and
                                 cur_block.value[-1].real_name == token_value and
