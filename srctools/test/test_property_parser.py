@@ -103,6 +103,9 @@ text"
         "FlagAllows" "This" [test_enabled]
         "Flag" "blocksthis" [!test_enabled]
 
+        "Replaced" "shouldbe"
+        "Replaced" "toreplace" [test_enabled]
+        "Replaced" "alsothis"  [test_enabled]
         }
 '''
 
@@ -134,6 +137,8 @@ def test_parse():
             P('after ', 'value'),
             P('Flag', 'allowed'),
             P('FlagAllows', 'This'),
+            P('Replaced', 'toreplace'),
+            P('Replaced', 'alsothis'),
         ])
     ])
 

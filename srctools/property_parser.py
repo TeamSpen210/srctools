@@ -114,6 +114,20 @@ class NoKeyError(LookupError):
         return "No key " + self.key + "!"
 
 
+def _read_flag(flags: Dict[str, bool], flag_val: str):
+    """Check whether a flag is True or False."""
+    flag_inv = flag_val[:1] == '!'
+    if flag_inv:
+        flag_val = flag_val[1:]
+    flag_val = flag_val.casefold()
+    try:
+        flag_result = bool(flags[flag_val])
+    except KeyError:
+        flag_result = PROP_FLAGS_DEFAULT.get(flag_val, False)
+    # If flag succeeds
+    return flag_inv is not flag_result
+
+
 class Property:
     """Represents Property found in property files, like those used by Valve.
 
@@ -209,6 +223,8 @@ class Property:
 
         # Do we require a block to be opened next? ("name"\n must have { next.)
         requires_block = False
+        # Are we permitted to replace the last property with a flagged version of the same?
+        can_flag_replace = False
 
         for token_type, token_value in tokenizer:
             if token_type is BRACE_OPEN:
@@ -218,7 +234,7 @@ class Property:
                         'Property cannot have sub-section if it already '
                         'has an in-line value.',
                     )
-                requires_block = False
+                requires_block = can_flag_replace = False
                 cur_block = cur_block[-1]
                 cur_block.value = []
                 open_properties.append(cur_block)
@@ -231,12 +247,34 @@ class Property:
 
             if token_type is NEWLINE:
                 continue
-            if token_type is STRING:   # data string
+            if token_type is STRING:   # "string"
+                # We need to check the next token to figure out what kind of
+                # prop it is.
                 prop_type, prop_value = tokenizer()
 
-                if prop_type is NEWLINE:
+                # It's a block followed by flag.
+                if prop_type is PROP_FLAG:
+                    # That must be the end of the line..
+                    tokenizer.expect(NEWLINE)
+                    requires_block = True
+                    if _read_flag(flags, prop_value):
+                        # Special function - if the last prop was a
+                        # keyvalue with this name, replace it instead.
+                        if (
+                            can_flag_replace and
+                            cur_block.value[-1].real_name == token_value and
+                            cur_block.value[-1].has_children()
+                        ):
+                            cur_block.value[-1] = Property(token_value, [])
+                        else:
+                            cur_block.append(Property(token_value, []))
+                        # Can't do twice in a row
+                        can_flag_replace = False
+
+                elif prop_type is NEWLINE:
                     # It's a block...
                     requires_block = True
+                    can_flag_replace = False
                     cur_block.append(Property(token_value, []))
                     continue
                 elif prop_type is STRING:
@@ -246,24 +284,30 @@ class Property:
                     requires_block = False
 
                     keyvalue = Property(token_value, prop_value)
-                    # Check for flags.
 
+                    # Check for flags.
                     flag_token, flag_val = tokenizer()
                     if flag_token is PROP_FLAG:
-                        flag_inv = flag_val[:1] == '!'
-                        if flag_inv:
-                            flag_val = flag_val[1:]
-                        flag_val = flag_val.casefold()
-                        try:
-                            flag_result = bool(flags[flag_val])
-                        except KeyError:
-                            flag_result = PROP_FLAGS_DEFAULT.get(flag_val, True)
-                        # If flag succeeds
-                        if flag_inv is not flag_result:
-                            cur_block.append(keyvalue)
+                        # Should be the end of the line here.
+                        tokenizer.expect(NEWLINE)
+                        if _read_flag(flags, flag_val):
+                            # Special function - if the last prop was a
+                            # keyvalue with this name, replace it instead.
+                            print('Flag: ', flag_val, cur_block.value[-1:], keyvalue)
+                            if (
+                                can_flag_replace and
+                                cur_block.value[-1].real_name == token_value and
+                                not cur_block.value[-1].has_children()
+                            ):
+                                cur_block.value[-1] = keyvalue
+                            else:
+                                cur_block.append(keyvalue)
+                            # Can't do twice in a row
+                            can_flag_replace = False
                     elif flag_token is NEWLINE:
                         # Normal, unconditionally add
                         cur_block.append(keyvalue)
+                        can_flag_replace = True
                     # Otherwise it must be a new line.
                     else:
                         raise tokenizer.error(flag_token)
@@ -278,6 +322,8 @@ class Property:
                     raise tokenizer.error(
                         'Too many closing brackets.',
                     )
+                # For replacing the block.
+                can_flag_replace = True
             else:
                 raise tokenizer.error(token_type)
 

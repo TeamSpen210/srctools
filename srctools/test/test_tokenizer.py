@@ -95,6 +95,9 @@ def test_prop_tokens(py_c_token):
         (T.STRING, "FlagAllows"), (T.STRING, "This"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
         (T.STRING, "Flag"), (T.STRING, "blocksthis"), (T.PROP_FLAG, "!test_enabled"), T.NEWLINE,
         T.NEWLINE,
+        (T.STRING, "Replaced"), (T.STRING, "shouldbe"), T.NEWLINE,
+        (T.STRING, "Replaced"), (T.STRING, "toreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+        (T.STRING, "Replaced"), (T.STRING, "alsothis"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
         T.BRACE_CLOSE, T.NEWLINE,
     ]
 
