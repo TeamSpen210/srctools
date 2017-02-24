@@ -132,7 +132,7 @@ class FileSystem:
         """Check that a file exists."""
         raise NotImplementedError
 
-    def walk_folder(self, folder: str):
+    def walk_folder(self, folder: str) -> Iterator[File]:
         """Yield files in a folder."""
         raise NotImplementedError
 
