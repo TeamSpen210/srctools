@@ -289,6 +289,9 @@ class RawFileSystem(FileSystem):
 
         This should be closed when done.
         """
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
         return open(self._resolve_path(name), mode='rt', encoding=encoding)
 
     def open_bin(self, name: str):
@@ -296,12 +299,21 @@ class RawFileSystem(FileSystem):
 
         This should be closed when done.
         """
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
         return open(self._resolve_path(name), mode='rb')
 
     def _file_exists(self, name: str) -> bool:
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
         return os.path.isfile(self._resolve_path(name))
 
     def _get_file(self, name: str):
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
         if os.path.isfile(self._resolve_path(name)):
             return File(self, name.replace('\\', '/'))
         raise FileNotFoundError(name)
