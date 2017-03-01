@@ -8,12 +8,14 @@ from datetime import datetime as DateTime
 
 from typing import Union, List, Dict, Any
 
+
 class ConnVis(Enum):
     """Type of connection visibility."""
     ANTLINE = 0
     SIGNAGE = 1
     NONE    = 2
-    
+
+
 class ConnType(Enum):
     """Types of item connections.
     
@@ -33,9 +35,9 @@ class ConnType(Enum):
 class PropType(Enum):
     """The types of data in item properties."""
     # Special
-    SUBTYPE = 'subtype' # Buttontype, etc - int.
-    CONN_COUNT = 'conncount' # Connection count for normal and tbeam.
-    PANEL_ANGLE = 'panel_angle' # ramp_xx_deg_open
+    SUBTYPE = 'subtype'  # Buttontype, etc - int.
+    CONN_COUNT = 'conncount'  # Connection count for normal and tbeam.
+    PANEL_ANGLE = 'panel_angle'  # ramp_xx_deg_open
     
     # Generic
     INT = 'int'
@@ -43,7 +45,8 @@ class PropType(Enum):
     BOOL = 'bool'
     STR = 'str'
     VEC = 'vec'
-    
+
+
 class ItemProps(Enum):
     """Properties usable for items."""
     CONN_COUNT = 'CONNECTION_COUNT'
@@ -142,6 +145,7 @@ ITEM_PROPS = {
 }
 
 # Check they all have a type.
+prop = None
 for prop in ItemProps:
     # Start open, enabled, etc are all bool.
     if prop.name[:3] == 'ST_':
@@ -151,6 +155,22 @@ for prop in ItemProps:
     
     assert prop in ITEM_PROPS, prop
 del prop
+
+
+def hex_to_date(hex_time: str) -> DateTime:
+    """Convert from the hex format in P2Cs to a DateTime."""
+    try:
+        time = int(hex_time, base=16)
+    except ValueError:
+        return DateTime.now()
+    else:
+        return DateTime.fromtimestamp(time)
+
+
+def date_to_hex(time: DateTime) -> str:
+    """Convert from the hex format in P2Cs to a DateTime."""
+    return hex((time - DateTime(1970, 1, 1, 10, 0)).total_seconds())
+
 
 class Item:
     """Represents an item."""
@@ -231,7 +251,8 @@ class Item:
             conn_vis,
             props,
         )
-        
+
+
 class Connection:
     """Represents a connection between two items.
     
@@ -262,6 +283,7 @@ class Connection:
                 self.receiver.id,
             )
 
+
 class Puzzle:
     """Represents a P2C file."""
     def __init__(
@@ -272,7 +294,7 @@ class Puzzle:
         desc: str,
         items: Dict[int, Item],
         blocks: Dict[Vec_tuple, 'Block'],
-        conn: List['Conn'],
+        conn: List['Connection'],
     ):
         self.is_coop = coop
         self.size = size
@@ -328,4 +350,3 @@ class Puzzle:
             blocks, 
             conn,
         )
-
