@@ -171,6 +171,9 @@ class FileSystemChain(FileSystem):
                 self.add_sys(sys, prefix)
             self.add_sys(sys)
 
+    def __repr__(self):
+        return 'FileSystemChain({!r})'.format(', '.join(map(repr, self.systems)))
+
     @staticmethod
     def get_system(file: File) -> FileSystem:
         """Retrieve the system for a File, if it was produced from a FileSystemChain."""
@@ -263,6 +266,9 @@ class RawFileSystem(FileSystem):
     def __init__(self, path: str):
         super().__init__(os.path.abspath(path))
 
+    def __repr__(self):
+        return 'RawFileSystem({!r})'.format(self.path)
+
     def _resolve_path(self, path: str) -> str:
         """Get the absolute path."""
         abs_path = os.path.abspath(os.path.join(self.path, path))
@@ -334,6 +340,9 @@ class ZipFileSystem(FileSystem):
         self._name_to_info = {}
         super().__init__(path)
 
+    def __repr__(self):
+        return 'ZipFileSystem({!r})'.format(self.path)
+
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
         self._check_open()
@@ -400,6 +409,9 @@ class VPKFileSystem(FileSystem):
     def __init__(self, path: str):
         self._ref = None  # type: VPK
         super().__init__(path)
+
+    def __repr__(self):
+        return 'VPKFileSystem({!r})'.format(self.path)
 
     def _create_ref(self):
         self._ref = VPK(self.path)
