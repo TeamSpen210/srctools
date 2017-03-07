@@ -790,5 +790,6 @@ class Property:
         else:
             yield '"{}" "{}"\n'.format(
                 self.real_name,
-                self.value.replace('"', '\\"')
+                # We need to escape quotes and backslashes so they don't get detected.
+                self.value.replace('\\', '\\\\').replace('"', '\\"')
             )
