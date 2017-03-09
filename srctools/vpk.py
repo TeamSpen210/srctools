@@ -106,6 +106,10 @@ def _get_file_parts(value):
 
         # Strip '/' off the end, and './' from the beginning.
         path = os.path.normpath(path).replace('\\', '/').rstrip('/')
+
+        # Special case - empty path gets returned as '.'...
+        if path == '.':
+            path = ''
             
         return path, filename, ext
 
