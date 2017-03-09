@@ -469,4 +469,6 @@ class VPKFileSystem(FileSystem):
                     file = self._ref[name]
                 except KeyError:
                     raise FileNotFoundError(name)
-            return io.StringIO(file.read().decode(encoding))
+            # Wrap the data to treat it as bytes, then
+            # wrap that to decode and clean up universal newlines.
+            return io.TextIOWrapper(io.BytesIO(file.read()), encoding)
