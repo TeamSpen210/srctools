@@ -1128,6 +1128,21 @@ class UVAxis:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
+    def rotate(self, angles: Vec) -> 'UVAxis':
+        """Rotate the axis by a vector.
+
+        This doesn't handle offsets correctly.
+        """
+        vec = self.vec()
+        vec.rotate(*angles)
+        return UVAxis(
+            vec.x,
+            vec.y,
+            vec.z,
+            self.offset,
+            self.scale
+        )
+
     def __str__(self):
         """Generate the text form for this UV data."""
         return '[{x:g} {y:g} {z:g} {off:g}] {scale:g}'.format(
