@@ -1,16 +1,8 @@
 """Test the Vector object."""
-import pytest
 import operator as op
 
+from srctools.test import *
 from srctools import Vec_tuple, Vec
-
-
-VALID_NUMS = [
-    1, 1.5, 0.2827, 2346.45,
-]
-VALID_NUMS += [-x for x in VALID_NUMS]
-
-VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
 @pytest.fixture(params=[Vec])
@@ -21,13 +13,6 @@ def py_c_vec(request):
     Vec = request.param
     yield None
     Vec = orig_vec
-
-
-def iter_vec(nums):
-    for x in nums:
-        for y in nums:
-            for z in nums:
-                yield x, y, z
 
 
 def test_construction():
