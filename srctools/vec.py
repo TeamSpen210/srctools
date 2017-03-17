@@ -990,12 +990,22 @@ class Quat:
         
     @classmethod
     def from_angle(cls, angle: 'Angle'):
-        """Return the quaternion representing an euler angle."""
+        """Return the quaternion representing an Euler angle."""
         rot = cls()
         rot *= cls.from_roll(angle.roll)
         rot *= cls.from_pitch(angle.pitch)
         rot *= cls.from_yaw(angle.yaw)
         return rot
+
+    def to_angle(self) -> 'Angle':
+        """Return an Euler angle replicating this rotation."""
+        r, i, j, k = self.w, self.x, self.y, self.z
+        # Note, our yaw is reversed...
+        return Angle(
+            roll=math.degrees(math.atan2((r*i + j*k), 1 - 2*(i**2 + j**2))),
+            pitch=math.degrees(math.asin((r*j - k*i))),
+            yaw=-math.degrees(math.atan2((r*k + i*j), 1 - 2*(j**2 + k**2))),
+        )
         
     def __mul__(self, other: 'Quat'):
         if isinstance(other, Quat):

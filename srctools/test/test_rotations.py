@@ -1,6 +1,7 @@
 """Test rotations in srctools.vec."""
-from test_vec import assert_vec
-from test_angles import assert_angle
+from srctools.test import *
+from srctools import Vec, Quat, Angle
+
 
 def test_vec_identities():
     """Check that vectors in the same axis as the rotation don't get spun."""
@@ -45,3 +46,10 @@ def test_vec_basic_pitch():
     
     assert_vec(Vec(200, 0, 0) * Quat.from_pitch(270), 0, 0, 200)
     assert_vec(Vec(0, 0, 150) * Quat.from_pitch(270), -150, 0, 0)
+
+
+def test_ang_quat_roundtrip():
+    """Check converting to and from a quaternion does not change values."""
+    for p, y, r in iter_vec(range(0, 360, 90)):
+        quat = Quat.from_angle(Angle(p, y, r))
+        assert_ang(quat.to_angle(), p, y, r)
