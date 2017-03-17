@@ -8,7 +8,7 @@ from typing import Union as _Union
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
 
-    'Angle', 'RotationMatrix',
+    'Angle', 'Quat',
 
     'NoKeyError', 'KeyValError', 'Property',
 
@@ -291,8 +291,7 @@ class AtomicWriter:
 # Import these, so people can reference 'srctools.Vec' instead of
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
-from srctools.vec import Vec, Vec_tuple, parse_vec_str
-from srctools.rotation import Angle, RotationMatrix
+from srctools.vec import Vec, Vec_tuple, parse_vec_str, Angle, Quat
 from srctools.property_parser import NoKeyError, KeyValError, Property
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
