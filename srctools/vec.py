@@ -15,8 +15,12 @@ when used in math operations and comparing values.
 
 Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
 
+Rotations are represented by Euler angles, but modifications need to be
+performed using quaternions.
 
-"""
+Rotations are implemented as a multiplication, where the left is rotated by the
+right. Vectors can be rotated by quaternions and angles and quaternions can be
+rotated by angles, but not vice-versa. """
 import collections
 import math
 from collections import abc
@@ -24,10 +28,15 @@ from collections import abc
 from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
 
 
-__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
+__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Quat']
 
 
-def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
+def parse_vec_str(
+    val: Union[str, 'Vec', 'Angle'],
+    x=0.0,
+    y=0.0,
+    z=0.0
+) -> Tuple[float, float, float]:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
@@ -419,7 +428,6 @@ class Vec:
             yield self + direction * pos
         yield end.copy()  # Directly yield - ensures no rounding errors.
 
-
     def axis(self) -> str:
         """For a normal vector, return the axis it is on.
 
@@ -446,7 +454,6 @@ class Vec:
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
         )
-
 
     def to_angle_roll(self, z_norm: 'Vec', stride: int=90) -> 'Vec':
         """Produce a Source Engine angle with roll.
@@ -892,3 +899,313 @@ class Vec:
 
     len = mag
     mag_sq = len_sq
+    
+    class _Transform:
+        """Implements Vec.transform."""
+
+        def __init__(self, vec: 'Vec'):
+            self._vec = vec
+            self._quat = None  # type: Quat
+
+        def __enter__(self):
+            self._quat = Quat()
+            return self._quat
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if exc_type is not None or self._quat is None:
+                return
+            result = self._vec * self._quat
+            self._vec.x = result.x
+            self._vec.y = result.y
+            self._vec.z = result.z
+
+    transform = property(
+        fget=_Transform,
+        doc="""Perform rotations on this Vector efficently.
+
+        Used as a context manager, which returns a quaternion.
+        When the body is exited safely, the quaternion is applied to
+        the angle.
+        """,
+    )
+
+
+class Quat:
+    """Represents a quaternion rotation."""
+    def __init__(self, w: float=1.0, x: float=0.0, y: float=0.0, z: float=0.0):
+        """Create a quaternion."""
+        self.w = w
+        self.x = x
+        self.y = y
+        self.z = z
+        # This divides by a float, so they're all floats now.
+        self._normalize()
+            
+    def __eq__(self, other: 'Quat'):
+        if isinstance(other, Quat):
+            if self.x != other.x:
+                return False
+            elif self.y != other.y:
+                return False
+            elif self.z != other.z:
+                return False
+            elif self.w != other.w:
+                return False
+            else:
+                return True
+        
+    def __repr__(self):
+        return 'Quat({0.w}, {0.x:g}, {0.y:g}, {0.z:g})'.format(self)
+        
+    def _normalize(self):
+        """Normalize the vector."""
+        len_sq = self.x**2 + self.y**2 + self.z**2 + self.w**2
+        mag = math.sqrt(len_sq)
+        self.w /= mag
+        self.x /= mag
+        self.y /= mag
+        self.z /= mag
+        
+    def copy(self):
+        return Quat(self.w, self.x, self.y, self.z)
+        
+    @classmethod
+    def from_pitch(cls, pitch: float):
+        """Return the quaternion representing a pitch rotation."""
+        ang = math.radians(pitch) / 2
+        return cls(math.cos(ang), 0, math.sin(ang), 0)
+
+    @classmethod
+    def from_yaw(cls, yaw: float):
+        """Return the quaternion representing a pitch rotation."""
+        ang = math.radians(yaw) / 2
+        # Invert, we go in the opposite direction...
+        return cls(math.cos(ang), 0, 0, -math.sin(ang))
+        
+    @classmethod
+    def from_roll(cls, roll: float):
+        """Return the quaternion representing a pitch rotation."""
+        ang = math.radians(roll) / 2
+        return cls(math.cos(ang), math.sin(ang), 0, 0)
+        
+    @classmethod
+    def from_angle(cls, angle: 'Angle'):
+        """Return the quaternion representing an euler angle."""
+        rot = cls()
+        rot *= cls.from_roll(angle.roll)
+        rot *= cls.from_pitch(angle.pitch)
+        rot *= cls.from_yaw(angle.yaw)
+        return rot
+        
+    def __mul__(self, other: 'Quat'):
+        if isinstance(other, Quat):
+            return Quat(*self._quat_mul(other))
+        elif isinstance(other, Angle):
+            return Quat(*self._quat_mul(Quat.from_angle(other)))
+        else:
+            return NotImplemented
+        
+    def __rmul__(self, other: Vec):
+        if isinstance(other, Vec):
+            result = other.copy()
+            self._vec_rot(result)
+            return result
+        else:
+            return NotImplemented
+        
+    def __imul__(self, other: 'Quat'):
+        if isinstance(other, Quat):
+            self.w, self.x, self.y, self.z = self._quat_mul(other)
+            return self
+        elif isinstance(other, Angle):
+            (
+                self.w,
+                self.x,
+                self.y,
+                self.z,
+            ) = self._quat_mul(Quat.from_angle(other))
+        else:
+            return NotImplemented
+            
+    def _quat_mul(self, other: 'Quat') -> Tuple[float, float, float, float]:
+        """Perform self * other, and return the result."""
+        a1 = self.w
+        b1 = self.x
+        c1 = self.y
+        d1 = self.z
+
+        a2 = other.w    
+        b2 = other.x
+        c2 = other.y
+        d2 = other.z
+        return (
+            a1*a2 - b1*b2 - c1*c2 - d1*d2,  # w
+            a1*b2 + b1*a2 + c1*d2 - d1*c2,  # x
+            a1*c2 - b1*d2 + c1*a2 + d1*b2,  # y
+            a1*d2 + b1*c2 - c1*b2 + d1*a2,  # z
+        )
+    
+    def _vec_rot(self, vec: Vec):
+        """Rotate a vector by our value."""
+        vx = vec.x
+        vy = vec.y
+        vz = vec.z
+        
+        qw = self.w
+        qx = self.x
+        qy = self.y
+        qz = self.z
+        
+        # Inlined matrix creation and multiplication.
+        vec.x = (
+            +vx*(qw**2 + qx**2 - qy**2 -qz**2)
+            +vy*(2*qx*qy - 2*qw*qz)
+            +vz*(2*qx*qz + 2*qw*qy)
+        )
+        vec.y = (
+            +vx*(2*qx*qy + 2*qw*qz)
+            +vy*(qw**2 - qx**2 + qy**2 - qz**2)
+            +vz*(2*qy*qz - 2*qw*qx)
+        )
+        vec.z = (
+            +vx*(2*qx*qz - 2*qw*qy)
+            +vy*(2*qy*qz - 2*qw*qx)
+            +vz*(qw**2 - qx**2 - qy**2 + qz**2)
+        )
+        
+    
+class Angle:
+    """Represents a pitch-yaw-roll Euler angle.
+
+    All values are remapped to between 0-360 when set.
+    Addition and subtraction modify values, multiplication with Vec or Angle
+    rotates (RHS rotating LHS).
+    Angle * Vec is not allowed for consistency.
+    """
+    __slots__ = ['_pitch', '_yaw', '_roll']
+
+    def __init__(
+        self,
+        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
+        yaw: Union[int, float]=0.0,
+        roll: Union[int, float]=0.0,
+    ):
+        """Create an Angle.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the pitch argument), which will be
+        used for pitch, yaw, and roll. This includes Vectors and other Angles.
+        """
+        if isinstance(pitch, (int, float)):
+            self._pitch = float(pitch) % 360
+            self._yaw = float(yaw) % 360
+            self._roll = float(roll) % 360
+        else:
+            it = iter(pitch)
+            self._pitch = float(next(it, 0.0)) % 360
+            self._yaw = float(next(it, yaw)) % 360
+            self._roll = float(next(it, roll)) % 360
+
+    def copy(self) -> 'Angle':
+        """Create a duplicate of this vector."""
+        return Angle(self._pitch, self._yaw, self._roll)
+
+    @classmethod
+    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
+        """Convert a string in the form '(4 6 -4)' into an Angle.
+
+         If the string is unparsable, this uses the defaults.
+         The string can start with any of the (), {}, [], <> bracket
+         types, or none.
+
+         If the value is already a Angle, a copy will be returned.
+         """
+
+        pitch, yaw, roll = parse_vec_str(val, pitch, yaw, roll)
+        return cls(pitch, yaw, roll)
+
+    @property
+    def pitch(self):
+        """The Y-axis rotation, performed second."""
+        return self._pitch
+
+    @pitch.setter
+    def pitch(self, pitch):
+        self._pitch = float(pitch) % 360
+
+    @property
+    def yaw(self):
+        """The Z-axis rotation, performed last."""
+        return self._yaw
+
+    @yaw.setter
+    def yaw(self, yaw):
+        self._yaw = float(yaw) % 360
+
+    @property
+    def roll(self):
+        """The X-axis rotation, performed first."""
+        return self._roll
+
+    @roll.setter
+    def roll(self, roll):
+        self._roll = float(roll) % 360
+
+    def __repr__(self):
+        return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
+
+    def __rmul__(self, other: Union[Vec, 'Angle']):
+        """(Vec or Angle) * Angle rotates the first by the second."""
+        if isinstance(other, Vec):
+            return other * Quat.from_angle(self)
+        elif isinstance(other, Angle):
+            return self._rotate_angle(other)
+        else:
+            return Angle(
+                self._pitch * other,
+                self._roll * other,
+                self._yaw * other,
+            )
+
+    __rmatmul__ = __rmul__
+
+    def _rotate_angle(self, target: 'Angle'):
+        """Rotate the target by this angle.
+        
+        Inefficient if we have more than one rotation to do.
+        """
+        quat = Quat()
+        quat *= target
+        quat *= self
+        return quat.to_angle()
+
+    class _Transform:
+        """Implements Angle.transform."""
+
+        def __init__(self, angle: 'Angle'):
+            self._angle = angle
+            self._quat = None  # type: Quat
+
+        def __enter__(self):
+            self._quat = Quat.from_angle(self._angle)
+            return self._quat
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if exc_type is not None or self._quat is None:
+                return
+            new_ang = self._quat.to_angle()
+            self._angle._pitch = new_ang._pitch
+            self._angle._yaw = new_ang._yaw
+            self._angle._roll = new_ang._roll
+
+    transform = property(
+        fget=_Transform,
+        doc="""Perform transformations on this angle.
+
+        Used as a context manager, which returns a quaternion.
+        When the body is exited safely, the quaternion is applied to
+        the angle.
+        """,
+    )
+
