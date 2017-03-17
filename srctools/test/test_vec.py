@@ -30,28 +30,6 @@ def iter_vec(nums):
                 yield x, y, z
 
 
-def assert_vec(vec, x, y, z, msg=''):
-    """Asserts that Vec is equal to (x,y,z)."""
-    # Don't show in pytest tracebacks.
-    __tracebackhide__ = True
-
-    # Ignore slight variations
-    if not vec.x == pytest.approx(x):
-        failed = 'x'
-    elif not vec.y == pytest.approx(y):
-        failed = 'y'
-    elif not vec.z == pytest.approx(z):
-        failed = 'z'
-    else:
-        # Success!
-        return
-
-    new_msg = "{!r} != ({:g}, {:g}, {:g})".format(vec, x, y, z)
-    if msg:
-        new_msg += ': ' + str(msg)
-    pytest.fail(new_msg)
-
-
 def test_construction():
     """Check various parts of the constructor - Vec(), Vec.from_str()."""
     for x, y, z in iter_vec(VALID_ZERONUMS):
