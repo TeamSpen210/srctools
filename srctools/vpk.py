@@ -5,7 +5,7 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union, Dict
+from typing import Union, Dict, Optional
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
@@ -84,7 +84,7 @@ def _get_arch_filename(prefix='pak01', index: int=None):
         return '{}_{!s:>03}.vpk'.format(prefix, index)
 
 
-def _get_file_parts(value):
+def _get_file_parts(value, relative_to=''):
         """Get folder, name, ext parts from a string/tuple.
         
         Possible arguments:
@@ -103,6 +103,9 @@ def _get_file_parts(value):
         
         if not ext and '.' in filename:
             filename, ext = filename.rsplit('.', 1)
+
+        if relative_to:
+            path = os.path.relpath(path, relative_to)
 
         # Strip '/' off the end, and './' from the beginning.
         path = os.path.normpath(path).replace('\\', '/').rstrip('/')
@@ -248,7 +251,7 @@ class VPK:
         dir_file,
         *,
         mode: Union[OpenModes, str]='r',
-        dir_data_limit: int=1024
+        dir_data_limit: Optional[int]=1024
     ):
         """Create a VPK file.
         
@@ -510,10 +513,7 @@ class VPK:
         """
         self._check_writable()
         
-        path, name, ext = _get_file_parts(filename)
-        
-        if root is not None:
-            path = os.path.relpath(path, root)
+        path, name, ext = _get_file_parts(filename, root)
 
         try:
             ext_infos = self._fileinfo[ext]
