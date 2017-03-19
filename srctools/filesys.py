@@ -33,6 +33,7 @@ def get_filesystem(path: str) -> 'FileSystem':
         return VPKFileSystem(path)
     raise ValueError('Unrecognised filesystem for "{}"'.format(path))
 
+
 class File:
     """Represents a file in a system. Should not be created directly."""
     def __init__(self, system: 'FileSystem', path: str, data=None):
@@ -45,6 +46,10 @@ class File:
         self.sys = system
         self.path = path
         self._data = path if data is None else data
+
+    def __fspath__(self):
+        """This can be interpreted as a path."""
+        return self.path
 
     def open_bin(self):
         """Return a file-like object in bytes mode.
