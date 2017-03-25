@@ -26,8 +26,12 @@ from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
 
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
 
+# Type aliases
+Tuple3 = Tuple[float, float, float]
+AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple[float, float, float]:
+
+def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
@@ -217,10 +221,10 @@ class Vec:
     B = bottom = z_neg = Vec_tuple(0, 0, -1)
 
     def __init__(
-            self,
-            x: Union[int, float, 'Vec', Iterable[Union[int, float]]]=0.0,
-            y: Union[int, float]=0.0,
-            z: Union[int, float]=0.0,
+        self,
+        x: Union[int, float, 'Vec', Iterable[float]]=0.0,
+        y: float=0.0,
+        z: float=0.0,
     ):
         """Create a Vector.
 
@@ -353,7 +357,7 @@ class Vec:
 
         return self
 
-    def rotate_by_str(self, ang, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
+    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
@@ -423,7 +427,6 @@ class Vec:
             yield self + direction * pos
         yield end.copy()  # Directly yield - ensures no rounding errors.
 
-
     def axis(self) -> str:
         """For a normal vector, return the axis it is on.
 
@@ -492,6 +495,34 @@ class Vec:
             abs(self.z),
         )
 
+    # The numeric magic methods are defined via exec(), so we need stubs
+    # to annotate them in a way a type-checker can understand.
+    # These are immediately overwritten.
+
+    def __add__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __radd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+
+    def __sub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __rsub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+
+    def __mul__(self, other: float) -> 'Vec': pass
+    def __rmul__(self, other: float) -> 'Vec': pass
+    def __imul__(self, other: float) -> 'Vec': pass
+
+    def __truediv__(self, other: float) -> 'Vec': pass
+    def __rtruediv__(self, other: float) -> 'Vec': pass
+    def __itruediv__(self, other: float) -> 'Vec': pass
+
+    def __floordiv__(self, other: float) -> 'Vec': pass
+    def __rfloordiv__(self, other: float) -> 'Vec': pass
+    def __ifloordiv__(self, other: float) -> 'Vec': pass
+
+    def __mod__(self, other: float) -> 'Vec': pass
+    def __rmod__(self, other: float) -> 'Vec': pass
+    def __imod__(self, other: float) -> 'Vec': pass
+
     funcname = op = pretty = None
 
     # Use exec() to generate all the number magic methods. This reduces code
@@ -552,9 +583,9 @@ class Vec:
         return self.x != 0 or self.y != 0 or self.z != 0
 
     def __eq__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+        ) -> bool:
         """== test.
 
         Two Vectors are compared based on the axes.
@@ -577,7 +608,7 @@ class Vec:
 
     def __ne__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple3, SupportsFloat],
             ) -> bool:
         """!= test.
 
@@ -601,7 +632,7 @@ class Vec:
 
     def __lt__(
             self,
-            other: Union['Vec', abc.Sequence, SupportsFloat],
+            other: Union['Vec', Tuple3, SupportsFloat],
             ) -> bool:
         """A<B test.
 
@@ -629,7 +660,7 @@ class Vec:
 
     def __le__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple3, SupportsFloat],
             ) -> bool:
         """A<=B test.
 
@@ -657,7 +688,7 @@ class Vec:
 
     def __gt__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple3, SupportsFloat],
             ) -> bool:
         """A>B test.
 
@@ -685,7 +716,7 @@ class Vec:
 
     def __ge__(
             self,
-            other: Union['Vec', tuple, SupportsFloat],
+            other: Union['Vec', Tuple3, SupportsFloat],
     ) -> bool:
         """A>=B test.
 
@@ -711,7 +742,7 @@ class Vec:
             except ValueError:
                 return NotImplemented
 
-    def max(self, other: Union['Vec', Vec_tuple]):
+    def max(self, other: AnyVec):
         """Set this vector's values to the maximum of the two vectors."""
         if self.x < other.x:
             self.x = other.x
@@ -720,7 +751,7 @@ class Vec:
         if self.z < other.z:
             self.z = other.z
 
-    def min(self, other: Union['Vec', Vec_tuple]):
+    def min(self, other: AnyVec):
         """Set this vector's values to be the minimum of the two vectors."""
         if self.x > other.x:
             self.x = other.x
@@ -817,7 +848,7 @@ class Vec:
         """Return the magnitude squared, which is slightly faster."""
         return self.x**2 + self.y**2 + self.z**2
 
-    def __len__(self):
+    def __len__(self) -> int:
         """The len() of a vector is the number of non-zero axes."""
         return (
             (self.x != 0) +
@@ -825,7 +856,7 @@ class Vec:
             (self.z != 0)
         )
 
-    def __contains__(self, val):
+    def __contains__(self, val: float):
         """Check to see if an axis is set to the given value.
         """
         return val == self.x or val == self.y or val == self.z
@@ -855,7 +886,7 @@ class Vec:
             val += 0
             return val
 
-    def dot(self, other):
+    def dot(self, other: AnyVec):
         """Return the dot product of both Vectors."""
         return (
             self.x * other.x +
@@ -863,7 +894,7 @@ class Vec:
             self.z * other.z
         )
 
-    def cross(self, other):
+    def cross(self, other: AnyVec):
         """Return the cross product of both Vectors."""
         return Vec(
             self.y * other.z - self.z * other.y,
@@ -873,8 +904,8 @@ class Vec:
 
     def localise(
             self,
-            origin: Union['Vec', tuple],
-            angles: Union['Vec', tuple]=None,
+            origin: Union['Vec', Tuple3],
+            angles: Union['Vec', Tuple3]=None,
     ):
         """Shift this point to be local to the given position and angles.
 
