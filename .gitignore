@@ -6,6 +6,9 @@ __pycache__/
 
 .idea/
 
+# Pytest
+.cache/
+
 # =========================
 # Operating System Files
 # =========================
