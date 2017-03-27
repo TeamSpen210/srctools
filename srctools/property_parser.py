@@ -58,14 +58,13 @@ They end with a quote."
     \n, \t, and \\ will be converted in Property values.
 """
 import sys
-import srctools
 
 from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
 from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
 
 from typing import (
     Optional, Union, Any,
-    List, Tuple, Iterator,
+    List, Tuple, Dict, Iterator,
 )
 
 
