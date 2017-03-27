@@ -102,7 +102,6 @@ BOOL_LOOKUP = {
     '0': False,
     'no': False,
     'false': False,
-    'FALSE': False,
     'n': False,
     'f': False,
 
@@ -111,7 +110,6 @@ BOOL_LOOKUP = {
     '1': True,
     'yes': True,
     'true': True,
-    'TRUE': True,
     'y': True,
     't': True,
 }
@@ -387,6 +385,7 @@ class AtomicWriter:
 # Not all classes are imported, just most-used ones.
 from srctools.vec import Vec, Vec_tuple, parse_vec_str
 from srctools.property_parser import NoKeyError, Property
+from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
 from srctools.fgd import FGD

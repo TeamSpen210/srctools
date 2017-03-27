@@ -3,8 +3,15 @@
 """
 from enum import Enum
 from io import BytesIO
-from srctools import AtomicWriter
+from srctools import AtomicWriter, Vec
 import struct
+
+from typing import List, Iterator
+
+__all__ = [
+    'BSP_LUMPS', 'VERSIONS'
+    'BSP', 'Lump', 'StaticProp',
+]
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 
@@ -231,7 +238,8 @@ class BSP:
                 file_off,
                 file_len,
             ) = get_struct(game_lump, '<4s HH ii')
-            self.game_lumps[lump_id] = (flags, version, file_off, file_len)
+            # The lump ID is backward..
+            self.game_lumps[lump_id[::-1]] = (flags, version, file_off, file_len)
 
     def get_game_lump(self, lump_id):
         """Get a given game-lump, given the 4-character byte ID."""
@@ -304,11 +312,17 @@ class BSP:
 
         return out.getvalue()
 
-    def read_static_prop_models(self):
-        """Get a list of all model names used by static props."""
-        static_lump = BytesIO(self.get_game_lump(b'prps'))
+    def read_static_props(self) -> Iterator['StaticProp']:
+        """Read in the Static Props lump."""
+        # The version of the static prop format - different features.
+        version = self.game_lumps[b'sprp'][1]
+        if version > 9:
+            raise ValueError('Unknown version "{}"!'.format(version))
+
+        static_lump = BytesIO(self.get_game_lump(b'sprp'))
         dict_num = get_struct(static_lump, 'i')[0]
 
+        # Array of model filenames.
         model_dict = []
         for _ in range(dict_num):
             padded_name = get_struct(static_lump, '128s')[0]
@@ -317,7 +331,104 @@ class BSP:
                 padded_name.rstrip(b'\x00').decode('ascii')
             )
 
-        return model_dict
+        visleaf_count = get_struct(static_lump, 'i')[0]
+        visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
+
+        prop_count = get_struct(static_lump, 'i')[0]
+
+        print(model_dict)
+
+        print('-' * 30)
+        print('props', version, prop_count)
+        print('-' * 30)
+
+        pos = static_lump.tell()
+        data = static_lump.read()
+        static_lump.seek(pos)
+        for i in range(12, 200, 12):
+            vals = Vec(struct.unpack_from('fff', data, i))
+            # if vals: and vals == round(vals):
+            print(i, repr(vals))
+
+        print(flush=True)
+        for i in range(prop_count):
+            origin = Vec(get_struct(static_lump, 'fff'))
+            angles = Vec(get_struct(static_lump, 'fff'))
+            (
+                model_ind,
+                first_leaf,
+                leaf_count,
+                solidity,
+                flags,
+                skin,
+                min_fade,
+                max_fade,
+            ) = get_struct(static_lump, 'HHHBBiff')
+
+            model_name = model_dict[model_ind]
+
+            visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
+            lighting_origin = Vec(get_struct(static_lump, 'fff'))
+
+            if version >= 5:
+                fade_scale = get_struct(static_lump, 'f')[0]
+            else:
+                fade_scale = 1  # default
+
+            if version in (6, 7):
+                min_dx_level, max_dx_level = get_struct(static_lump, 'HH')
+            else:
+                # Replaced by GPU & CPU in later versions.
+                min_dx_level = max_dx_level = 0  # None
+
+            if version >= 8:
+                (
+                    min_cpu_level,
+                    max_cpu_level,
+                    min_gpu_level,
+                    max_gpu_level,
+                ) = get_struct(static_lump, 'BBBB')
+            else:
+                # None
+                min_cpu_level = max_cpu_level = min_gpu_level = max_gpu_level = 0
+
+            if version >= 7:
+                r, g, b, a = get_struct(static_lump, 'BBBB')
+                # Alpha isn't used.
+                tint = Vec(r, g, b)
+            else:
+                # No tint.
+                tint = Vec(255, 255, 255)
+            if version >= 9:
+                disable_on_xbox = get_struct(static_lump, '?')[0]
+            else:
+                disable_on_xbox = False
+
+            # Unknown padding...
+            static_lump.read(3)
+
+            yield StaticProp(
+                model_name,
+                origin,
+                angles,
+                visleafs,
+                solidity,
+                flags,
+                skin,
+                min_fade,
+                max_fade,
+                lighting_origin,
+                fade_scale,
+                min_dx_level,
+                max_dx_level,
+                min_cpu_level,
+                max_cpu_level,
+                min_gpu_level,
+                max_gpu_level,
+                tint,
+                disable_on_xbox,
+            )
+
 
 
 class Lump:
@@ -368,3 +479,56 @@ class Lump:
                 s=self
             )
         )
+
+
+class StaticProp:
+    """Represents a prop_static in the BSP.
+
+    Different features were added in different versions.
+    v5+ allows fade_scale.
+    v6 and v7 allow min/max DXLevel.
+    v8+ allows min/max GPU and CPU levels.
+    v7+ allows model tinting.
+    v9+ allows disabling on XBox 360.
+    """
+    def __init__(
+        self,
+        model: str,
+        origin: Vec,
+        angles: Vec,
+        visleafs: List[int],
+        solidity: int,
+        flags: int,
+        skin: int,
+        min_fade: float,
+        max_fade: float,
+        lighting_origin: Vec,
+        fade_scale: float,
+        min_dx_level: int,
+        max_dx_level: int,
+        min_cpu_level: int,
+        max_cpu_level: int,
+        min_gpu_level: int,
+        max_gpu_level: int,
+        tint: Vec,  # Rendercolor
+        disable_on_xbox: bool,
+    ):
+        self.model = model
+        self.origin = origin
+        self.angles = angles
+        self.visleafs = visleafs
+        self.solidity = solidity
+        self.flags = flags
+        self.skin = skin
+        self.min_fade = min_fade
+        self.max_fade = max_fade
+        self.lighting = lighting_origin
+        self.fade_scale = fade_scale
+        self.min_dx_level = min_dx_level
+        self.max_dx_level = max_dx_level
+        self.min_cpu_level = min_cpu_level
+        self.max_cpu_level = max_cpu_level
+        self.min_gpu_level = min_gpu_level
+        self.max_gpu_level = max_gpu_level
+        self.tint = tint
+        self.disable_on_xbox = disable_on_xbox

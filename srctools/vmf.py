@@ -884,7 +884,7 @@ class VisGroup:
         buffer.write(ind + '\t"color" "{}"\n'.format(self.color))
         for child in self.child_groups:
             child.export(buffer, ind + '\t')
-        buffer.write('}\n')
+        buffer.write(ind + '}\n')
 
     def set_visible(self, target):
         """Find all objects with this ID, and set them to the given visibility."""
@@ -1129,6 +1129,21 @@ class UVAxis:
     def vec(self) -> Vec:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
+
+    def rotate(self, angles: Vec) -> 'UVAxis':
+        """Rotate the axis by a vector.
+
+        This doesn't handle offsets correctly.
+        """
+        vec = self.vec()
+        vec.rotate(*angles)
+        return UVAxis(
+            vec.x,
+            vec.y,
+            vec.z,
+            self.offset,
+            self.scale
+        )
 
     def __str__(self):
         """Generate the text form for this UV data."""
@@ -1855,14 +1870,18 @@ class Entity:
         else:
             return Vec.from_str(self['origin'])
 
+# One $fixup variable with replacement.
 FixupTuple = namedtuple('FixupTuple', 'var value id')
 
 
 class EntityFixup:
-    """A speciallised mapping which keeps track of the variable indexes.
+    """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
     writing variables with $ signs in front.
+
+    Additionally, lookups never fail - returning '' instead. Pass in a non-string
+    default or use `in` to distinguish,.
     """
     __slots__ = ['_fixup']
 
@@ -1870,6 +1889,7 @@ class EntityFixup:
         self._fixup = {}
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
+        # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
         used_indexes = set()
@@ -1937,8 +1957,11 @@ class EntityFixup:
         if var[0] == '$':
             var = var[1:]
 
-        if isinstance(val, bool):
-            val = '1' if val else '0'
+            val = (
+                ('1' if val else '0')
+                if isinstance(val, bool)
+                else str(val)
+            )
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
