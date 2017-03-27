@@ -6,6 +6,9 @@ __pycache__/
 
 .idea/
 
+# Pytest
+.cache/
+
 # =========================
 # Operating System Files
 # =========================
@@ -39,7 +42,9 @@ srctools/_tokenizer\.html
 
 srctools/_tokenizer\.c
 
-srctools/_tokenizer\.pyd
+*.pyd
+
 
 # Built output
 srctools-*/
+

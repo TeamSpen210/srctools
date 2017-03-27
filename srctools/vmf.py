@@ -326,12 +326,14 @@ class VMF:
         for i in item:
             self.add_ent(i)
 
-    def create_ent(self, **kargs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs) -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
         it.
+        A classname must be passed!
         """
+        kargs['classname'] = classname
         ent = Entity(self, keys=kargs)
         self.add_ent(ent)
         return ent
@@ -1846,7 +1848,7 @@ class Entity:
         if self.id in self.map.ent_id:
             self.map.ent_id.remove(self.id)
 
-    def get_bbox(self) -> (Vec, Vec):
+    def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
         if self.is_brush():
             bbox_min, bbox_max = self.solids[0].get_bbox()

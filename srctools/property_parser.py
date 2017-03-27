@@ -58,15 +58,15 @@ They end with a quote."
     \n, \t, and \\ will be converted in Property values.
 """
 import sys
-import srctools
 
 from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
 from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
 
 from typing import (
     Optional, Union, Any,
-    Dict, List, Tuple, Iterator,
+    List, Tuple, Dict, Iterator,
 )
+
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
@@ -97,7 +97,7 @@ class KeyValError(TokenSyntaxError):
     line_num = The line where the error occurred.
     """
 
-
+    
 class NoKeyError(LookupError):
     """Raised if a key is not found when searching from find_key().
 
@@ -378,7 +378,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop
         if def_ is _NO_KEY_FOUND:
@@ -395,7 +395,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop.value
         if def_ is _NO_KEY_FOUND:
@@ -581,7 +581,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
-            for prop in self.value:  # type: Property
+            for prop in self.value:
                 if prop._folded_name == key:
                     return True
             return False
@@ -594,7 +594,7 @@ class Property:
                 str,
                 int,
                 slice,
-                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]],
+                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]]
             ],
             ) -> str:
         """Allow indexing the children directly.
@@ -735,7 +735,7 @@ class Property:
             names
         }
         if self.has_children():
-            for item in self.value[:]:  # type: Property
+            for item in self.value[:]:
                 if item._folded_name in folded_names:
                     merge[item._folded_name].value.extend(item.value)
                 else:
