@@ -69,6 +69,8 @@ class Token(Enum):
     BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG
 
     COLON = ':'
+    EQUALS = '='
+    PLUS = '+'
 
 
 OPERATORS = {
