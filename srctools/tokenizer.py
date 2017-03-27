@@ -6,7 +6,7 @@ from enum import Enum
 
 from typing import (
     Union, Optional,
-    Callable, Iterable,
+    Callable, Iterable, Iterator,
     Tuple
 )
 
@@ -58,11 +58,11 @@ class Token(Enum):
     EOF = 0  # Ran out of text.
     STRING = 1  # Quoted or unquoted text
     NEWLINE = 2  # \n
+    PAREN_ARGS = 3  # (data)
+
     BRACE_OPEN = '{'
     BRACE_CLOSE = '}'
 
-    PAREN_OPEN = '('
-    PAREN_CLOSE = ')'
 
     PROP_FLAG = 10  # [!flag]
     BRACK_OPEN = 11  # only if above is not used
@@ -95,7 +95,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = '"\'{}<>();:[]'
+BARE_DISALLOWED = '"\'{}<>();:[]\n\t '
 
 
 class Tokenizer:
@@ -243,15 +243,28 @@ class Tokenizer:
                         raise self.error('Unterminated property flag!')
                     value_chars.append(next_char)
 
+            elif next_char == '(':
+                # Parentheses around text...
+                value_chars = []
+                while True:
+                    next_char = self._next_char()
+                    if next_char == ')':
+                        return Py_Token.PAREN_ARGS, ''.join(value_chars)
+                    elif next_char == '\n':
+                        self.line_num += 1
+                    elif next_char is None:
+                        raise self.error('Unterminated parentheses!')
+                    value_chars.append(next_char)
+
             # Bare names
             elif next_char not in BARE_DISALLOWED:
                 value_chars = [next_char]
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED:
-                        raise self.error('Unexpected character "{}"!', next_char)
-                    elif next_char in ' \t\n':
-                        # We need to repeat this so we return the newline.
+                        # We need to repeat this so we return the ending
+                        # char next. If it's not allowed, that'll error on
+                        # next call.
                         self.char_index -= 1
                         return Py_Token.STRING, ''.join(value_chars)
                     elif next_char is None:
