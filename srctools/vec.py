@@ -221,19 +221,11 @@ class Vec:
     B = bottom = z_neg = Vec_tuple(0, 0, -1)
 
     def __init__(
-<<<<<<< HEAD
-            self,
-            x: Union[int, float, 'Vec', Iterable[Union[int, float]]]=0.0,
-            y: Union[int, float]=0.0,
-            z: Union[int, float]=0.0,
-    ) -> None:
-=======
         self,
         x: Union[int, float, 'Vec', Iterable[float]]=0.0,
         y: float=0.0,
         z: float=0.0,
-    ):
->>>>>>> dev
+    ) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -616,11 +608,7 @@ class Vec:
 
     def __ne__(
             self,
-<<<<<<< HEAD
-            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
-=======
             other: Union['Vec', Tuple3, SupportsFloat],
->>>>>>> dev
             ) -> bool:
         """!= test.
 
@@ -644,11 +632,7 @@ class Vec:
 
     def __lt__(
             self,
-<<<<<<< HEAD
-            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
-=======
             other: Union['Vec', Tuple3, SupportsFloat],
->>>>>>> dev
             ) -> bool:
         """A<B test.
 
@@ -676,11 +660,7 @@ class Vec:
 
     def __le__(
             self,
-<<<<<<< HEAD
-            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
-=======
             other: Union['Vec', Tuple3, SupportsFloat],
->>>>>>> dev
             ) -> bool:
         """A<=B test.
 
@@ -708,11 +688,7 @@ class Vec:
 
     def __gt__(
             self,
-<<<<<<< HEAD
-            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
-=======
             other: Union['Vec', Tuple3, SupportsFloat],
->>>>>>> dev
             ) -> bool:
         """A>B test.
 
@@ -740,11 +716,7 @@ class Vec:
 
     def __ge__(
             self,
-<<<<<<< HEAD
-            other: Union['Vec', Tuple[float, float, float], SupportsFloat],
-=======
             other: Union['Vec', Tuple3, SupportsFloat],
->>>>>>> dev
     ) -> bool:
         """A>=B test.
 
@@ -885,11 +857,7 @@ class Vec:
             (self.z != 0)
         )
 
-<<<<<<< HEAD
     def __contains__(self, val: float) -> bool:
-=======
-    def __contains__(self, val: float):
->>>>>>> dev
         """Check to see if an axis is set to the given value.
         """
         return val == self.x or val == self.y or val == self.z
