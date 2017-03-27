@@ -63,7 +63,6 @@ class Token(Enum):
     BRACE_OPEN = '{'
     BRACE_CLOSE = '}'
 
-
     PROP_FLAG = 10  # [!flag]
     BRACK_OPEN = 11  # only if above is not used
     BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG

@@ -7,20 +7,20 @@ class Token(Enum):
     EOF = 0  # Ran out of text.
     STRING = 1  # Quoted or unquoted text
     NEWLINE = 2  # \n
+    PAREN_ARGS = 3  # (data)
     BRACE_OPEN = '{'
     BRACE_CLOSE = '}'
-
-    PAREN_OPEN = '('
-    PAREN_CLOSE = ')'
 
     PROP_FLAG = 10  # [!flag]
     BRACK_OPEN = 11  # only if above is not used
     BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG
 
     COLON = ':'
+    EQUALS = '='
+    PLUS = '+'
 
 # Characters not allowed for bare names on a line.
-DEF BARE_DISALLOWED = '"\'{}<>();:[]'
+DEF BARE_DISALLOWED = '"\'{}<>();:[]\n\t '
 
 
 cdef class Tokenizer:
@@ -41,11 +41,15 @@ cdef class Tokenizer:
     cdef object _tok_EOF
     cdef object _tok_STRING
     cdef object _tok_PROP_FLAG
+    cdef object _tok_PAREN_ARGS
     cdef object _tok_NEWLINE
     cdef object _tok_BRACE_OPEN
     cdef object _tok_BRACE_CLOSE
     cdef object _tok_BRACK_OPEN
     cdef object _tok_BRACK_CLOSE
+    cdef object _tok_COLON
+    cdef object _tok_EQUALS
+    cdef object _tok_PLUS
 
     def __init__(self, data not None, filename=None, error=None, bint string_bracket=False):
         if isinstance(data, str):
@@ -72,15 +76,18 @@ cdef class Tokenizer:
         self.string_bracket = string_bracket
         self.line_num = 1
 
-
         self._tok_STRING = Token.STRING
         self._tok_PROP_FLAG = Token.PROP_FLAG
         self._tok_NEWLINE = Token.NEWLINE
+        self._tok_PAREN_ARGS = Token.PAREN_ARGS
         self._tok_EOF = (Token.EOF, None)
         self._tok_BRACE_OPEN = (Token.BRACE_OPEN, '{')
         self._tok_BRACE_CLOSE = (Token.BRACE_CLOSE, '}')
         self._tok_BRACK_OPEN = (Token.BRACK_OPEN, '[')
         self._tok_BRACK_CLOSE = (Token.BRACK_CLOSE, ']')
+        self._tok_COLON = (Token.COLON, ':')
+        self._tok_EQUALS = (Token.EQUALS, '=')
+        self._tok_PLUS = (Token.PLUS, '+')
 
     def error(self, message, *args):
         """Raise a syntax error exception.
@@ -136,7 +143,7 @@ cdef class Tokenizer:
         """Return the next token, value pair."""
         return self._next_token()
 
-    cdef tuple _next_token(self):
+    cdef _next_token(self):
         cdef:
             list value_chars
             Py_UCS4 next_char
@@ -154,6 +161,10 @@ cdef class Tokenizer:
                 return self._tok_BRACE_CLOSE
             elif next_char == ':':
                 return self._tok_COLON
+            elif next_char == '+':
+                return self._tok_PLUS
+            elif next_char == '=':
+                return self._tok_EQUALS
             elif next_char == ']':
                 return self._tok_BRACK_CLOSE
 
@@ -231,6 +242,19 @@ cdef class Tokenizer:
                         raise self.error(self._tok_NEWLINE)
                     value_chars.append(next_char)
 
+            elif next_char == '(':
+                # Parentheses around text...
+                value_chars = []
+                while True:
+                    next_char = self._next_char()
+                    if next_char == -1:
+                        raise self._error('Unterminated parentheses!')
+                    elif next_char == ')':
+                        return self._tok_PAREN_ARGS, ''.join(value_chars)
+                    elif next_char == '\n':
+                        self.line_num += 1
+                    value_chars.append(next_char)
+
             else: # Not-in can't be in a switch, so we need to nest this.
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
@@ -243,14 +267,14 @@ cdef class Tokenizer:
                             return self._tok_STRING, ''.join(value_chars)
 
                         elif next_char in BARE_DISALLOWED:
-                            raise self._error(f'Unexpected character "{next_char}"!')
-                        elif next_char in ' \t\n':
+                            # We need to repeat this so we return the ending
+                            # char next. If it's not allowed, that'll error on
+                            # next call.
                             # We need to repeat this so we return the newline.
                             self.char_index -= 1
                             return self._tok_STRING, ''.join(value_chars)
                         else:
                             value_chars.append(next_char)
-
                 else:
                     raise self._error(f'Unexpected character "{next_char}"!')
 
@@ -258,11 +282,20 @@ cdef class Tokenizer:
         # Call ourselves until EOF is returned
         return iter(self, self._tok_EOF)
 
-    def expect(self, object token):
+    def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.
+        If skip_newline is true, newlines will be skipped over. This
+        does not apply if the desired token is newline.
         """
-        next_token = self._next_token()[0]
+        if token is self._tok_NEWLINE:
+            skip_newline = False
+
+        next_token, value = <tuple>self._next_token()
+
+        while skip_newline and next_token is self._tok_NEWLINE:
+            next_token, value = <tuple>self._next_token()
+
         if next_token is not token:
             raise self._error(f'Expected {token}, but got {next_token}!')
