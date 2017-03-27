@@ -277,32 +277,47 @@ class Tokenizer:
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[Token, Optional[str]]]:
         # Call ourselves until EOF is returned
         return iter(self, (Py_Token.EOF, None))
 
-    def expect(self, token: Token):
+    def expect(self, token: Token, skip_newline=True):
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.
+        If skip_newline is true, newlines will be skipped over. This
+        does not apply if the desired token is newline.
         """
+
+        if token is Token.NEWLINE:
+            skip_newline = False
+
         next_token, value = self()
+
+        while skip_newline and next_token is Token.NEWLINE:
+            next_token, value = self()
+
         if next_token is not token:
             raise self.error(
                 'Expected {}, but got {}!',
                 token,
                 next_token,
             )
+        return value
 
 # These are available as both C and Python versions, plus the unprefixed
 # best version.
 Py_Token = Token
 Py_Tokenizer = Tokenizer
+
+# These are for static typing help, so it knows they're the same.
+C_Token = Token
+C_Tokenizer = Tokenizer
 try:
     # noinspection all
     from srctools._tokenizer import Token, Tokenizer
 except ImportError:
-    C_Token = C_Tokenizer = None
+    C_Token = C_Tokenizer = None  # type: ignore
 else:
-    C_Token = Token
-    C_Tokenizer = Tokenizer
+    C_Token = Token  # type: ignore
+    C_Tokenizer = Tokenizer  # type: ignore
