@@ -10,7 +10,7 @@ import os.path
 from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
-from typing import Iterator, Union, List, Tuple
+from typing import Iterator, Union, List, Tuple, Dict
 
 __all__ = [
     'File', 'FileSystem', 'get_filesystem',
@@ -124,7 +124,7 @@ class FileSystem:
             raise KeyError
 
     def __contains__(self, name: str):
-        return self._get_file(name)
+        return self._file_exists(name)
 
     def _file_exists(self, name: str) -> bool:
         try:
@@ -134,7 +134,7 @@ class FileSystem:
             return False
 
     def _get_file(self, name: str) -> File:
-        """Check that a file exists."""
+        """Return a specific file."""
         raise NotImplementedError
 
     def walk_folder(self, folder: str) -> Iterator[File]:
@@ -260,6 +260,95 @@ class FileSystemChain(FileSystem):
         """Creating and deleting refs affects the underlying systems."""
         for sys, prefix in self.systems:
             sys.open_ref()
+        self._ref = True
+
+
+class VirtualFileSystem(FileSystem):
+    """Access a dict as if it were a filesystem.
+    
+    The dict should map file paths to either bytes or strings.
+    The encoding arg specifies how text data is presented if open_bin()
+    is called.
+    """
+
+    def __init__(self, mapping: Dict[str, Union[str, bytes]], encoding='utf8'):
+        super().__init__('<virtual>')
+        self._mapping = {
+            self._clean_path(filename): (filename, data)
+            for filename, data in
+            dict(mapping).items()
+        }
+        self.bytes_encoding = encoding
+
+    @staticmethod
+    def _clean_path(path: str) -> str:
+        """Convert paths to one representation."""
+        return os.path.normpath(path).replace('\\', '/').casefold()
+
+    def open_bin(self, name: str):
+        """Return a bytes buffer for a 'file'."""
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
+        try:
+            filename, data = self._mapping[self._clean_path(name)]
+        except KeyError:
+            raise FileNotFoundError(name)
+        if isinstance(data, str):
+            data = data.encode(self.bytes_encoding)
+        return io.BytesIO(data)
+
+    def open_str(self, name: str, encoding='utf8'):
+        """Return a string buffer for a 'file'. 
+        
+        This performs universal newlines conversion.
+        The encoding argument is ignored for files which are
+        originally text.
+        """
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
+        try:
+            filename, data = self._mapping[self._clean_path(name)]
+        except KeyError:
+            raise FileNotFoundError(name)
+        if isinstance(data, bytes):
+            # Decode on the fly, with universal newlines.
+            return io.TextIOWrapper(
+                io.BytesIO(data),
+                encoding=encoding,
+            )
+        else:
+            # None = universal newlines mode directly.
+            # No encoding is needed obviously.
+            return io.StringIO(data, newline=None)
+
+    def walk_folder(self, folder: str) -> Iterator[File]:
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
+        for filename, data in self._mapping.values():
+            yield File(self, filename)
+
+    def _file_exists(self, name: str) -> bool:
+        return self._clean_path(name) in self._mapping
+
+    def _get_file(self, name: str) -> File:
+        # We don't need this, but it should match other filesystems.
+        self._check_open()
+
+        try:
+            filename, data = self._mapping[self._clean_path(name)]
+        except KeyError:
+            raise FileNotFoundError(name)
+        return File(self, filename)
+
+    def _delete_ref(self) -> None:
+        """The virtual filesystem doesn't need a reference to anything."""
+        self._ref = None
+
+    def _create_ref(self) -> None:
+        """The virtual filesystem doesn't need a reference to anything."""
         self._ref = True
 
 
