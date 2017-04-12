@@ -2290,10 +2290,12 @@ class Output:
 
     def export(self, buffer, ind=''):
         """Generate the text required to define this output in the VMF."""
-        buffer.write(
-            '{ind}"{output}" "{targ}{sep}{input}{sep}{params}'
+        buffer.write(ind + self._get_text())
+        
+    def _get_text(self):
+        return (
+            '"{output}" "{targ}{sep}{input}{sep}{params}'
             '{sep}{delay:g}{sep}{times}"\n'.format(
-                ind=ind,
                 output=self.exp_out(),
                 targ=self.target,
                 input=self.exp_in(),
@@ -2303,6 +2305,7 @@ class Output:
                 sep=',' if self.comma_sep else OUTPUT_SEP,
             )
         )
+        
 
     def copy(self):
         """Duplicate this output object."""
