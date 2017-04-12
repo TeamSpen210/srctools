@@ -2257,15 +2257,29 @@ class Output:
             return self.input
 
     def __repr__(self):
-        return (
-            '{cls}({s.output}, {s.target}, {s.input}, {s.params!r}'
-            '{s.delay!r}, {s.times!r}, {s.inst_out!r}, {s.inst_in!r},'
-            ' {comma})'.format(
+        vals = (
+            '{cls}({s.output!r}, {s.target!r}, {s.input!r}, {s.params!r}, '
+            'delay={s.delay!r}'.format(
                 s=self,
                 cls=self.__class__.__name__,
-                comma=self.comma_sep,
             )
         )
+        if self.inst_in is not None:
+            vals += ', inst_in=' + repr(self.inst_in)
+        if self.inst_out is not None:
+            vals += ', inst_out=' + repr(self.inst_out)
+            
+        if self.times == 1:
+            # Use only_once  to be more clear
+            vals += ', only_once=True'
+        elif self.times != -1:
+            # Use 'raw' value if a specific count 
+            vals += ', times=' + repr(self.times)
+        # Omit if infinite, most common
+        
+        if self.comma_sep:
+            vals += ', comma_sep=True'
+        return vals + ')'
 
     def __str__(self):
         """Generate a user-friendly representation of this output."""
