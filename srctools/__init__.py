@@ -14,6 +14,8 @@ __all__ = [
     'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
 
     'EmptyMapping', 'AtomicWriter',
+
+    'GameID',
 ]
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
@@ -293,3 +295,4 @@ from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
 from srctools.fgd import FGD
+from srctools.const import GameID
