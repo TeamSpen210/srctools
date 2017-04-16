@@ -1135,14 +1135,27 @@ class UVAxis:
 
         This doesn't handle offsets correctly.
         """
-        vec = self.vec()
-        vec.rotate(*angles)
+        return self.localise(Vec(), angles)
+
+    def localise(self, origin: Vec, angles: Vec) -> 'UVAxis':
+        """Rotate and translate the texture coordinates."""
+        vec = self.vec().rotate(*angles)
+
+        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
+        offset = self.offset - origin.dot(vec) / self.scale
+
+        # Keep the values low. The highest texture size in P2 is 1024, so
+        # do the next power just to be safe.
+        # Add and subtract 1024 so the value is between -1024, 1024 not 0, 2048
+        # (This just looks nicer)
+        offset = (offset + 1024) % 2048 - 1024
+
         return UVAxis(
             vec.x,
             vec.y,
             vec.z,
-            self.offset,
-            self.scale
+            offset,
+            self.scale,
         )
 
     def __str__(self):
@@ -1426,27 +1439,12 @@ class Side:
         """
         for p in self.planes:
             p.localise(origin, angles)
-        # Rotate the uaxis values
-        u_axis = Vec(self.uaxis.x, self.uaxis.y, self.uaxis.z)
-        v_axis = Vec(self.vaxis.x, self.vaxis.y, self.vaxis.z)
 
-        if angles is not None:
-            u_axis.rotate(angles.x, angles.y, angles.z)
-            v_axis.rotate(angles.x, angles.y, angles.z)
+        if angles is None:
+            angles = Vec()
 
-            self.uaxis.x, self.uaxis.y, self.uaxis.z = u_axis
-            self.vaxis.x, self.vaxis.y, self.vaxis.z = v_axis
-
-        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
-        self.uaxis.offset -= origin.dot(u_axis) / self.uaxis.scale
-        self.vaxis.offset -= origin.dot(v_axis) / self.vaxis.scale
-
-        # Keep the values low. The highest texture size in P2 is 1024, so
-        # do the next power just to be safe.
-        # Add and subtract 1024 so the value is between -1024, 1024 not 0, 2048
-        # (This just looks nicer)
-        self.uaxis.offset = (self.uaxis.offset + 1024) % 2048 - 1024
-        self.vaxis.offset = (self.vaxis.offset + 1024) % 2048 - 1024
+        self.uaxis = self.uaxis.localise(origin, angles)
+        self.vaxis = self.vaxis.localise(origin, angles)
 
     def plane_desc(self):
         """Return a string which describes this face.
