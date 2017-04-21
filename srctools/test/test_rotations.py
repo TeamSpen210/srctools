@@ -57,3 +57,18 @@ def test_ang_quat_roundtrip():
             continue
         quat = Quat.from_angle(Angle(p, y, r))
         assert_ang(quat.to_angle(), p, y, r)
+
+def test_single_axis():
+    """In each axis, two rotations should be the same as adding."""
+    for axis in ('yaw', 'roll'):
+        for ang1 in VALID_ZERONUMS:
+            for ang2 in VALID_ZERONUMS:
+                if ang1 + ang2 == 0:
+                    # 0 gives a value around the 360-0 split,
+                    # so it can round to the wrong side sometimes.
+                    continue
+                assert_ang(
+                    Angle(**{axis: ang1}) *
+                    Angle(**{axis: ang2}),
+                    **{axis: ang1 + ang2 % 360}
+                )

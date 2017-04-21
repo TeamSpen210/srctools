@@ -1037,15 +1037,17 @@ class Quat:
         else:
             return NotImplemented
         
-    def __rmul__(self, other: Vec):
+    def __rmul__(self, other: Union['Vec', 'Angle']):
         if isinstance(other, Vec):
             result = other.copy()
             self._vec_rot(result)
             return result
+        elif isinstance(other, Quat):
+            return Quat(*Quat.from_angle(other)._quat_mul(self))
         else:
             return NotImplemented
         
-    def __imul__(self, other: 'Quat'):
+    def __imul__(self, other: Union['Quat', 'Angle']):
         if isinstance(other, Quat):
             self.w, self.x, self.y, self.z = self._quat_mul(other)
             return self
@@ -1056,6 +1058,7 @@ class Quat:
                 self.y,
                 self.z,
             ) = self._quat_mul(Quat.from_angle(other))
+            return self
         else:
             return NotImplemented
             
@@ -1187,12 +1190,28 @@ class Angle:
     def __repr__(self):
         return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
 
-    def __rmul__(self, other: Union[Vec, 'Angle']):
-        """(Vec or Angle) * Angle rotates the first by the second."""
+    def __mul__(self, other: Union['Angle', int]):
+        """Vec * Angle rotates the first by the second."""
+        if isinstance(other, Angle):
+            return other._rotate_angle(self)
+        elif isinstance(other, Quat):
+            return NotImplemented
+        else:
+            return Angle(
+                other * self._pitch,
+                other * self._roll,
+                other * self._yaw,
+            )
+
+    def __rmul__(self, other: Union[Vec, 'Angle', int]):
+        """Vec * Angle rotates the first by the second."""
         if isinstance(other, Vec):
             return other * Quat.from_angle(self)
         elif isinstance(other, Angle):
+            # Should always be done by __mul__!
             return self._rotate_angle(other)
+        elif isinstance(other, Quat):
+            return NotImplemented
         else:
             return Angle(
                 self._pitch * other,
@@ -1201,6 +1220,7 @@ class Angle:
             )
 
     __rmatmul__ = __rmul__
+    __matmul__ = __mul__
 
     def _rotate_angle(self, target: 'Angle'):
         """Rotate the target by this angle.

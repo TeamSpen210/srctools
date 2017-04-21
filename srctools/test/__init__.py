@@ -17,7 +17,7 @@ def iter_vec(nums):
                 yield x, y, z
 
 
-def assert_ang(ang: Angle, pitch, yaw, roll, msg=''):
+def assert_ang(ang: Angle, pitch=0, yaw=0, roll=0, msg=''):
     """Asserts that an Angle is equal to the provided angles.."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
