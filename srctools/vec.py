@@ -999,14 +999,36 @@ class Quat:
 
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
-        r, i, j, k = self.w, self.x, self.y, self.z
-        # Note, our yaw is reversed...
-        return Angle(
-            roll=math.degrees(math.atan2((r*i + j*k), 1 - 2*(i**2 + j**2))),
-            pitch=math.degrees(math.asin((r*j - k*i))),
-            yaw=-math.degrees(math.atan2((r*k + i*j), 1 - 2*(j**2 + k**2))),
-        )
-        
+        w, x, y, z = self.w, self.x, self.y, self.z
+        # Valve also converts to rotation matrix first...
+        # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L1857
+        for_x = 1.0 - 2.0 * y * y - 2.0 * z * z
+        for_y = 2.0 * x * y + 2.0 * w * z
+        for_z = 2.0 * x * z - 2.0 * w * y
+        left_x = 2.0 * x * y - 2.0 * w * z
+        left_y = 1.0 - 2.0 * x * x - 2.0 * z * z
+        left_z = 2.0 * y * z + 2.0 * w * x
+        # up_x = 2.0 * x * z + 2.0 * w * y
+        # up_y = 2.0 * y * z - 2.0 * w * x
+        up_z = 1.0 - 2.0 * x * x - 2.0 * y * y
+
+        # Now to Euler angles.
+        # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
+        horiz_dist = math.sqrt(for_x**2 + for_y**2)
+        if horiz_dist > 0.001:
+            return Angle(
+                yaw=-math.degrees(math.atan2(for_y, for_x)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=math.degrees(math.atan2(left_z, up_z)),
+            )
+        else:
+            # Vertical, gimbal lock (yaw=roll)...
+            return Angle(
+                yaw=-math.degrees(math.atan2(-left_x, left_y)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=0,  # Can't produce.
+            )
+
     def __mul__(self, other: 'Quat'):
         if isinstance(other, Quat):
             return Quat(*self._quat_mul(other))

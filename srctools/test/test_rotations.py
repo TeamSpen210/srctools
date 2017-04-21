@@ -51,5 +51,9 @@ def test_vec_basic_pitch():
 def test_ang_quat_roundtrip():
     """Check converting to and from a quaternion does not change values."""
     for p, y, r in iter_vec(range(0, 360, 90)):
+        vert = Vec(x=1).rotate(p, y, r).z
+        if vert < 0.99 or vert > 0.99:
+            # If nearly vertical, gimbal lock prevents roundtrips.
+            continue
         quat = Quat.from_angle(Angle(p, y, r))
         assert_ang(quat.to_angle(), p, y, r)
