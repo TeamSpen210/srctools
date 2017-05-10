@@ -326,12 +326,14 @@ class VMF:
         for i in item:
             self.add_ent(i)
 
-    def create_ent(self, **kargs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs) -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
         it.
+        A classname must be passed!
         """
+        kargs['classname'] = classname
         ent = Entity(self, keys=kargs)
         self.add_ent(ent)
         return ent
@@ -1128,6 +1130,34 @@ class UVAxis:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
+    def rotate(self, angles: Vec) -> 'UVAxis':
+        """Rotate the axis by a vector.
+
+        This doesn't handle offsets correctly.
+        """
+        return self.localise(Vec(), angles)
+
+    def localise(self, origin: Vec, angles: Vec) -> 'UVAxis':
+        """Rotate and translate the texture coordinates."""
+        vec = self.vec().rotate(*angles)
+
+        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
+        offset = self.offset - origin.dot(vec) / self.scale
+
+        # Keep the values low. The highest texture size in P2 is 1024, so
+        # do the next power just to be safe.
+        # Add and subtract 1024 so the value is between -1024, 1024 not 0, 2048
+        # (This just looks nicer)
+        offset = (offset + 1024) % 2048 - 1024
+
+        return UVAxis(
+            vec.x,
+            vec.y,
+            vec.z,
+            offset,
+            self.scale,
+        )
+
     def __str__(self):
         """Generate the text form for this UV data."""
         return '[{x:g} {y:g} {z:g} {off:g}] {scale:g}'.format(
@@ -1409,27 +1439,12 @@ class Side:
         """
         for p in self.planes:
             p.localise(origin, angles)
-        # Rotate the uaxis values
-        u_axis = Vec(self.uaxis.x, self.uaxis.y, self.uaxis.z)
-        v_axis = Vec(self.vaxis.x, self.vaxis.y, self.vaxis.z)
 
-        if angles is not None:
-            u_axis.rotate(angles.x, angles.y, angles.z)
-            v_axis.rotate(angles.x, angles.y, angles.z)
+        if angles is None:
+            angles = Vec()
 
-            self.uaxis.x, self.uaxis.y, self.uaxis.z = u_axis
-            self.vaxis.x, self.vaxis.y, self.vaxis.z = v_axis
-
-        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
-        self.uaxis.offset -= origin.dot(u_axis) / self.uaxis.scale
-        self.vaxis.offset -= origin.dot(v_axis) / self.vaxis.scale
-
-        # Keep the values low. The highest texture size in P2 is 1024, so
-        # do the next power just to be safe.
-        # Add and subtract 1024 so the value is between -1024, 1024 not 0, 2048
-        # (This just looks nicer)
-        self.uaxis.offset = (self.uaxis.offset + 1024) % 2048 - 1024
-        self.vaxis.offset = (self.vaxis.offset + 1024) % 2048 - 1024
+        self.uaxis = self.uaxis.localise(origin, angles)
+        self.vaxis = self.vaxis.localise(origin, angles)
 
     def plane_desc(self):
         """Return a string which describes this face.
@@ -1831,7 +1846,7 @@ class Entity:
         if self.id in self.map.ent_id:
             self.map.ent_id.remove(self.id)
 
-    def get_bbox(self) -> (Vec, Vec):
+    def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
         if self.is_brush():
             bbox_min, bbox_max = self.solids[0].get_bbox()
@@ -1853,14 +1868,18 @@ class Entity:
         else:
             return Vec.from_str(self['origin'])
 
+# One $fixup variable with replacement.
 FixupTuple = namedtuple('FixupTuple', 'var value id')
 
 
 class EntityFixup:
-    """A speciallised mapping which keeps track of the variable indexes.
+    """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
     writing variables with $ signs in front.
+
+    Additionally, lookups never fail - returning '' instead. Pass in a non-string
+    default or use `in` to distinguish,.
     """
     __slots__ = ['_fixup']
 
@@ -1868,6 +1887,7 @@ class EntityFixup:
         self._fixup = {}
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
+        # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
         used_indexes = set()
@@ -1935,8 +1955,11 @@ class EntityFixup:
         if var[0] == '$':
             var = var[1:]
 
-        if isinstance(val, bool):
-            val = '1' if val else '0'
+            val = (
+                ('1' if val else '0')
+                if isinstance(val, bool)
+                else str(val)
+            )
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
@@ -2232,15 +2255,29 @@ class Output:
             return self.input
 
     def __repr__(self):
-        return (
-            '{cls}({s.output}, {s.target}, {s.input}, {s.params!r}'
-            '{s.delay!r}, {s.times!r}, {s.inst_out!r}, {s.inst_in!r},'
-            ' {comma})'.format(
+        vals = (
+            '{cls}({s.output!r}, {s.target!r}, {s.input!r}, {s.params!r}, '
+            'delay={s.delay!r}'.format(
                 s=self,
                 cls=self.__class__.__name__,
-                comma=self.comma_sep,
             )
         )
+        if self.inst_in is not None:
+            vals += ', inst_in=' + repr(self.inst_in)
+        if self.inst_out is not None:
+            vals += ', inst_out=' + repr(self.inst_out)
+            
+        if self.times == 1:
+            # Use only_once  to be more clear
+            vals += ', only_once=True'
+        elif self.times != -1:
+            # Use 'raw' value if a specific count 
+            vals += ', times=' + repr(self.times)
+        # Omit if infinite, most common
+        
+        if self.comma_sep:
+            vals += ', comma_sep=True'
+        return vals + ')'
 
     def __str__(self):
         """Generate a user-friendly representation of this output."""
@@ -2265,10 +2302,12 @@ class Output:
 
     def export(self, buffer, ind=''):
         """Generate the text required to define this output in the VMF."""
-        buffer.write(
-            '{ind}"{output}" "{targ}{sep}{input}{sep}{params}'
+        buffer.write(ind + self._get_text())
+        
+    def _get_text(self):
+        return (
+            '"{output}" "{targ}{sep}{input}{sep}{params}'
             '{sep}{delay:g}{sep}{times}"\n'.format(
-                ind=ind,
                 output=self.exp_out(),
                 targ=self.target,
                 input=self.exp_in(),
@@ -2278,6 +2317,7 @@ class Output:
                 sep=',' if self.comma_sep else OUTPUT_SEP,
             )
         )
+        
 
     def copy(self):
         """Duplicate this output object."""

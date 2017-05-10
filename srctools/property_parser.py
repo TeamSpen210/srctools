@@ -57,38 +57,27 @@ They end with a quote."
 
     \n, \t, and \\ will be converted in Property values.
 """
-import re
 import sys
-import srctools
 
-from srctools import BOOL_LOOKUP, Vec as _Vec
+from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
+from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
 
 from typing import (
     Optional, Union, Any,
-    Dict, List, Tuple, Iterator,
+    List, Tuple, Dict, Iterator,
 )
+
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
-# various escape sequences that we allow
-REPLACE_CHARS = [
-    (r'\n',  '\n'),
-    (r'\t',  '\t'),
-    (r'\/',  '/'),
-    ('\\\\', '\\'),
-]
-
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = object()
-
-# We allow bare identifiers on lines, but they can't contain quotes or brackets.
-_RE_IDENTIFIER = re.compile('[^]"\'{}<>();:[]+')
 
 _Prop_Value = Union[List['Property'], str]
 
 # Various [flags] used after property names in some Valve files.
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/tier1/KeyValues.cpp#L2055
-PROP_FLAGS = {
+PROP_FLAGS_DEFAULT = {
     # We know we're not on a console...
     'x360': False,
     'ps3': False,
@@ -100,48 +89,15 @@ PROP_FLAGS = {
 }
 
 
-class KeyValError(Exception):
-    """An error that occured when parsing a Valve KeyValues file.
+class KeyValError(TokenSyntaxError):
+    """An error that occurred when parsing a Valve KeyValues file.
 
-    mess = The error message that occured.
+    mess = The error message that occurred.
     file = The filename passed to Property.parse(), if it exists
-    line_num = The line where the error occured.
+    line_num = The line where the error occurred.
     """
-    def __init__(
-            self,
-            message: str,
-            file: Optional[str],
-            line: Optional[int]
-            ) -> None:
-        super().__init__()
-        self.mess = message
-        self.file = file
-        self.line_num = line
 
-    def __repr__(self):
-        return 'KeyValError({!r}, {!r}, {!r})'.format(
-            self.mess,
-            self.file,
-            self.line_num,
-            )
-
-    def __str__(self):
-        """Generate the complete error message.
-
-        This includes the line number and file, if avalible.
-        """
-        mess = self.mess
-        if self.line_num:
-            mess += '\nError occured on line ' + str(self.line_num)
-            if self.file:
-                mess += ', with file'
-        if self.file:
-            if not self.line_num:
-                mess += '\nError occured with file'
-            mess += ' "' + self.file + '"'
-        return mess
-
-
+    
 class NoKeyError(LookupError):
     """Raised if a key is not found when searching from find_key().
 
@@ -158,65 +114,18 @@ class NoKeyError(LookupError):
         return "No key " + self.key + "!"
 
 
-def read_multiline_value(file, line_num, filename):
-    """Pull lines out until a quote character is reached."""
-    lines = ['']  # We return with a beginning newline
-    # Re-looping over the same iterator means we don't repeat lines
-    for line_num, line in file:
-        if isinstance(line, bytes):
-            # Decode bytes using utf-8
-            line = line.decode('utf-8')
-        line = line.strip()
-        if line.endswith('"'):
-            lines.append(line[:-1])
-            return '\n'.join(lines)
-        lines.append(line)
-    else:
-        # We hit EOF!
-        raise KeyValError(
-            "Reached EOF without ending quote!",
-            filename,
-            line_num,
-        )
-
-
-def read_flag(line_end, filename, line_num):
-    """Read a potential [] flag."""
-    flag = line_end.lstrip()
-    if flag[:1] == '[':
-        if ']' not in flag:
-            raise KeyValError(
-                'Unterminated [flag] on '
-                'line: "{}"'.format(line_end),
-                filename,
-                line_num,
-            )
-        flag, comment = flag.split(']', 1)
-        # Parse the flag
-        if flag[:1] == '!':
-            inv = True
-            flag = flag[1:]
-        else:
-            inv = False
-    else:
-        comment = flag
-        flag = inv = None
-
-    # Check for unexpected text at the end of a line..
-    comment = comment.lstrip()
-    if comment and not comment.startswith('//'):
-        raise KeyValError(
-            'Extra text after '
-            'line: "{}"'.format(line_end),
-            filename,
-            line_num,
-        )
-
-    if flag:
-        # If inv is False, we need True flags.
-        # If inv is True, we need False flags.
-        return inv is not PROP_FLAGS.get(flag.casefold(), True)
-    return True
+def _read_flag(flags: Dict[str, bool], flag_val: str):
+    """Check whether a flag is True or False."""
+    flag_inv = flag_val[:1] == '!'
+    if flag_inv:
+        flag_val = flag_val[1:]
+    flag_val = flag_val.casefold()
+    try:
+        flag_result = bool(flags[flag_val])
+    except KeyError:
+        flag_result = PROP_FLAGS_DEFAULT.get(flag_val, False)
+    # If flag succeeds
+    return flag_inv is not flag_result
 
 
 class Property:
@@ -239,29 +148,31 @@ class Property:
         """Create a new property instance.
 
         """
-        self.real_name = name  # type: Optional[str]
+        if name is None:
+            self._folded_name = self.real_name = None  # type: Optional[str]
+        else:
+            self.real_name = sys.intern(name)  # type: Optional[str]
+            self._folded_name = sys.intern(name.casefold())  # type: Optional[str]
+
         self.value = value  # type: _Prop_Value
-        self._folded_name = (
-            None if name is None
-            else name.casefold()
-        )  # type: Optional[str]
 
     @property
     def name(self) -> Optional[str]:
         """Name automatically casefolds() any given names.
 
-        This ensures comparisons are always case-sensitive.
+        This ensures comparisons are always case-insensitive.
         Read .real_name to get the original value.
         """
         return self._folded_name
 
     @name.setter
     def name(self, new_name):
-        self.real_name = new_name
         if new_name is None:
-            self._folded_name = None
+            self._folded_name = self.real_name = None
         else:
-            self._folded_name = new_name.casefold()
+            # Intern names to help reduce duplicates in memory.
+            self.real_name = sys.intern(new_name)
+            self._folded_name = sys.intern(new_name.casefold())
 
     def edit(self, name=None, value=None):
         """Simultaneously modify the name and value."""
@@ -270,20 +181,21 @@ class Property:
             self._folded_name = name.casefold()
         if value is not None:
             self.value = value
+        return self
 
     @staticmethod
-    def parse(file_contents, filename='') -> "Property":
+    def parse(
+        file_contents: Union[str, Iterator[str]],
+        filename='',
+        flags: Dict[str, bool]=EmptyMapping,
+    ) -> "Property":
         """Returns a Property tree parsed from given text.
 
         filename, if set should be the source of the text for debug purposes.
-        file_contents should be an iterable of strings
+        file_contents should be an iterable of strings or a single string.
+        flags should be a mapping for additional flags to accept
+        (which overrides defaults).
         """
-        if not filename:
-            # Try to pull the name off the file, if it's a file object.
-            filename = getattr(file_contents, 'name', '')
-
-        file_iter = enumerate(file_contents, start=1)
-
         # The block we are currently adding to.
 
         # The special name 'None' marks it as the root property, which
@@ -295,126 +207,136 @@ class Property:
         # A queue of the properties we are currently in (outside to inside).
         open_properties = [cur_block]
 
+        # Grab a reference to the token values, so we avoid global lookups.
+        STRING = Token.STRING
+        PROP_FLAG = Token.PROP_FLAG
+        NEWLINE = Token.NEWLINE
+        BRACE_OPEN = Token.BRACE_OPEN
+        BRACE_CLOSE = Token.BRACE_CLOSE
+
+        tokenizer = Tokenizer(
+            file_contents,
+            filename,
+            KeyValError,
+            string_bracket=True,
+        )
+
         # Do we require a block to be opened next? ("name"\n must have { next.)
         requires_block = False
+        # Are we permitted to replace the last property with a flagged version of the same?
+        can_flag_replace = False
 
-        is_identifier = _RE_IDENTIFIER.match
-
-        for line_num, line in file_iter:
-            if isinstance(line, bytes):
-                # Decode bytes using utf-8
-                line = line.decode('utf-8')
-            freshline = line.strip()
-
-            if not freshline or freshline[:2] == '//':
-                # Skip blank lines and comments!
-                continue
-
-            if freshline[0] == '{':
+        for token_type, token_value in tokenizer:
+            if token_type is BRACE_OPEN:
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
-                    raise KeyValError(
+                    raise tokenizer.error(
                         'Property cannot have sub-section if it already '
                         'has an in-line value.',
-                        filename,
-                        line_num,
                     )
-                requires_block = False
+                requires_block = can_flag_replace = False
                 cur_block = cur_block[-1]
                 cur_block.value = []
                 open_properties.append(cur_block)
                 continue
-            else:
-                # A "name" line was found, but it wasn't followed by '{'!
-                if requires_block:
-                    raise KeyValError(
-                        "Block opening ('{') required!",
-                        filename,
-                        line_num,
-                    )
+            # Something else, but followed by '{'
+            elif requires_block and token_type is not NEWLINE:
+                raise tokenizer.error(
+                    "Block opening ('{{') required!",
+                )
 
-            if freshline[0] == '"':   # data string
-                if '\\"' in freshline:
-                    # There's escaped double-quotes in here - handle that
-                    # split slowly but properly.
-                    line_contents = srctools.escape_quote_split(freshline)
-                else:
-                    # Just call split normally.
-                    line_contents = freshline.split('"')
-                # Line_contents = [indent, name, space, value, flags/comments]
+            if token_type is NEWLINE:
+                continue
+            if token_type is STRING:   # "string"
+                # We need to check the next token to figure out what kind of
+                # prop it is.
+                prop_type, prop_value = tokenizer()
 
-                name = line_contents[1]
-                try:
-                    value = line_contents[3]
-                except IndexError:  # It doesn't have a value - it's a block.
-                    cur_block.append(Property(name, ''))
-                    requires_block = True  # Ensure the next token must be a '{'.
-                    continue  # Skip to next line
-
-                # Special case - comment between name/value sections -
-                # it's a name block then.
-                if line_contents[2].lstrip().startswith('//'):
-                    cur_block.append(Property(name, ''))
+                # It's a block followed by flag.
+                if prop_type is PROP_FLAG:
+                    # That must be the end of the line..
+                    tokenizer.expect(NEWLINE)
                     requires_block = True
+                    if _read_flag(flags, prop_value):
+                        # Special function - if the last prop was a
+                        # keyvalue with this name, replace it instead.
+                        if (
+                            can_flag_replace and
+                            cur_block.value[-1].real_name == token_value and
+                            cur_block.value[-1].has_children()
+                        ):
+                            cur_block.value[-1] = Property(token_value, [])
+                        else:
+                            cur_block.append(Property(token_value, []))
+                        # Can't do twice in a row
+                        can_flag_replace = False
+
+                elif prop_type is NEWLINE:
+                    # It's a block...
+                    requires_block = True
+                    can_flag_replace = False
+                    cur_block.append(Property(token_value, []))
                     continue
-                # Check there isn't text between name and value!
-                elif line_contents[2].strip():
-                    raise KeyValError(
-                        "Extra text (" + line_contents[2] + ") in line!",
-                        filename,
-                        line_num
-                    )
+                elif prop_type is STRING:
+                    # A value..
+                    if requires_block:
+                        raise tokenizer.error('Keyvalue split across lines!')
+                    requires_block = False
 
-                if len(line_contents) < 5:
-                    # It's a multiline value - no ending quote!
-                    value += read_multiline_value(
-                        file_iter,
-                        line_num,
-                        filename,
-                    )
-                if value and '\\' in value:
-                    for orig, new in REPLACE_CHARS:
-                        value = value.replace(orig, new)
+                    keyvalue = Property(token_value, prop_value)
 
-                # Line_contents[4] is the start of the comment, check for [] flags.
-                if len(line_contents) >= 5:
-                    if read_flag(line_contents[4], filename, line_num):
-                        cur_block.append(Property(name, value))
-                else:
-                    # No flag, add unconditionally
-                    cur_block.append(Property(name, value))
-            elif freshline[0] == '}':
+                    # Check for flags.
+                    flag_token, flag_val = tokenizer()
+                    if flag_token is PROP_FLAG:
+                        # Should be the end of the line here.
+                        tokenizer.expect(NEWLINE)
+                        if _read_flag(flags, flag_val):
+                            # Special function - if the last prop was a
+                            # keyvalue with this name, replace it instead.
+                            if (
+                                can_flag_replace and
+                                cur_block.value[-1].real_name == token_value and
+                                not cur_block.value[-1].has_children()
+                            ):
+                                cur_block.value[-1] = keyvalue
+                            else:
+                                cur_block.append(keyvalue)
+                            # Can't do twice in a row
+                            can_flag_replace = False
+                    elif flag_token is NEWLINE:
+                        # Normal, unconditionally add
+                        cur_block.append(keyvalue)
+                        can_flag_replace = True
+                    # Otherwise it must be a new line.
+                    else:
+                        raise tokenizer.error(flag_token)
+                    continue
+            elif token_type is BRACE_CLOSE:
                 # Move back a block
                 open_properties.pop()
                 try:
-                    cur_block = open_properties[-1].value
+                    cur_block = open_properties[-1]
                 except IndexError:
                     # No open blocks!
-                    raise KeyValError(
+                    raise tokenizer.error(
                         'Too many closing brackets.',
-                        filename,
-                        line_num,
                     )
-
-            # Handle name bare on one line - it's a name block. This is used
-            # in VMF files...
-            elif is_identifier(freshline):
-                cur_block.append(Property(freshline, ''))
-                requires_block = True  # Ensure the next token must be a '{'.
-                continue
+                # For replacing the block.
+                can_flag_replace = True
             else:
-                raise KeyValError(
-                    "Unexpected beginning character '"
-                    + freshline[0]
-                    + '"!',
-                    filename,
-                    line_num,
-                )
+                raise tokenizer.error(token_type)
 
+        if requires_block:
+            raise KeyValError(
+                "Block opening ('{') required, but hit EOF!",
+                tokenizer.filename,
+                line=None,
+            )
+        
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.',
-                filename,
+                tokenizer.filename,
                 line=None,
             )
         return open_properties[0]
@@ -456,7 +378,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop
         if def_ is _NO_KEY_FOUND:
@@ -473,7 +395,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self.value):
             if prop._folded_name == key:
                 return prop.value
         if def_ is _NO_KEY_FOUND:
@@ -606,35 +528,6 @@ class Property:
         else:
             return self.value != other # Just compare values
 
-    def __lt__(self, other):
-        """Less-Than comparison. This ignores names.
-        """
-        if isinstance(other, Property):
-            return self.value < other.value
-        else:
-            return self.value < other
-
-    def __gt__(self, other):
-        "Greater-Than comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value > other.value
-        else:
-            return self.value > other
-
-    def __le__(self, other):
-        "Less-Than or Equal To comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value <= other.value
-        else:
-            return self.value <= other
-
-    def __ge__(self, other):
-        "Greater-Than or Equal To comparison. This ignores names."
-        if isinstance(other, Property):
-            return self.value >= other.value
-        else:
-            return self.value >= other
-
     def __len__(self):
         """Determine the number of child properties."""
         if self.has_children():
@@ -688,7 +581,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
-            for prop in self.value:  # type: Property
+            for prop in self.value:
                 if prop._folded_name == key:
                     return True
             return False
@@ -701,7 +594,7 @@ class Property:
                 str,
                 int,
                 slice,
-                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]],
+                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]]
             ],
             ) -> str:
         """Allow indexing the children directly.
@@ -724,7 +617,7 @@ class Property:
                     except NoKeyError as no_key:
                         raise IndexError(no_key) from no_key
         else:
-            raise IndexError("Can't index a Property without children!")
+            raise ValueError("Can't index a Property without children!")
 
     def __setitem__(
             self,
@@ -762,7 +655,7 @@ class Property:
                     except NoKeyError:
                         self.value.append(Property(index, value))
         else:
-            raise IndexError("Can't index a Property without children!")
+            raise ValueError("Can't index a Property without children!")
 
     def __delitem__(self, index):
         """Delete the given property index.
@@ -786,7 +679,7 @@ class Property:
         if self.has_children():
             self.value.clear()
         else:
-            raise Exception("Can't clear a Property without children!")
+            raise ValueError("Can't clear a Property without children!")
 
     def __add__(self, other):
         """Allow appending other properties to this one.
@@ -842,7 +735,7 @@ class Property:
             names
         }
         if self.has_children():
-            for item in self.value[:]:  # type: Property
+            for item in self.value[:]:
                 if item._folded_name in folded_names:
                     merge[item._folded_name].value.extend(item.value)
                 else:
@@ -897,5 +790,6 @@ class Property:
         else:
             yield '"{}" "{}"\n'.format(
                 self.real_name,
-                self.value.replace('"', '\\"')
+                # We need to escape quotes and backslashes so they don't get detected.
+                self.value.replace('\\', '\\\\').replace('"', '\\"')
             )

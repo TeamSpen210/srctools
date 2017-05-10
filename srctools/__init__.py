@@ -1,9 +1,7 @@
 import os as _os
 import string as _string
-import tempfile as _tempfile
 from collections import abc as _abc
-
-from typing import Union as _Union
+from typing import Union as _Union, Optional as _Optional
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
@@ -16,6 +14,8 @@ __all__ = [
     'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
 
     'EmptyMapping', 'AtomicWriter',
+
+    'GameID',
 ]
 
 _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
@@ -104,7 +104,6 @@ BOOL_LOOKUP = {
     '0': False,
     'no': False,
     'false': False,
-    'FALSE': False,
     'n': False,
     'f': False,
 
@@ -113,7 +112,6 @@ BOOL_LOOKUP = {
     '1': True,
     'yes': True,
     'true': True,
-    'TRUE': True,
     'y': True,
     't': True,
 }
@@ -155,7 +153,8 @@ def conv_int(val: str, default=0):
     except (ValueError, TypeError):
         return default
 
-
+# We only want one instance
+@object.__new__
 class EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
@@ -164,9 +163,9 @@ class EmptyMapping(_abc.MutableMapping):
     won't be kept, as well as allowing default.items() calls and similar.
     """
     __slots__ = []
-
-    def __init__(self):
-        pass
+    
+    def __new__(self):
+        raise AssertionError('Cannot instantiate more than one EmptyMapping!')
 
     def __call__(self):
         # Just in case someone tries to instantiate this
@@ -227,8 +226,6 @@ class EmptyMapping(_abc.MutableMapping):
     def popitem(self):
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
-
-EmptyMapping = EmptyMapping()  # We only want the one instance
 
 
 class AtomicWriter:
@@ -291,7 +288,11 @@ class AtomicWriter:
 # Import these, so people can reference 'srctools.Vec' instead of
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
+# Not all classes are imported, just most-used ones.
 from srctools.vec import Vec, Vec_tuple, parse_vec_str
 from srctools.property_parser import NoKeyError, KeyValError, Property
+from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
+from srctools.fgd import FGD
+from srctools.const import GameID

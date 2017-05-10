@@ -6,6 +6,9 @@ __pycache__/
 
 .idea/
 
+# Pytest
+.cache/
+
 # =========================
 # Operating System Files
 # =========================
@@ -34,3 +37,14 @@ Icon
 build/
 dist/
 srctools.egg-info/
+
+srctools/_tokenizer\.html
+
+srctools/_tokenizer\.c
+
+*.pyd
+
+
+# Built output
+srctools-*/
+
