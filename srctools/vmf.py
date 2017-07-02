@@ -1494,7 +1494,7 @@ class Entity:
     def __init__(
         self,
         vmf_file: VMF,
-        keys=EmptyMapping,
+        keys: Dict[str, str]=EmptyMapping,
         fixup=(),
         ent_id=-1,
         outputs=None,
@@ -1512,7 +1512,8 @@ class Entity:
         self.keys = {
             # Ensure all values are strings. This allows passing ints and Vecs
             # normally.
-            k: str(v)
+            # If bool (special case), swap to 1/0.
+            k: str(int(v) if isinstance(v, bool) else v)
             for k, v in
             keys.items()
         }
