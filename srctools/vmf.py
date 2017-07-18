@@ -1591,10 +1591,18 @@ class Entity:
                     keys[name] = item.value
                 else:
                     # Parse the $replace value
-                    vals = item.value.split(" ", 1)
-                    var = vals[0].lstrip('$')
-                    value = vals[1]
-                    fixup.append(FixupTuple(var, value, int(index)))
+                    try:
+                        vals = item.value.split(" ", 1)
+                        var = vals[0].lstrip('$')
+                        try:
+                            value = vals[1]
+                        except IndexError:
+                            # Might happen if entirely blank.
+                            value = ''
+                        fixup.append(FixupTuple(var, value, int(index)))
+                    except ValueError:
+                        # Failed!
+                        keys[name] = item.value
             elif name == "solid" and item.has_children():
                 solids.append(Solid.parse(vmf_file, item))
             elif name == "connections" and item.has_children():
