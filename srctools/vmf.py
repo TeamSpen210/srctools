@@ -108,8 +108,11 @@ def find_empty_id(used_id, desired=-1):
 def overlay_bounds(over):
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
+    angles = Vec.from_str(over['angles'])
     return Vec.bbox(
-        (origin + Vec.from_str(over['uv' + str(x)]))
+        (origin + Vec.from_str(over['uv' + str(x)]).rotate(
+            angles.x, angles.y, angles.z,
+        ))
         for x in
         range(4)
     )
