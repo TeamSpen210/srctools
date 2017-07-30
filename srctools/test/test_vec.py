@@ -17,6 +17,9 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
+raises_typeerror = pytest.raises(TypeError)
+raises_keyerror = pytest.raises(KeyError)
+raises_zero_div = pytest.raises(ZeroDivisionError)
 
 
 @pytest.fixture(params=[srctools.Vec])
@@ -439,7 +442,6 @@ def test_axis():
 
 def test_other_axes():
     """Test Vec.other_axes()."""
-    raiser = pytest.raises(KeyError)
     bad_args = ['p', '', 0, 1, 2, False, Vec(2, 3, 5)]
     for x, y, z in iter_vec(VALID_NUMS):
         vec = Vec(x, y, z)
@@ -448,7 +450,7 @@ def test_other_axes():
         assert vec.other_axes('z') == (x, y)
         # Test some bad args.
         for invalid in bad_args:
-            with raiser: vec.other_axes(invalid)
+            with raises_keyerror: vec.other_axes(invalid)
 
 
 def test_abs():
@@ -505,9 +507,8 @@ def test_getitem():
     assert vec['y'] == b
     assert vec['z'] == c
 
-    raises = pytest.raises(KeyError)
     for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with raises: vec[invalid]
+        with raises_keyerror: vec[invalid]
 
 
 def test_setitem():
@@ -522,10 +523,9 @@ def test_setitem():
         vec2[ind] = 20.3
         assert vec1 == vec2
 
-    raises = pytest.raises(KeyError)
     vec = Vec()
     for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with raises: vec[invalid] = 8
+        with raises_keyerror: vec[invalid] = 8
 
 
 def test_vec_constants():
