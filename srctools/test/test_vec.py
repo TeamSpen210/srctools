@@ -1,10 +1,14 @@
 """Test the Vector object."""
 import math
+
 import pytest
 import operator as op
+import srctools
+from srctools import Vec_tuple
 
-from srctools import Vec_tuple, Vec
 
+from typing import Type
+Vec = ...  # type: Type[srctools.Vec]
 
 VALID_NUMS = [
     1, 1.5, 0.2827, 2346.45,
@@ -14,11 +18,12 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
-@pytest.fixture(params=[Vec])
-def py_c_vec(request):
+
+@pytest.fixture(params=[srctools.Vec])
+def py_c_vec(request):  # type: ignore
     """Run the test twice, for the Python and C versions."""
     global Vec
-    orig_vec = Vec
+    orig_vec = srctools.Vec
     Vec = request.param
     yield None
     Vec = orig_vec
