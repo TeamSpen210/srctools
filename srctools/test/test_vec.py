@@ -363,6 +363,22 @@ def test_scalar_zero():
         # We don't need to check divmod(0, vec) -
         # that always falls back to % and /.
 
+        with raises_zero_div: vec / 0
+        with raises_zero_div: vec // 0
+        with raises_zero_div: vec % 0
+        with raises_zero_div: divmod(vec, 0)
+        with raises_zero_div: vec / 0.0
+        with raises_zero_div: vec // 0.0
+        with raises_zero_div: vec % 0.0
+        with raises_zero_div: divmod(vec, 0.0)
+
+        with raises_zero_div: vec /= 0
+        with raises_zero_div: vec //= 0
+        with raises_zero_div: vec %= 0
+        with raises_zero_div: vec /= 0.0
+        with raises_zero_div: vec //= 0.0
+        with raises_zero_div: vec %= 0.0
+
 
 def test_order():
     """Test ordering operations (>, <, <=, >=, ==)."""
