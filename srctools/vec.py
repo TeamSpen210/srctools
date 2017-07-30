@@ -571,7 +571,7 @@ class Vec:
                 x1, x2 = divmod(other, self.x)
                 y1, y2 = divmod(other, self.y)
                 z1, z2 = divmod(other, self.z)
-            except TypeError:
+            except (TypeError, ValueError):
                 return NotImplemented
             else:
                 return Vec(x1, y1, z1), Vec(x2, y2, z2)
@@ -601,7 +601,7 @@ class Vec:
         else:
             try:
                 return self.mag() == float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __ne__(
@@ -625,7 +625,7 @@ class Vec:
         else:
             try:
                 return self.mag() != float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __lt__(
@@ -653,7 +653,7 @@ class Vec:
         else:
             try:
                 return self.mag() < float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __le__(
@@ -681,7 +681,7 @@ class Vec:
         else:
             try:
                 return self.mag() <= float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __gt__(
@@ -709,7 +709,7 @@ class Vec:
         else:
             try:
                 return self.mag() > float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __ge__(
@@ -737,7 +737,7 @@ class Vec:
         else:
             try:
                 return self.mag() >= float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def max(self, other: AnyVec):
