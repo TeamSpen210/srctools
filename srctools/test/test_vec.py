@@ -1,4 +1,5 @@
 """Test the Vector object."""
+import math
 import pytest
 import operator as op
 
@@ -83,6 +84,19 @@ def test_construction():
         assert_vec(new, x, y, z)
         assert orig is not new  # It must be a copy
 
+        # Check as_tuple() makes an equivalent tuple
+        tup = orig.as_tuple()
+        assert isinstance(tup, tuple)
+        assert (x, y, z) == tup
+        assert hash((x, y, z)) == hash(tup)
+        # Bypass subclass functions.
+        assert tuple.__getitem__(tup, 0) == x
+        assert tuple.__getitem__(tup, 1) == y
+        assert tuple.__getitem__(tup, 2) == z
+        assert tup.x == x
+        assert tup.y == y
+        assert tup.z == z
+
     # Check failures in Vec.from_str()
     # Note - does not pass through unchanged, they're converted to floats!
     for val in VALID_ZERONUMS:
@@ -92,6 +106,55 @@ def test_construction():
         assert val == Vec.from_str('2 6 gh', z=val).z
         assert val == Vec.from_str('1.2 3.4', x=val).x
         assert val == Vec.from_str('34.5 38.4 -23 -38', z=val).z
+
+
+def test_with_axes():
+    """Test the with_axes() constructor."""
+    for axis, u, v in ['xyz', 'yxz', 'zxy']:
+        for num in VALID_ZERONUMS:
+            vec = Vec.with_axes(axis, num)
+            assert vec[axis] == num
+            # Other axes are zero.
+            assert vec[u] == 0
+            assert vec[v] == 0
+
+    for a, b, c in iter_vec('xyz'):
+        if a == b or b == c or a == c:
+            continue
+        for x, y, z in iter_vec(VALID_ZERONUMS):
+            vec = Vec.with_axes(a, x, b, y, c, z)
+            assert vec[a] == x
+            assert vec[b] == y
+            assert vec[c] == z
+
+
+def test_unary_ops():
+    """Test -vec and +vec."""
+    for x, y, z in iter_vec(VALID_NUMS):
+        assert_vec(-Vec(x, y, z), -x, -y, -z)
+        assert_vec(+Vec(x, y, z), +x, +y, +z)
+
+
+def test_mag():
+    """Test magnitude methods."""
+    for x, y, z in iter_vec(VALID_NUMS):
+        vec = Vec(x, y, z)
+        mag = vec.mag()
+        length = vec.len()
+        assert mag == length
+        assert mag == math.sqrt(x**2 + y**2 + z**2)
+
+        mag_sq = vec.mag_sq()
+        len_sq = vec.len_sq()
+        assert mag_sq == len_sq
+        assert len_sq == x**2 + y**2 + z**2
+
+
+def test_contains():
+    # Match to list.__contains__
+    for num in VALID_NUMS:
+        for x, y, z in iter_vec(VALID_NUMS):
+            assert (num in Vec(x, y, z)) == (num in [x, y, z])
 
 
 def test_scalar():
@@ -164,10 +227,11 @@ def test_scalar():
                 )
 
 
-def test_vec_plus_or_minus_vec():
+def test_vec_to_vec():
     """Check that Vec() +/- Vec() does the correct thing.
 
     For +, -, two Vectors apply the operations to all values.
+    Dot and cross products do something different.
     """
     operators = [
         ('+', op.add, op.iadd),
@@ -175,9 +239,26 @@ def test_vec_plus_or_minus_vec():
     ]
 
     def test(x1, y1, z1, x2, y2, z2):
-        """Check a Vec pair for addition and subtraction."""
+        """Check a Vec pair for the operations."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
+
+        # These are direct methods, so no inheritence and iop to deal with.
+
+        # Commutative
+        assert vec1.dot(vec2) == (x1*x2 + y1*y2 + z1*z2)
+        assert vec2.dot(vec1) == (x1*x2 + y1*y2 + z1*z2)
+        assert_vec(
+            vec1.cross(vec2),
+            y1*z2-z1*y2,
+            z1*x2-x1*z2,
+            x1*y2-y1*x2,
+        )
+        # Ensure they haven't modified the originals
+        assert_vec(vec1, x1, y1, z1)
+        assert_vec(vec2, x2, y2, z2)
+
+        # Addition and subtraction
         for op_name, op_func, op_ifunc in operators:
             result = (
                 op_func(x1, x2),
@@ -308,6 +389,32 @@ def test_order():
             test(num, num, num, num, num, 0)
 
 
+def test_binop_fail():
+    """Test binary operations with invalid operands."""
+    vec = Vec()
+    operations = [
+        op.add, op.iadd,
+        op.sub, op.isub,
+        op.truediv, op.itruediv,
+        op.floordiv, op.ifloordiv,
+        op.mul, op.imul,
+        op.lt, op.gt,
+        op.le, op.ge,
+
+        divmod,
+        op.concat, op.iconcat,
+    ]
+    for fail_object in [None, 'string', ..., staticmethod, tuple, Vec]:
+        assert vec != fail_object
+        assert fail_object != vec
+
+        assert not vec == fail_object
+        assert not fail_object == vec
+        for operation in operations:
+            pytest.raises(TypeError, operation, vec, fail_object)
+            pytest.raises(TypeError, operation, fail_object, vec)
+
+
 def test_axis():
     """Test the Vec.axis() function."""
     assert Vec(1, 0, 0).axis() == 'x'
@@ -316,6 +423,20 @@ def test_axis():
     assert Vec(0, -1, 0).axis() == 'y'
     assert Vec(0, 0, 1).axis() == 'z'
     assert Vec(0, 0, -1).axis() == 'z'
+
+
+def test_other_axes():
+    """Test Vec.other_axes()."""
+    raiser = pytest.raises(KeyError)
+    bad_args = ['p', '', 0, 1, 2, False, Vec(2, 3, 5)]
+    for x, y, z in iter_vec(VALID_NUMS):
+        vec = Vec(x, y, z)
+        assert vec.other_axes('x') == (y, z)
+        assert vec.other_axes('y') == (x, z)
+        assert vec.other_axes('z') == (x, y)
+        # Test some bad args.
+        for invalid in bad_args:
+            with raiser: vec.other_axes(invalid)
 
 
 def test_abs():
@@ -355,6 +476,44 @@ def test_len():
         assert len(Vec(val, 0, val)) == 2
         assert len(Vec(val, val, -0)) == 2
         assert len(Vec(val, val, val)) == 3
+
+
+def test_getitem():
+    """Test vec[x] with various args."""
+    a = 1.8
+    b = 2.3
+    c = 3.6
+    vec = Vec(a, b, c)
+
+    assert vec[0] == a
+    assert vec[1] == b
+    assert vec[2] == c
+
+    assert vec['x'] == a
+    assert vec['y'] == b
+    assert vec['z'] == c
+
+    raises = pytest.raises(KeyError)
+    for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
+        with raises: vec[invalid]
+
+
+def test_setitem():
+    """Test vec[x]=y with various args."""
+    for ind, axis in enumerate('xyz'):
+        vec1 = Vec()
+        vec1[axis] = 20.3
+        assert vec1[axis] == 20.3
+        assert vec1.other_axes(axis) == (0.0, 0.0)
+
+        vec2 = Vec()
+        vec2[ind] = 20.3
+        assert vec1 == vec2
+
+    raises = pytest.raises(KeyError)
+    vec = Vec()
+    for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
+        with raises: vec[invalid] = 8
 
 
 def test_vec_constants():
