@@ -349,9 +349,16 @@ def test_vec_to_vec():
 def test_scalar_zero():
     """Check zero behaviour with division ops."""
     for x, y, z in iter_vec(VALID_NUMS):
-        assert_vec(0 / Vec(x, y, z), 0, 0, 0)
-        assert_vec(0 // Vec(x, y, z), 0, 0, 0)
-        assert_vec(0 % Vec(x, y, z), 0, 0, 0)
+        vec = Vec(x, y, z)
+        assert_vec(0 / vec, 0, 0, 0)
+        assert_vec(0 // vec, 0, 0, 0)
+        assert_vec(0 % vec, 0, 0, 0)
+        assert_vec(0.0 / vec, 0, 0, 0)
+        assert_vec(0.0 // vec, 0, 0, 0)
+        assert_vec(0.0 % vec, 0, 0, 0)
+
+        # We don't need to check divmod(0, vec) -
+        # that always falls back to % and /.
 
 
 def test_order():
