@@ -17,9 +17,7 @@ Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
 
 
 """
-import collections
 import math
-from collections import abc
 
 from typing import Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple
 
