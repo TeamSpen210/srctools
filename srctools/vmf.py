@@ -1210,11 +1210,8 @@ class Side:
     def __init__(
             self,
             vmf_file,
-            planes=(
-                (0, 0, 0),
-                (0, 0, 0),
-                (0, 0, 0)
-            ),
+            # Must be 3 Vecs, or 3-item iterables.
+            planes: List[Iterable[float]],
             des_id=-1,
             lightmap=16,
             smoothing=0,
@@ -1228,10 +1225,10 @@ class Side:
         :type planes: list of [(int, int, int)]
         """
         self.map = vmf_file
-        self.planes = [Vec(), Vec(), Vec()]
+        if len(planes) != 3:
+            raise ValueError('Must have only 3 planes!')
+        self.planes = list(map(Vec, planes))
         self.id = vmf_file.face_id.get_id(des_id)
-        for i, pln in enumerate(planes):
-            self.planes[i] = Vec(x=pln[0], y=pln[1], z=pln[2])
         self.lightmap = lightmap
         self.smooth = smoothing
         self.mat = mat
@@ -1263,19 +1260,11 @@ class Side:
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
         side_id = tree.int('id', -1)
-        planes = [0, 0, 0]
-        for i, v in enumerate(verts):
-            if i > 3:
-                raise ValueError('Wrong number of solid planes in "' +
-                                 tree['plane', ''] +
-                                 '"')
-            verts = v.split(" ")
-            if len(verts) == 3:
-                planes[i] = [float(v) for v in verts]
-            else:
-                raise ValueError('Invalid planes in "' +
-                                 tree['plane', ''] +
-                                 '"!')
+        if len(verts) != 3:
+            raise ValueError('Wrong number of solid planes in "' +
+                             tree['plane', ''] +
+                             '"')
+        planes = list(map(srctools.parse_vec_str, verts))
 
         disp_tree = tree.find_key('dispinfo', [])
         if len(disp_tree) > 0:
