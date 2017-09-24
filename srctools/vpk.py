@@ -264,11 +264,9 @@ class VPK:
             dir_data_limit: The maximum amount of data for files saved to the dir file.
                None = no limit, and 0=save all to a data file.
         """
-        self.folder, filename = os.path.split(dir_file)
-        
-        if not filename.endswith('_dir.vpk'):
-            raise Exception('Must create with a _dir VPK file!')
-        self.file_prefix = filename[:-8]
+        self.folder = self.file_prefix = ''
+        self.path = dir_file
+
         # fileinfo[extension][directory][filename]
         self._fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
         
@@ -286,6 +284,22 @@ class VPK:
         """Verify that this is writable."""
         if not self.mode.writable:
             raise ValueError("Can't write with this mode!")
+
+    @property
+    def path(self):
+        """Return the location of the directory VPK file."""
+        return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
+
+    @path.setter
+    def path(self, path: str):
+        """Set the location and folder from the directory VPK file."""
+        folder, filename = os.path.split(path)
+
+        if not filename.endswith('_dir.vpk'):
+            raise Exception('Must create with a _dir VPK file!')
+
+        self.folder = folder
+        self.file_prefix = filename[:-8]
         
     def load_dirfile(self):
         """Read in the directory file to get all filenames.
@@ -294,19 +308,16 @@ class VPK:
         """
         if self.mode is OpenModes.WRITE:
             # Erase the directory file, we ignore current contents.
-            open(
-                os.path.join(self.folder, self.file_prefix + '_dir.vpk'),
-                'wb',
-            ).close()
+            open(self.path, 'wb').close()
             self.version = 1
             return
 
         try:
-            dirfile = open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'rb')
+            dirfile = open(self.path, 'rb')
         except FileNotFoundError:
             if self.mode is OpenModes.APPEND:
                 # No directory file - generate a blank file.
-                open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb').close()
+                open(self.path, 'wb').close()
                 self.version = 1
                 return
             else:
@@ -376,7 +387,7 @@ class VPK:
         
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
-        with open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb') as file:
+        with open(self.path, 'wb') as file:
             file.write(struct.pack('<III', VPK_SIG, self.version, 0))
             header_len = file.tell()
             key_getter = operator.itemgetter(0)
