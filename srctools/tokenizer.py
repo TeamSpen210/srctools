@@ -255,6 +255,10 @@ class Tokenizer:
                         raise self.error('Unterminated parentheses!')
                     value_chars.append(next_char)
 
+            # Ignore Unicode Byte Order Mark on first lines
+            elif next_char == '\uFEFF' and self.line_num == 1:
+                continue
+
             # Bare names
             elif next_char not in BARE_DISALLOWED:
                 value_chars = [next_char]

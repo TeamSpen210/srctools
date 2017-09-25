@@ -255,6 +255,11 @@ cdef class Tokenizer:
                         self.line_num += 1
                     value_chars.append(next_char)
 
+            # Ignore Unicode Byte Order Mark on first lines
+            elif next_char == '\uFEFF':
+                if self.line_num == 1:
+                    continue
+
             else: # Not-in can't be in a switch, so we need to nest this.
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
