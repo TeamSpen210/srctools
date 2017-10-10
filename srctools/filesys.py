@@ -4,6 +4,7 @@ This allows accessing raw files, zips and VPKs in the same way.
 Files are case-insensitive, and both slashes are converted to '/'.
 """
 from zipfile import ZipFile, ZipInfo
+from tarfile import TarFile, TarInfo
 import io
 import os.path
 
@@ -72,12 +73,17 @@ class FileSystem:
         self.path = path
         self._ref = None
         self._ref_count = 0
+        
+    def __repr__(self):
+        """Default repr()."""
+        return '{}({!r})'.format(self.__class__.__name__, self.path)
 
     def open_ref(self):
         """Lock open a reference to this system."""
         self._ref_count += 1
         if self._ref is None:
             self._create_ref()
+            assert self._ref is not None
 
     def close_ref(self):
         """Reverse self.open_ref() - must be done in pairs."""
@@ -86,6 +92,7 @@ class FileSystem:
             raise ValueError('Closed too many times!')
         if self._ref_count == 0 and self._ref is not None:
             self._delete_ref()
+            assert self._ref is None
 
     def read_prop(self, path: str, encoding='utf8') -> Property:
         """Read a Property file from the filesystem.
@@ -101,18 +108,22 @@ class FileSystem:
     def _check_open(self):
         """Ensure self._ref is valid."""
         if self._ref is None:
-            raise ValueError('The filesystem must have a valid reference!')
+            raise ValueError(
+                'The filesystem must have a valid reference to '
+                'execute this method!')
 
     def __enter__(self):
         """Temporarily get access to the system's reference.
 
-        This makes it more efficient to access files.
+        This makes it possible to access files.
         """
         self.open_ref()
+        assert self._ref is not None
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.close_ref()
+        assert self._ref is None
 
     def __iter__(self) -> Iterator[File]:
         return self.walk_folder('')
@@ -142,11 +153,17 @@ class FileSystem:
         raise NotImplementedError
 
     def _create_ref(self) -> None:
-        """Create the _ref object."""
+        """Create the _ref object. 
+        
+        After this is called, _ref should not be None.
+        """
         raise NotImplementedError
 
     def _delete_ref(self) -> None:
-        """Destroy and clean up the _ref object."""
+        """Destroy and clean up the _ref object.
+        
+        After this is called, _ref should be None.
+        """
         raise NotImplementedError
 
     def open_str(self, name: str, encoding='utf8'):
@@ -279,6 +296,9 @@ class VirtualFileSystem(FileSystem):
             dict(mapping).items()
         }
         self.bytes_encoding = encoding
+        
+    def __repr__(self):
+        return '<VirtualFileSystem: {} files>'.format(len(self._mapping))
 
     @staticmethod
     def _clean_path(path: str) -> str:
@@ -358,10 +378,7 @@ class RawFileSystem(FileSystem):
     This prohibits access to folders above the root.
     """
     def __init__(self, path: str):
-        super().__init__(os.path.abspath(path))
-
-    def __repr__(self):
-        return 'RawFileSystem({!r})'.format(self.path)
+        super().__init__(os.path.abspath(path))     
 
     def _resolve_path(self, path: str) -> str:
         """Get the absolute path."""
@@ -425,28 +442,28 @@ class RawFileSystem(FileSystem):
     def _create_ref(self) -> None:
         """The raw filesystem doesn't need a reference to anything."""
         self._ref = True
-
-
-class ZipFileSystem(FileSystem):
-    """Accesses files in a zip file."""
+        
+class _ArchFileSys(FileSystem):
+    """Common code for Zip and Tar systems."""
+    
+    # *Info class, for open_bin().
+    _info_class = object
+    
     def __init__(self, path: str):
         self._ref = None  # type: ZipFile
         self._name_to_info = {}
         super().__init__(path)
-
-    def __repr__(self):
-        return 'ZipFileSystem({!r})'.format(self.path)
-
+        
     def walk_folder(self, folder: str):
         """Yield files in a folder."""
         self._check_open()
         # \\ is not allowed in zips.
         folder = folder.replace('\\', '/').casefold()
-        for fileinfo in self._ref.infolist():
-            if fileinfo.filename.casefold().startswith(folder):
+        for filename, fileinfo in self._name_to_info.items():
+            if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
-
-    def open_bin(self, name: str):
+        
+    def open_bin(self, name: Union[str, TarInfo]):
         """Open a file in bytes mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
@@ -454,7 +471,7 @@ class ZipFileSystem(FileSystem):
         self._check_open()
 
         # We need the zipinfo object.
-        if isinstance(name, ZipInfo):
+        if isinstance(name, self._info_class):
             info = name
         else:
             name = name.replace('\\', '/')
@@ -470,7 +487,8 @@ class ZipFileSystem(FileSystem):
 
         The filesystem needs to be open while accessing this.
         """
-        # Zips only open in binary, so just open that, then wrap to decode.
+        # Zip and Tar only open in binary, so just open that,
+        # then wrap to decode.
         return io.TextIOWrapper(self.open_bin(name), encoding)
 
     def _get_file(self, name: str) -> File:
@@ -491,11 +509,57 @@ class ZipFileSystem(FileSystem):
         self._name_to_info.clear()
         self._ref = None
 
+class ZipFileSystem(_ArchFileSys):
+    """Accesses files in a zip file."""
+    _info_class = ZipInfo
+    
+    def __init__(self, path: str):
+        self._ref = None  # type: ZipFile
+        self._name_to_info = {}
+        super().__init__(path)
+
     def _create_ref(self) -> None:
         self._ref = zipfile = ZipFile(self.path)
         self._name_to_info.clear()
         for info in zipfile.infolist():
             self._name_to_info[info.filename.casefold()] = info
+            
+TAR_COMP_NONE = ''
+TAR_COMP_GZIP = 'gz'
+TAR_COMP_BZIP2 = 'bz2'
+TAR_COMP_LZMA = 'xz'
+TAR_COMP_GUESS = '*'
+
+_tar_comp_modes = {
+    val for name, val in 
+    globals().items() 
+    if 'TAR_COMP' in name
+}
+_tar_comp_modes_str = ', '.join(map(repr, sorted(_tar_comp_modes)))
+            
+class TarFileSystem(_ArchFileSys):
+    """Accesses files in a .tar file, compressed or uncompressed."""
+    _info_class = TarInfo
+    
+    def __init__(self, path: str, compression: str=TAR_COMP_GUESS):
+        self._ref = None  # type: ZipFile
+        self._name_to_info = {}
+        
+        self._compression = compression.casefold()
+        if self._compression not in _tar_comp_modes:
+            raise ValueError('Invalid mode {!}! Valid modes: {}'.format(
+                compression, 
+                _tar_comp_modes_str,
+            ))
+            
+        super().__init__(path)
+    
+    def _create_ref(self) -> None:
+        self._ref = tarfile = ZipFile(self.path)
+        self._name_to_info.clear()
+        for info in tarfile.infolist():
+            if info.isfile(): # Ignore folders, hardlinks, etc.
+                self._name_to_info[info.filename.casefold()] = info
 
 
 class VPKFileSystem(FileSystem):
