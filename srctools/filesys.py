@@ -17,6 +17,9 @@ __all__ = [
     'File', 'FileSystem', 'get_filesystem',
 
     'RawFileSystem', 'VPKFileSystem', 'ZipFileSystem',
+    'TarFileSystem', 'TAR_COMP_NONE', 'TAR_COMP_GZIP', 
+    'TAR_COMP_BZIP2', 'TAR_COMP_LZMA', 'TAR_COMP_GUESS',
+
 ]
 
 
