@@ -13,7 +13,7 @@ __all__ = [
     'KeyValError', 'FGD', 'EntityDef',
 ]
 
-# "text" +
+# "text" with an optional '+'
 _RE_DOC_LINE = re.compile(r'\s*"([^"]*)"\s*(\+)?\s*')
 
 _RE_KEYVAL_LINE = re.compile(

@@ -227,7 +227,7 @@ class Property:
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
-            if token_type is BRACE_OPEN:
+            if token_type is BRACE_OPEN: # {
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
                     raise tokenizer.error(
@@ -252,8 +252,8 @@ class Property:
                 # prop it is.
                 prop_type, prop_value = tokenizer()
 
-                # It's a block followed by flag.
-                if prop_type is PROP_FLAG:
+                # It's a block followed by flag. ("name" [stuff])
+                if prop_type is PROP_FLAG: 
                     # That must be the end of the line..
                     tokenizer.expect(NEWLINE)
                     requires_block = True
@@ -272,13 +272,13 @@ class Property:
                         can_flag_replace = False
 
                 elif prop_type is NEWLINE:
-                    # It's a block...
+                    # It's a block... ("name" \n)
                     requires_block = True
                     can_flag_replace = False
                     cur_block.append(Property(token_value, []))
                     continue
                 elif prop_type is STRING:
-                    # A value..
+                    # A value.. ("name" "value")
                     if requires_block:
                         raise tokenizer.error('Keyvalue split across lines!')
                     requires_block = False
@@ -311,13 +311,13 @@ class Property:
                     else:
                         raise tokenizer.error(flag_token)
                     continue
-            elif token_type is BRACE_CLOSE:
+            elif token_type is BRACE_CLOSE: # }
                 # Move back a block
                 open_properties.pop()
                 try:
                     cur_block = open_properties[-1]
                 except IndexError:
-                    # No open blocks!
+                    # It's empty, we've closed one too many properties.
                     raise tokenizer.error(
                         'Too many closing brackets.',
                     )
@@ -326,6 +326,10 @@ class Property:
             else:
                 raise tokenizer.error(token_type)
 
+        # We're out of data, do some final sanity checks.
+        
+        # We last had a ("name"\n), so we were expecting a block
+        # next.
         if requires_block:
             raise KeyValError(
                 "Block opening ('{') required, but hit EOF!",
@@ -333,12 +337,17 @@ class Property:
                 line=None,
             )
         
+        # All the properties in the file should be closed,
+        # so the only thing in open_properties should be the 
+        # root one we added.
+        
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.',
                 tokenizer.filename,
                 line=None,
             )
+        # Return that root property.
         return open_properties[0]
 
     def find_all(self, *keys) -> Iterator['Property']:
@@ -439,7 +448,7 @@ class Property:
         """
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
-        except LookupError:  # base for NoKeyError, KeyError
+        except LookupError:  # base for NoKeyError,i KeyError
             return def_
 
     def vec(self, key, x=0.0, y=0.0, z=0.0) -> _Vec:
@@ -450,7 +459,7 @@ class Property:
         """
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
-        except LookupError:  # base for NoKeyError, KeyError
+        except LookupError:  # key not present, defaults.
             return _Vec(x, y, z)
 
     def set_key(self, path, value):
