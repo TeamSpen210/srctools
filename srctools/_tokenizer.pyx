@@ -304,3 +304,4 @@ cdef class Tokenizer:
 
         if next_token is not token:
             raise self._error(f'Expected {token}, but got {next_token}!')
+        return value
