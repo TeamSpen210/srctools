@@ -150,13 +150,13 @@ def test_mag(py_c_vec):
         vec = Vec(x, y, z)
         mag = vec.mag()
         length = vec.len()
-        assert mag == length
-        assert mag == math.sqrt(x**2 + y**2 + z**2)
+        assert mag == length, "Exact equality, should be identical."
+        assert mag == pytest.approx(math.sqrt(x**2 + y**2 + z**2))
 
         mag_sq = vec.mag_sq()
         len_sq = vec.len_sq()
-        assert mag_sq == len_sq
-        assert len_sq == x**2 + y**2 + z**2
+        assert mag_sq == len_sq, "Exact equality, should be identical."
+        assert len_sq == pytest.approx(x**2 + y**2 + z**2)
 
 
 def test_contains(py_c_vec):
