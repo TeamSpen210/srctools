@@ -507,6 +507,29 @@ class EntityDef:
                         elif choices_token is not Token.STRING:
                             raise tok.error(choices_token)
                         vals, has_equal = read_colon_list(tok, had_colon=False)
+                        
+                        if val_typ is ValueTypes.SPAWNFLAGS:
+                            # The first value is an integer.
+                            try:
+                                choices_value = int(choices_value)
+                            except ValueError:
+                                raise tok.error(
+                                    'SpawnFlags must be integer values, '
+                                    'not "{}" (in {})!'.format(
+                                        choices_value, 
+                                        entity.classname, 
+                                    )
+                                ) from None
+                            power = math.log2(choices_value)
+                            if power != round(power):
+                                raise tok.error(
+                                    'SpawnFlags must be powers of two, '
+                                    'not {} (in {})!'.format(
+                                        choices_value,
+                                        entity.classname,
+                                    )
+                                ) from None
+                            
 
                         # Spawnflags can have a default, others don't
                         if len(vals) == 2 and val_typ is ValueTypes.SPAWNFLAGS:
