@@ -595,10 +595,10 @@ class FGD:
         Parameters:
         * file: A filesys.File representing the file to read, or a file path.
         * filesystem: The system to lookup files in. This is needed to 
-          resolve file inclusions. If not passed, file must by a filesystem
+          resolve file inclusions. If not passed, file must be a filesystem
           File to obtain a matching filesystem.
         """
-        if filesystem is not None:
+        if filesystem is not None and not isinstance(file, File):
             if not file.endswith('.fgd'):
                 file += '.fgd'
             try:
