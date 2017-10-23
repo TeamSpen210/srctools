@@ -195,13 +195,28 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
+        
+    def __repr__(self):
+        return 'KeyValues({s.name!r}, {s.type!r}, {s.disp_name!r}, {s.default!r}, {s.desc!r}, {s.val_list!r}, {s.readonly})'.format(s=self)
+        
 
 class IODef:
     """Represents an input or output for an entity."""
-    def __init__(self, name, val_type: ValueTypes, description: str):
+    def __init__(self, name, val_type: ValueTypes, description: str=''):
         self.name = name
         self.type = val_type
         self.desc = description
+        
+    def __repr__(self):
+        txt = '{}({!r}, {!r}'.format(
+            self.__class__.__name__,
+            self.name,
+            self.type,
+        )
+        if self.desc:
+            txt += ', ' + repr(self.desc)
+        return txt + ')'
+        
 
 
 class EntityDef:
