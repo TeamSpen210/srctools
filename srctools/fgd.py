@@ -74,7 +74,7 @@ class ValueTypes(Enum):
     STR_DECAL = 'decal'  # Sprite materials
     STR_MATERIAL = 'material'  # Materials
     STR_MODEL = 'studio'  # Model
-    STR_VSCIPT = 'scriptlist'  # List of vscripts
+    STR_VSCRIPT = 'scriptlist'  # List of vscripts
 
     # More complex
     ANGLE_NEG_PITCH = 'angle_negative_pitch'  # Inverse pitch of 'angles'
@@ -588,7 +588,7 @@ class FGD:
                     except ValueError:
                         raise tokeniser.error(
                             'Invalid Entity type "{}"!',
-                            ent_type[1:],
+                            token_value[1:],
                         )
                     EntityDef.parse(self, tokeniser, ent_type)
                 else:
