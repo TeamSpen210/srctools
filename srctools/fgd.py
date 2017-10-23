@@ -2,9 +2,8 @@
 from enum import Enum
 import re
 
-from typing import List, Tuple, Dict, Iterator, Union
+from typing import Dict, Iterator, Union, T, Mapping
 
-from srctools import Vec
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
@@ -217,7 +216,75 @@ class IODef:
             txt += ', ' + repr(self.desc)
         return txt + ')'
         
+class _EntityView(Mapping[str, T]):
+    """Provides a view over entity keyvalues, inputs, or outputs."""
+    __slots__ = ['_ent', '_attr', '_disp_attr',]
 
+    # Note, we expect the maps to have casefolded their keys.
+
+    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str):
+        self._ent = ent
+        self._attr = attr_name
+        self._disp_attr = disp_name
+        
+    @property
+    def __name__(self):
+        return self._disp_attr
+        
+    def __repr__(self):
+        return '{!r}.{}'.format(self._ent, self._disp_attr)
+
+    def __eq__(self, other) -> bool:
+        """We're private, so we should be the only instance for a given Entity."""
+        return other is self
+        
+    def _maps(self, ent=None) -> Mapping[str, T]:
+        """Yield all the mappings which we need to look through."""
+        if ent is None:
+            ent = self._ent
+            
+        yield getattr(ent, self._attr)
+        for base in ent.bases:
+            yield from self._maps(base)
+
+    def __getitem__(self, name: str) -> T:
+        fname = name.casefold()
+        for ent_map in self._maps():
+            try:
+                return ent_map[fname]
+            except KeyError:
+                pass
+        raise KeyError(name)
+
+    def __contains__(self, name: str) -> bool:
+        fname = name.casefold()
+        for ent_map in self._maps():
+            if fname in ent_map:
+                return True
+        return False
+        
+    def __iter__(self) -> Iterator[T]:
+        seen = set()
+        for ent_map in self._maps():
+            for name in ent_map.keys():
+                if name in seen:
+                    continue
+                seen.add(name)
+                yield name
+            
+    def __len__(self) -> int:
+        seen = set()
+        for ent_map in self._maps():
+            seen.update(ent_map)
+        return len(seen)
+
+
+# Fix a bug in some typing versions - slots can't be used with generics.
+del _EntityView.__slots__
+
+# Cache the classes ourselves here.
+_Ent_View_KV = _EntityView[KeyValues]
+_Ent_View_IO = _EntityView[IODef]
 
 class EntityDef:
     """A definition for an entity."""
@@ -233,6 +300,11 @@ class EntityDef:
         # this is a func, args tuple.
         self.helpers = []
         self.desc = []
+        
+        # Views for accessing data among all the entities.
+        self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')
+        self.inp = _Ent_View_IO(self, 'inputs', 'inp')
+        self.out = _Ent_View_IO(self, 'outputs', 'out')
 
     @classmethod
     def parse(
