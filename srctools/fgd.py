@@ -614,21 +614,35 @@ class FGD:
             )
         fgd = cls()
         fgd._parse_file(filesystem, file)
+        fgd._apply_bases()
+        return fgd
 
-        for ent in fgd:
-            new_bases, orig_bases = ent.bases, orig_bases = [], ent.bases
+    def _apply_bases(self):
+        """Fix base values in entities after parsing.
+        
+        While parsing the classnames are set as strings,
+        so order in the file doesn't matter. This fixes
+        them to the real entity objects.
+        """
+        for ent in self:
+            orig_bases = ent.bases
+            new_bases = ent.bases = []
             for base in orig_bases:
+                if isinstance(base, EntityDef):
+                    # This entity was already done.
+                    new_bases.append(base)
+                    continue
+                
                 try:
-                    new_bases.append(fgd.entities[base])
+                    new_bases.append(self[base])
                 except KeyError:
                     raise ValueError(
                         'Unknown base ({}) for {}'.format(
-                            orig_bases,
+                            base,
                             ent.classname,
                         )
                     )
 
-        return fgd
 
     def _parse_file(self, filesys: FileSystem, file: File):
         """Parse one file (recursively if needed)."""
