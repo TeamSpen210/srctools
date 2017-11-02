@@ -165,3 +165,45 @@ def test_constructor(py_c_token):
     Tokenizer('blah', '', KeyValError, True)
     Tokenizer('blah', error=KeyValError)
     Tokenizer(['blah', 'blah'], string_bracket=True)
+
+
+def test_token_syntax_error():
+    """Test the TokenSyntaxError class."""
+    # There's no C version - if we're erroring, we don't care about
+    # performance much.
+
+    # This pretty much just needs to return the right repr() and str(),
+    # and be an Exception.
+
+    assert issubclass(TokenSyntaxError, Exception)
+
+    err = TokenSyntaxError('test message', None, None)
+    assert repr(err) == "TokenSyntaxError('test message', None, None)"
+    assert err.mess == 'test message'
+    assert err.file is None
+    assert err.line_num is None
+    assert str(err) == '''test message'''
+
+    err = TokenSyntaxError('test message', 'a file', None)
+    assert repr(err) == "TokenSyntaxError('test message', 'a file', None)"
+    assert err.mess == 'test message'
+    assert err.file == 'a file'
+    assert err.line_num is None
+    assert str(err) == '''test message
+Error occurred with file "a file".'''
+
+    err = TokenSyntaxError('test message', 'a file', 45)
+    assert repr(err) == "TokenSyntaxError('test message', 'a file', 45)"
+    assert err.mess == 'test message'
+    assert err.file == 'a file'
+    assert err.line_num == 45
+    assert str(err) == '''test message
+Error occurred on line 45, with file "a file".'''
+
+    err = TokenSyntaxError('test message', None, 250)
+    assert repr(err) == "TokenSyntaxError('test message', None, 250)"
+    assert err.mess == 'test message'
+    assert err.file is None
+    assert err.line_num == 250
+    assert str(err) == '''test message
+Error occurred on line 250.'''
