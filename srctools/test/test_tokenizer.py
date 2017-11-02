@@ -119,6 +119,13 @@ def test_prop_tokens(py_c_token):
     tok = Tokenizer(test_list, '', string_bracket=True)
     check_tokens(tok, tokens)
 
+    # Test a special case - empty chunks at the end.
+    test_list += ['', '', '']
+
+    tok = Tokenizer(test_list, '', string_bracket=True)
+    check_tokens(tok, tokens)
+
+
 def test_bom(py_c_token):
     """Test skipping a UTF8 BOM at the beginning."""
     T, Tokenizer = py_c_token
