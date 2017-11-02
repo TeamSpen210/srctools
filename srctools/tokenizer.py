@@ -30,7 +30,7 @@ class TokenSyntaxError(Exception):
         self.line_num = line
 
     def __repr__(self):
-        return 'ParseError({!r}, {!r}, {!r})'.format(
+        return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
             self.mess,
             self.file,
             self.line_num,
@@ -46,10 +46,12 @@ class TokenSyntaxError(Exception):
             mess += '\nError occurred on line ' + str(self.line_num)
             if self.file:
                 mess += ', with file'
+            else:
+                mess += '.'
         if self.file:
             if not self.line_num:
                 mess += '\nError occurred with file'
-            mess += ' "' + self.file + '"'
+            mess += ' "' + self.file + '".'
         return mess
 
 
