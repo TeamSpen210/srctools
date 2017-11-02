@@ -90,6 +90,7 @@ def test_prop_tokens(py_c_token):
         T.BRACE_OPEN, T.NEWLINE,
         (T.STRING, "Name with \" in it"), (T.STRING, "Value with \" inside"), T.NEWLINE,
         (T.STRING, "multiline"), (T.STRING, 'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'), T.NEWLINE,
+        (T.STRING, "Escapes"), (T.STRING, '\t \n \\d'), T.NEWLINE,
         T.BRACE_CLOSE, T.NEWLINE,
         (T.STRING, "CommentChecks"), T.NEWLINE,
         T.BRACE_OPEN, T.NEWLINE,

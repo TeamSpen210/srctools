@@ -115,6 +115,7 @@ for many \\"lines\\" of
   possibly indented
 
 text"
+    "Escapes" "\\t \\n \\d"
     }
     "CommentChecks"
         {
@@ -153,6 +154,8 @@ def test_parse(py_c_token):
             P('multiline',
               'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
               ),
+            # Note, invalid = unchanged.
+            P('Escapes', '\t \n \\d')
         ]),
         P('CommentChecks', [
             P('after ', 'value'),
