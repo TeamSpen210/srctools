@@ -229,8 +229,13 @@ class FileInfo:
         """
         self.vpk._check_writable()
         # Split the file based on a certain limit.
+
+        new_checksum = checksum(data)
+
+        if new_checksum == self.crc:
+            return  # Same data, don't do anything.
         
-        self.crc = checksum(data)
+        self.crc = new_checksum
         
         self.start_data = data[:self.vpk.dir_limit]
         arch_data = data[self.vpk.dir_limit:]
