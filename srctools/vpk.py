@@ -182,6 +182,11 @@ class FileInfo:
         return '<VPK File: "{}">'.format(
             _join_file_parts(self.dir, self._filename, self.ext),
         )
+
+    @property
+    def size(self) -> int:
+        """The total size of this file."""
+        return self.arch_len + len(self.start_data)
         
     def read(self):
         """Return the contents for this file."""
