@@ -1,5 +1,6 @@
 from itertools import zip_longest
 import pytest
+import codecs
 
 from srctools.test.test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
@@ -27,6 +28,9 @@ def check_tokens(tokenizer, tokens):
 
     The arguments are either (token, value) tuples or tokens.
     """
+    # Don't show in pytest tracebacks.
+    __tracebackhide__ = True
+
     sentinel = object()
     tokenizer_iter = iter(tokenizer)
     tok_test_iter = iter(tokens)
@@ -112,6 +116,34 @@ def test_prop_tokens(py_c_token):
     assert ''.join(test_list) == prop_parse_test, "Bad test code!"
 
     tok = Tokenizer(test_list, '', string_bracket=True)
+    check_tokens(tok, tokens)
+
+def test_bom(py_c_token):
+    """Test skipping a UTF8 BOM at the beginning."""
+    T, Tokenizer = py_c_token
+
+    bom = codecs.BOM_UTF8.decode('utf8')
+
+    text = bom + '''\
+"blah"
+  {
+  "tes__t " "2"
+    }
+'''.replace('__', bom)  # Check the BOM can be inside the contents.
+
+    tokens = [
+        (T.STRING, "blah"), T.NEWLINE,
+        T.BRACE_OPEN, T.NEWLINE,
+        (T.STRING, "tes" + bom + "t "), (T.STRING, "2"), T.NEWLINE,
+        T.BRACE_CLOSE, T.NEWLINE,
+    ]
+
+    # Check without chunks.
+    tok = Tokenizer(text, '')
+    check_tokens(tok, tokens)
+
+    # And with chunks.
+    tok = Tokenizer(list(text), '')
     check_tokens(tok, tokens)
 
 
