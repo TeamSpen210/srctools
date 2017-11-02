@@ -138,7 +138,7 @@ class Tokenizer:
         The message can be a Token to indicate a wrong token,
         or a string which will be formatted with the positional args.
         """
-        if isinstance(message, Token):
+        if isinstance(message, Py_Token):
             message = 'Unexpected token {}!'.format(message.name)
         else:
             message = message.format(*args)
