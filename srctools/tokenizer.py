@@ -109,8 +109,8 @@ class Tokenizer:
         data: Union[str, Iterable[str]],
         filename: str=None,
         error: Callable[
-            [str, Optional[int], Optional[str]],
-            TokenSyntaxError,
+            [str, Optional[str], Optional[int]],
+            Exception,
         ]=TokenSyntaxError,
         string_bracket=False,
     ):
