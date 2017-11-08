@@ -41,11 +41,13 @@ cdef class Tokenizer:
     """
     cdef str cur_chunk
     cdef object chunk_iter
-    cdef int char_index
     # Class to call when errors occur..
     cdef object error_type
 
     cdef public str filename
+
+    cdef int char_index # Position inside cur_chunk
+
     cdef public int line_num
     cdef public bint string_bracket
 
@@ -63,9 +65,11 @@ cdef class Tokenizer:
             self.filename = str(filename)
         else:
             # If a file-like object, automatically set to the filename.
-            self.filename = str(data.name) if hasattr(data, 'name') else ''
+            try:
+                self.filename = str(data.name)
+            except AttributeError:
+                self.filename = ''
 
-        from srctools.tokenizer import TokenSyntaxError
         if error is None:
             self.error_type = TokenSyntaxError
         else:
@@ -128,9 +132,9 @@ cdef class Tokenizer:
 
     def __call__(self):
         """Return the next token, value pair."""
-        return self._next_token()
+        return self.next_token()
 
-    cdef _next_token(self):
+    cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
             list value_chars
@@ -284,10 +288,10 @@ cdef class Tokenizer:
         if token is NEWLINE:
             skip_newline = False
 
-        next_token, value = <tuple>self._next_token()
+        next_token, value = <tuple>self.next_token()
 
-            next_token, value = <tuple>self._next_token()
         while skip_newline and next_token is NEWLINE:
+            next_token, value = <tuple>self.next_token()
 
         if next_token is not token:
             raise self._error(f'Expected {token}, but got {next_token}!')
