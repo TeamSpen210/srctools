@@ -62,26 +62,32 @@ class Token(Enum):
     NEWLINE = 2  # \n
     PAREN_ARGS = 3  # (data)
 
-    BRACE_OPEN = '{'
-    BRACE_CLOSE = '}'
+    BRACE_OPEN = 5
+    BRACE_CLOSE = 6
 
     PROP_FLAG = 10  # [!flag]
     BRACK_OPEN = 11  # only if above is not used
-    BRACK_CLOSE = ']'  # Won't be used if PROP_FLAG
+    BRACK_CLOSE = 12
 
-    COLON = ':'
-    EQUALS = '='
-    PLUS = '+'
+    COLON = 13
+    EQUALS = 14
+    PLUS = 15
 
 
-OPERATORS = {
-    token.value: token
-    for token in Token
-    if isinstance(token.value, str)
+_OPERATORS = {
+    '{': Token.BRACE_OPEN,
+    '}': Token.BRACE_CLOSE,
+
+    ']': Token.BRACK_CLOSE,  # Won't be used if PROP_FLAG
+
+    ':': Token.COLON,
+    '=': Token.EQUALS,
+    '+': Token.PLUS,
+
+    # None is returned when no more characters...
+    None: Token.EOF,
 }
 
-# Returned when no more characters...
-OPERATORS[None] = Token.EOF
 
 ESCAPES = {
     'n': '\n',
@@ -178,7 +184,7 @@ class Tokenizer:
             next_char = self._next_char()
             # First try simple operators & EOF.
             try:
-                return OPERATORS[next_char], next_char
+                return _OPERATORS[next_char], next_char
             except KeyError:
                 pass
             if next_char == '\n':
