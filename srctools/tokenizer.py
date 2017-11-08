@@ -138,7 +138,7 @@ class Tokenizer:
         The message can be a Token to indicate a wrong token,
         or a string which will be formatted with the positional args.
         """
-        if isinstance(message, Py_Token):
+        if isinstance(message, Token):
             message = 'Unexpected token {}!'.format(message.name)
         else:
             message = message.format(*args)
@@ -183,7 +183,7 @@ class Tokenizer:
                 pass
             if next_char == '\n':
                 self.line_num += 1
-                return Py_Token.NEWLINE, '\n'
+                return Token.NEWLINE, '\n'
 
             elif next_char in ' \t':
                 # Ignore whitespace..
@@ -209,7 +209,7 @@ class Tokenizer:
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
-                        return Py_Token.STRING, ''.join(value_chars)
+                        return Token.STRING, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
                     elif next_char == '\\':
@@ -230,16 +230,16 @@ class Tokenizer:
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.string_bracket:
-                    return Py_Token.BRACK_OPEN, '['
+                    return Token.BRACK_OPEN, '['
 
                 value_chars = []
                 while True:
                     next_char = self._next_char()
                     if next_char == ']':
-                        return Py_Token.PROP_FLAG, ''.join(value_chars)
+                        return Token.PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
                     elif next_char == '\n':
-                        raise self.error(Py_Token.NEWLINE)
+                        raise self.error(Token.NEWLINE)
                     elif next_char is None:
                         raise self.error('Unterminated property flag!')
                     value_chars.append(next_char)
@@ -250,7 +250,7 @@ class Tokenizer:
                 while True:
                     next_char = self._next_char()
                     if next_char == ')':
-                        return Py_Token.PAREN_ARGS, ''.join(value_chars)
+                        return Token.PAREN_ARGS, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
                     elif next_char is None:
@@ -271,11 +271,11 @@ class Tokenizer:
                         # char next. If it's not allowed, that'll error on
                         # next call.
                         self.char_index -= 1
-                        return Py_Token.STRING, ''.join(value_chars)
+                        return Token.STRING, ''.join(value_chars)
                     elif next_char is None:
                         # Bare names at the end are actually fine.
                         # It could be a value for the last prop.
-                        return Py_Token.STRING, ''.join(value_chars)
+                        return Token.STRING, ''.join(value_chars)
                     else:
                         value_chars.append(next_char)
 
@@ -284,7 +284,7 @@ class Tokenizer:
 
     def __iter__(self) -> Iterator[Tuple[Token, Optional[str]]]:
         # Call ourselves until EOF is returned
-        return iter(self, (Py_Token.EOF, None))
+        return iter(self, (Token.EOF, None))
 
     def expect(self, token: Token, skip_newline=True):
         """Consume the next token, which should be the given type.
@@ -310,19 +310,17 @@ class Tokenizer:
             )
         return value
 
-# These are available as both C and Python versions, plus the unprefixed
+
+# This is available as both C and Python versions, plus the unprefixed
 # best version.
-Py_Token = Token
 Py_Tokenizer = Tokenizer
 
-# These are for static typing help, so it knows they're the same.
-C_Token = Token
+# This is for static typing help, so it thinks they're the same.
 C_Tokenizer = Tokenizer
+
+# Make the actual assignment hidden to type checkers.
 try:
     # noinspection all
-    from srctools._tokenizer import Token, Tokenizer
+    from srctools._tokenizer import Tokenizer, Tokenizer as C_Tokenizer  # type: ignore
 except ImportError:
-    C_Token = C_Tokenizer = None  # type: ignore
-else:
-    C_Token = Token  # type: ignore
-    C_Tokenizer = Tokenizer  # type: ignore
+    C_Tokenizer = None  # type: ignore

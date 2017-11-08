@@ -1,26 +1,26 @@
 import pytest
 from srctools.property_parser import Property, KeyValError, NoKeyError
-from srctools.tokenizer import C_Token, C_Tokenizer, Py_Token, Py_Tokenizer
+from srctools.tokenizer import C_Tokenizer, Py_Tokenizer
 from srctools import property_parser as pp_mod
 
-if C_Token is not None and C_Tokenizer is not None:
-    parms = [(C_Token, C_Tokenizer), (Py_Token, Py_Tokenizer)]
+if C_Tokenizer is not None:
+    parms = [C_Tokenizer, Py_Tokenizer]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:
     pytest.fail('No _tokenizer')
-    parms = [(Py_Token, Py_Tokenizer)]
+    parms = [Py_Tokenizer]
     ids = ['Python tokenizer']
 
 
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request):
     """Run the test twice, for the Python and C versions of Tokenizer."""
-    orig_tok, orig_izer = pp_mod.Token, pp_mod.Tokenizer
+    orig_tok = pp_mod.Tokenizer
     try:
-        pp_mod.Token, pp_mod.Tokenizer = request.param
+        pp_mod.Tokenizer = request.param
         yield None
     finally:
-        pp_mod.Token, pp_mod.Tokenizer = orig_tok, orig_izer
+        pp_mod.Tokenizer = orig_tok
 
 
 def assert_tree(first, second):

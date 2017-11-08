@@ -4,14 +4,17 @@ import codecs
 
 from srctools.test.test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
-from srctools.tokenizer import C_Token, C_Tokenizer, Py_Token, Py_Tokenizer, TokenSyntaxError
+from srctools.tokenizer import Token, C_Tokenizer, Py_Tokenizer, TokenSyntaxError
 
-if C_Token is not None and C_Tokenizer is not None:
-    parms = [(C_Token, C_Tokenizer), (Py_Token, Py_Tokenizer)]
+T = Token
+
+if C_Tokenizer is not None:
+    parms = [C_Tokenizer, Py_Tokenizer]
     ids = ['Cython', 'Python']
 else:
-    print('No _tokenizer!')
-    parms = [(Py_Token, Py_Tokenizer)]
+    import srctools.tokenizer
+    print('No _tokenizer! ' + str(vars(srctools.tokenizer)))
+    parms = [Py_Tokenizer]
     ids = ['Python']
 
 
@@ -58,7 +61,7 @@ def check_tokens(tokenizer, tokens):
 
 def test_prop_tokens(py_c_token):
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
-    T, Tokenizer = py_c_token
+    Tokenizer = py_c_token
     tokens = [
         T.NEWLINE,
         T.NEWLINE,
@@ -128,7 +131,7 @@ def test_prop_tokens(py_c_token):
 
 def test_bom(py_c_token):
     """Test skipping a UTF8 BOM at the beginning."""
-    T, Tokenizer = py_c_token
+    Tokenizer = py_c_token
 
     bom = codecs.BOM_UTF8.decode('utf8')
 
@@ -157,7 +160,7 @@ def test_bom(py_c_token):
 
 def test_constructor(py_c_token):
     """Test various argument syntax for the tokenizer."""
-    Token, Tokenizer = py_c_token
+    Tokenizer = py_c_token
 
     Tokenizer('blah')
     Tokenizer('blah', None)
