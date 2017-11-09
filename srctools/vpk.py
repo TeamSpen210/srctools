@@ -5,7 +5,8 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union, Dict, Optional
+from typing import Union, Dict, Optional, List
+
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
@@ -150,7 +151,7 @@ class FileInfo:
         arch_len: int=0,
         arch_index: int=None,
     ):
-        """This should only be called by VPK internally."""
+        """This should only be called by VPK() internally."""
 
         # Assert the path is ASCII.
         try:
@@ -360,7 +361,6 @@ class VPK:
                         crc, index_len, arch_ind, offset, arch_len, end = struct_file_read('<IHHIIH', dirfile)
                         if arch_ind == DIR_ARCH_INDEX:
                             arch_ind = None
-                            #offset += self.header_len
                             
                         if arch_len == 0:
                             offset = 0
@@ -478,7 +478,7 @@ class VPK:
         path, filename, ext = _get_file_parts(item)
         
         try:
-            info = self._fileinfo[ext][path].pop(filename)
+            self._fileinfo[ext][path].pop(filename)
         except KeyError:
             raise KeyError(
                 'No file "{}"!'.format(
