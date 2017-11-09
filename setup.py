@@ -26,6 +26,12 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    packages=['srctools'],
+    packages=['srctools', 'srctools.scripts'],
     ext_modules=modules,
+
+    entry_points={
+        'console_scripts': [
+            'srctools_dump_parms = srctools.scripts.dump_parms:main',
+        ],
+    },
 )

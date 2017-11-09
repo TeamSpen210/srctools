@@ -39,6 +39,24 @@ class VarType(Enum):
     FOUR_CC = 'SHADER_PARAM_TYPE_FOURCC'
 
 
+_SHADER_PARAM_TYPES = {}  # type: Dict[str, VarType]
+
+
+def get_parm_type(name: str) -> VarType:
+    """Retrieve the type a parameter has, or raise KeyError."""
+    if not _SHADER_PARAM_TYPES:
+        # Import and load the parameters.
+        from srctools._shaderdb import _shader_db
+
+        _shader_db(VarType, _SHADER_PARAM_TYPES)
+
+        # Delete the module - that way it'll be garbage
+        # collected - no need to keep it around.
+        del sys.modules['srctools._shaderdb']
+
+    return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
+
+
 class Material:
     """Represents a material.
     
