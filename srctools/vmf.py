@@ -2156,6 +2156,9 @@ class Output:
         'comma_sep',
     ]
 
+    # Make this available here also.
+    SEP = OUTPUT_SEP
+
     def __init__(
         self,
         out: str,
