@@ -292,6 +292,15 @@ class Tokenizer:
         # Call ourselves until EOF is returned
         return iter(self, (Token.EOF, None))
 
+    def skipping_newlines(self):
+        """Iterate over the tokens, skipping newlines."""
+        while True:
+            tok_and_val = tok, tok_value = self()
+            if tok is Token.EOF:
+                return
+            elif tok is not Token.NEWLINE:
+                yield tok_and_val
+
     def expect(self, token: Token, skip_newline=True):
         """Consume the next token, which should be the given type.
 

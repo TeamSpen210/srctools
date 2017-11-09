@@ -278,6 +278,10 @@ cdef class Tokenizer:
         # Call ourselves until EOF is returned
         return iter(self, EOF_TUP)
 
+    def skipping_newlines(self):
+        """Iterate over the tokens, skipping newlines."""
+        return NewlinesIter.__new__(NewlinesIter, self)
+
     def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
 
@@ -296,3 +300,26 @@ cdef class Tokenizer:
         if next_token is not token:
             raise self._error(f'Expected {token}, but got {next_token}!')
         return value
+
+
+cdef class NewlinesIter:
+    """Iterate over the tokens, skipping newlines."""
+    cdef Tokenizer tok
+
+    def __cinit__(self, Tokenizer tok not None):
+        self.tok = tok
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        while True:
+            tok_and_val = self.tok.next_token()
+
+            if tok_and_val is EOF_TUP:
+                raise StopIteration
+            elif tok_and_val is not NEWLINE_TUP:
+                return tok_and_val
+
+# Remove this class from the module, so it's not directly exposed.
+del globals()['NewlinesIter']
