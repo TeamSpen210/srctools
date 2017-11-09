@@ -118,10 +118,7 @@ class FileSystem:
         return self.walk_folder('')
 
     def __getitem__(self, name: str):
-        try:
-            return self._get_file(name)
-        except FileNotFoundError:
-            raise KeyError
+        return self._get_file(name)
 
     def __contains__(self, name: str):
         return self._file_exists(name)
