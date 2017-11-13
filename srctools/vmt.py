@@ -1,7 +1,8 @@
 """Parses material files."""
-from typing import Iterable, List, Dict, Union
+from typing import Iterable, List, Dict, Union, Callable, Optional
 
 import sys
+from io import TextIOWrapper
 from enum import Enum
 
 from srctools import FileSystem, Property
@@ -226,15 +227,29 @@ class Material:
 
         raise tok.error('EOF without closed block!')
 
-    def apply_patches(self, fsys: FileSystem, limit=100) -> 'Material':
+    def apply_patches(
+        self,
+        fsys: FileSystem,
+        *,
+        limit=100,
+        parent_func: Callable[[str], None]=None,
+    ) -> 'Material':
         """If the file is a Patch shader expand to the full material.
 
         This reads from the supplied filesystem as needed. If more than
         limit files are parsed, a RecursionError is raised.
+        If parent_func is provided, it will be called with the filenames
+        of the VMTs which are looked up.
         """
-        return self._apply_patch(fsys, 1, limit)
+        return self._apply_patch(fsys, 1, limit, parent_func)
 
-    def _apply_patch(self, fsys: FileSystem, count: int, limit: int) -> 'Material':
+    def _apply_patch(
+        self,
+        fsys: FileSystem,
+        count: int,
+        limit: int,
+        parent_func: Optional[Callable[[str], None]],
+    ) -> 'Material':
         """Do apply_patches()."""
         if count > limit:
             raise RecursionError('Parsed too deep a Patch tree!')
@@ -254,10 +269,13 @@ class Material:
                 ' patching!'.format(filename)
             ) from None
 
+        if parent_func is not None:
+            parent_func(parent_file)
+
         with fsys, parent_file.open_str() as f:
             parent = Material.parse(f, filename)
 
-        parent = parent._apply_patch(fsys, count + 1, limit)
+        parent = parent._apply_patch(fsys, count + 1, limit, parent_func)
 
         new_params = {
             name: (prop.copy() if isinstance(prop, Property) else prop)
