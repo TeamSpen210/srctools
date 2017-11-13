@@ -10,6 +10,7 @@ setup(
             'zip_exclude_packages': '',
         },
     },
+    requires=['srctools'],
     executables=[
         # Executable(
         #     'seecompiler/vbsp.py',
