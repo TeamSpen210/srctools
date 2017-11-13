@@ -142,6 +142,8 @@ class Material:
                     # End of us after single name.
                     params[param_name.casefold()] = param_value
                     break
+                elif token is Tok.NEWLINE:
+                    pass
                 else:
                     raise tok.error(token)
             else:
