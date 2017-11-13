@@ -120,6 +120,9 @@ class Tokenizer:
         ]=TokenSyntaxError,
         string_bracket=False,
     ):
+        if isinstance(data, bytes):
+            raise ValueError('Cannot parse binary data!')
+
         if isinstance(data, str):
             self.cur_chunk = data
             self.chunk_iter = iter(())
@@ -162,16 +165,25 @@ class Tokenizer:
         except IndexError:
             # Retrieve a chunk from the iterable.
             try:
-                self.cur_chunk = next(self.chunk_iter)
+                chunk = self.cur_chunk = next(self.chunk_iter)
             except StopIteration:
                 # Out of characters
                 return None
+            if isinstance(chunk, bytes):
+                raise ValueError('Cannot parse binary data!')
+            if not isinstance(chunk, str):
+                raise ValueError("Data was not a string!")
             self.char_index = 0
+
             try:
-                return self.cur_chunk[0]
+                return chunk[0]
             except IndexError:
                 # Skip empty chunks (shouldn't be there.)
                 for chunk in self.chunk_iter:
+                    if isinstance(chunk, bytes):
+                        raise ValueError('Cannot parse binary data!')
+                    if not isinstance(chunk, str):
+                        raise ValueError("Data was not a string!")
                     if chunk:
                         self.cur_chunk = chunk
                         return chunk[0]

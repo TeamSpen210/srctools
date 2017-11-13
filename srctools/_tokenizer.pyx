@@ -53,6 +53,9 @@ cdef class Tokenizer:
 
 
     def __init__(self, data not None, filename=None, error=None, bint string_bracket=False):
+        if isinstance(data, bytes):
+            raise ValueError('Cannot parse binary data!')
+
         if isinstance(data, str):
             self.cur_chunk = data
             self.chunk_iter = iter(())
@@ -105,28 +108,40 @@ cdef class Tokenizer:
     cdef Py_UCS4 _next_char(self) except -2:
         """Return the next character, or -1 if no more characters are there."""
         cdef str chunk
+        cdef object chunk_obj
 
         self.char_index += 1
         if self.char_index < len(self.cur_chunk):
             return self.cur_chunk[self.char_index]
 
         # Retrieve a chunk from the iterable.
-        chunk = next(self.chunk_iter, None)
-        if chunk is None:
+        chunk_obj = next(self.chunk_iter, None)
+        if chunk_obj is None:
             return -1
-        if not isinstance(chunk, str):
+
+        if isinstance(chunk_obj, bytes):
+            raise ValueError('Cannot parse binary data!')
+        if not isinstance(chunk_obj, str):
             raise ValueError("Data was not a string!")
-        self.cur_chunk = chunk
+
+        self.cur_chunk = chunk = <str>chunk_obj
         self.char_index = 0
 
         if len(chunk) > 0:
-            return chunk[0]
+            return (<str>chunk)[0]
 
         # Skip empty chunks (shouldn't be there.)
-        for chunk in self.chunk_iter:
+        for chunk_obj in self.chunk_iter:
+            if isinstance(chunk_obj, bytes):
+                raise ValueError('Cannot parse binary data!')
+            if not isinstance(chunk_obj, str):
+                raise ValueError("Data was not a string!")
+
+            chunk = <str>chunk_obj
+
             if len(chunk) > 0:
                 self.cur_chunk = chunk
-                return chunk[0]
+                return (<str>chunk)[0]
         # Out of characters after empty chunks
         return -1
 
