@@ -1,5 +1,6 @@
 #cython: language_level=3, embedsignature=True
 """Cython version of the Tokenizer class."""
+cimport cython
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -105,6 +106,9 @@ cdef class Tokenizer:
             self.line_num,
         )
 
+    # We check all the getitem[] accesses, so don't have Cython recheck.
+    @cython.boundscheck(False)
+    @cython.wraparound(False)
     cdef Py_UCS4 _next_char(self) except -2:
         """Return the next character, or -1 if no more characters are there."""
         cdef str chunk
