@@ -312,7 +312,21 @@ class BSP:
 
         return out.getvalue()
 
-    def read_static_props(self) -> Iterator['StaticProp']:
+    def static_prop_models(self):
+        """Yield all model filenames used in static props."""
+        static_lump = BytesIO(self.get_game_lump(b'sprp'))
+        return self._read_static_props_models(static_lump)
+
+    @staticmethod
+    def _read_static_props_models(static_lump: BytesIO):
+        """Read the static prop dictionary from the lump."""
+        dict_num = get_struct(static_lump, 'i')[0]
+        for _ in range(dict_num):
+            padded_name = get_struct(static_lump, '128s')[0]
+            # Strip null chars off the end, and convert to a str.
+            yield padded_name.rstrip(b'\x00').decode('ascii')
+
+    def static_props(self) -> Iterator['StaticProp']:
         """Read in the Static Props lump."""
         # The version of the static prop format - different features.
         version = self.game_lumps[b'sprp'][1]
@@ -320,27 +334,14 @@ class BSP:
             raise ValueError('Unknown version "{}"!'.format(version))
 
         static_lump = BytesIO(self.get_game_lump(b'sprp'))
-        dict_num = get_struct(static_lump, 'i')[0]
 
         # Array of model filenames.
-        model_dict = []
-        for _ in range(dict_num):
-            padded_name = get_struct(static_lump, '128s')[0]
-            # Strip null chars off the end, and convert to a str.
-            model_dict.append(
-                padded_name.rstrip(b'\x00').decode('ascii')
-            )
+        model_dict = list(self._read_static_props_models(static_lump))
 
         visleaf_count = get_struct(static_lump, 'i')[0]
         visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
 
         prop_count = get_struct(static_lump, 'i')[0]
-
-        print(model_dict)
-
-        print('-' * 30)
-        print('props', version, prop_count)
-        print('-' * 30)
 
         pos = static_lump.tell()
         data = static_lump.read()
