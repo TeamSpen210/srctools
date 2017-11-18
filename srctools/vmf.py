@@ -1715,7 +1715,7 @@ class Entity:
                 for face in solid:
                     yield face
 
-    def add_out(self, *outputs):
+    def add_out(self, *outputs: 'Output'):
         """Add the outputs to our list."""
         self.outputs.extend(outputs)
 
