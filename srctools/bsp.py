@@ -243,7 +243,10 @@ class BSP:
 
     def get_game_lump(self, lump_id):
         """Get a given game-lump, given the 4-character byte ID."""
-        flags, version, file_off, file_len = self.game_lumps[lump_id]
+        try:
+            flags, version, file_off, file_len = self.game_lumps[lump_id]
+        except KeyError:
+            raise ValueError('{} not in {}'.format(lump_id, list(self.game_lumps)))
         with open(self.filename, 'rb') as file:
             file.seek(file_off)
             return file.read(file_len)
