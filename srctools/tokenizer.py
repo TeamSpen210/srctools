@@ -157,6 +157,15 @@ class Tokenizer:
             self.line_num,
         )
 
+    def __reduce__(self):
+        """Disallow pickling Tokenizers.
+
+        The files themselves usually are not pickleable, or are very
+        large strings.
+        There is also the issue with recreating the C/Python versions.
+        """
+        raise NotImplementedError('Cannot pickle Tokenizers!')
+
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
         self.char_index += 1

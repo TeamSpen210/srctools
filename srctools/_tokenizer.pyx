@@ -1,4 +1,4 @@
-#cython: language_level=3, embedsignature=True
+#cython: language_level=3, embedsignature=True, auto_pickle=False
 """Cython version of the Tokenizer class."""
 cimport cython
 
@@ -83,6 +83,14 @@ cdef class Tokenizer:
         self.string_bracket = string_bracket
         self.line_num = 1
 
+    def __reduce__(self):
+        """Disallow pickling Tokenizers.
+
+        The files themselves usually are not pickleable, or are very
+        large strings.
+        There is also the issue with recreating the C/Python versions.
+        """
+        raise NotImplementedError('Cannot pickle Tokenizers!')
 
     def error(self, message, *args):
         """Raise a syntax error exception.
@@ -339,6 +347,10 @@ cdef class NewlinesIter:
                 raise StopIteration
             elif tok_and_val is not NEWLINE_TUP:
                 return tok_and_val
+
+    def __reduce__(self):
+        """This cannot be pickled - the Python version does not have this class."""
+        raise NotImplementedError('Cannot pickle NewlinesIter!')
 
 # Remove this class from the module, so it's not directly exposed.
 del globals()['NewlinesIter']
