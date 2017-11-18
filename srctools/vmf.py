@@ -222,13 +222,13 @@ class VMF:
     def __init__(
         self,
         map_info=EmptyMapping,
-        spawn=None,
-        entities=None,
-        brushes=None,
-        cameras=None,
-        cordons=None,
-        vis_tree=None,
-        preserve_ids=False,
+        spawn: 'Entity'=None,
+        entities: List['Entity']=None,
+        brushes: List['Solid']=None,
+        cameras: List['Camera']=None,
+        cordons: List['Cordon']=None,
+        vis_tree: List['VisGroup']=None,
+        preserve_ids: bool=False,
     ):
         """Create a VMF.
 
@@ -257,7 +257,7 @@ class VMF:
 
         # mapspawn entity, which is the entity world brushes are saved
         # to.
-        self.spawn = spawn or Entity(self)
+        self.spawn = spawn or Entity(self)  # type: Entity
         self.spawn.solids = self.brushes
         self.spawn.hidden_brushes = self.brushes
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
@@ -291,15 +291,15 @@ class VMF:
         self.quickhide_count = srctools.conv_int(
             map_info.get('quickhide'), -1)
 
-    def add_brush(self, item):
+    def add_brush(self, item: 'Solid'):
         """Add a world brush to this map."""
         self.brushes.append(item)
 
-    def remove_brush(self, item):
+    def remove_brush(self, brush: 'Solid'):
         """Remove a world brush from this map."""
-        self.brushes.remove(item)
+        self.brushes.remove(brush)
 
-    def add_ent(self, item):
+    def add_ent(self, item: 'Entity'):
         """Add an entity to the map.
 
         The entity should have been created with this VMF as a parent.
@@ -308,7 +308,7 @@ class VMF:
         self.by_class[item['classname', None]].add(item)
         self.by_target[item['targetname', None]].add(item)
 
-    def remove_ent(self, item):
+    def remove_ent(self, item: 'Entity'):
         """Remove an entity from the map.
 
         After this is called, the entity will no longer be exported.
@@ -341,7 +341,7 @@ class VMF:
         self.add_ent(ent)
         return ent
 
-    def create_visgroup(self, name, color=(255, 255, 255)) -> 'VisGroup':
+    def create_visgroup(self, name: str, color: Vec=(255, 255, 255)) -> 'VisGroup':
         """Convenience method for creating visgroups."""
         vis = VisGroup(self, -1, name, color)
         self.vis_tree.append(vis)
@@ -520,7 +520,7 @@ class VMF:
         if world:
             yield from self.brushes
         if detail:
-            for ent in self.iter_ents(classname='func_detail'):
+            for ent in self.by_class['func_detail']:
                 yield from ent.solids
 
     def iter_wfaces(self, world=True, detail=True) -> Iterator['Side']:
@@ -842,6 +842,7 @@ class Cordon:
     def remove(self):
         """Remove this cordon from the map."""
         self.map.cordons.remove(self)
+
 
 class VisGroup:
     """Defines one visgroup."""
