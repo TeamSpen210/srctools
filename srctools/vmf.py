@@ -321,13 +321,17 @@ class VMF:
         if item.id in self.ent_id:
             self.ent_id.remove(item.id)
 
-    def add_brushes(self, item):
-        for i in item:
-            self.add_brush(i)
+    def add_brushes(self, brushes: Iterable['Solid']):
+        """Add multiple brushes to the map."""
+        self.brushes.extend(brushes)
 
-    def add_ents(self, item):
-        for i in item:
-            self.add_ent(i)
+    def add_ents(self, ents: Iterable['Entity']):
+        """Add multiple entities to the map."""
+        ents = list(ents)
+        self.entities.extend(ents)
+        for item in ents:
+            self.by_class[item['classname', None]].add(item)
+            self.by_target[item['targetname', None]].add(item)
 
     def create_ent(self, classname: str, **kargs) -> 'Entity':
         """Convenience method to allow creating point entities.
