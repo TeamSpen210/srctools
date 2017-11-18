@@ -3,7 +3,11 @@
 """
 from enum import Enum
 from io import BytesIO
-from srctools import AtomicWriter, Vec
+import itertools
+
+from srctools import AtomicWriter, Vec, conv_int
+from srctools.vmf import VMF, Entity, Output
+from srctools.property_parser import Property
 import struct
 
 from typing import List, Iterator
@@ -280,36 +284,83 @@ class BSP:
                 ))
 
     def read_ent_data(self):
-        """Iterate through the entities in a map.
-
-        This yields a series of keyvalue dictionaries. The first is WorldSpawn.
+        """Parse in entity data.
+        
+        This returns a VMF object, with entities mirroring that in the BSP. 
+        No brushes are read.
         """
-        ent_data = self.get_lump(BSP_LUMPS.ENTITIES).decode('ascii')
-        cur_dict = None  # None = waiting for '{'
-
-        # This code is similar to property_parser, but simpler since there's
-        # no nesting, comments, or whitespace, except between key and value.
+        ent_data = self.get_lump(BSP_LUMPS.ENTITIES)
+        vmf = VMF()
+        cur_ent = None  # None when between brackets.
+        seen_spawn = False  # The first entity is worldspawn.
+        
+        # This code performs the same thing as property_parser, but simpler
+        # since there's no nesting, comments, or whitespace, except between
+        # key and value. We also operate directly on the (ASCII) binary.
         for line in ent_data.splitlines():
-            if line == '{':
-                cur_dict = {}
-            elif line == '}':
-                yield cur_dict
-                cur_dict = None
-            elif line == '\x00':
-                return
+            if line == b'{':
+                if cur_ent is not None:
+                    raise ValueError(
+                        '2 levels of nesting after {} ents'.format(
+                            len(vmf.entities)
+                        )
+                    )
+                if not seen_spawn:
+                    cur_ent = vmf.spawn
+                    seen_spawn = True
+                else:
+                    cur_ent = Entity(vmf)
+            elif line == b'}':
+                if cur_ent is None:
+                    raise ValueError(
+                        'Too many closing brackets after {} ents'.format(
+                            len(vmf.entities)
+                        )
+                    )
+                if cur_ent is vmf.spawn:
+                    if cur_ent['classname'] != 'worldspawn':
+                        raise ValueError('No worldspawn entity!')
+                else:
+                    # The spawn ent is stored in the attribute, not in the ent
+                    # list.
+                    vmf.add_ent(cur_ent)
+                cur_ent = None
+            elif line == b'\x00':  # Null byte at end of lump.
+                if cur_ent is not None:
+                    raise ValueError("Last entity didn't end!")
+                return vmf
             else:
                 # Line is of the form <"key" "val">
-                key, value = line.split('" "')
-                cur_dict[key[1:]] = value[:-1]
+                key, value = line.split(b'" "')
+                decoded_key = key[1:].decode('ascii')
+                decoded_val = value[:-1].decode('ascii')
+                if 27 in value:
+                    # All outputs use the comma_sep, so we can ID them.
+                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_val)))
+                else:
+                    # Normal keyvalue.
+                    cur_ent[decoded_key] = decoded_val
+                    
+        # This keyvalue needs to be stored in the VMF object too.
+        # The one in the entity is ignored.
+        vmf.map_ver = conv_int(vmf.spawn['mapversion'], vmf.map_ver)
+
+        return vmf
 
     @staticmethod
-    def write_ent_data(ent_dicts):
-        """Generate the entity data lump, given a list of dictionaries."""
+    def write_ent_data(vmf: VMF):
+        """Generate the entity data lump.
+        
+        This accepts a VMF file like that returned from read_ent_data(). 
+        Brushes are ignored, so the VMF must use *xx model references.
+        """
         out = BytesIO()
-        for keyvals in ent_dicts:
+        for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
-            for key, value in keyvals.items():
-                out.write('"{}" "{}"'.format(key, value).encode('ascii'))
+            for key, value in ent.keys.items():
+                out.write('"{}" "{}"\n'.format(key, value).encode('ascii'))
+            for output in ent.outputs:
+                out.write(output._get_text().encode('ascii'))
             out.write(b'}\n')
         out.write(b'\x00')
 
