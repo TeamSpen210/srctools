@@ -512,8 +512,8 @@ class VPKFileSystem(FileSystem):
         self._ref = None
 
     def _file_exists(self, name: str):
-        if self._ref is None:
-            return name in self._ref
+        self._check_open()
+        return name in self._ref
 
     def _get_file(self, name: str):
         try:
