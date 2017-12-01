@@ -3,24 +3,30 @@ from srctools.filesys import FileSystem, File
 from srctools import Vec
 from struct import pack, unpack, Struct, calcsize
 
+
 def str_read(format, file):
+    """Read a structure from the file."""
     return unpack(format, file.read(calcsize(format)))
-    
+
+
 def read_nullstr(file):
     """Read a null-terminated string from the file."""
     text = []
     while True:
         char = file.read(1)
         if char == b'\0':
-            return b''.join(text)
+            return b''.join(text).decode('ascii')
         if not char:
             raise ValueError('Fell off end of file!')
         text.append(char)
     
 ST_VEC = Struct('fff')
 
+
 def str_readvec(file):
+    """Read a vector from a file."""
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
+
 
 class Model:
     def __init__(self, filesystem: FileSystem, file: File):
@@ -36,11 +42,11 @@ class Model:
         if f.read(4) != b'IDST':
             raise ValueError('Not a model!')
         (
-            self.version, 
+            self.version,
             name,
             file_len,
-        # 4 bytes are unknown...
-        ) = str_read('i4x64si', f)
+            # 4 bytes are unknown...
+        ) = str_read('i 4x 64s i', f)
         self.name = name.rstrip(b'\0').decode('ascii')
         self.eye_pos = str_readvec(f)
         self.illum_pos = str_readvec(f)
@@ -62,21 +68,22 @@ class Model:
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-            
+
+            activitylistversion, eventsindexed,
+
             texture_count, texture_offset,
             cdmat_count, cdmat_offset,
             
-            skinref_count, skinfamily_count, skinref_ind,
+            skinref_count, skinref_ind, skinfamily_count,
             
             bodypart_count, bodypart_offset,
             attachment_count, attachment_offset,
-        ) = str_read('22i', f)
-        
-        
+        ) = str_read('24i', f)
+
         # Build CDMaterials data
         f.seek(cdmat_offset)
         cdmat_offsets = str_read(str(cdmat_count) + 'i', f)
-        self.cdmaterials = {}
+        self.cdmaterials = [None] * cdmat_count
         
         for ind, off in enumerate(cdmat_offsets):
             if off > file_len or off == 0:
@@ -91,15 +98,15 @@ class Model:
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
                 f.tell(),
-                str_read('ii8xii40x', f)
+                str_read('iii 4x ii 40x', f)
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
-            name_offset, flags, material, client_material = data
+            name_offset, flags, used, material, client_material = data
             f.seek(offset + name_offset)
             self.textures[tex_ind] = (
                 read_nullstr(f),
                 flags,
+                used,
                 material,
                 client_material
             )
-        print('Textures', self.textures)
