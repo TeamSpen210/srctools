@@ -2012,12 +2012,13 @@ class EntityFixup:
 
     def export(self, buffer, ind):
         """Export all the replace values into the VMF."""
-        if len(self._fixup):
-            for (key, value, index) in sorted(
-                    self._fixup.values(), key=operator.attrgetter('id')):
-                # When exporting, pad with zeros if needed
-                buffer.write(ind + '\t"replace{:02}" "${} {}"\n'.format(
-                    index, key, value))
+        for (key, value, index) in sorted(
+                self._fixup.values(), key=FixupTuple.id.__get__):
+
+            # When exporting, pad the index with zeros if needed
+            buffer.write('{}\t"replace{:02}" "${} {}"\n'.format(
+                ind, index, key, value,
+            ))
 
     def __str__(self):
         items = '\n'.join(
