@@ -1,4 +1,6 @@
 """Parses Source models, to extract metadata."""
+from typing import Set, List
+
 from srctools.filesys import FileSystem, File
 from srctools import Vec
 from struct import pack, unpack, Struct, calcsize
@@ -47,6 +49,10 @@ class Model:
             file_len,
             # 4 bytes are unknown...
         ) = str_read('i 4x 64s i', f)
+
+        if not 44 <= self.version <= 49:
+            raise ValueError('Unknown MDL version {}!'.format(self.version))
+
         self.name = name.rstrip(b'\0').decode('ascii')
         self.eye_pos = str_readvec(f)
         self.illum_pos = str_readvec(f)
@@ -83,13 +89,16 @@ class Model:
         # Build CDMaterials data
         f.seek(cdmat_offset)
         cdmat_offsets = str_read(str(cdmat_count) + 'i', f)
-        self.cdmaterials = [None] * cdmat_count
+        self.cdmaterials = [None] * cdmat_count  # type: List[str]
         
         for ind, off in enumerate(cdmat_offsets):
             if off > file_len or off == 0:
                 continue
             f.seek(off)
-            self.cdmaterials[ind] = read_nullstr(f)
+            self.cdmaterials[ind] = read_nullstr(f).replace('\\', '/')
+
+        # All models fallback to checking the texture at a root folder.
+        self.cdmaterials.append('/')
         
         # Build texture data
         f.seek(texture_offset)
@@ -110,3 +119,23 @@ class Model:
                 material,
                 client_material
             )
+
+    def iter_textures(self, skins: Set[int]=None):
+        """Yield textures used by this model.
+
+        Skins if given should be a set of skin indexes, which constrains the
+        list. This looks up in the filesystem to determine which CDMaterials
+        folder to use, if any.
+        """
+
+        if skins:
+            raise NotImplementedError('Skin families.')
+
+        with self._sys:
+            for tex in self.textures:
+                tex_path = tex[0]
+                for folder in self.cdmaterials:
+                    full = 'materials/{}{}.vmt'.format(folder, tex_path)
+                    if full in self._sys:
+                        yield full
+                        break
