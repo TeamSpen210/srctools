@@ -5,7 +5,7 @@ import re
 import io
 import math
 
-from typing import Dict, Iterator, Union, T, Mapping
+from typing import Dict, Iterator, Union, T, Mapping, Tuple, List
 
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
@@ -329,7 +329,16 @@ class BinStrDict:
 
 class KeyValues:
     """Represents a generic keyvalue type."""
-    def __init__(self, name, val_type, disp_name, default, doc, val_list, is_readonly):
+    def __init__(
+        self,
+        name: str,
+        val_type: ValueTypes,
+        disp_name: str,
+        default: str,
+        doc: str,
+        val_list: List[Union[Tuple[int, str, bool], Tuple[str, str]]],
+        is_readonly: bool,
+    ):
         self.name = name
         self.type = val_type
         self.default = default
@@ -994,7 +1003,6 @@ class FGD:
 
     def __iter__(self) -> Iterator[EntityDef]:
         return iter(self.entities.values())
-
 
     def serialise(self, file):
         """Write the FGD into a compacted binary format.
