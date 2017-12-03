@@ -10,6 +10,6 @@ with RawFileSystem('fgd/') as fs:
     for file in fs:
         fgd.parse_file(fs, file)
 
-with open('fgd.bfgd.lzma', 'wb') as f:
+with open('seecompiler/fgd.bfgd.lzma', 'wb') as f:
     with LZMAFile(f, mode='w') as cf:
         fgd.serialise(cf)
