@@ -174,7 +174,7 @@ class FileSystemChain(FileSystem):
             self.add_sys(sys)
 
     def __repr__(self):
-        return 'FileSystemChain({!r})'.format(', '.join(map(repr, self.systems)))
+        return 'FileSystemChain(\n{})'.format(',\n '.join(map(repr, self.systems)))
 
     @staticmethod
     def get_system(file: File) -> FileSystem:
