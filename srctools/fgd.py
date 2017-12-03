@@ -923,7 +923,7 @@ class FGD:
                 'String file path passed ({!r}), but no filesystem!'.format(file)
             )
         fgd = cls()
-        fgd._parse_file(filesystem, file)
+        fgd.parse_file(filesystem, file)
         return fgd
 
     def _apply_bases(self):
@@ -953,7 +953,7 @@ class FGD:
                     )
 
 
-    def _parse_file(self, filesys: FileSystem, file: File):
+    def parse_file(self, filesys: FileSystem, file: File):
         """Parse one file (recursively if needed)."""
 
         if file in self._parse_list:
