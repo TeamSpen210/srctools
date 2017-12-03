@@ -69,7 +69,7 @@ class File:
 class FileSystem:
     """Base class for different systems defining the interface."""
     def __init__(self, path: str):
-        self.path = path
+        self.path = os.fspath(path)
         self._ref = None
         self._ref_count = 0
 
