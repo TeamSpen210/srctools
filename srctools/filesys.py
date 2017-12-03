@@ -192,6 +192,7 @@ class FileSystemChain(FileSystem):
 
     def _get_file(self, name: str) -> File:
         """Search for a file on each filesystem in turn."""
+        self._check_open()
         for sys, prefix in self.systems:
             full_name = os.path.join(prefix, name).replace('\\', '/')
             try:
