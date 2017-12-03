@@ -69,7 +69,7 @@ class File:
 class FileSystem:
     """Base class for different systems defining the interface."""
     def __init__(self, path: str):
-        self.path = path
+        self.path = os.fspath(path)
         self._ref = None
         self._ref_count = 0
 
@@ -174,7 +174,7 @@ class FileSystemChain(FileSystem):
             self.add_sys(sys)
 
     def __repr__(self):
-        return 'FileSystemChain({!r})'.format(', '.join(map(repr, self.systems)))
+        return 'FileSystemChain(\n{})'.format(',\n '.join(map(repr, self.systems)))
 
     @staticmethod
     def get_system(file: File) -> FileSystem:
@@ -192,6 +192,7 @@ class FileSystemChain(FileSystem):
 
     def _get_file(self, name: str) -> File:
         """Search for a file on each filesystem in turn."""
+        self._check_open()
         for sys, prefix in self.systems:
             full_name = os.path.join(prefix, name).replace('\\', '/')
             try:

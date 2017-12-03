@@ -5,6 +5,7 @@ cimport cython
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
 # Also grab the exception object.
+
 cdef object Token, TokenSyntaxError
 from srctools.tokenizer import Token,  TokenSyntaxError
 
@@ -32,9 +33,10 @@ cdef:
 
 
 # Characters not allowed for bare names on a line.
-DEF BARE_DISALLOWED = '"\'{};:[]\n\t '
+DEF BARE_DISALLOWED = '"\'{};:[]()\n\t '
 
 
+@cython.final  # No point in inheriting from this.
 cdef class Tokenizer:
     """Processes text data into groups of tokens.
 
@@ -51,10 +53,19 @@ cdef class Tokenizer:
 
     cdef public int line_num
     cdef public bint string_bracket
+    cdef public bint allow_escapes
 
 
-    def __init__(self, data not None, filename=None, error=None, bint string_bracket=False):
-        if isinstance(data, bytes):
+    def __init__(
+        self,
+        data not None,
+        filename=None,
+        error=None,
+        bint string_bracket=False,
+        bint allow_escapes=True,
+    ):
+        # Early warning for this particular error.
+        if isinstance(data, bytes) or isinstance(data, bytearray):
             raise ValueError('Cannot parse binary data!')
 
         if isinstance(data, str):
@@ -81,6 +92,7 @@ cdef class Tokenizer:
                 raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
             self.error_type = error
         self.string_bracket = string_bracket
+        self.allow_escapes = allow_escapes
         self.line_num = 1
 
     def __reduce__(self):
@@ -216,28 +228,28 @@ cdef class Tokenizer:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated string!')
-                    if next_char == '"':
+                    elif next_char == '"':
                         return STRING, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
-                    elif next_char == '\\':
+                    elif next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape_char = self._next_char()
                         if escape_char == -1:
                             raise self._error('Unterminated string!')
 
-                        elif escape_char == 'n':
+                        if escape_char == 'n':
                             next_char = '\n'
                         elif escape_char == 't':
                             next_char = '\t'
                         elif escape_char == '\n':
                             # \ at end of line ignores the newline.
                             continue
-                        elif escape_char in '"\\/':
-                            # This actually escape_chars the functions of these..
+                        elif escape_char in ('"', '\\', '/'):
+                            # For these, we escape to give the literal value.
                             next_char = escape_char
                         else:
-                            # For unknown escape_chars, escape_char the \ automatically.
+                            # For unknown escape_chars, escape the \ automatically.
                             value_chars.append('\\' + escape_char)
                             continue
                             # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self.cur_chunk)

@@ -1,18 +1,21 @@
 """Parse FGD files, used to describe Hammer entities."""
+from collections import deque
+
+import itertools
 from enum import Enum
 from struct import Struct
 import re
 import io
 import math
 
-from typing import Dict, Iterator, Union, T, Mapping
+from typing import Dict, Iterator, Union, T, Mapping, Tuple, List
 
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
-    'ValueTypes', 'EntityTypes'
-    'KeyValError', 'FGD', 'EntityDef',
+    'ValueTypes', 'EntityTypes', 'HelperTypes',
+    'FGD', 'EntityDef',
 ]
 
 _fmt_8bit = Struct('>B')
@@ -53,8 +56,10 @@ _RE_HELPERS = re.compile(
 )
 _RE_HELPER_ARGS = re.compile(r'\s*\,\s*')
 
+
 class FGDParseError(TokenSyntaxError):
     pass
+
 
 class ValueTypes(Enum):
     """Types which can be applied to a KeyValue."""
@@ -305,7 +310,7 @@ class BinStrDict:
         for txt in inv_list:
             file.write(_fmt_16bit.pack(len(txt)))
             file.write(txt.encode('utf8'))
-     
+
     @staticmethod       
     def unserialise(file):
         """Read the dictionary from a file.
@@ -329,7 +334,16 @@ class BinStrDict:
 
 class KeyValues:
     """Represents a generic keyvalue type."""
-    def __init__(self, name, val_type, disp_name, default, doc, val_list, is_readonly):
+    def __init__(
+        self,
+        name: str,
+        val_type: ValueTypes,
+        disp_name: str,
+        default: str,
+        doc: str,
+        val_list: List[Union[Tuple[int, str, bool], Tuple[str, str]]],
+        is_readonly: bool,
+    ):
         self.name = name
         self.type = val_type
         self.default = default
@@ -468,7 +482,7 @@ class _EntityView(Mapping[str, T]):
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
-            
+
         yield getattr(ent, self._attr)
         for base in ent.bases:
             yield from self._maps(base)
@@ -512,20 +526,21 @@ del _EntityView.__slots__
 _Ent_View_KV = _EntityView[KeyValues]
 _Ent_View_IO = _EntityView[IODef]
 
+
 class EntityDef:
     """A definition for an entity."""
     def __init__(self, type: EntityTypes):
         self.type = type
         self.classname = ''
-        self.keyvalues = {}
-        self.inputs = {}
-        self.outputs = {}
+        self.keyvalues = {}  # type: Dict[str, KeyValues]
+        self.inputs = {}  # type: Dict[str, IODef]
+        self.outputs = {}  # type: Dict[str, IODef]
         # Base type names - base()
-        self.bases = []
+        self.bases = []  # type: List[EntityDef]
         # line(), studio(), etc in the header
         # this is a func, args tuple.
-        self.helpers = []
-        self.desc = []
+        self.helpers = []  # type: List[Tuple[HelperTypes, List[str]]]
+        self.desc = ''
         
         # Views for accessing data among all the entities.
         self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')
@@ -569,9 +584,9 @@ class EntityDef:
 
                 if help_type is HelperTypes.INHERIT:
                     for base in args:
-                        base = base.casefold()
-                        if base not in entity.bases:
-                            entity.bases.append(base.strip())
+                        base_ent = fgd[base.strip()]
+                        if base_ent not in entity.bases:
+                            entity.bases.append(base_ent)
                     help_type = None
                     continue
 
@@ -589,7 +604,7 @@ class EntityDef:
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
         if help_type:
-            entity.helpers.append((help_type, ''))
+            entity.helpers.append((help_type, []))
 
         entity.classname = tok.expect(Token.STRING).strip()
 
@@ -795,6 +810,18 @@ class EntityDef:
             return '<Entity Base "{}">'.format(self.classname)
         else:
             return '<Entity {}>'.format(self.classname)
+
+    def iter_bases(self, _done=None):
+        """Yield all base entities for this one.
+
+        If an entity is repeated, it will only be yielded once.
+        """
+        if not _done:
+            _done = {self}
+        for ent in self.bases:
+            _done.add(ent)
+            yield ent
+            yield from ent.iter_bases(_done)
             
     def serialise(self, file, str_dict: BinStrDict):
         """Write to the binary file."""
@@ -896,8 +923,7 @@ class FGD:
                 'String file path passed ({!r}), but no filesystem!'.format(file)
             )
         fgd = cls()
-        fgd._parse_file(filesystem, file)
-        fgd._apply_bases()
+        fgd.parse_file(filesystem, file)
         return fgd
 
     def _apply_bases(self):
@@ -927,7 +953,7 @@ class FGD:
                     )
 
 
-    def _parse_file(self, filesys: FileSystem, file: File):
+    def parse_file(self, filesys: FileSystem, file: File):
         """Parse one file (recursively if needed)."""
 
         if file in self._parse_list:
@@ -959,7 +985,7 @@ class FGD:
                         include = filesys[include_file]
                     except KeyError:
                         raise FileNotFoundError(file)
-                    self._parse_file(filesys, include)
+                    self.parse_file(filesys, include)
 
                 elif token_value == '@mapsize':
                     # Max/min map size definition
@@ -995,6 +1021,33 @@ class FGD:
     def __iter__(self) -> Iterator[EntityDef]:
         return iter(self.entities.values())
 
+    def __len__(self):
+        return len(self.entities)
+
+    def _fix_missing_bases(self, ent: EntityDef):
+        """Fix issues that prevent serialising base entities.
+
+        The FGD implementation by Valve is very order-dependent.
+        It is possible to have a base class overwritten by a real entity,
+        as long as it comes before that in the file. To allow serialising
+        this, fix those entities by appending numbers to any not in the list.
+        This is run recursively on every entity to check their bases.
+        """
+        for base in ent.bases:
+            # If it's in there, it'll be found again.
+            # We've also (or are going to) pass over this one.
+            # So don't redo it.
+            if self[base.classname] is base:
+                continue
+
+            base_name = base.classname.rstrip('_0123456789').casefold() + '_'
+            for num in itertools.count(1):
+                poss_name = base_name + str(num)
+                if poss_name not in self:
+                    base.classname = poss_name
+                    self.entities[poss_name] = base
+                    break
+            self._fix_missing_bases(base)
 
     def serialise(self, file):
         """Write the FGD into a compacted binary format.
@@ -1002,6 +1055,9 @@ class FGD:
         This is only readable by this module, and does not contain
         entity, keyvalue and IO help descriptions to keep the data small.
         """
+        for ent in list(self):
+            self._fix_missing_bases(ent)
+
         # The start of a file is a list of all used strings. 
         dictionary = BinStrDict()
         
@@ -1050,6 +1106,7 @@ class FGD:
         for _ in range(ent_count):
             ent = EntityDef.unserialise(file, from_dict)
             fgd.entities[ent.classname.casefold()] = ent
-        
+
         fgd._apply_bases()
+
         return fgd

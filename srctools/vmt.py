@@ -2,7 +2,6 @@
 from typing import Iterable, List, Dict, Union, Callable, Optional
 
 import sys
-from io import TextIOWrapper
 from enum import Enum
 
 from srctools import FileSystem, Property
@@ -83,7 +82,8 @@ class Material:
         """Parse a VMT from the file. 
         
         """
-        tok = Tokenizer(data, filename, string_bracket=True)
+        # Block escapes, so "files\test\tex" doesn't have a tab in it.
+        tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
         
         # First look for the shader name -
         # which must be the first string
@@ -298,3 +298,13 @@ class Material:
                 parent.proxies
             ]
         )
+
+    def __iter__(self):
+        for name, value in self._params.items():
+            if isinstance(value, Property):
+                continue
+            try:
+                par_type = get_parm_type(name)
+            except KeyError:
+                par_type = VarType.STR
+            yield name, par_type, value

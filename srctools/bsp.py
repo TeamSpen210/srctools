@@ -1,9 +1,13 @@
 """Read and write lumps in Source BSP files.
 
 """
+import contextlib
+
 from enum import Enum
 from io import BytesIO
 import itertools
+
+from zipfile import ZipFile
 
 from srctools import AtomicWriter, Vec, conv_int
 from srctools.vmf import VMF, Entity, Output
@@ -13,7 +17,7 @@ import struct
 from typing import List, Iterator
 
 __all__ = [
-    'BSP_LUMPS', 'VERSIONS'
+    'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump', 'StaticProp',
 ]
 
@@ -158,7 +162,7 @@ LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 
 class BSP:
     """A BSP file."""
-    def __init__(self, filename, version=VERSIONS.PORTAL_2):
+    def __init__(self, filename: str, version: VERSIONS=VERSIONS.PORTAL_2):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps = {}
@@ -186,7 +190,7 @@ class BSP:
             # Remember how big this is, so we can remake it later when needed.
             self.header_off = file.tell()
 
-    def get_lump(self, lump):
+    def get_lump(self, lump: BSP_LUMPS):
         """Read a lump from the BSP."""
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
@@ -194,7 +198,7 @@ class BSP:
             file.seek(lump.offset)
             return file.read(lump.length)
 
-    def replace_lump(self, new_name, lump, new_data: bytes):
+    def replace_lump(self, new_name: str, lump: BSP_LUMPS, new_data: bytes):
         """Write out the BSP file, replacing a lump with the given bytes.
 
         """
@@ -217,7 +221,7 @@ class BSP:
             file.write(new_data)
             file.write(after_lump)
 
-    def write_header(self, file):
+    def write_header(self, file) -> None:
         """Write the BSP file header into the given file."""
         file.write(BSP_MAGIC)
         file.write(struct.pack('i', self.version.value))
@@ -227,7 +231,7 @@ class BSP:
             file.write(lump.as_bytes())
         # The map revision would follow, but we never change that value!
 
-    def read_game_lumps(self):
+    def read_game_lumps(self) -> None:
         """Read in the game-lump's header, so we can get those values."""
         game_lump = BytesIO(self.get_lump(BSP_LUMPS.GAME_LUMP))
 
@@ -245,7 +249,7 @@ class BSP:
             # The lump ID is backward..
             self.game_lumps[lump_id[::-1]] = (flags, version, file_off, file_len)
 
-    def get_game_lump(self, lump_id):
+    def get_game_lump(self, lump_id: bytes) -> bytes:
         """Get a given game-lump, given the 4-character byte ID."""
         try:
             flags, version, file_off, file_len = self.game_lumps[lump_id]
@@ -257,7 +261,7 @@ class BSP:
 
     # Lump-specific commands:
 
-    def read_texture_names(self):
+    def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
         tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
         tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
@@ -283,7 +287,22 @@ class BSP:
                     tex_data[off:str_off]
                 ))
 
-    def read_ent_data(self):
+    @contextlib.contextmanager
+    def packfile(self):
+        """A context manager to allow editing the packed content.
+
+        When successfully exited, the zip will be rewritten to the BSP file.
+        """
+        data_file = BytesIO(self.get_lump(BSP_LUMPS.PAKFILE))
+        data_file.seek(0)
+        zip_file = ZipFile(data_file, mode='a')
+        # If exception, abort, so we don't need try: or with:
+        yield zip_file
+        # Explicitly close to finalise the footer.
+        zip_file.close()
+        self.replace_lump(self.filename, BSP_LUMPS.PAKFILE, data_file.getvalue())
+
+    def read_ent_data(self) -> VMF:
         """Parse in entity data.
         
         This returns a VMF object, with entities mirroring that in the BSP. 
@@ -366,7 +385,7 @@ class BSP:
 
         return out.getvalue()
 
-    def static_prop_models(self):
+    def static_prop_models(self) -> Iterator[str]:
         """Yield all model filenames used in static props."""
         static_lump = BytesIO(self.get_game_lump(b'sprp'))
         return self._read_static_props_models(static_lump)
