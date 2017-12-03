@@ -305,7 +305,7 @@ class BinStrDict:
         for txt in inv_list:
             file.write(_fmt_16bit.pack(len(txt)))
             file.write(txt.encode('utf8'))
-     
+
     @staticmethod       
     def unserialise(file):
         """Read the dictionary from a file.
@@ -477,7 +477,7 @@ class _EntityView(Mapping[str, T]):
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
-            
+
         yield getattr(ent, self._attr)
         for base in ent.bases:
             yield from self._maps(base)
@@ -521,20 +521,21 @@ del _EntityView.__slots__
 _Ent_View_KV = _EntityView[KeyValues]
 _Ent_View_IO = _EntityView[IODef]
 
+
 class EntityDef:
     """A definition for an entity."""
     def __init__(self, type: EntityTypes):
         self.type = type
         self.classname = ''
-        self.keyvalues = {}
-        self.inputs = {}
-        self.outputs = {}
+        self.keyvalues = {}  # type: Dict[str, KeyValues]
+        self.inputs = {}  # type: Dict[str, IODef]
+        self.outputs = {}  # type: Dict[str, IODef]
         # Base type names - base()
-        self.bases = []
+        self.bases = []  # type: List[EntityDef]
         # line(), studio(), etc in the header
         # this is a func, args tuple.
-        self.helpers = []
-        self.desc = []
+        self.helpers = []  # type: List[Tuple[HelperTypes, List[str]]]
+        self.desc = ''
         
         # Views for accessing data among all the entities.
         self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')
@@ -598,7 +599,7 @@ class EntityDef:
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
         if help_type:
-            entity.helpers.append((help_type, ''))
+            entity.helpers.append((help_type, []))
 
         entity.classname = tok.expect(Token.STRING).strip()
 
@@ -1058,6 +1059,7 @@ class FGD:
         for _ in range(ent_count):
             ent = EntityDef.unserialise(file, from_dict)
             fgd.entities[ent.classname.casefold()] = ent
-        
+
         fgd._apply_bases()
+
         return fgd
