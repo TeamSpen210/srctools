@@ -119,6 +119,7 @@ class Tokenizer:
             Exception,
         ]=TokenSyntaxError,
         string_bracket=False,
+        allow_escapes=True,
     ):
         if isinstance(data, bytes):
             raise ValueError('Cannot parse binary data!')
@@ -133,6 +134,7 @@ class Tokenizer:
         self.filename = filename
         self.error_type = error
         self.string_bracket = string_bracket
+        self.allow_escapes = allow_escapes
         self.line_num = 1
 
         # If a file-like object, this is automatic.
@@ -239,7 +241,7 @@ class Tokenizer:
                         return Token.STRING, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
-                    elif next_char == '\\':
+                    elif next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
                         try:
