@@ -2,64 +2,122 @@
 from pathlib import Path
 import os
 import sys
+from typing import Union, List
+
+import itertools
 
 from srctools import Property
+from srctools.filesys import FileSystemChain, VPKFileSystem, RawFileSystem
+
 
 GINFO = 'gameinfo.txt'
 
+
 class Game:
-    def __init__(self, path: str):
+    """Represents the data in GameInfo."""
+    def __init__(self, path: Union[str, Path]):
         """Parse a game from a folder."""
-        self.path = Path(path)
-        with open(path / GINFO) as f:
-            gameinfo = Property.parse(f).find_key('FileSystem')
-        self.app_id = gameinfo['SteamAppId']
-        self.tools_id = gameinfo['ToolsAppId', None]
-        self.additional_content = gameinfo['AdditionalContentId', None]
-        self.search_paths = []
-        for path in gameinfo.find_children('SearchPaths'):
-            self.search_paths.append(self.parse_search_path(path))
-            
-    def parse_search_path(self, path: Property) -> Path:
+        if isinstance(path, Path):
+            self.path = path
+        else:
+            self.path = Path(path)
+        with open(self.path / GINFO) as f:
+            gameinfo = Property.parse(f).find_key('GameInfo')
+        fsystems = gameinfo.find_key('Filesystem', [])
+
+        self.game_name = gameinfo['Game']
+        self.app_id = fsystems['SteamAppId']
+        self.tools_id = fsystems['ToolsAppId', None]
+        self.additional_content = fsystems['AdditionalContentId', None]
+        self.fgd_loc = gameinfo['GameData', 'None']
+        self.search_paths = []  # type: List[Path]
+
+        for path in fsystems.find_children('SearchPaths'):
+            self.search_paths.append(self.parse_search_path(self.path.parent, path))
+
+        # Add DLC folders based on the first/bin folder.
+        try:
+            first_search = self.search_paths[0]
+        except IndexError:
+            pass
+        else:
+            folder = first_search.parent
+            stem = first_search.name + '_dlc'
+            for ind in itertools.count(1):
+                path = folder / (stem + str(ind))
+                if path.exists():
+                    self.search_paths.insert(0, path)
+                else:
+                    break
+
+            # Force including 'platform', for Hammer assets.
+            self.search_paths.append(self.path.parent / 'platform')
+
+    def parse_search_path(self, root: Path, prop: Property) -> Path:
         """Evaluate options like |gameinfo_path|."""
-        if '|' not in path:
-            return Path(path).absolute()
-        if path.startswith('|gameinfo_path|'):
-            path = self.path / path[15:]
-        if path.startswith('|all_source_engine_paths|'):
-            # We have to figure out which of the possible paths this is.
-            rel_path = Path(path[25:])
-            
-def find_gameinfo() -> Game:
+
+        if '|' not in prop.value:
+            return (root / prop.value).absolute()
+        if prop.value.startswith('|gameinfo_path|'):
+            return (self.path / prop.value[15:]).absolute()
+
+        # We should have to figure out which of the possible paths this is.
+        # But, the game (public/filesystem_init.cpp) doesn't actually, it
+        # assumes Steam has included the needed VPKs.
+        if prop.value.startswith('|all_source_engine_paths|'):
+            return (root / prop.value[25:]).absolute()
+
+    def get_filesystem(self) -> FileSystemChain:
+        """Build a chained filesystem from the search paths."""
+        vpks = []
+        raw_folders = []
+        for path in self.search_paths:
+            if path.is_dir():
+                raw_folders.append(path)
+                if (path / 'pak01_dir.vpk').is_file():
+                    vpks.append(path / 'pak01_dir.vpk')
+            elif path.is_file() and path.suffix == 'vpk':
+                vpks.append(path)
+        fsys = FileSystemChain()
+        for path in vpks:
+            fsys.add_sys(VPKFileSystem(path))
+        for path in raw_folders:
+            fsys.add_sys(RawFileSystem(path))
+
+        return fsys
+
+
+def find_gameinfo(argv=sys.argv) -> Game:
     """Locate the game we're in, if launched as a a compiler.
     
     This checks the following:
     * -vproject
     * -game
-    * the VPROJECT evnironment variable
-    * the current folder.
+    * the VPROJECT environment variable
+    * the current folder and all parents.
     """
-    path = None
-    for i, value in enumerate(sys.argv):
+    for i, value in enumerate(argv):
         if value.casefold() in ('-vproject', '-game'):
             try:
-                path = sys.argv[i+1]
+                path = argv[i+1]
             except IndexError:
                 raise ValueError(
-                    '"{}" argument 
-                    'has no value!'.format(value)
+                    '"{}" argument has no value!'.format(value)
                 ) from None
             if Path(path, GINFO).exists():
                 return Game(path)
     else:
         # Check VPROJECT
         if 'VPROJECT' in os.environ:
-            path = os.environ['VPOROJECT']
+            path = os.environ['VPROJECT']
             if Path(path, GINFO).exists():
                 return Game(path)
         else:
-            path = os.getcwd()
-            if Path(path, GINFO).exists():
-                return Game(path)
-            else:
-                raise ValueError("Couldn't find gameinfo.txt!"")
+            if Path(os.getcwd(), GINFO).exists():
+                return Game(os.getcwd())
+
+            for folder in Path(os.getcwd()).parents:
+                path = folder / GINFO
+                if path.exists():
+                    return Game(path)
+            raise ValueError("Couldn't find gameinfo.txt!")
