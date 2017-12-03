@@ -32,7 +32,7 @@ cdef:
 
 
 # Characters not allowed for bare names on a line.
-DEF BARE_DISALLOWED = '"\'{};:[]\n\t '
+DEF BARE_DISALLOWED = '"\'{};:[]()\n\t '
 
 
 cdef class Tokenizer:

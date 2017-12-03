@@ -102,7 +102,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = '"\'{};:[]\n\t '
+BARE_DISALLOWED = '"\'{};:[]()\n\t '
 
 
 class Tokenizer:
