@@ -17,7 +17,7 @@ import struct
 from typing import List, Iterator
 
 __all__ = [
-    'BSP_LUMPS', 'VERSIONS'
+    'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump', 'StaticProp',
 ]
 

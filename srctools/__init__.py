@@ -15,6 +15,8 @@ __all__ = [
 
     'EmptyMapping', 'AtomicWriter',
 
+    'FGD',
+
     'GameID',
 ]
 
