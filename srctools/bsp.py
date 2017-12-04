@@ -14,7 +14,8 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Iterator
+from typing import List, Dict, Iterator, Union
+
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
@@ -165,7 +166,7 @@ class BSP:
     def __init__(self, filename: str, version: VERSIONS=VERSIONS.PORTAL_2):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps = {}
+        self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
         self.game_lumps = {}
         self.header_off = 0
         self.version = version
@@ -190,7 +191,7 @@ class BSP:
             # Remember how big this is, so we can remake it later when needed.
             self.header_off = file.tell()
 
-    def get_lump(self, lump: BSP_LUMPS):
+    def get_lump(self, lump: Union[BSP_LUMPS, 'Lump']):
         """Read a lump from the BSP."""
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
@@ -198,12 +199,12 @@ class BSP:
             file.seek(lump.offset)
             return file.read(lump.length)
 
-    def replace_lump(self, new_name: str, lump: BSP_LUMPS, new_data: bytes):
+    def replace_lump(self, new_name: str, lump: Union[BSP_LUMPS, 'Lump'], new_data: bytes):
         """Write out the BSP file, replacing a lump with the given bytes.
 
         """
         if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]
+            lump = self.lumps[lump]  # type: Lump
         with open(self.filename, 'rb') as file:
             data = file.read()
 
@@ -213,13 +214,48 @@ class BSP:
         # this memory around for long.
 
         # Adjust the length to match the new data block.
+        len_change = len(new_data) - lump.length
         lump.length = len(new_data)
+
+        # Find all lumps after this one, and adjust offsets.
+        # The order of headers doesn't need to match data order!
+        for other_lump in self.lumps.values():
+            # Not >=, that would adjust us too!
+            if other_lump.offset > lump.offset:
+                other_lump.offset += len_change
 
         with AtomicWriter(new_name, is_bytes=True) as file:
             self.write_header(file)
             file.write(before_lump)
             file.write(new_data)
             file.write(after_lump)
+
+            # Game lumps need their data to apply offsets.
+            # We're not adding/removing headers, so we can rewrite in-place.
+            game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
+            if game_lump.offset > lump.offset:
+                file.seek(game_lump.offset)
+                file.write(struct.pack('i', len(self.game_lumps)))
+                for lump_id, (
+                    flags,
+                    version,
+                    file_off,
+                    file_len,
+                ) in self.game_lumps.items():
+                    self.game_lumps[lump_id] = (
+                        flags,
+                        version,
+                        file_off + len_change,
+                        file_len,
+                    )
+                    file.write(struct.pack(
+                        '<4s HH ii',
+                        lump_id[::-1],
+                        flags,
+                        version,
+                        file_off + len_change,
+                        file_len,
+                    ))
 
     def write_header(self, file) -> None:
         """Write the BSP file header into the given file."""
