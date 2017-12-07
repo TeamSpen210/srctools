@@ -5,12 +5,13 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union, Dict, Optional, List
+from typing import Union, Dict, Optional, List, Tuple, Iterator
 
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
 
+FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 class OpenModes(Enum):
     """Modes for opening VPK files."""
@@ -85,7 +86,7 @@ def _get_arch_filename(prefix='pak01', index: int=None):
         return '{}_{!s:>03}.vpk'.format(prefix, index)
 
 
-def _get_file_parts(value, relative_to=''):
+def _get_file_parts(value: FileName, relative_to='') -> Tuple[str, str, str]:
         """Get folder, name, ext parts from a string/tuple.
         
         Possible arguments:
@@ -262,8 +263,8 @@ class VPK:
         dir_file,
         *,
         mode: Union[OpenModes, str]='r',
-        dir_data_limit: Optional[int]=1024
-    ):
+        dir_data_limit: Optional[int]=1024,
+    ) -> None:
         """Create a VPK file.
         
         Parameters:
@@ -311,7 +312,8 @@ class VPK:
 
         self.folder = folder
         self.file_prefix = filename[:-8]
-        
+
+
     def load_dirfile(self):
         """Read in the directory file to get all filenames.
         
@@ -447,7 +449,7 @@ class VPK:
         if exc_type is None and self.mode.writable:
             self.write_dirfile()
        
-    def __getitem__(self, item):
+    def __getitem__(self, item: FileName) -> FileInfo:
         """Get the FileInfo object for a file.
         
         Possible arguments:
@@ -465,7 +467,7 @@ class VPK:
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
-    def __delitem__(self, item):
+    def __delitem__(self, item: FileName):
         """Delete a file.
         
         Possible arguments:
@@ -485,21 +487,21 @@ class VPK:
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[FileInfo]:
         """Yield all FileInfo objects."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info
                     
-    def filenames(self):
+    def filenames(self) -> str:
         """Yield all filenames in this VPK."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info.filename
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the number of files we have."""
         count = 0
         for folders in self._fileinfo.values():
@@ -507,7 +509,7 @@ class VPK:
                 count += len(files)
         return count
 
-    def __contains__(self, item):
+    def __contains__(self, item: FileName) -> bool:
         path, filename, ext = _get_file_parts(item)
 
         try:
@@ -515,7 +517,7 @@ class VPK:
         except KeyError:
             return False
 
-    def extract_all(self, dest_dir):
+    def extract_all(self, dest_dir) -> None:
         """Extract the contents of this VPK to a directory."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():

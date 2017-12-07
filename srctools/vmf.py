@@ -47,7 +47,7 @@ class IDMan(set):
     """Allocate and manage a set of unique IDs."""
     __slots__ = ()
 
-    def get_id(self, desired=-1):
+    def get_id(self, desired: int=-1) -> int:
         """Get a valid ID."""
 
         if desired == -1:
@@ -245,8 +245,8 @@ class VMF:
 
         # Allow quick searching for particular groups, without checking
         # the whole map
-        self.by_target = defaultdict(CopySet)  # type: Dict[str, Set[Entity]]
-        self.by_class = defaultdict(CopySet)  # type: Dict[str, Set[Entity]]
+        self.by_target = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
+        self.by_class = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
 
         self.entities = []  # type: List[Entity]
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
@@ -432,8 +432,7 @@ class VMF:
 
         return map_obj
 
-
-    def export(self, dest_file=None, inc_version=True, minimal=False):
+    def export(self, dest_file=None, inc_version: bool=True, minimal: bool=False):
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -943,7 +942,7 @@ class Solid:
         self.group_id = group_id
         self.visgroup_ids = set(visgroup_ids)
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
+    def copy(self, des_id=-1, map: VMF=None, side_mapping: Dict[int, int]=EmptyMapping, keep_vis=True):
         """Duplicate this brush."""
         sides = [
             s.copy(map=map, side_mapping=side_mapping)
@@ -1304,7 +1303,7 @@ class Side:
             smoothing=tree.int('smoothing_groups', 0),
         )
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
+    def copy(self, des_id=-1, map: VMF=None, side_mapping: Dict[int, int]=EmptyMapping):
         """Duplicate this brush side.
 
         des_id is the id which is desired for the new side.
@@ -1492,18 +1491,18 @@ class Entity:
         self,
         vmf_file: VMF,
         keys: Dict[str, str]=EmptyMapping,
-        fixup=(),
-        ent_id=-1,
-        outputs=None,
-        solids=None,
-        hidden=False,
-        groups=(),
+        fixup: 'EntityFixup'=(),
+        ent_id: int=-1,
+        outputs: List['Output']=None,
+        solids: List[Solid]=None,
+        hidden: bool=False,
+        groups: List['EntityGroup']=(),
         vis_ids=(),
-        vis_shown=True,
-        vis_auto_shown=True,
+        vis_shown: bool=True,
+        vis_auto_shown: bool=True,
         logical_pos: str=None,
         editor_color: Vec=(255, 255, 255),
-        comments='',
+        comments: str='',
     ):
         self.map = vmf_file
         self.keys = {
@@ -1528,7 +1527,7 @@ class Entity:
         self.logical_pos = logical_pos or '[0 {}]'.format(self.id)
         self.comments = comments
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
+    def copy(self, des_id=-1, map: VMF=None, side_mapping: Dict[str, str]=EmptyMapping, keep_vis=True) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
         new_keys = {}
         new_fixup = self.fixup.copy_values()

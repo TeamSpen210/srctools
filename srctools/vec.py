@@ -19,7 +19,10 @@ Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
 """
 import math
 
-from typing import Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple
+from typing import (
+    Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
+    overload,
+)
 
 
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
@@ -369,7 +372,14 @@ class Vec:
         )
 
     @staticmethod
-    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']:
+    @overload
+    def bbox(points: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    @staticmethod
+    @overload
+    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
+
+    @staticmethod
+    def bbox(*points):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
