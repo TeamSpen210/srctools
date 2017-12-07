@@ -32,6 +32,7 @@ setup(
     entry_points={
         'console_scripts': [
             'srctools_dump_parms = srctools.scripts.dump_parms:main',
+            'srctools_diff = srctools.scripts.diff:main',
         ],
     },
 )
