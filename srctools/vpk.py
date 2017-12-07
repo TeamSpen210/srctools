@@ -264,6 +264,7 @@ class VPK:
         *,
         mode: Union[OpenModes, str]='r',
         dir_data_limit: Optional[int]=1024,
+        version: int=1,
     ) -> None:
         """Create a VPK file.
         
@@ -275,7 +276,11 @@ class VPK:
                Append mode will also create the directory, but not wipe the file.
             dir_data_limit: The maximum amount of data for files saved to the dir file.
                None = no limit, and 0=save all to a data file.
+            version: The desired version if the file is not read.
         """
+        if version not in (1, 2):
+            raise ValueError("Invalid version ({}) - must be 1 or 2!".format(version))
+
         self.folder = self.file_prefix = ''
         self.path = dir_file
 
@@ -287,7 +292,7 @@ class VPK:
         
         self.footer_data = b''
 
-        self.version = 1
+        self.version = version
         self.header_len = 0
         
         self.load_dirfile()
@@ -342,12 +347,18 @@ class VPK:
             if vpk_sig != VPK_SIG:
                 raise ValueError('Bad VPK directory signature!')
             
-            if self.version == 2:
-                raise ValueError("Doesn't support VPK version 2!")
-            elif self.version == 1:
-                pass
-            else:
+            if version not in (1, 2):
                 raise ValueError("Bad VPK version {}!".format(self.version))
+
+            self.version = version
+
+            if version >= 2:
+                (
+                    data_size,
+                    ext_md5_size,
+                    dir_md5_size,
+                    sig_size,
+                ) = struct_file_read('<4I', dirfile)
                 
             self.header_len = dirfile.tell() + tree_length
             
@@ -387,7 +398,7 @@ class VPK:
                 # 1 for the ending b'' section
                 if dirfile.tell() + 1 == self.header_len:
                     break
-                    
+
             self.footer_data = dirfile.read()
     
     def write_dirfile(self):
@@ -396,6 +407,9 @@ class VPK:
         This must be performed after writing to the VPK.
         """
         self._check_writable()
+
+        if self.version > 1:
+            raise NotImplementedError("Can't write V2 VPKs!")
         
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
