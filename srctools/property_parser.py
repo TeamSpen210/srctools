@@ -232,7 +232,8 @@ class Property:
                 if not requires_block:
                     raise tokenizer.error(
                         'Property cannot have sub-section if it already '
-                        'has an in-line value.',
+                        'has an in-line value.\n\n'
+                        'A "name" "value" line cannot then open a block.',
                     )
                 requires_block = can_flag_replace = False
                 cur_block = cur_block[-1]
@@ -242,7 +243,9 @@ class Property:
             # Something else, but followed by '{'
             elif requires_block and token_type is not NEWLINE:
                 raise tokenizer.error(
-                    "Block opening ('{{') required!",
+                    'Block opening ("{{") required!\n\n'
+                    'A single "name" on a line should next have a open brace '
+                    'to begin a block.',
                 )
 
             if token_type is NEWLINE:
@@ -280,7 +283,11 @@ class Property:
                 elif prop_type is STRING:
                     # A value.. ("name" "value")
                     if requires_block:
-                        raise tokenizer.error('Keyvalue split across lines!')
+                        raise tokenizer.error(
+                            'Keyvalue split across lines!\n\n'
+                            'A value like "name" "value" must be on the same '
+                            'line.'
+                        )
                     requires_block = False
 
                     keyvalue = Property(token_value, prop_value)
@@ -311,7 +318,7 @@ class Property:
                     else:
                         raise tokenizer.error(flag_token)
                     continue
-            elif token_type is BRACE_CLOSE: # }
+            elif token_type is BRACE_CLOSE:  # }
                 # Move back a block
                 open_properties.pop()
                 try:
@@ -319,7 +326,9 @@ class Property:
                 except IndexError:
                     # It's empty, we've closed one too many properties.
                     raise tokenizer.error(
-                        'Too many closing brackets.',
+                        'Too many closing brackets.\n\n'
+                        'An extra closing bracket was added which would '
+                        'close the outermost level.',
                     )
                 # For replacing the block.
                 can_flag_replace = True
@@ -332,7 +341,9 @@ class Property:
         # next.
         if requires_block:
             raise KeyValError(
-                "Block opening ('{') required, but hit EOF!",
+                'Block opening ("{") required, but hit EOF!\n'
+                'A "name" line was located at the end of the file, which needs'
+                ' a {} block to follow.',
                 tokenizer.filename,
                 line=None,
             )
@@ -343,7 +354,9 @@ class Property:
         
         if len(open_properties) > 1:
             raise KeyValError(
-                'End of text reached with remaining open sections.',
+                'End of text reached with remaining open sections.\n\n'
+                'File ended with at least one property that didn\'t '
+                'have an ending "}".',
                 tokenizer.filename,
                 line=None,
             )

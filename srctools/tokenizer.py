@@ -122,7 +122,10 @@ class Tokenizer:
         allow_escapes=True,
     ):
         if isinstance(data, bytes):
-            raise ValueError('Cannot parse binary data!')
+            raise ValueError(
+                'Cannot parse binary data! Decode to the desired encoding, '
+                'or wrap in io.TextIOWrapper() to decode as needed.'
+            )
 
         if isinstance(data, str):
             self.cur_chunk = data
@@ -229,7 +232,10 @@ class Tokenizer:
                 # The next must be another slash! (//)
                 comment_next = self._next_char()
                 if comment_next != '/':
-                    raise self.error('Single slash found!')
+                    raise self.error(
+                        'Single slash found, '
+                        'instead of two for a comment (//)!'
+                    )
                 # Skip to end of line
                 while True:
                     next_char = self._next_char()
@@ -276,7 +282,10 @@ class Tokenizer:
                     elif next_char == '\n':
                         raise self.error(Token.NEWLINE)
                     elif next_char is None:
-                        raise self.error('Unterminated property flag!')
+                        raise self.error(
+                            'Unterminated property flag!\n\n'
+                            'Like "name" "value" [flag_without_end'
+                        )
                     value_chars.append(next_char)
 
             elif next_char == '(':
@@ -295,6 +304,8 @@ class Tokenizer:
             # Ignore Unicode Byte Order Mark on first lines
             elif next_char == '\uFEFF' and self.line_num == 1:
                 continue
+                # If not on line 1 we fall out of the if,
+                # and get an unexpected char error.
 
             # Bare names
             elif next_char not in BARE_DISALLOWED:

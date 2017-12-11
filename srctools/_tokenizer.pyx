@@ -9,6 +9,9 @@ cimport cython
 cdef object Token, TokenSyntaxError
 from srctools.tokenizer import Token,  TokenSyntaxError
 
+# Cdef-ed globals become static module vars, which aren't in the module
+# dict. We can ensure these are of the type we specify - and are quick to
+# lookup.
 cdef:
     object STRING = Token.STRING
     object PAREN_ARGS = Token.PAREN_ARGS
@@ -16,6 +19,9 @@ cdef:
 
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
+
+    # Iterator that immediately raises StopIteration.
+    object EMPTY_ITER = iter('')
 
     # Reuse a single tuple for these, since the value is constant.
     tuple EOF_TUP = (Token.EOF, None)
@@ -66,14 +72,23 @@ cdef class Tokenizer:
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
-            raise ValueError('Cannot parse binary data!')
+            raise ValueError(
+                'Cannot parse binary data! Decode to the desired encoding, '
+                'or wrap in io.TextIOWrapper() to decode as needed.'
+            )
 
+        # For direct strings, we can immediately assign that as our chunk,
+        # and then set the iterable to an empty iterator.
         if isinstance(data, str):
             self.cur_chunk = data
-            self.chunk_iter = iter(())
+            self.chunk_iter = EMPTY_ITER
         else:
+            # The first next_char() call will pull out a chunk.
             self.cur_chunk = ''
+            # This checks that it is indeed iterable.
             self.chunk_iter = iter(data)
+
+        # We initially add one, so it'll be 0 next.
         self.char_index = -1
 
         if filename:
@@ -83,6 +98,7 @@ cdef class Tokenizer:
             try:
                 self.filename = str(data.name)
             except AttributeError:
+                # If not, a Falsey value is excluded by the exception message.
                 self.filename = ''
 
         if error is None:
@@ -212,13 +228,18 @@ cdef class Tokenizer:
             elif next_char == '/':
                 # The next must be another slash! (//)
                 if self._next_char() != '/':
-                    raise self._error('Single slash found!')
+                    raise self._error(
+                        'Single slash found, '
+                        'instead of two for a comment (//)!'
+                    )
                 # Skip to end of line
                 while True:
                     next_char = self._next_char()
                     if next_char == -1 or next_char == '\n':
                         break
-                # We want to produce the token for the end character.
+
+                # We want to produce the token for the end character -
+                # EOF or NEWLINE.
                 self.char_index -= 1
 
             # Strings
@@ -264,7 +285,10 @@ cdef class Tokenizer:
                 while True:
                     next_char = self._next_char()
                     if next_char == -1:
-                        raise self._error('Unterminated property flag!')
+                        raise self._error(
+                            'Unterminated property flag!\n\n'
+                            'Like "name" "value" [flag_without_end'
+                        )
                     elif next_char == ']':
                         return PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
@@ -289,6 +313,8 @@ cdef class Tokenizer:
             elif next_char == '\uFEFF':
                 if self.line_num == 1:
                     continue
+                # else, we fall out of the if, and get an unexpected char
+                # error.
 
             else: # Not-in can't be in a switch, so we need to nest this.
                 # Bare names
