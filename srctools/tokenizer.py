@@ -132,7 +132,13 @@ class Tokenizer:
             self.chunk_iter = iter(data)
         self.char_index = -1
         self.filename = filename
-        self.error_type = error
+
+        if error is None:
+            self.error_type = TokenSyntaxError
+        else:
+            if not issubclass(error, TokenSyntaxError):
+                raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
+
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
         self.line_num = 1
