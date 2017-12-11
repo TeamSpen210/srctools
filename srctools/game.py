@@ -76,8 +76,16 @@ class Game:
                 raw_folders.append(path)
                 if (path / 'pak01_dir.vpk').is_file():
                     vpks.append(path / 'pak01_dir.vpk')
-            elif path.is_file() and path.suffix == 'vpk':
+                continue
+
+            if not path.suffix:
+                path = path.with_suffix('.vpk')
+            if not path.name.endswith('_dir.vpk'):
+                path = path.with_name(path.name[:-4] + '_dir.vpk')
+
+            if path.is_file() and path.suffix == '.vpk':
                 vpks.append(path)
+
         fsys = FileSystemChain()
         for path in vpks:
             fsys.add_sys(VPKFileSystem(path))
