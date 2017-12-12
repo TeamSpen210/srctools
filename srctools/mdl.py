@@ -1,11 +1,10 @@
 """Parses Source models, to extract metadata."""
-from pprint import pprint
 from typing import Set, List, BinaryIO, NamedTuple
 from enum import IntFlag
 
 from srctools.filesys import FileSystem, File
 from srctools import Vec
-from struct import pack, unpack, Struct, calcsize
+from struct import unpack, Struct, calcsize
 
 
 IncludedMDL = NamedTuple('IncludedMDL', [
