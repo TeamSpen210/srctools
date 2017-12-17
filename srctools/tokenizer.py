@@ -73,6 +73,26 @@ class Token(Enum):
     EQUALS = 14
     PLUS = 15
 
+    @property
+    def has_value(self):
+        """If true, this type has an associated value."""
+        return self.value in (1, 3, 10)
+
+_PUSHBACK_VALS = {
+    Token.EOF: None,
+    Token.NEWLINE: '\n',
+
+    Token.BRACE_OPEN: '{',
+    Token.BRACE_CLOSE: '}',
+
+    Token.BRACK_OPEN: '[',
+    Token.BRACK_CLOSE: ']',
+
+    Token.COLON: ':',
+    Token.EQUALS: '=',
+    Token.PLUS: '+',
+}
+
 
 _OPERATORS = {
     '{': Token.BRACE_OPEN,
@@ -144,6 +164,8 @@ class Tokenizer:
 
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
+        # If set, this token will be returned next.
+        self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
 
         # If a file-like object, this is automatic.
@@ -212,6 +234,11 @@ class Tokenizer:
 
     def __call__(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
+        if self._pushback is not None:
+            next_char = self._pushback
+            self._pushback = None
+            return next_char
+
         while True:
             next_char = self._next_char()
             # First try simple operators & EOF.
@@ -331,6 +358,45 @@ class Tokenizer:
     def __iter__(self) -> Iterator[Tuple[Token, Optional[str]]]:
         # Call ourselves until EOF is returned
         return iter(self, (Token.EOF, None))
+
+    def push_back(self, tok: Token, value: str=None):
+        """Return a token, so it will be reproduced when called again.
+
+        Only one token can be pushed back at once.
+        The value should be the original value, or None
+        """
+        if self._pushback is not None:
+            raise ValueError('Token already pushed back!')
+        if not isinstance(tok, Token):
+            raise ValueError(repr(tok) + ' is not a Token!')
+
+        try:
+            real_value = _PUSHBACK_VALS[tok]
+        except KeyError:
+            if value is None:
+                value = ''
+            elif not isinstance(value, str):
+                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
+                    value, tok.name
+                )) from None
+        else:
+            if value is None:
+                value = real_value
+            elif real_value != value:
+                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
+                    value, tok.name
+                )) from None
+
+        self._pushback = (tok, value)
+
+    def peek(self) -> Tuple[Token, str]:
+        """Peek at the next token, without removing it from the stream."""
+        tok_and_val = self()
+        # We know this is a valid pushback value, and any existing value was
+        # just removed. So unconditionally assign.
+        self._pushback = tok_and_val
+        return tok_and_val
+
 
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""

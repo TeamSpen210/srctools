@@ -39,7 +39,8 @@ cdef:
 
 
 # Characters not allowed for bare names on a line.
-DEF BARE_DISALLOWED = '"\'{};:[]()\n\t '
+# Convert to tuple to only check the chars.
+DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
 
 @cython.final  # No point in inheriting from this.
@@ -60,6 +61,9 @@ cdef class Tokenizer:
     cdef public int line_num
     cdef public bint string_bracket
     cdef public bint allow_escapes
+
+    cdef object pushback_tok
+    cdef object pushback_val
 
 
     def __init__(
@@ -109,6 +113,9 @@ cdef class Tokenizer:
             self.error_type = error
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
+
+        self.pushback_tok = self.pushback_val = None
+
         self.line_num = 1
 
     def __reduce__(self):
@@ -195,6 +202,11 @@ cdef class Tokenizer:
             list value_chars
             Py_UCS4 next_char
             Py_UCS4 escape_char
+
+        if self.pushback_tok is not None:
+            output = self.pushback_tok, self.pushback_val
+            self.pushback_tok = self.pushback_val = None
+            return output
 
         while True:
             next_char = self._next_char()
@@ -342,6 +354,66 @@ cdef class Tokenizer:
     def __iter__(self):
         # Call ourselves until EOF is returned
         return iter(self, EOF_TUP)
+
+    def push_back(self, object tok not None, str value=None):
+        """Return a token, so it will be reproduced when called again.
+
+        Only one token can be pushed back at once.
+        The value should be the original value, or None
+        """
+        if self.pushback_tok is not None:
+            raise ValueError('Token already pushed back!')
+        if not isinstance(tok, Token):
+            raise ValueError(repr(tok) + ' is not a Token!')
+
+        cdef int tok_val = tok.value
+        cdef str real_value
+
+        if tok_val == 0: # EOF
+            real_value = None
+        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+            real_value = ''
+        elif tok_val == 2:  # NEWLINE
+            real_value = '\n'
+        elif tok_val == 5:  # BRACE_OPEN
+            real_value = '{'
+        elif tok_val == 6:  # BRACE_CLOSE
+            real_value = '}'
+        elif tok_val == 11:  # BRACK_OPEN
+            real_value = '['
+        elif tok_val == 12:  # BRACK_CLOSE
+            real_value = ']'
+        elif tok_val == 13:  # COLON
+            real_value = ':'
+        elif tok_val == 14:  # EQUALS
+            real_value = '='
+        elif tok_val == 15:  # PLUS
+            real_value = '+'
+        else:
+            raise ValueError('Unknown token value!')
+
+        # If no value provided, use the default (operators)
+        if value is None:
+            value = real_value
+        # A type which needs a value provided...
+        elif real_value == '':
+            value = '' if value is None else value
+        elif not isinstance(value, str):
+            raise ValueError(
+                f'Invalid value provided ({value!r}) for {tok.name}!'
+            ) from None
+
+        self.pushback_tok = tok
+        self.pushback_val = value
+
+
+    def peek(self):
+        """Peek at the next token, without removing it from the stream."""
+        # We know this is a valid pushback value, and any existing value was
+        # just removed. So unconditionally assign.
+        self.pushback_tok, self.pushback_val = tok_and_val = <tuple>self.next_token()
+
+        return tok_and_val
 
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""
