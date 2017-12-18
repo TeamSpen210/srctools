@@ -7,7 +7,8 @@ from enum import Enum
 from typing import (
     Union, Optional,
     Callable, Iterable, Iterator,
-    Tuple
+    Tuple,
+    Type,
 )
 
 
@@ -134,10 +135,7 @@ class Tokenizer:
         self,
         data: Union[str, Iterable[str]],
         filename: str=None,
-        error: Callable[
-            [str, Optional[str], Optional[int]],
-            Exception,
-        ]=TokenSyntaxError,
+        error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket=False,
         allow_escapes=True,
     ):
@@ -161,6 +159,7 @@ class Tokenizer:
         else:
             if not issubclass(error, TokenSyntaxError):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
+            self.error_type = error
 
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
