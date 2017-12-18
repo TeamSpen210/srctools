@@ -142,6 +142,20 @@ def test_prop_tokens(py_c_token):
     check_tokens(tok, prop_parse_tokens)
 
 
+def test_pushback(py_c_token):
+    """Test pushing back tokens."""
+    Tokenizer = py_c_token
+    tok = Tokenizer(prop_parse_test, '', string_bracket=True)
+    tokens = []
+    for i, (tok_type, tok_value) in enumerate(tok):
+        if i % 3 == 0:
+            tok.push_back(tok_type, tok_value)
+        else:
+            tokens.append((tok_type, tok_value))
+    check_tokens(tokens, prop_parse_tokens)
+
+
+
 def test_bom(py_c_token):
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
