@@ -92,17 +92,14 @@ parse_test = '''
     "Key" "Value"
         "Extra"        "Spaces"
     // "Commented" "out"
-    "Block"
-        {
+    "Block"  {
         "Empty"
              {
-             }
-        }
+             } }
     "Block" // "with value"
   {
  bare
-    {
-            "block" "he\\tre"
+    {   "block" "he\\tre"
           }
             }
        }
@@ -116,6 +113,7 @@ for many \\"lines\\" of
 
 text"
     "Escapes" "\\t \\n \\d"
+    "Oneliner" { "name" "value" }
     }
     "CommentChecks"
         {
@@ -155,7 +153,8 @@ def test_parse(py_c_token):
               'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
               ),
             # Note, invalid = unchanged.
-            P('Escapes', '\t \n \\d')
+            P('Escapes', '\t \n \\d'),
+            P('Oneliner', [Property('name', 'value')]),
         ]),
         P('CommentChecks', [
             P('after ', 'value'),

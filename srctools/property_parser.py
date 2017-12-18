@@ -25,7 +25,7 @@ They end with a quote."
     ...     props = Property.parse(f, 'filename.txt')
     >>> with open('filename_2.txt', 'w') as f:
     ...     for line in props.export():
-                f.write(line)
+    ...         f.write(line)
 
     Property values should be either a string, or a list of children Properties.
     Names will be converted to lowercase automatically; use Prop.real_name to
@@ -227,7 +227,7 @@ class Property:
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
-            if token_type is BRACE_OPEN: # {
+            if token_type is BRACE_OPEN:  # {
                 # Open a new block - make sure the last token was a name..
                 if not requires_block:
                     raise tokenizer.error(
@@ -274,12 +274,6 @@ class Property:
                         # Can't do twice in a row
                         can_flag_replace = False
 
-                elif prop_type is NEWLINE:
-                    # It's a block... ("name" \n)
-                    requires_block = True
-                    can_flag_replace = False
-                    cur_block.append(Property(token_value, []))
-                    continue
                 elif prop_type is STRING:
                     # A value.. ("name" "value")
                     if requires_block:
@@ -310,14 +304,29 @@ class Property:
                                 cur_block.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
-                    elif flag_token is NEWLINE:
-                        # Normal, unconditionally add
+                    elif flag_token is STRING:
+                        # Specifically disallow multiple text on the same line.
+                        # ("name" "value" "name2" "value2")
+                        raise tokenizer.error(
+                            "Cannot have multiple names on the same line!"
+                        )
+                    else:
+                        # Otherwise, it's got nothing after.
+                        # So insert the keyvalue, and check the token
+                        # in the next loop. This allows braces to be
+                        # on the same line.
                         cur_block.append(keyvalue)
                         can_flag_replace = True
-                    # Otherwise it must be a new line.
-                    else:
-                        raise tokenizer.error(flag_token)
+                        tokenizer.push_back(flag_token, flag_val)
                     continue
+                else:  # Something else - treat this as a block, and
+                    # then re-evaluate this in the next loop.
+                    requires_block = True
+                    can_flag_replace = False
+                    cur_block.append(Property(token_value, []))
+                    tokenizer.push_back(prop_type, prop_value)
+                    continue
+
             elif token_type is BRACE_CLOSE:  # }
                 # Move back a block
                 open_properties.pop()
