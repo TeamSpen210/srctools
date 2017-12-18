@@ -8,6 +8,65 @@ from srctools.tokenizer import Token, C_Tokenizer, Py_Tokenizer, TokenSyntaxErro
 
 T = Token
 
+# The correct result of parsing prop_parse_test.
+# Either the token, or token + value (which must be correct).
+prop_parse_tokens = [
+    T.NEWLINE,
+    T.NEWLINE,
+    T.NEWLINE,
+    T.NEWLINE,
+    (T.STRING, "Root1"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    T.NEWLINE,
+    T.NEWLINE,
+    (T.STRING, "Key"), (T.STRING, "Value"), T.NEWLINE,
+
+    (T.STRING, "Extra"), (T.STRING, "Spaces"), T.NEWLINE,
+    T.NEWLINE,
+    (T.STRING, "Block"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "Empty"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "Block"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "bare"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "block"), (T.STRING, "he\tre"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "Root2"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "Name with \" in it"), (T.STRING, "Value with \" inside"),
+    T.NEWLINE,
+    (T.STRING, "multiline"), (T.STRING,
+                              'text\n\tcan continue\nfor many "lines" of\n  '
+                              'possibly indented\n\ntext'),
+    T.NEWLINE,
+    (T.STRING, "Escapes"), (T.STRING, '\t \n \\d'), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "CommentChecks"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "after "), (T.STRING, "value"), T.NEWLINE,
+    (T.STRING, "FlagBlocks"), (T.STRING, "This"),
+    (T.PROP_FLAG, "test_disabled"), T.NEWLINE,
+    (T.STRING, "Flag"), (T.STRING, "allowed"), (T.PROP_FLAG, "!test_disabled"),
+    T.NEWLINE,
+    (T.STRING, "FlagAllows"), (T.STRING, "This"), (T.PROP_FLAG, "test_enabled"),
+    T.NEWLINE,
+    (T.STRING, "Flag"), (T.STRING, "blocksthis"),
+    (T.PROP_FLAG, "!test_enabled"), T.NEWLINE,
+    T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "shouldbe"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "toreplace"),
+    (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "alsothis"),
+    (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+]
+
 if C_Tokenizer is not None:
     parms = [C_Tokenizer, Py_Tokenizer]
     ids = ['Cython', 'Python']
@@ -62,55 +121,9 @@ def check_tokens(tokenizer, tokens):
 def test_prop_tokens(py_c_token):
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     Tokenizer = py_c_token
-    tokens = [
-        T.NEWLINE,
-        T.NEWLINE,
-        T.NEWLINE,
-        T.NEWLINE,
-        (T.STRING, "Root1"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        T.NEWLINE,
-        T.NEWLINE,
-        (T.STRING, "Key"), (T.STRING, "Value"), T.NEWLINE,
-
-        (T.STRING, "Extra"), (T.STRING, "Spaces"), T.NEWLINE,
-        T.NEWLINE,
-        (T.STRING, "Block"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        (T.STRING, "Empty"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        (T.STRING, "Block"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        (T.STRING, "bare"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        (T.STRING, "block"), (T.STRING, "he\tre"), T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        (T.STRING, "Root2"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        (T.STRING, "Name with \" in it"), (T.STRING, "Value with \" inside"), T.NEWLINE,
-        (T.STRING, "multiline"), (T.STRING, 'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'), T.NEWLINE,
-        (T.STRING, "Escapes"), (T.STRING, '\t \n \\d'), T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-        (T.STRING, "CommentChecks"), T.NEWLINE,
-        T.BRACE_OPEN, T.NEWLINE,
-        (T.STRING, "after "), (T.STRING, "value"), T.NEWLINE,
-        (T.STRING, "FlagBlocks"), (T.STRING, "This"), (T.PROP_FLAG, "test_disabled"), T.NEWLINE,
-        (T.STRING, "Flag"), (T.STRING, "allowed"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
-        (T.STRING, "FlagAllows"), (T.STRING, "This"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
-        (T.STRING, "Flag"), (T.STRING, "blocksthis"), (T.PROP_FLAG, "!test_enabled"), T.NEWLINE,
-        T.NEWLINE,
-        (T.STRING, "Replaced"), (T.STRING, "shouldbe"), T.NEWLINE,
-        (T.STRING, "Replaced"), (T.STRING, "toreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
-        (T.STRING, "Replaced"), (T.STRING, "alsothis"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
-        T.BRACE_CLOSE, T.NEWLINE,
-    ]
 
     tok = Tokenizer(prop_parse_test, '', string_bracket=True)
-    check_tokens(tok, tokens)
+    check_tokens(tok, prop_parse_tokens)
 
     # Test a list of lines.
     test_list = prop_parse_test.splitlines(keepends=True)
@@ -120,13 +133,13 @@ def test_prop_tokens(py_c_token):
     assert ''.join(test_list) == prop_parse_test, "Bad test code!"
 
     tok = Tokenizer(test_list, '', string_bracket=True)
-    check_tokens(tok, tokens)
+    check_tokens(tok, prop_parse_tokens)
 
     # Test a special case - empty chunks at the end.
     test_list += ['', '', '']
 
     tok = Tokenizer(test_list, '', string_bracket=True)
-    check_tokens(tok, tokens)
+    check_tokens(tok, prop_parse_tokens)
 
 
 def test_bom(py_c_token):
