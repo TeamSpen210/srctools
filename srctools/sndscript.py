@@ -1,13 +1,15 @@
- """Reads and writes Soundscripts."""
+"""Reads and writes Soundscripts."""
 from enum import Enum
 
 from srctools import Property, conv_float
 
 from typing import (
     Optional, Union, TypeVar,
-    List, Tuple, Dict, 
-    Iterable, Type, Callable
+    List, Tuple, Dict,
+    Iterable, Type, Callable,
+    TextIO,
 )
+
 
 class Pitch(float, Enum):
     PITCH_NORM = 100.0
@@ -21,9 +23,12 @@ class Pitch(float, Enum):
 class VOLUME(Enum):
     """Special value, substitutes default volume (usually 1)."""
     VOL_NORM = 'VOL_NORM'
+
 VOL_NORM = VOLUME.VOL_NORM
 
+
 class Channel(Enum):
+    """Different categories of sounds."""
     DEFAULT = "CHAN_AUTO"
     GUNFIRE = "CHAN_WEAPON"
     VOICE = "CHAN_VOICE"
@@ -37,7 +42,8 @@ class Channel(Enum):
 
     #CHAN_USER_BASE+<number>
     #Custom channels can be defined here.
-    
+
+
 class Level(Enum):
     """Soundlevel constants - attenuation."""
     SNDLVL_NONE = 'SNDLVL_NONE'
@@ -77,10 +83,11 @@ class Level(Enum):
 
 EnumType = TypeVar('EnumType', bound=Enum)
 
+
 def split_float(
     val: str, 
     enum: Callable[[str], EnumType], 
-    default: Union[float, Tuple[float, float]],
+    default,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
     """Handle values which can be either single or a low, high pair of numbers.
     
@@ -105,7 +112,8 @@ def split_float(
         except (LookupError, ValueError):
             out = conv_float(val, default)
         return out, out
-        
+
+
 def join_float(val) -> str:
     """Reverse split_float()."""
     low, high = val
@@ -113,6 +121,7 @@ def join_float(val) -> str:
         return str(low)
     else:
         return '{!s},{!s}'.format(low, high)
+
 
 class Sound:
     """Represents a single sound in the list."""
@@ -122,7 +131,7 @@ class Sound:
         sounds: List[str],
         volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]],
         channel: Channel,
-        level: Level,
+        level: Tuple[Union[float, Level], Union[float, Level]],
         pitch: Tuple[Union[float, Pitch], Union[float, Pitch]],
         
         # Operator stacks
@@ -168,28 +177,14 @@ class Sound:
             )
             
             # Either 1 "wave", or multiple in "rndwave".
-            
-            single_wav = list(snd_prop.find_all('wave'))
-            if len(single_wav) > 1:
-                raise ValueError('Two wav entries for "{}"!'.format(
-                    snd_prop.real_name
-                ))
-            elif len(single_wav) == 1:
-                if 'rndwave' in snd_prop:
-                    raise ValueError('wave and rndwave in "{}"!'.format(
-                        snd_prop.real_name
-                    ))
-                wavs = [single_wav[0].value]
-            else:
-                wavs = [
-                    prop.value 
-                    for prop in 
-                    snd_prop.find_all('rndwave', 'wave')
-                ]
-            if not wavs:
-                raise ValueError('No sounds for "{}"!'.format(
-                    snd_prop.real_name
-                ))
+            wavs = []
+            for prop in snd_prop:
+                if prop.name == 'wave':
+                    wavs.append(prop.value)
+                elif prop.name == 'rndwave':
+                    for subprop in prop:
+                        wavs.append(subprop.value)
+
             channel = Channel(snd_prop['channel', 'CHAN_AUTO'])
             
             sound_version = snd_prop.int('soundentry_version', 1)
@@ -225,12 +220,11 @@ class Sound:
                 pitch,
                 start_stack,
                 update_stack,
-                stop_stack
+                stop_stack,
             )
         return sounds
-            
-        
-    def export(sounds: Iterable['Sound'], file):
+
+    def export(self, sounds: Iterable['Sound'], file: TextIO):
         """Write SoundScripts to a file.
         
         Pass a file-like object open for text writing, and an iterable
