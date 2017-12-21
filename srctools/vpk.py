@@ -342,7 +342,7 @@ class VPK:
                 raise  # In read mode, don't overwrite and error when reading.
 
         with dirfile:
-            vpk_sig, self.version, tree_length = struct_file_read('<III', dirfile)
+            vpk_sig, version, tree_length = struct_file_read('<III', dirfile)
             
             if vpk_sig != VPK_SIG:
                 raise ValueError('Bad VPK directory signature!')
