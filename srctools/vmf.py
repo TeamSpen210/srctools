@@ -1491,7 +1491,7 @@ class Entity:
         self,
         vmf_file: VMF,
         keys: Dict[str, str]=EmptyMapping,
-        fixup: 'EntityFixup'=(),
+        fixup: Iterable['FixupTuple']=(),
         ent_id: int=-1,
         outputs: List['Output']=None,
         solids: List[Solid]=None,
