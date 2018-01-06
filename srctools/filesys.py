@@ -10,12 +10,18 @@ import os.path
 from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
-from typing import Iterator, Union, List, Tuple, Dict
+from typing import (
+    Optional, Union, Iterator,
+    List, Tuple, Dict,
+    TextIO, BinaryIO,
+)
+
 
 __all__ = [
     'File', 'FileSystem', 'get_filesystem',
 
     'RawFileSystem', 'VPKFileSystem', 'ZipFileSystem',
+    'VirtualFileSystem', 'FileSystemChain',
 ]
 
 
@@ -27,9 +33,10 @@ def get_filesystem(path: str) -> 'FileSystem':
     """
     if os.path.isdir(path):
         return RawFileSystem(path)
-    if path[-4:] == '.zip':
+    ext = path[-4:]
+    if ext == '.zip':
         return ZipFileSystem(path)
-    if path[-8:] == '_dir.vpk':
+    if ext == '.vpk':
         return VPKFileSystem(path)
     raise ValueError('Unrecognised filesystem for "{}"'.format(path))
 
@@ -51,19 +58,26 @@ class File:
         """This can be interpreted as a path."""
         return self.path
 
-    def open_bin(self):
+    def open_bin(self) -> BinaryIO:
         """Return a file-like object in bytes mode.
 
         This should be closed when done.
         """
         return self.sys.open_bin(self._data)
 
-    def open_str(self, encoding='utf8'):
+    def open_str(self, encoding='utf8') -> TextIO:
         """Return a file-like object in unicode mode.
 
         This should be closed when done.
         """
         return self.sys.open_str(self._data, encoding)
+
+    def cache_key(self) -> int:
+        """Return a checksum or last-modified date suitable for caching.
+
+        This allows preventing re-parsing the file. If not possible, return -1.
+        """
+        return self.sys._get_cache_key(self)
 
 
 class FileSystem:
@@ -146,19 +160,26 @@ class FileSystem:
         """Destroy and clean up the _ref object."""
         raise NotImplementedError
 
-    def open_str(self, name: str, encoding='utf8'):
+    def open_str(self, name: str, encoding='utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
         """
         raise NotImplementedError
 
-    def open_bin(self, name: str):
+    def open_bin(self, name: str) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
         """
         raise NotImplementedError
+
+    def _get_cache_key(self, file: File) -> int:
+        """Return a checksum or last-modified date suitable for caching.
+
+        This allows preventing re-parsing the file. If not possible, return -2.
+        """
+        return -1
 
 
 class FileSystemChain(FileSystem):
@@ -169,9 +190,9 @@ class FileSystemChain(FileSystem):
         self.systems = []  # type: List[Tuple[FileSystem, str]]
         for sys in systems:
             if isinstance(sys, tuple):
-                prefix, sys = sys
-                self.add_sys(sys, prefix)
-            self.add_sys(sys)
+                self.add_sys(*sys)
+            else:
+                self.add_sys(sys)
 
     def __repr__(self):
         return 'FileSystemChain(\n{})'.format(',\n '.join(map(repr, self.systems)))
@@ -205,7 +226,7 @@ class FileSystemChain(FileSystem):
                 return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self, name: str, encoding='utf8'):
+    def open_str(self, name: str, encoding='utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -214,7 +235,7 @@ class FileSystemChain(FileSystem):
             return name.open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self, name: str):
+    def open_bin(self, name: str) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -260,6 +281,16 @@ class FileSystemChain(FileSystem):
             sys.open_ref()
         self._ref = True
 
+    def _get_cache_key(self, file: File) -> int:
+        """Return the last modified time of this file.
+
+        If individual timestamps are not stored, the modification time of the
+        filesystem is returned instead."""
+        # Delegate to the original File stored in ours.
+        if not isinstance(file.sys, FileSystemChain):
+            raise ValueError('File is not from a FileSystemChain..')
+        return file._data.cache_key()
+
 
 class VirtualFileSystem(FileSystem):
     """Access a dict as if it were a filesystem.
@@ -283,7 +314,7 @@ class VirtualFileSystem(FileSystem):
         """Convert paths to one representation."""
         return os.path.normpath(path).replace('\\', '/').casefold()
 
-    def open_bin(self, name: str):
+    def open_bin(self, name: str) -> BinaryIO:
         """Return a bytes buffer for a 'file'."""
         # We don't need this, but it should match other filesystems.
         self._check_open()
@@ -296,7 +327,7 @@ class VirtualFileSystem(FileSystem):
             data = data.encode(self.bytes_encoding)
         return io.BytesIO(data)
 
-    def open_str(self, name: str, encoding='utf8'):
+    def open_str(self, name: str, encoding='utf8') -> TextIO:
         """Return a string buffer for a 'file'. 
         
         This performs universal newlines conversion.
@@ -382,7 +413,7 @@ class RawFileSystem(FileSystem):
                     rel_path.replace('\\', '/'),
                 )
 
-    def open_str(self, name: str, encoding='utf8'):
+    def open_str(self, name: str, encoding='utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -392,7 +423,7 @@ class RawFileSystem(FileSystem):
 
         return open(self._resolve_path(name), mode='rt', encoding=encoding)
 
-    def open_bin(self, name: str):
+    def open_bin(self, name: str) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -423,6 +454,13 @@ class RawFileSystem(FileSystem):
     def _create_ref(self) -> None:
         """The raw filesystem doesn't need a reference to anything."""
         self._ref = True
+
+    def _get_cache_key(self, file: File) -> int:
+        """Our cache key is the last modification time."""
+        try:
+            return os.stat(self._resolve_path(file.path)).st_mtime_ns
+        except FileNotFoundError:
+            return -1
 
 
 class ZipFileSystem(FileSystem):
@@ -495,6 +533,10 @@ class ZipFileSystem(FileSystem):
         for info in zipfile.infolist():
             self._name_to_info[info.filename.casefold()] = info
 
+    def _get_cache_key(self, file: File):
+        """Return the CRC of the VPK file."""
+        return file._data.CRC
+
 
 class VPKFileSystem(FileSystem):
     """Accesses files in a VPK file."""
@@ -531,11 +573,8 @@ class VPKFileSystem(FileSystem):
             if file.dir.startswith(folder):
                 yield File(self, file.filename, file)
 
-    def open_bin(self, name: str):
-        """Open a file in bytes mode or raise FileNotFoundError.
-
-        The return value is a BytesIO in-memory buffer.
-        """
+    def open_bin(self, name: str) -> BinaryIO:
+        """Open a file in bytes mode or raise FileNotFoundError."""
         with self:
             # File() calls with the VPK object we need directly.
             if isinstance(name, VPKFile):
@@ -547,11 +586,8 @@ class VPKFileSystem(FileSystem):
                     raise FileNotFoundError(name)
             return io.BytesIO(file.read())
 
-    def open_str(self, name: str, encoding='utf8'):
-        """Open a file in unicode mode or raise FileNotFoundError.
-
-        The return value is a StringIO in-memory buffer.
-        """
+    def open_str(self, name: str, encoding='utf8') -> TextIO:
+        """Open a file in unicode mode or raise FileNotFoundError."""
         with self:
             # File() calls with the VPK object we need directly.
             if isinstance(name, VPKFile):
@@ -564,3 +600,8 @@ class VPKFileSystem(FileSystem):
             # Wrap the data to treat it as bytes, then
             # wrap that to decode and clean up universal newlines.
             return io.TextIOWrapper(io.BytesIO(file.read()), encoding)
+
+    def _get_cache_key(self, file: File):
+        """Return the CRC of the VPK file."""
+        return file._data.crc
+
