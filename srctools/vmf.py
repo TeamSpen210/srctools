@@ -589,7 +589,7 @@ class VMF:
     def make_prism(self, p1, p2, mat='tools/toolsnodraw') -> PrismFace:
         """Create an axis-aligned brush connecting the two points.
 
-        A PrismFaces tuple will be returned which containes the six
+        A PrismFaces tuple will be returned which contains the six
         faces, as well as the solid.
         All faces will be textured with 'mat'.
         """
@@ -597,6 +597,13 @@ class VMF:
         b_max = Vec(p1)
         b_min.min(p2)
         b_max.max(p2)
+
+        # Sanity check - all dimensions must be different, otherwise we'll
+        # have an invalid zero-thick brush.
+        if b_min.x == b_max.x or b_min.y == b_max.y or b_min.z == b_max.z:
+            raise ValueError("Zero volume brush requested! ({}, {})".format(
+                b_min, b_max,
+            ))
 
         f_bottom = Side(
             self,
