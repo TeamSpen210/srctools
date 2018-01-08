@@ -117,6 +117,15 @@ class FileSystem:
         if self._ref is None:
             raise ValueError('The filesystem must have a valid reference!')
 
+    def __eq__(self, other: 'FileSystem') -> bool:
+        """Filesystems are equal if they have the same type and same path."""
+        if not isinstance(other, type(self)):
+            return NotImplemented  # If both ours -> False
+        return os.path.normpath(self.path) == os.path.normpath(other.path)
+
+    def __hash__(self):
+        return hash(type(self).__name__ + os.path.normpath(self.path))
+
     def __enter__(self):
         """Temporarily get access to the system's reference.
 
@@ -196,6 +205,14 @@ class FileSystemChain(FileSystem):
 
     def __repr__(self):
         return 'FileSystemChain(\n{})'.format(',\n '.join(map(repr, self.systems)))
+
+    def __eq__(self, other: 'FileSystemChain'):
+        if not isinstance(other, FileSystemChain):
+            return NotImplemented
+        return self.systems == other.systems
+
+    def __hash__(self):
+        return hash(tuple(self.systems))
 
     @staticmethod
     def get_system(file: File) -> FileSystem:
@@ -294,7 +311,7 @@ class FileSystemChain(FileSystem):
 
 class VirtualFileSystem(FileSystem):
     """Access a dict as if it were a filesystem.
-    
+
     The dict should map file paths to either bytes or strings.
     The encoding arg specifies how text data is presented if open_bin()
     is called.
@@ -308,6 +325,17 @@ class VirtualFileSystem(FileSystem):
             dict(mapping).items()
         }
         self.bytes_encoding = encoding
+
+    def __eq__(self, other: 'VirtualFileSystem'):
+        if not isinstance(other, VirtualFileSystem):
+            return NotImplemented
+        return (
+            self.bytes_encoding == other.bytes_encoding and
+            self._mapping == other._mapping
+        )
+
+    def __hash__(self):
+        return hash(self.bytes_encoding) ^ hash(tuple(self._mapping.values()))
 
     @staticmethod
     def _clean_path(path: str) -> str:
@@ -328,8 +356,8 @@ class VirtualFileSystem(FileSystem):
         return io.BytesIO(data)
 
     def open_str(self, name: str, encoding='utf8') -> TextIO:
-        """Return a string buffer for a 'file'. 
-        
+        """Return a string buffer for a 'file'.
+
         This performs universal newlines conversion.
         The encoding argument is ignored for files which are
         originally text.
