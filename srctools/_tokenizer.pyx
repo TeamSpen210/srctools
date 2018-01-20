@@ -1,6 +1,11 @@
 #cython: language_level=3, embedsignature=True, auto_pickle=False
 """Cython version of the Tokenizer class."""
 cimport cython
+from cpython cimport array
+import array
+
+cdef extern from *:
+    unicode PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -464,3 +469,44 @@ cdef class NewlinesIter:
 
 # Remove this class from the module, so it's not directly exposed.
 del globals()['NewlinesIter']
+
+
+cdef array.array bytes_array = array.array('b', [])
+
+@cython.nonecheck(False)
+def escape_text(str text not None):
+    r"""Escape special characters and backslashes, so tokenising reproduces them.
+
+    Specifically, \, ", tab, and newline.
+    """
+    # UTF8 = ASCII for those chars, so we can replace in that form.
+    cdef bytes enc_text = text.encode('utf8')
+    cdef Py_ssize_t final_len = len(enc_text)
+    cdef char letter
+    for letter in enc_text:
+        if letter in (b'\\', b'"', b'\t', b'\n'):
+            final_len += 1
+
+    cdef array.array out_buff = array.clone(bytes_array, final_len + 1, zero=True)
+    cdef int i = 0
+    for letter in enc_text:
+        if letter == b'\\':
+            out_buff.data.as_uchars[i] = b'\\'
+            out_buff.data.as_uchars[i+1] = b'\\'
+            i += 2
+        elif letter == b'"':
+            out_buff.data.as_uchars[i] = b'\\'
+            out_buff.data.as_uchars[i+1] = b'"'
+            i += 2
+        elif letter == b'\t':
+            out_buff.data.as_chars[i] = b'\\'
+            out_buff.data.as_chars[i+1] = b't'
+            i += 2
+        elif letter == b'\n':
+            out_buff.data.as_chars[i] = b'\\'
+            out_buff.data.as_chars[i+1] = b'n'
+            i += 2
+        else:
+            out_buff.data.as_chars[i] = letter
+            i += 1
+    return PyUnicode_FromStringAndSize(out_buff.data.as_chars, final_len)

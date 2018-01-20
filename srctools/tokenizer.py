@@ -454,10 +454,12 @@ Py_Tokenizer = Tokenizer  # type: Type[Tokenizer]
 # This is for static typing help, so it thinks they're the same.
 C_Tokenizer = Tokenizer  # type: Type[Tokenizer]
 
+# Maintain this for testing.
+_py_escape_text = escape_text
 
 # Make the actual assignment hidden to type checkers.
 try:
     # noinspection all
-    from srctools._tokenizer import Tokenizer, Tokenizer as C_Tokenizer  # type: ignore
+    from srctools._tokenizer import Tokenizer, Tokenizer as C_Tokenizer, escape_text  # type: ignore
 except ImportError:
     pass
