@@ -1,7 +1,7 @@
 #cython: language_level=3, embedsignature=True, auto_pickle=False
 """Cython version of the Tokenizer class."""
 cimport cython
-from cpython cimport array
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
 import array
 
 cdef extern from *:
@@ -471,8 +471,6 @@ cdef class NewlinesIter:
 del globals()['NewlinesIter']
 
 
-cdef array.array bytes_array = array.array('b', [])
-
 @cython.nonecheck(False)
 def escape_text(str text not None):
     r"""Escape special characters and backslashes, so tokenising reproduces them.
@@ -487,26 +485,31 @@ def escape_text(str text not None):
         if letter in (b'\\', b'"', b'\t', b'\n'):
             final_len += 1
 
-    cdef array.array out_buff = array.clone(bytes_array, final_len + 1, zero=True)
+    cdef char * out_buff
     cdef int i = 0
-    for letter in enc_text:
-        if letter == b'\\':
-            out_buff.data.as_uchars[i] = b'\\'
-            out_buff.data.as_uchars[i+1] = b'\\'
-            i += 2
-        elif letter == b'"':
-            out_buff.data.as_uchars[i] = b'\\'
-            out_buff.data.as_uchars[i+1] = b'"'
-            i += 2
-        elif letter == b'\t':
-            out_buff.data.as_chars[i] = b'\\'
-            out_buff.data.as_chars[i+1] = b't'
-            i += 2
-        elif letter == b'\n':
-            out_buff.data.as_chars[i] = b'\\'
-            out_buff.data.as_chars[i+1] = b'n'
-            i += 2
-        else:
-            out_buff.data.as_chars[i] = letter
+    try:
+        out_buff = <char *>PyMem_Malloc(final_len+1)
+        for letter in enc_text:
+            if letter == b'\\':
+                out_buff[i] = b'\\'
+                i += 1
+                out_buff[i] = b'\\'
+            elif letter == b'"':
+                out_buff[i] = b'\\'
+                i += 1
+                out_buff[i] = b'"'
+            elif letter == b'\t':
+                out_buff[i] = b'\\'
+                i += 1
+                out_buff[i] = b't'
+            elif letter == b'\n':
+                out_buff[i] = b'\\'
+                i += 1
+                out_buff[i] = b'n'
+            else:
+                out_buff[i] = letter
             i += 1
-    return PyUnicode_FromStringAndSize(out_buff.data.as_chars, final_len)
+        out_buff[final_len] = b'\0'
+        return PyUnicode_FromStringAndSize(out_buff, final_len)
+    finally:
+        PyMem_Free(out_buff)
