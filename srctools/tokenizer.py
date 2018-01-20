@@ -3,6 +3,7 @@
 This is used internally for parsing files.
 """
 from enum import Enum
+from io import StringIO
 
 from typing import (
     Union, Optional,
@@ -431,16 +432,32 @@ class Tokenizer:
         return value
 
 
+def escape_text(text: str) -> str:
+    r"""Escape special characters and backslashes, so tokenising reproduces them.
+
+    Specifically, \, ", tab, and newline.
+    """
+    return (
+        text.
+        replace('\\', '\\\\').
+        replace('"', '\\"').
+        replace('\t', '\\t').
+        replace('\n', '\\n')
+    )
+
+
+
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
-Py_Tokenizer = Tokenizer
+Py_Tokenizer = Tokenizer  # type: Type[Tokenizer]
 
 # This is for static typing help, so it thinks they're the same.
-C_Tokenizer = Tokenizer
+C_Tokenizer = Tokenizer  # type: Type[Tokenizer]
+
 
 # Make the actual assignment hidden to type checkers.
 try:
     # noinspection all
     from srctools._tokenizer import Tokenizer, Tokenizer as C_Tokenizer  # type: ignore
 except ImportError:
-    C_Tokenizer = None  # type: ignore
+    pass
