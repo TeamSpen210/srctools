@@ -4,7 +4,13 @@ import codecs
 
 from srctools.test.test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
-from srctools.tokenizer import Token, C_Tokenizer, Py_Tokenizer, TokenSyntaxError
+from srctools.tokenizer import (
+    Token,
+    Tokenizer,
+    C_Tokenizer, Py_Tokenizer,
+    escape_text, _py_escape_text,
+    TokenSyntaxError,
+)
 
 T = Token
 
@@ -58,17 +64,25 @@ prop_parse_tokens = [
 
 if C_Tokenizer is not None:
     parms = [C_Tokenizer, Py_Tokenizer]
+    parms_escape = [escape_text, _py_escape_text]
     ids = ['Cython', 'Python']
 else:
     import srctools.tokenizer
     print('No _tokenizer! ' + str(vars(srctools.tokenizer)))
     parms = [Py_Tokenizer]
+    parms_escape = [_py_escape_text]
     ids = ['Python']
 
 
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request):
     """Run the test twice, for the Python and C versions."""
+    yield request.param
+
+
+@pytest.fixture(params=parms_escape, ids=ids)
+def py_c_escape_text(request):
+    """Run the test twice with the two escape_text() functions."""
     yield request.param
 
 del parms, ids
@@ -184,6 +198,17 @@ def test_constructor(py_c_token):
     Tokenizer('blah', '', KeyValError, True)
     Tokenizer('blah', error=KeyValError)
     Tokenizer(['blah', 'blah'], string_bracket=True)
+
+
+def test_escape_text(py_c_escape_text):
+    """Test the Python and C escape_text() functions."""
+    assert py_c_escape_text("hello world") == "hello world"
+    assert py_c_escape_text("\thello_world") == r"\thello_world"
+    assert py_c_escape_text("\\thello_world") == r"\\thello_world"
+    assert py_c_escape_text("\\ttest\nvalue\t\\r\t\n") == r"\\ttest\nvalue\t\\r\t\n"
+    # BMP characters, and some multiplane chars.
+    assert py_c_escape_text("\t╒═\\═╕\n") == r"\t╒═\\═╕\n"
+    assert py_c_escape_text("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜") == r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"
 
 
 def test_token_syntax_error():
