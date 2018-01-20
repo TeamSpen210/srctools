@@ -60,7 +60,7 @@ They end with a quote."
 import sys
 
 from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
-from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError
+from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
     Optional, Union, Any,
@@ -819,8 +819,5 @@ class Property:
                 )
                 yield '\t}\n'
         else:
-            yield '"{}" "{}"\n'.format(
-                self.real_name,
-                # We need to escape quotes and backslashes so they don't get detected.
-                self.value.replace('\\', '\\\\').replace('"', '\\"')
-            )
+            # We need to escape quotes and backslashes so they don't get detected.
+            yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self.value))

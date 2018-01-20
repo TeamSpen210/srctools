@@ -186,6 +186,9 @@ def test_parse(py_c_token):
     )
     assert_tree(result, expected)
 
+    # Check export roundtrips.
+    assert_tree(Property.parse(expected.export()), expected)
+
 
 def test_parse_fails(py_c_token):
     """Test various forms of invalid syntax to ensure they indeed fail."""
