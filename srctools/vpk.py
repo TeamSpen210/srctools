@@ -5,7 +5,7 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union, Dict, Optional, List, Tuple, Iterator
+from typing import Union, Dict, Optional, List, Tuple, Iterator, BinaryIO
 
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
@@ -40,7 +40,7 @@ def struct_file_read(fmt, file):
     return struct.unpack(fmt, file.read(struct.calcsize(fmt)))
 
 
-def iter_nullstr(file):
+def iter_nullstr(file: BinaryIO):
     """Read a null-terminated ASCII string from the file.
     
     This continuously yields strings, with empty strings 
@@ -317,7 +317,6 @@ class VPK:
 
         self.folder = folder
         self.file_prefix = filename[:-8]
-
 
     def load_dirfile(self):
         """Read in the directory file to get all filenames.
