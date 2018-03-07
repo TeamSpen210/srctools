@@ -54,7 +54,7 @@ _RE_HELPERS = re.compile(
     r'''(\w+)\s* \( \s* ([^)]*) \s* \)''',
     re.VERBOSE,
 )
-_RE_HELPER_ARGS = re.compile(r'\s*\,\s*')
+_RE_HELPER_ARGS = re.compile(r'\s*,\s*')
 
 
 class FGDParseError(TokenSyntaxError):
@@ -272,7 +272,8 @@ def read_colon_list(tok: Tokenizer, had_colon=False):
             return strings, token
     else:
         raise tok.error(token)
-        
+
+
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
     
@@ -305,7 +306,7 @@ class BinStrDict:
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
             inv_list[ind] = txt
-        
+
         file.write(_fmt_32bit.pack(len(inv_list)))
         for txt in inv_list:
             file.write(_fmt_16bit.pack(len(txt)))
@@ -543,9 +544,9 @@ class EntityDef:
         self.desc = ''
         
         # Views for accessing data among all the entities.
-        self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')
-        self.inp = _Ent_View_IO(self, 'inputs', 'inp')
-        self.out = _Ent_View_IO(self, 'outputs', 'out')
+        self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')  # type: _EntityView[KeyValues]
+        self.inp = _Ent_View_IO(self, 'inputs', 'inp')  # type: _EntityView[IODef]
+        self.out = _Ent_View_IO(self, 'outputs', 'out')  # type: _EntityView[IODef]
 
     @classmethod
     def parse(
