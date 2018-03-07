@@ -559,7 +559,10 @@ class ZipFileSystem(FileSystem):
         self._ref = zipfile = ZipFile(self.path)
         self._name_to_info.clear()
         for info in zipfile.infolist():
-            self._name_to_info[info.filename.casefold()] = info
+            # Some zipfiles include entries for the directories too. They have
+            # a trailing slash.
+            if not info.filename.endswith('/'):
+                self._name_to_info[info.filename.casefold()] = info
 
     def _get_cache_key(self, file: File):
         """Return the CRC of the VPK file."""
