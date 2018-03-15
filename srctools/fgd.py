@@ -582,7 +582,7 @@ class EntityDef:
                     continue
                 else:
                     # No arguments for the previous helper - add it in like that.
-                    entity.helpers.append((help_type, ''))
+                    entity.helpers.append((help_type, ['']))
 
             elif token is Token.PAREN_ARGS:
                 if help_type is None:
@@ -682,14 +682,14 @@ class EntityDef:
 
                 if attrs:
                     try:
-                        [desc] = attrs
+                        [io_desc] = attrs
                     except ValueError:
                         raise tok.error('Too many values for IO definition!')
                 else:
-                    desc = ''
+                    io_desc = ''
 
                 # entity.inputs or entity.outputs
-                getattr(entity, io_type + 's')[name] = IODef(name, val_typ, desc)
+                getattr(entity, io_type + 's')[name] = IODef(name, val_typ, io_desc)
 
             else:
                 # Keyvalue
@@ -806,7 +806,7 @@ class EntityDef:
                     val_typ,
                     disp_name,
                     default,
-                    desc,
+                    ''.join(desc),
                     val_list,
                     is_readonly == 'readonly',
                 )
