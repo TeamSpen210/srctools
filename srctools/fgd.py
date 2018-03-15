@@ -8,7 +8,12 @@ import re
 import io
 import math
 
-from typing import Dict, Iterator, Union, T, Mapping, Tuple, List
+from typing import (
+    Dict, Iterator, Union, TypeVar, Mapping, Tuple, List,
+    Optional,
+    Set,
+    Any,
+)
 
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
@@ -241,7 +246,7 @@ VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
-def read_colon_list(tok: Tokenizer, had_colon=False):
+def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
     
     The token found at the end is returned.
@@ -265,7 +270,7 @@ def read_colon_list(tok: Tokenizer, had_colon=False):
                 raise tok.error('"+" without a string before it!')
             strings[-1] += tok.expect(Token.STRING)
         elif ready_for_string and token is Token.NEWLINE:
-            continue # skip over this in particular..
+            continue  # skip over this in particular..
         else:
             if ready_for_string:
                 raise tok.error(token)
@@ -342,7 +347,7 @@ class KeyValues:
         disp_name: str,
         default: str,
         doc: str,
-        val_list: List[Union[Tuple[int, str, bool], Tuple[str, str]]],
+        val_list: Optional[List[Union[Tuple[int, str, bool], Tuple[str, str]]]],
         is_readonly: bool,
     ):
         self.name = name
@@ -456,6 +461,7 @@ class IODef:
         value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
 
+T = TypeVar('T')
 
 class _EntityView(Mapping[str, T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
@@ -479,7 +485,7 @@ class _EntityView(Mapping[str, T]):
         """We're private, so we should be the only instance for a given Entity."""
         return other is self
         
-    def _maps(self, ent=None) -> Mapping[str, T]:
+    def _maps(self, ent=None) -> Iterator[Mapping[str, T]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
@@ -497,11 +503,12 @@ class _EntityView(Mapping[str, T]):
                 pass
         raise KeyError(name)
 
-    def __contains__(self, name: str) -> bool:
-        fname = name.casefold()
-        for ent_map in self._maps():
-            if fname in ent_map:
-                return True
+    def __contains__(self, name: object) -> bool:
+        if isinstance(name, str):
+            fname = name.casefold()
+            for ent_map in self._maps():
+                if fname in ent_map:
+                    return True
         return False
         
     def __iter__(self) -> Iterator[T]:
@@ -514,7 +521,7 @@ class _EntityView(Mapping[str, T]):
                 yield name
             
     def __len__(self) -> int:
-        seen = set()
+        seen = set()  # type: Set[str]
         for ent_map in self._maps():
             seen.update(ent_map)
         return len(seen)
@@ -530,7 +537,7 @@ _Ent_View_IO = _EntityView[IODef]
 
 class EntityDef:
     """A definition for an entity."""
-    def __init__(self, type: EntityTypes):
+    def __init__(self, type: EntityTypes) -> None:
         self.type = type
         self.classname = ''
         self.keyvalues = {}  # type: Dict[str, KeyValues]
@@ -611,7 +618,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc = None
+        desc = None  # type: List[str]
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -722,8 +729,7 @@ class EntityDef:
                     attrs, has_equal = read_colon_list(tok, had_colon)
                 attr_len = len(attrs)
 
-                desc = ''
-                default = None
+                desc = default = ''
                 if attr_len == 3:
                     disp_name, default, desc = attrs
                 elif attr_len == 2:
@@ -771,7 +777,6 @@ class EntityDef:
                                         entity.classname,
                                     )
                                 ) from None
-                            
 
                         # Spawnflags can have a default, others don't
                         if len(vals) == 2 and val_typ is ValueTypes.SPAWNFLAGS:

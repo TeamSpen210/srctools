@@ -65,6 +65,7 @@ from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError, escape_text
 from typing import (
     Optional, Union, Any,
     List, Tuple, Dict, Iterator,
+    TypeVar,
 )
 
 
@@ -73,7 +74,9 @@ __all__ = ['KeyValError', 'NoKeyError', 'Property']
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = object()
 
-_Prop_Value = Union[List['Property'], str]
+_Prop_Value = Union[List['Property'], str, Any]
+
+T = TypeVar('T')
 
 # Various [flags] used after property names in some Valve files.
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/tier1/KeyValues.cpp#L2055
@@ -141,10 +144,10 @@ class Property:
     __slots__ = ('_folded_name', 'real_name', 'value')
 
     def __init__(
-            self: 'Property',
-            name: Optional[str],
-            value: _Prop_Value,
-            ):
+        self: 'Property',
+        name: Optional[str],
+        value: _Prop_Value,
+    ) -> None:
         """Create a new property instance.
 
         """
@@ -434,7 +437,7 @@ class Property:
         else:
             return def_
 
-    def int(self, key: str, def_: Any=0) -> int:
+    def int(self, key: str, def_: T=0) -> Union[int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(prop[key]), but with a default value if missing or
@@ -447,7 +450,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: Any=0.0) -> float:
+    def float(self, key: str, def_: T=0.0) -> Union[float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(prop[key]), but with a default value if missing or
@@ -460,7 +463,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: Any=False) -> bool:
+    def bool(self, key: str, def_: T=False) -> Union[bool, T]:
         """Return the value of an boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -470,10 +473,10 @@ class Property:
         """
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
-        except LookupError:  # base for NoKeyError,i KeyError
+        except LookupError:  # base for NoKeyError and KeyError
             return def_
 
-    def vec(self, key, x=0.0, y=0.0, z=0.0) -> _Vec:
+    def vec(self, key: str, x=0.0, y=0.0, z=0.0) -> _Vec:
         """Return the given property, converted to a vector.
 
         If multiple keys with the same name are present, this will use the
@@ -625,7 +628,7 @@ class Property:
                 str,
                 int,
                 slice,
-                Tuple[Union[str, int, slice], Union[_Prop_Value, Any]]
+                Tuple[Union[str, int, slice], Union[str, Any]]
             ],
             ) -> str:
         """Allow indexing the children directly.

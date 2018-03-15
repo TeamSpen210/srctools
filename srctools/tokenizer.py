@@ -139,7 +139,7 @@ class Tokenizer:
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket=False,
         allow_escapes=True,
-    ):
+    ) -> None:
         if isinstance(data, bytes):
             raise ValueError(
                 'Cannot parse binary data! Decode to the desired encoding, '
@@ -148,7 +148,7 @@ class Tokenizer:
 
         if isinstance(data, str):
             self.cur_chunk = data
-            self.chunk_iter = iter(())
+            self.chunk_iter = iter(())  # type: Iterator[str]
         else:
             self.cur_chunk = ''
             self.chunk_iter = iter(data)
