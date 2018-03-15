@@ -12,6 +12,7 @@ __all__ = [
 
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
     'bool_as_int', 'conv_bool', 'conv_int', 'conv_float',
+    'BOOL_LOOKUP',
 
     'FileSystem', 'FileSystemChain', 'get_filesystem',
 
