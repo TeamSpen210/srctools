@@ -157,7 +157,7 @@ def conv_int(val: str, default=0):
     except (ValueError, TypeError):
         return default
 
-class EmptyMapping(_abc.MutableMapping):
+class _EmptyMapping(_abc.MutableMapping):
     """A Mapping class which is always empty.
 
     Any modifications will be ignored.
@@ -169,6 +169,9 @@ class EmptyMapping(_abc.MutableMapping):
     def __call__(self):
         # Just in case someone tries to instantiate this
         return self
+
+    def __repr__(self):
+        return "srctools.EmptyMapping"
 
     def __getitem__(self, key):
         """All key acesses fail."""
@@ -227,7 +230,7 @@ class EmptyMapping(_abc.MutableMapping):
         raise KeyError('EmptyMapping is empty')
 
 
-EmptyMapping = EmptyMapping()
+EmptyMapping = _EmptyMapping()
 
 
 class AtomicWriter:
