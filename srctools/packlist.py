@@ -56,7 +56,7 @@ EXT_TYPE = {
 INJECT_FORMAT = "{}/INJECT_{:X}.{ext}"
 
 # noinspection PyProtectedMember
-from seecompiler._class_resources import CLASS_RESOURCES
+from srctools._class_resources import CLASS_RESOURCES
 
 
 class PackFile:
