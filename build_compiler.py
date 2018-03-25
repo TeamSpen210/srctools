@@ -9,19 +9,19 @@ setup(
             'zip_include_packages': '*',
             'zip_exclude_packages': '',
             'zip_includes': [
-                ('seecompiler/fgd.lzma', 'seecompiler/fgd.lzma')
+                ('srctools/fgd.lzma', 'srctools/fgd.lzma')
             ],
         },
     },
-    requires=['srctools', 'setuptools', 'cx_freeze'],
+    requires=['setuptools', 'cx_freeze'],
     executables=[
         # Executable(
-        #     'seecompiler/vbsp.py',
+        #     'srctools/scripts/vbsp.py',
         #     base='Console',
         #     targetName='vbsp.exe',
         # ),
         Executable(
-            'seecompiler/vrad.py',
+            'srctools/scripts/vrad.py',
             base='Console',
             targetName='vrad.exe',
         ),
