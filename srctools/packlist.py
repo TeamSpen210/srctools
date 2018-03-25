@@ -12,7 +12,7 @@ from srctools.filesys import FileSystem, VPKFileSystem, FileSystemChain, File
 from srctools.mdl import Model
 from srctools.vmt import Material, VarType
 from srctools.sndscript import Sound
-from seecompiler.logger import get_logger
+from srctools.logger import get_logger
 
 LOGGER = get_logger(__name__)
 

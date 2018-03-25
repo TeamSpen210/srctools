@@ -4,7 +4,7 @@ import sys
 import subprocess
 import logging
 
-from seecompiler.logger import get_logger
+from srctools.logger import get_logger
 
 LOGGER = get_logger(__name__)
 

@@ -1,5 +1,6 @@
 import logging
 
+
 class LogMessage:
     """Allow using str.format() in logging messages.
 
@@ -215,11 +216,11 @@ def init_logging(filename: str=None, main_logger='', on_error=None) -> logging.L
 def get_logger(name: str='', alias: str=None) -> logging.Logger:
     """Get the named logger object.
 
-    This puts the logger into the BEE2 namespace, and wraps it to
+    This puts the logger into the srctools namespace, and wraps it to
     use str.format() instead of % formatting.
     If set, alias is the name to show for the module.
     """
     if name:
-        return LoggerAdapter(logging.getLogger('SEE.' + name), alias)
+        return LoggerAdapter(logging.getLogger('srctools.' + name), alias)
     else:  # Allow retrieving the main logger.
-        return LoggerAdapter(logging.getLogger('SEE'), alias)
+        return LoggerAdapter(logging.getLogger('srctools'), alias)

@@ -1,8 +1,8 @@
 """Replaces VRAD, to run operations on the final BSP."""
 
-from seecompiler.logger import init_logging
+from srctools.logger import init_logging
 
-LOGGER = init_logging('seecompiler/vrad.log')
+LOGGER = init_logging('srctools/vrad.log')
 
 import sys
 import os
@@ -19,12 +19,12 @@ from srctools.packlist import PackList
 def load_fgd() -> FGD:
     """Extract the local copy of FGD data."""
     # Pull the FGD file we included out, so we don't rely on a local one.
-    with LZMAFile(resource_stream('seecompiler', 'fgd.lzma')) as f:
+    with LZMAFile(resource_stream('srctools', 'fgd.lzma')) as f:
         return FGD.unserialise(f)
 
 
 def main(argv):
-    LOGGER.info('SEEcompiler VRAD hook started!')
+    LOGGER.info('Srctools VRAD hook started!')
 
     game_info = find_gameinfo(argv)
 
@@ -38,7 +38,7 @@ def main(argv):
     fgd = load_fgd()
 
     LOGGER.info('Loading soundscripts...')
-    packlist.load_soundscript_manifest('see_sndscript_data.vdf')
+    packlist.load_soundscript_manifest('srctools_sndscript_data.vdf')
     LOGGER.info('Done! ({} sounds)', len(packlist.soundscripts))
 
     # The path is the last argument to VRAD
@@ -79,7 +79,7 @@ def main(argv):
     with bsp_file.packfile() as pak_zip:
         packlist.pack_into_zip(pak_zip)
 
-    LOGGER.info("SEEcompiler VRAD hook finished!")
+    LOGGER.info("srctools VRAD hook finished!")
 
 if __name__ == '__main__':
     main(sys.argv[1:])
