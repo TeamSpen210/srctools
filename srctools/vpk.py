@@ -613,3 +613,48 @@ class VPK:
     def verify_all(self):
         """Check all files have a correct checksum."""
         return all(file.verify() for file in self)
+
+def script_write(args):
+    """Create a VPK archive."""
+    if len(args) not in (1, 2):
+        raise ValueError("Usage: make_vpk.py [max_arch_mb] <folder>")
+    
+    folder = args[-1]
+    
+    vpk_name_base = folder.rstrip('\\/_dir')
+    
+    if len(args) > 1:
+        arch_len = int(args[0]) * 1024 * 1024
+    else:
+        arch_len = 100 * 1024 * 1024
+        
+    current_arch = 1
+    
+    vpk_folder, vpk_name = os.path.split(vpk_name_base)
+    for filename in os.listdir(vpk_folder):
+        if filename.startswith(vpk_name + '_'):
+            print(f'removing existing "{filename}"')
+            os.remove(os.path.join(vpk_folder, filename))
+    
+    with VPK(vpk_name_base + '_dir.vpk', mode='w') as vpk:
+        arch_filename = get_arch_filename(vpk_name_base, current_arch)
+    
+        for subfolder, _, filenames, in os.walk(folder):
+            # normpath removes '.' and similar values from the beginning
+            vpk_path = os.path.normpath(os.path.relpath(subfolder, folder))
+            print(vpk_path + '/')
+            for filename in filenames:
+                print('\t' + filename)
+                with open(os.path.join(subfolder, filename), 'rb') as f:
+                    vpk.add_file(
+                        (vpk_path, filename), 
+                        f.read(), 
+                        arch_index=current_arch,
+                    )
+                if os.path.exists(arch_filename) and os.stat(arch_filename).st_size > arch_len:
+                    current_arch += 1
+                    arch_filename = get_arch_filename(vpk_name_base, current_arch)
+                
+                
+if __name__ == '__main__':
+    main(script_create[1:])
