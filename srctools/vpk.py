@@ -74,7 +74,7 @@ def _write_nullstring(file, string):
         file.write(b' \x00')
 
 
-def _get_arch_filename(prefix='pak01', index: int=None):
+def get_arch_filename(prefix='pak01', index: int=None):
     """Generate the name for a VPK file.
     
     Prefix is the name of the file, usually 'pak01'.
@@ -196,7 +196,7 @@ class FileInfo:
             if self.arch_index is None:
                 return self.start_data + self.vpk.footer_data[self.offset: self.offset + self.arch_len]
             else:
-                arch_file = _get_arch_filename(self.vpk.file_prefix, self.arch_index)
+                arch_file = get_arch_filename(self.vpk.file_prefix, self.arch_index)
                 with open(os.path.join(self.vpk.folder, arch_file), 'rb') as data:
                     data.seek(self.offset)
                     return self.start_data + data.read(self.arch_len)
@@ -213,7 +213,7 @@ class FileInfo:
                     chk
                  )
             else:
-                arch_file = _get_arch_filename(self.vpk.file_prefix, self.arch_index)
+                arch_file = get_arch_filename(self.vpk.file_prefix, self.arch_index)
                 with open(os.path.join(self.vpk.folder, arch_file), 'rb') as data:
                     data.seek(self.offset)
                     chk = checksum(
@@ -246,7 +246,7 @@ class FileInfo:
         
         if self.arch_len:
             self.arch_index = arch_index
-            arch_file = _get_arch_filename(self.vpk.file_prefix, arch_index)
+            arch_file = get_arch_filename(self.vpk.file_prefix, arch_index)
             with open(os.path.join(self.vpk.folder, arch_file), 'ab') as file:
                 self.offset = file.seek(0, os.SEEK_END)
                 file.write(arch_data)
