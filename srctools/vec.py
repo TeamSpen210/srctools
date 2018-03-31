@@ -22,6 +22,7 @@ import math
 from typing import (
     Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
     overload,
+    Dict,
 )
 
 
@@ -201,9 +202,9 @@ class Vec:
     __slots__ = ('x', 'y', 'z')
 
     INV_AXIS = {
-        'x': 'yz',
-        'y': 'xz',
-        'z': 'xy',
+        'x': ('y', 'z'),
+        'y': ('x', 'z'),
+        'z': ('x', 'y'),
 
         ('y', 'z'): 'x',
         ('x', 'z'): 'y',
@@ -212,7 +213,9 @@ class Vec:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }
+        # Make type checkers understand that you can't do
+        # str->str or tuple->tuple.
+    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
     S = south = y_neg = Vec_tuple(0, -1, 0)
