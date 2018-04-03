@@ -506,8 +506,8 @@ class ZipFileSystem(FileSystem):
         self._check_open()
         # \\ is not allowed in zips.
         folder = folder.replace('\\', '/').casefold()
-        for fileinfo in self._ref.infolist():
-            if fileinfo.filename.casefold().startswith(folder):
+        for filename, fileinfo in self._name_to_info.items():
+            if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
     def open_bin(self, name: str):
