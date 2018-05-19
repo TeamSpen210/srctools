@@ -80,7 +80,8 @@ def test_names():
     # It can also be set to None.
     prop.name = None
     assert prop.name is prop.real_name is None
-    
+
+# If edited, update test_parse() and tokeniser check too!
 parse_test = '''
 
 // """"" should be ignored
@@ -126,6 +127,32 @@ text"
         "Replaced" "shouldbe"
         "Replaced" "toreplace" [test_enabled]
         "Replaced" "alsothis"  [test_enabled]
+        
+        "Replaced" "shouldbe"
+        "Replaced" "toreplace" [!test_disabled]
+        "Replaced" "alsothis"  [!test_disabled]
+
+        "Replaced"
+            {
+            "shouldbe" "replaced"
+            "prop2" "blah"
+            }
+        "Replaced" [test_enabled]
+            {
+            "this" "should"
+            "replace" "above"
+            }
+        
+        "Replaced"
+            {
+            "shouldbe" "replaced"
+            "prop2" "blah"
+            }
+        "Replaced" [!test_disabled]
+            {
+            "this" "should"
+            "replace" "above"
+            }
         }
 '''
 
@@ -162,6 +189,16 @@ def test_parse(py_c_token):
             P('FlagAllows', 'This'),
             P('Replaced', 'toreplace'),
             P('Replaced', 'alsothis'),
+            P('Replaced', 'toreplace'),
+            P('Replaced', 'alsothis'),
+            P('Replaced', [
+                P('this', 'should'),
+                P('replace', 'above'),
+            ]),
+            P('Replaced', [
+                P('this', 'should'),
+                P('replace', 'above'),
+            ])
         ])
     ])
 
