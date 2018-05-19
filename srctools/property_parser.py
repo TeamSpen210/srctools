@@ -66,6 +66,7 @@ from typing import (
     Optional, Union, Any,
     List, Tuple, Dict, Iterator,
     TypeVar,
+    Iterable,
 )
 
 
@@ -75,6 +76,7 @@ __all__ = ['KeyValError', 'NoKeyError', 'Property']
 _NO_KEY_FOUND = object()
 
 _Prop_Value = Union[List['Property'], str, Any]
+_As_Dict_Ret = Dict[str, Union[str, '_As_Dict_Ret']]
 
 T = TypeVar('T')
 
@@ -106,18 +108,18 @@ class NoKeyError(LookupError):
 
     key = The missing key that was asked for.
     """
-    def __init__(self, key):
+    def __init__(self, key: str) -> None:
         super().__init__()
         self.key = key
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'NoKeyError({!r})'.format(self.key)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return "No key " + self.key + "!"
 
 
-def _read_flag(flags: Dict[str, bool], flag_val: str):
+def _read_flag(flags: Dict[str, bool], flag_val: str) -> bool:
     """Check whether a flag is True or False."""
     flag_inv = flag_val[:1] == '!'
     if flag_inv:
@@ -367,7 +369,7 @@ class Property:
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.\n\n'
-                'File ended with at least one property that didn\'t '
+                "File ended with at least one property that didn't "
                 'have an ending "}".',
                 tokenizer.filename,
                 line=None,
@@ -412,7 +414,7 @@ class Property:
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):
+        for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
                 return prop
         if def_ is _NO_KEY_FOUND:
@@ -421,15 +423,17 @@ class Property:
             return Property(key, def_)
             # We were given a default, return it wrapped in a Property.
 
-    def _get_value(self, key, def_=_NO_KEY_FOUND):
+    def _get_value(self, key: str, def_: T=_NO_KEY_FOUND) -> Union[_Prop_Value, T]:
         """Obtain the value of the child Property with a given name.
+
+        Effectively find_key() but doesn't make a new property.
 
         - If no child is found with the given name, this will return the
           default value, or raise NoKeyError if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
         key = key.casefold()
-        for prop in reversed(self.value):
+        for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
                 return prop.value
         if def_ is _NO_KEY_FOUND:
@@ -487,7 +491,7 @@ class Property:
         except LookupError:  # key not present, defaults.
             return _Vec(x, y, z)
 
-    def set_key(self, path, value):
+    def set_key(self, path: Union[Tuple[str, ...], str], value: _Prop_Value) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
         -If any of the hierarchy do not exist (or do not have children),
@@ -500,7 +504,7 @@ class Property:
             for key in path[:-1]:
                 folded_key = key.casefold()
                 # We can't use find_key() here because we also
-                # need to check that the property has chilren to search
+                # need to check that the property has children to search
                 # through
                 for prop in reversed(self.value):
                     if (prop.name is not None and
@@ -519,7 +523,7 @@ class Property:
         except NoKeyError:
             current_prop.value.append(Property(path, value))
 
-    def copy(self):
+    def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
         if self.has_children():
             # This recurses if needed
@@ -534,7 +538,7 @@ class Property:
         else:
             return Property(self.real_name, self.value)
 
-    def as_dict(self):
+    def as_dict(self) -> _As_Dict_Ret:
         """Convert this property tree into a tree of dictionaries.
 
         This keeps only the last if multiple items have the same name.
@@ -544,7 +548,7 @@ class Property:
         else:
             return self.value
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """Compare two items and determine if they are equal.
 
         This ignores names.
@@ -554,21 +558,21 @@ class Property:
         else:
             return self.value == other  # Just compare values
 
-    def __ne__(self, other):
+    def __ne__(self, other: Any) -> bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Property):
             return self.value != other.value
         else:
-            return self.value != other # Just compare values
+            return self.value != other  # Just compare values
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Determine the number of child properties."""
         if self.has_children():
             return len(self.value)
         raise ValueError("{!r} has no children!".format(self))
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """Properties are true if we have children, or have a value."""
         if self.has_children():
             return len(self.value) > 0
@@ -586,7 +590,7 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def iter_tree(self, blocks=False) -> Iterator['Property']:
+    def iter_tree(self, blocks: bool=False) -> Iterator['Property']:
         """Iterate through all properties in this tree.
 
         This goes through properties in the same order that they will serialise
@@ -601,7 +605,7 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def _iter_tree(self, blocks):
+    def _iter_tree(self, blocks: bool) -> Iterator['Property']:
         """Implementation of iter_tree(). This assumes self has children."""
         for prop in self.value:  # type: Property
             if prop.has_children():
@@ -611,7 +615,7 @@ class Property:
             else:
                 yield prop
 
-    def __contains__(self, key):
+    def __contains__(self, key: str) -> bool:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
@@ -691,7 +695,7 @@ class Property:
         else:
             raise ValueError("Can't index a Property without children!")
 
-    def __delitem__(self, index):
+    def __delitem__(self, index: Union[int, str]) -> None:
         """Delete the given property index.
 
         - If given an integer, it will delete by position.
@@ -708,14 +712,14 @@ class Property:
         else:
             raise IndexError("Can't index a Property without children!")
 
-    def clear(self):
+    def clear(self) -> None:
         """Delete the contents of a block."""
         if self.has_children():
             self.value.clear()
         else:
             raise ValueError("Can't clear a Property without children!")
 
-    def __add__(self, other):
+    def __add__(self, other: Union[Iterable['Property'], 'Property']):
         """Allow appending other properties to this one.
 
         This deep-copies the Property tree first.
@@ -730,13 +734,13 @@ class Property:
                     # We want to add the other property tree to our
                     # own, not its values.
                     copy.value.append(other)
-            else: # Assume a sequence.
-                copy.value += other # Add the values to ours.
+            else:  # Assume a sequence.
+                copy.value += other  # Add the values to ours.
             return copy
         else:
             return NotImplemented
 
-    def __iadd__(self, other):
+    def __iadd__(self, other: Union[Iterable['Property'], 'Property']):
         """Allow appending other properties to this one.
 
         This is the += op, where it does not copy the object.
@@ -755,7 +759,7 @@ class Property:
 
     append = __iadd__
 
-    def merge_children(self, *names: str):
+    def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
 
         After execution, this tree will have only one sub-Property for
@@ -769,7 +773,7 @@ class Property:
             names
         }
         if self.has_children():
-            for item in self.value[:]:
+            for item in self.value[:]:  # type: Property
                 if item._folded_name in folded_names:
                     merge[item._folded_name].value.extend(item.value)
                 else:
@@ -781,7 +785,7 @@ class Property:
 
         self.value = new_list
 
-    def ensure_exists(self, key) -> 'Property':
+    def ensure_exists(self, key: str) -> 'Property':
         """Ensure a Property group exists with this name, and return it."""
         try:
             return self.find_key(key)
@@ -790,24 +794,24 @@ class Property:
             self.value.append(prop)
             return prop
 
-    def has_children(self):
+    def has_children(self) -> bool:
         """Does this have child properties?"""
-        return isinstance(self.value, list)
+        return type(self.value) is list
 
-    def __repr__(self):
-        return 'Property(' + repr(self.real_name) + ', ' + repr(self.value) + ')'
+    def __repr__(self) -> str:
+        return 'Property({0!r}, {1!r})'.format(self.real_name, self.value)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return ''.join(self.export())
 
-    def export(self):
+    def export(self) -> Iterator[str]:
         """Generate the set of strings for a property file.
 
         Recursively calls itself for all child properties.
         """
         if isinstance(self.value, list):
             if self.name is None:
-                # If the name is None, we just output the chilren
+                # If the name is None, we just output the children
                 # without a "Name" { } surround. These Property
                 # objects represent the root.
                 for prop in self.value:
