@@ -262,6 +262,15 @@ regular text. with sentences.
 "no_block" 
 ''')
 
+    # Test block expecting a {
+    t('''\
+"block"
+    {
+    "blsh" "Val"
+    }
+"block1"
+''')
+
     # Test characters before a keyvalue
     t('''\
 bbhf  "text before"
@@ -368,6 +377,16 @@ text with
     "Key" "value
     which is multi-line
     and no ending.
+    ''')
+
+    # Test a key and value split over a line.
+    t('''\
+    "block"
+        {
+        "key" "value"
+        "key"
+        "value"
+        }
     ''')
 
 
