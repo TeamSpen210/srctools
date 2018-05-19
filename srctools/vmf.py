@@ -2177,13 +2177,13 @@ class Output:
         targ: Union[Entity, str],
         inp: str,
         param='',
-        delay=0.0,
+        delay: float=0.0,
         *,
-        times=-1,
-        only_once=False,
+        times: int=-1,
+        only_once: bool=False,
         inst_out: str=None,
         inst_in: str=None,
-        comma_sep=False
+        comma_sep: bool=False
     ):
         self.output = out
         self.inst_out = inst_out
