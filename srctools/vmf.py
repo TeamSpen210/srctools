@@ -2193,7 +2193,7 @@ class Output:
             self.target = targ
         self.input = inp
         self.inst_in = inst_in
-        self.params = param
+        self.params = str(param)
         self.delay = delay
         self.times = 1 if only_once else times
         self.comma_sep = comma_sep
