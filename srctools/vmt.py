@@ -129,6 +129,9 @@ class Material:
                 # We need to check there's a newline after that - for proxies, 
                 # or errors.
                 token, ignored = tok()
+                while token is Tok.NEWLINE:
+                    token, ignored = tok()
+
                 if token is Tok.BRACE_OPEN:
                     if param_name.casefold() == "proxies":
                         proxies.extend(cls._parse_block(tok, 'Proxy'))
@@ -142,8 +145,6 @@ class Material:
                     # End of us after single name.
                     params[param_name.casefold()] = param_value
                     break
-                elif token is Tok.NEWLINE:
-                    pass
                 else:
                     raise tok.error(token)
             else:
@@ -212,6 +213,9 @@ class Material:
                 # Name by itself: '%compilenodraw' etc...
                 # We need to check there's a newline after that - for subblocks.
                 token, ignored = tok()
+                while token is Tok.NEWLINE:
+                    token, ignored = tok()
+
                 if token is Tok.BRACE_OPEN:
                     prop.append(Material._parse_block(tok, param_name))
                     continue
