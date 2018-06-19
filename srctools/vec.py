@@ -194,14 +194,15 @@ def __i{func}__(self, other: float):
 '''
 
 
-class Vec:
+class Vec(Iterable[float]):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __slots__ = ('x', 'y', 'z')
-
-    INV_AXIS = {
+    # Make type checkers understand that you can't do str->str or tuple->tuple.
+    INV_AXIS = None  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    INV_AXIS = {  # type: ignore
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -213,9 +214,8 @@ class Vec:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-        # Make type checkers understand that you can't do
-        # str->str or tuple->tuple.
-    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    }
+
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
     S = south = y_neg = Vec_tuple(0, -1, 0)
@@ -241,6 +241,10 @@ class Vec:
             self.x = float(x)
             self.y = float(y)
             self.z = float(z)
+        elif isinstance(x, Vec):
+            self.x = x.x
+            self.y = x.y
+            self.z = x.z
         else:
             it = iter(x)
             self.x = float(next(it, 0.0))
@@ -487,7 +491,7 @@ class Vec:
                 )
             )
 
-    def rotation_around(self, rot=90):
+    def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
         if self.x:
             return Vec(z=self.x * rot)
@@ -498,7 +502,7 @@ class Vec:
         else:
             raise ValueError('Zero vector!')
 
-    def __abs__(self):
+    def __abs__(self) -> 'Vec':
         """Performing abs() on a Vec takes the absolute value of all axes."""
         return Vec(
             abs(self.x),
@@ -593,10 +597,7 @@ class Vec:
         """Vectors are True if any axis is non-zero."""
         return self.x != 0 or self.y != 0 or self.z != 0
 
-    def __eq__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-        ) -> bool:
+    def __eq__(self, other: object) -> bool:
         """== test.
 
         Two Vectors are compared based on the axes.
@@ -613,14 +614,11 @@ class Vec:
             )
         else:
             try:
-                return self.mag() == float(other)
+                return self.mag() == float(other)  # type: ignore
             except (TypeError, ValueError):
                 return NotImplemented
 
-    def __ne__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
-            ) -> bool:
+    def __ne__(self, other: object) -> bool:
         """!= test.
 
         Two Vectors are compared based on the axes.
@@ -637,7 +635,7 @@ class Vec:
             )
         else:
             try:
-                return self.mag() != float(other)
+                return self.mag() != float(other)  # type: ignore
             except (TypeError, ValueError):
                 return NotImplemented
 

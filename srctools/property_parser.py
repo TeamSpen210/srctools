@@ -58,8 +58,10 @@ They end with a quote."
     \n, \t, and \\ will be converted in Property values.
 """
 import sys
+import builtins  # Property.bool etc shadows these.
 
-from srctools import BOOL_LOOKUP, Vec as _Vec, EmptyMapping
+from srctools import BOOL_LOOKUP, EmptyMapping
+from srctools.vec import Vec as _Vec
 from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
@@ -441,7 +443,7 @@ class Property:
         else:
             return def_
 
-    def int(self, key: str, def_: T=0) -> Union[int, T]:
+    def int(self, key: str, def_: T=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(prop[key]), but with a default value if missing or
@@ -454,7 +456,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: T=0.0) -> Union[float, T]:
+    def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(prop[key]), but with a default value if missing or
@@ -467,7 +469,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: T=False) -> Union[bool, T]:
+    def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -548,7 +550,7 @@ class Property:
         else:
             return self.value
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
 
         This ignores names.
@@ -558,7 +560,7 @@ class Property:
         else:
             return self.value == other  # Just compare values
 
-    def __ne__(self, other: Any) -> bool:
+    def __ne__(self, other: Any) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Property):
@@ -566,13 +568,13 @@ class Property:
         else:
             return self.value != other  # Just compare values
 
-    def __len__(self) -> int:
+    def __len__(self) -> builtins.int:
         """Determine the number of child properties."""
         if self.has_children():
             return len(self.value)
         raise ValueError("{!r} has no children!".format(self))
 
-    def __bool__(self) -> bool:
+    def __bool__(self) -> builtins.bool:
         """Properties are true if we have children, or have a value."""
         if self.has_children():
             return len(self.value) > 0
@@ -590,7 +592,7 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def iter_tree(self, blocks: bool=False) -> Iterator['Property']:
+    def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Property']:
         """Iterate through all properties in this tree.
 
         This goes through properties in the same order that they will serialise
@@ -605,7 +607,7 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def _iter_tree(self, blocks: bool) -> Iterator['Property']:
+    def _iter_tree(self, blocks: builtins.bool) -> Iterator['Property']:
         """Implementation of iter_tree(). This assumes self has children."""
         for prop in self.value:  # type: Property
             if prop.has_children():
@@ -615,7 +617,7 @@ class Property:
             else:
                 yield prop
 
-    def __contains__(self, key: str) -> bool:
+    def __contains__(self, key: str) -> builtins.bool:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
@@ -630,9 +632,9 @@ class Property:
             self,
             index: Union[
                 str,
-                int,
+                builtins.int,
                 slice,
-                Tuple[Union[str, int, slice], Union[str, Any]]
+                Tuple[Union[str, builtins.int, slice], Union[str, Any]]
             ],
             ) -> str:
         """Allow indexing the children directly.
@@ -659,7 +661,7 @@ class Property:
 
     def __setitem__(
             self,
-            index: Union[int, slice, str],
+            index: Union[builtins.int, slice, str],
             value: _Prop_Value
             ):
         """Allow setting the values of the children directly.
@@ -695,7 +697,7 @@ class Property:
         else:
             raise ValueError("Can't index a Property without children!")
 
-    def __delitem__(self, index: Union[int, str]) -> None:
+    def __delitem__(self, index: Union[builtins.int, str]) -> None:
         """Delete the given property index.
 
         - If given an integer, it will delete by position.
@@ -794,7 +796,7 @@ class Property:
             self.value.append(prop)
             return prop
 
-    def has_children(self) -> bool:
+    def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
         return type(self.value) is list
 

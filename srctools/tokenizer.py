@@ -3,13 +3,13 @@
 This is used internally for parsing files.
 """
 from enum import Enum
-from io import StringIO
 
 from typing import (
     Union, Optional,
-    Callable, Iterable, Iterator,
+    Iterable, Iterator,
     Tuple,
     Type,
+    List,
 )
 
 
@@ -170,7 +170,7 @@ class Tokenizer:
 
         # If a file-like object, this is automatic.
         if not filename and hasattr(data, 'name'):
-            self.filename = data.name
+            self.filename = data.name  # type: ignore  # hasattr()
 
     def error(self, message: Union[str, Token], *args):
         """Raise a syntax error exception.
@@ -232,12 +232,12 @@ class Tokenizer:
                 # Out of characters after empty chunks
                 return None
 
-    def __call__(self) -> Tuple[Token, str]:
+    def __call__(self) -> Tuple[Token, Optional[str]]:
         """Return the next token, value pair."""
         if self._pushback is not None:
-            next_char = self._pushback
+            next_val = self._pushback
             self._pushback = None
-            return next_char
+            return next_val
 
         while True:
             next_char = self._next_char()
@@ -273,7 +273,7 @@ class Tokenizer:
 
             # Strings
             elif next_char == '"':
-                value_chars = []
+                value_chars = []  # type: List[str]
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
@@ -355,7 +355,7 @@ class Tokenizer:
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
 
-    def __iter__(self) -> Iterator[Tuple[Token, Optional[str]]]:
+    def __iter__(self) -> Iterator[Tuple[Token, str]]:
         # Call ourselves until EOF is returned
         return iter(self, (Token.EOF, None))
 

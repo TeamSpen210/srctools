@@ -1,4 +1,16 @@
+"""
+Wrapper around logging to provide our own functionality.
+
+This adds the ability to log using str.format() instead of %.
+"""
 import logging
+from types import TracebackType
+from typing import Dict, Tuple, Union, Type, Callable, Optional
+
+short_log_format = None  # type: logging.Formatter
+long_log_format = None  # type: logging.Formatter
+stderr_loghandler = None  # type: logging.Handler
+stdout_loghandler = None  # type: logging.Handler
 
 
 class LogMessage:
@@ -6,13 +18,18 @@ class LogMessage:
 
     The __str__() method performs the joining.
     """
-    def __init__(self, fmt, args, kwargs):
+    def __init__(
+        self,
+        fmt: str,
+        args: Tuple[object],
+        kwargs: Dict[str, object],
+    ) -> None:
         self.fmt = fmt
         self.args = args
         self.kwargs = kwargs
-        self.has_args = kwargs or args
+        self.has_args = bool(kwargs or args)
 
-    def format_msg(self):
+    def format_msg(self) -> str:
         # Only format if we have arguments!
         # That way { or } can be used in regular messages.
         if self.has_args:
@@ -25,7 +42,7 @@ class LogMessage:
         else:
             return str(self.fmt)
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Format the string, and add an ASCII indent."""
         msg = self.format_msg()
 
@@ -43,20 +60,29 @@ class LogMessage:
         return '\n | '.join(lines[:-1]) + '\n |_' + lines[-1] + '\n'
 
 
-class LoggerAdapter(logging.LoggerAdapter):
+class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
     """Fix loggers to use str.format().
 
     """
-    def __init__(self, logger: logging.Logger, alias=None) -> None:
+    def __init__(self, logger: logging.Logger, alias: str=None) -> None:
         # Alias is a replacement module name for log messages.
         self.alias = alias
-        super(LoggerAdapter, self).__init__(logger, extra={})
+        self.logger = logger
+        logging.LoggerAdapter.__init__(self, logger, extra={})
 
-    def log(self, level, msg, *args, exc_info=None, stack_info=False, **kwargs):
+    def log(
+        self,
+        level: int,
+        msg: str,
+        *args: object,
+        exc_info: Union[BaseException, Tuple[Type[BaseException], BaseException, TracebackType]]=None,
+        stack_info: bool=False,
+        **kwargs: object,
+    ):
         """This version of .log() is for str.format() compatibility.
 
         The message is wrapped in a LogMessage object, which is given the
-        args and kwargs
+        args and kwargs.
         """
         if self.isEnabledFor(level):
             self.logger._log(
@@ -71,7 +97,11 @@ class LoggerAdapter(logging.LoggerAdapter):
             )
 
 
-def init_logging(filename: str=None, main_logger='', on_error=None) -> logging.Logger:
+def init_logging(
+    filename: str=None,
+    main_logger: str='',
+    on_error: Optional[Callable[[Type[BaseException], BaseException, TracebackType], None]]=None,
+) -> logging.Logger:
     """Setup the logger and logging handlers.
 
     If filename is set, all logs will be written to this file as well.

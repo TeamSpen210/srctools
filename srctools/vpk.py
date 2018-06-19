@@ -151,7 +151,7 @@ class FileInfo:
         offset: int=0,
         arch_len: int=0,
         arch_index: int=None,
-    ):
+    ) -> None:
         """This should only be called by VPK() internally."""
 
         # Assert the path is ASCII.
@@ -507,7 +507,7 @@ class VPK:
                 for file, info in files.items():
                     yield info
                     
-    def filenames(self) -> str:
+    def filenames(self) -> Iterator[str]:
         """Yield all filenames in this VPK."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
@@ -530,7 +530,7 @@ class VPK:
         except KeyError:
             return False
 
-    def extract_all(self, dest_dir) -> None:
+    def extract_all(self, dest_dir: str) -> None:
         """Extract the contents of this VPK to a directory."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
@@ -539,7 +539,7 @@ class VPK:
                     with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 
-    def new_file(self, filename: str, root: str=None) -> FileInfo:
+    def new_file(self, filename: FileName, root: str=None) -> FileInfo:
         """Create the given file, making it empty by default.
         
         If root is set, files are treated as relative to there,
@@ -575,7 +575,7 @@ class VPK:
         
         return info
 
-    def add_file(self, filename, data: bytes, root=None, arch_index=0):
+    def add_file(self, filename: FileName, data: bytes, root=None, arch_index=0):
         """Add the given data to the VPK. 
         
         If root is set, files are treated as relative to there,
@@ -587,7 +587,7 @@ class VPK:
         """
         self.new_file(filename, root).write(data, arch_index)
 
-    def add_folder(self, folder, prefix=''):
+    def add_folder(self, folder: str, prefix: str='') -> None:
         """Write all files in a folder to the VPK. 
         
         If prefix is set, the folders will be written to that subfolder.
@@ -610,11 +610,12 @@ class VPK:
                 with open(os.path.join(subfolder, filename), 'rb') as f:
                     self.add_file((vpk_path, filename), f.read())
                     
-    def verify_all(self):
+    def verify_all(self) -> bool:
         """Check all files have a correct checksum."""
         return all(file.verify() for file in self)
 
-def script_write(args):
+
+def script_write(args: List[str]) -> None:
     """Create a VPK archive."""
     if len(args) not in (1, 2):
         raise ValueError("Usage: make_vpk.py [max_arch_mb] <folder>")

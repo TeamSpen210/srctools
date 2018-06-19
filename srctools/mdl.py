@@ -3,7 +3,8 @@ from typing import Set, List, BinaryIO, NamedTuple
 from enum import IntFlag
 
 from srctools.filesys import FileSystem, File
-from srctools import Vec
+from srctools.property_parser import Property
+from srctools.vec import Vec
 from struct import unpack, Struct, calcsize
 
 
