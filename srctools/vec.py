@@ -414,8 +414,14 @@ class Vec(Iterable[float]):
 
         Both borders will be included.
         """
-        min_x, min_y, min_z = map(int, min_pos)
-        max_x, max_y, max_z = map(int, max_pos)
+        min_x = int(min_pos.x)
+        min_y = int(min_pos.y)
+        min_z = int(min_pos.z)
+
+        max_x = int(max_pos.x)
+        max_y = int(max_pos.y)
+        max_z = int(max_pos.z)
+
         for x in range(min_x, max_x + 1, stride):
             for y in range(min_y, max_y + 1, stride):
                 for z in range(min_z, max_z + 1, stride):
@@ -753,21 +759,21 @@ class Vec(Iterable[float]):
 
     def max(self, other: AnyVec):
         """Set this vector's values to the maximum of the two vectors."""
-        if self.x < other.x:
-            self.x = other.x
-        if self.y < other.y:
-            self.y = other.y
-        if self.z < other.z:
-            self.z = other.z
+        if self.x < other[0]:
+            self.x = other[0]
+        if self.y < other[1]:
+            self.y = other[1]
+        if self.z < other[2]:
+            self.z = other[2]
 
     def min(self, other: AnyVec):
         """Set this vector's values to be the minimum of the two vectors."""
-        if self.x > other.x:
-            self.x = other.x
-        if self.y > other.y:
-            self.y = other.y
-        if self.z > other.z:
-            self.z = other.z
+        if self.x > other[0]:
+            self.x = other[0]
+        if self.y > other[1]:
+            self.y = other[1]
+        if self.z > other[2]:
+            self.z = other[2]
 
     def __round__(self, n=0):
         return Vec(
@@ -899,17 +905,17 @@ class Vec(Iterable[float]):
     def dot(self, other: AnyVec) -> float:
         """Return the dot product of both Vectors."""
         return (
-            self.x * other.x +
-            self.y * other.y +
-            self.z * other.z
+            self.x * other[0] +
+            self.y * other[1] +
+            self.z * other[2]
         )
 
     def cross(self, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors."""
         return Vec(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
+            self.y * other[2] - self.z * other[1],
+            self.z * other[0] - self.x * other[2],
+            self.x * other[1] - self.y * other[0],
         )
 
     def localise(
