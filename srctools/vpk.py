@@ -658,4 +658,5 @@ def script_write(args: List[str]) -> None:
                 
                 
 if __name__ == '__main__':
-    main(script_create[1:])
+    import sys
+    script_write(sys.argv[1:])
