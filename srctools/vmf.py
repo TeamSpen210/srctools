@@ -94,27 +94,6 @@ class NullIDMan(IDMan):
             return desired
 
 
-def find_empty_id(used_id, desired=-1):
-        """Ensure this item has a unique ID.
-
-        Used by entities, solids and brush sides to keep their IDs valid.
-        used_id must be sorted, and will be kept sorted.
-        """
-
-        if desired == -1:
-            desired = 1
-        else:
-            desired = int(desired)
-        used_id.sort()
-        if len(used_id) == 0 or desired not in used_id:
-            used_id.append(desired)
-            return desired
-        for poss_id in range(used_id[-1]+1):
-            if poss_id not in used_id:
-                used_id.append(poss_id)
-                return poss_id
-
-
 def overlay_bounds(over: 'Entity') -> Tuple[Vec, Vec]:
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
