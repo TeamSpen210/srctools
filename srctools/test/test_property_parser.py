@@ -139,7 +139,7 @@ text"
             }
         "Replaced" [test_enabled]
             {
-            "this" "should"
+            "lambda" "should"
             "replace" "above"
             }
         
@@ -150,58 +150,58 @@ text"
             }
         "Replaced" [!test_disabled]
             {
-            "this" "should"
+            "lambda" "should"
             "replace" "above"
             }
         }
 '''
 
+P = Property
+parse_result = P(None, [
+    P('Root1', [
+        P("Key", "Value"),
+        P("Extra", "Spaces"),
+        P("Block", [
+            P('Empty', []),
+        ]),
+        P('Block', [
+            P('bare', [
+                P('block', 'he\tre'),
+            ]),
+        ]),
+    ]),
+    P('Root2', [
+        P('Name with " in it', 'Value with \" inside'),
+        P('multiline',
+          'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
+          ),
+        # Note, invalid = unchanged.
+        P('Escapes', '\t \n \\d'),
+        P('Oneliner', [Property('name', 'value')]),
+    ]),
+    P('CommentChecks', [
+        P('after ', 'value'),
+        P('Flag', 'allowed'),
+        P('FlagAllows', 'This'),
+        P('Replaced', 'toreplace'),
+        P('Replaced', 'alsothis'),
+        P('Replaced', 'toreplace'),
+        P('Replaced', 'alsothis'),
+        P('Replaced', [
+            P('lambda', 'should'),
+            P('replace', 'above'),
+        ]),
+        P('Replaced', [
+            P('lambda', 'should'),
+            P('replace', 'above'),
+        ])
+    ])
+])
+del P
+
 
 def test_parse(py_c_token):
     """Test parsing strings."""
-    P = Property
-    
-    expected = P(None, [
-        P('Root1', [
-            P("Key", "Value"),
-            P("Extra", "Spaces"),
-            P("Block", [
-                P('Empty', []),
-            ]),
-            P('Block', [
-                P('bare', [
-                    P('block', 'he\tre'),
-                ]),
-            ]),
-        ]),
-        P('Root2', [
-            P('Name with " in it', 'Value with \" inside'),
-            P('multiline',
-              'text\n\tcan continue\nfor many "lines" of\n  possibly indented\n\ntext'
-              ),
-            # Note, invalid = unchanged.
-            P('Escapes', '\t \n \\d'),
-            P('Oneliner', [Property('name', 'value')]),
-        ]),
-        P('CommentChecks', [
-            P('after ', 'value'),
-            P('Flag', 'allowed'),
-            P('FlagAllows', 'This'),
-            P('Replaced', 'toreplace'),
-            P('Replaced', 'alsothis'),
-            P('Replaced', 'toreplace'),
-            P('Replaced', 'alsothis'),
-            P('Replaced', [
-                P('this', 'should'),
-                P('replace', 'above'),
-            ]),
-            P('Replaced', [
-                P('this', 'should'),
-                P('replace', 'above'),
-            ])
-        ])
-    ])
-
     result = Property.parse(
         # iter() ensures sequence methods aren't used anywhere.
         iter(parse_test.splitlines()),
@@ -211,7 +211,7 @@ def test_parse(py_c_token):
             'test_disabled': False,
         }
     )
-    assert_tree(result, expected)
+    assert_tree(result, parse_result)
 
     # Test the whole string can be passed too.
     result = Property.parse(
@@ -221,11 +221,10 @@ def test_parse(py_c_token):
             'test_disabled': False,
         },
     )
-    assert_tree(result, expected)
+    assert_tree(result, parse_result)
 
     # Check export roundtrips.
-    assert_tree(Property.parse(expected.export()), expected)
-
+    assert_tree(Property.parse(parse_result.export()), parse_result)
 
 def test_parse_fails(py_c_token):
     """Test various forms of invalid syntax to ensure they indeed fail."""
