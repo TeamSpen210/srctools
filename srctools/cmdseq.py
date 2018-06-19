@@ -5,6 +5,8 @@ These set the arguments to the compile tools.
 from struct import Struct, unpack, pack
 from enum import Enum
 from collections import OrderedDict
+from typing import List, Optional, Dict, IO, Sequence, TypeVar, Type, Union
+
 
 ST_HEADER = Struct('')
 
@@ -14,6 +16,7 @@ ST_COMMAND_PRE_V2 = Struct('ci260s260sii260si')
 SEQ_HEADER = b'Worldcraft Command Sequences\r\n\x1a'
 
 __all__ = ['SpecialCommand', 'Command', 'parse', 'write']
+
 
 class SpecialCommand(Enum):
     """Special commands to run instead of the exe."""
@@ -29,7 +32,8 @@ SPECIAL_NAMES = {
     SpecialCommand.RENAME_FILE: 'Rename File',
 }
 
-def strip_cstring(data: bytes):
+
+def strip_cstring(data: bytes) -> str:
     """Strip strings to the first null, and convert to ascii.
     
     The CmdSeq files appear to often have junk data in the unused
@@ -39,15 +43,20 @@ def strip_cstring(data: bytes):
         return data[:data.index(b'\0')].decode('ascii')
     else:
         return data.decode('ascii')
-    
-def pad_string(text: str, length: int):
+
+
+def pad_string(text: str, length: int) -> bytes:
     """Pad the string to the specified length and convert."""
     if len(text) > length:
         raise ValueError('{!r} is longer than {}!'.format(text, length))
     return text.encode('ascii') + b'\0' * (length - len(text))
 
+
 class Command:
     """A command to run."""
+
+    exe = None  # type: Union[str, SpecialCommand]
+
     def __init__(
         self,
         enabled: bool,
@@ -60,12 +69,14 @@ class Command:
         ensure_file: str,
         use_proc_win: bool,
         no_wait: bool
-    ):
-        self.enabled = enabled
+    ) -> None:
+
         if special:
             self.exe = SpecialCommand(special)
         else:
             self.exe = executable
+
+        self.enabled = enabled
         self.args = args
         self.ensure_check = ensure_check
         self.ensure_file = ensure_file
@@ -74,17 +85,17 @@ class Command:
         
     @classmethod
     def parse(
-        cls, 
-        is_enabled,
-        is_special,
-        executable,
-        args,
-        is_long_filename, # Unused
-        ensure_check,
-        ensure_file,
-        use_proc_win,
-        no_wait=False, 
-    ):
+        cls,
+        is_enabled: int,
+        is_special: int,
+        executable: bytes,
+        args: bytes,
+        is_long_filename: int,  # Unused
+        ensure_check: bytes,
+        ensure_file: bytes,
+        use_proc_win: int,
+        no_wait: int=0,
+    ) -> 'Command':
         return cls(
             bool(is_enabled),
             is_special,
@@ -92,17 +103,18 @@ class Command:
             strip_cstring(args),
             bool(ensure_check),
             strip_cstring(ensure_file),
-            use_proc_win,
+            bool(use_proc_win),
             bool(no_wait),
         )
         
-    def __bool__(self): 
+    def __bool__(self) -> bool:
         return self.enabled
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(vars(self))
-        
-def parse(file):
+
+
+def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     """Read a list of sequences from a file.
     
     This returns a dict mapping names to a list of sequences.
@@ -120,19 +132,21 @@ def parse(file):
         cmd_struct = ST_COMMAND
         
     [seq_count] = unpack('I', file.read(4))
-    sequences = OrderedDict()
+    sequences = OrderedDict()  # type: Dict[str, List[Command]]
     for _ in range(seq_count):
         seq_name = strip_cstring(file.read(128))
         [cmd_count] = unpack('I', file.read(4))
-        sequences[seq_name] = cmd_list = [None] * cmd_count
+        cmd_list = None  # type: List[Command]
+        sequences[seq_name] = cmd_list = [None] * cmd_count  # type: ignore
         
         for i in range(cmd_count):  
             cmd_list[i] = Command.parse(
                 *cmd_struct.unpack(file.read(cmd_struct.size)),
             )
     return sequences
-    
-def write(sequences: dict, file):
+
+
+def write(sequences: Dict[str, Sequence[Command]], file: IO[bytes]) -> None:
     """Write commands back to a file."""
     file.write(SEQ_HEADER)
     file.write(pack('f', 0.2))
