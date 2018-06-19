@@ -58,6 +58,7 @@ They end with a quote."
     \n, \t, and \\ will be converted in Property values.
 """
 import sys
+import keyword
 import builtins  # Property.bool etc shadows these.
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -830,3 +831,98 @@ class Property:
         else:
             # We need to escape quotes and backslashes so they don't get detected.
             yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self.value))
+
+    def build(self) -> '_Builder':
+        """Allows appending a tree to this property in a convenient way.
+
+        Use as follows:
+        # doctest: +NORMALIZE_WHITESPACE
+        >>> prop = Property('name', [])
+        >>> with prop.build() as builder:
+        ...     builder.root1('blah')
+        ...     builder.root2('blah')
+        ...     with builder.subprop:
+        ...         subprop = builder.config('value')
+        ...         builder['unusual name']('value')
+        Property('root1', 'blah')
+        Property('root2', 'blah')
+        Property('unusual name', 'value')
+        >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
+        "config" "value"
+        >>> print(prop) # doctest: +NORMALIZE_WHITESPACE
+        "name"
+            {
+            "root1" "blah"
+            "root2" "blah"
+            "subprop"
+                {
+                "config" "value"
+                "unusual name" "value"
+                }
+            }
+
+        Return values/results of the context manager are the properties.
+        Set names by builder.name, builder['name']. For keywords append '_'.
+
+        Alternatively:
+        >>> with Property('name', []).build() as (prop, builder):
+        ...     builder.root1('blah')
+        ...     builder.root2('blah')
+        Property('root1', 'blah')
+        Property('root2', 'blah')
+        >>> print(repr(prop))
+        Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
+        """
+        return _Builder(self)
+
+
+class _Builder:
+    """Allows constructing property trees using with: chains.
+
+    This is the object you
+    """
+    def __init__(self, parent: Property):
+        self._parents = [parent]
+
+    def __getattr__(self, name: str) -> '_BuilderElem':
+        return _BuilderElem(self, self._keywords.get(name, name))
+
+    def __getitem__(self, name: str) -> '_BuilderElem':
+        return _BuilderElem(self, name)
+
+    def __enter__(self) -> '_Builder':
+        """Start a property block."""
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        pass
+
+    def __iter__(self) -> Iterator[Union[Property, '_Builder']]:
+        """This allows doing as (x, y) to get the parent."""
+        return iter((self._parents[0], self))
+
+    _keywords = {kw + '_': kw for kw in keyword.kwlist}
+
+
+# noinspection PyProtectedMember
+class _BuilderElem:
+    """Allows constructing property trees using with: chains."""
+    def __init__(self, builder: _Builder, name: str):
+        self._builder = builder
+        self._name = name
+
+    def __call__(self, value: str) -> Property:
+        """Add a key-value pair."""
+        prop = Property(self._name, value)
+        self._builder._parents[-1].append(prop)
+        return prop
+
+    def __enter__(self) -> Property:
+        """Start a property block."""
+        prop = Property(self._name, [])
+        self._builder._parents[-1].append(prop)
+        self._builder._parents.append(prop)
+        return prop
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self._builder._parents.pop()

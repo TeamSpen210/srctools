@@ -225,6 +225,49 @@ def test_parse(py_c_token):
 
     # Check export roundtrips.
     assert_tree(Property.parse(parse_result.export()), parse_result)
+    
+def test_build():
+    """Test the .build() constructor."""
+    prop = Property(None, [])
+
+    with prop.build() as b:
+        with b.Root1:
+            b.Key("Value")
+            b.Extra("Spaces")
+            with b.Block:
+                with b.Empty:
+                    pass
+            with b.Block:
+                with b.bare:
+                    b.block('he\tre')
+        with b.Root2:
+            b['Name with " in it']('Value with \" inside')
+            b.multiline(
+              'text\n\tcan continue\nfor many "lines" of\n  possibly '
+              'indented\n\ntext'
+            )
+            # Note invalid = unchanged.
+            b.Escapes('\t \n \\d')
+            with b.Oneliner:
+                b.name('value')
+        
+        with b.CommentChecks:
+            b['after ']('value')
+            b.Flag('allowed')
+            b.FlagAllows('This')
+            b.Replaced('toreplace')
+            b.Replaced('alsothis')
+            b.Replaced('toreplace')
+            b.Replaced('alsothis')
+            with b.Replaced:
+                b.lambda_('should')
+                b.replace('above')
+            with b.Replaced:
+                b['lambda']('should')
+                b.replace('above')
+
+    assert_tree(parse_result, prop)
+    
 
 def test_parse_fails(py_c_token):
     """Test various forms of invalid syntax to ensure they indeed fail."""
