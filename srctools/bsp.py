@@ -584,9 +584,10 @@ class Lump:
 
     def __repr__(self):
         return (
-            'Lump({s.type}, {s.offset}, '
-            '{s.length}, {s.version}, {s.ident})'.format(
-                s=self
+            'Lump({s.type}, offset={s.offset}, '
+            'length={s.length}, version={s.version}, ident={ident})'.format(
+                s=self,
+                ident=bytes(self.ident),
             )
         )
 
