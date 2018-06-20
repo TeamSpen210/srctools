@@ -11,7 +11,8 @@ from typing import Type
 Vec = ...  # type: Type[srctools.Vec]
 
 VALID_NUMS = [
-    1, 1.5, 0.2827, 2346.45,
+    # 10e38 is the max single value, make sure we use double-precision.
+    1, 1.5, 0.2827, 2.3464545636e47,
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
