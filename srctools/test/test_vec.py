@@ -250,7 +250,7 @@ def test_vec_to_vec(py_c_vec):
     ]
 
     def test(x1, y1, z1, x2, y2, z2):
-        """Check a Vec pair for the operations."""
+        """Check a Vec pair for addition and subtraction."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
 
@@ -381,6 +381,62 @@ def test_scalar_zero(py_c_vec):
         with raises_zero_div: vec /= 0.0
         with raises_zero_div: vec //= 0.0
         with raises_zero_div: vec %= 0.0
+
+
+def test_divmod_vec_scalar(py_c_vec):
+    """Test divmod(vec, scalar)."""
+    for x, y, z in iter_vec(VALID_ZERONUMS):
+        for num in VALID_NUMS:
+            div, mod = divmod(Vec(x, y, z), num)
+            assert_vec(div, x // num, y // num, z // num)
+            assert_vec(mod, x % num, y % num, z % num)
+
+
+def test_divmod_scalar_vec(py_c_vec):
+    """Test divmod(scalar, vec)."""
+    for x, y, z in iter_vec(VALID_NUMS):
+        for num in VALID_ZERONUMS:
+            div, mod = divmod(num, Vec(x, y, z))
+            assert_vec(div, num // x, num // y, num // z)
+            assert_vec(mod, num % x, num % y, num % z)
+
+
+def test_vector_mult_fail(py_c_vec):
+    """Test *, /, //, %, divmod always fails between vectors."""
+    funcs = [
+        ('*', op.mul),
+        ('/', op.truediv),
+        ('//', op.floordiv),
+        ('%', op.mod),
+        ('*=', op.imul),
+        ('/=', op.itruediv),
+        ('//=', op.ifloordiv),
+        ('%=', op.imod),
+        ('divmod', divmod),
+    ]
+    for name, func in funcs:
+        raises = pytest.raises(
+            TypeError,
+            message='Expected TypError from vec {} vec'.format(name),
+        )
+        for num in VALID_ZERONUMS:
+            for num2 in VALID_NUMS:
+                # Test the whole value, then each axis individually
+                with raises:
+                    divmod(Vec(num, num, num), Vec(num2, num2, num2))
+
+                with raises:
+                    divmod(Vec(0, num, num), Vec(num2, num2, num2))
+                with raises:
+                    divmod(Vec(num, 0, num), Vec(num2, num2, num2))
+                with raises:
+                    divmod(Vec(num, num, 0), Vec(num2, num2, num2))
+                with raises:
+                    divmod(Vec(num, num, num), Vec(0, num2, num2))
+                with raises:
+                    divmod(Vec(num, num, num), Vec(num2, 0, num2))
+                with raises:
+                    divmod(Vec(num, num, num), Vec(num2, num2, 0))
 
 
 def test_order(py_c_vec):
