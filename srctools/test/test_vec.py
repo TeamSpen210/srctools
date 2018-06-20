@@ -44,12 +44,13 @@ def assert_vec(vec, x, y, z, msg=''):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    # Ignore slight variations
-    if not vec.x == pytest.approx(x):
+    assert type(vec).__name__ == 'Vec'
+
+    if not math.isclose(vec.x, x):
         failed = 'x'
-    elif not vec.y == pytest.approx(y):
+    elif not math.isclose(vec.y, y):
         failed = 'y'
-    elif not vec.z == pytest.approx(z):
+    elif not math.isclose(vec.z, z):
         failed = 'z'
     else:
         # Success!
