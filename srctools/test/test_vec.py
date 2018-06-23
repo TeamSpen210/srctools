@@ -77,8 +77,16 @@ def test_construction(py_c_vec):
         assert_vec(Vec([x]), x, 0, 0)
         assert_vec(Vec([x, y]), x, y, 0)
         assert_vec(Vec([x, y, z]), x, y, z)
-        # Check copying keeps the same values..
-        assert_vec(Vec(x, y, z).copy(), x, y, z)
+
+        # Test this does nothing (except copy).
+        v = Vec(x, y, z)
+        v2 = Vec(v)
+        assert_vec(v2, x, y, z)
+        assert v is not v2
+
+        v3 = Vec.copy(v)
+        assert_vec(v3, x, y, z)
+        assert v is not v3
 
         # Test Vec.from_str()
         assert_vec(Vec.from_str('{} {} {}'.format(x, y, z)), x, y, z)
@@ -584,7 +592,8 @@ def test_getitem(py_c_vec):
     assert vec['z'] == c
 
     for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with raises_keyerror: vec[invalid]
+        with raises_keyerror:
+            vec[invalid]
 
 
 def test_setitem(py_c_vec):
