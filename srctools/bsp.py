@@ -193,6 +193,10 @@ class BSP:
 
     def get_lump(self, lump: Union[BSP_LUMPS, 'Lump']):
         """Read a lump from the BSP."""
+        if not self.lumps:
+            # Read in the lumps if not already read.
+            self.read_header()
+
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
         with open(self.filename, 'rb') as file:
@@ -287,6 +291,10 @@ class BSP:
 
     def get_game_lump(self, lump_id: bytes) -> bytes:
         """Get a given game-lump, given the 4-character byte ID."""
+        if not self.game_lumps:
+            # Read in the lumps if not already read.
+            self.read_game_lumps()
+
         try:
             flags, version, file_off, file_len = self.game_lumps[lump_id]
         except KeyError:
