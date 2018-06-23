@@ -149,9 +149,12 @@ class PackList:
         filename: str,
         data_type: FileType=FileType.GENERIC,
         data: bytes=None,
-    ):
+    ) -> None:
         """Queue the given file to be packed.
-        If data is set, this file will use the given data.
+
+        If data is set, this file will use the given data instead of any
+        on-disk data. The data_type parameter allows specifying the kind of
+        file, which ensures it can be treated appropriately.
         """
         filename = os.fspath(filename)
 
@@ -565,6 +568,7 @@ class PackList:
                     with sys_file.open_bin() as f:
                         zip_file.writestr(file.filename, f.read())
 
+
     def eval_dependencies(self):
         """Add files to the list which need to also be packed.
 
@@ -575,6 +579,7 @@ class PackList:
         with self.fsys:
             while todo:
                 todo = False
+
                 for file in list(self._files.values()):
                     if file._analysed:
                         continue
@@ -588,11 +593,13 @@ class PackList:
                         todo = True
                     elif file.type is FileType.TEXTURE:
                         # Try packing the '.hdr.vtf' file as well if present.
-                        todo = True
-                        self.pack_file(
-                            file.filename[:-3] + 'hdr.vtf',
-                            FileType.OPTIONAL
-                        )
+                        # But don't recurse!
+                        if not file.filename.endswith('.hdr.vtf'):
+                            self.pack_file(
+                                file.filename[:-3] + 'hdr.vtf',
+                                FileType.OPTIONAL
+                            )
+                            todo = True
 
     def _get_model_files(self, file: PackFile):
         """Find any needed files for a model."""
