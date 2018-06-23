@@ -182,7 +182,7 @@ class PackList:
         try:
             file = self._files[path]
         except KeyError:
-            pass
+            pass  # We need to make it.
         else:
             # It's already here, is that OK?
 
@@ -190,12 +190,12 @@ class PackList:
             if file.data is None:
                 if data is not None:
                     file.data = data
-                # else: no data on either
+                # else: no data on either, that's fine.
             elif data == file.data:
                 pass  # Overrode with the same data, that's fine
-            elif file.data:
+            elif data:
                 raise ValueError('"{}": two different data streams!'.format(filename))
-            # else: we have an override, but asked to just pack.
+            # else: we had an override, but asked to just pack now. That's fine.
 
             if file.type is data_type:
                 # Same, no problems - just packing on top.
@@ -204,16 +204,16 @@ class PackList:
             if file.type is FileType.GENERIC:
                 file.type = data_type  # This is fine, we now know it has behaviour...
             elif data_type is FileType.GENERIC:
-                return  # If we know it has behaviour, that trumps generic.
-
-            if data_type is FileType.WHITELIST:
+                pass  # If we know it has behaviour already, that trumps generic.
+            elif data_type is FileType.WHITELIST:
                 file.type = data_type  # Blindly believe this.
-
-            raise ValueError('"{}": {} can\'t become a {}!'.format(
-                filename,
-                file.type.name,
-                data_type.name,
-            ))
+            else:
+                raise ValueError('"{}": {} can\'t become a {}!'.format(
+                    filename,
+                    file.type.name,
+                    data_type.name,
+                ))
+            return # Don't re-add this.
 
         start, ext = os.path.splitext(path)
 
