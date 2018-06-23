@@ -6,21 +6,11 @@ LOGGER = init_logging('srctools/vrad.log')
 
 import sys
 import os
-from lzma import LZMAFile
-from pkg_resources import resource_stream
 
 from srctools.bsp import BSP, BSP_LUMPS
 from srctools.bsp_transform import run_transformations
-from srctools import FGD
 from srctools.game import find_gameinfo
-from srctools.packlist import PackList
-
-
-def load_fgd() -> FGD:
-    """Extract the local copy of FGD data."""
-    # Pull the FGD file we included out, so we don't rely on a local one.
-    with LZMAFile(resource_stream('srctools', 'fgd.lzma')) as f:
-        return FGD.unserialise(f)
+from srctools.packlist import PackList, load_fgd
 
 
 def main(argv):

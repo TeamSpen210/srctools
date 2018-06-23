@@ -3,9 +3,10 @@ from collections import OrderedDict
 from typing import Iterable, Dict, Tuple, List
 from enum import Enum
 from zipfile import ZipFile
-import os.path
+import os
 
-from srctools import VMF, Property
+from srctools.property_parser import Property
+from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
 from srctools.bsp import BSP
 from srctools.filesys import FileSystem, VPKFileSystem, FileSystemChain, File
@@ -57,6 +58,18 @@ INJECT_FORMAT = "{}/INJECT_{:X}.{ext}"
 
 # noinspection PyProtectedMember
 from srctools._class_resources import CLASS_RESOURCES
+
+
+def load_fgd() -> FGD:
+    """Extract the local copy of FGD data.
+
+    This allows the analysis to not depend on local files.
+    """
+    # Import these here, so the overall package doesn't require them.
+    from pkg_resources import resource_stream
+    from lzma import LZMAFile
+    with LZMAFile(resource_stream('srctools', 'fgd.lzma')) as f:
+        return FGD.unserialise(f)
 
 
 class PackFile:
