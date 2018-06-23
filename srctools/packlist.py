@@ -162,7 +162,15 @@ class PackList:
 
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
-            return
+            return  # This packs the soundscript and wav for us.
+
+        # If soundscript data is provided, load it and force-include it.
+        elif data_type is FileType.SOUNDSCRIPT and data:
+            self._parse_soundscript(
+                Property.parse(data.decode('utf8'), filename),
+                filename,
+                always_include=True,
+            )
 
         if data_type is FileType.MATERIAL or filename.endswith('.vmt'):
             data_type = FileType.MATERIAL
@@ -276,27 +284,46 @@ class PackList:
         for raw_file in sound:
             self.pack_file('sound/' + raw_file)
 
-    def load_soundscript(self, file: File, *, always_include: bool=False):
+    def load_soundscript(
+        self,
+        file: File,
+        *,
+        always_include: bool=False,
+    ) -> Iterable[str]:
+        """Read in a soundscript and record which files use it.
+
+        If always_include is True, it will be included in the manifests even
+        if it isn't used.
+
+        The sounds registered by this soundscript are returned.
+        """
+        with file.sys, file.open_str() as f:
+            props = Property.parse(f, file.path)
+        return self._parse_soundscript(props, file.path, always_include)
+
+    def _parse_soundscript(
+        self,
+        props: Property,
+        path: str,
+        always_include: bool = False,
+    ) -> Iterable[str]:
         """Read in a soundscript and record which files use it.
 
         If always_include is True, it will be included in the manifests even
         if it isn't used.
         """
-        with file.sys, file.open_str() as f:
-            props = Property.parse(f, file.path)
-
-        if always_include or file.path not in self.soundscript_files:
-            self.soundscript_files[file.path] = always_include
+        if always_include or path not in self.soundscript_files:
+            self.soundscript_files[path] = always_include
 
         scripts = Sound.parse(props)
 
         for name, sound in scripts.items():
-            self.soundscripts[name] = file.path, [
+            self.soundscripts[name] = path, [
                 snd.lstrip('*@#<>^)}$!?').replace('\\', '/')
                 for snd in sound.sounds
             ]
 
-        return scripts.keys()
+        return list(scripts.keys())
 
     def load_soundscript_manifest(self, cache_file: str=None):
         """Read the soundscript manifest, and read all mentioned scripts.
