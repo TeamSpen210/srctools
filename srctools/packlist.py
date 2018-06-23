@@ -336,7 +336,7 @@ class PackList:
         except FileNotFoundError:
             return
 
-        cache_data = {}  # type: Dict[str, Property]
+        cache_data = {}  # type: Dict[str, Tuple[int, Property]]
         if cache_file is not None:
             try:
                 f = open(cache_file)
@@ -421,7 +421,7 @@ class PackList:
 
         buf = bytearray()
         for line in manifest.export():
-            buf.append(line.encode('utf8'))
+            buf.extend(line.encode('utf8'))
 
         self.pack_file(
             'map/{}_level_sounds.txt'.format(map_name)
