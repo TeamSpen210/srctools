@@ -425,7 +425,7 @@ class VMF:
     def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
     @overload
     def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False) -> None:
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False) -> str:
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -1770,9 +1770,24 @@ class Entity:
         self.map.remove_ent(self)
 
     def make_unique(self) -> 'Entity':
-        """Append our entity ID to the targetname, so it is uniquely-named.
-        """
-        self['targetname'] += str(self.id)
+        """Ensure this entity is uniquely named, by adding a numeric suffix."""
+        orig_name = self['targetname']
+
+        self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        
+        base_name = orig_name.rstrip('0123456789')
+
+        if self.map.by_target[orig_name]:
+            # Check every index in order.
+            for i in itertools.count(start=1):
+                name = base_name + str(i)
+                if not self.map.by_target[name]:
+                    self['targetname'] = name
+                    break
+        else:
+            # The base name is free!
+            self['targetname'] = base_name
+
         return self
 
     def __str__(self) -> str:
