@@ -51,7 +51,7 @@ def main(argv):
     vmf = bsp_file.read_ent_data()
     LOGGER.info('Done!')
 
-    run_transformations(vmf, fsys)
+    run_transformations(vmf, fsys, packlist)
 
     bsp_file.replace_lump(
         bsp_file.filename,
