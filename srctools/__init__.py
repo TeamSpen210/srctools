@@ -1,7 +1,10 @@
+import itertools as _itertools
 import os as _os
 import string as _string
 from collections import abc as _abc
-from typing import Union as _Union, Optional as _Optional
+from typing import Union as _Union, Type as _Type
+from types import TracebackType as _TracebackType
+
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
@@ -238,22 +241,23 @@ class AtomicWriter:
     """Atomically overwrite a file.
 
     Use as a context manager - the returned temporary file
-    should be written to. When cleanly exiting, the file will be transfered.
+    should be written to. When cleanly exiting, the file will be transferred.
     If an exception occurs in the body, the temporary data will be discarded.
 
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename, is_bytes=False):
+    def __init__(self, filename: str, is_bytes: bool=False) -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
         self.filename = filename
         self.dir = _os.path.dirname(filename)
+        self._temp_name = None
         self.is_bytes = is_bytes
         self.temp = None
 
-    def make_tempfile(self):
+    def make_tempfile(self) -> None:
         """Create the temporary file object."""
         if self.temp is not None:
             # Already open - close and delete the current file.
@@ -263,17 +267,28 @@ class AtomicWriter:
         # Create folders if needed..
         _os.makedirs(self.dir, exist_ok=True)
 
-        self.temp = open(
-            self.filename,
-            'wb' if self.is_bytes else 'wt',
-        )
+        for i in _itertools.count(start=1):
+            self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
+            try:
+                self.temp = open(
+                    self._temp_name,
+                    'xb' if self.is_bytes else 'xt',
+                )
+                break
+            except FileExistsError:
+                pass
 
     def __enter__(self):
         """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
         return self.temp.__enter__()
 
-    def __exit__(self, exc_type, exc_value, tback):
+    def __exit__(
+        self,
+        exc_type: _Type[BaseException],
+        exc_value: BaseException,
+        tback: _TracebackType,
+    ) -> bool:
         # Pass to tempfile, which also closes().
         temp_path = self.temp.name
         self.temp.__exit__(exc_type, exc_value, tback)
@@ -281,12 +296,12 @@ class AtomicWriter:
         if exc_type is not None:
             # An exception occurred, clean up.
             try:
-                _os.remove(temp_path)
+                _os.remove(self._temp_name)
             except FileNotFoundError:
                 pass
         else:
             # No exception, commit changes
-            _os.replace(temp_path, self.filename)
+            _os.replace(self._temp_name, self.filename)
 
         return False  # Don't cancel the exception.
 
