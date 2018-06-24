@@ -13,20 +13,26 @@ __all__ = ['CLASS_RESOURCES']
 # List them here - classname -> [(file, type), ...]
 # Alternatively it's a function to call with the entity to do class-specific
 # behaviour, yielding files to pack.
-_cls_res_type = Dict[str, Union[
-    List[Union[str, Tuple[str, FileType]]],
-    Callable[[Entity], Iterator[str]],
-]]
 
+ClassFunc = Callable[[Entity], Iterator[str]]
+_cls_res_type: Dict[str, List[Union[
+    str,
+    Tuple[str, FileType],
+    ClassFunc,
+]]]
 CLASS_RESOURCES = {}  # type: _cls_res_type
 
 
-def res(cls, *items):
+def res(cls: str, *items: Union[
+    str,
+    Tuple[str, FileType],
+    ClassFunc,
+]):
     """Add a resource to class_resources."""
     CLASS_RESOURCES[cls] = list(items)
 
 
-def cls_func(func: Callable[[Entity], Iterator[str]]):
+def cls_func(func: ClassFunc) -> ClassFunc:
     """Save a function to do special checks for a classname."""
     CLASS_RESOURCES[func.__name__] = func
     return func
@@ -73,8 +79,10 @@ res('npc_combine_cannon',
     ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
 )
 
+
 @cls_func
 def func_breakable_surf(ent: Entity):
+    """Additional materials required for func_breakable_surf"""
     yield 'models/brokenglass_piece.mdl'
 
     surf_type = conv_int(ent['surfacetype'])
@@ -111,6 +119,7 @@ def func_breakable_surf(ent: Entity):
             'models/brokenglass/glassbroken_03c.mdl',
             'models/brokenglass/glassbroken_03d.mdl',
         )
+
 
 @cls_func
 def move_rope(ent: Entity):
