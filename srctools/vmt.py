@@ -53,6 +53,9 @@ def get_parm_type(name: str) -> VarType:
     # collected - no need to keep it around.
     del sys.modules['srctools._shaderdb']
 
+    # Additional values is missed by the search code.
+    _SHADER_PARAM_TYPES['bottommaterial'] = VarType.MATERIAL
+
     # Redirect this to always call the normal function.
     get_parm_type.__code__ = _get_parm_type_real.__code__
     return _get_parm_type_real(name)
