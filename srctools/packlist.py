@@ -175,13 +175,17 @@ class PackList:
                 always_include=True,
             )
 
-        if data_type is FileType.MATERIAL or filename.endswith('.vmt'):
+        if data_type is FileType.MATERIAL or (
+            data_type is FileType.GENERIC and filename.endswith('.vmt')
+        ):
             data_type = FileType.MATERIAL
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
             if not filename.endswith(('.vmt', '.spr')):
                 filename = filename + '.vmt'
-        elif data_type is FileType.TEXTURE or filename.endswith('.vtf'):
+        elif data_type is FileType.TEXTURE or (
+            data_type is FileType.GENERIC and filename.endswith('.vtf')
+        ):
             data_type = FileType.TEXTURE
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
@@ -224,7 +228,7 @@ class PackList:
                     file.type.name,
                     data_type.name,
                 ))
-            return # Don't re-add this.
+            return  # Don't re-add this.
 
         start, ext = os.path.splitext(path)
 
@@ -568,7 +572,6 @@ class PackList:
                     with sys_file.open_bin() as f:
                         zip_file.writestr(file.filename, f.read())
 
-
     def eval_dependencies(self):
         """Add files to the list which need to also be packed.
 
@@ -610,7 +613,7 @@ class PackList:
         for ext in ['.phy', '.vtx', '.sw.vtx', '.dx80.vtx', '.dx90.vtx']:
             component = filename + ext
             if component in self.fsys:
-                yield self.pack_file(component)
+                self.pack_file(component)
 
         try:
             mdl = Model(self.fsys, self.fsys[file.filename])
@@ -641,7 +644,7 @@ class PackList:
         mat = mat.apply_patches(self.fsys, parent_func=parents.append)
 
         for vmt in parents:
-            yield self.pack_file(vmt, FileType.MATERIAL)
+            self.pack_file(vmt, FileType.MATERIAL)
 
         has_deps = bool(parents)
 
@@ -654,6 +657,13 @@ class PackList:
                 self.pack_file(
                     'materials/' + param_value + '.vtf',
                     FileType.TEXTURE,
+                )
+                has_deps = True
+            # Bottommaterial for water brushes mainly.
+            if param_type is VarType.MATERIAL:
+                self.pack_file(
+                    'materials/' + param_value + '.vmt',
+                    FileType.MATERIAL,
                 )
                 has_deps = True
 
