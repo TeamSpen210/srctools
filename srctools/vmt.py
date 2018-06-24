@@ -17,7 +17,7 @@ class VarType(Enum):
     FLAG = 0
 
     MATERIAL = 'SHADER_PARAM_TYPE_MATERIAL'  # models/blah.vmt
-    STR = 'SHADER_PARAM_TYPE_STRING' # Basic string, nothing special.
+    STR = 'SHADER_PARAM_TYPE_STRING'  # Basic string, nothing special.
     TEXTURE = 'SHADER_PARAM_TYPE_TEXTURE'
 
     INT = 'SHADER_PARAM_TYPE_INTEGER'
@@ -44,16 +44,22 @@ _SHADER_PARAM_TYPES = {}  # type: Dict[str, VarType]
 
 def get_parm_type(name: str) -> VarType:
     """Retrieve the type a parameter has, or raise KeyError."""
-    if not _SHADER_PARAM_TYPES:
-        # Import and load the parameters.
-        from srctools._shaderdb import _shader_db
+    # Import and load the parameters.
+    from srctools._shaderdb import _shader_db
 
-        _shader_db(VarType, _SHADER_PARAM_TYPES)
+    _shader_db(VarType, _SHADER_PARAM_TYPES)
 
-        # Delete the module - that way it'll be garbage
-        # collected - no need to keep it around.
-        del sys.modules['srctools._shaderdb']
+    # Delete the module - that way it'll be garbage
+    # collected - no need to keep it around.
+    del sys.modules['srctools._shaderdb']
 
+    # Redirect this to always call the normal function.
+    get_parm_type.__code__ = _get_parm_type_real.__code__
+    return _get_parm_type_real(name)
+
+
+def _get_parm_type_real(name: str) -> VarType:
+    """Retrieve the type a parameter has, or raise KeyError."""
     return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
 
 
