@@ -635,7 +635,8 @@ class PackList:
         for file in mdl.included_models:
             self.pack_file(file.filename, FileType.MODEL)
 
-        return True  # Have dependencies
+        for snd in mdl.find_sounds():
+            self.pack_file(snd, FileType.GAME_SOUND)
 
     def _get_material_files(self, file: PackFile):
         """Find any needed files for a material."""
