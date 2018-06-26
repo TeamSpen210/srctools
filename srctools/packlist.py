@@ -286,7 +286,9 @@ class PackList:
             LOGGER.warning('Unknown sound "{}"!', sound_name)
             return
 
-        self.pack_file(script_path)
+        # Mark the soundscript as something we need to add to the manifest.
+        self.soundscript_files[script_path] = True
+        self.pack_file(script_path, FileType.SOUNDSCRIPT)
 
         for raw_file in sound:
             self.pack_file('sound/' + raw_file)
