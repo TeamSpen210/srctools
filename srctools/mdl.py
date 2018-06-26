@@ -1,5 +1,5 @@
 """Parses Source models, to extract metadata."""
-from typing import Set, List, BinaryIO, NamedTuple
+from typing import Set, List, BinaryIO, NamedTuple, Iterator, Tuple
 from enum import IntFlag
 
 from srctools.filesys import FileSystem, File
@@ -11,6 +11,26 @@ from struct import unpack, Struct, calcsize
 IncludedMDL = NamedTuple('IncludedMDL', [
     ('label', str),
     ('filename', str),
+])
+
+SeqEvent = NamedTuple('SeqEvent', [
+    ('name', str),
+    ('cycle', float),
+    ('event', int),
+    ('type', int),
+    ('options', str),
+])
+
+MDLSequence = NamedTuple('Sequence', [
+    ('label', str),
+    ('act_name', str),
+    ('flags', int),
+    ('act_weight', int),
+    ('events', List[SeqEvent]),
+    ('bbox_min', Vec),
+    ('bbox_max', Vec),
+    # More after here.
+    ('keyvalues', Property),
 ])
 
 
@@ -89,6 +109,10 @@ def str_readvec(file: BinaryIO) -> Vec:
 
 
 class Model:
+    """Represents parts of Source models.
+
+    This does not parse the animation or geometry data, only other metadata.
+    """
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
         self._file = file
@@ -138,7 +162,6 @@ class Model:
 
         self.flags = Flags(flags)
 
-
         (
             activitylistversion, eventsindexed,
 
@@ -168,7 +191,7 @@ class Model:
             flexrules_count,
             flexrules_index,
          
-            # IK probably referse to inverse kinematics
+            # IK probably refers to inverse kinematics
             # mstudioikchain_t
             ikchain_count,
             ikchain_index,
@@ -270,8 +293,8 @@ class Model:
         
         # Build texture data
         f.seek(texture_offset)
-        self.textures = [None] * texture_count
-        tex_temp = [None] * texture_count
+        self.textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
+        tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
                 f.tell(),
@@ -287,9 +310,8 @@ class Model:
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
-            f.seek(offset + name_offset)
             self.textures[tex_ind] = (
-                read_nullstr(f),
+                read_nullstr(f, offset + name_offset),
                 flags,
                 used,
             )
@@ -312,7 +334,80 @@ class Model:
             # Then return to after that struct - 4 bytes * 2.
             f.seek(pos + 4 * 2)
 
-    def iter_textures(self, skins: Set[int]=None):
+        self.sequences = self._read_sequences(f, sequence_off, sequence_count)
+
+    @staticmethod
+    def _read_sequences(f: BinaryIO, off, count) -> List[MDLSequence]:
+        """Split this off to decrease stack in main parse method."""
+        f.seek(off)
+        sequences = [None] * count  # type: List[MDLSequence]
+        for i in range(count):
+            start_pos = f.tell()
+            (
+                base_ptr,
+                label_pos,
+                act_name_pos,
+                flags,
+                _,  # Seems to be a pointer.
+                act_weight,
+                event_count,
+                event_pos,
+            ) = str_read('8i', f)
+            bbox_min = str_readvec(f)
+            bbox_max = str_readvec(f)
+
+            # Skip 20 ints, 9 floats to get to keyvalues = 29*4 bytes
+            # Then 8 unused ints.
+            (
+                keyvalue_pos,
+                keyvalue_size,
+            ) = str_read('116xii32x', f)
+            end_pos = f.tell()
+
+            f.seek(start_pos + event_pos)
+            events = [None] * event_count  # type: List[SeqEvent]
+            for j in range(event_count):
+                event_start = f.tell()
+                (
+                    event_cycle,
+                    event_event,
+                    event_type,
+                    event_options,
+                    event_index,
+                ) = str_read('fii64si', f)
+                event_end = f.tell()
+                event_name = read_nullstr(f, event_start + event_index)
+                f.seek(event_end)
+                events[j] = SeqEvent(
+                    name=event_name,
+                    cycle=event_cycle,
+                    options=event_options.rstrip(b'\0').decode('ascii'),
+                    type=event_type,
+                    event=event_event,
+                )
+
+            if keyvalue_size == 0:
+                keyvalues = Property('Keyvalues', [])
+            else:
+                keyvalues = Property.parse(read_nullstr(f, start_pos + keyvalue_pos))
+                keyvalues.name = 'Keyvalues'
+
+            sequences[i] = MDLSequence(
+                label=read_nullstr(f, start_pos + label_pos),
+                act_name=read_nullstr(f, start_pos + act_name_pos),
+                flags=flags,
+                act_weight=act_weight,
+                events=events,
+                bbox_min=bbox_min,
+                bbox_max=bbox_max,
+                keyvalues=keyvalues,
+            )
+
+            f.seek(end_pos)
+
+        return sequences
+
+    def iter_textures(self, skins: Set[int]=None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the
@@ -331,3 +426,12 @@ class Model:
                     if full in self._sys:
                         yield full
                         break
+
+    def find_sounds(self) -> Iterator[str]:
+        """Yield all sounds used by animations.
+
+        """
+        for seq in self.sequences:
+            for event in seq.events:
+                if event.name in ('AE_CL_PLAYSOUND', 'CL_EVENT_SOUND'):
+                    yield event.options
