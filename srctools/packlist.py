@@ -530,7 +530,10 @@ class PackList:
         If ignore_vpk is True, files in VPK won't be packed unless that system
         is in allow_filesys.
         """
-        existing_names = set(zip_file.namelist())
+        existing_names = {
+            name.replace('\\', '/')
+            for name in zip_file.namelist()
+        }
 
         all_systems = {
             sys for sys, prefix in
@@ -551,9 +554,12 @@ class PackList:
 
         with self.fsys:
             for file in self._files.values():
+                # Need to ensure / separators.
+                fname = file.filename.replace('\\', '/')
+
                 if file.virtual:
                     # Always pack.
-                    zip_file.writestr(file.filename, file.data)
+                    zip_file.writestr(fname, file.data)
                     continue
 
                 if file.filename in existing_names:
@@ -570,9 +576,9 @@ class PackList:
 
                 if self.fsys.get_system(sys_file) in allowed:
                     with sys_file.open_bin() as f:
-                        zip_file.writestr(file.filename, f.read())
+                        zip_file.writestr(fname, f.read())
 
-    def eval_dependencies(self):
+    def eval_dependencies(self) -> None:
         """Add files to the list which need to also be packed.
 
         This requires parsing through many files.
