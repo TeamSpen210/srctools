@@ -11,11 +11,6 @@ import io
 from types import TracebackType
 from typing import Dict, Tuple, Union, Type, Callable, Any
 
-short_log_format = None  # type: logging.Formatter
-long_log_format = None  # type: logging.Formatter
-stderr_loghandler = None  # type: logging.Handler
-stdout_loghandler = None  # type: logging.Handler
-
 
 class LogMessage:
     """Allow using str.format() in logging messages.
@@ -176,8 +171,6 @@ def init_logging(
     on_error should be a function to call when this is done
     (taking type, value, traceback).
     """
-    global short_log_format, long_log_format
-    global stderr_loghandler, stdout_loghandler
 
     class NewLogRecord(logging.getLogRecordFactory()):
         """Allow passing an alias for log modules."""
