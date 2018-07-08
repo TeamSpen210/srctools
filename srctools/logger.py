@@ -140,6 +140,25 @@ def get_handler(filename: str) -> logging.FileHandler:
         except (FileExistsError, PermissionError):
             pass
 
+
+class NullStream(io.IOBase):
+    """A stream object that discards all data.
+
+    This is needed for multiprocessing, since it tries to flush stdout.
+    That'll fail if it is None.
+    """
+    def __init__(self) -> None:
+        super(NullStream, self).__init__()
+
+    @staticmethod
+    def write(self, args: Any, kwargs: Any) -> None:
+        pass
+
+    @staticmethod
+    def read(*args: Any, **kwargs: Any) -> str:
+        return ''
+
+
 def init_logging(
     filename: str=None,
     main_logger: str='',
@@ -204,21 +223,6 @@ def init_logging(
         err_log_handler.setFormatter(long_log_format)
 
         logger.addHandler(err_log_handler)
-
-    # This is needed for multiprocessing, since it tries to flush stdout.
-    # That'll fail if it is None.
-    class NullStream(io.IOBase):
-        """A stream object that discards all data."""
-        def __init__(self):
-            super(NullStream, self).__init__()
-
-        @staticmethod
-        def write(self, *args, **kwargs):
-            pass
-
-        @staticmethod
-        def read(*args, **kwargs):
-            return ''
 
     if sys.stdout:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
