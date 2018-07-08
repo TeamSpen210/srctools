@@ -34,12 +34,13 @@ class LogMessage:
         self.has_args = bool(kwargs or args)
 
     def format_msg(self) -> str:
+        """Format using str.format."""
         # Only format if we have arguments!
         # That way { or } can be used in regular messages.
         if self.has_args:
             f = self.fmt = str(self.fmt).format(*self.args, **self.kwargs)
 
-            # Don't repeat the formatting
+            # Don't repeat the formatting, and don't keep refs to the args.
             del self.args, self.kwargs
             self.has_args = False
             return f
@@ -99,6 +100,10 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
                 stack_info=stack_info,
                 extra={'alias': self.alias},
             )
+
+    def __getattr__(self, attr: str) -> Any:
+        """Delegate unknown methods to the logger."""
+        return getattr(self.logger, attr)
 
 
 def get_handler(filename: str) -> logging.FileHandler:
