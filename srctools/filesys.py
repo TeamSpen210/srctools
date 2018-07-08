@@ -5,13 +5,13 @@ Files are case-insensitive, and both slashes are converted to '/'.
 """
 from zipfile import ZipFile, ZipInfo
 import io
-import os.path
+import os
 
 from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
 from typing import (
-    Optional, Union, Iterator,
+    Union, Iterator,
     List, Tuple, Dict,
     TextIO, BinaryIO,
 )
@@ -54,7 +54,7 @@ class File:
         self.path = path
         self._data = path if data is None else data
 
-    def __fspath__(self):
+    def __fspath__(self) -> str:
         """This can be interpreted as a path."""
         return self.path
 
@@ -87,13 +87,13 @@ class FileSystem:
         self._ref = None
         self._ref_count = 0
 
-    def open_ref(self):
+    def open_ref(self) -> None:
         """Lock open a reference to this system."""
         self._ref_count += 1
         if self._ref is None:
             self._create_ref()
 
-    def close_ref(self):
+    def close_ref(self) -> None:
         """Reverse self.open_ref() - must be done in pairs."""
         self._ref_count -= 1
         if self._ref_count < 0:
@@ -112,7 +112,7 @@ class FileSystem:
                 self.path + ':' + path,
             )
 
-    def _check_open(self):
+    def _check_open(self) -> None:
         """Ensure self._ref is valid."""
         if self._ref is None:
             raise ValueError('The filesystem must have a valid reference!')
@@ -123,10 +123,10 @@ class FileSystem:
             return NotImplemented  # If both ours -> False
         return os.path.normpath(self.path) == os.path.normpath(other.path)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(type(self).__name__ + os.path.normpath(self.path))
 
-    def __enter__(self):
+    def __enter__(self) -> 'FileSystem':
         """Temporarily get access to the system's reference.
 
         This makes it more efficient to access files.
@@ -134,16 +134,16 @@ class FileSystem:
         self.open_ref()
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self.close_ref()
 
     def __iter__(self) -> Iterator[File]:
         return self.walk_folder('')
 
-    def __getitem__(self, name: str):
+    def __getitem__(self, name: str) -> File:
         return self._get_file(name)
 
-    def __contains__(self, name: str):
+    def __contains__(self, name: str) -> bool:
         return self._file_exists(name)
 
     def _file_exists(self, name: str) -> bool:
