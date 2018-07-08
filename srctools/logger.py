@@ -3,9 +3,13 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
+import itertools
 import logging
+import os
+import sys
+import io
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Optional
+from typing import Dict, Tuple, Union, Type, Callable, Any
 
 short_log_format = None  # type: logging.Formatter
 long_log_format = None  # type: logging.Formatter
@@ -97,6 +101,45 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
             )
 
 
+def get_handler(filename: str) -> logging.FileHandler:
+    """Cycle log files, then give the required file handler."""
+    name, ext = os.path.splitext(filename)
+
+    suffixes = ('.5', '.4', '.3', '.2', '.1', '')
+
+    try:
+        # Remove the oldest one.
+        try:
+            os.remove(name + suffixes[0] + ext)
+        except FileNotFoundError:
+            pass
+
+        # Go in reverse, moving each file over to give us space.
+        for frm, to in zip(suffixes[1:], suffixes):
+            try:
+                os.rename(name + frm + ext, name + to + ext)
+            except FileNotFoundError:
+                pass
+
+        try:
+            return logging.FileHandler(filename, mode='x')
+        except FileExistsError:
+            pass
+    except PermissionError:
+        pass
+
+    # On windows, we can't touch files opened by other programs (ourselves).
+    # If another copy of us is open, it'll hold access.
+    # In that case, just keep trying suffixes until we find an empty file.
+    for ind in itertools.count(start=1):
+        try:
+            return logging.FileHandler(
+                '{}.{}{}'.format(name, ind, ext),
+                mode='x',
+            )
+        except (FileExistsError, PermissionError):
+            pass
+
 def init_logging(
     filename: str=None,
     main_logger: str='',
@@ -111,9 +154,6 @@ def init_logging(
     """
     global short_log_format, long_log_format
     global stderr_loghandler, stdout_loghandler
-    import logging
-    from logging import handlers
-    import sys, io, os
 
     class NewLogRecord(logging.getLogRecordFactory()):
         """Allow passing an alias for log modules."""
@@ -151,21 +191,15 @@ def init_logging(
         os.makedirs(os.path.dirname(filename), exist_ok=True)
 
         # The log contains DEBUG and above logs.
-        # We rotate through logs of 500kb each, so it doesn't increase too much.
-        log_handler = handlers.RotatingFileHandler(
-            filename,
-            maxBytes=500 * 1024,
-            backupCount=1,
-        )
+        log_handler = get_handler(filename)
         log_handler.setLevel(logging.DEBUG)
         log_handler.setFormatter(long_log_format)
         logger.addHandler(log_handler)
 
-        err_log_handler = handlers.RotatingFileHandler(
-            filename[:-3] + 'error.' + filename[-3:],
-            maxBytes=500 * 1024,
-            backupCount=1,
-        )
+        name, ext = os.path.splitext(filename)
+
+        # The .error log has copies of WARNING and above.
+        err_log_handler = get_handler(name + '.error' + ext)
         err_log_handler.setLevel(logging.WARNING)
         err_log_handler.setFormatter(long_log_format)
 
