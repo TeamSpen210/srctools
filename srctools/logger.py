@@ -199,7 +199,7 @@ def init_logging(
     # Console messages, etc.
     short_log_format = logging.Formatter(
         # One letter for level name
-        '[{levelname[0]}] {module}: {message}',
+        '[{levelname[0]}] {module}.{funcName}(): {message}',
         style='{',
     )
 
@@ -225,7 +225,7 @@ def init_logging(
     if sys.stdout:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
         stdout_loghandler.setLevel(logging.INFO)
-        stdout_loghandler.setFormatter(long_log_format)
+        stdout_loghandler.setFormatter(short_log_format)
         logger.addHandler(stdout_loghandler)
 
         if sys.stderr:
@@ -242,7 +242,7 @@ def init_logging(
     if sys.stderr:
         stderr_loghandler = logging.StreamHandler(sys.stderr)
         stderr_loghandler.setLevel(logging.WARNING)
-        stderr_loghandler.setFormatter(long_log_format)
+        stderr_loghandler.setFormatter(short_log_format)
         logger.addHandler(stderr_loghandler)
     else:
         sys.stderr = NullStream()
