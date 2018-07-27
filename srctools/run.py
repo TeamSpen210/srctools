@@ -1,4 +1,7 @@
 """Code for running VBSP and VRAD."""
+import io
+from typing import List
+
 import os.path
 import sys
 import subprocess
@@ -24,24 +27,65 @@ def get_compiler_name(program: str):
         name = program + '_osx_original'
     else:
         name = program + '_linux_original'
-    return quote(os.path.abspath(name))
+    return os.path.abspath(name)
 
 
-def run_vrad(args):
-    """Execute the original VRAD."""
+def run_compiler(
+    name: str,
+    args: List[str],
+    logger: logging.Logger,
+) -> int:
+    """
+    Execute the original vbsp, vvis or vrad.
 
-    joined_args = get_compiler_name('vrad') + ' ' + ' '.join(map(quote, args))
+    The provided logger will be given the output from the compiler.
+    The process exit code is returned.
+    """
+    logger.info("Calling original {}...", name.upper())
+    logger.info('Args: {}', ', '.join(map(repr, args)))
 
-    LOGGER.info("Calling original VRAD...")
-    LOGGER.info('Args: {}', joined_args)
+    buf_out = bytearray()
+    buf_err = bytearray()
 
-    code = subprocess.call(
-        joined_args,
-        shell=True,
-    )
-    if code == 0:
-        LOGGER.info("Done!")
-    else:
-        LOGGER.warning("VRAD failed! (" + str(code) + ")")
-        logging.shutdown()
-        sys.exit(code)
+    comp_name = get_compiler_name(name)
+
+    with subprocess.Popen(
+        args=[comp_name] + args,
+        executable=comp_name,
+        universal_newlines=False,
+        bufsize=0,  # No buffering at all.
+        stdin=subprocess.DEVNULL,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+    ) as proc:
+        # Loop reading data from the subprocess, until it's dead.
+        stdout = proc.stdout  # type: io.FileIO
+        stderr = proc.stderr  # type: io.FileIO
+        while proc.poll() is None:  # Loop until dead.
+            buf_out.extend(stdout.read(64))
+            buf_err.extend(stderr.read(64))
+
+            if b'\r' in buf_err:
+                buf_err = buf_err.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+            if b'\r' in buf_out:
+                buf_out = buf_out.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
+
+            try:
+                newline_off = buf_err.index(b'\n')
+            except ValueError:
+                pass
+            else:
+                # Discard any invalid ASCII - we don't really care.
+                logger.error(buf_err[:newline_off].decode('ascii', 'ignore'))
+                buf_err = buf_err[newline_off+1:]
+
+            try:
+                newline_off = buf_out.index(b'\n')
+            except ValueError:
+                pass
+            else:
+                # Discard any invalid ASCII - we don't really care.
+                logger.info(buf_out[:newline_off].decode('ascii', 'ignore'))
+                buf_out = buf_out[newline_off+1:]
+
+    return proc.returncode
