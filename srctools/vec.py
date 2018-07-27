@@ -587,17 +587,14 @@ class Vec(Iterable[float]):
 
     def __rdivmod__(self, other: float) -> Tuple['Vec', 'Vec']:
         """Divide a scalar by a vector, returning the result and remainder."""
-        if isinstance(other, Vec):
+        try:
+            x1, x2 = divmod(other, self.x)
+            y1, y2 = divmod(other, self.y)
+            z1, z2 = divmod(other, self.z)
+        except (TypeError, ValueError):
             return NotImplemented
         else:
-            try:
-                x1, x2 = divmod(other, self.x)
-                y1, y2 = divmod(other, self.y)
-                z1, z2 = divmod(other, self.z)
-            except (TypeError, ValueError):
-                return NotImplemented
-            else:
-                return Vec(x1, y1, z1), Vec(x2, y2, z2)
+            return Vec(x1, y1, z1), Vec(x2, y2, z2)
 
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
