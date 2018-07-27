@@ -1543,7 +1543,7 @@ class Entity:
             k: str(int(v) if isinstance(v, bool) else v)
             for k, v in
             keys.items()
-        }
+        }  # type: Dict[str, str]
         self.fixup = EntityFixup(fixup)
         self.outputs = outputs or []  # type: List[Output]
         self.solids = solids or []  # type: List[Solid]
