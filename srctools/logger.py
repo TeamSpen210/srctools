@@ -88,7 +88,7 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
             self.logger._log(
                 level,
                 LogMessage(msg, args, kwargs),
-                (), # No positional arguments, we do the formatting through
+                (),  # No positional arguments, we do the formatting through
                 # LogMessage..
                 # Pull these two arguments out of kwargs, so they can be set..
                 exc_info=exc_info,
@@ -162,14 +162,18 @@ class NullStream(io.IOBase):
 def init_logging(
     filename: str=None,
     main_logger: str='',
-    on_error: Optional[Callable[[Type[BaseException], BaseException, TracebackType], None]]=None,
+    on_error: Callable[
+        [Type[BaseException], BaseException, TracebackType],
+        None,
+    ]=None,
 ) -> logging.Logger:
     """Setup the logger and logging handlers.
 
     If filename is set, all logs will be written to this file as well.
     This also sets sys.except_hook, so uncaught exceptions are captured.
-    on_error should be a function to call when this is done
+    on_error should be a function to call when uncaught exceptions are thrown.
     (taking type, value, traceback).
+    If the exception is a BaseException, the app will quit silently.
     """
 
     class NewLogRecord(logging.getLogRecordFactory()):
@@ -251,7 +255,11 @@ def init_logging(
     # logging system.
     old_except_handler = sys.excepthook
 
-    def except_handler(exc_type, exc_value, exc_tb):
+    def except_handler(
+        exc_type: Type[BaseException],
+        exc_value: BaseException,
+        exc_tb: TracebackType,
+    ) -> None:
         """Log uncaught exceptions."""
         if not issubclass(exc_type, Exception):
             # It's subclassing BaseException (KeyboardInterrupt, SystemExit),

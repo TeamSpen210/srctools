@@ -1,6 +1,6 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from collections import OrderedDict
-from typing import Iterable, Dict, Tuple, List
+from typing import Iterable, Dict, Tuple, List, Iterator
 from enum import Enum
 from zipfile import ZipFile
 import os
@@ -92,9 +92,10 @@ class PackFile:
 
     @property
     def virtual(self) -> bool:
+        """Virtual files do not exist on the file system."""
         return self.data is not None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         text = '<{}{} Packfile "{}"'.format(
             'virtual ' if self.virtual else '',
             self.type.name,
@@ -131,17 +132,17 @@ class PackList:
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
 
-    def __getitem__(self, path: str):
+    def __getitem__(self, path: str) -> PackFile:
         """Look up a packfile by filename."""
         return self._files[unify_path(path)]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._files)
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[PackFile]:
         return iter(self._files.values())
 
-    def __contains__(self, path):
+    def __contains__(self, path: str) -> bool:
         return unify_path(path) in self._files
 
     def pack_file(
@@ -334,7 +335,7 @@ class PackList:
 
         return list(scripts.keys())
 
-    def load_soundscript_manifest(self, cache_file: str=None):
+    def load_soundscript_manifest(self, cache_file: str=None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -414,7 +415,7 @@ class PackList:
                 for line in new_cache_data.export():
                     f.write(line)
 
-    def write_manifest(self, map_name: str=None):
+    def write_manifest(self, map_name: str=None) -> None:
         """Produce and pack a manifest file for this map.
 
         If map_name is provided, the script in the custom content position
@@ -440,7 +441,7 @@ class PackList:
             bytes(buf),
         )
 
-    def pack_from_bsp(self, bsp: BSP):
+    def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
         for static_prop in bsp.static_prop_models():
             self.pack_file(static_prop, FileType.MODEL)
@@ -448,7 +449,7 @@ class PackList:
         for mat in bsp.read_texture_names():
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
-    def pack_fgd(self, vmf: VMF, fgd: FGD):
+    def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
         for ent in vmf.entities:
             classname = ent['classname']
@@ -524,7 +525,7 @@ class PackList:
         whitelist: Iterable[FileSystem]=(),
         blacklist: Iterable[FileSystem]=(),
         ignore_vpk=True,
-    ):
+    ) -> None:
         """Pack all our files into the given zipfile.
 
         The filesys is used to find files to pack.

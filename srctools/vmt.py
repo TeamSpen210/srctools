@@ -1,5 +1,8 @@
 """Parses material files."""
-from typing import Iterable, List, Dict, Union, Callable, Optional
+from typing import (
+    Iterable, List, Dict, Union, Callable, Optional, Iterator,
+    Tuple,
+)
 
 import sys
 from enum import Enum
@@ -312,7 +315,7 @@ class Material:
             ]
         )
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, VarType, str]]:
         for name, value in self._params.items():
             if isinstance(value, Property):
                 continue
