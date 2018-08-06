@@ -13,9 +13,15 @@ from srctools.filesys import FileSystem, VPKFileSystem, FileSystemChain, File
 from srctools.mdl import Model
 from srctools.vmt import Material, VarType
 from srctools.sndscript import Sound
-from srctools.logger import get_logger
+import srctools.logger
 
-LOGGER = get_logger(__name__)
+LOGGER = srctools.logger.get_logger(__name__)
+
+try:
+    from importlib.resources import open_binary
+except ImportError:
+    # Backport module for before Python 3.7
+    from importlib_resources import open_binary
 
 
 class FileType(Enum):
@@ -65,10 +71,9 @@ def load_fgd() -> FGD:
 
     This allows the analysis to not depend on local files.
     """
-    # Import these here, so the overall package doesn't require them.
-    from pkg_resources import resource_stream
+
     from lzma import LZMAFile
-    with LZMAFile(resource_stream('srctools', 'fgd.lzma')) as f:
+    with LZMAFile(open_binary(srctools, 'fgd.lzma')) as f:
         return FGD.unserialise(f)
 
 
@@ -645,7 +650,7 @@ class PackList:
         parents = []
         try:
             with self.fsys, self.fsys.open_str(file.filename) as f:
-                mat = Material.parse(f, file.filename)
+                mat = Material.parse(f, file.filename)  # type: Material
         except FileNotFoundError:
             print('WARNING: File "{}" does not exist!'.format(file.filename))
             return

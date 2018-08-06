@@ -9,7 +9,8 @@ setup(
             'zip_include_packages': '*',
             'zip_exclude_packages': '',
             'zip_includes': [
-                ('srctools/fgd.lzma', 'srctools/fgd.lzma')
+                ('srctools/fgd.lzma', 'srctools/fgd.lzma'),
+                ('srctools/srctools.fgd', 'srctools.fgd'),
             ],
         },
     },
