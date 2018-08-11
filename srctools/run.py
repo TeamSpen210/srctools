@@ -49,6 +49,15 @@ def run_compiler(
 
     comp_name = get_compiler_name(name)
 
+    # On Windows, calling this will pop open a console window. This suppresses
+    # that.
+    if sys.platform == 'win32':
+        startup_info = subprocess.STARTUPINFO()
+        startup_info.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+        startup_info.wShowWindow = subprocess.SW_HIDE
+    else:
+        startup_info = None
+
     with subprocess.Popen(
         args=[comp_name] + args,
         executable=comp_name,
@@ -57,6 +66,7 @@ def run_compiler(
         stdin=subprocess.DEVNULL,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        startupinfo=startup_info,
     ) as proc:
         # Loop reading data from the subprocess, until it's dead.
         stdout = proc.stdout  # type: io.FileIO
