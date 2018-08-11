@@ -54,6 +54,13 @@ class FileType(Enum):
     MODEL = 'mdl'
 
 
+class SoundScriptMode(Enum):
+    """Value of Packlist.soundscript_files[]"""
+    UNKNOWN = 'unknown'  # Normal, we know about this script but it's not used.
+    INCLUDE = 'include'  # Something uses this script.
+    EXCLUDE = 'exclude'  # Ordered to NOT include this script.
+
+
 EXT_TYPE = {
     '.' + filetype.value: filetype
     for filetype in FileType
@@ -132,7 +139,7 @@ class PackList:
         # Ordered dictionary to keep the order intact, with
         # filename keys mapping to a bool value indicating if it's included
         # in the map.
-        self.soundscript_files = OrderedDict()
+        self.soundscript_files = OrderedDict()  # type: Dict[str, SoundScriptMode]
 
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
@@ -293,7 +300,7 @@ class PackList:
             return
 
         # Mark the soundscript as something we need to add to the manifest.
-        self.soundscript_files[script_path] = True
+        self.soundscript_files[script_path] = SoundScriptMode.INCLUDE
         self.pack_file(script_path, FileType.SOUNDSCRIPT)
 
         for raw_file in sound:
@@ -327,8 +334,13 @@ class PackList:
         If always_include is True, it will be included in the manifests even
         if it isn't used.
         """
-        if always_include or path not in self.soundscript_files:
-            self.soundscript_files[path] = always_include
+        # If set to excluded, ignore always_include.
+        if self.soundscript_files.get(path, None) is not SoundScriptMode.EXCLUDE:
+            self.soundscript_files[path] = (
+                SoundScriptMode.INCLUDE
+                if always_include else
+                SoundScriptMode.UNKNOWN
+            )
 
         scripts = Sound.parse(props)
 
@@ -400,7 +412,7 @@ class PackList:
                 # The soundscripts in the manifests are always included,
                 # since many would be part of the core code (physics, weapons,
                 # ui, etc). Just keep those loaded, no harm since vanilla does.
-                self.soundscript_files[file.path] = True
+                self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
 
                 if new_cache_data is not None:
                     new_cache_data.append(Property(prop.value, [
@@ -428,11 +440,11 @@ class PackList:
         such that it can override the master manifest with
         sv_soundemitter_flush.
         """
-        manifest = Property('game_sounds_manifest', [])
-        for snd, is_enabled in self.soundscript_files.items():
-            if not is_enabled:
-                continue
-            manifest.append(Property('precache_file', snd))
+        manifest = Property('game_sounds_manifest', [
+            Property('precache_file', snd)
+            for snd, is_enabled in self.soundscript_files.items()
+            if is_enabled is SoundScriptMode.INCLUDE
+        ])
 
         buf = bytearray()
         for line in manifest.export():
