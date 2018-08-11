@@ -67,8 +67,6 @@ EXT_TYPE = {
     if isinstance(filetype.value, str)
 }
 
-INJECT_FORMAT = "{}/INJECT_{:X}.{ext}"
-
 # noinspection PyProtectedMember
 from srctools._class_resources import CLASS_RESOURCES
 
@@ -278,7 +276,7 @@ class PackList:
         while True:
             # Repeatedly hashing permutes the data, until we stop colliding.
             name_hash = format(hash(name_hash), 'x')
-            full_name = INJECT_FORMAT.format(folder, name_hash, ext)
+            full_name = "{}/INJECT_{}.{}".format(folder, name_hash, ext)
             if full_name not in self._files:
                 break
         self.pack_file(full_name, data=data)
