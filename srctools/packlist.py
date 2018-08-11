@@ -275,7 +275,8 @@ class PackList:
         name_hash = data
         while True:
             # Repeatedly hashing permutes the data, until we stop colliding.
-            name_hash = format(hash(name_hash), 'x')
+            # Also abs() to remove ugly minus signs.
+            name_hash = format(abs(hash(name_hash)), 'x')
             full_name = "{}/INJECT_{}.{}".format(folder, name_hash, ext)
             if full_name not in self._files:
                 break
