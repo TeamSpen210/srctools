@@ -327,6 +327,7 @@ class KeyValues:
         doc: str,
         val_list: Optional[List[Union[Tuple[int, str, bool], Tuple[str, str]]]],
         is_readonly: bool,
+        tags: Iterable[str]=(),
     ):
         self.name = name
         self.type = val_type
@@ -335,9 +336,15 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
+        self.tags = tags
         
-    def __repr__(self):
-        return 'KeyValues({s.name!r}, {s.type!r}, {s.disp_name!r}, {s.default!r}, {s.desc!r}, {s.val_list!r}, {s.readonly})'.format(s=self)
+    def __repr__(self) -> str:
+        return (
+            'KeyValues({s.name!r}, {s.type!r}, '
+            '{s.disp_name!r}, {s.default!r}, '
+            '{s.desc!r}, {s.val_list!r}, '
+            '{s.readonly}, {s.tags!r})'.format(s=self)
+        )
         
     def serialise(self, file, str_dict: BinStrDict):
         """Write to the binary file."""
@@ -692,6 +699,20 @@ class EntityDef:
                 had_colon = False
                 has_equal = None
                 attrs = None
+                tags = []  # Extension - "tags" for the keyvalue.
+
+                if next_token is Token.BRACK_OPEN:
+                    # Read tags.
+                    while True:
+                        next_token, tag_value = tok()
+                        if next_token is Token.STRING:
+                            tags.append(tag_value.rstrip(','))
+                        elif next_token is Token.BRACK_CLOSE:
+                            break
+                        elif next_token is Token.EOF:
+                            raise tok.error('Unclosed keyvalue tags!')
+                        else:
+                            raise tok.error(next_token)
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
@@ -795,6 +816,7 @@ class EntityDef:
                     ''.join(desc),
                     val_list,
                     is_readonly == 'readonly',
+                    tags,
                 )
 
     def __repr__(self):
