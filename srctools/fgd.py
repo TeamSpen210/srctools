@@ -1,6 +1,4 @@
 """Parse FGD files, used to describe Hammer entities."""
-from collections import deque
-
 import itertools
 from enum import Enum
 from struct import Struct
@@ -9,10 +7,12 @@ import io
 import math
 
 from typing import (
-    Dict, Iterator, Union, TypeVar, Mapping, Tuple, List,
-    Optional,
-    Set,
-    Any,
+    Optional, Union, TypeVar,
+    Dict, Tuple, List, Set,
+    Mapping, Iterator,
+    Iterable,
+    Callable,
+    BinaryIO,
 )
 
 from srctools.filesys import FileSystem, File
@@ -30,35 +30,13 @@ _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
 _fmt_ent_header = Struct('<BBBBB')
 
-def _read_struct(format: Struct, file):
-    return format.unpack(file.read(format.size))
+
+def _read_struct(fmt: Struct, file):
+    return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
 BIN_FORMAT_VERSION = 1
 
-# "text" with an optional '+'
-_RE_DOC_LINE = re.compile(r'\s*"([^"]*)"\s*(\+)?\s*')
-
-_RE_KEYVAL_LINE = re.compile(
-    r''' (input | output)? \s* # Input or output name
-    (\w+)\s*\(\s*(\w+)\s*\) # Name, (type)
-    \s* (report | readonly)?  # Flags for the text
-    (?: \s* : \s* \"([^"]*)\"\s* # Display name
-        (\+)? \s* # IO only - plus for continued description
-        (?::([^:]+)  # Default
-            (?::([^:]+)  # Docs
-            )?
-        )?
-    )? # Optional for spawnflags..
-    \s* (=)? # Has equal sign?
-    ''',
-    re.VERBOSE,
-)
-
-_RE_HELPERS = re.compile(
-    r'''(\w+)\s* \( \s* ([^)]*) \s* \)''',
-    re.VERBOSE,
-)
 _RE_HELPER_ARGS = re.compile(r'\s*,\s*')
 
 
@@ -318,7 +296,7 @@ class BinStrDict:
             file.write(txt.encode('utf8'))
 
     @staticmethod       
-    def unserialise(file):
+    def unserialise(file: BinaryIO) -> Callable[[BinaryIO], str]:
         """Read the dictionary from a file.
         
         This returns a function which reads
@@ -380,11 +358,11 @@ class KeyValues:
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
                 power = int(math.log2(val))
-                if default: # Pack the default as the MSB.
+                if default:  # Pack the default as the MSB.
                     power |= 128
                 file.write(_fmt_8bit.pack(power))
                 file.write(str_dict(name))
-            return # Spawnflags doesn't need to write a default.
+            return  # Spawnflags doesn't need to write a default.
         
         file.write(str_dict(self.default or ''))
         
@@ -396,7 +374,10 @@ class KeyValues:
                 file.write(str_dict(name))
         
     @staticmethod
-    def unserialise(file, from_dict):
+    def unserialise(
+        file: BinaryIO,
+        from_dict: Callable[[BinaryIO], str],
+    ) -> 'KeyValues':
         name = from_dict(file)
         disp_name = from_dict(file)
         [value_ind] = _read_struct(_fmt_8bit, file)
@@ -406,13 +387,13 @@ class KeyValues:
         val_list = None
         
         if value_type is ValueTypes.SPAWNFLAGS:
-            default = '' # No default for this type.
+            default = ''  # No default for this type.
             [val_count] = _read_struct(_fmt_8bit, file)
             val_list = [0] * val_count
             for ind in range(val_count):
                 [power] = _read_struct(_fmt_8bit, file)
                 val_name = from_dict(file)
-                val_list[ind] = (1<<(power & 127), val_name, (power & 128) != 0)
+                val_list[ind] = (1 << (power & 127), val_name, (power & 128) != 0)
         else:
             default = from_dict(file)
             
@@ -454,14 +435,18 @@ class IODef:
     def serialise(self, file, dic: BinStrDict):
         file.write(dic(self.name))
         file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[self.type]))
-        
+
     @staticmethod
-    def unserialise(file, from_dict):
+    def unserialise(
+        file: BinaryIO,
+        from_dict: Callable[[BinaryIO], str],
+    ) -> 'IODef':
         name = from_dict(file)
         value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
 
 T = TypeVar('T')
+
 
 class _EntityView(Mapping[str, T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
@@ -475,10 +460,10 @@ class _EntityView(Mapping[str, T]):
         self._disp_attr = disp_name
         
     @property
-    def __name__(self):
+    def __name__(self) -> str:
         return self._disp_attr
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{!r}.{}'.format(self._ent, self._disp_attr)
 
     def __eq__(self, other) -> bool:
@@ -537,8 +522,8 @@ _Ent_View_IO = _EntityView[IODef]
 
 class EntityDef:
     """A definition for an entity."""
-    def __init__(self, type: EntityTypes) -> None:
-        self.type = type
+    def __init__(self, typ: EntityTypes) -> None:
+        self.type = typ
         self.classname = ''
         self.keyvalues = {}  # type: Dict[str, KeyValues]
         self.inputs = {}  # type: Dict[str, IODef]
@@ -705,6 +690,7 @@ class EntityDef:
 
                 is_readonly = False
                 had_colon = False
+                has_equal = None
                 attrs = None
 
                 if next_token is Token.STRING:
@@ -958,8 +944,11 @@ class FGD:
                         )
                     )
 
-
-    def parse_file(self, filesys: FileSystem, file: File):
+    def parse_file(
+        self,
+        filesys: FileSystem,
+        file: File,
+    ) -> None:
         """Parse one file (recursively if needed)."""
 
         if file in self._parse_list:
@@ -1027,10 +1016,10 @@ class FGD:
     def __iter__(self) -> Iterator[EntityDef]:
         return iter(self.entities.values())
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.entities)
 
-    def _fix_missing_bases(self, ent: EntityDef):
+    def _fix_missing_bases(self, ent: EntityDef) -> None:
         """Fix issues that prevent serialising base entities.
 
         The FGD implementation by Valve is very order-dependent.
@@ -1055,7 +1044,7 @@ class FGD:
                     break
             self._fix_missing_bases(base)
 
-    def serialise(self, file):
+    def serialise(self, file: BinaryIO) -> None:
         """Write the FGD into a compacted binary format.
         
         This is only readable by this module, and does not contain
@@ -1085,8 +1074,8 @@ class FGD:
         file.write(ent_data.getvalue())
       
     @classmethod  
-    def unserialise(cls, file) -> 'FGD':
-        """Unpack data from FGD.serialse() to return the original data.
+    def unserialise(cls, file: BinaryIO) -> 'FGD':
+        """Unpack data from FGD.serialise() to return the original data.
         
         Help descriptions are not preserved, and are set to <BINARY>.
         """
