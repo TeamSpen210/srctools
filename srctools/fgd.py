@@ -13,6 +13,8 @@ from typing import (
     Iterable,
     Callable,
     BinaryIO,
+    Collection,
+    Type,
 )
 
 from srctools.filesys import FileSystem, File
@@ -31,7 +33,7 @@ _fmt_header = Struct('>BddI')
 _fmt_ent_header = Struct('<BBBBB')
 
 
-def _read_struct(fmt: Struct, file):
+def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
@@ -212,9 +214,9 @@ ENTITY_TYPE_ORDER = [
 ]
 
 assert set(VALUE_TYPE_ORDER) == set(ValueTypes), \
-    "Missing values: " +repr(set(ValueTypes) - set(VALUE_TYPE_ORDER))
+    "Missing values: " + repr(set(ValueTypes) - set(VALUE_TYPE_ORDER))
 assert set(ENTITY_TYPE_ORDER) == set(EntityTypes), \
-    "Missing values: " +repr(set(EntityTypes) - set(ENTITY_TYPE_ORDER))
+    "Missing values: " + repr(set(EntityTypes) - set(ENTITY_TYPE_ORDER))
     
 # Can only store this many in the bytes.
 assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
@@ -255,7 +257,8 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
             return strings, token
     else:
         raise tok.error(token)
-        
+
+
 def read_tags(tok: Tokenizer) -> FrozenSet[str]:
     tags = []
     # Read tags.
@@ -268,11 +271,12 @@ def read_tags(tok: Tokenizer) -> FrozenSet[str]:
         elif token is Token.EOF:
             raise tok.error('Unclosed tags!')
         else:
-            raise tok.error(next_token)
+            raise tok.error(token)
     return validate_tags(tags, tok.error)
-    
+
+
 def validate_tags(
-    tags: Iterable[str],
+    tags: Collection[str],
     error: Callable[[str], BaseException]=ValueError,
 ) -> FrozenSet[str]:
     """Check these tags have valid values.
@@ -286,8 +290,7 @@ def validate_tags(
     if len(temp_set) != len(tags):
         raise error('Duplicate tags!')
     if '<any>' in temp_set:
-        raise error
-        ('<any> cannot be used as a tag!')
+        raise error('<any> cannot be used as a tag!')
     return frozenset({
         t.casefold() 
         for t in tags
@@ -311,6 +314,7 @@ def match_tags(search: Set[str], tags: Iterable[str]):
         elif not has_all and tag not in search:
             return False
     return True
+
 
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
@@ -939,7 +943,10 @@ class EntityDef:
         # Helpers are not added.
         
     @staticmethod
-    def unserialise(file, from_dict) -> 'EntityDef':
+    def unserialise(
+        file: BinaryIO,
+        from_dict: Callable[[BinaryIO], str],
+    ) -> 'EntityDef':
         """Read from the binary file."""
         [
             type_ind,
@@ -947,7 +954,7 @@ class EntityDef:
             kv_count,
             inp_count,
             out_count,
-        ] = _read_struct(_fmt_ent_header, file)
+        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int
         
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
         ent.classname = from_dict(file)
