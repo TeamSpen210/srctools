@@ -43,7 +43,7 @@ _RE_HELPER_ARGS = re.compile(r'\s*,\s*')
 
 
 class FGDParseError(TokenSyntaxError):
-    pass
+    """Raised if the FGD contains invalid syntax."""
 
 
 class ValueTypes(Enum):
@@ -96,7 +96,7 @@ class ValueTypes(Enum):
     INST_VAR_REP = 'instance_variable'  # $fixup usage
 
     @property
-    def has_list(self):
+    def has_list(self) -> bool:
         """Is this a flag or choices value, and needs a [] list?"""
         return self.value in ('choices', 'flags')
 
@@ -266,6 +266,10 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
 
 
 def read_tags(tok: Tokenizer) -> FrozenSet[str]:
+    """Parse a set of tags from the file.
+
+    The open bracket was just read.
+    """
     tags = []
     # Read tags.
     while True:
@@ -328,7 +332,7 @@ class BinStrDict:
     Each unique string is assigned a 2-byte index into the list.
     """
     
-    def __init__(self):
+    def __init__(self) -> None:
         self._dict = {}
         self.cur_index = 0
         
@@ -349,7 +353,7 @@ class BinStrDict:
                 
         return _fmt_16bit.pack(index)
         
-    def serialise(self, file):
+    def serialise(self, file: BinaryIO) -> None:
         """Convert this to a stream of bytes."""
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
@@ -450,6 +454,7 @@ class KeyValues:
         file: BinaryIO,
         from_dict: Callable[[], str],
     ) -> 'KeyValues':
+        """Recover a KeyValue from a binary file."""
         name = from_dict()
         disp_name = from_dict()
         [value_ind] = _read_struct(_fmt_8bit, file)
@@ -493,7 +498,7 @@ class IODef:
         self.type = val_type
         self.desc = description
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         txt = '{}({!r}, {!r}'.format(
             self.__class__.__name__,
             self.name,
@@ -503,7 +508,8 @@ class IODef:
             txt += ', ' + repr(self.desc)
         return txt + ')'
         
-    def serialise(self, file, dic: BinStrDict):
+    def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
+        """Write to the binary file."""
         file.write(dic(self.name))
         file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[self.type]))
 
@@ -512,6 +518,7 @@ class IODef:
         file: BinaryIO,
         from_dict: Callable[[], str],
     ) -> 'IODef':
+        """Recover an IODef from a binary file."""
         name = from_dict()
         value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
@@ -551,6 +558,10 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
             yield from self._maps(base)
 
     def __getitem__(self, name: Union[str, Tuple[str, Iterable[str]]]) -> T:
+        """Lookup the value in the entity.
+
+        Either obj['name'], or obj['name', {tags}] is accepted.
+        """
         if isinstance(name, str):
             search_tags = set()
         elif isinstance(name, tuple):
@@ -904,13 +915,13 @@ class EntityDef:
                     is_readonly == 'readonly',
                 )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
             return '<Entity Base "{}">'.format(self.classname)
         else:
             return '<Entity {}>'.format(self.classname)
 
-    def iter_bases(self, _done=None):
+    def iter_bases(self, _done: Set['EntityDef']=None) -> Iterator['EntityDef']:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
@@ -1013,7 +1024,7 @@ class EntityDef:
 
 class FGD:
     """A FGD set for a game. May be composed of several files."""
-    def __init__(self):
+    def __init__(self) -> None:
         """Create a FGD."""
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
@@ -1056,7 +1067,7 @@ class FGD:
         fgd.parse_file(filesystem, file)
         return fgd
 
-    def _apply_bases(self):
+    def _apply_bases(self) -> None:
         """Fix base values in entities after parsing.
         
         While parsing the classnames are set as strings,
@@ -1073,7 +1084,7 @@ class FGD:
                     continue
                 
                 try:
-                    new_bases.append(self[base])
+                    new_bases.append(self[base])  # type: ignore
                 except KeyError:
                     raise ValueError(
                         'Unknown base ({}) for {}'.format(
@@ -1145,7 +1156,7 @@ class FGD:
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
-    def __getitem__(self, classname) -> EntityDef:
+    def __getitem__(self, classname: str) -> EntityDef:
         try:
             return self.entities[classname.casefold()]
         except KeyError:
