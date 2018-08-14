@@ -37,7 +37,7 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 1
+BIN_FORMAT_VERSION = 2
 
 _RE_HELPER_ARGS = re.compile(r'\s*,\s*')
 
@@ -155,6 +155,12 @@ class HelperTypes(Enum):
     ENT_ROPE = 'keyframe'
     ENT_TRACK = 'animator'
     ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
+
+    # Format extensions.
+
+    # Indicates this entity is only available in the given games.
+    EXT_APPLIES_TO = 'appliesto'
+
     
 # Ordered list of value types, for encoding in the binary
 # format. All must be here, new ones should be added at the end.
@@ -931,15 +937,30 @@ class EntityDef:
         for base_ent in self.bases:
             file.write(str_dict(base_ent.classname))
         
-        for kv in self.keyvalues.values():
-            kv.serialise(file, str_dict)
-            
-        for inp in self.inputs.values():
-            inp.serialise(file, str_dict)
-            
-        for out in self.outputs.values():
-            out.serialise(file, str_dict)
-        
+        for obj_type in (self.keyvalues, self.inputs, self.outputs):
+            for name, tag_map in obj_type.items():
+                # We don't need to write the name, since that's stored
+                # also in the kv/io object itself.
+
+                if not tag_map:
+                    # No need to add this one.
+                    continue
+
+                # Special case - if there is one blank tag, write len=0
+                # and just the value.
+                # That saves 2 bytes.
+                if len(tag_map) == 1:
+                    [(tag, value)] = tag_map.items()
+                    if tag == '':
+                        file.write(_fmt_8bit.pack(0))
+                        value.serialise(file, str_dict)
+                        continue
+
+                file.write(_fmt_8bit.pack(len(tag_map)))
+                for tag, value in tag_map.items():
+                    file.write(str_dict(':'.join(tag)))
+                    value.serialise(file, str_dict)
+
         # Helpers are not added.
         
     @staticmethod
@@ -962,20 +983,32 @@ class EntityDef:
         
         for _ in range(base_count):
             ent.bases.append(from_dict(file))
-            
-        for _ in range(kv_count):
-            kv = KeyValues.unserialise(file, from_dict)
-            ent.keyvalues[kv.name] = kv
-            
-        for _ in range(inp_count):
-            inp = IODef.unserialise(file, from_dict)
-            ent.inputs[inp.name] = inp
-            
-        for _ in range(out_count):
-            out = IODef.unserialise(file, from_dict)
-            ent.outputs[out.name] = out
-           
-        return ent 
+
+        for count, val_map, cls in [
+            (kv_count, ent.keyvalues, KeyValues),
+            (inp_count, ent.inputs, IODef),
+            (out_count, ent.outputs, IODef),
+        ]:  # type: int, Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]], Type[Union[KeyValues, IODef]]
+            for _ in range(count):
+                [tag_count] = _read_struct(_fmt_8bit, file)
+                if tag_count == 0:
+                    # Special case, a single untagged item.
+                    obj = cls.unserialise(file, from_dict)
+                    val_map[obj.name] = {frozenset(''): obj}
+                else:
+
+                    # We know it's starting empty, and must have at least
+                    # one tag.
+
+                    tag = frozenset(from_dict(file).split(':'))
+                    obj = cls.unserialise(file, from_dict)
+                    tag_map = val_map[obj.name] = {tag: obj}
+                    for _ in range(tag_count - 1):
+                        tag = frozenset(from_dict(file).split(':'))
+                        obj = cls.unserialise(file, from_dict)
+                        tag_map[tag] = obj
+
+        return ent
 
 
 class FGD:
@@ -1197,7 +1230,7 @@ class FGD:
             ent_count,
         ] = _read_struct(_fmt_header, file)
         
-        if format_version > BIN_FORMAT_VERSION:
+        if format_version != BIN_FORMAT_VERSION:
             raise TypeError('Unknown format version "{}"!'.format(format_version))
             
         from_dict = BinStrDict.unserialise(file)
