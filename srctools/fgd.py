@@ -7,14 +7,11 @@ import io
 import math
 
 from typing import (
-    Optional, Union, TypeVar,
+    Optional, Union, overload,
+    TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
-    Mapping, Iterator,
-    Iterable,
-    Callable,
-    BinaryIO,
-    Collection,
-    Type,
+    Mapping, Iterator, Iterable, Collection,
+    BinaryIO, TextIO,
 )
 
 from srctools.filesys import FileSystem, File
@@ -99,6 +96,11 @@ class ValueTypes(Enum):
     def has_list(self) -> bool:
         """Is this a flag or choices value, and needs a [] list?"""
         return self.value in ('choices', 'flags')
+
+    @property
+    def is_literal(self) -> bool:
+        """Should values of this type be written without quotes around it?"""
+        return self.value in ('boolean', 'integer', 'float')
 
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
@@ -396,7 +398,6 @@ class KeyValues:
         doc: str,
         val_list: Optional[List[Union[Tuple[int, str, bool], Tuple[str, str]]]],
         is_readonly: bool,
-        tags: Iterable[str]=(),
     ):
         self.name = name
         self.type = val_type
@@ -405,16 +406,39 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
-        self.tags = tags
         
     def __repr__(self) -> str:
         return (
             'KeyValues({s.name!r}, {s.type!r}, '
             '{s.disp_name!r}, {s.default!r}, '
             '{s.desc!r}, {s.val_list!r}, '
-            '{s.readonly}, {s.tags!r})'.format(s=self)
+            '{s.readonly})'.format(s=self)
         )
-        
+
+    def export(self, file: TextIO, tags: Collection[str]=()) -> None:
+        """Write this back out to a FGD file."""
+        file.write('\t' + self.name)
+        if tags:
+            file.write('[' + ', '.join(tags) + ']')
+        file.write('({}) '.format(self.type.value))
+
+        if self.readonly:
+            file.write('readonly ')
+
+        file.write(': "{}"'.format(self.disp_name))
+        if self.default:
+            if self.type.is_literal:  # Int/float etc.
+                file.write(' : {}'.format(self.default))
+            else:
+                file.write(' : "{}"'.format(self.default))
+            if self.desc:
+                file.write(' : "{}"'.format(self.desc.replace('\n', '\\n')))
+        else:
+            if self.desc:
+                file.write(' : : "{}"'.format(self.desc.replace('\n', '\\n')))
+
+        file.write('\n')
+
     def serialise(self, file, str_dict: BinStrDict):
         """Write to the binary file."""
         file.write(str_dict(self.name))
@@ -507,6 +531,31 @@ class IODef:
         if self.desc:
             txt += ', ' + repr(self.desc)
         return txt + ')'
+
+    def export(
+        self,
+        file: TextIO,
+        io_type: str,
+        tags: Collection[str]=(),
+    ) -> None:
+        """Write this back out to a FGD file.
+
+        io_type should be "input" or "output".
+        """
+        file.write('\t{} {}'.format(
+            io_type,
+            self.name,
+        ))
+
+        if tags:
+            file.write('[' + ', '.join(tags) + ']')
+
+        file.write('({})'.format(self.type.value))
+
+        if self.desc:
+            file.write(' : "{}"\n'.format(self.desc))
+        else:
+            file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
         """Write to the binary file."""
@@ -522,6 +571,7 @@ class IODef:
         name = from_dict()
         value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
+
 
 T = TypeVar('T')
 
@@ -921,6 +971,44 @@ class EntityDef:
         else:
             return '<Entity {}>'.format(self.classname)
 
+    def export(self, file: TextIO) -> None:
+        """Write the entity out to a FGD file."""
+        # Make it look pretty: BaseClass
+        file.write('\n@{} '.format(
+            self.type.value.title().replace('class', 'Class')
+        ))
+        if self.bases:
+            file.write('base(')
+            file.write(', '.join([base.classname for base in self.bases]))
+            file.write(') ')
+        for helper, args in self.helpers:
+            file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
+        file.write('= {}'.format(self.classname))
+
+        if self.desc:
+            file.write(': "{}"'.format(self.desc.replace('\n', '\\n')))
+
+        file.write('\n\t[\n')
+
+        for kv_map in self.keyvalues.values():
+            for tags, kv in kv_map.items():
+                kv.export(file, tags)
+
+        if self.inputs:
+            file.write('\n\t// Inputs\n')
+
+            for inp_map in self.inputs.values():
+                for tags, inp in inp_map.items():
+                    inp.export(file, 'input', tags)
+
+        if self.outputs:
+            file.write('\n\t// Outputs\n')
+
+            for out_map in self.outputs.values():
+                for tags, out in out_map.items():
+                    out.export(file, 'output', tags)
+        file.write('\t]\n')
+
     def iter_bases(self, _done: Set['EntityDef']=None) -> Iterator['EntityDef']:
         """Yield all base entities for this one.
 
@@ -1092,6 +1180,29 @@ class FGD:
                             ent.classname,
                         )
                     )
+
+    @overload
+    def export(self) -> str: ...
+    @overload
+    def export(self, file: TextIO) -> None: ...
+    def export(self, file=None):
+        """Write the FGD contents into a text file.
+
+        If none are provided, the text will be returned.
+        """
+        ret_string = file is None
+        if ret_string:
+            file = io.StringIO()
+
+        if self.map_size_min != self.map_size_max:
+            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
+
+        # TODO: topological sort.
+        for ent in self.entities.values():
+            ent.export(file)
+
+        if ret_string:
+            return file.getvalue()
 
     def parse_file(
         self,
