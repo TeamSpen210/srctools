@@ -8,7 +8,7 @@ import math
 
 from typing import (
     Optional, Union, TypeVar,
-    Dict, Tuple, List, Set,
+    Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator,
     Iterable,
     Callable,
@@ -255,7 +255,62 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
             return strings, token
     else:
         raise tok.error(token)
-
+        
+def read_tags(tok: Tokenizer) -> FrozenSet[str]:
+    tags = []
+    # Read tags.
+    while True:
+        token, value = tok()
+        if token is Token.STRING:
+            tags.append(value.casefold().rstrip(','))
+        elif token is Token.BRACK_CLOSE:
+            break
+        elif token is Token.EOF:
+            raise tok.error('Unclosed tags!')
+        else:
+            raise tok.error(next_token)
+    return validate_tags(tags, tok.error)
+    
+def validate_tags(
+    tags: Iterable[str],
+    error: Callable[[str], BaseException]=ValueError,
+) -> FrozenSet[str]:
+    """Check these tags have valid values.
+    
+    The error exception is raised if invalid.
+    """
+    temp_set = {
+        t.lstrip('!').casefold() 
+        for t in tags
+    }
+    if len(temp_set) != len(tags):
+        raise error('Duplicate tags!')
+    if '<any>' in temp_set:
+        raise error
+        ('<any> cannot be used as a tag!')
+    return frozenset({
+        t.casefold() 
+        for t in tags
+    })
+    
+    
+def match_tags(search: Set[str], tags: Iterable[str]):
+    """Check if the search constraints satisfy tags.
+    
+    The search tags should be casefolded.
+    """
+    if not tags: 
+        return True
+        
+    has_all = '<all>' in search
+    for tag in tags:
+        tag = tag.casefold()
+        if tag[0] == '!':
+            if tag[1:] in search:
+                return False
+        elif not has_all and tag not in search:
+            return False
+    return True
 
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
@@ -455,7 +510,7 @@ class IODef:
 T = TypeVar('T')
 
 
-class _EntityView(Mapping[str, T]):
+class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
     __slots__ = ['_ent', '_attr', '_disp_attr',]
 
@@ -486,27 +541,39 @@ class _EntityView(Mapping[str, T]):
         for base in ent.bases:
             yield from self._maps(base)
 
-    def __getitem__(self, name: str) -> T:
-        fname = name.casefold()
+    def __getitem__(self, name: Union[str, Tuple[str, Iterable[str]]]) -> T:
+        if isinstance(name, str):
+            search_tags = set()
+        elif isinstance(name, tuple):
+            name, search_tags = name
+            search_tags = frozenset({t.casefold() for t in search_tags})
+        else:
+            raise TypeError(
+                'Expected str or (str, Iterable[str]), '
+                'got "{}"'.format(name),
+            )
+        name = name.casefold()
         for ent_map in self._maps():
             try:
-                return ent_map[fname]
+                tag_map = ent_map[name]
             except KeyError:
-                pass
-        raise KeyError(name)
-
-    def __contains__(self, name: object) -> bool:
-        if isinstance(name, str):
-            fname = name.casefold()
-            for ent_map in self._maps():
-                if fname in ent_map:
-                    return True
-        return False
+                continue
+            
+            # Force longer more-specific tags to match first.
+            for tags, value in sorted(
+                tag_map.items(),
+                key=lambda t: len(t[0]),
+                reverse=True,
+            ):
+                if match_tags(search_tags, tags):
+                    return value
+        raise KeyError((name, search_tags))
         
     def __iter__(self) -> Iterator[T]:
+        """Yields all keys this object has."""
         seen = set()
         for ent_map in self._maps():
-            for name in ent_map.keys():
+            for name, tags in ent_map.keys():
                 if name in seen:
                     continue
                 seen.add(name)
@@ -532,9 +599,10 @@ class EntityDef:
     def __init__(self, typ: EntityTypes) -> None:
         self.type = typ
         self.classname = ''
-        self.keyvalues = {}  # type: Dict[str, KeyValues]
-        self.inputs = {}  # type: Dict[str, IODef]
-        self.outputs = {}  # type: Dict[str, IODef]
+        # These are (name) -> {tags} -> value dicts.
+        self.keyvalues = {}  # type: Dict[str, Dict[FrozenSet[str], KeyValues]]
+        self.inputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
+        self.outputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
         # Base type names - base()
         self.bases = []  # type: List[EntityDef]
         # line(), studio(), etc in the header
@@ -653,7 +721,16 @@ class EntityDef:
             if io_type in ('input', 'output'):
 
                 name = tok.expect(Token.STRING)
-                raw_value_type = tok.expect(Token.PAREN_ARGS).strip()
+                
+                # Next is either the value type parens, or a tags brackets.
+                val_token, raw_value_type = tok()
+                if val_token is Token.BRACK_OPEN:
+                    tags = read_tags(tok)
+                    val_token, raw_value_type = tok()
+                else:
+                    tags = frozenset()
+                    
+                raw_value_type = raw_value_type.strip()
                 try:
                     val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
                 except KeyError:
@@ -681,13 +758,26 @@ class EntityDef:
                     io_desc = ''
 
                 # entity.inputs or entity.outputs
-                getattr(entity, io_type + 's')[name] = IODef(name, val_typ, io_desc)
+                tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
+                tags_map[tags] = IODef(name, val_typ, io_desc)
 
             else:
                 # Keyvalue
                 name = io_type
+                
+                # Next is either the value type parens, or a tags brackets.
+                
+                val_token, raw_value_type = tok()
+                if val_token is Token.BRACK_OPEN:
+                    tags = read_tags(tok)
+                    val_token, raw_value_type = tok()
+                else:
+                    tags = frozenset()
+                
+                if val_token is not Token.PAREN_ARGS:
+                    raise tok.error(val_token)  
 
-                raw_value_type = tok.expect(Token.PAREN_ARGS).strip()
+                raw_value_type = raw_value_type.strip()
                 try:
                     val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
                 except KeyError:
@@ -699,20 +789,6 @@ class EntityDef:
                 had_colon = False
                 has_equal = None
                 attrs = None
-                tags = []  # Extension - "tags" for the keyvalue.
-
-                if next_token is Token.BRACK_OPEN:
-                    # Read tags.
-                    while True:
-                        next_token, tag_value = tok()
-                        if next_token is Token.STRING:
-                            tags.append(tag_value.rstrip(','))
-                        elif next_token is Token.BRACK_CLOSE:
-                            break
-                        elif next_token is Token.EOF:
-                            raise tok.error('Unclosed keyvalue tags!')
-                        else:
-                            raise tok.error(next_token)
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
@@ -808,7 +884,8 @@ class EntityDef:
                     if has_equal is Token.EQUALS:
                         raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
 
-                entity.keyvalues[name.casefold()] = KeyValues(
+                tags_map = entity.keyvalues.setdefault(name.casefold(), {})
+                tags_map[tags] = KeyValues(
                     name,
                     val_typ,
                     disp_name,
@@ -816,7 +893,6 @@ class EntityDef:
                     ''.join(desc),
                     val_list,
                     is_readonly == 'readonly',
-                    tags,
                 )
 
     def __repr__(self):
@@ -1127,3 +1203,4 @@ class FGD:
         fgd._apply_bases()
 
         return fgd
+
