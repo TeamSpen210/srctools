@@ -361,7 +361,7 @@ class BinStrDict:
             file.write(txt.encode('utf8'))
 
     @staticmethod       
-    def unserialise(file: BinaryIO) -> Callable[[BinaryIO], str]:
+    def unserialise(file: BinaryIO) -> Callable[[], str]:
         """Read the dictionary from a file.
         
         This returns a function which reads
@@ -373,7 +373,7 @@ class BinStrDict:
             [str_len] = _read_struct(_fmt_16bit, file)
             inv_list[ind] = file.read(str_len).decode('utf8')
 
-        def lookup(file) -> str:
+        def lookup() -> str:
             """Read the index from the file, and return the string it matches."""
             [index] = _read_struct(_fmt_16bit, file)
             return inv_list[index]
@@ -448,10 +448,10 @@ class KeyValues:
     @staticmethod
     def unserialise(
         file: BinaryIO,
-        from_dict: Callable[[BinaryIO], str],
+        from_dict: Callable[[], str],
     ) -> 'KeyValues':
-        name = from_dict(file)
-        disp_name = from_dict(file)
+        name = from_dict()
+        disp_name = from_dict()
         [value_ind] = _read_struct(_fmt_8bit, file)
         readonly = value_ind & 128
         value_type = VALUE_TYPE_ORDER[value_ind & 127]
@@ -464,17 +464,16 @@ class KeyValues:
             val_list = [0] * val_count
             for ind in range(val_count):
                 [power] = _read_struct(_fmt_8bit, file)
-                val_name = from_dict(file)
+                val_name = from_dict()
                 val_list[ind] = (1 << (power & 127), val_name, (power & 128) != 0)
         else:
-            default = from_dict(file)
+            default = from_dict()
             
             if value_type is ValueTypes.CHOICES:
                 [val_count] = _read_struct(_fmt_16bit, file)
                 val_list = [0] * val_count
                 for ind in range(val_count):
-                    val_list[ind] = (from_dict(file), from_dict(file))
-        
+                    val_list[ind] = (from_dict(), from_dict())
         
         return KeyValues(
             name,
@@ -511,9 +510,9 @@ class IODef:
     @staticmethod
     def unserialise(
         file: BinaryIO,
-        from_dict: Callable[[BinaryIO], str],
+        from_dict: Callable[[], str],
     ) -> 'IODef':
-        name = from_dict(file)
+        name = from_dict()
         value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
 
@@ -966,7 +965,7 @@ class EntityDef:
     @staticmethod
     def unserialise(
         file: BinaryIO,
-        from_dict: Callable[[BinaryIO], str],
+        from_dict: Callable[[], str],
     ) -> 'EntityDef':
         """Read from the binary file."""
         [
@@ -978,11 +977,12 @@ class EntityDef:
         ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int
         
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
-        ent.classname = from_dict(file)
+        ent.classname = from_dict()
         ent.desc = ''
         
         for _ in range(base_count):
-            ent.bases.append(from_dict(file))
+            # We temporarily store strings, then evaluate later on.
+            ent.bases.append(from_dict())  # type: ignore
 
         for count, val_map, cls in [
             (kv_count, ent.keyvalues, KeyValues),
@@ -1000,11 +1000,11 @@ class EntityDef:
                     # We know it's starting empty, and must have at least
                     # one tag.
 
-                    tag = frozenset(from_dict(file).split(':'))
+                    tag = frozenset(from_dict().split(':'))
                     obj = cls.unserialise(file, from_dict)
                     tag_map = val_map[obj.name] = {tag: obj}
                     for _ in range(tag_count - 1):
-                        tag = frozenset(from_dict(file).split(':'))
+                        tag = frozenset(from_dict().split(':'))
                         obj = cls.unserialise(file, from_dict)
                         tag_map[tag] = obj
 
