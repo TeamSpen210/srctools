@@ -455,6 +455,23 @@ class KeyValues:
             if self.desc:
                 file.write(' : : "{}"'.format(self.desc.replace('\n', '\\n')))
 
+        if self.type.has_list:
+            file.write(' =\n\t\t[\n')
+            if self.type is ValueTypes.SPAWNFLAGS:
+                # Empty tuple handles a None value.
+                for index, name, default in self.val_list or ():
+                    file.write('\t\t{}: "{}" : {}\n'.format(
+                        index,
+                        name,
+                        int(default),
+                    ))
+            elif self.type is ValueTypes.CHOICES:
+                for value, name in self.val_list or ():
+                    file.write('\t\t{}: "{}"\n'.format(value, name))
+            else:
+                raise AssertionError('No other types possible!')
+            file.write('\t\t]\n')
+
         file.write('\n')
 
     def serialise(self, file, str_dict: BinStrDict):
