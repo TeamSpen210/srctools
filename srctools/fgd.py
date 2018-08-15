@@ -415,6 +415,18 @@ class KeyValues:
             '{s.readonly})'.format(s=self)
         )
 
+    def copy(self) -> 'KeyValues':
+        """Create a duplicate of this keyvalue."""
+        return KeyValues(
+            self.name,
+            self.type,
+            self.disp_name,
+            self.default,
+            self.desc,
+            self.val_list.copy() if self.val_list else None,
+            self.readonly,
+        )
+
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
@@ -531,6 +543,10 @@ class IODef:
         if self.desc:
             txt += ', ' + repr(self.desc)
         return txt + ')'
+
+    def copy(self) -> 'IODef':
+        """Create a duplicate of this IODef."""
+        return IODef(self.name, self.type, self.desc)
 
     def export(
         self,
