@@ -1222,6 +1222,65 @@ class FGD:
                         )
                     )
 
+    def collapse_bases(self) -> None:
+        """Collapse all bases into the entities that use them.
+
+        This operates in-place.
+        """
+        # We need to do a topological sort effectively, to ensure we do
+        # parents before children.
+        todo = set(self)  # type: Set[EntityDef]
+        done = set()  # type: Set[EntityDef]
+        while todo:
+            deferred = set()  # type: Set[EntityDef]
+            for ent in todo:
+                if not ent.bases:
+                    done.add(ent)
+                    continue
+
+                ready = True
+                for base in ent.bases:
+                    if base not in done:
+                        deferred.add(base)
+                        ready = False
+                if not ready:
+                    continue
+                # All of this entity's bases are collapsed.
+                # We can collapse it.
+
+                base_kv = []
+                keyvalue_names = set(ent.kv_order)
+
+                for base in ent.bases:
+                    for name, base_kv_map in base.keyvalues.items():
+                        ent_kv_map = ent.keyvalues.setdefault(name, {})
+                        for tag, kv in base_kv_map.items():
+                            if tag not in ent_kv_map:
+                                ent_kv_map[tag] = kv.copy()
+                        if name not in keyvalue_names:
+                            base_kv.append(name)
+                            keyvalue_names.add(name)
+
+                    for base_map, ent_map in [
+                        (base.inputs, ent.inputs),
+                        (base.outputs, ent.outputs),
+                    ]:
+                        for name, base_tags_map in base_map.items():
+                            ent_tags_map = ent_map.setdefault(name, {})
+                            for tag, io_def in base_tags_map.items():
+                                if tag not in ent_tags_map:
+                                    ent_tags_map[tag] = io_def.copy()
+
+                ent.kv_order = base_kv + ent.kv_order
+                ent.bases.clear()
+                done.add(ent)
+
+            # All the entities have a dependency on another.
+            if todo == deferred:
+                raise ValueError("Loop in bases!")
+
+            todo = deferred
+
     @overload
     def export(self) -> str: ...
     @overload
