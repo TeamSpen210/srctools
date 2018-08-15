@@ -389,7 +389,12 @@ class BinStrDict:
 
 
 class KeyValues:
-    """Represents a generic keyvalue type."""
+    """Represents a generic keyvalue type.
+
+    If the type is choices or spawnflags, val_list is required:
+    * For choices it's a list of (value, name) tuples.
+    * For spawnflags it's a list of (bitflag, name, default) tuples.
+    """
     def __init__(
         self,
         name: str,
@@ -955,7 +960,7 @@ class EntityDef:
 
                         # Spawnflags can have a default, others don't
                         if len(vals) == 2 and val_typ is ValueTypes.SPAWNFLAGS:
-                            val_list.append((choices_value, vals[0], bool(vals[1])))
+                            val_list.append((choices_value, vals[0], vals[1].strip() == '1'))
                         elif len(vals) == 1:
                             if val_typ is ValueTypes.SPAWNFLAGS:
                                 val_list.append((choices_value, vals[0], True))
