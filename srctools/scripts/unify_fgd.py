@@ -5,9 +5,13 @@ This allows sharing definitions among different engine versions.
 import sys
 import argparse
 from pathlib import Path
-from typing import List, Tuple, Set, FrozenSet
+from typing import List, Tuple, Set, FrozenSet, Union, Dict
 
-from srctools.fgd import FGD, validate_tags, EntityDef, EntityTypes
+from srctools.fgd import (
+    FGD, validate_tags, EntityDef, EntityTypes,
+    HelperTypes, IODef,
+    KeyValues,
+)
 from srctools.filesys import RawFileSystem
 
 
@@ -85,12 +89,148 @@ def load_database(dbase: Path) -> FGD:
     return fgd
 
 
+def get_appliesto(ent: EntityDef) -> List[str]:
+    """Ensure exactly one AppliesTo() helper is present, and return the args.
+
+    If no helper exists, one will be prepended. Otherwise only the first
+    will remain, with the arguments merged together. The same list is
+    returned, so it can be viewed or edited.
+    """
+    pos = None
+    applies_to = set()
+    for i, (helper_type, args) in enumerate(ent.helpers):
+        if helper_type is HelperTypes.EXT_APPLIES_TO:
+            if pos is None:
+                pos = i
+            applies_to.update(args)
+
+    if pos is None:
+        pos = 0
+    arg_list = sorted(applies_to)
+    ent.helpers[:] = [
+        tup for tup in
+        ent.helpers
+        if tup[0] is not HelperTypes.EXT_APPLIES_TO
+    ]
+    ent.helpers.insert(pos, (HelperTypes.EXT_APPLIES_TO, arg_list))
+    return arg_list
+
+
+def add_tag(tags: FrozenSet[str], new_tag: str) -> FrozenSet[str]:
+    """Modify these tags such that they allow the new tag."""
+    tag_set = set(tags)
+    if new_tag.startswith('!'):
+        tag_set.discard(new_tag[1:])
+        tag_set.add(new_tag)
+    else:
+        tag_set.discard('!' + new_tag.upper())
+        tag_set.add(new_tag.upper())
+
+    return frozenset(tag_set)
+
+
 def action_import(
     dbase: Path,
-    tags: FrozenSet[str],
+    engine_tag: str,
     fgd_paths: List[Path],
 ) -> None:
     """Import an FGD file, adding differences to the unified files."""
+    new_fgd = FGD()
+    print('Using tag "{}"'.format(engine_tag))
+
+    print('Reading FGDs:'.format(len(fgd_paths)))
+    for path in fgd_paths:
+        print(path)
+        with RawFileSystem(str(path.parent)) as fsys:
+            new_fgd.parse_file(fsys, fsys[path.name], eval_bases=False)
+
+    print('\nImporting {} entiti{}...'.format(
+        len(new_fgd),
+        "y" if len(new_fgd) == 1 else "ies",
+    ))
+    for new_ent in new_fgd:
+        path = dbase / ent_path(new_ent)
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+        if path.exists():
+            old_fgd = FGD()
+            with RawFileSystem(str(path.parent)) as fsys:
+                old_fgd.parse_file(fsys, fsys[path.name], eval_bases=False)
+            try:
+                ent = old_fgd[new_ent.classname]
+            except KeyError:
+                raise ValueError("Classname not present in FGD!")
+            to_export = old_fgd
+            # Now merge the two.
+
+            if new_ent.desc not in ent.desc:
+                # Temporary, append it.
+                ent.desc += '|||' + new_ent.desc
+
+            # Merge helpers. We just combine overall...
+            for new_base in new_ent.bases:
+                if new_base not in ent.bases:
+                    ent.bases.append(new_base)
+
+            for helper in new_ent.helpers:
+                # Sorta ew, quadratic search. But helper sizes shouldn't
+                # get too big.
+                if helper not in ent.helpers:
+                    ent.helpers.append(helper)
+
+            for cat in ('keyvalues', 'inputs', 'outputs'):
+                cur_map = getattr(ent, cat)  # type: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
+                new_map = getattr(new_ent, cat)
+                new_names = set()
+                for name, tag_map in new_map.items():
+                    new_names.add(name)
+                    try:
+                        orig_tag_map = cur_map[name]
+                    except KeyError:
+                        # Not present in the old file.
+                        cur_map[name] = {
+                            add_tag(tag, engine_tag): value
+                            for tag, value in tag_map.items()
+                        }
+                        continue
+                    # Otherwise merge, if unequal add the new ones.
+                    # TODO: Handle tags in "new" files.
+                    for tag, new_value in tag_map.items():
+                        for old_tag, old_value in orig_tag_map.items():
+                            if old_value == new_value:
+                                if tag:
+                                    # Already present, modify this tag.
+                                    del orig_tag_map[old_tag]
+                                    orig_tag_map[add_tag(old_tag, engine_tag)] = new_value
+                                # else: Blank tag, keep blank.
+                                break
+                        else:
+                            # Otherwise, we need to add this.
+                            orig_tag_map[add_tag(tag, engine_tag)] = new_value
+
+                # Make sure removed items don't apply to the new tag.
+                for name, tag_map in cur_map.items():
+                    if name not in new_names:
+                        cur_map[name] = {
+                            add_tag(tag, '!' + engine_tag): value
+                            for tag, value in tag_map.items()
+                        }
+
+        else:
+            # No existing one, just set appliesto.
+            ent = new_ent
+            # We just write this entity in.
+            to_export = new_ent
+
+        applies_to = get_appliesto(ent)
+        if engine_tag not in applies_to:
+            applies_to.append(engine_tag)
+
+        with open(path, 'w') as f:
+            to_export.export(f)
+
+        print('.', end='', flush=True)
+    print()
 
 
 def action_export(
@@ -140,12 +280,10 @@ def main(args: List[str]=None):
         aliases=["imp", "i"],
     )
     parser_imp.add_argument(
-        "-t", "--tag",
-        required=True,
-        action="append",
-        choices=ALL_TAGS,
-        help="Tag to associate this FGD set with.",
-        dest="tags",
+        "engine",
+        type=str.upper,
+        choices=GAME_ORDER,
+        help="Engine to mark this FGD set as supported by.",
     )
     parser_imp.add_argument(
         "fgd",
@@ -163,18 +301,16 @@ def main(args: List[str]=None):
     dbase = Path(result.database).resolve()
     dbase.mkdir(parents=True, exist_ok=True)
 
-    tags = validate_tags(result.tags)
-
     if result.mode == "import":
         action_import(
             dbase,
-            tags,
+            result.engine,
             result.fgd,
         )
     elif result.mode == "export":
         action_export(
             dbase,
-            tags,
+            validate_tags(result.tags),
             result.output,
         )
     else:
