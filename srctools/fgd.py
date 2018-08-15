@@ -162,6 +162,7 @@ class HelperTypes(Enum):
 
     # Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
+    EXT_ORDERBY = 'orderby'  # Reorder keyvalues. Args = names in order.
 
     
 # Ordered list of value types, for encoding in the binary
@@ -689,6 +690,11 @@ class EntityDef:
         self.keyvalues = {}  # type: Dict[str, Dict[FrozenSet[str], KeyValues]]
         self.inputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
         self.outputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
+
+        # Keyvalues have an order. If not present in here,
+        # they appear at the end.
+        self.kv_order = []  # type: List[str]
+
         # Base type names - base()
         self.bases = []  # type: List[EntityDef]
         # line(), studio(), etc in the header
@@ -971,6 +977,10 @@ class EntityDef:
                         raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
 
                 tags_map = entity.keyvalues.setdefault(name.casefold(), {})
+                if not tags_map:
+                    # New, add to the ordering.
+                    entity.kv_order.append(name.casefold())
+
                 tags_map[tags] = KeyValues(
                     name,
                     val_typ,
@@ -997,8 +1007,13 @@ class EntityDef:
             file.write('base(')
             file.write(', '.join([base.classname for base in self.bases]))
             file.write(') ')
+
+        kv_order_list = []
+
         for helper, args in self.helpers:
             file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
+            if helper is HelperTypes.EXT_ORDERBY:
+                kv_order_list.extend(map(str.casefold, args))
         file.write('= {}'.format(self.classname))
 
         if self.desc:
@@ -1006,7 +1021,17 @@ class EntityDef:
 
         file.write('\n\t[\n')
 
-        for kv_map in self.keyvalues.values():
+        kv_order = {
+            name: ind
+            for ind, name in
+            enumerate(kv_order_list or self.kv_order)
+        }
+
+        for name, kv_map in sorted(
+            self.keyvalues.items(),
+            # Sort by position in kv_order. If not present add to the end.
+            key=lambda name_kv: kv_order.get(name_kv[0], 2**64),
+        ):
             for tags, kv in kv_map.items():
                 kv.export(file, tags)
 
