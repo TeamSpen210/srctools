@@ -15,11 +15,7 @@ def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
     if l:
         r = g = b = l
-    if size:
-        # Special format, force these to
-        # compare unequal.
-        r = g = b = a = object()
-    else:
+    if not size:
         size = r + g + b + a
         
     return (mode, r, g, b, a, size)
