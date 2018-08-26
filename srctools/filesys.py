@@ -261,7 +261,7 @@ class FileSystemChain(FileSystem):
             return name.open_bin()
         return self._get_file(name).open_bin()
 
-    def walk_folder(self, folder: str):
+    def walk_folder(self, folder: str) -> Iterator[File]:
         """Walk folders, not repeating files."""
         done = set()
         for file in self.walk_folder_repeat(folder):
@@ -271,7 +271,7 @@ class FileSystemChain(FileSystem):
             done.add(folded)
             yield file
 
-    def walk_folder_repeat(self, folder: str=''):
+    def walk_folder_repeat(self, folder: str='') -> Iterator[File]:
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded
@@ -427,7 +427,7 @@ class RawFileSystem(FileSystem):
             raise ValueError('Path "{}" escaped "{}"!'.format(path, self.path))
         return abs_path
 
-    def walk_folder(self, folder: str):
+    def walk_folder(self, folder: str) -> Iterator[File]:
         """Yield files in a folder."""
         path = self._resolve_path(folder)
         for dirpath, dirnames, filenames in os.walk(path):
@@ -501,7 +501,7 @@ class ZipFileSystem(FileSystem):
     def __repr__(self):
         return 'ZipFileSystem({!r})'.format(self.path)
 
-    def walk_folder(self, folder: str):
+    def walk_folder(self, folder: str) -> Iterator[File]:
         """Yield files in a folder."""
         self._check_open()
         # \\ is not allowed in zips.
@@ -596,7 +596,7 @@ class VPKFileSystem(FileSystem):
             raise FileNotFoundError(name) from None
         return File(self, name.replace('\\', '/'), file)
 
-    def walk_folder(self, folder: str):
+    def walk_folder(self, folder: str) -> Iterator[File]:
         """Yield files in a folder."""
         # All VPK files use forward slashes.
         folder = folder.replace('\\', '/')
