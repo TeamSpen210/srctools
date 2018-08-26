@@ -2,7 +2,6 @@
 import itertools
 from enum import Enum
 from struct import Struct
-import re
 import io
 import math
 
@@ -35,8 +34,6 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
 
 # Version number for the format.
 BIN_FORMAT_VERSION = 2
-
-_RE_HELPER_ARGS = re.compile(r'\s*,\s*')
 
 
 class FGDParseError(TokenSyntaxError):
@@ -791,7 +788,11 @@ class EntityDef:
                 if help_type is None:
                     raise tok.error('Args without helper type! ({!r})', token_value)
 
-                args = _RE_HELPER_ARGS.split(token_value)
+                args = [
+                    arg.strip()
+                    for arg in
+                    token_value.split(',')
+                ]
 
                 if help_type is HelperTypes.INHERIT:
                     for base in args:
