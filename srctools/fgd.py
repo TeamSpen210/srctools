@@ -303,7 +303,7 @@ def validate_tags(
     The error exception is raised if invalid.
     """
     temp_set = {
-        t.lstrip('!').casefold() 
+        t.lstrip('!').upper()
         for t in tags
     }
     if len(temp_set) != len(tags):
@@ -311,7 +311,7 @@ def validate_tags(
     if '<any>' in temp_set:
         raise error('<any> cannot be used as a tag!')
     return frozenset({
-        t.casefold() 
+        t.upper()
         for t in tags
     })
     
@@ -319,15 +319,15 @@ def validate_tags(
 def match_tags(search: Set[str], tags: Iterable[str]):
     """Check if the search constraints satisfy tags.
     
-    The search tags should be casefolded.
+    The search tags should be uppercased.
     """
     if not tags: 
         return True
         
-    has_all = '<all>' in search
+    has_all = '<ALL>' in search
     for tag in tags:
-        tag = tag.casefold()
-        if tag[0] == '!':
+        tag = tag.upper()
+        if tag[0:1] == '!':
             if tag[1:] in search:
                 return False
         elif not has_all and tag not in search:
