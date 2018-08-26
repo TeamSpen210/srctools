@@ -77,6 +77,7 @@ class ValueTypes(Enum):
     STR_MATERIAL = 'material'  # Materials
     STR_MODEL = 'studio'  # Model
     STR_VSCRIPT = 'scriptlist'  # List of vscripts
+    STR_VSCRIPT_SINGLE = 'script'  # Single VScript path.
 
     # More complex
     ANGLE_NEG_PITCH = 'angle_negative_pitch'  # Inverse pitch of 'angles'
@@ -137,8 +138,10 @@ class HelperTypes(Enum):
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
-    BRUSH_SIDES = 'sidelist'
+    BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
+    # Draws the movement of a player-sized bounding box from A to B.
+    SWEPT_HULL = 'sweptplayerhull'
 
     # Complex helpers using resources
     SPRITE = 'iconsprite'
@@ -157,6 +160,7 @@ class HelperTypes(Enum):
     ENT_ROPE = 'keyframe'
     ENT_TRACK = 'animator'
     ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
+    ENT_WORLDTEXT = 'worldtext'  # Renders 3D text in-world.
 
     # Format extensions.
 
@@ -209,6 +213,8 @@ VALUE_TYPE_ORDER = [
     ValueTypes.INST_FILE,
     ValueTypes.INST_VAR_DEF,
     ValueTypes.INST_VAR_REP,
+
+    ValueTypes.STR_VSCRIPT_SINGLE,
 ]
 
 # Ditto for entity types.
