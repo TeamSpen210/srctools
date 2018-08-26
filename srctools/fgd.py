@@ -483,6 +483,12 @@ class KeyValues:
                     ))
             elif self.type is ValueTypes.CHOICES:
                 for value, name in self.val_list or ():
+                    # Numbers can be unquoted, everything else cannot.
+                    try:
+                        float(value)
+                    except ValueError:
+                        value = '"' + value + '"'
+
                     file.write('\t\t{}: "{}"\n'.format(value, name))
             else:
                 raise AssertionError('No other types possible!')
