@@ -318,8 +318,11 @@ class Model:
 
         f.seek(surfaceprop_index)
         self.surfaceprop = read_nullstr(f)
-        
-        self.keyvalues = read_nullstr(f, keyvalue_index)
+
+        if keyvalue_count:
+            self.keyvalues = read_nullstr(f, keyvalue_index)
+        else:
+            self.keyvalues = ''
 
         f.seek(includemodel_index)
         self.included_models = [None] * includemodel_count  # type: List[IncludedMDL]
