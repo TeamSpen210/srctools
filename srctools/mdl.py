@@ -1,6 +1,6 @@
 """Parses Source models, to extract metadata."""
-from typing import Set, List, BinaryIO, NamedTuple, Iterator, Tuple
-from enum import IntFlag
+from typing import Set, List, BinaryIO, NamedTuple, Iterator, Tuple, Dict
+from enum import IntFlag, Enum
 
 from srctools.filesys import FileSystem, File
 from srctools.property_parser import Property
@@ -14,10 +14,8 @@ IncludedMDL = NamedTuple('IncludedMDL', [
 ])
 
 SeqEvent = NamedTuple('SeqEvent', [
-    ('name', str),
+    ('type', 'AnimEvents'),
     ('cycle', float),
-    ('event', int),
-    ('type', int),
     ('options', str),
 ])
 
@@ -55,6 +53,211 @@ class Flags(IntFlag):
     ambient_boost = 1 << 16
     do_not_cast_shadows = 1 << 17
     cast_texture_shadows = 1 << 18
+
+
+class AnimEventTypes(IntFlag):
+    """Categories of animation events."""
+    NONE = 0
+    SERVER    = 1 << 0
+    SCRIPTED  = 1 << 1
+    SHARED    = 1 << 2
+    WEAPON    = 1 << 3
+    CLIENT    = 1 << 4
+    FACEPOSER = 1 << 5
+
+CL = AnimEventTypes.CLIENT
+SV = AnimEventTypes.SERVER
+
+
+class AnimEvents(Enum):
+    """The types of events in models.
+
+    0    -  999 is "specific" / new string-based type.
+    1000 - 1999 is for scripted events.
+    2000 - 2999 is shared events.
+    3000 - 4999 is weapon events.
+    5000+       is clientside events.
+    """
+
+    # New string-based type (eventlist.h)
+    AE_EMPTY = 0
+    AE_NPC_LEFTFOOT = 1
+    AE_NPC_RIGHTFOOT = 2
+    AE_NPC_BODYDROP_LIGHT = 3 
+    AE_NPC_BODYDROP_HEAVY = 4
+    AE_NPC_SWISHSOUND = 5
+    AE_NPC_180TURN = 6
+    AE_NPC_ITEM_PICKUP = 7
+    AE_NPC_WEAPON_DROP = 8
+    AE_NPC_WEAPON_SET_SEQUENCE_NAME = 9
+    AE_NPC_WEAPON_SET_SEQUENCE_NUMBER = 10
+    AE_NPC_WEAPON_SET_ACTIVITY = 11
+    AE_NPC_HOLSTER = 11
+    AE_NPC_DRAW = 12
+    AE_NPC_WEAPON_FIRE = 13
+
+    AE_CL_PLAYSOUND = 14
+    AE_SV_PLAYSOUND = 15
+    AE_CL_STOPSOUND = 16
+
+    AE_START_SCRIPTED_EFFECT = 17
+    AE_STOP_SCRIPTED_EFFECT = 18
+
+    AE_CLIENT_EFFECT_ATTACH = 19
+
+    AE_MUZZLEFLASH = 20
+    AE_NPC_MUZZLEFLASH = 21
+
+    AE_THUMPER_THUMP = 22
+    AE_AMMOCRATE_PICKUP_AMMO = 23
+
+    AE_NPC_RAGDOLL = 24
+    AE_NPC_ADDGESTURE = 25
+    AE_NPC_RESTARTGESTURE = 26
+    AE_NPC_ATTACK_BROADCAST = 27
+    AE_NPC_HURT_INTERACTION_PARTNER = 28
+    AE_NPC_SET_INTERACTION_CANTDIE = 29
+
+    AE_SV_DUSTTRAIL = 30
+    AE_CL_CREATE_PARTICLE_EFFECT = 31
+    AE_RAGDOLL = 32
+
+    AE_CL_ENABLE_BODYGROUP = 33
+    AE_CL_DISABLE_BODYGROUP = 34
+    AE_CL_BODYGROUP_SET_VALUE = 35
+    AE_CL_BODYGROUP_SET_VALUE_CMODEL_WPN = 36
+
+    AE_WPN_PRIMARYATTACK = 37
+    AE_WPN_INCREMENTAMMO = 38
+    AE_WPN_HIDE = 39
+    AE_WPN_UNHIDE = 40
+    AE_WPN_PLAYWPNSOUND = 41
+
+    AE_RD_ROBOT_POP_PANELS_OFF = 42
+
+    AE_TAUNT_ENABLE_MOVE = 43
+    AE_TAUNT_DISABLE_MOVE = 44
+
+    # Alien Swarm+ events
+    AE_ASW_FOOTSTEP = 45
+    AE_MARINE_FOOTSTEP = 46
+    AE_MARINE_RELOAD_SOUND_A = 47
+    AE_MARINE_RELOAD_SOUND_B = 48
+    AE_MARINE_RELOAD_SOUND_C = 49
+    AE_REMOVE_CLIENT_AIM = 50
+
+    AE_MELEE_DAMAGE = 51
+    AE_MELEE_START_COLLISION_DAMAGE = 52
+    AE_MELEE_STOP_COLLISION_DAMAGE = 53
+    AE_SCREEN_SHAKE = 54
+    AE_START_DETECTING_COMBO = 55
+    AE_STOP_DETECTING_COMBO = 56
+    AE_COMBO_TRANSITION = 57
+    AE_ALLOW_MOVEMENT = 57
+    AE_SKILL_EVENT = 59
+
+    AE_TUG_INCAP = 60
+
+    # Script events (scriptevent.h)
+    SCRIPT_EVENT_DEAD           = 1000
+    SCRIPT_EVENT_NOINTERRUPT    = 1001
+    SCRIPT_EVENT_CANINTERRUPT   = 1002
+    SCRIPT_EVENT_FIREEVENT      = 1003
+    SCRIPT_EVENT_SOUND          = 1004
+    SCRIPT_EVENT_SENTENCE       = 1005
+    SCRIPT_EVENT_INAIR          = 1006
+    SCRIPT_EVENT_ENDANIMATION   = 1007
+    SCRIPT_EVENT_SOUND_VOICE    = 1008
+    SCRIPT_EVENT_SENTENCE_RND1  = 1009
+    SCRIPT_EVENT_NOT_DEAD       = 1010
+    SCRIPT_EVENT_EMPHASIS       = 1011
+    SCRIPT_EVENT_BODYGROUPON    = 1020
+    SCRIPT_EVENT_BODYGROUPOFF   = 1021
+    SCRIPT_EVENT_BODYGROUPTEMP  = 1022
+    SCRIPT_EVENT_FIRE_INPUT     = 1100
+
+    NPC_EVENT_BODYDROP_LIGHT    = 2001
+    NPC_EVENT_BODYDROP_HEAVY    = 2002
+
+    NPC_EVENT_SWISHSOUND        = 2010
+
+    NPC_EVENT_180TURN           = 2020
+
+    NPC_EVENT_ITEM_PICKUP                   = 2040
+    NPC_EVENT_WEAPON_DROP                   = 2041
+    NPC_EVENT_WEAPON_SET_SEQUENCE_NAME      = 2042
+    NPC_EVENT_WEAPON_SET_SEQUENCE_NUMBER    = 2043
+    NPC_EVENT_WEAPON_SET_ACTIVITY           = 2044
+
+    NPC_EVENT_LEFTFOOT          = 2050
+    NPC_EVENT_RIGHTFOOT         = 2051
+
+    NPC_EVENT_OPEN_DOOR         = 2060
+
+    EVENT_WEAPON_MELEE_HIT          = 3001
+    EVENT_WEAPON_SMG1               = 3002
+    EVENT_WEAPON_MELEE_SWISH        = 3003
+    EVENT_WEAPON_SHOTGUN_FIRE       = 3004
+    EVENT_WEAPON_THROW              = 3005
+    EVENT_WEAPON_AR1                = 3006
+    EVENT_WEAPON_AR2                = 3007
+    EVENT_WEAPON_HMG1               = 3008
+    EVENT_WEAPON_SMG2               = 3009
+    EVENT_WEAPON_MISSILE_FIRE       = 3010
+    EVENT_WEAPON_SNIPER_RIFLE_FIRE  = 3011
+    EVENT_WEAPON_AR2_GRENADE        = 3012
+    EVENT_WEAPON_THROW2             = 3013
+    EVENT_WEAPON_PISTOL_FIRE        = 3014
+    EVENT_WEAPON_RELOAD             = 3015
+    EVENT_WEAPON_THROW3             = 3016
+    EVENT_WEAPON_RELOAD_SOUND       = 3017
+    EVENT_WEAPON_RELOAD_FILL_CLIP   = 3018
+    EVENT_WEAPON_SMG1_BURST1        = 3101
+    EVENT_WEAPON_SMG1_BURSTN        = 3102
+    EVENT_WEAPON_AR2_ALTFIRE        = 3103
+
+    EVENT_WEAPON_SEQUENCE_FINISHED  = 3900
+
+    # Client-side events (cl_animevent.h)
+    CL_EVENT_MUZZLEFLASH0 = 5001
+    CL_EVENT_MUZZLEFLASH1 = 5011
+    CL_EVENT_MUZZLEFLASH2 = 5021
+    CL_EVENT_MUZZLEFLASH3 = 5031
+    CL_EVENT_SPARK0 = 5002
+    CL_EVENT_NPC_MUZZLEFLASH0 = 5003
+    CL_EVENT_NPC_MUZZLEFLASH1 = 5013
+    CL_EVENT_NPC_MUZZLEFLASH2 = 5023
+    CL_EVENT_NPC_MUZZLEFLASH3 = 5033
+    CL_EVENT_SOUND = 5004
+    CL_EVENT_EJECTBRASS1 = 6001
+    CL_EVENT_DISPATCHEFFECT0 = 9001
+    CL_EVENT_DISPATCHEFFECT1 = 9011
+    CL_EVENT_DISPATCHEFFECT2 = 9021
+    CL_EVENT_DISPATCHEFFECT3 = 9031
+    CL_EVENT_DISPATCHEFFECT4 = 9041
+    CL_EVENT_DISPATCHEFFECT5 = 9051
+    CL_EVENT_DISPATCHEFFECT6 = 9061
+    CL_EVENT_DISPATCHEFFECT7 = 9071
+    CL_EVENT_DISPATCHEFFECT8 = 9081
+    CL_EVENT_DISPATCHEFFECT9 = 9091
+    CL_EVENT_SPRITEGROUP_CREATE = 6002
+    CL_EVENT_SPRITEGROUP_DESTROY = 6003
+    CL_EVENT_FOOTSTEP_LEFT = 6004
+    CL_EVENT_FOOTSTEP_RIGHT = 6005
+    CL_EVENT_MFOOTSTEP_LEFT = 6006
+    CL_EVENT_MFOOTSTEP_RIGHT = 6007
+    CL_EVENT_MFOOTSTEP_LEFT_LOUD = 6008
+    CL_EVENT_MFOOTSTEP_RIGHT_LOUD = 6009
+
+
+ANIM_EVENT_BY_INDEX = {
+    event.value: event
+    for event in AnimEvents
+}  # type: Dict[int, AnimEvents]
+ANIM_EVENT_BY_NAME = {
+    event.name: event
+    for event in AnimEvents
+}  # type: Dict[str, AnimEvents]
 
 
 def str_read(format, file: BinaryIO):
@@ -373,20 +576,41 @@ class Model:
                 event_start = f.tell()
                 (
                     event_cycle,
-                    event_event,
-                    event_type,
-                    event_options,
                     event_index,
+                    event_flags,
+                    event_options,
+                    event_nameloc,
                 ) = str_read('fii64si', f)
                 event_end = f.tell()
-                event_name = read_nullstr(f, event_start + event_index)
+
+                # There are two event systems.
+                if event_flags == 1 << 10:
+                    # New system, name in the file.
+                    event_name = read_nullstr(f, event_start + event_nameloc)
+                    if event_name.isdigit():
+                        try:
+                            event_type = ANIM_EVENT_BY_INDEX[int(event_name)]
+                        except KeyError:
+                            raise ValueError('Unknown event index!')
+                    else:
+                        try:
+                            event_type = ANIM_EVENT_BY_NAME[event_name]
+                        except KeyError:
+                            raise ValueError('Unknown event type!')
+                else:
+                    # Old system, index.
+                    try:
+                        event_type = ANIM_EVENT_BY_INDEX[event_index]
+                    except KeyError:
+                        # raise ValueError('Unknown event index!')
+                        print('Unknown: ', event_index, event_options.rstrip(b'\0'))
+                        continue
+
                 f.seek(event_end)
                 events[j] = SeqEvent(
-                    name=event_name,
-                    cycle=event_cycle,
-                    options=event_options.rstrip(b'\0').decode('ascii'),
                     type=event_type,
-                    event=event_event,
+                    cycle=event_cycle,
+                    options=event_options.rstrip(b'\0').decode('ascii')
                 )
 
             if keyvalue_size == 0:
@@ -434,7 +658,24 @@ class Model:
         """Yield all sounds used by animations.
 
         """
+        sound_events = [
+            AnimEvents.CL_PLAYSOUND,
+            AnimEvents.SV_PLAYSOUND,
+            AnimEvents.SCRIPT_EVENT_SOUND,
+            AnimEvents.SCRIPT_EVENT_SOUND_VOICE,
+        ]
+        footstep_events = [
+            AnimEvents.NPC_LEFTFOOT
+        ]
+
         for seq in self.sequences:
             for event in seq.events:
-                if event.name in ('AE_CL_PLAYSOUND', 'CL_EVENT_SOUND'):
+                if event.type in sound_events:
                     yield event.options
+                if event.type in footstep_events:
+                    npc = event.options or "NPC_CombineS"
+                    yield npc + ".RunFootstepLeft"
+                    yield npc + ".RunFootstepRight"
+                    yield npc + ".FootstepLeft"
+                    yield npc + ".FootstepRight"
+
