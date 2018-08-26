@@ -718,7 +718,7 @@ class EntityDef:
         self.kv_order = []  # type: List[str]
 
         # Base type names - base()
-        self.bases = []  # type: List[EntityDef]
+        self.bases = []  # type: List[Union[EntityDef, str]]
         # line(), studio(), etc in the header
         # this is a func, args tuple.
         self.helpers = []  # type: List[Tuple[HelperTypes, List[str]]]
@@ -735,6 +735,7 @@ class EntityDef:
         fgd: 'FGD',
         tok: Tokenizer,
         ent_type: EntityTypes,
+        eval_bases: bool=True,
     ):
         """Parse an entity definition."""
         entity = cls(ent_type)
@@ -766,9 +767,10 @@ class EntityDef:
 
                 if help_type is HelperTypes.INHERIT:
                     for base in args:
-                        base_ent = fgd[base.strip()]
-                        if base_ent not in entity.bases:
-                            entity.bases.append(base_ent)
+                        if eval_bases:
+                            base = fgd[base]
+                        if base not in entity.bases:
+                            entity.bases.append(base)
                     help_type = None
                     continue
 
@@ -1027,7 +1029,10 @@ class EntityDef:
         ))
         if self.bases:
             file.write('base(')
-            file.write(', '.join([base.classname for base in self.bases]))
+            file.write(', '.join([
+                (base.classname if isinstance(base, EntityDef) else base)
+                for base in self.bases
+            ]))
             file.write(') ')
 
         kv_order_list = []
@@ -1218,10 +1223,10 @@ class FGD:
         fgd.parse_file(filesystem, file)
         return fgd
 
-    def _apply_bases(self) -> None:
+    def apply_bases(self) -> None:
         """Fix base values in entities after parsing.
         
-        While parsing the classnames are set as strings,
+        While parsing the classnames may be set as strings,
         so order in the file doesn't matter. This fixes
         them to the real entity objects.
         """
@@ -1330,15 +1335,23 @@ class FGD:
         self,
         filesys: FileSystem,
         file: File,
+        *,
+        eval_bases: bool=True,
+        encoding='cp1252',
     ) -> None:
-        """Parse one file (recursively if needed)."""
+        """Parse one file (recursively if needed).
+
+        If eval_bases is False, bases will not be computed. This makes it
+        impossible in some cases to evaluate these later, but it can help
+        if it is not required.
+        """
 
         if file in self._parse_list:
             return
 
         self._parse_list.append(file)
 
-        with filesys, file.open_str() as f:
+        with filesys, file.open_str(encoding) as f:
             tokeniser = Tokenizer(
                 f,
                 filename=file.path,
@@ -1385,7 +1398,7 @@ class FGD:
                             'Invalid Entity type "{}"!',
                             token_value[1:],
                         )
-                    EntityDef.parse(self, tokeniser, ent_type)
+                    EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
@@ -1484,7 +1497,7 @@ class FGD:
             ent = EntityDef.unserialise(file, from_dict)
             fgd.entities[ent.classname.casefold()] = ent
 
-        fgd._apply_bases()
+        fgd.apply_bases()
 
         return fgd
 
