@@ -427,6 +427,19 @@ class KeyValues:
             '{s.readonly})'.format(s=self)
         )
 
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, KeyValues):
+            return (
+                self.name == other.name
+                and self.type == other.type
+                and self.disp_name == other.disp_name
+                and self.default == other.default
+                and self.desc == other.desc
+                and self.val_list == other.val_list
+                and self.readonly == other.readonly
+            )
+        return NotImplemented
+
     def copy(self) -> 'KeyValues':
         """Create a duplicate of this keyvalue."""
         return KeyValues(
@@ -576,6 +589,15 @@ class IODef:
     def copy(self) -> 'IODef':
         """Create a duplicate of this IODef."""
         return IODef(self.name, self.type, self.desc)
+
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, IODef):
+            return (
+                self.name == other.name
+                and self.type == other.type
+                and self.desc == other.desc
+            )
+        return NotImplemented
 
     def export(
         self,
