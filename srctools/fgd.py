@@ -390,6 +390,26 @@ class BinStrDict:
         
         return lookup
 
+    @staticmethod
+    def read_tags(file: BinaryIO, from_dict: Callable[[], str]) -> FrozenSet[str]:
+        """Pull tags from a BinStrDict."""
+        [size] = _fmt_8bit.unpack(file.read(1))
+        return frozenset({
+            from_dict()
+            for _ in range(size)
+        })
+
+    @staticmethod
+    def write_tags(
+        file: BinaryIO,
+        dic: 'BinStrDict',
+        tags: Collection[str],
+    ) -> None:
+        """Write tags a file using the dictionary."""
+        file.write(_fmt_8bit.pack(len(tags)))
+        for tag in tags:
+            file.write(dic(tag))
+
 
 class KeyValues:
     """Represents a generic keyvalue type.
@@ -713,7 +733,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         """Yields all keys this object has."""
         seen = set()
         for ent_map in self._maps():
-            for name, tags in ent_map.keys():
+            for name in ent_map:
                 if name in seen:
                     continue
                 seen.add(name)
@@ -1151,15 +1171,15 @@ class EntityDef:
                 # and just the value.
                 # That saves 2 bytes.
                 if len(tag_map) == 1:
-                    [(tag, value)] = tag_map.items()
-                    if tag == '':
+                    [(tags, value)] = tag_map.items()
+                    if not tags:
                         file.write(_fmt_8bit.pack(0))
                         value.serialise(file, str_dict)
                         continue
 
                 file.write(_fmt_8bit.pack(len(tag_map)))
-                for tag, value in tag_map.items():
-                    file.write(str_dict(':'.join(tag)))
+                for tags, value in tag_map.items():
+                    BinStrDict.write_tags(file, str_dict, tags)
                     value.serialise(file, str_dict)
 
         # Helpers are not added.
@@ -1196,17 +1216,17 @@ class EntityDef:
                 if tag_count == 0:
                     # Special case, a single untagged item.
                     obj = cls.unserialise(file, from_dict)
-                    val_map[obj.name] = {frozenset(''): obj}
+                    val_map[obj.name] = {frozenset(): obj}
                 else:
 
                     # We know it's starting empty, and must have at least
                     # one tag.
 
-                    tag = frozenset(from_dict().split(':'))
+                    tag = BinStrDict.read_tags(file, from_dict)
                     obj = cls.unserialise(file, from_dict)
                     tag_map = val_map[obj.name] = {tag: obj}
                     for _ in range(tag_count - 1):
-                        tag = frozenset(from_dict().split(':'))
+                        tag = BinStrDict.read_tags(file, from_dict)
                         obj = cls.unserialise(file, from_dict)
                         tag_map[tag] = obj
 
