@@ -1,5 +1,9 @@
 """Parses Source models, to extract metadata."""
-from typing import Set, List, BinaryIO, NamedTuple, Iterator, Tuple, Dict
+from typing import (
+    Union, Iterator,
+    List, Dict, Set, Tuple, NamedTuple,
+    BinaryIO,
+)
 from enum import IntFlag, Enum
 
 from srctools.filesys import FileSystem, File
@@ -14,7 +18,8 @@ IncludedMDL = NamedTuple('IncludedMDL', [
 ])
 
 SeqEvent = NamedTuple('SeqEvent', [
-    ('type', 'AnimEvents'),
+    # AnimEvents for known common ones, str for dynamic NPC-specific events.
+    ('type', Union['AnimEvents', str]),
     ('cycle', float),
     ('options', str),
 ])
@@ -249,6 +254,16 @@ class AnimEvents(Enum):
     CL_EVENT_MFOOTSTEP_LEFT_LOUD = 6008
     CL_EVENT_MFOOTSTEP_RIGHT_LOUD = 6009
 
+    # These are defined directly as numbers, in
+    # C_CSPlayer::FireEvent in the 2007 cstrike branch.
+    CSS_FOOT_WATER_SPLASH = 7001
+    CSS_FOOT_WATER_RIPPLE = 7002
+
+    # A different set of foot impact events from
+    # CSGO. Options are 'lfoot' or 'rfoot' (IK names)
+    CSGO_FOOT_JUMP = 4001
+    CSGO_FOOT_WALK = 4002
+
 
 ANIM_EVENT_BY_INDEX = {
     event.value: event
@@ -257,6 +272,8 @@ ANIM_EVENT_BY_INDEX = {
 ANIM_EVENT_BY_NAME = {
     event.name: event
     for event in AnimEvents
+    # Don't save some that don't actually have official names.
+    if event.value not in (4001, 4002, 7001, 7002)
 }  # type: Dict[str, AnimEvents]
 
 
@@ -596,7 +613,8 @@ class Model:
                         try:
                             event_type = ANIM_EVENT_BY_NAME[event_name]
                         except KeyError:
-                            raise ValueError('Unknown event type!')
+                            # NPC-specific events, declared dynamically.
+                            event_type = event_name
                 else:
                     # Old system, index.
                     try:
