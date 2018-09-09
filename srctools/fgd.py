@@ -1430,7 +1430,12 @@ class FGD:
                         include = filesys[include_file]
                     except KeyError:
                         raise FileNotFoundError(file)
-                    self.parse_file(filesys, include)
+                    self.parse_file(
+                        filesys,
+                        include,
+                        eval_bases=eval_bases,
+                        encoding=encoding,
+                    )
 
                 elif token_value == '@mapsize':
                     # Max/min map size definition
