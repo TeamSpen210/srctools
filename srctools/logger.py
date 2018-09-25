@@ -55,9 +55,12 @@ class LogMessage:
         if lines[-1].isspace():
             # Strip last line if it's blank
             del lines[-1]
-        # '|' beside all the lines, '|_ beside the last. Add an empty
-        # line at the end.
-        return '\n | '.join(lines[:-1]) + '\n |_' + lines[-1] + '\n'
+        # [I] A multi-line message looks like the following:
+        # | blah
+        # | blah
+        # |___
+        #
+        return '\n | '.join(lines[:]) + '\n |___\n'
 
 
 class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
