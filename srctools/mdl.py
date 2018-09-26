@@ -675,13 +675,14 @@ class Model:
 
         """
         sound_events = [
-            AnimEvents.CL_PLAYSOUND,
-            AnimEvents.SV_PLAYSOUND,
+            AnimEvents.AE_CL_PLAYSOUND,
+            AnimEvents.AE_SV_PLAYSOUND,
             AnimEvents.SCRIPT_EVENT_SOUND,
             AnimEvents.SCRIPT_EVENT_SOUND_VOICE,
         ]
         footstep_events = [
-            AnimEvents.NPC_LEFTFOOT
+            AnimEvents.AE_NPC_LEFTFOOT,
+            AnimEvents.AE_NPC_RIGHTFOOT,
         ]
 
         for seq in self.sequences:
