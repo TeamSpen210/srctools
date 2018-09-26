@@ -318,3 +318,4 @@ from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
 from srctools.fgd import FGD
 from srctools.const import GameID
+from srctools.surfaceprop import SurfaceProp, SurfChar
