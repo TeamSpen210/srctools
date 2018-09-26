@@ -7,7 +7,6 @@ from typing import (
 from enum import IntFlag, Enum
 
 from srctools.filesys import FileSystem, File
-from srctools.property_parser import Property
 from srctools.vec import Vec
 from struct import unpack, Struct, calcsize
 
@@ -33,7 +32,7 @@ MDLSequence = NamedTuple('Sequence', [
     ('bbox_min', Vec),
     ('bbox_max', Vec),
     # More after here.
-    ('keyvalues', Property),
+    ('keyvalues', str),
 ])
 
 
@@ -631,11 +630,10 @@ class Model:
                     options=event_options.rstrip(b'\0').decode('ascii')
                 )
 
-            if keyvalue_size == 0:
-                keyvalues = Property('Keyvalues', [])
+            if keyvalue_size:
+                keyvalues = read_nullstr(f, start_pos + keyvalue_pos)
             else:
-                keyvalues = Property.parse(read_nullstr(f, start_pos + keyvalue_pos))
-                keyvalues.name = 'Keyvalues'
+                keyvalues = ''
 
             sequences[i] = MDLSequence(
                 label=read_nullstr(f, start_pos + label_pos),
@@ -696,4 +694,3 @@ class Model:
                     yield npc + ".RunFootstepRight"
                     yield npc + ".FootstepLeft"
                     yield npc + ".FootstepRight"
-
