@@ -429,8 +429,8 @@ class KeyValues:
     """Represents a generic keyvalue type.
 
     If the type is choices or spawnflags, val_list is required:
-    * For choices it's a list of (value, name) tuples.
-    * For spawnflags it's a list of (bitflag, name, default) tuples.
+    * For choices it's a list of (value, name, tags) tuples.
+    * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
     def __init__(
         self,
@@ -439,7 +439,11 @@ class KeyValues:
         disp_name: str,
         default: str,
         doc: str,
-        val_list: Optional[List[Union[Tuple[int, str, bool], Tuple[str, str]]]],
+        val_list: Union[
+            None,
+            List[Tuple[int, str, bool, FrozenSet[str]]],
+            List[Tuple[str, str, FrozenSet[str]]],
+        ],
         is_readonly: bool,
     ):
         self.name = name
@@ -449,7 +453,7 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
-        
+
     def __repr__(self) -> str:
         return (
             'KeyValues({s.name!r}, {s.type!r}, '
@@ -509,21 +513,29 @@ class KeyValues:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
-                for index, name, default in self.val_list or ():
-                    file.write('\t\t{}: "{}" : {}\n'.format(
+                for index, name, default, tags in self.val_list or ():
+                    file.write('\t\t{}: "{}" : {}'.format(
                         index,
                         name,
                         int(default),
                     ))
+                    if tags:
+                        file.write(' [' + ', '.join(tags) + ']\n')
+                    else:
+                        file.write('\n')
             elif self.type is ValueTypes.CHOICES:
-                for value, name in self.val_list or ():
+                for value, name, tags in self.val_list or ():
                     # Numbers can be unquoted, everything else cannot.
                     try:
                         float(value)
                     except ValueError:
                         value = '"' + value + '"'
 
-                    file.write('\t\t{}: "{}"\n'.format(value, name))
+                    file.write('\t\t{}: "{}"'.format(value, name))
+                    if tags:
+                        file.write(' [' + ', '.join(tags) + ']\n')
+                    else:
+                        file.write('\n')
             else:
                 raise AssertionError('No other types possible!')
             file.write('\t\t]\n')
@@ -1022,7 +1034,12 @@ class EntityDef:
                             break
                         elif choices_token is not Token.STRING:
                             raise tok.error(choices_token)
-                        vals, has_equal = read_colon_list(tok, had_colon=False)
+                        vals, end_token = read_colon_list(tok, had_colon=False)
+
+                        if end_token is Token.BRACK_OPEN:
+                            val_tags = read_tags(tok)
+                        else:
+                            val_tags = frozenset()
                         
                         if val_typ is ValueTypes.SPAWNFLAGS:
                             # The first value is an integer.
@@ -1048,19 +1065,19 @@ class EntityDef:
 
                         # Spawnflags can have a default, others don't
                         if len(vals) == 2 and val_typ is ValueTypes.SPAWNFLAGS:
-                            val_list.append((choices_value, vals[0], vals[1].strip() == '1'))
+                            val_list.append((choices_value, vals[0], vals[1].strip() == '1', val_tags))
                         elif len(vals) == 1:
                             if val_typ is ValueTypes.SPAWNFLAGS:
-                                val_list.append((choices_value, vals[0], True))
+                                val_list.append((choices_value, vals[0], True, val_tags))
                             else:
-                                val_list.append((choices_value, vals[0]))
+                                val_list.append((choices_value, vals[0], val_tags))
                         elif len(vals) == 0:
                             raise tok.error(Token.STRING)
                         else:
                             raise tok.error('Too many values!\n{}', vals)
 
                         # Handle ] at the end of a : : line.
-                        if has_equal is Token.BRACK_CLOSE:
+                        if end_token is Token.BRACK_CLOSE:
                             break
                     else:
                         raise tok.error(token.EOF)
@@ -1110,6 +1127,9 @@ class EntityDef:
             file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
             if helper is HelperTypes.EXT_ORDERBY:
                 kv_order_list.extend(map(str.casefold, args))
+
+        if self.helpers:
+            file.write('\n')  # Put the classname on the following line.
         file.write('= {}'.format(self.classname))
 
         if self.desc:
@@ -1321,7 +1341,7 @@ class FGD:
     def collapse_bases(self) -> None:
         """Collapse all bases into the entities that use them.
 
-        This operates in-place.
+        This operates in-place, and clears all the base attributes as a result.
         """
         # We need to do a topological sort effectively, to ensure we do
         # parents before children.
