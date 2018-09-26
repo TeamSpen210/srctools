@@ -9,7 +9,10 @@ from srctools.property_parser import Property
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
 from srctools.bsp import BSP
-from srctools.filesys import FileSystem, VPKFileSystem, FileSystemChain, File
+from srctools.filesys import (
+    FileSystem, VPKFileSystem, FileSystemChain, File,
+    VirtualFileSystem,
+)
 from srctools.mdl import Model
 from srctools.vmt import Material, VarType
 from srctools.sndscript import Sound
@@ -642,11 +645,22 @@ class PackList:
             if component in self.fsys:
                 self.pack_file(component)
 
-        try:
-            mdl = Model(self.fsys, self.fsys[file.filename])
-        except FileNotFoundError:
-            LOGGER.warning('Can\'t find model "{}"!', file.filename)
-            return
+        if file.virtual:
+            # We need to add that file onto the system, so it's loaded.
+            virtual_system = VirtualFileSystem({
+                file.filename: file.data,
+            })
+            self.fsys.systems.insert(0, (virtual_system, ''))
+            try:
+                mdl = Model(self.fsys, self.fsys[file.filename])
+            finally:
+                self.fsys.systems.pop(0)
+        else:
+            try:
+                mdl = Model(self.fsys, self.fsys[file.filename])
+            except FileNotFoundError:
+                LOGGER.warning('Can\'t find model "{}"!', file.filename)
+                return
 
         for tex in mdl.iter_textures():
             self.pack_file(tex, FileType.MATERIAL)
@@ -661,12 +675,16 @@ class PackList:
         """Find any needed files for a material."""
 
         parents = []
-        try:
-            with self.fsys, self.fsys.open_str(file.filename) as f:
-                mat = Material.parse(f, file.filename)  # type: Material
-        except FileNotFoundError:
-            print('WARNING: File "{}" does not exist!'.format(file.filename))
-            return
+        if file.virtual:
+            # Read directly from the data we have.
+            mat = Material.parse(file.data.decode('utf8'), file.filename)
+        else:
+            try:
+                with self.fsys, self.fsys.open_str(file.filename) as f:
+                    mat = Material.parse(f, file.filename)
+            except FileNotFoundError:
+                print('WARNING: File "{}" does not exist!'.format(file.filename))
+                return
 
         # For 'patch' shaders, apply the originals.
         mat = mat.apply_patches(self.fsys, parent_func=parents.append)
