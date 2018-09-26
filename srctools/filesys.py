@@ -493,10 +493,15 @@ class RawFileSystem(FileSystem):
 
 class ZipFileSystem(FileSystem):
     """Accesses files in a zip file."""
-    def __init__(self, path: str):
+    def __init__(self, path: str, zipfile: ZipFile=None):
         self._ref = None  # type: ZipFile
         self._name_to_info = {}
         super().__init__(path)
+
+        if zipfile is not None:
+            # Use the zipfile directly, and don't close it.
+            self._ref_count += 1
+            self._ref = zipfile
 
     def __repr__(self):
         return 'ZipFileSystem({!r})'.format(self.path)
