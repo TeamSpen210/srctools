@@ -1373,6 +1373,15 @@ class FGD:
                         for tag, kv in base_kv_map.items():
                             if tag not in ent_kv_map:
                                 ent_kv_map[tag] = kv.copy()
+                            elif kv.type.has_list:
+                                # If both are lists, merge those. This is mainly
+                                # for spawnflags.
+                                targ_list = ent_kv_map[tag].val_list
+                                if targ_list:
+                                    for val in kv.val_list:
+                                        if val not in targ_list:
+                                            targ_list.append(val)
+
                         if name not in keyvalue_names:
                             base_kv.append(name)
                             keyvalue_names.add(name)
