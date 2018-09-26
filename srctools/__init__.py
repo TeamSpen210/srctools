@@ -265,7 +265,8 @@ class AtomicWriter:
             _os.remove(self.temp.name)
 
         # Create folders if needed..
-        _os.makedirs(self.dir, exist_ok=True)
+        if self.dir:
+            _os.makedirs(self.dir, exist_ok=True)
 
         for i in _itertools.count(start=1):
             self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
