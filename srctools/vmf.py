@@ -10,12 +10,9 @@ from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union,
-    Dict, List, Tuple, Set, Iterable, Iterator,
-    TypeVar,
-    Mapping,
-    overload,
-    IO,
+    Optional, Union, Any, overload, TypeVar,
+    Dict, List, Tuple, Set, Mapping, IO,
+    Iterable, Iterator,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -1830,11 +1827,16 @@ class Entity:
         else:
             return default
 
-    def __setitem__(self, key: str, val: Union[str, int, float]):
+    def __setitem__(
+        self,
+        key: str,
+        val: Union[str, int, float, bool, Any],
+    ) -> None:
         """Allow using [] syntax to save a keyvalue.
 
         - It is case-insensitive, so it will overwrite a key which only
           differs by case.
+        - Booleans are treated specially, all other types are stringified.
         """
         if isinstance(val, bool):
             val = '1' if val else '0'
