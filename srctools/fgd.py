@@ -11,6 +11,7 @@ from typing import (
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
     BinaryIO, TextIO,
+    Container,
 )
 
 from srctools.filesys import FileSystem, File
@@ -300,7 +301,7 @@ def validate_tags(
     The error exception is raised if invalid.
     """
     temp_set = {
-        t.lstrip('!').upper()
+        t.lstrip('!-+').upper()
         for t in tags
     }
     if len(temp_set) != len(tags):
@@ -313,23 +314,36 @@ def validate_tags(
     })
     
     
-def match_tags(search: Set[str], tags: Iterable[str]):
+def match_tags(search: Container[str], tags: Iterable[str]):
     """Check if the search constraints satisfy tags.
     
     The search tags should be uppercased.
+
+    All !tags or -tags cannot be present, all +tags must be present, and
+    at lest one normal tag must be present (if they are) to pass.
     """
     if not tags: 
         return True
         
     has_all = '<ALL>' in search
+    # None = no normal tags, True = matched one, False = not matched one.
+    matched = None
     for tag in tags:
         tag = tag.upper()
-        if tag[0:1] == '!':
+        start = tag[0:1]
+        if start == '!' or start == '-':
             if tag[1:] in search:
                 return False
-        elif not has_all and tag not in search:
-            return False
-    return True
+        elif start == '+':
+            if tag[1:] not in search:
+                return False
+        else:
+            if matched is None:
+                matched = False
+            if has_all or tag in search:
+                matched = True
+
+    return matched is not False
 
 
 class BinStrDict:
