@@ -8,8 +8,6 @@ from collections import OrderedDict
 from typing import List, Optional, Dict, IO, Sequence, TypeVar, Type, Union
 
 
-ST_HEADER = Struct('')
-
 ST_COMMAND = Struct('ci260s260sii260sii')
 ST_COMMAND_PRE_V2 = Struct('ci260s260sii260si')
 
