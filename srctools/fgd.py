@@ -1107,6 +1107,35 @@ class EntityDef:
         else:
             return '<Entity {}>'.format(self.classname)
 
+    def strip_tags(self, tags: FrozenSet[str]) -> None:
+        """Strip all tags from this entity, blanking them.
+
+        Only values matching the given tags will be kept.
+        """
+        for category in [self.keyvalues, self.inputs, self.outputs]:
+            for key, tag_map in list(category.items()):
+                # Force longer more-specific tags to match first.
+                for key_tag, value in sorted(
+                    tag_map.items(),
+                    key=lambda t: len(t[0]),
+                    reverse=True,
+                ):
+                    if match_tags(tags, key_tag):
+                        category[key] = {
+                            frozenset(): value
+                        }
+                        if isinstance(value, KeyValues) and value.val_list:
+
+                            # Filter the value list as well.
+                            value.val_list = [
+                                val[:-1] + (frozenset(), )
+                                for val in value.val_list
+                                if match_tags(tags, val[-1])
+                            ]
+                        break
+                else:
+                    del category[key]
+
     def export(self, file: TextIO) -> None:
         """Write the entity out to a FGD file."""
         # Make it look pretty: BaseClass
