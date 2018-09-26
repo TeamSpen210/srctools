@@ -1,4 +1,5 @@
 """Handles the list of files which are desired to be packed into the BSP."""
+import io
 from collections import OrderedDict
 from typing import Iterable, Dict, Tuple, List, Iterator
 from enum import Enum
@@ -677,7 +678,10 @@ class PackList:
         parents = []
         if file.virtual:
             # Read directly from the data we have.
-            mat = Material.parse(file.data.decode('utf8'), file.filename)
+            mat = Material.parse(
+                io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
+                file.filename,
+            )
         else:
             try:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
