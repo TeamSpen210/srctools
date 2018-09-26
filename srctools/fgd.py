@@ -1356,10 +1356,16 @@ class FGD:
 
                 ready = True
                 for base in ent.bases:
+                    if isinstance(base, str):
+                        raise ValueError(
+                            'Unevaluated base: {} in {}!'.format(
+                                base, ent.classname
+                            ))
                     if base not in done:
                         deferred.add(base)
                         ready = False
                 if not ready:
+                    deferred.add(ent)
                     continue
                 # All of this entity's bases are collapsed.
                 # We can collapse it.
@@ -1402,7 +1408,12 @@ class FGD:
 
             # All the entities have a dependency on another.
             if todo == deferred:
-                raise ValueError("Loop in bases!")
+                raise ValueError(
+                    "Loop in bases! \n "
+                    "Problematic entities: \n{}".format([
+                        ent.classname
+                        for ent in todo
+                    ]))
 
             todo = deferred
 
