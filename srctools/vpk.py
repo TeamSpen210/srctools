@@ -396,10 +396,12 @@ class VPK:
                 
                 # 1 for the ending b'' section
                 if dirfile.tell() + 1 == self.header_len:
+                    dirfile.read(1)  # Skip null byte.
                     break
 
             self.footer_data = dirfile.read()
     
+
     def write_dirfile(self):
         """Write the directory file with the changes.
         
