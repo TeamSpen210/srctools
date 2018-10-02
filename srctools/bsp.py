@@ -68,6 +68,8 @@ class VERSIONS(Enum):
     DOTA2 = 22
     CONTAGION = 23
 
+    DESOLATION = 42
+
 
 class BSP_LUMPS(Enum):
     """All the lumps in a BSP file.
@@ -445,33 +447,36 @@ class BSP:
 
     def static_props(self) -> Iterator['StaticProp']:
         """Read in the Static Props lump."""
+        if not self.game_lumps:
+            self.read_game_lumps()
+
         # The version of the static prop format - different features.
         version = self.game_lumps[b'sprp'][1]
-        if version > 9:
-            raise ValueError('Unknown version "{}"!'.format(version))
+        if version > 11:
+            raise ValueError('Unknown version ({})!'.format(version))
+        if version < 4:
+            # Predates HL2...
+            raise ValueError('Static prop version {} is too old!')
 
         static_lump = BytesIO(self.get_game_lump(b'sprp'))
 
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
 
-        visleaf_count = get_struct(static_lump, 'i')[0]
+        [visleaf_count] = get_struct(static_lump, 'i')
         visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
 
-        prop_count = get_struct(static_lump, 'i')[0]
+        [prop_count] = get_struct(static_lump, 'i')
 
-        pos = static_lump.tell()
-        data = static_lump.read()
-        static_lump.seek(pos)
-        for i in range(12, 200, 12):
-            vals = Vec(struct.unpack_from('fff', data, i))
-            # if vals: and vals == round(vals):
-            print(i, repr(vals))
-
-        print(flush=True)
         for i in range(prop_count):
             origin = Vec(get_struct(static_lump, 'fff'))
             angles = Vec(get_struct(static_lump, 'fff'))
+
+            if version >= 11:
+                scaling = get_struct(static_lump, 'f')
+            else:
+                scaling = 1.0
+
             (
                 model_ind,
                 first_leaf,
@@ -511,12 +516,18 @@ class BSP:
                 min_cpu_level = max_cpu_level = min_gpu_level = max_gpu_level = 0
 
             if version >= 7:
-                r, g, b, a = get_struct(static_lump, 'BBBB')
+                r, g, b, renderfx = get_struct(static_lump, 'BBBB')
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
             else:
                 # No tint.
                 tint = Vec(255, 255, 255)
+                renderfx = 255
+
+            if version >= 10:
+                # 4 unknown bytes, might be a float?
+                static_lump.read(4)
+
             if version >= 9:
                 disable_on_xbox = get_struct(static_lump, '?')[0]
             else:
@@ -529,6 +540,7 @@ class BSP:
                 model_name,
                 origin,
                 angles,
+                scaling,
                 visleafs,
                 solidity,
                 flags,
@@ -544,6 +556,7 @@ class BSP:
                 min_gpu_level,
                 max_gpu_level,
                 tint,
+                renderfx,
                 disable_on_xbox,
             )
 
@@ -607,14 +620,17 @@ class StaticProp:
     v5+ allows fade_scale.
     v6 and v7 allow min/max DXLevel.
     v8+ allows min/max GPU and CPU levels.
-    v7+ allows model tinting.
+    v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
+    v10+ adds 4 unknown bytes (float?).
+    v11+ adds uniform scaling.
     """
     def __init__(
         self,
         model: str,
         origin: Vec,
         angles: Vec,
+        scaling: float,
         visleafs: List[int],
         solidity: int,
         flags: int,
@@ -630,11 +646,13 @@ class StaticProp:
         min_gpu_level: int,
         max_gpu_level: int,
         tint: Vec,  # Rendercolor
+        renderfx: int,
         disable_on_xbox: bool,
     ):
         self.model = model
         self.origin = origin
         self.angles = angles
+        self.scaling = scaling
         self.visleafs = visleafs
         self.solidity = solidity
         self.flags = flags
@@ -650,4 +668,5 @@ class StaticProp:
         self.min_gpu_level = min_gpu_level
         self.max_gpu_level = max_gpu_level
         self.tint = tint
+        self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
