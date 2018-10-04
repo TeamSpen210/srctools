@@ -1617,7 +1617,7 @@ class Entity:
                 index = item.name[-2:]  # Index is the last 2 digits
                 try:
                     index = int(index)
-                except TypeError:  # Not a replace value!
+                except ValueError:  # Not a replace value!
                     keys[name] = item.value
                 else:
                     # Parse the $replace value
