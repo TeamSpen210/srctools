@@ -5,15 +5,19 @@ specifics of VMF files.
 import io
 import itertools
 import operator
+import builtins
 from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union, Any,
-    Dict, List, Tuple, Set, Iterable, Iterator
+    Optional, Union, Any, overload, TypeVar,
+    Dict, List, Tuple, Set, Mapping, IO,
+    Iterable, Iterator,
 )
 
-from srctools import Property, BOOL_LOOKUP, Vec, EmptyMapping
+from srctools import BOOL_LOOKUP, EmptyMapping
+from srctools.vec import Vec
+from srctools.property_parser import Property
 import srctools
 
 # Used to set the defaults for versioninfo
@@ -43,11 +47,14 @@ PrismFace = namedtuple(
 OUTPUT_SEP = chr(27)
 
 
+T = TypeVar('T')
+
+
 class IDMan(set):
     """Allocate and manage a set of unique IDs."""
     __slots__ = ()
 
-    def get_id(self, desired=-1):
+    def get_id(self, desired: int=-1) -> int:
         """Get a valid ID."""
 
         if desired == -1:
@@ -55,7 +62,7 @@ class IDMan(set):
             desired = 1
 
         if desired not in self:
-            # The desired ID is avalible!
+            # The desired ID is available!
             self.add(desired)
             return desired
 
@@ -84,50 +91,32 @@ class NullIDMan(IDMan):
             return desired
 
 
-def find_empty_id(used_id, desired=-1):
-        """Ensure this item has a unique ID.
-
-        Used by entities, solids and brush sides to keep their IDs valid.
-        used_id must be sorted, and will be kept sorted.
-        """
-
-        if desired == -1:
-            desired = 1
-        else:
-            desired = int(desired)
-        used_id.sort()
-        if len(used_id) == 0 or desired not in used_id:
-            used_id.append(desired)
-            return desired
-        for poss_id in range(used_id[-1]+1):
-            if poss_id not in used_id:
-                used_id.append(poss_id)
-                return poss_id
-
-
-def overlay_bounds(over):
+def overlay_bounds(over: 'Entity') -> Tuple[Vec, Vec]:
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
+    angles = Vec.from_str(over['angles'])
     return Vec.bbox(
-        (origin + Vec.from_str(over['uv' + str(x)]))
+        (origin + Vec.from_str(over['uv' + str(x)]).rotate(
+            angles.x, angles.y, angles.z,
+        ))
         for x in
         range(4)
     )
 
 
 def make_overlay(
-        vmf: 'VMF',
-        normal: Vec,
-        origin: Vec,
-        uax: Vec,
-        vax: Vec,
-        material: str,
-        surfaces: Iterable['Side'],
-        u_repeat=1,
-        v_repeat=1,
-        swap=False,
-        render_order=0
-        ) -> 'Entity':
+    vmf: 'VMF',
+    normal: Vec,
+    origin: Vec,
+    uax: Vec,
+    vax: Vec,
+    material: str,
+    surfaces: Iterable['Side'],
+    u_repeat: float=1,
+    v_repeat: float=1,
+    swap: bool=False,
+    render_order: int=0,
+    ) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
     - origin is the center point of the overlay.
@@ -178,7 +167,7 @@ def make_overlay(
     )
 
 
-def localise_overlay(over, origin, angles=None):
+def localise_overlay(over: 'Entity', origin: Vec, angles: Vec=None) -> None:
     """Rotate an overlay like what is done in instances."""
     if angles is not None:
         for key in ('basisNormal', 'basisU', 'basisV'):
@@ -219,13 +208,13 @@ class VMF:
     def __init__(
         self,
         map_info=EmptyMapping,
-        spawn=None,
-        entities=None,
-        brushes=None,
-        cameras=None,
-        cordons=None,
-        vis_tree=None,
-        preserve_ids=False,
+        spawn: 'Entity'=None,
+        entities: List['Entity']=None,
+        brushes: List['Solid']=None,
+        cameras: List['Camera']=None,
+        cordons: List['Cordon']=None,
+        vis_tree: List['VisGroup']=None,
+        preserve_ids: bool=False,
     ):
         """Create a VMF.
 
@@ -242,8 +231,8 @@ class VMF:
 
         # Allow quick searching for particular groups, without checking
         # the whole map
-        self.by_target = defaultdict(CopySet)  # type: Dict[str, Set[Entity]]
-        self.by_class = defaultdict(CopySet)  # type: Dict[str, Set[Entity]]
+        self.by_target = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
+        self.by_class = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
 
         self.entities = []  # type: List[Entity]
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
@@ -254,7 +243,7 @@ class VMF:
 
         # mapspawn entity, which is the entity world brushes are saved
         # to.
-        self.spawn = spawn or Entity(self)
+        self.spawn = spawn or Entity(self)  # type: Entity
         self.spawn.solids = self.brushes
         self.spawn.hidden_brushes = self.brushes
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
@@ -288,15 +277,15 @@ class VMF:
         self.quickhide_count = srctools.conv_int(
             map_info.get('quickhide'), -1)
 
-    def add_brush(self, item):
+    def add_brush(self, item: 'Solid'):
         """Add a world brush to this map."""
         self.brushes.append(item)
 
-    def remove_brush(self, item):
+    def remove_brush(self, brush: 'Solid'):
         """Remove a world brush from this map."""
-        self.brushes.remove(item)
+        self.brushes.remove(brush)
 
-    def add_ent(self, item):
+    def add_ent(self, item: 'Entity'):
         """Add an entity to the map.
 
         The entity should have been created with this VMF as a parent.
@@ -305,7 +294,7 @@ class VMF:
         self.by_class[item['classname', None]].add(item)
         self.by_target[item['targetname', None]].add(item)
 
-    def remove_ent(self, item):
+    def remove_ent(self, item: 'Entity'):
         """Remove an entity from the map.
 
         After this is called, the entity will no longer be exported.
@@ -318,13 +307,17 @@ class VMF:
         if item.id in self.ent_id:
             self.ent_id.remove(item.id)
 
-    def add_brushes(self, item):
-        for i in item:
-            self.add_brush(i)
+    def add_brushes(self, brushes: Iterable['Solid']):
+        """Add multiple brushes to the map."""
+        self.brushes.extend(brushes)
 
-    def add_ents(self, item):
-        for i in item:
-            self.add_ent(i)
+    def add_ents(self, ents: Iterable['Entity']):
+        """Add multiple entities to the map."""
+        ents = list(ents)
+        self.entities.extend(ents)
+        for item in ents:
+            self.by_class[item['classname', None]].add(item)
+            self.by_target[item['targetname', None]].add(item)
 
     def create_ent(self, classname: str, **kargs) -> 'Entity':
         """Convenience method to allow creating point entities.
@@ -338,7 +331,7 @@ class VMF:
         self.add_ent(ent)
         return ent
 
-    def create_visgroup(self, name, color=(255, 255, 255)) -> 'VisGroup':
+    def create_visgroup(self, name: str, color: Vec=(255, 255, 255)) -> 'VisGroup':
         """Convenience method for creating visgroups."""
         vis = VisGroup(self, -1, name, color)
         self.vis_tree.append(vis)
@@ -425,8 +418,11 @@ class VMF:
 
         return map_obj
 
-
-    def export(self, dest_file=None, inc_version=True, minimal=False):
+    @overload
+    def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
+    @overload
+    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False) -> str:
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -512,20 +508,20 @@ class VMF:
             dest_file.close()
             return string
 
-    def iter_wbrushes(self, world=True, detail=True) -> Iterator['Solid']:
+    def iter_wbrushes(self, world: bool=True, detail: bool=True) -> Iterator['Solid']:
         """Iterate through all world and detail solids in the map."""
         if world:
             yield from self.brushes
         if detail:
-            for ent in self.iter_ents(classname='func_detail'):
+            for ent in self.by_class['func_detail']:
                 yield from ent.solids
 
-    def iter_wfaces(self, world=True, detail=True) -> Iterator['Side']:
+    def iter_wfaces(self, world: bool=True, detail: bool=True) -> Iterator['Side']:
         """Iterate through the faces of world and detail solids."""
         for brush in self.iter_wbrushes(world, detail):
             yield from brush
 
-    def iter_ents(self, **cond):
+    def iter_ents(self, **cond: str) -> Iterator['Entity']:
         """Iterate through entities having the given keyvalue values."""
         items = cond.items()
         for ent in self.entities[:]:
@@ -535,7 +531,11 @@ class VMF:
             else:
                 yield ent
 
-    def iter_ents_tags(self, vals=EmptyMapping, tags=EmptyMapping):
+    def iter_ents_tags(
+        self,
+        vals: Mapping[str, str]=EmptyMapping,
+        tags: Mapping[str, str]=EmptyMapping,
+    ) -> Iterator['Entity']:
         """Iterate through all entities.
 
         The returned entities must have exactly the given keyvalue values,
@@ -552,7 +552,7 @@ class VMF:
                 else:
                     yield ent
 
-    def iter_inputs(self, name):
+    def iter_inputs(self, name: str) -> Iterator['Output']:
         """Loop through all Outputs which target the named entity.
 
         - Allows using * at beginning/end
@@ -580,10 +580,15 @@ class VMF:
                         if out.target == name:  # target
                             yield out
 
-    def make_prism(self, p1, p2, mat='tools/toolsnodraw') -> PrismFace:
+    def make_prism(
+        self,
+        p1: Vec,
+        p2: Vec,
+        mat: str='tools/toolsnodraw',
+    ) -> PrismFace:
         """Create an axis-aligned brush connecting the two points.
 
-        A PrismFaces tuple will be returned which containes the six
+        A PrismFaces tuple will be returned which contains the six
         faces, as well as the solid.
         All faces will be textured with 'mat'.
         """
@@ -591,6 +596,13 @@ class VMF:
         b_max = Vec(p1)
         b_min.min(p2)
         b_max.max(p2)
+
+        # Sanity check - all dimensions must be different, otherwise we'll
+        # have an invalid zero-thick brush.
+        if b_min.x == b_max.x or b_min.y == b_max.y or b_min.z == b_max.z:
+            raise ValueError("Zero volume brush requested! ({}, {})".format(
+                b_min, b_max,
+            ))
 
         f_bottom = Side(
             self,
@@ -686,11 +698,12 @@ class VMF:
         )
 
     def make_hollow(
-            self,
-            p1, p2,
-            thick=16,
-            mat='tools/toolsnodraw',
-            ) -> List['Solid']:
+        self,
+        p1: Vec,
+        p2: Vec,
+        thick: float=16,
+        mat: str='tools/toolsnodraw',
+    ) -> List['Solid']:
         """Create 6 brushes to surround the given region."""
         b_min, b_max = Vec.bbox(p1, p2)
 
@@ -734,64 +747,66 @@ class VMF:
 
 
 class Camera:
-    def __init__(self, vmf_file, pos, targ):
+    """Represents one of several cameras which can be swapped between."""
+    def __init__(self, vmf_file: VMF, pos: Vec, targ: Vec) -> None:
         self.pos = pos
         self.target = targ
         self.map = vmf_file
         vmf_file.cameras.append(self)
 
-    def targ_ent(self, ent):
+    def targ_ent(self, ent: 'Entity') -> None:
         """Point the camera at an entity."""
         if ent['origin']:
             self.target = Vec.from_str(ent['origin'])
 
-    def is_active(self):
+    def is_active(self) -> bool:
         """Is this camera in use?"""
         return self.map.active_cam == self.map.cameras.index(self) + 1
 
-    def set_active(self):
+    def set_active(self) -> None:
         """Set this to be the map's active camera"""
         self.map.active_cam = self.map.cameras.index(self) + 1
 
-    def set_inactive_all(self):
+    def set_inactive_all(self) -> None:
         """Disable all cameras in this map."""
         self.map.active_cam = -1
 
-    @staticmethod
-    def parse(vmf_file, tree):
+    @classmethod
+    def parse(cls, vmf_file: VMF, tree: Property) -> 'Camera':
         """Read a camera from a property_parser tree."""
         pos = Vec.from_str(tree.find_key('position', '_').value)
         targ = Vec.from_str(tree.find_key('look', '_').value, y=64)
-        return Camera(vmf_file, pos, targ)
+        return cls(vmf_file, pos, targ)
 
-    def copy(self):
+    def copy(self) -> 'Camera':
         """Duplicate this camera object."""
         return Camera(self.map, self.pos.copy(), self.target.copy())
 
-    def remove(self):
+    def remove(self) -> None:
         """Delete this camera from the map."""
         self.map.cameras.remove(self)
         if self.is_active():
             self.set_inactive_all()
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
+        """Export the camera to the VMF file."""
         buffer.write(ind + 'camera\n')
         buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"position" "[' + self.pos.join(' ') + ']"\n')
-        buffer.write(ind + '\t"look" "[' + self.target.join(' ') + ']"\n')
+        buffer.write('{}\t"position" "[{}]"\n'.format(ind, self.pos))
+        buffer.write('{}\t"look" "[{}]"\n'.format(ind, self.target))
         buffer.write(ind + '}\n')
 
 
 class Cordon:
     """Represents one cordon volume."""
     def __init__(
-            self,
-            vmf_file: VMF,
-            min_: Vec,
-            max_: Vec,
-            is_active=True,
-            name='Cordon',
-            ):
+        self,
+        vmf_file: VMF,
+        min_: Vec,
+        max_: Vec,
+        is_active=True,
+        name='Cordon',
+    ):
         self.map = vmf_file
         self.name = name
         self.bounds_min = min_
@@ -799,8 +814,9 @@ class Cordon:
         self.active = is_active
         vmf_file.cordons.append(self)
 
-    @staticmethod
-    def parse(vmf_file, tree):
+    @classmethod
+    def parse(cls, vmf_file: VMF, tree: Property) -> 'Cordon':
+        """Parse a cordon from the VMF file."""
         name = tree['name', 'cordon']
         is_active = tree.bool('active', False)
         bounds = tree.find_key('box', [])
@@ -808,7 +824,8 @@ class Cordon:
         max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
+        """Write the cordon into the VMF."""
         buffer.write(ind + 'cordon\n')
         buffer.write(ind + '{\n')
         buffer.write(ind + '\t"name" "' + self.name + '"\n')
@@ -836,9 +853,10 @@ class Cordon:
             self.name,
         )
 
-    def remove(self):
+    def remove(self) -> None:
         """Remove this cordon from the map."""
         self.map.cordons.remove(self)
+
 
 class VisGroup:
     """Defines one visgroup."""
@@ -857,7 +875,8 @@ class VisGroup:
         self.id = vmf.vis_id.get_id(vis_id)
 
     @classmethod
-    def parse(cls, vmf: VMF, props: Property):
+    def parse(cls, vmf: VMF, props: Property) -> 'VisGroup':
+        """Parse a visgroup from the VMF file."""
         vis_id = props.int('visgroupid', -1)
         name = props['name', 'VisGroup_{}'.format(vis_id)]
         color = props.vec('color', 255, 255, 255)
@@ -876,7 +895,7 @@ class VisGroup:
             children,
         )
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
         buffer.write(ind + 'visgroup\n')
         buffer.write(ind + '{\n')
         buffer.write(ind + '\t"name" "{}"\n'.format(self.name))
@@ -886,7 +905,7 @@ class VisGroup:
             child.export(buffer, ind + '\t')
         buffer.write(ind + '}\n')
 
-    def set_visible(self, target):
+    def set_visible(self, target: bool) -> None:
         """Find all objects with this ID, and set them to the given visibility."""
         for ent in self.child_ents():
             ent.vis_shown = ent.hidden = target
@@ -912,18 +931,18 @@ class VisGroup:
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
     def __init__(
-            self,
-            vmf_file: VMF,
-            des_id=-1,
-            sides=None,
-            visgroup_ids=(),
-            hidden=False,
-            group_id=None,
-            vis_shown=True,
-            vis_auto_shown=True,
-            cordon_solid=None,
-            editor_color: Vec=(255, 255, 255),
-            ):
+        self,
+        vmf_file: VMF,
+        des_id: int=-1,
+        sides: List['Side']=None,
+        visgroup_ids: Iterable[int]=(),
+        hidden: bool=False,
+        group_id: Optional[int]=None,
+        vis_shown: bool=True,
+        vis_auto_shown: bool=True,
+        cordon_solid: int=None,
+        editor_color: Vec=(255, 255, 255),
+    ):
         self.map = vmf_file
         self.sides = sides or []  # type: List[Side]
         self.id = vmf_file.solid_id.get_id(des_id)
@@ -935,16 +954,22 @@ class Solid:
         self.group_id = group_id
         self.visgroup_ids = set(visgroup_ids)
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
+    def copy(
+        self,
+        des_id: int=-1,
+        vmf_file: VMF=None,
+        side_mapping: Dict[int, int]=EmptyMapping,
+        keep_vis: bool=True,
+    ) -> 'Solid':
         """Duplicate this brush."""
         sides = [
-            s.copy(map=map, side_mapping=side_mapping)
+            s.copy(vmf_file=vmf_file, side_mapping=side_mapping)
             for s in
             self.sides
         ]
 
         return Solid(
-            map or self.map,
+            vmf_file or self.map,
             des_id,
             sides,
             self.visgroup_ids if keep_vis else (),
@@ -956,8 +981,8 @@ class Solid:
             self.editor_color,
         )
 
-    @staticmethod
-    def parse(vmf_file, tree, hidden=False):
+    @classmethod
+    def parse(cls, vmf_file: VMF, tree: Property, hidden: bool=False) -> 'Solid':
         """Parse a Property tree into a Solid object."""
         solid_id = tree.int('id', -1)
         sides = []
@@ -986,7 +1011,7 @@ class Solid:
                 if val:
                     visgroups.append(val)
 
-        return Solid(
+        return cls(
             vmf_file,
             solid_id,
             sides,
@@ -999,7 +1024,7 @@ class Solid:
             editor_color,
         )
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the strings needed to define this brush."""
         if self.hidden:
             buffer.write(ind + 'hidden\n' + ind + '{\n')
@@ -1039,7 +1064,7 @@ class Solid:
         if self.hidden:
             buffer.write(ind[:-1] + '}\n')
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return a user-friendly description of our data."""
         st = "<solid:" + str(self.id) + ">\n{\n"
         for s in self.sides:
@@ -1047,16 +1072,16 @@ class Solid:
         st += "}"
         return st
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator['Side']:
         for s in self.sides:
             yield s
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
         if self.id in self.map.solid_id:
             self.map.solid_id.remove(self.id)
 
-    def remove(self):
+    def remove(self) -> None:
         """Remove this brush from the map."""
         self.map.remove_brush(self)
 
@@ -1097,10 +1122,17 @@ class UVAxis:
         'offset',
     ]
 
-    def __init__(self, x, y, z, offset=0.0, scale=0.25):
-        self.x = x  # type: float
-        self.y = y  # type: float
-        self.z = z  # type: float
+    def __init__(
+        self,
+        x: float,
+        y: float,
+        z: float,
+        offset: float=0.0,
+        scale: float=0.25,
+    ) -> None:
+        self.x = x
+        self.y = y
+        self.z = z
         self.offset = offset
         self.scale = scale
 
@@ -1158,7 +1190,7 @@ class UVAxis:
             self.scale,
         )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Generate the text form for this UV data."""
         return '[{x:g} {y:g} {z:g} {off:g}] {scale:g}'.format(
             x=self.x,
@@ -1168,7 +1200,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         rep = '{cls}({x:g}, {y:g}, {z:g}'.format(
             cls=self.__class__.__name__,
             x=self.x,
@@ -1205,30 +1237,25 @@ class Side:
     ]
 
     def __init__(
-            self,
-            vmf_file,
-            planes=(
-                (0, 0, 0),
-                (0, 0, 0),
-                (0, 0, 0)
-            ),
-            des_id=-1,
-            lightmap=16,
-            smoothing=0,
-            mat='tools/toolsnodraw',
-            rotation=0,
-            uaxis=None,
-            vaxis=None,
-            disp_data: dict=None,
-            ):
-        """
-        :type planes: list of [(int, int, int)]
-        """
+        self,
+        vmf_file: VMF,
+        # Must be 3 Vecs, or 3-item iterables.
+        planes: List[Iterable[float]],
+        des_id: int=-1,
+        lightmap: int=16,
+        smoothing: int=0,
+        mat: str='tools/toolsnodraw',
+        rotation: float=0,
+        uaxis: Optional[UVAxis]=None,
+        vaxis: Optional[UVAxis]=None,
+        disp_data: dict=None,
+    ):
+        """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
-        self.planes = [Vec(), Vec(), Vec()]
+        if len(planes) != 3:
+            raise ValueError('Must have only 3 planes!')
+        self.planes = list(map(Vec, planes))
         self.id = vmf_file.face_id.get_id(des_id)
-        for i, pln in enumerate(planes):
-            self.planes[i] = Vec(x=pln[0], y=pln[1], z=pln[2])
         self.lightmap = lightmap
         self.smooth = smoothing
         self.mat = mat
@@ -1254,25 +1281,17 @@ class Side:
         else:
             self.is_disp = False
 
-    @staticmethod
-    def parse(vmf_file, tree):
+    @classmethod
+    def parse(cls, vmf_file: VMF, tree: Property) -> 'Side':
         """Parse the property tree into a Side object."""
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
         side_id = tree.int('id', -1)
-        planes = [0, 0, 0]
-        for i, v in enumerate(verts):
-            if i > 3:
-                raise ValueError('Wrong number of solid planes in "' +
-                                 tree['plane', ''] +
-                                 '"')
-            verts = v.split(" ")
-            if len(verts) == 3:
-                planes[i] = [float(v) for v in verts]
-            else:
-                raise ValueError('Invalid planes in "' +
-                                 tree['plane', ''] +
-                                 '"!')
+        if len(verts) != 3:
+            raise ValueError('Wrong number of solid planes in "' +
+                             tree['plane', ''] +
+                             '"')
+        planes = list(map(srctools.parse_vec_str, verts))
 
         disp_tree = tree.find_key('dispinfo', [])
         if len(disp_tree) > 0:
@@ -1294,7 +1313,7 @@ class Side:
         else:
             disp_data = None
 
-        return Side(
+        return cls(
             vmf_file,
             planes=planes,
             des_id=side_id,
@@ -1307,7 +1326,12 @@ class Side:
             smoothing=tree.int('smoothing_groups', 0),
         )
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping):
+    def copy(
+        self,
+        des_id: int=-1,
+        vmf_file: VMF=None,
+        side_mapping: Dict[int, int]=EmptyMapping,
+    ) -> 'Side':
         """Duplicate this brush side.
 
         des_id is the id which is desired for the new side.
@@ -1325,11 +1349,11 @@ class Side:
         else:
             disp_data = None
 
-        if map is not None and des_id == -1:
+        if vmf_file is not None and des_id == -1:
             des_id = self.id
 
         copy = Side(
-            map or self.map,
+            vmf_file or self.map,
             planes=planes,
             des_id=des_id,
             mat=self.mat,
@@ -1343,7 +1367,7 @@ class Side:
         side_mapping[self.id] = copy.id
         return copy
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the strings required to define this side in a VMF."""
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
@@ -1389,7 +1413,7 @@ class Side:
             buffer.write(ind + '\t}\n')
         buffer.write(ind + '}\n')
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Dump a user-friendly representation of the side."""
         st = "\tmat = " + self.mat
         st += "\n\trotation = " + str(self.ham_rot) + '\n'
@@ -1397,7 +1421,7 @@ class Side:
         st += '\tplane: ' + ", ".join(pl_str) + '\n'
         return st
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
         if self.id in self.map.face_id:
             self.map.face_id.remove(self.id)
@@ -1417,7 +1441,7 @@ class Side:
         origin = (size_min + size_max) / 2
         return origin
 
-    def translate(self, diff):
+    def translate(self, diff: Vec) -> None:
         """Move this side by the specified vector.
 
         - A tuple can be passed in instead if desired.
@@ -1432,10 +1456,10 @@ class Side:
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Vec=None):
+    def localise(self, origin: Vec, angles: Vec=None) -> None:
         """Shift the face by the given origin and angles.
 
-        This preserves texture offsets
+        This preserves texture offsets.
         """
         for p in self.planes:
             p.localise(origin, angles)
@@ -1446,7 +1470,7 @@ class Side:
         self.uaxis = self.uaxis.localise(origin, angles)
         self.vaxis = self.vaxis.localise(origin, angles)
 
-    def plane_desc(self):
+    def plane_desc(self) -> str:
         """Return a string which describes this face.
 
          This is for use in texture randomisation.
@@ -1469,12 +1493,12 @@ class Side:
 
         return point_2.cross(point_1).norm()
 
-    def scale(self, value):
+    def scale(self, value: float) -> None:
         self.uaxis.scale = value
         self.vaxis.scale = value
     scale = property(fset=scale, doc='Set both scale attributes easily.')
 
-    def offset(self, value):
+    def offset(self, value: float) -> None:
         self.uaxis.offset = value
         self.vaxis.offset = value
     offset = property(fset=offset, doc='Set both offset attributes easily.')
@@ -1494,28 +1518,29 @@ class Entity:
     def __init__(
         self,
         vmf_file: VMF,
-        keys=EmptyMapping,
-        fixup=(),
-        ent_id=-1,
-        outputs=None,
-        solids=None,
-        hidden=False,
-        groups=(),
+        keys: Dict[str, str]=EmptyMapping,
+        fixup: Iterable['FixupTuple']=(),
+        ent_id: int=-1,
+        outputs: List['Output']=None,
+        solids: List[Solid]=None,
+        hidden: bool=False,
+        groups: List['EntityGroup']=(),
         vis_ids=(),
-        vis_shown=True,
-        vis_auto_shown=True,
+        vis_shown: bool=True,
+        vis_auto_shown: bool=True,
         logical_pos: str=None,
         editor_color: Vec=(255, 255, 255),
-        comments='',
+        comments: str='',
     ):
         self.map = vmf_file
         self.keys = {
             # Ensure all values are strings. This allows passing ints and Vecs
             # normally.
-            k: str(v)
+            # If bool (special case), swap to 1/0.
+            k: str(int(v) if isinstance(v, bool) else v)
             for k, v in
             keys.items()
-        }
+        }  # type: Dict[str, str]
         self.fixup = EntityFixup(fixup)
         self.outputs = outputs or []  # type: List[Output]
         self.solids = solids or []  # type: List[Solid]
@@ -1530,7 +1555,13 @@ class Entity:
         self.logical_pos = logical_pos or '[0 {}]'.format(self.id)
         self.comments = comments
 
-    def copy(self, des_id=-1, map=None, side_mapping=EmptyMapping, keep_vis=True):
+    def copy(
+        self,
+        des_id: int=-1,
+        vmf_file: VMF=None,
+        side_mapping: Dict[int, int]=EmptyMapping,
+        keep_vis=True,
+    ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
         new_keys = {}
         new_fixup = self.fixup.copy_values()
@@ -1538,7 +1569,7 @@ class Entity:
             new_keys[key] = value
 
         new_solids = [
-            solid.copy(map=map, side_mapping=side_mapping)
+            solid.copy(vmf_file=vmf_file, side_mapping=side_mapping)
             for solid in
             self.solids
         ]
@@ -1547,7 +1578,7 @@ class Entity:
         new_groups = [group.copy() for group in self.groups]
 
         return Entity(
-            vmf_file=map or self.map,
+            vmf_file=vmf_file or self.map,
             keys=new_keys,
             fixup=new_fixup,
             ent_id=des_id,
@@ -1586,14 +1617,22 @@ class Entity:
                 index = item.name[-2:]  # Index is the last 2 digits
                 try:
                     index = int(index)
-                except TypeError:  # Not a replace value!
+                except ValueError:  # Not a replace value!
                     keys[name] = item.value
                 else:
                     # Parse the $replace value
-                    vals = item.value.split(" ", 1)
-                    var = vals[0].lstrip('$')
-                    value = vals[1]
-                    fixup.append(FixupTuple(var, value, int(index)))
+                    try:
+                        vals = item.value.split(" ", 1)
+                        var = vals[0].lstrip('$')
+                        try:
+                            value = vals[1]
+                        except IndexError:
+                            # Might happen if entirely blank.
+                            value = ''
+                        fixup.append(FixupTuple(var, value, int(index)))
+                    except ValueError:
+                        # Failed!
+                        keys[name] = item.value
             elif name == "solid" and item.has_children():
                 solids.append(Solid.parse(vmf_file, item))
             elif name == "connections" and item.has_children():
@@ -1645,11 +1684,11 @@ class Entity:
             comment,
         )
 
-    def is_brush(self):
+    def is_brush(self) -> bool:
         """Is this Entity a brush entity?"""
         return len(self.solids) > 0
 
-    def export(self, buffer, ent_name='entity', ind=''):
+    def export(self, buffer: IO[str], ent_name: str='entity', ind: str='') -> None:
         """Generate the strings needed to create this entity.
 
         ent_name is the key used for the item's block, which is used to allow
@@ -1657,17 +1696,14 @@ class Entity:
         """
 
         if self.hidden:
-            buffer.write(ind + 'hidden\n' + ind + '{\n')
+            buffer.write('{0}hidden\n{0}{{\n'.format(ind))
             ind += '\t'
 
-        buffer.write(ind + ent_name + '\n')
+        buffer.write('{}{}\n'.format(ind, ent_name))
         buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
+        buffer.write('{}\t"id" "{}"\n'.format(ind, str(self.id)))
         for key, value in sorted(self.keys.items(), key=operator.itemgetter(0)):
-            buffer.write(
-                ind +
-                '\t"{}" "{!s}"\n'.format(key, value)
-            )
+            buffer.write('{}\t"{}" "{!s}"\n'.format(ind, key, value))
 
         self.fixup.export(buffer, ind)
 
@@ -1707,14 +1743,14 @@ class Entity:
         if self.hidden:
             buffer.write(ind[:-1] + '}\n')
 
-    def sides(self):
+    def sides(self) -> 'Side':
         """Iterate through all our brush sides."""
         if self.is_brush():
             for solid in self.solids:
                 for face in solid:
                     yield face
 
-    def add_out(self, *outputs):
+    def add_out(self, *outputs: 'Output') -> None:
         """Add the outputs to our list."""
         self.outputs.extend(outputs)
 
@@ -1726,17 +1762,32 @@ class Entity:
             self.outputs
         }
 
-    def remove(self):
+    def remove(self) -> None:
         """Remove this entity from the map."""
         self.map.remove_ent(self)
 
-    def make_unique(self):
-        """Append our entity ID to the targetname, so it is uniquely-named.
-        """
-        self['targetname'] += str(self.id)
+    def make_unique(self) -> 'Entity':
+        """Ensure this entity is uniquely named, by adding a numeric suffix."""
+        orig_name = self['targetname']
+
+        self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        
+        base_name = orig_name.rstrip('0123456789')
+
+        if self.map.by_target[orig_name]:
+            # Check every index in order.
+            for i in itertools.count(start=1):
+                name = base_name + str(i)
+                if not self.map.by_target[name]:
+                    self['targetname'] = name
+                    break
+        else:
+            # The base name is free!
+            self['targetname'] = base_name
+
         return self
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Dump a user-friendly representation of the entity."""
         st = "<Entity>: \n{\n"
         for k, v in self.keys.items():
@@ -1750,7 +1801,11 @@ class Entity:
         st += "}\n"
         return st
 
-    def __getitem__(self, key, default='') -> str:
+    @overload
+    def __getitem__(self, key: str) -> str: ...
+    @overload
+    def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: Union[str, T]) -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -1762,6 +1817,9 @@ class Entity:
         """
         if isinstance(key, tuple):
             key, default = key
+        else:
+            default = ''
+
         key = key.casefold()
         for k in self.keys:
             if k.casefold() == key:
@@ -1769,11 +1827,16 @@ class Entity:
         else:
             return default
 
-    def __setitem__(self, key, val):
+    def __setitem__(
+        self,
+        key: str,
+        val: Union[str, int, float, bool, Any],
+    ) -> None:
         """Allow using [] syntax to save a keyvalue.
 
         - It is case-insensitive, so it will overwrite a key which only
           differs by case.
+        - Booleans are treated specially, all other types are stringified.
         """
         if isinstance(val, bool):
             val = '1' if val else '0'
@@ -1798,7 +1861,7 @@ class Entity:
                 self.map.by_target[orig_val].remove(self)
             self.map.by_target[val].add(self)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         key = key.casefold()
         if key == 'targetname':
             with suppress(KeyError):
@@ -1819,9 +1882,24 @@ class Entity:
                 del self.keys[k]
                 break
 
-    get = __getitem__
+    def get(self, key: str, default: T='') -> Union[str, T]:
+        """Allow using [] syntax to search for keyvalues.
 
-    def clear_keys(self):
+        - This will return '' if the value is not present.
+        - It ignores case-matching, but will use the first given version
+          of a key.
+        - If used via Entity.get() the default argument is available.
+        - A tuple can be passed for the default to be set, inside the
+          [] syntax.
+        """
+        key = key.casefold()
+        for k in self.keys:
+            if k.casefold() == key:
+                return self.keys[k]
+        else:
+            return default
+
+    def clear_keys(self) -> None:
         """Remove all keyvalues from an item."""
         # Delete these so the .by_class/name values are cleared.
         del self['targetname']
@@ -1830,7 +1908,7 @@ class Entity:
         # Clear $fixup as well.
         self.fixup.clear()
 
-    def __contains__(self, key: str):
+    def __contains__(self, key: str) -> bool:
         """Determine if a value exists for the given key."""
         key = key.casefold()
         for k in self.keys:
@@ -1841,7 +1919,7 @@ class Entity:
 
     get_key = __contains__
 
-    def __del__(self):
+    def __del__(self) -> None:
         """Forget this entity's ID when the object is destroyed."""
         if self.id in self.map.ent_id:
             self.map.ent_id.remove(self.id)
@@ -1881,6 +1959,8 @@ class EntityFixup:
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
     """
+    # Because of the int(), bool(), float() methods, we need to use builtins
+    # for the type annotations.
     __slots__ = ['_fixup']
 
     def __init__(self, fixup: Iterable[FixupTuple]=()):
@@ -1902,7 +1982,7 @@ class EntityFixup:
             # Add these values wherever they'll fit.
             self[fix.var] = fix.value
 
-    def get(self, var, default=''):
+    def get(self, var: str, default: T='') -> Union[str, T]:
         """Get the value of an instance $replace variable.
 
         If not found, the default will be returned (an empty string).
@@ -1915,15 +1995,15 @@ class EntityFixup:
         else:
             return default
 
-    def copy_values(self):
+    def copy_values(self) -> List[FixupTuple]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
 
-    def clear(self):
+    def clear(self) -> None:
         """Wipe all the $fixup values."""
         self._fixup.clear()
 
-    def update(self, other):
+    def update(self, other: Union['EntityFixup', Mapping[str, str]]) -> None:
         """Copy the keys of the other item to this one.
 
         Variable IDs are not preserved.
@@ -1932,8 +2012,12 @@ class EntityFixup:
         for key, value in dict(other).items():
             self[key] = value
 
-    def __getitem__(self, key: Union[str, Tuple[str, str]]):
-        """Retieve keys via fixup[key] or fixup[key, default].
+    @overload
+    def __getitem__(self, key: str) -> str: ...
+    @overload
+    def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+    def __getitem__(self, key: Union[Tuple[str, T], str]) -> Union[str, T]:
+        """Retrieve keys via fixup[key] or fixup[key, default].
 
         See EntityFixup.get().
         """
@@ -1942,16 +2026,14 @@ class EntityFixup:
         else:
             return self.get(key)
 
-    def __contains__(self, var: str):
+    def __contains__(self, var: str) -> builtins.bool:
         """Check if a variable is present in the fixup list."""
         if var[0] == '$':
             var = var[1:]
         return var.casefold() in self._fixup
 
-    def __setitem__(self, var, val):
-        """Set the value of an instance $replace variable.
-
-        """
+    def __setitem__(self, var: str, val: Union[builtins.int, builtins.float, str]) -> None:
+        """Set the value of an instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
 
@@ -1980,7 +2062,7 @@ class EntityFixup:
                 self._fixup[folded_var].id,
             )
 
-    def __delitem__(self, var):
+    def __delitem__(self, var: str) -> None:
         """Delete a instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
@@ -1988,32 +2070,36 @@ class EntityFixup:
         if var in self._fixup:
             del self._fixup[var]
 
-    def keys(self):
+    def keys(self) -> Iterator[str]:
         """Iterate over all set variable names."""
         for value in self._fixup.values():
             yield value.var
 
-    __iter__ = keys
+    def __iter__(self) -> Iterator[str]:
+        """Iterate over all set variable names."""
+        return self.keys()
 
-    def items(self):
+    def items(self) -> Iterator[Tuple[str, str]]:
         """Iterate over all variable-value pairs."""
         for value in self._fixup.values():
             yield value.var, value.value
 
-    def values(self):
+    def values(self) -> Iterator[str]:
+        """Iterate over all variable values."""
         for value in self._fixup.values():
             yield value.value
 
-    def export(self, buffer, ind):
+    def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the replace values into the VMF."""
-        if len(self._fixup):
-            for (key, value, index) in sorted(
-                    self._fixup.values(), key=operator.attrgetter('id')):
-                # When exporting, pad with zeros if needed
-                buffer.write(ind + '\t"replace{:02}" "${} {}"\n'.format(
-                    index, key, value))
+        for (key, value, index) in sorted(
+                self._fixup.values(), key=FixupTuple.id.__get__):
 
-    def __str__(self):
+            # When exporting, pad the index with zeros if needed
+            buffer.write('{}\t"replace{:02}" "${} {}"\n'.format(
+                ind, index, key, value,
+            ))
+
+    def __str__(self) -> str:
         items = '\n'.join(
             '\t${0.var} = {0.value!r}'.format(tup)
             for tup in
@@ -2021,7 +2107,7 @@ class EntityFixup:
         )
         return self.__class__.__name__ + '{\n' + items + '\n}'
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         items = ', '.join(
             repr(tup)
             for tup in
@@ -2029,7 +2115,7 @@ class EntityFixup:
         )
         return self.__class__.__name__ + '([' + items + '])'
 
-    def int(self, key: str, def_: Any=0) -> int:
+    def int(self, key: str, def_: T=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(fixup[key]), but with a default value if missing or
@@ -2040,7 +2126,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: Any=0.0) -> float:
+    def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(fixup[key]), but with a default value if missing or
@@ -2051,7 +2137,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: Any=False) -> bool:
+    def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
         """Return a fixup interpreted as a boolean.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -2062,7 +2148,13 @@ class EntityFixup:
         except KeyError:
             return def_
 
-    def vec(self, key, x=0.0, y=0.0, z=0.0) -> Vec:
+    def vec(
+        self,
+        key: str,
+        x: builtins.float=0.0,
+        y: builtins.float=0.0,
+        z: builtins.float=0.0,
+    ) -> Vec:
         """Return the given fixup, converted to a vector."""
         return Vec.from_str(self.get(key), x, y, z)
 
@@ -2073,19 +2165,20 @@ class EntityGroup:
     This allows the grouping of brushes.
     """
     def __init__(
-            self,
-            map: VMF,
-            grp_id,
-            vis_shown=False,
-            vis_auto_shown=False,
-            ):
-        self.map = map
-        self.id = map.group_id.get_id(grp_id)
+        self,
+        vmf_file: VMF,
+        grp_id: int,
+        vis_shown: bool=False,
+        vis_auto_shown: bool=False,
+    ) -> None:
+        self.map = vmf_file
+        self.id = vmf_file.group_id.get_id(grp_id)
         self.shown = vis_shown
         self.auto_shown = vis_auto_shown
 
     @classmethod
-    def parse(cls, vmf_file, props):
+    def parse(cls, vmf_file: VMF, props: Property) -> 'EntityGroup':
+        """Parse an entity group from the VMF file."""
         editor_block = props.find_key('editor', [])
         return cls(
             vmf_file,
@@ -2094,17 +2187,19 @@ class EntityGroup:
             vis_auto_shown=editor_block.bool('visgroupsautoshown', True),
         )
 
-    def copy(self, map=None):
-        if map is None:
-            map = self.map
+    def copy(self, vmf_file: VMF=None) -> 'EntityGroup':
+        """Duplicate an entity group."""
+        if vmf_file is None:
+            vmf_file = self.map
         return EntityGroup(
-            map,
+            vmf_file,
             self.id,
             self.shown,
             self.auto_shown,
         )
 
-    def export(self, buffer, ind):
+    def export(self, buffer: IO[str], ind: str) -> None:
+        """Write out a group into a VMF file."""
         buffer.write(ind + 'group\n')
         buffer.write(ind + '\t{\n')
         buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
@@ -2118,7 +2213,6 @@ class EntityGroup:
         ))
         buffer.write(ind + '\t\t}\n')
         buffer.write(ind + '\t}')
-
 
 
 class Output:
@@ -2155,19 +2249,22 @@ class Output:
         'comma_sep',
     ]
 
+    # Make this available here also.
+    SEP = OUTPUT_SEP
+
     def __init__(
         self,
         out: str,
         targ: Union[Entity, str],
         inp: str,
         param='',
-        delay=0.0,
+        delay: float=0.0,
         *,
-        times=-1,
-        only_once=False,
+        times: int=-1,
+        only_once: bool=False,
         inst_out: str=None,
         inst_in: str=None,
-        comma_sep=False
+        comma_sep: bool=False,
     ):
         self.output = out
         self.inst_out = inst_out
@@ -2177,22 +2274,22 @@ class Output:
             self.target = targ
         self.input = inp
         self.inst_in = inst_in
-        self.params = param
+        self.params = str(param)
         self.delay = delay
         self.times = 1 if only_once else times
         self.comma_sep = comma_sep
 
     @property
-    def only_once(self):
+    def only_once(self) -> bool:
         """Check if the output is active only once."""
         return self.times == 1
 
     @only_once.setter
-    def only_once(self, is_once):
+    def only_once(self, is_once: bool) -> None:
         self.times = 1 if is_once else -1
 
-    @staticmethod
-    def parse(prop: Property):
+    @classmethod
+    def parse(cls, prop: Property) -> 'Output':
         """Convert the VMF Property into an Output object."""
         if OUTPUT_SEP in prop.value:
             sep = False
@@ -2209,7 +2306,7 @@ class Output:
         inst_out, out = Output.parse_name(prop.real_name)
         inst_inp, inp = Output.parse_name(inp)
 
-        return Output(
+        return cls(
             out,
             targ,
             inp,
@@ -2242,19 +2339,21 @@ class Output:
                 return inst_part[9:], command
         return None, name
 
-    def exp_out(self):
+    def exp_out(self) -> str:
+        """Combine the instance name with the output if necessary."""
         if self.inst_out:
             return 'instance:' + self.inst_out + ';' + self.output
         else:
             return self.output
 
-    def exp_in(self):
+    def exp_in(self) -> str:
+        """Combine the instance name with the input if necessary."""
         if self.inst_in:
             return 'instance:' + self.inst_in + ';' + self.input
         else:
             return self.input
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         vals = (
             '{cls}({s.output!r}, {s.target!r}, {s.input!r}, {s.params!r}, '
             'delay={s.delay!r}'.format(
@@ -2279,7 +2378,7 @@ class Output:
             vals += ', comma_sep=True'
         return vals + ')'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Generate a user-friendly representation of this output."""
         st = "<Output> "
         if self.inst_out:
@@ -2300,11 +2399,12 @@ class Output:
             st += " only)"
         return st
 
-    def export(self, buffer, ind=''):
+    def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""
         buffer.write(ind + self._get_text())
         
-    def _get_text(self):
+    def _get_text(self) -> str:
+        """Generate the text form of the output."""
         return (
             '"{output}" "{targ}{sep}{input}{sep}{params}'
             '{sep}{delay:g}{sep}{times}"\n'.format(
@@ -2317,10 +2417,9 @@ class Output:
                 sep=',' if self.comma_sep else OUTPUT_SEP,
             )
         )
-        
 
-    def copy(self):
-        """Duplicate this output object."""
+    def copy(self) -> 'Output':
+        """Duplicate this Output object."""
         return Output(
             self.output,
             self.target,
@@ -2333,7 +2432,7 @@ class Output:
             comma_sep=self.comma_sep,
         )
 
-    def gen_addoutput(self, delim=','):
+    def gen_addoutput(self, delim: str=',') -> str:
         """Return the parameter needed to create this output via AddOutput.
 
         This assumes the target instance uses Prefix fixup, if inst_in is set.

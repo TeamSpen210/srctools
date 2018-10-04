@@ -17,11 +17,13 @@ Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
 
 
 """
-import collections
 import math
-from collections import abc
 
-from typing import Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple
+from typing import (
+    Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
+    overload,
+    Dict,
+)
 
 
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
@@ -192,17 +194,18 @@ def __i{func}__(self, other: float):
 '''
 
 
-class Vec:
+class Vec(Iterable[float]):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __slots__ = ('x', 'y', 'z')
-
-    INV_AXIS = {
-        'x': 'yz',
-        'y': 'xz',
-        'z': 'xy',
+    # Make type checkers understand that you can't do str->str or tuple->tuple.
+    INV_AXIS = None  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    INV_AXIS = {  # type: ignore
+        'x': ('y', 'z'),
+        'y': ('x', 'z'),
+        'z': ('x', 'y'),
 
         ('y', 'z'): 'x',
         ('x', 'z'): 'y',
@@ -212,6 +215,7 @@ class Vec:
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
     }
+
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
     S = south = y_neg = Vec_tuple(0, -1, 0)
@@ -237,6 +241,10 @@ class Vec:
             self.x = float(x)
             self.y = float(y)
             self.z = float(z)
+        elif isinstance(x, Vec):
+            self.x = x.x
+            self.y = x.y
+            self.z = x.z
         else:
             it = iter(x)
             self.x = float(next(it, 0.0))
@@ -371,7 +379,14 @@ class Vec:
         )
 
     @staticmethod
-    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']:
+    @overload
+    def bbox(points: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    @staticmethod
+    @overload
+    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
+
+    @staticmethod
+    def bbox(*points):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -399,8 +414,14 @@ class Vec:
 
         Both borders will be included.
         """
-        min_x, min_y, min_z = map(int, min_pos)
-        max_x, max_y, max_z = map(int, max_pos)
+        min_x = int(min_pos.x)
+        min_y = int(min_pos.y)
+        min_z = int(min_pos.z)
+
+        max_x = int(max_pos.x)
+        max_y = int(max_pos.y)
+        max_z = int(max_pos.z)
+
         for x in range(min_x, max_x + 1, stride):
             for y in range(min_y, max_y + 1, stride):
                 for z in range(min_z, max_z + 1, stride):
@@ -476,7 +497,7 @@ class Vec:
                 )
             )
 
-    def rotation_around(self, rot=90):
+    def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
         if self.x:
             return Vec(z=self.x * rot)
@@ -487,7 +508,7 @@ class Vec:
         else:
             raise ValueError('Zero vector!')
 
-    def __abs__(self):
+    def __abs__(self) -> 'Vec':
         """Performing abs() on a Vec takes the absolute value of all axes."""
         return Vec(
             abs(self.x),
@@ -566,26 +587,20 @@ class Vec:
 
     def __rdivmod__(self, other: float) -> Tuple['Vec', 'Vec']:
         """Divide a scalar by a vector, returning the result and remainder."""
-        if isinstance(other, Vec):
+        try:
+            x1, x2 = divmod(other, self.x)
+            y1, y2 = divmod(other, self.y)
+            z1, z2 = divmod(other, self.z)
+        except (TypeError, ValueError):
             return NotImplemented
         else:
-            try:
-                x1, x2 = divmod(other, self.x)
-                y1, y2 = divmod(other, self.y)
-                z1, z2 = divmod(other, self.z)
-            except TypeError:
-                return NotImplemented
-            else:
-                return Vec(x1, y1, z1), Vec(x2, y2, z2)
+            return Vec(x1, y1, z1), Vec(x2, y2, z2)
 
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
         return self.x != 0 or self.y != 0 or self.z != 0
 
-    def __eq__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-        ) -> bool:
+    def __eq__(self, other: object) -> bool:
         """== test.
 
         Two Vectors are compared based on the axes.
@@ -602,14 +617,11 @@ class Vec:
             )
         else:
             try:
-                return self.mag() == float(other)
-            except ValueError:
+                return self.mag() == float(other)  # type: ignore
+            except (TypeError, ValueError):
                 return NotImplemented
 
-    def __ne__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
-            ) -> bool:
+    def __ne__(self, other: object) -> bool:
         """!= test.
 
         Two Vectors are compared based on the axes.
@@ -626,8 +638,8 @@ class Vec:
             )
         else:
             try:
-                return self.mag() != float(other)
-            except ValueError:
+                return self.mag() != float(other)  # type: ignore
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __lt__(
@@ -655,7 +667,7 @@ class Vec:
         else:
             try:
                 return self.mag() < float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __le__(
@@ -683,7 +695,7 @@ class Vec:
         else:
             try:
                 return self.mag() <= float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __gt__(
@@ -711,7 +723,7 @@ class Vec:
         else:
             try:
                 return self.mag() > float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def __ge__(
@@ -739,26 +751,26 @@ class Vec:
         else:
             try:
                 return self.mag() >= float(other)
-            except ValueError:
+            except (TypeError, ValueError):
                 return NotImplemented
 
     def max(self, other: AnyVec):
         """Set this vector's values to the maximum of the two vectors."""
-        if self.x < other.x:
-            self.x = other.x
-        if self.y < other.y:
-            self.y = other.y
-        if self.z < other.z:
-            self.z = other.z
+        if self.x < other[0]:
+            self.x = other[0]
+        if self.y < other[1]:
+            self.y = other[1]
+        if self.z < other[2]:
+            self.z = other[2]
 
     def min(self, other: AnyVec):
         """Set this vector's values to be the minimum of the two vectors."""
-        if self.x > other.x:
-            self.x = other.x
-        if self.y > other.y:
-            self.y = other.y
-        if self.z > other.z:
-            self.z = other.z
+        if self.x > other[0]:
+            self.x = other[0]
+        if self.y > other[1]:
+            self.y = other[1]
+        if self.z > other[2]:
+            self.z = other[2]
 
     def __round__(self, n=0):
         return Vec(
@@ -890,17 +902,17 @@ class Vec:
     def dot(self, other: AnyVec) -> float:
         """Return the dot product of both Vectors."""
         return (
-            self.x * other.x +
-            self.y * other.y +
-            self.z * other.z
+            self.x * other[0] +
+            self.y * other[1] +
+            self.z * other[2]
         )
 
     def cross(self, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors."""
         return Vec(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
+            self.y * other[2] - self.z * other[1],
+            self.z * other[0] - self.x * other[2],
+            self.x * other[1] - self.y * other[0],
         )
 
     def localise(

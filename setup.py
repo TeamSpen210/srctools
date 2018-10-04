@@ -26,6 +26,27 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    packages=['srctools'],
+    packages=[
+        'srctools',
+        'srctools.scripts',
+        'srctools.test',
+        'srctools.bsp_transform',
+    ],
     ext_modules=modules,
+
+    package_data={'srctools': [
+        'fgd.lzma',
+        'srctools.fgd',
+    ]},
+
+    entry_points={
+        'console_scripts': [
+            'srctools_dump_parms = srctools.scripts.dump_parms:main',
+            'srctools_diff = srctools.scripts.diff:main',
+        ],
+    },
+    install_requires=[
+        'cx_Freeze',
+        'importlib_resources',
+    ]
 )
