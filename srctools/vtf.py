@@ -1,4 +1,5 @@
 """Reads VTF image data into a PIL object."""
+import math
 import struct
 from enum import Enum
 from collections import namedtuple
@@ -6,10 +7,11 @@ from collections import namedtuple
 from PIL import Image, ImageFile
 from srctools import Vec
 
-from typing import IO, Tuple, Union, List
+from typing import IO
 
 # Raw image mode, pixel counts or object(), bytes per pixel. 
 ImageAlignment = namedtuple("ImageAlignment", 'mode r g b a size')
+
 
 def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
@@ -18,7 +20,8 @@ def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
     if not size:
         size = r + g + b + a
         
-    return (mode, r, g, b, a, size)
+    return mode, r, g, b, a, size
+
 
 class ImageFormats(ImageAlignment, Enum):
     """All VTF image formats, with their data sizes in the value."""
@@ -29,7 +32,7 @@ class ImageFormats(ImageAlignment, Enum):
     RGB565 = f('RGB;16L', 5, 6, 5, 0)
     I8 = f('L', l=8, a=0)
     IA88 = f('LA', l=8, a=8)
-    P8 = f('?') # Paletted, not used.
+    P8 = f('?')  # Paletted, not used.
     A8 = f('a', a=8)
     # Blue = alpha channel too
     RGB888_BLUESCREEN = f('rgb', 8, 8, 8)
@@ -55,7 +58,7 @@ class ImageFormats(ImageAlignment, Enum):
     def mode(self):
         """Return the PIL image mode for this file format."""
         if self.name == 'RGBA16161616':
-            return 'I' # 16-bit integer
+            return 'I'  # 16-bit integer
         elif self.name == 'RGBA16161616F':
             return 'F'  # 16-bit floating point
         if self.name in ('A8', 'IA88'):
@@ -97,28 +100,29 @@ for fmt in ImageFormats:
 del fmt
 
 FORMAT_INDEX = {
-    ind: format
-    for ind, format in
+    ind: img_format
+    for ind, img_format in
     enumerate(ImageFormats)
 }
 
 _HEADER = struct.Struct(
-    '<'   # Align
-    'I'   # header size
-    'HH'  # width, height
-    'I'   # flags
-    'H'   # frame count
-    'H'   # first frame index
+    '<'    # Align
+    'I'    # Header size
+    'HH'   # Width, height
+    'I'    # Flags
+    'H'    # Frame count
+    'H'    # First frame index
     '4x'
-    'fff' # reflectivity vector
+    'fff'  # Reflectivity vector
     '4x'
-    'f'   # bumpmap scale
-    'I'   # high-res image format
-    'B'   # mipmap count
-    'I'   # low-res format (DXT1 usually)
-    'BB'  # Low-res width, height
+    'f'    # Bumpmap scale
+    'I'    # High-res image format
+    'B'    # Mipmap count
+    'I'    # Low-res format (DXT1 usually)
+    'BB'   # Low-res width, height
 )
-    
+
+
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
     def __init__(
@@ -131,7 +135,7 @@ class VTF:
         bump_scale=1.0,
     ):
         """Load a VTF file."""
-        if not ((7, 2) <= version_minor <= (7, 5)):
+        if not ((7, 2) <= version <= (7, 5)):
             raise ValueError('Version must be between 7.2 and 7.5')
         if not math.log2(width).is_integer():
             raise ValueError("Width must be a power of 2!")
@@ -198,15 +202,15 @@ class VTF:
             if fmt in SPECIAL_FORMATS:
                 continue
             for mipmap in reversed(range(mipmap_count)):
-               frame[mipmap] = Image.frombytes(
-                  'RGB',
-                   (vtf.width>>mipmap, vtf.height>>mipmap),
-                   file.read(3*(vtf.width>>mipmap)*(vtf.height>>mipmap)),
-                  'raw',
-                  fmt.mode,
-               )
-               if mipmap == 0:
-                   frame[mipmap].show()
+                frame[mipmap] = Image.frombytes(
+                    'RGB',
+                    (vtf.width >> mipmap, vtf.height >> mipmap),
+                    file.read(3*(vtf.width >> mipmap)*(vtf.height >> mipmap)),
+                    'raw',
+                    fmt.mode,
+                )
+                if mipmap == 0:
+                    frame[mipmap].show()
         
     def seek(self, frame: int) -> None:
         """Switch to the given frame, or raise EOFError if moved outside the file."""
