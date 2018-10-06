@@ -1,6 +1,9 @@
 """Reads VTF image data into a PIL object."""
+from array import array
 import math
 import struct
+from collections import namedtuple
+from enum import Enum
 
 from srctools import Vec
 
@@ -10,48 +13,96 @@ from typing import IO, List
 # and choose an appropriate unprefixed version.
 
 # noinspection PyProtectedMember
-from srctools._vtf_frame import (
-    ImageFrame as Py_ImageFrame,
-    ImageFormats as _Py_ImageFormats,
-)
+from srctools import _vtf_readwrite as _Py_format_funcs
 try:
     # noinspection PyUnresolvedReferences, PyProtectedMember
-    from srctools._vtf_frame_cython import (
-        ImageFrame as Cy_ImageFrame,
-        FORMATS as Cy_IMAGE_FORMATS,
-        _FORMAT_ORDER
-    )  # type: ignore
-    ImageFrame = Cy_ImageFrame  # type: ignore
-    _ImageFormats = Cy_IMAGE_FORMATS  # type: ignore
+    from srctools import _vtf_readwrite_cython as _Cy_format_funcs # type: ignore
+    _format_funcs = _Cy_format_funcs  # type: ignore
 except ImportError:
     # Type checker only reads this branch.
-    ImageFrame = Py_ImageFrame
-    _ImageFormats = _Py_ImageFormats
-    _FORMAT_ORDER = list(_ImageFormats)  # type: List[_ImageFormats]
+    _format_funcs = _Py_format_funcs
 
-FMT_RGBA8888 = _ImageFormats.RGBA8888
-FMT_ABGR8888 = _ImageFormats.ABGR8888
-FMT_RGB888 = _ImageFormats.RGB888
-FMT_BGR888 = _ImageFormats.BGR888
-FMT_RGB565 = _ImageFormats.RGB565
-FMT_I8 = _ImageFormats.I8
-FMT_IA88 = _ImageFormats.IA88
-FMT_P8 = _ImageFormats.P8
-FMT_A8 = _ImageFormats.A8
-FMT_RGB888_BLUESCREEN = _ImageFormats.RGB888_BLUESCREEN
-FMT_BGR888_BLUESCREEN = _ImageFormats.BGR888_BLUESCREEN
-FMT_ARGB8888 = _ImageFormats.ARGB8888
-FMT_BGRA8888 = _ImageFormats.BGRA8888
-FMT_DXT1 = _ImageFormats.DXT1
-FMT_DXT3 = _ImageFormats.DXT3
-FMT_DXT5 = _ImageFormats.DXT5
-FMT_BGRX8888 = _ImageFormats.BGRX8888
-FMT_BGR565 = _ImageFormats.BGR565
-FMT_BGRX5551 = _ImageFormats.BGRX5551
-FMT_BGRA4444 = _ImageFormats.BGRA4444
-FMT_DXT1_ONEBITALPHA = _ImageFormats.DXT1_ONEBITALPHA
-FMT_BGRA5551 = _ImageFormats.BGRA5551
-FMT_RGBA16161616F = _ImageFormats.RGBA16161616F
+
+# The _vtf_readwrite module contains load_FORMATNAME() functions which
+# convert the VTF data into a uniform 32-bit RGBA block, which we can then
+# parse.
+# That works for everything except RGBA16161616 (used for HDR cubemaps), which
+# is 16-bit for each channel. We can't do much about that.
+
+
+class ImageAlignment(namedtuple("ImageAlignment", 'mode r g b a size')):
+    """Raw image mode, pixel counts or object(), bytes per pixel."""
+    # Force object-style comparisons.
+    __gt__ = object.__gt__
+    __lt__ = object.__lt__
+    __ge__ = object.__ge__
+    __le__ = object.__le__
+    __eq__ = object.__eq__
+    __ne__ = object.__ne__
+    __hash__ = object.__hash__
+
+
+def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
+    """Helper function to construct ImageFormats."""
+    if l:
+        r = g = b = l
+        size = l + a
+    if not size:
+        size = r + g + b + a
+
+    return mode, r, g, b, a, size
+
+
+class ImageFormats(ImageAlignment, Enum):
+    """All VTF image formats, with their data sizes in the value."""
+    RGBA8888 = f('RGBA', 8, 8, 8, 8)
+    ABGR8888 = f('ABGR', 8, 8, 8, 8)
+    RGB888 = f('RGB', 8, 8, 8, 0)
+    BGR888 = f('BGR', 8, 8, 8)
+    RGB565 = f('RGB;16L', 5, 6, 5, 0)
+    I8 = f('L', l=8, a=0)
+    IA88 = f('LA', l=8, a=8)
+    P8 = f('?')  # Palletted, not used.
+    A8 = f('a', a=8)
+    # Blue = alpha channel too
+    RGB888_BLUESCREEN = f('rgb', 8, 8, 8)
+    BGR888_BLUESCREEN = f('bgr', 8, 8, 8)
+    ARGB8888 = f('ARGB', 8, 8, 8, 8)
+    BGRA8888 = f('BFRA', 8, 8, 8, 8)
+    DXT1 = f('dxt1', size=4)
+    DXT3 = f('dxt3', size=8)
+    DXT5 = f('dxt5', size=8)
+    BGRX8888 = f('bgr_', 8, 8, 8, 8)
+    BGR565 = f('bgr', 5, 6, 5)
+    BGRX5551 = f('bgr_', 5, 5, 5, 1)
+    BGRA4444 = f('bgra', 4, 4, 4, 4)
+    DXT1_ONEBITALPHA = f('dxt1', a=1, size=4)
+    BGRA5551 = f('bgra', 5, 5, 5, 1)
+    UV88 = f('?')
+    UVWQ8888 = f('?')
+    RGBA16161616F = f('rgba', 16, 16, 16, 16)
+    RGBA16161616 = f('rgba', 16, 16, 16, 16)
+    UVLX8888 = f('?')
+
+    def frame_size(self, width: int, height: int) -> int:
+        """Compute the number of bytes needed for this image size."""
+        if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1ONEBITALPHA'):
+            block_wid, mod = divmod(width, 4)
+            if mod:
+                block_wid += 1
+
+            block_height, mod = divmod(height, 4)
+            if mod:
+                block_height += 1
+            return self.size * block_wid * block_height // 8
+        else:
+            return self.size * width * height // 8
+
+del f
+
+
+FORMAT_ORDER = list(ImageFormats)  # type: List[ImageFormats]
+
 
 _HEADER = struct.Struct(
     '<'    # Align
@@ -69,6 +120,28 @@ _HEADER = struct.Struct(
     'I'    # Low-res format (DXT1 usually)
     'BB'   # Low-res width, height
 )
+
+
+def _blank_frame(width: int, height: int) -> array:
+    """Construct a blank image of the desired size."""
+    return _format_funcs.blank(width, height)
+
+
+def _load_frame(
+    fmt: ImageFormats,
+    pixels: array,
+    data: bytes,
+    width: int,
+    height: int,
+) -> None:
+    """Load in pixels from VTF data."""
+    try:
+        loader = getattr(_format_funcs, "load_" + fmt.name.casefold())
+    except AttributeError:
+        raise NotImplementedError(
+            "Loading {} not implemented!".format(fmt.name)
+        ) from None
+    loader(pixels, data, width, height)
 
 
 class VTF:
@@ -99,10 +172,10 @@ class VTF:
         self.bump_scale = bump_scale
         
         self._frames = [
-            ImageFrame(width, height)
+            _blank_frame(width, height)
             for _ in range(frames)
         ]
-           
+
     @classmethod    
     def read(
         cls,
@@ -121,7 +194,7 @@ class VTF:
         assert version_major == 7, version_major
         assert 2 <= version_minor <= 5, version_minor
         
-        vtf = cls.__new__(cls)
+        vtf = cls.__new__(cls)  # type: VTF
         
         (
             vtf._header_size,
@@ -138,33 +211,41 @@ class VTF:
             low_width, low_height,
         ) = _HEADER.unpack(file.read(_HEADER.size))
 
-        vtf.width = width >> mipmap
-        vtf.height = height >> mipmap
+        vtf.width = width >> mipmap or 1
+        vtf.height = height >> mipmap or 1
         
         vtf._frames = [
-            ImageFrame(width, height)
+            _blank_frame(width, height)
             for _ in range(frame_count)
         ]
         
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
-        vtf.format = fmt = _FORMAT_ORDER[high_format]
+        vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
+        vtf.low_formtat = low_fmt = FORMAT_ORDER[low_format]
         
         if version_minor >= 3:
             raise NotImplementedError()
         elif version_minor == 2:
-            [mipmap_depth] = struct.unpack('H', file.read(2))
+            [mipmap_depth] = struct.unpack('Hx', file.read(3))
 
-        bytes_per_pixel = fmt.size
+        if fmt is ImageFormats.RGBA16161616:
+            return vtf
+
+        low_res_data = low_fmt.frame_size(low_width, low_height)
         
         for frame_ind in range(frame_count):
             for data_mipmap in reversed(range(mipmap_count)):
-                mip_width = width >> data_mipmap
-                mip_height = height >> data_mipmap
-                mip_data = file.read(
-                    bytes_per_pixel * mip_width * mip_height
-                )
+                mip_width = width >> data_mipmap or 1
+                mip_height = height >> data_mipmap or 1
+                mip_data = file.read(fmt.frame_size(mip_width, mip_height))
                 if data_mipmap == mipmap:
-                    vtf._frames[frame_ind]._load(fmt, mip_data)
+                    _load_frame(
+                        fmt,
+                        vtf._frames[frame_ind],
+                        mip_data,
+                        mip_width,
+                        mip_height,
+                    )
 
         return vtf
