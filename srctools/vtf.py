@@ -1,109 +1,57 @@
 """Reads VTF image data into a PIL object."""
 import math
 import struct
-from enum import Enum
-from collections import namedtuple
 
-from PIL import Image, ImageFile
 from srctools import Vec
 
-from typing import IO
+from typing import IO, List
 
-# Raw image mode, pixel counts or object(), bytes per pixel. 
-ImageAlignment = namedtuple("ImageAlignment", 'mode r g b a size')
+# A little dance to import both the Cython and Python versions,
+# and choose an appropriate unprefixed version.
 
+# noinspection PyProtectedMember
+from srctools._vtf_frame import (
+    ImageFrame as Py_ImageFrame,
+    ImageFormats as _Py_ImageFormats,
+)
+try:
+    # noinspection PyUnresolvedReferences, PyProtectedMember
+    from srctools._vtf_frame_cython import (
+        ImageFrame as Cy_ImageFrame,
+        FORMATS as Cy_IMAGE_FORMATS,
+        _FORMAT_ORDER
+    )  # type: ignore
+    ImageFrame = Cy_ImageFrame  # type: ignore
+    _ImageFormats = Cy_IMAGE_FORMATS  # type: ignore
+except ImportError:
+    # Type checker only reads this branch.
+    ImageFrame = Py_ImageFrame
+    _ImageFormats = _Py_ImageFormats
+    _FORMAT_ORDER = list(_ImageFormats)  # type: List[_ImageFormats]
 
-def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
-    """Helper function to construct ImageFormats."""
-    if l:
-        r = g = b = l
-    if not size:
-        size = r + g + b + a
-        
-    return mode, r, g, b, a, size
-
-
-class ImageFormats(ImageAlignment, Enum):
-    """All VTF image formats, with their data sizes in the value."""
-    RGBA8888 = f('RGBA', 8, 8, 8, 8)
-    ABGR8888 = f('ABGR', 8, 8, 8, 8)
-    RGB888 = f('RGB', 8, 8, 8, 0)
-    BGR888 = f('BGR', 8, 8, 8)
-    RGB565 = f('RGB;16L', 5, 6, 5, 0)
-    I8 = f('L', l=8, a=0)
-    IA88 = f('LA', l=8, a=8)
-    P8 = f('?')  # Paletted, not used.
-    A8 = f('a', a=8)
-    # Blue = alpha channel too
-    RGB888_BLUESCREEN = f('rgb', 8, 8, 8)
-    BGR888_BLUESCREEN = f('bgr', 8, 8, 8)
-    ARGB8888 = f('ARGB', 8, 8, 8, 8)
-    BGRA8888 = f('BFRA', 8, 8, 8, 8)
-    DXT1 = f('dxt1', size=4)
-    DXT3 = f('dxt3', size=8)
-    DXT5 = f('dxt5', size=8)
-    BGRX8888 = f('bgr_', 8, 8, 8, 8)
-    BGR565 = f('bgr', 5, 6, 5)
-    BGRX5551 = f('bgr_', 5, 5, 5, 1)
-    BGRA4444 = f('bgra', 4, 4, 4, 4)
-    DXT1_ONEBITALPHA = f('dxt1', a=1, size=4)
-    BGRA5551 = f('bgra', 5, 5, 5, 1)
-    UV88 = f('?')
-    UVWQ8888 = f('?')
-    RGBA16161616F = f('rgba', 16, 16, 16, 16)
-    RGBA16161616 = f('rgba', 16, 16, 16, 16)
-    UVLX8888 = f('?')
-    
-    @property
-    def mode(self):
-        """Return the PIL image mode for this file format."""
-        if self.name == 'RGBA16161616':
-            return 'I'  # 16-bit integer
-        elif self.name == 'RGBA16161616F':
-            return 'F'  # 16-bit floating point
-        if self.name in ('A8', 'IA88'):
-            return 'LA'
-        elif self.name == 'I8':
-            return 'L'
-        elif self.a != 0 or 'A' in self.name or self.name in ('DXT3', 'DXT5'):
-            return 'RGBA'
-        else:
-            return 'RGB'
-        
-    # Force object-style comparisons.
-    __gt__ = object.__gt__
-    __lt__ = object.__lt__
-    __ge__ = object.__ge__
-    __le__ = object.__le__
-    __eq__ = object.__eq__
-    __ne__ = object.__ne__
-    __hash__ = object.__hash__
-    
-del f
-
-# Formats requiring specific code to decode them.
-# These are all the compressed formats, plus some oddballs.
-SPECIAL_FORMATS = {
-    ImageFormats.DXT1,
-    ImageFormats.DXT1_ONEBITALPHA,
-    ImageFormats.DXT3,
-    ImageFormats.DXT5,
-    ImageFormats.P8,
-    ImageFormats.UV88,
-    ImageFormats.UVWQ8888,
-    ImageFormats.UVLX8888,
-}
-
-for fmt in ImageFormats:
-    if type(fmt.a) is object:
-        assert fmt in SPECIAL_FORMATS, fmt
-del fmt
-
-FORMAT_INDEX = {
-    ind: img_format
-    for ind, img_format in
-    enumerate(ImageFormats)
-}
+FMT_RGBA8888 = _ImageFormats.RGBA8888
+FMT_ABGR8888 = _ImageFormats.ABGR8888
+FMT_RGB888 = _ImageFormats.RGB888
+FMT_BGR888 = _ImageFormats.BGR888
+FMT_RGB565 = _ImageFormats.RGB565
+FMT_I8 = _ImageFormats.I8
+FMT_IA88 = _ImageFormats.IA88
+FMT_P8 = _ImageFormats.P8
+FMT_A8 = _ImageFormats.A8
+FMT_RGB888_BLUESCREEN = _ImageFormats.RGB888_BLUESCREEN
+FMT_BGR888_BLUESCREEN = _ImageFormats.BGR888_BLUESCREEN
+FMT_ARGB8888 = _ImageFormats.ARGB8888
+FMT_BGRA8888 = _ImageFormats.BGRA8888
+FMT_DXT1 = _ImageFormats.DXT1
+FMT_DXT3 = _ImageFormats.DXT3
+FMT_DXT5 = _ImageFormats.DXT5
+FMT_BGRX8888 = _ImageFormats.BGRX8888
+FMT_BGR565 = _ImageFormats.BGR565
+FMT_BGRX5551 = _ImageFormats.BGRX5551
+FMT_BGRA4444 = _ImageFormats.BGRA4444
+FMT_DXT1_ONEBITALPHA = _ImageFormats.DXT1_ONEBITALPHA
+FMT_BGRA5551 = _ImageFormats.BGRA5551
+FMT_RGBA16161616F = _ImageFormats.RGBA16161616F
 
 _HEADER = struct.Struct(
     '<'    # Align
@@ -150,16 +98,21 @@ class VTF:
         self.reflectivity = ref
         self.bump_scale = bump_scale
         
-        img_mode = version.mode
-        
-        self.frames = [
-            [Image.new(img_mode, (width, height))]
+        self._frames = [
+            ImageFrame(width, height)
             for _ in range(frames)
         ]
            
     @classmethod    
-    def read(cls, file: IO[bytes]) -> 'VTF':
-        """Read in a VTF file."""
+    def read(
+        cls,
+        file: IO[bytes],
+        mipmap: int=0,
+    ) -> 'VTF':
+        """Read in a VTF file.
+
+        If specified, mipmap will read in a shrunken image.
+        """
         signature = file.read(4)
         if signature != b'VTF\0':
             raise ValueError('Bad file signature!')
@@ -172,7 +125,8 @@ class VTF:
         
         (
             vtf._header_size,
-            vtf.width, vtf.height,
+            width,
+            height,
             vtf.flags,
             frame_count,
             first_frame_index,
@@ -183,61 +137,34 @@ class VTF:
             low_format,
             low_width, low_height,
         ) = _HEADER.unpack(file.read(_HEADER.size))
+
+        vtf.width = width >> mipmap
+        vtf.height = height >> mipmap
         
-        vtf._frames = []
+        vtf._frames = [
+            ImageFrame(width, height)
+            for _ in range(frame_count)
+        ]
         
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
-        vtf.format = fmt = FORMAT_INDEX[high_format]
+        vtf.format = fmt = _FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
         
         if version_minor >= 3:
             raise NotImplementedError()
         elif version_minor == 2:
             [mipmap_depth] = struct.unpack('H', file.read(2))
-            
-        vtf.frames = [None] * frame_count
+
+        bytes_per_pixel = fmt.size
         
         for frame_ind in range(frame_count):
-            frame = vtf.frames[frame_ind] = [None] * mipmap_count
-            if fmt in SPECIAL_FORMATS:
-                continue
-            for mipmap in reversed(range(mipmap_count)):
-                frame[mipmap] = Image.frombytes(
-                    'RGB',
-                    (vtf.width >> mipmap, vtf.height >> mipmap),
-                    file.read(3*(vtf.width >> mipmap)*(vtf.height >> mipmap)),
-                    'raw',
-                    fmt.mode,
+            for data_mipmap in reversed(range(mipmap_count)):
+                mip_width = width >> data_mipmap
+                mip_height = height >> data_mipmap
+                mip_data = file.read(
+                    bytes_per_pixel * mip_width * mip_height
                 )
-                if mipmap == 0:
-                    frame[mipmap].show()
-        
-    def seek(self, frame: int) -> None:
-        """Switch to the given frame, or raise EOFError if moved outside the file."""
-        if frame < 0:
-            raise ValueError('Negative frame')
-        if frame > self.__frame_count:
-            raise EOFError()
-        self.__cur_frame = frame
-        offset = (
-            self.__img_start
-            # + frame offset...
-        )
-        self.fp.seek(offset)
-        print('Format =', self.__format)
-        if self.__format in SPECIAL_FORMATS:
-            raise NotImplementedError
-            self.tile = [
-                ("srcvtf", (0, 0) + self.size, offset, (
-                    self.__format, 
-                    offset,
-                ))
-            ]
-        else:
-            self.tile = [(
-                "raw",
-                (0, 0) + self.size,
-                offset,
-                (self.__format.order, 0, 1),
-            )]
+                if data_mipmap == mipmap:
+                    vtf._frames[frame_ind]._load(fmt, mip_data)
 
+        return vtf
