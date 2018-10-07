@@ -232,7 +232,18 @@ class VTF:
         if fmt is ImageFormats.RGBA16161616:
             return vtf
 
-        low_res_data = low_fmt.frame_size(low_width, low_height)
+        vtf._low_res = _blank_frame(low_width, low_height)
+        try:
+            _load_frame(
+                low_fmt,
+                vtf._low_res,
+                file.read(low_fmt.frame_size(low_width, low_height)),
+                low_width,
+                low_height
+            )
+        except NotImplementedError:
+            # TODO: Implement all formats.
+            vtf._low_res = None
         
         for frame_ind in range(frame_count):
             for data_mipmap in reversed(range(mipmap_count)):
