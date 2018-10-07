@@ -58,8 +58,8 @@ def load_rgb565(pixels, data, width, height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
         pixels[4 * offset] = a & 0b11111000
-        pixels[4 * offset + 1] = (a & 0b00000111 << 5) + (b & 0b11100000 >> 3)
-        pixels[4 * offset + 2] = b & 0b00011111 << 3
+        pixels[4 * offset + 1] = ((a & 0b00000111) << 5) + ((b & 0b11100000) >> 5)
+        pixels[4 * offset + 2] = (b & 0b00011111) << 3
         pixels[4 * offset + 3] = 255
 
 
@@ -69,8 +69,8 @@ def load_bgr565(pixels, data, width, height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
         pixels[4 * offset+2] = a & 0b11111000
-        pixels[4 * offset+1] = (a & 0b00000111 << 5) + (b & 0b11100000 >> 3)
-        pixels[4 * offset] = b & 0b00011111 << 3
+        pixels[4 * offset+1] = ((a & 0b00000111) << 5) + ((b & 0b11100000) >> 5)
+        pixels[4 * offset] = (b & 0b00011111) << 3
         pixels[4 * offset+3] = 255
 
 
