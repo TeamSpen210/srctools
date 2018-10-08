@@ -34,7 +34,7 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 2
+BIN_FORMAT_VERSION = 3
 
 
 class FGDParseError(TokenSyntaxError):
@@ -557,7 +557,8 @@ class KeyValues:
         if self.type is ValueTypes.SPAWNFLAGS:
             file.write(_fmt_8bit.pack(len(self.val_list)))
             # spawnflags go up to at least 1<<23.
-            for val, name, default in self.val_list:
+            for val, name, default, tags in self.val_list:
+                BinStrDict.write_tags(file, str_dict, tags)
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
                 power = int(math.log2(val))
@@ -572,7 +573,8 @@ class KeyValues:
         if self.type is ValueTypes.CHOICES:
             # Use two bytes, these can be large (soundscapes).
             file.write(_fmt_16bit.pack(len(self.val_list)))
-            for val, name in self.val_list:
+            for val, name, tags in self.val_list:
+                BinStrDict.write_tags(file, str_dict, tags)
                 file.write(str_dict(val))
                 file.write(str_dict(name))
         
@@ -595,9 +597,15 @@ class KeyValues:
             [val_count] = _read_struct(_fmt_8bit, file)
             val_list = [0] * val_count
             for ind in range(val_count):
+                tags = BinStrDict.read_tags(file, from_dict)
                 [power] = _read_struct(_fmt_8bit, file)
                 val_name = from_dict()
-                val_list[ind] = (1 << (power & 127), val_name, (power & 128) != 0)
+                val_list[ind] = (
+                    1 << (power & 127),
+                    val_name,
+                    (power & 128) != 0,
+                    tags,
+                )
         else:
             default = from_dict()
             
@@ -605,7 +613,8 @@ class KeyValues:
                 [val_count] = _read_struct(_fmt_16bit, file)
                 val_list = [0] * val_count
                 for ind in range(val_count):
-                    val_list[ind] = (from_dict(), from_dict())
+                    tags = BinStrDict.read_tags(file, from_dict)
+                    val_list[ind] = (from_dict(), from_dict(), tags)
         
         return KeyValues(
             name,
