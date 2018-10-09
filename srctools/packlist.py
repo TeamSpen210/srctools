@@ -6,7 +6,7 @@ from enum import Enum
 from zipfile import ZipFile
 import os
 
-from srctools.property_parser import Property
+from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
 from srctools.bsp import BSP
@@ -361,7 +361,7 @@ class PackList:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
-        cache the file reading for later use.
+        cache the file reading for later use. 
         """
         try:
             man = self.fsys.read_prop('scripts/game_sounds_manifest.txt')
@@ -370,13 +370,15 @@ class PackList:
 
         cache_data = {}  # type: Dict[str, Tuple[int, Property]]
         if cache_file is not None:
+            # If the file doesn't exist or is corrupt, that's
+            # fine. We'll just parse the soundscripts the slow
+            # way.
             try:
-                f = open(cache_file)
-            except FileNotFoundError:
+                with open(cache_file) as f:
+                    old_cache = Property.parse(f, cache_file)
+            except (FileNotFoundError, KeyValError):
                 pass
             else:
-                with f:
-                    old_cache = Property.parse(f, cache_file)
                 for cache_prop in old_cache:
                     cache_data[cache_prop.name] = (
                         cache_prop.int('cache_key'),
@@ -433,7 +435,7 @@ class PackList:
 
         if cache_file is not None:
             # Write back out our new cache with updated data.
-            with open(cache_file, 'w') as f:
+            with srctools.AtomicWriter(cache_file) as f:
                 for line in new_cache_data.export():
                     f.write(line)
 
