@@ -47,6 +47,14 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
+def upsample(bits, data):
+    """Stretch bits worth of data to fill the byte.
+
+    This is done by duplicating the MSB to fill the remaining space.
+    """
+    return data | (data >> bits)
+
+
 def load_bgrx8888(pixels, data, width, height):
     """Strange - skip byte."""
     for offset in range(width * height):
@@ -61,9 +69,9 @@ def load_rgb565(pixels, data, width, height):
     for offset in range(width * height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = (a & 0b00011111) << 3
-        pixels[4 * offset + 1] = ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)
-        pixels[4 * offset + 2] = b & 0b11111000
+        pixels[4 * offset] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + 1] = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
+        pixels[4 * offset + 2] = upsample(5, b & 0b11111000)
         pixels[4 * offset + 3] = 255
 
 
@@ -72,9 +80,9 @@ def load_bgr565(pixels, data, width, height):
     for offset in range(width * height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset + 2] = (a & 0b00011111) << 3
-        pixels[4 * offset + 1] = ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)
-        pixels[4 * offset] = b & 0b11111000
+        pixels[4 * offset + 2] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + 1] = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
+        pixels[4 * offset] = upsample(5, b & 0b11111000)
         pixels[4 * offset+3] = 255
 
 
@@ -94,9 +102,9 @@ def load_bgra5551(pixels, data, width, height):
     for offset in range(width * height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = (b & 0b01111100) << 1
-        pixels[4 * offset+1] = (a & 0b11100000) >> 2 | (b & 0b00000011) << 6
-        pixels[4 * offset+2] = (a & 0b00011111) << 3
+        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
         pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
 
 
@@ -105,9 +113,9 @@ def load_bgrx5551(pixels, data, width, height):
     for offset in range(width * height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = (b & 0b01111100) << 1
-        pixels[4 * offset+1] = (a & 0b11100000) >> 2 | (b & 0b00000011) << 6
-        pixels[4 * offset+2] = (a & 0b00011111) << 3
+        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
         pixels[4 * offset+3] = 255
 
 
