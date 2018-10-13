@@ -212,8 +212,7 @@ def load_bgr888_bluescreen(pixels, data, width, height):
             pixels[4 * offset + 2] = b
             pixels[4 * offset + 3] = 255
 
-# Note - due to how VTFs are power of two only,
-# we won't ever have partial blocks.
+
 def load_dxt1(pixels, data, width, height):
     """Load compressed DXT1 data."""
     load_dxt1_impl(pixels, data, width, height, b'\0\0\0\xFF')
@@ -243,8 +242,8 @@ def load_dxt1_impl(
             block_off = 8 * (block_wid * block_y + block_x)
 
             # First, load the 2 colors.
-            c0 = c0r, c0g, c0b = decomp565(data[block_off], data[block_off+1])
-            c1 = c1r, c1g, c1b = decomp565(data[block_off+2], data[block_off+3])
+            c0r, c0g, c0b = decomp565(data[block_off], data[block_off+1])
+            c1r, c1g, c1b = decomp565(data[block_off+2], data[block_off+3])
 
             # We store the lookup colors as bytes so we can directly copy them.
 
@@ -253,56 +252,74 @@ def load_dxt1_impl(
                 data[block_off] > data[block_off+2] or
                 data[block_off+1] > data[block_off+3]
             ):
-                c2 = array.array('B', [
+                c2 = [
                     (2*c0b + c1b) // 3,
                     (2*c0g + c1g) // 3,
                     (2*c0r + c1r) // 3,
                     255
-                ])
-                c3 = array.array('B', [
+                ]
+                c3 = [
                     (c0b + 2*c1b) // 3,
                     (c0g + 2*c1g) // 3,
                     (c0r + 2*c1r) // 3,
                     255
-                ])
+                ]
             else:
-                c2 = array.array('B', [
+                c2 = [
                     (c0r + c1r) // 2,
                     (c0g + c1g) // 2,
                     (c0b + c1b) // 2,
                     255
-                ])
-                c3 = array.array('B', black_color)
+                ]
+                c3 = black_color
 
             table = [
-                array.array('B', bytes(c0)[::-1] + b'\xFF'),
-                array.array('B', bytes(c1)[::-1] + b'\xFF'),
+                [c0b, c0g, c0r, 255],
+                [c1b, c1g, c1r, 255],
                 c2,
                 c3,
             ]
             for y in range(4):
                 byte = data[block_off + 4 + y]
                 row = 16*block_wid*(4*block_y+y) + 16*block_x
-                pixels[row:row+4] = table[(byte & 0b11000000) >> 6]
-                pixels[row+4:row+8] = table[(byte & 0b00110000) >> 4]
-                pixels[row+8:row+12] = table[(byte & 0b00001100) >> 2]
-                pixels[row+12:row+16] = table[byte & 0b00000011]
+                (
+                    pixels[row],
+                    pixels[row+1],
+                    pixels[row+2],
+                    pixels[row+3],
+                ) = table[(byte & 0b11000000) >> 6]
+                (
+                    pixels[row+4],
+                    pixels[row+5],
+                    pixels[row+6],
+                    pixels[row+7],
+                ) = table[(byte & 0b00110000) >> 4]
+                (
+                    pixels[row + 8],
+                    pixels[row + 9],
+                    pixels[row + 10],
+                    pixels[row + 11],
+                ) = table[(byte & 0b00001100) >> 2]
+                (
+                    pixels[row + 12],
+                    pixels[row + 13],
+                    pixels[row + 14],
+                    pixels[row + 15],
+                ) = table[byte & 0b00000011]
 
-#
-#
-# def load_dxt3(pixels, data, width, height):
-#     """Load compressed DXT3 data."""
-#
-#
-# def load_dxt5(pixels, data, width, height):
-#     """Load compressed DXT5 data."""
 
+def load_dxt3(pixels, data, width, height):
+    """Load compressed DXT3 data."""
+
+
+
+def load_dxt5(pixels, data, width, height):
+    """Load compressed DXT5 data."""
 
 
 # Don't do the high-def 16-bit resolution.
 
-# @loader(ImageFormats.RGBA16161616F)
-# def load_16bit(pixels, offset, data, data_off):
+# def load_rgba16161616f(pixels, offset, data, data_off):
 #     """16-bit RGBA format - max resolution."""
 #     pixels[offset] = data[data_off] << 8 + data[data_off+1]
 #     pixels[offset + 1] = data[data_off+2] << 8 + data[data_off+3]
