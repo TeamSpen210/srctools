@@ -1,4 +1,3 @@
-# noinspection PyMissingTypeHints
 """Functions for reading/writing VTF data."""
 import array
 import itertools
@@ -43,6 +42,11 @@ load_rgb888 = loader_rgba('rgb')
 load_bgr888 = loader_rgba('bgr')
 
 
+# These semantically operate differently, but just have 4 channels.
+load_uvlx8888 = loader_rgba('rgba')
+load_uvwq8888 = loader_rgba('rgba')
+
+
 def load_bgrx8888(pixels, data, width, height):
     """Strange - skip byte."""
     for offset in range(width * height):
@@ -85,6 +89,28 @@ def load_bgra4444(pixels, data, width, height):
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
+def load_bgra5551(pixels, data, width, height):
+    """BGRA format, 5 bits per color plus 1 bit of alpha."""
+    for offset in range(width * height):
+        a = data[2 * offset]
+        b = data[2 * offset + 1]
+        pixels[4 * offset] = (b & 0b01111100) << 1
+        pixels[4 * offset+1] = (a & 0b11100000) >> 2 | (b & 0b00000011) << 6
+        pixels[4 * offset+2] = (a & 0b00011111) << 3
+        pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
+
+
+def load_bgrx5551(pixels, data, width, height):
+    """BGR format, 5 bits per color, alpha ignored."""
+    for offset in range(width * height):
+        a = data[2 * offset]
+        b = data[2 * offset + 1]
+        pixels[4 * offset] = (b & 0b01111100) << 1
+        pixels[4 * offset+1] = (a & 0b11100000) >> 2 | (b & 0b00000011) << 6
+        pixels[4 * offset+2] = (a & 0b00011111) << 3
+        pixels[4 * offset+3] = 255
+
+
 def load_i8(pixels, data, width, height):
     """I8 format, R=G=B"""
     for offset in range(width * height):
@@ -106,6 +132,15 @@ def load_a8(pixels, data, width, height):
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
         pixels[4*offset+3] = data[offset]
+
+
+def load_uv88(pixels, data, width, height):
+    """UV-only, which is mapped to RG."""
+    for offset in range(width * height):
+        pixels[4*offset] = data[2*offset]
+        pixels[4*offset+1] = data[2*offset+1]
+        pixels[4*offset+2] = 0
+        pixels[4*offset+3] = 255
 
 # @loader(ImageFormats.RGB888_BLUESCREEN)
 # @loader(ImageFormats.BGR888_BLUESCREEN)
