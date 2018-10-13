@@ -8,6 +8,20 @@ def blank(width: int, height: int) -> array.array:
     return array.array('B', itertools.repeat(0, times=width * height * 4))
 
 
+def ppm_convert(pixels, width, height) -> bytes:
+    """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
+    header = b'P6 %i %i 255\n' % (width, height)
+    img_off = len(header)
+    buffer = bytearray(img_off + 3 * width * height)
+
+    buffer[0:img_off] = header
+
+    for off in range(width * height):
+        buffer[img_off+3*off:img_off+3*off + 3] = pixels[4*off:4*off + 3]
+
+    return bytes(buffer)
+
+
 def loader_rgba(mode: str):
     """Make the RGB loader functions."""
     r_off = mode.index('r')

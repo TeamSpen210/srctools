@@ -268,3 +268,31 @@ class VTF:
                     )
 
         return vtf
+
+    def to_PIL(self, frame: int):
+        """Convert the given frame into a PIL image.
+
+        Requires Pillow to be installed.
+        """
+        from PIL import Image
+        return Image.frombuffer(
+            'RGBA',
+            (self.width, self.height),
+            self._frames[frame],
+            'raw',
+            'RGBA',
+            0,
+            1,
+        )
+
+    def to_tkinter(self, frame: int, tk=None):
+        """Convert the given frame into a Tkinter PhotoImage."""
+        from tkinter import PhotoImage
+        return PhotoImage(
+            master=tk,
+            data=_format_funcs.ppm_convert(
+                self._frames[frame],
+                self.width,
+                self.height,
+            ),
+        )
