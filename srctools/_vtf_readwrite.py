@@ -35,7 +35,8 @@ def loader_rgba(mode: str):
 load_rgba8888 = loader_rgba('rgba')
 load_bgra8888 = loader_rgba('bgra')
 
-load_argb8888 = loader_rgba('argb')
+# This is totally the wrong order, but it's how it's actually ordered.
+load_argb8888 = loader_rgba('gbar')
 load_abgr8888 = loader_rgba('abgr')
 
 load_rgb888 = loader_rgba('rgb')
@@ -150,14 +151,49 @@ def load_uv88(pixels, data, width, height):
         pixels[4*offset+2] = 0
         pixels[4*offset+3] = 255
 
-# @loader(ImageFormats.RGB888_BLUESCREEN)
-# @loader(ImageFormats.BGR888_BLUESCREEN)
-# @loader(ImageFormats.BGRX5551)
-# @loader(ImageFormats.BGRA5551)
+
+def load_rgb888_bluescreen(pixels, data, width, height):
+    """RGB format, with 'bluescreen' mode for alpha.
+
+    Pure blue pixels are transparent.
+    """
+    for offset in range(width * height):
+        r = data[3 * offset]
+        g = data[3 * offset + 1]
+        b = data[3 * offset + 2]
+        if r == g == 0 and b == 255:
+            pixels[4*offset] = pixels[4*offset+1] = 0
+            pixels[4*offset+2] = pixels[4*offset+3] = 0
+        else:
+            pixels[4 * offset] = r
+            pixels[4 * offset + 1] = g
+            pixels[4 * offset + 2] = b
+            pixels[4 * offset + 3] = 255
+
+
+def load_bgr888_bluescreen(pixels, data, width, height):
+    """BGR format, with 'bluescreen' mode for alpha.
+
+    Pure blue pixels are transparent.
+    """
+    for offset in range(width * height):
+        r = data[3 * offset + 2]
+        g = data[3 * offset + 1]
+        b = data[3 * offset]
+        if r == g == 0 and b == 255:
+            pixels[4*offset] = pixels[4*offset+1] = 0
+            pixels[4*offset+2] = pixels[4*offset+3] = 0
+        else:
+            pixels[4 * offset] = r
+            pixels[4 * offset + 1] = g
+            pixels[4 * offset + 2] = b
+            pixels[4 * offset + 3] = 255
+
+
 # @loader(ImageFormats.DXT1)
+# @loader(ImageFormats.DXT1_ONEBITALPHA)
 # @loader(ImageFormats.DXT3)
 # @loader(ImageFormats.DXT5)
-# @loader(ImageFormats.DXT1_ONEBITALPHA)
 
 
 # Don't do the high-def 16-bit resolution.
