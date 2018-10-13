@@ -75,14 +75,14 @@ def load_bgr565(pixels, data, width, height):
 
 
 def load_bgra4444(pixels, data, width, height):
-    """BGRA format, only upper 4 bits."""
+    """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset+2] = a & 0b00001111 << 4
-        pixels[4 * offset+1] = a & 0b11110000
-        pixels[4 * offset] = b & 0b00001111 << 4
-        pixels[4 * offset+3] = b & 0b11110000
+        pixels[4 * offset+1] = (a & 0b11110000) | (a & 0b11110000) >> 4
+        pixels[4 * offset+2] = (a & 0b00001111) | (a & 0b00001111) << 4
+        pixels[4 * offset] = (b & 0b00001111) | (b & 0b00001111) << 4
+        pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
 def load_i8(pixels, data, width, height):
