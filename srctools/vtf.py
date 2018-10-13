@@ -30,9 +30,10 @@ except ImportError:
 # is 16-bit for each channel. We can't do much about that.
 
 
-class ImageAlignment(namedtuple("ImageAlignment", 'mode r g b a size')):
+class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
-    # Force object-style comparisons.
+    # Force object-style comparisons, so formats with the same counts
+    # compare different.
     __gt__ = object.__gt__
     __lt__ = object.__lt__
     __ge__ = object.__ge__
@@ -42,7 +43,7 @@ class ImageAlignment(namedtuple("ImageAlignment", 'mode r g b a size')):
     __hash__ = object.__hash__
 
 
-def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
+def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
     if l:
         r = g = b = l
@@ -50,39 +51,39 @@ def f(mode, r=0, g=0, b=0, a=0, *, l=0, size=0):
     if not size:
         size = r + g + b + a
 
-    return mode, r, g, b, a, size
+    return r, g, b, a, size
 
 
 class ImageFormats(ImageAlignment, Enum):
     """All VTF image formats, with their data sizes in the value."""
-    RGBA8888 = f('RGBA', 8, 8, 8, 8)
-    ABGR8888 = f('ABGR', 8, 8, 8, 8)
-    RGB888 = f('RGB', 8, 8, 8, 0)
-    BGR888 = f('BGR', 8, 8, 8)
-    RGB565 = f('RGB;16L', 5, 6, 5, 0)
-    I8 = f('L', l=8, a=0)
-    IA88 = f('LA', l=8, a=8)
-    P8 = f('?')  # Palletted, not used.
-    A8 = f('a', a=8)
+    RGBA8888 = f(8, 8, 8, 8)
+    ABGR8888 = f(8, 8, 8, 8)
+    RGB888 = f(8, 8, 8, 0)
+    BGR888 = f(8, 8, 8)
+    RGB565 = f(5, 6, 5, 0)
+    I8 = f(a=0, l=8)
+    IA88 = f(a=8, l=8)
+    P8 = f()  # Palletted, not used.
+    A8 = f(a=8)
     # Blue = alpha channel too
-    RGB888_BLUESCREEN = f('rgb', 8, 8, 8)
-    BGR888_BLUESCREEN = f('bgr', 8, 8, 8)
-    ARGB8888 = f('ARGB', 8, 8, 8, 8)
-    BGRA8888 = f('BFRA', 8, 8, 8, 8)
-    DXT1 = f('dxt1', size=64)
-    DXT3 = f('dxt3', size=128)
-    DXT5 = f('dxt5', size=128)
-    BGRX8888 = f('bgr_', 8, 8, 8, 8)
-    BGR565 = f('bgr', 5, 6, 5)
-    BGRX5551 = f('bgr_', 5, 5, 5, 1)
-    BGRA4444 = f('bgra', 4, 4, 4, 4)
-    DXT1_ONEBITALPHA = f('dxt1', a=1, size=4)
-    BGRA5551 = f('bgra', 5, 5, 5, 1)
-    UV88 = f('?')
-    UVWQ8888 = f('?')
-    RGBA16161616F = f('rgba', 16, 16, 16, 16)
-    RGBA16161616 = f('rgba', 16, 16, 16, 16)
-    UVLX8888 = f('?')
+    RGB888_BLUESCREEN = f(8, 8, 8)
+    BGR888_BLUESCREEN = f(8, 8, 8)
+    ARGB8888 = f(8, 8, 8, 8)
+    BGRA8888 = f(8, 8, 8, 8)
+    DXT1 = f(size=64)
+    DXT3 = f(size=128)
+    DXT5 = f(size=128)
+    BGRX8888 = f(8, 8, 8, 8)
+    BGR565 = f(5, 6, 5)
+    BGRX5551 = f(5, 5, 5, 1)
+    BGRA4444 = f(4, 4, 4, 4)
+    DXT1_ONEBITALPHA = f(a=1, size=4)
+    BGRA5551 = f(5, 5, 5, 1)
+    UV88 = f(size=16)
+    UVWQ8888 = f(size=32)
+    RGBA16161616F = f(16, 16, 16, 16)
+    RGBA16161616 = f(16, 16, 16, 16)
+    UVLX8888 = f(size=32)
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
