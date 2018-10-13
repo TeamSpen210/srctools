@@ -279,38 +279,97 @@ def load_dxt1_impl(
                 c2,
                 c3,
             ]
-            for y in range(4):
-                byte = data[block_off + 4 + y]
-                row = 16*block_wid*(4*block_y+y) + 16*block_x
-                (
-                    pixels[row],
-                    pixels[row+1],
-                    pixels[row+2],
-                    pixels[row+3],
-                ) = table[(byte & 0b11000000) >> 6]
-                (
-                    pixels[row+4],
-                    pixels[row+5],
-                    pixels[row+6],
-                    pixels[row+7],
-                ) = table[(byte & 0b00110000) >> 4]
-                (
-                    pixels[row + 8],
-                    pixels[row + 9],
-                    pixels[row + 10],
-                    pixels[row + 11],
-                ) = table[(byte & 0b00001100) >> 2]
-                (
-                    pixels[row + 12],
-                    pixels[row + 13],
-                    pixels[row + 14],
-                    pixels[row + 15],
-                ) = table[byte & 0b00000011]
+            dxt_color_table(
+                pixels, data, table,
+                block_off, block_wid,
+                block_x, block_y,
+            )
+
+
+def dxt_color_table(
+    pixels,
+    data,
+    table,
+    block_off: int,
+    block_wid: int,
+    block_x: int,
+    block_y: int,
+):
+    """Decodes the actual colour table into pixels."""
+    for y in range(4):
+        byte = data[block_off + 4 + y]
+        row = 16 * block_wid * (4 * block_y + y) + 16 * block_x
+        (
+            pixels[row],
+            pixels[row + 1],
+            pixels[row + 2],
+            pixels[row + 3],
+        ) = table[(byte & 0b11000000) >> 6]
+        (
+            pixels[row + 4],
+            pixels[row + 5],
+            pixels[row + 6],
+            pixels[row + 7],
+        ) = table[(byte & 0b00110000) >> 4]
+        (
+            pixels[row + 8],
+            pixels[row + 9],
+            pixels[row + 10],
+            pixels[row + 11],
+        ) = table[(byte & 0b00001100) >> 2]
+        (
+            pixels[row + 12],
+            pixels[row + 13],
+            pixels[row + 14],
+            pixels[row + 15],
+        ) = table[byte & 0b00000011]
 
 
 def load_dxt3(pixels, data, width, height):
     """Load compressed DXT3 data."""
+    block_wid, mod = divmod(width, 4)
+    if mod:
+        block_wid += 1
 
+    for block_y in range(0, height, 4):
+        block_y //= 4
+        for block_x in range(0, width, 4):
+            block_x //= 4
+            # Skip the alpha block first.
+            block_off = 16 * (block_wid * block_y + block_x) + 8
+
+            # First, load the 2 colors.
+            c0r, c0g, c0b = decomp565(data[block_off], data[block_off + 1])
+            c1r, c1g, c1b = decomp565(data[block_off + 2], data[block_off + 3])
+
+            table = [
+                [c0b, c0g, c0r, 255],
+                [c1b, c1g, c1r, 255],
+                [
+                    (2 * c0b + c1b) // 3,
+                    (2 * c0g + c1g) // 3,
+                    (2 * c0r + c1r) // 3,
+                    255
+                ],
+                [
+                    (c0b + 2 * c1b) // 3,
+                    (c0g + 2 * c1g) // 3,
+                    (c0r + 2 * c1r) // 3,
+                    255
+                ],
+            ]
+            dxt_color_table(
+                pixels, data, table,
+                block_off, block_wid,
+                block_x, block_y,
+            )
+            # Now add on the real alpha values.
+            for off in range(8):
+                byte = data[block_off - 8 + off]
+                y, x = divmod(off*2, 4)
+                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
+                pixels[pos + 3] = byte & 0b00001111 | (byte & 0b00001111) << 4
+                pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 
 
 def load_dxt5(pixels, data, width, height):
