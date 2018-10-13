@@ -69,9 +69,9 @@ class ImageFormats(ImageAlignment, Enum):
     BGR888_BLUESCREEN = f('bgr', 8, 8, 8)
     ARGB8888 = f('ARGB', 8, 8, 8, 8)
     BGRA8888 = f('BFRA', 8, 8, 8, 8)
-    DXT1 = f('dxt1', size=4)
-    DXT3 = f('dxt3', size=8)
-    DXT5 = f('dxt5', size=8)
+    DXT1 = f('dxt1', size=64)
+    DXT3 = f('dxt3', size=128)
+    DXT5 = f('dxt5', size=128)
     BGRX8888 = f('bgr_', 8, 8, 8, 8)
     BGR565 = f('bgr', 5, 6, 5)
     BGRX5551 = f('bgr_', 5, 5, 5, 1)
@@ -211,8 +211,8 @@ class VTF:
             low_width, low_height,
         ) = _HEADER.unpack(file.read(_HEADER.size))
 
-        vtf.width = width >> mipmap or 1
-        vtf.height = height >> mipmap or 1
+        vtf.width = max(width >> mipmap, 1)
+        vtf.height = max(height >> mipmap, 1)
         
         vtf._frames = [
             _blank_frame(width, height)
@@ -223,14 +223,21 @@ class VTF:
         vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
         vtf.low_formtat = low_fmt = FORMAT_ORDER[low_format]
-        
+
+        # For volumetric textures, multiple layers. (Cannot be used with faces.)
+        vtf.depth = 1
+
         if version_minor >= 3:
             raise NotImplementedError()
-        elif version_minor == 2:
-            [mipmap_depth] = struct.unpack('Hx', file.read(3))
+        elif version_minor >= 2:
+            [vtf.depth] = struct.unpack('H', file.read(2))
 
+        # We don't implement this high-res format.
         if fmt is ImageFormats.RGBA16161616:
             return vtf
+
+        # We always seek, there's an unknown amount of padding here.
+        file.seek(vtf._header_size)
 
         vtf._low_res = _blank_frame(low_width, low_height)
         try:
@@ -244,11 +251,11 @@ class VTF:
         except NotImplementedError:
             # TODO: Implement all formats.
             vtf._low_res = None
-        
+
         for frame_ind in range(frame_count):
             for data_mipmap in reversed(range(mipmap_count)):
-                mip_width = width >> data_mipmap or 1
-                mip_height = height >> data_mipmap or 1
+                mip_width = max(width >> data_mipmap, 1)
+                mip_height = max(height >> data_mipmap, 1)
                 mip_data = file.read(fmt.frame_size(mip_width, mip_height))
                 if data_mipmap == mipmap:
                     _load_frame(
