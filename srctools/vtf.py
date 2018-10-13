@@ -77,7 +77,7 @@ class ImageFormats(ImageAlignment, Enum):
     BGR565 = f(5, 6, 5)
     BGRX5551 = f(5, 5, 5, 1)
     BGRA4444 = f(4, 4, 4, 4)
-    DXT1_ONEBITALPHA = f(a=1, size=4)
+    DXT1_ONEBITALPHA = f(size=64)
     BGRA5551 = f(5, 5, 5, 1)
     UV88 = f(size=16)
     UVWQ8888 = f(size=32)
@@ -87,7 +87,7 @@ class ImageFormats(ImageAlignment, Enum):
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
-        if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1ONEBITALPHA'):
+        if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1_ONEBITALPHA'):
             block_wid, mod = divmod(width, 4)
             if mod:
                 block_wid += 1
