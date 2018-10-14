@@ -1,8 +1,17 @@
-from setuptools import setup
+from setuptools import setup, Extension
 
 try:
     from Cython.Build import cythonize
-    modules = cythonize("srctools/_tokenizer.pyx")
+    modules = cythonize([
+        Extension(
+            "srctools._tokenizer",
+            sources=["srctools/_tokenizer.pyx"]
+        ),
+        Extension(
+            "srctools._cy_vtf_readwrite",
+            sources=["srctools/_cy_vtf_readwrite.pyx"]
+        ),
+    ])
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
     modules = []

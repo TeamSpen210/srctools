@@ -13,14 +13,14 @@ from typing import IO, Dict
 # and choose an appropriate unprefixed version.
 
 # noinspection PyProtectedMember
-from srctools import _vtf_readwrite as _Py_format_funcs
+from srctools import _py_vtf_readwrite as _py_format_funcs
 try:
     # noinspection PyUnresolvedReferences, PyProtectedMember
-    from srctools import _vtf_readwrite_cython as _Cy_format_funcs # type: ignore
-    _format_funcs = _Cy_format_funcs  # type: ignore
+    from srctools import _cy_vtf_readwrite as _cy_format_funcs # type: ignore
+    _format_funcs = _cy_format_funcs  # type: ignore
 except ImportError:
     # Type checker only reads this branch.
-    _format_funcs = _Py_format_funcs
+    _format_funcs = _py_format_funcs
 
 
 # The _vtf_readwrite module contains load_FORMATNAME() functions which
