@@ -7,7 +7,7 @@ from enum import Enum
 
 from srctools import Vec
 
-from typing import IO, List
+from typing import IO, Dict
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -85,6 +85,8 @@ class ImageFormats(ImageAlignment, Enum):
     RGBA16161616 = f(16, 16, 16, 16)
     UVLX8888 = f(size=32)
 
+    NONE = f()
+
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
         if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1_ONEBITALPHA'):
@@ -102,7 +104,32 @@ class ImageFormats(ImageAlignment, Enum):
 del f
 
 
-FORMAT_ORDER = list(ImageFormats)  # type: List[ImageFormats]
+FORMAT_ORDER = dict(enumerate(ImageFormats))  # type: Dict[int, ImageFormats]
+FORMAT_ORDER[-1] = ImageFormats.NONE
+
+
+class ResourceID(bytes, Enum):
+    """For VTF format 7.3+, there is an extensible resource system."""
+    # The two data parts in earlier versions.
+    LOW_RES = b'\x01\0\0'  # The low-res thumbnail.
+    HIGH_RES = b'\x30\0\0'  # The main image.
+
+    # Used for particle spritesheets.
+    PARTICLE_SHEET = b'\x10\0\0'
+    # Cyclic Redundancy Checksum.
+    CRC = b'CRC'
+
+    # Allows forcing specific mipmaps to be used for 'medium' shader settings.
+    LOD_SETTINGS = b'LOD'
+
+    # 4 extra bytes of bitflags.
+    EXTRA_FLAGS = b'TSO'
+
+    # Block of keyvalues data.
+    KEYVALUES = b'KVD'
+
+
+Resource = namedtuple('Resource', 'flags data')
 
 
 _HEADER = struct.Struct(
@@ -116,9 +143,9 @@ _HEADER = struct.Struct(
     'fff'  # Reflectivity vector
     '4x'
     'f'    # Bumpmap scale
-    'I'    # High-res image format
+    'i'    # High-res image format
     'B'    # Mipmap count
-    'I'    # Low-res format (DXT1 usually)
+    'i'    # Low-res format (DXT1 usually)
     'BB'   # Low-res width, height
 )
 
@@ -171,6 +198,7 @@ class VTF:
         self.version = version
         self.reflectivity = ref
         self.bump_scale = bump_scale
+        self.resources = {}
         
         self._frames = [
             _blank_frame(width, height)
@@ -193,7 +221,7 @@ class VTF:
         version_major, version_minor = struct.unpack('II', file.read(8))
         
         assert version_major == 7, version_major
-        assert 2 <= version_minor <= 5, version_minor
+        assert 0 <= version_minor <= 5, version_minor
         
         vtf = cls.__new__(cls)  # type: VTF
         
@@ -223,32 +251,74 @@ class VTF:
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
         vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
-        vtf.low_formtat = low_fmt = FORMAT_ORDER[low_format]
+        vtf.low_format = low_fmt = FORMAT_ORDER[low_format]
+
+        if fmt is ImageFormats.NONE:
+            raise ValueError('High-res format cannot be missing!')
 
         # For volumetric textures, multiple layers. (Cannot be used with faces.)
         vtf.depth = 1
-
-        if version_minor >= 3:
-            raise NotImplementedError()
-        elif version_minor >= 2:
+        if version_minor >= 2:
             [vtf.depth] = struct.unpack('H', file.read(2))
+
+        low_res_offset = high_res_offset = None
+
+        vtf.resources = {}
+
+        # Read resources.
+        if version_minor >= 3:
+            [num_resources] = struct.unpack('<3xI8x', file.read(15))
+            for i in range(num_resources):
+                [res_id, flags, data] = struct.unpack('<3sBI', file.read(8))
+                if res_id in vtf.resources:
+                    raise ValueError(
+                        'Duplicate resource ID "{}"!'.format(res_id)
+                    )
+
+                # These do not go in the resources, it's only parsed as images.
+                if res_id == ResourceID.LOW_RES:
+                    low_res_offset = data
+                elif res_id == ResourceID.HIGH_RES:
+                    high_res_offset = data
+                else:
+                    try:
+                        res_id = ResourceID(res_id)
+                    except ValueError:
+                        pass  # Custom.
+                    vtf.resources[res_id] = Resource(flags, data)
+
+            for res_id, (flags, data) in vtf.resources.items():
+                if not flags & 0x02:
+                    # There's actual data elsewhere in the file.
+                    file.seek(data)
+                    [size] = struct.unpack('I', file.read(4))
+                    data = file.read(size)
+                    vtf.resources[res_id] = Resource(flags, data)
+
+            if low_res_offset is None and low_fmt is not ImageFormats.NONE:
+                raise ValueError('Missing low-res thumbnail resource!')
+            if high_res_offset is None:
+                raise ValueError('Missing main image resource!')
+        else:
+            low_res_offset = vtf._header_size
+            high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
 
         # We don't implement these high-res formats.
         if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
             return vtf
 
-        # We always seek, there's an unknown amount of padding here.
-        file.seek(vtf._header_size)
-
         vtf._low_res = _blank_frame(low_width, low_height)
-        _load_frame(
-            low_fmt,
-            vtf._low_res,
-            file.read(low_fmt.frame_size(low_width, low_height)),
-            low_width,
-            low_height
-        )
+        if low_fmt is not ImageFormats.NONE:
+            file.seek(low_res_offset)
+            _load_frame(
+                low_fmt,
+                vtf._low_res,
+                file.read(low_fmt.frame_size(low_width, low_height)),
+                low_width,
+                low_height
+            )
 
+        file.seek(high_res_offset)
         for frame_ind in range(frame_count):
             for data_mipmap in reversed(range(mipmap_count)):
                 mip_width = max(width >> data_mipmap, 1)
