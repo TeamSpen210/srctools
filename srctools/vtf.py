@@ -233,25 +233,21 @@ class VTF:
         elif version_minor >= 2:
             [vtf.depth] = struct.unpack('H', file.read(2))
 
-        # We don't implement this high-res format.
-        if fmt is ImageFormats.RGBA16161616:
+        # We don't implement these high-res formats.
+        if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
             return vtf
 
         # We always seek, there's an unknown amount of padding here.
         file.seek(vtf._header_size)
 
         vtf._low_res = _blank_frame(low_width, low_height)
-        try:
-            _load_frame(
-                low_fmt,
-                vtf._low_res,
-                file.read(low_fmt.frame_size(low_width, low_height)),
-                low_width,
-                low_height
-            )
-        except NotImplementedError:
-            # TODO: Implement all formats.
-            vtf._low_res = None
+        _load_frame(
+            low_fmt,
+            vtf._low_res,
+            file.read(low_fmt.frame_size(low_width, low_height)),
+            low_width,
+            low_height
+        )
 
         for frame_ind in range(frame_count):
             for data_mipmap in reversed(range(mipmap_count)):
