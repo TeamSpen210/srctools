@@ -4,7 +4,7 @@ from cpython cimport array
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.stdio cimport snprintf
-import array
+from libc.stdint cimport uint_least64_t
 
 
 cdef object img_template = array.array('B', [])
@@ -22,7 +22,7 @@ def blank(uint width, uint height):
     return array.clone(img_template, 4 * width * height, zero=True)
 
 
-def ppm_convert(array.array[unsigned char] pixels, uint width, uint height) -> bytes:
+def ppm_convert(array.array[unsigned char] pixels, uint width, uint height):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef uint img_off, off
     cdef Py_ssize_t size = 3 * width * height
@@ -94,7 +94,7 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
-cdef byte upsample(byte bits, byte data):
+cdef byte upsample(byte bits, byte data) nogil:
     """Stretch bits worth of data to fill the byte.
 
     This is done by duplicating the MSB to fill the remaining space.
@@ -459,6 +459,7 @@ def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
 
 def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
     """Load compressed DXT5 data."""
+
     cdef uint block_wid, block_off, block_x, block_y
     cdef uint x, y, i, off, pos
 
@@ -467,6 +468,8 @@ def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
 
     cdef RGB c0, c1
     cdef byte inp
+
+    cdef uint_least64_t lookup  # at least 48 bits!
 
     # All colours are opaque.
     color_table[C0A] = color_table[C1A] = 255
@@ -528,10 +531,10 @@ def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
                 block_x, block_y,
             )
             # Concatenate the bits for the alpha values into a big integer.
-            lookup = sum(
-                data[block_off + i] << (8 * (11-i))
-                for i in range(12)
-            )
+            lookup = 0
+            for i in range(12):
+                lookup |= data[block_off + i] << (8 * (11-i))
+
             for i in range(16):
                 y = i // 4
                 x = i % 4
