@@ -335,12 +335,11 @@ def load_dxt3(pixels, data, width, height):
         block_y //= 4
         for block_x in range(0, width, 4):
             block_x //= 4
-            # Skip the alpha block first.
-            block_off = 16 * (block_wid * block_y + block_x) + 8
+            block_off = 16 * (block_wid * block_y + block_x)
 
             # First, load the 2 colors.
-            c0r, c0g, c0b = decomp565(data[block_off], data[block_off + 1])
-            c1r, c1g, c1b = decomp565(data[block_off + 2], data[block_off + 3])
+            c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
+            c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
             table = [
                 [c0b, c0g, c0r, 255],
@@ -360,12 +359,12 @@ def load_dxt3(pixels, data, width, height):
             ]
             dxt_color_table(
                 pixels, data, table,
-                block_off, block_wid,
+                block_off+8, block_wid,
                 block_x, block_y,
             )
             # Now add on the real alpha values.
             for off in range(8):
-                byte = data[block_off - 8 + off]
+                byte = data[block_off + off]
                 y, x = divmod(off*2, 4)
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
                 pixels[pos + 3] = byte & 0b00001111 | (byte & 0b00001111) << 4
@@ -374,7 +373,79 @@ def load_dxt3(pixels, data, width, height):
 
 def load_dxt5(pixels, data, width, height):
     """Load compressed DXT5 data."""
+    block_wid, mod = divmod(width, 4)
+    if mod:
+        block_wid += 1
 
+    # TODO: These alpha values aren't quite right.
+
+    for block_y in range(0, height, 4):
+        block_y //= 4
+        for block_x in range(0, width, 4):
+            block_x //= 4
+            block_off = 16 * (block_wid * block_y + block_x)
+
+            alpha0 = data[block_off]
+            alpha1 = data[block_off + 1]
+            if alpha0 >= alpha1:
+                alpha_table = [
+                    alpha0,
+                    alpha1,
+                    (6*alpha0 + 1*alpha1) // 7,
+                    (5*alpha0 + 2*alpha1) // 7,
+                    (4*alpha0 + 3*alpha1) // 7,
+                    (3*alpha0 + 4*alpha1) // 7,
+                    (2*alpha0 + 5*alpha1) // 7,
+                    (1*alpha0 + 6*alpha1) // 7,
+                ]
+            else:
+                alpha_table = [
+                    alpha0,
+                    alpha1,
+                    (4*alpha0 + 1*alpha1) // 5,
+                    (3*alpha0 + 2*alpha1) // 5,
+                    (2*alpha0 + 3*alpha1) // 5,
+                    (1*alpha0 + 4*alpha1) // 5,
+                    0,
+                    255
+                ]
+
+            # Now, load the colour blocks.
+            c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
+            c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
+
+            table = [
+                [c0b, c0g, c0r, 127],
+                [c1b, c1g, c1r, 127],
+                [
+                    (2 * c0b + c1b) // 3,
+                    (2 * c0g + c1g) // 3,
+                    (2 * c0r + c1r) // 3,
+                    127
+                ],
+                [
+                    (c0b + 2 * c1b) // 3,
+                    (c0g + 2 * c1g) // 3,
+                    (c0r + 2 * c1r) // 3,
+                    127
+                ],
+            ]
+            dxt_color_table(
+                pixels, data, table,
+                block_off+8, block_wid,
+                block_x, block_y,
+            )
+            # Concatenate the bits for the alpha values into a big integer.
+            lookup = sum(
+                data[block_off + i] << (8 * (11-i))
+                for i in range(12)
+            )
+            for i in range(16):
+                y, x = divmod(i, 4)
+                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
+                pixels[pos + 3] = alpha_table[
+                    (lookup >> (48-3*i)) & 0b111
+                ]
 
 # Don't do the high-def 16-bit resolution.
 
