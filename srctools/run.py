@@ -21,10 +21,10 @@ def quote(txt):
 
 def get_compiler_name(program: str):
     """Get the real executable name for VBSP or VRAD."""
-    if 'win' in sys.platform:
-        name = program + '_original.exe'
-    elif 'darwin' in sys.platform:
+    if 'darwin' in sys.platform:
         name = program + '_osx_original'
+    elif 'win' in sys.platform:
+        name = program + '_original.exe'
     else:
         name = program + '_linux_original'
     return os.path.abspath(name)
