@@ -3,7 +3,6 @@
 """
 import contextlib
 
-from enum import Enum
 from io import BytesIO
 import itertools
 
@@ -14,12 +13,18 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union
+from typing import List, Dict, Iterator, Union, ContextManager
 
+
+try:
+    from enum import Enum, Flag
+except ImportError:
+    from aenum import Enum, Flag
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
-    'BSP', 'Lump', 'StaticProp',
+    'BSP', 'Lump',
+    'StaticProp', 'StaticPropFlags',
 ]
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
@@ -161,6 +166,20 @@ class BSP_LUMPS(Enum):
     DISP_MULTIBLEND = 63
 
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
+
+
+class StaticPropFlags(Flag):
+    """Bitflags specified for static props."""
+    NONE = 0
+
+    DOES_FADE = 0x1  # Is the fade distances set?
+    HAS_LIGHTING_ORIGIN = 0x2  # info_lighting entity used.
+    DISABLE_DRAW = 0x4  # Changes at runtime.
+    IGNORE_NORMALS = 0x8
+    NO_SHADOW = 0x10
+    SCREEN_SPACE_FADE = 0x20  # Use screen space fading. Obselete since at least ASW.
+    NO_PER_VERTEX_LIGHTING = 0x40
+    NO_SELF_SHADOWING = 0x80
 
 
 class BSP:
@@ -334,7 +353,7 @@ class BSP:
                 ))
 
     @contextlib.contextmanager
-    def packfile(self):
+    def packfile(self) -> ContextManager[ZipFile]:
         """A context manager to allow editing the packed content.
 
         When successfully exited, the zip will be rewritten to the BSP file.
@@ -504,6 +523,8 @@ class BSP:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
 
+            flags = StaticPropFlags(flags)
+
             if version >= 8:
                 (
                     min_cpu_level,
@@ -533,7 +554,7 @@ class BSP:
             else:
                 disable_on_xbox = False
 
-            # Unknown padding...
+            # Padding bytes.
             static_lump.read(3)
 
             yield StaticProp(
@@ -559,7 +580,6 @@ class BSP:
                 renderfx,
                 disable_on_xbox,
             )
-
 
 
 class Lump:
@@ -633,7 +653,7 @@ class StaticProp:
         scaling: float,
         visleafs: List[int],
         solidity: int,
-        flags: int,
+        flags: StaticPropFlags,
         skin: int,
         min_fade: float,
         max_fade: float,
