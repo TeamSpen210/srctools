@@ -97,9 +97,6 @@ docs/_build/
 # PyBuilder
 target/
 
-# This gets regenerated from .fgd files.
-fgd.lzma
-
 # Exclude Cython generated files.
 srctools/_tokenizer\.html
 srctools/_tokenizer\.c
