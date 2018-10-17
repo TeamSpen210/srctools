@@ -8,9 +8,7 @@ from types import TracebackType as _TracebackType
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
-
     'NoKeyError', 'KeyValError', 'Property',
-
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
 
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
@@ -22,7 +20,8 @@ __all__ = [
     'EmptyMapping', 'AtomicWriter',
 
     'FGD', 'VPK',
-
+    'VTF',
+    'SurfaceProp', 'SurfChar',
     'GameID',
 ]
 
@@ -319,3 +318,4 @@ from srctools.vpk import VPK
 from srctools.fgd import FGD
 from srctools.const import GameID
 from srctools.surfaceprop import SurfaceProp, SurfChar
+from srctools.vtf import VTF
