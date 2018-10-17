@@ -13,7 +13,7 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, ContextManager
+from typing import List, Dict, Iterator, Union, ContextManager, Optional
 
 
 try:
@@ -184,45 +184,173 @@ class StaticPropFlags(Flag):
 
 class BSP:
     """A BSP file."""
-    def __init__(self, filename: str, version: VERSIONS=VERSIONS.PORTAL_2):
+    def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
-        self.game_lumps = {}
+        self.game_lumps = {}  # type: Dict[bytes, GameLump]
         self.header_off = 0
-        self.version = version
+        self.version = version  # type: Optional[VERSIONS, int]
 
-    def read_header(self):
-        """Read through the BSP header to find the lumps.
+        self.read()
 
-        This allows locating any data in the BSP.
-        """
+    def read(self) -> None:
+        """Load all data."""
+        self.lumps.clear()
+        self.game_lumps.clear()
+
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
             magic_name, bsp_version = get_struct(file, '4si')
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
-            assert bsp_version == self.version.value, 'Different BSP version!'
+            if self.version is None:
+                try:
+                    self.version = VERSIONS(bsp_version)
+                except ValueError:
+                    self.version = bsp_version
+            else:
+                assert bsp_version == self.version.value, 'Different BSP version!'
+
+            lump_offsets = {}
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                lump = Lump.from_bytes(index, file)
-                self.lumps[lump.type] = lump
+                offset, length, version, ident = get_struct(
+                    file,
+                    # 3 ints and a 4-long char array
+                    '<3i4s',
+                )
+                lump_id = BSP_LUMPS(index)
+                self.lumps[lump_id] = Lump(
+                    lump_id,
+                    version,
+                    ident,
+                )
+                lump_offsets[lump_id] = offset, length
 
-            # Remember how big this is, so we can remake it later when needed.
-            self.header_off = file.tell()
+            [self.map_revision] = get_struct(file, 'i')
 
-    def get_lump(self, lump: Union[BSP_LUMPS, 'Lump']):
-        """Read a lump from the BSP."""
-        if not self.lumps:
-            # Read in the lumps if not already read.
-            self.read_header()
+            for lump in self.lumps.values():
+                # Now read in each lump.
+                offset, length = lump_offsets[lump.type]
+                file.seek(offset)
+                lump.data = file.read(length)
 
-        if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]
-        with open(self.filename, 'rb') as file:
-            file.seek(lump.offset)
-            return file.read(lump.length)
+            game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
+
+            self.game_lumps.clear()
+
+            [lump_count] = struct.unpack_from('<i', game_lump.data)
+            lump_offset = 4
+
+            for _ in range(lump_count):
+                (
+                    lump_id,
+                    flags,
+                    version,
+                    file_off,
+                    file_len,
+                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
+                lump_offset += GameLump.ST.size
+
+                file.seek(file_off)
+
+                # The lump ID is backward..
+                self.game_lumps[lump_id[::-1]] = GameLump(
+                    lump_id,
+                    flags,
+                    version,
+                    file.read(file_len),
+                )
+            # This is not valid any longer.
+            game_lump.data = b''
+
+    def save(self, filename=None) -> None:
+        """Write the BSP back into the given file."""
+        # This gets difficult. The offsets need to be written before we know
+        # what they are. So write empty bytes, record that location then go
+        # back to fill them inafter we actually determine where they are.
+        # We use either BSP_LUMPS enums or game-lump byte IDs for dict keys.
+
+        # Location of the header field.
+        fixup_loc = {}  # type: Dict[Union[BSP_LUMPS, bytes], int]
+        # The data to write.
+        fixup_data = {}  # type: Dict[Union[BSP_LUMPS, bytes], bytes]
+
+        game_lumps = list(self.game_lumps.values())  # Lock iteration order.
+
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
+            file.write(BSP_MAGIC)
+            if isinstance(self.version, VERSIONS):
+                file.write(struct.pack('<i', self.version.value))
+            else:
+                file.write(struct.pack('<i', self.version))
+
+            # Write headers.
+            for lump_name in BSP_LUMPS:
+                lump = self.lumps[lump_name]
+                fixup_loc[lump_name] = file.tell()
+                file.write(struct.pack(
+                    '<8xi4s',
+                    # offset,
+                    # length,
+                    lump.version,
+                    bytes(lump.ident),
+                ))
+
+            # After lump headers, the map revision...
+            file.write(struct.pack('<i', self.map_revision))
+
+            # Then each lump.
+            for lump_name in BSP_LUMPS:
+                # Write out the actual data.
+                lump = self.lumps[lump_name]
+                if lump_name is BSP_LUMPS.GAME_LUMP:
+                    # Construct this right here.
+                    lump_start = file.tell()
+                    file.write(struct.pack('<i', len(game_lumps)))
+                    for game_lump in game_lumps:
+                        file.write(struct.pack(
+                            '<4s HH',
+                            game_lump.id[::-1],
+                            game_lump.flags,
+                            game_lump.version,
+                        ))
+                        fixup_loc[
+                            game_lump.id] = file.tell()  # offset goes here.
+                        file.write(struct.pack('<4xi', len(game_lump.data)))
+
+                    # Now write data.
+                    for game_lump in game_lumps:
+                        fixup_data[game_lump.id] = struct.pack('<i',
+                                                               file.tell())
+                        file.write(game_lump.data)
+                    # Length of the game lump is current - start.
+                    fixup_data[lump_name] = struct.pack(
+                        '<ii',
+                        lump_start,
+                        file.tell() - lump_start,
+                    )
+                else:
+                    # Normal lump.
+                    fixup_data[lump_name] = struct.pack(
+                        '<ii',
+                        file.tell(),
+                        len(lump.data),
+                    )
+                    file.write(lump.data)
+
+            # Now apply all the fixups we deferred.
+            for fixup_key in fixup_loc:
+                file.seek(fixup_loc[fixup_key])
+                file.write(fixup_data[fixup_key])
+
+    def read_header(self):
+        """No longer used."""
+
+    def read_game_lumps(self):
+        """No longer used."""
 
     def replace_lump(self, new_name: str, lump: Union[BSP_LUMPS, 'Lump'], new_data: bytes):
         """Write out the BSP file, replacing a lump with the given bytes.
@@ -230,99 +358,22 @@ class BSP:
         """
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]  # type: Lump
-        with open(self.filename, 'rb') as file:
-            data = file.read()
 
-        before_lump = data[self.header_off:lump.offset]
-        after_lump = data[lump.offset + lump.length:]
-        del data  # This contains the entire file, we don't want to keep
-        # this memory around for long.
+        lump.data = new_data
 
-        # Adjust the length to match the new data block.
-        len_change = len(new_data) - lump.length
-        lump.length = len(new_data)
+        self.save(new_name)
 
-        # Find all lumps after this one, and adjust offsets.
-        # The order of headers doesn't need to match data order!
-        for other_lump in self.lumps.values():
-            # Not >=, that would adjust us too!
-            if other_lump.offset > lump.offset:
-                other_lump.offset += len_change
-
-        with AtomicWriter(new_name, is_bytes=True) as file:
-            self.write_header(file)
-            file.write(before_lump)
-            file.write(new_data)
-            file.write(after_lump)
-
-            # Game lumps need their data to apply offsets.
-            # We're not adding/removing headers, so we can rewrite in-place.
-            game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
-            if game_lump.offset > lump.offset:
-                file.seek(game_lump.offset)
-                file.write(struct.pack('i', len(self.game_lumps)))
-                for lump_id, (
-                    flags,
-                    version,
-                    file_off,
-                    file_len,
-                ) in self.game_lumps.items():
-                    self.game_lumps[lump_id] = (
-                        flags,
-                        version,
-                        file_off + len_change,
-                        file_len,
-                    )
-                    file.write(struct.pack(
-                        '<4s HH ii',
-                        lump_id[::-1],
-                        flags,
-                        version,
-                        file_off + len_change,
-                        file_len,
-                    ))
-
-    def write_header(self, file) -> None:
-        """Write the BSP file header into the given file."""
-        file.write(BSP_MAGIC)
-        file.write(struct.pack('i', self.version.value))
-        for lump_name in BSP_LUMPS:
-            # Write each header
-            lump = self.lumps[lump_name]
-            file.write(lump.as_bytes())
-        # The map revision would follow, but we never change that value!
-
-    def read_game_lumps(self) -> None:
-        """Read in the game-lump's header, so we can get those values."""
-        game_lump = BytesIO(self.get_lump(BSP_LUMPS.GAME_LUMP))
-
-        self.game_lumps.clear()
-        lump_count = get_struct(game_lump, 'i')[0]
-
-        for _ in range(lump_count):
-            (
-                lump_id,
-                flags,
-                version,
-                file_off,
-                file_len,
-            ) = get_struct(game_lump, '<4s HH ii')
-            # The lump ID is backward..
-            self.game_lumps[lump_id[::-1]] = (flags, version, file_off, file_len)
+    def get_lump(self, lump: BSP_LUMPS) -> bytes:
+        """Return the contents of the given lump."""
+        return self.lumps[lump].data
 
     def get_game_lump(self, lump_id: bytes) -> bytes:
         """Get a given game-lump, given the 4-character byte ID."""
-        if not self.game_lumps:
-            # Read in the lumps if not already read.
-            self.read_game_lumps()
-
         try:
-            flags, version, file_off, file_len = self.game_lumps[lump_id]
+            lump = self.game_lumps[lump_id]
         except KeyError:
             raise ValueError('{} not in {}'.format(lump_id, list(self.game_lumps)))
-        with open(self.filename, 'rb') as file:
-            file.seek(file_off)
-            return file.read(file_len)
+        return lump.data
 
     # Lump-specific commands:
 
@@ -358,14 +409,15 @@ class BSP:
 
         When successfully exited, the zip will be rewritten to the BSP file.
         """
-        data_file = BytesIO(self.get_lump(BSP_LUMPS.PAKFILE))
-        data_file.seek(0)
+        pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
+        data_file = BytesIO(pak_lump.data)
+
         zip_file = ZipFile(data_file, mode='a')
         # If exception, abort, so we don't need try: or with:
         yield zip_file
         # Explicitly close to finalise the footer.
         zip_file.close()
-        self.replace_lump(self.filename, BSP_LUMPS.PAKFILE, data_file.getvalue())
+        pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
         """Parse in entity data.
@@ -466,18 +518,19 @@ class BSP:
 
     def static_props(self) -> Iterator['StaticProp']:
         """Read in the Static Props lump."""
-        if not self.game_lumps:
-            self.read_game_lumps()
-
         # The version of the static prop format - different features.
-        version = self.game_lumps[b'sprp'][1]
+        try:
+            version = self.game_lumps[b'sprp'].version
+        except KeyError:
+            raise ValueError('No static prop lump!') from None
+
         if version > 11:
             raise ValueError('Unknown version ({})!'.format(version))
         if version < 4:
             # Predates HL2...
             raise ValueError('Static prop version {} is too old!')
 
-        static_lump = BytesIO(self.get_game_lump(b'sprp'))
+        static_lump = BytesIO(self.game_lumps[b'sprp'].data)
 
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
@@ -585,51 +638,61 @@ class BSP:
 class Lump:
     """Represents a lump header in a BSP file.
 
-    These indicate the location and size of each component.
     """
-    def __init__(self, index, offset, length, version, ident):
-        self.type = BSP_LUMPS(index)
-        self.offset = offset
-        self.length = length
+    def __init__(
+        self,
+        typ: BSP_LUMPS,
+        version: int,
+        ident: bytes,
+    ):
+        """This should not be constructed outside a BSP."""
+        self.type = typ
         self.version = version
         self.ident = [int(x) for x in ident]
-
-    @classmethod
-    def from_bytes(cls, index, file):
-        """Decode this header from the file."""
-        offset, length, version, ident = get_struct(
-            file,
-            # 3 ints and a 4-long char array
-            '<3i4s',
-        )
-        return cls(
-            index=index,
-            offset=offset,
-            length=length,
-            version=version,
-            ident=ident,
-        )
-
-    def as_bytes(self):
-        """Get the binary version of this lump header."""
-        return struct.pack(
-            '<3i4s',
-            self.offset,
-            self.length,
-            self.version,
-            bytes(self.ident),
-        )
-
-    def __len__(self):
-        return self.length
+        self.data = b''
 
     def __repr__(self):
-        return (
-            'Lump({s.type}, offset={s.offset}, '
-            'length={s.length}, version={s.version}, ident={ident})'.format(
-                s=self,
-                ident=bytes(self.ident),
-            )
+        return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
+            self.type.name,
+            self.version,
+            bytes(self.ident),
+            len(self.data)
+        )
+
+
+class GameLump:
+    """Represents a game lump.
+
+    These are designed to be game-specific.
+    """
+    __slots__ = [
+        'id',
+        'flags',
+        'version',
+        'data',
+    ]
+
+    ST = struct.Struct('<4s HH ii')
+
+    def __init__(
+        self,
+        lump_id: bytes,
+        flags: int,
+        version: int,
+        data: bytes,
+    ):
+        """This should not be constructed outside a BSP."""
+        self.id = lump_id
+        self.flags = flags
+        self.version = version
+        self.data = data
+
+    def __repr__(self):
+        return '<GameLump "{}", flags={}, v{}, {} bytes>'.format(
+            self.id,
+            self.flags,
+            self.version,
+            len(self.data),
         )
 
 
