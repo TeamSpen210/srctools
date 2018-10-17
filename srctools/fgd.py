@@ -19,7 +19,7 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef',
 ]
 
 _fmt_8bit = Struct('>B')
