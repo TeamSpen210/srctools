@@ -7,7 +7,7 @@ from enum import Enum
 
 from srctools import Vec
 
-from typing import IO, Dict
+from typing import IO, Dict, List, Optional, Tuple
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -28,6 +28,11 @@ except ImportError:
 # parse.
 # That works for everything except RGBA16161616 (used for HDR cubemaps), which
 # is 16-bit for each channel. We can't do much about that.
+
+__all__ = [
+    'VTF',
+    'ResourceID',
+]
 
 
 class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
@@ -114,7 +119,7 @@ class ResourceID(bytes, Enum):
     LOW_RES = b'\x01\0\0'  # The low-res thumbnail.
     HIGH_RES = b'\x30\0\0'  # The main image.
 
-    # Used for particle spritesheets.
+    # Used for particle spritesheets, decoded into .sheet_info
     PARTICLE_SHEET = b'\x10\0\0'
     # Cyclic Redundancy Checksum.
     CRC = b'CRC'
@@ -182,6 +187,7 @@ class VTF:
         ref=Vec(0, 0, 0),
         frames=1,
         bump_scale=1.0,
+        sheet_info: List['SheetSequence']=(),
     ):
         """Load a VTF file."""
         if not ((7, 2) <= version <= (7, 5)):
@@ -199,6 +205,7 @@ class VTF:
         self.reflectivity = ref
         self.bump_scale = bump_scale
         self.resources = {}
+        self.sheet_info = list(sheet_info)
         
         self._frames = [
             _blank_frame(width, height)
@@ -299,6 +306,12 @@ class VTF:
                 raise ValueError('Missing low-res thumbnail resource!')
             if high_res_offset is None:
                 raise ValueError('Missing main image resource!')
+
+            if ResourceID.PARTICLE_SHEET in vtf.resources:
+                vtf.sheet_info = SheetSequence.from_resource(
+                    vtf.resources[ResourceID.PARTICLE_SHEET].data
+                )
+
         else:
             low_res_offset = vtf._header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
@@ -362,3 +375,87 @@ class VTF:
                 self.height,
             ),
         )
+
+TexCoord = namedtuple('TexCoord', ['left', 'top', 'right', 'bottom'])
+
+
+class SheetSequence:
+    """VTFs may contain a number of sequences using different parts of the image."""
+    MAX_COUNT = 64
+
+    def __init__(
+        self,
+        frames: List[Tuple[float, TexCoord]],
+        clamp: bool,
+        duration: float,
+    ):
+        self.frames = frames
+        self.clamp = clamp
+        self.duration = duration
+
+    @classmethod
+    def from_resource(cls, data: bytes) -> List[Optional['SheetSequence']]:
+        """Decode from the resource data."""
+        (
+            version,
+            sequence_count,
+        ) = struct.unpack_from('<II', data)
+        offset = 8
+
+        if version > 1:
+            raise ValueError('Unknown version {}!'.format(version))
+
+        sequences = [None] * SheetSequence.MAX_COUNT  # type: List[Optional['SheetSequence']]
+        if sequence_count > SheetSequence.MAX_COUNT:
+            raise ValueError('Cannot have more than {} sequences ({})!'.format(
+                SheetSequence.MAX_COUNT,
+                sequence_count
+            ))
+
+        for _ in range(sequence_count):
+            (
+                seq_num,
+                clamp,
+                frame_count,
+                total_time,
+            ) = struct.unpack_from('<Ixxx?If', data, offset)
+            offset += 16
+            # seq_num = _
+            if not (0 <= seq_num < 64):
+                raise ValueError('Invalid sequence number {}!'.format(seq_num))
+
+            frames = [None] * frame_count
+
+            for frame_ind in range(frame_count):
+                [duration] = struct.unpack_from('<f', data, offset)
+                offset += 4
+
+                if version == 0:
+                    # Only one in the file, repeated 4 times.
+                    samples = [
+                        TexCoord._make(struct.unpack_from('<4f', data, offset))
+                    ] * 4
+                    offset += 16
+                else:
+                    samples = [
+                        TexCoord._make(struct.unpack_from('<4f', data, offset+off))
+                        for off in (0, 16, 32, 48)
+                    ]
+                    offset += 64
+
+                frames[frame_ind] = (duration, samples)
+
+            sequences[seq_num] = SheetSequence(frames, clamp, total_time)
+
+        return list(filter(None, sequences))
+
+if __name__ == '__main__':
+    with open('F:/Git/Desolation/game/portal2_base/materials/particle/paintblobs/paint_blob_sheet_1.vtf', 'rb') as f:
+        vtf = VTF.read(f)
+
+    for i, seq in enumerate(vtf.sheet_info):
+        print(f'{i}: clamp={seq.clamp}, duration={seq.duration}s')
+        for duration, coord in seq.frames:
+            # print(f'\t{duration}s:')
+            for coord in coord:
+                print('\t' + repr(TexCoord._make([x*vtf.width for x in coord])))
