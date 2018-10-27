@@ -22,12 +22,20 @@ def ppm_convert(pixels, width, height) -> bytes:
     return bytes(buffer)
 
 
+def upsample(bits, data):
+    """Stretch bits worth of data to fill the byte.
+
+    This is done by duplicating the MSB to fill the remaining space.
+    """
+    return data | (data >> bits)
+
+
 def decomp565(a: int, b: int):
     """Decompress 565-packed data into RGB triplets."""
     return (
-        (a & 0b00011111) << 3,
-        ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3),
-        b & 0b11111000,
+        upsample(5, (a & 0b00011111) << 3),
+        upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)),
+        upsample(5, b & 0b11111000),
     )
 
 
@@ -71,14 +79,6 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
-def upsample(bits, data):
-    """Stretch bits worth of data to fill the byte.
-
-    This is done by duplicating the MSB to fill the remaining space.
-    """
-    return data | (data >> bits)
-
-
 def load_bgrx8888(pixels, data, width, height):
     """Strange - skip byte."""
     for offset in range(width * height):
@@ -93,9 +93,9 @@ def load_rgb565(pixels, data, width, height):
     for offset in range(width * height):
         r, g, b = decomp565(data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = upsample(5, r)
-        pixels[4 * offset + 1] = upsample(6, g)
-        pixels[4 * offset + 2] = upsample(5, b)
+        pixels[4 * offset] = r
+        pixels[4 * offset + 1] = g
+        pixels[4 * offset + 2] = b
         pixels[4 * offset + 3] = 255
 
 
@@ -104,9 +104,9 @@ def load_bgr565(pixels, data, width, height):
     for offset in range(width * height):
         b, g, r = decomp565(data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = upsample(5, r)
-        pixels[4 * offset + 1] = upsample(6, g)
-        pixels[4 * offset + 2] = upsample(5, b)
+        pixels[4 * offset] = r
+        pixels[4 * offset + 1] = g
+        pixels[4 * offset + 2] = b
         pixels[4 * offset + 3] = 255
 
 

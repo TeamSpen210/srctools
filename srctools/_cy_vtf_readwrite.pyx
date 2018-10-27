@@ -44,11 +44,19 @@ def ppm_convert(array.array[unsigned char] pixels, uint width, uint height):
         PyMem_Free(buffer)
 
 
-cdef decomp565(RGB *rgb, byte a, byte b):
+cdef inline byte upsample(byte bits, byte data) nogil:
+    """Stretch bits worth of data to fill the byte.
+
+    This is done by duplicating the MSB to fill the remaining space.
+    """
+    return data | (data >> bits)
+
+
+cdef inline int decomp565(RGB *rgb, byte a, byte b):
     """Decompress 565-packed data into RGB triplets."""
-    rgb.r = (a & 0b00011111) << 3
-    rgb.g = ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)
-    rgb.b = b & 0b11111000
+    rgb.r = upsample(5, (a & 0b00011111) << 3)
+    rgb.g = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
+    rgb.b = upsample(5, b & 0b11111000)
 
 
 def loader_rgba(mode: str):
@@ -94,14 +102,6 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
-cdef byte upsample(byte bits, byte data) nogil:
-    """Stretch bits worth of data to fill the byte.
-
-    This is done by duplicating the MSB to fill the remaining space.
-    """
-    return data | (data >> bits)
-
-
 def load_bgrx8888(byte[:] pixels, const byte[:] data, uint width, uint height):
     """Strange - skip byte."""
     cdef uint offset
@@ -119,9 +119,9 @@ def load_rgb565(byte[:] pixels, const byte[:] data, uint width, uint height):
     for offset in range(width * height):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = upsample(5, col.r)
-        pixels[4 * offset + 1] = upsample(6, col.g)
-        pixels[4 * offset + 2] = upsample(5, col.b)
+        pixels[4 * offset] = col.r
+        pixels[4 * offset + 1] = col.g
+        pixels[4 * offset + 2] = col.b
         pixels[4 * offset + 3] = 255
 
 
@@ -132,9 +132,9 @@ def load_bgr565(byte[:] pixels, const byte[:] data, uint width, uint height):
     for offset in range(width * height):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = upsample(5, col.b)
-        pixels[4 * offset + 1] = upsample(6, col.g)
-        pixels[4 * offset + 2] = upsample(5, col.r)
+        pixels[4 * offset] = col.b
+        pixels[4 * offset + 1] = col.g
+        pixels[4 * offset + 2] = col.r
         pixels[4 * offset + 3] = 255
 
 
@@ -151,7 +151,7 @@ def load_bgra4444(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def load_bgra5551(byte[:] pixels, bytes data, uint width, uint height):
+def load_bgra5551(byte[:] pixels, const byte[:] data, uint width, uint height):
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     cdef uint offset
     cdef byte a, b
@@ -286,7 +286,7 @@ DEF C3G = 13
 DEF C3B = 14
 DEF C3A = 15
 
-cdef load_dxt1_impl(
+cdef inline load_dxt1_impl(
     byte[:] pixels,
     const byte[:] data,
     uint width,
@@ -354,10 +354,11 @@ cdef load_dxt1_impl(
                 pixels, data, color_table,
                 block_off, block_wid,
                 block_x, block_y,
+                do_alpha=True,
             )
 
 
-cdef void dxt_color_table(
+cdef inline void dxt_color_table(
     byte[:] pixels,
     const byte[:] data,
     byte *table,
@@ -365,6 +366,7 @@ cdef void dxt_color_table(
     uint block_wid,
     uint block_x,
     uint block_y,
+    bint do_alpha,
 ):
     """Decodes the actual colour table into pixels."""
     cdef unsigned int row, y
@@ -377,25 +379,29 @@ cdef void dxt_color_table(
         pixels[row + C0R] = table[off + 0]
         pixels[row + C0G] = table[off + 1]
         pixels[row + C0B] = table[off + 2]
-        pixels[row + C0A] = table[off + 3]
+        if do_alpha:
+            pixels[row + C0A] = table[off + 3]
 
         off = 4 * ((inp & 0b00110000) >> 4)
         pixels[row + C1R] = table[off + 0]
         pixels[row + C1G] = table[off + 1]
         pixels[row + C1B] = table[off + 2]
-        pixels[row + C1A] = table[off + 3]
+        if do_alpha:
+            pixels[row + C1A] = table[off + 3]
 
         off = 4 * ((inp & 0b00001100) >> 2)
         pixels[row + C2R] = table[off + 0]
         pixels[row + C2G] = table[off + 1]
         pixels[row + C2B] = table[off + 2]
-        pixels[row + C2A] = table[off + 3]
+        if do_alpha:
+            pixels[row + C2A] = table[off + 3]
 
         off = 4 * (inp & 0b00000011)
         pixels[row + C3R] = table[off + 0]
         pixels[row + C3G] = table[off + 1]
         pixels[row + C3B] = table[off + 2]
-        pixels[row + C3A] = table[off + 3]
+        if do_alpha:
+            pixels[row + C3A] = table[off + 3]
 
 
 def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
@@ -446,6 +452,7 @@ def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
                 pixels, data, color_table,
                 block_off + 8, block_wid,
                 block_x, block_y,
+                do_alpha=False,
             )
             # Now add on the real alpha values.
             for off in range(8):
@@ -529,6 +536,7 @@ def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
                 pixels, data, color_table,
                 block_off+8, block_wid,
                 block_x, block_y,
+                do_alpha=False,
             )
             # Concatenate the bits for the alpha values into a big integer.
             lookup = 0
