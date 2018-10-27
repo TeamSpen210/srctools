@@ -653,6 +653,7 @@ class PackList:
             virtual_system = VirtualFileSystem({
                 file.filename: file.data,
             })
+            virtual_system.open_ref()
             self.fsys.systems.insert(0, (virtual_system, ''))
             try:
                 mdl = Model(self.fsys, self.fsys[file.filename])
