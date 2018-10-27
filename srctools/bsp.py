@@ -257,7 +257,9 @@ class BSP:
                 file.seek(file_off)
 
                 # The lump ID is backward..
-                self.game_lumps[lump_id[::-1]] = GameLump(
+                lump_id = lump_id[::-1]
+
+                self.game_lumps[lump_id] = GameLump(
                     lump_id,
                     flags,
                     version,
@@ -317,8 +319,7 @@ class BSP:
                             game_lump.flags,
                             game_lump.version,
                         ))
-                        fixup_loc[
-                            game_lump.id] = file.tell()  # offset goes here.
+                        fixup_loc[game_lump.id] = file.tell()  # Offset goes here.
                         file.write(struct.pack('<4xi', len(game_lump.data)))
 
                     # Now write data.
@@ -558,7 +559,7 @@ class BSP:
                 skin,
                 min_fade,
                 max_fade,
-            ) = get_struct(static_lump, 'HHHBBiff')
+            ) = get_struct(static_lump, '<HHHBBiff')
 
             model_name = model_dict[model_ind]
 
@@ -682,7 +683,7 @@ class BSP:
             prop_lump.write(struct.pack('<128s', name.encode('ascii')))
 
         prop_lump.write(struct.pack('<i', len(leaf_array)))
-        prop_lump.write(struct.pack('<{}h'.format(len(leaf_array)), *leaf_array))
+        prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
         for prop in props:
@@ -699,7 +700,7 @@ class BSP:
                 prop_lump.write(struct.pack('<f', prop.scaling))
 
             prop_lump.write(struct.pack(
-                '<HHHBBi5f',
+                '<HHHBBifffff',
                 model_ind[prop.model],
                 leaf_offsets[tuple(sorted(prop.visleafs))],
                 len(prop.visleafs),
@@ -721,7 +722,8 @@ class BSP:
                     prop.min_dx_level,
                     prop.max_dx_level,
                 ))
-            elif game_lump.version >= 8:
+
+            if game_lump.version >= 8:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     prop.min_cpu_level,
@@ -729,15 +731,25 @@ class BSP:
                     prop.min_gpu_level,
                     prop.max_gpu_level
                 ))
+
             if game_lump.version >= 7:
-                prop_lump.write(struct.pack('<fff', *prop.tint)),
+                prop_lump.write(struct.pack(
+                    '<BBBB',
+                    int(prop.tint.x),
+                    int(prop.tint.y),
+                    int(prop.tint.z),
+                    prop.renderfx,
+                ))
 
             if game_lump.version >= 10:
-                # Unknown purpose.
+                # Padding bytes?
                 prop_lump.write(b'\0\0\0\0')
 
             if game_lump.version >= 9:
                 prop_lump.write(struct.pack('<?', prop.disable_on_xbox))
+
+            # Padding bytes.
+            prop_lump.write(b'\0\0\0')
 
         game_lump.data = prop_lump.getvalue()
 
@@ -795,8 +807,8 @@ class GameLump:
         self.data = data
 
     def __repr__(self):
-        return '<GameLump "{}", flags={}, v{}, {} bytes>'.format(
-            self.id,
+        return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
+            repr(self.id)[1:],
             self.flags,
             self.version,
             len(self.data),
