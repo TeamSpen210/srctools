@@ -98,5 +98,4 @@ docs/_build/
 target/
 
 # Exclude Cython generated files.
-srctools/_tokenizer\.html
-srctools/_tokenizer\.c
+srctools/*.html

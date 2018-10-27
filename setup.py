@@ -2,16 +2,6 @@ from setuptools import setup, Extension
 
 try:
     from Cython.Build import cythonize
-    modules = cythonize([
-        Extension(
-            "srctools._tokenizer",
-            sources=["srctools/_tokenizer.pyx"]
-        ),
-        Extension(
-            "srctools._cy_vtf_readwrite",
-            sources=["srctools/_cy_vtf_readwrite.pyx"]
-        ),
-    ])
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
     modules = []
@@ -41,7 +31,17 @@ setup(
         'srctools.test',
         'srctools.bsp_transform',
     ],
-    ext_modules=modules,
+    # Setuptools automatically runs Cython, if available.
+    ext_modules=cythonize([
+        Extension(
+            "srctools._tokenizer",
+            sources=["srctools/_tokenizer.pyx"],
+        ),
+        Extension(
+            "srctools._cy_vtf_readwrite",
+            sources=["srctools/_cy_vtf_readwrite.pyx"],
+        ),
+    ]),
 
     package_data={'srctools': [
         'fgd.lzma',
@@ -54,8 +54,12 @@ setup(
             'srctools_diff = srctools.scripts.diff:main',
         ],
     },
+    python_requires='>=3.4, <4',
     install_requires=[
         'cx_Freeze',
         'importlib_resources',
+        'aenum<3.6',
+
+    ],
     ]
 )
