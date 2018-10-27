@@ -407,7 +407,7 @@ class Tokenizer:
             elif tok is not Token.NEWLINE:
                 yield tok_and_val
 
-    def expect(self, token: Token, skip_newline=True):
+    def expect(self, token: Token, skip_newline: bool=True) -> Optional[str]:
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.
