@@ -8,6 +8,7 @@ import logging
 import os
 import sys
 import io
+import traceback
 from types import TracebackType
 from typing import Dict, Tuple, Union, Type, Callable, Any
 
@@ -102,6 +103,35 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
     def __getattr__(self, attr: str) -> Any:
         """Delegate unknown methods to the logger."""
         return getattr(self.logger, attr)
+
+
+class Formatter(logging.Formatter):
+    """Override exception handling."""
+    EXC_KEYWORDS = ['importlib', 'cx_freeze']
+    def formatException(self, ei):
+        """Ignore importlib and cx_freeze."""
+        exc_type, exc_value, exc_tb = ei
+        buffer = io.StringIO()
+
+        trace = exc_tb  # type: TracebackType
+
+        try:
+            while trace is not None:
+                filename = trace.tb_frame.f_code.co_filename.casefold()
+                if 'importlib' not in filename and 'cx_freeze' not in filename:
+                    break
+                trace = trace.tb_next
+
+            if trace is None:
+                # All importlib, allow that.
+                trace = exc_tb
+        except Exception:
+            trace = exc_tb
+
+        for line in traceback.TracebackException(exc_type, exc_value, trace).format():
+            buffer.write(line)
+
+        return buffer.getvalue().rstrip('\n')
 
 
 def get_handler(filename: str) -> logging.FileHandler:
@@ -199,12 +229,12 @@ def init_logging(
     logger.setLevel(logging.DEBUG)
 
     # Put more info in the log file, since it's not onscreen.
-    long_log_format = logging.Formatter(
+    long_log_format = Formatter(
         '[{levelname}] {module}.{funcName}(): {message}',
         style='{',
     )
     # Console messages, etc.
-    short_log_format = logging.Formatter(
+    short_log_format = Formatter(
         # One letter for level name
         '[{levelname[0]}] {module}.{funcName}(): {message}',
         style='{',
@@ -280,7 +310,8 @@ def init_logging(
         if on_error is not None:
             on_error(exc_type, exc_value, exc_tb)
         # Call the original handler - that prints to the normal console.
-        old_except_handler(exc_type, exc_value, exc_tb)
+        if old_except_handler is not sys.__excepthook__:
+            old_except_handler(exc_type, exc_value, exc_tb)
 
     sys.excepthook = except_handler
 
