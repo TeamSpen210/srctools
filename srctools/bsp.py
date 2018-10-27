@@ -634,6 +634,113 @@ class BSP:
                 disable_on_xbox,
             )
 
+    def write_static_props(self, props: List['StaticProp']):
+        """Remake the static prop lump."""
+
+        # First generate an optimised visleafs block.
+        # Each prop stores a pointer into the list of leafs and a leaf count.
+        # So we want to remove redundant entries in that.
+        # This can be done in a brute-force manner - for each new section,
+        # add to a dict it and all prefixes/suffixes. Then they won't require
+        # a new part.
+        visleafs = []
+
+        models = set()
+
+        for prop in props:
+            visleafs.append(prop.visleafs)
+            models.add(prop.model)
+
+        visleafs.sort(key=len, reverse=True)
+        leaf_array = []
+        leaf_offsets = {}
+
+        for leaf in visleafs:
+            tup = tuple(sorted(leaf))
+            if tup not in leaf_offsets:
+                # Add to the table.
+                pos = len(leaf_array)
+                leaf_array.extend(leaf)
+                for off in range(1, len(leaf)):
+                    leaf_offsets[tup[off:]] = pos + off
+                    leaf_offsets[tup[:-off]] = pos
+
+                leaf_offsets[tup] = pos
+
+        model_list = list(models)
+        model_ind = {
+            mdl: i
+            for i, mdl in enumerate(model_list)
+        }
+
+        game_lump = self.game_lumps[b'sprp']
+
+        # Now write out the sections.
+        prop_lump = BytesIO()
+        prop_lump.write(struct.pack('<i', len(model_list)))
+        for name in model_list:
+            prop_lump.write(struct.pack('<128s', name.encode('ascii')))
+
+        prop_lump.write(struct.pack('<i', len(leaf_array)))
+        prop_lump.write(struct.pack('<{}h'.format(len(leaf_array)), *leaf_array))
+
+        prop_lump.write(struct.pack('<i', len(props)))
+        for prop in props:
+            prop_lump.write(struct.pack(
+                '<6f',
+                prop.origin.x,
+                prop.origin.y,
+                prop.origin.z,
+                prop.angles.x,
+                prop.angles.y,
+                prop.angles.z,
+            ))
+            if game_lump.version >= 11:
+                prop_lump.write(struct.pack('<f', prop.scaling))
+
+            prop_lump.write(struct.pack(
+                '<HHHBBi5f',
+                model_ind[prop.model],
+                leaf_offsets[tuple(sorted(prop.visleafs))],
+                len(prop.visleafs),
+                prop.solidity,
+                prop.flags.value,
+                prop.skin,
+                prop.min_fade,
+                prop.max_fade,
+                prop.lighting.x,
+                prop.lighting.y,
+                prop.lighting.z,
+            ))
+            if game_lump.version >= 5:
+                prop_lump.write(struct.pack('<f', prop.fade_scale))
+
+            if game_lump.version in (6, 7):
+                prop_lump.write(struct.pack(
+                    '<HH',
+                    prop.min_dx_level,
+                    prop.max_dx_level,
+                ))
+            elif game_lump.version >= 8:
+                prop_lump.write(struct.pack(
+                    '<BBBB',
+                    prop.min_cpu_level,
+                    prop.max_cpu_level,
+                    prop.min_gpu_level,
+                    prop.max_gpu_level
+                ))
+            if game_lump.version >= 7:
+                prop_lump.write(struct.pack('<fff', *prop.tint)),
+
+            if game_lump.version >= 10:
+                # Unknown purpose.
+                prop_lump.write(b'\0\0\0\0')
+
+            if game_lump.version >= 9:
+                prop_lump.write(struct.pack('<?', prop.disable_on_xbox))
+
+        game_lump.data = prop_lump.getvalue()
+
 
 class Lump:
     """Represents a lump header in a BSP file.
@@ -753,3 +860,11 @@ class StaticProp:
         self.tint = tint
         self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
+
+    def __repr__(self):
+        return '<Prop "{}#{}" @ {} rot {}>'.format(
+            self.model,
+            self.skin,
+            self.origin,
+            self.angles
+        )
