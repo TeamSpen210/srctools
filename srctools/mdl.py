@@ -387,7 +387,9 @@ class Model:
             texture_count, texture_offset,
             cdmat_count, cdmat_offset,
             
-            skinref_count, skinref_ind, skinfamily_count,
+            skinref_count,  # Number of skin "groups"
+            skin_count,   # Number of model skins.
+            skinref_ind,  # Location of skins reference table.
             
             bodypart_count, bodypart_offset,
             attachment_count, attachment_offset,
@@ -535,6 +537,19 @@ class Model:
                 used,
             )
 
+        # Now parse through the family table, to match skins to textures.
+        f.seek(skinref_ind)
+        ref_data = f.read(2 * skinref_count * skin_count)
+        self.skins = [None] * skin_count  # type: List[List[str]]
+        skin_group = Struct('<{}H'.format(skinref_count))
+        offset = 0
+        for ind in range(skin_count):
+            self.skins[ind] = [
+                self.textures[i][0]
+                for i in skin_group.unpack_from(ref_data, offset)
+            ]
+            offset += skin_group.size
+
         f.seek(surfaceprop_index)
         self.surfaceprop = read_nullstr(f)
 
@@ -659,13 +674,20 @@ class Model:
         """
 
         if skins:
-            raise NotImplementedError('Skin families.')
+            paths = set()
+            for ind in skins:
+                try:
+                    paths.update(self.skins[ind])
+                except IndexError:
+                    # Default to skin 0.
+                    paths.update(self.skins[0])
+        else:
+            paths = {tex[0] for tex in self.textures}
 
         with self._sys:
-            for tex in self.textures:
-                tex_path = tex[0]
+            for tex in paths:
                 for folder in self.cdmaterials:
-                    full = 'materials/{}{}.vmt'.format(folder, tex_path)
+                    full = 'materials/{}{}.vmt'.format(folder, tex)
                     if full in self._sys:
                         yield full
                         break
