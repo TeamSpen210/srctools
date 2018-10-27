@@ -94,6 +94,14 @@ class Game:
 
         return fsys
 
+    def bin_folder(self) -> Path:
+        """Retrieve the location of the bin/ folder."""
+        folder = self.path.parent / 'bin'
+        # Variant in some versions.
+        if (folder / 'win32').is_dir():
+            return folder / 'win32'
+        return folder
+
 
 def find_gameinfo(argv=sys.argv) -> Game:
     """Locate the game we're in, if launched as a a compiler.
