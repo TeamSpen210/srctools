@@ -1,11 +1,12 @@
 #cython: language_level=3, embedsignature=True, auto_pickle=False
 """Cython version of the Tokenizer class."""
 cimport cython
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 import array
 
 cdef extern from *:
     unicode PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
+    unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -70,6 +71,18 @@ cdef class Tokenizer:
     cdef object pushback_tok
     cdef object pushback_val
 
+    # Private buffer, to hold string parts we're constructing.
+    cdef Py_ssize_t buf_size  # 2 << x
+    cdef unsigned int buf_pos
+    cdef Py_UCS4* val_buffer
+
+    def __cinit__(self):
+        self.val_buffer = <Py_UCS4 *>PyMem_Malloc(32 * sizeof(Py_UCS4))
+        self.buf_size = 32
+        self.buf_pos = 0
+
+    def __dealloc__(self):
+        PyMem_Free(self.val_buffer)
 
     def __init__(
         self,
@@ -99,6 +112,8 @@ cdef class Tokenizer:
 
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
+        
+        self.buf_reset()
 
         if filename:
             self.filename = str(filename)
@@ -146,13 +161,37 @@ cdef class Tokenizer:
             message = message.format(*args)
         return self._error(message)
 
-    cdef _error(self, str message):
+    cdef inline _error(self, str message):
         """C-private self.error()."""
         return self.error_type(
             message,
             self.filename,
             self.line_num,
         )
+
+    cdef inline void buf_reset(self):
+        """Reset the temporary buffer."""
+        self.buf_pos = 0
+
+    cdef inline void buf_add_char(self, Py_UCS4 uchar):
+        """Add a character to the temporary buffer, reallocating if needed."""
+        if self.buf_pos >= self.buf_size:
+            self.buf_size *= 2
+            self.val_buffer = <Py_UCS4 *>PyMem_Realloc(
+                self.val_buffer,
+                self.buf_size * sizeof(Py_UCS4),
+            )
+        self.val_buffer[self.buf_pos] = uchar
+        self.buf_pos += 1
+
+    cdef object buf_get_text(self):
+        """Decode the buffer, and return the text."""
+        cdef int byteorder = 0  # Native order.
+        # Decode buffer with default ("errors") error handling, native order.
+        out = PyUnicode_FromKindAndData(4, self.val_buffer, self.buf_pos)
+        self.buf_pos = 0
+        return out
+
 
     # We check all the getitem[] accesses, so don't have Cython recheck.
     @cython.boundscheck(False)
@@ -204,7 +243,6 @@ cdef class Tokenizer:
     cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
-            list value_chars
             Py_UCS4 next_char
             Py_UCS4 escape_char
 
@@ -261,13 +299,13 @@ cdef class Tokenizer:
 
             # Strings
             elif next_char == '"':
-                value_chars = []
+                self.buf_reset()
                 while True:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated string!')
                     elif next_char == '"':
-                        return STRING, ''.join(value_chars)
+                        return STRING, self.buf_get_text()
                     elif next_char == '\n':
                         self.line_num += 1
                     elif next_char == '\\' and self.allow_escapes:
@@ -288,17 +326,18 @@ cdef class Tokenizer:
                             next_char = escape_char
                         else:
                             # For unknown escape_chars, escape the \ automatically.
-                            value_chars.append('\\' + escape_char)
+                            self.buf_add_char('\\')
+                            self.buf_add_char(escape_char)
                             continue
                             # raise self.error('Unknown escape_char "\\{}" in {}!', escape_char, self.cur_chunk)
-                    value_chars.append(next_char)
+                    self.buf_add_char(next_char)
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
                 if not self.string_bracket:
                     return BRACK_OPEN_TUP
 
-                value_chars = []
+                self.buf_reset()
                 while True:
                     next_char = self._next_char()
                     if next_char == -1:
@@ -307,24 +346,24 @@ cdef class Tokenizer:
                             'Like "name" "value" [flag_without_end'
                         )
                     elif next_char == ']':
-                        return PROP_FLAG, ''.join(value_chars)
+                        return PROP_FLAG, self.buf_get_text()
                     # Must be one line!
                     elif next_char == '\n':
                         raise self.error(NEWLINE)
-                    value_chars.append(next_char)
+                    self.buf_add_char(next_char)
 
             elif next_char == '(':
                 # Parentheses around text...
-                value_chars = []
+                self.buf_reset()
                 while True:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated parentheses!')
                     elif next_char == ')':
-                        return PAREN_ARGS, ''.join(value_chars)
+                        return PAREN_ARGS, self.buf_get_text()
                     elif next_char == '\n':
                         self.line_num += 1
-                    value_chars.append(next_char)
+                    self.buf_add_char(next_char)
 
             # Ignore Unicode Byte Order Mark on first lines
             elif next_char == '\uFEFF':
@@ -336,13 +375,14 @@ cdef class Tokenizer:
             else: # Not-in can't be in a switch, so we need to nest this.
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
-                    value_chars = [next_char]
+                    self.buf_reset()
+                    self.buf_add_char(next_char)
                     while True:
                         next_char = self._next_char()
                         if next_char == -1:
                             # Bare names at the end are actually fine.
                             # It could be a value for the last prop.
-                            return STRING, ''.join(value_chars)
+                            return STRING, self.buf_get_text()
 
                         elif next_char in BARE_DISALLOWED:
                             # We need to repeat this so we return the ending
@@ -350,9 +390,9 @@ cdef class Tokenizer:
                             # next call.
                             # We need to repeat this so we return the newline.
                             self.char_index -= 1
-                            return STRING, ''.join(value_chars)
+                            return STRING, self.buf_get_text()
                         else:
-                            value_chars.append(next_char)
+                            self.buf_add_char(next_char)
                 else:
                     raise self._error(f'Unexpected character "{next_char}"!')
 
