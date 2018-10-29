@@ -2,11 +2,18 @@
 """Cython version of the Tokenizer class."""
 cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
-import array
 
 cdef extern from *:
     unicode PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
+
+# On Python 3.6+, convert stuff to PathLike.
+cdef object _conv_path
+try:
+    from os import fspath as _conv_path
+except ImportError:
+    # Default to just using str().
+    _conv_path = None
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -96,7 +103,7 @@ cdef class Tokenizer:
         if isinstance(data, bytes) or isinstance(data, bytearray):
             raise ValueError(
                 'Cannot parse binary data! Decode to the desired encoding, '
-                'or wrap in io.TextIOWrapper() to decode as needed.'
+                'or wrap in io.TextIOWrapper() to decode gradually.'
             )
 
         # For direct strings, we can immediately assign that as our chunk,
@@ -116,7 +123,10 @@ cdef class Tokenizer:
         self.buf_reset()
 
         if filename:
-            self.filename = str(filename)
+            if _conv_path is None:
+                self.filename = str(filename)
+            else:
+                self.filename = _conv_path(filename)
         else:
             # If a file-like object, automatically set to the filename.
             try:

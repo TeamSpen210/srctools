@@ -12,6 +12,12 @@ from typing import (
     List,
 )
 
+try:
+    from os import fspath as _conv_path, PathLike
+except ImportError:
+    _conv_path = str  # type: ignore
+    PathLike = str  # type: ignore
+
 
 class TokenSyntaxError(Exception):
     """An error that occurred when parsing a file.
@@ -135,7 +141,7 @@ class Tokenizer:
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: str=None,
+        filename: PathLike=None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket=False,
         allow_escapes=True,
@@ -143,7 +149,7 @@ class Tokenizer:
         if isinstance(data, bytes):
             raise ValueError(
                 'Cannot parse binary data! Decode to the desired encoding, '
-                'or wrap in io.TextIOWrapper() to decode as needed.'
+                'or wrap in io.TextIOWrapper() to decode gradually.'
             )
 
         if isinstance(data, str):
@@ -153,7 +159,7 @@ class Tokenizer:
             self.cur_chunk = ''
             self.chunk_iter = iter(data)
         self.char_index = -1
-        self.filename = filename
+        self.filename = _conv_path(filename)
 
         if error is None:
             self.error_type = TokenSyntaxError
@@ -449,10 +455,10 @@ def escape_text(text: str) -> str:
 
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
-Py_Tokenizer = Tokenizer  # type: Type[Tokenizer]
+Py_Tokenizer = Tokenizer
 
 # This is for static typing help, so it thinks they're the same.
-C_Tokenizer = Tokenizer  # type: Type[Tokenizer]
+C_Tokenizer = Tokenizer
 
 # Maintain this for testing.
 _py_escape_text = escape_text
