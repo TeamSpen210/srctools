@@ -104,6 +104,18 @@ def escape_quote_split(line: str) -> List[str]:
     out_strings.append(''.join(cur_part))
     return out_strings
 
+SequenceT = TypeVar('SequenceT', bound=Sequence)
+
+
+def partition(coll: SequenceT, size: int) -> Iterator[SequenceT]:
+    """Break up the collection into groups of at most size"""
+    if len(coll) <= size:
+        yield coll
+        return
+
+    for start in range(0, len(coll), size):
+        yield coll[start:start + size]
+
 
 def bool_as_int(val: object) -> str:
     """Convert a True/False value into '1' or '0'.
