@@ -2,8 +2,8 @@ import itertools as _itertools
 import os as _os
 import string as _string
 from collections import abc as _abc
-from typing import Union as _Union, Type as _Type
-from types import TracebackType as _TracebackType
+from typing import Union, Type, TypeVar, Iterator, Sequence, List, Container
+from types import TracebackType
 
 
 __all__ = [
@@ -25,10 +25,11 @@ __all__ = [
     'GameID',
 ]
 
-_FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
+# _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
+_FILE_CHARS = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ .|')
 
 
-def clean_line(line: str):
+def clean_line(line: str) -> str:
     """Removes extra spaces and comments from the input."""
     if isinstance(line, bytes):
         line = line.decode()  # convert bytes to strings if needed
@@ -37,7 +38,10 @@ def clean_line(line: str):
     return line.strip()
 
 
-def is_plain_text(name, valid_chars=_FILE_CHARS):
+def is_plain_text(
+    name: str,
+    valid_chars: Container[str]=_FILE_CHARS,
+) -> bool:
     """Check to see if any characters are not in the whitelist.
 
     """
@@ -47,7 +51,11 @@ def is_plain_text(name, valid_chars=_FILE_CHARS):
     return True
 
 
-def whitelist(string, valid_chars=_FILE_CHARS, rep_char='_'):
+def whitelist(
+    string: str,
+    valid_chars: Container[str]=_FILE_CHARS,
+    rep_char: str='_',
+) -> str:
     """Replace any characters not in the whitelist with the replacement char."""
     chars = list(string)
     for ind, char in enumerate(chars):
@@ -56,7 +64,11 @@ def whitelist(string, valid_chars=_FILE_CHARS, rep_char='_'):
     return ''.join(chars)
 
 
-def blacklist(string, invalid_chars='', rep_char='_'):
+def blacklist(
+    string: str,
+    invalid_chars: Container[str]=(),
+    rep_char: str='_',
+) -> str:
     """Replace any characters in the blacklist with the replacement char."""
     chars = list(string)
     for ind, char in enumerate(chars):
@@ -65,7 +77,7 @@ def blacklist(string, invalid_chars='', rep_char='_'):
     return ''.join(chars)
 
 
-def escape_quote_split(line):
+def escape_quote_split(line: str) -> List[str]:
     """Split quote values on a line, handling \\" correctly."""
     out_strings = []
     was_backslash = False  # Last character was a backslash
@@ -93,7 +105,7 @@ def escape_quote_split(line):
     return out_strings
 
 
-def bool_as_int(val):
+def bool_as_int(val: object) -> str:
     """Convert a True/False value into '1' or '0'.
 
     Valve uses these strings for True/False in editoritems and other
@@ -124,7 +136,7 @@ BOOL_LOOKUP = {
 }
 
 
-def conv_bool(val: _Union[str, bool, None], default=False):
+def conv_bool(val: Union[str, bool, None], default=False):
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
@@ -285,9 +297,9 @@ class AtomicWriter:
 
     def __exit__(
         self,
-        exc_type: _Type[BaseException],
+        exc_type: Type[BaseException],
         exc_value: BaseException,
-        tback: _TracebackType,
+        tback: TracebackType,
     ) -> bool:
         # Pass to tempfile, which also closes().
         temp_path = self.temp.name
