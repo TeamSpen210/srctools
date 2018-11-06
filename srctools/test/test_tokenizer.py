@@ -186,7 +186,6 @@ def test_pushback(py_c_token):
     check_tokens(tokens, prop_parse_tokens)
 
 
-
 def test_bom(py_c_token):
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
@@ -268,6 +267,40 @@ def test_escape_text(py_c_escape_text):
     assert py_c_escape_text("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜") == r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"
 
 
+def test_brackets(py_c_token):
+    """Test the [] handling produces the right results."""
+    check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=True), [
+        (Token.STRING, "blah"),
+        (Token.PROP_FLAG, " !!text45() ")
+    ])
+
+    check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=False), [
+        (Token.STRING, "blah"),
+        Token.BRACK_OPEN,
+        (Token.STRING, "!!text45"),
+        (Token.PAREN_ARGS, ''),
+        Token.BRACK_CLOSE,
+    ])
+
+    # Without, we don't care about brackets.
+    check_tokens(py_c_token('[ unclosed {}', string_bracket=False), [
+        Token.BRACK_OPEN,
+        (Token.STRING, 'unclosed'),
+        Token.BRACE_OPEN,
+        Token.BRACE_CLOSE,
+    ])
+
+    # Corner case, check EOF while reading the string.
+    check_tokens(py_c_token('[ unclosed', string_bracket=False), [
+        Token.BRACK_OPEN,
+        (Token.STRING, 'unclosed'),
+    ])
+
+    # Without, we don't care about brackets.
+    check_tokens(py_c_token('unopened ]', string_bracket=False), [
+        (Token.STRING, 'unopened'),
+        Token.BRACK_CLOSE,
+    ])
 
 def test_invalid_bracket(py_c_token):
     """Test detecting various invalid combinations of [] brackets."""
@@ -303,6 +336,7 @@ def test_invalid_paren(py_c_token):
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( no ( nesting ) )', string_bracket=True):
             pass
+
 
 def test_token_syntax_error():
     """Test the TokenSyntaxError class."""
