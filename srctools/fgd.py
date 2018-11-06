@@ -12,8 +12,10 @@ from typing import (
     Mapping, Iterator, Iterable, Collection,
     BinaryIO, TextIO,
     Container,
+    IO,
 )
 
+import srctools
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
@@ -272,6 +274,18 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
         raise tok.error(token)
 
 
+def _write_longstring(file: IO[str], text: str) -> None:
+    """Write potentially long strings to the file, splitting with + if needed."""
+    if len(text) <= 128:
+        file.write('"{}"'.format(text))
+    else:
+        file.write(' + '.join([
+            '"{}"'.format(st)
+            for st in
+            srctools.partition(text, 128)
+        ]))
+
+
 def read_tags(tok: Tokenizer) -> FrozenSet[str]:
     """Parse a set of tags from the file.
 
@@ -500,16 +514,20 @@ class KeyValues:
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
             file.write(': "{}"'.format(self.disp_name))
+
         if self.default:
             if self.type.is_literal:  # Int/float etc.
                 file.write(' : {}'.format(self.default))
             else:
                 file.write(' : "{}"'.format(self.default))
             if self.desc:
-                file.write(' : "{}"'.format(self.desc.replace('\n', '\\n')))
+                file.write(' : ')
         else:
             if self.desc:
-                file.write(' : : "{}"'.format(self.desc.replace('\n', '\\n')))
+                file.write(' : : ')
+
+        if self.desc:
+            _write_longstring(file, self.desc.replace('\n', '\\n'))
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
@@ -680,9 +698,9 @@ class IODef:
         file.write('({})'.format(self.type.value))
 
         if self.desc:
-            file.write(' : "{}"\n'.format(self.desc))
-        else:
-            file.write('\n')
+            file.write(' : ')
+            _write_longstring(file, self.desc.replace('\n', '\\n'))
+        file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
         """Write to the binary file."""
@@ -1173,7 +1191,8 @@ class EntityDef:
         file.write('= {}'.format(self.classname))
 
         if self.desc:
-            file.write(': "{}"'.format(self.desc.replace('\n', '\\n')))
+            file.write(': ')
+            _write_longstring(file, self.desc.replace('\n', '\\n'))
 
         file.write('\n\t[\n')
 
