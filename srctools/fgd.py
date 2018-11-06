@@ -497,7 +497,9 @@ class KeyValues:
         if self.readonly:
             file.write('readonly ')
 
-        file.write(': "{}"'.format(self.disp_name))
+        if self.type is not ValueTypes.SPAWNFLAGS:
+            # Spawnflags never use names!
+            file.write(': "{}"'.format(self.disp_name))
         if self.default:
             if self.type.is_literal:  # Int/float etc.
                 file.write(' : {}'.format(self.default))
