@@ -2,6 +2,8 @@ from itertools import zip_longest
 import pytest
 import codecs
 
+from pytest import raises
+
 from srctools.test.test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
 from srctools.tokenizer import (
@@ -265,6 +267,42 @@ def test_escape_text(py_c_escape_text):
     assert py_c_escape_text("\t╒═\\═╕\n") == r"\t╒═\\═╕\n"
     assert py_c_escape_text("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜") == r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"
 
+
+
+def test_invalid_bracket(py_c_token):
+    """Test detecting various invalid combinations of [] brackets."""
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('unopened ]', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('[ok] bad ]', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('[ no [ nesting ] ]', string_bracket=True):
+            pass
+
+def test_invalid_paren(py_c_token):
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('unopened )', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('(ok) bad )', string_bracket=True):
+            pass
+
+    with raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token('( no ( nesting ) )', string_bracket=True):
+            pass
 
 def test_token_syntax_error():
     """Test the TokenSyntaxError class."""
