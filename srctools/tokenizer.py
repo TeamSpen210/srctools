@@ -159,7 +159,14 @@ class Tokenizer:
             self.cur_chunk = ''
             self.chunk_iter = iter(data)
         self.char_index = -1
-        self.filename = _conv_path(filename)
+
+        if filename is not None:
+            self.filename = _conv_path(filename)
+            # If a file-like object, automatically use the configured name.
+        elif hasattr(data, 'name'):
+            self.filename = data.name  # type: ignore  # hasattr()
+        else:
+            self.filename = None
 
         if error is None:
             self.error_type = TokenSyntaxError
@@ -174,9 +181,6 @@ class Tokenizer:
         self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
 
-        # If a file-like object, this is automatic.
-        if not filename and hasattr(data, 'name'):
-            self.filename = data.name  # type: ignore  # hasattr()
 
     def error(self, message: Union[str, Token], *args):
         """Raise a syntax error exception.
