@@ -101,7 +101,13 @@ class ValueTypes(Enum):
     @property
     def is_literal(self) -> bool:
         """Should values of this type be written without quotes around it?"""
-        return self.value in ('boolean', 'integer', 'float')
+        # NOT floats! Some cases cause a parse fail (with the period).
+        return self.value in {
+            'boolean',
+            'integer',
+            'node_dest',
+            'node_id',
+        }
 
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
