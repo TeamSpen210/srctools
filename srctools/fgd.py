@@ -860,10 +860,13 @@ class EntityDef:
                             'Unknown HelperType "{}"!',
                             token_value,
                         )
-                    continue
                 else:
-                    # No arguments for the previous helper - add it in like that.
-                    entity.helpers.append((help_type, ['']))
+                    # No arguments for the previous helper, add it in.
+                    entity.helpers.append((help_type, []))
+                    help_type = None
+                    # Then repeat this token so it's parsed.
+                    tok.push_back(token, token_value)
+                continue
 
             elif token is Token.PAREN_ARGS:
                 if help_type is None:
@@ -1182,7 +1185,11 @@ class EntityDef:
         kv_order_list = []
 
         for helper, args in self.helpers:
-            file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
+            if helper is HelperTypes.HALF_GRID_SNAP:
+                # Special case, no args.
+                file.write('\n\thalfgridsnap')
+            else:
+                file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
             if helper is HelperTypes.EXT_ORDERBY:
                 kv_order_list.extend(map(str.casefold, args))
 
