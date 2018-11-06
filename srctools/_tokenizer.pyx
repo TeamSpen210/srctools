@@ -276,9 +276,6 @@ cdef class Tokenizer:
                 return PLUS_TUP
             elif next_char == '=':
                 return EQUALS_TUP
-            elif next_char == ']':
-                return BRACK_CLOSE_TUP
-
             # First try simple operators & EOF.
 
             elif next_char == '\n':
@@ -350,17 +347,25 @@ cdef class Tokenizer:
                 self.buf_reset()
                 while True:
                     next_char = self._next_char()
-                    if next_char == -1:
-                        raise self._error(
-                            'Unterminated property flag!\n\n'
-                            'Like "name" "value" [flag_without_end'
-                        )
+                    if next_char == '[':
+                        # Don't allow nesting, that's bad.
+                        raise self._error('Cannot nest [] brackets!')
                     elif next_char == ']':
                         return PROP_FLAG, self.buf_get_text()
                     # Must be one line!
-                    elif next_char == '\n':
-                        raise self.error(NEWLINE)
+                    elif next_char == '\n' or next_char == -1:
+                        raise self._error(
+                            'Reached end of line '
+                            'without closing "]"!'
+                        )
                     self.buf_add_char(next_char)
+
+            elif next_char == ']':
+                if self.string_bracket:
+                    # If string_bracket is set (using PROP_FLAG), this is a
+                    # syntax error - we don't have an open one to close!
+                    raise self._error('No open [] to close with "]"!')
+                return BRACK_CLOSE_TUP
 
             elif next_char == '(':
                 # Parentheses around text...
@@ -369,11 +374,16 @@ cdef class Tokenizer:
                     next_char = self._next_char()
                     if next_char == -1:
                         raise self._error('Unterminated parentheses!')
+                    elif next_char == '(':
+                        raise self._error('Cannot nest () brackets!')
                     elif next_char == ')':
                         return PAREN_ARGS, self.buf_get_text()
                     elif next_char == '\n':
                         self.line_num += 1
                     self.buf_add_char(next_char)
+
+            elif next_char == ')':
+                raise self._error('No open () to close with ")"!')
 
             # Ignore Unicode Byte Order Mark on first lines
             elif next_char == '\uFEFF':

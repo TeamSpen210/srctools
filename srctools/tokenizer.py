@@ -106,8 +106,6 @@ _OPERATORS = {
     '{': Token.BRACE_OPEN,
     '}': Token.BRACE_CLOSE,
 
-    ']': Token.BRACK_CLOSE,  # Won't be used if PROP_FLAG
-
     ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
@@ -130,7 +128,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = '"\'{};:[]()\n\t '
+BARE_DISALLOWED = set('"\'{};:[]()\n\t ')
 
 
 class Tokenizer:
@@ -143,8 +141,8 @@ class Tokenizer:
         data: Union[str, Iterable[str]],
         filename: PathLike=None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
-        string_bracket=False,
-        allow_escapes=True,
+        string_bracket: bool=False,
+        allow_escapes: bool=True,
     ) -> None:
         if isinstance(data, bytes):
             raise ValueError(
@@ -175,12 +173,11 @@ class Tokenizer:
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
             self.error_type = error
 
-        self.string_bracket = string_bracket
-        self.allow_escapes = allow_escapes
+        self.string_bracket = bool(string_bracket)
+        self.allow_escapes = bool(allow_escapes)
         # If set, this token will be returned next.
         self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
-
 
     def error(self, message: Union[str, Token], *args):
         """Raise a syntax error exception.
@@ -317,7 +314,13 @@ class Tokenizer:
                         return Token.PROP_FLAG, ''.join(value_chars)
                     # Must be one line!
                     elif next_char == '\n':
-                        raise self.error(Token.NEWLINE)
+                        raise self.error(
+                            'Reached end of line '
+                            'without closing "]"!'
+                        )
+                    elif next_char == '[':
+                        # Don't allow nesting, that's bad.
+                        raise self.error('Cannot nest [] brackets!')
                     elif next_char is None:
                         raise self.error(
                             'Unterminated property flag!\n\n'
@@ -334,6 +337,8 @@ class Tokenizer:
                         return Token.PAREN_ARGS, ''.join(value_chars)
                     elif next_char == '\n':
                         self.line_num += 1
+                    elif next_char == '(':
+                        raise self.error('Cannot nest () brackets!')
                     elif next_char is None:
                         raise self.error('Unterminated parentheses!')
                     value_chars.append(next_char)
@@ -343,6 +348,16 @@ class Tokenizer:
                 continue
                 # If not on line 1 we fall out of the if,
                 # and get an unexpected char error.
+
+            elif next_char == ']':
+                if self.string_bracket:
+                    # If string_bracket is set (using PROP_FLAG), this is a
+                    # syntax error - we don't have an open one to close!
+                    raise self.error('No open [] to close with "]"!')
+                return Token.BRACK_CLOSE, ']'
+
+            elif next_char == ')':
+                raise self.error('No open () to close with ")"!')
 
             # Bare names
             elif next_char not in BARE_DISALLOWED:
