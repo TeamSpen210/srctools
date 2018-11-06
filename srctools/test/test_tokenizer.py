@@ -226,6 +226,35 @@ def test_constructor(py_c_token):
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
 
+def test_obj_config(py_c_token):
+    """Test getting and setting configuration attributes."""
+    Tokenizer = py_c_token
+
+    assert Tokenizer('').string_bracket is False
+    assert Tokenizer('').allow_escapes is True
+
+    assert Tokenizer('', string_bracket=1).string_bracket is True
+    assert Tokenizer('', string_bracket=True).string_bracket is True
+    assert Tokenizer('', string_bracket=False).string_bracket is False
+    assert Tokenizer('', allow_escapes=[]).allow_escapes is False
+    assert Tokenizer('', allow_escapes=True).allow_escapes is True
+    assert Tokenizer('', allow_escapes=False).allow_escapes is False
+
+    tok = Tokenizer('')
+    assert tok.string_bracket is False
+    tok.string_bracket = True
+    assert tok.string_bracket is True
+    tok.string_bracket = False
+    assert tok.string_bracket is False
+
+    tok = Tokenizer('')
+    assert tok.allow_escapes is True
+    tok.allow_escapes = False
+    assert tok.allow_escapes is False
+    tok.allow_escapes = True
+    assert tok.allow_escapes is True
+
+
 def test_escape_text(py_c_escape_text):
     """Test the Python and C escape_text() functions."""
     assert py_c_escape_text("hello world") == "hello world"
