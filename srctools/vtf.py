@@ -353,8 +353,8 @@ class VTF:
 
         Requires Pillow to be installed.
         """
-        from PIL import Image
-        return Image.frombuffer(
+        from PIL.Image import frombuffer
+        return frombuffer(
             'RGBA',
             (self.width, self.height),
             self._frames[frame],
@@ -448,14 +448,3 @@ class SheetSequence:
             sequences[seq_num] = SheetSequence(frames, clamp, total_time)
 
         return list(filter(None, sequences))
-
-if __name__ == '__main__':
-    with open('F:/Git/Desolation/game/portal2_base/materials/particle/paintblobs/paint_blob_sheet_1.vtf', 'rb') as f:
-        vtf = VTF.read(f)
-
-    for i, seq in enumerate(vtf.sheet_info):
-        print(f'{i}: clamp={seq.clamp}, duration={seq.duration}s')
-        for duration, coord in seq.frames:
-            # print(f'\t{duration}s:')
-            for coord in coord:
-                print('\t' + repr(TexCoord._make([x*vtf.width for x in coord])))
