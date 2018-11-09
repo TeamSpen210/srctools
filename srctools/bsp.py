@@ -172,14 +172,17 @@ class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
 
-    DOES_FADE = 0x1  # Is the fade distances set?
-    HAS_LIGHTING_ORIGIN = 0x2  # info_lighting entity used.
-    DISABLE_DRAW = 0x4  # Changes at runtime.
-    IGNORE_NORMALS = 0x8
+    DOES_FADE = 0x01  # Is the fade distances set?
+    HAS_LIGHTING_ORIGIN = 0x02  # info_lighting entity used.
+    DISABLE_DRAW = 0x04  # Changes at runtime.
+    IGNORE_NORMALS = 0x08
     NO_SHADOW = 0x10
-    SCREEN_SPACE_FADE = 0x20  # Use screen space fading. Obselete since at least ASW.
+    SCREEN_SPACE_FADE = 0x20  # Use screen space fading. Obsolete since at least ASW.
     NO_PER_VERTEX_LIGHTING = 0x40
     NO_SELF_SHADOWING = 0x80
+
+    # These are set in the secondary flags section.
+    BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
 
 
 class BSP:
@@ -541,17 +544,22 @@ class BSP:
 
         [prop_count] = get_struct(static_lump, 'i')
 
-        for i in range(prop_count):
+        for prop_id in range(prop_count):
             origin = Vec(get_struct(static_lump, 'fff'))
             angles = Vec(get_struct(static_lump, 'fff'))
 
+            [model_ind] = get_struct(static_lump, '<H')
+
+            # Unknown data in v10/11.
+            unknown_1 = b'\0\0'
+            unknown_2 = b'\0\0\0\0'
+
             if version >= 11:
-                scaling = get_struct(static_lump, 'f')
-            else:
-                scaling = 1.0
+                # Appears to be an ID that increases for each prop,
+                # although scaled props increase by 2.
+                [prop_id, unknown_1] = get_struct(static_lump, '<H2s')
 
             (
-                model_ind,
                 first_leaf,
                 leaf_count,
                 solidity,
@@ -559,7 +567,7 @@ class BSP:
                 skin,
                 min_fade,
                 max_fade,
-            ) = get_struct(static_lump, '<HHHBBiff')
+            ) = get_struct(static_lump, '<HHBBiff')
 
             model_name = model_dict[model_ind]
 
@@ -600,19 +608,22 @@ class BSP:
                 renderfx = 255
 
             if version >= 10:
-                # 4 unknown bytes, might be a float?
-                static_lump.read(4)
+                # 4 unknown bytes
+                unknown_2 = static_lump.read(4)
 
-            if version >= 9:
-                disable_on_xbox = get_struct(static_lump, '?')[0]
-            else:
-                disable_on_xbox = False
+            scaling = 1.0
+            disable_on_xbox = False
 
-            # Padding bytes.
-            static_lump.read(3)
+            if version >= 11:
+                # XBox support was removed. Instead this is the scaling factor.
+                [scaling] = get_struct(static_lump, "<f")
+            elif version >= 9:
+                # The single boolean byte also produces 3 pad bytes.
+                [disable_on_xbox] = get_struct(static_lump, '<?xxx')
 
             yield StaticProp(
                 model_name,
+                prop_id,
                 origin,
                 angles,
                 scaling,
@@ -688,20 +699,22 @@ class BSP:
         prop_lump.write(struct.pack('<i', len(props)))
         for prop in props:
             prop_lump.write(struct.pack(
-                '<6f',
+                '<6fH',
                 prop.origin.x,
                 prop.origin.y,
                 prop.origin.z,
                 prop.angles.x,
                 prop.angles.y,
                 prop.angles.z,
+                model_ind[prop.model],
             ))
+
             if game_lump.version >= 11:
-                prop_lump.write(struct.pack('<f', prop.scaling))
+                # Unknown data goes here, appears to be various flags.
+                prop_lump.write(b'\0\0\0\0')
 
             prop_lump.write(struct.pack(
-                '<HHHBBifffff',
-                model_ind[prop.model],
+                '<HHBBifffff',
                 leaf_offsets[tuple(sorted(prop.visleafs))],
                 len(prop.visleafs),
                 prop.solidity,
@@ -745,11 +758,10 @@ class BSP:
                 # Padding bytes?
                 prop_lump.write(b'\0\0\0\0')
 
-            if game_lump.version >= 9:
-                prop_lump.write(struct.pack('<?', prop.disable_on_xbox))
-
-            # Padding bytes.
-            prop_lump.write(b'\0\0\0')
+            if game_lump.version >= 11:
+                prop_lump.write(struct.pack('<f', prop.scaling))
+            elif game_lump.version >= 9:
+                prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
         game_lump.data = prop_lump.getvalue()
 
@@ -825,32 +837,34 @@ class StaticProp:
     v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
     v10+ adds 4 unknown bytes (float?).
-    v11+ adds uniform scaling.
+    v11+ adds uniform scaling, the prop id and removes XBox disabling.
     """
     def __init__(
         self,
         model: str,
+        prop_id: int,
         origin: Vec,
         angles: Vec,
         scaling: float,
         visleafs: List[int],
         solidity: int,
-        flags: StaticPropFlags,
-        skin: int,
-        min_fade: float,
-        max_fade: float,
-        lighting_origin: Vec,
-        fade_scale: float,
-        min_dx_level: int,
-        max_dx_level: int,
-        min_cpu_level: int,
-        max_cpu_level: int,
-        min_gpu_level: int,
-        max_gpu_level: int,
-        tint: Vec,  # Rendercolor
-        renderfx: int,
-        disable_on_xbox: bool,
+        flags: StaticPropFlags=StaticPropFlags.NONE,
+        skin: int=0,
+        min_fade: float=0,
+        max_fade: float=0,
+        lighting_origin: Vec=None,
+        fade_scale: float=-1,
+        min_dx_level: int=0,
+        max_dx_level: int=0,
+        min_cpu_level: int=0,
+        max_cpu_level: int=0,
+        min_gpu_level: int=0,
+        max_gpu_level: int=0,
+        tint: Vec=(255, 255, 255),  # Rendercolor
+        renderfx: int=255,
+        disable_on_xbox: bool=False,
     ):
+        self.id = prop_id
         self.model = model
         self.origin = origin
         self.angles = angles
@@ -861,7 +875,12 @@ class StaticProp:
         self.skin = skin
         self.min_fade = min_fade
         self.max_fade = max_fade
-        self.lighting = lighting_origin
+
+        if lighting_origin is None:
+            self.lighting = Vec(origin)
+        else:
+            self.lighting = lighting_origin
+
         self.fade_scale = fade_scale
         self.min_dx_level = min_dx_level
         self.max_dx_level = max_dx_level
@@ -869,7 +888,7 @@ class StaticProp:
         self.max_cpu_level = max_cpu_level
         self.min_gpu_level = min_gpu_level
         self.max_gpu_level = max_gpu_level
-        self.tint = tint
+        self.tint = Vec(tint)
         self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
 
