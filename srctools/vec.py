@@ -194,15 +194,14 @@ def __i{func}__(self, other: float):
 '''
 
 
-class Vec(Iterable[float]):
+class Vec:
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
-    INV_AXIS = None  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
-    INV_AXIS = {  # type: ignore
+    INV_AXIS = {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -214,7 +213,7 @@ class Vec(Iterable[float]):
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }
+    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
 
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
@@ -254,6 +253,17 @@ class Vec(Iterable[float]):
     def copy(self) -> 'Vec':
         """Create a duplicate of this vector."""
         return Vec(self.x, self.y, self.z)
+
+    __copy__ = copy  # copy module support.
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk, (self.x, self.y, self.z)
+
 
     @classmethod
     def from_str(cls, val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0):
@@ -940,3 +950,16 @@ class Vec(Iterable[float]):
 
     len = mag
     mag_sq = len_sq
+
+
+def _mk(x, y, z) -> Vec:
+    """Unpickle the Vec object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # Skip __init__'s checks and coercion/iteration.
+    v = Vec.__new__(Vec)
+    v.x = x
+    v.y = y
+    v.z = z
+    return v
