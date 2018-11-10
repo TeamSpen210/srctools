@@ -12,7 +12,7 @@ Vec = ...  # type: Type[srctools.Vec]
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.
-    1, 1.5, 0.2827, 2.3464545636e47,
+    30, 1.5, 0.2827, 2.3464545636e47,
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
@@ -720,3 +720,35 @@ def test_minmax(py_c_vec):
             vec_b[axis] = b
             assert vec_a.max(vec_b) is None, (a, b, axis, max_val)
             assert vec_a[axis] == max_val, (a, b, axis, max_val)
+
+
+def test_copy_pickle(py_c_vec):
+    """Test pickling and unpickling and copying Vectors."""
+
+    test_data = 1.5, 0.2827, 2.3464545636e47
+
+    orig = Vec(test_data)
+
+    cpy_meth = orig.copy()
+
+    assert orig is not cpy_meth  # Must be a new object.
+    assert cpy_meth is not orig.copy()  # Cannot be cached
+    assert orig == cpy_meth # Numbers must be exactly identical!
+
+    cpy = copy.copy(orig)
+
+    assert orig is not cpy
+    assert cpy_meth is not copy.copy(orig)
+    assert orig == cpy
+
+    dcpy = copy.deepcopy(orig)
+
+    assert orig is not dcpy
+    assert orig == dcpy
+
+    pick = pickle.loads(pickle.dumps(orig))
+
+    assert orig is not pick
+    assert orig == pick
+
+    # TODO: Check both c/python version produce the same data.
