@@ -306,16 +306,20 @@ class Vec:
                 vec[axis3] = val3[axis3] if isinstance(val3, Vec) else val3
         return vec
 
-    def mat_mul(self, matrix: Tuple[float, float, float, float, float, float, float, float, float]) -> None:
+    def _mat_mul(
+        self,
+        a: float, b: float, c: float,
+        d: float, e: float, f: float,
+        g: float, h: float, i: float,
+    ) -> None:
         """Multiply this vector by a 3x3 rotation matrix.
 
         Used for Vec.rotate().
-        The matrix should be a 9-tuple, following the pattern:
+        The matrix should follow the following pattern:
         [ a b c ]
         [ d e f ]
         [ g h i ]
         """
-        a, b, c, d, e, f, g, h, i = matrix
         x, y, z = self.x, self.y, self.z
 
         self.x = (x * a) + (y * b) + (z * c)
@@ -351,27 +355,24 @@ class Vec:
         sin_y = math.sin(rad_yaw)
         sin_r = math.sin(rad_roll)
 
-        mat_roll = (  # X
+        # Need to do transformations in roll, pitch, yaw order
+        self._mat_mul(  # Roll = X
             1, 0, 0,
             0, cos_r, -sin_r,
             0, sin_r, cos_r,
         )
-        mat_yaw = (  # Z
-            cos_y, -sin_y, 0,
-            sin_y, cos_y, 0,
-            0, 0, 1,
-        )
 
-        mat_pitch = (  # Y
+        self._mat_mul(  # Pitch = Y
             cos_p, 0, sin_p,
             0, 1, 0,
             -sin_p, 0, cos_p,
         )
 
-        # Need to do transformations in roll, pitch, yaw order
-        self.mat_mul(mat_roll)
-        self.mat_mul(mat_pitch)
-        self.mat_mul(mat_yaw)
+        self._mat_mul(  # Yaw = Z
+            cos_y, -sin_y, 0,
+            sin_y, cos_y, 0,
+            0, 0, 1,
+        )
 
         if round_vals:
             self.x = round(self.x, 3)
