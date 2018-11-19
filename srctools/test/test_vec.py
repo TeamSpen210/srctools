@@ -1,5 +1,7 @@
 """Test the Vector object."""
 import math
+import pickle
+import copy
 
 import pytest
 import operator as op
