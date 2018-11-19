@@ -264,9 +264,8 @@ class Vec:
         """
         return _mk, (self.x, self.y, self.z)
 
-
     @classmethod
-    def from_str(cls, val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0):
+    def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
         """Convert a string in the form '(4 6 -4)' into a Vector.
 
          If the string is unparsable, this uses the defaults (x,y,z).
@@ -281,13 +280,13 @@ class Vec:
 
     @classmethod
     def with_axes(
-            cls,
-            axis1: str,
-            val1: Union[float, 'Vec'],
-            axis2: str=None,
-            val2: Union[float, 'Vec']=None,
-            axis3: str=None,
-            val3: Union[float, 'Vec']=None
+        cls,
+        axis1: str,
+        val1: Union[float, 'Vec'],
+        axis2: str=None,
+        val2: Union[float, 'Vec']=None,
+        axis3: str=None,
+        val3: Union[float, 'Vec']=None
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -307,7 +306,7 @@ class Vec:
                 vec[axis3] = val3[axis3] if isinstance(val3, Vec) else val3
         return vec
 
-    def mat_mul(self, matrix) -> None:
+    def mat_mul(self, matrix: Tuple[float, float, float, float, float, float, float, float, float]) -> None:
         """Multiply this vector by a 3x3 rotation matrix.
 
         Used for Vec.rotate().
@@ -323,7 +322,13 @@ class Vec:
         self.y = (x * d) + (y * e) + (z * f)
         self.z = (x * g) + (y * h) + (z * i)
 
-    def rotate(self, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
+    def rotate(
+        self,
+        pitch: float=0.0,
+        yaw: float=0.0,
+        roll: float=0.0,
+        round_vals: bool=True,
+    ) -> 'Vec':
         """Rotate a vector by a Source rotational angle.
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
@@ -375,7 +380,7 @@ class Vec:
 
         return self
 
-    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
+    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
@@ -449,7 +454,7 @@ class Vec:
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self, end: 'Vec', stride: int=1):
+    def iter_line(self, end: 'Vec', stride: int=1) -> Iterator['Vec']:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -486,7 +491,7 @@ class Vec:
             'not an on-axis vector!'.format(self.x, self.y, self.z)
         )
 
-    def to_angle(self, roll=0) -> 'Vec':
+    def to_angle(self, roll: float=0) -> 'Vec':
         """Convert a normal to a Source Engine angle.
 
         A +x axis vector will result in a 0, 0, 0 angle. The roll is not
@@ -501,7 +506,6 @@ class Vec:
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
         )
-
 
     def to_angle_roll(self, z_norm: 'Vec', stride: int=90) -> 'Vec':
         """Produce a Source Engine angle with roll.
@@ -670,9 +674,9 @@ class Vec:
                 return NotImplemented
 
     def __lt__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A<B test.
 
         Two Vectors are compared based on the axes.
@@ -698,9 +702,9 @@ class Vec:
                 return NotImplemented
 
     def __le__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A<=B test.
 
         Two Vectors are compared based on the axes.
@@ -726,9 +730,9 @@ class Vec:
                 return NotImplemented
 
     def __gt__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A>B test.
 
         Two Vectors are compared based on the axes.
@@ -754,8 +758,8 @@ class Vec:
                 return NotImplemented
 
     def __ge__(
-            self,
-            other: Union['Vec', Tuple3, SupportsFloat],
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
     ) -> bool:
         """A>=B test.
 
@@ -781,7 +785,7 @@ class Vec:
             except (TypeError, ValueError):
                 return NotImplemented
 
-    def max(self, other: AnyVec):
+    def max(self, other: AnyVec) -> None:
         """Set this vector's values to the maximum of the two vectors."""
         if self.x < other[0]:
             self.x = other[0]
@@ -790,7 +794,7 @@ class Vec:
         if self.z < other[2]:
             self.z = other[2]
 
-    def min(self, other: AnyVec):
+    def min(self, other: AnyVec) -> None:
         """Set this vector's values to be the minimum of the two vectors."""
         if self.x > other[0]:
             self.x = other[0]
@@ -799,18 +803,18 @@ class Vec:
         if self.z > other[2]:
             self.z = other[2]
 
-    def __round__(self, n=0):
+    def __round__(self, n: int=0) -> 'Vec':
         return Vec(
             round(self.x, n),
             round(self.y, n),
             round(self.z, n),
         )
 
-    def mag(self):
+    def mag(self) -> float:
         """Compute the distance from the vector and the origin."""
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
-    def join(self, delim=', '):
+    def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the .0 if no decimal portion exists.
@@ -855,7 +859,7 @@ class Vec:
             return self.z
         raise KeyError('Invalid axis: {!r}'.format(ind))
 
-    def __setitem__(self, ind: Union[str, int], val: float):
+    def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to edit values.
@@ -943,9 +947,9 @@ class Vec:
         )
 
     def localise(
-            self,
-            origin: Union['Vec', Tuple3],
-            angles: Union['Vec', Tuple3]=None,
+        self,
+        origin: Union['Vec', Tuple3],
+        angles: Union['Vec', Tuple3]=None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
@@ -969,7 +973,7 @@ class Vec:
     mag_sq = len_sq
 
 
-def _mk(x, y, z) -> Vec:
+def _mk(x: float, y: float, z: float) -> Vec:
     """Unpickle the Vec object, maintaining compatibility with C versions.
 
     Shortened name shrinks the data size.
