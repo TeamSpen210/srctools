@@ -1743,7 +1743,7 @@ class Entity:
         if self.hidden:
             buffer.write(ind[:-1] + '}\n')
 
-    def sides(self) -> 'Side':
+    def sides(self) -> Iterable['Side']:
         """Iterate through all our brush sides."""
         if self.is_brush():
             for solid in self.solids:
