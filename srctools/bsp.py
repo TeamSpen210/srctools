@@ -275,7 +275,7 @@ class BSP:
         """Write the BSP back into the given file."""
         # This gets difficult. The offsets need to be written before we know
         # what they are. So write empty bytes, record that location then go
-        # back to fill them inafter we actually determine where they are.
+        # back to fill them in after we actually determine where they are.
         # We use either BSP_LUMPS enums or game-lump byte IDs for dict keys.
 
         # Location of the header field.
