@@ -61,7 +61,7 @@ def assert_vec(vec, x, y, z, msg=''):
 
     new_msg = "{!r} != ({}, {}, {})".format(vec, failed, x, y, z)
     if msg:
-        new_msg += ': ' + msg
+        new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
 
 
@@ -754,3 +754,61 @@ def test_copy_pickle(py_c_vec):
     assert orig == pick
 
     # TODO: Check both c/python version produce the same data.
+
+
+def test_bbox(py_c_vec):
+    """Test the functionality of Vec.bbox()."""
+
+    # No arguments
+    with raises_typeerror:
+        Vec.bbox()
+
+    # Non-iterable
+    with raises_typeerror:
+        Vec.bbox(None)
+
+    # Starting with non-vector.
+    with raises_typeerror:
+        Vec.bbox(None, Vec())
+
+    # Containing non-vector.
+    with raises_typeerror:
+        Vec.bbox(Vec(), None)
+
+    # Empty iterable.
+    with pytest.raises(ValueError):
+        Vec.bbox([])
+
+    # Iterable starting with non-vector.
+    with raises_typeerror:
+        Vec.bbox([None])
+
+    # Iterable containing non-vector.
+    with raises_typeerror:
+        Vec.bbox([Vec(), None])
+
+    def test(*values):
+        """Test these values work."""
+        min_x = min([v.x for v in values])
+        min_y = min([v.y for v in values])
+        min_z = min([v.z for v in values])
+
+        max_x = max([v.x for v in values])
+        max_y = max([v.y for v in values])
+        max_z = max([v.z for v in values])
+
+        # Check passing a single iterable.
+        bb_min, bb_max = Vec.bbox(values)
+        assert_vec(bb_min, min_x, min_y, min_z, values)
+        assert_vec(bb_max, max_x, max_y, max_z, values)
+
+        # Check passing each value individually.
+        bb_min, bb_max = Vec.bbox(*values)
+        assert_vec(bb_min, min_x, min_y, min_z, values)
+        assert_vec(bb_max, max_x, max_y, max_z, values)
+
+    test(Vec(0.0, 0.0, 0.0))
+    test(Vec(1.0, -1.0, 0.0), Vec(2.4, -2.4, 5.5))
+    test(Vec(2.3, 4.5, 5.6), Vec(-3.4, 4.8, -2.3), Vec(-2.3, 8.2, 3.4))
+    # Extreme double values.
+    test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
