@@ -160,7 +160,7 @@ def test_unary_ops(py_c_vec):
 
 def test_mag(py_c_vec):
     """Test magnitude methods."""
-    for x, y, z in iter_vec(VALID_NUMS):
+    for x, y, z in iter_vec(VALID_ZERONUMS):
         vec = Vec(x, y, z)
         mag = vec.mag()
         length = vec.len()
@@ -171,6 +171,13 @@ def test_mag(py_c_vec):
         len_sq = vec.len_sq()
         assert mag_sq == len_sq, "Exact equality, should be identical."
         assert len_sq == pytest.approx(x**2 + y**2 + z**2)
+
+        if x == y == z == 0:
+            # Vec(0, 0, 0).norm() = 0, 0, 0
+            # Not ZeroDivisionError
+            assert_vec(vec.norm(), 0, 0, 0)
+        else:
+            assert_vec(vec.norm(), x/length, y/length, z/length, vec)
 
 
 def test_contains(py_c_vec):
@@ -660,6 +667,8 @@ def test_vec_constants(py_c_vec):
     assert Vec.INV_AXIS['y', 'x'] == 'z'
     assert Vec.INV_AXIS['z', 'y'] == 'x'
     assert Vec.INV_AXIS['z', 'x'] == 'y'
+
+    assert len(Vec.INV_AXIS) == 9, 'Extra values!'
 
 # Copied from CPython's round() tests.
 ROUND_VALS = [
