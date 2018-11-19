@@ -20,7 +20,9 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
+# Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
+raises_valueerror = pytest.raises(ValueError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
@@ -517,12 +519,34 @@ def test_binop_fail(py_c_vec):
 
 def test_axis(py_c_vec):
     """Test the Vec.axis() function."""
-    assert Vec(1, 0, 0).axis() == 'x'
-    assert Vec(-1, 0, 0).axis() == 'x'
-    assert Vec(0, 1, 0).axis() == 'y'
-    assert Vec(0, -1, 0).axis() == 'y'
-    assert Vec(0, 0, 1).axis() == 'z'
-    assert Vec(0, 0, -1).axis() == 'z'
+    for num in VALID_NUMS:
+        assert Vec(num, 0, 0).axis() == 'x', num
+        assert Vec(0, num, 0).axis() == 'y', num
+        assert Vec(0, 0, num).axis() == 'z', num
+
+        with raises_valueerror:
+            Vec(num, num, 0).axis()
+
+        with raises_valueerror:
+            Vec(num, 0, num).axis()
+
+        with raises_valueerror:
+            Vec(0, num, num).axis()
+
+        with raises_valueerror:
+            Vec(num, num, num).axis()
+
+        with raises_valueerror:
+            Vec(-num, num, num).axis()
+
+        with raises_valueerror:
+            Vec(num, -num, num).axis()
+
+        with raises_valueerror:
+            Vec(num, num, -num).axis()
+
+    with raises_valueerror:
+        Vec().axis()
 
 
 def test_other_axes(py_c_vec):
@@ -776,7 +800,7 @@ def test_bbox(py_c_vec):
         Vec.bbox(Vec(), None)
 
     # Empty iterable.
-    with pytest.raises(ValueError):
+    with raises_valueerror:
         Vec.bbox([])
 
     # Iterable starting with non-vector.
