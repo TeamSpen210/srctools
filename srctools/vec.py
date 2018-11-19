@@ -471,14 +471,19 @@ class Vec:
         yield end.copy()  # Directly yield - ensures no rounding errors.
 
     def axis(self) -> str:
-        """For a normal vector, return the axis it is on.
-
-        This will not function correctly if not a on-axis normal vector!
-        """
-        return (
-            'x' if self.x != 0 else
-            'y' if self.y != 0 else
-            'z'
+        """For a normal vector, return the axis it is on."""
+        x = self.x != 0
+        y = self.y != 0
+        z = self.z != 0
+        if x and not y and not z:
+            return 'x'
+        if not x and y and not z:
+            return 'y'
+        if not x and not y and z:
+            return 'z'
+        raise ValueError(
+            '({}, {}, {}) is '
+            'not an on-axis vector!'.format(self.x, self.y, self.z)
         )
 
     def to_angle(self, roll=0) -> 'Vec':
