@@ -402,13 +402,24 @@ class Vec:
         Pass either several Vecs, or an iterable of Vecs.
         Returns a (min, max) tuple.
         """
-            (first, *points), = points
         # Allow passing a single iterable, but also handle a single Vec.
+        # The error messages match those produced by min()/max().
         if len(points) == 1 and not isinstance(points[0], Vec):
+            try:
+                [[first, *points]] = points
+            except ValueError:
+                raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
-            first, *points = points
-        bbox_min = first.copy()
-        bbox_max = first.copy()
+            try:
+                first, *points = points
+            except ValueError:
+                raise TypeError(
+                    'Vec.bbox() expected at '
+                    'least 1 argument, got 0.'
+                ) from None
+
+        bbox_min = Vec(first)
+        bbox_max = bbox_min.copy()
         for point in points:
             bbox_min.min(point)
             bbox_max.max(point)
