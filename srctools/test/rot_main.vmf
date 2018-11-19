@@ -1,0 +1,10225 @@
+versioninfo
+{
+	"editorversion" "400"
+	"editorbuild" "5304"
+	"mapversion" "1"
+	"formatversion" "100"
+	"prefab" "0"
+}
+visgroups
+{
+}
+viewsettings
+{
+	"bSnapToGrid" "1"
+	"bShowGrid" "1"
+	"bShowLogicalGrid" "0"
+	"nGridSpacing" "64"
+	"bShow3DGrid" "0"
+}
+world
+{
+	"id" "1"
+	"classname" "worldspawn"
+	"mapversion" "1"
+	solid
+	{
+		"id" "5"
+		side
+		{
+			"id" "25"
+			"plane" "(-256 256 -256) (256 256 -256) (256 272 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "26"
+			"plane" "(-256 272 256) (256 272 256) (256 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "30"
+			"plane" "(-256 272 -256) (256 272 -256) (256 272 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "29"
+			"plane" "(256 256 -256) (-256 256 -256) (-256 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "28"
+			"plane" "(256 272 -256) (256 256 -256) (256 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "27"
+			"plane" "(-256 272 256) (-256 256 256) (-256 256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	solid
+	{
+		"id" "6"
+		side
+		{
+			"id" "31"
+			"plane" "(-256 -272 -256) (256 -272 -256) (256 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "32"
+			"plane" "(-256 -256 256) (256 -256 256) (256 -272 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "36"
+			"plane" "(-256 -256 -256) (256 -256 -256) (256 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "35"
+			"plane" "(256 -272 -256) (-256 -272 -256) (-256 -272 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "34"
+			"plane" "(256 -256 -256) (256 -272 -256) (256 -272 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "33"
+			"plane" "(-256 -256 256) (-256 -272 256) (-256 -272 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	solid
+	{
+		"id" "4"
+		side
+		{
+			"id" "19"
+			"plane" "(256 -256 -256) (272 -256 -256) (272 256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "20"
+			"plane" "(256 256 256) (272 256 256) (272 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "24"
+			"plane" "(256 256 -256) (272 256 -256) (272 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "23"
+			"plane" "(272 -256 -256) (256 -256 -256) (256 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "22"
+			"plane" "(272 256 -256) (272 -256 -256) (272 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "21"
+			"plane" "(256 256 256) (256 -256 256) (256 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	solid
+	{
+		"id" "3"
+		side
+		{
+			"id" "13"
+			"plane" "(-272 -256 -256) (-256 -256 -256) (-256 256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "14"
+			"plane" "(-272 256 256) (-256 256 256) (-256 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "18"
+			"plane" "(-272 256 -256) (-256 256 -256) (-256 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "17"
+			"plane" "(-256 -256 -256) (-272 -256 -256) (-272 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "16"
+			"plane" "(-256 256 -256) (-256 -256 -256) (-256 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "15"
+			"plane" "(-272 256 256) (-272 -256 256) (-272 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	solid
+	{
+		"id" "1"
+		side
+		{
+			"id" "1"
+			"plane" "(-256 -256 256) (256 -256 256) (256 256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "2"
+			"plane" "(-256 256 272) (256 256 272) (256 -256 272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "6"
+			"plane" "(-256 256 256) (256 256 256) (256 256 272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "5"
+			"plane" "(256 -256 256) (-256 -256 256) (-256 -256 272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "4"
+			"plane" "(256 256 256) (256 -256 256) (256 -256 272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "3"
+			"plane" "(-256 256 272) (-256 -256 272) (-256 -256 256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	solid
+	{
+		"id" "2"
+		side
+		{
+			"id" "7"
+			"plane" "(-256 -256 -272) (256 -256 -272) (256 256 -272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "8"
+			"plane" "(-256 256 -256) (256 256 -256) (256 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 -1 0 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "12"
+			"plane" "(-256 256 -272) (256 256 -272) (256 256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "11"
+			"plane" "(256 -256 -272) (-256 -256 -272) (-256 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[1 0 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "10"
+			"plane" "(256 256 -272) (256 -256 -272) (256 -256 -256)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		side
+		{
+			"id" "9"
+			"plane" "(-256 256 -256) (-256 -256 -256) (-256 -256 -272)"
+			"material" "tools/toolsnodraw"
+			"uaxis" "[0 1 0 0] 0.25"
+			"vaxis" "[0 0 -1 0] 0.25"
+			"rotation" "0"
+			"lightmapscale" "16"
+			"smoothing_groups" "0"
+		}
+		editor
+		{
+			"color" "255 255 255"
+			"visgroupshown" "1"
+			"visgroupautoshown" "1"
+		}
+	}
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 1]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "2"
+	"angles" "0 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 2]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "3"
+	"angles" "0 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 3]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "4"
+	"angles" "0 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 4]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "5"
+	"angles" "0 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 5]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "6"
+	"angles" "0 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 6]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "7"
+	"angles" "0 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 7]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "8"
+	"angles" "0 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 8]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "9"
+	"angles" "0 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 9]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "10"
+	"angles" "0 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 10]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "11"
+	"angles" "0 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 11]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "12"
+	"angles" "0 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 12]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "13"
+	"angles" "0 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 13]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "14"
+	"angles" "0 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 14]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "15"
+	"angles" "0 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 15]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "16"
+	"angles" "0 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 16]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "17"
+	"angles" "0 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 17]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "18"
+	"angles" "0 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 18]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "19"
+	"angles" "0 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 19]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "20"
+	"angles" "0 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 20]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "21"
+	"angles" "0 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 21]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "22"
+	"angles" "0 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 22]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "23"
+	"angles" "0 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 23]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "24"
+	"angles" "0 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 24]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "25"
+	"angles" "0 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 25]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "26"
+	"angles" "0 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 26]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "27"
+	"angles" "0 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 27]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "28"
+	"angles" "0 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 28]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "29"
+	"angles" "0 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 29]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "30"
+	"angles" "0 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 30]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "31"
+	"angles" "0 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 31]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "32"
+	"angles" "0 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 32]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "33"
+	"angles" "0 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 33]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "34"
+	"angles" "0 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 34]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "35"
+	"angles" "0 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 35]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "36"
+	"angles" "0 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 36]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "37"
+	"angles" "0 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 37]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "38"
+	"angles" "0 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 38]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "39"
+	"angles" "0 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 39]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "40"
+	"angles" "0 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 40]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "41"
+	"angles" "0 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 41]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "42"
+	"angles" "0 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 42]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "43"
+	"angles" "0 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 43]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "44"
+	"angles" "0 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 44]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "45"
+	"angles" "0 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 45]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "46"
+	"angles" "0 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 46]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "47"
+	"angles" "0 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 47]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "48"
+	"angles" "0 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 48]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "49"
+	"angles" "0 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 49]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "50"
+	"angles" "0 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 50]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "51"
+	"angles" "0 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 51]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "52"
+	"angles" "0 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 52]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "53"
+	"angles" "0 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 53]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "54"
+	"angles" "0 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 54]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "55"
+	"angles" "0 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 55]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "56"
+	"angles" "0 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 56]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "57"
+	"angles" "0 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 57]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "58"
+	"angles" "0 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 58]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "59"
+	"angles" "0 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 59]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "60"
+	"angles" "0 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 60]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "61"
+	"angles" "0 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 61]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "62"
+	"angles" "0 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 62]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "63"
+	"angles" "0 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 63]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "64"
+	"angles" "0 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 64]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "65"
+	"angles" "0 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 0"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 65]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "66"
+	"angles" "45 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 66]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "67"
+	"angles" "45 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 67]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "68"
+	"angles" "45 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 68]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "69"
+	"angles" "45 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 69]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "70"
+	"angles" "45 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 70]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "71"
+	"angles" "45 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 71]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "72"
+	"angles" "45 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 72]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "73"
+	"angles" "45 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 73]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "74"
+	"angles" "45 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 74]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "75"
+	"angles" "45 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 75]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "76"
+	"angles" "45 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 76]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "77"
+	"angles" "45 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 77]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "78"
+	"angles" "45 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 78]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "79"
+	"angles" "45 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 79]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "80"
+	"angles" "45 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 80]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "81"
+	"angles" "45 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 81]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "82"
+	"angles" "45 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 82]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "83"
+	"angles" "45 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 83]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "84"
+	"angles" "45 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 84]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "85"
+	"angles" "45 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 85]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "86"
+	"angles" "45 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 86]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "87"
+	"angles" "45 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 87]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "88"
+	"angles" "45 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 88]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "89"
+	"angles" "45 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 89]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "90"
+	"angles" "45 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 90]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "91"
+	"angles" "45 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 91]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "92"
+	"angles" "45 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 92]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "93"
+	"angles" "45 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 93]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "94"
+	"angles" "45 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 94]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "95"
+	"angles" "45 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 95]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "96"
+	"angles" "45 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 96]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "97"
+	"angles" "45 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 97]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "98"
+	"angles" "45 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 98]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "99"
+	"angles" "45 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 99]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "100"
+	"angles" "45 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 100]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "101"
+	"angles" "45 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 101]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "102"
+	"angles" "45 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 102]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "103"
+	"angles" "45 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 103]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "104"
+	"angles" "45 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 104]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "105"
+	"angles" "45 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 105]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "106"
+	"angles" "45 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 106]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "107"
+	"angles" "45 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 107]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "108"
+	"angles" "45 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 108]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "109"
+	"angles" "45 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 109]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "110"
+	"angles" "45 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 110]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "111"
+	"angles" "45 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 111]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "112"
+	"angles" "45 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 112]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "113"
+	"angles" "45 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 113]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "114"
+	"angles" "45 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 114]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "115"
+	"angles" "45 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 115]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "116"
+	"angles" "45 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 116]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "117"
+	"angles" "45 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 117]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "118"
+	"angles" "45 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 118]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "119"
+	"angles" "45 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 119]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "120"
+	"angles" "45 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 120]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "121"
+	"angles" "45 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 121]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "122"
+	"angles" "45 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 122]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "123"
+	"angles" "45 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 123]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "124"
+	"angles" "45 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 124]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "125"
+	"angles" "45 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 125]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "126"
+	"angles" "45 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 126]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "127"
+	"angles" "45 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 127]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "128"
+	"angles" "45 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 128]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "129"
+	"angles" "45 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 45"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 129]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "130"
+	"angles" "90 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 130]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "131"
+	"angles" "90 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 131]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "132"
+	"angles" "90 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 132]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "133"
+	"angles" "90 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 133]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "134"
+	"angles" "90 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 134]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "135"
+	"angles" "90 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 135]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "136"
+	"angles" "90 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 136]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "137"
+	"angles" "90 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 137]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "138"
+	"angles" "90 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 138]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "139"
+	"angles" "90 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 139]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "140"
+	"angles" "90 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 140]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "141"
+	"angles" "90 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 141]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "142"
+	"angles" "90 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 142]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "143"
+	"angles" "90 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 143]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "144"
+	"angles" "90 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 144]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "145"
+	"angles" "90 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 145]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "146"
+	"angles" "90 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 146]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "147"
+	"angles" "90 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 147]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "148"
+	"angles" "90 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 148]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "149"
+	"angles" "90 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 149]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "150"
+	"angles" "90 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 150]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "151"
+	"angles" "90 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 151]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "152"
+	"angles" "90 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 152]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "153"
+	"angles" "90 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 153]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "154"
+	"angles" "90 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 154]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "155"
+	"angles" "90 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 155]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "156"
+	"angles" "90 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 156]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "157"
+	"angles" "90 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 157]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "158"
+	"angles" "90 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 158]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "159"
+	"angles" "90 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 159]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "160"
+	"angles" "90 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 160]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "161"
+	"angles" "90 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 161]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "162"
+	"angles" "90 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 162]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "163"
+	"angles" "90 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 163]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "164"
+	"angles" "90 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 164]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "165"
+	"angles" "90 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 165]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "166"
+	"angles" "90 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 166]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "167"
+	"angles" "90 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 167]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "168"
+	"angles" "90 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 168]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "169"
+	"angles" "90 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 169]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "170"
+	"angles" "90 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 170]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "171"
+	"angles" "90 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 171]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "172"
+	"angles" "90 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 172]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "173"
+	"angles" "90 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 173]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "174"
+	"angles" "90 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 174]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "175"
+	"angles" "90 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 175]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "176"
+	"angles" "90 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 176]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "177"
+	"angles" "90 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 177]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "178"
+	"angles" "90 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 178]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "179"
+	"angles" "90 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 179]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "180"
+	"angles" "90 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 180]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "181"
+	"angles" "90 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 181]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "182"
+	"angles" "90 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 182]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "183"
+	"angles" "90 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 183]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "184"
+	"angles" "90 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 184]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "185"
+	"angles" "90 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 185]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "186"
+	"angles" "90 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 186]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "187"
+	"angles" "90 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 187]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "188"
+	"angles" "90 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 188]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "189"
+	"angles" "90 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 189]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "190"
+	"angles" "90 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 190]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "191"
+	"angles" "90 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 191]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "192"
+	"angles" "90 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 192]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "193"
+	"angles" "90 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 90"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 193]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "194"
+	"angles" "135 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 194]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "195"
+	"angles" "135 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 195]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "196"
+	"angles" "135 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 196]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "197"
+	"angles" "135 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 197]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "198"
+	"angles" "135 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 198]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "199"
+	"angles" "135 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 199]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "200"
+	"angles" "135 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 200]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "201"
+	"angles" "135 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 201]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "202"
+	"angles" "135 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 202]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "203"
+	"angles" "135 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 203]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "204"
+	"angles" "135 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 204]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "205"
+	"angles" "135 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 205]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "206"
+	"angles" "135 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 206]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "207"
+	"angles" "135 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 207]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "208"
+	"angles" "135 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 208]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "209"
+	"angles" "135 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 209]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "210"
+	"angles" "135 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 210]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "211"
+	"angles" "135 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 211]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "212"
+	"angles" "135 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 212]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "213"
+	"angles" "135 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 213]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "214"
+	"angles" "135 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 214]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "215"
+	"angles" "135 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 215]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "216"
+	"angles" "135 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 216]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "217"
+	"angles" "135 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 217]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "218"
+	"angles" "135 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 218]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "219"
+	"angles" "135 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 219]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "220"
+	"angles" "135 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 220]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "221"
+	"angles" "135 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 221]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "222"
+	"angles" "135 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 222]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "223"
+	"angles" "135 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 223]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "224"
+	"angles" "135 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 224]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "225"
+	"angles" "135 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 225]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "226"
+	"angles" "135 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 226]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "227"
+	"angles" "135 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 227]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "228"
+	"angles" "135 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 228]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "229"
+	"angles" "135 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 229]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "230"
+	"angles" "135 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 230]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "231"
+	"angles" "135 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 231]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "232"
+	"angles" "135 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 232]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "233"
+	"angles" "135 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 233]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "234"
+	"angles" "135 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 234]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "235"
+	"angles" "135 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 235]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "236"
+	"angles" "135 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 236]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "237"
+	"angles" "135 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 237]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "238"
+	"angles" "135 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 238]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "239"
+	"angles" "135 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 239]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "240"
+	"angles" "135 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 240]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "241"
+	"angles" "135 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 241]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "242"
+	"angles" "135 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 242]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "243"
+	"angles" "135 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 243]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "244"
+	"angles" "135 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 244]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "245"
+	"angles" "135 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 245]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "246"
+	"angles" "135 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 246]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "247"
+	"angles" "135 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 247]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "248"
+	"angles" "135 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 248]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "249"
+	"angles" "135 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 249]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "250"
+	"angles" "135 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 250]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "251"
+	"angles" "135 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 251]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "252"
+	"angles" "135 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 252]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "253"
+	"angles" "135 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 253]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "254"
+	"angles" "135 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 254]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "255"
+	"angles" "135 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 255]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "256"
+	"angles" "135 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 256]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "257"
+	"angles" "135 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 135"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 257]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "258"
+	"angles" "180 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 258]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "259"
+	"angles" "180 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 259]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "260"
+	"angles" "180 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 260]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "261"
+	"angles" "180 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 261]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "262"
+	"angles" "180 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 262]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "263"
+	"angles" "180 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 263]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "264"
+	"angles" "180 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 264]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "265"
+	"angles" "180 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 265]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "266"
+	"angles" "180 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 266]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "267"
+	"angles" "180 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 267]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "268"
+	"angles" "180 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 268]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "269"
+	"angles" "180 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 269]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "270"
+	"angles" "180 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 270]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "271"
+	"angles" "180 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 271]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "272"
+	"angles" "180 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 272]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "273"
+	"angles" "180 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 273]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "274"
+	"angles" "180 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 274]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "275"
+	"angles" "180 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 275]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "276"
+	"angles" "180 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 276]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "277"
+	"angles" "180 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 277]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "278"
+	"angles" "180 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 278]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "279"
+	"angles" "180 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 279]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "280"
+	"angles" "180 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 280]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "281"
+	"angles" "180 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 281]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "282"
+	"angles" "180 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 282]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "283"
+	"angles" "180 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 283]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "284"
+	"angles" "180 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 284]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "285"
+	"angles" "180 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 285]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "286"
+	"angles" "180 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 286]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "287"
+	"angles" "180 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 287]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "288"
+	"angles" "180 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 288]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "289"
+	"angles" "180 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 289]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "290"
+	"angles" "180 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 290]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "291"
+	"angles" "180 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 291]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "292"
+	"angles" "180 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 292]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "293"
+	"angles" "180 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 293]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "294"
+	"angles" "180 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 294]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "295"
+	"angles" "180 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 295]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "296"
+	"angles" "180 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 296]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "297"
+	"angles" "180 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 297]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "298"
+	"angles" "180 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 298]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "299"
+	"angles" "180 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 299]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "300"
+	"angles" "180 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 300]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "301"
+	"angles" "180 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 301]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "302"
+	"angles" "180 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 302]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "303"
+	"angles" "180 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 303]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "304"
+	"angles" "180 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 304]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "305"
+	"angles" "180 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 305]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "306"
+	"angles" "180 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 306]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "307"
+	"angles" "180 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 307]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "308"
+	"angles" "180 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 308]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "309"
+	"angles" "180 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 309]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "310"
+	"angles" "180 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 310]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "311"
+	"angles" "180 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 311]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "312"
+	"angles" "180 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 312]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "313"
+	"angles" "180 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 313]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "314"
+	"angles" "180 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 314]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "315"
+	"angles" "180 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 315]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "316"
+	"angles" "180 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 316]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "317"
+	"angles" "180 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 317]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "318"
+	"angles" "180 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 318]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "319"
+	"angles" "180 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 319]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "320"
+	"angles" "180 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 320]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "321"
+	"angles" "180 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 180"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 321]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "322"
+	"angles" "225 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 322]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "323"
+	"angles" "225 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 323]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "324"
+	"angles" "225 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 324]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "325"
+	"angles" "225 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 325]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "326"
+	"angles" "225 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 326]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "327"
+	"angles" "225 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 327]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "328"
+	"angles" "225 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 328]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "329"
+	"angles" "225 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 329]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "330"
+	"angles" "225 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 330]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "331"
+	"angles" "225 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 331]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "332"
+	"angles" "225 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 332]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "333"
+	"angles" "225 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 333]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "334"
+	"angles" "225 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 334]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "335"
+	"angles" "225 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 335]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "336"
+	"angles" "225 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 336]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "337"
+	"angles" "225 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 337]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "338"
+	"angles" "225 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 338]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "339"
+	"angles" "225 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 339]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "340"
+	"angles" "225 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 340]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "341"
+	"angles" "225 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 341]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "342"
+	"angles" "225 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 342]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "343"
+	"angles" "225 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 343]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "344"
+	"angles" "225 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 344]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "345"
+	"angles" "225 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 345]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "346"
+	"angles" "225 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 346]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "347"
+	"angles" "225 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 347]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "348"
+	"angles" "225 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 348]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "349"
+	"angles" "225 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 349]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "350"
+	"angles" "225 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 350]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "351"
+	"angles" "225 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 351]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "352"
+	"angles" "225 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 352]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "353"
+	"angles" "225 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 353]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "354"
+	"angles" "225 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 354]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "355"
+	"angles" "225 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 355]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "356"
+	"angles" "225 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 356]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "357"
+	"angles" "225 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 357]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "358"
+	"angles" "225 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 358]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "359"
+	"angles" "225 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 359]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "360"
+	"angles" "225 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 360]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "361"
+	"angles" "225 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 361]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "362"
+	"angles" "225 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 362]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "363"
+	"angles" "225 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 363]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "364"
+	"angles" "225 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 364]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "365"
+	"angles" "225 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 365]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "366"
+	"angles" "225 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 366]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "367"
+	"angles" "225 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 367]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "368"
+	"angles" "225 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 368]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "369"
+	"angles" "225 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 369]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "370"
+	"angles" "225 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 370]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "371"
+	"angles" "225 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 371]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "372"
+	"angles" "225 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 372]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "373"
+	"angles" "225 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 373]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "374"
+	"angles" "225 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 374]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "375"
+	"angles" "225 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 375]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "376"
+	"angles" "225 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 376]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "377"
+	"angles" "225 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 377]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "378"
+	"angles" "225 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 378]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "379"
+	"angles" "225 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 379]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "380"
+	"angles" "225 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 380]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "381"
+	"angles" "225 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 381]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "382"
+	"angles" "225 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 382]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "383"
+	"angles" "225 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 383]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "384"
+	"angles" "225 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 384]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "385"
+	"angles" "225 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 225"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 385]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "386"
+	"angles" "270 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 386]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "387"
+	"angles" "270 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 387]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "388"
+	"angles" "270 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 388]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "389"
+	"angles" "270 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 389]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "390"
+	"angles" "270 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 390]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "391"
+	"angles" "270 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 391]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "392"
+	"angles" "270 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 392]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "393"
+	"angles" "270 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 393]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "394"
+	"angles" "270 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 394]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "395"
+	"angles" "270 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 395]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "396"
+	"angles" "270 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 396]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "397"
+	"angles" "270 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 397]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "398"
+	"angles" "270 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 398]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "399"
+	"angles" "270 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 399]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "400"
+	"angles" "270 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 400]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "401"
+	"angles" "270 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 401]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "402"
+	"angles" "270 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 402]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "403"
+	"angles" "270 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 403]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "404"
+	"angles" "270 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 404]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "405"
+	"angles" "270 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 405]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "406"
+	"angles" "270 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 406]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "407"
+	"angles" "270 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 407]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "408"
+	"angles" "270 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 408]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "409"
+	"angles" "270 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 409]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "410"
+	"angles" "270 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 410]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "411"
+	"angles" "270 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 411]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "412"
+	"angles" "270 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 412]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "413"
+	"angles" "270 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 413]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "414"
+	"angles" "270 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 414]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "415"
+	"angles" "270 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 415]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "416"
+	"angles" "270 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 416]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "417"
+	"angles" "270 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 417]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "418"
+	"angles" "270 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 418]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "419"
+	"angles" "270 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 419]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "420"
+	"angles" "270 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 420]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "421"
+	"angles" "270 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 421]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "422"
+	"angles" "270 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 422]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "423"
+	"angles" "270 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 423]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "424"
+	"angles" "270 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 424]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "425"
+	"angles" "270 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 425]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "426"
+	"angles" "270 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 426]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "427"
+	"angles" "270 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 427]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "428"
+	"angles" "270 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 428]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "429"
+	"angles" "270 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 429]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "430"
+	"angles" "270 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 430]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "431"
+	"angles" "270 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 431]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "432"
+	"angles" "270 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 432]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "433"
+	"angles" "270 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 433]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "434"
+	"angles" "270 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 434]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "435"
+	"angles" "270 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 435]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "436"
+	"angles" "270 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 436]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "437"
+	"angles" "270 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 437]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "438"
+	"angles" "270 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 438]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "439"
+	"angles" "270 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 439]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "440"
+	"angles" "270 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 440]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "441"
+	"angles" "270 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 441]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "442"
+	"angles" "270 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 442]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "443"
+	"angles" "270 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 443]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "444"
+	"angles" "270 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 444]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "445"
+	"angles" "270 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 445]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "446"
+	"angles" "270 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 446]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "447"
+	"angles" "270 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 447]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "448"
+	"angles" "270 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 448]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "449"
+	"angles" "270 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 270"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 449]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "450"
+	"angles" "315 0 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 450]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "451"
+	"angles" "315 0 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 451]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "452"
+	"angles" "315 0 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 452]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "453"
+	"angles" "315 0 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 453]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "454"
+	"angles" "315 0 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 454]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "455"
+	"angles" "315 0 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 455]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "456"
+	"angles" "315 0 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 456]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "457"
+	"angles" "315 0 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 0"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 457]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "458"
+	"angles" "315 45 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 458]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "459"
+	"angles" "315 45 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 459]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "460"
+	"angles" "315 45 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 460]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "461"
+	"angles" "315 45 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 461]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "462"
+	"angles" "315 45 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 462]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "463"
+	"angles" "315 45 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 463]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "464"
+	"angles" "315 45 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 464]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "465"
+	"angles" "315 45 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 45"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 465]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "466"
+	"angles" "315 90 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 466]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "467"
+	"angles" "315 90 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 467]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "468"
+	"angles" "315 90 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 468]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "469"
+	"angles" "315 90 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 469]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "470"
+	"angles" "315 90 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 470]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "471"
+	"angles" "315 90 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 471]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "472"
+	"angles" "315 90 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 472]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "473"
+	"angles" "315 90 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 90"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 473]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "474"
+	"angles" "315 135 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 474]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "475"
+	"angles" "315 135 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 475]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "476"
+	"angles" "315 135 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 476]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "477"
+	"angles" "315 135 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 477]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "478"
+	"angles" "315 135 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 478]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "479"
+	"angles" "315 135 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 479]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "480"
+	"angles" "315 135 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 480]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "481"
+	"angles" "315 135 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 135"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 481]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "482"
+	"angles" "315 180 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 482]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "483"
+	"angles" "315 180 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 483]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "484"
+	"angles" "315 180 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 484]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "485"
+	"angles" "315 180 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 485]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "486"
+	"angles" "315 180 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 486]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "487"
+	"angles" "315 180 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 487]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "488"
+	"angles" "315 180 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 488]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "489"
+	"angles" "315 180 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 180"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 489]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "490"
+	"angles" "315 225 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 490]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "491"
+	"angles" "315 225 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 491]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "492"
+	"angles" "315 225 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 492]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "493"
+	"angles" "315 225 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 493]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "494"
+	"angles" "315 225 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 494]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "495"
+	"angles" "315 225 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 495]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "496"
+	"angles" "315 225 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 496]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "497"
+	"angles" "315 225 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 225"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 497]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "498"
+	"angles" "315 270 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 498]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "499"
+	"angles" "315 270 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 499]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "500"
+	"angles" "315 270 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 500]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "501"
+	"angles" "315 270 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 501]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "502"
+	"angles" "315 270 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 502]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "503"
+	"angles" "315 270 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 503]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "504"
+	"angles" "315 270 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 504]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "505"
+	"angles" "315 270 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 270"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 505]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "506"
+	"angles" "315 315 0"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 506]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "507"
+	"angles" "315 315 45"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 45"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 507]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "508"
+	"angles" "315 315 90"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 90"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 508]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "509"
+	"angles" "315 315 135"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 135"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 509]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "510"
+	"angles" "315 315 180"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 180"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 510]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "511"
+	"angles" "315 315 225"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 225"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 511]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "512"
+	"angles" "315 315 270"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 270"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 512]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "513"
+	"angles" "315 315 315"
+	"classname" "func_instance"
+	"file" "instances/rot_inst.vmf"
+	"origin" "0 0 0"
+	"replace01" "$rot_pitch 315"
+	"replace02" "$rot_yaw 315"
+	"replace03" "$rot_roll 315"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 513]"
+		"comments" ""
+	}
+}
+cameras
+{
+	"activecamera" "-1"
+}
+cordons
+{
+	"active" "0"
+}

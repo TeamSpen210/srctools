@@ -8,8 +8,14 @@ import operator as op
 import srctools
 from srctools import Vec_tuple
 
-
 from typing import Type
+
+try:
+    from importlib.resources import path as import_file_path
+except ImportError:
+    from importlib_resources import path as import_file_path
+
+
 Vec = ...  # type: Type[srctools.Vec]
 
 VALID_NUMS = [
@@ -61,7 +67,7 @@ def assert_vec(vec, x, y, z, msg=''):
         # Success!
         return
 
-    new_msg = "{!r} != ({}, {}, {})".format(vec, failed, x, y, z)
+    new_msg = "{!r}.{} != ({}, {}, {})".format(vec, failed, x, y, z)
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
@@ -845,3 +851,35 @@ def test_bbox(py_c_vec):
     test(Vec(2.3, 4.5, 5.6), Vec(-3.4, 4.8, -2.3), Vec(-2.3, 8.2, 3.4))
     # Extreme double values.
     test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
+
+
+def test_vmf_rotation(py_c_vec):
+    """Complex test.
+
+    Use a compiled map to check the functionality of Vec.rotate().
+    """
+    from srctools.bsp import BSP
+    import srctools.test
+
+    with import_file_path(srctools.test, 'rot_main.bsp') as bsp_path:
+        bsp = BSP(bsp_path)
+        vmf = bsp.read_ent_data()
+    del bsp
+
+    for ent in vmf.entities:
+        if ent['classname'] != 'info_target':
+            continue
+        angle_str = ent['angles']
+        angles = Vec.from_str(angle_str)
+        local_vec = Vec(
+            float(ent['local_x']),
+            float(ent['local_y']),
+            float(ent['local_z']),
+        )
+        x, y, z = round(Vec.from_str(ent['origin']) / 128, 3)
+
+        msg = '{} @ {} => ({}, {}, {})'.format(local_vec, angles, x, y, z)
+
+        assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg)
+        assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg)
+
