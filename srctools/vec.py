@@ -402,8 +402,9 @@ class Vec:
         Pass either several Vecs, or an iterable of Vecs.
         Returns a (min, max) tuple.
         """
-        if len(points) == 1:  # Allow passing a single iterable
             (first, *points), = points
+        # Allow passing a single iterable, but also handle a single Vec.
+        if len(points) == 1 and not isinstance(points[0], Vec):
         else:
             first, *points = points
         bbox_min = first.copy()
