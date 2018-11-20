@@ -249,9 +249,12 @@ class VMF:
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion'))
+
         if 'mapversion' in self.spawn:
             # This is saved only in the main VMF object, delete the copy.
             del self.spawn['mapversion']
+        # The worldspawn entity should always be worldspawn.
+        self.spawn['classname'] = 'worldspawn'
 
         # These three are mostly useless for us, but we'll preserve them anyway
         self.format_ver = srctools.conv_int(
@@ -470,7 +473,10 @@ class VMF:
             dest_file.write('\t"bShow3DGrid" "' +
                             srctools.bool_as_int(self.show_3d_grid) + '"\n}\n')
 
+        # The worldspawn version should always match the global value.
+        # Also force the classname, since this will crash if it's different.
         self.spawn['mapversion'] = str(self.map_ver)
+        self.spawn['classname'] = 'worldspawn'
         self.spawn.export(dest_file, ent_name='world')
         del self.spawn['mapversion']
 
