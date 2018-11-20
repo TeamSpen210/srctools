@@ -452,13 +452,12 @@ class VMF:
         dest_file.write('\t"prefab" "' +
                         srctools.bool_as_int(self.is_prefab) + '"\n}\n')
 
-        if self.vis_tree:
+        if not minimal:
             dest_file.write('visgroups\n{\n')
             for vis in self.vis_tree:
                 vis.export(dest_file, ind='\t')
             dest_file.write('}\n')
 
-        if not minimal:
             dest_file.write('viewsettings\n{\n')
             dest_file.write('\t"bSnapToGrid" "' +
                             srctools.bool_as_int(self.snap_grid) + '"\n')
