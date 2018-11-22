@@ -637,7 +637,6 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return other.x == self.x and other.y == self.y and other.z == self.z
@@ -648,17 +647,13 @@ class Vec:
                 self.z == other[2]
             )
         else:
-            try:
-                return self.mag() == float(other)  # type: ignore
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
     def __ne__(self, other: object) -> bool:
         """!= test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return other.x != self.x or other.y != self.y or other.z != self.z
@@ -669,20 +664,13 @@ class Vec:
                 self.z != other[2]
             )
         else:
-            try:
-                return self.mag() != float(other)  # type: ignore
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
-    def __lt__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-    ) -> bool:
+    def __lt__(self, other: AnyVec) -> bool:
         """A<B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -697,15 +685,9 @@ class Vec:
                 self.z < other[2]
             )
         else:
-            try:
-                return self.mag() < float(other)
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
-    def __le__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-    ) -> bool:
+    def __le__(self,other: AnyVec) -> bool:
         """A<=B test.
 
         Two Vectors are compared based on the axes.
@@ -725,20 +707,13 @@ class Vec:
                 self.z <= other[2]
             )
         else:
-            try:
-                return self.mag() <= float(other)
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
-    def __gt__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-    ) -> bool:
+    def __gt__(self,other: AnyVec) -> bool:
         """A>B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -753,15 +728,9 @@ class Vec:
                 self.z > other[2]
             )
         else:
-            try:
-                return self.mag() > float(other)
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
-    def __ge__(
-        self,
-        other: Union['Vec', Tuple3, SupportsFloat],
-    ) -> bool:
+    def __ge__(self, other: AnyVec) -> bool:
         """A>=B test.
 
         Two Vectors are compared based on the axes.
@@ -781,10 +750,7 @@ class Vec:
                 self.z >= other[2]
             )
         else:
-            try:
-                return self.mag() >= float(other)
-            except (TypeError, ValueError):
-                return NotImplemented
+            return NotImplemented
 
     def max(self, other: AnyVec) -> None:
         """Set this vector's values to the maximum of the two vectors."""
@@ -805,6 +771,7 @@ class Vec:
             self.z = other[2]
 
     def __round__(self, n: int=0) -> 'Vec':
+        """Performing round() on a Vec rounds each axis."""
         return Vec(
             round(self.x, n),
             round(self.y, n),
