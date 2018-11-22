@@ -164,6 +164,7 @@ def test_with_axes(py_c_vec):
             assert vec[c] == z
 
 
+
 def test_unary_ops(py_c_vec):
     """Test -vec and +vec."""
     for x, y, z in iter_vec(VALID_NUMS):
@@ -621,25 +622,65 @@ def test_len(py_c_vec):
         assert len(Vec(val, val, -0)) == 2
         assert len(Vec(val, val, val)) == 3
 
+INVALID_KEYS = [
+    '4',
+    '',
+    -1,
+    4,
+    4.0,
+    bool,
+    slice(0, 1),
+    None,
+
+    # Overflow checks - won't fit into 1 byte!
+    2 ** 256,
+    -2 ** 256,
+    '♞',
+]
 
 def test_getitem(py_c_vec):
     """Test vec[x] with various args."""
-    a = 1.8
-    b = 2.3
-    c = 3.6
-    vec = Vec(a, b, c)
+    v = Vec(1.5, 3.5, -8.7)
 
-    assert vec[0] == a
-    assert vec[1] == b
-    assert vec[2] == c
+    assert v[0] == 1.5
+    assert v[1] == 3.5
+    assert v[2] == -8.7
+    assert v['x'] == 1.5
+    assert v['y'] == 3.5
+    assert v['z'] == -8.7
 
-    assert vec['x'] == a
-    assert vec['y'] == b
-    assert vec['z'] == c
+    v[1] = 67.9
 
-    for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
+    assert v[0] == 1.5
+    assert v[1] == 67.9
+    assert v[2] == -8.7
+    assert v['x'] == 1.5
+    assert v['y'] == 67.9
+    assert v['z'] == -8.7
+
+    v[0] = -12.9
+
+    assert v[0] == -12.9
+    assert v[1] == 67.9
+    assert v[2] == -8.7
+    assert v['x'] == -12.9
+    assert v['y'] == 67.9
+    assert v['z'] == -8.7
+
+    v[2] = 0
+
+    assert v[0] == -12.9
+    assert v[1] == 67.9
+    assert v[2] == 0
+    assert v['x'] == -12.9
+    assert v['y'] == 67.9
+    assert v['z'] == 0
+
+    v.x = v.y = v.z = 0
+
+    for invalid in INVALID_KEYS:
         with raises_keyerror:
-            vec[invalid]
+            v[invalid]
 
 
 def test_setitem(py_c_vec):
@@ -652,11 +693,13 @@ def test_setitem(py_c_vec):
 
         vec2 = Vec()
         vec2[ind] = 20.3
-        assert vec1 == vec2
+        assert_vec(vec1, vec2.x, vec2.y, vec2.z)
 
     vec = Vec()
     for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with raises_keyerror: vec[invalid] = 8
+        with raises_keyerror:
+            vec[invalid] = 8
+        assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
 
 def test_vec_constants(py_c_vec):
