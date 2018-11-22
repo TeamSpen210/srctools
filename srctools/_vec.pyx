@@ -21,14 +21,14 @@ cdef inline Vec _vector(double x, double y, double z):
 cdef object _vector_make
 from srctools.vec import _mk as _vector_make
 
-cdef void _parse_vec_str(vec_t *vec, object value, double x, double y, double z):
+cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
 
     if isinstance(value, Vec):
         vec.x = (<Vec>value).val.x
         vec.y = (<Vec>value).val.y
         vec.z = (<Vec>value).val.z
-        return
+        return True
 
     try:
         str_x, str_y, str_z = (<unicode?>value).split(' ')
@@ -36,7 +36,7 @@ cdef void _parse_vec_str(vec_t *vec, object value, double x, double y, double z)
         vec.x = x
         vec.y = y
         vec.z = z
-        return
+        return True
 
     if str_x[0] in '({[<':
         str_x = str_x[1:]
@@ -50,8 +50,9 @@ cdef void _parse_vec_str(vec_t *vec, object value, double x, double y, double z)
         vec.x = x
         vec.y = y
         vec.z = z
+    return True
 
-cdef inline void _conv_vec(vec_t *result, object vec):
+cdef inline unsigned char _conv_vec(vec_t *result, object vec) except False:
     """Convert some object to a unified Vector struct."""
     if isinstance(vec, Vec):
         result.x = (<Vec>vec).val.x
@@ -63,6 +64,7 @@ cdef inline void _conv_vec(vec_t *result, object vec):
         result.x = vec.x
         result.y = vec.y
         result.z = vec.z
+    return True
 
 DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
