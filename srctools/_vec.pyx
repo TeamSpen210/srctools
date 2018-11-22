@@ -18,8 +18,12 @@ cdef inline Vec _vector(double x, double y, double z):
     vec.val.z = z
     return vec
 
-cdef object _vector_make
-from srctools.vec import _mk as _vector_make
+
+# Shared func that we use to do unpickling.
+# It's defined in the Python module, so all versions
+# produce the same pickle value.
+cdef object unpickle_func
+from srctools.vec import _mk as unpickle_func
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
@@ -221,7 +225,7 @@ cdef class Vec:
         return _vector(self.val.x, self.val.y, self.val.z)
 
     def __reduce__(self):
-        return _vector_make, (self.val.x, self.val.y, self.val.z)
+        return unpickle_func, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, value, double x=0, double y=0, double z=0):
