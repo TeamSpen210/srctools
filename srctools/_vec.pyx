@@ -316,3 +316,18 @@ cdef class Vec:
                 bbox_max.max(point)
 
         return bbox_min, bbox_max
+
+
+    def axis(self) -> str:
+        """For a normal vector, return the axis it is on."""
+
+        if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
+            return 'x'
+        if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
+            return 'y'
+        if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
+            return 'z'
+        raise ValueError(
+            f'({self.val.x}, {self.val.y}, {self.val.z}) is '
+            'not an on-axis vector!'
+        )
