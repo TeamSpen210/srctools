@@ -262,3 +262,57 @@ cdef class Vec:
                 raise ValueError(f'Invalid axis {axis!r}!')
 
         return vec
+
+    @staticmethod
+    def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':
+        """Compute the bounding box for a set of points.
+
+        Pass either several Vecs, or an iterable of Vecs.
+        Returns a (min, max) tuple.
+        """
+        cdef Vec bbox_min = Vec.__new__(Vec)
+        cdef Vec bbox_max = Vec.__new__(Vec)
+        cdef Vec sing_vec
+        cdef Py_ssize_t i
+        # Allow passing a single iterable, but also handle a single Vec.
+        # The error messages match those produced by min()/max().
+
+        if len(points) == 1:
+            if isinstance(points[0], Vec):
+                # Special case, don't iter over the vec, just copy.
+                sing_vec = <Vec>points[0]
+                bbox_min.val = sing_vec.val
+                bbox_max.val = sing_vec.val
+                return bbox_min, bbox_max
+            points_iter = iter(points)
+            try:
+                first = next(points_iter)
+            except StopIteration:
+                raise TypeError('Empty iterator!') from None
+
+            _conv_vec(&bbox_min.val, first)
+            bbox_max.val = bbox_min.val
+
+            try:
+                while True:
+                    point = next(points_iter)
+                    bbox_min.min(point)
+                    bbox_max.max(point)
+            except StopIteration:
+                pass
+        elif len(points) == 0:
+            raise TypeError(
+                'Vec.bbox() expected at '
+                'least 1 argument, got 0.'
+            )
+        else:
+            # Tuple-specific.
+            _conv_vec(&bbox_min.val, points[0])
+            bbox_max.val = bbox_min.val
+
+            for i in range(1, len(points)):
+                point = points[i]
+                bbox_min.min(point)
+                bbox_max.max(point)
+
+        return bbox_min, bbox_max
