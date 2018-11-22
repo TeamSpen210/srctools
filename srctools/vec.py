@@ -985,3 +985,16 @@ def _mk(x: float, y: float, z: float) -> Vec:
     v.y = y
     v.z = z
     return v
+
+
+# A little dance to import both the Cython and Python versions,
+# and choose an appropriate unprefixed version.
+
+Py_Vec = Vec
+try:
+    # noinspection PyUnresolvedReferences, PyProtectedMember
+    from srctools._vec import Vec as Cy_Vec  # type: ignore
+    Vec = Cy_Vec  # type: ignore
+except ImportError:
+    # Type checker only reads this branch.
+    Cy_Vec = Py_Vec

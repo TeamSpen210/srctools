@@ -7,7 +7,7 @@ import pytest
 import operator as op
 import srctools
 from srctools import Vec_tuple
-
+from srctools.vec import Py_Vec, Cy_Vec
 from typing import Type
 
 try:
@@ -32,8 +32,16 @@ raises_valueerror = pytest.raises(ValueError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
+if Py_Vec is Cy_Vec:
+    parms = [Py_Vec]
+    names = ['Python']
+    print('No _vec! ')
+else:
+    parms = [Py_Vec, Cy_Vec]
+    names = ['Python', 'Cython']
 
-@pytest.fixture(params=[srctools.Vec])
+
+@pytest.fixture(params=parms, ids=names)
 def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""
     global Vec
@@ -161,7 +169,6 @@ def test_unary_ops(py_c_vec):
     for x, y, z in iter_vec(VALID_NUMS):
         assert_vec(-Vec(x, y, z), -x, -y, -z)
         assert_vec(+Vec(x, y, z), +x, +y, +z)
-
 
 
 def test_mag(py_c_vec):
