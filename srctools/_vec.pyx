@@ -765,9 +765,48 @@ cdef class Vec:
 
         return vec
 
-    def mag(self) -> float:
+    cdef inline double _mag_sq(self):
+        return self.val.x**2 + self.val.y**2 + self.val.z**2
+
+    cdef inline double _mag(self):
+        return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
+
+    def mag_sq(self):
         """Compute the distance from the vector and the origin."""
-        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+        return self._mag_sq()
+
+    def len_sq(self):
+        """Compute the distance from the vector and the origin."""
+        return self._mag_sq()
+
+    def mag(self):
+        """Compute the distance from the vector and the origin."""
+        return self._mag()
+
+    def len(self):
+        """Compute the distance from the vector and the origin."""
+        return self._mag()
+
+    def norm(self):
+        """Normalise the Vector.
+
+         This is done by transforming it to have a magnitude of 1 but the same
+         direction.
+         The vector is left unchanged if it is equal to (0,0,0).
+         """
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef double mag = self._mag()
+
+        if mag == 0:
+            # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
+            vec.val.x = vec.val.y = vec.val.z = 0
+        else:
+            # Disable ZeroDivisionError check, we just checked that.
+            with cython.cdivision(True):
+                vec.val.x = self.val.x / mag
+                vec.val.y = self.val.y / mag
+                vec.val.z = self.val.z / mag
+        return vec
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
@@ -860,4 +899,5 @@ cdef class Vec:
                 return
 
         raise KeyError(f'Invalid axis: {ind!r}')
+
 
