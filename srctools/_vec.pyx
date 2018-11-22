@@ -61,9 +61,12 @@ cdef inline unsigned char _conv_vec(vec_t *result, object vec) except False:
     elif isinstance(vec, tuple):
         result.x, result.y, result.z = <tuple>vec
     else:
-        result.x = vec.x
-        result.y = vec.y
-        result.z = vec.z
+        try:
+            result.x = vec.x
+            result.y = vec.y
+            result.z = vec.z
+        except AttributeError:
+            raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
 DEF PI = 3.141592653589793238462643383279502884197
@@ -287,11 +290,11 @@ cdef class Vec:
                 bbox_min.val = sing_vec.val
                 bbox_max.val = sing_vec.val
                 return bbox_min, bbox_max
-            points_iter = iter(points)
+            points_iter = iter(points[0])
             try:
                 first = next(points_iter)
             except StopIteration:
-                raise TypeError('Empty iterator!') from None
+                raise ValueError('Empty iterator!') from None
 
             _conv_vec(&bbox_min.val, first)
             bbox_max.val = bbox_min.val
