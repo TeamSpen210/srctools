@@ -23,7 +23,17 @@ cdef inline Vec _vector(double x, double y, double z):
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
 cdef object unpickle_func
-from srctools.vec import _mk as unpickle_func
+
+# Grab the Vec_Tuple class.
+cdef object Vec_tuple
+from srctools.vec import _mk as unpickle_func, Vec_tuple
+
+# And cache this for fast tuple creation.
+cdef object tuple_new = tuple.__new__
+
+# Sanity check.
+if not issubclass(Vec_tuple, tuple):
+    raise RuntimeError('Vec_tuple is not a tuple subclass!')
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
@@ -405,6 +415,13 @@ cdef class Vec:
                 return self.x, self.y
 
         raise KeyError(f'Bad axis {axis!r}!')
+
+    @cython.optimize.unpack_method_calls(False)
+    def as_tuple(self) -> 'Tuple[float, float, float]':
+        """Return the Vector as a tuple."""
+        # Use tuple.__new__(cls, iterable) instead of calling the
+        # Python __new__.
+        return tuple_new(Vec_tuple, (self.val.x, self.val.y, self.val.z))
 
     def to_angle(self, double roll: float=0) -> 'Vec':
         """Convert a normal to a Source Engine angle.
