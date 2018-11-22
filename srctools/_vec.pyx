@@ -366,3 +366,190 @@ cdef class Vec:
                 'not an on-axis vector!'
             )
         return vec
+
+    def __abs__(self):
+        """Performing abs() on a Vec takes the absolute value of all axes."""
+        cdef Vec vec = Vec.__new__(Vec)
+
+        vec.val.x = abs(self.val.x)
+        vec.val.y = abs(self.val.y)
+        vec.val.z = abs(self.val.z)
+
+        return vec
+
+    def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
+        """Divide the vector by a scalar, returning the result and remainder."""
+        cdef Vec vec
+        cdef Vec res_1 = Vec.__new__(Vec)
+        cdef Vec res_2 = Vec.__new__(Vec)
+        cdef double other_d
+
+        if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+            raise TypeError("Cannot divide 2 Vectors.")
+        elif isinstance(obj_a, Vec):
+            # vec / val
+            vec = <Vec>obj_a
+            try:
+                other_d = <double ?>obj_b
+            except TypeError:
+                return NotImplemented
+
+            # We put % first, since Cython then produces a 'divmod' error.
+
+            res_2.val.x = vec.val.x % other_d
+            res_1.val.x = vec.val.x // other_d
+            res_2.val.y = vec.val.y % other_d
+            res_1.val.y = vec.val.y // other_d
+            res_2.val.z = vec.val.z % other_d
+            res_1.val.z = vec.val.z // other_d
+        elif isinstance(obj_b, Vec):
+            # val / vec
+            vec = <Vec>obj_b
+            try:
+                other_d = <double ?>obj_a
+            except TypeError:
+                return NotImplemented
+
+            res_2.val.x = other_d % vec.val.x
+            res_1.val.x = other_d // vec.val.x
+            res_2.val.y = other_d % vec.val.y
+            res_1.val.y = other_d // vec.val.y
+            res_2.val.z = other_d % vec.val.z
+            res_1.val.z = other_d // vec.val.z
+        else:
+            raise TypeError("Called with non-vectors??")
+
+        return res_1, res_2
+    
+    def max(self, other):
+        """Set this vector's values to the maximum of the two vectors."""
+        cdef vec_t vec
+        _conv_vec(&vec, other)
+        if self.val.x < vec.x:
+            self.val.x = vec.x
+
+        if self.val.y < vec.y:
+            self.val.y = vec.y
+
+        if self.val.z < vec.z:
+            self.val.z = vec.z
+
+    def min(self, other):
+        """Set this vector's values to be the minimum of the two vectors."""
+        cdef vec_t vec
+        _conv_vec(&vec, other)
+        if self.val.x > vec.x:
+            self.val.x = vec.x
+
+        if self.val.y > vec.y:
+            self.val.y = vec.y
+
+        if self.val.z > vec.z:
+            self.val.z = vec.z
+
+    def __round__(self, object n=0):
+        """Performing round() on a Vec rounds each axis."""
+        cdef Vec vec = Vec.__new__(Vec)
+
+        vec.val.x = round(self.val.x, n)
+        vec.val.y = round(self.val.y, n)
+        vec.val.z = round(self.val.z, n)
+
+        return vec
+
+    def mag(self) -> float:
+        """Compute the distance from the vector and the origin."""
+        return math.sqrt(self.x**2 + self.y**2 + self.z**2)
+
+    def join(self, delim: str=', ') -> str:
+        """Return a string with all numbers joined by the passed delimiter.
+
+        This strips off the .0 if no decimal portion exists.
+        """
+        # :g strips the .0 off of floats if it's an integer.
+        return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
+
+    def __str__(self):
+        """Return the values, separated by spaces.
+
+        This is the main format in Valve's file formats.
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
+
+    def __repr__(self):
+        """Code required to reproduce this vector."""
+        return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+
+    def __iter__(self):
+        return VecIter.__new__(VecIter, self)
+
+    def __getitem__(self, ind: 'Union[str, int]') -> float:
+        """Allow reading values by index instead of name if desired.
+
+        This accepts either 0,1,2 or 'x','y','z' to read values.
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        cdef unsigned char ind_i
+        cdef Py_UCS4 ind_chr
+        if isinstance(ind, int):
+            try:
+                ind_i = ind
+            except (TypeError, ValueError, OverflowError):
+                pass
+            else:
+                if ind_i == 0:
+                    return self.val.x
+                elif ind_i == 1:
+                    return self.val.y
+                elif ind_i == 2:
+                    return self.val.z
+        elif isinstance(ind, str) and len(<str>ind) == 1:
+            ind_chr = (<str>ind)[0]
+            if ind_chr == "x":
+                return self.val.x
+            elif ind_chr == "y":
+                return self.val.y
+            elif ind_chr == "z":
+                return self.val.z
+
+        raise KeyError(f'Invalid axis: {ind!r}')
+
+    def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+        """Allow editing values by index instead of name if desired.
+
+        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        cdef unsigned char ind_i
+        cdef Py_UCS4 ind_chr
+
+        if isinstance(ind, int):
+            try:
+                ind_i = ind
+            except (TypeError, ValueError, OverflowError):
+                pass
+            else:
+                if ind_i == 0:
+                    self.val.x = val
+                    return
+                elif ind_i == 1:
+                    self.val.y = val
+                    return
+                elif ind_i == 2:
+                    self.val.z = val
+                    return
+        elif isinstance(ind, str) and len(<str>ind) == 1:
+            ind_chr = (<str>ind)[0]
+            if ind_chr == "x":
+                self.val.x = val
+                return
+            elif ind_chr == "y":
+                self.val.y = val
+                return
+            elif ind_chr == "z":
+                self.val.z = val
+                return
+
+        raise KeyError(f'Invalid axis: {ind!r}')
+
