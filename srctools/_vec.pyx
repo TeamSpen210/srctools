@@ -331,3 +331,20 @@ cdef class Vec:
             f'({self.val.x}, {self.val.y}, {self.val.z}) is '
             'not an on-axis vector!'
         )
+
+    def to_angle(self, double roll: float=0) -> 'Vec':
+        """Convert a normal to a Source Engine angle.
+
+        A +x axis vector will result in a 0, 0, 0 angle. The roll is not
+        affected by the direction of the normal.
+
+        The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
+        """
+        cdef Vec vec = Vec().__new__(Vec)
+
+        # Pitch is applied first, so we need to reconstruct the x-value.
+        cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
+
+        vec.val.x = rad_2_deg * math.atan2(-self.z, horiz_dist)
+        vec.val.y = (math.atan2(self.y, self.x) * rad_2_deg) % 360.0
+        vec.val.z = roll
