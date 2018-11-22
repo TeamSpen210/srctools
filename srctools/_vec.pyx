@@ -216,3 +216,49 @@ cdef class Vec:
         cdef Vec vec = Vec.__new__(Vec)
         _parse_vec_str(&vec.val, value, x, y, z)
         return vec
+
+    @staticmethod
+    @cython.boundscheck(False)
+    def with_axes(*args) -> 'Vec':
+        """Create a Vector, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            vec = Vec()
+            vec[axis1] = val1
+            vec[axis2] = val2
+            vec[axis3] = val3
+        The magnitudes can also be Vectors, in which case the matching
+        axis will be used from the vector.
+        """
+        cdef Py_ssize_t arg_count = len(args)
+        if arg_count not in (2, 4, 6):
+            raise TypeError(
+                f'Vec.with_axis() takes 2, 4 or 6 positional arguments '
+                f'but {arg_count} were given'
+            )
+
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef unicode axis
+        cdef unsigned char i
+        for i in range(0, arg_count, 2):
+            axis = args[i]
+            axis_val = args[i+1]
+            if axis == 'x':
+                if isinstance(axis_val, Vec):
+                    vec.val.x = (<Vec>axis_val).val.x
+                else:
+                    vec.val.x = axis_val
+            elif axis == 'y':
+                if isinstance(axis_val, Vec):
+                    vec.val.y = (<Vec>axis_val).val.y
+                else:
+                    vec.val.y = axis_val
+            elif axis == 'z':
+                if isinstance(axis_val, Vec):
+                    vec.val.z = (<Vec>axis_val).val.z
+                else:
+                    vec.val.z = axis_val
+            else:
+                raise ValueError(f'Invalid axis {axis!r}!')
+
+        return vec
