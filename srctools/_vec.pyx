@@ -52,12 +52,25 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
         vec.z = z
     return True
 
-cdef inline unsigned char _conv_vec(vec_t *result, object vec) except False:
-    """Convert some object to a unified Vector struct."""
+cdef inline unsigned char _conv_vec(
+    vec_t *result,
+    object vec,
+    bint scalar,
+) except False:
+    """Convert some object to a unified Vector struct. 
+    
+    If scalar is True, allow int/float to set all axes.
+    """
     if isinstance(vec, Vec):
         result.x = (<Vec>vec).val.x
         result.y = (<Vec>vec).val.y
         result.z = (<Vec>vec).val.z
+    elif isinstance(vec, float) or isinstance(vec, int):
+        if scalar:
+            result.x = result.y = result.z = vec
+        else:
+            # No need to do argument checks.
+            raise TypeError('Cannot use scalars here.')
     elif isinstance(vec, tuple):
         result.x, result.y, result.z = <tuple>vec
     else:
@@ -296,13 +309,13 @@ cdef class Vec:
             except StopIteration:
                 raise ValueError('Empty iterator!') from None
 
-            _conv_vec(&bbox_min.val, first)
+            _conv_vec(&bbox_min.val, first, scalar=False)
             bbox_max.val = bbox_min.val
 
             try:
                 while True:
                     point = next(points_iter)
-                    _conv_vec(&vec, point)
+                    _conv_vec(&vec, point, scalar=False)
 
                     if bbox_max.val.x < vec.x:
                         bbox_max.val.x = vec.x
@@ -330,12 +343,12 @@ cdef class Vec:
             )
         else:
             # Tuple-specific.
-            _conv_vec(&bbox_min.val, points[0])
+            _conv_vec(&bbox_min.val, points[0], scalar=False)
             bbox_max.val = bbox_min.val
 
             for i in range(1, len(points)):
                 point = points[i]
-                _conv_vec(&vec, point)
+                _conv_vec(&vec, point, scalar=False)
 
                 if bbox_max.val.x < vec.x:
                     bbox_max.val.x = vec.x
@@ -464,7 +477,7 @@ cdef class Vec:
     def max(self, other):
         """Set this vector's values to the maximum of the two vectors."""
         cdef vec_t vec
-        _conv_vec(&vec, other)
+        _conv_vec(&vec, other, scalar=False)
         if self.val.x < vec.x:
             self.val.x = vec.x
 
@@ -477,7 +490,7 @@ cdef class Vec:
     def min(self, other):
         """Set this vector's values to be the minimum of the two vectors."""
         cdef vec_t vec
-        _conv_vec(&vec, other)
+        _conv_vec(&vec, other, scalar=False)
         if self.val.x > vec.x:
             self.val.x = vec.x
 
