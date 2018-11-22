@@ -17,6 +17,85 @@ cdef inline Vec _vector(double x, double y, double z):
     vec.val.y = y
     vec.val.z = z
     return vec
+
+cdef object _vector_make
+from srctools.vec import _mk as _vector_make
+
+cdef void _parse_vec_str(vec_t *vec, object value, double x, double y, double z):
+    cdef unicode str_x, str_y, str_z
+
+    if isinstance(value, Vec):
+        vec.x = (<Vec>value).val.x
+        vec.y = (<Vec>value).val.y
+        vec.z = (<Vec>value).val.z
+        return
+
+    try:
+        str_x, str_y, str_z = (<unicode?>value).split(' ')
+    except ValueError:
+        vec.x = x
+        vec.y = y
+        vec.z = z
+        return
+
+    if str_x[0] in '({[<':
+        str_x = str_x[1:]
+    if str_z[-1] in ')}]>':
+        str_z = str_z[:-1]
+    try:
+        vec.x = float(str_x)
+        vec.y = float(str_y)
+        vec.z = float(str_z)
+    except ValueError:
+        vec.x = x
+        vec.y = y
+        vec.z = z
+
+cdef inline void _conv_vec(vec_t *result, object vec):
+    """Convert some object to a unified Vector struct."""
+    if isinstance(vec, Vec):
+        result.x = (<Vec>vec).val.x
+        result.y = (<Vec>vec).val.y
+        result.z = (<Vec>vec).val.z
+    elif isinstance(vec, tuple):
+        result.x, result.y, result.z = <tuple>vec
+    else:
+        result.x = vec.x
+        result.y = vec.y
+        result.z = vec.z
+
+DEF PI = 3.141592653589793238462643383279502884197
+# Multiply to convert.
+DEF rad_2_deg = 180 / PI
+DEF deg_2_rad = PI / 180.0
+
+cdef class VecIter:
+    """Implements iter(Vec)."""
+    cdef Vec vec
+    cdef unsigned char index
+
+    def __cinit__(self, Vec vec not None):
+        self.vec = vec
+        self.index = 0
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.index == 3:
+            raise StopIteration
+        self.index += 1
+        if self.index == 1:
+            return self.vec.val.x
+        if self.index == 2:
+            return self.vec.val.y
+        if self.index == 3:
+            # Drop our reference.
+            ret = self.vec.val.z
+            self.vec = None
+            return ret
+
+
 # Lots of temporaries are expected.
 @cython.freelist(16)
 cdef class Vec:
@@ -112,3 +191,28 @@ cdef class Vec:
                 self.val.z = next(it)
             except StopIteration:
                 self.val.z = z
+
+    def copy(self):
+        """Create a duplicate of this vector."""
+        return _vector(self.val.x, self.val.y, self.val.z)
+
+    def __copy__(self):
+        """Create a duplicate of this vector."""
+        return _vector(self.val.x, self.val.y, self.val.z)
+
+    def __reduce__(self):
+        return _vector_make, (self.val.x, self.val.y, self.val.z)
+
+    @classmethod
+    def from_str(cls, value, double x=0, double y=0, double z=0):
+        """Convert a string in the form '(4 6 -4)' into a Vector.
+
+        If the string is unparsable, this uses the defaults (x,y,z).
+        The string can start with any of the (), {}, [], <> bracket
+        types, or none.
+
+        If the value is already a vector, a copy will be returned.
+        """
+        cdef Vec vec = Vec.__new__(Vec)
+        _parse_vec_str(&vec.val, value, x, y, z)
+        return vec
