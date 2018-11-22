@@ -430,6 +430,259 @@ cdef class Vec:
 
         return vec
 
+    # Non-in-place operators. Arg 1 may not be a Vec.
+
+    def __add__(obj_a, obj_b):
+        """+ operation.
+
+        This additionally works on scalars (adds to all axes).
+        """
+        cdef vec_t vec_a, vec_b
+
+        try:
+            _conv_vec(&vec_a, obj_a, scalar=True)
+            _conv_vec(&vec_b, obj_b, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        cdef Vec result = Vec.__new__(Vec)
+        result.val.x = vec_a.x + vec_b.x
+        result.val.y = vec_a.y + vec_b.y
+        result.val.z = vec_a.z + vec_b.z
+        return result
+
+    def __sub__(obj_a, obj_b):
+        """- operation.
+
+        This additionally works on scalars (adds to all axes).
+        """
+        cdef vec_t vec_a, vec_b
+
+        try:
+            _conv_vec(&vec_a, obj_a, scalar=True)
+            _conv_vec(&vec_b, obj_b, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        cdef Vec result = Vec.__new__(Vec)
+        result.val.x = vec_a.x - vec_b.x
+        result.val.y = vec_a.y - vec_b.y
+        result.val.z = vec_a.z - vec_b.z
+        return result
+
+    def __mul__(obj_a, obj_b):
+        """Vector * scalar operation."""
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef double scalar
+        # Vector * Vector is disallowed.
+        if isinstance(obj_a, (int, float)):
+            # scalar * vector
+            scalar = obj_a
+            _conv_vec(&vec.val, obj_b, scalar=False)
+            vec.val.x = scalar * vec.val.x
+            vec.val.y = scalar * vec.val.y
+            vec.val.z = scalar * vec.val.z
+        elif isinstance(obj_b, (int, float)):
+            # vector * scalar.
+            _conv_vec(&vec.val, obj_a, scalar=False)
+            scalar = obj_b
+            vec.val.x = vec.val.x * scalar
+            vec.val.y = vec.val.y * scalar
+            vec.val.z = vec.val.z * scalar
+
+        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+            raise TypeError('Cannot multiply 2 Vectors.')
+        else:
+            # Both vector-like or vector * something else.
+            return NotImplemented
+        return vec
+
+    def __truediv__(obj_a, obj_b):
+        """Vector / scalar operation."""
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef double scalar
+        # Vector / Vector is disallowed.
+        if isinstance(obj_a, (int, float)):
+            # scalar / vector
+            scalar = obj_a
+            _conv_vec(&vec.val, obj_b, scalar=False)
+            vec.val.x = scalar / vec.val.x
+            vec.val.y = scalar / vec.val.y
+            vec.val.z = scalar / vec.val.z
+        elif isinstance(obj_b, (int, float)):
+            # vector / scalar.
+            _conv_vec(&vec.val, obj_a, scalar=False)
+            scalar = obj_b
+            vec.val.x = vec.val.x / scalar
+            vec.val.y = vec.val.y / scalar
+            vec.val.z = vec.val.z / scalar
+
+        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+            raise TypeError('Cannot divide 2 Vectors.')
+        else:
+            # Both vector-like or vector * something else.
+            return NotImplemented
+        return vec
+
+
+    def __floordiv__(obj_a, obj_b):
+        """Vector // scalar operation."""
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef double scalar
+        # Vector // Vector is disallowed.
+        if isinstance(obj_a, (int, float)):
+            # scalar // vector
+            scalar = obj_a
+            _conv_vec(&vec.val, obj_b, scalar=False)
+            vec.val.x = scalar // vec.val.x
+            vec.val.y = scalar // vec.val.y
+            vec.val.z = scalar // vec.val.z
+        elif isinstance(obj_b, (int, float)):
+            # vector // scalar.
+            _conv_vec(&vec.val, obj_a, scalar=False)
+            scalar = obj_b
+            vec.val.x = vec.val.x // scalar
+            vec.val.y = vec.val.y // scalar
+            vec.val.z = vec.val.z // scalar
+
+        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+            raise TypeError('Cannot floor-divide 2 Vectors.')
+        else:
+            # Both vector-like or vector * something else.
+            return NotImplemented
+        return vec
+
+    def __mod__(obj_a, obj_b):
+        """Vector % scalar operation."""
+        cdef Vec vec = Vec.__new__(Vec)
+        cdef double scalar
+        # Vector % Vector is disallowed.
+        if isinstance(obj_a, (int, float)):
+            # scalar % vector
+            scalar = obj_a
+            _conv_vec(&vec.val, obj_b, scalar=False)
+            vec.val.x = scalar % vec.val.x
+            vec.val.y = scalar % vec.val.y
+            vec.val.z = scalar % vec.val.z
+        elif isinstance(obj_b, (int, float)):
+            # vector % scalar.
+            _conv_vec(&vec.val, obj_a, scalar=False)
+            scalar = obj_b
+            vec.val.x = vec.val.x % scalar
+            vec.val.y = vec.val.y % scalar
+            vec.val.z = vec.val.z % scalar
+
+        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+            raise TypeError('Cannot modulus 2 Vectors.')
+        else:
+            # Both vector-like or vector * something else.
+            return NotImplemented
+        return vec
+
+    # In-place operators. Self is always a Vec.
+
+    def __iadd__(self, other: 'Union[Vec, tuple, float]'):
+        """+= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef vec_t vec_other
+        try:
+            _conv_vec(&vec_other, other, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        self.val.x += vec_other.x
+        self.val.y += vec_other.y
+        self.val.z += vec_other.z
+
+        return self
+
+    def __isub__(self, other: 'Union[Vec, tuple, float]'):
+        """-= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef vec_t vec_other
+        try:
+            _conv_vec(&vec_other, other, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        self.val.x -= vec_other.x
+        self.val.y -= vec_other.y
+        self.val.z -= vec_other.z
+
+        return self
+
+    def __imul__(self, object other: float):
+        """*= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.x *= scalar
+            self.y *= scalar
+            self.z *= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot multiply 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __itruediv__(self, other: float):
+        """/= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.x /= scalar
+            self.y /= scalar
+            self.z /= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot divide 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __ifloordiv__(self, other: float):
+        """//= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.x //= scalar
+            self.y //= scalar
+            self.z //= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot floor-divide 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __imod__(self, other: float):
+        """%= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.x %= scalar
+            self.y %= scalar
+            self.z %= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot modulus 2 Vectors.")
+        else:
+            return NotImplemented
+
     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
         """Divide the vector by a scalar, returning the result and remainder."""
         cdef Vec vec
