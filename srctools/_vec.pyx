@@ -275,6 +275,7 @@ cdef class Vec:
         cdef Vec bbox_min = Vec.__new__(Vec)
         cdef Vec bbox_max = Vec.__new__(Vec)
         cdef Vec sing_vec
+        cdef vec_t vec
         cdef Py_ssize_t i
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by min()/max().
@@ -298,8 +299,25 @@ cdef class Vec:
             try:
                 while True:
                     point = next(points_iter)
-                    bbox_min.min(point)
-                    bbox_max.max(point)
+                    _conv_vec(&vec, point)
+
+                    if bbox_max.val.x < vec.x:
+                        bbox_max.val.x = vec.x
+
+                    if bbox_max.val.y < vec.y:
+                        bbox_max.val.y = vec.y
+
+                    if bbox_max.val.z < vec.z:
+                        bbox_max.val.z = vec.z
+
+                    if bbox_min.val.x > vec.x:
+                        bbox_min.val.x = vec.x
+
+                    if bbox_min.val.y > vec.y:
+                        bbox_min.val.y = vec.y
+
+                    if bbox_min.val.z > vec.z:
+                        bbox_min.val.z = vec.z
             except StopIteration:
                 pass
         elif len(points) == 0:
@@ -314,8 +332,25 @@ cdef class Vec:
 
             for i in range(1, len(points)):
                 point = points[i]
-                bbox_min.min(point)
-                bbox_max.max(point)
+                _conv_vec(&vec, point)
+
+                if bbox_max.val.x < vec.x:
+                    bbox_max.val.x = vec.x
+
+                if bbox_max.val.y < vec.y:
+                    bbox_max.val.y = vec.y
+
+                if bbox_max.val.z < vec.z:
+                    bbox_max.val.z = vec.z
+
+                if bbox_min.val.x > vec.x:
+                    bbox_min.val.x = vec.x
+
+                if bbox_min.val.y > vec.y:
+                    bbox_min.val.y = vec.y
+
+                if bbox_min.val.z > vec.z:
+                    bbox_min.val.z = vec.z
 
         return bbox_min, bbox_max
 
