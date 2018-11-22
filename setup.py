@@ -41,6 +41,10 @@ setup(
             "srctools._cy_vtf_readwrite",
             sources=["srctools/_cy_vtf_readwrite.pyx"],
         ),
+        Extension(
+            "srctools._vec",
+            sources=["srctools/_vec.pyx"],
+        ),
     ]),
 
     package_data={'srctools': [
