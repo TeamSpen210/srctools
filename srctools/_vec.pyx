@@ -391,6 +391,21 @@ cdef class Vec:
             'not an on-axis vector!'
         )
 
+    @cython.boundscheck(False)
+    def other_axes(self, object axis) -> 'Tuple[float, float]':
+        """Get the values for the other two axes."""
+        cdef Py_UCS4 axis_chr
+        if isinstance(axis, str) and len(<str>axis) == 1:
+            axis_chr = (<str>axis)[0]
+            if axis_chr == 'x':
+                return self.y, self.z
+            if axis_chr == 'y':
+                return self.x, self.z
+            if axis_chr == 'z':
+                return self.x, self.y
+
+        raise KeyError(f'Bad axis {axis!r}!')
+
     def to_angle(self, double roll: float=0) -> 'Vec':
         """Convert a normal to a Source Engine angle.
 
