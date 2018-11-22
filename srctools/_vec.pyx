@@ -348,3 +348,21 @@ cdef class Vec:
         vec.val.x = rad_2_deg * math.atan2(-self.z, horiz_dist)
         vec.val.y = (math.atan2(self.y, self.x) * rad_2_deg) % 360.0
         vec.val.z = roll
+
+    def rotation_around(self, double rot: float=90) -> 'Vec':
+        """For an axis-aligned normal, return the angles which rotate around it."""
+        cdef Vec vec = Vec.__new__(Vec)
+        vec.val.x = vec.val.y = vec.val.z = 0.0
+
+        if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
+            vec.val.z = math.copysign(rot, self.val.x)
+        elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
+            vec.val.x = math.copysign(rot, self.val.y)
+        elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
+            vec.val.y = math.copysign(rot, self.val.z)
+        else:
+            raise ValueError(
+                f'({self.val.x}, {self.val.y}, {self.val.z}) is '
+                'not an on-axis vector!'
+            )
+        return vec
