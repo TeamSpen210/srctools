@@ -532,11 +532,11 @@ class Vec:
     def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
         if self.x:
-            return Vec(z=self.x * rot)
+            return Vec(z=math.copysign(rot, self.x))
         elif self.y:
-            return Vec(x=self.y * rot)
+            return Vec(x=math.copysign(rot, self.y))
         elif self.z:
-            return Vec(y=self.z * rot)
+            return Vec(y=math.copysign(rot, self.z))
         else:
             raise ValueError('Zero vector!')
 
