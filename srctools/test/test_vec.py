@@ -492,13 +492,9 @@ def test_order(py_c_vec):
                     x1, y1, z1, op_func.__name__, x2, y2, z2
                 )
             )
-            assert op_func(vec1, vec2) == corr_result, comp.format('Vec')
-            assert op_func(vec1, Vec_tuple(x2, y2, z2)) == corr_result, comp.format('Vec_tuple')
-            assert op_func(vec1, (x2, y2, z2)) == corr_result, comp.format('tuple')
-            # Bare numbers compare magnitude..
-            assert op_func(vec1, x2) == op_func(vec1.mag(), x2), comp.format('x')
-            assert op_func(vec1, y2) == op_func(vec1.mag(), y2), comp.format('y')
-            assert op_func(vec1, z2) == op_func(vec1.mag(), z2), comp.format('z')
+            assert corr_result == op_func(vec1, vec2), comp.format('Vec')
+            assert corr_result == op_func(vec1, Vec_tuple(x2, y2, z2)), comp.format('Vec_tuple')
+            assert corr_result == op_func(vec1, (x2, y2, z2)), comp.format('tuple')
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:
