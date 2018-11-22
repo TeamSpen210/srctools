@@ -87,6 +87,7 @@ DEF PI = 3.141592653589793238462643383279502884197
 DEF rad_2_deg = 180 / PI
 DEF deg_2_rad = PI / 180.0
 
+@cython.final
 cdef class VecIter:
     """Implements iter(Vec)."""
     cdef Vec vec
@@ -116,6 +117,7 @@ cdef class VecIter:
 
 # Lots of temporaries are expected.
 @cython.freelist(16)
+@cython.final
 cdef class Vec:
     """A 3D Vector. This has most standard Vector functions.
 
