@@ -1,6 +1,7 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
+from cpython.object cimport Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 cimport cython
 
 # Lightweight struct just holding the three values.
@@ -823,6 +824,69 @@ cdef class Vec:
             raise TypeError("Called with non-vectors??")
 
         return res_1, res_2
+
+    def __bool__(self) -> bool:
+        """Vectors are True if any axis is non-zero."""
+        if self.val.x != 0:
+            return True
+        if self.val.y != 0:
+            return True
+        if self.val.z != 0:
+            return True
+        return False
+
+    # All the comparisons are similar, so we can use richcmp to
+    # nicely combine the parsing code.
+    def __richcmp__(self, other_obj, int op):
+        """Rich Comparisons.
+
+        Two Vectors are compared based on the axes.
+        A Vector can be compared with a 3-tuple as if it was a Vector also.
+        """
+        cdef vec_t other
+        try:
+            _conv_vec(&other, other_obj, False)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        if op == Py_EQ:
+            return (
+                self.val.x == other.x and
+                self.val.y == other.y and
+                self.val.z == other.z
+            )
+        elif op == Py_NE:
+            return (
+                self.val.x != other.x or
+                self.val.y != other.y or
+                self.val.z != other.z
+            )
+        elif op == Py_LT:
+            return (
+                self.val.x < other.x and
+                self.val.y < other.y and
+                self.val.z < other.z
+            )
+        elif op == Py_GT:
+            return (
+                self.val.x > other.x and
+                self.val.y > other.y and
+                self.val.z > other.z
+            )
+        elif op == Py_LE:
+            return (
+                self.val.x <= other.x and
+                self.val.y <= other.y and
+                self.val.z <= other.z
+            )
+        elif op == Py_GE:
+            return (
+                self.val.x >= other.x and
+                self.val.y >= other.y and
+                self.val.z >= other.z
+            )
+        else:
+            raise RuntimeError('Bad operation!')
 
     def max(self, other):
         """Set this vector's values to the maximum of the two vectors."""
