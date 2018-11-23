@@ -835,6 +835,14 @@ cdef class Vec:
             return True
         return False
 
+    def __len__(self):
+        """The len() of a vector is the number of non-zero axes."""
+        return (
+            (self.val.x != 0) +
+            (self.val.y != 0) +
+            (self.val.z != 0)
+        )
+
     # All the comparisons are similar, so we can use richcmp to
     # nicely combine the parsing code.
     def __richcmp__(self, other_obj, int op):
