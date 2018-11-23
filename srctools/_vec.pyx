@@ -460,13 +460,27 @@ cdef class Vec:
 
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""
-        cdef Vec vec = Vec.__new__(Vec)
+        return _vector(
+            abs(self.val.x),
+            abs(self.val.y),
+            abs(self.val.z),
+        )
 
-        vec.val.x = abs(self.val.x)
-        vec.val.y = abs(self.val.y)
-        vec.val.z = abs(self.val.z)
+    def __neg__(self):
+        """The inverted form of a Vector has inverted axes."""
+        return _vector(
+            -self.val.x,
+            -self.val.y,
+            -self.val.z,
+        )
 
-        return vec
+    def __pos__(self):
+        """+ on a Vector simply copies it."""
+        return _vector(
+            self.val.x,
+            self.val.y,
+            self.val.z,
+        )
 
     # Non-in-place operators. Arg 1 may not be a Vec.
 
