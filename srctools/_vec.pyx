@@ -67,6 +67,21 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
         vec.z = z
     return True
 
+
+def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
+    """Convert a string in the form '(4 6 -4)' into a set of floats.
+
+     If the string is unparsable, this uses the defaults (x,y,z).
+     The string can start with any of the (), {}, [], <> bracket
+     types.
+
+     If the 'string' is actually a Vec, the values will be returned.
+     """
+    cdef vec_t vec
+    _parse_vec_str(&vec, val, x, y, z)
+    with cython.optimize.unpack_method_calls(False):
+        return tuple_new(Vec_tuple, (vec.x, vec.y, vec.z))
+
 cdef inline unsigned char _conv_vec(
     vec_t *result,
     object vec,

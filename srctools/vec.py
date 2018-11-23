@@ -22,7 +22,7 @@ import math
 from typing import (
     Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
     overload,
-    Dict,
+    Dict, TYPE_CHECKING,
 )
 
 
@@ -957,11 +957,16 @@ def _mk(x: float, y: float, z: float) -> Vec:
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
 
-Py_Vec = Vec
-try:
-    # noinspection PyUnresolvedReferences, PyProtectedMember
-    from srctools._vec import Vec as Cy_Vec  # type: ignore
-    Vec = Cy_Vec  # type: ignore
-except ImportError:
-    # Type checker only reads this branch.
-    Cy_Vec = Py_Vec
+Cy_Vec = Py_Vec = Vec
+Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
+if not TYPE_CHECKING:
+    try:
+        # noinspection PyUnresolvedReferences, PyProtectedMember
+        from srctools._vec import (
+            Vec as Cy_Vec,
+            parse_vec_str as Cy_parse_vec_str,
+        )
+        Vec = Cy_Vec
+        parse_vec_str = Cy_parse_vec_str
+    except ImportError:
+        pass
