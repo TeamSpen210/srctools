@@ -970,9 +970,7 @@ cdef class Vec:
                     return self.val.y
                 elif ind == 2:
                     return self.val.z
-                else:
-                    raise KeyError(f'Invalid axis: {ind!r}')
-
+            raise KeyError(f'Invalid axis: {<int>ind!r}')
         else:
             ind = _conv_axis(ind_obj)
             if ind == "x":
@@ -999,12 +997,14 @@ cdef class Vec:
             else:
                 if ind == 0:
                     self.val.x = val
+                    return
                 elif ind == 1:
                     self.val.y = val
+                    return
                 elif ind == 2:
                     self.val.z = val
-                else:
-                    raise KeyError(f'Invalid axis: {ind!r}')
+                    return
+            raise KeyError(f'Invalid axis: {<int>ind!r}')
         else:
             ind = _conv_axis(ind_obj)
             if ind == "x":
@@ -1013,5 +1013,6 @@ cdef class Vec:
                 self.val.y = val
             elif ind == "z":
                 self.val.z = val
+
 
 
