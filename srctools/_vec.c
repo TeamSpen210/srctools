@@ -7042,12 +7042,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_28__pos__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":487
- *     # Non-in-place operators. Arg 1 may not be a Vec.
- * 
- *     def __add__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """+ operation.
- * 
+/* "srctools/_vec.pyx":488
+ *         """Check to see if an axis is set to the given value."""
+ *         cdef double val_d
+ *         try:             # <<<<<<<<<<<<<<
+ *             val_d = val
+ *         except (TypeError, ValueError): # Non-floats should return False!
  */
 
 /* Python wrapper */
@@ -7083,12 +7083,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("__add__", 0);
 
-  /* "srctools/_vec.pyx":494
- *         cdef vec_t vec_a, vec_b
- * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+  /* "srctools/_vec.pyx":495
+ *             return True
+ *         if val_d == self.val.y:
+ *             return True             # <<<<<<<<<<<<<<
+ *         if val_d == self.val.z:
+ *             return True
  */
   {
     __Pyx_PyThreadState_declare
@@ -7099,30 +7099,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":495
- * 
- *         try:
- *             _conv_vec(&vec_a, obj_a, scalar=True)             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):
- */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 495, __pyx_L3_error)
-
       /* "srctools/_vec.pyx":496
- *         try:
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)             # <<<<<<<<<<<<<<
- *         except (TypeError, ValueError):
- *             return NotImplemented
+ *         if val_d == self.val.y:
+ *             return True
+ *         if val_d == self.val.z:             # <<<<<<<<<<<<<<
+ *             return True
+ *         return False
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 496, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 496, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":494
- *         cdef vec_t vec_a, vec_b
+      /* "srctools/_vec.pyx":497
+ *             return True
+ *         if val_d == self.val.z:
+ *             return True             # <<<<<<<<<<<<<<
+ *         return False
  * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+ */
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 497, __pyx_L3_error)
+
+      /* "srctools/_vec.pyx":495
+ *             return True
+ *         if val_d == self.val.y:
+ *             return True             # <<<<<<<<<<<<<<
+ *         if val_d == self.val.z:
+ *             return True
  */
     }
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7131,27 +7131,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":497
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
- *             return NotImplemented
+    /* "srctools/_vec.pyx":498
+ *         if val_d == self.val.z:
+ *             return True
+ *         return False             # <<<<<<<<<<<<<<
  * 
+ *     # Non-in-place operators. Arg 1 may not be a Vec.
  */
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__add__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 497, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 498, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":498
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):
- *             return NotImplemented             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":499
+ *             return True
+ *         return False
+ *              # <<<<<<<<<<<<<<
+ *     # Non-in-place operators. Arg 1 may not be a Vec.
  * 
- *         cdef Vec result = Vec.__new__(Vec)
  */
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -7164,12 +7164,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":494
- *         cdef vec_t vec_a, vec_b
- * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+    /* "srctools/_vec.pyx":495
+ *             return True
+ *         if val_d == self.val.y:
+ *             return True             # <<<<<<<<<<<<<<
+ *         if val_d == self.val.z:
+ *             return True
  */
     __Pyx_XGIVEREF(__pyx_t_1);
     __Pyx_XGIVEREF(__pyx_t_2);
@@ -7185,63 +7185,63 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":500
- *             return NotImplemented
+  /* "srctools/_vec.pyx":501
  * 
- *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         result.val.x = vec_a.x + vec_b.x
- *         result.val.y = vec_a.y + vec_b.y
+ *     # Non-in-place operators. Arg 1 may not be a Vec.
+ *              # <<<<<<<<<<<<<<
+ *     def __add__(obj_a, obj_b):
+ *         """+ operation.
  */
-  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 500, __pyx_L1_error)
+  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 501, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_8));
   __pyx_v_result = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_8);
   __pyx_t_8 = 0;
 
-  /* "srctools/_vec.pyx":501
+  /* "srctools/_vec.pyx":502
+ *     # Non-in-place operators. Arg 1 may not be a Vec.
  * 
- *         cdef Vec result = Vec.__new__(Vec)
- *         result.val.x = vec_a.x + vec_b.x             # <<<<<<<<<<<<<<
- *         result.val.y = vec_a.y + vec_b.y
- *         result.val.z = vec_a.z + vec_b.z
+ *     def __add__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """+ operation.
+ * 
  */
   __pyx_v_result->val.x = (__pyx_v_vec_a.x + __pyx_v_vec_b.x);
 
-  /* "srctools/_vec.pyx":502
- *         cdef Vec result = Vec.__new__(Vec)
- *         result.val.x = vec_a.x + vec_b.x
- *         result.val.y = vec_a.y + vec_b.y             # <<<<<<<<<<<<<<
- *         result.val.z = vec_a.z + vec_b.z
- *         return result
+  /* "srctools/_vec.pyx":503
+ * 
+ *     def __add__(obj_a, obj_b):
+ *         """+ operation.             # <<<<<<<<<<<<<<
+ * 
+ *         This additionally works on scalars (adds to all axes).
  */
   __pyx_v_result->val.y = (__pyx_v_vec_a.y + __pyx_v_vec_b.y);
 
-  /* "srctools/_vec.pyx":503
- *         result.val.x = vec_a.x + vec_b.x
- *         result.val.y = vec_a.y + vec_b.y
- *         result.val.z = vec_a.z + vec_b.z             # <<<<<<<<<<<<<<
- *         return result
- * 
+  /* "srctools/_vec.pyx":504
+ *     def __add__(obj_a, obj_b):
+ *         """+ operation.
+ *              # <<<<<<<<<<<<<<
+ *         This additionally works on scalars (adds to all axes).
+ *         """
  */
   __pyx_v_result->val.z = (__pyx_v_vec_a.z + __pyx_v_vec_b.z);
 
-  /* "srctools/_vec.pyx":504
- *         result.val.y = vec_a.y + vec_b.y
- *         result.val.z = vec_a.z + vec_b.z
- *         return result             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":505
+ *         """+ operation.
  * 
- *     def __sub__(obj_a, obj_b):
+ *         This additionally works on scalars (adds to all axes).             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_a, vec_b
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_result));
   __pyx_r = ((PyObject *)__pyx_v_result);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":487
- *     # Non-in-place operators. Arg 1 may not be a Vec.
- * 
- *     def __add__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """+ operation.
- * 
+  /* "srctools/_vec.pyx":488
+ *         """Check to see if an axis is set to the given value."""
+ *         cdef double val_d
+ *         try:             # <<<<<<<<<<<<<<
+ *             val_d = val
+ *         except (TypeError, ValueError): # Non-floats should return False!
  */
 
   /* function exit code */
@@ -7258,12 +7258,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__add__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":506
- *         return result
+/* "srctools/_vec.pyx":507
+ *         This additionally works on scalars (adds to all axes).
+ *         """
+ *         cdef vec_t vec_a, vec_b             # <<<<<<<<<<<<<<
  * 
- *     def __sub__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """- operation.
- * 
+ *         try:
  */
 
 /* Python wrapper */
@@ -7299,12 +7299,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("__sub__", 0);
 
-  /* "srctools/_vec.pyx":513
- *         cdef vec_t vec_a, vec_b
- * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+  /* "srctools/_vec.pyx":514
+ *         except (TypeError, ValueError):
+ *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x + vec_b.x
  */
   {
     __Pyx_PyThreadState_declare
@@ -7315,30 +7315,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":514
- * 
- *         try:
- *             _conv_vec(&vec_a, obj_a, scalar=True)             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):
- */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 514, __pyx_L3_error)
-
       /* "srctools/_vec.pyx":515
- *         try:
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
+ *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         result.val.x = vec_a.x + vec_b.x
+ *         result.val.y = vec_a.y + vec_b.y
+ */
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 515, __pyx_L3_error)
+
+      /* "srctools/_vec.pyx":516
+ * 
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x + vec_b.x             # <<<<<<<<<<<<<<
+ *         result.val.y = vec_a.y + vec_b.y
+ *         result.val.z = vec_a.z + vec_b.z
+ */
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 516, __pyx_L3_error)
+
+      /* "srctools/_vec.pyx":514
  *         except (TypeError, ValueError):
  *             return NotImplemented
- */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 515, __pyx_L3_error)
-
-      /* "srctools/_vec.pyx":513
- *         cdef vec_t vec_a, vec_b
- * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+ *              # <<<<<<<<<<<<<<
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x + vec_b.x
  */
     }
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -7347,27 +7347,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":516
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
- *             return NotImplemented
- * 
+    /* "srctools/_vec.pyx":517
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x + vec_b.x
+ *         result.val.y = vec_a.y + vec_b.y             # <<<<<<<<<<<<<<
+ *         result.val.z = vec_a.z + vec_b.z
+ *         return result
  */
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__sub__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 516, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 517, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":517
- *             _conv_vec(&vec_b, obj_b, scalar=True)
- *         except (TypeError, ValueError):
- *             return NotImplemented             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":518
+ *         result.val.x = vec_a.x + vec_b.x
+ *         result.val.y = vec_a.y + vec_b.y
+ *         result.val.z = vec_a.z + vec_b.z             # <<<<<<<<<<<<<<
+ *         return result
  * 
- *         cdef Vec result = Vec.__new__(Vec)
  */
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -7380,12 +7380,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":513
- *         cdef vec_t vec_a, vec_b
- * 
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_a, obj_a, scalar=True)
- *             _conv_vec(&vec_b, obj_b, scalar=True)
+    /* "srctools/_vec.pyx":514
+ *         except (TypeError, ValueError):
+ *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x + vec_b.x
  */
     __Pyx_XGIVEREF(__pyx_t_1);
     __Pyx_XGIVEREF(__pyx_t_2);
@@ -7401,63 +7401,63 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":519
- *             return NotImplemented
- * 
- *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         result.val.x = vec_a.x - vec_b.x
- *         result.val.y = vec_a.y - vec_b.y
+  /* "srctools/_vec.pyx":520
+ *         result.val.z = vec_a.z + vec_b.z
+ *         return result
+ *              # <<<<<<<<<<<<<<
+ *     def __sub__(obj_a, obj_b):
+ *         """- operation.
  */
-  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 519, __pyx_L1_error)
+  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 520, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_8));
   __pyx_v_result = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_8);
   __pyx_t_8 = 0;
 
-  /* "srctools/_vec.pyx":520
+  /* "srctools/_vec.pyx":521
+ *         return result
  * 
- *         cdef Vec result = Vec.__new__(Vec)
- *         result.val.x = vec_a.x - vec_b.x             # <<<<<<<<<<<<<<
- *         result.val.y = vec_a.y - vec_b.y
- *         result.val.z = vec_a.z - vec_b.z
+ *     def __sub__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """- operation.
+ * 
  */
   __pyx_v_result->val.x = (__pyx_v_vec_a.x - __pyx_v_vec_b.x);
 
-  /* "srctools/_vec.pyx":521
- *         cdef Vec result = Vec.__new__(Vec)
- *         result.val.x = vec_a.x - vec_b.x
- *         result.val.y = vec_a.y - vec_b.y             # <<<<<<<<<<<<<<
- *         result.val.z = vec_a.z - vec_b.z
- *         return result
+  /* "srctools/_vec.pyx":522
+ * 
+ *     def __sub__(obj_a, obj_b):
+ *         """- operation.             # <<<<<<<<<<<<<<
+ * 
+ *         This additionally works on scalars (adds to all axes).
  */
   __pyx_v_result->val.y = (__pyx_v_vec_a.y - __pyx_v_vec_b.y);
 
-  /* "srctools/_vec.pyx":522
- *         result.val.x = vec_a.x - vec_b.x
- *         result.val.y = vec_a.y - vec_b.y
- *         result.val.z = vec_a.z - vec_b.z             # <<<<<<<<<<<<<<
- *         return result
- * 
+  /* "srctools/_vec.pyx":523
+ *     def __sub__(obj_a, obj_b):
+ *         """- operation.
+ *              # <<<<<<<<<<<<<<
+ *         This additionally works on scalars (adds to all axes).
+ *         """
  */
   __pyx_v_result->val.z = (__pyx_v_vec_a.z - __pyx_v_vec_b.z);
 
-  /* "srctools/_vec.pyx":523
- *         result.val.y = vec_a.y - vec_b.y
- *         result.val.z = vec_a.z - vec_b.z
- *         return result             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":524
+ *         """- operation.
  * 
- *     def __mul__(obj_a, obj_b):
+ *         This additionally works on scalars (adds to all axes).             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_a, vec_b
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_result));
   __pyx_r = ((PyObject *)__pyx_v_result);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":506
- *         return result
+  /* "srctools/_vec.pyx":507
+ *         This additionally works on scalars (adds to all axes).
+ *         """
+ *         cdef vec_t vec_a, vec_b             # <<<<<<<<<<<<<<
  * 
- *     def __sub__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """- operation.
- * 
+ *         try:
  */
 
   /* function exit code */
@@ -7474,12 +7474,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__sub__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":525
- *         return result
+/* "srctools/_vec.pyx":526
+ *         This additionally works on scalars (adds to all axes).
+ *         """
+ *         cdef vec_t vec_a, vec_b             # <<<<<<<<<<<<<<
  * 
- *     def __mul__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector * scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+ *         try:
  */
 
 /* Python wrapper */
@@ -7512,24 +7512,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   unsigned char __pyx_t_6;
   __Pyx_RefNannySetupContext("__mul__", 0);
 
-  /* "srctools/_vec.pyx":527
- *     def __mul__(obj_a, obj_b):
- *         """Vector * scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double scalar
- *         # Vector * Vector is disallowed.
+  /* "srctools/_vec.pyx":528
+ *         cdef vec_t vec_a, vec_b
+ * 
+ *         try:             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec_a, obj_a, scalar=True)
+ *             _conv_vec(&vec_b, obj_b, scalar=True)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 527, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":530
- *         cdef double scalar
- *         # Vector * Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar * vector
- *             scalar = obj_a
+  /* "srctools/_vec.pyx":531
+ *             _conv_vec(&vec_a, obj_a, scalar=True)
+ *             _conv_vec(&vec_b, obj_b, scalar=True)
+ *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
   __pyx_t_3 = PyInt_Check(__pyx_v_obj_a); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -7545,68 +7545,68 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":532
- *         if isinstance(obj_a, (int, float)):
- *             # scalar * vector
- *             scalar = obj_a             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar * vec.val.x
+    /* "srctools/_vec.pyx":533
+ *         except (TypeError, ValueError):
+ *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x - vec_b.x
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 532, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":533
- *             # scalar * vector
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
- *             vec.val.x = scalar * vec.val.x
- *             vec.val.y = scalar * vec.val.y
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 533, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":534
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar * vec.val.x             # <<<<<<<<<<<<<<
- *             vec.val.y = scalar * vec.val.y
- *             vec.val.z = scalar * vec.val.z
+ *             return NotImplemented
+ * 
+ *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         result.val.x = vec_a.x - vec_b.x
+ *         result.val.y = vec_a.y - vec_b.y
+ */
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 534, __pyx_L1_error)
+
+    /* "srctools/_vec.pyx":535
+ * 
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x - vec_b.x             # <<<<<<<<<<<<<<
+ *         result.val.y = vec_a.y - vec_b.y
+ *         result.val.z = vec_a.z - vec_b.z
  */
     __pyx_v_vec->val.x = (__pyx_v_scalar * __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":535
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar * vec.val.x
- *             vec.val.y = scalar * vec.val.y             # <<<<<<<<<<<<<<
- *             vec.val.z = scalar * vec.val.z
- *         elif isinstance(obj_b, (int, float)):
+    /* "srctools/_vec.pyx":536
+ *         cdef Vec result = Vec.__new__(Vec)
+ *         result.val.x = vec_a.x - vec_b.x
+ *         result.val.y = vec_a.y - vec_b.y             # <<<<<<<<<<<<<<
+ *         result.val.z = vec_a.z - vec_b.z
+ *         return result
  */
     __pyx_v_vec->val.y = (__pyx_v_scalar * __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":536
- *             vec.val.x = scalar * vec.val.x
- *             vec.val.y = scalar * vec.val.y
- *             vec.val.z = scalar * vec.val.z             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_b, (int, float)):
- *             # vector * scalar.
+    /* "srctools/_vec.pyx":537
+ *         result.val.x = vec_a.x - vec_b.x
+ *         result.val.y = vec_a.y - vec_b.y
+ *         result.val.z = vec_a.z - vec_b.z             # <<<<<<<<<<<<<<
+ *         return result
+ * 
  */
     __pyx_v_vec->val.z = (__pyx_v_scalar * __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":530
- *         cdef double scalar
- *         # Vector * Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar * vector
- *             scalar = obj_a
+    /* "srctools/_vec.pyx":531
+ *             _conv_vec(&vec_a, obj_a, scalar=True)
+ *             _conv_vec(&vec_b, obj_b, scalar=True)
+ *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":537
- *             vec.val.y = scalar * vec.val.y
- *             vec.val.z = scalar * vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector * scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+  /* "srctools/_vec.pyx":538
+ *         result.val.y = vec_a.y - vec_b.y
+ *         result.val.z = vec_a.z - vec_b.z
+ *         return result             # <<<<<<<<<<<<<<
+ * 
+ *     def __mul__(obj_a, obj_b):
  */
   __pyx_t_2 = PyInt_Check(__pyx_v_obj_b); 
   __pyx_t_4 = (__pyx_t_2 != 0);
@@ -7622,68 +7622,68 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":539
- *         elif isinstance(obj_b, (int, float)):
- *             # vector * scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
- *             scalar = obj_b
- *             vec.val.x = vec.val.x * scalar
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 539, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":540
- *             # vector * scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b             # <<<<<<<<<<<<<<
- *             vec.val.x = vec.val.x * scalar
- *             vec.val.y = vec.val.y * scalar
+ *         return result
+ * 
+ *     def __mul__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """Vector * scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 540, __pyx_L1_error)
-    __pyx_v_scalar = __pyx_t_5;
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 540, __pyx_L1_error)
 
     /* "srctools/_vec.pyx":541
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b
- *             vec.val.x = vec.val.x * scalar             # <<<<<<<<<<<<<<
- *             vec.val.y = vec.val.y * scalar
- *             vec.val.z = vec.val.z * scalar
+ * 
+ *     def __mul__(obj_a, obj_b):
+ *         """Vector * scalar operation."""             # <<<<<<<<<<<<<<
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
+ */
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 541, __pyx_L1_error)
+    __pyx_v_scalar = __pyx_t_5;
+
+    /* "srctools/_vec.pyx":542
+ *     def __mul__(obj_a, obj_b):
+ *         """Vector * scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double scalar
+ *         # Vector * Vector is disallowed.
  */
     __pyx_v_vec->val.x = (__pyx_v_vec->val.x * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":542
- *             scalar = obj_b
- *             vec.val.x = vec.val.x * scalar
- *             vec.val.y = vec.val.y * scalar             # <<<<<<<<<<<<<<
- *             vec.val.z = vec.val.z * scalar
- * 
+    /* "srctools/_vec.pyx":543
+ *         """Vector * scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar             # <<<<<<<<<<<<<<
+ *         # Vector * Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
  */
     __pyx_v_vec->val.y = (__pyx_v_vec->val.y * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":543
- *             vec.val.x = vec.val.x * scalar
- *             vec.val.y = vec.val.y * scalar
- *             vec.val.z = vec.val.z * scalar             # <<<<<<<<<<<<<<
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+    /* "srctools/_vec.pyx":544
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
+ *         # Vector * Vector is disallowed.             # <<<<<<<<<<<<<<
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar * vector
  */
     __pyx_v_vec->val.z = (__pyx_v_vec->val.z * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":537
- *             vec.val.y = scalar * vec.val.y
- *             vec.val.z = scalar * vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector * scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+    /* "srctools/_vec.pyx":538
+ *         result.val.y = vec_a.y - vec_b.y
+ *         result.val.z = vec_a.z - vec_b.z
+ *         return result             # <<<<<<<<<<<<<<
+ * 
+ *     def __mul__(obj_a, obj_b):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":545
- *             vec.val.z = vec.val.z * scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot multiply 2 Vectors.')
- *         else:
+  /* "srctools/_vec.pyx":546
+ *         # Vector * Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar * vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -7698,34 +7698,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":546
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot multiply 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+    /* "srctools/_vec.pyx":547
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar * vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar * vec.val.x
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 546, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 547, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 546, __pyx_L1_error)
+    __PYX_ERR(0, 547, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":545
- *             vec.val.z = vec.val.z * scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot multiply 2 Vectors.')
- *         else:
+    /* "srctools/_vec.pyx":546
+ *         # Vector * Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar * vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   }
 
-  /* "srctools/_vec.pyx":549
- *         else:
- *             # Both vector-like or vector * something else.
- *             return NotImplemented             # <<<<<<<<<<<<<<
- *         return vec
- * 
+  /* "srctools/_vec.pyx":550
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar * vec.val.x
+ *             vec.val.y = scalar * vec.val.y             # <<<<<<<<<<<<<<
+ *             vec.val.z = scalar * vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -7735,24 +7735,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":550
- *             # Both vector-like or vector * something else.
- *             return NotImplemented
- *         return vec             # <<<<<<<<<<<<<<
- * 
- *     def __truediv__(obj_a, obj_b):
+  /* "srctools/_vec.pyx":551
+ *             vec.val.x = scalar * vec.val.x
+ *             vec.val.y = scalar * vec.val.y
+ *             vec.val.z = scalar * vec.val.z             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector * scalar.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":525
- *         return result
+  /* "srctools/_vec.pyx":526
+ *         This additionally works on scalars (adds to all axes).
+ *         """
+ *         cdef vec_t vec_a, vec_b             # <<<<<<<<<<<<<<
  * 
- *     def __mul__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector * scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+ *         try:
  */
 
   /* function exit code */
@@ -7767,12 +7767,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_34__mul__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":552
- *         return vec
- * 
- *     def __truediv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector / scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+/* "srctools/_vec.pyx":553
+ *             vec.val.z = scalar * vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector * scalar.             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b
  */
 
 /* Python wrapper */
@@ -7805,24 +7805,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   unsigned char __pyx_t_6;
   __Pyx_RefNannySetupContext("__truediv__", 0);
 
-  /* "srctools/_vec.pyx":554
- *     def __truediv__(obj_a, obj_b):
- *         """Vector / scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double scalar
- *         # Vector / Vector is disallowed.
+  /* "srctools/_vec.pyx":555
+ *             # vector * scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b             # <<<<<<<<<<<<<<
+ *             vec.val.x = vec.val.x * scalar
+ *             vec.val.y = vec.val.y * scalar
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 554, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 555, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":557
- *         cdef double scalar
- *         # Vector / Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar / vector
- *             scalar = obj_a
+  /* "srctools/_vec.pyx":558
+ *             vec.val.x = vec.val.x * scalar
+ *             vec.val.y = vec.val.y * scalar
+ *             vec.val.z = vec.val.z * scalar             # <<<<<<<<<<<<<<
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  */
   __pyx_t_3 = PyInt_Check(__pyx_v_obj_a); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -7838,80 +7838,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":559
- *         if isinstance(obj_a, (int, float)):
- *             # scalar / vector
- *             scalar = obj_a             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar / vec.val.x
+    /* "srctools/_vec.pyx":560
+ *             vec.val.z = vec.val.z * scalar
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError('Cannot multiply 2 Vectors.')
+ *         else:
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 559, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 560, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":560
- *             # scalar / vector
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
- *             vec.val.x = scalar / vec.val.x
- *             vec.val.y = scalar / vec.val.y
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 560, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":561
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar / vec.val.x             # <<<<<<<<<<<<<<
- *             vec.val.y = scalar / vec.val.y
- *             vec.val.z = scalar / vec.val.z
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot multiply 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
+ */
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 561, __pyx_L1_error)
+
+    /* "srctools/_vec.pyx":562
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot multiply 2 Vectors.')
+ *         else:             # <<<<<<<<<<<<<<
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 561, __pyx_L1_error)
+      __PYX_ERR(0, 562, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = (__pyx_v_scalar / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":562
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar / vec.val.x
- *             vec.val.y = scalar / vec.val.y             # <<<<<<<<<<<<<<
- *             vec.val.z = scalar / vec.val.z
- *         elif isinstance(obj_b, (int, float)):
+    /* "srctools/_vec.pyx":563
+ *             raise TypeError('Cannot multiply 2 Vectors.')
+ *         else:
+ *             # Both vector-like or vector * something else.             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ *         return vec
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 562, __pyx_L1_error)
+      __PYX_ERR(0, 563, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = (__pyx_v_scalar / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":563
- *             vec.val.x = scalar / vec.val.x
- *             vec.val.y = scalar / vec.val.y
- *             vec.val.z = scalar / vec.val.z             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_b, (int, float)):
- *             # vector / scalar.
+    /* "srctools/_vec.pyx":564
+ *         else:
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ *         return vec
+ * 
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 563, __pyx_L1_error)
+      __PYX_ERR(0, 564, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = (__pyx_v_scalar / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":557
- *         cdef double scalar
- *         # Vector / Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar / vector
- *             scalar = obj_a
+    /* "srctools/_vec.pyx":558
+ *             vec.val.x = vec.val.x * scalar
+ *             vec.val.y = vec.val.y * scalar
+ *             vec.val.z = vec.val.z * scalar             # <<<<<<<<<<<<<<
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":564
- *             vec.val.y = scalar / vec.val.y
- *             vec.val.z = scalar / vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector / scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+  /* "srctools/_vec.pyx":565
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ *     def __truediv__(obj_a, obj_b):
  */
   __pyx_t_2 = PyInt_Check(__pyx_v_obj_b); 
   __pyx_t_4 = (__pyx_t_2 != 0);
@@ -7927,80 +7927,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":566
- *         elif isinstance(obj_b, (int, float)):
- *             # vector / scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
- *             scalar = obj_b
- *             vec.val.x = vec.val.x / scalar
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 566, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":567
- *             # vector / scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b             # <<<<<<<<<<<<<<
- *             vec.val.x = vec.val.x / scalar
- *             vec.val.y = vec.val.y / scalar
+ *         return vec
+ * 
+ *     def __truediv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """Vector / scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 567, __pyx_L1_error)
-    __pyx_v_scalar = __pyx_t_5;
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 567, __pyx_L1_error)
 
     /* "srctools/_vec.pyx":568
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b
- *             vec.val.x = vec.val.x / scalar             # <<<<<<<<<<<<<<
- *             vec.val.y = vec.val.y / scalar
- *             vec.val.z = vec.val.z / scalar
+ * 
+ *     def __truediv__(obj_a, obj_b):
+ *         """Vector / scalar operation."""             # <<<<<<<<<<<<<<
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
  */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 568, __pyx_L1_error)
-    }
-    __pyx_v_vec->val.x = (__pyx_v_vec->val.x / __pyx_v_scalar);
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 568, __pyx_L1_error)
+    __pyx_v_scalar = __pyx_t_5;
 
     /* "srctools/_vec.pyx":569
- *             scalar = obj_b
- *             vec.val.x = vec.val.x / scalar
- *             vec.val.y = vec.val.y / scalar             # <<<<<<<<<<<<<<
- *             vec.val.z = vec.val.z / scalar
- * 
+ *     def __truediv__(obj_a, obj_b):
+ *         """Vector / scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double scalar
+ *         # Vector / Vector is disallowed.
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 569, __pyx_L1_error)
     }
-    __pyx_v_vec->val.y = (__pyx_v_vec->val.y / __pyx_v_scalar);
+    __pyx_v_vec->val.x = (__pyx_v_vec->val.x / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":570
- *             vec.val.x = vec.val.x / scalar
- *             vec.val.y = vec.val.y / scalar
- *             vec.val.z = vec.val.z / scalar             # <<<<<<<<<<<<<<
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *         """Vector / scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar             # <<<<<<<<<<<<<<
+ *         # Vector / Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 570, __pyx_L1_error)
     }
+    __pyx_v_vec->val.y = (__pyx_v_vec->val.y / __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":571
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
+ *         # Vector / Vector is disallowed.             # <<<<<<<<<<<<<<
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar / vector
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 571, __pyx_L1_error)
+    }
     __pyx_v_vec->val.z = (__pyx_v_vec->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":564
- *             vec.val.y = scalar / vec.val.y
- *             vec.val.z = scalar / vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector / scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+    /* "srctools/_vec.pyx":565
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ *     def __truediv__(obj_a, obj_b):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":572
- *             vec.val.z = vec.val.z / scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot divide 2 Vectors.')
- *         else:
+  /* "srctools/_vec.pyx":573
+ *         # Vector / Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar / vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -8015,34 +8015,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":573
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot divide 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+    /* "srctools/_vec.pyx":574
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar / vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar / vec.val.x
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 573, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 574, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 573, __pyx_L1_error)
+    __PYX_ERR(0, 574, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":572
- *             vec.val.z = vec.val.z / scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot divide 2 Vectors.')
- *         else:
+    /* "srctools/_vec.pyx":573
+ *         # Vector / Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar / vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   }
 
-  /* "srctools/_vec.pyx":576
- *         else:
- *             # Both vector-like or vector * something else.
- *             return NotImplemented             # <<<<<<<<<<<<<<
- *         return vec
- * 
+  /* "srctools/_vec.pyx":577
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar / vec.val.x
+ *             vec.val.y = scalar / vec.val.y             # <<<<<<<<<<<<<<
+ *             vec.val.z = scalar / vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -8052,24 +8052,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":577
- *             # Both vector-like or vector * something else.
- *             return NotImplemented
- *         return vec             # <<<<<<<<<<<<<<
- * 
- * 
+  /* "srctools/_vec.pyx":578
+ *             vec.val.x = scalar / vec.val.x
+ *             vec.val.y = scalar / vec.val.y
+ *             vec.val.z = scalar / vec.val.z             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector / scalar.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":552
- *         return vec
- * 
- *     def __truediv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector / scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+  /* "srctools/_vec.pyx":553
+ *             vec.val.z = scalar * vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector * scalar.             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b
  */
 
   /* function exit code */
@@ -8084,12 +8084,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__truediv__(PyObject *__pyx_v_o
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":580
- * 
- * 
- *     def __floordiv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector // scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+/* "srctools/_vec.pyx":581
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector / scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
+ *             scalar = obj_b
+ *             vec.val.x = vec.val.x / scalar
  */
 
 /* Python wrapper */
@@ -8122,24 +8122,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   unsigned char __pyx_t_6;
   __Pyx_RefNannySetupContext("__floordiv__", 0);
 
-  /* "srctools/_vec.pyx":582
- *     def __floordiv__(obj_a, obj_b):
- *         """Vector // scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double scalar
- *         # Vector // Vector is disallowed.
+  /* "srctools/_vec.pyx":583
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b
+ *             vec.val.x = vec.val.x / scalar             # <<<<<<<<<<<<<<
+ *             vec.val.y = vec.val.y / scalar
+ *             vec.val.z = vec.val.z / scalar
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 582, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 583, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":585
- *         cdef double scalar
- *         # Vector // Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar // vector
- *             scalar = obj_a
+  /* "srctools/_vec.pyx":586
+ *             vec.val.y = vec.val.y / scalar
+ *             vec.val.z = vec.val.z / scalar
+ *              # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot divide 2 Vectors.')
  */
   __pyx_t_3 = PyInt_Check(__pyx_v_obj_a); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -8155,80 +8155,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":587
- *         if isinstance(obj_a, (int, float)):
- *             # scalar // vector
- *             scalar = obj_a             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar // vec.val.x
+    /* "srctools/_vec.pyx":588
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot divide 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 587, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 588, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":588
- *             # scalar // vector
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
- *             vec.val.x = scalar // vec.val.x
- *             vec.val.y = scalar // vec.val.y
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 588, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":589
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar // vec.val.x             # <<<<<<<<<<<<<<
- *             vec.val.y = scalar // vec.val.y
- *             vec.val.z = scalar // vec.val.z
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot divide 2 Vectors.')
+ *         else:             # <<<<<<<<<<<<<<
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ */
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 589, __pyx_L1_error)
+
+    /* "srctools/_vec.pyx":590
+ *             raise TypeError('Cannot divide 2 Vectors.')
+ *         else:
+ *             # Both vector-like or vector * something else.             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ *         return vec
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 589, __pyx_L1_error)
+      __PYX_ERR(0, 590, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = floor(__pyx_v_scalar / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":590
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar // vec.val.x
- *             vec.val.y = scalar // vec.val.y             # <<<<<<<<<<<<<<
- *             vec.val.z = scalar // vec.val.z
- *         elif isinstance(obj_b, (int, float)):
+    /* "srctools/_vec.pyx":591
+ *         else:
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ *         return vec
+ * 
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 590, __pyx_L1_error)
+      __PYX_ERR(0, 591, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = floor(__pyx_v_scalar / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":591
- *             vec.val.x = scalar // vec.val.x
- *             vec.val.y = scalar // vec.val.y
- *             vec.val.z = scalar // vec.val.z             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_b, (int, float)):
- *             # vector // scalar.
+    /* "srctools/_vec.pyx":592
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 591, __pyx_L1_error)
+      __PYX_ERR(0, 592, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = floor(__pyx_v_scalar / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":585
- *         cdef double scalar
- *         # Vector // Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar // vector
- *             scalar = obj_a
+    /* "srctools/_vec.pyx":586
+ *             vec.val.y = vec.val.y / scalar
+ *             vec.val.z = vec.val.z / scalar
+ *              # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot divide 2 Vectors.')
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":592
- *             vec.val.y = scalar // vec.val.y
- *             vec.val.z = scalar // vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector // scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+  /* "srctools/_vec.pyx":593
+ *             return NotImplemented
+ *         return vec
+ *              # <<<<<<<<<<<<<<
+ * 
+ *     def __floordiv__(obj_a, obj_b):
  */
   __pyx_t_2 = PyInt_Check(__pyx_v_obj_b); 
   __pyx_t_4 = (__pyx_t_2 != 0);
@@ -8244,80 +8244,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":594
- *         elif isinstance(obj_b, (int, float)):
- *             # vector // scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
- *             scalar = obj_b
- *             vec.val.x = vec.val.x // scalar
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 594, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":595
- *             # vector // scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b             # <<<<<<<<<<<<<<
- *             vec.val.x = vec.val.x // scalar
- *             vec.val.y = vec.val.y // scalar
+ * 
+ * 
+ *     def __floordiv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """Vector // scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 595, __pyx_L1_error)
-    __pyx_v_scalar = __pyx_t_5;
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 595, __pyx_L1_error)
 
     /* "srctools/_vec.pyx":596
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b
- *             vec.val.x = vec.val.x // scalar             # <<<<<<<<<<<<<<
- *             vec.val.y = vec.val.y // scalar
- *             vec.val.z = vec.val.z // scalar
+ * 
+ *     def __floordiv__(obj_a, obj_b):
+ *         """Vector // scalar operation."""             # <<<<<<<<<<<<<<
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
  */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 596, __pyx_L1_error)
-    }
-    __pyx_v_vec->val.x = floor(__pyx_v_vec->val.x / __pyx_v_scalar);
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_v_scalar = __pyx_t_5;
 
     /* "srctools/_vec.pyx":597
- *             scalar = obj_b
- *             vec.val.x = vec.val.x // scalar
- *             vec.val.y = vec.val.y // scalar             # <<<<<<<<<<<<<<
- *             vec.val.z = vec.val.z // scalar
- * 
+ *     def __floordiv__(obj_a, obj_b):
+ *         """Vector // scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double scalar
+ *         # Vector // Vector is disallowed.
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 597, __pyx_L1_error)
     }
-    __pyx_v_vec->val.y = floor(__pyx_v_vec->val.y / __pyx_v_scalar);
+    __pyx_v_vec->val.x = floor(__pyx_v_vec->val.x / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":598
- *             vec.val.x = vec.val.x // scalar
- *             vec.val.y = vec.val.y // scalar
- *             vec.val.z = vec.val.z // scalar             # <<<<<<<<<<<<<<
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *         """Vector // scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar             # <<<<<<<<<<<<<<
+ *         # Vector // Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 598, __pyx_L1_error)
     }
+    __pyx_v_vec->val.y = floor(__pyx_v_vec->val.y / __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":599
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
+ *         # Vector // Vector is disallowed.             # <<<<<<<<<<<<<<
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar // vector
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 599, __pyx_L1_error)
+    }
     __pyx_v_vec->val.z = floor(__pyx_v_vec->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":592
- *             vec.val.y = scalar // vec.val.y
- *             vec.val.z = scalar // vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector // scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+    /* "srctools/_vec.pyx":593
+ *             return NotImplemented
+ *         return vec
+ *              # <<<<<<<<<<<<<<
+ * 
+ *     def __floordiv__(obj_a, obj_b):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":600
- *             vec.val.z = vec.val.z // scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot floor-divide 2 Vectors.')
- *         else:
+  /* "srctools/_vec.pyx":601
+ *         # Vector // Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar // vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -8332,34 +8332,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":601
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot floor-divide 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+    /* "srctools/_vec.pyx":602
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar // vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar // vec.val.x
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 601, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 602, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 601, __pyx_L1_error)
+    __PYX_ERR(0, 602, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":600
- *             vec.val.z = vec.val.z // scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot floor-divide 2 Vectors.')
- *         else:
+    /* "srctools/_vec.pyx":601
+ *         # Vector // Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar // vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   }
 
-  /* "srctools/_vec.pyx":604
- *         else:
- *             # Both vector-like or vector * something else.
- *             return NotImplemented             # <<<<<<<<<<<<<<
- *         return vec
- * 
+  /* "srctools/_vec.pyx":605
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar // vec.val.x
+ *             vec.val.y = scalar // vec.val.y             # <<<<<<<<<<<<<<
+ *             vec.val.z = scalar // vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -8369,24 +8369,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":605
- *             # Both vector-like or vector * something else.
- *             return NotImplemented
- *         return vec             # <<<<<<<<<<<<<<
- * 
- *     def __mod__(obj_a, obj_b):
+  /* "srctools/_vec.pyx":606
+ *             vec.val.x = scalar // vec.val.x
+ *             vec.val.y = scalar // vec.val.y
+ *             vec.val.z = scalar // vec.val.z             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector // scalar.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":580
- * 
- * 
- *     def __floordiv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector // scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+  /* "srctools/_vec.pyx":581
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector / scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
+ *             scalar = obj_b
+ *             vec.val.x = vec.val.x / scalar
  */
 
   /* function exit code */
@@ -8401,12 +8401,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__floordiv__(PyObject *__pyx_v_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":607
- *         return vec
- * 
- *     def __mod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector % scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+/* "srctools/_vec.pyx":608
+ *             vec.val.z = scalar // vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector // scalar.             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b
  */
 
 /* Python wrapper */
@@ -8439,24 +8439,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   unsigned char __pyx_t_6;
   __Pyx_RefNannySetupContext("__mod__", 0);
 
-  /* "srctools/_vec.pyx":609
- *     def __mod__(obj_a, obj_b):
- *         """Vector % scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double scalar
- *         # Vector % Vector is disallowed.
+  /* "srctools/_vec.pyx":610
+ *             # vector // scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b             # <<<<<<<<<<<<<<
+ *             vec.val.x = vec.val.x // scalar
+ *             vec.val.y = vec.val.y // scalar
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 609, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 610, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":612
- *         cdef double scalar
- *         # Vector % Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar % vector
- *             scalar = obj_a
+  /* "srctools/_vec.pyx":613
+ *             vec.val.x = vec.val.x // scalar
+ *             vec.val.y = vec.val.y // scalar
+ *             vec.val.z = vec.val.z // scalar             # <<<<<<<<<<<<<<
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  */
   __pyx_t_3 = PyInt_Check(__pyx_v_obj_a); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -8472,80 +8472,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":614
- *         if isinstance(obj_a, (int, float)):
- *             # scalar % vector
- *             scalar = obj_a             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar % vec.val.x
+    /* "srctools/_vec.pyx":615
+ *             vec.val.z = vec.val.z // scalar
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError('Cannot floor-divide 2 Vectors.')
+ *         else:
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 614, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 615, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":615
- *             # scalar % vector
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
- *             vec.val.x = scalar % vec.val.x
- *             vec.val.y = scalar % vec.val.y
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 615, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":616
- *             scalar = obj_a
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar % vec.val.x             # <<<<<<<<<<<<<<
- *             vec.val.y = scalar % vec.val.y
- *             vec.val.z = scalar % vec.val.z
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot floor-divide 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
+ */
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 616, __pyx_L1_error)
+
+    /* "srctools/_vec.pyx":617
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot floor-divide 2 Vectors.')
+ *         else:             # <<<<<<<<<<<<<<
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 616, __pyx_L1_error)
+      __PYX_ERR(0, 617, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":617
- *             _conv_vec(&vec.val, obj_b, scalar=False)
- *             vec.val.x = scalar % vec.val.x
- *             vec.val.y = scalar % vec.val.y             # <<<<<<<<<<<<<<
- *             vec.val.z = scalar % vec.val.z
- *         elif isinstance(obj_b, (int, float)):
+    /* "srctools/_vec.pyx":618
+ *             raise TypeError('Cannot floor-divide 2 Vectors.')
+ *         else:
+ *             # Both vector-like or vector * something else.             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ *         return vec
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 617, __pyx_L1_error)
+      __PYX_ERR(0, 618, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":618
- *             vec.val.x = scalar % vec.val.x
- *             vec.val.y = scalar % vec.val.y
- *             vec.val.z = scalar % vec.val.z             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_b, (int, float)):
- *             # vector % scalar.
+    /* "srctools/_vec.pyx":619
+ *         else:
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ *         return vec
+ * 
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 618, __pyx_L1_error)
+      __PYX_ERR(0, 619, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":612
- *         cdef double scalar
- *         # Vector % Vector is disallowed.
- *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
- *             # scalar % vector
- *             scalar = obj_a
+    /* "srctools/_vec.pyx":613
+ *             vec.val.x = vec.val.x // scalar
+ *             vec.val.y = vec.val.y // scalar
+ *             vec.val.z = vec.val.z // scalar             # <<<<<<<<<<<<<<
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":619
- *             vec.val.y = scalar % vec.val.y
- *             vec.val.z = scalar % vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector % scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+  /* "srctools/_vec.pyx":620
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ *     def __mod__(obj_a, obj_b):
  */
   __pyx_t_2 = PyInt_Check(__pyx_v_obj_b); 
   __pyx_t_4 = (__pyx_t_2 != 0);
@@ -8561,80 +8561,80 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":621
- *         elif isinstance(obj_b, (int, float)):
- *             # vector % scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
- *             scalar = obj_b
- *             vec.val.x = vec.val.x % scalar
- */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 621, __pyx_L1_error)
-
     /* "srctools/_vec.pyx":622
- *             # vector % scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b             # <<<<<<<<<<<<<<
- *             vec.val.x = vec.val.x % scalar
- *             vec.val.y = vec.val.y % scalar
+ *         return vec
+ * 
+ *     def __mod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
+ *         """Vector % scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 622, __pyx_L1_error)
-    __pyx_v_scalar = __pyx_t_5;
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 622, __pyx_L1_error)
 
     /* "srctools/_vec.pyx":623
- *             _conv_vec(&vec.val, obj_a, scalar=False)
- *             scalar = obj_b
- *             vec.val.x = vec.val.x % scalar             # <<<<<<<<<<<<<<
- *             vec.val.y = vec.val.y % scalar
- *             vec.val.z = vec.val.z % scalar
+ * 
+ *     def __mod__(obj_a, obj_b):
+ *         """Vector % scalar operation."""             # <<<<<<<<<<<<<<
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
  */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 623, __pyx_L1_error)
-    }
-    __pyx_v_vec->val.x = __Pyx_mod_double(__pyx_v_vec->val.x, __pyx_v_scalar);
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 623, __pyx_L1_error)
+    __pyx_v_scalar = __pyx_t_5;
 
     /* "srctools/_vec.pyx":624
- *             scalar = obj_b
- *             vec.val.x = vec.val.x % scalar
- *             vec.val.y = vec.val.y % scalar             # <<<<<<<<<<<<<<
- *             vec.val.z = vec.val.z % scalar
- * 
+ *     def __mod__(obj_a, obj_b):
+ *         """Vector % scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double scalar
+ *         # Vector % Vector is disallowed.
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
       __PYX_ERR(0, 624, __pyx_L1_error)
     }
-    __pyx_v_vec->val.y = __Pyx_mod_double(__pyx_v_vec->val.y, __pyx_v_scalar);
+    __pyx_v_vec->val.x = __Pyx_mod_double(__pyx_v_vec->val.x, __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":625
- *             vec.val.x = vec.val.x % scalar
- *             vec.val.y = vec.val.y % scalar
- *             vec.val.z = vec.val.z % scalar             # <<<<<<<<<<<<<<
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *         """Vector % scalar operation."""
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar             # <<<<<<<<<<<<<<
+ *         # Vector % Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
       __PYX_ERR(0, 625, __pyx_L1_error)
     }
+    __pyx_v_vec->val.y = __Pyx_mod_double(__pyx_v_vec->val.y, __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":626
+ *         cdef Vec vec = Vec.__new__(Vec)
+ *         cdef double scalar
+ *         # Vector % Vector is disallowed.             # <<<<<<<<<<<<<<
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar % vector
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+      __PYX_ERR(0, 626, __pyx_L1_error)
+    }
     __pyx_v_vec->val.z = __Pyx_mod_double(__pyx_v_vec->val.z, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":619
- *             vec.val.y = scalar % vec.val.y
- *             vec.val.z = scalar % vec.val.z
- *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
- *             # vector % scalar.
- *             _conv_vec(&vec.val, obj_a, scalar=False)
+    /* "srctools/_vec.pyx":620
+ *             # Both vector-like or vector * something else.
+ *             return NotImplemented
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ *     def __mod__(obj_a, obj_b):
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":627
- *             vec.val.z = vec.val.z % scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot modulus 2 Vectors.')
- *         else:
+  /* "srctools/_vec.pyx":628
+ *         # Vector % Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar % vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -8649,34 +8649,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":628
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+    /* "srctools/_vec.pyx":629
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar % vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar % vec.val.x
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 628, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 629, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 628, __pyx_L1_error)
+    __PYX_ERR(0, 629, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":627
- *             vec.val.z = vec.val.z % scalar
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError('Cannot modulus 2 Vectors.')
- *         else:
+    /* "srctools/_vec.pyx":628
+ *         # Vector % Vector is disallowed.
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar % vector             # <<<<<<<<<<<<<<
+ *             scalar = obj_a
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
  */
   }
 
-  /* "srctools/_vec.pyx":631
- *         else:
- *             # Both vector-like or vector * something else.
- *             return NotImplemented             # <<<<<<<<<<<<<<
- *         return vec
- * 
+  /* "srctools/_vec.pyx":632
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar % vec.val.x
+ *             vec.val.y = scalar % vec.val.y             # <<<<<<<<<<<<<<
+ *             vec.val.z = scalar % vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -8686,24 +8686,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":632
- *             # Both vector-like or vector * something else.
- *             return NotImplemented
- *         return vec             # <<<<<<<<<<<<<<
- * 
- *     # In-place operators. Self is always a Vec.
+  /* "srctools/_vec.pyx":633
+ *             vec.val.x = scalar % vec.val.x
+ *             vec.val.y = scalar % vec.val.y
+ *             vec.val.z = scalar % vec.val.z             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector % scalar.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":607
- *         return vec
- * 
- *     def __mod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
- *         """Vector % scalar operation."""
- *         cdef Vec vec = Vec.__new__(Vec)
+  /* "srctools/_vec.pyx":608
+ *             vec.val.z = scalar // vec.val.z
+ *         elif isinstance(obj_b, (int, float)):
+ *             # vector // scalar.             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b
  */
 
   /* function exit code */
@@ -8718,12 +8718,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mod__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":636
- *     # In-place operators. Self is always a Vec.
- * 
- *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
- *         """+= operation.
- * 
+/* "srctools/_vec.pyx":637
+ *             # vector % scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b             # <<<<<<<<<<<<<<
+ *             vec.val.x = vec.val.x % scalar
+ *             vec.val.y = vec.val.y % scalar
  */
 
 /* Python wrapper */
@@ -8757,12 +8757,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("__iadd__", 0);
 
-  /* "srctools/_vec.pyx":642
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):
+  /* "srctools/_vec.pyx":643
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
  */
   {
     __Pyx_PyThreadState_declare
@@ -8773,21 +8773,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":643
- *         cdef vec_t vec_other
- *         try:
- *             _conv_vec(&vec_other, other, scalar=True)             # <<<<<<<<<<<<<<
- *         except (TypeError, ValueError):
+      /* "srctools/_vec.pyx":644
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot modulus 2 Vectors.')
+ *         else:             # <<<<<<<<<<<<<<
+ *             # Both vector-like or vector * something else.
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 643, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 644, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":642
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):
+      /* "srctools/_vec.pyx":643
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
  */
     }
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -8796,27 +8796,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":644
- *         try:
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":645
+ *             raise TypeError('Cannot modulus 2 Vectors.')
+ *         else:
+ *             # Both vector-like or vector * something else.             # <<<<<<<<<<<<<<
  *             return NotImplemented
- * 
+ *         return vec
  */
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__iadd__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 644, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 645, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":645
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):
+      /* "srctools/_vec.pyx":646
+ *         else:
+ *             # Both vector-like or vector * something else.
  *             return NotImplemented             # <<<<<<<<<<<<<<
+ *         return vec
  * 
- *         self.val.x += vec_other.x
  */
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -8829,12 +8829,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":642
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):
+    /* "srctools/_vec.pyx":643
+ * 
+ *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
+ *         else:
+ *             # Both vector-like or vector * something else.
  */
     __Pyx_XGIVEREF(__pyx_t_1);
     __Pyx_XGIVEREF(__pyx_t_2);
@@ -8850,51 +8850,51 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":647
+  /* "srctools/_vec.pyx":648
  *             return NotImplemented
+ *         return vec
+ *              # <<<<<<<<<<<<<<
+ *     # In-place operators. Self is always a Vec.
  * 
- *         self.val.x += vec_other.x             # <<<<<<<<<<<<<<
- *         self.val.y += vec_other.y
- *         self.val.z += vec_other.z
  */
   __pyx_v_self->val.x = (__pyx_v_self->val.x + __pyx_v_vec_other.x);
 
-  /* "srctools/_vec.pyx":648
+  /* "srctools/_vec.pyx":649
+ *         return vec
  * 
- *         self.val.x += vec_other.x
- *         self.val.y += vec_other.y             # <<<<<<<<<<<<<<
- *         self.val.z += vec_other.z
+ *     # In-place operators. Self is always a Vec.             # <<<<<<<<<<<<<<
  * 
+ *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):
  */
   __pyx_v_self->val.y = (__pyx_v_self->val.y + __pyx_v_vec_other.y);
 
-  /* "srctools/_vec.pyx":649
- *         self.val.x += vec_other.x
- *         self.val.y += vec_other.y
- *         self.val.z += vec_other.z             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":650
  * 
- *         return self
+ *     # In-place operators. Self is always a Vec.
+ *              # <<<<<<<<<<<<<<
+ *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):
+ *         """+= operation.
  */
   __pyx_v_self->val.z = (__pyx_v_self->val.z + __pyx_v_vec_other.z);
 
-  /* "srctools/_vec.pyx":651
- *         self.val.z += vec_other.z
+  /* "srctools/_vec.pyx":652
  * 
- *         return self             # <<<<<<<<<<<<<<
+ *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):
+ *         """+= operation.             # <<<<<<<<<<<<<<
  * 
- *     def __isub__(self, other: 'Union[Vec, tuple, float]'):
+ *         Like the normal one except without duplication.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":636
- *     # In-place operators. Self is always a Vec.
- * 
- *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
- *         """+= operation.
- * 
+  /* "srctools/_vec.pyx":637
+ *             # vector % scalar.
+ *             _conv_vec(&vec.val, obj_a, scalar=False)
+ *             scalar = obj_b             # <<<<<<<<<<<<<<
+ *             vec.val.x = vec.val.x % scalar
+ *             vec.val.y = vec.val.y % scalar
  */
 
   /* function exit code */
@@ -8910,12 +8910,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__iadd__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":653
- *         return self
+/* "srctools/_vec.pyx":654
+ *         """+= operation.
  * 
- *     def __isub__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
- *         """-= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_other
  */
 
 /* Python wrapper */
@@ -8949,12 +8949,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
   PyObject *__pyx_t_8 = NULL;
   __Pyx_RefNannySetupContext("__isub__", 0);
 
-  /* "srctools/_vec.pyx":659
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":660
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *         self.val.x += vec_other.x
  */
   {
     __Pyx_PyThreadState_declare
@@ -8965,21 +8965,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":660
- *         cdef vec_t vec_other
- *         try:
- *             _conv_vec(&vec_other, other, scalar=True)             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":661
  *         except (TypeError, ValueError):
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *         self.val.x += vec_other.x
+ *         self.val.y += vec_other.y
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 660, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 661, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":659
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":660
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *         self.val.x += vec_other.x
  */
     }
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
@@ -8988,27 +8988,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":661
- *         try:
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":662
  *             return NotImplemented
  * 
+ *         self.val.x += vec_other.x             # <<<<<<<<<<<<<<
+ *         self.val.y += vec_other.y
+ *         self.val.z += vec_other.z
  */
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__isub__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 661, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 662, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":662
- *             _conv_vec(&vec_other, other, scalar=True)
- *         except (TypeError, ValueError):
- *             return NotImplemented             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":663
  * 
- *         self.val.x -= vec_other.x
+ *         self.val.x += vec_other.x
+ *         self.val.y += vec_other.y             # <<<<<<<<<<<<<<
+ *         self.val.z += vec_other.z
+ * 
  */
       __Pyx_XDECREF(__pyx_r);
       __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -9021,12 +9021,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":659
- *         """
- *         cdef vec_t vec_other
- *         try:             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":660
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *         self.val.x += vec_other.x
  */
     __Pyx_XGIVEREF(__pyx_t_1);
     __Pyx_XGIVEREF(__pyx_t_2);
@@ -9042,51 +9042,51 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":664
- *             return NotImplemented
+  /* "srctools/_vec.pyx":665
+ *         self.val.y += vec_other.y
+ *         self.val.z += vec_other.z
+ *              # <<<<<<<<<<<<<<
+ *         return self
  * 
- *         self.val.x -= vec_other.x             # <<<<<<<<<<<<<<
- *         self.val.y -= vec_other.y
- *         self.val.z -= vec_other.z
  */
   __pyx_v_self->val.x = (__pyx_v_self->val.x - __pyx_v_vec_other.x);
 
-  /* "srctools/_vec.pyx":665
- * 
- *         self.val.x -= vec_other.x
- *         self.val.y -= vec_other.y             # <<<<<<<<<<<<<<
- *         self.val.z -= vec_other.z
- * 
- */
-  __pyx_v_self->val.y = (__pyx_v_self->val.y - __pyx_v_vec_other.y);
-
   /* "srctools/_vec.pyx":666
- *         self.val.x -= vec_other.x
- *         self.val.y -= vec_other.y
- *         self.val.z -= vec_other.z             # <<<<<<<<<<<<<<
- * 
- *         return self
- */
-  __pyx_v_self->val.z = (__pyx_v_self->val.z - __pyx_v_vec_other.z);
-
-  /* "srctools/_vec.pyx":668
- *         self.val.z -= vec_other.z
+ *         self.val.z += vec_other.z
  * 
  *         return self             # <<<<<<<<<<<<<<
  * 
- *     def __imul__(self, object other: float):
+ *     def __isub__(self, other: 'Union[Vec, tuple, float]'):
+ */
+  __pyx_v_self->val.y = (__pyx_v_self->val.y - __pyx_v_vec_other.y);
+
+  /* "srctools/_vec.pyx":667
+ * 
+ *         return self
+ *              # <<<<<<<<<<<<<<
+ *     def __isub__(self, other: 'Union[Vec, tuple, float]'):
+ *         """-= operation.
+ */
+  __pyx_v_self->val.z = (__pyx_v_self->val.z - __pyx_v_vec_other.z);
+
+  /* "srctools/_vec.pyx":669
+ * 
+ *     def __isub__(self, other: 'Union[Vec, tuple, float]'):
+ *         """-= operation.             # <<<<<<<<<<<<<<
+ * 
+ *         Like the normal one except without duplication.
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":653
- *         return self
+  /* "srctools/_vec.pyx":654
+ *         """+= operation.
  * 
- *     def __isub__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
- *         """-= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_other
  */
 
   /* function exit code */
@@ -9102,12 +9102,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__isub__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":670
- *         return self
+/* "srctools/_vec.pyx":671
+ *         """-= operation.
  * 
- *     def __imul__(self, object other: float):             # <<<<<<<<<<<<<<
- *         """*= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_other
  */
 
 /* Python wrapper */
@@ -9122,7 +9122,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_47__imul__(PyObject *__pyx_v_self
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__imul__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 670, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 671, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9147,14 +9147,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__imul__(struct __pyx_obj_8srct
   int __pyx_t_4;
   __Pyx_RefNannySetupContext("__imul__", 0);
 
-  /* "srctools/_vec.pyx":676
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
- *             scalar = other
- *             self.val.x *= scalar
+  /* "srctools/_vec.pyx":677
+ *             _conv_vec(&vec_other, other, scalar=True)
+ *         except (TypeError, ValueError):
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *         self.val.x -= vec_other.x
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 676, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 677, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9164,7 +9164,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__imul__(struct __pyx_obj_8srct
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 676, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 677, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9174,105 +9174,105 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__imul__(struct __pyx_obj_8srct
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":677
- *         cdef double scalar
- *         if isinstance(other, (int, float)):
- *             scalar = other             # <<<<<<<<<<<<<<
- *             self.val.x *= scalar
- *             self.val.y *= scalar
+    /* "srctools/_vec.pyx":678
+ *         except (TypeError, ValueError):
+ *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *         self.val.x -= vec_other.x
+ *         self.val.y -= vec_other.y
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":678
- *         if isinstance(other, (int, float)):
- *             scalar = other
- *             self.val.x *= scalar             # <<<<<<<<<<<<<<
- *             self.val.y *= scalar
- *             self.val.z *= scalar
+    /* "srctools/_vec.pyx":679
+ *             return NotImplemented
+ * 
+ *         self.val.x -= vec_other.x             # <<<<<<<<<<<<<<
+ *         self.val.y -= vec_other.y
+ *         self.val.z -= vec_other.z
  */
     __pyx_v_self->val.x = (__pyx_v_self->val.x * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":679
- *             scalar = other
- *             self.val.x *= scalar
- *             self.val.y *= scalar             # <<<<<<<<<<<<<<
- *             self.val.z *= scalar
- *             return self
+    /* "srctools/_vec.pyx":680
+ * 
+ *         self.val.x -= vec_other.x
+ *         self.val.y -= vec_other.y             # <<<<<<<<<<<<<<
+ *         self.val.z -= vec_other.z
+ * 
  */
     __pyx_v_self->val.y = (__pyx_v_self->val.y * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":680
- *             self.val.x *= scalar
- *             self.val.y *= scalar
- *             self.val.z *= scalar             # <<<<<<<<<<<<<<
- *             return self
- *         elif isinstance(other, Vec):
+    /* "srctools/_vec.pyx":681
+ *         self.val.x -= vec_other.x
+ *         self.val.y -= vec_other.y
+ *         self.val.z -= vec_other.z             # <<<<<<<<<<<<<<
+ * 
+ *         return self
  */
     __pyx_v_self->val.z = (__pyx_v_self->val.z * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":681
- *             self.val.y *= scalar
- *             self.val.z *= scalar
- *             return self             # <<<<<<<<<<<<<<
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot multiply 2 Vectors.")
+    /* "srctools/_vec.pyx":682
+ *         self.val.y -= vec_other.y
+ *         self.val.z -= vec_other.z
+ *              # <<<<<<<<<<<<<<
+ *         return self
+ * 
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(((PyObject *)__pyx_v_self));
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":676
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
- *             scalar = other
- *             self.val.x *= scalar
+    /* "srctools/_vec.pyx":677
+ *             _conv_vec(&vec_other, other, scalar=True)
+ *         except (TypeError, ValueError):
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *         self.val.x -= vec_other.x
  */
   }
 
-  /* "srctools/_vec.pyx":682
- *             self.val.z *= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot multiply 2 Vectors.")
- *         else:
+  /* "srctools/_vec.pyx":683
+ *         self.val.z -= vec_other.z
+ * 
+ *         return self             # <<<<<<<<<<<<<<
+ * 
+ *     def __imul__(self, object other: float):
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 682, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 683, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":683
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot multiply 2 Vectors.")             # <<<<<<<<<<<<<<
- *         else:
- *             return NotImplemented
+    /* "srctools/_vec.pyx":684
+ * 
+ *         return self
+ *              # <<<<<<<<<<<<<<
+ *     def __imul__(self, object other: float):
+ *         """*= operation.
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 683, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 684, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 683, __pyx_L1_error)
+    __PYX_ERR(0, 684, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":682
- *             self.val.z *= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot multiply 2 Vectors.")
- *         else:
+    /* "srctools/_vec.pyx":683
+ *         self.val.z -= vec_other.z
+ * 
+ *         return self             # <<<<<<<<<<<<<<
+ * 
+ *     def __imul__(self, object other: float):
  */
   }
 
-  /* "srctools/_vec.pyx":685
- *             raise TypeError("Cannot multiply 2 Vectors.")
- *         else:
- *             return NotImplemented             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":686
  * 
- *     def __itruediv__(self, other: float):
+ *     def __imul__(self, object other: float):
+ *         """*= operation.             # <<<<<<<<<<<<<<
+ * 
+ *         Like the normal one except without duplication.
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -9281,12 +9281,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__imul__(struct __pyx_obj_8srct
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":670
- *         return self
+  /* "srctools/_vec.pyx":671
+ *         """-= operation.
  * 
- *     def __imul__(self, object other: float):             # <<<<<<<<<<<<<<
- *         """*= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef vec_t vec_other
  */
 
   /* function exit code */
@@ -9300,12 +9300,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__imul__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":687
- *             return NotImplemented
+/* "srctools/_vec.pyx":688
+ *         """*= operation.
  * 
- *     def __itruediv__(self, other: float):             # <<<<<<<<<<<<<<
- *         """/= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
 /* Python wrapper */
@@ -9320,7 +9320,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_49__itruediv__(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__itruediv__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 687, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 688, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9345,14 +9345,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__itruediv__(struct __pyx_obj_8
   int __pyx_t_4;
   __Pyx_RefNannySetupContext("__itruediv__", 0);
 
-  /* "srctools/_vec.pyx":693
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":694
  *             scalar = other
- *             self.val.x /= scalar
+ *             self.val.x *= scalar
+ *             self.val.y *= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z *= scalar
+ *             return self
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 693, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 694, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9362,7 +9362,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__itruediv__(struct __pyx_obj_8
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 693, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 694, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9372,117 +9372,117 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__itruediv__(struct __pyx_obj_8
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":694
- *         cdef double scalar
- *         if isinstance(other, (int, float)):
- *             scalar = other             # <<<<<<<<<<<<<<
- *             self.val.x /= scalar
- *             self.val.y /= scalar
+    /* "srctools/_vec.pyx":695
+ *             self.val.x *= scalar
+ *             self.val.y *= scalar
+ *             self.val.z *= scalar             # <<<<<<<<<<<<<<
+ *             return self
+ *         elif isinstance(other, Vec):
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":695
- *         if isinstance(other, (int, float)):
- *             scalar = other
- *             self.val.x /= scalar             # <<<<<<<<<<<<<<
- *             self.val.y /= scalar
- *             self.val.z /= scalar
- */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 695, __pyx_L1_error)
-    }
-    __pyx_v_self->val.x = (__pyx_v_self->val.x / __pyx_v_scalar);
-
     /* "srctools/_vec.pyx":696
- *             scalar = other
- *             self.val.x /= scalar
- *             self.val.y /= scalar             # <<<<<<<<<<<<<<
- *             self.val.z /= scalar
- *             return self
+ *             self.val.y *= scalar
+ *             self.val.z *= scalar
+ *             return self             # <<<<<<<<<<<<<<
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot multiply 2 Vectors.")
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 696, __pyx_L1_error)
     }
-    __pyx_v_self->val.y = (__pyx_v_self->val.y / __pyx_v_scalar);
+    __pyx_v_self->val.x = (__pyx_v_self->val.x / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":697
- *             self.val.x /= scalar
- *             self.val.y /= scalar
- *             self.val.z /= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z *= scalar
  *             return self
- *         elif isinstance(other, Vec):
+ *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot multiply 2 Vectors.")
+ *         else:
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 697, __pyx_L1_error)
     }
-    __pyx_v_self->val.z = (__pyx_v_self->val.z / __pyx_v_scalar);
+    __pyx_v_self->val.y = (__pyx_v_self->val.y / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":698
- *             self.val.y /= scalar
- *             self.val.z /= scalar
- *             return self             # <<<<<<<<<<<<<<
+ *             return self
  *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")
+ *             raise TypeError("Cannot multiply 2 Vectors.")             # <<<<<<<<<<<<<<
+ *         else:
+ *             return NotImplemented
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 698, __pyx_L1_error)
+    }
+    __pyx_v_self->val.z = (__pyx_v_self->val.z / __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":699
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot multiply 2 Vectors.")
+ *         else:             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(((PyObject *)__pyx_v_self));
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":693
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":694
  *             scalar = other
- *             self.val.x /= scalar
+ *             self.val.x *= scalar
+ *             self.val.y *= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z *= scalar
+ *             return self
  */
   }
 
-  /* "srctools/_vec.pyx":699
- *             self.val.z /= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot divide 2 Vectors.")
+  /* "srctools/_vec.pyx":700
+ *             raise TypeError("Cannot multiply 2 Vectors.")
  *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __itruediv__(self, other: float):
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 699, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 700, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":700
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":701
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __itruediv__(self, other: float):
+ *         """/= operation.
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 700, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 701, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 700, __pyx_L1_error)
+    __PYX_ERR(0, 701, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":699
- *             self.val.z /= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot divide 2 Vectors.")
- *         else:
- */
-  }
-
-  /* "srctools/_vec.pyx":702
- *             raise TypeError("Cannot divide 2 Vectors.")
+    /* "srctools/_vec.pyx":700
+ *             raise TypeError("Cannot multiply 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
  * 
- *     def __ifloordiv__(self, other: float):
+ *     def __itruediv__(self, other: float):
+ */
+  }
+
+  /* "srctools/_vec.pyx":703
+ * 
+ *     def __itruediv__(self, other: float):
+ *         """/= operation.             # <<<<<<<<<<<<<<
+ * 
+ *         Like the normal one except without duplication.
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -9491,12 +9491,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__itruediv__(struct __pyx_obj_8
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":687
- *             return NotImplemented
+  /* "srctools/_vec.pyx":688
+ *         """*= operation.
  * 
- *     def __itruediv__(self, other: float):             # <<<<<<<<<<<<<<
- *         """/= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
   /* function exit code */
@@ -9510,12 +9510,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__itruediv__(struct __pyx_obj_8
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":704
- *             return NotImplemented
+/* "srctools/_vec.pyx":705
+ *         """/= operation.
  * 
- *     def __ifloordiv__(self, other: float):             # <<<<<<<<<<<<<<
- *         """//= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
 /* Python wrapper */
@@ -9530,7 +9530,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_51__ifloordiv__(PyObject *__pyx_v
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__ifloordiv__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 704, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 705, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9555,14 +9555,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__ifloordiv__(struct __pyx_obj_
   int __pyx_t_4;
   __Pyx_RefNannySetupContext("__ifloordiv__", 0);
 
-  /* "srctools/_vec.pyx":710
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":711
  *             scalar = other
- *             self.val.x //= scalar
+ *             self.val.x /= scalar
+ *             self.val.y /= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z /= scalar
+ *             return self
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 710, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 711, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9572,7 +9572,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__ifloordiv__(struct __pyx_obj_
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 710, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 711, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9582,117 +9582,117 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__ifloordiv__(struct __pyx_obj_
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":711
- *         cdef double scalar
- *         if isinstance(other, (int, float)):
- *             scalar = other             # <<<<<<<<<<<<<<
- *             self.val.x //= scalar
- *             self.val.y //= scalar
+    /* "srctools/_vec.pyx":712
+ *             self.val.x /= scalar
+ *             self.val.y /= scalar
+ *             self.val.z /= scalar             # <<<<<<<<<<<<<<
+ *             return self
+ *         elif isinstance(other, Vec):
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":712
- *         if isinstance(other, (int, float)):
- *             scalar = other
- *             self.val.x //= scalar             # <<<<<<<<<<<<<<
- *             self.val.y //= scalar
- *             self.val.z //= scalar
- */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 712, __pyx_L1_error)
-    }
-    __pyx_v_self->val.x = floor(__pyx_v_self->val.x / __pyx_v_scalar);
-
     /* "srctools/_vec.pyx":713
- *             scalar = other
- *             self.val.x //= scalar
- *             self.val.y //= scalar             # <<<<<<<<<<<<<<
- *             self.val.z //= scalar
- *             return self
+ *             self.val.y /= scalar
+ *             self.val.z /= scalar
+ *             return self             # <<<<<<<<<<<<<<
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot divide 2 Vectors.")
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 713, __pyx_L1_error)
     }
-    __pyx_v_self->val.y = floor(__pyx_v_self->val.y / __pyx_v_scalar);
+    __pyx_v_self->val.x = floor(__pyx_v_self->val.x / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":714
- *             self.val.x //= scalar
- *             self.val.y //= scalar
- *             self.val.z //= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z /= scalar
  *             return self
- *         elif isinstance(other, Vec):
+ *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot divide 2 Vectors.")
+ *         else:
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
       __PYX_ERR(0, 714, __pyx_L1_error)
     }
-    __pyx_v_self->val.z = floor(__pyx_v_self->val.z / __pyx_v_scalar);
+    __pyx_v_self->val.y = floor(__pyx_v_self->val.y / __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":715
- *             self.val.y //= scalar
- *             self.val.z //= scalar
- *             return self             # <<<<<<<<<<<<<<
+ *             return self
  *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot floor-divide 2 Vectors.")
+ *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
+ *         else:
+ *             return NotImplemented
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 715, __pyx_L1_error)
+    }
+    __pyx_v_self->val.z = floor(__pyx_v_self->val.z / __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":716
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot divide 2 Vectors.")
+ *         else:             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(((PyObject *)__pyx_v_self));
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":710
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":711
  *             scalar = other
- *             self.val.x //= scalar
+ *             self.val.x /= scalar
+ *             self.val.y /= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z /= scalar
+ *             return self
  */
   }
 
-  /* "srctools/_vec.pyx":716
- *             self.val.z //= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot floor-divide 2 Vectors.")
+  /* "srctools/_vec.pyx":717
+ *             raise TypeError("Cannot divide 2 Vectors.")
  *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __ifloordiv__(self, other: float):
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 716, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 717, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":717
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot floor-divide 2 Vectors.")             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":718
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __ifloordiv__(self, other: float):
+ *         """//= operation.
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 717, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__14, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 718, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 717, __pyx_L1_error)
+    __PYX_ERR(0, 718, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":716
- *             self.val.z //= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot floor-divide 2 Vectors.")
- *         else:
- */
-  }
-
-  /* "srctools/_vec.pyx":719
- *             raise TypeError("Cannot floor-divide 2 Vectors.")
+    /* "srctools/_vec.pyx":717
+ *             raise TypeError("Cannot divide 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
  * 
- *     def __imod__(self, other: float):
+ *     def __ifloordiv__(self, other: float):
+ */
+  }
+
+  /* "srctools/_vec.pyx":720
+ * 
+ *     def __ifloordiv__(self, other: float):
+ *         """//= operation.             # <<<<<<<<<<<<<<
+ * 
+ *         Like the normal one except without duplication.
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -9701,12 +9701,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__ifloordiv__(struct __pyx_obj_
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":704
- *             return NotImplemented
+  /* "srctools/_vec.pyx":705
+ *         """/= operation.
  * 
- *     def __ifloordiv__(self, other: float):             # <<<<<<<<<<<<<<
- *         """//= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
   /* function exit code */
@@ -9720,12 +9720,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__ifloordiv__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":721
- *             return NotImplemented
+/* "srctools/_vec.pyx":722
+ *         """//= operation.
  * 
- *     def __imod__(self, other: float):             # <<<<<<<<<<<<<<
- *         """%= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
 /* Python wrapper */
@@ -9740,7 +9740,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_53__imod__(PyObject *__pyx_v_self
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__imod__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 721, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 722, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -9765,14 +9765,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__imod__(struct __pyx_obj_8srct
   int __pyx_t_4;
   __Pyx_RefNannySetupContext("__imod__", 0);
 
-  /* "srctools/_vec.pyx":727
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":728
  *             scalar = other
- *             self.val.x %= scalar
+ *             self.val.x //= scalar
+ *             self.val.y //= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z //= scalar
+ *             return self
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 727, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 728, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9782,7 +9782,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__imod__(struct __pyx_obj_8srct
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 727, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 728, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -9792,117 +9792,117 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__imod__(struct __pyx_obj_8srct
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":728
- *         cdef double scalar
- *         if isinstance(other, (int, float)):
- *             scalar = other             # <<<<<<<<<<<<<<
- *             self.val.x %= scalar
- *             self.val.y %= scalar
+    /* "srctools/_vec.pyx":729
+ *             self.val.x //= scalar
+ *             self.val.y //= scalar
+ *             self.val.z //= scalar             # <<<<<<<<<<<<<<
+ *             return self
+ *         elif isinstance(other, Vec):
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":729
- *         if isinstance(other, (int, float)):
- *             scalar = other
- *             self.val.x %= scalar             # <<<<<<<<<<<<<<
- *             self.val.y %= scalar
- *             self.val.z %= scalar
- */
-    if (unlikely(__pyx_v_scalar == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 729, __pyx_L1_error)
-    }
-    __pyx_v_self->val.x = __Pyx_mod_double(__pyx_v_self->val.x, __pyx_v_scalar);
-
     /* "srctools/_vec.pyx":730
- *             scalar = other
- *             self.val.x %= scalar
- *             self.val.y %= scalar             # <<<<<<<<<<<<<<
- *             self.val.z %= scalar
- *             return self
+ *             self.val.y //= scalar
+ *             self.val.z //= scalar
+ *             return self             # <<<<<<<<<<<<<<
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
       __PYX_ERR(0, 730, __pyx_L1_error)
     }
-    __pyx_v_self->val.y = __Pyx_mod_double(__pyx_v_self->val.y, __pyx_v_scalar);
+    __pyx_v_self->val.x = __Pyx_mod_double(__pyx_v_self->val.x, __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":731
- *             self.val.x %= scalar
- *             self.val.y %= scalar
- *             self.val.z %= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z //= scalar
  *             return self
- *         elif isinstance(other, Vec):
+ *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")
+ *         else:
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
       __PYX_ERR(0, 731, __pyx_L1_error)
     }
-    __pyx_v_self->val.z = __Pyx_mod_double(__pyx_v_self->val.z, __pyx_v_scalar);
+    __pyx_v_self->val.y = __Pyx_mod_double(__pyx_v_self->val.y, __pyx_v_scalar);
 
     /* "srctools/_vec.pyx":732
- *             self.val.y %= scalar
- *             self.val.z %= scalar
- *             return self             # <<<<<<<<<<<<<<
+ *             return self
  *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot modulus 2 Vectors.")
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")             # <<<<<<<<<<<<<<
+ *         else:
+ *             return NotImplemented
+ */
+    if (unlikely(__pyx_v_scalar == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+      __PYX_ERR(0, 732, __pyx_L1_error)
+    }
+    __pyx_v_self->val.z = __Pyx_mod_double(__pyx_v_self->val.z, __pyx_v_scalar);
+
+    /* "srctools/_vec.pyx":733
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")
+ *         else:             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(((PyObject *)__pyx_v_self));
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":727
- *         """
- *         cdef double scalar
- *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":728
  *             scalar = other
- *             self.val.x %= scalar
+ *             self.val.x //= scalar
+ *             self.val.y //= scalar             # <<<<<<<<<<<<<<
+ *             self.val.z //= scalar
+ *             return self
  */
   }
 
-  /* "srctools/_vec.pyx":733
- *             self.val.z %= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot modulus 2 Vectors.")
+  /* "srctools/_vec.pyx":734
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")
  *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __imod__(self, other: float):
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 733, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 734, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":734
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot modulus 2 Vectors.")             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":735
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __imod__(self, other: float):
+ *         """%= operation.
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 734, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__15, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 735, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 734, __pyx_L1_error)
+    __PYX_ERR(0, 735, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":733
- *             self.val.z %= scalar
- *             return self
- *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot modulus 2 Vectors.")
- *         else:
- */
-  }
-
-  /* "srctools/_vec.pyx":736
- *             raise TypeError("Cannot modulus 2 Vectors.")
+    /* "srctools/_vec.pyx":734
+ *             raise TypeError("Cannot floor-divide 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
  * 
- *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
+ *     def __imod__(self, other: float):
+ */
+  }
+
+  /* "srctools/_vec.pyx":737
+ * 
+ *     def __imod__(self, other: float):
+ *         """%= operation.             # <<<<<<<<<<<<<<
+ * 
+ *         Like the normal one except without duplication.
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -9911,12 +9911,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__imod__(struct __pyx_obj_8srct
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":721
- *             return NotImplemented
+  /* "srctools/_vec.pyx":722
+ *         """//= operation.
  * 
- *     def __imod__(self, other: float):             # <<<<<<<<<<<<<<
- *         """%= operation.
- * 
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
   /* function exit code */
@@ -9930,12 +9930,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__imod__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":738
- *             return NotImplemented
+/* "srctools/_vec.pyx":739
+ *         """%= operation.
  * 
- *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
- *         """Divide the vector by a scalar, returning the result and remainder."""
- *         cdef Vec vec
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
 /* Python wrapper */
@@ -9975,36 +9975,36 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
   PyObject *__pyx_t_11 = NULL;
   __Pyx_RefNannySetupContext("__divmod__", 0);
 
-  /* "srctools/_vec.pyx":741
- *         """Divide the vector by a scalar, returning the result and remainder."""
- *         cdef Vec vec
- *         cdef Vec res_1 = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef Vec res_2 = Vec.__new__(Vec)
- *         cdef double other_d
+  /* "srctools/_vec.pyx":742
+ *         """
+ *         cdef double scalar
+ *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
+ *             scalar = other
+ *             self.val.x %= scalar
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 741, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 742, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_res_1 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":742
- *         cdef Vec vec
- *         cdef Vec res_1 = Vec.__new__(Vec)
- *         cdef Vec res_2 = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double other_d
- * 
+  /* "srctools/_vec.pyx":743
+ *         cdef double scalar
+ *         if isinstance(other, (int, float)):
+ *             scalar = other             # <<<<<<<<<<<<<<
+ *             self.val.x %= scalar
+ *             self.val.y %= scalar
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 742, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 743, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_res_2 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":745
- *         cdef double other_d
- * 
- *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot divide 2 Vectors.")
- *         elif isinstance(obj_a, Vec):
+  /* "srctools/_vec.pyx":746
+ *             self.val.x %= scalar
+ *             self.val.y %= scalar
+ *             self.val.z %= scalar             # <<<<<<<<<<<<<<
+ *             return self
+ *         elif isinstance(other, Vec):
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_4 = (__pyx_t_3 != 0);
@@ -10019,57 +10019,57 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
   __pyx_L4_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":746
- * 
- *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_a, Vec):
- *             # vec / val
+    /* "srctools/_vec.pyx":747
+ *             self.val.y %= scalar
+ *             self.val.z %= scalar
+ *             return self             # <<<<<<<<<<<<<<
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot modulus 2 Vectors.")
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 746, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 747, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 746, __pyx_L1_error)
+    __PYX_ERR(0, 747, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":745
- *         cdef double other_d
- * 
- *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             raise TypeError("Cannot divide 2 Vectors.")
- *         elif isinstance(obj_a, Vec):
+    /* "srctools/_vec.pyx":746
+ *             self.val.x %= scalar
+ *             self.val.y %= scalar
+ *             self.val.z %= scalar             # <<<<<<<<<<<<<<
+ *             return self
+ *         elif isinstance(other, Vec):
  */
   }
 
-  /* "srctools/_vec.pyx":747
- *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")
- *         elif isinstance(obj_a, Vec):             # <<<<<<<<<<<<<<
- *             # vec / val
- *             vec = <Vec>obj_a
+  /* "srctools/_vec.pyx":748
+ *             self.val.z %= scalar
+ *             return self
+ *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:
  */
   __pyx_t_2 = __Pyx_TypeCheck(__pyx_v_obj_a, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":749
- *         elif isinstance(obj_a, Vec):
- *             # vec / val
- *             vec = <Vec>obj_a             # <<<<<<<<<<<<<<
- *             try:
- *                 other_d = <double ?>obj_b
+    /* "srctools/_vec.pyx":750
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:             # <<<<<<<<<<<<<<
+ *             return NotImplemented
+ * 
  */
     __pyx_t_1 = __pyx_v_obj_a;
     __Pyx_INCREF(__pyx_t_1);
     __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "srctools/_vec.pyx":750
- *             # vec / val
- *             vec = <Vec>obj_a
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_b
- *             except TypeError:
+    /* "srctools/_vec.pyx":751
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
  */
     {
       __Pyx_PyThreadState_declare
@@ -10080,22 +10080,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __Pyx_XGOTREF(__pyx_t_7);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":751
- *             vec = <Vec>obj_a
- *             try:
- *                 other_d = <double ?>obj_b             # <<<<<<<<<<<<<<
- *             except TypeError:
- *                 return NotImplemented
+        /* "srctools/_vec.pyx":752
+ *         else:
+ *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
+ *         """Divide the vector by a scalar, returning the result and remainder."""
  */
-        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 751, __pyx_L6_error)
+        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 752, __pyx_L6_error)
         __pyx_v_other_d = ((double)__pyx_t_8);
 
-        /* "srctools/_vec.pyx":750
- *             # vec / val
- *             vec = <Vec>obj_a
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_b
- *             except TypeError:
+        /* "srctools/_vec.pyx":751
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
  */
       }
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -10105,27 +10105,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __pyx_L6_error:;
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "srctools/_vec.pyx":752
- *             try:
- *                 other_d = <double ?>obj_b
- *             except TypeError:             # <<<<<<<<<<<<<<
- *                 return NotImplemented
+      /* "srctools/_vec.pyx":753
+ *             return NotImplemented
  * 
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
+ *         """Divide the vector by a scalar, returning the result and remainder."""
+ *         cdef Vec vec
  */
       __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError);
       if (__pyx_t_9) {
         __Pyx_AddTraceback("srctools._vec.Vec.__divmod__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_10, &__pyx_t_11) < 0) __PYX_ERR(0, 752, __pyx_L8_except_error)
+        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_10, &__pyx_t_11) < 0) __PYX_ERR(0, 753, __pyx_L8_except_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_GOTREF(__pyx_t_11);
 
-        /* "srctools/_vec.pyx":753
- *                 other_d = <double ?>obj_b
- *             except TypeError:
- *                 return NotImplemented             # <<<<<<<<<<<<<<
+        /* "srctools/_vec.pyx":754
  * 
- *             # We put % first, since Cython then produces a 'divmod' error.
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
+ *         """Divide the vector by a scalar, returning the result and remainder."""             # <<<<<<<<<<<<<<
+ *         cdef Vec vec
+ *         cdef Vec res_1 = Vec.__new__(Vec)
  */
         __Pyx_XDECREF(__pyx_r);
         __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -10138,12 +10138,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       goto __pyx_L8_except_error;
       __pyx_L8_except_error:;
 
-      /* "srctools/_vec.pyx":750
- *             # vec / val
- *             vec = <Vec>obj_a
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_b
- *             except TypeError:
+      /* "srctools/_vec.pyx":751
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:
+ *             return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':
  */
       __Pyx_XGIVEREF(__pyx_t_5);
       __Pyx_XGIVEREF(__pyx_t_6);
@@ -10159,123 +10159,123 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __pyx_L11_try_end:;
     }
 
-    /* "srctools/_vec.pyx":757
- *             # We put % first, since Cython then produces a 'divmod' error.
+    /* "srctools/_vec.pyx":758
+ *         cdef Vec res_1 = Vec.__new__(Vec)
+ *         cdef Vec res_2 = Vec.__new__(Vec)
+ *         cdef double other_d             # <<<<<<<<<<<<<<
  * 
- *             res_2.val.x = vec.val.x % other_d             # <<<<<<<<<<<<<<
- *             res_1.val.x = vec.val.x // other_d
- *             res_2.val.y = vec.val.y % other_d
+ *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 757, __pyx_L1_error)
+      __PYX_ERR(0, 758, __pyx_L1_error)
     }
     __pyx_v_res_2->val.x = __Pyx_mod_double(__pyx_v_vec->val.x, __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":758
- * 
- *             res_2.val.x = vec.val.x % other_d
- *             res_1.val.x = vec.val.x // other_d             # <<<<<<<<<<<<<<
- *             res_2.val.y = vec.val.y % other_d
- *             res_1.val.y = vec.val.y // other_d
+    /* "srctools/_vec.pyx":759
+ *         cdef Vec res_2 = Vec.__new__(Vec)
+ *         cdef double other_d
+ *              # <<<<<<<<<<<<<<
+ *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError("Cannot divide 2 Vectors.")
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 758, __pyx_L1_error)
+      __PYX_ERR(0, 759, __pyx_L1_error)
     }
     __pyx_v_res_1->val.x = floor(__pyx_v_vec->val.x / __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":759
- *             res_2.val.x = vec.val.x % other_d
- *             res_1.val.x = vec.val.x // other_d
- *             res_2.val.y = vec.val.y % other_d             # <<<<<<<<<<<<<<
- *             res_1.val.y = vec.val.y // other_d
- *             res_2.val.z = vec.val.z % other_d
+    /* "srctools/_vec.pyx":760
+ *         cdef double other_d
+ * 
+ *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot divide 2 Vectors.")
+ *         elif isinstance(obj_a, Vec):
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 759, __pyx_L1_error)
+      __PYX_ERR(0, 760, __pyx_L1_error)
     }
     __pyx_v_res_2->val.y = __Pyx_mod_double(__pyx_v_vec->val.y, __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":760
- *             res_1.val.x = vec.val.x // other_d
- *             res_2.val.y = vec.val.y % other_d
- *             res_1.val.y = vec.val.y // other_d             # <<<<<<<<<<<<<<
- *             res_2.val.z = vec.val.z % other_d
- *             res_1.val.z = vec.val.z // other_d
+    /* "srctools/_vec.pyx":761
+ * 
+ *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+ *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_a, Vec):
+ *             # vec / val
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 760, __pyx_L1_error)
+      __PYX_ERR(0, 761, __pyx_L1_error)
     }
     __pyx_v_res_1->val.y = floor(__pyx_v_vec->val.y / __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":761
- *             res_2.val.y = vec.val.y % other_d
- *             res_1.val.y = vec.val.y // other_d
- *             res_2.val.z = vec.val.z % other_d             # <<<<<<<<<<<<<<
- *             res_1.val.z = vec.val.z // other_d
- *         elif isinstance(obj_b, Vec):
- */
-    if (unlikely(__pyx_v_other_d == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 761, __pyx_L1_error)
-    }
-    __pyx_v_res_2->val.z = __Pyx_mod_double(__pyx_v_vec->val.z, __pyx_v_other_d);
-
     /* "srctools/_vec.pyx":762
- *             res_1.val.y = vec.val.y // other_d
- *             res_2.val.z = vec.val.z % other_d
- *             res_1.val.z = vec.val.z // other_d             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_b, Vec):
- *             # val / vec
- */
-    if (unlikely(__pyx_v_other_d == 0)) {
-      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 762, __pyx_L1_error)
-    }
-    __pyx_v_res_1->val.z = floor(__pyx_v_vec->val.z / __pyx_v_other_d);
-
-    /* "srctools/_vec.pyx":747
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError("Cannot divide 2 Vectors.")
  *         elif isinstance(obj_a, Vec):             # <<<<<<<<<<<<<<
  *             # vec / val
  *             vec = <Vec>obj_a
  */
+    if (unlikely(__pyx_v_other_d == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
+      __PYX_ERR(0, 762, __pyx_L1_error)
+    }
+    __pyx_v_res_2->val.z = __Pyx_mod_double(__pyx_v_vec->val.z, __pyx_v_other_d);
+
+    /* "srctools/_vec.pyx":763
+ *             raise TypeError("Cannot divide 2 Vectors.")
+ *         elif isinstance(obj_a, Vec):
+ *             # vec / val             # <<<<<<<<<<<<<<
+ *             vec = <Vec>obj_a
+ *             try:
+ */
+    if (unlikely(__pyx_v_other_d == 0)) {
+      PyErr_SetString(PyExc_ZeroDivisionError, "float division");
+      __PYX_ERR(0, 763, __pyx_L1_error)
+    }
+    __pyx_v_res_1->val.z = floor(__pyx_v_vec->val.z / __pyx_v_other_d);
+
+    /* "srctools/_vec.pyx":748
+ *             self.val.z %= scalar
+ *             return self
+ *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
+ *             raise TypeError("Cannot modulus 2 Vectors.")
+ *         else:
+ */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":763
- *             res_2.val.z = vec.val.z % other_d
- *             res_1.val.z = vec.val.z // other_d
- *         elif isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             # val / vec
- *             vec = <Vec>obj_b
+  /* "srctools/_vec.pyx":764
+ *         elif isinstance(obj_a, Vec):
+ *             # vec / val
+ *             vec = <Vec>obj_a             # <<<<<<<<<<<<<<
+ *             try:
+ *                 other_d = <double ?>obj_b
  */
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_v_obj_b, __pyx_ptype_8srctools_4_vec_Vec); 
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (likely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":765
- *         elif isinstance(obj_b, Vec):
- *             # val / vec
- *             vec = <Vec>obj_b             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":766
+ *             vec = <Vec>obj_a
  *             try:
- *                 other_d = <double ?>obj_a
+ *                 other_d = <double ?>obj_b             # <<<<<<<<<<<<<<
+ *             except TypeError:
+ *                 return NotImplemented
  */
     __pyx_t_11 = __pyx_v_obj_b;
     __Pyx_INCREF(__pyx_t_11);
     __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_11);
     __pyx_t_11 = 0;
 
-    /* "srctools/_vec.pyx":766
- *             # val / vec
- *             vec = <Vec>obj_b
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_a
- *             except TypeError:
+    /* "srctools/_vec.pyx":767
+ *             try:
+ *                 other_d = <double ?>obj_b
+ *             except TypeError:             # <<<<<<<<<<<<<<
+ *                 return NotImplemented
+ * 
  */
     {
       __Pyx_PyThreadState_declare
@@ -10286,22 +10286,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":767
- *             vec = <Vec>obj_b
- *             try:
- *                 other_d = <double ?>obj_a             # <<<<<<<<<<<<<<
+        /* "srctools/_vec.pyx":768
+ *                 other_d = <double ?>obj_b
  *             except TypeError:
- *                 return NotImplemented
+ *                 return NotImplemented             # <<<<<<<<<<<<<<
+ * 
+ *             # We put % first, since Cython then produces a 'divmod' error.
  */
-        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 767, __pyx_L14_error)
+        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 768, __pyx_L14_error)
         __pyx_v_other_d = ((double)__pyx_t_8);
 
-        /* "srctools/_vec.pyx":766
- *             # val / vec
- *             vec = <Vec>obj_b
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_a
- *             except TypeError:
+        /* "srctools/_vec.pyx":767
+ *             try:
+ *                 other_d = <double ?>obj_b
+ *             except TypeError:             # <<<<<<<<<<<<<<
+ *                 return NotImplemented
+ * 
  */
       }
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
@@ -10313,27 +10313,27 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-      /* "srctools/_vec.pyx":768
- *             try:
- *                 other_d = <double ?>obj_a
- *             except TypeError:             # <<<<<<<<<<<<<<
+      /* "srctools/_vec.pyx":769
+ *             except TypeError:
  *                 return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *             # We put % first, since Cython then produces a 'divmod' error.
  * 
  */
       __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError);
       if (__pyx_t_9) {
         __Pyx_AddTraceback("srctools._vec.Vec.__divmod__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_10, &__pyx_t_1) < 0) __PYX_ERR(0, 768, __pyx_L16_except_error)
+        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_10, &__pyx_t_1) < 0) __PYX_ERR(0, 769, __pyx_L16_except_error)
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_GOTREF(__pyx_t_1);
 
-        /* "srctools/_vec.pyx":769
- *                 other_d = <double ?>obj_a
- *             except TypeError:
- *                 return NotImplemented             # <<<<<<<<<<<<<<
+        /* "srctools/_vec.pyx":770
+ *                 return NotImplemented
  * 
- *             res_2.val.x = other_d % vec.val.x
+ *             # We put % first, since Cython then produces a 'divmod' error.             # <<<<<<<<<<<<<<
+ * 
+ *             res_2.val.x = vec.val.x % other_d
  */
         __Pyx_XDECREF(__pyx_r);
         __Pyx_INCREF(__pyx_builtin_NotImplemented);
@@ -10346,12 +10346,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       goto __pyx_L16_except_error;
       __pyx_L16_except_error:;
 
-      /* "srctools/_vec.pyx":766
- *             # val / vec
- *             vec = <Vec>obj_b
- *             try:             # <<<<<<<<<<<<<<
- *                 other_d = <double ?>obj_a
- *             except TypeError:
+      /* "srctools/_vec.pyx":767
+ *             try:
+ *                 other_d = <double ?>obj_b
+ *             except TypeError:             # <<<<<<<<<<<<<<
+ *                 return NotImplemented
+ * 
  */
       __Pyx_XGIVEREF(__pyx_t_7);
       __Pyx_XGIVEREF(__pyx_t_6);
@@ -10367,119 +10367,119 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
       __pyx_L19_try_end:;
     }
 
-    /* "srctools/_vec.pyx":771
- *                 return NotImplemented
+    /* "srctools/_vec.pyx":772
+ *             # We put % first, since Cython then produces a 'divmod' error.
  * 
- *             res_2.val.x = other_d % vec.val.x             # <<<<<<<<<<<<<<
- *             res_1.val.x = other_d // vec.val.x
- *             res_2.val.y = other_d % vec.val.y
+ *             res_2.val.x = vec.val.x % other_d             # <<<<<<<<<<<<<<
+ *             res_1.val.x = vec.val.x // other_d
+ *             res_2.val.y = vec.val.y % other_d
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 771, __pyx_L1_error)
+      __PYX_ERR(0, 772, __pyx_L1_error)
     }
     __pyx_v_res_2->val.x = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":772
+    /* "srctools/_vec.pyx":773
  * 
- *             res_2.val.x = other_d % vec.val.x
- *             res_1.val.x = other_d // vec.val.x             # <<<<<<<<<<<<<<
- *             res_2.val.y = other_d % vec.val.y
- *             res_1.val.y = other_d // vec.val.y
+ *             res_2.val.x = vec.val.x % other_d
+ *             res_1.val.x = vec.val.x // other_d             # <<<<<<<<<<<<<<
+ *             res_2.val.y = vec.val.y % other_d
+ *             res_1.val.y = vec.val.y // other_d
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 772, __pyx_L1_error)
+      __PYX_ERR(0, 773, __pyx_L1_error)
     }
     __pyx_v_res_1->val.x = floor(__pyx_v_other_d / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":773
- *             res_2.val.x = other_d % vec.val.x
- *             res_1.val.x = other_d // vec.val.x
- *             res_2.val.y = other_d % vec.val.y             # <<<<<<<<<<<<<<
- *             res_1.val.y = other_d // vec.val.y
- *             res_2.val.z = other_d % vec.val.z
+    /* "srctools/_vec.pyx":774
+ *             res_2.val.x = vec.val.x % other_d
+ *             res_1.val.x = vec.val.x // other_d
+ *             res_2.val.y = vec.val.y % other_d             # <<<<<<<<<<<<<<
+ *             res_1.val.y = vec.val.y // other_d
+ *             res_2.val.z = vec.val.z % other_d
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 773, __pyx_L1_error)
+      __PYX_ERR(0, 774, __pyx_L1_error)
     }
     __pyx_v_res_2->val.y = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":774
- *             res_1.val.x = other_d // vec.val.x
- *             res_2.val.y = other_d % vec.val.y
- *             res_1.val.y = other_d // vec.val.y             # <<<<<<<<<<<<<<
- *             res_2.val.z = other_d % vec.val.z
- *             res_1.val.z = other_d // vec.val.z
+    /* "srctools/_vec.pyx":775
+ *             res_1.val.x = vec.val.x // other_d
+ *             res_2.val.y = vec.val.y % other_d
+ *             res_1.val.y = vec.val.y // other_d             # <<<<<<<<<<<<<<
+ *             res_2.val.z = vec.val.z % other_d
+ *             res_1.val.z = vec.val.z // other_d
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 774, __pyx_L1_error)
+      __PYX_ERR(0, 775, __pyx_L1_error)
     }
     __pyx_v_res_1->val.y = floor(__pyx_v_other_d / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":775
- *             res_2.val.y = other_d % vec.val.y
- *             res_1.val.y = other_d // vec.val.y
- *             res_2.val.z = other_d % vec.val.z             # <<<<<<<<<<<<<<
- *             res_1.val.z = other_d // vec.val.z
- *         else:
+    /* "srctools/_vec.pyx":776
+ *             res_2.val.y = vec.val.y % other_d
+ *             res_1.val.y = vec.val.y // other_d
+ *             res_2.val.z = vec.val.z % other_d             # <<<<<<<<<<<<<<
+ *             res_1.val.z = vec.val.z // other_d
+ *         elif isinstance(obj_b, Vec):
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 775, __pyx_L1_error)
+      __PYX_ERR(0, 776, __pyx_L1_error)
     }
     __pyx_v_res_2->val.z = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":776
- *             res_1.val.y = other_d // vec.val.y
- *             res_2.val.z = other_d % vec.val.z
- *             res_1.val.z = other_d // vec.val.z             # <<<<<<<<<<<<<<
- *         else:
- *             raise TypeError("Called with non-vectors??")
+    /* "srctools/_vec.pyx":777
+ *             res_1.val.y = vec.val.y // other_d
+ *             res_2.val.z = vec.val.z % other_d
+ *             res_1.val.z = vec.val.z // other_d             # <<<<<<<<<<<<<<
+ *         elif isinstance(obj_b, Vec):
+ *             # val / vec
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 776, __pyx_L1_error)
+      __PYX_ERR(0, 777, __pyx_L1_error)
     }
     __pyx_v_res_1->val.z = floor(__pyx_v_other_d / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":763
- *             res_2.val.z = vec.val.z % other_d
- *             res_1.val.z = vec.val.z // other_d
- *         elif isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
- *             # val / vec
- *             vec = <Vec>obj_b
+    /* "srctools/_vec.pyx":764
+ *         elif isinstance(obj_a, Vec):
+ *             # vec / val
+ *             vec = <Vec>obj_a             # <<<<<<<<<<<<<<
+ *             try:
+ *                 other_d = <double ?>obj_b
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":778
- *             res_1.val.z = other_d // vec.val.z
- *         else:
- *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
- * 
- *         return res_1, res_2
+  /* "srctools/_vec.pyx":779
+ *             res_1.val.z = vec.val.z // other_d
+ *         elif isinstance(obj_b, Vec):
+ *             # val / vec             # <<<<<<<<<<<<<<
+ *             vec = <Vec>obj_b
+ *             try:
  */
   /*else*/ {
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 778, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 779, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 778, __pyx_L1_error)
+    __PYX_ERR(0, 779, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":780
- *             raise TypeError("Called with non-vectors??")
- * 
- *         return res_1, res_2             # <<<<<<<<<<<<<<
- * 
- *     def max(self, other):
+  /* "srctools/_vec.pyx":781
+ *             # val / vec
+ *             vec = <Vec>obj_b
+ *             try:             # <<<<<<<<<<<<<<
+ *                 other_d = <double ?>obj_a
+ *             except TypeError:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 780, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 781, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_res_1));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_res_1));
@@ -10491,12 +10491,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":738
- *             return NotImplemented
+  /* "srctools/_vec.pyx":739
+ *         """%= operation.
  * 
- *     def __divmod__(obj_a, obj_b) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
- *         """Divide the vector by a scalar, returning the result and remainder."""
- *         cdef Vec vec
+ *         Like the normal one except without duplication.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef double scalar
  */
 
   /* function exit code */
@@ -10515,12 +10515,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__divmod__(PyObject *__pyx_v_ob
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":782
- *         return res_1, res_2
+/* "srctools/_vec.pyx":783
+ *             try:
+ *                 other_d = <double ?>obj_a
+ *             except TypeError:             # <<<<<<<<<<<<<<
+ *                 return NotImplemented
  * 
- *     def max(self, other):             # <<<<<<<<<<<<<<
- *         """Set this vector's values to the maximum of the two vectors."""
- *         cdef vec_t vec
  */
 
 /* Python wrapper */
@@ -10546,108 +10546,108 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56max(struct __pyx_obj_8srctools_
   double __pyx_t_3;
   __Pyx_RefNannySetupContext("max", 0);
 
-  /* "srctools/_vec.pyx":785
- *         """Set this vector's values to the maximum of the two vectors."""
- *         cdef vec_t vec
- *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
- *         if self.val.x < vec.x:
- *             self.val.x = vec.x
- */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 785, __pyx_L1_error)
-
   /* "srctools/_vec.pyx":786
- *         cdef vec_t vec
- *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x < vec.x:             # <<<<<<<<<<<<<<
- *             self.val.x = vec.x
+ *                 return NotImplemented
  * 
+ *             res_2.val.x = other_d % vec.val.x             # <<<<<<<<<<<<<<
+ *             res_1.val.x = other_d // vec.val.x
+ *             res_2.val.y = other_d % vec.val.y
+ */
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 786, __pyx_L1_error)
+
+  /* "srctools/_vec.pyx":787
+ * 
+ *             res_2.val.x = other_d % vec.val.x
+ *             res_1.val.x = other_d // vec.val.x             # <<<<<<<<<<<<<<
+ *             res_2.val.y = other_d % vec.val.y
+ *             res_1.val.y = other_d // vec.val.y
  */
   __pyx_t_2 = ((__pyx_v_self->val.x < __pyx_v_vec.x) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":787
- *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x < vec.x:
- *             self.val.x = vec.x             # <<<<<<<<<<<<<<
- * 
- *         if self.val.y < vec.y:
+    /* "srctools/_vec.pyx":788
+ *             res_2.val.x = other_d % vec.val.x
+ *             res_1.val.x = other_d // vec.val.x
+ *             res_2.val.y = other_d % vec.val.y             # <<<<<<<<<<<<<<
+ *             res_1.val.y = other_d // vec.val.y
+ *             res_2.val.z = other_d % vec.val.z
  */
     __pyx_t_3 = __pyx_v_vec.x;
     __pyx_v_self->val.x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":786
- *         cdef vec_t vec
- *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x < vec.x:             # <<<<<<<<<<<<<<
- *             self.val.x = vec.x
+    /* "srctools/_vec.pyx":787
  * 
+ *             res_2.val.x = other_d % vec.val.x
+ *             res_1.val.x = other_d // vec.val.x             # <<<<<<<<<<<<<<
+ *             res_2.val.y = other_d % vec.val.y
+ *             res_1.val.y = other_d // vec.val.y
  */
   }
 
-  /* "srctools/_vec.pyx":789
- *             self.val.x = vec.x
- * 
- *         if self.val.y < vec.y:             # <<<<<<<<<<<<<<
- *             self.val.y = vec.y
- * 
+  /* "srctools/_vec.pyx":790
+ *             res_2.val.y = other_d % vec.val.y
+ *             res_1.val.y = other_d // vec.val.y
+ *             res_2.val.z = other_d % vec.val.z             # <<<<<<<<<<<<<<
+ *             res_1.val.z = other_d // vec.val.z
+ *         else:
  */
   __pyx_t_2 = ((__pyx_v_self->val.y < __pyx_v_vec.y) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":790
- * 
- *         if self.val.y < vec.y:
- *             self.val.y = vec.y             # <<<<<<<<<<<<<<
- * 
- *         if self.val.z < vec.z:
+    /* "srctools/_vec.pyx":791
+ *             res_1.val.y = other_d // vec.val.y
+ *             res_2.val.z = other_d % vec.val.z
+ *             res_1.val.z = other_d // vec.val.z             # <<<<<<<<<<<<<<
+ *         else:
+ *             raise TypeError("Called with non-vectors??")
  */
     __pyx_t_3 = __pyx_v_vec.y;
     __pyx_v_self->val.y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":789
- *             self.val.x = vec.x
- * 
- *         if self.val.y < vec.y:             # <<<<<<<<<<<<<<
- *             self.val.y = vec.y
- * 
+    /* "srctools/_vec.pyx":790
+ *             res_2.val.y = other_d % vec.val.y
+ *             res_1.val.y = other_d // vec.val.y
+ *             res_2.val.z = other_d % vec.val.z             # <<<<<<<<<<<<<<
+ *             res_1.val.z = other_d // vec.val.z
+ *         else:
  */
   }
 
-  /* "srctools/_vec.pyx":792
- *             self.val.y = vec.y
+  /* "srctools/_vec.pyx":793
+ *             res_1.val.z = other_d // vec.val.z
+ *         else:
+ *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
  * 
- *         if self.val.z < vec.z:             # <<<<<<<<<<<<<<
- *             self.val.z = vec.z
- * 
+ *         return res_1, res_2
  */
   __pyx_t_2 = ((__pyx_v_self->val.z < __pyx_v_vec.z) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":793
+    /* "srctools/_vec.pyx":794
+ *         else:
+ *             raise TypeError("Called with non-vectors??")
+ *              # <<<<<<<<<<<<<<
+ *         return res_1, res_2
  * 
- *         if self.val.z < vec.z:
- *             self.val.z = vec.z             # <<<<<<<<<<<<<<
- * 
- *     def min(self, other):
  */
     __pyx_t_3 = __pyx_v_vec.z;
     __pyx_v_self->val.z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":792
- *             self.val.y = vec.y
+    /* "srctools/_vec.pyx":793
+ *             res_1.val.z = other_d // vec.val.z
+ *         else:
+ *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
  * 
- *         if self.val.z < vec.z:             # <<<<<<<<<<<<<<
- *             self.val.z = vec.z
- * 
+ *         return res_1, res_2
  */
   }
 
-  /* "srctools/_vec.pyx":782
- *         return res_1, res_2
+  /* "srctools/_vec.pyx":783
+ *             try:
+ *                 other_d = <double ?>obj_a
+ *             except TypeError:             # <<<<<<<<<<<<<<
+ *                 return NotImplemented
  * 
- *     def max(self, other):             # <<<<<<<<<<<<<<
- *         """Set this vector's values to the maximum of the two vectors."""
- *         cdef vec_t vec
  */
 
   /* function exit code */
@@ -10662,12 +10662,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56max(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":795
- *             self.val.z = vec.z
+/* "srctools/_vec.pyx":796
  * 
- *     def min(self, other):             # <<<<<<<<<<<<<<
- *         """Set this vector's values to be the minimum of the two vectors."""
- *         cdef vec_t vec
+ *         return res_1, res_2
+ *              # <<<<<<<<<<<<<<
+ *     def max(self, other):
+ *         """Set this vector's values to the maximum of the two vectors."""
  */
 
 /* Python wrapper */
@@ -10693,108 +10693,108 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58min(struct __pyx_obj_8srctools_
   double __pyx_t_3;
   __Pyx_RefNannySetupContext("min", 0);
 
-  /* "srctools/_vec.pyx":798
- *         """Set this vector's values to be the minimum of the two vectors."""
+  /* "srctools/_vec.pyx":799
+ *     def max(self, other):
+ *         """Set this vector's values to the maximum of the two vectors."""
+ *         cdef vec_t vec             # <<<<<<<<<<<<<<
+ *         _conv_vec(&vec, other, scalar=False)
+ *         if self.val.x < vec.x:
+ */
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 799, __pyx_L1_error)
+
+  /* "srctools/_vec.pyx":800
+ *         """Set this vector's values to the maximum of the two vectors."""
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
- *         if self.val.x > vec.x:
+ *         if self.val.x < vec.x:
  *             self.val.x = vec.x
- */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 798, __pyx_L1_error)
-
-  /* "srctools/_vec.pyx":799
- *         cdef vec_t vec
- *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x > vec.x:             # <<<<<<<<<<<<<<
- *             self.val.x = vec.x
- * 
  */
   __pyx_t_2 = ((__pyx_v_self->val.x > __pyx_v_vec.x) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":800
+    /* "srctools/_vec.pyx":801
+ *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x > vec.x:
- *             self.val.x = vec.x             # <<<<<<<<<<<<<<
+ *         if self.val.x < vec.x:             # <<<<<<<<<<<<<<
+ *             self.val.x = vec.x
  * 
- *         if self.val.y > vec.y:
  */
     __pyx_t_3 = __pyx_v_vec.x;
     __pyx_v_self->val.x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":799
+    /* "srctools/_vec.pyx":800
+ *         """Set this vector's values to the maximum of the two vectors."""
  *         cdef vec_t vec
- *         _conv_vec(&vec, other, scalar=False)
- *         if self.val.x > vec.x:             # <<<<<<<<<<<<<<
+ *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
+ *         if self.val.x < vec.x:
  *             self.val.x = vec.x
- * 
  */
   }
 
-  /* "srctools/_vec.pyx":802
+  /* "srctools/_vec.pyx":803
+ *         if self.val.x < vec.x:
  *             self.val.x = vec.x
- * 
- *         if self.val.y > vec.y:             # <<<<<<<<<<<<<<
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.y < vec.y:
  *             self.val.y = vec.y
- * 
  */
   __pyx_t_2 = ((__pyx_v_self->val.y > __pyx_v_vec.y) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":803
+    /* "srctools/_vec.pyx":804
+ *             self.val.x = vec.x
  * 
- *         if self.val.y > vec.y:
- *             self.val.y = vec.y             # <<<<<<<<<<<<<<
+ *         if self.val.y < vec.y:             # <<<<<<<<<<<<<<
+ *             self.val.y = vec.y
  * 
- *         if self.val.z > vec.z:
  */
     __pyx_t_3 = __pyx_v_vec.y;
     __pyx_v_self->val.y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":802
+    /* "srctools/_vec.pyx":803
+ *         if self.val.x < vec.x:
  *             self.val.x = vec.x
- * 
- *         if self.val.y > vec.y:             # <<<<<<<<<<<<<<
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.y < vec.y:
  *             self.val.y = vec.y
- * 
  */
   }
 
-  /* "srctools/_vec.pyx":805
+  /* "srctools/_vec.pyx":806
+ *         if self.val.y < vec.y:
  *             self.val.y = vec.y
- * 
- *         if self.val.z > vec.z:             # <<<<<<<<<<<<<<
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.z < vec.z:
  *             self.val.z = vec.z
- * 
  */
   __pyx_t_2 = ((__pyx_v_self->val.z > __pyx_v_vec.z) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":806
+    /* "srctools/_vec.pyx":807
+ *             self.val.y = vec.y
  * 
- *         if self.val.z > vec.z:
- *             self.val.z = vec.z             # <<<<<<<<<<<<<<
+ *         if self.val.z < vec.z:             # <<<<<<<<<<<<<<
+ *             self.val.z = vec.z
  * 
- *     def __round__(self, object n=0):
  */
     __pyx_t_3 = __pyx_v_vec.z;
     __pyx_v_self->val.z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":805
+    /* "srctools/_vec.pyx":806
+ *         if self.val.y < vec.y:
  *             self.val.y = vec.y
- * 
- *         if self.val.z > vec.z:             # <<<<<<<<<<<<<<
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.z < vec.z:
  *             self.val.z = vec.z
- * 
  */
   }
 
-  /* "srctools/_vec.pyx":795
- *             self.val.z = vec.z
+  /* "srctools/_vec.pyx":796
  * 
- *     def min(self, other):             # <<<<<<<<<<<<<<
- *         """Set this vector's values to be the minimum of the two vectors."""
- *         cdef vec_t vec
+ *         return res_1, res_2
+ *              # <<<<<<<<<<<<<<
+ *     def max(self, other):
+ *         """Set this vector's values to the maximum of the two vectors."""
  */
 
   /* function exit code */
@@ -10809,12 +10809,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58min(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":808
+/* "srctools/_vec.pyx":809
+ *         if self.val.z < vec.z:
  *             self.val.z = vec.z
- * 
- *     def __round__(self, object n=0):             # <<<<<<<<<<<<<<
- *         """Performing round() on a Vec rounds each axis."""
- *         cdef Vec vec = Vec.__new__(Vec)
+ *              # <<<<<<<<<<<<<<
+ *     def min(self, other):
+ *         """Set this vector's values to be the minimum of the two vectors."""
  */
 
 /* Python wrapper */
@@ -10847,7 +10847,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_61__round__(PyObject *__pyx_v_sel
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__round__") < 0)) __PYX_ERR(0, 808, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__round__") < 0)) __PYX_ERR(0, 809, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -10861,7 +10861,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_61__round__(PyObject *__pyx_v_sel
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__round__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 808, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__round__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 809, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.__round__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10883,50 +10883,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__round__(struct __pyx_obj_8src
   double __pyx_t_3;
   __Pyx_RefNannySetupContext("__round__", 0);
 
-  /* "srctools/_vec.pyx":810
- *     def __round__(self, object n=0):
- *         """Performing round() on a Vec rounds each axis."""
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":811
  * 
- *         vec.val.x = round(self.val.x, n)
+ *     def min(self, other):
+ *         """Set this vector's values to be the minimum of the two vectors."""             # <<<<<<<<<<<<<<
+ *         cdef vec_t vec
+ *         _conv_vec(&vec, other, scalar=False)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 810, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 811, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":812
- *         cdef Vec vec = Vec.__new__(Vec)
- * 
- *         vec.val.x = round(self.val.x, n)             # <<<<<<<<<<<<<<
- *         vec.val.y = round(self.val.y, n)
- *         vec.val.z = round(self.val.z, n)
- */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 812, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 812, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
-  __Pyx_INCREF(__pyx_v_n);
-  __Pyx_GIVEREF(__pyx_v_n);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 812, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 812, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_vec->val.x = __pyx_t_3;
-
   /* "srctools/_vec.pyx":813
- * 
- *         vec.val.x = round(self.val.x, n)
- *         vec.val.y = round(self.val.y, n)             # <<<<<<<<<<<<<<
- *         vec.val.z = round(self.val.z, n)
- * 
+ *         """Set this vector's values to be the minimum of the two vectors."""
+ *         cdef vec_t vec
+ *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
+ *         if self.val.x > vec.x:
+ *             self.val.x = vec.x
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 813, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 813, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 813, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -10941,16 +10917,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__round__(struct __pyx_obj_8src
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 813, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_vec->val.y = __pyx_t_3;
+  __pyx_v_vec->val.x = __pyx_t_3;
 
   /* "srctools/_vec.pyx":814
- *         vec.val.x = round(self.val.x, n)
- *         vec.val.y = round(self.val.y, n)
- *         vec.val.z = round(self.val.z, n)             # <<<<<<<<<<<<<<
+ *         cdef vec_t vec
+ *         _conv_vec(&vec, other, scalar=False)
+ *         if self.val.x > vec.x:             # <<<<<<<<<<<<<<
+ *             self.val.x = vec.x
  * 
- *         return vec
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 814, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 814, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 814, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -10965,26 +10941,50 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__round__(struct __pyx_obj_8src
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 814, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_vec->val.y = __pyx_t_3;
+
+  /* "srctools/_vec.pyx":815
+ *         _conv_vec(&vec, other, scalar=False)
+ *         if self.val.x > vec.x:
+ *             self.val.x = vec.x             # <<<<<<<<<<<<<<
+ * 
+ *         if self.val.y > vec.y:
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 815, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 815, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
+  __Pyx_INCREF(__pyx_v_n);
+  __Pyx_GIVEREF(__pyx_v_n);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 815, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 815, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_vec->val.z = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":816
- *         vec.val.z = round(self.val.z, n)
+  /* "srctools/_vec.pyx":817
+ *             self.val.x = vec.x
  * 
- *         return vec             # <<<<<<<<<<<<<<
+ *         if self.val.y > vec.y:             # <<<<<<<<<<<<<<
+ *             self.val.y = vec.y
  * 
- *     cdef inline double _mag_sq(self):
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":808
+  /* "srctools/_vec.pyx":809
+ *         if self.val.z < vec.z:
  *             self.val.z = vec.z
- * 
- *     def __round__(self, object n=0):             # <<<<<<<<<<<<<<
- *         """Performing round() on a Vec rounds each axis."""
- *         cdef Vec vec = Vec.__new__(Vec)
+ *              # <<<<<<<<<<<<<<
+ *     def min(self, other):
+ *         """Set this vector's values to be the minimum of the two vectors."""
  */
 
   /* function exit code */
@@ -11000,12 +11000,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__round__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":818
- *         return vec
- * 
- *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
- *         return self.val.x**2 + self.val.y**2 + self.val.z**2
- * 
+/* "srctools/_vec.pyx":819
+ *         if self.val.y > vec.y:
+ *             self.val.y = vec.y
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.z > vec.z:
+ *             self.val.z = vec.z
  */
 
 static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_obj_8srctools_4_vec_Vec *__pyx_v_self) {
@@ -11013,22 +11013,22 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_ob
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_mag_sq", 0);
 
-  /* "srctools/_vec.pyx":819
+  /* "srctools/_vec.pyx":820
+ *             self.val.y = vec.y
  * 
- *     cdef inline double _mag_sq(self):
- *         return self.val.x**2 + self.val.y**2 + self.val.z**2             # <<<<<<<<<<<<<<
+ *         if self.val.z > vec.z:             # <<<<<<<<<<<<<<
+ *             self.val.z = vec.z
  * 
- *     cdef inline double _mag(self):
  */
   __pyx_r = ((pow(__pyx_v_self->val.x, 2.0) + pow(__pyx_v_self->val.y, 2.0)) + pow(__pyx_v_self->val.z, 2.0));
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":818
- *         return vec
- * 
- *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
- *         return self.val.x**2 + self.val.y**2 + self.val.z**2
- * 
+  /* "srctools/_vec.pyx":819
+ *         if self.val.y > vec.y:
+ *             self.val.y = vec.y
+ *              # <<<<<<<<<<<<<<
+ *         if self.val.z > vec.z:
+ *             self.val.z = vec.z
  */
 
   /* function exit code */
@@ -11037,12 +11037,12 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":821
- *         return self.val.x**2 + self.val.y**2 + self.val.z**2
- * 
- *     cdef inline double _mag(self):             # <<<<<<<<<<<<<<
- *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
- * 
+/* "srctools/_vec.pyx":822
+ *         if self.val.z > vec.z:
+ *             self.val.z = vec.z
+ *              # <<<<<<<<<<<<<<
+ *     def __round__(self, object n=0):
+ *         """Performing round() on a Vec rounds each axis."""
  */
 
 static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag(struct __pyx_obj_8srctools_4_vec_Vec *__pyx_v_self) {
@@ -11050,22 +11050,22 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag(struct __pyx_obj_8
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_mag", 0);
 
-  /* "srctools/_vec.pyx":822
+  /* "srctools/_vec.pyx":823
+ *             self.val.z = vec.z
  * 
- *     cdef inline double _mag(self):
- *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)             # <<<<<<<<<<<<<<
- * 
- *     def mag_sq(self):
+ *     def __round__(self, object n=0):             # <<<<<<<<<<<<<<
+ *         """Performing round() on a Vec rounds each axis."""
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
   __pyx_r = sqrt(((pow(__pyx_v_self->val.x, 2.0) + pow(__pyx_v_self->val.y, 2.0)) + pow(__pyx_v_self->val.z, 2.0)));
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":821
- *         return self.val.x**2 + self.val.y**2 + self.val.z**2
- * 
- *     cdef inline double _mag(self):             # <<<<<<<<<<<<<<
- *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
- * 
+  /* "srctools/_vec.pyx":822
+ *         if self.val.z > vec.z:
+ *             self.val.z = vec.z
+ *              # <<<<<<<<<<<<<<
+ *     def __round__(self, object n=0):
+ *         """Performing round() on a Vec rounds each axis."""
  */
 
   /* function exit code */
@@ -11074,12 +11074,12 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag(struct __pyx_obj_8
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":824
- *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
+/* "srctools/_vec.pyx":825
+ *     def __round__(self, object n=0):
+ *         """Performing round() on a Vec rounds each axis."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  * 
- *     def mag_sq(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()
+ *         vec.val.x = round(self.val.x, n)
  */
 
 /* Python wrapper */
@@ -11102,26 +11102,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62mag_sq(struct __pyx_obj_8srctoo
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("mag_sq", 0);
 
-  /* "srctools/_vec.pyx":826
- *     def mag_sq(self):
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":827
+ *         cdef Vec vec = Vec.__new__(Vec)
  * 
- *     def len_sq(self):
+ *         vec.val.x = round(self.val.x, n)             # <<<<<<<<<<<<<<
+ *         vec.val.y = round(self.val.y, n)
+ *         vec.val.z = round(self.val.z, n)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 826, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 827, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":824
- *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
+  /* "srctools/_vec.pyx":825
+ *     def __round__(self, object n=0):
+ *         """Performing round() on a Vec rounds each axis."""
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  * 
- *     def mag_sq(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()
+ *         vec.val.x = round(self.val.x, n)
  */
 
   /* function exit code */
@@ -11135,12 +11135,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62mag_sq(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":828
- *         return self._mag_sq()
+/* "srctools/_vec.pyx":829
+ *         vec.val.x = round(self.val.x, n)
+ *         vec.val.y = round(self.val.y, n)
+ *         vec.val.z = round(self.val.z, n)             # <<<<<<<<<<<<<<
  * 
- *     def len_sq(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()
+ *         return vec
  */
 
 /* Python wrapper */
@@ -11163,26 +11163,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64len_sq(struct __pyx_obj_8srctoo
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("len_sq", 0);
 
-  /* "srctools/_vec.pyx":830
- *     def len_sq(self):
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":831
+ *         vec.val.z = round(self.val.z, n)
  * 
- *     def mag(self):
+ *         return vec             # <<<<<<<<<<<<<<
+ * 
+ *     cdef inline double _mag_sq(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 830, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 831, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":828
- *         return self._mag_sq()
+  /* "srctools/_vec.pyx":829
+ *         vec.val.x = round(self.val.x, n)
+ *         vec.val.y = round(self.val.y, n)
+ *         vec.val.z = round(self.val.z, n)             # <<<<<<<<<<<<<<
  * 
- *     def len_sq(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag_sq()
+ *         return vec
  */
 
   /* function exit code */
@@ -11196,12 +11196,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64len_sq(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":832
- *         return self._mag_sq()
+/* "srctools/_vec.pyx":833
+ *         return vec
  * 
- *     def mag(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()
+ *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
+ *         return self.val.x**2 + self.val.y**2 + self.val.z**2
+ * 
  */
 
 /* Python wrapper */
@@ -11224,26 +11224,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_66mag(struct __pyx_obj_8srctools_
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("mag", 0);
 
-  /* "srctools/_vec.pyx":834
- *     def mag(self):
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()             # <<<<<<<<<<<<<<
- * 
- *     def len(self):
+  /* "srctools/_vec.pyx":835
+ *     cdef inline double _mag_sq(self):
+ *         return self.val.x**2 + self.val.y**2 + self.val.z**2
+ *              # <<<<<<<<<<<<<<
+ *     cdef inline double _mag(self):
+ *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 834, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 835, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":832
- *         return self._mag_sq()
+  /* "srctools/_vec.pyx":833
+ *         return vec
  * 
- *     def mag(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()
+ *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
+ *         return self.val.x**2 + self.val.y**2 + self.val.z**2
+ * 
  */
 
   /* function exit code */
@@ -11257,12 +11257,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_66mag(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":836
- *         return self._mag()
+/* "srctools/_vec.pyx":837
  * 
- *     def len(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()
+ *     cdef inline double _mag(self):
+ *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)             # <<<<<<<<<<<<<<
+ * 
+ *     def mag_sq(self):
  */
 
 /* Python wrapper */
@@ -11285,26 +11285,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_68len(struct __pyx_obj_8srctools_
   PyObject *__pyx_t_1 = NULL;
   __Pyx_RefNannySetupContext("len", 0);
 
-  /* "srctools/_vec.pyx":838
- *     def len(self):
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":839
+ *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
  * 
- *     def norm(self):
+ *     def mag_sq(self):             # <<<<<<<<<<<<<<
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag_sq()
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 838, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 839, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":836
- *         return self._mag()
+  /* "srctools/_vec.pyx":837
  * 
- *     def len(self):             # <<<<<<<<<<<<<<
- *         """Compute the distance from the vector and the origin."""
- *         return self._mag()
+ *     cdef inline double _mag(self):
+ *         return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)             # <<<<<<<<<<<<<<
+ * 
+ *     def mag_sq(self):
  */
 
   /* function exit code */
@@ -11318,12 +11318,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_68len(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":840
- *         return self._mag()
+/* "srctools/_vec.pyx":841
+ *     def mag_sq(self):
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag_sq()             # <<<<<<<<<<<<<<
  * 
- *     def norm(self):             # <<<<<<<<<<<<<<
- *         """Normalise the Vector.
- * 
+ *     def len_sq(self):
  */
 
 /* Python wrapper */
@@ -11349,114 +11349,114 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70norm(struct __pyx_obj_8srctools
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("norm", 0);
 
-  /* "srctools/_vec.pyx":847
- *          The vector is left unchanged if it is equal to (0,0,0).
- *          """
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         cdef double mag = self._mag()
+  /* "srctools/_vec.pyx":848
+ * 
+ *     def mag(self):
+ *         """Compute the distance from the vector and the origin."""             # <<<<<<<<<<<<<<
+ *         return self._mag()
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 847, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 848, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":848
- *          """
- *         cdef Vec vec = Vec.__new__(Vec)
- *         cdef double mag = self._mag()             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":849
+ *     def mag(self):
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag()             # <<<<<<<<<<<<<<
  * 
- *         if mag == 0:
+ *     def len(self):
  */
   __pyx_v_mag = __pyx_f_8srctools_4_vec_3Vec__mag(__pyx_v_self);
 
-  /* "srctools/_vec.pyx":850
- *         cdef double mag = self._mag()
+  /* "srctools/_vec.pyx":851
+ *         return self._mag()
  * 
- *         if mag == 0:             # <<<<<<<<<<<<<<
- *             # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
- *             vec.val.x = vec.val.y = vec.val.z = 0
+ *     def len(self):             # <<<<<<<<<<<<<<
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag()
  */
   __pyx_t_2 = ((__pyx_v_mag == 0.0) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":852
- *         if mag == 0:
- *             # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
- *             vec.val.x = vec.val.y = vec.val.z = 0             # <<<<<<<<<<<<<<
- *         else:
- *             # Disable ZeroDivisionError check, we just checked that.
+    /* "srctools/_vec.pyx":853
+ *     def len(self):
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag()             # <<<<<<<<<<<<<<
+ * 
+ *     def norm(self):
  */
     __pyx_v_vec->val.x = 0.0;
     __pyx_v_vec->val.y = 0.0;
     __pyx_v_vec->val.z = 0.0;
 
-    /* "srctools/_vec.pyx":850
- *         cdef double mag = self._mag()
+    /* "srctools/_vec.pyx":851
+ *         return self._mag()
  * 
- *         if mag == 0:             # <<<<<<<<<<<<<<
- *             # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
- *             vec.val.x = vec.val.y = vec.val.z = 0
+ *     def len(self):             # <<<<<<<<<<<<<<
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag()
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":855
- *         else:
- *             # Disable ZeroDivisionError check, we just checked that.
- *             with cython.cdivision(True):             # <<<<<<<<<<<<<<
- *                 vec.val.x = self.val.x / mag
- *                 vec.val.y = self.val.y / mag
+  /* "srctools/_vec.pyx":856
+ * 
+ *     def norm(self):
+ *         """Normalise the Vector.             # <<<<<<<<<<<<<<
+ * 
+ *          This is done by transforming it to have a magnitude of 1 but the same
  */
   /*else*/ {
 
-    /* "srctools/_vec.pyx":856
- *             # Disable ZeroDivisionError check, we just checked that.
- *             with cython.cdivision(True):
- *                 vec.val.x = self.val.x / mag             # <<<<<<<<<<<<<<
- *                 vec.val.y = self.val.y / mag
- *                 vec.val.z = self.val.z / mag
+    /* "srctools/_vec.pyx":857
+ *     def norm(self):
+ *         """Normalise the Vector.
+ *              # <<<<<<<<<<<<<<
+ *          This is done by transforming it to have a magnitude of 1 but the same
+ *          direction.
  */
     __pyx_v_vec->val.x = (__pyx_v_self->val.x / __pyx_v_mag);
 
-    /* "srctools/_vec.pyx":857
- *             with cython.cdivision(True):
- *                 vec.val.x = self.val.x / mag
- *                 vec.val.y = self.val.y / mag             # <<<<<<<<<<<<<<
- *                 vec.val.z = self.val.z / mag
- *         return vec
+    /* "srctools/_vec.pyx":858
+ *         """Normalise the Vector.
+ * 
+ *          This is done by transforming it to have a magnitude of 1 but the same             # <<<<<<<<<<<<<<
+ *          direction.
+ *          The vector is left unchanged if it is equal to (0,0,0).
  */
     __pyx_v_vec->val.y = (__pyx_v_self->val.y / __pyx_v_mag);
 
-    /* "srctools/_vec.pyx":858
- *                 vec.val.x = self.val.x / mag
- *                 vec.val.y = self.val.y / mag
- *                 vec.val.z = self.val.z / mag             # <<<<<<<<<<<<<<
- *         return vec
+    /* "srctools/_vec.pyx":859
  * 
+ *          This is done by transforming it to have a magnitude of 1 but the same
+ *          direction.             # <<<<<<<<<<<<<<
+ *          The vector is left unchanged if it is equal to (0,0,0).
+ *          """
  */
     __pyx_v_vec->val.z = (__pyx_v_self->val.z / __pyx_v_mag);
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":859
- *                 vec.val.y = self.val.y / mag
- *                 vec.val.z = self.val.z / mag
- *         return vec             # <<<<<<<<<<<<<<
- * 
- *     def join(self, delim: str=', ') -> str:
+  /* "srctools/_vec.pyx":860
+ *          This is done by transforming it to have a magnitude of 1 but the same
+ *          direction.
+ *          The vector is left unchanged if it is equal to (0,0,0).             # <<<<<<<<<<<<<<
+ *          """
+ *         cdef Vec vec = Vec.__new__(Vec)
  */
   __Pyx_XDECREF(__pyx_r);
   __Pyx_INCREF(((PyObject *)__pyx_v_vec));
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":840
- *         return self._mag()
+  /* "srctools/_vec.pyx":841
+ *     def mag_sq(self):
+ *         """Compute the distance from the vector and the origin."""
+ *         return self._mag_sq()             # <<<<<<<<<<<<<<
  * 
- *     def norm(self):             # <<<<<<<<<<<<<<
- *         """Normalise the Vector.
- * 
+ *     def len_sq(self):
  */
 
   /* function exit code */
@@ -11471,11 +11471,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70norm(struct __pyx_obj_8srctools
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":861
- *         return vec
- * 
- *     def join(self, delim: str=', ') -> str:             # <<<<<<<<<<<<<<
- *         """Return a string with all numbers joined by the passed delimiter.
+/* "srctools/_vec.pyx":862
+ *          The vector is left unchanged if it is equal to (0,0,0).
+ *          """
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double mag = self._mag()
  * 
  */
 
@@ -11509,7 +11509,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_73join(PyObject *__pyx_v_self, Py
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "join") < 0)) __PYX_ERR(0, 861, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "join") < 0)) __PYX_ERR(0, 862, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -11523,13 +11523,13 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_73join(PyObject *__pyx_v_self, Py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("join", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 861, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("join", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 862, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.join", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_delim), (&PyUnicode_Type), 1, "delim", 1))) __PYX_ERR(0, 861, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_delim), (&PyUnicode_Type), 1, "delim", 1))) __PYX_ERR(0, 862, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_3Vec_72join(((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_self), __pyx_v_delim);
 
   /* function exit code */
@@ -11551,21 +11551,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72join(struct __pyx_obj_8srctools
   PyObject *__pyx_t_5 = NULL;
   __Pyx_RefNannySetupContext("join", 0);
 
-  /* "srctools/_vec.pyx":867
- *         """
- *         # :g strips the .0 off of floats if it's an integer.
- *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'             # <<<<<<<<<<<<<<
- * 
- *     def __str__(self):
+  /* "srctools/_vec.pyx":868
+ *             # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
+ *             vec.val.x = vec.val.y = vec.val.z = 0
+ *         else:             # <<<<<<<<<<<<<<
+ *             # Disable ZeroDivisionError check, we just checked that.
+ *             with cython.cdivision(True):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11573,16 +11573,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
   __pyx_t_2 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -11590,16 +11590,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
   __pyx_t_2 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11607,18 +11607,18 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 868, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":861
- *         return vec
- * 
- *     def join(self, delim: str=', ') -> str:             # <<<<<<<<<<<<<<
- *         """Return a string with all numbers joined by the passed delimiter.
+  /* "srctools/_vec.pyx":862
+ *          The vector is left unchanged if it is equal to (0,0,0).
+ *          """
+ *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
+ *         cdef double mag = self._mag()
  * 
  */
 
@@ -11635,12 +11635,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72join(struct __pyx_obj_8srctools
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":869
- *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
- * 
- *     def __str__(self):             # <<<<<<<<<<<<<<
- *         """Return the values, separated by spaces.
- * 
+/* "srctools/_vec.pyx":870
+ *         else:
+ *             # Disable ZeroDivisionError check, we just checked that.
+ *             with cython.cdivision(True):             # <<<<<<<<<<<<<<
+ *                 vec.val.x = self.val.x / mag
+ *                 vec.val.y = self.val.y / mag
  */
 
 /* Python wrapper */
@@ -11670,21 +11670,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74__str__(struct __pyx_obj_8srcto
   PyObject *__pyx_t_5 = NULL;
   __Pyx_RefNannySetupContext("__str__", 0);
 
-  /* "srctools/_vec.pyx":875
- *         This strips off the .0 if no decimal portion exists.
- *         """
- *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":876
+ *         return vec
  * 
- *     def __repr__(self):
+ *     def join(self, delim: str=', ') -> str:             # <<<<<<<<<<<<<<
+ *         """Return a string with all numbers joined by the passed delimiter.
+ * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11696,9 +11696,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74__str__(struct __pyx_obj_8srcto
   __pyx_t_2 += 1;
   __Pyx_GIVEREF(__pyx_kp_u_);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u_);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -11710,9 +11710,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74__str__(struct __pyx_obj_8srcto
   __pyx_t_2 += 1;
   __Pyx_GIVEREF(__pyx_kp_u_);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_kp_u_);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11720,19 +11720,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74__str__(struct __pyx_obj_8srcto
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 875, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 876, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":869
- *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
- * 
- *     def __str__(self):             # <<<<<<<<<<<<<<
- *         """Return the values, separated by spaces.
- * 
+  /* "srctools/_vec.pyx":870
+ *         else:
+ *             # Disable ZeroDivisionError check, we just checked that.
+ *             with cython.cdivision(True):             # <<<<<<<<<<<<<<
+ *                 vec.val.x = self.val.x / mag
+ *                 vec.val.y = self.val.y / mag
  */
 
   /* function exit code */
@@ -11748,12 +11748,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74__str__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":877
- *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
- * 
- *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         """Code required to reproduce this vector."""
- *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+/* "srctools/_vec.pyx":878
+ *     def join(self, delim: str=', ') -> str:
+ *         """Return a string with all numbers joined by the passed delimiter.
+ *              # <<<<<<<<<<<<<<
+ *         This strips off the .0 if no decimal portion exists.
+ *         """
  */
 
 /* Python wrapper */
@@ -11783,15 +11783,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   PyObject *__pyx_t_5 = NULL;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_vec.pyx":879
- *     def __repr__(self):
- *         """Code required to reproduce this vector."""
- *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":880
  * 
- *     def __iter__(self):
+ *         This strips off the .0 if no decimal portion exists.
+ *         """             # <<<<<<<<<<<<<<
+ *         # :g strips the .0 off of floats if it's an integer.
+ *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
@@ -11799,9 +11799,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   __pyx_t_2 += 4;
   __Pyx_GIVEREF(__pyx_kp_u_Vec);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Vec);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11813,9 +11813,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   __pyx_t_2 += 2;
   __Pyx_GIVEREF(__pyx_kp_u__7);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__7);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -11827,9 +11827,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   __pyx_t_2 += 2;
   __Pyx_GIVEREF(__pyx_kp_u__7);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__7);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -11841,19 +11841,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   __pyx_t_2 += 1;
   __Pyx_GIVEREF(__pyx_kp_u__18);
   PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__18);
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 879, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 880, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":877
- *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
- * 
- *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         """Code required to reproduce this vector."""
- *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+  /* "srctools/_vec.pyx":878
+ *     def join(self, delim: str=', ') -> str:
+ *         """Return a string with all numbers joined by the passed delimiter.
+ *              # <<<<<<<<<<<<<<
+ *         This strips off the .0 if no decimal portion exists.
+ *         """
  */
 
   /* function exit code */
@@ -11869,12 +11869,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__repr__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":881
- *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+/* "srctools/_vec.pyx":882
+ *         """
+ *         # :g strips the .0 off of floats if it's an integer.
+ *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'             # <<<<<<<<<<<<<<
  * 
- *     def __iter__(self):             # <<<<<<<<<<<<<<
- *         return VecIter.__new__(VecIter, self)
- * 
+ *     def __str__(self):
  */
 
 /* Python wrapper */
@@ -11897,32 +11897,32 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_78__iter__(struct __pyx_obj_8srct
   PyObject *__pyx_t_2 = NULL;
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_vec.pyx":882
- * 
- *     def __iter__(self):
- *         return VecIter.__new__(VecIter, self)             # <<<<<<<<<<<<<<
- * 
- *     def __getitem__(self, ind: 'Union[str, int]') -> float:
+  /* "srctools/_vec.pyx":883
+ *         # :g strips the .0 off of floats if it's an integer.
+ *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
+ *              # <<<<<<<<<<<<<<
+ *     def __str__(self):
+ *         """Return the values, separated by spaces.
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 882, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 883, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_self));
-  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecIter), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 882, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecIter), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 883, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_2));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":881
- *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+  /* "srctools/_vec.pyx":882
+ *         """
+ *         # :g strips the .0 off of floats if it's an integer.
+ *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'             # <<<<<<<<<<<<<<
  * 
- *     def __iter__(self):             # <<<<<<<<<<<<<<
- *         return VecIter.__new__(VecIter, self)
- * 
+ *     def __str__(self):
  */
 
   /* function exit code */
@@ -11937,12 +11937,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_78__iter__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":884
- *         return VecIter.__new__(VecIter, self)
+/* "srctools/_vec.pyx":885
  * 
- *     def __getitem__(self, ind: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
- *         """Allow reading values by index instead of name if desired.
+ *     def __str__(self):
+ *         """Return the values, separated by spaces.             # <<<<<<<<<<<<<<
  * 
+ *         This is the main format in Valve's file formats.
  */
 
 /* Python wrapper */
@@ -11981,23 +11981,23 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
   PyObject *__pyx_t_12 = NULL;
   __Pyx_RefNannySetupContext("__getitem__", 0);
 
-  /* "srctools/_vec.pyx":892
- *         cdef unsigned char ind_i
- *         cdef Py_UCS4 ind_chr
- *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
- *             try:
- *                 ind_i = ind
+  /* "srctools/_vec.pyx":893
+ * 
+ *     def __repr__(self):
+ *         """Code required to reproduce this vector."""             # <<<<<<<<<<<<<<
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+ * 
  */
   __pyx_t_1 = PyInt_Check(__pyx_v_ind); 
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":893
- *         cdef Py_UCS4 ind_chr
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+    /* "srctools/_vec.pyx":894
+ *     def __repr__(self):
+ *         """Code required to reproduce this vector."""
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"             # <<<<<<<<<<<<<<
+ * 
+ *     def __iter__(self):
  */
     {
       __Pyx_PyThreadState_declare
@@ -12008,136 +12008,136 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":894
- *         if isinstance(ind, int):
- *             try:
- *                 ind_i = ind             # <<<<<<<<<<<<<<
- *             except (TypeError, ValueError, OverflowError):
- *                 pass
+        /* "srctools/_vec.pyx":895
+ *         """Code required to reproduce this vector."""
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+ *              # <<<<<<<<<<<<<<
+ *     def __iter__(self):
+ *         return VecIter.__new__(VecIter, self)
  */
-        __pyx_t_6 = __Pyx_PyInt_As_unsigned_char(__pyx_v_ind); if (unlikely((__pyx_t_6 == (unsigned char)-1) && PyErr_Occurred())) __PYX_ERR(0, 894, __pyx_L4_error)
+        __pyx_t_6 = __Pyx_PyInt_As_unsigned_char(__pyx_v_ind); if (unlikely((__pyx_t_6 == (unsigned char)-1) && PyErr_Occurred())) __PYX_ERR(0, 895, __pyx_L4_error)
         __pyx_v_ind_i = __pyx_t_6;
 
-        /* "srctools/_vec.pyx":893
- *         cdef Py_UCS4 ind_chr
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+        /* "srctools/_vec.pyx":894
+ *     def __repr__(self):
+ *         """Code required to reproduce this vector."""
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"             # <<<<<<<<<<<<<<
+ * 
+ *     def __iter__(self):
  */
       }
 
-      /* "srctools/_vec.pyx":898
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     return self.val.x
- *                 elif ind_i == 1:
+      /* "srctools/_vec.pyx":899
+ *         return VecIter.__new__(VecIter, self)
+ * 
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
+ *         """Allow reading values by index instead of name if desired.
+ * 
  */
       /*else:*/ {
 
-        /* "srctools/_vec.pyx":902
- *                 elif ind_i == 1:
- *                     return self.val.y
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
+        /* "srctools/_vec.pyx":903
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef unsigned char ind_i
  */
         switch (__pyx_v_ind_i) {
 
-          /* "srctools/_vec.pyx":898
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     return self.val.x
- *                 elif ind_i == 1:
+          /* "srctools/_vec.pyx":899
+ *         return VecIter.__new__(VecIter, self)
+ * 
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
+ *         """Allow reading values by index instead of name if desired.
+ * 
  */
           case 0:
 
-          /* "srctools/_vec.pyx":899
- *             else:
- *                 if ind_i == 0:
- *                     return self.val.x             # <<<<<<<<<<<<<<
- *                 elif ind_i == 1:
- *                     return self.val.y
+          /* "srctools/_vec.pyx":900
+ * 
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:
+ *         """Allow reading values by index instead of name if desired.             # <<<<<<<<<<<<<<
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 899, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 900, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":898
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     return self.val.x
- *                 elif ind_i == 1:
+          /* "srctools/_vec.pyx":899
+ *         return VecIter.__new__(VecIter, self)
+ * 
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
+ *         """Allow reading values by index instead of name if desired.
+ * 
  */
           break;
 
-          /* "srctools/_vec.pyx":900
- *                 if ind_i == 0:
- *                     return self.val.x
- *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
- *                     return self.val.y
- *                 elif ind_i == 2:
+          /* "srctools/_vec.pyx":901
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:
+ *         """Allow reading values by index instead of name if desired.
+ *              # <<<<<<<<<<<<<<
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.
  */
           case 1:
 
-          /* "srctools/_vec.pyx":901
- *                     return self.val.x
- *                 elif ind_i == 1:
- *                     return self.val.y             # <<<<<<<<<<<<<<
- *                 elif ind_i == 2:
- *                     return self.val.z
+          /* "srctools/_vec.pyx":902
+ *         """Allow reading values by index instead of name if desired.
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.             # <<<<<<<<<<<<<<
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 901, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 902, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":900
- *                 if ind_i == 0:
- *                     return self.val.x
- *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
- *                     return self.val.y
- *                 elif ind_i == 2:
+          /* "srctools/_vec.pyx":901
+ *     def __getitem__(self, ind: 'Union[str, int]') -> float:
+ *         """Allow reading values by index instead of name if desired.
+ *              # <<<<<<<<<<<<<<
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.
  */
           break;
 
-          /* "srctools/_vec.pyx":902
- *                 elif ind_i == 1:
- *                     return self.val.y
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
+          /* "srctools/_vec.pyx":903
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef unsigned char ind_i
  */
           case 2:
 
-          /* "srctools/_vec.pyx":903
- *                     return self.val.y
- *                 elif ind_i == 2:
- *                     return self.val.z             # <<<<<<<<<<<<<<
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
+          /* "srctools/_vec.pyx":904
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """             # <<<<<<<<<<<<<<
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 903, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 904, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":902
- *                 elif ind_i == 1:
- *                     return self.val.y
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
+          /* "srctools/_vec.pyx":903
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to read values.
+ *         Useful in conjunction with a loop to apply commands to all values.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef unsigned char ind_i
  */
           break;
           default: break;
@@ -12149,12 +12149,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
       goto __pyx_L9_try_end;
       __pyx_L4_error:;
 
-      /* "srctools/_vec.pyx":895
- *             try:
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
- *                 pass
- *             else:
+      /* "srctools/_vec.pyx":896
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+ * 
+ *     def __iter__(self):             # <<<<<<<<<<<<<<
+ *         return VecIter.__new__(VecIter, self)
+ * 
  */
       __pyx_t_8 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_OverflowError);
       if (__pyx_t_8) {
@@ -12164,12 +12164,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
       goto __pyx_L6_except_error;
       __pyx_L6_except_error:;
 
-      /* "srctools/_vec.pyx":893
- *         cdef Py_UCS4 ind_chr
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+      /* "srctools/_vec.pyx":894
+ *     def __repr__(self):
+ *         """Code required to reproduce this vector."""
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"             # <<<<<<<<<<<<<<
+ * 
+ *     def __iter__(self):
  */
       __Pyx_XGIVEREF(__pyx_t_3);
       __Pyx_XGIVEREF(__pyx_t_4);
@@ -12190,22 +12190,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
       __pyx_L9_try_end:;
     }
 
-    /* "srctools/_vec.pyx":892
- *         cdef unsigned char ind_i
- *         cdef Py_UCS4 ind_chr
- *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
- *             try:
- *                 ind_i = ind
+    /* "srctools/_vec.pyx":893
+ * 
+ *     def __repr__(self):
+ *         """Code required to reproduce this vector."""             # <<<<<<<<<<<<<<
+ *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+ * 
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":904
- *                 elif ind_i == 2:
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:             # <<<<<<<<<<<<<<
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
+  /* "srctools/_vec.pyx":905
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """
+ *         cdef unsigned char ind_i             # <<<<<<<<<<<<<<
+ *         cdef Py_UCS4 ind_chr
+ *         if isinstance(ind, int):
  */
   __pyx_t_1 = PyUnicode_Check(__pyx_v_ind); 
   __pyx_t_9 = (__pyx_t_1 != 0);
@@ -12216,158 +12216,158 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
   }
   if (unlikely(__pyx_v_ind == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 904, __pyx_L1_error)
+    __PYX_ERR(0, 905, __pyx_L1_error)
   }
-  __pyx_t_10 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind)); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 904, __pyx_L1_error)
+  __pyx_t_10 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind)); if (unlikely(__pyx_t_10 == ((Py_ssize_t)-1))) __PYX_ERR(0, 905, __pyx_L1_error)
   __pyx_t_9 = ((__pyx_t_10 == 1) != 0);
   __pyx_t_2 = __pyx_t_9;
   __pyx_L10_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":905
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]             # <<<<<<<<<<<<<<
- *             if ind_chr == "x":
- *                 return self.val.x
+    /* "srctools/_vec.pyx":906
+ *         """
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr             # <<<<<<<<<<<<<<
+ *         if isinstance(ind, int):
+ *             try:
  */
-    __pyx_t_11 = __Pyx_GetItemInt_Unicode(__pyx_v_ind, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_11 == (Py_UCS4)-1)) __PYX_ERR(0, 905, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_GetItemInt_Unicode(__pyx_v_ind, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_11 == (Py_UCS4)-1)) __PYX_ERR(0, 906, __pyx_L1_error)
     __pyx_v_ind_chr = __pyx_t_11;
 
-    /* "srctools/_vec.pyx":906
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":             # <<<<<<<<<<<<<<
- *                 return self.val.x
- *             elif ind_chr == "y":
+    /* "srctools/_vec.pyx":907
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr
+ *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
+ *             try:
+ *                 ind_i = ind
  */
     switch (__pyx_v_ind_chr) {
       case 0x78:
 
-      /* "srctools/_vec.pyx":907
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
- *                 return self.val.x             # <<<<<<<<<<<<<<
- *             elif ind_chr == "y":
- *                 return self.val.y
+      /* "srctools/_vec.pyx":908
+ *         cdef Py_UCS4 ind_chr
+ *         if isinstance(ind, int):
+ *             try:             # <<<<<<<<<<<<<<
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 907, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 908, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":906
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":             # <<<<<<<<<<<<<<
- *                 return self.val.x
- *             elif ind_chr == "y":
+      /* "srctools/_vec.pyx":907
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr
+ *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
+ *             try:
+ *                 ind_i = ind
  */
       break;
 
-      /* "srctools/_vec.pyx":908
- *             if ind_chr == "x":
- *                 return self.val.x
- *             elif ind_chr == "y":             # <<<<<<<<<<<<<<
- *                 return self.val.y
- *             elif ind_chr == "z":
+      /* "srctools/_vec.pyx":909
+ *         if isinstance(ind, int):
+ *             try:
+ *                 ind_i = ind             # <<<<<<<<<<<<<<
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass
  */
       case 0x79:
 
-      /* "srctools/_vec.pyx":909
- *                 return self.val.x
- *             elif ind_chr == "y":
- *                 return self.val.y             # <<<<<<<<<<<<<<
- *             elif ind_chr == "z":
- *                 return self.val.z
+      /* "srctools/_vec.pyx":910
+ *             try:
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
+ *                 pass
+ *             else:
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 909, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 910, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":908
- *             if ind_chr == "x":
- *                 return self.val.x
- *             elif ind_chr == "y":             # <<<<<<<<<<<<<<
- *                 return self.val.y
- *             elif ind_chr == "z":
+      /* "srctools/_vec.pyx":909
+ *         if isinstance(ind, int):
+ *             try:
+ *                 ind_i = ind             # <<<<<<<<<<<<<<
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass
  */
       break;
 
-      /* "srctools/_vec.pyx":910
- *             elif ind_chr == "y":
- *                 return self.val.y
- *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
- *                 return self.val.z
- * 
+      /* "srctools/_vec.pyx":911
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass             # <<<<<<<<<<<<<<
+ *             else:
+ *                 if ind_i == 0:
  */
       case 0x7A:
 
-      /* "srctools/_vec.pyx":911
- *                 return self.val.y
- *             elif ind_chr == "z":
- *                 return self.val.z             # <<<<<<<<<<<<<<
- * 
- *         raise KeyError(f'Invalid axis: {ind!r}')
+      /* "srctools/_vec.pyx":912
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass
+ *             else:             # <<<<<<<<<<<<<<
+ *                 if ind_i == 0:
+ *                     return self.val.x
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 911, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 912, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":910
- *             elif ind_chr == "y":
- *                 return self.val.y
- *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
- *                 return self.val.z
- * 
+      /* "srctools/_vec.pyx":911
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass             # <<<<<<<<<<<<<<
+ *             else:
+ *                 if ind_i == 0:
  */
       break;
       default: break;
     }
 
-    /* "srctools/_vec.pyx":904
- *                 elif ind_i == 2:
- *                     return self.val.z
- *         elif isinstance(ind, str) and len(<str>ind) == 1:             # <<<<<<<<<<<<<<
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
+    /* "srctools/_vec.pyx":905
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """
+ *         cdef unsigned char ind_i             # <<<<<<<<<<<<<<
+ *         cdef Py_UCS4 ind_chr
+ *         if isinstance(ind, int):
  */
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":913
- *                 return self.val.z
- * 
- *         raise KeyError(f'Invalid axis: {ind!r}')             # <<<<<<<<<<<<<<
- * 
- *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+  /* "srctools/_vec.pyx":914
+ *             else:
+ *                 if ind_i == 0:
+ *                     return self.val.x             # <<<<<<<<<<<<<<
+ *                 elif ind_i == 1:
+ *                     return self.val.y
  */
-  __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 913, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 914, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_7); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 913, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_7); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 914, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_12); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 913, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_12); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 914, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   __Pyx_Raise(__pyx_t_7, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-  __PYX_ERR(0, 913, __pyx_L1_error)
+  __PYX_ERR(0, 914, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":884
- *         return VecIter.__new__(VecIter, self)
+  /* "srctools/_vec.pyx":885
  * 
- *     def __getitem__(self, ind: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
- *         """Allow reading values by index instead of name if desired.
+ *     def __str__(self):
+ *         """Return the values, separated by spaces.             # <<<<<<<<<<<<<<
  * 
+ *         This is the main format in Valve's file formats.
  */
 
   /* function exit code */
@@ -12382,12 +12382,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80__getitem__(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":915
- *         raise KeyError(f'Invalid axis: {ind!r}')
- * 
- *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:             # <<<<<<<<<<<<<<
- *         """Allow editing values by index instead of name if desired.
- * 
+/* "srctools/_vec.pyx":916
+ *                     return self.val.x
+ *                 elif ind_i == 1:
+ *                     return self.val.y             # <<<<<<<<<<<<<<
+ *                 elif ind_i == 2:
+ *                     return self.val.z
  */
 
 /* Python wrapper */
@@ -12402,7 +12402,7 @@ static int __pyx_pw_8srctools_4_vec_3Vec_83__setitem__(PyObject *__pyx_v_self, P
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setitem__ (wrapper)", 0);
   assert(__pyx_arg_val); {
-    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 915, __pyx_L3_error)
+    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 916, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -12436,23 +12436,23 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
   PyObject *__pyx_t_12 = NULL;
   __Pyx_RefNannySetupContext("__setitem__", 0);
 
-  /* "srctools/_vec.pyx":924
- *         cdef Py_UCS4 ind_chr
+  /* "srctools/_vec.pyx":925
+ *             elif ind_chr == "y":
+ *                 return self.val.y
+ *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
+ *                 return self.val.z
  * 
- *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
- *             try:
- *                 ind_i = ind
  */
   __pyx_t_1 = PyInt_Check(__pyx_v_ind); 
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":925
+    /* "srctools/_vec.pyx":926
+ *                 return self.val.y
+ *             elif ind_chr == "z":
+ *                 return self.val.z             # <<<<<<<<<<<<<<
  * 
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+ *         raise KeyError(f'Invalid axis: {ind!r}')
  */
     {
       __Pyx_PyThreadState_declare
@@ -12463,151 +12463,151 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":926
- *         if isinstance(ind, int):
- *             try:
- *                 ind_i = ind             # <<<<<<<<<<<<<<
- *             except (TypeError, ValueError, OverflowError):
- *                 pass
+        /* "srctools/_vec.pyx":927
+ *             elif ind_chr == "z":
+ *                 return self.val.z
+ *              # <<<<<<<<<<<<<<
+ *         raise KeyError(f'Invalid axis: {ind!r}')
+ * 
  */
-        __pyx_t_6 = __Pyx_PyInt_As_unsigned_char(__pyx_v_ind); if (unlikely((__pyx_t_6 == (unsigned char)-1) && PyErr_Occurred())) __PYX_ERR(0, 926, __pyx_L4_error)
+        __pyx_t_6 = __Pyx_PyInt_As_unsigned_char(__pyx_v_ind); if (unlikely((__pyx_t_6 == (unsigned char)-1) && PyErr_Occurred())) __PYX_ERR(0, 927, __pyx_L4_error)
         __pyx_v_ind_i = __pyx_t_6;
 
-        /* "srctools/_vec.pyx":925
+        /* "srctools/_vec.pyx":926
+ *                 return self.val.y
+ *             elif ind_chr == "z":
+ *                 return self.val.z             # <<<<<<<<<<<<<<
  * 
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+ *         raise KeyError(f'Invalid axis: {ind!r}')
  */
       }
 
-      /* "srctools/_vec.pyx":930
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     self.val.x = val
- *                     return
+      /* "srctools/_vec.pyx":931
+ * 
+ *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+ *         """Allow editing values by index instead of name if desired.             # <<<<<<<<<<<<<<
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
  */
       /*else:*/ {
 
-        /* "srctools/_vec.pyx":936
- *                     self.val.y = val
- *                     return
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     self.val.z = val
- *                     return
+        /* "srctools/_vec.pyx":937
+ *         """
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr             # <<<<<<<<<<<<<<
+ * 
+ *         if isinstance(ind, int):
  */
         switch (__pyx_v_ind_i) {
 
-          /* "srctools/_vec.pyx":930
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     self.val.x = val
- *                     return
+          /* "srctools/_vec.pyx":931
+ * 
+ *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+ *         """Allow editing values by index instead of name if desired.             # <<<<<<<<<<<<<<
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
  */
           case 0:
 
-          /* "srctools/_vec.pyx":931
- *             else:
- *                 if ind_i == 0:
- *                     self.val.x = val             # <<<<<<<<<<<<<<
- *                     return
- *                 elif ind_i == 1:
+          /* "srctools/_vec.pyx":932
+ *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+ *         """Allow editing values by index instead of name if desired.
+ *              # <<<<<<<<<<<<<<
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
+ *         Useful in conjunction with a loop to apply commands to all values.
  */
           __pyx_v_self->val.x = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":932
- *                 if ind_i == 0:
- *                     self.val.x = val
- *                     return             # <<<<<<<<<<<<<<
- *                 elif ind_i == 1:
- *                     self.val.y = val
+          /* "srctools/_vec.pyx":933
+ *         """Allow editing values by index instead of name if desired.
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.             # <<<<<<<<<<<<<<
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """
  */
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":930
- *                 pass
- *             else:
- *                 if ind_i == 0:             # <<<<<<<<<<<<<<
- *                     self.val.x = val
- *                     return
+          /* "srctools/_vec.pyx":931
+ * 
+ *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+ *         """Allow editing values by index instead of name if desired.             # <<<<<<<<<<<<<<
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
  */
           break;
 
-          /* "srctools/_vec.pyx":933
- *                     self.val.x = val
- *                     return
- *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
- *                     self.val.y = val
- *                     return
+          /* "srctools/_vec.pyx":934
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
+ *         Useful in conjunction with a loop to apply commands to all values.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef unsigned char ind_i
  */
           case 1:
 
-          /* "srctools/_vec.pyx":934
- *                     return
- *                 elif ind_i == 1:
- *                     self.val.y = val             # <<<<<<<<<<<<<<
- *                     return
- *                 elif ind_i == 2:
+          /* "srctools/_vec.pyx":935
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """             # <<<<<<<<<<<<<<
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr
  */
           __pyx_v_self->val.y = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":935
- *                 elif ind_i == 1:
- *                     self.val.y = val
- *                     return             # <<<<<<<<<<<<<<
- *                 elif ind_i == 2:
- *                     self.val.z = val
+          /* "srctools/_vec.pyx":936
+ *         Useful in conjunction with a loop to apply commands to all values.
+ *         """
+ *         cdef unsigned char ind_i             # <<<<<<<<<<<<<<
+ *         cdef Py_UCS4 ind_chr
+ * 
  */
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":933
- *                     self.val.x = val
- *                     return
- *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
- *                     self.val.y = val
- *                     return
+          /* "srctools/_vec.pyx":934
+ * 
+ *         This accepts either 0,1,2 or 'x','y','z' to edit values.
+ *         Useful in conjunction with a loop to apply commands to all values.             # <<<<<<<<<<<<<<
+ *         """
+ *         cdef unsigned char ind_i
  */
           break;
 
-          /* "srctools/_vec.pyx":936
- *                     self.val.y = val
- *                     return
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     self.val.z = val
- *                     return
+          /* "srctools/_vec.pyx":937
+ *         """
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr             # <<<<<<<<<<<<<<
+ * 
+ *         if isinstance(ind, int):
  */
           case 2:
 
-          /* "srctools/_vec.pyx":937
- *                     return
- *                 elif ind_i == 2:
- *                     self.val.z = val             # <<<<<<<<<<<<<<
- *                     return
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
+          /* "srctools/_vec.pyx":938
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr
+ *              # <<<<<<<<<<<<<<
+ *         if isinstance(ind, int):
+ *             try:
  */
           __pyx_v_self->val.z = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":938
- *                 elif ind_i == 2:
- *                     self.val.z = val
- *                     return             # <<<<<<<<<<<<<<
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
+          /* "srctools/_vec.pyx":939
+ *         cdef Py_UCS4 ind_chr
+ * 
+ *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
+ *             try:
+ *                 ind_i = ind
  */
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":936
- *                     self.val.y = val
- *                     return
- *                 elif ind_i == 2:             # <<<<<<<<<<<<<<
- *                     self.val.z = val
- *                     return
+          /* "srctools/_vec.pyx":937
+ *         """
+ *         cdef unsigned char ind_i
+ *         cdef Py_UCS4 ind_chr             # <<<<<<<<<<<<<<
+ * 
+ *         if isinstance(ind, int):
  */
           break;
           default: break;
@@ -12619,12 +12619,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
       goto __pyx_L9_try_end;
       __pyx_L4_error:;
 
-      /* "srctools/_vec.pyx":927
- *             try:
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
- *                 pass
- *             else:
+      /* "srctools/_vec.pyx":928
+ *                 return self.val.z
+ * 
+ *         raise KeyError(f'Invalid axis: {ind!r}')             # <<<<<<<<<<<<<<
+ * 
+ *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
  */
       __pyx_t_7 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_OverflowError);
       if (__pyx_t_7) {
@@ -12634,12 +12634,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
       goto __pyx_L6_except_error;
       __pyx_L6_except_error:;
 
-      /* "srctools/_vec.pyx":925
+      /* "srctools/_vec.pyx":926
+ *                 return self.val.y
+ *             elif ind_chr == "z":
+ *                 return self.val.z             # <<<<<<<<<<<<<<
  * 
- *         if isinstance(ind, int):
- *             try:             # <<<<<<<<<<<<<<
- *                 ind_i = ind
- *             except (TypeError, ValueError, OverflowError):
+ *         raise KeyError(f'Invalid axis: {ind!r}')
  */
       __Pyx_XGIVEREF(__pyx_t_3);
       __Pyx_XGIVEREF(__pyx_t_4);
@@ -12660,22 +12660,22 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
       __pyx_L9_try_end:;
     }
 
-    /* "srctools/_vec.pyx":924
- *         cdef Py_UCS4 ind_chr
+    /* "srctools/_vec.pyx":925
+ *             elif ind_chr == "y":
+ *                 return self.val.y
+ *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
+ *                 return self.val.z
  * 
- *         if isinstance(ind, int):             # <<<<<<<<<<<<<<
- *             try:
- *                 ind_i = ind
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":939
- *                     self.val.z = val
- *                     return
- *         elif isinstance(ind, str) and len(<str>ind) == 1:             # <<<<<<<<<<<<<<
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
+  /* "srctools/_vec.pyx":940
+ * 
+ *         if isinstance(ind, int):
+ *             try:             # <<<<<<<<<<<<<<
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
  */
   __pyx_t_1 = PyUnicode_Check(__pyx_v_ind); 
   __pyx_t_8 = (__pyx_t_1 != 0);
@@ -12686,173 +12686,173 @@ static int __pyx_pf_8srctools_4_vec_3Vec_82__setitem__(struct __pyx_obj_8srctool
   }
   if (unlikely(__pyx_v_ind == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 939, __pyx_L1_error)
+    __PYX_ERR(0, 940, __pyx_L1_error)
   }
-  __pyx_t_9 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind)); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 939, __pyx_L1_error)
+  __pyx_t_9 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind)); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 940, __pyx_L1_error)
   __pyx_t_8 = ((__pyx_t_9 == 1) != 0);
   __pyx_t_2 = __pyx_t_8;
   __pyx_L10_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":940
- *                     return
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]             # <<<<<<<<<<<<<<
- *             if ind_chr == "x":
- *                 self.val.x = val
+    /* "srctools/_vec.pyx":941
+ *         if isinstance(ind, int):
+ *             try:
+ *                 ind_i = ind             # <<<<<<<<<<<<<<
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass
  */
-    __pyx_t_10 = __Pyx_GetItemInt_Unicode(__pyx_v_ind, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_10 == (Py_UCS4)-1)) __PYX_ERR(0, 940, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_GetItemInt_Unicode(__pyx_v_ind, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_10 == (Py_UCS4)-1)) __PYX_ERR(0, 941, __pyx_L1_error)
     __pyx_v_ind_chr = __pyx_t_10;
 
-    /* "srctools/_vec.pyx":941
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":             # <<<<<<<<<<<<<<
- *                 self.val.x = val
- *                 return
+    /* "srctools/_vec.pyx":942
+ *             try:
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
+ *                 pass
+ *             else:
  */
     switch (__pyx_v_ind_chr) {
       case 0x78:
 
-      /* "srctools/_vec.pyx":942
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
- *                 self.val.x = val             # <<<<<<<<<<<<<<
- *                 return
- *             elif ind_chr == "y":
+      /* "srctools/_vec.pyx":943
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass             # <<<<<<<<<<<<<<
+ *             else:
+ *                 if ind_i == 0:
  */
       __pyx_v_self->val.x = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":943
- *             if ind_chr == "x":
- *                 self.val.x = val
- *                 return             # <<<<<<<<<<<<<<
- *             elif ind_chr == "y":
- *                 self.val.y = val
+      /* "srctools/_vec.pyx":944
+ *             except (TypeError, ValueError, OverflowError):
+ *                 pass
+ *             else:             # <<<<<<<<<<<<<<
+ *                 if ind_i == 0:
+ *                     self.val.x = val
  */
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":941
- *         elif isinstance(ind, str) and len(<str>ind) == 1:
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":             # <<<<<<<<<<<<<<
- *                 self.val.x = val
- *                 return
+      /* "srctools/_vec.pyx":942
+ *             try:
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
+ *                 pass
+ *             else:
  */
       break;
 
-      /* "srctools/_vec.pyx":944
- *                 self.val.x = val
- *                 return
- *             elif ind_chr == "y":             # <<<<<<<<<<<<<<
- *                 self.val.y = val
- *                 return
+      /* "srctools/_vec.pyx":945
+ *                 pass
+ *             else:
+ *                 if ind_i == 0:             # <<<<<<<<<<<<<<
+ *                     self.val.x = val
+ *                     return
  */
       case 0x79:
 
-      /* "srctools/_vec.pyx":945
- *                 return
- *             elif ind_chr == "y":
- *                 self.val.y = val             # <<<<<<<<<<<<<<
- *                 return
- *             elif ind_chr == "z":
+      /* "srctools/_vec.pyx":946
+ *             else:
+ *                 if ind_i == 0:
+ *                     self.val.x = val             # <<<<<<<<<<<<<<
+ *                     return
+ *                 elif ind_i == 1:
  */
       __pyx_v_self->val.y = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":946
- *             elif ind_chr == "y":
- *                 self.val.y = val
- *                 return             # <<<<<<<<<<<<<<
- *             elif ind_chr == "z":
- *                 self.val.z = val
+      /* "srctools/_vec.pyx":947
+ *                 if ind_i == 0:
+ *                     self.val.x = val
+ *                     return             # <<<<<<<<<<<<<<
+ *                 elif ind_i == 1:
+ *                     self.val.y = val
  */
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":944
- *                 self.val.x = val
- *                 return
- *             elif ind_chr == "y":             # <<<<<<<<<<<<<<
- *                 self.val.y = val
- *                 return
+      /* "srctools/_vec.pyx":945
+ *                 pass
+ *             else:
+ *                 if ind_i == 0:             # <<<<<<<<<<<<<<
+ *                     self.val.x = val
+ *                     return
  */
       break;
 
-      /* "srctools/_vec.pyx":947
- *                 self.val.y = val
- *                 return
- *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
- *                 self.val.z = val
- *                 return
+      /* "srctools/_vec.pyx":948
+ *                     self.val.x = val
+ *                     return
+ *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
+ *                     self.val.y = val
+ *                     return
  */
       case 0x7A:
 
-      /* "srctools/_vec.pyx":948
- *                 return
- *             elif ind_chr == "z":
- *                 self.val.z = val             # <<<<<<<<<<<<<<
- *                 return
- * 
+      /* "srctools/_vec.pyx":949
+ *                     return
+ *                 elif ind_i == 1:
+ *                     self.val.y = val             # <<<<<<<<<<<<<<
+ *                     return
+ *                 elif ind_i == 2:
  */
       __pyx_v_self->val.z = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":949
- *             elif ind_chr == "z":
- *                 self.val.z = val
- *                 return             # <<<<<<<<<<<<<<
- * 
- *         raise KeyError(f'Invalid axis: {ind!r}')
+      /* "srctools/_vec.pyx":950
+ *                 elif ind_i == 1:
+ *                     self.val.y = val
+ *                     return             # <<<<<<<<<<<<<<
+ *                 elif ind_i == 2:
+ *                     self.val.z = val
  */
       __pyx_r = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":947
- *                 self.val.y = val
- *                 return
- *             elif ind_chr == "z":             # <<<<<<<<<<<<<<
- *                 self.val.z = val
- *                 return
+      /* "srctools/_vec.pyx":948
+ *                     self.val.x = val
+ *                     return
+ *                 elif ind_i == 1:             # <<<<<<<<<<<<<<
+ *                     self.val.y = val
+ *                     return
  */
       break;
       default: break;
     }
 
-    /* "srctools/_vec.pyx":939
- *                     self.val.z = val
- *                     return
- *         elif isinstance(ind, str) and len(<str>ind) == 1:             # <<<<<<<<<<<<<<
- *             ind_chr = (<str>ind)[0]
- *             if ind_chr == "x":
+    /* "srctools/_vec.pyx":940
+ * 
+ *         if isinstance(ind, int):
+ *             try:             # <<<<<<<<<<<<<<
+ *                 ind_i = ind
+ *             except (TypeError, ValueError, OverflowError):
  */
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":951
- *                 return
- * 
- *         raise KeyError(f'Invalid axis: {ind!r}')             # <<<<<<<<<<<<<<
- * 
- * 
+  /* "srctools/_vec.pyx":952
+ *                     return
+ *                 elif ind_i == 2:
+ *                     self.val.z = val             # <<<<<<<<<<<<<<
+ *                     return
+ *         elif isinstance(ind, str) and len(<str>ind) == 1:
  */
-  __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 951, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 952, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
-  __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 951, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_11); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 952, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_12);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __pyx_t_11 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 951, __pyx_L1_error)
+  __pyx_t_11 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_12); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 952, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
   __Pyx_Raise(__pyx_t_11, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-  __PYX_ERR(0, 951, __pyx_L1_error)
+  __PYX_ERR(0, 952, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":915
- *         raise KeyError(f'Invalid axis: {ind!r}')
- * 
- *     def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:             # <<<<<<<<<<<<<<
- *         """Allow editing values by index instead of name if desired.
- * 
+  /* "srctools/_vec.pyx":916
+ *                     return self.val.x
+ *                 elif ind_i == 1:
+ *                     return self.val.y             # <<<<<<<<<<<<<<
+ *                 elif ind_i == 2:
+ *                     return self.val.z
  */
 
   /* function exit code */
@@ -13347,9 +13347,9 @@ static int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 119, __pyx_L1_error)
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 277, __pyx_L1_error)
   __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(0, 417, __pyx_L1_error)
-  __pyx_builtin_NotImplemented = __Pyx_GetBuiltinName(__pyx_n_s_NotImplemented); if (!__pyx_builtin_NotImplemented) __PYX_ERR(0, 498, __pyx_L1_error)
-  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 812, __pyx_L1_error)
-  __pyx_builtin_OverflowError = __Pyx_GetBuiltinName(__pyx_n_s_OverflowError); if (!__pyx_builtin_OverflowError) __PYX_ERR(0, 895, __pyx_L1_error)
+  __pyx_builtin_NotImplemented = __Pyx_GetBuiltinName(__pyx_n_s_NotImplemented); if (!__pyx_builtin_NotImplemented) __PYX_ERR(0, 499, __pyx_L1_error)
+  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 813, __pyx_L1_error)
+  __pyx_builtin_OverflowError = __Pyx_GetBuiltinName(__pyx_n_s_OverflowError); if (!__pyx_builtin_OverflowError) __PYX_ERR(0, 896, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -13392,113 +13392,113 @@ static int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__5);
   __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "srctools/_vec.pyx":546
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot multiply 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+  /* "srctools/_vec.pyx":547
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar * vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar * vec.val.x
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 546, __pyx_L1_error)
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 547, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__8);
   __Pyx_GIVEREF(__pyx_tuple__8);
 
-  /* "srctools/_vec.pyx":573
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot divide 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+  /* "srctools/_vec.pyx":574
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar / vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar / vec.val.x
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 573, __pyx_L1_error)
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 574, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__9);
   __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "srctools/_vec.pyx":601
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot floor-divide 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+  /* "srctools/_vec.pyx":602
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar // vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar // vec.val.x
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 601, __pyx_L1_error)
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 602, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__10);
   __Pyx_GIVEREF(__pyx_tuple__10);
 
-  /* "srctools/_vec.pyx":628
- * 
- *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
- *         else:
- *             # Both vector-like or vector * something else.
+  /* "srctools/_vec.pyx":629
+ *         if isinstance(obj_a, (int, float)):
+ *             # scalar % vector
+ *             scalar = obj_a             # <<<<<<<<<<<<<<
+ *             _conv_vec(&vec.val, obj_b, scalar=False)
+ *             vec.val.x = scalar % vec.val.x
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 628, __pyx_L1_error)
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 629, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__11);
   __Pyx_GIVEREF(__pyx_tuple__11);
 
-  /* "srctools/_vec.pyx":683
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot multiply 2 Vectors.")             # <<<<<<<<<<<<<<
- *         else:
- *             return NotImplemented
+  /* "srctools/_vec.pyx":684
+ * 
+ *         return self
+ *              # <<<<<<<<<<<<<<
+ *     def __imul__(self, object other: float):
+ *         """*= operation.
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 683, __pyx_L1_error)
+  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 684, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__12);
   __Pyx_GIVEREF(__pyx_tuple__12);
 
-  /* "srctools/_vec.pyx":700
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":701
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __itruediv__(self, other: float):
+ *         """/= operation.
  */
-  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 700, __pyx_L1_error)
+  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 701, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__13);
   __Pyx_GIVEREF(__pyx_tuple__13);
 
-  /* "srctools/_vec.pyx":717
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot floor-divide 2 Vectors.")             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":718
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __ifloordiv__(self, other: float):
+ *         """//= operation.
  */
-  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 717, __pyx_L1_error)
+  __pyx_tuple__14 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__14)) __PYX_ERR(0, 718, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__14);
   __Pyx_GIVEREF(__pyx_tuple__14);
 
-  /* "srctools/_vec.pyx":734
- *             return self
- *         elif isinstance(other, Vec):
- *             raise TypeError("Cannot modulus 2 Vectors.")             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":735
  *         else:
  *             return NotImplemented
+ *              # <<<<<<<<<<<<<<
+ *     def __imod__(self, other: float):
+ *         """%= operation.
  */
-  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 734, __pyx_L1_error)
+  __pyx_tuple__15 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__15)) __PYX_ERR(0, 735, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__15);
   __Pyx_GIVEREF(__pyx_tuple__15);
 
-  /* "srctools/_vec.pyx":746
- * 
- *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
- *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
- *         elif isinstance(obj_a, Vec):
- *             # vec / val
+  /* "srctools/_vec.pyx":747
+ *             self.val.y %= scalar
+ *             self.val.z %= scalar
+ *             return self             # <<<<<<<<<<<<<<
+ *         elif isinstance(other, Vec):
+ *             raise TypeError("Cannot modulus 2 Vectors.")
  */
-  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 746, __pyx_L1_error)
+  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 747, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__16);
   __Pyx_GIVEREF(__pyx_tuple__16);
 
-  /* "srctools/_vec.pyx":778
- *             res_1.val.z = other_d // vec.val.z
- *         else:
- *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
- * 
- *         return res_1, res_2
+  /* "srctools/_vec.pyx":779
+ *             res_1.val.z = vec.val.z // other_d
+ *         elif isinstance(obj_b, Vec):
+ *             # val / vec             # <<<<<<<<<<<<<<
+ *             vec = <Vec>obj_b
+ *             try:
  */
-  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_u_Called_with_non_vectors); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 778, __pyx_L1_error)
+  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_u_Called_with_non_vectors); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 779, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_GIVEREF(__pyx_tuple__17);
 

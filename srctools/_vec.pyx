@@ -482,6 +482,21 @@ cdef class Vec:
             self.val.z,
         )
 
+    def __contains__(self, val) -> bool:
+        """Check to see if an axis is set to the given value."""
+        cdef double val_d
+        try:
+            val_d = val
+        except (TypeError, ValueError): # Non-floats should return False!
+            return False
+        if val_d == self.val.x:
+            return True
+        if val_d == self.val.y:
+            return True
+        if val_d == self.val.z:
+            return True
+        return False
+
     # Non-in-place operators. Arg 1 may not be a Vec.
 
     def __add__(obj_a, obj_b):
