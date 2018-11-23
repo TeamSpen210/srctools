@@ -137,6 +137,31 @@ cdef class Vec:
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
+    # Various constants.
+    INV_AXIS = {
+        'x': ('y', 'z'),
+        'y': ('x', 'z'),
+        'z': ('x', 'y'),
+
+        ('y', 'z'): 'x',
+        ('x', 'z'): 'y',
+        ('x', 'y'): 'z',
+
+        ('z', 'y'): 'x',
+        ('z', 'x'): 'y',
+        ('y', 'x'): 'z',
+    }
+    # Vectors pointing in all cardinal directions.
+    # Tuple.__new__() can't be unpacked...
+    with cython.optimize.unpack_method_calls(False):
+        N = north = y_pos = tuple_new(Vec_tuple, (0, 1, 0))
+        S = south = y_neg = tuple_new(Vec_tuple, (0, -1, 0))
+        E = east = x_pos = tuple_new(Vec_tuple, (1, 0, 0))
+        W = west = x_neg = tuple_new(Vec_tuple, (-1, 0, 0))
+        T = top = z_pos = tuple_new(Vec_tuple, (0, 0, 1))
+        B = bottom = z_neg = tuple_new(Vec_tuple, (0, 0, -1))
+
+
     # This is a sub-struct, so we can pass pointers to it to other
     # functions.
     cdef vec_t val
