@@ -7,7 +7,7 @@ import pytest
 import operator as op
 import srctools
 from srctools import Vec_tuple, vec as vec_mod
-from srctools.vec import Py_Vec, Cy_Vec
+from srctools.vec import Py_Vec, Cy_Vec, Py_parse_vec_str, Cy_parse_vec_str, parse_vec_str
 from typing import Type
 
 try:
@@ -33,22 +33,25 @@ raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
 if Py_Vec is Cy_Vec:
-    parms = [Py_Vec]
+    parms = [(Py_Vec, Py_parse_vec_str)]
     names = ['Python']
     print('No _vec! ')
 else:
-    parms = [Py_Vec, Cy_Vec]
+    parms = [(Py_Vec, Py_parse_vec_str), (Cy_Vec, Cy_parse_vec_str)]
     names = ['Python', 'Cython']
 
 
 @pytest.fixture(params=parms, ids=names)
 def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""
-    global Vec
-    orig_vec = srctools.Vec
-    Vec = request.param
+    global Vec, parse_vec_str
+    orig_vec = vec_mod.Vec
+    orig_parse = vec_mod.parse_vec_str
+    vec_mod.Vec, vec_mod.parse_vec_str = Vec, parse_vec_str = request.param
     yield None
-    Vec = orig_vec
+    vec_mod.Vec = Vec = orig_vec
+    vec_mod.parse_vec_str = parse_vec_str = orig_parse
+
 
 
 def iter_vec(nums):
@@ -82,7 +85,10 @@ def assert_vec(vec, x, y, z, msg=''):
 
 
 def test_construction(py_c_vec):
-    """Check various parts of the constructor - Vec(), Vec.from_str()."""
+    """Check various parts of the constructor.
+    
+    This tests Vec(), Vec.from_str() and parse_vec_str().
+    """
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(Vec(x, y, z), x, y, z)
         assert_vec(Vec(x, y), x, y, 0)
@@ -114,6 +120,18 @@ def test_construction(py_c_vec):
         assert_vec(Vec.from_str('({} {} {})'.format(x, y, z)), x, y, z)
         assert_vec(Vec.from_str('[{} {} {}]'.format(x, y, z)), x, y, z)
 
+        # And parse_vec_str
+        assert_vec(v, *parse_vec_str('{} {} {}'.format(x, y, z)))
+        assert_vec(v, *parse_vec_str('<{} {} {}>'.format(x, y, z)))
+
+        assert_vec(v, *parse_vec_str('{{{} {} {}}}'.format(x, y, z)))
+        assert_vec(v, *parse_vec_str('({} {} {})'.format(x, y, z)))
+        assert_vec(v, *parse_vec_str('[{} {} {}]'.format(x, y, z)))
+
+        parse_res = parse_vec_str('{} {} {}'.format(x, y, z))
+        assert isinstance(parse_res, tuple)
+        assert parse_res == (x, y, z)
+
         # Test converting a converted Vec
         orig = Vec(x, y, z)
         new = Vec.from_str(Vec(x, y, z))
@@ -136,6 +154,13 @@ def test_construction(py_c_vec):
     # Check failures in Vec.from_str()
     # Note - does not pass through unchanged, they're converted to floats!
     for val in VALID_ZERONUMS:
+        assert val == parse_vec_str('', x=val)[0]
+        assert val == parse_vec_str('blah 4 2', y=val)[1]
+        assert val == parse_vec_str('2 hi 2', x=val)[0]
+        assert val == parse_vec_str('2 6 gh', z=val)[2]
+        assert val == parse_vec_str('1.2 3.4', x=val)[0]
+        assert val == parse_vec_str('34.5 38.4 -23 -38', z=val)[2]
+
         assert val == Vec.from_str('', x=val).x
         assert val == Vec.from_str('blah 4 2', y=val).y
         assert val == Vec.from_str('2 hi 2', x=val).x
