@@ -769,13 +769,13 @@ ROUND_VALS = [
 def test_round(py_c_vec):
     """Test round(Vec)."""
     for from_val, to_val in ROUND_VALS:
-        assert round(Vec(from_val, from_val, from_val)) == Vec(to_val, to_val, to_val)
+        assert_vec(round(Vec(from_val, from_val, from_val)), to_val, to_val, to_val)
 
     # Check it doesn't mix up orders..
     for val in VALID_NUMS:
-        assert round(Vec(val, 0, 0)) == Vec(round(val), 0, 0)
-        assert round(Vec(0, val, 0)) == Vec(0, round(val), 0)
-        assert round(Vec(0, 0, val)) == Vec(0, 0, round(val))
+        assert_vec(round(Vec(val, 0, 0)), round(val), 0, 0)
+        assert_vec(round(Vec(0, val, 0)), 0, round(val), 0)
+        assert_vec(round(Vec(0, 0, val)), 0, 0, round(val))
 
 MINMAX_VALUES = [
     (0, 0),
