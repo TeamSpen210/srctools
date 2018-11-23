@@ -903,6 +903,31 @@ cdef class Vec:
                 vec.val.z = self.val.z / mag
         return vec
 
+    def dot(self, other) -> float:
+        """Return the dot product of both Vectors."""
+        cdef vec_t oth
+
+        _conv_vec(&oth, other, False)
+
+        return (
+            self.val.x * oth.x +
+            self.val.y * oth.y +
+            self.val.z * oth.z
+        )
+
+    def cross(self, other) -> 'Vec':
+        """Return the cross product of both Vectors."""
+        cdef vec_t oth
+
+        _conv_vec(&oth, other, False)
+
+        return _vector(
+            self.val.y * oth.z - self.val.z * oth.y,
+            self.val.z * oth.x - self.val.x * oth.z,
+            self.val.x * oth.y - self.val.y * oth.x,
+        )
+
+
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
