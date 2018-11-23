@@ -108,6 +108,28 @@ cdef inline Py_UCS4 _conv_axis(object axis_obj) except -1:
     raise KeyError(f'Invalid axis {axis_obj!r}!')
 
 
+cdef inline void _mat_mul(
+    vec_t *vec,
+    double a, double b, double c,
+    double d, double e, double f,
+    double g, double h, double i,
+):
+    """Multiply this vector by a 3x3 rotation matrix.
+
+    Used for Vec.rotate().
+    The matrix should follow the following pattern:
+    [ a b c ]
+    [ d e f ]
+    [ g h i ]
+    """
+    cdef double x = vec.x
+    cdef double y = vec.y
+    cdef double z = vec.z
+
+    vec.x = (x * a) + (y * b) + (z * c)
+    vec.y = (x * d) + (y * e) + (z * f)
+    vec.z = (x * g) + (y * h) + (z * i)
+
 DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
 DEF rad_2_deg = 180 / PI
@@ -331,6 +353,95 @@ cdef class Vec:
                     vec.val.z = axis_val
 
         return vec
+
+    cdef _rotate(
+        self,
+        double pitch,
+        double yaw,
+        double roll,
+        bint round_vals,
+    ):
+        # pitch is in the y axis
+        # yaw is the z axis
+        # roll is the x axis
+
+        pitch *= deg_2_rad
+        yaw *= deg_2_rad
+        roll *= deg_2_rad
+
+        cdef double cos_p = math.cos(pitch)
+        cdef double cos_y = math.cos(yaw)
+        cdef double cos_r = math.cos(roll)
+
+        cdef double sin_p = math.sin(pitch)
+        cdef double sin_y = math.sin(yaw)
+        cdef double sin_r = math.sin(roll)
+
+        # Need to do transformations in roll, pitch, yaw order
+        _mat_mul(  # Roll = X
+            &self.val,
+            1, 0, 0,
+            0, cos_r, -sin_r,
+            0, sin_r, cos_r,
+        )
+
+        _mat_mul(  # Pitch = Y
+            &self.val,
+            cos_p, 0, sin_p,
+            0, 1, 0,
+            -sin_p, 0, cos_p,
+        )
+
+        _mat_mul(  # Yaw = Z
+            &self.val,
+            cos_y, -sin_y, 0,
+            sin_y, cos_y, 0,
+            0, 0, 1,
+        )
+
+        if round_vals:
+            self.val.x = round(self.val.x, 3)
+            self.val.y = round(self.val.y, 3)
+            self.val.z = round(self.val.z, 3)
+
+    def rotate(
+        self,
+        double pitch: float=0.0,
+        double yaw: float=0.0,
+        double roll: float=0.0,
+        bint round_vals: bool=True,
+    ) -> 'Vec':
+        """Rotate a vector by a Source rotational angle.
+        Returns the vector, so you can use it in the form
+        val = Vec(0,1,0).rotate(p, y, r)
+
+        If round is True, all values will be rounded to 3 decimals
+        (since these calculations always have small inprecision.)
+        """
+        self._rotate(pitch, yaw, roll, round_vals)
+        return self
+
+    def rotate_by_str(
+        self,
+        ang,
+        double pitch=0.0,
+        double yaw=0.0,
+        double roll=0.0,
+        bint round_vals=True,
+    ) -> 'Vec':
+        """Rotate a vector, using a string instead of a vector.
+
+        If the string cannot be parsed, use the passed in values instead.
+        """
+        cdef vec_t angle
+        _parse_vec_str(&angle, ang, pitch, yaw, roll)
+        self._rotate(
+            angle.x,
+            angle.y,
+            angle.z,
+            round_vals,
+        )
+        return self
 
     @staticmethod
     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':
