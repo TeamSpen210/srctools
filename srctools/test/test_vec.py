@@ -6,7 +6,7 @@ import copy
 import pytest
 import operator as op
 import srctools
-from srctools import Vec_tuple
+from srctools import Vec_tuple, vec as vec_mod
 from srctools.vec import Py_Vec, Cy_Vec
 from typing import Type
 
@@ -812,6 +812,7 @@ def test_minmax(py_c_vec):
 
 def test_copy_pickle(py_c_vec):
     """Test pickling and unpickling and copying Vectors."""
+    vec_mod.Vec = Vec
 
     test_data = 1.5, 0.2827, 2.3464545636e47
 
@@ -821,7 +822,7 @@ def test_copy_pickle(py_c_vec):
 
     assert orig is not cpy_meth  # Must be a new object.
     assert cpy_meth is not orig.copy()  # Cannot be cached
-    assert orig == cpy_meth # Numbers must be exactly identical!
+    assert orig == cpy_meth  # Numbers must be exactly identical!
 
     cpy = copy.copy(orig)
 
@@ -834,12 +835,17 @@ def test_copy_pickle(py_c_vec):
     assert orig is not dcpy
     assert orig == dcpy
 
-    pick = pickle.loads(pickle.dumps(orig))
+    pick = pickle.dumps(orig)
+    thaw = pickle.loads(pick)
 
-    assert orig is not pick
-    assert orig == pick
+    assert orig is not thaw
+    assert orig == thaw
 
-    # TODO: Check both c/python version produce the same data.
+    # Ensure both produce the same pickle - so they can be interchanged.
+    cy_pick = pickle.dumps(Cy_Vec(test_data))
+    py_pick = pickle.dumps(Cy_Vec(test_data))
+
+    assert cy_pick == py_pick == pick
 
 
 def test_bbox(py_c_vec):
