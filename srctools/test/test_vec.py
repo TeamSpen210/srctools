@@ -159,9 +159,10 @@ def test_with_axes(py_c_vec):
             continue
         for x, y, z in iter_vec(VALID_ZERONUMS):
             vec = Vec.with_axes(a, x, b, y, c, z)
-            assert vec[a] == x
-            assert vec[b] == y
-            assert vec[c] == z
+            msg = '{} = {}={}, {}={}, {}={}'.format(vec, a, x, b, y, c, z)
+            assert vec[a] == x, msg
+            assert vec[b] == y, msg
+            assert vec[c] == z, msg
 
 
 
@@ -684,16 +685,16 @@ def test_setitem(py_c_vec):
     for ind, axis in enumerate('xyz'):
         vec1 = Vec()
         vec1[axis] = 20.3
-        assert vec1[axis] == 20.3
-        assert vec1.other_axes(axis) == (0.0, 0.0)
+        assert vec1[axis] == 20.3, axis
+        assert vec1.other_axes(axis) == (0.0, 0.0), axis
 
         vec2 = Vec()
         vec2[ind] = 20.3
-        assert_vec(vec1, vec2.x, vec2.y, vec2.z)
+        assert_vec(vec1, vec2.x, vec2.y, vec2.z, axis)
 
     vec = Vec()
     for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with raises_keyerror:
+        with pytest.raises(KeyError, message=repr(invalid)):
             vec[invalid] = 8
         assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
