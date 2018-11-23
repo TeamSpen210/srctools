@@ -200,7 +200,7 @@ cdef class Vec:
                 self.val.y = y
 
             if len(tup) >= 3:
-                self.val.z = tup[3]
+                self.val.z = tup[2]
             else:
                 self.val.z = z
 

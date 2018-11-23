@@ -3534,7 +3534,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  *                 self.val.y = y
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
- *                 self.val.z = tup[3]
+ *                 self.val.z = tup[2]
  *             else:
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
@@ -3548,7 +3548,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       /* "srctools/_vec.pyx":203
  * 
  *             if len(tup) >= 3:
- *                 self.val.z = tup[3]             # <<<<<<<<<<<<<<
+ *                 self.val.z = tup[2]             # <<<<<<<<<<<<<<
  *             else:
  *                 self.val.z = z
  */
@@ -3556,7 +3556,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
         __PYX_ERR(0, 203, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 3, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 203, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 203, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
@@ -3566,14 +3566,14 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  *                 self.val.y = y
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
- *                 self.val.z = tup[3]
+ *                 self.val.z = tup[2]
  *             else:
  */
       goto __pyx_L8;
     }
 
     /* "srctools/_vec.pyx":205
- *                 self.val.z = tup[3]
+ *                 self.val.z = tup[2]
  *             else:
  *                 self.val.z = z             # <<<<<<<<<<<<<<
  * 
