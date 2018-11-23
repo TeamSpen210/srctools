@@ -96,6 +96,17 @@ cdef inline unsigned char _conv_vec(
             raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
+
+cdef inline Py_UCS4 _conv_axis(object axis_obj) except -1:
+    """Convert an x/y/z string to the matching character, or raise KeyError."""
+    cdef Py_UCS4 let
+    if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
+        let = (<str>axis_obj)[0]
+        if let in ('x', 'y', 'z'):
+            return let
+    raise KeyError(f'Invalid axis {axis_obj!r}!')
+
+
 DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
 DEF rad_2_deg = 180 / PI
@@ -297,11 +308,11 @@ cdef class Vec:
             )
 
         cdef Vec vec = Vec.__new__(Vec)
-        cdef unicode axis
+        cdef Py_UCS4 axis
         cdef unsigned char i
         for i in range(0, arg_count, 2):
-            axis = args[i]
             axis_val = args[i+1]
+            axis = _conv_axis(args[i])
             if axis == 'x':
                 if isinstance(axis_val, Vec):
                     vec.val.x = (<Vec>axis_val).val.x
@@ -317,8 +328,6 @@ cdef class Vec:
                     vec.val.z = (<Vec>axis_val).val.z
                 else:
                     vec.val.z = axis_val
-            else:
-                raise ValueError(f'Invalid axis {axis!r}!')
 
         return vec
 
@@ -429,17 +438,13 @@ cdef class Vec:
     @cython.boundscheck(False)
     def other_axes(self, object axis) -> 'Tuple[float, float]':
         """Get the values for the other two axes."""
-        cdef Py_UCS4 axis_chr
-        if isinstance(axis, str) and axis is not None and len(<str>axis) == 1:
-            axis_chr = (<str>axis)[0]
-            if axis_chr == 'x':
-                return self.val.y, self.val.z
-            elif axis_chr == 'y':
-                return self.val.x, self.val.z
-            elif axis_chr == 'z':
-                return self.val.x, self.val.y
-
-        raise KeyError(f'Bad axis {axis!r}!')
+        cdef char axis_chr = _conv_axis(axis)
+        if axis_chr == b'x':
+            return self.val.y, self.val.z
+        elif axis_chr == b'y':
+            return self.val.x, self.val.z
+        elif axis_chr == b'z':
+            return self.val.x, self.val.y
 
     @cython.optimize.unpack_method_calls(False)
     def as_tuple(self) -> 'Tuple[float, float, float]':
@@ -818,7 +823,7 @@ cdef class Vec:
             raise TypeError("Called with non-vectors??")
 
         return res_1, res_2
-    
+
     def max(self, other):
         """Set this vector's values to the maximum of the two vectors."""
         cdef vec_t vec
@@ -921,73 +926,67 @@ cdef class Vec:
     def __iter__(self):
         return VecIter.__new__(VecIter, self)
 
-    def __getitem__(self, ind: 'Union[str, int]') -> float:
+    def __getitem__(self, ind_obj: 'Union[str, int]') -> float:
         """Allow reading values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to read values.
         Useful in conjunction with a loop to apply commands to all values.
         """
-        cdef unsigned char ind_i
-        cdef Py_UCS4 ind_chr
-        if isinstance(ind, int):
+        cdef Py_UCS4 ind
+        if isinstance(ind_obj, int):
             try:
-                ind_i = ind
+                ind = ind_obj
             except (TypeError, ValueError, OverflowError):
                 pass
             else:
-                if ind_i == 0:
+                if ind == 0:
                     return self.val.x
-                elif ind_i == 1:
+                elif ind == 1:
                     return self.val.y
-                elif ind_i == 2:
+                elif ind == 2:
                     return self.val.z
-        elif isinstance(ind, str) and len(<str>ind) == 1:
-            ind_chr = (<str>ind)[0]
-            if ind_chr == "x":
+                else:
+                    raise KeyError(f'Invalid axis: {ind!r}')
+
+        else:
+            ind = _conv_axis(ind_obj)
+            if ind == "x":
                 return self.val.x
-            elif ind_chr == "y":
+            elif ind == "y":
                 return self.val.y
-            elif ind_chr == "z":
+            elif ind == "z":
                 return self.val.z
 
-        raise KeyError(f'Invalid axis: {ind!r}')
 
-    def __setitem__(self, ind: 'Union[str, int]', double val: float) -> None:
+    def __setitem__(self, ind_obj: 'Union[str, int]', double val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
-        cdef unsigned char ind_i
-        cdef Py_UCS4 ind_chr
+        cdef Py_UCS4 ind
 
-        if isinstance(ind, int):
+        if isinstance(ind_obj, int):
             try:
-                ind_i = ind
+                ind = ind_obj
             except (TypeError, ValueError, OverflowError):
                 pass
             else:
-                if ind_i == 0:
+                if ind == 0:
                     self.val.x = val
-                    return
-                elif ind_i == 1:
+                elif ind == 1:
                     self.val.y = val
-                    return
-                elif ind_i == 2:
+                elif ind == 2:
                     self.val.z = val
-                    return
-        elif isinstance(ind, str) and len(<str>ind) == 1:
-            ind_chr = (<str>ind)[0]
-            if ind_chr == "x":
+                else:
+                    raise KeyError(f'Invalid axis: {ind!r}')
+        else:
+            ind = _conv_axis(ind_obj)
+            if ind == "x":
                 self.val.x = val
-                return
-            elif ind_chr == "y":
+            elif ind == "y":
                 self.val.y = val
-                return
-            elif ind_chr == "z":
+            elif ind == "z":
                 self.val.z = val
-                return
-
-        raise KeyError(f'Invalid axis: {ind!r}')
 
 
