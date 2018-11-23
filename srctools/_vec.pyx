@@ -405,14 +405,14 @@ cdef class Vec:
     def other_axes(self, object axis) -> 'Tuple[float, float]':
         """Get the values for the other two axes."""
         cdef Py_UCS4 axis_chr
-        if isinstance(axis, str) and len(<str>axis) == 1:
+        if isinstance(axis, str) and axis is not None and len(<str>axis) == 1:
             axis_chr = (<str>axis)[0]
             if axis_chr == 'x':
-                return self.y, self.z
-            if axis_chr == 'y':
-                return self.x, self.z
-            if axis_chr == 'z':
-                return self.x, self.y
+                return self.val.y, self.val.z
+            elif axis_chr == 'y':
+                return self.val.x, self.val.z
+            elif axis_chr == 'z':
+                return self.val.x, self.val.y
 
         raise KeyError(f'Bad axis {axis!r}!')
 
@@ -431,14 +431,14 @@ cdef class Vec:
 
         The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
         """
-        cdef Vec vec = Vec().__new__(Vec)
-
         # Pitch is applied first, so we need to reconstruct the x-value.
         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
 
-        vec.val.x = rad_2_deg * math.atan2(-self.z, horiz_dist)
-        vec.val.y = (math.atan2(self.y, self.x) * rad_2_deg) % 360.0
-        vec.val.z = roll
+        return _vector(
+            rad_2_deg * math.atan2(-self.val.z, horiz_dist),
+            (math.atan2(self.val.y, self.val.x) * rad_2_deg) % 360.0,
+            roll,
+        )
 
     def rotation_around(self, double rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
@@ -661,9 +661,9 @@ cdef class Vec:
         cdef double scalar
         if isinstance(other, (int, float)):
             scalar = other
-            self.x *= scalar
-            self.y *= scalar
-            self.z *= scalar
+            self.val.x *= scalar
+            self.val.y *= scalar
+            self.val.z *= scalar
             return self
         elif isinstance(other, Vec):
             raise TypeError("Cannot multiply 2 Vectors.")
@@ -678,9 +678,9 @@ cdef class Vec:
         cdef double scalar
         if isinstance(other, (int, float)):
             scalar = other
-            self.x /= scalar
-            self.y /= scalar
-            self.z /= scalar
+            self.val.x /= scalar
+            self.val.y /= scalar
+            self.val.z /= scalar
             return self
         elif isinstance(other, Vec):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -695,9 +695,9 @@ cdef class Vec:
         cdef double scalar
         if isinstance(other, (int, float)):
             scalar = other
-            self.x //= scalar
-            self.y //= scalar
-            self.z //= scalar
+            self.val.x //= scalar
+            self.val.y //= scalar
+            self.val.z //= scalar
             return self
         elif isinstance(other, Vec):
             raise TypeError("Cannot floor-divide 2 Vectors.")
@@ -712,9 +712,9 @@ cdef class Vec:
         cdef double scalar
         if isinstance(other, (int, float)):
             scalar = other
-            self.x %= scalar
-            self.y %= scalar
-            self.z %= scalar
+            self.val.x %= scalar
+            self.val.y %= scalar
+            self.val.z %= scalar
             return self
         elif isinstance(other, Vec):
             raise TypeError("Cannot modulus 2 Vectors.")
