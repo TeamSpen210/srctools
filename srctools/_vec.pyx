@@ -1,7 +1,8 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from cpython.object cimport Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
+from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
+from cpython.ref cimport Py_INCREF
 cimport cython
 
 # Lightweight struct just holding the three values.
@@ -29,12 +30,18 @@ cdef object unpickle_func
 cdef object Vec_tuple
 from srctools.vec import _mk as unpickle_func, Vec_tuple
 
-# And cache this for fast tuple creation.
-cdef object tuple_new = tuple.__new__
-
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
     raise RuntimeError('Vec_tuple is not a tuple subclass!')
+
+cdef object _make_tuple(double x, double y, double z):
+    # Fast-construct a Vec_tuple. We make a normal tuple (fast),
+    # then assign the namedtuple type. The type is on the heap
+    # so we need to incref it.
+    cdef tuple tup = (x, y, z)
+    Py_INCREF(Vec_tuple)
+    (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
+    return tup
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
@@ -79,8 +86,7 @@ def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
      """
     cdef vec_t vec
     _parse_vec_str(&vec, val, x, y, z)
-    with cython.optimize.unpack_method_calls(False):
-        return tuple_new(Vec_tuple, (vec.x, vec.y, vec.z))
+    return _make_tuple(vec.x, vec.y, vec.z)
 
 cdef inline unsigned char _conv_vec(
     vec_t *result,
@@ -202,13 +208,12 @@ cdef class Vec:
     }
     # Vectors pointing in all cardinal directions.
     # Tuple.__new__() can't be unpacked...
-    with cython.optimize.unpack_method_calls(False):
-        N = north = y_pos = tuple_new(Vec_tuple, (0, 1, 0))
-        S = south = y_neg = tuple_new(Vec_tuple, (0, -1, 0))
-        E = east = x_pos = tuple_new(Vec_tuple, (1, 0, 0))
-        W = west = x_neg = tuple_new(Vec_tuple, (-1, 0, 0))
-        T = top = z_pos = tuple_new(Vec_tuple, (0, 0, 1))
-        B = bottom = z_neg = tuple_new(Vec_tuple, (0, 0, -1))
+    N = north = y_pos = _make_tuple(0, 1, 0)
+    S = south = y_neg = _make_tuple(0, -1, 0)
+    E = east = x_pos = _make_tuple(1, 0, 0)
+    W = west = x_neg = _make_tuple(-1, 0, 0)
+    T = top = z_pos = _make_tuple(0, 0, 1)
+    B = bottom = z_neg = _make_tuple(0, 0, -1)
 
 
     # This is a sub-struct, so we can pass pointers to it to other
@@ -573,12 +578,11 @@ cdef class Vec:
         elif axis_chr == b'z':
             return self.val.x, self.val.y
 
-    @cython.optimize.unpack_method_calls(False)
     def as_tuple(self) -> 'Tuple[float, float, float]':
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the
         # Python __new__.
-        return tuple_new(Vec_tuple, (self.val.x, self.val.y, self.val.z))
+        return _make_tuple(self.val.x, self.val.y, self.val.z)
 
     def to_angle(self, double roll: float=0) -> 'Vec':
         """Convert a normal to a Source Engine angle.
