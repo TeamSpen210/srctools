@@ -151,6 +151,22 @@ cdef inline void _mat_mul(
     vec.y = (x * d) + (y * e) + (z * f)
     vec.z = (x * g) + (y * h) + (z * i)
 
+cdef inline double _vec_mag(vec_t *vec):
+    return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
+
+cdef _vec_normalise(vec_t *out, vec_t *inp):
+    cdef double mag = _vec_mag(inp)
+
+    if mag == 0:
+        # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
+        out.x = out.y = out.z = 0
+    else:
+        # Disable ZeroDivisionError check, we just checked that.
+        with cython.cdivision(True):
+            out.x = inp.x / mag
+            out.y = inp.y / mag
+            out.z = inp.z / mag
+
 DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
 DEF rad_2_deg = 180 / PI
@@ -175,9 +191,9 @@ cdef class VecIter:
         self.index += 1
         if self.index == 1:
             return self.vec.val.x
-        if self.index == 2:
+        elif self.index == 2:
             return self.vec.val.y
-        if self.index == 3:
+        elif self.index == 3:
             # Drop our reference.
             ret = self.vec.val.z
             self.vec = None
@@ -1065,9 +1081,6 @@ cdef class Vec:
     cdef inline double _mag_sq(self):
         return self.val.x**2 + self.val.y**2 + self.val.z**2
 
-    cdef inline double _mag(self):
-        return math.sqrt(self.val.x**2 + self.val.y**2 + self.val.z**2)
-
     def mag_sq(self):
         """Compute the distance from the vector and the origin."""
         return self._mag_sq()
@@ -1078,11 +1091,11 @@ cdef class Vec:
 
     def mag(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag()
+        return _vec_mag(&self.val)
 
     def len(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag()
+        return _vec_mag(&self.val)
 
     def norm(self):
         """Normalise the Vector.
@@ -1092,18 +1105,33 @@ cdef class Vec:
          The vector is left unchanged if it is equal to (0,0,0).
          """
         cdef Vec vec = Vec.__new__(Vec)
-        cdef double mag = self._mag()
-
-        if mag == 0:
-            # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
-            vec.val.x = vec.val.y = vec.val.z = 0
-        else:
-            # Disable ZeroDivisionError check, we just checked that.
-            with cython.cdivision(True):
-                vec.val.x = self.val.x / mag
-                vec.val.y = self.val.y / mag
-                vec.val.z = self.val.z / mag
+        _vec_normalise(&vec.val, &self.val)
         return vec
+
+    def norm_mask(self, normal: 'Vec') -> 'Vec':
+        """Subtract the components of this vector not in the direction of the normal.
+
+        If the normal is axis-aligned, this will zero out the other axes.
+        If not axis-aligned, it will do the equivalent.
+        """
+        cdef vec_t norm
+
+        _conv_vec(&norm, normal, False)
+
+        _vec_normalise(&norm, &norm)
+
+        cdef double dot = (
+            self.val.x * norm.x +
+            self.val.y * norm.y +
+            self.val.z * norm.z
+        )
+
+        return _vector(
+            norm.x * dot,
+            norm.y * dot,
+            norm.z * dot,
+        )
+
 
     def dot(self, other) -> float:
         """Return the dot product of both Vectors."""
