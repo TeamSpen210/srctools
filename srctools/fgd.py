@@ -98,17 +98,6 @@ class ValueTypes(Enum):
         """Is this a flag or choices value, and needs a [] list?"""
         return self.value in ('choices', 'flags')
 
-    @property
-    def is_literal(self) -> bool:
-        """Should values of this type be written without quotes around it?"""
-        # NOT floats! Some cases cause a parse fail (with the period).
-        return self.value in {
-            'boolean',
-            'integer',
-            'node_dest',
-            'node_id',
-        }
-
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
     for typ in ValueTypes
@@ -522,10 +511,12 @@ class KeyValues:
             file.write(': "{}"'.format(self.disp_name))
 
         if self.default:
-            if self.type.is_literal:  # Int/float etc.
-                file.write(' : {}'.format(self.default))
+            default_str = str(self.default)
+            # We can write unquoted integers, but nothing else.
+            if all(x in '0123456789-' for x in default_str):
+                file.write(' : ' + default_str)
             else:
-                file.write(' : "{}"'.format(self.default))
+                file.write(' : "{}"'.format(default_str))
             if self.desc:
                 file.write(' : ')
         else:
