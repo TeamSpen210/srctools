@@ -60,7 +60,5 @@ setup(
         'cx_Freeze',
         'importlib_resources',
         'aenum<3.6',
-
     ],
-    ]
 )
