@@ -1168,7 +1168,7 @@ class EntityDef:
     def export(self, file: TextIO) -> None:
         """Write the entity out to a FGD file."""
         # Make it look pretty: BaseClass
-        file.write('\n@{} '.format(
+        file.write('@{} '.format(
             self.type.value.title().replace('class', 'Class')
         ))
         if self.bases:
@@ -1186,7 +1186,7 @@ class EntityDef:
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
             else:
-                file.write('\n\t{}({}) '.format(helper.value, ', '.join(args)))
+                file.write('\n\t{}({})'.format(helper.value, ', '.join(args)))
             if helper is HelperTypes.EXT_ORDERBY:
                 kv_order_list.extend(map(str.casefold, args))
 
@@ -1494,10 +1494,11 @@ class FGD:
             file = io.StringIO()
 
         if self.map_size_min != self.map_size_max:
-            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
+            file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
 
         # TODO: topological sort.
         for ent in self.entities.values():
+            file.write('\n')
             ent.export(file)
 
         if ret_string:
