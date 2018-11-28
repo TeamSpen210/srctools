@@ -5,11 +5,13 @@ import operator
 from enum import Enum
 from binascii import crc32 # The checksum method Valve uses
 
-from typing import Union, Dict
+from typing import Union, Dict, Optional, List, Tuple, Iterator, BinaryIO
+
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
 
+FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 class OpenModes(Enum):
     """Modes for opening VPK files."""
@@ -38,7 +40,7 @@ def struct_file_read(fmt, file):
     return struct.unpack(fmt, file.read(struct.calcsize(fmt)))
 
 
-def iter_nullstr(file):
+def iter_nullstr(file: BinaryIO):
     """Read a null-terminated ASCII string from the file.
     
     This continuously yields strings, with empty strings 
@@ -72,7 +74,7 @@ def _write_nullstring(file, string):
         file.write(b' \x00')
 
 
-def _get_arch_filename(prefix='pak01', index: int=None):
+def get_arch_filename(prefix='pak01', index: int=None):
     """Generate the name for a VPK file.
     
     Prefix is the name of the file, usually 'pak01'.
@@ -84,7 +86,7 @@ def _get_arch_filename(prefix='pak01', index: int=None):
         return '{}_{!s:>03}.vpk'.format(prefix, index)
 
 
-def _get_file_parts(value):
+def _get_file_parts(value: FileName, relative_to='') -> Tuple[str, str, str]:
         """Get folder, name, ext parts from a string/tuple.
         
         Possible arguments:
@@ -104,8 +106,15 @@ def _get_file_parts(value):
         if not ext and '.' in filename:
             filename, ext = filename.rsplit('.', 1)
 
+        if relative_to:
+            path = os.path.relpath(path, relative_to)
+
         # Strip '/' off the end, and './' from the beginning.
         path = os.path.normpath(path).replace('\\', '/').rstrip('/')
+
+        # Special case - empty path gets returned as '.'...
+        if path == '.':
+            path = ''
             
         return path, filename, ext
 
@@ -142,8 +151,8 @@ class FileInfo:
         offset: int=0,
         arch_len: int=0,
         arch_index: int=None,
-    ):
-        """This should only be called by VPK internally."""
+    ) -> None:
+        """This should only be called by VPK() internally."""
 
         # Assert the path is ASCII.
         try:
@@ -175,6 +184,11 @@ class FileInfo:
         return '<VPK File: "{}">'.format(
             _join_file_parts(self.dir, self._filename, self.ext),
         )
+
+    @property
+    def size(self) -> int:
+        """The total size of this file."""
+        return self.arch_len + len(self.start_data)
         
     def read(self):
         """Return the contents for this file."""
@@ -182,7 +196,7 @@ class FileInfo:
             if self.arch_index is None:
                 return self.start_data + self.vpk.footer_data[self.offset: self.offset + self.arch_len]
             else:
-                arch_file = _get_arch_filename(self.vpk.file_prefix, self.arch_index)
+                arch_file = get_arch_filename(self.vpk.file_prefix, self.arch_index)
                 with open(os.path.join(self.vpk.folder, arch_file), 'rb') as data:
                     data.seek(self.offset)
                     return self.start_data + data.read(self.arch_len)
@@ -199,7 +213,7 @@ class FileInfo:
                     chk
                  )
             else:
-                arch_file = _get_arch_filename(self.vpk.file_prefix, self.arch_index)
+                arch_file = get_arch_filename(self.vpk.file_prefix, self.arch_index)
                 with open(os.path.join(self.vpk.folder, arch_file), 'rb') as data:
                     data.seek(self.offset)
                     chk = checksum(
@@ -217,8 +231,13 @@ class FileInfo:
         """
         self.vpk._check_writable()
         # Split the file based on a certain limit.
+
+        new_checksum = checksum(data)
+
+        if new_checksum == self.crc:
+            return  # Same data, don't do anything.
         
-        self.crc = checksum(data)
+        self.crc = new_checksum
         
         self.start_data = data[:self.vpk.dir_limit]
         arch_data = data[self.vpk.dir_limit:]
@@ -227,7 +246,7 @@ class FileInfo:
         
         if self.arch_len:
             self.arch_index = arch_index
-            arch_file = _get_arch_filename(self.vpk.file_prefix, arch_index)
+            arch_file = get_arch_filename(self.vpk.file_prefix, arch_index)
             with open(os.path.join(self.vpk.folder, arch_file), 'ab') as file:
                 self.offset = file.seek(0, os.SEEK_END)
                 file.write(arch_data)
@@ -244,8 +263,9 @@ class VPK:
         dir_file,
         *,
         mode: Union[OpenModes, str]='r',
-        dir_data_limit: int=1024
-    ):
+        dir_data_limit: Optional[int]=1024,
+        version: int=1,
+    ) -> None:
         """Create a VPK file.
         
         Parameters:
@@ -256,12 +276,14 @@ class VPK:
                Append mode will also create the directory, but not wipe the file.
             dir_data_limit: The maximum amount of data for files saved to the dir file.
                None = no limit, and 0=save all to a data file.
+            version: The desired version if the file is not read.
         """
-        self.folder, filename = os.path.split(dir_file)
-        
-        if not filename.endswith('_dir.vpk'):
-            raise Exception('Must create with a _dir VPK file!')
-        self.file_prefix = filename[:-8]
+        if version not in (1, 2):
+            raise ValueError("Invalid version ({}) - must be 1 or 2!".format(version))
+
+        self.folder = self.file_prefix = ''
+        self.path = dir_file
+
         # fileinfo[extension][directory][filename]
         self._fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
         
@@ -270,7 +292,7 @@ class VPK:
         
         self.footer_data = b''
 
-        self.version = 1
+        self.version = version
         self.header_len = 0
         
         self.load_dirfile()
@@ -279,7 +301,23 @@ class VPK:
         """Verify that this is writable."""
         if not self.mode.writable:
             raise ValueError("Can't write with this mode!")
-        
+
+    @property
+    def path(self):
+        """Return the location of the directory VPK file."""
+        return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
+
+    @path.setter
+    def path(self, path: str):
+        """Set the location and folder from the directory VPK file."""
+        folder, filename = os.path.split(path)
+
+        if not filename.endswith('_dir.vpk'):
+            raise Exception('Must create with a _dir VPK file!')
+
+        self.folder = folder
+        self.file_prefix = filename[:-8]
+
     def load_dirfile(self):
         """Read in the directory file to get all filenames.
         
@@ -287,36 +325,39 @@ class VPK:
         """
         if self.mode is OpenModes.WRITE:
             # Erase the directory file, we ignore current contents.
-            open(
-                os.path.join(self.folder, self.file_prefix + '_dir.vpk'),
-                'wb',
-            ).close()
+            open(self.path, 'wb').close()
             self.version = 1
             return
 
         try:
-            dirfile = open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'rb')
+            dirfile = open(self.path, 'rb')
         except FileNotFoundError:
             if self.mode is OpenModes.APPEND:
                 # No directory file - generate a blank file.
-                open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb').close()
+                open(self.path, 'wb').close()
                 self.version = 1
                 return
             else:
                 raise  # In read mode, don't overwrite and error when reading.
 
         with dirfile:
-            vpk_sig, self.version, tree_length = struct_file_read('<III', dirfile)
+            vpk_sig, version, tree_length = struct_file_read('<III', dirfile)
             
             if vpk_sig != VPK_SIG:
                 raise ValueError('Bad VPK directory signature!')
             
-            if self.version == 2:
-                raise ValueError("Doesn't support VPK version 2!")
-            elif self.version == 1:
-                pass
-            else:
+            if version not in (1, 2):
                 raise ValueError("Bad VPK version {}!".format(self.version))
+
+            self.version = version
+
+            if version >= 2:
+                (
+                    data_size,
+                    ext_md5_size,
+                    dir_md5_size,
+                    sig_size,
+                ) = struct_file_read('<4I', dirfile)
                 
             self.header_len = dirfile.tell() + tree_length
             
@@ -332,7 +373,6 @@ class VPK:
                         crc, index_len, arch_ind, offset, arch_len, end = struct_file_read('<IHHIIH', dirfile)
                         if arch_ind == DIR_ARCH_INDEX:
                             arch_ind = None
-                            #offset += self.header_len
                             
                         if arch_len == 0:
                             offset = 0
@@ -356,20 +396,25 @@ class VPK:
                 
                 # 1 for the ending b'' section
                 if dirfile.tell() + 1 == self.header_len:
+                    dirfile.read(1)  # Skip null byte.
                     break
-                    
+
             self.footer_data = dirfile.read()
     
+
     def write_dirfile(self):
         """Write the directory file with the changes.
         
         This must be performed after writing to the VPK.
         """
         self._check_writable()
+
+        if self.version > 1:
+            raise NotImplementedError("Can't write V2 VPKs!")
         
         # We don't know how big the directory section is, so we first write the directory,
         # then come back and overwrite the length value.
-        with open(os.path.join(self.folder, self.file_prefix + '_dir.vpk'), 'wb') as file:
+        with open(self.path, 'wb') as file:
             file.write(struct.pack('<III', VPK_SIG, self.version, 0))
             header_len = file.tell()
             key_getter = operator.itemgetter(0)
@@ -419,7 +464,7 @@ class VPK:
         if exc_type is None and self.mode.writable:
             self.write_dirfile()
        
-    def __getitem__(self, item):
+    def __getitem__(self, item: FileName) -> FileInfo:
         """Get the FileInfo object for a file.
         
         Possible arguments:
@@ -437,7 +482,7 @@ class VPK:
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
-    def __delitem__(self, item):
+    def __delitem__(self, item: FileName):
         """Delete a file.
         
         Possible arguments:
@@ -450,28 +495,28 @@ class VPK:
         path, filename, ext = _get_file_parts(item)
         
         try:
-            info = self._fileinfo[ext][path].pop(filename)
+            self._fileinfo[ext][path].pop(filename)
         except KeyError:
             raise KeyError(
                 'No file "{}"!'.format(
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[FileInfo]:
         """Yield all FileInfo objects."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info
                     
-    def filenames(self):
+    def filenames(self) -> Iterator[str]:
         """Yield all filenames in this VPK."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info.filename
 
-    def __len__(self):
+    def __len__(self) -> int:
         """Returns the number of files we have."""
         count = 0
         for folders in self._fileinfo.values():
@@ -479,7 +524,7 @@ class VPK:
                 count += len(files)
         return count
 
-    def __contains__(self, item):
+    def __contains__(self, item: FileName) -> bool:
         path, filename, ext = _get_file_parts(item)
 
         try:
@@ -487,7 +532,7 @@ class VPK:
         except KeyError:
             return False
 
-    def extract_all(self, dest_dir):
+    def extract_all(self, dest_dir: str) -> None:
         """Extract the contents of this VPK to a directory."""
         for ext, folders in self._fileinfo.items():
             for folder, files in folders.items():
@@ -496,7 +541,7 @@ class VPK:
                     with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 
-    def new_file(self, filename: str, root: str=None) -> FileInfo:
+    def new_file(self, filename: FileName, root: str=None) -> FileInfo:
         """Create the given file, making it empty by default.
         
         If root is set, files are treated as relative to there,
@@ -506,10 +551,7 @@ class VPK:
         """
         self._check_writable()
         
-        path, name, ext = _get_file_parts(filename)
-        
-        if root is not None:
-            path = os.path.relpath(path, root)
+        path, name, ext = _get_file_parts(filename, root)
 
         try:
             ext_infos = self._fileinfo[ext]
@@ -535,7 +577,7 @@ class VPK:
         
         return info
 
-    def add_file(self, filename, data: bytes, root=None, arch_index=0):
+    def add_file(self, filename: FileName, data: bytes, root=None, arch_index=0):
         """Add the given data to the VPK. 
         
         If root is set, files are treated as relative to there,
@@ -547,7 +589,7 @@ class VPK:
         """
         self.new_file(filename, root).write(data, arch_index)
 
-    def add_folder(self, folder, prefix=''):
+    def add_folder(self, folder: str, prefix: str='') -> None:
         """Write all files in a folder to the VPK. 
         
         If prefix is set, the folders will be written to that subfolder.
@@ -570,6 +612,53 @@ class VPK:
                 with open(os.path.join(subfolder, filename), 'rb') as f:
                     self.add_file((vpk_path, filename), f.read())
                     
-    def verify_all(self):
+    def verify_all(self) -> bool:
         """Check all files have a correct checksum."""
         return all(file.verify() for file in self)
+
+
+def script_write(args: List[str]) -> None:
+    """Create a VPK archive."""
+    if len(args) not in (1, 2):
+        raise ValueError("Usage: make_vpk.py [max_arch_mb] <folder>")
+    
+    folder = args[-1]
+    
+    vpk_name_base = folder.rstrip('\\/_dir')
+    
+    if len(args) > 1:
+        arch_len = int(args[0]) * 1024 * 1024
+    else:
+        arch_len = 100 * 1024 * 1024
+        
+    current_arch = 1
+    
+    vpk_folder, vpk_name = os.path.split(vpk_name_base)
+    for filename in os.listdir(vpk_folder):
+        if filename.startswith(vpk_name + '_'):
+            print(f'removing existing "{filename}"')
+            os.remove(os.path.join(vpk_folder, filename))
+    
+    with VPK(vpk_name_base + '_dir.vpk', mode='w') as vpk:
+        arch_filename = get_arch_filename(vpk_name_base, current_arch)
+    
+        for subfolder, _, filenames, in os.walk(folder):
+            # normpath removes '.' and similar values from the beginning
+            vpk_path = os.path.normpath(os.path.relpath(subfolder, folder))
+            print(vpk_path + '/')
+            for filename in filenames:
+                print('\t' + filename)
+                with open(os.path.join(subfolder, filename), 'rb') as f:
+                    vpk.add_file(
+                        (vpk_path, filename), 
+                        f.read(), 
+                        arch_index=current_arch,
+                    )
+                if os.path.exists(arch_filename) and os.stat(arch_filename).st_size > arch_len:
+                    current_arch += 1
+                    arch_filename = get_arch_filename(vpk_name_base, current_arch)
+                
+                
+if __name__ == '__main__':
+    import sys
+    script_write(sys.argv[1:])

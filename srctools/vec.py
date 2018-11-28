@@ -20,31 +20,33 @@ performed using quaternions.
 
 Rotations are implemented as a multiplication, where the left is rotated by the
 right. Vectors can be rotated by quaternions and angles and quaternions can be
-rotated by angles, but not vice-versa. """
-import collections
+rotated by angles, but not vice-versa.
+"""
 import math
-from collections import abc
 
-from typing import Union, Tuple, SupportsFloat, Iterator, Iterable
+from typing import (
+    Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
+    overload,
+    Dict,
+)
 
 
 __all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Quat']
 
+# Type aliases
+Tuple3 = Tuple[float, float, float]
+AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
-def parse_vec_str(
-    val: Union[str, 'Vec', 'Angle'],
-    x=0.0,
-    y=0.0,
-    z=0.0
-) -> Tuple[float, float, float]:
+
+def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
-     If the string is unparsable, this uses the defaults (x,y,z).
-     The string can start with any of the (), {}, [], <> bracket
-     types.
+    If the string is unparsable, this uses the defaults (x,y,z).
+    The string can start with any of the (), {}, [], <> bracket
+    types.
 
-     If the 'string' is actually a Vec, the values will be returned.
-     """
+    If the 'string' is actually a Vec, the values will be returned.
+    """
     if isinstance(val, Vec):
         return val.x, val.y, val.z
 
@@ -67,7 +69,7 @@ def parse_vec_str(
         return x, y, z
 
 
-Vec_tuple = collections.namedtuple('Vec_tuple', ['x', 'y', 'z'])
+Vec_tuple = NamedTuple('Vec_tuple', [('x', float), ('y', float), ('z', float)])
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -199,11 +201,11 @@ class Vec:
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __slots__ = ('x', 'y', 'z')
-
+    # Make type checkers understand that you can't do str->str or tuple->tuple.
     INV_AXIS = {
-        'x': 'yz',
-        'y': 'xz',
-        'z': 'xy',
+        'x': ('y', 'z'),
+        'y': ('x', 'z'),
+        'z': ('x', 'y'),
 
         ('y', 'z'): 'x',
         ('x', 'z'): 'y',
@@ -212,7 +214,8 @@ class Vec:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }
+    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
     S = south = y_neg = Vec_tuple(0, -1, 0)
@@ -222,11 +225,11 @@ class Vec:
     B = bottom = z_neg = Vec_tuple(0, 0, -1)
 
     def __init__(
-            self,
-            x: Union[int, float, 'Vec', Iterable[Union[int, float]]]=0.0,
-            y: Union[int, float]=0.0,
-            z: Union[int, float]=0.0,
-    ):
+        self,
+        x: Union[int, float, 'Vec', Iterable[float]]=0.0,
+        y: float=0.0,
+        z: float=0.0,
+    ) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -238,6 +241,10 @@ class Vec:
             self.x = float(x)
             self.y = float(y)
             self.z = float(z)
+        elif isinstance(x, Vec):
+            self.x = x.x
+            self.y = x.y
+            self.z = x.z
         else:
             it = iter(x)
             self.x = float(next(it, 0.0))
@@ -248,8 +255,18 @@ class Vec:
         """Create a duplicate of this vector."""
         return Vec(self.x, self.y, self.z)
 
+    __copy__ = copy  # copy module support.
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk, (self.x, self.y, self.z)
+
     @classmethod
-    def from_str(cls, val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0):
+    def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
         """Convert a string in the form '(4 6 -4)' into a Vector.
 
          If the string is unparsable, this uses the defaults (x,y,z).
@@ -264,13 +281,13 @@ class Vec:
 
     @classmethod
     def with_axes(
-            cls,
-            axis1: str,
-            val1: Union[float, 'Vec'],
-            axis2: str=None,
-            val2: Union[float, 'Vec']=None,
-            axis3: str=None,
-            val3: Union[float, 'Vec']=None
+        cls,
+        axis1: str,
+        val1: Union[float, 'Vec'],
+        axis2: str=None,
+        val2: Union[float, 'Vec']=None,
+        axis3: str=None,
+        val3: Union[float, 'Vec']=None
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -290,23 +307,33 @@ class Vec:
                 vec[axis3] = val3[axis3] if isinstance(val3, Vec) else val3
         return vec
 
-    def mat_mul(self, matrix) -> None:
+    def _mat_mul(
+        self,
+        a: float, b: float, c: float,
+        d: float, e: float, f: float,
+        g: float, h: float, i: float,
+    ) -> None:
         """Multiply this vector by a 3x3 rotation matrix.
 
         Used for Vec.rotate().
-        The matrix should be a 9-tuple, following the pattern:
+        The matrix should follow the following pattern:
         [ a b c ]
         [ d e f ]
         [ g h i ]
         """
-        a, b, c, d, e, f, g, h, i = matrix
         x, y, z = self.x, self.y, self.z
 
         self.x = (x * a) + (y * b) + (z * c)
         self.y = (x * d) + (y * e) + (z * f)
         self.z = (x * g) + (y * h) + (z * i)
 
-    def rotate(self, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
+    def rotate(
+        self,
+        pitch: float=0.0,
+        yaw: float=0.0,
+        roll: float=0.0,
+        round_vals: bool=True,
+    ) -> 'Vec':
         """Rotate a vector by a Source rotational angle.
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
@@ -329,27 +356,24 @@ class Vec:
         sin_y = math.sin(rad_yaw)
         sin_r = math.sin(rad_roll)
 
-        mat_roll = (  # X
+        # Need to do transformations in roll, pitch, yaw order
+        self._mat_mul(  # Roll = X
             1, 0, 0,
             0, cos_r, -sin_r,
             0, sin_r, cos_r,
         )
-        mat_yaw = (  # Z
-            cos_y, -sin_y, 0,
-            sin_y, cos_y, 0,
-            0, 0, 1,
-        )
 
-        mat_pitch = (  # Y
+        self._mat_mul(  # Pitch = Y
             cos_p, 0, sin_p,
             0, 1, 0,
             -sin_p, 0, cos_p,
         )
 
-        # Need to do transformations in roll, pitch, yaw order
-        self.mat_mul(mat_roll)
-        self.mat_mul(mat_pitch)
-        self.mat_mul(mat_yaw)
+        self._mat_mul(  # Yaw = Z
+            cos_y, -sin_y, 0,
+            sin_y, cos_y, 0,
+            0, 0, 1,
+        )
 
         if round_vals:
             self.x = round(self.x, 3)
@@ -358,7 +382,7 @@ class Vec:
 
         return self
 
-    def rotate_by_str(self, ang, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True):
+    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
@@ -372,18 +396,37 @@ class Vec:
         )
 
     @staticmethod
-    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']:
+    @overload
+    def bbox(points: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    @staticmethod
+    @overload
+    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
+
+    @staticmethod
+    def bbox(*points):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
         Returns a (min, max) tuple.
         """
-        if len(points) == 1:  # Allow passing a single iterable
-            (first, *points), = points
+        # Allow passing a single iterable, but also handle a single Vec.
+        # The error messages match those produced by min()/max().
+        if len(points) == 1 and not isinstance(points[0], Vec):
+            try:
+                [[first, *points]] = points
+            except ValueError:
+                raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
-            first, *points = points
-        bbox_min = first.copy()
-        bbox_max = first.copy()
+            try:
+                first, *points = points
+            except ValueError:
+                raise TypeError(
+                    'Vec.bbox() expected at '
+                    'least 1 argument, got 0.'
+                ) from None
+
+        bbox_min = Vec(first)
+        bbox_max = bbox_min.copy()
         for point in points:
             bbox_min.min(point)
             bbox_max.max(point)
@@ -400,14 +443,20 @@ class Vec:
 
         Both borders will be included.
         """
-        min_x, min_y, min_z = map(int, min_pos)
-        max_x, max_y, max_z = map(int, max_pos)
+        min_x = int(min_pos.x)
+        min_y = int(min_pos.y)
+        min_z = int(min_pos.z)
+
+        max_x = int(max_pos.x)
+        max_y = int(max_pos.y)
+        max_z = int(max_pos.z)
+
         for x in range(min_x, max_x + 1, stride):
             for y in range(min_y, max_y + 1, stride):
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self, end: 'Vec', stride: int=1):
+    def iter_line(self, end: 'Vec', stride: int=1) -> Iterator['Vec']:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -429,17 +478,22 @@ class Vec:
         yield end.copy()  # Directly yield - ensures no rounding errors.
 
     def axis(self) -> str:
-        """For a normal vector, return the axis it is on.
-
-        This will not function correctly if not a on-axis normal vector!
-        """
-        return (
-            'x' if self.x != 0 else
-            'y' if self.y != 0 else
-            'z'
+        """For a normal vector, return the axis it is on."""
+        x = self.x != 0
+        y = self.y != 0
+        z = self.z != 0
+        if x and not y and not z:
+            return 'x'
+        if not x and y and not z:
+            return 'y'
+        if not x and not y and z:
+            return 'z'
+        raise ValueError(
+            '({}, {}, {}) is '
+            'not an on-axis vector!'.format(self.x, self.y, self.z)
         )
 
-    def to_angle(self, roll=0) -> 'Vec':
+    def to_angle(self, roll: float=0) -> 'Vec':
         """Convert a normal to a Source Engine angle.
 
         A +x axis vector will result in a 0, 0, 0 angle. The roll is not
@@ -476,7 +530,7 @@ class Vec:
                 )
             )
 
-    def rotation_around(self, rot=90):
+    def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
         if self.x:
             return Vec(z=self.x * rot)
@@ -487,13 +541,41 @@ class Vec:
         else:
             raise ValueError('Zero vector!')
 
-    def __abs__(self):
+    def __abs__(self) -> 'Vec':
         """Performing abs() on a Vec takes the absolute value of all axes."""
         return Vec(
             abs(self.x),
             abs(self.y),
             abs(self.z),
         )
+
+    # The numeric magic methods are defined via exec(), so we need stubs
+    # to annotate them in a way a type-checker can understand.
+    # These are immediately overwritten.
+
+    def __add__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __radd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+
+    def __sub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __rsub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+
+    def __mul__(self, other: float) -> 'Vec': pass
+    def __rmul__(self, other: float) -> 'Vec': pass
+    def __imul__(self, other: float) -> 'Vec': pass
+
+    def __truediv__(self, other: float) -> 'Vec': pass
+    def __rtruediv__(self, other: float) -> 'Vec': pass
+    def __itruediv__(self, other: float) -> 'Vec': pass
+
+    def __floordiv__(self, other: float) -> 'Vec': pass
+    def __rfloordiv__(self, other: float) -> 'Vec': pass
+    def __ifloordiv__(self, other: float) -> 'Vec': pass
+
+    def __mod__(self, other: float) -> 'Vec': pass
+    def __rmod__(self, other: float) -> 'Vec': pass
+    def __imod__(self, other: float) -> 'Vec': pass
 
     funcname = op = pretty = None
 
@@ -538,31 +620,24 @@ class Vec:
 
     def __rdivmod__(self, other: float) -> Tuple['Vec', 'Vec']:
         """Divide a scalar by a vector, returning the result and remainder."""
-        if isinstance(other, Vec):
+        try:
+            x1, x2 = divmod(other, self.x)
+            y1, y2 = divmod(other, self.y)
+            z1, z2 = divmod(other, self.z)
+        except (TypeError, ValueError):
             return NotImplemented
         else:
-            try:
-                x1, x2 = divmod(other, self.x)
-                y1, y2 = divmod(other, self.y)
-                z1, z2 = divmod(other, self.z)
-            except TypeError:
-                return NotImplemented
-            else:
-                return Vec(x1, y1, z1), Vec(x2, y2, z2)
+            return Vec(x1, y1, z1), Vec(x2, y2, z2)
 
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
         return self.x != 0 or self.y != 0 or self.z != 0
 
-    def __eq__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
-            ) -> bool:
+    def __eq__(self, other: object) -> bool:
         """== test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return other.x == self.x and other.y == self.y and other.z == self.z
@@ -573,20 +648,13 @@ class Vec:
                 self.z == other[2]
             )
         else:
-            try:
-                return self.mag() == float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
-    def __ne__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
-            ) -> bool:
+    def __ne__(self, other: object) -> bool:
         """!= test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return other.x != self.x or other.y != self.y or other.z != self.z
@@ -597,20 +665,16 @@ class Vec:
                 self.z != other[2]
             )
         else:
-            try:
-                return self.mag() != float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
     def __lt__(
-            self,
-            other: Union['Vec', abc.Sequence, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A<B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -625,20 +689,16 @@ class Vec:
                 self.z < other[2]
             )
         else:
-            try:
-                return self.mag() < float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
     def __le__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A<=B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -653,20 +713,16 @@ class Vec:
                 self.z <= other[2]
             )
         else:
-            try:
-                return self.mag() <= float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
     def __gt__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
-            ) -> bool:
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
+    ) -> bool:
         """A>B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -681,20 +737,16 @@ class Vec:
                 self.z > other[2]
             )
         else:
-            try:
-                return self.mag() > float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
     def __ge__(
-            self,
-            other: Union['Vec', tuple, SupportsFloat],
+        self,
+        other: Union['Vec', Tuple3, SupportsFloat],
     ) -> bool:
         """A>=B test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Vec):
             return (
@@ -709,41 +761,38 @@ class Vec:
                 self.z >= other[2]
             )
         else:
-            try:
-                return self.mag() >= float(other)
-            except ValueError:
-                return NotImplemented
+            return NotImplemented
 
-    def max(self, other: Union['Vec', Vec_tuple]):
+    def max(self, other: AnyVec) -> None:
         """Set this vector's values to the maximum of the two vectors."""
-        if self.x < other.x:
-            self.x = other.x
-        if self.y < other.y:
-            self.y = other.y
-        if self.z < other.z:
-            self.z = other.z
+        if self.x < other[0]:
+            self.x = other[0]
+        if self.y < other[1]:
+            self.y = other[1]
+        if self.z < other[2]:
+            self.z = other[2]
 
-    def min(self, other: Union['Vec', Vec_tuple]):
+    def min(self, other: AnyVec) -> None:
         """Set this vector's values to be the minimum of the two vectors."""
-        if self.x > other.x:
-            self.x = other.x
-        if self.y > other.y:
-            self.y = other.y
-        if self.z > other.z:
-            self.z = other.z
+        if self.x > other[0]:
+            self.x = other[0]
+        if self.y > other[1]:
+            self.y = other[1]
+        if self.z > other[2]:
+            self.z = other[2]
 
-    def __round__(self, n=0):
+    def __round__(self, n: int=0) -> 'Vec':
         return Vec(
             round(self.x, n),
             round(self.y, n),
             round(self.z, n),
         )
 
-    def mag(self):
+    def mag(self) -> float:
         """Compute the distance from the vector and the origin."""
         return math.sqrt(self.x**2 + self.y**2 + self.z**2)
 
-    def join(self, delim=', '):
+    def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the .0 if no decimal portion exists.
@@ -788,7 +837,7 @@ class Vec:
             return self.z
         raise KeyError('Invalid axis: {!r}'.format(ind))
 
-    def __setitem__(self, ind: Union[str, int], val: float):
+    def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to edit values.
@@ -811,16 +860,17 @@ class Vec:
             return self.x, self.z
         if axis == 'z':
             return self.x, self.y
+        raise KeyError('Bad axis "{}"'.format(axis))
 
-    def as_tuple(self):
+    def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         return Vec_tuple(self.x, self.y, self.z)
 
-    def len_sq(self):
+    def len_sq(self) -> float:
         """Return the magnitude squared, which is slightly faster."""
         return self.x**2 + self.y**2 + self.z**2
 
-    def __len__(self):
+    def __len__(self) -> int:
         """The len() of a vector is the number of non-zero axes."""
         return (
             (self.x != 0) +
@@ -828,16 +878,16 @@ class Vec:
             (self.z != 0)
         )
 
-    def __contains__(self, val):
+    def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value.
         """
         return val == self.x or val == self.y or val == self.z
 
-    def __neg__(self):
+    def __neg__(self) -> 'Vec':
         """The inverted form of a Vector has inverted axes."""
         return Vec(-self.x, -self.y, -self.z)
 
-    def __pos__(self):
+    def __pos__(self) -> 'Vec':
         """+ on a Vector simply copies it."""
         return Vec(self.x, self.y, self.z)
 
@@ -858,27 +908,27 @@ class Vec:
             val += 0
             return val
 
-    def dot(self, other):
+    def dot(self, other: AnyVec) -> float:
         """Return the dot product of both Vectors."""
         return (
-            self.x * other.x +
-            self.y * other.y +
-            self.z * other.z
+            self.x * other[0] +
+            self.y * other[1] +
+            self.z * other[2]
         )
 
-    def cross(self, other):
+    def cross(self, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors."""
         return Vec(
-            self.y * other.z - self.z * other.y,
-            self.z * other.x - self.x * other.z,
-            self.x * other.y - self.y * other.x,
+            self.y * other[2] - self.z * other[1],
+            self.z * other[0] - self.x * other[2],
+            self.x * other[1] - self.y * other[0],
         )
 
     def localise(
-            self,
-            origin: Union['Vec', tuple],
-            angles: Union['Vec', tuple]=None,
-    ):
+        self,
+        origin: Union['Vec', Tuple3],
+        angles: Union['Vec', Tuple3]=None,
+    ) -> None:
         """Shift this point to be local to the given position and angles.
 
         This effectively translates local-space offsets to a global location,
@@ -894,8 +944,8 @@ class Vec:
         If the normal is axis-aligned, this will zero out the other axes.
         If not axis-aligned, it will do the equivalent.
         """
-        normal = normal.norm()
-        return normal * self.dot(normal)
+        norm = normal.norm()
+        return norm * self.dot(norm)
 
     len = mag
     mag_sq = len_sq
@@ -1261,3 +1311,15 @@ class Angle:
         """,
     )
 
+
+def _mk(x: float, y: float, z: float) -> Vec:
+    """Unpickle the Vec object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # Skip __init__'s checks and coercion/iteration.
+    v = Vec.__new__(Vec)
+    v.x = x
+    v.y = y
+    v.z = z
+    return v

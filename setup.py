@@ -1,8 +1,7 @@
-from setuptools import setup
+from setuptools import setup, Extension
 
 try:
     from Cython.Build import cythonize
-    modules = cythonize("srctools/_tokenizer.pyx")
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
     modules = []
@@ -24,8 +23,42 @@ setup(
         'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    packages=['srctools'],
-    ext_modules=modules,
+    packages=[
+        'srctools',
+        'srctools.scripts',
+        'srctools.test',
+        'srctools.bsp_transform',
+    ],
+    # Setuptools automatically runs Cython, if available.
+    ext_modules=cythonize([
+        Extension(
+            "srctools._tokenizer",
+            sources=["srctools/_tokenizer.pyx"],
+        ),
+        Extension(
+            "srctools._cy_vtf_readwrite",
+            sources=["srctools/_cy_vtf_readwrite.pyx"],
+        ),
+    ]),
+
+    package_data={'srctools': [
+        'fgd.lzma',
+        'srctools.fgd',
+    ]},
+
+    entry_points={
+        'console_scripts': [
+            'srctools_dump_parms = srctools.scripts.dump_parms:main',
+            'srctools_diff = srctools.scripts.diff:main',
+        ],
+    },
+    python_requires='>=3.4, <4',
+    install_requires=[
+        'cx_Freeze',
+        'importlib_resources',
+        'aenum<3.6',
+    ],
 )

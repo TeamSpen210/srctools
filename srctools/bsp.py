@@ -1,16 +1,30 @@
 """Read and write lumps in Source BSP files.
 
 """
-from enum import Enum
+import contextlib
+
 from io import BytesIO
-from srctools import AtomicWriter, Vec
+import itertools
+
+from zipfile import ZipFile
+
+from srctools import AtomicWriter, Vec, conv_int
+from srctools.vmf import VMF, Entity, Output
+from srctools.property_parser import Property
 import struct
 
-from typing import List, Iterator
+from typing import List, Dict, Iterator, Union, ContextManager, Optional
+
+
+try:
+    from enum import Enum, Flag
+except ImportError:
+    from aenum import Enum, Flag
 
 __all__ = [
-    'BSP_LUMPS', 'VERSIONS'
-    'BSP', 'Lump', 'StaticProp',
+    'BSP_LUMPS', 'VERSIONS',
+    'BSP', 'Lump',
+    'StaticProp', 'StaticPropFlags',
 ]
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
@@ -58,6 +72,8 @@ class VERSIONS(Enum):
     STANLEY_PARABLE = 21
     DOTA2 = 22
     CONTAGION = 23
+
+    DESOLATION = 42
 
 
 class BSP_LUMPS(Enum):
@@ -152,105 +168,220 @@ class BSP_LUMPS(Enum):
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 
 
+class StaticPropFlags(Flag):
+    """Bitflags specified for static props."""
+    NONE = 0
+
+    DOES_FADE = 0x01  # Is the fade distances set?
+    HAS_LIGHTING_ORIGIN = 0x02  # info_lighting entity used.
+    DISABLE_DRAW = 0x04  # Changes at runtime.
+    IGNORE_NORMALS = 0x08
+    NO_SHADOW = 0x10
+    SCREEN_SPACE_FADE = 0x20  # Use screen space fading. Obsolete since at least ASW.
+    NO_PER_VERTEX_LIGHTING = 0x40
+    NO_SELF_SHADOWING = 0x80
+
+    # These are set in the secondary flags section.
+    BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
+
+
 class BSP:
     """A BSP file."""
-    def __init__(self, filename, version=VERSIONS.PORTAL_2):
+    def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps = {}
-        self.game_lumps = {}
+        self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
+        self.game_lumps = {}  # type: Dict[bytes, GameLump]
         self.header_off = 0
-        self.version = version
+        self.version = version  # type: Optional[VERSIONS, int]
 
-    def read_header(self):
-        """Read through the BSP header to find the lumps.
+        self.read()
 
-        This allows locating any data in the BSP.
-        """
+    def read(self) -> None:
+        """Load all data."""
+        self.lumps.clear()
+        self.game_lumps.clear()
+
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
             magic_name, bsp_version = get_struct(file, '4si')
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
-            assert bsp_version == self.version.value, 'Different BSP version!'
+            if self.version is None:
+                try:
+                    self.version = VERSIONS(bsp_version)
+                except ValueError:
+                    self.version = bsp_version
+            else:
+                assert bsp_version == self.version.value, 'Different BSP version!'
+
+            lump_offsets = {}
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                lump = Lump.from_bytes(index, file)
-                self.lumps[lump.type] = lump
+                offset, length, version, ident = get_struct(
+                    file,
+                    # 3 ints and a 4-long char array
+                    '<3i4s',
+                )
+                lump_id = BSP_LUMPS(index)
+                self.lumps[lump_id] = Lump(
+                    lump_id,
+                    version,
+                    ident,
+                )
+                lump_offsets[lump_id] = offset, length
 
-            # Remember how big this is, so we can remake it later when needed.
-            self.header_off = file.tell()
+            [self.map_revision] = get_struct(file, 'i')
 
-    def get_lump(self, lump):
-        """Read a lump from the BSP."""
-        if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]
-        with open(self.filename, 'rb') as file:
-            file.seek(lump.offset)
-            return file.read(lump.length)
+            for lump in self.lumps.values():
+                # Now read in each lump.
+                offset, length = lump_offsets[lump.type]
+                file.seek(offset)
+                lump.data = file.read(length)
 
-    def replace_lump(self, new_name, lump, new_data: bytes):
+            game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
+
+            self.game_lumps.clear()
+
+            [lump_count] = struct.unpack_from('<i', game_lump.data)
+            lump_offset = 4
+
+            for _ in range(lump_count):
+                (
+                    lump_id,
+                    flags,
+                    version,
+                    file_off,
+                    file_len,
+                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
+                lump_offset += GameLump.ST.size
+
+                file.seek(file_off)
+
+                # The lump ID is backward..
+                lump_id = lump_id[::-1]
+
+                self.game_lumps[lump_id] = GameLump(
+                    lump_id,
+                    flags,
+                    version,
+                    file.read(file_len),
+                )
+            # This is not valid any longer.
+            game_lump.data = b''
+
+    def save(self, filename=None) -> None:
+        """Write the BSP back into the given file."""
+        # This gets difficult. The offsets need to be written before we know
+        # what they are. So write empty bytes, record that location then go
+        # back to fill them in after we actually determine where they are.
+        # We use either BSP_LUMPS enums or game-lump byte IDs for dict keys.
+
+        # Location of the header field.
+        fixup_loc = {}  # type: Dict[Union[BSP_LUMPS, bytes], int]
+        # The data to write.
+        fixup_data = {}  # type: Dict[Union[BSP_LUMPS, bytes], bytes]
+
+        game_lumps = list(self.game_lumps.values())  # Lock iteration order.
+
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
+            file.write(BSP_MAGIC)
+            if isinstance(self.version, VERSIONS):
+                file.write(struct.pack('<i', self.version.value))
+            else:
+                file.write(struct.pack('<i', self.version))
+
+            # Write headers.
+            for lump_name in BSP_LUMPS:
+                lump = self.lumps[lump_name]
+                fixup_loc[lump_name] = file.tell()
+                file.write(struct.pack(
+                    '<8xi4s',
+                    # offset,
+                    # length,
+                    lump.version,
+                    bytes(lump.ident),
+                ))
+
+            # After lump headers, the map revision...
+            file.write(struct.pack('<i', self.map_revision))
+
+            # Then each lump.
+            for lump_name in BSP_LUMPS:
+                # Write out the actual data.
+                lump = self.lumps[lump_name]
+                if lump_name is BSP_LUMPS.GAME_LUMP:
+                    # Construct this right here.
+                    lump_start = file.tell()
+                    file.write(struct.pack('<i', len(game_lumps)))
+                    for game_lump in game_lumps:
+                        file.write(struct.pack(
+                            '<4s HH',
+                            game_lump.id[::-1],
+                            game_lump.flags,
+                            game_lump.version,
+                        ))
+                        fixup_loc[game_lump.id] = file.tell()  # Offset goes here.
+                        file.write(struct.pack('<4xi', len(game_lump.data)))
+
+                    # Now write data.
+                    for game_lump in game_lumps:
+                        fixup_data[game_lump.id] = struct.pack('<i',
+                                                               file.tell())
+                        file.write(game_lump.data)
+                    # Length of the game lump is current - start.
+                    fixup_data[lump_name] = struct.pack(
+                        '<ii',
+                        lump_start,
+                        file.tell() - lump_start,
+                    )
+                else:
+                    # Normal lump.
+                    fixup_data[lump_name] = struct.pack(
+                        '<ii',
+                        file.tell(),
+                        len(lump.data),
+                    )
+                    file.write(lump.data)
+
+            # Now apply all the fixups we deferred.
+            for fixup_key in fixup_loc:
+                file.seek(fixup_loc[fixup_key])
+                file.write(fixup_data[fixup_key])
+
+    def read_header(self):
+        """No longer used."""
+
+    def read_game_lumps(self):
+        """No longer used."""
+
+    def replace_lump(self, new_name: str, lump: Union[BSP_LUMPS, 'Lump'], new_data: bytes):
         """Write out the BSP file, replacing a lump with the given bytes.
 
         """
         if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]
-        with open(self.filename, 'rb') as file:
-            data = file.read()
+            lump = self.lumps[lump]  # type: Lump
 
-        before_lump = data[self.header_off:lump.offset]
-        after_lump = data[lump.offset + lump.length:]
-        del data  # This contains the entire file, we don't want to keep
-        # this memory around for long.
+        lump.data = new_data
 
-        # Adjust the length to match the new data block.
-        lump.length = len(new_data)
+        self.save(new_name)
 
-        with AtomicWriter(new_name, is_bytes=True) as file:
-            self.write_header(file)
-            file.write(before_lump)
-            file.write(new_data)
-            file.write(after_lump)
+    def get_lump(self, lump: BSP_LUMPS) -> bytes:
+        """Return the contents of the given lump."""
+        return self.lumps[lump].data
 
-    def write_header(self, file):
-        """Write the BSP file header into the given file."""
-        file.write(BSP_MAGIC)
-        file.write(struct.pack('i', self.version.value))
-        for lump_name in BSP_LUMPS:
-            # Write each header
-            lump = self.lumps[lump_name]
-            file.write(lump.as_bytes())
-        # The map revision would follow, but we never change that value!
-
-    def read_game_lumps(self):
-        """Read in the game-lump's header, so we can get those values."""
-        game_lump = BytesIO(self.get_lump(BSP_LUMPS.GAME_LUMP))
-
-        self.game_lumps.clear()
-        lump_count = get_struct(game_lump, 'i')[0]
-
-        for _ in range(lump_count):
-            (
-                lump_id,
-                flags,
-                version,
-                file_off,
-                file_len,
-            ) = get_struct(game_lump, '<4s HH ii')
-            # The lump ID is backward..
-            self.game_lumps[lump_id[::-1]] = (flags, version, file_off, file_len)
-
-    def get_game_lump(self, lump_id):
+    def get_game_lump(self, lump_id: bytes) -> bytes:
         """Get a given game-lump, given the 4-character byte ID."""
-        flags, version, file_off, file_len = self.game_lumps[lump_id]
-        with open(self.filename, 'rb') as file:
-            file.seek(file_off)
-            return file.read(file_len)
+        try:
+            lump = self.game_lumps[lump_id]
+        except KeyError:
+            raise ValueError('{} not in {}'.format(lump_id, list(self.game_lumps)))
+        return lump.data
 
     # Lump-specific commands:
 
-    def read_texture_names(self):
+    def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
         tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
         tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
@@ -276,86 +407,159 @@ class BSP:
                     tex_data[off:str_off]
                 ))
 
-    def read_ent_data(self):
-        """Iterate through the entities in a map.
+    @contextlib.contextmanager
+    def packfile(self) -> ContextManager[ZipFile]:
+        """A context manager to allow editing the packed content.
 
-        This yields a series of keyvalue dictionaries. The first is WorldSpawn.
+        When successfully exited, the zip will be rewritten to the BSP file.
         """
-        ent_data = self.get_lump(BSP_LUMPS.ENTITIES).decode('ascii')
-        cur_dict = None  # None = waiting for '{'
+        pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
+        data_file = BytesIO(pak_lump.data)
 
-        # This code is similar to property_parser, but simpler since there's
-        # no nesting, comments, or whitespace, except between key and value.
+        zip_file = ZipFile(data_file, mode='a')
+        # If exception, abort, so we don't need try: or with:
+        yield zip_file
+        # Explicitly close to finalise the footer.
+        zip_file.close()
+        pak_lump.data = data_file.getvalue()
+
+    def read_ent_data(self) -> VMF:
+        """Parse in entity data.
+        
+        This returns a VMF object, with entities mirroring that in the BSP. 
+        No brushes are read.
+        """
+        ent_data = self.get_lump(BSP_LUMPS.ENTITIES)
+        vmf = VMF()
+        cur_ent = None  # None when between brackets.
+        seen_spawn = False  # The first entity is worldspawn.
+        
+        # This code performs the same thing as property_parser, but simpler
+        # since there's no nesting, comments, or whitespace, except between
+        # key and value. We also operate directly on the (ASCII) binary.
         for line in ent_data.splitlines():
-            if line == '{':
-                cur_dict = {}
-            elif line == '}':
-                yield cur_dict
-                cur_dict = None
-            elif line == '\x00':
-                return
+            if line == b'{':
+                if cur_ent is not None:
+                    raise ValueError(
+                        '2 levels of nesting after {} ents'.format(
+                            len(vmf.entities)
+                        )
+                    )
+                if not seen_spawn:
+                    cur_ent = vmf.spawn
+                    seen_spawn = True
+                else:
+                    cur_ent = Entity(vmf)
+            elif line == b'}':
+                if cur_ent is None:
+                    raise ValueError(
+                        'Too many closing brackets after {} ents'.format(
+                            len(vmf.entities)
+                        )
+                    )
+                if cur_ent is vmf.spawn:
+                    if cur_ent['classname'] != 'worldspawn':
+                        raise ValueError('No worldspawn entity!')
+                else:
+                    # The spawn ent is stored in the attribute, not in the ent
+                    # list.
+                    vmf.add_ent(cur_ent)
+                cur_ent = None
+            elif line == b'\x00':  # Null byte at end of lump.
+                if cur_ent is not None:
+                    raise ValueError("Last entity didn't end!")
+                return vmf
             else:
                 # Line is of the form <"key" "val">
-                key, value = line.split('" "')
-                cur_dict[key[1:]] = value[:-1]
+                key, value = line.split(b'" "')
+                decoded_key = key[1:].decode('ascii')
+                decoded_val = value[:-1].decode('ascii')
+                if 27 in value:
+                    # All outputs use the comma_sep, so we can ID them.
+                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_val)))
+                else:
+                    # Normal keyvalue.
+                    cur_ent[decoded_key] = decoded_val
+                    
+        # This keyvalue needs to be stored in the VMF object too.
+        # The one in the entity is ignored.
+        vmf.map_ver = conv_int(vmf.spawn['mapversion'], vmf.map_ver)
+
+        return vmf
 
     @staticmethod
-    def write_ent_data(ent_dicts):
-        """Generate the entity data lump, given a list of dictionaries."""
+    def write_ent_data(vmf: VMF):
+        """Generate the entity data lump.
+        
+        This accepts a VMF file like that returned from read_ent_data(). 
+        Brushes are ignored, so the VMF must use *xx model references.
+        """
         out = BytesIO()
-        for keyvals in ent_dicts:
+        for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
-            for key, value in keyvals.items():
-                out.write('"{}" "{}"'.format(key, value).encode('ascii'))
+            for key, value in ent.keys.items():
+                out.write('"{}" "{}"\n'.format(key, value).encode('ascii'))
+            for output in ent.outputs:
+                out.write(output._get_text().encode('ascii'))
             out.write(b'}\n')
         out.write(b'\x00')
 
         return out.getvalue()
 
-    def read_static_props(self) -> Iterator['StaticProp']:
-        """Read in the Static Props lump."""
-        # The version of the static prop format - different features.
-        version = self.game_lumps[b'sprp'][1]
-        if version > 9:
-            raise ValueError('Unknown version "{}"!'.format(version))
-
+    def static_prop_models(self) -> Iterator[str]:
+        """Yield all model filenames used in static props."""
         static_lump = BytesIO(self.get_game_lump(b'sprp'))
-        dict_num = get_struct(static_lump, 'i')[0]
+        return self._read_static_props_models(static_lump)
 
-        # Array of model filenames.
-        model_dict = []
+    @staticmethod
+    def _read_static_props_models(static_lump: BytesIO):
+        """Read the static prop dictionary from the lump."""
+        dict_num = get_struct(static_lump, 'i')[0]
         for _ in range(dict_num):
             padded_name = get_struct(static_lump, '128s')[0]
             # Strip null chars off the end, and convert to a str.
-            model_dict.append(
-                padded_name.rstrip(b'\x00').decode('ascii')
-            )
+            yield padded_name.rstrip(b'\x00').decode('ascii')
 
-        visleaf_count = get_struct(static_lump, 'i')[0]
+    def static_props(self) -> Iterator['StaticProp']:
+        """Read in the Static Props lump."""
+        # The version of the static prop format - different features.
+        try:
+            version = self.game_lumps[b'sprp'].version
+        except KeyError:
+            raise ValueError('No static prop lump!') from None
+
+        if version > 11:
+            raise ValueError('Unknown version ({})!'.format(version))
+        if version < 4:
+            # Predates HL2...
+            raise ValueError('Static prop version {} is too old!')
+
+        static_lump = BytesIO(self.game_lumps[b'sprp'].data)
+
+        # Array of model filenames.
+        model_dict = list(self._read_static_props_models(static_lump))
+
+        [visleaf_count] = get_struct(static_lump, 'i')
         visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
 
-        prop_count = get_struct(static_lump, 'i')[0]
+        [prop_count] = get_struct(static_lump, 'i')
 
-        print(model_dict)
-
-        print('-' * 30)
-        print('props', version, prop_count)
-        print('-' * 30)
-
-        pos = static_lump.tell()
-        data = static_lump.read()
-        static_lump.seek(pos)
-        for i in range(12, 200, 12):
-            vals = Vec(struct.unpack_from('fff', data, i))
-            # if vals: and vals == round(vals):
-            print(i, repr(vals))
-
-        print(flush=True)
-        for i in range(prop_count):
+        for prop_id in range(prop_count):
             origin = Vec(get_struct(static_lump, 'fff'))
             angles = Vec(get_struct(static_lump, 'fff'))
+
+            [model_ind] = get_struct(static_lump, '<H')
+
+            # Unknown data in v10/11.
+            unknown_1 = b'\0\0'
+            unknown_2 = b'\0\0\0\0'
+
+            if version >= 11:
+                # Appears to be an ID that increases for each prop,
+                # although scaled props increase by 2.
+                [prop_id, unknown_1] = get_struct(static_lump, '<H2s')
+
             (
-                model_ind,
                 first_leaf,
                 leaf_count,
                 solidity,
@@ -363,7 +567,7 @@ class BSP:
                 skin,
                 min_fade,
                 max_fade,
-            ) = get_struct(static_lump, 'HHHBBiff')
+            ) = get_struct(static_lump, '<HHBBiff')
 
             model_name = model_dict[model_ind]
 
@@ -381,6 +585,8 @@ class BSP:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
 
+            flags = StaticPropFlags(flags)
+
             if version >= 8:
                 (
                     min_cpu_level,
@@ -393,24 +599,34 @@ class BSP:
                 min_cpu_level = max_cpu_level = min_gpu_level = max_gpu_level = 0
 
             if version >= 7:
-                r, g, b, a = get_struct(static_lump, 'BBBB')
+                r, g, b, renderfx = get_struct(static_lump, 'BBBB')
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
             else:
                 # No tint.
                 tint = Vec(255, 255, 255)
-            if version >= 9:
-                disable_on_xbox = get_struct(static_lump, '?')[0]
-            else:
-                disable_on_xbox = False
+                renderfx = 255
 
-            # Unknown padding...
-            static_lump.read(3)
+            if version >= 10:
+                # 4 unknown bytes
+                unknown_2 = static_lump.read(4)
+
+            scaling = 1.0
+            disable_on_xbox = False
+
+            if version >= 11:
+                # XBox support was removed. Instead this is the scaling factor.
+                [scaling] = get_struct(static_lump, "<f")
+            elif version >= 9:
+                # The single boolean byte also produces 3 pad bytes.
+                [disable_on_xbox] = get_struct(static_lump, '<?xxx')
 
             yield StaticProp(
                 model_name,
+                prop_id,
                 origin,
                 angles,
+                scaling,
                 visleafs,
                 solidity,
                 flags,
@@ -426,58 +642,188 @@ class BSP:
                 min_gpu_level,
                 max_gpu_level,
                 tint,
+                renderfx,
                 disable_on_xbox,
             )
 
+    def write_static_props(self, props: List['StaticProp']):
+        """Remake the static prop lump."""
+
+        # First generate an optimised visleafs block.
+        # Each prop stores a pointer into the list of leafs and a leaf count.
+        # So we want to remove redundant entries in that.
+        # This can be done in a brute-force manner - for each new section,
+        # add to a dict it and all prefixes/suffixes. Then they won't require
+        # a new part.
+        visleafs = []
+
+        models = set()
+
+        for prop in props:
+            visleafs.append(prop.visleafs)
+            models.add(prop.model)
+
+        visleafs.sort(key=len, reverse=True)
+        leaf_array = []
+        leaf_offsets = {}
+
+        for leaf in visleafs:
+            tup = tuple(sorted(leaf))
+            if tup not in leaf_offsets:
+                # Add to the table.
+                pos = len(leaf_array)
+                leaf_array.extend(leaf)
+                for off in range(1, len(leaf)):
+                    leaf_offsets[tup[off:]] = pos + off
+                    leaf_offsets[tup[:-off]] = pos
+
+                leaf_offsets[tup] = pos
+
+        model_list = list(models)
+        model_ind = {
+            mdl: i
+            for i, mdl in enumerate(model_list)
+        }
+
+        game_lump = self.game_lumps[b'sprp']
+
+        # Now write out the sections.
+        prop_lump = BytesIO()
+        prop_lump.write(struct.pack('<i', len(model_list)))
+        for name in model_list:
+            prop_lump.write(struct.pack('<128s', name.encode('ascii')))
+
+        prop_lump.write(struct.pack('<i', len(leaf_array)))
+        prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
+
+        prop_lump.write(struct.pack('<i', len(props)))
+        for prop in props:
+            prop_lump.write(struct.pack(
+                '<6fH',
+                prop.origin.x,
+                prop.origin.y,
+                prop.origin.z,
+                prop.angles.x,
+                prop.angles.y,
+                prop.angles.z,
+                model_ind[prop.model],
+            ))
+
+            if game_lump.version >= 11:
+                # Unknown data goes here, appears to be various flags.
+                prop_lump.write(b'\0\0\0\0')
+
+            prop_lump.write(struct.pack(
+                '<HHBBifffff',
+                leaf_offsets[tuple(sorted(prop.visleafs))],
+                len(prop.visleafs),
+                prop.solidity,
+                prop.flags.value,
+                prop.skin,
+                prop.min_fade,
+                prop.max_fade,
+                prop.lighting.x,
+                prop.lighting.y,
+                prop.lighting.z,
+            ))
+            if game_lump.version >= 5:
+                prop_lump.write(struct.pack('<f', prop.fade_scale))
+
+            if game_lump.version in (6, 7):
+                prop_lump.write(struct.pack(
+                    '<HH',
+                    prop.min_dx_level,
+                    prop.max_dx_level,
+                ))
+
+            if game_lump.version >= 8:
+                prop_lump.write(struct.pack(
+                    '<BBBB',
+                    prop.min_cpu_level,
+                    prop.max_cpu_level,
+                    prop.min_gpu_level,
+                    prop.max_gpu_level
+                ))
+
+            if game_lump.version >= 7:
+                prop_lump.write(struct.pack(
+                    '<BBBB',
+                    int(prop.tint.x),
+                    int(prop.tint.y),
+                    int(prop.tint.z),
+                    prop.renderfx,
+                ))
+
+            if game_lump.version >= 10:
+                # Padding bytes?
+                prop_lump.write(b'\0\0\0\0')
+
+            if game_lump.version >= 11:
+                prop_lump.write(struct.pack('<f', prop.scaling))
+            elif game_lump.version >= 9:
+                prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
+
+        game_lump.data = prop_lump.getvalue()
 
 
 class Lump:
     """Represents a lump header in a BSP file.
 
-    These indicate the location and size of each component.
     """
-    def __init__(self, index, offset, length, version, ident):
-        self.type = BSP_LUMPS(index)
-        self.offset = offset
-        self.length = length
+    def __init__(
+        self,
+        typ: BSP_LUMPS,
+        version: int,
+        ident: bytes,
+    ):
+        """This should not be constructed outside a BSP."""
+        self.type = typ
         self.version = version
         self.ident = [int(x) for x in ident]
-
-    @classmethod
-    def from_bytes(cls, index, file):
-        """Decode this header from the file."""
-        offset, length, version, ident = get_struct(
-            file,
-            # 3 ints and a 4-long char array
-            '<3i4s',
-        )
-        return cls(
-            index=index,
-            offset=offset,
-            length=length,
-            version=version,
-            ident=ident,
-        )
-
-    def as_bytes(self):
-        """Get the binary version of this lump header."""
-        return struct.pack(
-            '<3i4s',
-            self.offset,
-            self.length,
-            self.version,
-            bytes(self.ident),
-        )
-
-    def __len__(self):
-        return self.length
+        self.data = b''
 
     def __repr__(self):
-        return (
-            'Lump({s.type}, {s.offset}, '
-            '{s.length}, {s.version}, {s.ident})'.format(
-                s=self
-            )
+        return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
+            self.type.name,
+            self.version,
+            bytes(self.ident),
+            len(self.data)
+        )
+
+
+class GameLump:
+    """Represents a game lump.
+
+    These are designed to be game-specific.
+    """
+    __slots__ = [
+        'id',
+        'flags',
+        'version',
+        'data',
+    ]
+
+    ST = struct.Struct('<4s HH ii')
+
+    def __init__(
+        self,
+        lump_id: bytes,
+        flags: int,
+        version: int,
+        data: bytes,
+    ):
+        """This should not be constructed outside a BSP."""
+        self.id = lump_id
+        self.flags = flags
+        self.version = version
+        self.data = data
+
+    def __repr__(self):
+        return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
+            repr(self.id)[1:],
+            self.flags,
+            self.version,
+            len(self.data),
         )
 
 
@@ -488,41 +834,53 @@ class StaticProp:
     v5+ allows fade_scale.
     v6 and v7 allow min/max DXLevel.
     v8+ allows min/max GPU and CPU levels.
-    v7+ allows model tinting.
+    v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
+    v10+ adds 4 unknown bytes (float?).
+    v11+ adds uniform scaling, the prop id and removes XBox disabling.
     """
     def __init__(
         self,
         model: str,
+        prop_id: int,
         origin: Vec,
         angles: Vec,
+        scaling: float,
         visleafs: List[int],
         solidity: int,
-        flags: int,
-        skin: int,
-        min_fade: float,
-        max_fade: float,
-        lighting_origin: Vec,
-        fade_scale: float,
-        min_dx_level: int,
-        max_dx_level: int,
-        min_cpu_level: int,
-        max_cpu_level: int,
-        min_gpu_level: int,
-        max_gpu_level: int,
-        tint: Vec,  # Rendercolor
-        disable_on_xbox: bool,
+        flags: StaticPropFlags=StaticPropFlags.NONE,
+        skin: int=0,
+        min_fade: float=0,
+        max_fade: float=0,
+        lighting_origin: Vec=None,
+        fade_scale: float=-1,
+        min_dx_level: int=0,
+        max_dx_level: int=0,
+        min_cpu_level: int=0,
+        max_cpu_level: int=0,
+        min_gpu_level: int=0,
+        max_gpu_level: int=0,
+        tint: Vec=(255, 255, 255),  # Rendercolor
+        renderfx: int=255,
+        disable_on_xbox: bool=False,
     ):
+        self.id = prop_id
         self.model = model
         self.origin = origin
         self.angles = angles
+        self.scaling = scaling
         self.visleafs = visleafs
         self.solidity = solidity
         self.flags = flags
         self.skin = skin
         self.min_fade = min_fade
         self.max_fade = max_fade
-        self.lighting = lighting_origin
+
+        if lighting_origin is None:
+            self.lighting = Vec(origin)
+        else:
+            self.lighting = lighting_origin
+
         self.fade_scale = fade_scale
         self.min_dx_level = min_dx_level
         self.max_dx_level = max_dx_level
@@ -530,5 +888,14 @@ class StaticProp:
         self.max_cpu_level = max_cpu_level
         self.min_gpu_level = min_gpu_level
         self.max_gpu_level = max_gpu_level
-        self.tint = tint
+        self.tint = Vec(tint)
+        self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
+
+    def __repr__(self):
+        return '<Prop "{}#{}" @ {} rot {}>'.format(
+            self.model,
+            self.skin,
+            self.origin,
+            self.angles
+        )

@@ -1,0 +1,190 @@
+versioninfo
+{
+	"editorversion" "400"
+	"editorbuild" "5304"
+	"mapversion" "1"
+	"formatversion" "100"
+	"prefab" "0"
+}
+visgroups
+{
+}
+viewsettings
+{
+	"bSnapToGrid" "1"
+	"bShowGrid" "1"
+	"bShowLogicalGrid" "0"
+	"nGridSpacing" "64"
+	"bShow3DGrid" "0"
+}
+world
+{
+	"id" "1"
+	"classname" "worldspawn"
+	"mapversion" "1"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 1]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "2"
+	"classname" "func_instance_parms"
+	"origin" "0 0 0"
+	"parm1" "$rot_pitch integer 0"
+	"parm2" "$rot_roll integer 0"
+	"parm3" "$rot_yaw integer 0"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 2]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "3"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "1.0"
+	"local_y" "0.0"
+	"local_z" "0.0"
+	"origin" "128 0 0"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 3]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "4"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "0.0"
+	"local_y" "1.0"
+	"local_z" "0.0"
+	"origin" "0 128 0"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 4]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "5"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "0.0"
+	"local_y" "0.0"
+	"local_z" "1.0"
+	"origin" "0 0 128"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 5]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "6"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "-1.0"
+	"local_y" "0.0"
+	"local_z" "0.0"
+	"origin" "-128 0 0"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 6]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "7"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "0.0"
+	"local_y" "-1.0"
+	"local_z" "0.0"
+	"origin" "0 -128 0"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 7]"
+		"comments" ""
+	}
+}
+entity
+{
+	"id" "8"
+	"angles" "0 0 0"
+	"classname" "info_target"
+	"local_x" "0.0"
+	"local_y" "0.0"
+	"local_z" "-1.0"
+	"origin" "0 0 -128"
+	"rot_pitch" "$rot_pitch"
+	"rot_roll" "$rot_roll"
+	"rot_yaw" "$rot_yaw"
+	"targetname" "offset"
+	editor
+	{
+		"color" "255 255 255"
+		"visgroupshown" "1"
+		"visgroupautoshown" "1"
+		"logicalpos" "[0 8]"
+		"comments" ""
+	}
+}
+cameras
+{
+	"activecamera" "-1"
+}
+cordons
+{
+	"active" "0"
+}
