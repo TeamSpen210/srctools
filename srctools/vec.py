@@ -18,9 +18,22 @@ Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
 Rotations are represented by Euler angles, but modifications need to be
 performed using quaternions.
 
-Rotations are implemented as a multiplication, where the left is rotated by the
-right. Vectors can be rotated by quaternions and angles and quaternions can be
-rotated by angles, but not vice-versa.
+Rotations are implemented as a matrix-multiplication, where the left is rotated
+by the right. Vectors can be rotated by quaternions and angles and quaternions
+can be rotated by angles, but not vice-versa.
+
+Scales magnitude:
+ - Vec * Scalar
+ - Scalar * Vec
+ - Angle * Scalar
+ - Scalar * Angle
+
+Rotates LHS by RHS:
+ - Vec @ Angle
+ - Vec @ Quat
+ - Angle @ Angle
+ - Angle @ Quat
+ - Quat @ Quat
 """
 import math
 
@@ -964,10 +977,7 @@ class Vec:
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type is not None or self._quat is None:
                 return
-            result = self._vec * self._quat
-            self._vec.x = result.x
-            self._vec.y = result.y
-            self._vec.z = result.z
+            self._quat._vec_rot(self._vec)
 
     transform = property(
         fget=_Transform,
@@ -1042,9 +1052,9 @@ class Quat:
     def from_angle(cls, angle: 'Angle'):
         """Return the quaternion representing an Euler angle."""
         rot = cls()
-        rot *= cls.from_roll(angle.roll)
-        rot *= cls.from_pitch(angle.pitch)
-        rot *= cls.from_yaw(angle.yaw)
+        rot @= cls.from_roll(angle.roll)
+        rot @= cls.from_pitch(angle.pitch)
+        rot @= cls.from_yaw(angle.yaw)
         return rot
 
     def to_angle(self) -> 'Angle':
@@ -1079,7 +1089,7 @@ class Quat:
                 roll=0,  # Can't produce.
             )
 
-    def __mul__(self, other: 'Quat'):
+    def __matmul__(self, other: 'Quat'):
         if isinstance(other, Quat):
             return Quat(*self._quat_mul(other))
         elif isinstance(other, Angle):
@@ -1087,7 +1097,7 @@ class Quat:
         else:
             return NotImplemented
         
-    def __rmul__(self, other: Union['Vec', 'Angle']):
+    def __rmatmul__(self, other: Union['Vec', 'Angle']):
         if isinstance(other, Vec):
             result = other.copy()
             self._vec_rot(result)
@@ -1097,7 +1107,7 @@ class Quat:
         else:
             return NotImplemented
         
-    def __imul__(self, other: Union['Quat', 'Angle']):
+    def __imatmul__(self, other: Union['Quat', 'Angle']):
         if isinstance(other, Quat):
             self.w, self.x, self.y, self.z = self._quat_mul(other)
             return self
@@ -1163,9 +1173,8 @@ class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 
     All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, multiplication with Vec or Angle
+    Addition and subtraction modify values, matrix-multiplication with Vec or Angle
     rotates (RHS rotating LHS).
-    Angle * Vec is not allowed for consistency.
     """
     __slots__ = ['_pitch', '_yaw', '_roll']
 
@@ -1240,37 +1249,41 @@ class Angle:
     def __repr__(self):
         return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
 
-    def __mul__(self, other: Union['Angle', int]):
-        """Vec * Angle rotates the first by the second."""
-        if isinstance(other, Angle):
-            return other._rotate_angle(self)
-        elif isinstance(other, Quat):
-            return NotImplemented
-        else:
+    def __mul__(self, other: float):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return Angle(
+                self._pitch * other,
+                self._yaw * other,
+                self._roll * other,
+            )
+        return NotImplemented
+
+    def __rmul__(self, other: float):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
             return Angle(
                 other * self._pitch,
-                other * self._roll,
                 other * self._yaw,
+                other * self._roll,
             )
+        return NotImplemented
 
-    def __rmul__(self, other: Union[Vec, 'Angle', int]):
-        """Vec * Angle rotates the first by the second."""
+    def __matmul__(self, other: Union['Angle']):
+        """Angle @ Angle rotates the first by the second.
+        """
+        if isinstance(other, Angle):
+            return other._rotate_angle(self)
+        else:
+            return NotImplemented
+
+    def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
+        """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Vec):
-            return other * Quat.from_angle(self)
+            return other @ Quat.from_angle(self)
         elif isinstance(other, Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
-        elif isinstance(other, Quat):
-            return NotImplemented
-        else:
-            return Angle(
-                self._pitch * other,
-                self._roll * other,
-                self._yaw * other,
-            )
-
-    __rmatmul__ = __rmul__
-    __matmul__ = __mul__
 
     def _rotate_angle(self, target: 'Angle'):
         """Rotate the target by this angle.
@@ -1278,8 +1291,8 @@ class Angle:
         Inefficient if we have more than one rotation to do.
         """
         quat = Quat()
-        quat *= target
-        quat *= self
+        quat @= target
+        quat @= self
         return quat.to_angle()
 
     class _Transform:
