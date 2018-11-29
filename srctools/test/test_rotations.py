@@ -73,3 +73,54 @@ def test_single_axis():
                     Angle(**{axis: ang2}),
                     **{axis: ang1 + ang2 % 360}
                 )
+
+
+def test_gen_check():
+    """Do an exhaustive check on all rotation math using data from the engine.
+
+    For each 45 degree angle, an offset in 6 directions is computed as well
+    as each 45 degree angle.
+    """
+    OFF = [
+        Vec(x=64),
+        Vec(x=-64),
+        Vec(y=64),
+        Vec(y=-64),
+        Vec(z=64),
+        Vec(z=-64),
+    ]
+    with open('rotation.txt') as f:
+        for w_pitch in range(0, 360, 45):
+            for w_yaw in range(0, 360, 45):
+                for w_roll in range(0, 360, 45):
+                    world = Angle(w_pitch, w_yaw, w_roll)
+
+                    # First the world line, which should match us.
+                    # world: pitch yaw roll
+                    world_line = f.readline().split()
+                    assert len(world_line) == 4
+
+                    assert_ang(
+                        world,
+                        float(world_line[1]),
+                        float(world_line[2]),
+                        float(world_line[3]),
+                    )
+                    # 6 offsets at 64 from origin in order.
+                    for off in OFF:
+                        head, name, x, y, z = f.readline().split()
+                        assert_vec(
+                            round(off @ world),
+                            round(float(x)),
+                            round(float(y)),
+                            round(float(z)),
+                            msg='({}) @ {}'.format(off, world),
+                        )
+                    # Then all 512 local positions.
+                    for l_pitch in range(0, 360, 45):
+                        for l_yaw in range(0, 360, 45):
+                            for l_roll in range(0, 360, 45):
+                                rotated = world @ Angle(l_pitch, l_yaw, l_roll)
+                                head, p, y, r = f.readline().split()
+                                # assert_ang(rotated, float(p), float(y), float(r))
+
