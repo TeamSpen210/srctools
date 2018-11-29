@@ -1,9 +1,11 @@
 """Helpers for performing tests."""
-from srctools import Vec, Angle
+import srctools
 import pytest
+import math
 
 VALID_NUMS = [
-    1, 1.5, 0.2827, 2346.45,
+    # 10e38 is the max single value, make sure we use double-precision.
+    30, 1.5, 0.2827, 2.3464545636e47,
 ]
 VALID_NUMS += [-x for x in VALID_NUMS]
 
@@ -17,8 +19,8 @@ def iter_vec(nums):
                 yield x, y, z
 
 
-def assert_ang(ang: Angle, pitch=0, yaw=0, roll=0, msg=''):
-    """Asserts that an Angle is equal to the provided angles.."""
+def assert_ang(ang, pitch=0, yaw=0, roll=0, msg=''):
+    """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
@@ -27,17 +29,17 @@ def assert_ang(ang: Angle, pitch=0, yaw=0, roll=0, msg=''):
     roll %= 360
 
     # Ignore slight variations
-    if not ang.pitch == pytest.approx(pitch):
-        pass
-    elif not ang.yaw == pytest.approx(yaw):
-        pass
-    elif not ang.roll == pytest.approx(roll):
-        pass
+    if not math.isclose(ang.pitch, pitch):
+        failed = 'x'
+    elif not math.isclose(ang.yaw, yaw):
+        failed = 'y'
+    elif not math.isclose(ang.roll, roll):
+        failed = 'z'
     else:
         # Success!
         return
 
-    new_msg = "{!r} != ({:g}, {:g}, {:g})".format(ang, pitch, yaw, roll)
+    new_msg = "{!r}.{} != ({:g}, {:g}, {:g})".format(ang, failed, pitch, yaw, roll)
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
@@ -48,18 +50,19 @@ def assert_vec(vec, x, y, z, msg=''):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    # Ignore slight variations
-    if not vec.x == pytest.approx(x):
-        pass
-    elif not vec.y == pytest.approx(y):
-        pass
-    elif not vec.z == pytest.approx(z):
-        pass
+    assert type(vec).__name__ == 'Vec'
+
+    if not math.isclose(vec.x, x):
+        failed = 'x'
+    elif not math.isclose(vec.y, y):
+        failed = 'y'
+    elif not math.isclose(vec.z, z):
+        failed = 'z'
     else:
         # Success!
         return
 
-    new_msg = "{!r} != ({:g}, {:g}, {:g})".format(vec, x, y, z)
+    new_msg = "{!r}.{} != ({}, {}, {})".format(vec, failed, x, y, z)
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)

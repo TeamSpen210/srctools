@@ -1,31 +1,16 @@
 """Test the Vector object."""
-import math
 import pickle
 import copy
 
-import pytest
 import operator as op
 import srctools
 from srctools.test import *
 from srctools import Vec_tuple
 
-from typing import Type
-
 try:
     from importlib.resources import path as import_file_path
 except ImportError:
     from importlib_resources import path as import_file_path
-
-
-Vec = ...  # type: Type[srctools.Vec]
-
-VALID_NUMS = [
-    # 10e38 is the max single value, make sure we use double-precision.
-    30, 1.5, 0.2827, 2.3464545636e47,
-]
-VALID_NUMS += [-x for x in VALID_NUMS]
-
-VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
@@ -42,36 +27,6 @@ def py_c_vec(request):
     Vec = request.param
     yield None
     Vec = orig_vec
-
-
-def iter_vec(nums):
-    for x in nums:
-        for y in nums:
-            for z in nums:
-                yield x, y, z
-
-
-def assert_vec(vec, x, y, z, msg=''):
-    """Asserts that Vec is equal to (x,y,z)."""
-    # Don't show in pytest tracebacks.
-    __tracebackhide__ = True
-
-    assert type(vec).__name__ == 'Vec'
-
-    if not math.isclose(vec.x, x):
-        failed = 'x'
-    elif not math.isclose(vec.y, y):
-        failed = 'y'
-    elif not math.isclose(vec.z, z):
-        failed = 'z'
-    else:
-        # Success!
-        return
-
-    new_msg = "{!r}.{} != ({}, {}, {})".format(vec, failed, x, y, z)
-    if msg:
-        new_msg += ': ' + str(msg)
-    pytest.fail(new_msg)
 
 
 def test_construction(py_c_vec):
