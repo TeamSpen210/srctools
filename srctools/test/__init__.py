@@ -66,3 +66,14 @@ def assert_vec(vec, x, y, z, msg=''):
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
+
+
+@pytest.fixture(params=[srctools.Vec])
+def py_c_vec(request):
+    """Run the test twice, for the Python and C versions."""
+    orig_vec = srctools.Vec
+    srctools.Vec = request.param
+    try:
+        yield request.param
+    finally:
+        srctools.Vec = orig_vec
