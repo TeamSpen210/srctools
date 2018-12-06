@@ -47,6 +47,7 @@ setup(
     package_data={'srctools': [
         'fgd.lzma',
         'srctools.fgd',
+        'py.typed',
     ]},
 
     entry_points={
