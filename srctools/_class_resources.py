@@ -33,7 +33,7 @@ def res(cls: str, *items: Union[
 
 def cls_func(func: ClassFunc) -> ClassFunc:
     """Save a function to do special checks for a classname."""
-    CLASS_RESOURCES[func.__name__].append(func)
+    CLASS_RESOURCES[func.__name__] = func
     return func
 
 
