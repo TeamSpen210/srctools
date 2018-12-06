@@ -55,9 +55,6 @@ class Game:
 
     def parse_search_path(self, root: Path, prop: Property) -> Path:
         """Evaluate options like |gameinfo_path|."""
-
-        if '|' not in prop.value:
-            return (root / prop.value).absolute()
         if prop.value.startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -66,6 +63,8 @@ class Game:
         # assumes Steam has included the needed VPKs.
         if prop.value.startswith('|all_source_engine_paths|'):
             return (root / prop.value[25:]).absolute()
+
+        return (root / prop.value).absolute()
 
     def get_filesystem(self) -> FileSystemChain:
         """Build a chained filesystem from the search paths."""
@@ -136,4 +135,4 @@ def find_gameinfo(argv=sys.argv) -> Game:
                 path = folder / GINFO
                 if path.exists():
                     return Game(path)
-            raise ValueError("Couldn't find gameinfo.txt!")
+    raise ValueError("Couldn't find gameinfo.txt!")

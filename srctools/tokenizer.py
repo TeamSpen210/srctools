@@ -290,6 +290,8 @@ class Tokenizer:
                     elif next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
+                        if escape is None:
+                            raise self.error('No character to escape!')
                         try:
                             next_char = ESCAPES[escape]
                         except KeyError:
@@ -298,9 +300,10 @@ class Tokenizer:
                             else:
                                 next_char = '\\' + escape
                                 # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
-                    elif next_char is None:
+                    if next_char is None:
                         raise self.error('Unterminated string!')
-                    value_chars.append(next_char)
+                    else:
+                        value_chars.append(next_char)
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.

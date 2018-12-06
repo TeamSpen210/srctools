@@ -288,7 +288,7 @@ def read_nullstr(file: BinaryIO, pos: int=None):
             return ''
         file.seek(pos)
 
-    text = []
+    text = []  # type: List[bytes]
     while True:
         char = file.read(1)
         if char == b'\0':

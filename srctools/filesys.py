@@ -14,6 +14,9 @@ from typing import (
     Union, Iterator,
     List, Tuple, Dict,
     TextIO, BinaryIO,
+    Any,
+    Optional,
+    Set,
 )
 
 
@@ -84,7 +87,7 @@ class FileSystem:
     """Base class for different systems defining the interface."""
     def __init__(self, path: str):
         self.path = os.fspath(path)
-        self._ref = None
+        self._ref = None  # type: Optional[Any]
         self._ref_count = 0
 
     def open_ref(self) -> None:
@@ -263,7 +266,7 @@ class FileSystemChain(FileSystem):
 
     def walk_folder(self, folder: str) -> Iterator[File]:
         """Walk folders, not repeating files."""
-        done = set()
+        done = set()  # type: Set[str]
         for file in self.walk_folder_repeat(folder):
             folded = file.path.casefold()
             if folded in done:
@@ -326,7 +329,7 @@ class VirtualFileSystem(FileSystem):
         }
         self.bytes_encoding = encoding
 
-    def __eq__(self, other: 'VirtualFileSystem'):
+    def __eq__(self, other: object):
         if not isinstance(other, VirtualFileSystem):
             return NotImplemented
         return (
@@ -495,7 +498,7 @@ class ZipFileSystem(FileSystem):
     """Accesses files in a zip file."""
     def __init__(self, path: str, zipfile: ZipFile=None):
         self._ref = None  # type: ZipFile
-        self._name_to_info = {}
+        self._name_to_info = {}  # type: Dict[str, ZipInfo]
         super().__init__(path)
 
         if zipfile is not None:

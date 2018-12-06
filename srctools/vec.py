@@ -284,9 +284,9 @@ class Vec:
         axis1: str,
         val1: Union[float, 'Vec'],
         axis2: str=None,
-        val2: Union[float, 'Vec']=None,
+        val2: Union[float, 'Vec']=0.0,
         axis3: str=None,
-        val3: Union[float, 'Vec']=None
+        val3: Union[float, 'Vec']=0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 

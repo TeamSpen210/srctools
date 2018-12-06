@@ -13,13 +13,13 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, ContextManager, Optional
+from typing import List, Dict, Iterator, Union, Optional, Tuple
 
 
 try:
     from enum import Enum, Flag
 except ImportError:
-    from aenum import Enum, Flag
+    from aenum import Enum, Flag  # type: ignore
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
@@ -74,6 +74,10 @@ class VERSIONS(Enum):
     CONTAGION = 23
 
     DESOLATION = 42
+
+    def __eq__(self, other: object):
+        """Versions are equal to their integer value."""
+        return self.value == other
 
 
 class BSP_LUMPS(Enum):
@@ -193,7 +197,7 @@ class BSP:
         self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
         self.game_lumps = {}  # type: Dict[bytes, GameLump]
         self.header_off = 0
-        self.version = version  # type: Optional[VERSIONS, int]
+        self.version = version  # type: Optional[Union[VERSIONS, int]]
 
         self.read()
 
@@ -213,7 +217,7 @@ class BSP:
                 except ValueError:
                     self.version = bsp_version
             else:
-                assert bsp_version == self.version.value, 'Different BSP version!'
+                assert bsp_version == self.version, 'Different BSP version!'
 
             lump_offsets = {}
 
@@ -249,23 +253,23 @@ class BSP:
 
             for _ in range(lump_count):
                 (
-                    lump_id,
+                    game_lump_id,
                     flags,
-                    version,
+                    glump_version,
                     file_off,
                     file_len,
-                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
+                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)  # type: bytes, int, int, int, int
                 lump_offset += GameLump.ST.size
 
                 file.seek(file_off)
 
                 # The lump ID is backward..
-                lump_id = lump_id[::-1]
+                game_lump_id = game_lump_id[::-1]
 
-                self.game_lumps[lump_id] = GameLump(
-                    lump_id,
+                self.game_lumps[game_lump_id] = GameLump(
+                    game_lump_id,
                     flags,
-                    version,
+                    glump_version,
                     file.read(file_len),
                 )
             # This is not valid any longer.
@@ -361,7 +365,7 @@ class BSP:
 
         """
         if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]  # type: Lump
+            lump = self.lumps[lump]
 
         lump.data = new_data
 
@@ -408,7 +412,7 @@ class BSP:
                 ))
 
     @contextlib.contextmanager
-    def packfile(self) -> ContextManager[ZipFile]:
+    def packfile(self) -> Iterator[ZipFile]:
         """A context manager to allow editing the packed content.
 
         When successfully exited, the zip will be rewritten to the BSP file.
@@ -470,6 +474,9 @@ class BSP:
                     raise ValueError("Last entity didn't end!")
                 return vmf
             else:
+                if cur_ent is None:
+                    raise ValueError("Keyvalue outside brackets!")
+
                 # Line is of the form <"key" "val">
                 key, value = line.split(b'" "')
                 decoded_key = key[1:].decode('ascii')
@@ -664,8 +671,8 @@ class BSP:
             models.add(prop.model)
 
         visleafs.sort(key=len, reverse=True)
-        leaf_array = []
-        leaf_offsets = {}
+        leaf_array = []  # type: List[int]
+        leaf_offsets = {}  # type: Dict[Tuple[int, ...], int]
 
         for leaf in visleafs:
             tup = tuple(sorted(leaf))
@@ -860,7 +867,7 @@ class StaticProp:
         max_cpu_level: int=0,
         min_gpu_level: int=0,
         max_gpu_level: int=0,
-        tint: Vec=(255, 255, 255),  # Rendercolor
+        tint: Vec=Vec(255, 255, 255),  # Rendercolor
         renderfx: int=255,
         disable_on_xbox: bool=False,
     ):

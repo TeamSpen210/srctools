@@ -13,6 +13,7 @@ from typing import (
     Optional, Union, Any, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator,
+    NamedTuple,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -71,6 +72,7 @@ class IDMan(set):
             if poss_id not in self:
                 self.add(poss_id)
                 return poss_id
+        raise AssertionError("Count() never ends...")
 
 
 class NullIDMan(IDMan):
@@ -245,7 +247,6 @@ class VMF:
         # to.
         self.spawn = spawn or Entity(self)  # type: Entity
         self.spawn.solids = self.brushes
-        self.spawn.hidden_brushes = self.brushes
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion'))
@@ -425,7 +426,7 @@ class VMF:
     def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
     @overload
     def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False) -> str:
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False):
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -509,6 +510,7 @@ class VMF:
             dest_file.write('}\n')
 
         if ret_string:
+            assert isinstance(dest_file, io.StringIO)
             string = dest_file.getvalue()
             dest_file.close()
             return string
@@ -871,7 +873,7 @@ class VisGroup:
         vis_id: int,
         name: str,
         color: Vec=(255, 255, 255),
-        children: List['VisGroup']=(),
+        children: Iterable['VisGroup']=(),
     ):
         self.vmf = vmf
         self.name = name
@@ -977,7 +979,7 @@ class Solid:
             vmf_file or self.map,
             des_id,
             sides,
-            self.visgroup_ids if keep_vis else (),
+            self.visgroup_ids if keep_vis else (),  # type: ignore
             self.hidden if keep_vis else False,
             self.group_id,
             self.vis_shown if keep_vis else True,
@@ -1244,8 +1246,7 @@ class Side:
     def __init__(
         self,
         vmf_file: VMF,
-        # Must be 3 Vecs, or 3-item iterables.
-        planes: List[Iterable[float]],
+        planes: List[Union[Tuple[float, float, float], Vec]],
         des_id: int=-1,
         lightmap: int=16,
         smoothing: int=0,
@@ -1253,7 +1254,7 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis]=None,
         vaxis: Optional[UVAxis]=None,
-        disp_data: dict=None,
+        disp_data: Optional[Dict[str, Any]]=None,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1279,7 +1280,7 @@ class Side:
             self.disp_is_subdiv = srctools.conv_bool(
                 disp_data.get('subdiv', '_'), False)
             self.disp_allowed_verts = disp_data.get('allowed_verts', {})
-            self.disp_data = {}
+            self.disp_data = {}  # type: Dict[str, List[str]]
             for v in _DISP_ROWS:
                 self.disp_data[v] = disp_data.get(v, [])
             self.is_disp = True
@@ -1316,7 +1317,7 @@ class Side:
                     rows.sort(key=lambda x: srctools.conv_int(x.name[3:]))
                     disp_data[v] = [v.value for v in rows]
         else:
-            disp_data = None
+            disp_data = None  # type: Optional[Dict[str, Any]]
 
         return cls(
             vmf_file,
@@ -1352,7 +1353,7 @@ class Side:
             disp_data['subdiv'] = self.disp_is_subdiv
             disp_data['allowed_verts'] = self.disp_allowed_verts
         else:
-            disp_data = None
+            disp_data = None  # type: Optional[Dict[str, Any]]
 
         if vmf_file is not None and des_id == -1:
             des_id = self.id
@@ -1498,15 +1499,17 @@ class Side:
 
         return point_2.cross(point_1).norm()
 
-    def scale(self, value: float) -> None:
+    def scale_set(self, value: float) -> None:
         self.uaxis.scale = value
         self.vaxis.scale = value
-    scale = property(fset=scale, doc='Set both scale attributes easily.')
+    scale = property(fset=scale_set, doc='Set both scale attributes easily.')
 
-    def offset(self, value: float) -> None:
+    def offset_set(self, value: float) -> None:
         self.uaxis.offset = value
         self.vaxis.offset = value
-    offset = property(fset=offset, doc='Set both offset attributes easily.')
+    offset = property(fset=offset_set, doc='Set both offset attributes easily.')
+
+    del scale_set, offset_set
 
 
 class Entity:
@@ -1529,7 +1532,7 @@ class Entity:
         outputs: List['Output']=None,
         solids: List[Solid]=None,
         hidden: bool=False,
-        groups: List['EntityGroup']=(),
+        groups: Iterable['EntityGroup']=(),
         vis_ids=(),
         vis_shown: bool=True,
         vis_auto_shown: bool=True,
@@ -1887,7 +1890,7 @@ class Entity:
                 del self.keys[k]
                 break
 
-    def get(self, key: str, default: T='') -> Union[str, T]:
+    def get(self, key: str, default: Union[str, T]='') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -1952,7 +1955,11 @@ class Entity:
             return Vec.from_str(self['origin'])
 
 # One $fixup variable with replacement.
-FixupTuple = namedtuple('FixupTuple', 'var value id')
+FixupTuple = NamedTuple('FixupTuple', [
+    ('var', str),
+    ('value', str),
+    ('id', int),
+])
 
 
 class EntityFixup:
@@ -1964,19 +1971,19 @@ class EntityFixup:
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
     """
-    # Because of the int(), bool(), float() methods, we need to use builtins
+    # Because of the int(), bool(), float() methods, we need to use builtins.*
     # for the type annotations.
     __slots__ = ['_fixup']
 
     def __init__(self, fixup: Iterable[FixupTuple]=()):
-        self._fixup = {}
+        self._fixup = {}  # type: Dict[str, FixupTuple]
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes = set()
-        extra_vals = []
+        used_indexes = set()  # type: Set[int]
+        extra_vals = []  # type: List[FixupTuple]
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -2042,11 +2049,11 @@ class EntityFixup:
         if var[0] == '$':
             var = var[1:]
 
-            val = (
-                ('1' if val else '0')
-                if isinstance(val, bool)
-                else str(val)
-            )
+        sval = (
+            ('1' if val else '0')
+            if isinstance(val, bool)
+            else str(val)
+        )
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
@@ -2058,12 +2065,12 @@ class EntityFixup:
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(var, val, ind)
+                    self._fixup[folded_var] = FixupTuple(var, sval, ind)
                     break
         else:
             self._fixup[folded_var] = FixupTuple(
                 var,
-                val,
+                sval,
                 self._fixup[folded_var].id,
             )
 
@@ -2120,7 +2127,7 @@ class EntityFixup:
         )
         return self.__class__.__name__ + '([' + items + '])'
 
-    def int(self, key: str, def_: T=0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(fixup[key]), but with a default value if missing or
@@ -2131,7 +2138,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(fixup[key]), but with a default value if missing or
@@ -2142,7 +2149,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
         """Return a fixup interpreted as a boolean.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',

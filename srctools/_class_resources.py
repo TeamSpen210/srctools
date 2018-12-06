@@ -15,10 +15,9 @@ __all__ = ['CLASS_RESOURCES']
 # behaviour, yielding files to pack.
 
 ClassFunc = Callable[[Entity], Iterator[str]]
-_cls_res_type: Dict[str, List[Union[
-    str,
-    Tuple[str, FileType],
+_cls_res_type = Dict[str, Union[
     ClassFunc,
+    List[Union[str, Tuple[str, FileType]],
 ]]]
 CLASS_RESOURCES = {}  # type: _cls_res_type
 
@@ -34,7 +33,7 @@ def res(cls: str, *items: Union[
 
 def cls_func(func: ClassFunc) -> ClassFunc:
     """Save a function to do special checks for a classname."""
-    CLASS_RESOURCES[func.__name__] = func
+    CLASS_RESOURCES[func.__name__].append(func)
     return func
 
 

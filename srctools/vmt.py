@@ -115,8 +115,8 @@ class Material:
         # Open the parameters body.
         tok.expect(Tok.BRACE_OPEN)
         
-        params = {}
-        proxies = []
+        params = {}  # type: Dict[str, Union[str, Property]]
+        proxies = []  # type: List[Property]
         
         # Look for parameter names
         for token, param_name in tok:
