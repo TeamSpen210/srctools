@@ -27,6 +27,8 @@ except ImportError:
     # Backport module for before Python 3.7
     from importlib_resources import open_binary
 
+SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
+
 
 class FileType(Enum):
     """Types of files we might pack."""
@@ -325,7 +327,7 @@ class PackList:
         The sounds registered by this soundscript are returned.
         """
         with file.sys, file.open_str() as f:
-            props = Property.parse(f, file.path)
+            props = Property.parse(f, file.path, allow_escapes=False)
         return self._parse_soundscript(props, file.path, always_include)
 
     def _parse_soundscript(
@@ -376,7 +378,9 @@ class PackList:
             try:
                 with open(cache_file) as f:
                     old_cache = Property.parse(f, cache_file)
-            except (FileNotFoundError, KeyValError):
+                if man['version'] != SOUND_CACHE_VERSION:
+                    raise LookupError
+            except (FileNotFoundError, KeyValError, LookupError):
                 pass
             else:
                 for cache_prop in old_cache:
@@ -387,9 +391,13 @@ class PackList:
 
             # Regenerate from scratch each time - that way we remove old files
             # from the list.
-            new_cache_data = Property(None, [])
+            new_cache_sounds = Property('Sounds', [])
+            new_cache_data = Property(None, [
+                Property('version', SOUND_CACHE_VERSION),
+                new_cache_sounds,
+            ])
         else:
-            new_cache_data = None
+            new_cache_data = new_cache_sounds = None
 
         with self.fsys:
             for prop in man.find_children('game_sounds_manifest'):
@@ -421,8 +429,8 @@ class PackList:
                 # ui, etc). Just keep those loaded, no harm since vanilla does.
                 self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
 
-                if new_cache_data is not None:
-                    new_cache_data.append(Property(prop.value, [
+                if new_cache_sounds is not None:
+                    new_cache_sounds.append(Property(prop.value, [
                         Property('cache_key', str(cur_key)),
                         Property('Files', [
                             Property(snd, [
