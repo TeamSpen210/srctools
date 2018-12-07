@@ -196,6 +196,7 @@ class Property:
         file_contents: Union[str, Iterator[str]],
         filename='',
         flags: Dict[str, bool]=EmptyMapping,
+        allow_escapes: bool=True,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
@@ -203,6 +204,7 @@ class Property:
         file_contents should be an iterable of strings or a single string.
         flags should be a mapping for additional flags to accept
         (which overrides defaults).
+        character_escapes allows choosing if \\t or similar escapes are parsed.
         """
         # The block we are currently adding to.
 
@@ -227,6 +229,7 @@ class Property:
             filename,
             KeyValError,
             string_bracket=True,
+            allow_escapes=allow_escapes,
         )
 
         # Do we require a block to be opened next? ("name"\n must have { next.)
