@@ -300,10 +300,26 @@ class Material:
             for name, prop in parent._params.items()
         }
 
+        # Empty strings in these delete the value.
+
         for prop in self._params.get('insert', ()):
             if prop.has_children():
                 raise ValueError('Append contains blocks?')
-            new_params[prop.name] = prop.value
+            if prop.value == '':
+                continue
+            if prop.name not in new_params:
+                new_params[prop.name] = prop.value
+
+        for prop in self._params.get('replace', ()):
+            if prop.has_children():
+                raise ValueError('Append contains blocks?')
+            if prop.value == '':
+                try:
+                    del new_params[prop.name]
+                except KeyError:
+                    pass
+            else:
+                new_params[prop.name] = prop.value
 
         return Material(
             parent.shader,
