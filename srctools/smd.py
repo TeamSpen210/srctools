@@ -348,3 +348,66 @@ class Model:
             tris.append(Triangle(mat_name, *points))
 
         raise ParseError('end', 'No end to triangles section!')
+
+    def export(self, file: BinaryIO):
+        """Write out the SMD to the given file."""
+        file.write(b"version 1\nnodes\n")
+
+        # Deconstruct the tree into the original indexes.
+        bone_indexes = {}  # type: Dict[Bone, int]
+        next_ind = 0
+        todo = set(self.bones.values())
+        while todo:
+            for bone in todo:
+                if not bone.parent or bone.parent in bone_indexes:
+                    bone_indexes[bone] = next_ind
+                    todo.remove(bone)
+                    if bone.parent is None:
+                        parent_ind = -1
+                    else:
+                        parent_ind = bone_indexes[bone.parent]  # or KeyError.
+                    file.write(b'%i "%s" %i\n' % (
+                        next_ind,
+                        bone.name.encode('ascii'),
+                        parent_ind,
+                    ))
+                    next_ind += 1
+                    break
+            else:
+                # Every bone had a parent, so it must be a loop somewhere!
+                raise ValueError('Loop in bone parenting!')
+
+        file.write(b'end\nskeleton\n')
+        for time, frame in sorted(self.animation.items(), key=itemgetter(0)):
+            file.write(b'time %i\n' % time)
+            for bone_pose in frame:  # type: BoneFrame
+                x, y, z = bone_pose.position
+                pit, yaw, rol = bone_pose.rotation
+                file.write(b'%i %.6f %.6f %.6f  %.6f %.6f %.6f\n' % (
+                    bone_indexes[bone_pose.bone],
+                    x, y, z,
+                    pit, yaw, rol,
+                ))
+        file.write(b'end\n')
+        if self.triangles:
+            file.write(b'triangles\n')
+            for tri in self.triangles:
+                file.write(tri.mat.encode('ascii') + b'\n')
+                for vert in tri:
+                    # Add the last link as the "main" one, which recieves
+                    # the amount not set by the other weights.
+                    assert len(vert.links) > 0
+                    file.write(
+                        b'%i\t%.6f %.6f %.6f\t'  # bone index, position XYZ
+                        b'%.6f %.6f %.6f\t'  # Normal XYZ
+                        b'%.6f %.6f %i' % (  # UV, weight count.
+                            bone_indexes[vert.links[-1][0]],
+                            vert.pos.x, vert.pos.y, vert.pos.z,
+                            vert.norm.x, vert.norm.y, vert.norm.z,
+                            vert.tex_u, vert.tex_v, (len(vert.links) - 1)
+                        )
+                    )
+                    for bone, weight in vert.links[:-1]:
+                        file.write(b' %i %.6f' % (bone_indexes[bone], weight))
+                    file.write(b'\n')
+            file.write(b'end\n')
