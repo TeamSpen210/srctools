@@ -84,7 +84,7 @@ def load_fgd() -> FGD:
     """
 
     from lzma import LZMAFile
-    with LZMAFile(open_binary(srctools, 'fgd.lzma')) as f:
+    with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
         return FGD.unserialise(f)
 
 
