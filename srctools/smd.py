@@ -1,7 +1,12 @@
 """Parses SMD model/animation data."""
 import re
+from operator import itemgetter
+
 import math
-from typing import List, Optional, Dict, Tuple, Iterator, Iterable, Union
+from typing import (
+    List, Optional, Dict, Tuple, Iterator, Iterable, Union,
+    BinaryIO,
+)
 
 from srctools import Vec
 
@@ -132,7 +137,7 @@ class Model:
     """
     def __init__(
         self,
-        bones: List[Bone],
+        bones: Dict[str, Bone],
         animation: Dict[int, List[BoneFrame]],
         triangles: List[Triangle]
     ):
@@ -201,7 +206,11 @@ class Model:
         if tri is None:
             tri = []
 
-        return Model(list(bones.values()), anim, tri)
+        return Model({
+            bone.name: bone
+            for bone in
+            bones.values()
+        }, anim, tri)
 
     @staticmethod
     def _parse_smd_bones(file_iter: Iterator[Tuple[int, bytes]]) -> Dict[int, Bone]:
@@ -221,16 +230,17 @@ class Model:
                 raise ParseError(line_num, 'Invalid line!') from None
             else:
                 if bone_parent == -1:
-                    bones[bone_ind] = Bone(bone_name, None)
+                    parent_ind = None
                 else:
                     try:
-                        bones[bone_ind] = Bone(bone_name, bones[bone_parent])
+                        parent_ind = bones[bone_parent]
                     except KeyError:
                         raise ParseError(
                             line_num,
                             'Undefined parent bone {}!',
                             bone_parent,
                         ) from None
+                bones[bone_ind] = Bone(bone_name.decode('ascii'), parent_ind)
         raise ParseError('end', 'No end to nodes section!')
 
     @staticmethod
