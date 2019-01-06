@@ -383,7 +383,7 @@ class PackList:
             except (FileNotFoundError, KeyValError, LookupError):
                 pass
             else:
-                for cache_prop in old_cache:
+                for cache_prop in old_cache.find_children('Sounds'):
                     cache_data[cache_prop.name] = (
                         cache_prop.int('cache_key'),
                         cache_prop.find_key('files')
