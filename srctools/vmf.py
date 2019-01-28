@@ -2020,9 +2020,14 @@ class EntityFixup:
 
         Variable IDs are not preserved.
         """
-        # Convert to dict - this handles EntityFixup + other mappings
-        for key, value in dict(other).items():
-            self[key] = value
+        if isinstance(other, EntityFixup):
+            # Iterate over the internal tuples.
+            for var in other._fixup.values():
+                self[var.var] = var.value
+        else:
+            # Convert to dict - this all mapping types.
+            for key, value in dict(other).items():
+                self[key] = value
 
     @overload
     def __getitem__(self, key: str) -> str: ...
