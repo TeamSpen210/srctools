@@ -162,10 +162,10 @@ def make_overlay(
         endU=str(u_repeat),
         endV=str(v_repeat),
 
-        uv0='-{} -{} 0'.format(u_dist, v_dist),
-        uv1='-{} {} 0'.format(u_dist, v_dist),
+        uv0='{} {} 0'.format(-u_dist, -v_dist),
+        uv1='{} {} 0'.format(-u_dist, v_dist),
         uv2='{} {} 0'.format(u_dist, v_dist),
-        uv3='{} -{} 0'.format(u_dist, v_dist),
+        uv3='{} {} 0'.format(u_dist, -v_dist),
     )
 
 
