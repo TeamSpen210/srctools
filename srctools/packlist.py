@@ -292,6 +292,10 @@ class PackList:
 
     def pack_soundscript(self, sound_name: str):
         """Pack a soundscript or raw sound file."""
+        # Blank means no sound is used.
+        if not sound_name:
+            return
+
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
         if sound_name.endswith(('.wav', '.mp3')):
