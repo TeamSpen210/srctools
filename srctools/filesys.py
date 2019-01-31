@@ -224,9 +224,21 @@ class FileSystemChain(FileSystem):
             raise ValueError('File is not from a FileSystemChain..')
         return file._data.sys
 
-    def add_sys(self, sys: FileSystem, prefix=''):
-        """Add a filesystem to the list."""
-        self.systems.append((sys, prefix))
+    def add_sys(
+        self,
+        sys: FileSystem,
+        prefix: str='',
+        *,
+        priority: bool=True,
+    ) -> None:
+        """Add a filesystem to the list.
+
+        If priority is True, the system will be added to the start.
+        """
+        if priority:
+            self.systems.insert(0, (sys, prefix))
+        else:
+            self.systems.append((sys, prefix))
         # If we're currently open, apply that to the added systems.
         if self._ref_count > 0:
             sys.open_ref()
