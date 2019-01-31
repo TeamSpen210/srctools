@@ -229,7 +229,7 @@ class FileSystemChain(FileSystem):
         sys: FileSystem,
         prefix: str='',
         *,
-        priority: bool=True,
+        priority: bool=False,
     ) -> None:
         """Add a filesystem to the list.
 
