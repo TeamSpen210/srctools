@@ -138,11 +138,6 @@ def make_overlay(
     basis_u = uax.norm()
     basis_v = vax.norm()
 
-    if normal.x < 0 or normal.y < 0:
-        basis_v *= -1
-    if normal.z < 0:
-        basis_u *= -1
-
     return vmf.create_ent(
         classname='info_overlay',
         angles='0 0 0',  # Not actually used by VBSP!
