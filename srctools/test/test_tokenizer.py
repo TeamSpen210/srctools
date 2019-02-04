@@ -186,6 +186,64 @@ def test_pushback(py_c_token):
     check_tokens(tokens, prop_parse_tokens)
 
 
+def test_star_comments(py_c_token):
+    """Test disallowing /* */ comments."""
+    Tokenizer = py_c_token
+
+    text = '''\
+    "blah"
+        {
+        "a" "b"
+    /*
+        "c" "d"
+        }
+    "second"
+        {
+    */
+        }
+    '''
+
+    with pytest.raises(TokenSyntaxError):
+        # Default = false
+        for tok, tok_value in py_c_token(text):
+            pass
+
+    with pytest.raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token(text, allow_star_comments=False):
+            pass
+
+
+    check_tokens(py_c_token(text, allow_star_comments=True), [
+        (Token.STRING, "blah"), Token.NEWLINE,
+        Token.BRACE_OPEN, Token.NEWLINE,
+        (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
+        Token.NEWLINE,
+        Token.BRACE_CLOSE, Token.NEWLINE,
+    ])
+
+    # Test with one string per chunk:
+    for tok, tok_value in py_c_token(list(text), allow_star_comments=True):
+        pass
+
+    # Check line number is correct.
+    tokenizer = py_c_token(text, allow_star_comments=True)
+    for tok, tok_value in tokenizer:
+        if tok is Token.BRACE_CLOSE:
+            assert 10 == tokenizer.line_num
+
+    # Check unterminated comments are invalid.
+    with pytest.raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token(text.replace('*/', ''), allow_star_comments=True):
+            pass
+
+    # Test some edge cases with multiple asterisks:
+    for tok, tok_value in py_c_token('"blah"\n/**/', allow_star_comments=True):
+        pass
+
+    for tok, tok_value in py_c_token('"blah"\n/*\n **/', allow_star_comments=True):
+        pass
+
+
 def test_bom(py_c_token):
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
