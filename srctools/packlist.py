@@ -6,6 +6,7 @@ from enum import Enum
 from zipfile import ZipFile
 import os
 
+from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
@@ -690,23 +691,30 @@ class PackList:
     def _get_material_files(self, file: PackFile):
         """Find any needed files for a material."""
 
-        parents = []
-        if file.virtual:
-            # Read directly from the data we have.
-            mat = Material.parse(
-                io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
-                file.filename,
-            )
-        else:
-            try:
+        parents = []  # type: List[str]
+        try:
+            if file.virtual:
+                # Read directly from the data we have.
+                mat = Material.parse(
+                    io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
+                    file.filename,
+                )
+            else:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
-            except FileNotFoundError:
-                print('WARNING: File "{}" does not exist!'.format(file.filename))
-                return
 
-        # For 'patch' shaders, apply the originals.
-        mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+            # For 'patch' shaders, apply the originals.
+            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+        except FileNotFoundError:
+            LOGGER.warning('File "{}" does not exist!', file.filename)
+            return
+        except TokenSyntaxError as exc:
+            LOGGER.warning(
+                'File "{}" cannot be parsed:\n{}',
+                file.filename,
+                exc,
+            )
+            return
 
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL)
