@@ -135,6 +135,14 @@ class Tokenizer:
     """Processes text data into groups of tokens.
 
     This mainly groups strings and removes comments.
+
+    Due to many inconsistencies in Valve's parsing of files,
+    several options are available to control whether different
+    syntaxes are accepted:
+        * string_bracket parses [bracket] blocks as a single string-like block.
+          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        * allow_escapes controls whether \\n-style escapes are expanded.
+        * allow_star_comments if enabled allows /* */ comments.
     """
     def __init__(
         self,
@@ -143,6 +151,7 @@ class Tokenizer:
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
+        allow_star_comments: bool=False,
     ) -> None:
         if isinstance(data, bytes):
             raise ValueError(
@@ -175,6 +184,7 @@ class Tokenizer:
 
         self.string_bracket = bool(string_bracket)
         self.allow_escapes = bool(allow_escapes)
+        self.allow_star_comments = bool(allow_star_comments)
         # If set, this token will be returned next.
         self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
@@ -265,18 +275,55 @@ class Tokenizer:
             elif next_char == '/':
                 # The next must be another slash! (//)
                 comment_next = self._next_char()
-                if comment_next != '/':
+                if comment_next == '*':
+                    # /* comment.
+                    if self.allow_star_comments:
+                        comment_start = self.line_num
+                        while True:
+                            next_char = self._next_char()
+                            if next_char is None:
+                                raise self.error(
+                                    'Unclosed /* comment '
+                                    '(starting on line {})!',
+                                    comment_start,
+                                )
+                            elif next_char == '\n':
+                                self.line_num += 1
+                            elif next_char == '*':
+                                # Check next next character!
+                                next_next_char = self._next_char()
+                                if next_next_char is None:
+                                    raise self.error(
+                                        'Unclosed /* comment '
+                                        '(starting on line {})!',
+                                        comment_start,
+                                    )
+                                elif next_next_char == '/':
+                                    break
+                                else:
+                                    # We need to reparse this, to ensure
+                                    # "**/" parses correctly!
+                                    self.char_index -= 1
+                    else:
+                        raise self.error(
+                            '/**/-style comments are not allowed!'
+                        )
+                elif comment_next != '/':
                     raise self.error(
+                        'Single slash found, '
+                        'instead of two for a comment (// or /* */)!'
+                        if self.allow_star_comments else
                         'Single slash found, '
                         'instead of two for a comment (//)!'
                     )
-                # Skip to end of line
-                while True:
-                    next_char = self._next_char()
-                    if next_char == '\n' or next_char is None:
-                        break
-                # We want to produce the token for the end character.
-                self.char_index -= 1
+                else:
+                    # Skip to end of line
+                    while True:
+                        next_char = self._next_char()
+                        if next_char == '\n' or next_char is None:
+                            break
+                    # We want to produce the token for the end character.
+                    self.char_index -= 1
 
             # Strings
             elif next_char == '"':
