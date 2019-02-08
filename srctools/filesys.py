@@ -517,6 +517,7 @@ class ZipFileSystem(FileSystem):
             # Use the zipfile directly, and don't close it.
             self._ref_count += 1
             self._ref = zipfile
+            self._load_paths()
 
     def __repr__(self):
         return 'ZipFileSystem({!r})'.format(self.path)
@@ -577,8 +578,11 @@ class ZipFileSystem(FileSystem):
 
     def _create_ref(self) -> None:
         self._ref = zipfile = ZipFile(self.path)
+        self._load_paths()
+
+    def _load_paths(self) -> None:
         self._name_to_info.clear()
-        for info in zipfile.infolist():
+        for info in self._ref.infolist():
             # Some zipfiles include entries for the directories too. They have
             # a trailing slash.
             if not info.filename.endswith('/'):
