@@ -137,6 +137,7 @@ class HelperTypes(Enum):
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
     SWEPT_HULL = 'sweptplayerhull'
+    ORIENTED_BBOX = 'obb'  # Bounding box oriented to angles.
 
     # Complex helpers using resources
     SPRITE = 'iconsprite'
