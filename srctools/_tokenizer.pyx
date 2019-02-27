@@ -136,7 +136,10 @@ cdef class Tokenizer:
             if _conv_path is None:
                 self.filename = str(filename)
             else:
-                self.filename = _conv_path(filename)
+                # Use os method to convert to string.
+                # We know this isn't a method.
+                with cython.optimize.unpack_method_calls(False):
+                    self.filename = _conv_path(filename)
         else:
             # If a file-like object, automatically set to the filename.
             try:
@@ -182,6 +185,8 @@ cdef class Tokenizer:
             message = message.format(*args)
         return self._error(message)
 
+    # Don't unpack, error_type should be a class.
+    @cython.optimize.unpack_method_calls(False)
     cdef inline _error(self, str message):
         """C-private self.error()."""
         return self.error_type(
