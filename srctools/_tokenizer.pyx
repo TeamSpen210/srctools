@@ -103,7 +103,7 @@ cdef class Tokenizer:
     def __init__(
         self,
         data not None,
-        filename: str=None,
+        object filename=None,
         error=None,
         bint string_bracket=False,
         bint allow_escapes=True,

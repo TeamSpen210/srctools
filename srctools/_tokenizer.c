@@ -986,12 +986,6 @@ static int __Pyx_ParseOptionalKeywords(PyObject *kwds, PyObject **argnames[],\
     PyObject *kwds2, PyObject *values[], Py_ssize_t num_pos_args,\
     const char* function_name);
 
-/* ArgTypeTest.proto */
-#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
-    ((likely((Py_TYPE(obj) == type) | (none_allowed && (obj == Py_None)))) ? 1 :\
-        __Pyx__ArgTypeTest(obj, type, name, exact))
-static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
-
 /* PyObjectCall.proto */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw);
@@ -1158,6 +1152,12 @@ static PyObject* __Pyx_PyUnicode_BuildFromAscii(Py_ssize_t ulength, char* chars,
 
 /* CIntToPyUnicode.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyUnicode_From_int(int value, Py_ssize_t width, char padding_char, char format_char);
+
+/* ArgTypeTest.proto */
+#define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
+    ((likely((Py_TYPE(obj) == type) | (none_allowed && (obj == Py_None)))) ? 1 :\
+        __Pyx__ArgTypeTest(obj, type, name, exact))
+static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact);
 
 /* BytesEquals.proto */
 static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int equals);
@@ -1686,15 +1686,15 @@ static int __pyx_pw_8srctools_10_tokenizer_9Tokenizer_5__init__(PyObject *__pyx_
     /* "srctools/_tokenizer.pyx":106
  *         self,
  *         data not None,
- *         filename: str=None,             # <<<<<<<<<<<<<<
+ *         object filename=None,             # <<<<<<<<<<<<<<
  *         error=None,
  *         bint string_bracket=False,
  */
-    values[1] = ((PyObject*)Py_None);
+    values[1] = ((PyObject *)Py_None);
 
     /* "srctools/_tokenizer.pyx":107
  *         data not None,
- *         filename: str=None,
+ *         object filename=None,
  *         error=None,             # <<<<<<<<<<<<<<
  *         bint string_bracket=False,
  *         bint allow_escapes=True,
@@ -1776,14 +1776,14 @@ static int __pyx_pw_8srctools_10_tokenizer_9Tokenizer_5__init__(PyObject *__pyx_
       }
     }
     __pyx_v_data = values[0];
-    __pyx_v_filename = ((PyObject*)values[1]);
+    __pyx_v_filename = values[1];
     __pyx_v_error = values[2];
     if (values[3]) {
       __pyx_v_string_bracket = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_string_bracket == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 108, __pyx_L3_error)
     } else {
 
       /* "srctools/_tokenizer.pyx":108
- *         filename: str=None,
+ *         object filename=None,
  *         error=None,
  *         bint string_bracket=False,             # <<<<<<<<<<<<<<
  *         bint allow_escapes=True,
@@ -1829,7 +1829,6 @@ static int __pyx_pw_8srctools_10_tokenizer_9Tokenizer_5__init__(PyObject *__pyx_
   if (unlikely(((PyObject *)__pyx_v_data) == Py_None)) {
     PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "data"); __PYX_ERR(0, 105, __pyx_L1_error)
   }
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_filename), (&PyUnicode_Type), 1, "filename", 1))) __PYX_ERR(0, 106, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_10_tokenizer_9Tokenizer_4__init__(((struct __pyx_obj_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self), __pyx_v_data, __pyx_v_filename, __pyx_v_error, __pyx_v_string_bracket, __pyx_v_allow_escapes, __pyx_v_allow_star_comments);
 
   /* "srctools/_tokenizer.pyx":103
@@ -2014,7 +2013,7 @@ static int __pyx_pf_8srctools_10_tokenizer_9Tokenizer_4__init__(struct __pyx_obj
  *             if _conv_path is None:
  *                 self.filename = str(filename)
  */
-  __pyx_t_2 = (__pyx_v_filename != Py_None)&&(__Pyx_PyUnicode_IS_TRUE(__pyx_v_filename) != 0);
+  __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_v_filename); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 135, __pyx_L1_error)
   if (__pyx_t_2) {
 
     /* "srctools/_tokenizer.pyx":136
@@ -7884,7 +7883,7 @@ static PyTypeObject __pyx_type_8srctools_10_tokenizer_Tokenizer = {
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-  "Tokenizer(data, unicode filename: str = None, error=None, bool string_bracket=False, bool allow_escapes=True, bool allow_star_comments=False)\nProcesses text data into groups of tokens.\n\n    This mainly groups strings and removes comments.\n\n    Due to many inconsistencies in Valve's parsing of files,\n    several options are available to control whether different\n    syntaxes are accepted:\n        * string_bracket parses [bracket] blocks as a single string-like block.\n          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.\n        * allow_escapes controls whether \\n-style escapes are expanded.\n        * allow_star_comments if enabled allows /* */ comments.\n    ", /*tp_doc*/
+  "Tokenizer(data, filename=None, error=None, bool string_bracket=False, bool allow_escapes=True, bool allow_star_comments=False)\nProcesses text data into groups of tokens.\n\n    This mainly groups strings and removes comments.\n\n    Due to many inconsistencies in Valve's parsing of files,\n    several options are available to control whether different\n    syntaxes are accepted:\n        * string_bracket parses [bracket] blocks as a single string-like block.\n          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.\n        * allow_escapes controls whether \\n-style escapes are expanded.\n        * allow_star_comments if enabled allows /* */ comments.\n    ", /*tp_doc*/
   __pyx_tp_traverse_8srctools_10_tokenizer_Tokenizer, /*tp_traverse*/
   __pyx_tp_clear_8srctools_10_tokenizer_Tokenizer, /*tp_clear*/
   0, /*tp_richcompare*/
@@ -9343,27 +9342,6 @@ bad:
     return -1;
 }
 
-/* ArgTypeTest */
-static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
-{
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    else if (exact) {
-        #if PY_MAJOR_VERSION == 2
-        if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
-        #endif
-    }
-    else {
-        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
-    }
-    PyErr_Format(PyExc_TypeError,
-        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
-        name, type->tp_name, Py_TYPE(obj)->tp_name);
-    return 0;
-}
-
 /* PyObjectCall */
 #if CYTHON_COMPILING_IN_CPYTHON
 static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg, PyObject *kw) {
@@ -10268,6 +10246,27 @@ static CYTHON_INLINE PyObject* __Pyx_PyUnicode_From_int(int value, Py_ssize_t wi
         return PyUnicode_FromOrdinal(*dpos);
     }
     return __Pyx_PyUnicode_BuildFromAscii(ulength, dpos, (int) length, prepend_sign, padding_char);
+}
+
+/* ArgTypeTest */
+static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
+{
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    else if (exact) {
+        #if PY_MAJOR_VERSION == 2
+        if ((type == &PyBaseString_Type) && likely(__Pyx_PyBaseString_CheckExact(obj))) return 1;
+        #endif
+    }
+    else {
+        if (likely(__Pyx_TypeCheck(obj, type))) return 1;
+    }
+    PyErr_Format(PyExc_TypeError,
+        "Argument '%.200s' has incorrect type (expected %.200s, got %.200s)",
+        name, type->tp_name, Py_TYPE(obj)->tp_name);
+    return 0;
 }
 
 /* BytesEquals */
