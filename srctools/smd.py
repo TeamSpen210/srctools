@@ -158,13 +158,25 @@ class Mesh:
         bones: Dict[str, Bone],
         animation: Dict[int, List[BoneFrame]],
         triangles: List[Triangle]
-    ):
+    ) -> None:
         self.bones = bones
         self.animation = animation
         self.triangles = triangles
 
     @staticmethod
-    def parse_smd(file: Iterable[bytes]):
+    def blank(root_name: str) -> 'Mesh':
+        """Create an empty mesh, with a single root bone."""
+        root_bone = Bone(root_name, None)
+        return Mesh(
+            {'static_prop': root_bone},
+            {0: [
+                BoneFrame(root_bone, Vec(), Vec())
+            ]},
+            [],
+        )
+
+    @staticmethod
+    def parse_smd(file: Iterable[bytes]) -> 'Mesh':
         """Parse a SMD file.
 
         The file argument should be an iterable of lines.
