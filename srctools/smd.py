@@ -60,6 +60,15 @@ class Vertex:
             self.pos, self.norm, self.tex_u, self.tex_v, self.links
         )
 
+    def copy(self) -> 'Vertex':
+        return Vertex(
+            self.pos.copy(),
+            self.norm.copy(),
+            self.tex_u,
+            self.tex_v,
+            self.links.copy(),
+        )
+
 
 class Triangle:
     """Represents one triangle."""
@@ -101,6 +110,15 @@ class Triangle:
             self.point3 = value
         else:
             raise IndexError(item)
+
+    def copy(self) -> 'Triangle':
+        """Duplicate this triangle."""
+        return Triangle(
+            self.mat,
+            self.point1.copy(),
+            self.point2.copy(),
+            self.point3.copy(),
+        )
 
 
 class ParseError(Exception):
@@ -411,3 +429,34 @@ class Model:
                         file.write(b' %i %.6f' % (bone_indexes[bone], weight))
                     file.write(b'\n')
             file.write(b'end\n')
+
+    def append_model(
+        self,
+        mdl: 'Model',
+        rotation: Vec=(0.0, 0.0, 0.0),
+        offset: Vec=(0.0, 0.0, 0.0),
+    ) -> None:
+        """Append another model's geometry onto this one.
+
+        All geometry is attached to the root bone.
+        """
+        if not mdl.triangles:
+            # Nothing to add.
+            return
+
+        for bone in self.bones.values():
+            if bone.parent is None:
+                root_bone = bone
+                break
+        else:
+            raise ValueError('No root bone?')
+
+        bone_link = [(root_bone, 1.0)]
+
+        for orig_tri in mdl.triangles:
+            new_tri = orig_tri.copy()
+            for vert in new_tri:
+                vert.links[:] = bone_link
+                vert.pos.localise(offset, rotation)
+                vert.norm.localise(offset, rotation)
+            self.triangles.append(new_tri)
