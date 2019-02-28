@@ -145,7 +145,7 @@ def _clean_file(file: Iterable[bytes]) -> Iterator[Tuple[int, bytes]]:
             yield line_num, line
 
 
-class Model:
+class Mesh:
     """The contents of an SMD model.
 
     This contains:
@@ -194,14 +194,14 @@ class Model:
                         line_num,
                         'Duplicate bone section!',
                     )
-                bones = Model._parse_smd_bones(file_iter)
+                bones = Mesh._parse_smd_bones(file_iter)
             elif line == b'skeleton':
                 if anim is not None:
                     raise ParseError(
                         line_num,
                         'Duplicate animation section!',
                     )
-                anim = Model._parse_smd_anim(file_iter, bones)
+                anim = Mesh._parse_smd_anim(file_iter, bones)
             elif line == b'triangles':
                 if tri is not None:
                     raise ParseError(
@@ -213,7 +213,7 @@ class Model:
                         line_num,
                         'Triangles section before bones section!'
                     )
-                tri = Model._parse_smd_tri(file_iter, bones)
+                tri = Mesh._parse_smd_tri(file_iter, bones)
 
         if bones is None:
             raise ParseError(line_num, 'No bone section!')
@@ -224,7 +224,7 @@ class Model:
         if tri is None:
             tri = []
 
-        return Model({
+        return Mesh({
             bone.name: bone
             for bone in
             bones.values()
@@ -432,7 +432,7 @@ class Model:
 
     def append_model(
         self,
-        mdl: 'Model',
+        mdl: 'Mesh',
         rotation: Vec=(0.0, 0.0, 0.0),
         offset: Vec=(0.0, 0.0, 0.0),
     ) -> None:
