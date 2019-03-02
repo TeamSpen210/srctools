@@ -521,9 +521,9 @@ class BSP:
     @staticmethod
     def _read_static_props_models(static_lump: BytesIO):
         """Read the static prop dictionary from the lump."""
-        dict_num = get_struct(static_lump, 'i')[0]
+        [dict_num] = get_struct(static_lump, '<i')
         for _ in range(dict_num):
-            padded_name = get_struct(static_lump, '128s')[0]
+            [padded_name] = get_struct(static_lump, '<128s')
             # Strip null chars off the end, and convert to a str.
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
@@ -546,25 +546,16 @@ class BSP:
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
 
-        [visleaf_count] = get_struct(static_lump, 'i')
+        [visleaf_count] = get_struct(static_lump, '<i')
         visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
 
-        [prop_count] = get_struct(static_lump, 'i')
+        [prop_count] = get_struct(static_lump, '<i')
 
-        for prop_id in range(prop_count):
+        for i in range(prop_count):
             origin = Vec(get_struct(static_lump, 'fff'))
             angles = Vec(get_struct(static_lump, 'fff'))
 
             [model_ind] = get_struct(static_lump, '<H')
-
-            # Unknown data in v10/11.
-            unknown_1 = b'\0\0'
-            unknown_2 = b'\0\0\0\0'
-
-            if version >= 11:
-                # Appears to be an ID that increases for each prop,
-                # although scaled props increase by 2.
-                [prop_id, unknown_1] = get_struct(static_lump, '<H2s')
 
             (
                 first_leaf,
@@ -579,20 +570,18 @@ class BSP:
             model_name = model_dict[model_ind]
 
             visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
-            lighting_origin = Vec(get_struct(static_lump, 'fff'))
+            lighting_origin = Vec(get_struct(static_lump, '<fff'))
 
             if version >= 5:
-                fade_scale = get_struct(static_lump, 'f')[0]
+                fade_scale = get_struct(static_lump, '<f')[0]
             else:
                 fade_scale = 1  # default
 
             if version in (6, 7):
-                min_dx_level, max_dx_level = get_struct(static_lump, 'HH')
+                min_dx_level, max_dx_level = get_struct(static_lump, '<HH')
             else:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
-
-            flags = StaticPropFlags(flags)
 
             if version >= 8:
                 (
@@ -603,7 +592,8 @@ class BSP:
                 ) = get_struct(static_lump, 'BBBB')
             else:
                 # None
-                min_cpu_level = max_cpu_level = min_gpu_level = max_gpu_level = 0
+                min_cpu_level = max_cpu_level = 0
+                min_gpu_level = max_gpu_level = 0
 
             if version >= 7:
                 r, g, b, renderfx = get_struct(static_lump, 'BBBB')
@@ -614,9 +604,15 @@ class BSP:
                 tint = Vec(255, 255, 255)
                 renderfx = 255
 
+            if version >= 11:
+                # Unknown data, though it's float-like.
+                unknown_1 = get_struct(static_lump, '<i')
+
             if version >= 10:
-                # 4 unknown bytes
-                unknown_2 = static_lump.read(4)
+                # Extra flags, post-CSGO.
+                flags |= get_struct(static_lump, '<I')[0] << 8
+
+            flags = StaticPropFlags(flags)
 
             scaling = 1.0
             disable_on_xbox = False
@@ -630,7 +626,6 @@ class BSP:
 
             yield StaticProp(
                 model_name,
-                prop_id,
                 origin,
                 angles,
                 scaling,
@@ -716,16 +711,12 @@ class BSP:
                 model_ind[prop.model],
             ))
 
-            if game_lump.version >= 11:
-                # Unknown data goes here, appears to be various flags.
-                prop_lump.write(b'\0\0\0\0')
-
             prop_lump.write(struct.pack(
                 '<HHBBifffff',
                 leaf_offsets[tuple(sorted(prop.visleafs))],
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value,
+                prop.flags.value & 0xFF,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -762,10 +753,12 @@ class BSP:
                 ))
 
             if game_lump.version >= 10:
-                # Padding bytes?
-                prop_lump.write(b'\0\0\0\0')
+                prop_lump.write(struct.pack('<I', prop.flags.value >> 8))
 
             if game_lump.version >= 11:
+                # Unknown padding/data
+                prop_lump.write(b'\0\0\0\0')
+
                 prop_lump.write(struct.pack('<f', prop.scaling))
             elif game_lump.version >= 9:
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
@@ -843,13 +836,12 @@ class StaticProp:
     v8+ allows min/max GPU and CPU levels.
     v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
-    v10+ adds 4 unknown bytes (float?).
-    v11+ adds uniform scaling, the prop id and removes XBox disabling.
+    v10+ adds 4 unknown bytes (float?), and an expanded flags section.
+    v11+ adds uniform scaling and removes XBox disabling.
     """
     def __init__(
         self,
         model: str,
-        prop_id: int,
         origin: Vec,
         angles: Vec,
         scaling: float,
@@ -871,7 +863,6 @@ class StaticProp:
         renderfx: int=255,
         disable_on_xbox: bool=False,
     ):
-        self.id = prop_id
         self.model = model
         self.origin = origin
         self.angles = angles
@@ -904,5 +895,5 @@ class StaticProp:
             self.model,
             self.skin,
             self.origin,
-            self.angles
+            self.angles,
         )
