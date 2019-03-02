@@ -469,6 +469,9 @@ class Mesh:
             new_tri = orig_tri.copy()
             for vert in new_tri:
                 vert.links[:] = bone_link
-                vert.pos.localise(offset, rotation)
-                vert.norm.localise(offset, rotation)
+
+                vert.norm.rotate(*rotation, round_vals=False)
+                vert.pos.rotate(*rotation, round_vals=False)
+                vert.pos += offset
+
             self.triangles.append(new_tri)
