@@ -1,7 +1,7 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 import io
 from collections import OrderedDict
-from typing import Iterable, Dict, Tuple, List, Iterator
+from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
 from enum import Enum
 from zipfile import ZipFile
 import os
@@ -149,6 +149,10 @@ class PackList:
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
 
+        # For each model, defines the skins the model uses. None means at least
+        # one use is unknown, so all skins could be used.
+        self.skinsets = {}  # type: Dict[str, Optional[Set[int]]]
+
     def __getitem__(self, path: str) -> PackFile:
         """Look up a packfile by filename."""
         return self._files[unify_path(path)]
@@ -167,12 +171,18 @@ class PackList:
         filename: str,
         data_type: FileType=FileType.GENERIC,
         data: bytes=None,
+        skinset: Set[int]=None,
     ) -> None:
         """Queue the given file to be packed.
 
         If data is set, this file will use the given data instead of any
         on-disk data. The data_type parameter allows specifying the kind of
         file, which ensures it can be treated appropriately.
+
+        If the file is a model, skinset allows restricting which skins are used.
+        If None (default), all skins may be used. Otherwise it is a set of
+        skins. If all uses of a model restrict the skin, only those skins need
+        to be packed.
         """
         filename = os.fspath(filename)
 
@@ -211,6 +221,21 @@ class PackList:
                 filename = filename + '.vtf'
 
         path = unify_path(filename)
+
+        if data_type is FileType.MODEL or filename.endswith('.mdl'):
+            data_type = FileType.MODEL
+            if skinset is None:
+                # It's dynamic, this overrides any previous specific skins.
+                self.skinsets[filename] = None
+            else:
+                try:
+                    existing_skins = self.skinsets[filename]
+                except KeyError:
+                    self.skinsets[filename] = skinset.copy()
+                else:
+                    # Merge the two.
+                    if existing_skins is not None:
+                        self.skinsets[filename] = existing_skins | skinset
 
         try:
             file = self._files[path]
@@ -480,8 +505,9 @@ class PackList:
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
-        for static_prop in bsp.static_prop_models():
-            self.pack_file(static_prop, FileType.MODEL)
+        for prop in bsp.static_props():
+            # Static props obviously only use one skin.
+            self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
 
         for mat in bsp.read_texture_names():
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
@@ -495,6 +521,17 @@ class PackList:
             except KeyError:
                 LOGGER.warning('Unknown class "{}"!', classname)
                 continue
+
+            if ent['skinset'] != '':
+                # Special key for us - if set this is a list of skins this
+                # entity is pledging it will restrict itself to.
+                skinset = {
+                    int(x)
+                    for x in ent['skinset'].split()
+                }  # type: Optional[Set[int]]
+            else:
+                skinset = None
+
             for key in set(ent.keys) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
@@ -507,7 +544,7 @@ class PackList:
                     # a '*37' brush ref, a model, or a sprite.
                     value = ent[key]
                     if value and value[:1] != '*':
-                        self.pack_file(value)
+                        self.pack_file(value, skinset=skinset)
                     continue
                 try:
                     kv = ent_class.kv[key]  # type: KeyValues
@@ -679,7 +716,7 @@ class PackList:
                 LOGGER.warning('Can\'t find model "{}"!', file.filename)
                 return
 
-        for tex in mdl.iter_textures():
+        for tex in mdl.iter_textures(self.skinsets.get(file.filename, None)):
             self.pack_file(tex, FileType.MATERIAL)
 
         for file in mdl.included_models:
