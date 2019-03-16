@@ -288,17 +288,26 @@ def read_tags(tok: Tokenizer) -> FrozenSet[str]:
     The open bracket was just read.
     """
     tags = []
+    prefix = ''
     # Read tags.
     while True:
         token, value = tok()
         if token is Token.STRING:
-            tags.append(value.casefold().rstrip(','))
+            tags.append(prefix + value.casefold().rstrip(','))
+            prefix = ''
+        elif token is Token.PLUS:
+            if prefix:
+                raise tok.error('Duplicate "+" operators!')
+            prefix = '+'
         elif token is Token.BRACK_CLOSE:
             break
         elif token is Token.EOF:
             raise tok.error('Unclosed tags!')
         else:
             raise tok.error(token)
+
+    if prefix:
+        raise tok.error('Trailing "+" operator!')
     return validate_tags(tags, tok.error)
 
 
@@ -1424,16 +1433,18 @@ class FGD:
                             ))
                     if base not in done:
                         deferred.add(ent)
+                        deferred.add(base)
                         ready = False
                 if not ready:
                     deferred.add(ent)
                     continue
 
                 batch.append(ent)
-                done.add(ent)
 
             batch.sort(key=lambda ent: ent.classname)
             yield from batch
+
+            done.update(batch)
 
             # All the entities have a dependency on another.
             if todo == deferred:
@@ -1444,7 +1455,7 @@ class FGD:
                         for ent in todo
                     ]))
 
-            todo = deferred
+            todo = deferred.difference(done)
 
     def collapse_bases(self) -> None:
         """Collapse all bases into the entities that use them.
