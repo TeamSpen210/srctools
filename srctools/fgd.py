@@ -1406,12 +1406,14 @@ class FGD:
         """Yield all entities in sorted order.
 
         This ensures only all bases for an entity are yielded before the entity.
+        Otherwise entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
         todo = set(self)  # type: Set[EntityDef]
         done = set()  # type: Set[EntityDef]
         while todo:
             deferred = set()  # type: Set[EntityDef]
+            batch = []
             for ent in todo:
                 ready = True
                 for base in ent.bases:
@@ -1421,14 +1423,17 @@ class FGD:
                                 base, ent.classname
                             ))
                     if base not in done:
-                        deferred.add(base)
+                        deferred.add(ent)
                         ready = False
                 if not ready:
                     deferred.add(ent)
                     continue
 
-                yield ent
+                batch.append(ent)
                 done.add(ent)
+
+            batch.sort(key=lambda ent: ent.classname)
+            yield from batch
 
             # All the entities have a dependency on another.
             if todo == deferred:
