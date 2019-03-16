@@ -582,6 +582,29 @@ class VMF:
                         if out.target == name:  # target
                             yield out
 
+    def search(self, name: str) -> Iterator['Entity']:
+        """Yield all entities that fit this search string.
+
+        This can be the exact targetname, end-* matching,
+        or the exact classname.
+        """
+        name = name.casefold()
+        if not name:
+            return
+
+        if name[-1] == '*':
+            name = name[:-1]
+            for ent_name, ents in self.by_target.items():
+                if ent_name is not None and ent_name.casefold().startswith(name):
+                    yield from ents
+        else:
+            for ent_name, ents in self.by_target.items():
+                if ent_name is not None and ent_name.casefold() == name:
+                    yield from ents
+
+            if name in self.by_class:
+                yield from self.by_class[name]
+
     def make_prism(
         self,
         p1: Vec,
