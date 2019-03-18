@@ -171,6 +171,13 @@ class BSP_LUMPS(Enum):
 
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 
+# Special-case the packfile lump, put it at the end.
+# This way the BSP can be opened by generic zip programs.
+LUMP_WRITE_ORDER = list(BSP_LUMPS)
+LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
+LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
+print(LUMP_WRITE_ORDER)
+
 
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
@@ -312,7 +319,7 @@ class BSP:
             file.write(struct.pack('<i', self.map_revision))
 
             # Then each lump.
-            for lump_name in BSP_LUMPS:
+            for lump_name in LUMP_WRITE_ORDER:
                 # Write out the actual data.
                 lump = self.lumps[lump_name]
                 if lump_name is BSP_LUMPS.GAME_LUMP:
