@@ -338,8 +338,7 @@ class BSP:
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        fixup_data[game_lump.id] = struct.pack('<i',
-                                                               file.tell())
+                        fixup_data[game_lump.id] = struct.pack('<i', file.tell())
                         file.write(game_lump.data)
                     # Length of the game lump is current - start.
                     fixup_data[lump_name] = struct.pack(
@@ -361,15 +360,21 @@ class BSP:
                 file.seek(fixup_loc[fixup_key])
                 file.write(fixup_data[fixup_key])
 
-    def read_header(self):
+    def read_header(self) -> None:
         """No longer used."""
 
-    def read_game_lumps(self):
+    def read_game_lumps(self) -> None:
         """No longer used."""
 
-    def replace_lump(self, new_name: str, lump: Union[BSP_LUMPS, 'Lump'], new_data: bytes):
+    def replace_lump(
+        self,
+        new_name: str,
+        lump: Union[BSP_LUMPS, 'Lump'],
+        new_data: bytes
+    ) -> None:
         """Write out the BSP file, replacing a lump with the given bytes.
 
+        This is deprecated, simply assign to the .data attribute of the lump.
         """
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
@@ -502,7 +507,7 @@ class BSP:
         return vmf
 
     @staticmethod
-    def write_ent_data(vmf: VMF):
+    def write_ent_data(vmf: VMF) -> bytes:
         """Generate the entity data lump.
         
         This accepts a VMF file like that returned from read_ent_data(). 
@@ -526,7 +531,7 @@ class BSP:
         return self._read_static_props_models(static_lump)
 
     @staticmethod
-    def _read_static_props_models(static_lump: BytesIO):
+    def _read_static_props_models(static_lump: BytesIO) -> Iterator[str]:
         """Read the static prop dictionary from the lump."""
         [dict_num] = get_struct(static_lump, '<i')
         for _ in range(dict_num):
