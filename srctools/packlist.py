@@ -671,23 +671,27 @@ class PackList:
                         continue
                     file._analysed = True
 
-                    if file.type is FileType.MATERIAL:
-                        if self._get_material_files(file):
+                    try:
+                        if file.type is FileType.MATERIAL:
+                            if self._get_material_files(file):
+                                todo = True
+                        elif file.type is FileType.MODEL:
+                            self._get_model_files(file)
                             todo = True
-                    elif file.type is FileType.MODEL:
-                        self._get_model_files(file)
-                        todo = True
-                    elif file.type is FileType.TEXTURE:
-                        # Try packing the '.hdr.vtf' file as well if present.
-                        # But don't recurse!
-                        if not file.filename.endswith('.hdr.vtf'):
-                            self.pack_file(
-                                file.filename[:-3] + 'hdr.vtf',
-                                FileType.OPTIONAL
-                            )
-                            todo = True
+                        elif file.type is FileType.TEXTURE:
+                            # Try packing the '.hdr.vtf' file as well if present.
+                            # But don't recurse!
+                            if not file.filename.endswith('.hdr.vtf'):
+                                self.pack_file(
+                                    file.filename[:-3] + 'hdr.vtf',
+                                    FileType.OPTIONAL
+                                )
+                                todo = True
+                    except Exception as exc:
+                        # Skip errors in the file format - means we can't find the dependencies.
+                        LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
 
-    def _get_model_files(self, file: PackFile):
+    def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
         self.pack_file(filename + '.vvd')  # Must be present.
