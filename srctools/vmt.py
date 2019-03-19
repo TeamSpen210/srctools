@@ -58,6 +58,7 @@ def get_parm_type(name: str) -> VarType:
 
     # Additional values is missed by the search code.
     _SHADER_PARAM_TYPES['bottommaterial'] = VarType.MATERIAL
+    _SHADER_PARAM_TYPES['crackmaterial'] = VarType.MATERIAL
 
     # Redirect this to always call the normal function.
     get_parm_type.__code__ = _get_parm_type_real.__code__
