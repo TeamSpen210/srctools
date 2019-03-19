@@ -176,7 +176,6 @@ LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 LUMP_WRITE_ORDER = list(BSP_LUMPS)
 LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
 LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
-print(LUMP_WRITE_ORDER)
 
 
 class StaticPropFlags(Flag):
