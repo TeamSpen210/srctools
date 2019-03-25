@@ -483,7 +483,8 @@ cdef class Tokenizer:
         if not isinstance(tok, Token):
             raise ValueError(repr(tok) + ' is not a Token!')
 
-        cdef int tok_val = tok.value
+        # Read this directly to skip the 'value' descriptor.
+        cdef int tok_val = tok._value_
         cdef str real_value
 
         if tok_val == 0: # EOF

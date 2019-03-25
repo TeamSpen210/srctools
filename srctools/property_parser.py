@@ -212,7 +212,10 @@ class Property:
         # just outputs its children when exported. This way we can handle
         # multiple root blocks in the file, while still returning a single
         # Property object which has all the methods.
-        cur_block = Property(None, [])
+        # Skip calling __init__ for speed.
+        cur_block = Property.__new__(Property)
+        cur_block._folded_name = cur_block.real_name = None
+        cur_block.value = []
 
         # A queue of the properties we are currently in (outside to inside).
         open_properties = [cur_block]
@@ -247,7 +250,7 @@ class Property:
                         'A "name" "value" line cannot then open a block.',
                     )
                 requires_block = can_flag_replace = False
-                cur_block = cur_block[-1]
+                cur_block = cur_block.value[-1]
                 cur_block.value = []
                 open_properties.append(cur_block)
                 continue
@@ -262,6 +265,12 @@ class Property:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
+                # Skip calling __init__ for speed. Value needs to be set
+                # before using this, since it's unset here.
+                keyvalue = Property.__new__(Property)
+                keyvalue._folded_name = sys.intern(token_value.casefold())
+                keyvalue.real_name = sys.intern(token_value)
+
                 # We need to check the next token to figure out what kind of
                 # prop it is.
                 prop_type, prop_value = tokenizer()
@@ -272,16 +281,18 @@ class Property:
                     tokenizer.expect(NEWLINE)
                     requires_block = True
                     if _read_flag(flags, prop_value):
+                        keyvalue.value = []
+
                         # Special function - if the last prop was a
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
                             cur_block.value[-1].real_name == token_value and
-                            cur_block.value[-1].has_children()
+                            type(cur_block.value[-1].value) == list
                         ):
-                            cur_block.value[-1] = Property(token_value, [])
+                            cur_block.value[-1] = keyvalue
                         else:
-                            cur_block.append(Property(token_value, []))
+                            cur_block.value.append(keyvalue)
                         # Can't do twice in a row
                         can_flag_replace = False
 
@@ -295,7 +306,7 @@ class Property:
                         )
                     requires_block = False
 
-                    keyvalue = Property(token_value, prop_value)
+                    keyvalue.value = prop_value
 
                     # Check for flags.
                     flag_token, flag_val = tokenizer()
@@ -308,11 +319,11 @@ class Property:
                             if (
                                 can_flag_replace and
                                 cur_block.value[-1].real_name == token_value and
-                                not cur_block.value[-1].has_children()
+                                type(cur_block.value[-1].value) == str
                             ):
                                 cur_block.value[-1] = keyvalue
                             else:
-                                cur_block.append(keyvalue)
+                                cur_block.value.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
@@ -326,15 +337,18 @@ class Property:
                         # So insert the keyvalue, and check the token
                         # in the next loop. This allows braces to be
                         # on the same line.
-                        cur_block.append(keyvalue)
+                        cur_block.value.append(keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
-                else:  # Something else - treat this as a block, and
-                    # then re-evaluate this in the next loop.
+                else:
+                    # Something else - treat this as a block, and
+                    # then re-evaluate the token in the next loop.
+                    keyvalue.value = []
+
                     requires_block = True
                     can_flag_replace = False
-                    cur_block.append(Property(token_value, []))
+                    cur_block.value.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
