@@ -279,6 +279,27 @@ class Vec:
         return cls(x, y, z)
 
     @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Vec']) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+        axis3: str, val3: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
     def with_axes(
         cls,
         axis1: str,
