@@ -914,7 +914,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc = None  # type: List[str]
+        desc = None  # type: Optional[List[str]]
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1137,7 +1137,7 @@ class EntityDef:
                     default,
                     ''.join(desc),
                     val_list,
-                    is_readonly == 'readonly',
+                    is_readonly,
                 )
 
     def __repr__(self) -> str:
