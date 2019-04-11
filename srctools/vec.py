@@ -1012,6 +1012,7 @@ class Matrix:
         'd', 'e', 'f', 
         'g', 'h', 'i'
     ]
+
     @overload
     def __init__(self) -> None: ...
     @overload
@@ -1058,7 +1059,7 @@ class Matrix:
             )
         return False
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
             'Matrix(\n'
             '{0.a}, {0.b}, {0.c},\n'
@@ -1067,27 +1068,59 @@ class Matrix:
             ')'
         ).format(self)
                 
-    def copy(self):
+    def copy(self) -> 'Matrix':
         return Matrix(
             self.a, self.b, self.c,
             self.d, self.e, self.f,
             self.g, self.h, self.i,
         )
-        
+
     @classmethod
     def from_pitch(cls, pitch: float) -> 'Matrix':
-        """Return the matrix representing a pitch rotation."""
-        raise NotImplementedError
+        """Return the matrix representing a pitch rotation.
+
+        This is a rotation around the Y axis.
+        """
+        rad_pitch = math.radians(pitch)
+        cos_p = math.cos(rad_pitch)
+        sin_p = math.sin(rad_pitch)
+
+        return Matrix(  # Pitch = Y
+            cos_p, 0.0, sin_p,
+            0.0, 1.0, 0.0,
+            -sin_p, 0.0, cos_p,
+        )
 
     @classmethod
     def from_yaw(cls, yaw: float) -> 'Matrix':
-        """Return the matrix representing a yaw rotation."""
-        raise NotImplementedError
+        """Return the matrix representing a yaw rotation.
+
+        """
+        rad_yaw = math.radians(-yaw)
+        sin_y = math.sin(rad_yaw)
+        cos_y = math.cos(rad_yaw)
+
+        return Matrix(
+            cos_y, -sin_y, 0.0,
+            sin_y, cos_y, 0.0,
+            0.0, 0.0, 1.0,
+        )
         
     @classmethod
     def from_roll(cls, roll: float) -> 'Matrix':
-        """Return the matrix representing a roll rotation."""
-        raise NotImplementedError
+        """Return the matrix representing a roll rotation.
+
+        This is a rotation around the X axis.
+        """
+        rad_roll = math.radians(roll)
+        cos_r = math.cos(rad_roll)
+        sin_r = math.sin(rad_roll)
+
+        return Matrix(
+            1.0, 0.0, 0.0,
+            0.0, cos_r, -sin_r,
+            0.0, sin_r, cos_r,
+        )
         
     @classmethod
     def from_angle(cls, angle: 'Angle') -> 'Matrix':
@@ -1115,103 +1148,105 @@ class Matrix:
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
             return Angle(
-                yaw=-math.degrees(math.atan2(for_y, for_x)),
-                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
-                roll=math.degrees(math.atan2(left_z, up_z)),
+                yaw=math.degrees(math.atan2(for_y, for_x)),
+                pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=-math.degrees(math.atan2(left_z, up_z)),
             )
         else:
             # Vertical, gimbal lock (yaw=roll)...
             return Angle(
-                yaw=-math.degrees(math.atan2(-left_x, left_y)),
-                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                yaw=math.degrees(math.atan2(-left_x, left_y)),
+                pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=0,  # Can't produce.
             )
 
+    @overload
+    def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
+    def __matmul__(self, other: 'Angle') -> 'Matrix': ...
+    @overload
+    def __matmul__(self, other: object) -> NotImplemented: ...
+
     def __matmul__(self, other: object) -> 'Matrix':
-        if isinstance(other, Quat):
-            return Matrix(*self._quat_mul(other))
+        if isinstance(other, Matrix):
+            mat = self.copy()
+            mat._mat_mul(other)
+            return mat
         elif isinstance(other, Angle):
-            return Matrix(*self._quat_mul(Quat.from_angle(other)))
+            mat = self.copy()
+            mat._mat_mul(Matrix.from_angle(other))
+            return mat
         else:
             return NotImplemented
-        
+
     @overload
     def __rmatmul__(self, other: Vec) -> Vec: ...
     @overload
+    def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
     @overload
-    def __rmatmul__(self, other: object) -> NoReturn: ...
+    def __rmatmul__(self, other: object) -> NotImplemented: ...
     
     def __rmatmul__(self, other):
         if isinstance(other, Vec):
             result = other.copy()
             self._vec_rot(result)
             return result
-        elif isinstance(other, Quat):
-            return Matrix(*Quat.from_angle(other)._quat_mul(self))
+        elif isinstance(other, Angle):
+            mat = Matrix.from_angle(other)
+            mat._mat_mul(self)
+            return mat.to_angle()
+        elif isinstance(other, Matrix):
+            mat = other.copy()
+            return mat._mat_mul(self)
         else:
             return NotImplemented
-        
-    def __imatmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
+
+    @overload
+    def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
+    def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
+    @overload
+    def __imatmul__(self, other: object) -> NotImplemented: ...
+
+    def __imatmul__(self, other):
         if isinstance(other, Matrix):
-            self.w, self.x, self.y, self.z = self._quat_mul(other)
+            self._mat_mul(other)
             return self
         elif isinstance(other, Angle):
-            (
-                self.w,
-                self.x,
-                self.y,
-                self.z,
-            ) = self._quat_mul(Quat.from_angle(other))
+            self._mat_mul(Matrix.from_angle(other))
             return self
         else:
             return NotImplemented
             
-    def _mat_mul(self, other: 'Matrix') -> Tuple[float, float, float, float]:
-        """Perform self * other, and return the result."""
-        a1 = self.w
-        b1 = self.x
-        c1 = self.y
-        d1 = self.z
+    def _mat_mul(self, other: 'Matrix') -> None:
+        """Rotate myself by the other matrix."""
+        a, b, c = self.a, self.b, self.c
+        d, e, f = self.d, self.e, self.f
+        g, h, i = self.g, self.h, self.i
 
-        a2 = other.w    
-        b2 = other.x
-        c2 = other.y
-        d2 = other.z
-        return (
-            a1*a2 - b1*b2 - c1*c2 - d1*d2,  # w
-            a1*b2 + b1*a2 + c1*d2 - d1*c2,  # x
-            a1*c2 - b1*d2 + c1*a2 + d1*b2,  # y
-            a1*d2 + b1*c2 - c1*b2 + d1*a2,  # z
-        )
+        self.a = a * other.a + b * other.d + c * other.g
+        self.b = a * other.b + b * other.e + c * other.h
+        self.c = a * other.c + b * other.f + c * other.i
+
+        self.d = d * other.a + e * other.d + f * other.g
+        self.e = d * other.b + e * other.e + f * other.h
+        self.f = d * other.c + e * other.f + f * other.i
+
+        self.g = g * other.a + h * other.d + i * other.g
+        self.h = g * other.b + h * other.e + i * other.h
+        self.i = g * other.c + h * other.f + i * other.i
     
-    def _vec_rot(self, vec: Vec):
+    def _vec_rot(self, vec: Vec) -> None:
         """Rotate a vector by our value."""
-        vx = vec.x
-        vy = vec.y
-        vz = vec.z
-        
-        qw = self.w
-        qx = self.x
-        qy = self.y
-        qz = self.z
-        
-        # Inlined matrix creation and multiplication.
-        vec.x = (
-            +vx*(qw**2 + qx**2 - qy**2 -qz**2)
-            +vy*(2*qx*qy - 2*qw*qz)
-            +vz*(2*qx*qz + 2*qw*qy)
-        )
-        vec.y = (
-            +vx*(2*qx*qy + 2*qw*qz)
-            +vy*(qw**2 - qx**2 + qy**2 - qz**2)
-            +vz*(2*qy*qz - 2*qw*qx)
-        )
-        vec.z = (
-            +vx*(2*qx*qz - 2*qw*qy)
-            +vy*(2*qy*qz - 2*qw*qx)
-            +vz*(qw**2 - qx**2 - qy**2 + qz**2)
-        )
+        x = vec.x
+        y = vec.y
+        z = vec.z
+
+        vec.x = (x * self.a) + (y * self.b) + (z * self.c)
+        vec.y = (x * self.d) + (y * self.e) + (z * self.f)
+        vec.z = (x * self.g) + (y * self.h) + (z * self.i)
         
     
 class Angle:
@@ -1221,6 +1256,7 @@ class Angle:
     Addition and subtraction modify values, matrix-multiplication with 
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
+    # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     __slots__ = ['_pitch', '_yaw', '_roll']
     
     def __init__(
@@ -1237,14 +1273,14 @@ class Angle:
         used for pitch, yaw, and roll. This includes Vectors and other Angles.
         """
         if isinstance(pitch, (int, float)):
-            self._pitch = float(pitch) % 360
-            self._yaw = float(yaw) % 360
-            self._roll = float(roll) % 360
+            self._pitch = float(pitch) % 360 % 360
+            self._yaw = float(yaw) % 360 % 360
+            self._roll = float(roll) % 360 % 360
         else:
             it = iter(pitch)
-            self._pitch = float(next(it, 0.0)) % 360
-            self._yaw = float(next(it, yaw)) % 360
-            self._roll = float(next(it, roll)) % 360
+            self._pitch = float(next(it, 0.0)) % 360 % 360
+            self._yaw = float(next(it, yaw)) % 360 % 360
+            self._roll = float(next(it, roll)) % 360 % 360
 
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
@@ -1265,36 +1301,41 @@ class Angle:
         return cls(pitch, yaw, roll)
 
     @property
-    def pitch(self):
+    def pitch(self) -> float:
         """The Y-axis rotation, performed second."""
         return self._pitch
 
     @pitch.setter
-    def pitch(self, pitch):
-        self._pitch = float(pitch) % 360
+    def pitch(self, pitch: float) -> None:
+        self._pitch = float(pitch) % 360 % 360
 
     @property
-    def yaw(self):
+    def yaw(self) -> float:
         """The Z-axis rotation, performed last."""
         return self._yaw
 
     @yaw.setter
-    def yaw(self, yaw):
-        self._yaw = float(yaw) % 360
+    def yaw(self, yaw: float) -> None:
+        self._yaw = float(yaw) % 360 % 360
 
     @property
-    def roll(self):
+    def roll(self) -> float:
         """The X-axis rotation, performed first."""
         return self._roll
 
     @roll.setter
-    def roll(self, roll):
-        self._roll = float(roll) % 360
+    def roll(self, roll: float) -> None:
+        self._roll = float(roll) % 360 % 360
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
 
-    def __mul__(self, other: float):
+    @overload
+    def __mul__(self, other: Union[int, float]) -> 'Angle': ...
+    @overload
+    def __mul__(self, other: object) -> NotImplemented: ...
+
+    def __mul__(self, other):
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return Angle(
@@ -1303,6 +1344,11 @@ class Angle:
                 self._roll * other,
             )
         return NotImplemented
+
+    @overload
+    def __rmul__(self, other: Union[int, float]) -> 'Angle': ...
+    @overload
+    def __rmul__(self, other: object) -> NotImplemented: ...
 
     def __rmul__(self, other: float):
         """Angle * float multiplies each value."""
@@ -1314,7 +1360,12 @@ class Angle:
             )
         return NotImplemented
 
-    def __matmul__(self, other: Union['Angle']):
+    @overload
+    def __matmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __matmul__(self, other: object) -> NotImplemented: ...
+
+    def __matmul__(self, other):
         """Angle @ Angle rotates the first by the second.
         """
         if isinstance(other, Angle):
@@ -1322,13 +1373,21 @@ class Angle:
         else:
             return NotImplemented
 
-    def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
+    @overload
+    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+    @overload
+    def __rmatmul__(self, other: object) -> NotImplemented: ...
+
+    def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Vec):
             return other @ Matrix.from_angle(self)
         elif isinstance(other, Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
+        return NotImplemented
 
     def _rotate_angle(self, target: 'Angle') -> 'Angle':
         """Rotate the target by this angle.
