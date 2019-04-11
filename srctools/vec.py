@@ -38,9 +38,9 @@ Rotates LHS by RHS:
 import math
 
 from typing import (
-    Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
-    overload,
-    Dict,
+    Union, Tuple, overload, NoReturn,
+    Dict, NamedTuple,
+    SupportsFloat, Iterator, Iterable,
 )
 
 
@@ -1039,7 +1039,6 @@ class Matrix:
         a: float=1.0, b: float=0.0, c: float=0.0,
         d: float=0.0, e: float=1.0, f: float=0.0,
         g: float=0.0, h: float=0.0, i: float=1.0,
-        *,
     ):
         """Create a matrix. 
         With no arguments, this defaults to the identity matrix.
@@ -1076,7 +1075,7 @@ class Matrix:
             'Matrix(\n'
             '{0.a}, {0.b}, {0.c},\n'
             '{0.d}, {0.e}, {0.f},\n'
-            '{0.g}, {0.h}, {0.i},\n
+            '{0.g}, {0.h}, {0.i},\n'
             ')'
         ).format(self)
                 
@@ -1088,18 +1087,18 @@ class Matrix:
         )
         
     @classmethod
-    def from_pitch(cls, pitch: float) -> Matrix:
+    def from_pitch(cls, pitch: float) -> 'Matrix':
         """Return the matrix representing a pitch rotation."""
         raise NotImplementedError
 
     @classmethod
-    def from_yaw(cls, yaw: float) -> Matrix:
-        """Return the matrix representing a pitch rotation."""
+    def from_yaw(cls, yaw: float) -> 'Matrix':
+        """Return the matrix representing a yaw rotation."""
         raise NotImplementedError
         
     @classmethod
-    def from_roll(cls, roll: float) -> Matrix:
-        """Return the matrix representing a pitch rotation."""
+    def from_roll(cls, roll: float) -> 'Matrix':
+        """Return the matrix representing a roll rotation."""
         raise NotImplementedError
         
     @classmethod
@@ -1113,21 +1112,18 @@ class Matrix:
 
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
-        w, x, y, z = self.w, self.x, self.y, self.z
-        # Valve also converts to rotation matrix first...
-        # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L1857
-        for_x = 1.0 - 2.0 * y * y - 2.0 * z * z
-        for_y = 2.0 * x * y + 2.0 * w * z
-        for_z = 2.0 * x * z - 2.0 * w * y
-        left_x = 2.0 * x * y - 2.0 * w * z
-        left_y = 1.0 - 2.0 * x * x - 2.0 * z * z
-        left_z = 2.0 * y * z + 2.0 * w * x
-        # up_x = 2.0 * x * z + 2.0 * w * y
-        # up_y = 2.0 * y * z - 2.0 * w * x
-        up_z = 1.0 - 2.0 * x * x - 2.0 * y * y
 
-        # Now to Euler angles.
         # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
+        for_x = self.a
+        for_y = self.b
+        for_z = self.c
+        left_x = self.d
+        left_y = self.e
+        left_z = self.f
+        # up_x = self.g
+        # up_y = self.h
+        up_z = self.i
+        
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
             return Angle(
@@ -1151,18 +1147,25 @@ class Matrix:
         else:
             return NotImplemented
         
-    def __rmatmul__(self, other: Union['Vec', 'Angle']):
+    @overload
+    def __rmatmul__(self, other: Vec) -> Vec: ...
+    @overload
+    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __rmatmul__(self, other: object) -> NoReturn: ...
+    
+    def __rmatmul__(self, other):
         if isinstance(other, Vec):
             result = other.copy()
             self._vec_rot(result)
             return result
         elif isinstance(other, Quat):
-            return Quat(*Quat.from_angle(other)._quat_mul(self))
+            return Matrix(*Quat.from_angle(other)._quat_mul(self))
         else:
             return NotImplemented
         
-    def __imatmul__(self, other: Union['Quat', 'Angle']):
-        if isinstance(other, Quat):
+    def __imatmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
+        if isinstance(other, Matrix):
             self.w, self.x, self.y, self.z = self._quat_mul(other)
             return self
         elif isinstance(other, Angle):
@@ -1176,7 +1179,7 @@ class Matrix:
         else:
             return NotImplemented
             
-    def _quat_mul(self, other: 'Quat') -> Tuple[float, float, float, float]:
+    def _mat_mul(self, other: 'Matrix') -> Tuple[float, float, float, float]:
         """Perform self * other, and return the result."""
         a1 = self.w
         b1 = self.x
