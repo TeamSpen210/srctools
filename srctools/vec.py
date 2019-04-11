@@ -13,13 +13,13 @@ Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
 dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
 when used in math operations and comparing values.
 
-Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
+Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 2 index access.
 
 Rotations are represented by Euler angles, but modifications need to be
-performed using quaternions.
+performed using matrices.
 
 Rotations are implemented as a matrix-multiplication, where the left is rotated
-by the right. Vectors can be rotated by quaternions and angles and quaternions
+by the right. Vectors can be rotated by matrices and angles and matrices
 can be rotated by angles, but not vice-versa.
 
 Scales magnitude:
@@ -30,10 +30,10 @@ Scales magnitude:
 
 Rotates LHS by RHS:
  - Vec @ Angle
- - Vec @ Quat
+ - Vec @ Matrix
  - Angle @ Angle
- - Angle @ Quat
- - Quat @ Quat
+ - Angle @ Matrix
+ - Matrix @ Matrix
 """
 import math
 
@@ -44,14 +44,14 @@ from typing import (
 )
 
 
-__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Quat']
+__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Matrix']
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
 
-def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
@@ -989,89 +989,122 @@ class Vec:
 
         def __init__(self, vec: 'Vec'):
             self._vec = vec
-            self._quat = None  # type: Quat
+            self._mat = None  # type: Matrix
 
         def __enter__(self):
-            self._quat = Quat()
-            return self._quat
+            self._mat = Matrix()
+            return self._mat
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type is not None or self._quat is None:
                 return
-            self._quat._vec_rot(self._vec)
+            self._mat._vec_rot(self._vec)
 
     transform = property(
         fget=_Transform,
         doc="""Perform rotations on this Vector efficently.
 
-        Used as a context manager, which returns a quaternion.
-        When the body is exited safely, the quaternion is applied to
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
         the angle.
         """,
     )
 
 
-class Quat:
-    """Represents a quaternion rotation."""
-    def __init__(self, w: float=1.0, x: float=0.0, y: float=0.0, z: float=0.0):
-        """Create a quaternion."""
-        self.w = w
-        self.x = x
-        self.y = y
-        self.z = z
-        # This divides by a float, so they're all floats now.
-        self._normalize()
+class Matrix:
+    """Represents a rotation matrix.
+    
+    Values are arranged as follows:
+    [a b c]
+    [d e f]
+    [g h i]
+    """
+    __slots__ = [
+        'a', 'b', 'c', 
+        'd', 'e', 'f', 
+        'g', 'h', 'i'
+    ]
+    @overload
+    def __init__(self) -> None: ...
+    @overload
+    def __init__(
+        self, 
+        a: float, b: float, c: float,
+        d: float, e: float, f: float,
+        g: float, h: float, i: float,
+    ) -> None: ...
+
+    def __init__(
+        self,
+        a: float=1.0, b: float=0.0, c: float=0.0,
+        d: float=0.0, e: float=1.0, f: float=0.0,
+        g: float=0.0, h: float=0.0, i: float=1.0,
+        *,
+    ):
+        """Create a matrix. 
+        With no arguments, this defaults to the identity matrix.
+        """
+        self.a = a
+        self.b = b
+        self.c = c
+        
+        self.d = d
+        self.e = e
+        self.f = f
+        
+        self.g = g
+        self.h = h
+        self.i = i
             
-    def __eq__(self, other: 'Quat'):
-        if isinstance(other, Quat):
-            if self.x != other.x:
-                return False
-            elif self.y != other.y:
-                return False
-            elif self.z != other.z:
-                return False
-            elif self.w != other.w:
-                return False
-            else:
-                return True
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, Matrix):
+            return (
+                self.a == other.a and
+                self.b == other.b and
+                self.c == other.c and
+                self.d == other.d and
+                self.e == other.e and
+                self.f == other.f and
+                self.g == other.g and
+                self.h == other.h and
+                self.i == other.i
+            )
+        return False
         
     def __repr__(self):
-        return 'Quat({0.w}, {0.x:g}, {0.y:g}, {0.z:g})'.format(self)
-        
-    def _normalize(self):
-        """Normalize the vector."""
-        len_sq = self.x**2 + self.y**2 + self.z**2 + self.w**2
-        mag = math.sqrt(len_sq)
-        self.w /= mag
-        self.x /= mag
-        self.y /= mag
-        self.z /= mag
-        
+        return (
+            'Matrix(\n'
+            '{0.a}, {0.b}, {0.c},\n'
+            '{0.d}, {0.e}, {0.f},\n'
+            '{0.g}, {0.h}, {0.i},\n
+            ')'
+        ).format(self)
+                
     def copy(self):
-        return Quat(self.w, self.x, self.y, self.z)
+        return Matrix(
+            self.a, self.b, self.c,
+            self.d, self.e, self.f,
+            self.g, self.h, self.i,
+        )
         
     @classmethod
-    def from_pitch(cls, pitch: float):
-        """Return the quaternion representing a pitch rotation."""
-        ang = math.radians(pitch) / 2
-        return cls(math.cos(ang), 0, math.sin(ang), 0)
+    def from_pitch(cls, pitch: float) -> Matrix:
+        """Return the matrix representing a pitch rotation."""
+        raise NotImplementedError
 
     @classmethod
-    def from_yaw(cls, yaw: float):
-        """Return the quaternion representing a pitch rotation."""
-        ang = math.radians(yaw) / 2
-        # Invert, we go in the opposite direction...
-        return cls(math.cos(ang), 0, 0, -math.sin(ang))
+    def from_yaw(cls, yaw: float) -> Matrix:
+        """Return the matrix representing a pitch rotation."""
+        raise NotImplementedError
         
     @classmethod
-    def from_roll(cls, roll: float):
-        """Return the quaternion representing a pitch rotation."""
-        ang = math.radians(roll) / 2
-        return cls(math.cos(ang), math.sin(ang), 0, 0)
+    def from_roll(cls, roll: float) -> Matrix:
+        """Return the matrix representing a pitch rotation."""
+        raise NotImplementedError
         
     @classmethod
-    def from_angle(cls, angle: 'Angle'):
-        """Return the quaternion representing an Euler angle."""
+    def from_angle(cls, angle: 'Angle') -> 'Matrix':
+        """Return the matrix representing an Euler angle."""
         rot = cls()
         rot @= cls.from_roll(angle.roll)
         rot @= cls.from_pitch(angle.pitch)
@@ -1110,11 +1143,11 @@ class Quat:
                 roll=0,  # Can't produce.
             )
 
-    def __matmul__(self, other: 'Quat'):
+    def __matmul__(self, other: object) -> 'Matrix':
         if isinstance(other, Quat):
-            return Quat(*self._quat_mul(other))
+            return Matrix(*self._quat_mul(other))
         elif isinstance(other, Angle):
-            return Quat(*self._quat_mul(Quat.from_angle(other)))
+            return Matrix(*self._quat_mul(Quat.from_angle(other)))
         else:
             return NotImplemented
         
@@ -1194,11 +1227,11 @@ class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 
     All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, matrix-multiplication with Vec or Angle
-    rotates (RHS rotating LHS).
+    Addition and subtraction modify values, matrix-multiplication with 
+    Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
     __slots__ = ['_pitch', '_yaw', '_roll']
-
+    
     def __init__(
         self,
         pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
@@ -1301,36 +1334,36 @@ class Angle:
     def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Vec):
-            return other @ Quat.from_angle(self)
+            return other @ Matrix.from_angle(self)
         elif isinstance(other, Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
 
-    def _rotate_angle(self, target: 'Angle'):
+    def _rotate_angle(self, target: 'Angle') -> 'Angle':
         """Rotate the target by this angle.
         
         Inefficient if we have more than one rotation to do.
         """
-        quat = Quat()
-        quat @= target
-        quat @= self
-        return quat.to_angle()
+        mat = Matrix()
+        mat @= target
+        mat @= self
+        return mat.to_angle()
 
     class _Transform:
         """Implements Angle.transform."""
 
         def __init__(self, angle: 'Angle'):
             self._angle = angle
-            self._quat = None  # type: Quat
+            self._mat = None  # type: Matrix
 
         def __enter__(self):
-            self._quat = Quat.from_angle(self._angle)
-            return self._quat
+            self._mat = Matrix.from_angle(self._angle)
+            return self._mat
 
         def __exit__(self, exc_type, exc_val, exc_tb):
             if exc_type is not None or self._quat is None:
                 return
-            new_ang = self._quat.to_angle()
+            new_ang = self._mat.to_angle()
             self._angle._pitch = new_ang._pitch
             self._angle._yaw = new_ang._yaw
             self._angle._roll = new_ang._roll
@@ -1339,8 +1372,8 @@ class Angle:
         fget=_Transform,
         doc="""Perform transformations on this angle.
 
-        Used as a context manager, which returns a quaternion.
-        When the body is exited safely, the quaternion is applied to
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
         the angle.
         """,
     )
