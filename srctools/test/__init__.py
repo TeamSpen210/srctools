@@ -11,6 +11,9 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
+# In SMD files the maximum precision is this, so it should be a good reference.
+EPSILON = 1e-6
+
 
 def iter_vec(nums):
     for x in nums:
@@ -29,12 +32,12 @@ def assert_ang(ang, pitch=0, yaw=0, roll=0, msg=''):
     roll %= 360
 
     # Ignore slight variations
-    if not math.isclose(ang.pitch, pitch):
-        failed = 'x'
-    elif not math.isclose(ang.yaw, yaw):
-        failed = 'y'
-    elif not math.isclose(ang.roll, roll):
-        failed = 'z'
+    if not math.isclose(ang.pitch, pitch, abs_tol=EPSILON):
+        failed = 'pitch'
+    elif not math.isclose(ang.yaw, yaw, abs_tol=EPSILON):
+        failed = 'yaw'
+    elif not math.isclose(ang.roll, roll, abs_tol=EPSILON):
+        failed = 'roll'
     else:
         # Success!
         return
@@ -52,11 +55,11 @@ def assert_vec(vec, x, y, z, msg=''):
 
     assert type(vec).__name__ == 'Vec'
 
-    if not math.isclose(vec.x, x):
+    if not math.isclose(vec.x, x, abs_tol=EPSILON):
         failed = 'x'
-    elif not math.isclose(vec.y, y):
+    elif not math.isclose(vec.y, y, abs_tol=EPSILON):
         failed = 'y'
-    elif not math.isclose(vec.z, z):
+    elif not math.isclose(vec.z, z, abs_tol=EPSILON):
         failed = 'z'
     else:
         # Success!
