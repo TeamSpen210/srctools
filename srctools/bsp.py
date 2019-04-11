@@ -13,13 +13,13 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, ContextManager, Optional
+from typing import List, Dict, Iterator, Union, Optional, Tuple
 
 
 try:
     from enum import Enum, Flag
 except ImportError:
-    from aenum import Enum, Flag
+    from aenum import Enum, Flag  # type: ignore
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
@@ -74,6 +74,10 @@ class VERSIONS(Enum):
     CONTAGION = 23
 
     DESOLATION = 42
+
+    def __eq__(self, other: object):
+        """Versions are equal to their integer value."""
+        return self.value == other
 
 
 class BSP_LUMPS(Enum):
@@ -167,6 +171,12 @@ class BSP_LUMPS(Enum):
 
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 
+# Special-case the packfile lump, put it at the end.
+# This way the BSP can be opened by generic zip programs.
+LUMP_WRITE_ORDER = list(BSP_LUMPS)
+LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
+LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
+
 
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
@@ -193,7 +203,7 @@ class BSP:
         self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
         self.game_lumps = {}  # type: Dict[bytes, GameLump]
         self.header_off = 0
-        self.version = version  # type: Optional[VERSIONS, int]
+        self.version = version  # type: Optional[Union[VERSIONS, int]]
 
         self.read()
 
@@ -213,7 +223,7 @@ class BSP:
                 except ValueError:
                     self.version = bsp_version
             else:
-                assert bsp_version == self.version.value, 'Different BSP version!'
+                assert bsp_version == self.version, 'Different BSP version!'
 
             lump_offsets = {}
 
@@ -249,23 +259,23 @@ class BSP:
 
             for _ in range(lump_count):
                 (
-                    lump_id,
+                    game_lump_id,
                     flags,
-                    version,
+                    glump_version,
                     file_off,
                     file_len,
-                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
+                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)  # type: bytes, int, int, int, int
                 lump_offset += GameLump.ST.size
 
                 file.seek(file_off)
 
                 # The lump ID is backward..
-                lump_id = lump_id[::-1]
+                game_lump_id = game_lump_id[::-1]
 
-                self.game_lumps[lump_id] = GameLump(
-                    lump_id,
+                self.game_lumps[game_lump_id] = GameLump(
+                    game_lump_id,
                     flags,
-                    version,
+                    glump_version,
                     file.read(file_len),
                 )
             # This is not valid any longer.
@@ -308,7 +318,7 @@ class BSP:
             file.write(struct.pack('<i', self.map_revision))
 
             # Then each lump.
-            for lump_name in BSP_LUMPS:
+            for lump_name in LUMP_WRITE_ORDER:
                 # Write out the actual data.
                 lump = self.lumps[lump_name]
                 if lump_name is BSP_LUMPS.GAME_LUMP:
@@ -327,8 +337,7 @@ class BSP:
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        fixup_data[game_lump.id] = struct.pack('<i',
-                                                               file.tell())
+                        fixup_data[game_lump.id] = struct.pack('<i', file.tell())
                         file.write(game_lump.data)
                     # Length of the game lump is current - start.
                     fixup_data[lump_name] = struct.pack(
@@ -350,18 +359,24 @@ class BSP:
                 file.seek(fixup_loc[fixup_key])
                 file.write(fixup_data[fixup_key])
 
-    def read_header(self):
+    def read_header(self) -> None:
         """No longer used."""
 
-    def read_game_lumps(self):
+    def read_game_lumps(self) -> None:
         """No longer used."""
 
-    def replace_lump(self, new_name: str, lump: Union[BSP_LUMPS, 'Lump'], new_data: bytes):
+    def replace_lump(
+        self,
+        new_name: str,
+        lump: Union[BSP_LUMPS, 'Lump'],
+        new_data: bytes
+    ) -> None:
         """Write out the BSP file, replacing a lump with the given bytes.
 
+        This is deprecated, simply assign to the .data attribute of the lump.
         """
         if isinstance(lump, BSP_LUMPS):
-            lump = self.lumps[lump]  # type: Lump
+            lump = self.lumps[lump]
 
         lump.data = new_data
 
@@ -408,7 +423,7 @@ class BSP:
                 ))
 
     @contextlib.contextmanager
-    def packfile(self) -> ContextManager[ZipFile]:
+    def packfile(self) -> Iterator[ZipFile]:
         """A context manager to allow editing the packed content.
 
         When successfully exited, the zip will be rewritten to the BSP file.
@@ -470,6 +485,9 @@ class BSP:
                     raise ValueError("Last entity didn't end!")
                 return vmf
             else:
+                if cur_ent is None:
+                    raise ValueError("Keyvalue outside brackets!")
+
                 # Line is of the form <"key" "val">
                 key, value = line.split(b'" "')
                 decoded_key = key[1:].decode('ascii')
@@ -488,7 +506,7 @@ class BSP:
         return vmf
 
     @staticmethod
-    def write_ent_data(vmf: VMF):
+    def write_ent_data(vmf: VMF) -> bytes:
         """Generate the entity data lump.
         
         This accepts a VMF file like that returned from read_ent_data(). 
@@ -512,11 +530,11 @@ class BSP:
         return self._read_static_props_models(static_lump)
 
     @staticmethod
-    def _read_static_props_models(static_lump: BytesIO):
+    def _read_static_props_models(static_lump: BytesIO) -> Iterator[str]:
         """Read the static prop dictionary from the lump."""
-        dict_num = get_struct(static_lump, 'i')[0]
+        [dict_num] = get_struct(static_lump, '<i')
         for _ in range(dict_num):
-            padded_name = get_struct(static_lump, '128s')[0]
+            [padded_name] = get_struct(static_lump, '<128s')
             # Strip null chars off the end, and convert to a str.
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
@@ -539,25 +557,16 @@ class BSP:
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
 
-        [visleaf_count] = get_struct(static_lump, 'i')
+        [visleaf_count] = get_struct(static_lump, '<i')
         visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
 
-        [prop_count] = get_struct(static_lump, 'i')
+        [prop_count] = get_struct(static_lump, '<i')
 
-        for prop_id in range(prop_count):
+        for i in range(prop_count):
             origin = Vec(get_struct(static_lump, 'fff'))
             angles = Vec(get_struct(static_lump, 'fff'))
 
             [model_ind] = get_struct(static_lump, '<H')
-
-            # Unknown data in v10/11.
-            unknown_1 = b'\0\0'
-            unknown_2 = b'\0\0\0\0'
-
-            if version >= 11:
-                # Appears to be an ID that increases for each prop,
-                # although scaled props increase by 2.
-                [prop_id, unknown_1] = get_struct(static_lump, '<H2s')
 
             (
                 first_leaf,
@@ -572,20 +581,18 @@ class BSP:
             model_name = model_dict[model_ind]
 
             visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
-            lighting_origin = Vec(get_struct(static_lump, 'fff'))
+            lighting_origin = Vec(get_struct(static_lump, '<fff'))
 
             if version >= 5:
-                fade_scale = get_struct(static_lump, 'f')[0]
+                fade_scale = get_struct(static_lump, '<f')[0]
             else:
                 fade_scale = 1  # default
 
             if version in (6, 7):
-                min_dx_level, max_dx_level = get_struct(static_lump, 'HH')
+                min_dx_level, max_dx_level = get_struct(static_lump, '<HH')
             else:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
-
-            flags = StaticPropFlags(flags)
 
             if version >= 8:
                 (
@@ -596,7 +603,8 @@ class BSP:
                 ) = get_struct(static_lump, 'BBBB')
             else:
                 # None
-                min_cpu_level = max_cpu_level = min_gpu_level = max_gpu_level = 0
+                min_cpu_level = max_cpu_level = 0
+                min_gpu_level = max_gpu_level = 0
 
             if version >= 7:
                 r, g, b, renderfx = get_struct(static_lump, 'BBBB')
@@ -607,9 +615,15 @@ class BSP:
                 tint = Vec(255, 255, 255)
                 renderfx = 255
 
+            if version >= 11:
+                # Unknown data, though it's float-like.
+                unknown_1 = get_struct(static_lump, '<i')
+
             if version >= 10:
-                # 4 unknown bytes
-                unknown_2 = static_lump.read(4)
+                # Extra flags, post-CSGO.
+                flags |= get_struct(static_lump, '<I')[0] << 8
+
+            flags = StaticPropFlags(flags)
 
             scaling = 1.0
             disable_on_xbox = False
@@ -623,7 +637,6 @@ class BSP:
 
             yield StaticProp(
                 model_name,
-                prop_id,
                 origin,
                 angles,
                 scaling,
@@ -664,8 +677,8 @@ class BSP:
             models.add(prop.model)
 
         visleafs.sort(key=len, reverse=True)
-        leaf_array = []
-        leaf_offsets = {}
+        leaf_array = []  # type: List[int]
+        leaf_offsets = {}  # type: Dict[Tuple[int, ...], int]
 
         for leaf in visleafs:
             tup = tuple(sorted(leaf))
@@ -709,16 +722,12 @@ class BSP:
                 model_ind[prop.model],
             ))
 
-            if game_lump.version >= 11:
-                # Unknown data goes here, appears to be various flags.
-                prop_lump.write(b'\0\0\0\0')
-
             prop_lump.write(struct.pack(
                 '<HHBBifffff',
                 leaf_offsets[tuple(sorted(prop.visleafs))],
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value,
+                prop.flags.value & 0xFF,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -755,10 +764,12 @@ class BSP:
                 ))
 
             if game_lump.version >= 10:
-                # Padding bytes?
-                prop_lump.write(b'\0\0\0\0')
+                prop_lump.write(struct.pack('<I', prop.flags.value >> 8))
 
             if game_lump.version >= 11:
+                # Unknown padding/data
+                prop_lump.write(b'\0\0\0\0')
+
                 prop_lump.write(struct.pack('<f', prop.scaling))
             elif game_lump.version >= 9:
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
@@ -836,13 +847,12 @@ class StaticProp:
     v8+ allows min/max GPU and CPU levels.
     v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
-    v10+ adds 4 unknown bytes (float?).
-    v11+ adds uniform scaling, the prop id and removes XBox disabling.
+    v10+ adds 4 unknown bytes (float?), and an expanded flags section.
+    v11+ adds uniform scaling and removes XBox disabling.
     """
     def __init__(
         self,
         model: str,
-        prop_id: int,
         origin: Vec,
         angles: Vec,
         scaling: float,
@@ -860,11 +870,10 @@ class StaticProp:
         max_cpu_level: int=0,
         min_gpu_level: int=0,
         max_gpu_level: int=0,
-        tint: Vec=(255, 255, 255),  # Rendercolor
+        tint: Vec=Vec(255, 255, 255),  # Rendercolor
         renderfx: int=255,
         disable_on_xbox: bool=False,
     ):
-        self.id = prop_id
         self.model = model
         self.origin = origin
         self.angles = angles
@@ -897,5 +906,5 @@ class StaticProp:
             self.model,
             self.skin,
             self.origin,
-            self.angles
+            self.angles,
         )

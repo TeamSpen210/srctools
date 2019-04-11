@@ -33,7 +33,7 @@ class Game:
         self.search_paths = []  # type: List[Path]
 
         for path in fsystems.find_children('SearchPaths'):
-            self.search_paths.append(self.parse_search_path(self.path.parent, path))
+            self.search_paths.append(self.parse_search_path(path))
 
         # Add DLC folders based on the first/bin folder.
         try:
@@ -53,11 +53,13 @@ class Game:
             # Force including 'platform', for Hammer assets.
             self.search_paths.append(self.path.parent / 'platform')
 
-    def parse_search_path(self, root: Path, prop: Property) -> Path:
-        """Evaluate options like |gameinfo_path|."""
+    @property
+    def root(self) -> Path:
+        """Return the game's root folder."""
+        return self.path.parent
 
-        if '|' not in prop.value:
-            return (root / prop.value).absolute()
+    def parse_search_path(self, prop: Property) -> Path:
+        """Evaluate options like |gameinfo_path|."""
         if prop.value.startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -65,12 +67,15 @@ class Game:
         # But, the game (public/filesystem_init.cpp) doesn't actually, it
         # assumes Steam has included the needed VPKs.
         if prop.value.startswith('|all_source_engine_paths|'):
-            return (root / prop.value[25:]).absolute()
+            return (self.root / prop.value[25:]).absolute()
+
+        return (self.root / prop.value).absolute()
 
     def get_filesystem(self) -> FileSystemChain:
         """Build a chained filesystem from the search paths."""
         vpks = []
         raw_folders = []
+
         for path in self.search_paths:
             if path.is_dir():
                 raw_folders.append(path)
@@ -136,4 +141,4 @@ def find_gameinfo(argv=sys.argv) -> Game:
                 path = folder / GINFO
                 if path.exists():
                     return Game(path)
-            raise ValueError("Couldn't find gameinfo.txt!")
+    raise ValueError("Couldn't find gameinfo.txt!")

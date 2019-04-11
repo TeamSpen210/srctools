@@ -271,7 +271,7 @@ def load_dxt1_impl(
                     (c0b + c1b) // 2,
                     255
                 ]
-                c3 = black_color
+                c3 = list(black_color)
 
             table = [
                 [c0b, c0g, c0r, 255],

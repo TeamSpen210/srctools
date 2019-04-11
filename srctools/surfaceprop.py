@@ -19,7 +19,7 @@ class SurfChar(Enum):
     BLOODYFLESH = 'B'
     CONCRETE = 'C'
     DIRT = 'D'
-    EGGSHELL = 'E' # the egg sacs in the tunnels in ep2.
+    EGGSHELL = 'E'  # The egg sacs in the tunnels in EP2.
     FLESH = 'F'
     GRATE = 'G'
     ALIENFLESH = 'H'
@@ -67,7 +67,7 @@ _InitArgT = TypeVar('_InitArgT', float, str, bool, SurfChar)
 
 
 def _attr_value(
-    parent: 'SurfaceProp',
+    parent: Optional['SurfaceProp'],
     name: str,
     arg: Optional[_InitArgT],
     default: _InitArgT,
@@ -258,7 +258,7 @@ class SurfaceProp:
                 base = default
 
             try:
-                game_mat = SurfChar(prop['gamematerial'])
+                game_mat = SurfChar(prop['gamematerial'])  # type: Optional[SurfChar]
             except (LookupError, ValueError):
                 game_mat = None
 

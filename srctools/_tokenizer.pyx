@@ -61,6 +61,14 @@ cdef class Tokenizer:
     """Processes text data into groups of tokens.
 
     This mainly groups strings and removes comments.
+
+    Due to many inconsistencies in Valve's parsing of files,
+    several options are available to control whether different
+    syntaxes are accepted:
+        * string_bracket parses [bracket] blocks as a single string-like block.
+          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        * allow_escapes controls whether \\n-style escapes are expanded.
+        * allow_star_comments if enabled allows /* */ comments.
     """
     cdef str cur_chunk
     cdef object chunk_iter
@@ -74,6 +82,7 @@ cdef class Tokenizer:
     cdef public int line_num
     cdef public bint string_bracket
     cdef public bint allow_escapes
+    cdef public bint allow_star_comments
 
     cdef object pushback_tok
     cdef object pushback_val
@@ -94,10 +103,11 @@ cdef class Tokenizer:
     def __init__(
         self,
         data not None,
-        filename=None,
+        object filename=None,
         error=None,
         bint string_bracket=False,
         bint allow_escapes=True,
+        bint allow_star_comments=False,
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
@@ -126,7 +136,10 @@ cdef class Tokenizer:
             if _conv_path is None:
                 self.filename = str(filename)
             else:
-                self.filename = _conv_path(filename)
+                # Use os method to convert to string.
+                # We know this isn't a method.
+                with cython.optimize.unpack_method_calls(False):
+                    self.filename = _conv_path(filename)
         else:
             # If a file-like object, automatically set to the filename.
             try:
@@ -143,6 +156,7 @@ cdef class Tokenizer:
             self.error_type = error
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
+        self.allow_star_comments = allow_star_comments
 
         self.pushback_tok = self.pushback_val = None
 
@@ -171,6 +185,8 @@ cdef class Tokenizer:
             message = message.format(*args)
         return self._error(message)
 
+    # Don't unpack, error_type should be a class.
+    @cython.optimize.unpack_method_calls(False)
     cdef inline _error(self, str message):
         """C-private self.error()."""
         return self.error_type(
@@ -201,7 +217,6 @@ cdef class Tokenizer:
         out = PyUnicode_FromKindAndData(4, self.val_buffer, self.buf_pos)
         self.buf_pos = 0
         return out
-
 
     # We check all the getitem[] accesses, so don't have Cython recheck.
     @cython.boundscheck(False)
@@ -255,6 +270,8 @@ cdef class Tokenizer:
         cdef:
             Py_UCS4 next_char
             Py_UCS4 escape_char
+            Py_UCS4 peek_char
+            int start_line
 
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
@@ -289,20 +306,55 @@ cdef class Tokenizer:
             # Comments
             elif next_char == '/':
                 # The next must be another slash! (//)
-                if self._next_char() != '/':
+                next_char = self._next_char()
+                if next_char == '*': # /* comment.
+                    if self.allow_star_comments:
+                        start_line = self.line_num
+                        while True:
+                            next_char = self._next_char()
+                            if next_char == -1:
+                                raise self._error(
+                                    f'Unclosed /* comment '
+                                    f'(starting on line {start_line})!',
+                                )
+                            elif next_char == '\n':
+                                self.line_num += 1
+                            elif next_char == '*':
+                                # Check next next character!
+                                peek_char = self._next_char()
+                                if peek_char == -1:
+                                    raise self._error(
+                                        f'Unclosed /* comment '
+                                        f'(starting on line {start_line})!',
+                                    )
+                                elif peek_char == '/':
+                                    break
+                                else:
+                                    # We need to reparse this, to ensure
+                                    # "**/" parses correctly!
+                                    self.char_index -= 1
+                    else:
+                        raise self._error(
+                            '/**/-style comments are not allowed!'
+                        )
+                elif next_char == '/':
+                    # Skip to end of line
+                    while True:
+                        next_char = self._next_char()
+                        if next_char == -1 or next_char == '\n':
+                            break
+
+                    # We want to produce the token for the end character -
+                    # EOF or NEWLINE.
+                    self.char_index -= 1
+                else:
                     raise self._error(
+                        'Single slash found, '
+                        'instead of two for a comment (// or /* */)!'
+                        if self.allow_star_comments else
                         'Single slash found, '
                         'instead of two for a comment (//)!'
                     )
-                # Skip to end of line
-                while True:
-                    next_char = self._next_char()
-                    if next_char == -1 or next_char == '\n':
-                        break
-
-                # We want to produce the token for the end character -
-                # EOF or NEWLINE.
-                self.char_index -= 1
 
             # Strings
             elif next_char == '"':
@@ -431,7 +483,8 @@ cdef class Tokenizer:
         if not isinstance(tok, Token):
             raise ValueError(repr(tok) + ' is not a Token!')
 
-        cdef int tok_val = tok.value
+        # Read this directly to skip the 'value' descriptor.
+        cdef int tok_val = tok._value_
         cdef str real_value
 
         if tok_val == 0: # EOF

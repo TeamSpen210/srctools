@@ -9,6 +9,7 @@ from enum import IntFlag, Enum
 from srctools.filesys import FileSystem, File
 from srctools.vec import Vec
 from struct import unpack, Struct, calcsize
+import os
 
 
 IncludedMDL = NamedTuple('IncludedMDL', [
@@ -288,7 +289,7 @@ def read_nullstr(file: BinaryIO, pos: int=None):
             return ''
         file.seek(pos)
 
-    text = []
+    text = []  # type: List[bytes]
     while True:
         char = file.read(1)
         if char == b'\0':
@@ -507,14 +508,10 @@ class Model:
             if cdmat[-1:] != '/':
                 cdmat += '/'
             self.cdmaterials[ind] = cdmat
-
-        # All models fallback to checking the texture at a root folder.
-        if '/' not in self.cdmaterials:
-            self.cdmaterials.append('/')
         
         # Build texture data
         f.seek(texture_offset)
-        self.textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
+        textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
         tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
@@ -531,7 +528,7 @@ class Model:
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
-            self.textures[tex_ind] = (
+            textures[tex_ind] = (
                 read_nullstr(f, offset + name_offset),
                 flags,
                 used,
@@ -545,10 +542,23 @@ class Model:
         offset = 0
         for ind in range(skin_count):
             self.skins[ind] = [
-                self.textures[i][0]
+                # Strip folders from these skin names.
+                os.path.basename(textures[i][0])
                 for i in skin_group.unpack_from(ref_data, offset)
             ]
             offset += skin_group.size
+
+        # If models have folders, add those folders onto cdmaterials.
+        for tex, flags, used in textures:
+            tex = tex.replace('\\', '/')
+            if '/' in tex:
+                folder = tex.rsplit('/', 1)[0]
+                if folder not in self.cdmaterials:
+                    self.cdmaterials.append(folder)
+
+        # All models fallback to checking the texture at a root folder.
+        if '/' not in self.cdmaterials:
+            self.cdmaterials.append('/')
 
         f.seek(surfaceprop_index)
         self.surfaceprop = read_nullstr(f)
@@ -682,7 +692,11 @@ class Model:
                     # Default to skin 0.
                     paths.update(self.skins[0])
         else:
-            paths = {tex[0] for tex in self.textures}
+            paths = {
+                tex
+                for texgroup in self.skins
+                for tex in texgroup
+            }
 
         with self._sys:
             for tex in paths:

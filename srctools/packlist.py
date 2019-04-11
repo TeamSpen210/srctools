@@ -1,11 +1,12 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 import io
 from collections import OrderedDict
-from typing import Iterable, Dict, Tuple, List, Iterator
+from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
 from enum import Enum
 from zipfile import ZipFile
 import os
 
+from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
@@ -26,6 +27,8 @@ try:
 except ImportError:
     # Backport module for before Python 3.7
     from importlib_resources import open_binary
+
+SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
 
 
 class FileType(Enum):
@@ -82,7 +85,7 @@ def load_fgd() -> FGD:
     """
 
     from lzma import LZMAFile
-    with LZMAFile(open_binary(srctools, 'fgd.lzma')) as f:
+    with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
         return FGD.unserialise(f)
 
 
@@ -146,6 +149,10 @@ class PackList:
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
 
+        # For each model, defines the skins the model uses. None means at least
+        # one use is unknown, so all skins could be used.
+        self.skinsets = {}  # type: Dict[str, Optional[Set[int]]]
+
     def __getitem__(self, path: str) -> PackFile:
         """Look up a packfile by filename."""
         return self._files[unify_path(path)]
@@ -164,12 +171,18 @@ class PackList:
         filename: str,
         data_type: FileType=FileType.GENERIC,
         data: bytes=None,
+        skinset: Set[int]=None,
     ) -> None:
         """Queue the given file to be packed.
 
         If data is set, this file will use the given data instead of any
         on-disk data. The data_type parameter allows specifying the kind of
         file, which ensures it can be treated appropriately.
+
+        If the file is a model, skinset allows restricting which skins are used.
+        If None (default), all skins may be used. Otherwise it is a set of
+        skins. If all uses of a model restrict the skin, only those skins need
+        to be packed.
         """
         filename = os.fspath(filename)
 
@@ -208,6 +221,21 @@ class PackList:
                 filename = filename + '.vtf'
 
         path = unify_path(filename)
+
+        if data_type is FileType.MODEL or filename.endswith('.mdl'):
+            data_type = FileType.MODEL
+            if skinset is None:
+                # It's dynamic, this overrides any previous specific skins.
+                self.skinsets[filename] = None
+            else:
+                try:
+                    existing_skins = self.skinsets[filename]
+                except KeyError:
+                    self.skinsets[filename] = skinset.copy()
+                else:
+                    # Merge the two.
+                    if existing_skins is not None:
+                        self.skinsets[filename] = existing_skins | skinset
 
         try:
             file = self._files[path]
@@ -290,6 +318,10 @@ class PackList:
 
     def pack_soundscript(self, sound_name: str):
         """Pack a soundscript or raw sound file."""
+        # Blank means no sound is used.
+        if not sound_name:
+            return
+
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
         if sound_name.endswith(('.wav', '.mp3')):
@@ -325,7 +357,7 @@ class PackList:
         The sounds registered by this soundscript are returned.
         """
         with file.sys, file.open_str() as f:
-            props = Property.parse(f, file.path)
+            props = Property.parse(f, file.path, allow_escapes=False)
         return self._parse_soundscript(props, file.path, always_include)
 
     def _parse_soundscript(
@@ -376,10 +408,12 @@ class PackList:
             try:
                 with open(cache_file) as f:
                     old_cache = Property.parse(f, cache_file)
-            except (FileNotFoundError, KeyValError):
+                if man['version'] != SOUND_CACHE_VERSION:
+                    raise LookupError
+            except (FileNotFoundError, KeyValError, LookupError):
                 pass
             else:
-                for cache_prop in old_cache:
+                for cache_prop in old_cache.find_children('Sounds'):
                     cache_data[cache_prop.name] = (
                         cache_prop.int('cache_key'),
                         cache_prop.find_key('files')
@@ -387,9 +421,13 @@ class PackList:
 
             # Regenerate from scratch each time - that way we remove old files
             # from the list.
-            new_cache_data = Property(None, [])
+            new_cache_sounds = Property('Sounds', [])
+            new_cache_data = Property(None, [
+                Property('version', SOUND_CACHE_VERSION),
+                new_cache_sounds,
+            ])
         else:
-            new_cache_data = None
+            new_cache_data = new_cache_sounds = None
 
         with self.fsys:
             for prop in man.find_children('game_sounds_manifest'):
@@ -421,8 +459,8 @@ class PackList:
                 # ui, etc). Just keep those loaded, no harm since vanilla does.
                 self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
 
-                if new_cache_data is not None:
-                    new_cache_data.append(Property(prop.value, [
+                if new_cache_sounds is not None:
+                    new_cache_sounds.append(Property(prop.value, [
                         Property('cache_key', str(cur_key)),
                         Property('Files', [
                             Property(snd, [
@@ -467,8 +505,9 @@ class PackList:
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
-        for static_prop in bsp.static_prop_models():
-            self.pack_file(static_prop, FileType.MODEL)
+        for prop in bsp.static_props():
+            # Static props obviously only use one skin.
+            self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
 
         for mat in bsp.read_texture_names():
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
@@ -482,6 +521,17 @@ class PackList:
             except KeyError:
                 LOGGER.warning('Unknown class "{}"!', classname)
                 continue
+
+            if ent['skinset'] != '':
+                # Special key for us - if set this is a list of skins this
+                # entity is pledging it will restrict itself to.
+                skinset = {
+                    int(x)
+                    for x in ent['skinset'].split()
+                }  # type: Optional[Set[int]]
+            else:
+                skinset = None
+
             for key in set(ent.keys) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
@@ -494,7 +544,7 @@ class PackList:
                     # a '*37' brush ref, a model, or a sprite.
                     value = ent[key]
                     if value and value[:1] != '*':
-                        self.pack_file(value)
+                        self.pack_file(value, skinset=skinset)
                     continue
                 try:
                     kv = ent_class.kv[key]  # type: KeyValues
@@ -621,23 +671,27 @@ class PackList:
                         continue
                     file._analysed = True
 
-                    if file.type is FileType.MATERIAL:
-                        if self._get_material_files(file):
+                    try:
+                        if file.type is FileType.MATERIAL:
+                            if self._get_material_files(file):
+                                todo = True
+                        elif file.type is FileType.MODEL:
+                            self._get_model_files(file)
                             todo = True
-                    elif file.type is FileType.MODEL:
-                        self._get_model_files(file)
-                        todo = True
-                    elif file.type is FileType.TEXTURE:
-                        # Try packing the '.hdr.vtf' file as well if present.
-                        # But don't recurse!
-                        if not file.filename.endswith('.hdr.vtf'):
-                            self.pack_file(
-                                file.filename[:-3] + 'hdr.vtf',
-                                FileType.OPTIONAL
-                            )
-                            todo = True
+                        elif file.type is FileType.TEXTURE:
+                            # Try packing the '.hdr.vtf' file as well if present.
+                            # But don't recurse!
+                            if not file.filename.endswith('.hdr.vtf'):
+                                self.pack_file(
+                                    file.filename[:-3] + 'hdr.vtf',
+                                    FileType.OPTIONAL
+                                )
+                                todo = True
+                    except Exception as exc:
+                        # Skip errors in the file format - means we can't find the dependencies.
+                        LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
 
-    def _get_model_files(self, file: PackFile):
+    def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
         self.pack_file(filename + '.vvd')  # Must be present.
@@ -666,7 +720,7 @@ class PackList:
                 LOGGER.warning('Can\'t find model "{}"!', file.filename)
                 return
 
-        for tex in mdl.iter_textures():
+        for tex in mdl.iter_textures(self.skinsets.get(file.filename, None)):
             self.pack_file(tex, FileType.MATERIAL)
 
         for file in mdl.included_models:
@@ -678,23 +732,30 @@ class PackList:
     def _get_material_files(self, file: PackFile):
         """Find any needed files for a material."""
 
-        parents = []
-        if file.virtual:
-            # Read directly from the data we have.
-            mat = Material.parse(
-                io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
-                file.filename,
-            )
-        else:
-            try:
+        parents = []  # type: List[str]
+        try:
+            if file.virtual:
+                # Read directly from the data we have.
+                mat = Material.parse(
+                    io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
+                    file.filename,
+                )
+            else:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
-            except FileNotFoundError:
-                print('WARNING: File "{}" does not exist!'.format(file.filename))
-                return
 
-        # For 'patch' shaders, apply the originals.
-        mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+            # For 'patch' shaders, apply the originals.
+            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+        except FileNotFoundError:
+            LOGGER.warning('File "{}" does not exist!', file.filename)
+            return
+        except TokenSyntaxError as exc:
+            LOGGER.warning(
+                'File "{}" cannot be parsed:\n{}',
+                file.filename,
+                exc,
+            )
+            return
 
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL)

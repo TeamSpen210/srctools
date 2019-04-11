@@ -14,6 +14,9 @@ from typing import (
     Union, Iterator,
     List, Tuple, Dict,
     TextIO, BinaryIO,
+    Any,
+    Optional,
+    Set,
 )
 
 
@@ -84,7 +87,7 @@ class FileSystem:
     """Base class for different systems defining the interface."""
     def __init__(self, path: str):
         self.path = os.fspath(path)
-        self._ref = None
+        self._ref = None  # type: Optional[Any]
         self._ref_count = 0
 
     def open_ref(self) -> None:
@@ -221,9 +224,21 @@ class FileSystemChain(FileSystem):
             raise ValueError('File is not from a FileSystemChain..')
         return file._data.sys
 
-    def add_sys(self, sys: FileSystem, prefix=''):
-        """Add a filesystem to the list."""
-        self.systems.append((sys, prefix))
+    def add_sys(
+        self,
+        sys: FileSystem,
+        prefix: str='',
+        *,
+        priority: bool=False,
+    ) -> None:
+        """Add a filesystem to the list.
+
+        If priority is True, the system will be added to the start.
+        """
+        if priority:
+            self.systems.insert(0, (sys, prefix))
+        else:
+            self.systems.append((sys, prefix))
         # If we're currently open, apply that to the added systems.
         if self._ref_count > 0:
             sys.open_ref()
@@ -263,7 +278,7 @@ class FileSystemChain(FileSystem):
 
     def walk_folder(self, folder: str) -> Iterator[File]:
         """Walk folders, not repeating files."""
-        done = set()
+        done = set()  # type: Set[str]
         for file in self.walk_folder_repeat(folder):
             folded = file.path.casefold()
             if folded in done:
@@ -326,7 +341,7 @@ class VirtualFileSystem(FileSystem):
         }
         self.bytes_encoding = encoding
 
-    def __eq__(self, other: 'VirtualFileSystem'):
+    def __eq__(self, other: object):
         if not isinstance(other, VirtualFileSystem):
             return NotImplemented
         return (
@@ -495,13 +510,14 @@ class ZipFileSystem(FileSystem):
     """Accesses files in a zip file."""
     def __init__(self, path: str, zipfile: ZipFile=None):
         self._ref = None  # type: ZipFile
-        self._name_to_info = {}
+        self._name_to_info = {}  # type: Dict[str, ZipInfo]
         super().__init__(path)
 
         if zipfile is not None:
             # Use the zipfile directly, and don't close it.
             self._ref_count += 1
             self._ref = zipfile
+            self._load_paths()
 
     def __repr__(self):
         return 'ZipFileSystem({!r})'.format(self.path)
@@ -562,8 +578,11 @@ class ZipFileSystem(FileSystem):
 
     def _create_ref(self) -> None:
         self._ref = zipfile = ZipFile(self.path)
+        self._load_paths()
+
+    def _load_paths(self) -> None:
         self._name_to_info.clear()
-        for info in zipfile.infolist():
+        for info in self._ref.infolist():
             # Some zipfiles include entries for the directories too. They have
             # a trailing slash.
             if not info.filename.endswith('/'):
@@ -578,6 +597,8 @@ class VPKFileSystem(FileSystem):
     """Accesses files in a VPK file."""
     def __init__(self, path: str):
         self._ref = None  # type: VPK
+        # Used to enforce case-insensitivity.
+        self._name_to_file = {}  # type: Dict[str, VPKFile]
         super().__init__(path)
 
     def __repr__(self):
@@ -586,26 +607,33 @@ class VPKFileSystem(FileSystem):
     def _create_ref(self):
         self._ref = VPK(self.path)
 
-    def _delete_ref(self):
+        self._name_to_file.clear()
+        for file in self._ref:
+            self._name_to_file[
+                file.filename.replace('\\', '/').casefold()
+            ] = file
+
+    def _delete_ref(self) -> None:
         # We only read from VPKs, so no cleanup needs to be done.
         self._ref = None
 
     def _file_exists(self, name: str):
         self._check_open()
-        return name in self._ref
+        return name in self._name_to_file
 
     def _get_file(self, name: str):
+        key = name.casefold().replace('\\', '/')
         try:
-            file = self._ref[name]
+            file = self._name_to_file[key]
         except KeyError:
             raise FileNotFoundError(name) from None
-        return File(self, name.replace('\\', '/'), file)
+        return File(self, key, file)
 
     def walk_folder(self, folder: str) -> Iterator[File]:
         """Yield files in a folder."""
         # All VPK files use forward slashes.
         folder = folder.replace('\\', '/')
-        for file in self._ref:
+        for file in self._name_to_file.values():
             if file.dir.startswith(folder):
                 yield File(self, file.filename, file)
 
@@ -617,7 +645,7 @@ class VPKFileSystem(FileSystem):
                 file = name
             else:
                 try:
-                    file = self._ref[name]
+                    file = self._name_to_file[name.casefold().replace('\\', '/')]
                 except KeyError:
                     raise FileNotFoundError(name)
             return io.BytesIO(file.read())
@@ -630,7 +658,7 @@ class VPKFileSystem(FileSystem):
                 file = name
             else:
                 try:
-                    file = self._ref[name]
+                    file = self._name_to_file[name.casefold().replace('\\', '/')]
                 except KeyError:
                     raise FileNotFoundError(name)
             # Wrap the data to treat it as bytes, then

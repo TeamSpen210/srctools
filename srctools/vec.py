@@ -293,14 +293,35 @@ class Vec:
         return cls(x, y, z)
 
     @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Vec']) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+        axis3: str, val3: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
     def with_axes(
         cls,
         axis1: str,
         val1: Union[float, 'Vec'],
         axis2: str=None,
-        val2: Union[float, 'Vec']=None,
+        val2: Union[float, 'Vec']=0.0,
         axis3: str=None,
-        val3: Union[float, 'Vec']=None
+        val3: Union[float, 'Vec']=0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 

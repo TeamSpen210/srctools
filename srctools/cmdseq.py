@@ -134,7 +134,7 @@ def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     for _ in range(seq_count):
         seq_name = strip_cstring(file.read(128))
         [cmd_count] = unpack('I', file.read(4))
-        cmd_list = None  # type: List[Command]
+        cmd_list = ...  # type: List[Command]
         sequences[seq_name] = cmd_list = [None] * cmd_count  # type: ignore
         
         for i in range(cmd_count):  

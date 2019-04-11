@@ -128,13 +128,13 @@ text"
         "Replaced" "toreplace" [test_enabled]
         "Replaced" "alsothis"  [test_enabled]
         
-        "Replaced" "shouldbe"
-        "Replaced" "toreplace" [!test_disabled]
-        "Replaced" "alsothis"  [!test_disabled]
+        "Replaced" "shouldbe2"
+        "Replaced" "toreplace2" [!test_disabled]
+        "Replaced" "alsothis2"  [!test_disabled]
 
         "Replaced"
             {
-            "shouldbe" "replaced"
+            "shouldbe3" "replaced3"
             "prop2" "blah"
             }
         "Replaced" [test_enabled]
@@ -145,13 +145,13 @@ text"
         
         "Replaced"
             {
-            "shouldbe" "replaced"
+            "shouldbe4" "replaced4"
             "prop2" "blah"
             }
         "Replaced" [!test_disabled]
             {
-            "lambda" "should"
-            "replace" "above"
+            "lambda2" "should2"
+            "replace2" "above2"
             }
         }
 '''
@@ -185,15 +185,15 @@ parse_result = P(None, [
         P('FlagAllows', 'This'),
         P('Replaced', 'toreplace'),
         P('Replaced', 'alsothis'),
-        P('Replaced', 'toreplace'),
-        P('Replaced', 'alsothis'),
+        P('Replaced', 'toreplace2'),
+        P('Replaced', 'alsothis2'),
         P('Replaced', [
             P('lambda', 'should'),
             P('replace', 'above'),
         ]),
         P('Replaced', [
-            P('lambda', 'should'),
-            P('replace', 'above'),
+            P('lambda2', 'should2'),
+            P('replace2', 'above2'),
         ])
     ])
 ])
@@ -211,7 +211,7 @@ def test_parse(py_c_token):
             'test_disabled': False,
         }
     )
-    assert_tree(result, parse_result)
+    assert_tree(parse_result, result)
 
     # Test the whole string can be passed too.
     result = Property.parse(
@@ -221,10 +221,10 @@ def test_parse(py_c_token):
             'test_disabled': False,
         },
     )
-    assert_tree(result, parse_result)
+    assert_tree(parse_result, result)
 
     # Check export roundtrips.
-    assert_tree(Property.parse(parse_result.export()), parse_result)
+    assert_tree(parse_result, Property.parse(parse_result.export()))
     
 def test_build():
     """Test the .build() constructor."""
@@ -257,14 +257,14 @@ def test_build():
             b.FlagAllows('This')
             b.Replaced('toreplace')
             b.Replaced('alsothis')
-            b.Replaced('toreplace')
-            b.Replaced('alsothis')
+            b.Replaced('toreplace2')
+            b.Replaced('alsothis2')
             with b.Replaced:
                 b.lambda_('should')
                 b.replace('above')
             with b.Replaced:
-                b['lambda']('should')
-                b.replace('above')
+                b['lambda2']('should2')
+                b.replace2('above2')
 
     assert_tree(parse_result, prop)
     

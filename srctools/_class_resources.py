@@ -15,19 +15,14 @@ __all__ = ['CLASS_RESOURCES']
 # behaviour, yielding files to pack.
 
 ClassFunc = Callable[[Entity], Iterator[str]]
-_cls_res_type: Dict[str, List[Union[
-    str,
-    Tuple[str, FileType],
+_cls_res_type = Dict[str, Union[
     ClassFunc,
+    List[Union[str, Tuple[str, FileType]],
 ]]]
 CLASS_RESOURCES = {}  # type: _cls_res_type
 
 
-def res(cls: str, *items: Union[
-    str,
-    Tuple[str, FileType],
-    ClassFunc,
-]):
+def res(cls: str, *items: Union[str, Tuple[str, FileType]]):
     """Add a resource to class_resources."""
     CLASS_RESOURCES[cls] = list(items)
 
@@ -82,42 +77,42 @@ res('npc_combine_cannon',
 
 @cls_func
 def func_breakable_surf(ent: Entity):
-    """Additional materials required for func_breakable_surf"""
+    """Additional materials required for func_breakable_surf."""
     yield 'models/brokenglass_piece.mdl'
 
     surf_type = conv_int(ent['surfacetype'])
     if surf_type == 1:  # Tile
         yield from (
-            'models/brokentile/tilebroken_03a.mdl',
-            'models/brokentile/tilebroken_03b.mdl',
-            'models/brokentile/tilebroken_03c.mdl',
-            'models/brokentile/tilebroken_03d.mdl',
+            'materials/models/brokentile/tilebroken_03a.vmt',
+            'materials/models/brokentile/tilebroken_03b.vmt',
+            'materials/models/brokentile/tilebroken_03c.vmt',
+            'materials/models/brokentile/tilebroken_03d.vmt',
 
-            'models/brokentile/tilebroken_02a.mdl',
-            'models/brokentile/tilebroken_02b.mdl',
-            'models/brokentile/tilebroken_02c.mdl',
-            'models/brokentile/tilebroken_02d.mdl',
+            'materials/models/brokentile/tilebroken_02a.vmt',
+            'materials/models/brokentile/tilebroken_02b.vmt',
+            'materials/models/brokentile/tilebroken_02c.vmt',
+            'materials/models/brokentile/tilebroken_02d.vmt',
 
-            'models/brokentile/tilebroken_01a.mdl',
-            'models/brokentile/tilebroken_01b.mdl',
-            'models/brokentile/tilebroken_01c.mdl',
-            'models/brokentile/tilebroken_01d.mdl',
+            'materials/models/brokentile/tilebroken_01a.vmt',
+            'materials/models/brokentile/tilebroken_01b.vmt',
+            'materials/models/brokentile/tilebroken_01c.vmt',
+            'materials/models/brokentile/tilebroken_01d.vmt',
         )
     elif surf_type == 0:  # Glass
         yield from (
-            'models/brokenglass/glassbroken_solid.mdl',
-            'models/brokenglass/glassbroken_01a.mdl',
-            'models/brokenglass/glassbroken_01b.mdl',
-            'models/brokenglass/glassbroken_01c.mdl',
-            'models/brokenglass/glassbroken_01d.mdl',
-            'models/brokenglass/glassbroken_02a.mdl',
-            'models/brokenglass/glassbroken_02b.mdl',
-            'models/brokenglass/glassbroken_02c.mdl',
-            'models/brokenglass/glassbroken_02d.mdl',
-            'models/brokenglass/glassbroken_03a.mdl',
-            'models/brokenglass/glassbroken_03b.mdl',
-            'models/brokenglass/glassbroken_03c.mdl',
-            'models/brokenglass/glassbroken_03d.mdl',
+            'materials/models/brokenglass/glassbroken_solid.vmt',
+            'materials/models/brokenglass/glassbroken_01a.vmt',
+            'materials/models/brokenglass/glassbroken_01b.vmt',
+            'materials/models/brokenglass/glassbroken_01c.vmt',
+            'materials/models/brokenglass/glassbroken_01d.vmt',
+            'materials/models/brokenglass/glassbroken_02a.vmt',
+            'materials/models/brokenglass/glassbroken_02b.vmt',
+            'materials/models/brokenglass/glassbroken_02c.vmt',
+            'materials/models/brokenglass/glassbroken_02d.vmt',
+            'materials/models/brokenglass/glassbroken_03a.vmt',
+            'materials/models/brokenglass/glassbroken_03b.vmt',
+            'materials/models/brokenglass/glassbroken_03c.vmt',
+            'materials/models/brokenglass/glassbroken_03d.vmt',
         )
 
 

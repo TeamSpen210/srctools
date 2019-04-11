@@ -3,10 +3,11 @@
 This merges static props together, so they can be drawn with a single
 draw call.
 """
+import os
 import subprocess
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Dict, List
+from typing import Dict, List, Set, Optional, Tuple
 
 from srctools import Vec, partition
 from srctools.tokenizer import Tokenizer, Token
@@ -17,6 +18,7 @@ from srctools.logger import get_logger
 from srctools.packlist import PackList
 from srctools.bsp import BSP, StaticProp, StaticPropFlags
 from srctools.mdl import Model
+from srctools.smd import Mesh
 from collections import defaultdict, namedtuple
 
 
@@ -34,35 +36,20 @@ QC_TEMPLATE = '''\
 $staticprop
 $modelname "{path}"
 $surfaceprop "{surf}"
-$cdmaterials {cdmats}
 
-$body body blank.smd
+$body body "{ref_mesh}"
 
-$sequence idle blank act_idle 1
+$sequence idle anim act_idle 1
 '''
 
 QC_COLL_TEMPLATE = '''
-$collisionmodel "blank" {
+$collisionmodel "{}" {{
     $maxconvexpieces 2048
-    $concaveperjoint
     $automass
-    $remove2d
     $concave
+}}
 '''
 
-# No bones, no animation, no geometry...
-BLANK_SMD  = b'''\
-version 1
-nodes
-  0 "static_prop" -1
-end
-skeleton
-  time 0
-    0 0.000000 0.000000 0.000000 0.000000 0.000000 0.000000
-end
-triangles
-end
-'''
 
 MDL_EXTS = [
     '.mdl',
@@ -90,15 +77,11 @@ def unify_mdl(path: str):
     return path
 
 
-def load_qcs(game: Game) -> Dict[str, QC]:
+def load_qcs(qc_folder: Path) -> Dict[str, QC]:
     """Parse through all the QC files to match to compiled models."""
-    # If gameinfo is blah/game/hl2/gameinfo.txt,
-    # QCs should be in blah/content/....
-
     qc_map = {}
 
-    content_path = game.path.parent.parent / 'content'
-    for qc_path in content_path.rglob('*.qc'):  # type: Path
+    for qc_path in qc_folder.rglob('*.qc'):  # type: Path
         model_name = ref_smd = phy_smd = None
         scale_factor = ref_scale = phy_scale = 1.0
         qc_loc = qc_path.parent
@@ -156,9 +139,10 @@ def load_qcs(game: Game) -> Dict[str, QC]:
                             '$weightlist',
                             '$poseparameter',
                             '$proceduralbones',
-                            '$lod',
                             '$jigglebone',
                             '$keyvalues',
+                            # Allow LOD models, propcombine is better than that.
+                            # '$lod',
                         ):
                             raise DynamicModel
 
@@ -169,6 +153,16 @@ def load_qcs(game: Game) -> Dict[str, QC]:
             # Malformed...
             LOGGER.warning('Cannot parse "{}"... ({}, {})', qc_path, model_name, ref_smd)
             continue
+
+        # We can't parse FBX files right now.
+        if ref_smd.suffix.casefold() not in ('.smd', '.dmx'):
+            LOGGER.warning('Reference mesh not a SMD/DMX:\n{}', ref_smd)
+            continue
+
+        if phy_smd is not None:
+            if phy_smd.suffix.casefold() not in ('.smd', '.dmx'):
+                LOGGER.warning('Collision mesh not a SMD/DMX:\n{}', ref_smd)
+                continue
 
         qc_map[unify_mdl(model_name)] = QC(
             str(qc_path).replace('\\', '/'),
@@ -183,7 +177,10 @@ def load_qcs(game: Game) -> Dict[str, QC]:
 def merge_props(
     qc_map: Dict[str, QC],
     mdl_map: Dict[str, Model],
+    mesh_cache: Dict[Tuple[QC, int], Tuple[Mesh, Optional[Mesh]]],
+    temp_folder: Path,
     game: Game,
+    studiomdl_loc: Path,
     pack: PackList,
     map_name: str,
     props: List[StaticProp],
@@ -196,9 +193,9 @@ def merge_props(
     center_pos = (bbox_min + bbox_max) / 2
 
     # Unify these properties.
-    surfprops = set()
-    cdmats = set()
-    visleafs = set()
+    surfprops = set()  # type: Set[str]
+    cdmats = set()  # type: Set[str]
+    visleafs = set()  # type: Set[int]
 
     for prop in props:
         mdl = mdl_map[unify_mdl(prop.model)]
@@ -216,76 +213,96 @@ def merge_props(
 
     prop_name = 'maps/{}/propcombine/merge_{:04X}'.format(map_name, counter)
 
-    with TemporaryDirectory(prefix='autocomb_') as temp_dir:
-        with open(temp_dir + '/blank.smd', 'wb') as f:
-            f.write(BLANK_SMD)
-        with open(temp_dir + '/model.qc', 'w') as f:
-            f.write(QC_TEMPLATE.format(
-                path=prop_name,
-                surf=surfprop,
-                cdmats=' '.join('"{}"'.format(mat) for mat in sorted(cdmats))
-            ))
+    ref_mesh = Mesh.blank('static_prop')
+    coll_mesh = None  #  type: Optional[Mesh]
 
-            has_coll = False
+    for prop in props:
+        qc = qc_map[unify_mdl(prop.model)]
+        mdl = mdl_map[unify_mdl(prop.model)]
+        try:
+            child_ref, child_coll = mesh_cache[qc, prop.skin]
+        except KeyError:
+            LOGGER.info('Parsing ref "{}"', qc.ref_smd)
+            with open(qc.ref_smd, 'rb') as fb:
+                child_ref = Mesh.parse_smd(fb)
+            if qc.phy_smd is not None:
+                LOGGER.info('Parsing coll "{}"', qc.phy_smd)
+                with open(qc.phy_smd, 'rb') as fb:
+                    child_coll = Mesh.parse_smd(fb)
+            else:
+                child_coll = None
 
-            for prop in props:
-                qc = qc_map[unify_mdl(prop.model)]
-                f.write(
-                    '$appendsource "{}" "offset '
-                    'pos[ {:.3f} {:.3f} {:.3f} ] '
-                    'angle[ {:.3f} {:.3f} {:.3f} ] '
-                    'scale[ {:.3f} '
-                    ']"\n'.format(
-                        qc.ref_smd,
-                        prop.origin.x - center_pos.x,
-                        prop.origin.y - center_pos.y,
-                        prop.origin.z - center_pos.z,
-                        prop.angles.x,
-                        prop.angles.y,
-                        prop.angles.z,
-                        qc.ref_scale
-                    )
-                )
-                if qc.phy_smd:
-                    has_coll = True
+            if prop.skin != 0 and prop.skin <= len(mdl.skins):
+                # We need to rename the materials to match the skin.
+                swap_skins = dict(zip(
+                    mdl.skins[0],
+                    mdl.skins[prop.skin]
+                ))
+                for tri in child_ref.triangles:
+                    tri.mat = swap_skins.get(tri.mat, tri.mat)
 
-            if has_coll:
-                f.write(QC_COLL_TEMPLATE)
-                for prop in props:
-                    qc = qc_map[unify_mdl(prop.model)]
-                    if qc.phy_smd:
-                        f.write(
-                            '    $addconvexsrc "{}" "offset '
-                            'pos[ {:.3f} {:.3f} {:.3f} ] '
-                            'angle[ {:.3f} {:.3f} {:.3f} ] '
-                            'scale[ {:.3f} '
-                            ']"\n'.format(
-                                qc.phy_smd,
-                                prop.origin.x - center_pos.x,
-                                prop.origin.y - center_pos.y,
-                                prop.origin.z - center_pos.z,
-                                prop.angles.x,
-                                prop.angles.y,
-                                prop.angles.z,
-                                qc.phy_scale
-                            )
-                        )
-                f.write('}\n')
-        args = [
-            str(game.bin_folder() / 'studiomdl.exe'),
-            '-nop4',
-            '-game', str(game.path), temp_dir + '/model.qc',
-        ]
-        subprocess.run(args)
+            # For some reason all the SMDs are rotated badly, but only
+            # if we append them.
+            for tri in child_ref.triangles:
+                for vert in tri:
+                    vert.pos.rotate(0, 90, 0, round_vals=False)
+                    vert.norm.rotate(0, 90, 0, round_vals=False)
+            if child_coll is not None:
+                for tri in child_coll.triangles:
+                    for vert in tri:
+                        vert.pos.rotate(0, 90, 0, round_vals=False)
+                        vert.norm.rotate(0, 90, 0, round_vals=False)
+
+            mesh_cache[qc, prop.skin] = child_ref, child_coll
+
+        offset = prop.origin - center_pos
+
+        ref_mesh.append_model(child_ref, prop.angles, offset)
+
+        if child_coll is not None:
+            if coll_mesh is None:
+                coll_mesh = Mesh.blank('static_prop')
+            coll_mesh.append_model(child_coll, prop.angles, offset)
+
+    prefix = str(temp_folder / '{:04X}'.format(counter))
+
+    with open(prefix + '_ref.smd', 'wb') as fb:
+        ref_mesh.export(fb)
+
+    if coll_mesh is not None:
+        with open(prefix + '_phy.smd', 'wb') as fb:
+            coll_mesh.export(fb)
+
+    with open(prefix + '.qc', 'w') as f:
+        f.write(QC_TEMPLATE.format(
+            path=prop_name,
+            surf=surfprop,
+            ref_mesh=prefix + '_ref.smd',
+        ))
+
+        for mat in sorted(cdmats):
+            f.write('$cdmaterials "{}"\n'.format(mat))
+
+        if coll_mesh is not None:
+            f.write(QC_COLL_TEMPLATE.format(prefix + '_phy.smd'))
+
+    args = [
+        str(studiomdl_loc.resolve()),
+        '-nop4',
+        '-game', str(game.path),
+        prefix + '.qc',
+    ]
+    subprocess.run(args)
 
     full_model_path = game.path / 'models' / prop_name
     for ext in MDL_EXTS:
         try:
-            with open(str(full_model_path) + ext, 'rb') as f:
+            with open(str(full_model_path) + ext, 'rb') as fb:
                 pack.pack_file(
                     'models/{}{}'.format(prop_name, ext),
-                    data=f.read(),
+                    data=fb.read(),
                 )
+            os.remove(str(full_model_path) + ext)
         except FileNotFoundError:
             pass
 
@@ -297,22 +314,11 @@ def merge_props(
         angles=Vec(0, 270, 0),
         scaling=1.0,
         visleafs=sorted(visleafs),
-        solidity=props[0].solidity,
+        solidity=0 if coll_mesh is None else props[0].solidity,
         flags=props[0].flags,
-        skin=0,
-        min_fade=-1,
-        max_fade=-1,
         lighting_origin=center_pos,
-        fade_scale=1.0,
-        min_dx_level=0,
-        max_dx_level=0,
-        min_cpu_level=0,
-        max_cpu_level=0,
-        min_gpu_level=0,
-        max_gpu_level=0,
         tint=props[0].tint,
         renderfx=props[0].renderfx,
-        disable_on_xbox=False,
     )
 
 
@@ -358,32 +364,50 @@ def group_props(
             bbox_min, bbox_max = Vec.bbox(prop.origin for prop in cluster)
             center_pos = (bbox_min + bbox_max) / 2
 
-            cluster = [
-                prop for prop in cluster
-                if (center_pos - prop.origin).mag_sq() <= dist_sq
-            ]
+            cluster_list = []
 
-            if len(cluster) >= min_cluster:
-                todo.difference_update(cluster)
-                for part in partition(cluster, MAX_GROUP):
-                    yield part
+            for prop in cluster:
+                prop_off = (center_pos - prop.origin).mag_sq()
+                if prop_off <= dist_sq:
+                    cluster_list.append((prop, prop_off))
+
+            cluster_list.sort(key=lambda t: t[1])
+            cluster_list = [
+                prop for prop, off in
+                cluster_list[:MAX_GROUP]
+            ]
+            todo.difference_update(cluster_list)
+
+            if len(cluster_list) >= min_cluster:
+                yield cluster_list
             else:
-                rejected.append(center)
+                rejected.extend(cluster_list)
 
 
 def combine(
     bsp: BSP,
     pack: PackList,
     game: Game,
+    studiomdl_loc: Path=None,
+    qc_folder: Path=None,
 ):
     """Combine props in this map."""
-    if not (game.bin_folder() / 'studiomdl.exe').exists():
+    if studiomdl_loc is None:
+        studiomdl_loc = game.bin_folder() / 'studiomdl.exe'
+
+    if not studiomdl_loc.exists():
         LOGGER.warning('No studioMDL! Cannot propcombine!')
         return
-    
+
+    if qc_folder is None:
+        # If gameinfo is blah/game/hl2/gameinfo.txt,
+        # QCs should be in blah/content/ according to Valve's scheme.
+        # But allow users to override this.
+        qc_folder = game.path.parent.parent / 'content'
+
     # Parse through all the QC files.
-    LOGGER.info('Parsing QC files...')
-    qc_map = load_qcs(game)
+    LOGGER.info('Parsing QC files. Path: {}', qc_folder)
+    qc_map = load_qcs(qc_folder)
     LOGGER.info('Done! {} props.', len(qc_map))
 
     map_name = Path(bsp.filename).stem
@@ -430,8 +454,7 @@ def combine(
             prop.solidity,
             prop.renderfx,
             *prop.tint,
-            *model.skins[0],
-            *skinset,
+            *sorted(skinset),
         )
 
     prop_count = 0
@@ -444,18 +467,28 @@ def combine(
 
     # This holds the list of all props we want in the map -
     # combined ones, and any we reject for whatever reason.
-    final_props = []
+    final_props = []  # type: List[StaticProp]
 
-    for ind, group in enumerate(group_props(prop_groups, final_props, 128, 2)):
-        final_props.append(merge_props(
-            qc_map,
-            mdl_map,
-            game,
-            pack,
-            map_name,
-            group,
-            ind,
-        ))
+    with TemporaryDirectory(prefix='autocomb_') as temp_dir:
+        mesh_cache = {}
+        temp_path = Path(temp_dir)
+
+        with open(temp_dir + '/anim.smd', 'wb') as f:
+            Mesh.blank('static_prop').export(f)
+
+        for ind, group in enumerate(group_props(prop_groups, final_props, 384, 2)):
+            final_props.append(merge_props(
+                qc_map,
+                mdl_map,
+                mesh_cache,
+                temp_path,
+                game,
+                studiomdl_loc,
+                pack,
+                map_name,
+                group,
+                ind,
+            ))
 
     LOGGER.info('Combined {} props to {} props', prop_count, len(final_props))
 

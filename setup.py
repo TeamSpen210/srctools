@@ -47,6 +47,7 @@ setup(
     package_data={'srctools': [
         'fgd.lzma',
         'srctools.fgd',
+        'py.typed',
     ]},
 
     entry_points={
@@ -57,7 +58,7 @@ setup(
     },
     python_requires='>=3.4, <4',
     install_requires=[
-        'cx_Freeze',
+        'PyInstaller',
         'importlib_resources',
         'aenum<3.6',
     ],

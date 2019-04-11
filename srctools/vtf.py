@@ -7,7 +7,7 @@ from enum import Enum
 
 from srctools import Vec
 
-from typing import IO, Dict, List, Optional, Tuple
+from typing import IO, Dict, List, Optional, Tuple, Iterable, Union
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -187,7 +187,11 @@ class VTF:
         ref=Vec(0, 0, 0),
         frames=1,
         bump_scale=1.0,
-        sheet_info: List['SheetSequence']=(),
+        sheet_info: Iterable['SheetSequence']=(),
+        flags: int=0,
+        fmt: ImageFormats=ImageFormats.RGBA8888,
+        thumb_fmt: ImageFormats=ImageFormats.DXT1,
+        depth: int=1,
     ):
         """Load a VTF file."""
         if not ((7, 2) <= version <= (7, 5)):
@@ -201,16 +205,22 @@ class VTF:
         
         self.width = width
         self.height = height
+        self.depth = depth
+
         self.version = version
         self.reflectivity = ref
         self.bump_scale = bump_scale
-        self.resources = {}
+        self.resources = {}  # type: Dict[Union[ResourceID, bytes], Resource]
         self.sheet_info = list(sheet_info)
+        self.flags = flags
+        self.high_format = fmt
+        self.low_format = thumb_fmt
         
         self._frames = [
             _blank_frame(width, height)
             for _ in range(frames)
         ]
+        self._low_res = _blank_frame(16, 16)
 
     @classmethod    
     def read(
@@ -233,7 +243,7 @@ class VTF:
         vtf = cls.__new__(cls)  # type: VTF
         
         (
-            vtf._header_size,
+            header_size,
             width,
             height,
             vtf.flags,
@@ -276,7 +286,7 @@ class VTF:
         if version_minor >= 3:
             [num_resources] = struct.unpack('<3xI8x', file.read(15))
             for i in range(num_resources):
-                [res_id, flags, data] = struct.unpack('<3sBI', file.read(8))
+                [res_id, flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
                 if res_id in vtf.resources:
                     raise ValueError(
                         'Duplicate resource ID "{}"!'.format(res_id)
@@ -313,7 +323,7 @@ class VTF:
                 )
 
         else:
-            low_res_offset = vtf._header_size
+            low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
 
         # We don't implement these high-res formats.
@@ -432,9 +442,8 @@ class SheetSequence:
 
                 if version == 0:
                     # Only one in the file, repeated 4 times.
-                    samples = [
-                        TexCoord._make(struct.unpack_from('<4f', data, offset))
-                    ] * 4
+                    tex_coord = TexCoord._make(struct.unpack_from('<4f', data, offset))
+                    samples = [tex_coord, tex_coord, tex_coord, tex_coord]
                     offset += 16
                 else:
                     samples = [

@@ -137,6 +137,7 @@ class HelperTypes(Enum):
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
     SWEPT_HULL = 'sweptplayerhull'
+    ORIENTED_BBOX = 'obb'  # Bounding box oriented to angles.
 
     # Complex helpers using resources
     SPRITE = 'iconsprite'
@@ -287,17 +288,26 @@ def read_tags(tok: Tokenizer) -> FrozenSet[str]:
     The open bracket was just read.
     """
     tags = []
+    prefix = ''
     # Read tags.
     while True:
         token, value = tok()
         if token is Token.STRING:
-            tags.append(value.casefold().rstrip(','))
+            tags.append(prefix + value.casefold().rstrip(','))
+            prefix = ''
+        elif token is Token.PLUS:
+            if prefix:
+                raise tok.error('Duplicate "+" operators!')
+            prefix = '+'
         elif token is Token.BRACK_CLOSE:
             break
         elif token is Token.EOF:
             raise tok.error('Unclosed tags!')
         else:
             raise tok.error(token)
+
+    if prefix:
+        raise tok.error('Trailing "+" operator!')
     return validate_tags(tags, tok.error)
 
 
@@ -904,7 +914,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc = None  # type: List[str]
+        desc = None  # type: Optional[List[str]]
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1127,7 +1137,7 @@ class EntityDef:
                     default,
                     ''.join(desc),
                     val_list,
-                    is_readonly == 'readonly',
+                    is_readonly,
                 )
 
     def __repr__(self) -> str:
@@ -1401,22 +1411,19 @@ class FGD:
                         )
                     )
 
-    def collapse_bases(self) -> None:
-        """Collapse all bases into the entities that use them.
+    def sorted_ents(self) -> Iterator[EntityDef]:
+        """Yield all entities in sorted order.
 
-        This operates in-place, and clears all the base attributes as a result.
+        This ensures only all bases for an entity are yielded before the entity.
+        Otherwise entities are ordered in alphabetical order.
         """
-        # We need to do a topological sort effectively, to ensure we do
-        # parents before children.
+        # We need to do a topological sort.
         todo = set(self)  # type: Set[EntityDef]
         done = set()  # type: Set[EntityDef]
         while todo:
             deferred = set()  # type: Set[EntityDef]
+            batch = []
             for ent in todo:
-                if not ent.bases:
-                    done.add(ent)
-                    continue
-
                 ready = True
                 for base in ent.bases:
                     if isinstance(base, str):
@@ -1425,49 +1432,19 @@ class FGD:
                                 base, ent.classname
                             ))
                     if base not in done:
+                        deferred.add(ent)
                         deferred.add(base)
                         ready = False
                 if not ready:
                     deferred.add(ent)
                     continue
-                # All of this entity's bases are collapsed.
-                # We can collapse it.
 
-                base_kv = []
-                keyvalue_names = set(ent.kv_order)
+                batch.append(ent)
 
-                for base in ent.bases:
-                    for name, base_kv_map in base.keyvalues.items():
-                        ent_kv_map = ent.keyvalues.setdefault(name, {})
-                        for tag, kv in base_kv_map.items():
-                            if tag not in ent_kv_map:
-                                ent_kv_map[tag] = kv.copy()
-                            elif kv.type.has_list:
-                                # If both are lists, merge those. This is mainly
-                                # for spawnflags.
-                                targ_list = ent_kv_map[tag].val_list
-                                if targ_list:
-                                    for val in kv.val_list:
-                                        if val not in targ_list:
-                                            targ_list.append(val)
+            batch.sort(key=lambda ent: ent.classname)
+            yield from batch
 
-                        if name not in keyvalue_names:
-                            base_kv.append(name)
-                            keyvalue_names.add(name)
-
-                    for base_map, ent_map in [
-                        (base.inputs, ent.inputs),
-                        (base.outputs, ent.outputs),
-                    ]:
-                        for name, base_tags_map in base_map.items():
-                            ent_tags_map = ent_map.setdefault(name, {})
-                            for tag, io_def in base_tags_map.items():
-                                if tag not in ent_tags_map:
-                                    ent_tags_map[tag] = io_def.copy()
-
-                ent.kv_order = base_kv + ent.kv_order
-                ent.bases.clear()
-                done.add(ent)
+            done.update(batch)
 
             # All the entities have a dependency on another.
             if todo == deferred:
@@ -1478,7 +1455,50 @@ class FGD:
                         for ent in todo
                     ]))
 
-            todo = deferred
+            todo = deferred.difference(done)
+
+    def collapse_bases(self) -> None:
+        """Collapse all bases into the entities that use them.
+
+        This operates in-place, and clears all the base attributes as a result.
+        """
+        # We need to do a topological sort effectively, to ensure we do
+        # parents before children.
+        for ent in self.sorted_ents():
+            base_kv = []
+            keyvalue_names = set(ent.kv_order)
+
+            for base in ent.bases:
+                for name, base_kv_map in base.keyvalues.items():
+                    ent_kv_map = ent.keyvalues.setdefault(name, {})
+                    for tag, kv in base_kv_map.items():
+                        if tag not in ent_kv_map:
+                            ent_kv_map[tag] = kv.copy()
+                        elif kv.type.has_list:
+                            # If both are lists, merge those. This is mainly
+                            # for spawnflags.
+                            targ_list = ent_kv_map[tag].val_list
+                            if targ_list:
+                                for val in kv.val_list:
+                                    if val not in targ_list:
+                                        targ_list.append(val)
+
+                    if name not in keyvalue_names:
+                        base_kv.append(name)
+                        keyvalue_names.add(name)
+
+                for base_map, ent_map in [
+                    (base.inputs, ent.inputs),
+                    (base.outputs, ent.outputs),
+                ]:
+                    for name, base_tags_map in base_map.items():
+                        ent_tags_map = ent_map.setdefault(name, {})
+                        for tag, io_def in base_tags_map.items():
+                            if tag not in ent_tags_map:
+                                ent_tags_map[tag] = io_def.copy()
+
+            ent.kv_order = base_kv + ent.kv_order
+            ent.bases.clear()
 
     @overload
     def export(self) -> str: ...
@@ -1496,8 +1516,7 @@ class FGD:
         if self.map_size_min != self.map_size_max:
             file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
 
-        # TODO: topological sort.
-        for ent in self.entities.values():
+        for ent in self.sorted_ents():
             file.write('\n')
             ent.export(file)
 
