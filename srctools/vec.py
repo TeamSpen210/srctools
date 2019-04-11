@@ -36,11 +36,13 @@ Rotates LHS by RHS:
  - Matrix @ Matrix
 """
 import math
+import contextlib
 
 from typing import (
-    Union, Tuple, overload, NoReturn,
+    Union, Tuple, overload,
     Dict, NamedTuple,
     SupportsFloat, Iterator, Iterable,
+    ContextManager
 )
 
 
@@ -983,32 +985,18 @@ class Vec:
 
     len = mag
     mag_sq = len_sq
-    
-    class _Transform:
-        """Implements Vec.transform."""
 
-        def __init__(self, vec: 'Vec'):
-            self._vec = vec
-            self._mat = None  # type: Matrix
-
-        def __enter__(self):
-            self._mat = Matrix()
-            return self._mat
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            if exc_type is not None or self._quat is None:
-                return
-            self._mat._vec_rot(self._vec)
-
-    transform = property(
-        fget=_Transform,
-        doc="""Perform rotations on this Vector efficently.
+    @contextlib.contextmanager
+    def transform(self) -> ContextManager['Matrix']:
+        """Perform rotations on this Vector efficiently.
 
         Used as a context manager, which returns a matrix.
         When the body is exited safely, the matrix is applied to
         the angle.
-        """,
-    )
+        """
+        mat = Matrix()
+        yield mat
+        mat._vec_rot(self)
 
 
 class Matrix:
@@ -1352,34 +1340,20 @@ class Angle:
         mat @= self
         return mat.to_angle()
 
-    class _Transform:
-        """Implements Angle.transform."""
-
-        def __init__(self, angle: 'Angle'):
-            self._angle = angle
-            self._mat = None  # type: Matrix
-
-        def __enter__(self):
-            self._mat = Matrix.from_angle(self._angle)
-            return self._mat
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            if exc_type is not None or self._quat is None:
-                return
-            new_ang = self._mat.to_angle()
-            self._angle._pitch = new_ang._pitch
-            self._angle._yaw = new_ang._yaw
-            self._angle._roll = new_ang._roll
-
-    transform = property(
-        fget=_Transform,
-        doc="""Perform transformations on this angle.
+    @contextlib.contextmanager
+    def transform(self) -> ContextManager[Matrix]:
+        """Perform transformations on this angle.
 
         Used as a context manager, which returns a matrix.
         When the body is exited safely, the matrix is applied to
         the angle.
-        """,
-    )
+        """
+        mat = Matrix()
+        yield mat
+        new_ang = mat.to_angle()
+        self._pitch = new_ang._pitch
+        self._yaw = new_ang._yaw
+        self._roll = new_ang._roll
 
 
 def _mk(x: float, y: float, z: float) -> Vec:
