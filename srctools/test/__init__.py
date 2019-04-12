@@ -71,6 +71,28 @@ def assert_vec(vec, x, y, z, msg=''):
     pytest.fail(new_msg)
 
 
+def assert_rot(rot, exp_rot, msg=''):
+    """Asserts that the two rotations are the same."""
+    # Don't show in pytest tracebacks.
+    __tracebackhide__ = True
+
+    for pos in 'abcdefghi':
+        if not math.isclose(
+            getattr(rot, pos),
+            getattr(exp_rot, pos),
+            abs_tol=EPSILON,
+        ):
+            break
+    else:
+        # Success!
+        return
+
+    new_msg = '{} != {}\nAxis: {}'.format(rot, exp_rot, pos)
+    if msg:
+        new_msg += ': ' + str(msg)
+    pytest.fail(new_msg)
+
+
 @pytest.fixture(params=[srctools.Vec])
 def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""

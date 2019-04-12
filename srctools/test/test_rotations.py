@@ -61,12 +61,13 @@ def test_ang_matrix_roundtrip():
 
 def test_matrix_roundtrip_pitch():
     """Check converting to and from a Matrix does not change values."""
+    # We can't directly check the resulted value, some of these produce
+    # gimbal lock and can't be recovered.
+    # So instead check the rotation matrix is the same.
     for pitch in range(0, 360, 45):
-        if pitch in (90, -90):
-            # Don't test gimbal lock.
-            continue
-        mat = Rotation.from_pitch(pitch)
-        assert_ang(mat.to_angle(), pitch, 0, 0)
+        old_ang = Angle(pitch, 0, 0)
+        new_ang = Rotation.from_pitch(pitch).to_angle()
+        assert_rot(Rotation.from_angle(old_ang), Rotation.from_angle(new_ang))
 
 
 def test_matrix_roundtrip_yaw():
@@ -88,9 +89,10 @@ def test_matrix_roundtrip_roll():
 
 def test_single_axis():
     """In each axis, two rotations should be the same as adding."""
-    for axis in ('pitch', 'yaw', 'roll'):
-        for ang1 in VALID_ZERONUMS:
-            for ang2 in VALID_ZERONUMS:
+    # Pitch gives gimbal lock and breaks recovery of the values.
+    for axis in ('yaw', 'roll'):
+        for ang1 in range(0, 360, 45):
+            for ang2 in range(0, 360, 45):
                 if ang1 + ang2 == 0:
                     # 0 gives a value around the 360-0 split,
                     # so it can round to the wrong side sometimes.
