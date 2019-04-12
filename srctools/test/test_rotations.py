@@ -153,8 +153,13 @@ def test_gen_check():
                                 local = Angle(l_pitch, l_yaw, l_roll)
                                 rotated = world @ local
                                 head, p, y, r = f.readline().split()
-                                assert_ang(
-                                    rotated,
-                                    float(p), float(y), float(r),
+
+                                # To handle gimbal lock, we need to compare
+                                # rotations.
+                                assert_rot(
+                                    Rotation.from_angle(rotated),
+                                    Rotation.from_angle(
+                                        Angle(float(p), float(y), float(r))
+                                    ),
                                     (world, local),
                                 )
