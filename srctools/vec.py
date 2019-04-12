@@ -1010,65 +1010,39 @@ class Rotation:
         'g', 'h', 'i'
     ]
 
-    @overload
-    def __init__(self) -> None: ...
-    @overload
-    def __init__(
-        self, 
-        a: float, b: float, c: float,
-        d: float, e: float, f: float,
-        g: float, h: float, i: float,
-    ) -> None: ...
-
-    def __init__(
-        self,
-        a: float=1.0, b: float=0.0, c: float=0.0,
-        d: float=0.0, e: float=1.0, f: float=0.0,
-        g: float=0.0, h: float=0.0, i: float=1.0,
-    ):
+    def __init__(self) -> None:
         """Create a rotation set to the identity transform."""
-        self.a = a
-        self.b = b
-        self.c = c
-        
-        self.d = d
-        self.e = e
-        self.f = f
-        
-        self.g = g
-        self.h = h
-        self.i = i
-            
+        self.a, self.b, self.c = 1.0, 0.0, 0.0
+        self.d, self.e, self.f = 0.0, 1.0, 0.0
+        self.g, self.h, self.i = 0.0, 0.0, 1.0
+
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Rotation):
             return (
-                self.a == other.a and
-                self.b == other.b and
-                self.c == other.c and
-                self.d == other.d and
-                self.e == other.e and
-                self.f == other.f and
-                self.g == other.g and
-                self.h == other.h and
-                self.i == other.i
+                self.a == other.a and self.b == other.b and self.c == other.c and
+                self.d == other.d and self.e == other.e and self.f == other.f and
+                self.g == other.g and self.h == other.h and self.i == other.i
             )
         return False
         
     def __repr__(self) -> str:
         return (
-            'Matrix(\n'
-            '{0.a}, {0.b}, {0.c},\n'
-            '{0.d}, {0.e}, {0.f},\n'
-            '{0.g}, {0.h}, {0.i},\n'
+            'Rotation(\n'
+            '\t<{0.a}, {0.b}, {0.c}>\n'
+            '\t<{0.d}, {0.e}, {0.f}>\n'
+            '\t<{0.g}, {0.h}, {0.i}>\n'
             ')'
         ).format(self)
-                
+
     def copy(self) -> 'Rotation':
-        return Rotation(
-            self.a, self.b, self.c,
-            self.d, self.e, self.f,
-            self.g, self.h, self.i,
-        )
+        """Duplicate this matrix."""
+        rot = Rotation.__new__(Rotation)
+
+        rot.a, rot.b, rot.c = self.a, self.b, self.c
+        rot.d, rot.e, rot.f = self.d, self.e, self.f
+        rot.g, rot.h, rot.i = self.g, self.h, self.i
+
+        return rot
 
     @classmethod
     def from_pitch(cls, pitch: float) -> 'Rotation':
@@ -1077,14 +1051,16 @@ class Rotation:
         This is a rotation around the Y axis.
         """
         rad_pitch = math.radians(pitch)
-        cos_p = math.cos(rad_pitch)
-        sin_p = math.sin(rad_pitch)
+        cos = math.cos(rad_pitch)
+        sin = math.sin(rad_pitch)
 
-        return Rotation(  # Pitch = Y
-            cos_p, 0.0, sin_p,
-            0.0, 1.0, 0.0,
-            -sin_p, 0.0, cos_p,
-        )
+        rot = cls.__new__(cls)
+
+        rot.a, rot.b, rot.c = cos, 0.0, sin
+        rot.d, rot.e, rot.f = 0.0, 1.0, 0.0
+        rot.g, rot.h, rot.i = -sin, 0.0, cos
+
+        return rot
 
     @classmethod
     def from_yaw(cls, yaw: float) -> 'Rotation':
@@ -1092,14 +1068,16 @@ class Rotation:
 
         """
         rad_yaw = math.radians(-yaw)
-        sin_y = math.sin(rad_yaw)
-        cos_y = math.cos(rad_yaw)
+        sin = math.sin(rad_yaw)
+        cos = math.cos(rad_yaw)
 
-        return Rotation(
-            cos_y, -sin_y, 0.0,
-            sin_y, cos_y, 0.0,
-            0.0, 0.0, 1.0,
-        )
+        rot = cls.__new__(cls)
+
+        rot.a, rot.b, rot.c = cos, -sin, 0.0
+        rot.d, rot.e, rot.f = sin, cos, 0.0
+        rot.g, rot.h, rot.i = 0.0, 0.0, 1.0
+
+        return rot
         
     @classmethod
     def from_roll(cls, roll: float) -> 'Rotation':
@@ -1111,11 +1089,13 @@ class Rotation:
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        return Rotation(
-            1.0, 0.0, 0.0,
-            0.0, cos_r, -sin_r,
-            0.0, sin_r, cos_r,
-        )
+        rot = cls.__new__(cls)
+
+        rot.a, rot.b, rot.c = 1.0, 0.0, 0.0
+        rot.c, rot.d, rot.e = 0.0, cos_r, -sin_r
+        rot.f, rot.g, rot.h = 0.0, sin_r, cos_r
+
+        return rot
         
     @classmethod
     def from_angle(cls, angle: 'Angle') -> 'Rotation':
