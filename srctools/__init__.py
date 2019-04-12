@@ -8,7 +8,7 @@ from types import TracebackType
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
-    'Angle', 'Quat',
+    'Angle', 'Rotation',
 
     'NoKeyError', 'KeyValError', 'Property',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
