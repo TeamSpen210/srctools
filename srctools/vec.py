@@ -1092,8 +1092,8 @@ class Rotation:
         rot = cls.__new__(cls)
 
         rot.a, rot.b, rot.c = 1.0, 0.0, 0.0
-        rot.c, rot.d, rot.e = 0.0, cos_r, -sin_r
-        rot.f, rot.g, rot.h = 0.0, sin_r, cos_r
+        rot.d, rot.e, rot.f = 0.0, cos_r, -sin_r
+        rot.g, rot.h, rot.i = 0.0, sin_r, cos_r
 
         return rot
         
