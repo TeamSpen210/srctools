@@ -165,5 +165,7 @@ def test_gen_check():
                                     Rotation.from_angle(
                                         Angle(float(p), float(y), float(r))
                                     ),
-                                    (world, local),
+                                    '({} @ {} = {}) != {}, {}, {}'.format(
+                                        world, local, rotated, p, y, r,
+                                    ),
                                 )
