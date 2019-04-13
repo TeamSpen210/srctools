@@ -155,7 +155,7 @@ def test_gen_check():
                         for l_yaw in range(0, 360, 45):
                             for l_roll in range(0, 360, 45):
                                 local = Angle(l_pitch, l_yaw, l_roll)
-                                rotated = world @ local
+                                rotated = local @ world
                                 head, p, y, r = f.readline().split()
 
                                 # To handle gimbal lock, we need to compare
