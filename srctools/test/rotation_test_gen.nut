@@ -60,7 +60,9 @@ function test() {
 			}
 		}
 	}
+	printl("-------- END DATA -------");
+	EntFire("!player", "Ignite");
 }
 
-tester = test();
+tester <- test();
 EntFireByHandle(self, "RunScriptCode", "resume tester", 0.10, null, null);
