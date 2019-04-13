@@ -1067,7 +1067,7 @@ class Rotation:
         """Return the rotation representing a yaw rotation.
 
         """
-        rad_yaw = math.radians(-yaw)
+        rad_yaw = math.radians(yaw)
         sin = math.sin(rad_yaw)
         cos = math.cos(rad_yaw)
 
@@ -1123,14 +1123,14 @@ class Rotation:
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
             return Angle(
-                yaw=math.degrees(math.atan2(for_y, for_x)),
+                yaw=-math.degrees(math.atan2(for_y, for_x)),
                 pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=-math.degrees(math.atan2(left_z, up_z)),
             )
         else:
             # Vertical, gimbal lock (yaw=roll)...
             return Angle(
-                yaw=math.degrees(math.atan2(-left_x, left_y)),
+                yaw=-math.degrees(math.atan2(-left_x, left_y)),
                 pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=0,  # Can't produce.
             )

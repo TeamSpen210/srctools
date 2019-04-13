@@ -23,14 +23,14 @@ def test_vec_basic_yaw() -> None:
     assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(0), 200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(0), 0, 150, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(90), 0, -200, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(90), 150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(90), 0, 200, 0)
+    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(90), -150, 0, 0)
     
     assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(180), -200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(180), 0, -150, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(270), 0, 200, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(270), -150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(270), 0, -200, 0)
+    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(270), 150, 0, 0)
 
 
 def test_vec_basic_pitch():
@@ -67,7 +67,11 @@ def test_matrix_roundtrip_pitch():
     for pitch in range(0, 360, 45):
         old_ang = Angle(pitch, 0, 0)
         new_ang = Rotation.from_pitch(pitch).to_angle()
-        assert_rot(Rotation.from_angle(old_ang), Rotation.from_angle(new_ang))
+        assert_rot(
+            Rotation.from_angle(old_ang),
+            Rotation.from_angle(new_ang),
+            (old_ang, new_ang),
+        )
 
 
 def test_matrix_roundtrip_yaw():
