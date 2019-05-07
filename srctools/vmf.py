@@ -1098,8 +1098,7 @@ class Solid:
         return st
 
     def __iter__(self) -> Iterator['Side']:
-        for s in self.sides:
-            yield s
+        return iter(self.sides)
 
     def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
