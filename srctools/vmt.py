@@ -138,7 +138,7 @@ class Material:
                 pass
             elif token is Tok.NEWLINE:
                 # Name by itself: '%compilenodraw' etc...
-                param_value = None
+                param_value = ''
                 # We need to check there's a newline after that - for proxies, 
                 # or errors.
                 token, ignored = tok()
