@@ -247,19 +247,22 @@ cdef class Tokenizer:
             return (<str>chunk)[0]
 
         # Skip empty chunks (shouldn't be there.)
-        for chunk_obj in self.chunk_iter:
+        # Use manual next to avoid re-calling iter() here,
+        # or using list/tuple optimisations.
+        while True:
+            chunk_obj = next(self.chunk_iter, None)
+            if chunk_obj is None:
+                # Out of characters after empty chunks
+                return -1
+
             if isinstance(chunk_obj, bytes):
                 raise ValueError('Cannot parse binary data!')
             if not isinstance(chunk_obj, str):
                 raise ValueError("Data was not a string!")
 
-            chunk = <str>chunk_obj
-
-            if len(chunk) > 0:
-                self.cur_chunk = chunk
-                return (<str>chunk)[0]
-        # Out of characters after empty chunks
-        return -1
+            if len(<str ?>chunk_obj) > 0:
+                self.cur_chunk = <str>chunk_obj
+                return (<str>chunk_obj)[0]
 
     def __call__(self):
         """Return the next token, value pair."""
