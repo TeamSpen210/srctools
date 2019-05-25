@@ -1,4 +1,4 @@
-#cython: language_level=3, embedsignature=True, auto_pickle=False
+#cython: language_level=3, embedsignature=True, auto_pickle=False, binding=True
 """Cython version of the Tokenizer class."""
 cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
@@ -152,7 +152,7 @@ cdef class Tokenizer:
             self.error_type = TokenSyntaxError
         else:
             if not issubclass(error, TokenSyntaxError):
-                raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
+                raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
             self.error_type = error
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
@@ -180,7 +180,7 @@ cdef class Tokenizer:
         or a string which will be formatted with the positional args.
         """
         if isinstance(message, Token):
-            message = f'Unexpected token {message.name}!'
+            message = f'Unexpected token {message.name}' '!'
         else:
             message = message.format(*args)
         return self._error(message)
@@ -466,7 +466,7 @@ cdef class Tokenizer:
                         else:
                             self.buf_add_char(next_char)
                 else:
-                    raise self._error(f'Unexpected character "{next_char}"!')
+                    raise self._error(f'Unexpected character "{next_char}"' '!')
 
     def __iter__(self):
         # Call ourselves until EOF is returned
@@ -518,7 +518,7 @@ cdef class Tokenizer:
             value = '' if value is None else value
         elif not isinstance(value, str):
             raise ValueError(
-                f'Invalid value provided ({value!r}) for {tok.name}!'
+                f'Invalid value provided ({value!r}) for {tok.name}' '!'
             ) from None
 
         self.pushback_tok = tok
@@ -535,7 +535,7 @@ cdef class Tokenizer:
 
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""
-        return NewlinesIter.__new__(NewlinesIter, self)
+        return _NewlinesIter.__new__(_NewlinesIter, self)
 
     def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
@@ -553,16 +553,24 @@ cdef class Tokenizer:
             next_token, value = <tuple>self.next_token()
 
         if next_token is not token:
-            raise self._error(f'Expected {token}, but got {next_token}!')
+            raise self._error(f'Expected {token}, but got {next_token}' '!')
         return value
 
 
-cdef class NewlinesIter:
+# This is entirely internal, users shouldn't access this.
+@cython.final
+cdef class _NewlinesIter:
     """Iterate over the tokens, skipping newlines."""
     cdef Tokenizer tok
 
     def __cinit__(self, Tokenizer tok not None):
         self.tok = tok
+
+    def __repr__(self):
+        return f'<srctools.tokenizer.Tokenizer.skipping_newlines() at {id(self):X}>'
+
+    def __init__(self, tok):
+        raise TypeError("Cannot create '_NewlinesIter' instances")
 
     def __iter__(self):
         return self
@@ -578,14 +586,11 @@ cdef class NewlinesIter:
 
     def __reduce__(self):
         """This cannot be pickled - the Python version does not have this class."""
-        raise NotImplementedError('Cannot pickle NewlinesIter!')
-
-# Remove this class from the module, so it's not directly exposed.
-del globals()['NewlinesIter']
+        raise NotImplementedError('Cannot pickle _NewlinesIter!')
 
 
 @cython.nonecheck(False)
-def escape_text(str text not None):
+def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     Specifically, \, ", tab, and newline.

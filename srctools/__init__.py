@@ -330,6 +330,18 @@ class AtomicWriter:
         return False  # Don't cancel the exception.
 
 
+# Strip this private class from the module dict.
+# It's accessed directly in the C code.
+# Since we're in init, this will be run if anyone else
+# tries importing this module before us.
+try:
+    from srctools import _tokenizer
+except ImportError:
+    pass
+else:
+    del _tokenizer._NewlinesIter, _tokenizer
+
+
 # Import these, so people can reference 'srctools.Vec' instead of
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
