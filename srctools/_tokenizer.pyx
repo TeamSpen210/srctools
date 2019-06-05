@@ -1,4 +1,5 @@
-#cython: language_level=3, embedsignature=True, auto_pickle=False, binding=True
+# cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: binding=True
 """Cython version of the Tokenizer class."""
 cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
@@ -13,7 +14,7 @@ try:
     from os import fspath as _conv_path
 except ImportError:
     # Default to just using str().
-    _conv_path = None
+    _conv_path = str
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -56,6 +57,7 @@ cdef:
 DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
 
+# noinspection PyMissingTypeHints
 @cython.final  # No point in inheriting from this.
 cdef class Tokenizer:
     """Processes text data into groups of tokens.
@@ -88,6 +90,7 @@ cdef class Tokenizer:
     cdef object pushback_val
 
     # Private buffer, to hold string parts we're constructing.
+    # Tokenizers are expected to be temporary, so we just never shrink.
     cdef Py_ssize_t buf_size  # 2 << x
     cdef unsigned int buf_pos
     cdef Py_UCS4* val_buffer
@@ -133,13 +136,10 @@ cdef class Tokenizer:
         self.buf_reset()
 
         if filename:
-            if _conv_path is None:
-                self.filename = str(filename)
-            else:
-                # Use os method to convert to string.
-                # We know this isn't a method.
-                with cython.optimize.unpack_method_calls(False):
-                    self.filename = _conv_path(filename)
+            # Use os method to convert to string.
+            # We know this isn't a method.
+            with cython.optimize.unpack_method_calls(False):
+                self.filename = _conv_path(filename)
         else:
             # If a file-like object, automatically set to the filename.
             try:
@@ -197,6 +197,7 @@ cdef class Tokenizer:
 
     cdef inline void buf_reset(self):
         """Reset the temporary buffer."""
+        # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
 
     cdef inline void buf_add_char(self, Py_UCS4 uchar):
@@ -212,9 +213,9 @@ cdef class Tokenizer:
 
     cdef object buf_get_text(self):
         """Decode the buffer, and return the text."""
-        cdef int byteorder = 0  # Native order.
-        # Decode buffer with default ("errors") error handling, native order.
+        # Convert the buffer directly to a string. 4 = UCS4 mode.
         out = PyUnicode_FromKindAndData(4, self.val_buffer, self.buf_pos)
+        # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
         return out
 
