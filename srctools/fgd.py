@@ -133,6 +133,7 @@ class HelperTypes(Enum):
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
+    ORIGIN = 'origin'
     BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
