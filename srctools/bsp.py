@@ -13,7 +13,7 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, Tuple
+from typing import List, Dict, Iterator, Union, Optional, Tuple, BinaryIO
 
 
 try:
@@ -295,7 +295,7 @@ class BSP:
 
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
             file.write(BSP_MAGIC)
             if isinstance(self.version, VERSIONS):
                 file.write(struct.pack('<i', self.version.value))
@@ -659,7 +659,7 @@ class BSP:
                 disable_on_xbox,
             )
 
-    def write_static_props(self, props: List['StaticProp']):
+    def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump."""
 
         # First generate an optimised visleafs block.
@@ -786,14 +786,14 @@ class Lump:
         typ: BSP_LUMPS,
         version: int,
         ident: bytes,
-    ):
+    ) -> None:
         """This should not be constructed outside a BSP."""
         self.type = typ
         self.version = version
         self.ident = [int(x) for x in ident]
         self.data = b''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
             self.type.name,
             self.version,
@@ -822,14 +822,14 @@ class GameLump:
         flags: int,
         version: int,
         data: bytes,
-    ):
+    ) -> None:
         """This should not be constructed outside a BSP."""
         self.id = lump_id
         self.flags = flags
         self.version = version
         self.data = data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
             repr(self.id)[1:],
             self.flags,
@@ -873,7 +873,7 @@ class StaticProp:
         tint: Vec=Vec(255, 255, 255),  # Rendercolor
         renderfx: int=255,
         disable_on_xbox: bool=False,
-    ):
+    ) -> None:
         self.model = model
         self.origin = origin
         self.angles = angles
@@ -901,7 +901,7 @@ class StaticProp:
         self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
             self.model,
             self.skin,
