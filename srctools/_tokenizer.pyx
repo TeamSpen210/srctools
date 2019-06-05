@@ -23,6 +23,8 @@ except ImportError:
 cdef object Token, TokenSyntaxError
 from srctools.tokenizer import Token,  TokenSyntaxError
 
+__all__ = ['Tokenizer', 'escape_text']
+
 # Cdef-ed globals become static module vars, which aren't in the module
 # dict. We can ensure these are of the type we specify - and are quick to
 # lookup.
@@ -563,6 +565,7 @@ cdef class Tokenizer:
 
 # This is entirely internal, users shouldn't access this.
 @cython.final
+@cython.embedsignature(False)
 cdef class _NewlinesIter:
     """Iterate over the tokens, skipping newlines."""
     cdef Tokenizer tok
@@ -635,3 +638,12 @@ def escape_text(str text not None: str) -> str:
         return PyUnicode_FromStringAndSize(out_buff, final_len)
     finally:
         PyMem_Free(out_buff)
+
+# Override the tokenizer's name to match the public one.
+# This fixes all the methods too, though not in exceptions.
+from cpython.object cimport PyTypeObject
+cdef char *tok_class_name = b"srctools.tokenizer.Tokenizer"
+cdef char *nliter_class_name = b"srctools.tokenizer.Tokenizer.skipping_newlines"
+(<PyTypeObject *>Tokenizer).tp_name = tok_class_name
+(<PyTypeObject *>_NewlinesIter).tp_name = nliter_class_name
+escape_text.__module__ = 'srctools.tokenizer'
