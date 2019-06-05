@@ -1,6 +1,5 @@
 import itertools as _itertools
 import os as _os
-import string as _string
 from collections import abc as _abc
 from typing import Union, Type, TypeVar, Iterator, Sequence, List, Container
 from types import TracebackType
@@ -25,8 +24,14 @@ __all__ = [
     'GameID',
 ]
 
-# _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
-_FILE_CHARS = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ .|')
+# import string
+# _FILE_CHARS = frozenset(string.ascii_letters + string.digits + '-_ .|')
+_FILE_CHARS = frozenset(
+    'abcdefghijklmnopqrstuvwxyz'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '0123456789'
+    '-_ .|'
+)
 
 
 def clean_line(line: str) -> str:
