@@ -1,4 +1,5 @@
 """Parses SMD model/animation data."""
+import os
 import re
 from operator import itemgetter
 
@@ -323,6 +324,11 @@ class Mesh:
                     exc.reason,
                     exc.start
                 ) from None
+
+            # We need to process the material name, it can have various things
+            # in it - ignored folders, file extensions.
+            mat_name = os.path.basename(mat_name.rstrip('\\/ \t\b\n\r'))
+
             # Grab the three lines.
             for i in range(3):
                 try:
