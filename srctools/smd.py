@@ -169,7 +169,7 @@ class Mesh:
         """Create an empty mesh, with a single root bone."""
         root_bone = Bone(root_name, None)
         return Mesh(
-            {'static_prop': root_bone},
+            {root_name: root_bone},
             {0: [
                 BoneFrame(root_bone, Vec(), Vec())
             ]},
