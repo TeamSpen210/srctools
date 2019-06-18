@@ -192,8 +192,18 @@ class StaticPropFlags(Flag):
     NO_SELF_SHADOWING = 0x80
 
     # These are set in the secondary flags section.
+    NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
     BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
 
+    @property
+    def value_prim(self) -> int:
+        """Return the data for the original flag byte."""
+        return self.value & 0xFF
+
+    @property
+    def value_sec(self) -> int:
+        """Return the data for the secondary flag byte."""
+        return self.value >> 8
 
 class BSP:
     """A BSP file."""
@@ -662,36 +672,19 @@ class BSP:
     def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump."""
 
-        # First generate an optimised visleafs block.
-        # Each prop stores a pointer into the list of leafs and a leaf count.
-        # So we want to remove redundant entries in that.
-        # This can be done in a brute-force manner - for each new section,
-        # add to a dict it and all prefixes/suffixes. Then they won't require
-        # a new part.
-        visleafs = []
+        # First generate the visleaf and model-names block.
+        # Unfortunately it seems reusing visleaf parts isn't possible.
+        leaf_array = []  # type: List[int]
+        leaf_offsets = []  # type: List[int]
 
         models = set()
 
         for prop in props:
-            visleafs.append(prop.visleafs)
+            leaf_offsets.append(len(leaf_array))
+            leaf_array.extend(prop.visleafs)
             models.add(prop.model)
 
-        visleafs.sort(key=len, reverse=True)
-        leaf_array = []  # type: List[int]
-        leaf_offsets = {}  # type: Dict[Tuple[int, ...], int]
-
-        for leaf in visleafs:
-            tup = tuple(sorted(leaf))
-            if tup not in leaf_offsets:
-                # Add to the table.
-                pos = len(leaf_array)
-                leaf_array.extend(leaf)
-                for off in range(1, len(leaf)):
-                    leaf_offsets[tup[off:]] = pos + off
-                    leaf_offsets[tup[:-off]] = pos
-
-                leaf_offsets[tup] = pos
-
+        # Lock down the order of the names.
         model_list = list(models)
         model_ind = {
             mdl: i
@@ -710,7 +703,7 @@ class BSP:
         prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
-        for prop in props:
+        for leaf_off, prop in zip(leaf_offsets, props):
             prop_lump.write(struct.pack(
                 '<6fH',
                 prop.origin.x,
@@ -724,10 +717,10 @@ class BSP:
 
             prop_lump.write(struct.pack(
                 '<HHBBifffff',
-                leaf_offsets[tuple(sorted(prop.visleafs))],
+                leaf_off,
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value & 0xFF,
+                prop.flags.value_prim,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -764,14 +757,14 @@ class BSP:
                 ))
 
             if game_lump.version >= 10:
-                prop_lump.write(struct.pack('<I', prop.flags.value >> 8))
+                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
             if game_lump.version >= 11:
-                # Unknown padding/data
-                prop_lump.write(b'\0\0\0\0')
+                # Unknown padding/data, though it's always zero.
 
-                prop_lump.write(struct.pack('<f', prop.scaling))
+                prop_lump.write(struct.pack('<xxxxf', prop.scaling))
             elif game_lump.version >= 9:
+                # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
         game_lump.data = prop_lump.getvalue()
