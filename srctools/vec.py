@@ -396,9 +396,9 @@ class Vec:
         )
 
         if round_vals:
-            self.x = round(self.x, 3)
-            self.y = round(self.y, 3)
-            self.z = round(self.z, 3)
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
 
         return self
 
