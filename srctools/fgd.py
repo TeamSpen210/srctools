@@ -801,6 +801,12 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                     continue
                 seen.add(name)
                 yield name
+
+    def __contains__(self, item: str) -> bool:
+        for ent_map in self._maps():
+            if item in ent_map:
+                return True
+        return False
             
     def __len__(self) -> int:
         seen = set()  # type: Set[str]
