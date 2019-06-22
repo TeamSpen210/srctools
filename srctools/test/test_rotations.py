@@ -110,62 +110,39 @@ def test_single_axis():
 
 
 def test_gen_check():
-    """Do an exhaustive check on all rotation math using data from the engine.
-
-    For each 45 degree angle, an offset in 6 directions is computed as well
-    as each 45 degree angle.
-    """
-    OFF = [
-        Vec(x=64),
-        Vec(x=-64),
-        Vec(y=64),
-        Vec(y=-64),
-        Vec(z=64),
-        Vec(z=-64),
-    ]
+    """Do an exhaustive check on all rotation math using data from the engine."""
+    X = Vec(x=1)
+    Y = Vec(y=1)
+    Z = Vec(z=1)
     with open('rotation.txt') as f:
-        for w_pitch in range(0, 360, 45):
-            for w_yaw in range(0, 360, 45):
-                for w_roll in range(0, 360, 45):
-                    world = Angle(w_pitch, w_yaw, w_roll)
+        for line_num, line in enumerate(f, start=1):
+            if not line.startswith('|'):
+                # Skip other junk in the log.
+                continue
 
-                    # First the world line, which should match us.
-                    # world: pitch yaw roll
-                    world_line = f.readline().split()
-                    assert len(world_line) == 4
+            (
+                pit, yaw, roll,
+                for_x, for_y, for_z,
+                left_x, left_y, left_z,
+                up_x, up_y, up_z
+            ) = map(float, line[1:].split())
 
-                    assert_ang(
-                        world,
-                        float(world_line[1]),
-                        float(world_line[2]),
-                        float(world_line[3]),
-                    )
-                    # 6 offsets at 64 from origin in order.
-                    for off in OFF:
-                        head, name, x, y, z = f.readline().split()
-                        assert_vec(
-                            round(off @ world),
-                            round(float(x)),
-                            round(float(y)),
-                            round(float(z)),
-                            msg='({}) @ {}'.format(off, world),
-                        )
-                    # Then all 512 local positions.
-                    for l_pitch in range(0, 360, 45):
-                        for l_yaw in range(0, 360, 45):
-                            for l_roll in range(0, 360, 45):
-                                local = Angle(l_pitch, l_yaw, l_roll)
-                                rotated = local @ world
-                                head, p, y, r = f.readline().split()
+            mat = Rotation.from_angle(Angle(pit, yaw, roll))
 
-                                # To handle gimbal lock, we need to compare
-                                # rotations.
-                                assert_rot(
-                                    Rotation.from_angle(rotated),
-                                    Rotation.from_angle(
-                                        Angle(float(p), float(y), float(r))
-                                    ),
-                                    '({} @ {} = {}) != {}, {}, {}'.format(
-                                        world, local, rotated, p, y, r,
-                                    ),
-                                )
+            # Then check rotating vectors works correctly.
+            assert_vec(abs(X @ mat), for_x, for_y, for_z)
+            assert_vec(abs(Y @ mat), left_x, left_y, left_z)
+            assert_vec(abs(Z @ mat), up_x, up_y, up_z)
+
+            assert math.isclose(for_x, mat.a)
+            assert math.isclose(-for_y, mat.b)
+            assert math.isclose(for_z, mat.c)
+
+            assert math.isclose(left_x, mat.d)
+            assert math.isclose(-left_y, mat.e)
+            assert math.isclose(left_z, mat.f)
+
+            assert math.isclose(up_x, mat.g)
+            assert math.isclose(-up_y, mat.h)
+            assert math.isclose(up_z, mat.i)
+
