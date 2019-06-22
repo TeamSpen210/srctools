@@ -133,6 +133,7 @@ class HelperTypes(Enum):
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
+    ORIGIN = 'origin'
     BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
@@ -800,6 +801,12 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                     continue
                 seen.add(name)
                 yield name
+
+    def __contains__(self, item: str) -> bool:
+        for ent_map in self._maps():
+            if item in ent_map:
+                return True
+        return False
             
     def __len__(self) -> int:
         seen = set()  # type: Set[str]

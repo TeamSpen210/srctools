@@ -1,4 +1,8 @@
-"""Reads VTF image data into a PIL object."""
+"""Reads VTF image data into a PIL object.
+
+After this is imported, the imghdr module can recoginise
+VTF images (returning 'source_vtf').
+"""
 from array import array
 import math
 import struct
@@ -176,7 +180,6 @@ def _load_frame(
         ) from None
     loader(pixels, data, width, height)
 
-
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
     def __init__(
@@ -237,8 +240,13 @@ class VTF:
             raise ValueError('Bad file signature!')
         version_major, version_minor = struct.unpack('II', file.read(8))
         
-        assert version_major == 7, version_major
-        assert 0 <= version_minor <= 5, version_minor
+        if version_major != 7 or not (0 <= version_minor <= 5):
+            raise ValueError(
+                "VTF version {}.{} is not "
+                "between 7.0-7.5!".format(
+                    version_major, version_minor,
+                )
+            )
         
         vtf = cls.__new__(cls)  # type: VTF
         
@@ -457,3 +465,19 @@ class SheetSequence:
             sequences[seq_num] = SheetSequence(frames, clamp, total_time)
 
         return list(filter(None, sequences))
+        
+# Add support for the imghdr module. 
+def test_vtf(h, f):
+    """Source Engine Valve Texture Format."""
+    if h[:4] == b'VTF\0':
+        try:
+            version_major, version_minor = struct.unpack('II', h[4:12])
+        except struct.error:
+            return
+        if version_major == 7 and (0 <= version_minor <= 5):
+            return 'source_vtf'
+            
+import imghdr
+imghdr.test_vtf = test_vtf
+imghdr.tests.append(test_vtf)
+del imghdr, test_vtf

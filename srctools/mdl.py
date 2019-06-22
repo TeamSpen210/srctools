@@ -1,7 +1,7 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Union, Iterator,
-    List, Dict, Set, Tuple, NamedTuple,
+    Union, Iterator, Iterable,
+    List, Dict, Tuple, NamedTuple,
     BinaryIO,
 )
 from enum import IntFlag, Enum
@@ -277,12 +277,12 @@ ANIM_EVENT_BY_NAME = {
 }  # type: Dict[str, AnimEvents]
 
 
-def str_read(format, file: BinaryIO):
+def str_read(fmt: str, file: BinaryIO) -> tuple:
     """Read a structure from the file."""
-    return unpack(format, file.read(calcsize(format)))
+    return unpack(fmt, file.read(calcsize(fmt)))
 
 
-def read_nullstr(file: BinaryIO, pos: int=None):
+def read_nullstr(file: BinaryIO, pos: int=None) -> str:
     """Read a null-terminated string from the file."""
     if pos is not None:
         if pos == 0:
@@ -301,7 +301,7 @@ def read_nullstr(file: BinaryIO, pos: int=None):
 
 def read_nullstr_array(file: BinaryIO, count: int) -> List[str]:
     """Read consecutive null-terminated strings from the file."""
-    arr = [None] * count  # type: List[str]
+    arr = [''] * count
     if not count:
         return arr
 
@@ -310,10 +310,10 @@ def read_nullstr_array(file: BinaryIO, count: int) -> List[str]:
     return arr
 
 
-def read_offset_array(file: BinaryIO, count: int):
+def read_offset_array(file: BinaryIO, count: int) -> List[str]:
     """Read an array of offsets to null-terminated strings from the file."""
     cdmat_offsets = str_read(str(count) + 'i', file)
-    arr = [None] * count  # type: List[str]
+    arr = [''] * count
 
     for ind, off in enumerate(cdmat_offsets):
         file.seek(off)
@@ -341,7 +341,7 @@ class Model:
         with self._sys, self._file.open_bin() as f:
             self._load(f)
 
-    def _load(self, f: BinaryIO):
+    def _load(self, f: BinaryIO) -> None:
         """Read data from the MDL file."""
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
@@ -675,7 +675,7 @@ class Model:
 
         return sequences
 
-    def iter_textures(self, skins: Set[int]=None) -> Iterator[str]:
+    def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the

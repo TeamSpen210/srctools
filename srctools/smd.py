@@ -1,4 +1,5 @@
 """Parses SMD model/animation data."""
+import os
 import re
 from operator import itemgetter
 
@@ -168,7 +169,7 @@ class Mesh:
         """Create an empty mesh, with a single root bone."""
         root_bone = Bone(root_name, None)
         return Mesh(
-            {'static_prop': root_bone},
+            {root_name: root_bone},
             {0: [
                 BoneFrame(root_bone, Vec(), Vec())
             ]},
@@ -323,6 +324,11 @@ class Mesh:
                     exc.reason,
                     exc.start
                 ) from None
+
+            # We need to process the material name, it can have various things
+            # in it - ignored folders, file extensions.
+            mat_name = os.path.basename(mat_name.rstrip('\\/ \t\b\n\r'))
+
             # Grab the three lines.
             for i in range(3):
                 try:

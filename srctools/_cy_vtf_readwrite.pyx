@@ -1,4 +1,4 @@
-# cython: language_level=3, boundscheck=False
+# cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
 from cpython cimport array
 from cpython.mem cimport PyMem_Malloc, PyMem_Free
@@ -7,7 +7,7 @@ from libc.stdio cimport snprintf
 from libc.stdint cimport uint_least64_t
 
 
-cdef object img_template = array.array('B', [])
+cdef object img_template = array.array('B')
 ctypedef unsigned char byte
 ctypedef unsigned int uint
 
@@ -16,13 +16,16 @@ cdef struct RGB:
     byte g
     byte b
 
+# We specify all the arrays are C-contiguous, since we're the only one using
+# these functions directly.
 
 def blank(uint width, uint height):
     """Construct a blank image of the desired size."""
     return array.clone(img_template, 4 * width * height, zero=True)
 
 
-def ppm_convert(array.array[unsigned char] pixels, uint width, uint height):
+
+def ppm_convert(const byte[::1] pixels, uint width, uint height):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef uint img_off, off
     cdef Py_ssize_t size = 3 * width * height
@@ -68,7 +71,7 @@ def loader_rgba(mode: str):
     try:
         a_off = mode.index('a')
     except ValueError:
-        def loader(byte[:] pixels, const byte[:] data, uint width, uint height):
+        def loader(byte[::1] pixels, const byte[::1] data, uint width, uint height):
             cdef uint offset
             for offset in range(width * height):
                 pixels[4 * offset] = data[3 * offset + r_off]
@@ -76,7 +79,7 @@ def loader_rgba(mode: str):
                 pixels[4 * offset + 2] = data[3 * offset + b_off]
                 pixels[4 * offset + 3] = 255
     else:
-        def loader(byte[:] pixels, const byte[:] data, uint width, uint height):
+        def loader(byte[::1] pixels, const byte[::1] data, uint width, uint height):
             cdef uint offset
             for offset in range(width * height):
                 pixels[4 * offset] = data[4 * offset + r_off]
@@ -102,7 +105,7 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
-def load_bgrx8888(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Strange - skip byte."""
     cdef uint offset
     for offset in range(width * height):
@@ -112,7 +115,7 @@ def load_bgrx8888(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset + 3] = 255
 
 
-def load_rgb565(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """RGB format, packed into 2 bytes by dropping LSBs."""
     cdef uint offset
     cdef RGB col
@@ -125,7 +128,7 @@ def load_rgb565(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset + 3] = 255
 
 
-def load_bgr565(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, packed into 2 bytes by dropping LSBs."""
     cdef uint offset
     cdef RGB col
@@ -138,7 +141,7 @@ def load_bgr565(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset + 3] = 255
 
 
-def load_bgra4444(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     cdef uint offset
     cdef byte a, b
@@ -151,7 +154,7 @@ def load_bgra4444(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def load_bgra5551(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     cdef uint offset
     cdef byte a, b
@@ -164,7 +167,7 @@ def load_bgra5551(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
 
 
-def load_bgrx5551(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, 5 bits per color, alpha ignored."""
     cdef uint offset
     cdef byte a, b
@@ -177,7 +180,7 @@ def load_bgrx5551(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4 * offset+3] = 255
 
 
-def load_i8(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B"""
     cdef uint offset
     for offset in range(width * height):
@@ -185,7 +188,7 @@ def load_i8(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4*offset+3] = 255
 
 
-def load_ia88(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B + A"""
     cdef uint offset
     for offset in range(width * height):
@@ -195,7 +198,7 @@ def load_ia88(byte[:] pixels, const byte[:] data, uint width, uint height):
 
 # ImageFormats.P8 is not implemented by Valve either.
 
-def load_a8(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Single alpha bytes."""
     cdef uint offset
     for offset in range(width * height):
@@ -203,7 +206,7 @@ def load_a8(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4*offset+3] = data[offset]
 
 
-def load_uv88(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """UV-only, which is mapped to RG."""
     cdef uint offset
     for offset in range(width * height):
@@ -213,7 +216,7 @@ def load_uv88(byte[:] pixels, const byte[:] data, uint width, uint height):
         pixels[4*offset+3] = 255
 
 
-def load_rgb888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """RGB format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -234,7 +237,7 @@ def load_rgb888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint 
             pixels[4 * offset + 3] = 255
 
 
-def load_bgr888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -255,12 +258,12 @@ def load_bgr888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint 
             pixels[4 * offset + 3] = 255
 
 
-def load_dxt1(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT1 data."""
     load_dxt1_impl(pixels, data, width, height, 255)
 
 
-def load_dxt1_onebitalpha(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
     load_dxt1_impl(pixels, data, width, height, 0)
 
@@ -287,8 +290,8 @@ DEF C3B = 14
 DEF C3A = 15
 
 cdef inline load_dxt1_impl(
-    byte[:] pixels,
-    const byte[:] data,
+    byte[::1] pixels,
+    const byte[::1] data,
     uint width,
     uint height,
     byte black_alpha,
@@ -359,8 +362,8 @@ cdef inline load_dxt1_impl(
 
 
 cdef inline void dxt_color_table(
-    byte[:] pixels,
-    const byte[:] data,
+    byte[::1] pixels,
+    const byte[::1] data,
     byte *table,
     uint block_off,
     uint block_wid,
@@ -376,35 +379,35 @@ cdef inline void dxt_color_table(
         row = 16 * block_wid * (4 * block_y + y) + 16 * block_x
 
         off = 4 * ((inp & 0b11000000) >> 6)
-        pixels[row + C0R] = table[off + 0]
-        pixels[row + C0G] = table[off + 1]
-        pixels[row + C0B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C0A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00110000) >> 4)
-        pixels[row + C1R] = table[off + 0]
-        pixels[row + C1G] = table[off + 1]
-        pixels[row + C1B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C1A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00001100) >> 2)
-        pixels[row + C2R] = table[off + 0]
-        pixels[row + C2G] = table[off + 1]
-        pixels[row + C2B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C2A] = table[off + 3]
-
-        off = 4 * (inp & 0b00000011)
         pixels[row + C3R] = table[off + 0]
         pixels[row + C3G] = table[off + 1]
         pixels[row + C3B] = table[off + 2]
         if do_alpha:
             pixels[row + C3A] = table[off + 3]
 
+        off = 4 * ((inp & 0b00110000) >> 4)
+        pixels[row + C2R] = table[off + 0]
+        pixels[row + C2G] = table[off + 1]
+        pixels[row + C2B] = table[off + 2]
+        if do_alpha:
+            pixels[row + C2A] = table[off + 3]
 
-def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
+        off = 4 * ((inp & 0b00001100) >> 2)
+        pixels[row + C1R] = table[off + 0]
+        pixels[row + C1G] = table[off + 1]
+        pixels[row + C1B] = table[off + 2]
+        if do_alpha:
+            pixels[row + C1A] = table[off + 3]
+
+        off = 4 * (inp & 0b00000011)
+        pixels[row + C0R] = table[off + 0]
+        pixels[row + C0G] = table[off + 1]
+        pixels[row + C0B] = table[off + 2]
+        if do_alpha:
+            pixels[row + C0A] = table[off + 3]
+
+
+def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT3 data."""
     cdef uint block_wid, block_off, block_x, block_y
     cdef uint x, y, off, pos
@@ -464,7 +467,7 @@ def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
                 pixels[pos + 7] = inp & 0b11110000 | (inp & 0b11110000) >> 4
 
 
-def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
+def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT5 data."""
 
     cdef uint block_wid, block_off, block_x, block_y

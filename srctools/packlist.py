@@ -634,7 +634,7 @@ class PackList:
                 # Need to ensure / separators.
                 fname = file.filename.replace('\\', '/')
 
-                if file.virtual:
+                if file.data is not None:
                     # Always pack.
                     zip_file.writestr(fname, file.data)
                     continue

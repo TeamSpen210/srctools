@@ -57,6 +57,7 @@ def entity_finder(ctx: Context):
         except KeyError:
             found_ent = None
             cur_dist = float('inf')
+            targ_ent = None
             for targ_ent in ctx.vmf.by_class[targ_class]:
                 dist_to = (Vec.from_str(targ_ent['origin']) - targ_pos).mag()
                 if targ_radius == 0 or dist_to < targ_radius:
@@ -66,8 +67,10 @@ def entity_finder(ctx: Context):
             del targ_ent
             if found_ent is None:
                 LOGGER.warning(
-                    'Cannot find valid entity '
+                    'Cannot find valid {} entity within {} units '
                     'for entity finder at <{}>!',
+                    targ_class,
+                    targ_radius,
                     finder['origin'],
                 )
                 continue
@@ -78,8 +81,12 @@ def entity_finder(ctx: Context):
 
         # If the ent has no targetname, give it one.
         if not found_ent['targetname']:
-            found_ent['targetname'] = found_ent['classname']
+            found_ent['targetname'] = '_found_entity_1'
             found_ent.make_unique()
+
+        # If specified, teleport to the item's location.
+        if conv_bool(finder['teleporttarget']):
+            found_ent['origin'] = targ_pos
 
         for ind in itertools.count(1):
             kv_mode_str = finder['kv{}_mode'.format(ind)].casefold()
