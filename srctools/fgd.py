@@ -1,6 +1,7 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
 from enum import Enum
+from pathlib import PurePosixPath
 from struct import Struct
 import io
 import math
@@ -1354,12 +1355,16 @@ class FGD:
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
         self._parse_list = []
+
         # Entity definitions
         self.entities = {}  # type: Dict[str, EntityDef]
-        # maximum bounding box of map
+
+        # Maximum bounding box of map
         self.map_size_min = 0
         self.map_size_max = 0
 
+        # Directories we have excluded.
+        self.mat_exclusions = set()  # type: Set[PurePosixPath]
     @classmethod
     def parse(
         cls,
@@ -1593,6 +1598,22 @@ class FGD:
                             'Invalid @MapSize: ({})',
                             mapsize_args,
                         )
+                elif token_value == '@materialexclusion':
+                    # Material exclusion directories
+                    tokeniser.expect(Token.BRACK_OPEN)
+                    for tok, tok_value in tokeniser:
+                        if tok is Token.BRACK_CLOSE:
+                            break
+                        elif tok is Token.STRING:
+                            self.mat_exclusions.add(PurePosixPath(tok_value))
+                        elif tok is not Token.NEWLINE:
+                            raise tokeniser.error(tok)
+                    else:
+                        raise tokeniser.error(
+                            'Missing closing bracket '
+                            'for @MaterialExclusion!'
+                        )
+
                 # Entity definition...
                 elif token_value[:1] == '@':
                     try:
