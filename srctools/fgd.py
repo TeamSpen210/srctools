@@ -165,6 +165,9 @@ class HelperTypes(Enum):
     # Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
     EXT_ORDERBY = 'orderby'  # Reorder keyvalues. Args = names in order.
+    # Convenience only used in parsing, adds @AutoVisgroup parents for the
+    # current entity. 'Auto' is implied at the start.
+    EXT_AUTO_VISGROUP = 'autovis'
 
     
 # Ordered list of value types, for encoding in the binary
@@ -861,7 +864,8 @@ class EntityDef:
         """Parse an entity definition."""
         entity = cls(ent_type)
 
-        # First parse the bases part - lots of name(args) sections until an '='
+        # First parse the bases part - lots of name(args) sections until an '='.
+        ext_autovisgroups = []  # type: List[List[str]]
         help_type = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
@@ -892,6 +896,9 @@ class EntityDef:
                     for arg in
                     token_value.split(',')
                 ]
+                # helper() produces [''], when we want []
+                if len(args) == 1 and args[0] == '':
+                    args.clear()
 
                 if help_type is HelperTypes.INHERIT:
                     for base in args:
@@ -899,6 +906,14 @@ class EntityDef:
                             base = fgd[base]
                         if base not in entity.bases:
                             entity.bases.append(base)
+                    help_type = None
+                    continue
+                elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
+                    if len(args) > 0 and args[0].casefold() != 'auto':
+                        args.insert(0, 'Auto')
+                    if len(args) < 2:
+                        raise tok.error('autovis() requires 2 or more arguments!')
+                    ext_autovisgroups.append(args)
                     help_type = None
                     continue
 
@@ -916,6 +931,8 @@ class EntityDef:
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
         if help_type:
+            if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
+                raise tok.error('{}() requires at least one argument!', help_type.value)
             entity.helpers.append((help_type, []))
 
         entity.classname = tok.expect(Token.STRING).strip()
@@ -948,6 +965,17 @@ class EntityDef:
                 raise tok.error(doc_token)
 
         fgd.entities[entity.classname.casefold()] = entity
+
+        # Now apply EXT_AUTO_VISGROUP, since we have the classname.
+        for auto_visgroup in ext_autovisgroups:
+            auto_visgroup.append(entity.classname)
+
+            for vis_a, vis_b, vis_c in zip(
+                auto_visgroup,
+                auto_visgroup[1:],
+                auto_visgroup[2:],
+            ):
+                fgd.auto_visgroups.setdefault((vis_a, vis_b), set()).add(vis_c)
 
         # Now parse keyvalues, and input/outputs
         for token, token_value in tok:
@@ -1664,15 +1692,18 @@ class FGD:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
     def __getitem__(self, classname: str) -> EntityDef:
+        """Lookup entities by classname."""
         try:
             return self.entities[classname.casefold()]
         except KeyError:
             raise KeyError('No class "{}"!'.format(classname)) from None
 
     def __iter__(self) -> Iterator[EntityDef]:
+        """Iterating over FGDs iterates over the entities."""
         return iter(self.entities.values())
 
     def __len__(self) -> int:
+        """The length of the FGD is the number of entities."""
         return len(self.entities)
 
     def _fix_missing_bases(self, ent: EntityDef) -> None:
