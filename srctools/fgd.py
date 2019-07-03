@@ -1365,6 +1365,14 @@ class FGD:
 
         # Directories we have excluded.
         self.mat_exclusions = set()  # type: Set[PurePosixPath]
+
+        # Automatic visgroups.
+        # This maps a parent, folder to the entities that have that group.
+        # For example:
+        # ('Auto', 'World Details'): 'Props'
+        # ('World Details', 'Props') : 'prop_static'
+        self.auto_visgroups = {}  # type: Dict[Tuple[str, str], Set[str]]
+
     @classmethod
     def parse(
         cls,
@@ -1613,6 +1621,34 @@ class FGD:
                             'Missing closing bracket '
                             'for @MaterialExclusion!'
                         )
+
+                elif token_value == '@autovisgroup':
+                    tokeniser.expect(Token.EQUALS)
+                    vis_parent = tokeniser.expect(Token.STRING)
+                    tokeniser.expect(Token.BRACK_OPEN)
+
+                    for tok, tok_value in tokeniser:
+                        if tok is Token.BRACK_CLOSE:
+                            break
+                        elif tok is Token.STRING:
+                            # Folder
+                            vis_key = vis_parent, tok_value
+                            try:
+                                vis_list = self.auto_visgroups[vis_key]
+                            except KeyError:
+                                vis_list = self.auto_visgroups[vis_key] = set()
+
+                            tokeniser.expect(Token.BRACK_OPEN)
+                            for ent_tok, ent_tok_value in tokeniser:
+                                if ent_tok is Token.BRACK_CLOSE:
+                                    break
+                                elif ent_tok is Token.STRING:
+                                    # Entity
+                                    vis_list.add(ent_tok_value)
+                                elif ent_tok is not Token.NEWLINE:
+                                    raise tokeniser.error(ent_tok)
+                        elif tok is not Token.NEWLINE:
+                            raise tokeniser.error(tok)
 
                 # Entity definition...
                 elif token_value[:1] == '@':
