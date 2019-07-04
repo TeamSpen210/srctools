@@ -1060,7 +1060,7 @@ class EntityDef:
                 is_readonly = False
                 had_colon = False
                 has_equal = None
-                attrs = None
+                attrs = None  # type: Optional[List[str]]
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
@@ -1092,9 +1092,9 @@ class EntityDef:
                     attrs, has_equal = read_colon_list(tok, had_colon)
                 attr_len = len(attrs)
 
-                desc = default = ''
+                kv_desc = default = ''
                 if attr_len == 3:
-                    disp_name, default, desc = attrs
+                    disp_name, default, kv_desc = attrs
                 elif attr_len == 2:
                     disp_name, default = attrs
                 elif attr_len == 1:
