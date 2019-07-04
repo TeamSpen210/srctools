@@ -1066,6 +1066,14 @@ class EntityDef:
                     # 'report' or 'readonly'
                     if key_flag.casefold() == 'readonly':
                         is_readonly = True
+                    elif key_flag.casefold() == 'report':
+                        # We're not tracking this, not really important.
+                        pass
+                    else:
+                        raise tok.error(
+                            'Invalid keyword after keyvalue type: {!r}',
+                            key_flag
+                        )
                 elif next_token is Token.COLON:
                     had_colon = True
                 elif next_token is Token.EQUALS:
