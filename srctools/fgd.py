@@ -1565,12 +1565,20 @@ class FGD:
 
         If none are provided, the text will be returned.
         """
-        ret_string = file is None
-        if ret_string:
+        if file is None:
             file = io.StringIO()
+            ret_string = True
+        else:
+            ret_string = False
 
         if self.map_size_min != self.map_size_max:
             file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
+            
+        if self.mat_exclusions:
+            file.write('@MaterialExclusion\n\t[\n')
+            for folder in sorted(self.mat_exclusions):
+                file.write('\t"{!s}"\n'.format(folder))
+            file.write('\t]\n')
 
         for ent in self.sorted_ents():
             file.write('\n')
