@@ -805,17 +805,11 @@ class PackList:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
                     continue
-                self.pack_file(
-                    'materials/' + param_value + '.vtf',
-                    FileType.TEXTURE,
-                )
+                self.pack_file(param_value, FileType.TEXTURE)
                 has_deps = True
             # Bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
-                self.pack_file(
-                    'materials/' + param_value + '.vmt',
-                    FileType.MATERIAL,
-                )
+                self.pack_file(param_value, FileType.MATERIAL)
                 has_deps = True
 
         return has_deps
