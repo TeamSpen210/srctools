@@ -186,6 +186,12 @@ class PackList:
         """
         filename = os.fspath(filename)
 
+        # Assume an empty filename is an optional value.
+        if not filename:
+            if data is not None:
+                raise ValueError('Data provided with no filename!')
+            return
+
         if '\t' in filename:
             raise ValueError(
                 'No tabs are allowed in filenames ({!r})'.format(filename)
@@ -591,6 +597,37 @@ class PackList:
             else:
                 for file in res:
                     self.pack_file(file)
+
+        # Handle worldspawn here - this is fairly special.
+        sky_name = vmf.spawn['skyname']
+        for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
+            self.pack_file(
+                'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
+                FileType.MATERIAL,
+            )
+            self.pack_file(
+                'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
+                FileType.MATERIAL,
+            )
+        self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
+
+        detail_script = vmf.spawn['detailvbsp']
+        if detail_script:
+            self.pack_file(detail_script, FileType.GENERIC)
+            try:
+                with self.fsys:
+                    detail_props = self.fsys.read_prop(detail_script, 'ansi')
+            except Exception:
+                LOGGER.warning(
+                    'Could not parse detail.vbsp file: ',
+                    exc_info=True
+                )
+            else:
+                # We only need to worry about models, the sprites are a single
+                # sheet packed above.
+                for prop in detail_props.iter_tree():
+                    if prop.name == 'model':
+                        self.pack_file(prop.value, FileType.MODEL)
 
     def pack_into_zip(
         self,
