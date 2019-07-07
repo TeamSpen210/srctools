@@ -391,7 +391,8 @@ class Model:
             skinref_count,  # Number of skin "groups"
             skin_count,   # Number of model skins.
             skinref_ind,  # Location of skins reference table.
-            
+
+            # The number of $body in the model (mstudiobodyparts_t).
             bodypart_count, bodypart_offset,
             attachment_count, attachment_offset,
         ) = str_read('13i', f)
@@ -581,12 +582,15 @@ class Model:
             # Then return to after that struct - 4 bytes * 2.
             f.seek(pos + 4 * 2)
 
-        self.sequences = self._read_sequences(f, sequence_off, sequence_count)
+        f.seek(sequence_off)
+        self.sequences = self._read_sequences(f, sequence_count)
+
+        f.seek(bodypart_offset)
+        self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
-    def _read_sequences(f: BinaryIO, off, count) -> List[MDLSequence]:
+    def _read_sequences(f: BinaryIO, count: int) -> List[MDLSequence]:
         """Split this off to decrease stack in main parse method."""
-        f.seek(off)
         sequences = [None] * count  # type: List[MDLSequence]
         for i in range(count):
             start_pos = f.tell()
@@ -674,6 +678,74 @@ class Model:
             f.seek(end_pos)
 
         return sequences
+
+    def _cull_skins_table(self, f: BinaryIO, body_count: int) -> None:
+        """Fix the table of used skins to correspond to those actually used.
+
+        StudioMDL is rather messy, and adds many extra columns that are not used
+        on the actual model.
+        We're following  mstudiobodyparts_t -> mstudiomodel_t -> mstudiomesh_t -> material.
+        """
+        used_inds = set()
+
+        # Iterate through bodygroups.
+        for body_ind in range(body_count):
+            body_start = f.tell()
+            (
+                body_name_off,  # Offset to find the bodygroup name
+                model_count,  # Number of models in this group
+                base,  # Unknown
+                model_off,
+            ) = str_read('iiii', f)
+            body_end = f.tell()
+
+            f.seek(body_start + model_off)
+            for model_ind in range(model_count):
+                model_start = f.tell()
+                (
+                    mdl_name,
+                    mdl_type,
+                    bound_radius,
+                    mesh_count,
+                    mesh_off,
+                    num_verts,
+                    vert_off,
+                    tangent_off,
+                    attach_count,
+                    attach_ind,
+                    eyeball_count,
+                    eyeball_ind,
+                    # Two void* pointers,
+                    # 32 empty bytes
+                ) = str_read('64s i f 9i 8x 32x', f)
+                model_end = f.tell()
+
+                f.seek(model_start + mesh_off)
+                for mesh_ind in range(mesh_count):
+                    (
+                        material,
+                        mesh_model_ind,
+                        mesh_vert_count,
+                        mesh_vert_off,
+                        mesh_flex_count,
+                        mesh_flex_ind,
+                        mesh_mat_type,
+                        mesh_mat_param,
+                        mesh_id,
+                        mesh_cent_x,
+                        mesh_cent_y,
+                        mesh_cent_z,
+                        # Void pointer
+                        # Array of LOD vertex counts ints, 8 of them
+                        # 8 unused int spaces.
+                    ) = str_read('9i 3f 4x 32x 32x', f)
+                    used_inds.add(material)
+
+                f.seek(model_end)
+            f.seek(body_end)
+
+        for skin_ind, tex in enumerate(self.skins):
+            self.skins[skin_ind] = [tex[i] for i in used_inds]
 
     def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
         """Yield textures used by this model.
