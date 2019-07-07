@@ -167,3 +167,28 @@ res('prop_button',
     )
 
 CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
+
+
+# *** Team Fortress 2 ***
+
+@cls_func
+def item_teamflag(ent: Entity) -> Iterator[str]:
+    """This item has several special team-specific options."""
+    for kvalue, prefix in [
+        ('flag_icon', 'materials/vgui/'),
+        ('flag_trail', 'materials/effects/')
+    ]:
+        value = prefix +ent[kvalue]
+        if value != prefix:
+            yield value + '.vmt'
+            yield value + '_red.vmt'
+            yield value + '_blue.vmt'
+
+@cls_func
+def team_control_point(ent: Entity) -> Iterator[str]:
+    """Special '_locked' materials."""
+    for kvalue in ['team_icon_0', 'team_icon_1', 'team_icon_2']:
+        mat = ent[kvalue]
+        if mat:
+            yield 'materials/{}.vmt'.format(mat)
+            yield 'materials/{}_locked.vmt'.format(mat)
