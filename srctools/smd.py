@@ -453,6 +453,7 @@ class Mesh:
         mdl: 'Mesh',
         rotation: Vec=(0.0, 0.0, 0.0),
         offset: Vec=(0.0, 0.0, 0.0),
+        scale: float=1.0,
     ) -> None:
         """Append another model's geometry onto this one.
 
@@ -477,6 +478,7 @@ class Mesh:
                 vert.links[:] = bone_link
 
                 vert.norm.rotate(*rotation, round_vals=False)
+                vert.pos *= scale
                 vert.pos.rotate(*rotation, round_vals=False)
                 vert.pos += offset
 
