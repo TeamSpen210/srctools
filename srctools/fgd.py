@@ -1179,7 +1179,7 @@ class EntityDef:
                     val_typ,
                     disp_name,
                     default,
-                    ''.join(desc),
+                    kv_desc,
                     val_list,
                     is_readonly,
                 )
