@@ -70,6 +70,8 @@ from typing import (
     List, Tuple, Dict, Iterator,
     TypeVar,
     Iterable,
+    overload,
+    Callable,
 )
 
 
@@ -567,6 +569,32 @@ class Property:
             return {item._folded_name: item.as_dict() for item in self}
         else:
             return self.value
+
+    @overload
+    def as_array(self) -> List[str]: ...
+
+    @overload
+    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
+
+    def as_array(self, *, conv: Callable[[str], T]=str) -> List[T]:
+        """Convert a property block into a list of values.
+
+        If the property is a single keyvalue, the single value will be
+        yielded. Otherwise, each child must be a single value and each
+        of those will be yielded. The name is ignored.
+        """
+        if self.has_children():
+            arr = []
+            for child in self.value:
+                if child.has_children():
+                    raise ValueError(
+                        'Cannot have sub-children in a '
+                        '"{}" array of values!'.format(self.real_name)
+                    )
+                arr.append(conv(child.value))
+            return arr
+        else:
+            return [conv(self.value)]
 
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
