@@ -780,9 +780,6 @@ class PackList:
             else:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
-
-            # For 'patch' shaders, apply the originals.
-            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
         except FileNotFoundError:
             LOGGER.warning('File "{}" does not exist!', file.filename)
             return
@@ -791,6 +788,17 @@ class PackList:
                 'File "{}" cannot be parsed:\n{}',
                 file.filename,
                 exc,
+            )
+            return
+
+        try:
+            # For 'patch' shaders, apply the originals.
+            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+        except ValueError as exc:
+            LOGGER.warning(
+                'Error parsing Patch shader in "{}":',
+                file.filename,
+                exc_info=True,
             )
             return
 
