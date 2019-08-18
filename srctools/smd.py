@@ -483,3 +483,94 @@ class Mesh:
                 vert.pos += offset
 
             self.triangles.append(new_tri)
+
+    # The triangles required for a prism.
+    # Each sublist is a triangle.
+    # The tuples are (x, y, z, u, v).
+    _BBOX_MESH_DATA = [
+        [
+            (-1, -1, -1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 1.0),
+            (-1, +1, -1, 0.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, +1, +1, 1.0, 1.0),
+            (+1, +1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, +1, -1, 0.0, 0.0),
+            (+1, -1, +1, 1.0, 1.0),
+            (+1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, -1, -1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+            (-1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, -1, -1, 1.0, 1.0),
+            (-1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, +1, +1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+            (+1, -1, +1, 0.0, 1.0),
+        ],
+        [
+            (-1, -1, -1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 0.0),
+            (-1, +1, +1, 1.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 0.0),
+            (+1, +1, +1, 1.0, 1.0),
+        ],
+        [
+            (+1, +1, -1, 0.0, 0.0),
+            (+1, +1, +1, 1.0, 0.0),
+            (+1, -1, +1, 1.0, 1.0),
+        ],
+        [
+            (+1, -1, -1, 0.0, 0.0),
+            (+1, -1, +1, 1.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, +1, -1, 1.0, 0.0),
+            (+1, -1, -1, 1.0, 1.0),
+        ],
+        [
+            (+1, +1, +1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+        ],
+    ]
+
+
+    @classmethod
+    def build_bbox(cls, root_bone: str, mat: str, bbox_min: Vec, bbox_max: Vec) -> 'Mesh':
+        """Construct a mesh for a bounding box."""
+        mesh = cls.blank(root_bone)
+        [root] = mesh.bones.values()
+        links = [(root, 1.0)]
+
+        bbox_min, bbox_max = Vec.bbox(bbox_min, bbox_max)
+
+        for tri_def in cls._BBOX_MESH_DATA:
+            tri = Triangle(mat, *[
+                Vertex(
+                    Vec(
+                        bbox_max.x if x > 0 else bbox_min.x,
+                        bbox_max.y if y > 0 else bbox_min.y,
+                        bbox_max.z if z > 0 else bbox_min.z,
+                    ), Vec(x, y, z).norm(),
+                    u, v, links.copy()
+                )
+                for x, y, z, u, v in tri_def
+            ])
+            mesh.triangles.append(tri)
+        return mesh
