@@ -365,6 +365,10 @@ class VTF:
                     )
 
         return vtf
+        
+    def __len__(self) -> int:
+        """The length of a VTF is the number of image frames."""
+        return len(self._frames)
 
     def to_PIL(self, frame: int):
         """Convert the given frame into a PIL image.
