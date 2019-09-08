@@ -46,7 +46,7 @@ def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
         return val.x, val.y, val.z
 
     try:
-        str_x, str_y, str_z = val.split(' ')
+        str_x, str_y, str_z = val.split()
     except ValueError:
         return x, y, z
 
