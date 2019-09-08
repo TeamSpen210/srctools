@@ -587,7 +587,12 @@ class PackList:
                     for script in value.split():
                         self.pack_file('scripts/vscripts/' + script)
                 elif val_type is KVTypes.STR_SPRITE:
-                    self.pack_file('materials/sprites/' + value, FileType.MATERIAL)
+                    if not value.casefold().startswith('sprites/'):
+                        value = 'sprites/' + value
+                    if not value.casefold().startswith('materials/'):
+                        value = 'materials/' + value
+
+                    self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_SOUND:
                     self.pack_soundscript(value)
 
