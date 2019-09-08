@@ -543,7 +543,13 @@ class PackList:
                 # any packing for them.
                 # Origin/angles might be set (brushes, instances) even for ents
                 # that don't use them.
-                if key in ('classname', 'hammerid', 'origin', 'angles', 'skin', 'pitch'):
+                if key in (
+                    'classname', 'hammerid',
+                    'origin', 'angles',
+                    'skin',
+                    'pitch',
+                    'skinset'
+                ):
                     continue
                 elif key == 'model':
                     # Models are set on all brush entities, and are always either
