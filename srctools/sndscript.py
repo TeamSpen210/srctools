@@ -10,6 +10,9 @@ from typing import (
     TextIO,
 )
 
+# All the prefixes  wavs can have.
+SND_CHARS = '*@#<>^)}$!?'
+
 
 class Pitch(float, Enum):
     PITCH_NORM = 100.0

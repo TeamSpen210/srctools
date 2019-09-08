@@ -17,7 +17,7 @@ from srctools.filesys import (
 )
 from srctools.mdl import Model
 from srctools.vmt import Material, VarType
-from srctools.sndscript import Sound
+from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
 
 LOGGER = srctools.logger.get_logger(__name__)
@@ -389,7 +389,7 @@ class PackList:
 
         for name, sound in scripts.items():
             self.soundscripts[name] = path, [
-                snd.lstrip('*@#<>^)}$!?').replace('\\', '/')
+                snd.lstrip(SND_CHARS).replace('\\', '/')
                 for snd in sound.sounds
             ]
 
@@ -628,6 +628,8 @@ class PackList:
             try:
                 with self.fsys:
                     detail_props = self.fsys.read_prop(detail_script, 'ansi')
+            except FileNotFoundError:
+                LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
             except Exception:
                 LOGGER.warning(
                     'Could not parse detail.vbsp file: ',
@@ -656,7 +658,7 @@ class PackList:
         is in allow_filesys.
         """
         existing_names = {
-            name.replace('\\', '/')
+            name.replace('\\', '/').casefold()
             for name in zip_file.namelist()
         }
 
@@ -687,7 +689,7 @@ class PackList:
                     zip_file.writestr(fname, file.data)
                     continue
 
-                if file.filename in existing_names:
+                if file.filename.casefold() in existing_names:
                     # Already in the zip - cubemap patch files, or something
                     # else has already added it. Ignore.
                     continue
