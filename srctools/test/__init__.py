@@ -48,18 +48,18 @@ def assert_ang(ang, pitch=0, yaw=0, roll=0, msg=''):
     pytest.fail(new_msg)
 
 
-def assert_vec(vec, x, y, z, msg=''):
+def assert_vec(vec, x, y, z, msg='', tol=EPSILON):
     """Asserts that Vec is equal to (x,y,z)."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
     assert type(vec).__name__ == 'Vec'
 
-    if not math.isclose(vec.x, x, abs_tol=EPSILON):
+    if not math.isclose(vec.x, x, abs_tol=tol):
         failed = 'x'
-    elif not math.isclose(vec.y, y, abs_tol=EPSILON):
+    elif not math.isclose(vec.y, y, abs_tol=tol):
         failed = 'y'
-    elif not math.isclose(vec.z, z, abs_tol=EPSILON):
+    elif not math.isclose(vec.z, z, abs_tol=tol):
         failed = 'z'
     else:
         # Success!
