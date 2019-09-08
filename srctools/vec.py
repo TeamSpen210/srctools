@@ -53,7 +53,7 @@ Tuple3 = Tuple[float, float, float]
 AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
@@ -62,8 +62,15 @@ def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
 
     If the 'string' is actually a Vec, the values will be returned.
     """
-    if isinstance(val, Vec):
+    if isinstance(val, str):
+        pass  # Fast path to skip the below code.
+    elif isinstance(val, Vec):
         return val.x, val.y, val.z
+    elif isinstance(val, Angle):
+        return val.pitch, val.yaw, val.roll
+    else:
+        # Not a string.
+        return x, y, z
 
     try:
         str_x, str_y, str_z = val.split(' ')
@@ -1304,6 +1311,101 @@ class Angle:
 
     def __repr__(self) -> str:
         return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
+
+    def as_tuple(self) -> Tuple[float, float, float]:
+        """Return the Angle as a tuple."""
+        return Vec_tuple(self._pitch, self._yaw, self._roll)
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._pitch
+        yield self._yaw
+        yield self._roll
+
+    @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Angle']) -> 'Angle':
+        ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+    ) -> 'Angle':
+        ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+        axis3: str, val3: Union[float, 'Angle'],
+    ) -> 'Angle':
+        ...
+
+    @classmethod
+    def with_axes(
+        cls,
+        axis1: str,
+        val1: Union[float, 'Angle'],
+        axis2: str = None,
+        val2: Union[float, 'Angle'] = 0.0,
+        axis3: str = None,
+        val3: Union[float, 'Angle'] = 0.0,
+    ) -> 'Angle':
+        """Create an Angle, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            ang = Angle()
+            ang[axis1] = val1
+            ang[axis2] = val2
+            ang[axis3] = val3
+        The magnitudes can also be Angles, in which case the matching
+        axis will be used from the angle.
+        """
+        ang = cls()
+        ang[axis1] = val1[axis1] if isinstance(val1, Angle) else val1
+        if axis2 is not None:
+            ang[axis2] = val2[axis2] if isinstance(val2, Angle) else val2
+            if axis3 is not None:
+                ang[axis3] = val3[axis3] if isinstance(val3, Angle) else val3
+        return ang
+
+    def __getitem__(self, ind: Union[str, int]) -> float:
+        """Allow reading values by index instead of name if desired.
+
+        This accepts the following indexes to read values:
+        - 0, 1, 2
+        - pitch, yaw, roll
+        - pit, yaw, rol
+        - p, y, r
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind in (0, 'p', 'pit','pitch'):
+            return self._pitch
+        elif ind in (1, 'y', 'yaw'):
+            return self._yaw
+        elif ind in (2, 'r', 'rol', 'roll'):
+            return self._roll
+        raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    def __setitem__(self, ind: Union[str, int], val: float) -> None:
+        """Allow editing values by index instead of name if desired.
+
+        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind in (0, 'p', 'pit','pitch'):
+            self._pitch = float(val) % 360.0 % 360.0
+        elif ind in (1, 'y', 'yaw'):
+            self._yaw = float(val) % 360.0 % 360.0
+        elif ind in (2, 'r', 'rol', 'roll'):
+            self._roll = float(val) % 360.0 % 360.0
+        else:
+            raise KeyError('Invalid axis: {!r}'.format(ind))
 
     @overload
     def __mul__(self, other: Union[int, float]) -> 'Angle': ...
