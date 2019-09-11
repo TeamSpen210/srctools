@@ -59,6 +59,16 @@ def test_ang_matrix_roundtrip():
         assert_ang(mat.to_angle(), p, y, r)
 
 
+def test_to_angle_roundtrip():
+    """Check Vec.to_angle() roundtrips."""
+    for x, y, z in iter_vec((-1, 0, 1)):
+        if x == y == z == 0:
+            continue
+        norm = Vec(x, y, z).norm()
+        ang = norm.to_angle()
+        assert_vec(Vec(x=1).rotate(*ang), norm.x, norm.y, norm.z, ang)
+
+
 def test_matrix_roundtrip_pitch():
     """Check converting to and from a Matrix does not change values."""
     # We can't directly check the resulted value, some of these produce
