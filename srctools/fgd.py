@@ -53,14 +53,18 @@ class ValueTypes(Enum):
 
     # Simple values
     STRING = 'string'
-    BOOL = 'boolean'
+    BOOL = 'bool'
     INT = 'integer'
     FLOAT = 'float'
     VEC = 'vector'  # Offset or the like
     ANGLES = 'angle'  # Rotation
 
     # String targetname values (need fixups)
-    TARG_DEST = 'target_destination'  # A targetname of another ent.
+
+    # A targetname of another ent. For outputs, this is an entity handle.
+    TARG_DEST = 'target_destination'
+    ENT_HANDLE = EHANDLE = TARG_DEST
+
     TARG_DEST_CLASS = 'target_name_or_class'  # Above + classnames.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
     TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
@@ -99,13 +103,42 @@ class ValueTypes(Enum):
         """Is this a flag or choices value, and needs a [] list?"""
         return self.value in ('choices', 'flags')
 
+    @property
+    def valid_for_io(self) -> bool:
+        """Is this type valid for I/O definitions?"""
+        return self.value in (
+            'void',
+            'integer', 'bool', 'string', 'float',
+            'vector', 'target_destination', 'color255'
+        )
+
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
     for typ in ValueTypes
-}
+} # type: Dict[str, ValueTypes]
 # These have two names pointing to the same type...
-VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
+VALUE_TYPE_LOOKUP['boolean'] = ValueTypes.BOOL
 VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
+
+# In I/O definitions, types are constrained.
+# So this is the most appropriate type to use instead for all types.
+# First, string can reproduce everything if not allowed.
+VALUE_TO_IO_DECAY = {
+    typ: typ if typ.valid_for_io else ValueTypes.STRING
+    for typ in ValueTypes
+}  # type: Dict[ValueTypes, ValueTypes]
+
+# Then manually set others.
+VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
+VALUE_TO_IO_DECAY[ValueTypes.BOOL] = ValueTypes.INT
+VALUE_TO_IO_DECAY[ValueTypes.TARG_NODE_SOURCE] = ValueTypes.INT
+VALUE_TO_IO_DECAY[ValueTypes.ANGLE_NEG_PITCH] = ValueTypes.FLOAT
+
+VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
+# Only one color type present.
+VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 
 class EntityTypes(Enum):
@@ -216,6 +249,7 @@ VALUE_TYPE_ORDER = [
     ValueTypes.INST_VAR_REP,
 
     ValueTypes.STR_VSCRIPT_SINGLE,
+    ValueTypes.ENT_HANDLE,
 ]
 
 # Ditto for entity types.
@@ -991,7 +1025,6 @@ class EntityDef:
 
             io_type = token_value.casefold()
             if io_type in ('input', 'output'):
-
                 name = tok.expect(Token.STRING)
                 
                 # Next is either the value type parens, or a tags brackets.
@@ -1001,18 +1034,23 @@ class EntityDef:
                     val_token, raw_value_type = tok()
                 else:
                     tags = frozenset()
-                    
-                raw_value_type = raw_value_type.strip()
-                try:
-                    val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                except KeyError:
-                    raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
 
-                # Can't have a spawnflags or choices input type...
-                if val_typ.has_list:
+                raw_value_type = raw_value_type.strip()
+                if raw_value_type == 'ehandle':
+                    # This is a duplicate (deprecated) name, but only for I/O.
+                    val_typ = ValueTypes.EHANDLE
+                else:
+                    try:
+                        val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+                    except KeyError:
+                        raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+
+                if not val_typ.valid_for_io:
                     raise tok.error(
-                        '"{}" value type is not valid for an input or output!',
+                        '"{}" value type is not valid for an input or '
+                        'output! Use "{}" instead.',
                         val_typ.value,
+                        VALUE_TO_IO_DECAY[val_typ].value,
                     )
 
                 # Read desc
