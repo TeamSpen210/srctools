@@ -502,7 +502,8 @@ class KeyValues:
             List[Tuple[int, str, bool, FrozenSet[str]]],
             List[Tuple[str, str, FrozenSet[str]]],
         ],
-        is_readonly: bool,
+        is_readonly: bool=False,
+        show_in_report: bool=False,
     ):
         self.name = name
         self.type = val_type
@@ -511,25 +512,27 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
+        self.reportable = show_in_report
 
     def __repr__(self) -> str:
         return (
             'KeyValues({s.name!r}, {s.type!r}, '
             '{s.disp_name!r}, {s.default!r}, '
             '{s.desc!r}, {s.val_list!r}, '
-            '{s.readonly})'.format(s=self)
+            '{s.readonly}, {s.reportable})'.format(s=self)
         )
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, KeyValues):
             return (
                 self.name == other.name
-                and self.type == other.type
+                and self.type is other.type
                 and self.disp_name == other.disp_name
                 and self.default == other.default
                 and self.desc == other.desc
                 and self.val_list == other.val_list
-                and self.readonly == other.readonly
+                and self.readonly is other.readonly
+                and self.reportable is other.reportable
             )
         return NotImplemented
 
@@ -543,6 +546,7 @@ class KeyValues:
             self.desc,
             self.val_list.copy() if self.val_list else None,
             self.readonly,
+            self.reportable,
         )
 
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
@@ -554,6 +558,9 @@ class KeyValues:
 
         if self.readonly:
             file.write('readonly ')
+
+        if self.reportable:
+            file.write('report ')
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
@@ -1095,8 +1102,7 @@ class EntityDef:
 
                 next_token, key_flag = tok()
 
-                is_readonly = False
-                had_colon = False
+                is_readonly = show_in_report = had_colon = False
                 has_equal = None
                 attrs = None  # type: Optional[List[str]]
 
@@ -1105,8 +1111,7 @@ class EntityDef:
                     if key_flag.casefold() == 'readonly':
                         is_readonly = True
                     elif key_flag.casefold() == 'report':
-                        # We're not tracking this, not really important.
-                        pass
+                        show_in_report = True
                     else:
                         raise tok.error(
                             'Invalid keyword after keyvalue type: {!r}',
@@ -1220,6 +1225,7 @@ class EntityDef:
                     kv_desc,
                     val_list,
                     is_readonly,
+                    show_in_report,
                 )
 
     def __repr__(self) -> str:
