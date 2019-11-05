@@ -53,7 +53,7 @@ class ValueTypes(Enum):
 
     # Simple values
     STRING = 'string'
-    BOOL = 'bool'
+    BOOL = 'boolean'
     INT = 'integer'
     FLOAT = 'float'
     VEC = 'vector'  # Offset or the like
@@ -108,7 +108,7 @@ class ValueTypes(Enum):
         """Is this type valid for I/O definitions?"""
         return self.value in (
             'void',
-            'integer', 'bool', 'string', 'float',
+            'integer', 'boolean', 'string', 'float',
             'vector', 'target_destination', 'color255'
         )
 
@@ -117,7 +117,7 @@ VALUE_TYPE_LOOKUP = {
     for typ in ValueTypes
 } # type: Dict[str, ValueTypes]
 # These have two names pointing to the same type...
-VALUE_TYPE_LOOKUP['boolean'] = ValueTypes.BOOL
+VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
 VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
 
 # In I/O definitions, types are constrained.
@@ -130,7 +130,6 @@ VALUE_TO_IO_DECAY = {
 
 # Then manually set others.
 VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
-VALUE_TO_IO_DECAY[ValueTypes.BOOL] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.TARG_NODE_SOURCE] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.ANGLE_NEG_PITCH] = ValueTypes.FLOAT
 
@@ -587,10 +586,10 @@ class KeyValues:
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
                 for index, name, default, tags in self.val_list or ():
-                    file.write('\t\t{}: "{}" : {}'.format(
+                    file.write('\t\t{0}: "[{0}] {1}" : {2}'.format(
                         index,
                         name,
-                        int(default),
+                        '1' if default else '0',
                     ))
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
@@ -748,7 +747,11 @@ class IODef:
         if tags:
             file.write('[' + ', '.join(tags) + ']')
 
-        file.write('({})'.format(self.type.value))
+        # Special case, bool is "boolean" on values, "bool" on IO...
+        if self.type is ValueTypes.BOOL:
+            file.write('(bool)')
+        else:
+            file.write('({})'.format(VALUE_TO_IO_DECAY[self.type].value))
 
         if self.desc:
             file.write(' : ')
@@ -1434,7 +1437,7 @@ class FGD:
         """Create a FGD."""
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
-        self._parse_list = []
+        self._parse_list = set()
 
         # Entity definitions
         self.entities = {}  # type: Dict[str, EntityDef]
@@ -1509,7 +1512,7 @@ class FGD:
                             base,
                             ent.classname,
                         )
-                    )
+                    ) from None
 
     def sorted_ents(self) -> Iterator[EntityDef]:
         """Yield all entities in sorted order.
@@ -1649,7 +1652,7 @@ class FGD:
         if file in self._parse_list:
             return
 
-        self._parse_list.append(file)
+        self._parse_list.add(file)
 
         with filesys, file.open_str(encoding) as f:
             tokeniser = Tokenizer(
