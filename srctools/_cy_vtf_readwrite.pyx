@@ -55,7 +55,7 @@ cdef inline byte upsample(byte bits, byte data) nogil:
     return data | (data >> bits)
 
 
-cdef inline int decomp565(RGB *rgb, byte a, byte b):
+cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
     """Decompress 565-packed data into RGB triplets."""
     rgb.r = upsample(5, (a & 0b00011111) << 3)
     rgb.g = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
@@ -489,8 +489,6 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     if width % 4:
         block_wid += 1
 
-    # TODO: These alpha values aren't quite right.
-
     for block_y in range(0, height, 4):
         block_y //= 4
         for block_x in range(0, width, 4):
@@ -513,7 +511,7 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
                 alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
                 alpha[6] = 0
-                alpha[7] = 25
+                alpha[7] = 255
 
             # Now, load the colour blocks.
             decomp565(&c0, data[block_off + 8], data[block_off + 9])
@@ -541,18 +539,19 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 block_x, block_y,
                 do_alpha=False,
             )
-            # Concatenate the bits for the alpha values into a big integer.
+            # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
+            # value. It's in little-endian order!
+            # lookup = int.from_bytes(data[block_off + 2:8], 'little')
             lookup = 0
-            for i in range(12):
-                lookup |= data[block_off + i] << (8 * (11-i))
+            for i in range(6):
+                lookup |= data[block_off + 2 + 6 - i]
+                lookup <<= 8
 
             for i in range(16):
                 y = i // 4
                 x = i % 4
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha[
-                    (lookup >> (48-3*i)) & 0b111
-                ]
+                pixels[pos + 3] = alpha[(lookup >> (3*i)) & 0b111]
 
 # Don't do the high-def 16-bit resolution.
 
