@@ -24,17 +24,18 @@ def blank(uint width, uint height):
     return array.clone(img_template, 4 * width * height, zero=True)
 
 
-
 def ppm_convert(const byte[::1] pixels, uint width, uint height):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef uint img_off, off
     cdef Py_ssize_t size = 3 * width * height
 
-    cdef byte *buffer = <byte *> PyMem_Malloc(size + 16)
+    # b'P6 65536 65536 255\n' is 19 characters long.
+    # We shouldn't get a larger frame than that, it's already absurd.
+    cdef byte *buffer = <byte *> PyMem_Malloc(size + 19)
     try:
-        img_off = snprintf(<char *>buffer, 16, b'P6 %u %u 255\n', width, height)
+        img_off = snprintf(<char *>buffer, 19, b'P6 %u %u 255\n', width, height)
 
-        if img_off < 0:
+        if img_off < 0: # If it does fail just produce a blank file.
             return b''
 
         for off in range(width * height):
