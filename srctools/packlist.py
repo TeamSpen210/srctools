@@ -648,7 +648,7 @@ class PackList:
         *,
         whitelist: Iterable[FileSystem]=(),
         blacklist: Iterable[FileSystem]=(),
-        ignore_vpk=True,
+        ignore_vpk: bool=True,
     ) -> None:
         """Pack all our files into the given zipfile.
 
@@ -720,23 +720,20 @@ class PackList:
                     if file._analysed:
                         continue
                     file._analysed = True
+                    todo = True
 
                     try:
                         if file.type is FileType.MATERIAL:
-                            if self._get_material_files(file):
-                                todo = True
+                            self._get_material_files(file)
                         elif file.type is FileType.MODEL:
                             self._get_model_files(file)
-                            todo = True
                         elif file.type is FileType.TEXTURE:
                             # Try packing the '.hdr.vtf' file as well if present.
                             # But don't recurse!
                             if not file.filename.endswith('.hdr.vtf'):
-                                self.pack_file(
-                                    file.filename[:-3] + 'hdr.vtf',
-                                    FileType.OPTIONAL
-                                )
-                                todo = True
+                                hdr_tex = file.filename[:-3] + 'hdr.vtf'
+                                if hdr_tex in self.fsys:
+                                    self.pack_file(hdr_tex)
                     except Exception as exc:
                         # Skip errors in the file format - means we can't find the dependencies.
                         LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
@@ -779,7 +776,7 @@ class PackList:
         for snd in mdl.find_sounds():
             self.pack_file(snd, FileType.GAME_SOUND)
 
-    def _get_material_files(self, file: PackFile):
+    def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
 
         parents = []  # type: List[str]
@@ -807,7 +804,7 @@ class PackList:
         try:
             # For 'patch' shaders, apply the originals.
             mat = mat.apply_patches(self.fsys, parent_func=parents.append)
-        except ValueError as exc:
+        except ValueError:
             LOGGER.warning(
                 'Error parsing Patch shader in "{}":',
                 file.filename,
@@ -818,8 +815,6 @@ class PackList:
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL)
 
-        has_deps = bool(parents)
-
         for param_name, param_type, param_value in mat:
             param_value = param_value.casefold()
             if param_type is VarType.TEXTURE:
@@ -827,10 +822,6 @@ class PackList:
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
                     continue
                 self.pack_file(param_value, FileType.TEXTURE)
-                has_deps = True
             # Bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
                 self.pack_file(param_value, FileType.MATERIAL)
-                has_deps = True
-
-        return has_deps
