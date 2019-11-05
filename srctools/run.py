@@ -33,6 +33,7 @@ def run_compiler(
     name: str,
     args: List[str],
     logger: logging.Logger,
+    change_name: bool=True,
 ) -> int:
     """
     Execute the original vbsp, vvis or vrad.
@@ -46,7 +47,7 @@ def run_compiler(
     buf_out = bytearray()
     buf_err = bytearray()
 
-    comp_name = get_compiler_name(name)
+    comp_name = get_compiler_name(name) if change_name else name
 
     # On Windows, calling this will pop open a console window. This suppresses
     # that.
@@ -65,6 +66,7 @@ def run_compiler(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         startupinfo=startup_info,
+        cwd=os.path.dirname(comp_name) or None,
     ) as proc:
         # Loop reading data from the subprocess, until it's dead.
         stdout = proc.stdout  # type: IO[bytes]
