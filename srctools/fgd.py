@@ -22,7 +22,7 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper',
 ]
 
 _fmt_8bit = Struct('>B')
@@ -480,6 +480,83 @@ class BinStrDict:
         file.write(_fmt_8bit.pack(len(tags)))
         for tag in tags:
             file.write(dic(tag))
+
+
+class Helper:
+    """Base class for representing helper() commands in the header of an entity.
+
+    These mainly add visual widgets in Hammer's views for manipulating and
+    previewing keyvalues.
+
+    This should not be instantiated, only subclasses in _fgd_helpers.
+    """
+    # The HelperType which this implements.
+    TYPE = None  # type: HelperTypes
+    IS_EXTENSION = False  # true for our extensions to the format.
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse this helper from the given arguments.
+
+        The default implementation expects one argument only.
+        """
+        if args:
+            raise ValueError(
+                'No arguments accepted by {}()!'.format(cls.TYPE.name)
+            )
+        return cls()
+
+    def export(self) -> List[str]:
+        """Produce the argument text to recreate this helper type."""
+        return []
+
+    def get_resources(self, entity: 'EntityDef') -> List[str]:
+        """Return the resources used by this helper."""
+        return []
+
+    def overrides(self) -> Collection[HelperTypes]:
+        """Specify which types can be overriden by this.
+
+        If any of these helper types are present before this type, they're
+        redundant and can be removed.
+        For example size() is ignored if a studio() is present after it.
+        """
+        return ()
+
+    def __eq__(self, other: object) -> bool:
+        """Define equality as all attributes matching, and only matching types."""
+        if not isinstance(other, Helper):
+            return NotImplemented
+        return self.TYPE is other.TYPE and vars(self) == vars(other)
+
+    def __ne__(self, other: object) -> bool:
+        """Define equality as all attributes matching, and only matching types."""
+        if not isinstance(other, Helper):
+            return NotImplemented
+        return self.TYPE is not other.TYPE or vars(self) != vars(other)
+
+
+HelperT = TypeVar('HelperT', bound=Helper)
+# Each helper type -> the class implementing them.
+# We fill this at the end of the module.
+HELPER_IMPL = {}  # type: Dict[HelperTypes, Type[Helper]]
+
+
+def _init_helper_impl() -> None:
+    """Import and register the helper implementations."""
+    from srctools import _fgd_helpers as helper_mod
+    for helper_type in vars(helper_mod).values():
+        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
+            HELPER_IMPL[helper_type.TYPE] = helper_type
+
+    for helper in HelperTypes:
+        if helper not in HELPER_IMPL:
+            raise ValueError(
+                'Missing helper implementation '
+                'for {}!'.format(helper)
+            )
+del _init_helper_impl
+from srctools._fgd_helpers import *
 
 
 class KeyValues:
