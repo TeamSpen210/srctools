@@ -23,6 +23,20 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
     'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper',
+
+    # From srctools._fgd_helpers
+    'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
+    'HelperBrushSides', 'HelperCylinder', 'HelperDecal',
+    'HelperEnvSprite', 'HelperFrustum', 'HelperHalfGridSnap',
+    'HelperInherit', 'HelperInstance', 'HelperLight', 'HelperLightSpot',
+    'HelperLine', 'HelperModel', 'HelperModelLight', 'HelperModelProp',
+    'HelperOrientedBBox', 'HelperOrigin', 'HelperOverlay',
+    'HelperOverlayTransition', 'HelperRenderColor', 'HelperRope',
+    'HelperSize', 'HelperSphere', 'HelperSprite',
+    'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
+    'HelperVecLine', 'HelperWorldText',
+
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
 _fmt_8bit = Struct('>B')
@@ -556,6 +570,8 @@ def _init_helper_impl() -> None:
                 'Missing helper implementation '
                 'for {}!'.format(helper)
             )
+
+_init_helper_impl()
 del _init_helper_impl
 from srctools._fgd_helpers import *
 
@@ -625,6 +641,18 @@ class KeyValues:
             self.readonly,
             self.reportable,
         )
+
+    def known_options(self) -> Iterator[str]:
+        """Use the default value and value list to determine values this can be set to."""
+        if self.type is ValueTypes.CHOICES:
+            options = {value for value, name, tags in self.val_list}
+            options.add(self.default)
+            yield from options
+        elif self.type is ValueTypes.SPAWNFLAGS:
+            for bitflag, name, default, tags in self.val_list:
+                yield bitflag
+        else:
+            yield self.default
 
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
         """Write this back out to a FGD file."""
@@ -965,9 +993,7 @@ class EntityDef:
 
         # Base type names - base()
         self.bases = []  # type: List[Union[EntityDef, str]]
-        # line(), studio(), etc in the header
-        # this is a func, args tuple.
-        self.helpers = []  # type: List[Tuple[HelperTypes, List[str]]]
+        self.helpers = []  # type: List[Helper]
         self.desc = ''
         
         # Views for accessing data among all the entities.
@@ -1003,7 +1029,13 @@ class EntityDef:
                         )
                 else:
                     # No arguments for the previous helper, add it in.
-                    entity.helpers.append((help_type, []))
+                    try:
+                        entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+                    except ValueError as exc:
+                        raise tok.error(
+                            'Invalid helper arguments for {}()',
+                            help_type.value
+                        ) from exc
                     help_type = None
                     # Then repeat this token so it's parsed.
                     tok.push_back(token, token_value)
@@ -1039,7 +1071,14 @@ class EntityDef:
                     help_type = None
                     continue
 
-                entity.helpers.append((help_type, args))
+                try:
+                    entity.helpers.append(HELPER_IMPL[help_type].parse(args))
+                except (TypeError, ValueError) as exc:
+                    raise tok.error(
+                        'Invalid helper arguments for {}():\n',
+                        help_type.value,
+                        '\n'.join(map(str, exc.args)),
+                    ) from exc
 
                 help_type = None
 
@@ -1055,7 +1094,13 @@ class EntityDef:
         if help_type:
             if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
                 raise tok.error('{}() requires at least one argument!', help_type.value)
-            entity.helpers.append((help_type, []))
+            try:
+                entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+            except ValueError as exc:
+                raise tok.error(
+                    'Invalid helper arguments for {}()',
+                    help_type.value
+                ) from exc
 
         entity.classname = tok.expect(Token.STRING).strip()
 
@@ -1315,6 +1360,12 @@ class EntityDef:
         else:
             return '<Entity {}>'.format(self.classname)
 
+    def get_helpers(self, typ: HelperT) -> Iterator[HelperT]:
+        """Find all helpers with this specific type."""
+        for helper in self.helpers:
+            if helper.TYPE == typ.TYPE:
+                yield helper
+
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
 
@@ -1360,13 +1411,14 @@ class EntityDef:
 
         kv_order_list = []
 
-        for helper, args in self.helpers:
-            if helper is HelperTypes.HALF_GRID_SNAP:
+        for helper in self.helpers:
+            args = helper.export()
+            if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
             else:
-                file.write('\n\t{}({})'.format(helper.value, ', '.join(args)))
-            if helper is HelperTypes.EXT_ORDERBY:
+                file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+            if isinstance(helper, HelperExtOrderBy):
                 kv_order_list.extend(map(str.casefold, args))
 
         if self.helpers:
@@ -1933,4 +1985,6 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
+
+
 
