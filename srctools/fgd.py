@@ -166,7 +166,8 @@ class HelperTypes(Enum):
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
-    ORIGIN = 'origin'
+    ORIGIN = 'origin'  # Adds circle at an absolute position.
+    VECLINE = 'vecline'  # Draws line to an absolute position.
     BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
