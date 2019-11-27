@@ -122,7 +122,7 @@ class ValueTypes(Enum):
         """Is this type valid for I/O definitions?"""
         return self.value in (
             'void',
-            'integer', 'boolean', 'string', 'float',
+            'integer', 'boolean', 'string', 'float', 'script',
             'vector', 'target_destination', 'color255'
         )
 
