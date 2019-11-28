@@ -231,6 +231,9 @@ def load_dxt1_impl(
     black_color: bytes,
 ):
     """Does the actual decompression."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+
     block_wid, mod = divmod(width, 4)
     if mod:
         block_wid += 1
@@ -327,6 +330,9 @@ def dxt_color_table(
 
 def load_dxt3(pixels, data, width, height):
     """Load compressed DXT3 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+
     block_wid, mod = divmod(width, 4)
     if mod:
         block_wid += 1
@@ -374,6 +380,9 @@ def load_dxt3(pixels, data, width, height):
 
 def load_dxt5(pixels, data, width, height):
     """Load compressed DXT5 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+
     block_wid, mod = divmod(width, 4)
     if mod:
         block_wid += 1

@@ -318,14 +318,17 @@ DEF C3G = 13
 DEF C3B = 14
 DEF C3A = 15
 
-cdef inline load_dxt1_impl(
+cdef inline int load_dxt1_impl(
     byte[::1] pixels,
     const byte[::1] data,
     uint width,
     uint height,
     byte black_alpha,
-):
+) except 1:
     """Does the actual decompression."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+
     cdef uint block_wid, block_off, block_x, block_y
 
     cdef byte[16] color_table
@@ -438,6 +441,9 @@ cdef inline void dxt_color_table(
 
 def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT3 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+
     cdef uint block_wid, block_off, block_x, block_y
     cdef uint x, y, off, pos
 
@@ -498,6 +504,8 @@ def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
 
 def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT5 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
 
     cdef uint block_wid, block_off, block_x, block_y
     cdef uint x, y, i, off, pos
