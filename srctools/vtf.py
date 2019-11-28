@@ -129,9 +129,13 @@ class ImageFormats(ImageAlignment, Enum):
 
     NONE = f()
 
+    @property
+    def is_compressed(self) -> bool:
+        return self.name.startswith('DXT')
+
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
-        if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1_ONEBITALPHA'):
+        if self.is_compressed:
             block_wid, mod = divmod(width, 4)
             if mod:
                 block_wid += 1
@@ -271,6 +275,11 @@ class Frame:
                 ResourceWarning,
                 source=stream,
             )
+
+        # DXT formats cannot have smaller than 4x4 images.
+        # So don't actually load the data for these - it should be blank.
+        if not fmt.is_compressed and (self.width < 4 or self.height < 4):
+            return
 
         stream.seek(file_off)
         data = stream.read(fmt.frame_size(self.width, self.height))
