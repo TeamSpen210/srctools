@@ -1,6 +1,7 @@
 """Functions for reading/writing VTF data."""
 import array
 import itertools
+from typing import Tuple, List
 
 
 def blank(width: int, height: int) -> array.array:
@@ -22,7 +23,7 @@ def ppm_convert(pixels, width, height) -> bytes:
     return bytes(buffer)
 
 
-def upsample(bits, data):
+def upsample(bits: int, data: int) -> int:
     """Stretch bits worth of data to fill the byte.
 
     This is done by duplicating the MSB to fill the remaining space.
@@ -79,7 +80,7 @@ load_uvlx8888 = loader_rgba('rgba')
 load_uvwq8888 = loader_rgba('rgba')
 
 
-def load_bgrx8888(pixels, data, width, height):
+def load_bgrx8888(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Strange - skip byte."""
     for offset in range(width * height):
         pixels[4 * offset] = data[4 * offset + 2]
@@ -88,7 +89,7 @@ def load_bgrx8888(pixels, data, width, height):
         pixels[4 * offset + 3] = 255
 
 
-def load_rgb565(pixels, data, width, height):
+def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """RGB format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         r, g, b = decomp565(data[2 * offset], data[2 * offset + 1])
@@ -99,7 +100,7 @@ def load_rgb565(pixels, data, width, height):
         pixels[4 * offset + 3] = 255
 
 
-def load_bgr565(pixels, data, width, height):
+def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         b, g, r = decomp565(data[2 * offset], data[2 * offset + 1])
@@ -110,7 +111,7 @@ def load_bgr565(pixels, data, width, height):
         pixels[4 * offset + 3] = 255
 
 
-def load_bgra4444(pixels, data, width, height):
+def load_bgra4444(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -121,7 +122,7 @@ def load_bgra4444(pixels, data, width, height):
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def load_bgra5551(pixels, data, width, height):
+def load_bgra5551(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -132,7 +133,7 @@ def load_bgra5551(pixels, data, width, height):
         pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
 
 
-def load_bgrx5551(pixels, data, width, height):
+def load_bgrx5551(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGR format, 5 bits per color, alpha ignored."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -143,14 +144,14 @@ def load_bgrx5551(pixels, data, width, height):
         pixels[4 * offset+3] = 255
 
 
-def load_i8(pixels, data, width, height):
+def load_i8(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B"""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
         pixels[4*offset+3] = 255
 
 
-def load_ia88(pixels, data, width, height):
+def load_ia88(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
@@ -159,14 +160,14 @@ def load_ia88(pixels, data, width, height):
 
 # ImageFormats.P8 is not implemented by Valve either.
 
-def load_a8(pixels, data, width, height):
+def load_a8(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Single alpha bytes."""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
         pixels[4*offset+3] = data[offset]
 
 
-def load_uv88(pixels, data, width, height):
+def load_uv88(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
     for offset in range(width * height):
         pixels[4*offset] = data[2*offset]
@@ -175,7 +176,7 @@ def load_uv88(pixels, data, width, height):
         pixels[4*offset+3] = 255
 
 
-def load_rgb888_bluescreen(pixels, data, width, height):
+def load_rgb888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """RGB format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -194,7 +195,7 @@ def load_rgb888_bluescreen(pixels, data, width, height):
             pixels[4 * offset + 3] = 255
 
 
-def load_bgr888_bluescreen(pixels, data, width, height):
+def load_bgr888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGR format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -213,12 +214,12 @@ def load_bgr888_bluescreen(pixels, data, width, height):
             pixels[4 * offset + 3] = 255
 
 
-def load_dxt1(pixels, data, width, height):
+def load_dxt1(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data."""
     load_dxt1_impl(pixels, data, width, height, b'\0\0\0\xFF')
 
 
-def load_dxt1_onebitalpha(pixels, data, width, height):
+def load_dxt1_onebitalpha(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
     load_dxt1_impl(pixels, data, width, height, b'\0\0\0\0')
 
@@ -255,30 +256,30 @@ def load_dxt1_impl(
                 data[block_off] > data[block_off+2] or
                 data[block_off+1] > data[block_off+3]
             ):
-                c2 = [
+                c2 = (
                     (2*c0b + c1b) // 3,
                     (2*c0g + c1g) // 3,
                     (2*c0r + c1r) // 3,
                     255
-                ]
-                c3 = [
+                )
+                c3 = (
                     (c0b + 2*c1b) // 3,
                     (c0g + 2*c1g) // 3,
                     (c0r + 2*c1r) // 3,
                     255
-                ]
+                )
             else:
-                c2 = [
+                c2 = (
                     (c0r + c1r) // 2,
                     (c0g + c1g) // 2,
                     (c0b + c1b) // 2,
                     255
-                ]
-                c3 = list(black_color)
+                )
+                c3 = tuple(black_color)
 
             table = [
-                [c0b, c0g, c0r, 255],
-                [c1b, c1g, c1r, 255],
+                (c0b, c0g, c0r, 255),
+                (c1b, c1g, c1r, 255),
                 c2,
                 c3,
             ]
@@ -290,9 +291,9 @@ def load_dxt1_impl(
 
 
 def dxt_color_table(
-    pixels,
-    data,
-    table,
+    pixels: array.array,
+    data: bytes,
+    table: List[Tuple[int, int, int, int]],
     block_off: int,
     block_wid: int,
     block_x: int,
@@ -328,7 +329,7 @@ def dxt_color_table(
         ) = table[byte & 0b00000011]
 
 
-def load_dxt3(pixels, data, width, height):
+def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
@@ -348,20 +349,20 @@ def load_dxt3(pixels, data, width, height):
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
             table = [
-                [c0b, c0g, c0r, 255],
-                [c1b, c1g, c1r, 255],
-                [
+                (c0b, c0g, c0r, 255),
+                (c1b, c1g, c1r, 255),
+                (
                     (2 * c0b + c1b) // 3,
                     (2 * c0g + c1g) // 3,
                     (2 * c0r + c1r) // 3,
-                    255
-                ],
-                [
+                    255,
+                ),
+                (
                     (c0b + 2 * c1b) // 3,
                     (c0g + 2 * c1g) // 3,
                     (c0r + 2 * c1r) // 3,
-                    255
-                ],
+                    255,
+                ),
             ]
             dxt_color_table(
                 pixels, data, table,
@@ -386,8 +387,6 @@ def load_dxt5(pixels, data, width, height):
     block_wid, mod = divmod(width, 4)
     if mod:
         block_wid += 1
-
-    # TODO: These alpha values aren't quite right.
 
     for block_y in range(0, height, 4):
         block_y //= 4
@@ -425,20 +424,20 @@ def load_dxt5(pixels, data, width, height):
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
 
             table = [
-                [c0b, c0g, c0r, 127],
-                [c1b, c1g, c1r, 127],
-                [
+                (c0b, c0g, c0r, 127),
+                (c1b, c1g, c1r, 127),
+                (
                     (2 * c0b + c1b) // 3,
                     (2 * c0g + c1g) // 3,
                     (2 * c0r + c1r) // 3,
                     127
-                ],
-                [
+                ),
+                (
                     (c0b + 2 * c1b) // 3,
                     (c0g + 2 * c1g) // 3,
                     (c0r + 2 * c1r) // 3,
                     127
-                ],
+                ),
             ]
             dxt_color_table(
                 pixels, data, table,
