@@ -581,6 +581,27 @@ class VTF:
         """The length of a VTF is the number of image frames."""
         return len(self._frames)
 
+    def get(
+        self, *,
+        frame: int = 0,
+        depth: int = 0,
+        side: CubeSide = None,
+        mipmap: int = 0,
+    ) -> Frame:
+        """Get a specific image frame.
+
+        If the texture is a cubemap, a side must be provided and depth must be 0.
+        """
+        if side is not None and depth != 0:
+            raise TypeError('Side and depth are mutually exclusive!')
+        if VTFFlags.ENVMAP in self.flags:
+            if side is None:
+                raise ValueError('Side must be provided for cubemaps!')
+            depth_side = side
+        else:
+            depth_side = depth
+        return self._frames[frame, depth_side, mipmap]
+
 
 TexCoord = namedtuple('TexCoord', ['left', 'top', 'right', 'bottom'])
 
