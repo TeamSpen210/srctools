@@ -8,7 +8,7 @@ from srctools import Vec, parse_vec_str
 from srctools.fgd import HelperTypes, Helper
 
 if TYPE_CHECKING:
-    from srctools.fgd import EntityDef, KeyValues
+    from srctools.fgd import EntityDef
 
 
 __all__ = [
@@ -712,5 +712,4 @@ class HelperExtAutoVisgroups(Helper):
 
     def export(self) -> List[str]:
         return self.path
-
 
