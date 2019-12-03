@@ -1,10 +1,10 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
 from cpython cimport array
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.stdio cimport snprintf
 from libc.stdint cimport uint_least64_t
+from libc.stdlib cimport abort, malloc, free
+from cython.parallel cimport prange, parallel
 
 
 cdef object img_template = array.array('B')
@@ -31,7 +31,7 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
 
     # b'P6 65536 65536 255\n' is 19 characters long.
     # We shouldn't get a larger frame than that, it's already absurd.
-    cdef byte *buffer = <byte *> PyMem_Malloc(size + 19)
+    cdef byte *buffer = <byte *> malloc(size + 19)
     try:
         img_off = snprintf(<char *>buffer, 19, b'P6 %u %u 255\n', width, height)
 
@@ -43,9 +43,9 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
             buffer[img_off + 3*off+1] = pixels[4*off+1]
             buffer[img_off + 3*off+2] = pixels[4*off+2]
 
-        return PyBytes_FromStringAndSize(<char *>buffer, size + img_off)
+        return buffer[:size+img_off]
     finally:
-        PyMem_Free(buffer)
+        free(buffer)
 
 
 cdef inline byte upsample(byte bits, byte data) nogil:
@@ -66,8 +66,8 @@ cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
 # These semantically operate differently, but are implemented the same.
 def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse RGBA-ordered 8888 pixels."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(0, width * height, 4, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 0]
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 2]
@@ -75,8 +75,8 @@ def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVLX data, copying them into RGBA respectively."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 0]
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 2]
@@ -84,8 +84,8 @@ def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVWQ data, copying them into RGBA respectively."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 0]
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 2]
@@ -93,8 +93,8 @@ def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 
 def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 2]
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 0]
@@ -103,32 +103,32 @@ def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 # This is totally the wrong order, but it's how it's actually ordered.
 def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """This is toally wrong - it's actually in GBAR order."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 3]
         pixels[4 * offset + 1] = data[4 * offset + 0]
         pixels[4 * offset + 2] = data[4 * offset + 1]
         pixels[4 * offset + 3] = data[4 * offset + 2]
 
 def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(0, width * height, 4, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 3]
         pixels[4 * offset + 1] = data[4 * offset + 2]
         pixels[4 * offset + 2] = data[4 * offset + 1]
         pixels[4 * offset + 3] = data[4 * offset + 0]
 
 def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[3 * offset + 0]
         pixels[4 * offset + 1] = data[3 * offset + 1]
         pixels[4 * offset + 2] = data[3 * offset + 2]
         pixels[4 * offset + 3] = 255
 
 def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[3 * offset + 2]
         pixels[4 * offset + 1] = data[3 * offset + 1]
         pixels[4 * offset + 2] = data[3 * offset + 0]
@@ -136,8 +136,8 @@ def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height)
 
 def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Strange - skip byte."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset] = data[4 * offset + 2]
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 0]
@@ -146,9 +146,9 @@ def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """RGB format, packed into 2 bytes by dropping LSBs."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef RGB col
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
         pixels[4 * offset] = col.r
@@ -159,9 +159,9 @@ def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
 
 def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, packed into 2 bytes by dropping LSBs."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef RGB col
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
         pixels[4 * offset] = col.b
@@ -172,9 +172,9 @@ def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
 
 def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
         pixels[4 * offset+1] = (a & 0b11110000) | (a & 0b11110000) >> 4
@@ -185,9 +185,9 @@ def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
         pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
@@ -198,9 +198,9 @@ def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, 5 bits per color, alpha ignored."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
         pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
@@ -211,16 +211,16 @@ def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 
 def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B"""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
         pixels[4*offset+3] = 255
 
 
 def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B + A"""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
         pixels[4*offset+3] = data[2*offset+1]
 
@@ -229,16 +229,16 @@ def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
 
 def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Single alpha bytes."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
         pixels[4*offset+3] = data[offset]
 
 
 def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """UV-only, which is mapped to RG."""
-    cdef uint offset
-    for offset in range(width * height):
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4*offset] = data[2*offset]
         pixels[4*offset+1] = data[2*offset+1]
         pixels[4*offset+2] = 0
@@ -250,9 +250,9 @@ def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
 
     Pure blue pixels are transparent.
     """
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte r, g, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset]
         g = data[3 * offset + 1]
         b = data[3 * offset + 2]
@@ -271,9 +271,9 @@ def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
 
     Pure blue pixels are transparent.
     """
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte r, g, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset + 2]
         g = data[3 * offset + 1]
         b = data[3 * offset]
@@ -329,68 +329,76 @@ cdef inline int load_dxt1_impl(
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
 
-    cdef uint block_wid, block_off, block_x, block_y
-
-    cdef byte[16] color_table
-
+    cdef uint block_wid, block_off
+    cdef Py_ssize_t block_x, block_y  # OpenMP requires this to be signed.
+    cdef byte *color_table
     cdef RGB c0, c1
-
-    # All but the 4th colour are opaque.
-    color_table[C0A] = color_table[C1A] = color_table[C2A] = 255
 
     block_wid = width // 4
     if width % 4:
         block_wid += 1
 
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 8 * (block_wid * block_y + block_x)
+    # Make each thread have their own local color_table and c0/c1.
+    with nogil, parallel():
+        c0 = [0, 0, 0]
+        c1 = [0, 0, 0]
+        color_table = <byte *>malloc(16)
+        if color_table is NULL:
+            with gil:
+                raise MemoryError('Cannot allocate color_table!')
+        try:
+            # All but the 4th colour are opaque.
+            color_table[C0A] = color_table[C1A] = color_table[C2A] = 255
 
-            # First, load the 2 colors.
-            decomp565(&c0, data[block_off], data[block_off+1])
-            decomp565(&c1, data[block_off+2], data[block_off+3])
+            for block_y in prange(0, height //4, schedule='static'):
+                for block_x in range(0, width // 4):
+                    block_off = 8 * (block_wid * block_y + block_x)
 
-            color_table[C0B] = c0.r
-            color_table[C0G] = c0.g
-            color_table[C0R] = c0.b
-            
-            color_table[C1B] = c1.r
-            color_table[C1G] = c1.g
-            color_table[C1R] = c1.b
+                    # First, load the 2 colors.
+                    decomp565(&c0, data[block_off], data[block_off+1])
+                    decomp565(&c1, data[block_off+2], data[block_off+3])
 
-            # We store the lookup colors as bytes so we can directly copy them.
+                    color_table[C0B] = c0.r
+                    color_table[C0G] = c0.g
+                    color_table[C0R] = c0.b
 
-            # Equivalent to 16-bit comparison...
-            if (
-                data[block_off] > data[block_off+2] or
-                data[block_off+1] > data[block_off+3]
-            ):
-                color_table[C2R] = (2*c0.b + c1.b) // 3
-                color_table[C2G] = (2*c0.g + c1.g) // 3
-                color_table[C2B] = (2*c0.r + c1.r) // 3
+                    color_table[C1B] = c1.r
+                    color_table[C1G] = c1.g
+                    color_table[C1R] = c1.b
 
-                color_table[C3R] = (c0.b + 2*c1.b) // 3
-                color_table[C3G] = (c0.g + 2*c1.g) // 3
-                color_table[C3B] = (c0.r + 2*c1.r) // 3
-                color_table[C3A] = 255
-            else:
-                color_table[C2R] = (c0.b + c1.b) // 2
-                color_table[C2G] = (c0.g + c1.g) // 2
-                color_table[C2B] = (c0.r + c1.r) // 2
+                    # We store the lookup colors as bytes so we can directly copy them.
 
-                color_table[C3R] = 0
-                color_table[C3G] = 0
-                color_table[C3B] = 0
-                color_table[C3A] = black_alpha
+                    # Equivalent to 16-bit comparison...
+                    if (
+                        data[block_off] > data[block_off+2] or
+                        data[block_off+1] > data[block_off+3]
+                    ):
+                        color_table[C2R] = (2*c0.b + c1.b) // 3
+                        color_table[C2G] = (2*c0.g + c1.g) // 3
+                        color_table[C2B] = (2*c0.r + c1.r) // 3
 
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off, block_wid,
-                block_x, block_y,
-                do_alpha=True,
-            )
+                        color_table[C3R] = (c0.b + 2*c1.b) // 3
+                        color_table[C3G] = (c0.g + 2*c1.g) // 3
+                        color_table[C3B] = (c0.r + 2*c1.r) // 3
+                        color_table[C3A] = 255
+                    else:
+                        color_table[C2R] = (c0.b + c1.b) // 2
+                        color_table[C2G] = (c0.g + c1.g) // 2
+                        color_table[C2B] = (c0.r + c1.r) // 2
+
+                        color_table[C3R] = 0
+                        color_table[C3G] = 0
+                        color_table[C3B] = 0
+                        color_table[C3A] = black_alpha
+
+                    dxt_color_table(
+                        pixels, data, color_table,
+                        block_off, block_wid,
+                        block_x, block_y,
+                        do_alpha=True,
+                    )
+        finally:
+            free(color_table)
 
 
 cdef inline void dxt_color_table(
@@ -402,7 +410,7 @@ cdef inline void dxt_color_table(
     uint block_x,
     uint block_y,
     bint do_alpha,
-):
+) nogil:
     """Decodes the actual colour table into pixels."""
     cdef unsigned int row, y
     cdef byte inp, off
@@ -460,6 +468,7 @@ def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     if width % 4:
         block_wid += 1
 
+    # for block_y in prange(0, height, 4, schedule='static', nogil=True):
     for block_y in range(0, height, 4):
         block_y //= 4
         for block_x in range(0, width, 4):

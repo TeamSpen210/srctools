@@ -1,11 +1,14 @@
 from setuptools import setup, Extension
+import sys
 
 try:
     from Cython.Build import cythonize
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
-    modules = []
-    cythonize = None
+    def cythonize(extensions):
+        return []
+
+WIN = sys.platform.startswith('win')
 
 setup(
     name='srctools',
@@ -42,7 +45,11 @@ setup(
         Extension(
             "srctools._cy_vtf_readwrite",
             sources=["srctools/_cy_vtf_readwrite.pyx"],
-            # extra_compile_args=['/FAs'],  # MS ASM dump
+            extra_compile_args=[
+                '/openmp' if WIN else '-openmp',
+                # '/FAs',  # MS ASM dump
+            ],
+            extra_link_args=['/openmp' if WIN else '-openmp'],
         ),
     ]),
 
