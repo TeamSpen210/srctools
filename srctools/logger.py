@@ -261,7 +261,11 @@ def init_logging(
 
     if sys.stdout:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
-        stdout_loghandler.setLevel(logging.INFO)
+        stdout_loghandler.setLevel(
+            logging.DEBUG
+            if os.environ.get('SRCTOOLS_DEBUG', 0) == '1' else
+            logging.INFO
+        )
         stdout_loghandler.setFormatter(short_log_format)
         logger.addHandler(stdout_loghandler)
 
