@@ -522,7 +522,7 @@ class Vec:
         The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
-        horiz_dist = math.sqrt(self.x ** 2 + self.y ** 2)
+        horiz_dist = math.hypot(self.x, self.y)
         return Vec(
             math.degrees(math.atan2(-self.z, horiz_dist)),
             math.degrees(math.atan2(self.y, self.x)) % 360,
