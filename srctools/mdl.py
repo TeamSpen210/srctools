@@ -5,6 +5,7 @@ from typing import (
     BinaryIO,
 )
 from enum import IntFlag, Enum
+from pathlib import PurePosixPath
 
 from srctools.filesys import FileSystem, File
 from srctools.vec import Vec
@@ -505,8 +506,8 @@ class Model:
         self.cdmaterials = read_offset_array(f, cdmat_count)
         
         for ind, cdmat in enumerate(self.cdmaterials):
-            cdmat = cdmat.replace('\\', '/')
-            if cdmat[-1:] != '/':
+            cdmat = cdmat.replace('\\', '/').lstrip('/')
+            if cdmat and cdmat[-1:] != '/':
                 cdmat += '/'
             self.cdmaterials[ind] = cdmat
         
@@ -543,8 +544,7 @@ class Model:
         offset = 0
         for ind in range(skin_count):
             self.skins[ind] = [
-                # Strip folders from these skin names.
-                os.path.basename(textures[i][0])
+                textures[i][0].replace('\\', '/').lstrip('/')
                 for i in skin_group.unpack_from(ref_data, offset)
             ]
             offset += skin_group.size
@@ -558,8 +558,8 @@ class Model:
                     self.cdmaterials.append(folder)
 
         # All models fallback to checking the texture at a root folder.
-        if '/' not in self.cdmaterials:
-            self.cdmaterials.append('/')
+        if '' not in self.cdmaterials:
+            self.cdmaterials.append('')
 
         f.seek(surfaceprop_index)
         self.surfaceprop = read_nullstr(f)
@@ -773,7 +773,7 @@ class Model:
         with self._sys:
             for tex in paths:
                 for folder in self.cdmaterials:
-                    full = 'materials/{}{}.vmt'.format(folder, tex)
+                    full = str(PurePosixPath('materials', folder, tex).with_suffix('.vmt'))
                     if full in self._sys:
                         yield full
                         break
