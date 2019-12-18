@@ -264,7 +264,6 @@ def _shader_db(var_type, DB):
     DB['splinetype'] = INT
     DB['spriteorientation'] = INT
     DB['spriterendermode'] = INT
-    DB['ssbump'] = INT
     DB['stage'] = INT
     DB['staticblendtextureframe'] = INT
     DB['tcsize0'] = INT
@@ -621,6 +620,7 @@ def _shader_db(var_type, DB):
     DB['showalpha'] = BOOL
     DB['softedges'] = BOOL
     DB['spheretexkillcombo'] = BOOL
+    DB['ssbump'] = BOOL
     DB['ssbumpmathfix'] = BOOL
     DB['toolmode'] = BOOL
     DB['translucentgoo'] = BOOL
@@ -635,7 +635,9 @@ def _shader_db(var_type, DB):
     DB['writez'] = BOOL
     DB['zfailenable'] = BOOL
 
+    DB['ambientocclcolor'] = COLOR
     DB['cloakcolortint'] = COLOR
+    DB['color'] = COLOR
     DB['color2'] = COLOR
     DB['colortint'] = COLOR
     DB['detailtint'] = COLOR
@@ -648,6 +650,12 @@ def _shader_db(var_type, DB):
     DB['fogcolor'] = COLOR
     DB['glassenvmaptint'] = COLOR
     DB['glowcolor'] = COLOR
+    DB['layerbordertint'] = COLOR
+    DB['layertint1'] = COLOR
+    DB['layertint2'] = COLOR
+    DB['lerpcolor1'] = COLOR
+    DB['lerpcolor2'] = COLOR
+    DB['light_color'] = COLOR
     DB['outlinecolor'] = COLOR
     DB['portalcolorgradientdark'] = COLOR
     DB['portalcolorgradientlight'] = COLOR
@@ -655,6 +663,7 @@ def _shader_db(var_type, DB):
     DB['portalcoopcolorplayeroneportaltwo'] = COLOR
     DB['portalcoopcolorplayertwoportalone'] = COLOR
     DB['portalcoopcolorplayertwoportaltwo'] = COLOR
+    DB['phongcolortint'] = COLOR
     DB['reflectivity'] = COLOR
     DB['reflecttint'] = COLOR
     DB['refracttint'] = COLOR
@@ -662,7 +671,10 @@ def _shader_db(var_type, DB):
     DB['scroll2'] = COLOR
     DB['selfillumtint'] = COLOR
     DB['silhouettecolor'] = COLOR
+    DB['sscolortint'] = COLOR
     DB['tint'] = COLOR
+    DB['vomitcolor1'] = COLOR
+    DB['vomitcolor2'] = COLOR
 
     DB['basetextureoffset'] = VEC2
     DB['basetexturescale'] = VEC2
@@ -675,11 +687,9 @@ def _shader_db(var_type, DB):
     DB['maskscale'] = VEC2
     DB['refractionamount'] = VEC2
 
-    DB['ambientocclcolor'] = VEC3
     DB['basealphaenvmapmaskminmaxexp'] = VEC3
     DB['bbmax'] = VEC3
     DB['bbmin'] = VEC3
-    DB['color'] = VEC3
     DB['dimensions'] = VEC3
     DB['entityorigin'] = VEC3
     DB['envmapfresnelminmaxexp'] = VEC3
@@ -689,25 +699,15 @@ def _shader_db(var_type, DB):
     DB['flow_vortex_pos2'] = VEC3
     DB['forward'] = VEC3
     DB['interiorcolor'] = VEC3
-    DB['layerbordertint'] = VEC3
-    DB['layertint1'] = VEC3
-    DB['layertint2'] = VEC3
     DB['leafcenter'] = VEC3
-    DB['lerpcolor1'] = VEC3
-    DB['lerpcolor2'] = VEC3
-    DB['light_color'] = VEC3
     DB['light_position'] = VEC3
-    DB['phongcolortint'] = VEC3
     DB['phongfresnel'] = VEC3
     DB['phongfresnel2'] = VEC3
     DB['phongfresnelranges'] = VEC3
     DB['phongtint'] = VEC3
     DB['spriteorigin'] = VEC3
-    DB['sscolortint'] = VEC3
     DB['translucentfresnelminmaxexp'] = VEC3
     DB['uvprojoffset'] = VEC3
-    DB['vomitcolor1'] = VEC3
-    DB['vomitcolor2'] = VEC3
 
     DB['aainternal1'] = VEC4
     DB['aainternal2'] = VEC4
