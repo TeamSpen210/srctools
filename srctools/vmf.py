@@ -1799,7 +1799,7 @@ class Entity:
         
         base_name = orig_name.rstrip('0123456789')
 
-        if self.map.by_target[orig_name]:
+        if self.map.by_target[base_name]:
             # Check every index in order.
             for i in itertools.count(start=1):
                 name = base_name + str(i)
