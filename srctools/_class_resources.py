@@ -151,21 +151,18 @@ res('point_energy_ball_launcher',
     'models/effects/combineball.mdl',
     'materials/effects/eball_finite_life.vmt',
     'materials/effects/eball_infinite_life.vmt',
-
-    'sound/weapons/physcannon/energy_bounce1.wav',
-    'sound/weapons/physcannon/energy_bounce2.wav',
-    'sound/weapons/physcannon/energy_disintegrate4.wav',
-    'sound/weapons/physcannon/energy_disintegrate5.wav',
-    'sound/weapons/physcannon/energy_sing_explosion2.wav',
-    'sound/weapons/physcannon/energy_sing_flyby1.wav',
-    'sound/weapons/physcannon/energy_sing_flyby2.wav',
-    'sound/weapons/physcannon/energy_sing_loop4.wav',
+    ("EnergyBall.Explosion", FileType.GAME_SOUND),
+    ("EnergyBall.Launch", FileType.GAME_SOUND),
+    ("EnergyBall.KillImpact", FileType.GAME_SOUND),
+    ("EnergyBall.Impact", FileType.GAME_SOUND),
+    ("EnergyBall.AmbientLoop", FileType.GAME_SOUND),
     )
 
 res('prop_button',
     'models/props/switch001.mdl'
     )
 
+# The ball by itself needs the same resources.
 CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
 
 
@@ -178,7 +175,7 @@ def item_teamflag(ent: Entity) -> Iterator[str]:
         ('flag_icon', 'materials/vgui/'),
         ('flag_trail', 'materials/effects/')
     ]:
-        value = prefix +ent[kvalue]
+        value = prefix + ent[kvalue]
         if value != prefix:
             yield value + '.vmt'
             yield value + '_red.vmt'
