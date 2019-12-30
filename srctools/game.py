@@ -33,7 +33,20 @@ class Game:
         self.search_paths = []  # type: List[Path]
 
         for path in fsystems.find_children('SearchPaths'):
-            self.search_paths.append(self.parse_search_path(path))
+            exp_path = self.parse_search_path(path)
+            # Expand /* if at the end of paths.
+            if exp_path.name == '*':
+                self.search_paths.extend(
+                    map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                )
+            # Handle folder_* too.
+            elif exp_path.name.endswith('*'):
+                exp_path = exp_path.with_name(exp_path.name[:-1])
+                self.search_paths.extend(
+                    filter(Path.is_dir, exp_path.glob(exp_path.name))
+                )
+            else:
+                self.search_paths.append(exp_path)
 
         # Add DLC folders based on the first/bin folder.
         try:
