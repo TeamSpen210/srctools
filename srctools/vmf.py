@@ -1791,11 +1791,16 @@ class Entity:
         """Remove this entity from the map."""
         self.map.remove_ent(self)
 
-    def make_unique(self) -> 'Entity':
-        """Ensure this entity is uniquely named, by adding a numeric suffix."""
-        orig_name = self['targetname']
+    def make_unique(self, unnamed_prefix='') -> 'Entity':
+        """Ensure this entity is uniquely named, by adding a numeric suffix.
 
-        self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        If the entity doesn't start with a name, it will use the parameter.
+        """
+        orig_name = self['targetname']
+        if orig_name:
+            self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        else:
+            orig_name = unnamed_prefix
         
         base_name = orig_name.rstrip('0123456789')
 
