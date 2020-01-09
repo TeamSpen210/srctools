@@ -322,6 +322,17 @@ class PackList:
         self._inject_files[folder, ext, data] = full_name
         return full_name
 
+    def inject_vscript(self, code: str, folder: str='inject') -> str:
+        """Specialised variant of inject_file() for VScript code specifically.
+
+        This returns the script name suitable for passing to Entity Scripts.
+        """
+        return self.inject_file(
+            code.encode('ascii'),
+            os.path.join('scripts/vscripts', folder), '.nut'
+            # Strip off the scripts/vscripts/ folder since it's implied.
+        )[17:]
+
     def pack_soundscript(self, sound_name: str):
         """Pack a soundscript or raw sound file."""
         # Blank means no sound is used.
