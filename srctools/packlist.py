@@ -607,18 +607,25 @@ class PackList:
                 elif val_type is KVTypes.STR_SOUND:
                     self.pack_soundscript(value)
 
+        # Handle resources that's coded into different entities with our
+        # internal database.
         for classname in vmf.by_class.keys():
             try:
                 res = CLASS_RESOURCES[classname]
             except KeyError:
                 continue
-            if callable(res):
+            if isinstance(res, list):
+                # Basic dependencies, if they're the same for any copy of this ent.
+                for file, filetype in res:
+                    self.pack_file(file, filetype)
+            else:
+                # Different stuff is packed based on keyvalues, so call a function.
                 for ent in vmf.by_class[classname]:
                     for file in res(ent):
-                        self.pack_file(file)
-            else:
-                for file in res:
-                    self.pack_file(file)
+                        if isinstance(file, tuple):
+                            self.pack_file(*file)  # Specify the file type too.
+                        else:
+                            self.pack_file(file)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']

@@ -14,17 +14,20 @@ __all__ = ['CLASS_RESOURCES']
 # Alternatively it's a function to call with the entity to do class-specific
 # behaviour, yielding files to pack.
 
-ClassFunc = Callable[[Entity], Iterator[str]]
+ClassFunc = Callable[[Entity], Iterator[Union[str, Tuple[str, FileType]]]]
 _cls_res_type = Dict[str, Union[
     ClassFunc,
-    List[Union[str, Tuple[str, FileType]],
+    List[Tuple[str, FileType],
 ]]]
 CLASS_RESOURCES = {}  # type: _cls_res_type
 
 
 def res(cls: str, *items: Union[str, Tuple[str, FileType]]):
     """Add a resource to class_resources."""
-    CLASS_RESOURCES[cls] = list(items)
+    CLASS_RESOURCES[cls] = [
+        (file, FileType.GENERIC) if isinstance(file, str) else file
+        for file in items
+    ]
 
 
 def cls_func(func: ClassFunc) -> ClassFunc:
