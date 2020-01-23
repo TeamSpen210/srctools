@@ -8,8 +8,6 @@ import logging
 
 from srctools.logger import get_logger
 
-LOGGER = get_logger(__name__)
-
 
 def quote(txt: str) -> str:
     """Add quotes to text if needed."""
@@ -32,7 +30,7 @@ def get_compiler_name(program: str) -> str:
 def run_compiler(
     name: str,
     args: List[str],
-    logger: logging.Logger,
+    logger: logging.Logger=get_logger('<compiler>'),
     change_name: bool=True,
 ) -> int:
     """
@@ -75,19 +73,19 @@ def run_compiler(
             buf_out.extend(stdout.read())
             buf_err.extend(stderr.read())
 
-            _pop_lines(logging.ERROR, name, buf_err)
-            _pop_lines(logging.INFO, name, buf_out)
+            _pop_lines(logger, logging.ERROR, name, buf_err)
+            _pop_lines(logger, logging.INFO, name, buf_out)
 
         # Grab any extra lines still in the pipe.
         buf_out.extend(stdout.read())
         buf_err.extend(stderr.read())
-        _pop_lines(logging.ERROR, name, buf_err)
-        _pop_lines(logging.INFO, name, buf_out)
+        _pop_lines(logger, logging.ERROR, name, buf_err)
+        _pop_lines(logger, logging.INFO, name, buf_out)
 
     return proc.returncode
 
 
-def _pop_lines(loglevel: int, compname: str, buf: bytearray) -> None:
+def _pop_lines(logger: logging.Logger, loglevel: int, compname: str, buf: bytearray) -> None:
     """Pull off as many complete lines as possible, logging them."""
     if b'\r' in buf:
         buf[:] = buf.replace(b'\r\n', b'\n').replace(b'\r', b'\n')
@@ -103,7 +101,7 @@ def _pop_lines(loglevel: int, compname: str, buf: bytearray) -> None:
 
             # Generate a logging record directly, so the logs appear to "come"
             # from the compiler itself.
-            LOGGER.handle(LOGGER.makeRecord(
+            logger.handle(logger.makeRecord(
                 "subproc",
                 loglevel,
                 "<valve>",
