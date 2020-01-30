@@ -141,8 +141,8 @@ def make_overlay(
     return vmf.create_ent(
         classname='info_overlay',
         angles='0 0 0',  # Not actually used by VBSP!
-        origin=origin.join(' '),
-
+        # Ensure it's not exactly on the edge plane.
+        origin=(origin + normal).join(' '),
         basisNormal=normal.join(' '),
         basisOrigin=origin.join(' '),
         basisU=basis_u.join(' '),
