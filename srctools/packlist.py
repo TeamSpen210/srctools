@@ -10,7 +10,7 @@ from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
-from srctools.bsp import BSP
+from srctools.bsp import BSP, BSP_LUMPS
 from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
     VirtualFileSystem,
@@ -662,28 +662,34 @@ class PackList:
 
     def pack_into_zip(
         self,
-        zip_file: ZipFile,
+        bsp: BSP,
         *,
         whitelist: Iterable[FileSystem]=(),
         blacklist: Iterable[FileSystem]=(),
         ignore_vpk: bool=True,
     ) -> None:
-        """Pack all our files into the given zipfile.
+        """Pack all our files into the packfile in the BSP.
 
         The filesys is used to find files to pack.
         Filesystems must be in the whitelist and not in the blacklist, if provided.
         If ignore_vpk is True, files in VPK won't be packed unless that system
         is in allow_filesys.
         """
-        existing_names = {
-            name.replace('\\', '/').casefold()
-            for name in zip_file.namelist()
-        }
+        # We need to rebuild the zipfile from scratch, so we can overwrite
+        # old data if required.
 
+        # First retrieve the data.
+        with bsp.packfile() as start_zip:
+            packed_files = {
+                info.filename.casefold(): (info.filename, start_zip.read(info))
+                for info in start_zip.infolist()
+            }  # type: Dict[str, Tuple[str, bytes]]
+
+        # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         all_systems = {
             sys for sys, prefix in
             self.fsys.systems
-        }
+        }  # type: Set[FileSystem]
 
         allowed = set(all_systems)
 
@@ -702,26 +708,30 @@ class PackList:
                 # Need to ensure / separators.
                 fname = file.filename.replace('\\', '/')
 
-                if file.data is not None:
-                    # Always pack.
-                    zip_file.writestr(fname, file.data)
-                    continue
+                already_packed = fname.casefold() in packed_files
 
-                if file.filename.casefold() in existing_names:
-                    # Already in the zip - cubemap patch files, or something
-                    # else has already added it. Ignore.
+                if file.data is not None:
+                    # Always pack, we've got custom data.
+                    packed_files[fname.casefold()] = (fname, file.data)
                     continue
 
                 try:
                     sys_file = self.fsys[file.filename]
                 except FileNotFoundError:
-                    if file.type is not FileType.OPTIONAL:
-                        print('WARNING: "{}" not packed!'.format(file.filename))
+                    if file.type is not FileType.OPTIONAL and not already_packed:
+                        LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                     continue
 
                 if self.fsys.get_system(sys_file) in allowed:
                     with sys_file.open_bin() as f:
-                        zip_file.writestr(fname, f.read())
+                        packed_files[fname.casefold()] = (fname, f.read())
+
+        LOGGER.info('Compressing packfile...')
+        with io.BytesIO() as new_data:
+            with ZipFile(new_data, 'w') as new_zip:
+                for fname, data in packed_files.values():
+                    new_zip.writestr(fname, data)
+            bsp.lumps[BSP_LUMPS.PAKFILE].data = new_data.getvalue()
 
     def eval_dependencies(self) -> None:
         """Add files to the list which need to also be packed.

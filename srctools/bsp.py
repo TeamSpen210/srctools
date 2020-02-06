@@ -441,10 +441,14 @@ class BSP:
         data_file = BytesIO(pak_lump.data)
 
         zip_file = ZipFile(data_file, mode='a')
-        # If exception, abort, so we don't need try: or with:
+        # If exception, abort, so we don't need try: or with:.
+        # Because this is purely in memory, there are no actual resources here
+        # and we don't actually care about not closing the zip file or BytesIO.
         yield zip_file
         # Explicitly close to finalise the footer.
         zip_file.close()
+        # Note: because data is bytes, CPython won't end up doing any copying
+        # here.
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
