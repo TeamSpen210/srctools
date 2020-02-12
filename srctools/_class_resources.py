@@ -22,7 +22,7 @@ _cls_res_type = Dict[str, Union[
 CLASS_RESOURCES = {}  # type: _cls_res_type
 
 
-def res(cls: str, *items: Union[str, Tuple[str, FileType]]):
+def res(cls: str, *items: Union[str, Tuple[str, FileType]]) -> None:
     """Add a resource to class_resources."""
     CLASS_RESOURCES[cls] = [
         (file, FileType.GENERIC) if isinstance(file, str) else file
@@ -161,12 +161,30 @@ res('point_energy_ball_launcher',
     ("EnergyBall.AmbientLoop", FileType.GAME_SOUND),
     )
 
+# The ball by itself needs the same resources.
+CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
+
 res('prop_button',
     'models/props/switch001.mdl'
     )
 
-# The ball by itself needs the same resources.
-CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
+res('npc_rocket_turret',
+    'materials/effects/bluelaser1.vmt',
+    'materials/sprites/light_glow03.vmt',
+    'models/props_bts/rocket_sentry.mdl',
+    ('NPC_RocketTurret.LockingBeep', FileType.GAME_SOUND),
+    ('NPC_FloorTurret.LockedBeep', FileType.GAME_SOUND),
+    ('NPC_FloorTurret.RocketFire', FileType.GAME_SOUND),
+)
+
+res('rocket_turret_projectile',
+    'models/props_bts/rocket.mdl',
+    'materials/decals/scorchfade.vmt',
+    ('NPC_FloorTurret.RocketFlyLoop', FileType.GAME_SOUND),
+)
+
+# The turret spawns the rocket of course.
+CLASS_RESOURCES['npc_rocket_turret'].extend(CLASS_RESOURCES['rocket_turret_projectile'])
 
 
 # *** Team Fortress 2 ***
