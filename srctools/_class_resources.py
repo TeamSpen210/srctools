@@ -1,6 +1,6 @@
 """For each entity class, specify hardcoded resources.
 
-Those are ones that don't simply appear in fgd.
+Those are ones that don't simply appear in keyvalues.
 """
 from typing import Iterator, Callable, Tuple, Union, List, Dict
 
@@ -35,12 +35,7 @@ def cls_func(func: ClassFunc) -> ClassFunc:
     CLASS_RESOURCES[func.__name__] = func
     return func
 
-
-# *** Base entities  / HL2 ***
-res('env_screeneffect',
-    'materials/effects/stun.vmt',
-    'materials/effects/introblur.vmt',
-    )
+# In alphabetical order: 
 
 res('env_fire_trail',
     'materials/sprites/flamelet1.vmt',
@@ -52,30 +47,21 @@ res('env_fire_trail',
     'materials/particle/particle_noisesphere.vmt',
     )
 
-res('env_steam',
-    'materials/particle/particle_smokegrenade.vmt',
-    'materials/sprites/heatwave.vmt',
-)
-CLASS_RESOURCES['env_steamjet'] = CLASS_RESOURCES['env_steam']
+res('env_screeneffect',
+    'materials/effects/stun.vmt',
+    'materials/effects/introblur.vmt',
+    )
 
 res('env_starfield',
     'materials/effects/spark_noz.vmt',
     )
 
-res('func_dust',
-    'materials/particle/sparkles.vmt',
-    )
-
-res('func_tankchange',
-    ('FuncTrackChange.Blocking', FileType.GAME_SOUND),
-    )
-
-res('npc_combine_cannon',
-    'models/combine_soldier.mdl',
-    'materials/effects/bluelaser1.vmt',
-    'materials/sprites/light_glow03.vmt',
-    ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
+res('env_steam',
+    'materials/particle/particle_smokegrenade.vmt',
+    'materials/sprites/heatwave.vmt',
 )
+
+CLASS_RESOURCES['env_steamjet'] = CLASS_RESOURCES['env_steam']
 
 
 @cls_func
@@ -118,6 +104,36 @@ def func_breakable_surf(ent: Entity):
             'materials/models/brokenglass/glassbroken_03d.vmt',
         )
 
+res('func_dust',
+    'materials/particle/sparkles.vmt',
+    )
+
+
+res('func_tankchange',
+    ('FuncTrackChange.Blocking', FileType.GAME_SOUND),
+    )
+
+@cls_func
+def item_teamflag(ent: Entity) -> Iterator[str]:
+    """This item has several special team-specific options."""
+    for kvalue, prefix in [
+        ('flag_icon', 'materials/vgui/'),
+        ('flag_trail', 'materials/effects/')
+    ]:
+        value = prefix + ent[kvalue]
+        if value != prefix:
+            yield value + '.vmt'
+            yield value + '_red.vmt'
+            yield value + '_blue.vmt'
+
+res('npc_combine_cannon',
+    'models/combine_soldier.mdl',
+    'materials/effects/bluelaser1.vmt',
+    'materials/sprites/light_glow03.vmt',
+    ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
+)
+
+
 
 @cls_func
 def move_rope(ent: Entity):
@@ -135,20 +151,18 @@ def move_rope(ent: Entity):
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
 
 
+res('npc_rocket_turret',
+    'materials/effects/bluelaser1.vmt',
+    'materials/sprites/light_glow03.vmt',
+    'models/props_bts/rocket_sentry.mdl',
+    ('NPC_RocketTurret.LockingBeep', FileType.GAME_SOUND),
+    ('NPC_FloorTurret.LockedBeep', FileType.GAME_SOUND),
+    ('NPC_FloorTurret.RocketFire', FileType.GAME_SOUND),
+)
+
 res('npc_vehicledriver',
     'models/roller_vehicledriver.mdl',
     )
-
-res('point_spotlight',
-    'materials/sprites/light_glow03.vmt',
-    'materials/sprites/glow_test02.vmt',
-    )
-
-res('vgui_screen',
-    'materials/engine/writez.vmt',
-    )
-
-# *** Portal 1/2 ***
 
 res('point_energy_ball_launcher',
     'models/effects/combineball.mdl',
@@ -161,21 +175,17 @@ res('point_energy_ball_launcher',
     ("EnergyBall.AmbientLoop", FileType.GAME_SOUND),
     )
 
-# The ball by itself needs the same resources.
-CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
+res('point_spotlight',
+    'materials/sprites/light_glow03.vmt',
+    'materials/sprites/glow_test02.vmt',
+    )
 
 res('prop_button',
     'models/props/switch001.mdl'
     )
 
-res('npc_rocket_turret',
-    'materials/effects/bluelaser1.vmt',
-    'materials/sprites/light_glow03.vmt',
-    'models/props_bts/rocket_sentry.mdl',
-    ('NPC_RocketTurret.LockingBeep', FileType.GAME_SOUND),
-    ('NPC_FloorTurret.LockedBeep', FileType.GAME_SOUND),
-    ('NPC_FloorTurret.RocketFire', FileType.GAME_SOUND),
-)
+# The ball by itself needs the same resources.
+CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
 
 res('rocket_turret_projectile',
     'models/props_bts/rocket.mdl',
@@ -187,21 +197,6 @@ res('rocket_turret_projectile',
 CLASS_RESOURCES['npc_rocket_turret'].extend(CLASS_RESOURCES['rocket_turret_projectile'])
 
 
-# *** Team Fortress 2 ***
-
-@cls_func
-def item_teamflag(ent: Entity) -> Iterator[str]:
-    """This item has several special team-specific options."""
-    for kvalue, prefix in [
-        ('flag_icon', 'materials/vgui/'),
-        ('flag_trail', 'materials/effects/')
-    ]:
-        value = prefix + ent[kvalue]
-        if value != prefix:
-            yield value + '.vmt'
-            yield value + '_red.vmt'
-            yield value + '_blue.vmt'
-
 @cls_func
 def team_control_point(ent: Entity) -> Iterator[str]:
     """Special '_locked' materials."""
@@ -210,3 +205,7 @@ def team_control_point(ent: Entity) -> Iterator[str]:
         if mat:
             yield 'materials/{}.vmt'.format(mat)
             yield 'materials/{}_locked.vmt'.format(mat)
+
+res('vgui_screen',
+    'materials/engine/writez.vmt',
+    )
