@@ -316,6 +316,7 @@ res('env_global')
 res('env_global_light')
 res('env_gunfire')
 
+
 @cls_func
 def env_headcrabcanister(ent: Entity):
     """Check if it spawns in skybox or not, and precache the headcrab."""
@@ -352,10 +353,50 @@ def env_headcrabcanister(ent: Entity):
     else:
         yield from CASS_RESOURCES[headcrab]
 
+
+res('env_laser')
+res('env_lightglow', mat('materials/sprites/light_glow02_add_noz.vmt'))
+res('env_lightrail_endpoint',
+    mat('effects/light_rail_endpoint'),
+    mat('effects/strider_muzzle'),
+    mat('effects/combinemuzzle2'),
+    mat('effects/combinemuzzle2_dark'),
+    )
+res('env_physexplosion')
+res('env_physics_blocker')
+res('env_physimpact')
+
+@cls_func
+def env_portal_laser(ent: Entity):
+    if not ent['model']:
+        yield mdl('models/props/laser_emitter.mdl')
+    yield sound('Flesh.LaserBurn')
+    yield sound('Laser.BeamLoop')
+    yield sound('Player.PainSmall')
+    yield part('laser_start_glow')
+    yield part('reflector_start_glow')
+
+
 res('env_screeneffect',
     'materials/effects/stun.vmt',
     'materials/effects/introblur.vmt',
     )
+
+
+@cls_func
+def env_shooter(ent: Entity):
+    """A hardcoded array of sounds to play."""
+    try:
+        yield (
+            "Breakable.MatGlass", 
+            "Breakable.MatWood", 
+            "Breakable.MatMetal", 
+            "Breakable.MatFlesh", 
+            "Breakable.MatConcrete",
+        )[conv_int(ent['spawnflags'])]
+    except IndexError:
+        pass
+
 
 res('env_starfield',
     'materials/effects/spark_noz.vmt',
@@ -452,7 +493,7 @@ res('npc_headcrab',
     )
 
 res('npc_headcrab_black',
-    mdl('models/headcrabblack.mdl');
+    mdl('models/headcrabblack.mdl'),
 
     sound('NPC_BlackHeadcrab.Telegraph'),
     sound('NPC_BlackHeadcrab.Attack'),
@@ -523,25 +564,87 @@ res('npc_vehicledriver',
 res('point_energy_ball_launcher',
     includes='prop_energy_ball',
     )
+res('point_futbol_shooter', 
+    sound('World.Wheatley.fire'),
+    includes='prop_exploding_futbol',
+    )
+res('point_hurt')
+
+res('point_prop_use_target')
+res('point_proximity_sensor')
+res('point_push')
 
 res('point_spotlight',
     'materials/sprites/light_glow03.vmt',
     'materials/sprites/glow_test02.vmt',
 )
 
-res('prop_button',
-    'models/props/switch001.mdl'
+res('prop_floor_button')  # Model set in keyvalues.
+res('prop_floor_ball_button', mdl('models/props/ball_button.mdl'))
+res('prop_floor_cube_button', mdl('models/props/box_socket.mdl'))
+res('prop_button', 
+    mdl('models/props/switch001.mdl'),
+    sound('Portal.button_down'),
+    sound('Portal.button_up'),
+    sound('Portal.button_locked'),
+    sound('Portal.room1_TickTock'),
     )
 
 res('prop_energy_ball',
-    'models/effects/combineball.mdl',
-    'materials/effects/eball_finite_life.vmt',
-    'materials/effects/eball_infinite_life.vmt',
-    ('EnergyBall.Explosion', FileType.GAME_SOUND),
-    ('EnergyBall.Launch', FileType.GAME_SOUND),
-    ('EnergyBall.KillImpact', FileType.GAME_SOUND),
-    ('EnergyBall.Impact', FileType.GAME_SOUND),
-    ('EnergyBall.AmbientLoop', FileType.GAME_SOUND),
+    mdl('models/effects/combineball.mdl'),
+    mat('materials/effects/eball_finite_life.vmt'),
+    mat('materials/effects/eball_infinite_life.vmt'),
+    sound('EnergyBall.Explosion'),
+    sound('EnergyBall.Launch'),
+    sound('EnergyBall.KillImpact'),
+    sound('EnergyBall.Impact'),
+    sound('EnergyBall.AmbientLoop'),
+    )
+
+res('prop_exploding_futbol',
+    mdl('models/npcs/personality_sphere_angry.mdl'),
+    part('bomb_trail'),
+    )
+
+res('prop_laser_catcher',
+    part('laser_relay_powered'),
+    sound('prop_laser_catcher.powerloop'),
+    sound('prop_laser_catcher.poweroff'),
+    sound('prop_laser_catcher.poweron'),
+    )
+
+res('prop_laser_relay', 
+    mdl('models/props/laser_receptacle.mdl'),
+    part('laser_relay_powered'),
+    sound('prop_laser_catcher.powerloop'),
+    sound('prop_laser_catcher.poweroff'),
+    sound('prop_laser_catcher.poweron'),
+    )
+
+res('prop_linked_portal_door', mdl('models/props/portal_door.mdl'))
+
+res('prop_monster_box',
+    mdl('models/npcs/monsters/monster_a.mdl'),
+    mdl('models/npcs/monsters/monster_a_box.mdl'),
+    sound('DoSparkSmaller'),
+    )
+
+res('prop_under_button', 
+    mdl('models/props_underground/underground_testchamber_button.mdl'),
+    sound('Portal.button_down'),
+    sound('Portal.button_up'),
+    sound('Portal.button_locked'),
+    sound('Portal.room1_TickTock'),
+    )
+res('prop_under_floor_button', mdl('models/props_underground/underground_floor_button.mdl'))
+
+res('prop_wall_projector',
+    mdl('models/props/wall_emitter.mdl'),
+    sound('VFX.BridgeGlow'),
+    sound('music.ctc_lbout'),
+    # sound('music.mapname_lbout')
+    sound('music.sp_all_maps_lbout'),
+    part('projected_wall_impact'),
     )
 
 res('rocket_turret_projectile',
@@ -558,6 +661,82 @@ def team_control_point(ent: Entity) -> Iterator[str]:
         if mat:
             yield 'materials/{}.vmt'.format(mat)
             yield 'materials/{}_locked.vmt'.format(mat)
+
+res('trigger_active_weapon_detect')
+res('trigger_add_tf_player_condition')
+res('trigger_apply_impulse')
+res('trigger_asw_button_area')
+res('trigger_asw_chance')
+res('trigger_asw_computer_area')
+res('trigger_asw_door_area')
+res('trigger_asw_jump')
+res('trigger_asw_marine_knockback')
+res('trigger_asw_marine_position')
+res('trigger_asw_random_target')
+res('trigger_asw_supplies_chatter')
+res('trigger_asw_synup_chatter')
+res('trigger_auto_crouch')
+res('trigger_autosave')
+res('trigger_bomb_reset')
+res('trigger_bot_tag')
+res('trigger_capture_area')
+res('trigger_catapult')
+res('trigger_changelevel')
+res('trigger_escape')
+res('trigger_fall')
+res('trigger_finale')
+res('trigger_finale_dlc3')
+res('trigger_gravity')
+res('trigger_hierarchy')
+res('trigger_hurt')
+res('trigger_hurt_ghost')
+res('trigger_ignite')
+res('trigger_ignite_arrows')
+res('trigger_impact')
+res('trigger_look')
+res('trigger_multiple')
+res('trigger_once')
+res('trigger_paint_cleanser')
+res('trigger_passtime_ball')
+res('trigger_physics_trap')
+res('trigger_ping_detector')
+res('trigger_player_respawn_override')
+res('trigger_playermovement')
+res('trigger_playerteam')
+
+res(
+    'trigger_portal_cleanser',
+    part('cleanser_scanline'),
+    sound('VFX.FizzlerLp'),
+    sound('VFX.FizzlerDestroy'),
+    sound('VFX.FizzlerStart'),
+    sound('VFX.FizzlerVortexLp'),
+    sound('Prop.Fizzled'),
+    )
+
+res('trigger_proximity')
+res('trigger_push')
+res('trigger_rd_vault_trigger')
+res('trigger_remove')
+res('trigger_remove_tf_player_condition')
+res('trigger_rpgfire')
+res('trigger_serverragdoll')
+res('trigger_softbarrier')
+res('trigger_soundoperator')
+res('trigger_soundscape')
+res('trigger_standoff')
+res('trigger_stun')
+res('trigger_teleport')
+res('trigger_teleport_relative')
+res('trigger_timer_door')
+res('trigger_tonemap')
+res('trigger_transition')
+res('trigger_upgrade_laser_sight')
+res('trigger_vphysics_motion')
+res('trigger_waterydeath')
+res('trigger_weapon_dissolve')
+res('trigger_weapon_strip')
+res('trigger_wind')
 
 res('vgui_screen',
     'materials/engine/writez.vmt',
