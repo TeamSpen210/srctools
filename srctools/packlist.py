@@ -2,7 +2,7 @@
 import io
 from collections import OrderedDict
 from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
-from enum import Enum
+from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
 
@@ -33,19 +33,20 @@ SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
 
 class FileType(Enum):
     """Types of files we might pack."""
-    GENERIC = 0  # Other file types.
-    SOUNDSCRIPT = 1  # Should be added to the manifest
+    GENERIC = auto_enum()  # Other file types.
+    SOUNDSCRIPT = auto_enum()  # Should be added to the manifest
 
-    GAME_SOUND = 2  # 'world.blah' sound - lookup the soundscript, and raw files.
+    GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
+    PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
 
     # Assume these files are present even
     # if we can't find them. (rt_ textures for example.)
     # also don't bother looking for dependencies.
-    WHITELIST = 3
+    WHITELIST = auto_enum()
     
     # This file might be present - if it is pack it.
     # If not it's not an error.
-    OPTIONAL = 4
+    OPTIONAL = auto_enum()
     
     PARTICLE_FILE = 'pcf'  # Should be added to the manifest
     
@@ -200,6 +201,9 @@ class PackList:
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
             return  # This packs the soundscript and wav for us.
+        if data_type is FileType.PARTICLE:
+            # self.pack_particle(filename)  # TODO: Particle parsing
+            return  # This packs the PCF and material if required.
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
