@@ -219,7 +219,11 @@ class PackList:
             data_type = FileType.MATERIAL
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if not filename.endswith(('.vmt', '.spr')):
+            if filename.endswith('.spr'):
+                # This is really wrong, spr materials don't exist anymore.
+                # Silently swap the extension.
+                filename = filename[:-3] + 'vmt'
+            elif not filename.endswith('.vmt'):
                 filename = filename + '.vmt'
         elif data_type is FileType.TEXTURE or (
             data_type is FileType.GENERIC and filename.endswith('.vtf')
