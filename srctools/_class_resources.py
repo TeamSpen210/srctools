@@ -20,14 +20,17 @@ _cls_res_type = Dict[str, Union[
     List[Tuple[str, FileType],
 ]]]
 CLASS_RESOURCES = {}  # type: _cls_res_type
+INCLUDES = {}  # type: Dict[str, List[str]]
 
 
-def res(cls: str, *items: Union[str, Tuple[str, FileType]]) -> None:
-    """Add a resource to class_resources."""
+def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='') -> None:
+    """Add a class to class_resources, with each of the files it always uses."""
     CLASS_RESOURCES[cls] = [
         (file, FileType.GENERIC) if isinstance(file, str) else file
         for file in items
     ]
+    if includes:
+        INCLUDES[cls] = includes.split()
 
 
 def cls_func(func: ClassFunc) -> ClassFunc:
@@ -59,7 +62,7 @@ res('env_starfield',
 res('env_steam',
     'materials/particle/particle_smokegrenade.vmt',
     'materials/sprites/heatwave.vmt',
-)
+    )
 
 CLASS_RESOURCES['env_steamjet'] = CLASS_RESOURCES['env_steam']
 
@@ -108,10 +111,10 @@ res('func_dust',
     'materials/particle/sparkles.vmt',
     )
 
-
 res('func_tankchange',
     ('FuncTrackChange.Blocking', FileType.GAME_SOUND),
     )
+
 
 @cls_func
 def item_teamflag(ent: Entity) -> Iterator[str]:
@@ -131,8 +134,7 @@ res('npc_combine_cannon',
     'materials/effects/bluelaser1.vmt',
     'materials/sprites/light_glow03.vmt',
     ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
-)
-
+    )
 
 
 @cls_func
@@ -158,13 +160,27 @@ res('npc_rocket_turret',
     ('NPC_RocketTurret.LockingBeep', FileType.GAME_SOUND),
     ('NPC_FloorTurret.LockedBeep', FileType.GAME_SOUND),
     ('NPC_FloorTurret.RocketFire', FileType.GAME_SOUND),
-)
+    includes='rocket_turret_projectile',
+    )
 
 res('npc_vehicledriver',
     'models/roller_vehicledriver.mdl',
     )
 
 res('point_energy_ball_launcher',
+    includes='prop_energy_ball',
+    )
+
+res('point_spotlight',
+    'materials/sprites/light_glow03.vmt',
+    'materials/sprites/glow_test02.vmt',
+)
+
+res('prop_button',
+    'models/props/switch001.mdl'
+    )
+
+res('prop_energy_ball',
     'models/effects/combineball.mdl',
     'materials/effects/eball_finite_life.vmt',
     'materials/effects/eball_infinite_life.vmt',
@@ -175,27 +191,11 @@ res('point_energy_ball_launcher',
     ("EnergyBall.AmbientLoop", FileType.GAME_SOUND),
     )
 
-res('point_spotlight',
-    'materials/sprites/light_glow03.vmt',
-    'materials/sprites/glow_test02.vmt',
-    )
-
-res('prop_button',
-    'models/props/switch001.mdl'
-    )
-
-# The ball by itself needs the same resources.
-CLASS_RESOURCES['prop_energy_ball'] = CLASS_RESOURCES['point_energy_ball_launcher']
-
 res('rocket_turret_projectile',
     'models/props_bts/rocket.mdl',
     'materials/decals/scorchfade.vmt',
     ('NPC_FloorTurret.RocketFlyLoop', FileType.GAME_SOUND),
-)
-
-# The turret spawns the rocket of course.
-CLASS_RESOURCES['npc_rocket_turret'].extend(CLASS_RESOURCES['rocket_turret_projectile'])
-
+    )
 
 @cls_func
 def team_control_point(ent: Entity) -> Iterator[str]:
@@ -209,3 +209,14 @@ def team_control_point(ent: Entity) -> Iterator[str]:
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )
+
+
+# Now all of these have been done, apply "includes" commands.
+# For simplicity, require all the included classes to not have includes
+# themselves.
+for cls, includes in INCLUDES.items():
+    resources = CLASS_RESOURCES[cls]
+    assert isinstance(resources, list), 'Class {} has include and function!'.format(cls)
+    for cls in includes:
+        assert cls not in INCLUDES, 'Class {} can\'t be included and include others'.format(cls)
+        resources.extend(CLASS_RESOURCES[cls])
