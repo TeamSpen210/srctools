@@ -105,15 +105,15 @@ CLASS_RESOURCES['asw_ambient_generic'] = CLASS_RESOURCES['ambient_generic']  # I
 res('asw_ammo_autogun', mdl('models/swarm/ammo/ammoautogun.mdl'))
 
 res('asw_ammo_drop', 
-    mdl("models/items/Ammobag/AmmoBag.mdl" ),
-    sound("ASW_Ammobag.DropImpact"),
-    sound("ASW_Ammobag.Pickup_sml"),
-    sound("ASW_Ammobag.Pickup_med"),
-    sound("ASW_Ammobag.Pickup_lrg"),
-    sound("ASW_Ammobag.Fail" ),
-    part("ammo_satchel_take_sml"),
-    part("ammo_satchel_take_med"),
-    part("ammo_satchel_take_lrg"),
+    mdl('models/items/Ammobag/AmmoBag.mdl' ),
+    sound('ASW_Ammobag.DropImpact'),
+    sound('ASW_Ammobag.Pickup_sml'),
+    sound('ASW_Ammobag.Pickup_med'),
+    sound('ASW_Ammobag.Pickup_lrg'),
+    sound('ASW_Ammobag.Fail' ),
+    part('ammo_satchel_take_sml'),
+    part('ammo_satchel_take_med'),
+    part('ammo_satchel_take_lrg'),
     )
 
 
@@ -142,38 +142,38 @@ res('asw_barrel_radioactive',
 res('asw_bloodhound', mdl('models/swarmprops/Vehicles/BloodhoundMesh.mdl'))
 
 res('asw_boomer',
-    part("boomer_explode"),
-    part("joint_goo" ),
-    mdl("models/aliens/boomer/boomerLegA.mdl"),
-    mdl("models/aliens/boomer/boomerLegB.mdl"),
-    mdl("models/aliens/boomer/boomerLegC.mdl"),
+    part('boomer_explode'),
+    part('joint_goo' ),
+    mdl('models/aliens/boomer/boomerLegA.mdl'),
+    mdl('models/aliens/boomer/boomerLegB.mdl'),
+    mdl('models/aliens/boomer/boomerLegC.mdl'),
     mdl('models/aliens/boomer/boomer.mdl'),
-    sound("ASW_Boomer.Death_Explode"),
-    sound("ASW_Boomer.Death_Gib"),
+    sound('ASW_Boomer.Death_Explode'),
+    sound('ASW_Boomer.Death_Gib'),
     )
 
 res('asw_broadcast_camera')
 res('asw_buzzer',
     mdl('models/aliens/buzzer/buzzer.mdl'),
-    sound("ASW_Buzzer.Attack"),
-    sound("ASW_Buzzer.Death"),
-    sound("ASW_Buzzer.Pain"),
-    sound("ASW_Buzzer.Idle"),
-    sound("ASW_Buzzer.OnFire"),
+    sound('ASW_Buzzer.Attack'),
+    sound('ASW_Buzzer.Death'),
+    sound('ASW_Buzzer.Pain'),
+    sound('ASW_Buzzer.Idle'),
+    sound('ASW_Buzzer.OnFire'),
 
-    part("buzzer_trail" ),
-    part("buzzer_death" ),
-    sound("ASWFire.BurningFlesh"),
-    sound("ASWFire.StopBurning"),
+    part('buzzer_trail' ),
+    part('buzzer_death' ),
+    sound('ASWFire.BurningFlesh'),
+    sound('ASWFire.StopBurning'),
     )
 res('asw_client_corpse')
 
 res('asw_colonist',
-    mdl("models/swarm/Colonist/Male/MaleColonist.mdl"),
-    sound("NPC_Citizen.FootstepLeft"),
-    sound("NPC_Citizen.FootstepRight"),
-    sound("NPC_Citizen.Die"),
-    sound("MaleMarine.Pain"),
+    mdl('models/swarm/Colonist/Male/MaleColonist.mdl'),
+    sound('NPC_Citizen.FootstepLeft'),
+    sound('NPC_Citizen.FootstepRight'),
+    sound('NPC_Citizen.Die'),
+    sound('MaleMarine.Pain'),
     )
 
 res('asw_debrief_info')
@@ -262,6 +262,23 @@ res('asw_parasite',
 
 CLASS_RESOURCES['asw_parasite_defanged'] = CLASS_RESOURCES['asw_parasite']  # Identical.
 
+res('asw_grub',
+    mdl('models/swarm/Grubs/Grub.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib1.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib2.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib3.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib4.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib5.mdl'),
+    mdl('models/Swarm/Grubs/GrubGib6.mdl'),
+    sound('ASW_Parasite.Death'),
+    sound('ASW_Parasite.Attack'),
+    sound('ASW_Parasite.Idle'),
+    sound('NPC_AntlionGrub.Squash'),
+    sound('ASW_Drone.GibSplatQuiet'),
+    part('grub_death'),
+    part('grub_death_fire'),
+    )
+
 res('env_alyxemp',
     mat('materials/effects/laser1.vmt'),
     sound('AlyxEmp.Charge'),
@@ -298,6 +315,42 @@ res('env_funnel', mat('materials/sprites/flare6.vmt'))
 res('env_global')
 res('env_global_light')
 res('env_gunfire')
+
+@cls_func
+def env_headcrabcanister(ent: Entity):
+    """Check if it spawns in skybox or not, and precache the headcrab."""
+    flags = conv_int(ent['spawnflags'])
+    if flags & 0x1 == 0: # !SF_NO_IMPACT_SOUND
+        yield sound('HeadcrabCanister.Explosion')
+        yield sound('HeadcrabCanister.IncomingSound')
+        yield sound('HeadcrabCanister.SkyboxExplosion')
+    if flags & 0x2 == 0: # !SF_NO_LAUNCH_SOUND
+        yield sound('HeadcrabCanister.LaunchSound')
+    if flags & 0x1000 == 0: # !SF_START_IMPACTED
+        yield mat('materials/sprites/smoke.vmt')
+
+    if flags &0x80000 == 0: # !SF_NO_IMPACT_EFFECTS
+        yield mat('particle/particle_noisesphere')  # AR2 explosion
+
+    # All three could be used, depending on exactly where the ent is and other
+    # stuff we can't easily check.
+    yield mdl('models/props_combine/headcrabcannister01a.mdl')
+    yield mdl('models/props_combine/headcrabcannister01b.mdl')
+    yield mdl('models/props_combine/headcrabcannister01a_skybox.mdl')
+    
+    yield sound('HeadcrabCanister.AfterLanding')
+    yield sound('HeadcrabCanister.Open')
+    # Also precache the appropriate headcrab's resources.
+    try:
+        headcrab = (
+            'npc_headcrab',
+            'npc_headcrab_fast',
+            'npc_headcrab_poison',
+        )[conv_int(ent['HeadcrabType'])]
+    except IndexError:
+        pass
+    else:
+        yield from CASS_RESOURCES[headcrab]
 
 res('env_screeneffect',
     'materials/effects/stun.vmt',
@@ -385,6 +438,57 @@ res('npc_combine_cannon',
     ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
     )
 
+res('npc_headcrab',
+    mdl('models/headcrabclassic.mdl'),
+    sound('NPC_HeadCrab.Gib'),
+    sound('NPC_HeadCrab.Idle'),
+    sound('NPC_HeadCrab.Alert'),
+    sound('NPC_HeadCrab.Pain'),
+    sound('NPC_HeadCrab.Die'),
+    sound('NPC_HeadCrab.Attack'),
+    sound('NPC_HeadCrab.Bite'),
+    sound('NPC_Headcrab.BurrowIn'),
+    sound('NPC_Headcrab.BurrowOut'),
+    )
+
+res('npc_headcrab_black',
+    mdl('models/headcrabblack.mdl');
+
+    sound('NPC_BlackHeadcrab.Telegraph'),
+    sound('NPC_BlackHeadcrab.Attack'),
+    sound('NPC_BlackHeadcrab.Bite'),
+    sound('NPC_BlackHeadcrab.Threat'),
+    sound('NPC_BlackHeadcrab.Alert'),
+    sound('NPC_BlackHeadcrab.Idle'),
+    sound('NPC_BlackHeadcrab.Talk'),
+    sound('NPC_BlackHeadcrab.AlertVoice'),
+    sound('NPC_BlackHeadcrab.Pain'),
+    sound('NPC_BlackHeadcrab.Die'),
+    sound('NPC_BlackHeadcrab.Impact'),
+    sound('NPC_BlackHeadcrab.ImpactAngry'),
+    sound('NPC_BlackHeadcrab.FootstepWalk'),
+    sound('NPC_BlackHeadcrab.Footstep'),
+
+    sound('NPC_HeadCrab.Gib'),
+    sound('NPC_Headcrab.BurrowIn'),
+    sound('NPC_Headcrab.BurrowOut'),
+    )
+
+CLASS_RESOURCES['npc_headcrab_poison'] = CLASS_RESOURCES['npc_headcrab_black']  # Alias
+
+res('npc_headcrab_fast',
+    mdl('models/headcrab.mdl'),
+    sound('NPC_FastHeadCrab.Idle'),
+    sound('NPC_FastHeadCrab.Alert'),
+    sound('NPC_FastHeadCrab.Pain'),
+    sound('NPC_FastHeadCrab.Die'),
+    sound('NPC_FastHeadCrab.Attack'),
+    sound('NPC_FastHeadCrab.Bite'),
+
+    sound('NPC_HeadCrab.Gib'),
+    sound('NPC_Headcrab.BurrowIn'),
+    sound('NPC_Headcrab.BurrowOut'),
+    )
 
 @cls_func
 def move_rope(ent: Entity):
@@ -433,11 +537,11 @@ res('prop_energy_ball',
     'models/effects/combineball.mdl',
     'materials/effects/eball_finite_life.vmt',
     'materials/effects/eball_infinite_life.vmt',
-    ("EnergyBall.Explosion", FileType.GAME_SOUND),
-    ("EnergyBall.Launch", FileType.GAME_SOUND),
-    ("EnergyBall.KillImpact", FileType.GAME_SOUND),
-    ("EnergyBall.Impact", FileType.GAME_SOUND),
-    ("EnergyBall.AmbientLoop", FileType.GAME_SOUND),
+    ('EnergyBall.Explosion', FileType.GAME_SOUND),
+    ('EnergyBall.Launch', FileType.GAME_SOUND),
+    ('EnergyBall.KillImpact', FileType.GAME_SOUND),
+    ('EnergyBall.Impact', FileType.GAME_SOUND),
+    ('EnergyBall.AmbientLoop', FileType.GAME_SOUND),
     )
 
 res('rocket_turret_projectile',
@@ -460,7 +564,7 @@ res('vgui_screen',
     )
 
 
-# Now all of these have been done, apply "includes" commands.
+# Now all of these have been done, apply 'includes' commands.
 # For simplicity, require all the included classes to not have includes
 # themselves.
 for cls, includes in INCLUDES.items():
