@@ -179,11 +179,12 @@ cdef class Tokenizer:
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token to indicate a wrong token,
-        or a string which will be formatted with the positional args.
+        or a string which will be {}-formatted with the positional args
+        if they are present.
         """
         if isinstance(message, Token):
             message = f'Unexpected token {message.name}' '!'
-        else:
+        elif args:
             message = message.format(*args)
         return self._error(message)
 
