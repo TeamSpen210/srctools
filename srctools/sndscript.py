@@ -1,20 +1,25 @@
 """Reads and writes Soundscripts."""
 from enum import Enum
+from chunk import Chunk as WAVChunk
 
 from srctools import Property, conv_float
-
 from typing import (
-    Optional, Union, TypeVar,
+    Optional, Union, TypeVar, Callable,
     List, Tuple, Dict,
-    Iterable, Type, Callable,
-    TextIO,
+    TextIO, IO,
 )
 
-# All the prefixes  wavs can have.
+__all__ = [
+    'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
+    'Sound', 'wav_is_looped',
+]
+
+# All the prefixes wavs can have.
 SND_CHARS = '*@#<>^)}$!?'
 
 
 class Pitch(float, Enum):
+    """The constants permitted for sound pitches."""
     PITCH_NORM = 100.0
     PITCH_LOW = 95.0
     PITCH_HIGH = 120.0
@@ -120,7 +125,7 @@ def split_float(
         return out, out
 
 
-def join_float(val) -> str:
+def join_float(val: Tuple[float, float]) -> str:
     """Reverse split_float()."""
     low, high = val
     if low == high:
@@ -129,8 +134,29 @@ def join_float(val) -> str:
         return '{!s},{!s}'.format(low, high)
 
 
+def wav_is_looped(file: IO[bytes]) -> bool:
+    """Check if the provided wave file contains loop cue points.
+
+    This code is partially copied from wave.Wave_read.initfp().
+    """
+    first = WAVChunk(file, bigendian=False)
+    if first.getname() != b'RIFF':
+        raise ValueError('File does not start with RIFF id.')
+    if first.read(4) != b'WAVE':
+        raise ValueError('Not a WAVE file.')
+
+    while True:
+        try:
+            chunk = WAVChunk(file, bigendian=False)
+        except EOFError:
+            return False
+        if chunk.getname() == b'cue ':
+            return True
+        chunk.skip()
+
+
 class Sound:
-    """Represents a single sound in the list."""
+    """Represents a single soundscript."""
     def __init__(
         self,
         name: str,
@@ -167,9 +193,9 @@ class Sound:
         else:
             self.pitch = pitch, pitch
         
-        self.stack_start = Property('', []) if stack_start is None else stack_start
-        self.stack_update = Property('', []) if stack_update is None else stack_update
-        self.stack_stop = Property('', []) if stack_stop is None else stack_stop
+        self.stack_start = Property('', []) if stack_start is None else stack_start  # type: Property
+        self.stack_update = Property('', []) if stack_update is None else stack_update  # type: Property
+        self.stack_stop = Property('', []) if stack_stop is None else stack_stop  # type: Property
        
     @classmethod 
     def parse(cls, file: Property) -> Dict[str, 'Sound']:
