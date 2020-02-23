@@ -92,8 +92,12 @@ class Game:
         for path in self.search_paths:
             if path.is_dir():
                 raw_folders.append(path)
-                if (path / 'pak01_dir.vpk').is_file():
-                    vpks.append(path / 'pak01_dir.vpk')
+                for ind in range(1, 100):
+                    vpk = (path / 'pak{:02}_dir.vpk'.format(ind))
+                    if vpk.is_file():
+                        vpks.append(vpk)
+                    else:
+                        break
                 continue
 
             if not path.suffix:
