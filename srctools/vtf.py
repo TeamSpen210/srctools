@@ -576,6 +576,14 @@ class VTF:
         """Close the streams if any frames still have them open."""
         for frame in self._frames.values():
             frame._fileinfo = None
+
+    def load(self) -> None:
+        """Fully load all image frames from the VTF.
+
+        This allows closing the file stream.
+        """
+        for frame in self._frames.values():
+            frame.load()
         
     def __len__(self) -> int:
         """The length of a VTF is the number of image frames."""
