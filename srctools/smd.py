@@ -1,6 +1,7 @@
 """Parses SMD model/animation data."""
 import os
 import re
+from copy import deepcopy
 from operator import itemgetter
 
 import math
@@ -28,6 +29,12 @@ class Bone:
             'None',
         )
 
+    def __copy__(self):
+        return Bone(self.name, self.parent)
+
+    def __deepcopy__(self, memodict: dict=None):
+        return Bone(self.name, deepcopy(self.parent, memodict))
+
 
 class BoneFrame:
     """Represents a single frame of bone animation."""
@@ -37,6 +44,16 @@ class BoneFrame:
         self.bone = bone
         self.position = position
         self.rotation = rotation
+
+    def __copy__(self) -> 'BoneFrame':
+        return BoneFrame(self.bone, self.position, self.rotation)
+
+    def __deepcopy__(self, memodict: dict=None) -> 'BoneFrame':
+        return BoneFrame(
+            deepcopy(self.bone, memodict),
+            self.position.copy(),
+            self.rotation.copy(),
+        )
 
 
 class Vertex:
@@ -62,12 +79,24 @@ class Vertex:
         )
 
     def copy(self) -> 'Vertex':
+        """Copy the vertex."""
         return Vertex(
             self.pos.copy(),
             self.norm.copy(),
             self.tex_u,
             self.tex_v,
             self.links.copy(),
+        )
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict=None) -> 'Vertex':
+        return Vertex(
+            self.pos.copy(),
+            self.norm.copy(),
+            self.tex_u,
+            self.tex_v,
+            deepcopy(self.links, memodict),
         )
 
 
@@ -113,6 +142,18 @@ class Triangle:
             raise IndexError(item)
 
     def copy(self) -> 'Triangle':
+        """Duplicate this triangle."""
+        # Copy the points, they shouldn't be shared.
+        return Triangle(
+            self.mat,
+            self.point1.copy(),
+            self.point2.copy(),
+            self.point3.copy(),
+        )
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict=None) -> 'Triangle':
         """Duplicate this triangle."""
         return Triangle(
             self.mat,
@@ -163,6 +204,16 @@ class Mesh:
         self.bones = bones
         self.animation = animation
         self.triangles = triangles
+
+    def __copy__(self):
+        return Mesh(self.bones, self.animation, self.triangles)
+
+    def __deepcopy__(self, memodict: dict=None):
+        return Mesh(
+            deepcopy(self.bones, memodict),
+            deepcopy(self.animation, memodict),
+            deepcopy(self.triangles, memodict),
+        )
 
     @staticmethod
     def blank(root_name: str) -> 'Mesh':
