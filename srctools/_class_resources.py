@@ -613,6 +613,22 @@ def item_teamflag(ent: Entity) -> Iterator[str]:
             yield value + '_red.vmt'
             yield value + '_blue.vmt'
 
+res('npc_barnacle',
+    mdl('models/barnacle.mdl'),
+    mdl("models/gibs/hgibs.mdl"),
+    mdl("models/gibs/hgibs_scapula.mdl"),
+    mdl("models/gibs/hgibs_rib.mdl"),
+    mdl("models/gibs/hgibs_spine.mdl"),
+    sound("NPC_Barnacle.Digest"),
+    sound("NPC_Barnacle.BreakNeck"),
+    sound("NPC_Barnacle.Scream"),
+    sound("NPC_Barnacle.PullPant"),
+    sound("NPC_Barnacle.TongueStretch"),
+    sound("NPC_Barnacle.FinalBite"),
+    sound("NPC_Barnacle.Die"),
+    includes='npc_barnacle_tongue_tip',
+    )
+res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
 res('npc_combine_cannon',
     'models/combine_soldier.mdl',
     'materials/effects/bluelaser1.vmt',
@@ -698,6 +714,9 @@ def move_rope(ent: Entity):
 # These classes are identical.
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
 
+res('phys_bone_follower')
+res('physics_entity_solver')
+res('physics_npc_solver')
 
 res('npc_rocket_turret',
     'materials/effects/bluelaser1.vmt',
@@ -804,6 +823,8 @@ res('rocket_turret_projectile',
     'materials/decals/scorchfade.vmt',
     ('NPC_FloorTurret.RocketFlyLoop', FileType.GAME_SOUND),
     )
+
+res('squadinsignia', "models/chefhat.mdl")  # Yeah.
 
 @cls_func
 def team_control_point(ent: Entity) -> Iterator[str]:
