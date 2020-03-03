@@ -1305,7 +1305,10 @@ class EntityDef:
                                         entity.classname, 
                                     )
                                 ) from None
-                            power = math.log2(choices_value)
+                            try:
+                                power = math.log2(choices_value)
+                            except ValueError:
+                                power = 0.5  # Force the following code to raise
                             if power != round(power):
                                 raise tok.error(
                                     'SpawnFlags must be powers of two, '
