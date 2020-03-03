@@ -2,7 +2,7 @@
 
 Those are ones that don't simply appear in keyvalues.
 """
-from typing import Iterator, Callable, Tuple, Union, List, Dict
+from typing import Iterator, Callable, Tuple, Union, List, Dict, Iterable
 
 from srctools.packlist import FileType
 from srctools import Entity, conv_int
@@ -15,20 +15,19 @@ __all__ = ['CLASS_RESOURCES']
 # behaviour, yielding files to pack.
 
 ClassFunc = Callable[[Entity], Iterator[Union[str, Tuple[str, FileType]]]]
-_cls_res_type = Dict[str, Union[
-    ClassFunc,
-    List[Tuple[str, FileType],
-]]]
-CLASS_RESOURCES = {}  # type: _cls_res_type
+CLASS_RESOURCES = {}  # type: Dict[str, Union[ClassFunc, Iterable[Tuple[str, FileType] ]]]
 INCLUDES = {}  # type: Dict[str, List[str]]
 
 
 def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='') -> None:
     """Add a class to class_resources, with each of the files it always uses."""
-    CLASS_RESOURCES[cls] = [
-        (file, FileType.GENERIC) if isinstance(file, str) else file
-        for file in items
-    ]
+    if items:
+        CLASS_RESOURCES[cls] = [
+            (file, FileType.GENERIC) if isinstance(file, str) else file
+            for file in items
+        ]
+    else:
+        CLASS_RESOURCES[cls] = ()
     if includes:
         INCLUDES[cls] = includes.split()
 
@@ -37,6 +36,31 @@ def cls_func(func: ClassFunc) -> ClassFunc:
     """Save a function to do special checks for a classname."""
     CLASS_RESOURCES[func.__name__] = func
     return func
+
+
+def _process_includes() -> None:
+    """Apply the INCLUDES dict."""
+    for cls in INCLUDES:
+        if callable(CLASS_RESOURCES[cls]):
+            raise ValueError('Class {} has include and function!'.format(cls))
+    while INCLUDES:
+        has_changed = False
+        for cls in list(INCLUDES):
+            resources = CLASS_RESOURCES[cls]
+            includes = INCLUDES[cls]
+            if not isinstance(resources, list):
+                resources = CLASS_RESOURCES[cls] = list(resources)
+            for inc_cls in includes[:]:
+                if inc_cls not in INCLUDES:
+                    resources.extend(CLASS_RESOURCES[inc_cls])
+                    includes.remove(inc_cls)
+                    has_changed = True
+            if not includes:
+                del INCLUDES[cls]
+                has_changed = True
+        if not has_changed:
+            raise ValueError('Circular loop in includes: {}'.format(sorted(INCLUDES)))
+
 
 def mdl(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
@@ -54,7 +78,18 @@ def part(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.PARTICLE)
 
-# In alphabetical order: 
+# In alphabetical order:
+
+res('_firesmoke', *[
+    # env_fire_[tiny/small/medium/large][_smoke]
+    part('env_fire_ ' + name + smoke)
+    for name in ['tiny', 'small', 'medium', 'large']
+    for smoke in ['', '_smoke']
+])
+res('_plasma',
+    mat("materials/sprites/plasma1.vmt"),
+    mat("materials/sprites/fire_floor.vmt"),
+    )
 
 res('ai_ally_manager')
 res('ai_battle_line')
@@ -84,6 +119,8 @@ res('ai_weaponmodifier')
 res('ambient_generic')  # Sound is a keyvalue
 res('ambient_music')
 
+# The actual explosion itself.
+res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
 res('assault_assaultpoint')
 res('assault_rallypoint')
 
@@ -143,7 +180,7 @@ res('asw_bloodhound', mdl('models/swarmprops/Vehicles/BloodhoundMesh.mdl'))
 
 res('asw_boomer',
     part('boomer_explode'),
-    part('joint_goo' ),
+    part('joint_goo'),
     mdl('models/aliens/boomer/boomerLegA.mdl'),
     mdl('models/aliens/boomer/boomerLegB.mdl'),
     mdl('models/aliens/boomer/boomerLegC.mdl'),
@@ -279,13 +316,38 @@ res('asw_grub',
     part('grub_death_fire'),
     )
 
+res('commentary_auto')
+res('commentary_dummy')
+res('commentary_zombie_spawner')
+
+res('comp_choreo_sceneset')
+res('comp_entity_finder')
+res('comp_entity_mover')
+res('comp_kv_setter')
+res('comp_numeric_transition')
+
+# Handled by srctools.bsp_transform.packing transforms.
+res('comp_pack')
+res('comp_pack_rename')
+res('comp_pack_replace_soundscript')
+res('comp_precache_model')
+res('comp_precache_sound')
+
+res('comp_propcombine_set')
+res('comp_scriptvar_setter')
+res('comp_trigger_coop')
+res('comp_trigger_p2_goo')
+
+res('env_airstrike_indoors')
+res('env_airstrike_outdoors')
+res('env_ambient_light')
 res('env_alyxemp',
     mat('materials/effects/laser1.vmt'),
     sound('AlyxEmp.Charge'),
     sound('AlyxEmp.Discharge'),
     sound('AlyxEmp.Stop'),
     )
-res('env_ar2explosion')
+res('env_ar2explosion', includes="ar2explosion")
 
 res('env_beam')
 res('env_beverage', mdl('models/can.mdl'))
@@ -300,7 +362,43 @@ def env_break_shooter(ent: Entity):
         yield mdl(ent['model'])
     # Otherwise, a template name or a regular gib.
 
+res('env_dustpuff',
+    mat("materials/particle/particle_smokegrenade.vmt"),
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
+res('env_fire_trail',
+    mat("materials/sprites/flamelet1.vmt"),
+    mat("materials/sprites/flamelet2.vmt"),
+    mat("materials/sprites/flamelet3.vmt"),
+    mat("materials/sprites/flamelet4.vmt"),
+    mat("materials/sprites/flamelet5.vmt"),
+    mat("materials/particle/particle_smokegrenade.vmt"),
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
 
+@cls_func
+def env_fire(ent: Entity):
+    """Two types of fire, with different resources."""
+    yield sound('Fire.Plasma')
+    fire_type = conv_int(ent['firetype'])
+    if fire_type == 0:  # Natural
+        flags = conv_int(ent['spawnflags'])
+        if flags & 2:  # Smokeless?
+            suffix = ''  # env_fire_small
+        else:
+            suffix = '_smoke'  # env_fire_medium_smoke
+        for name in ['tiny', 'small', 'medium', 'large']:
+            yield part('env_fire_{}{}'.format(name, suffix))
+    elif fire_type == 1:  # Plasma
+        yield from CLASS_RESOURCES['_plasma']
+
+res('env_firesensor')
+res('env_firesource')
+res('env_flare',
+    mdl("models/weapons/flare.mdl"),
+    sound("Weapon_FlareGun.Burn"),
+    includes="_firesmoke",
+    )
 res('env_fire_trail',
     mat('materials/sprites/flamelet1.vmt'),
     mat('materials/sprites/flamelet2.vmt'),
@@ -321,16 +419,16 @@ res('env_gunfire')
 def env_headcrabcanister(ent: Entity):
     """Check if it spawns in skybox or not, and precache the headcrab."""
     flags = conv_int(ent['spawnflags'])
-    if flags & 0x1 == 0: # !SF_NO_IMPACT_SOUND
+    if flags & 0x1 == 0:  # !SF_NO_IMPACT_SOUND
         yield sound('HeadcrabCanister.Explosion')
         yield sound('HeadcrabCanister.IncomingSound')
         yield sound('HeadcrabCanister.SkyboxExplosion')
-    if flags & 0x2 == 0: # !SF_NO_LAUNCH_SOUND
+    if flags & 0x2 == 0:  # !SF_NO_LAUNCH_SOUND
         yield sound('HeadcrabCanister.LaunchSound')
-    if flags & 0x1000 == 0: # !SF_START_IMPACTED
+    if flags & 0x1000 == 0:  # !SF_START_IMPACTED
         yield mat('materials/sprites/smoke.vmt')
 
-    if flags &0x80000 == 0: # !SF_NO_IMPACT_EFFECTS
+    if flags & 0x80000 == 0:  # !SF_NO_IMPACT_EFFECTS
         yield mat('particle/particle_noisesphere')  # AR2 explosion
 
     # All three could be used, depending on exactly where the ent is and other
@@ -351,7 +449,7 @@ def env_headcrabcanister(ent: Entity):
     except IndexError:
         pass
     else:
-        yield from CASS_RESOURCES[headcrab]
+        yield from CLASS_RESOURCES[headcrab]
 
 
 res('env_laser')
@@ -366,8 +464,10 @@ res('env_physexplosion')
 res('env_physics_blocker')
 res('env_physimpact')
 
+
 @cls_func
 def env_portal_laser(ent: Entity):
+    """The P2 laser defaults to a model if not provided."""
     if not ent['model']:
         yield mdl('models/props/laser_emitter.mdl')
     yield sound('Flesh.LaserBurn')
@@ -397,17 +497,61 @@ def env_shooter(ent: Entity):
     except IndexError:
         pass
 
-
+res('env_spark',
+    mat('materials/sprites/glow01.vmt'),
+    mat('materials/effects/yellowflare.vmt'),
+    sound('DoSpark'),
+    )
+res('env_smoketrail',
+    mat("materials/particle/particle_smokegrenade.vmt"),
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
 res('env_starfield',
-    'materials/effects/spark_noz.vmt',
+    mat('materials/effects/spark_noz.vmt'),
     )
 
 res('env_steam',
-    'materials/particle/particle_smokegrenade.vmt',
-    'materials/sprites/heatwave.vmt',
+    mat('materials/particle/particle_smokegrenade.vmt'),
+    mat('materials/sprites/heatwave.vmt'),
     )
+res('env_steamjet', includes='env_steam')
+res('env_sun', mat('materials/sprites/light_glow02_add_noz.vmt'))
+res('env_texturetoggle')
 
-CLASS_RESOURCES['env_steamjet'] = CLASS_RESOURCES['env_steam']
+res('filter_activator_class')
+res('filter_activator_classify')
+res('filter_activator_context')
+res('filter_activator_hintgroup')
+res('filter_activator_infected_class')
+res('filter_activator_involume')
+res('filter_activator_keyfield')
+res('filter_activator_mass_greater')
+res('filter_activator_model')
+res('filter_activator_name')
+res('filter_activator_relationship')
+res('filter_activator_squad')
+res('filter_activator_surfacedata')
+res('filter_activator_team')
+res('filter_activator_tfteam')
+res('filter_base')
+res('filter_blood_control')
+res('filter_combineball_type')
+res('filter_damage_mod')
+res('filter_damage_transfer')
+res('filter_damage_type')
+res('filter_enemy')
+res('filter_health')
+res('filter_melee_damage')
+res('filter_multi')
+res('filter_player_held')
+res('filter_redirect_inflictor')
+res('filter_redirect_owner')
+res('filter_redirect_weapon')
+res('filter_tf_bot_has_tag')
+res('filter_tf_class')
+res('filter_tf_condition')
+res('filter_tf_damaged_by_weapon_in_slot')
+res('filter_tf_player_can_cap')
 
 
 @cls_func
@@ -417,38 +561,15 @@ def func_breakable_surf(ent: Entity):
 
     surf_type = conv_int(ent['surfacetype'])
     if surf_type == 1:  # Tile
-        yield from (
-            'materials/models/brokentile/tilebroken_03a.vmt',
-            'materials/models/brokentile/tilebroken_03b.vmt',
-            'materials/models/brokentile/tilebroken_03c.vmt',
-            'materials/models/brokentile/tilebroken_03d.vmt',
-
-            'materials/models/brokentile/tilebroken_02a.vmt',
-            'materials/models/brokentile/tilebroken_02b.vmt',
-            'materials/models/brokentile/tilebroken_02c.vmt',
-            'materials/models/brokentile/tilebroken_02d.vmt',
-
-            'materials/models/brokentile/tilebroken_01a.vmt',
-            'materials/models/brokentile/tilebroken_01b.vmt',
-            'materials/models/brokentile/tilebroken_01c.vmt',
-            'materials/models/brokentile/tilebroken_01d.vmt',
-        )
+        for num in '123':
+            for letter in 'abcd':
+                yield mat('materials/models/brokentile/tilebroken_0{}{}.vmt'.format(num, letter))
     elif surf_type == 0:  # Glass
-        yield from (
-            'materials/models/brokenglass/glassbroken_solid.vmt',
-            'materials/models/brokenglass/glassbroken_01a.vmt',
-            'materials/models/brokenglass/glassbroken_01b.vmt',
-            'materials/models/brokenglass/glassbroken_01c.vmt',
-            'materials/models/brokenglass/glassbroken_01d.vmt',
-            'materials/models/brokenglass/glassbroken_02a.vmt',
-            'materials/models/brokenglass/glassbroken_02b.vmt',
-            'materials/models/brokenglass/glassbroken_02c.vmt',
-            'materials/models/brokenglass/glassbroken_02d.vmt',
-            'materials/models/brokenglass/glassbroken_03a.vmt',
-            'materials/models/brokenglass/glassbroken_03b.vmt',
-            'materials/models/brokenglass/glassbroken_03c.vmt',
-            'materials/models/brokenglass/glassbroken_03d.vmt',
-        )
+        yield mat('materials/models/brokenglass/glassbroken_solid.vmt')
+        for num in '123':
+            for letter in 'abcd':
+                yield mat('materials/models/brokenglass/'
+                          'glassbroken_0{}{}.vmt'.format(num, letter))
 
 res('func_dust',
     'materials/particle/sparkles.vmt',
@@ -456,6 +577,26 @@ res('func_dust',
 
 res('func_tankchange',
     ('FuncTrackChange.Blocking', FileType.GAME_SOUND),
+    )
+
+res('grenade_helicopter',  # Bomb dropped by npc_helicopter
+    mdl("models/combine_helicopter/helicopter_bomb01.mdl"),
+    sound("ReallyLoudSpark"),
+    sound("NPC_AttackHelicopterGrenade.Ping"),
+    sound("NPC_AttackHelicopterGrenade.PingCaptured"),
+    sound("NPC_AttackHelicopterGrenade.HardImpact"),
+    )
+
+res('helicopter_chunk',  # Broken bits of npc_helicopter
+    mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
+    mdl("models/gibs/helicopter_brokenpiece_02.mdl"),
+    mdl("models/gibs/helicopter_brokenpiece_03.mdl"),
+    mdl("models/gibs/helicopter_brokenpiece_04_cockpit.mdl"),
+    mdl("models/gibs/helicopter_brokenpiece_05_tailfan.mdl"),
+    mdl("models/gibs/helicopter_brokenpiece_06_body.mdl"),
+    sound('BaseExplosionEffect.Sound'),
+    sound('NPC_AttackHelicopter.Crash'),
+    includes='env_smoketrail env_fire_trail ar2explosion'
     )
 
 
@@ -530,6 +671,17 @@ res('npc_headcrab_fast',
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
     )
+
+res('npc_heli_avoidbox')
+res('npc_heli_avoidsphere')
+res('npc_heli_nobomb')
+res('npc_helicopter',
+    mdl("models/combine_helicopter.mdl"),
+    mdl("models/combine_helicopter_broken.mdl"),
+    mat("materials/sprites/redglow1.vmt"),
+    includes='helicopter_chunk grenade_helicopter',
+    )
+
 
 @cls_func
 def move_rope(ent: Entity):
@@ -744,11 +896,4 @@ res('vgui_screen',
 
 
 # Now all of these have been done, apply 'includes' commands.
-# For simplicity, require all the included classes to not have includes
-# themselves.
-for cls, includes in INCLUDES.items():
-    resources = CLASS_RESOURCES[cls]
-    assert isinstance(resources, list), 'Class {} has include and function!'.format(cls)
-    for cls in includes:
-        assert cls not in INCLUDES, 'Class {} can\'t be included and include others'.format(cls)
-        resources.extend(CLASS_RESOURCES[cls])
+_process_includes()
