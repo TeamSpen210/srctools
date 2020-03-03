@@ -1008,7 +1008,7 @@ class Vec:
         When the body is exited safely, the quaternion is applied to
         the angle.
         """,
-    )        
+    )
     
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
@@ -1164,6 +1164,179 @@ class Angle:
         the angle.
         """,
     )
+    
+class Matrix:
+    """Represents a 3x3 rotation matrix.
+
+    Valid operations:
+    matrix @ angle
+    matrix @ matrix
+    vec @ matrix
+    """
+    __slots__ = [
+        'aa', 'ab', 'ac',
+        'ba', 'bb', 'bc',
+        'ca', 'cb', 'cc',
+    ]
+
+    def __init__(
+        self,
+        aa: float=1.0, ab: float=0.0, ac: float=0.0,
+        ba: float=0.0, bb: float=1.0, bc: float=0.0,
+        ca: float=0.0, cb: float=0.0, cc: float=1.0,
+    ) -> None:
+        self.aa = aa
+        self.ab = ab
+        self.ac = ac
+        self.ba = ba
+        self.bb = bb
+        self.bc = bc
+        self.ca = ca
+        self.cb = cb
+        self.cc = cc
+
+    def copy(self) -> Matrix:
+        return Matrix(
+            self.aa, self.ab, self.ac,
+            self.ba, self.bb, self.bc,
+            self.ca, self.cb, self.cc,
+        )
+
+    def __repr__(self) -> str:
+        return '<Matrix {} {} {}, {} {} {}, {} {} {}>'.format(
+            self.aa, self.ab, self.ac,
+            self.ba, self.bb, self.bc,
+            self.ca, self.cb, self.cc,
+        )
+
+    def __getitem__(self, axes: Tuple[int, int]) -> float:
+        x, y = axes
+        return getattr(self, 'abc'[y] + 'abc'[x])
+
+    def __setitem__(self, axes: Tuple[int, int] value: float) -> None:
+        x, y = axes
+        setattr(self, 'abc'[y] + 'abc'[x], float(value))
+
+    def rotate_vec(self, vec: Vec) -> Vec:
+        """Rotate a Vec by ourselves."""
+        x = vec.x
+        y = vec.y
+        z = vec.z
+        return Vec(
+            round((x * self.aa) + (y * self.ab) + (z * self.ac), 6),
+            round((x * self.ba) + (y * self.bb) + (z * self.bc), 6),
+            round((x * self.ca) + (y * self.cb) + (z * self.cc), 6),
+        )
+
+    def rotate_by_mat(self, other: 'RotationMatrix'):
+        """Multiply ourselves by another rotation matrix."""
+
+        # We don't use A row after the first 3, so we can re-assign.
+        # 3-tuple unpacking is optimised.
+        self.aa, self.ab, self.ac = (
+            self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
+            self.aa * other.ab + self.ab * other.bb + self.ac * other.cb,
+            self.aa * other.ac + self.ab * other.bc + self.ac * other.cc,
+        )
+
+        self.ba, self.bb, self.bc = (
+            self.ba * other.aa + self.bb * other.ba + self.bc * other.ca,
+            self.ba * other.ab + self.bb * other.bb + self.bc * other.cb,
+            self.ba * other.ac + self.bb * other.bc + self.bc * other.cc,
+        )
+
+        self.ca, self.cb, self.cc = (
+            self.ca * other.aa + self.cb * other.ba + self.cc * other.ca,
+            self.ca * other.ab + self.cb * other.bb + self.cc * other.cb,
+            self.ca * other.ac + self.cb * other.bc + self.cc * other.cc,
+        )
+
+    @classmethod
+    def pitch(cls, pitch):
+        """Return the rotation matrix rotating around pitch/y."""
+        ang = math.radians(pitch)
+        return cls(
+            math.cos(ang), 0, math.sin(ang),
+            0, 1, 0,
+            -math.sin(ang), 0, math.cos(ang),
+        )
+    @classmethod
+    def yaw(cls, yaw):
+        """Return the rotation matrix rotating around yaw/z."""
+        ang = math.radians(yaw)
+        return cls(
+            math.cos(ang), -math.sin(ang), 0,
+            math.sin(ang), math.cos(ang), 0,
+            0, 0, 1,
+        )
+
+    @classmethod
+    def roll(cls, roll):
+        """Return the rotation matrix rotating around roll/x."""
+        ang = math.radians(roll)
+        return cls(
+            1, 0, 0,
+            0, math.cos(ang), -math.sin(ang),
+            0, math.sin(ang), math.cos(ang),
+        )
+
+    def rotate_by_angle(self, ang: 'Angle'):
+        """Rotate ourselves by an angle."""
+        # pitch is in the y axis
+        # yaw is the z axis
+        # roll is the x axis
+        # Need to do transformations in roll, pitch, yaw order
+        if ang.roll:
+            self.rotate_by_mat(RotationMatrix.roll(ang.roll))  # X
+        if ang.pitch:
+            self.rotate_by_mat(RotationMatrix.pitch(ang.pitch))  # Z
+        if ang.yaw:
+            self.rotate_by_mat(RotationMatrix.yaw(ang.yaw))  # Y
+
+    def to_angle(self) -> 'Angle':
+        """Convert this to a pitch-yaw-roll angle."""
+        ang = Angle()
+        ang.yaw = math.degrees(math.atan2(self.ab, self.aa))
+
+        # Rotate so yaw = 0, then pitch and roll are aligned.
+        copy = self.copy()
+        copy.rotate_by_mat(self.yaw(-ang.yaw))
+
+        ang.pitch = math.degrees(math.atan2(self.ac, self.aa))
+        ang.roll = math.degrees(math.atan2(self.cb, self.aa))
+        return ang
+
+    def __matmul__(self, other):
+        copy = self.copy()
+        if isinstance(other, Angle):
+            copy.rotate_by_angle(other)
+            return copy
+        elif isinstance(other, RotationMatrix):
+            copy.rotate_by_mat(other)
+            return copy
+        else:
+            return NotImplemented
+
+    def __imatmul__(self, other):
+        if isinstance(other, Angle):
+            self.rotate_by_angle(other)
+            return self
+        elif isinstance(other, RotationMatrix):
+            self.rotate_by_mat(other)
+            return self
+        else:
+            return NotImplemented
+
+    def __rmatmul__(self, other):
+        if isinstance(other, Vec):
+            copy = other.copy()
+            self.rotate_vec(copy)
+            return copy
+        elif isinstance(other, Angle):
+            raise TypeError("Can't rotate angle!")
+        else:
+            return NotImplemented
+
 
 class Quat:
     """Represents a quaternion rotation."""
