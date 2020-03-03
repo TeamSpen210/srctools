@@ -37,10 +37,12 @@ setup(
         Extension(
             "srctools._tokenizer",
             sources=["srctools/_tokenizer.pyx"],
+            # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
             sources=["srctools/_cy_vtf_readwrite.pyx"],
+            # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
     ]),
 

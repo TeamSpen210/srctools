@@ -165,25 +165,14 @@ def main():
         for var in VARS.values():
             var_by_type[var.type].append(var.name.casefold())
 
-        f.write('''\
-    for vt, vars in zip(var_type, (
-''')
-
+        f.write('    [{}] = var_type\n'.format(', '.join([
+            var_type.name
+            for var_type in VarType
+        ])))
         for var_type in VarType:
-            f.write('''\
-        {!r},
-'''.format(' '.join(sorted(var_by_type[var_type]))))
-
-        # We split strings at runtime - a list of strings would be too big to
-        # constant-fold, but a string will always be stored as a full-size
-        # constant.
-        f.write('''\
-    )):
-        for v in vars.split(' '):
-            DB[v] = vt
-''')
-
-    from srctools import _shaderdb
+            for var in sorted(var_by_type[var_type]):
+                f.write('    DB[{!r}] = {}\n'.format(var, var_type.name))
+            f.write('\n')
 
 
 if __name__ == '__main__':

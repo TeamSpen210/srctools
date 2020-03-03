@@ -1,4 +1,5 @@
-#cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: binding=True
 """Cython version of the Tokenizer class."""
 cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
@@ -13,7 +14,7 @@ try:
     from os import fspath as _conv_path
 except ImportError:
     # Default to just using str().
-    _conv_path = None
+    _conv_path = str
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -21,6 +22,8 @@ except ImportError:
 
 cdef object Token, TokenSyntaxError
 from srctools.tokenizer import Token,  TokenSyntaxError
+
+__all__ = ['Tokenizer', 'escape_text']
 
 # Cdef-ed globals become static module vars, which aren't in the module
 # dict. We can ensure these are of the type we specify - and are quick to
@@ -56,6 +59,7 @@ cdef:
 DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
 
+# noinspection PyMissingTypeHints
 @cython.final  # No point in inheriting from this.
 cdef class Tokenizer:
     """Processes text data into groups of tokens.
@@ -88,6 +92,7 @@ cdef class Tokenizer:
     cdef object pushback_val
 
     # Private buffer, to hold string parts we're constructing.
+    # Tokenizers are expected to be temporary, so we just never shrink.
     cdef Py_ssize_t buf_size  # 2 << x
     cdef unsigned int buf_pos
     cdef Py_UCS4* val_buffer
@@ -133,13 +138,10 @@ cdef class Tokenizer:
         self.buf_reset()
 
         if filename:
-            if _conv_path is None:
-                self.filename = str(filename)
-            else:
-                # Use os method to convert to string.
-                # We know this isn't a method.
-                with cython.optimize.unpack_method_calls(False):
-                    self.filename = _conv_path(filename)
+            # Use os method to convert to string.
+            # We know this isn't a method.
+            with cython.optimize.unpack_method_calls(False):
+                self.filename = _conv_path(filename)
         else:
             # If a file-like object, automatically set to the filename.
             try:
@@ -152,7 +154,7 @@ cdef class Tokenizer:
             self.error_type = TokenSyntaxError
         else:
             if not issubclass(error, TokenSyntaxError):
-                raise TypeError(f'Invalid error instance "{type(error).__name__}"!')
+                raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
             self.error_type = error
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
@@ -177,11 +179,12 @@ cdef class Tokenizer:
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token to indicate a wrong token,
-        or a string which will be formatted with the positional args.
+        or a string which will be {}-formatted with the positional args
+        if they are present.
         """
         if isinstance(message, Token):
-            message = f'Unexpected token {message.name}!'
-        else:
+            message = f'Unexpected token {message.name}' '!'
+        elif args:
             message = message.format(*args)
         return self._error(message)
 
@@ -197,6 +200,7 @@ cdef class Tokenizer:
 
     cdef inline void buf_reset(self):
         """Reset the temporary buffer."""
+        # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
 
     cdef inline void buf_add_char(self, Py_UCS4 uchar):
@@ -212,9 +216,9 @@ cdef class Tokenizer:
 
     cdef object buf_get_text(self):
         """Decode the buffer, and return the text."""
-        cdef int byteorder = 0  # Native order.
-        # Decode buffer with default ("errors") error handling, native order.
+        # Convert the buffer directly to a string. 4 = UCS4 mode.
         out = PyUnicode_FromKindAndData(4, self.val_buffer, self.buf_pos)
+        # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
         return out
 
@@ -247,19 +251,22 @@ cdef class Tokenizer:
             return (<str>chunk)[0]
 
         # Skip empty chunks (shouldn't be there.)
-        for chunk_obj in self.chunk_iter:
+        # Use manual next to avoid re-calling iter() here,
+        # or using list/tuple optimisations.
+        while True:
+            chunk_obj = next(self.chunk_iter, None)
+            if chunk_obj is None:
+                # Out of characters after empty chunks
+                return -1
+
             if isinstance(chunk_obj, bytes):
                 raise ValueError('Cannot parse binary data!')
             if not isinstance(chunk_obj, str):
                 raise ValueError("Data was not a string!")
 
-            chunk = <str>chunk_obj
-
-            if len(chunk) > 0:
-                self.cur_chunk = chunk
-                return (<str>chunk)[0]
-        # Out of characters after empty chunks
-        return -1
+            if len(<str ?>chunk_obj) > 0:
+                self.cur_chunk = <str>chunk_obj
+                return (<str>chunk_obj)[0]
 
     def __call__(self):
         """Return the next token, value pair."""
@@ -466,7 +473,7 @@ cdef class Tokenizer:
                         else:
                             self.buf_add_char(next_char)
                 else:
-                    raise self._error(f'Unexpected character "{next_char}"!')
+                    raise self._error(f'Unexpected character "{next_char}"' '!')
 
     def __iter__(self):
         # Call ourselves until EOF is returned
@@ -518,7 +525,7 @@ cdef class Tokenizer:
             value = '' if value is None else value
         elif not isinstance(value, str):
             raise ValueError(
-                f'Invalid value provided ({value!r}) for {tok.name}!'
+                f'Invalid value provided ({value!r}) for {tok.name}' '!'
             ) from None
 
         self.pushback_tok = tok
@@ -535,7 +542,7 @@ cdef class Tokenizer:
 
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""
-        return NewlinesIter.__new__(NewlinesIter, self)
+        return _NewlinesIter.__new__(_NewlinesIter, self)
 
     def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
@@ -553,16 +560,26 @@ cdef class Tokenizer:
             next_token, value = <tuple>self.next_token()
 
         if next_token is not token:
-            raise self._error(f'Expected {token}, but got {next_token}!')
+            raise self._error(f'Expected {token}, but got {next_token}' '!')
         return value
 
 
-cdef class NewlinesIter:
+# This is entirely internal, users shouldn't access this.
+@cython.final
+@cython.embedsignature(False)
+@cython.internal
+cdef class _NewlinesIter:
     """Iterate over the tokens, skipping newlines."""
     cdef Tokenizer tok
 
     def __cinit__(self, Tokenizer tok not None):
         self.tok = tok
+
+    def __repr__(self):
+        return f'<srctools.tokenizer.Tokenizer.skipping_newlines() at {id(self):X}>'
+
+    def __init__(self, tok):
+        raise TypeError("Cannot create '_NewlinesIter' instances")
 
     def __iter__(self):
         return self
@@ -578,14 +595,11 @@ cdef class NewlinesIter:
 
     def __reduce__(self):
         """This cannot be pickled - the Python version does not have this class."""
-        raise NotImplementedError('Cannot pickle NewlinesIter!')
-
-# Remove this class from the module, so it's not directly exposed.
-del globals()['NewlinesIter']
+        raise NotImplementedError('Cannot pickle _NewlinesIter!')
 
 
 @cython.nonecheck(False)
-def escape_text(str text not None):
+def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     Specifically, \, ", tab, and newline.
@@ -626,3 +640,10 @@ def escape_text(str text not None):
         return PyUnicode_FromStringAndSize(out_buff, final_len)
     finally:
         PyMem_Free(out_buff)
+
+# Override the tokenizer's name to match the public one.
+# This fixes all the methods too, though not in exceptions.
+from cpython.object cimport PyTypeObject
+(<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
+(<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.Tokenizer.skipping_newlines"
+escape_text.__module__ = 'srctools.tokenizer'

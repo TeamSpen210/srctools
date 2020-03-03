@@ -300,28 +300,28 @@ def dxt_color_table(
         byte = data[block_off + 4 + y]
         row = 16 * block_wid * (4 * block_y + y) + 16 * block_x
         (
-            pixels[row],
-            pixels[row + 1],
-            pixels[row + 2],
-            pixels[row + 3],
+            pixels[row + 12],
+            pixels[row + 13],
+            pixels[row + 14],
+            pixels[row + 15],
         ) = table[(byte & 0b11000000) >> 6]
-        (
-            pixels[row + 4],
-            pixels[row + 5],
-            pixels[row + 6],
-            pixels[row + 7],
-        ) = table[(byte & 0b00110000) >> 4]
         (
             pixels[row + 8],
             pixels[row + 9],
             pixels[row + 10],
             pixels[row + 11],
+        ) = table[(byte & 0b00110000) >> 4]
+        (
+            pixels[row + 4],
+            pixels[row + 5],
+            pixels[row + 6],
+            pixels[row + 7],
         ) = table[(byte & 0b00001100) >> 2]
         (
-            pixels[row + 12],
-            pixels[row + 13],
-            pixels[row + 14],
-            pixels[row + 15],
+            pixels[row + 0],
+            pixels[row + 1],
+            pixels[row + 2],
+            pixels[row + 3],
         ) = table[byte & 0b00000011]
 
 
@@ -367,6 +367,7 @@ def load_dxt3(pixels, data, width, height):
                 byte = data[block_off + off]
                 y, x = divmod(off*2, 4)
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
+                # Combine the values twice so we evenly cover the whole range.
                 pixels[pos + 3] = byte & 0b00001111 | (byte & 0b00001111) << 4
                 pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 
@@ -435,17 +436,13 @@ def load_dxt5(pixels, data, width, height):
                 block_off+8, block_wid,
                 block_x, block_y,
             )
-            # Concatenate the bits for the alpha values into a big integer.
-            lookup = sum(
-                data[block_off + i] << (8 * (11-i))
-                for i in range(12)
-            )
+            # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
+            # value.
+            lookup = int.from_bytes(data[block_off + 2:block_off + (2 + 6)], 'little')
             for i in range(16):
                 y, x = divmod(i, 4)
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha_table[
-                    (lookup >> (48-3*i)) & 0b111
-                ]
+                pixels[pos + 3] = alpha_table[(lookup >> (3*i)) & 0b111]
 
 # Don't do the high-def 16-bit resolution.
 

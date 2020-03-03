@@ -141,8 +141,8 @@ def make_overlay(
     return vmf.create_ent(
         classname='info_overlay',
         angles='0 0 0',  # Not actually used by VBSP!
-        origin=origin.join(' '),
-
+        # Ensure it's not exactly on the edge plane.
+        origin=(origin + normal).join(' '),
         basisNormal=normal.join(' '),
         basisOrigin=origin.join(' '),
         basisU=basis_u.join(' '),
@@ -1098,8 +1098,7 @@ class Solid:
         return st
 
     def __iter__(self) -> Iterator['Side']:
-        for s in self.sides:
-            yield s
+        return iter(self.sides)
 
     def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
@@ -1792,15 +1791,20 @@ class Entity:
         """Remove this entity from the map."""
         self.map.remove_ent(self)
 
-    def make_unique(self) -> 'Entity':
-        """Ensure this entity is uniquely named, by adding a numeric suffix."""
-        orig_name = self['targetname']
+    def make_unique(self, unnamed_prefix='') -> 'Entity':
+        """Ensure this entity is uniquely named, by adding a numeric suffix.
 
-        self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        If the entity doesn't start with a name, it will use the parameter.
+        """
+        orig_name = self['targetname']
+        if orig_name:
+            self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        else:
+            orig_name = unnamed_prefix
         
         base_name = orig_name.rstrip('0123456789')
 
-        if self.map.by_target[orig_name]:
+        if self.map.by_target[base_name]:
             # Check every index in order.
             for i in itertools.count(start=1):
                 name = base_name + str(i)

@@ -56,10 +56,6 @@ def get_parm_type(name: str) -> VarType:
     # collected - no need to keep it around.
     del sys.modules['srctools._shaderdb']
 
-    # Additional values is missed by the search code.
-    _SHADER_PARAM_TYPES['bottommaterial'] = VarType.MATERIAL
-    _SHADER_PARAM_TYPES['crackmaterial'] = VarType.MATERIAL
-
     # Redirect this to always call the normal function.
     get_parm_type.__code__ = _get_parm_type_real.__code__
     return _get_parm_type_real(name)
@@ -138,7 +134,7 @@ class Material:
                 pass
             elif token is Tok.NEWLINE:
                 # Name by itself: '%compilenodraw' etc...
-                param_value = None
+                param_value = ''
                 # We need to check there's a newline after that - for proxies, 
                 # or errors.
                 token, ignored = tok()

@@ -1,6 +1,6 @@
 """Handles user configuration common to the different scripts."""
 from pathlib import Path
-from typing import Tuple, Optional, Set
+from typing import Tuple, Set
 
 from srctools.game import Game
 
@@ -70,12 +70,11 @@ def parse(path: Path) -> Tuple[
         else:
             # Give up, write to working directory.
             folder = Path()
-        file_path = str(folder / CONF_NAME)
-        conf.path = file_path
+        conf.path = folder / CONF_NAME
 
-        LOGGER.warning('Writing default to "{}"', file_path)
+        LOGGER.warning('Writing default to "{}"', conf.path)
 
-        with AtomicWriter(file_path) as f:
+        with AtomicWriter(str(conf.path)) as f:
             conf.save(f)
 
     game = Game((folder / conf.get(str, 'gameinfo')).resolve())
@@ -92,6 +91,10 @@ def parse(path: Path) -> Tuple[
     game_root = game.root
 
     for prop in conf.get(Property, 'searchpaths'):  # type: Property
+        if prop.has_children():
+            raise ValueError('Config "searchpaths" value cannot have children.')
+        assert isinstance(prop.value, str)
+
         if prop.value.endswith('.vpk'):
             fsys = VPKFileSystem(str((game_root / prop.value).resolve()))
         else:
@@ -140,18 +143,37 @@ OPTIONS = [
         * "nopack" "folder/" prohibits files in this path from being packed.
     """),
     Opt(
-        'propcombine_studiomdl', '',
-        """Set the path to StudioMDL used to combine static props.
-        If unset combining props is disabled. 
+        'studiomdl', '',
+        """Set the path to StudioMDL so the compiler can generate props.
+        If unset these features are disabled.
         This is relative to the game root.
-        """
+        """,
+        fallback='propcombine_studiomdl',
+    ),
+
+    Opt(
+        'propcombine_studiomdl', '',
+        """Old name for "studiomdl".
+        """,
     ),
     Opt(
-        'propcombine_qc_folder', '',
+        'propcombine_qc_folder', Property('', []),
         """Define where the QC files are for combinable static props.
         This path is searched recursively. If unset this defaults to 
         the 'content/' folder, which is adjacent to the game root.
         This is how Valve sets up their file structure.
         """
-    )
+    ),
+    Opt(
+        'propcombine_auto_range', 0,
+        """If greater than zero, combine props at least this close together.
+        This is ignored if comp_propcombine_set entities are in the map.
+        """,
+    ),
+    Opt(
+        'propcombine_min_cluster', 2,
+        """The minimum number of props required before propcombine will
+        bother merging them. Should be greater than 1.
+        """,
+    ),
 ]

@@ -1,6 +1,7 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
 from enum import Enum
+from pathlib import PurePosixPath
 from struct import Struct
 import io
 import math
@@ -21,7 +22,21 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper',
+
+    # From srctools._fgd_helpers
+    'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
+    'HelperBrushSides', 'HelperCylinder', 'HelperDecal',
+    'HelperEnvSprite', 'HelperFrustum', 'HelperHalfGridSnap',
+    'HelperInherit', 'HelperInstance', 'HelperLight', 'HelperLightSpot',
+    'HelperLine', 'HelperModel', 'HelperModelLight', 'HelperModelProp',
+    'HelperOrientedBBox', 'HelperOrigin', 'HelperOverlay',
+    'HelperOverlayTransition', 'HelperRenderColor', 'HelperRope',
+    'HelperSize', 'HelperSphere', 'HelperSprite',
+    'HelperSweptPlayerHull', 'HelperTrack', 'HelperTypes',
+    'HelperVecLine', 'HelperWorldText',
+
+    'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
 _fmt_8bit = Struct('>B')
@@ -59,7 +74,11 @@ class ValueTypes(Enum):
     ANGLES = 'angle'  # Rotation
 
     # String targetname values (need fixups)
-    TARG_DEST = 'target_destination'  # A targetname of another ent.
+
+    # A targetname of another ent. For outputs, this is an entity handle.
+    TARG_DEST = 'target_destination'
+    ENT_HANDLE = EHANDLE = TARG_DEST
+
     TARG_DEST_CLASS = 'target_name_or_class'  # Above + classnames.
     TARG_SOURCE = 'target_source'  # The 'targetname' keyvalue.
     TARG_NPC_CLASS = 'npcclass'  # targetnames filtered to NPC ents
@@ -98,13 +117,41 @@ class ValueTypes(Enum):
         """Is this a flag or choices value, and needs a [] list?"""
         return self.value in ('choices', 'flags')
 
+    @property
+    def valid_for_io(self) -> bool:
+        """Is this type valid for I/O definitions?"""
+        return self.value in (
+            'void',
+            'integer', 'boolean', 'string', 'float', 'script',
+            'vector', 'target_destination', 'color255'
+        )
+
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
     for typ in ValueTypes
-}
+} # type: Dict[str, ValueTypes]
 # These have two names pointing to the same type...
 VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
 VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
+
+# In I/O definitions, types are constrained.
+# So this is the most appropriate type to use instead for all types.
+# First, string can reproduce everything if not allowed.
+VALUE_TO_IO_DECAY = {
+    typ: typ if typ.valid_for_io else ValueTypes.STRING
+    for typ in ValueTypes
+}  # type: Dict[ValueTypes, ValueTypes]
+
+# Then manually set others.
+VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
+VALUE_TO_IO_DECAY[ValueTypes.TARG_NODE_SOURCE] = ValueTypes.INT
+VALUE_TO_IO_DECAY[ValueTypes.ANGLE_NEG_PITCH] = ValueTypes.FLOAT
+
+VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
+# Only one color type present.
+VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 
 class EntityTypes(Enum):
@@ -133,6 +180,8 @@ class HelperTypes(Enum):
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
+    ORIGIN = 'origin'  # Adds circle at an absolute position.
+    VECLINE = 'vecline'  # Draws line to an absolute position.
     BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
     BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
     # Draws the movement of a player-sized bounding box from A to B.
@@ -163,6 +212,9 @@ class HelperTypes(Enum):
     # Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
     EXT_ORDERBY = 'orderby'  # Reorder keyvalues. Args = names in order.
+    # Convenience only used in parsing, adds @AutoVisgroup parents for the
+    # current entity. 'Auto' is implied at the start.
+    EXT_AUTO_VISGROUP = 'autovis'
 
     
 # Ordered list of value types, for encoding in the binary
@@ -211,6 +263,7 @@ VALUE_TYPE_ORDER = [
     ValueTypes.INST_VAR_REP,
 
     ValueTypes.STR_VSCRIPT_SINGLE,
+    ValueTypes.ENT_HANDLE,
 ]
 
 # Ditto for entity types.
@@ -444,6 +497,85 @@ class BinStrDict:
             file.write(dic(tag))
 
 
+class Helper:
+    """Base class for representing helper() commands in the header of an entity.
+
+    These mainly add visual widgets in Hammer's views for manipulating and
+    previewing keyvalues.
+
+    This should not be instantiated, only subclasses in _fgd_helpers.
+    """
+    # The HelperType which this implements.
+    TYPE = None  # type: HelperTypes
+    IS_EXTENSION = False  # true for our extensions to the format.
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse this helper from the given arguments.
+
+        The default implementation expects one argument only.
+        """
+        if args:
+            raise ValueError(
+                'No arguments accepted by {}()!'.format(cls.TYPE.name)
+            )
+        return cls()
+
+    def export(self) -> List[str]:
+        """Produce the argument text to recreate this helper type."""
+        return []
+
+    def get_resources(self, entity: 'EntityDef') -> List[str]:
+        """Return the resources used by this helper."""
+        return []
+
+    def overrides(self) -> Collection[HelperTypes]:
+        """Specify which types can be overriden by this.
+
+        If any of these helper types are present before this type, they're
+        redundant and can be removed.
+        For example size() is ignored if a studio() is present after it.
+        """
+        return ()
+
+    def __eq__(self, other: object) -> bool:
+        """Define equality as all attributes matching, and only matching types."""
+        if not isinstance(other, Helper):
+            return NotImplemented
+        return self.TYPE is other.TYPE and vars(self) == vars(other)
+
+    def __ne__(self, other: object) -> bool:
+        """Define equality as all attributes matching, and only matching types."""
+        if not isinstance(other, Helper):
+            return NotImplemented
+        return self.TYPE is not other.TYPE or vars(self) != vars(other)
+
+
+HelperT = TypeVar('HelperT', bound=Helper)
+# Each helper type -> the class implementing them.
+# We fill this at the end of the module.
+HELPER_IMPL = {}  # type: Dict[HelperTypes, Type[Helper]]
+
+
+def _init_helper_impl() -> None:
+    """Import and register the helper implementations."""
+    from srctools import _fgd_helpers as helper_mod
+    for helper_type in vars(helper_mod).values():
+        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
+            HELPER_IMPL[helper_type.TYPE] = helper_type
+
+    for helper in HelperTypes:
+        if helper not in HELPER_IMPL:
+            raise ValueError(
+                'Missing helper implementation '
+                'for {}!'.format(helper)
+            )
+
+_init_helper_impl()
+del _init_helper_impl
+from srctools._fgd_helpers import *
+
+
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -463,7 +595,8 @@ class KeyValues:
             List[Tuple[int, str, bool, FrozenSet[str]]],
             List[Tuple[str, str, FrozenSet[str]]],
         ],
-        is_readonly: bool,
+        is_readonly: bool=False,
+        show_in_report: bool=False,
     ):
         self.name = name
         self.type = val_type
@@ -472,25 +605,27 @@ class KeyValues:
         self.desc = doc
         self.val_list = val_list
         self.readonly = is_readonly
+        self.reportable = show_in_report
 
     def __repr__(self) -> str:
         return (
             'KeyValues({s.name!r}, {s.type!r}, '
             '{s.disp_name!r}, {s.default!r}, '
             '{s.desc!r}, {s.val_list!r}, '
-            '{s.readonly})'.format(s=self)
+            '{s.readonly}, {s.reportable})'.format(s=self)
         )
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, KeyValues):
             return (
                 self.name == other.name
-                and self.type == other.type
+                and self.type is other.type
                 and self.disp_name == other.disp_name
                 and self.default == other.default
                 and self.desc == other.desc
                 and self.val_list == other.val_list
-                and self.readonly == other.readonly
+                and self.readonly is other.readonly
+                and self.reportable is other.reportable
             )
         return NotImplemented
 
@@ -504,7 +639,20 @@ class KeyValues:
             self.desc,
             self.val_list.copy() if self.val_list else None,
             self.readonly,
+            self.reportable,
         )
+
+    def known_options(self) -> Iterator[str]:
+        """Use the default value and value list to determine values this can be set to."""
+        if self.type is ValueTypes.CHOICES:
+            options = {value for value, name, tags in self.val_list}
+            options.add(self.default)
+            yield from options
+        elif self.type is ValueTypes.SPAWNFLAGS:
+            for bitflag, name, default, tags in self.val_list:
+                yield bitflag
+        else:
+            yield self.default
 
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
         """Write this back out to a FGD file."""
@@ -515,6 +663,9 @@ class KeyValues:
 
         if self.readonly:
             file.write('readonly ')
+
+        if self.reportable:
+            file.write('report ')
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
@@ -541,10 +692,10 @@ class KeyValues:
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
                 for index, name, default, tags in self.val_list or ():
-                    file.write('\t\t{}: "{}" : {}'.format(
+                    file.write('\t\t{0}: "[{0}] {1}" : {2}'.format(
                         index,
                         name,
-                        int(default),
+                        '1' if default else '0',
                     ))
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
@@ -702,7 +853,11 @@ class IODef:
         if tags:
             file.write('[' + ', '.join(tags) + ']')
 
-        file.write('({})'.format(self.type.value))
+        # Special case, bool is "boolean" on values, "bool" on IO...
+        if self.type is ValueTypes.BOOL:
+            file.write('(bool)')
+        else:
+            file.write('({})'.format(VALUE_TO_IO_DECAY[self.type].value))
 
         if self.desc:
             file.write(' : ')
@@ -800,6 +955,12 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                     continue
                 seen.add(name)
                 yield name
+
+    def __contains__(self, item: str) -> bool:
+        for ent_map in self._maps():
+            if item in ent_map:
+                return True
+        return False
             
     def __len__(self) -> int:
         seen = set()  # type: Set[str]
@@ -832,9 +993,7 @@ class EntityDef:
 
         # Base type names - base()
         self.bases = []  # type: List[Union[EntityDef, str]]
-        # line(), studio(), etc in the header
-        # this is a func, args tuple.
-        self.helpers = []  # type: List[Tuple[HelperTypes, List[str]]]
+        self.helpers = []  # type: List[Helper]
         self.desc = ''
         
         # Views for accessing data among all the entities.
@@ -853,7 +1012,8 @@ class EntityDef:
         """Parse an entity definition."""
         entity = cls(ent_type)
 
-        # First parse the bases part - lots of name(args) sections until an '='
+        # First parse the bases part - lots of name(args) sections until an '='.
+        ext_autovisgroups = []  # type: List[List[str]]
         help_type = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
@@ -869,7 +1029,13 @@ class EntityDef:
                         )
                 else:
                     # No arguments for the previous helper, add it in.
-                    entity.helpers.append((help_type, []))
+                    try:
+                        entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+                    except ValueError as exc:
+                        raise tok.error(
+                            'Invalid helper arguments for {}()',
+                            help_type.value
+                        ) from exc
                     help_type = None
                     # Then repeat this token so it's parsed.
                     tok.push_back(token, token_value)
@@ -884,6 +1050,9 @@ class EntityDef:
                     for arg in
                     token_value.split(',')
                 ]
+                # helper() produces [''], when we want []
+                if len(args) == 1 and args[0] == '':
+                    args.clear()
 
                 if help_type is HelperTypes.INHERIT:
                     for base in args:
@@ -893,8 +1062,23 @@ class EntityDef:
                             entity.bases.append(base)
                     help_type = None
                     continue
+                elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
+                    if len(args) > 0 and args[0].casefold() != 'auto':
+                        args.insert(0, 'Auto')
+                    if len(args) < 2:
+                        raise tok.error('autovis() requires 2 or more arguments!')
+                    ext_autovisgroups.append(args)
+                    help_type = None
+                    continue
 
-                entity.helpers.append((help_type, args))
+                try:
+                    entity.helpers.append(HELPER_IMPL[help_type].parse(args))
+                except (TypeError, ValueError) as exc:
+                    raise tok.error(
+                        'Invalid helper arguments for {}():\n',
+                        help_type.value,
+                        '\n'.join(map(str, exc.args)),
+                    ) from exc
 
                 help_type = None
 
@@ -908,7 +1092,15 @@ class EntityDef:
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
         if help_type:
-            entity.helpers.append((help_type, []))
+            if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
+                raise tok.error('{}() requires at least one argument!', help_type.value)
+            try:
+                entity.helpers.append(HELPER_IMPL[help_type].parse([]))
+            except ValueError as exc:
+                raise tok.error(
+                    'Invalid helper arguments for {}()',
+                    help_type.value
+                ) from exc
 
         entity.classname = tok.expect(Token.STRING).strip()
 
@@ -941,6 +1133,17 @@ class EntityDef:
 
         fgd.entities[entity.classname.casefold()] = entity
 
+        # Now apply EXT_AUTO_VISGROUP, since we have the classname.
+        for auto_visgroup in ext_autovisgroups:
+            auto_visgroup.append(entity.classname)
+
+            for vis_a, vis_b, vis_c in zip(
+                auto_visgroup,
+                auto_visgroup[1:],
+                auto_visgroup[2:],
+            ):
+                fgd.auto_visgroups.setdefault((vis_a, vis_b), set()).add(vis_c)
+
         # Now parse keyvalues, and input/outputs
         for token, token_value in tok:
             if token is Token.BRACK_CLOSE:
@@ -955,7 +1158,6 @@ class EntityDef:
 
             io_type = token_value.casefold()
             if io_type in ('input', 'output'):
-
                 name = tok.expect(Token.STRING)
                 
                 # Next is either the value type parens, or a tags brackets.
@@ -965,18 +1167,23 @@ class EntityDef:
                     val_token, raw_value_type = tok()
                 else:
                     tags = frozenset()
-                    
-                raw_value_type = raw_value_type.strip()
-                try:
-                    val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                except KeyError:
-                    raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
 
-                # Can't have a spawnflags or choices input type...
-                if val_typ.has_list:
+                raw_value_type = raw_value_type.strip()
+                if raw_value_type == 'ehandle':
+                    # This is a duplicate (deprecated) name, but only for I/O.
+                    val_typ = ValueTypes.EHANDLE
+                else:
+                    try:
+                        val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+                    except KeyError:
+                        raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+
+                if not val_typ.valid_for_io:
                     raise tok.error(
-                        '"{}" value type is not valid for an input or output!',
+                        '"{}" value type is not valid for an input or '
+                        'output! Use "{}" instead.',
                         val_typ.value,
+                        VALUE_TO_IO_DECAY[val_typ].value,
                     )
 
                 # Read desc
@@ -1021,15 +1228,21 @@ class EntityDef:
 
                 next_token, key_flag = tok()
 
-                is_readonly = False
-                had_colon = False
+                is_readonly = show_in_report = had_colon = False
                 has_equal = None
-                attrs = None
+                attrs = None  # type: Optional[List[str]]
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
                     if key_flag.casefold() == 'readonly':
                         is_readonly = True
+                    elif key_flag.casefold() == 'report':
+                        show_in_report = True
+                    else:
+                        raise tok.error(
+                            'Invalid keyword after keyvalue type: {!r}',
+                            key_flag
+                        )
                 elif next_token is Token.COLON:
                     had_colon = True
                 elif next_token is Token.EQUALS:
@@ -1048,9 +1261,9 @@ class EntityDef:
                     attrs, has_equal = read_colon_list(tok, had_colon)
                 attr_len = len(attrs)
 
-                desc = default = ''
+                kv_desc = default = ''
                 if attr_len == 3:
-                    disp_name, default, desc = attrs
+                    disp_name, default, kv_desc = attrs
                 elif attr_len == 2:
                     disp_name, default = attrs
                 elif attr_len == 1:
@@ -1092,7 +1305,10 @@ class EntityDef:
                                         entity.classname, 
                                     )
                                 ) from None
-                            power = math.log2(choices_value)
+                            try:
+                                power = math.log2(choices_value)
+                            except ValueError:
+                                power = 0.5  # Force the following code to raise
                             if power != round(power):
                                 raise tok.error(
                                     'SpawnFlags must be powers of two, '
@@ -1135,9 +1351,10 @@ class EntityDef:
                     val_typ,
                     disp_name,
                     default,
-                    ''.join(desc),
+                    kv_desc,
                     val_list,
                     is_readonly,
+                    show_in_report,
                 )
 
     def __repr__(self) -> str:
@@ -1145,6 +1362,12 @@ class EntityDef:
             return '<Entity Base "{}">'.format(self.classname)
         else:
             return '<Entity {}>'.format(self.classname)
+
+    def get_helpers(self, typ: HelperT) -> Iterator[HelperT]:
+        """Find all helpers with this specific type."""
+        for helper in self.helpers:
+            if helper.TYPE == typ.TYPE:
+                yield helper
 
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
@@ -1191,13 +1414,14 @@ class EntityDef:
 
         kv_order_list = []
 
-        for helper, args in self.helpers:
-            if helper is HelperTypes.HALF_GRID_SNAP:
+        for helper in self.helpers:
+            args = helper.export()
+            if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
             else:
-                file.write('\n\t{}({})'.format(helper.value, ', '.join(args)))
-            if helper is HelperTypes.EXT_ORDERBY:
+                file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+            if isinstance(helper, HelperExtOrderBy):
                 kv_order_list.extend(map(str.casefold, args))
 
         if self.helpers:
@@ -1346,12 +1570,24 @@ class FGD:
         """Create a FGD."""
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
-        self._parse_list = []
+        self._parse_list = set()
+
         # Entity definitions
         self.entities = {}  # type: Dict[str, EntityDef]
-        # maximum bounding box of map
+
+        # Maximum bounding box of map
         self.map_size_min = 0
         self.map_size_max = 0
+
+        # Directories we have excluded.
+        self.mat_exclusions = set()  # type: Set[PurePosixPath]
+
+        # Automatic visgroups.
+        # This maps a parent, folder to the entities that have that group.
+        # For example:
+        # ('Auto', 'World Details'): 'Props'
+        # ('World Details', 'Props') : 'prop_static'
+        self.auto_visgroups = {}  # type: Dict[Tuple[str, str], Set[str]]
 
     @classmethod
     def parse(
@@ -1409,7 +1645,7 @@ class FGD:
                             base,
                             ent.classname,
                         )
-                    )
+                    ) from None
 
     def sorted_ents(self) -> Iterator[EntityDef]:
         """Yield all entities in sorted order.
@@ -1509,12 +1745,20 @@ class FGD:
 
         If none are provided, the text will be returned.
         """
-        ret_string = file is None
-        if ret_string:
+        if file is None:
             file = io.StringIO()
+            ret_string = True
+        else:
+            ret_string = False
 
         if self.map_size_min != self.map_size_max:
             file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
+            
+        if self.mat_exclusions:
+            file.write('@MaterialExclusion\n\t[\n')
+            for folder in sorted(self.mat_exclusions):
+                file.write('\t"{!s}"\n'.format(folder))
+            file.write('\t]\n')
 
         for ent in self.sorted_ents():
             file.write('\n')
@@ -1541,7 +1785,7 @@ class FGD:
         if file in self._parse_list:
             return
 
-        self._parse_list.append(file)
+        self._parse_list.add(file)
 
         with filesys, file.open_str(encoding) as f:
             tokeniser = Tokenizer(
@@ -1586,6 +1830,50 @@ class FGD:
                             'Invalid @MapSize: ({})',
                             mapsize_args,
                         )
+                elif token_value == '@materialexclusion':
+                    # Material exclusion directories
+                    tokeniser.expect(Token.BRACK_OPEN)
+                    for tok, tok_value in tokeniser:
+                        if tok is Token.BRACK_CLOSE:
+                            break
+                        elif tok is Token.STRING:
+                            self.mat_exclusions.add(PurePosixPath(tok_value))
+                        elif tok is not Token.NEWLINE:
+                            raise tokeniser.error(tok)
+                    else:
+                        raise tokeniser.error(
+                            'Missing closing bracket '
+                            'for @MaterialExclusion!'
+                        )
+
+                elif token_value == '@autovisgroup':
+                    tokeniser.expect(Token.EQUALS)
+                    vis_parent = tokeniser.expect(Token.STRING)
+                    tokeniser.expect(Token.BRACK_OPEN)
+
+                    for tok, tok_value in tokeniser:
+                        if tok is Token.BRACK_CLOSE:
+                            break
+                        elif tok is Token.STRING:
+                            # Folder
+                            vis_key = vis_parent, tok_value
+                            try:
+                                vis_list = self.auto_visgroups[vis_key]
+                            except KeyError:
+                                vis_list = self.auto_visgroups[vis_key] = set()
+
+                            tokeniser.expect(Token.BRACK_OPEN)
+                            for ent_tok, ent_tok_value in tokeniser:
+                                if ent_tok is Token.BRACK_CLOSE:
+                                    break
+                                elif ent_tok is Token.STRING:
+                                    # Entity
+                                    vis_list.add(ent_tok_value)
+                                elif ent_tok is not Token.NEWLINE:
+                                    raise tokeniser.error(ent_tok)
+                        elif tok is not Token.NEWLINE:
+                            raise tokeniser.error(tok)
+
                 # Entity definition...
                 elif token_value[:1] == '@':
                     try:
@@ -1600,15 +1888,18 @@ class FGD:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
     def __getitem__(self, classname: str) -> EntityDef:
+        """Lookup entities by classname."""
         try:
             return self.entities[classname.casefold()]
         except KeyError:
             raise KeyError('No class "{}"!'.format(classname)) from None
 
     def __iter__(self) -> Iterator[EntityDef]:
+        """Iterating over FGDs iterates over the entities."""
         return iter(self.entities.values())
 
     def __len__(self) -> int:
+        """The length of the FGD is the number of entities."""
         return len(self.entities)
 
     def _fix_missing_bases(self, ent: EntityDef) -> None:
@@ -1697,4 +1988,6 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
+
+
 

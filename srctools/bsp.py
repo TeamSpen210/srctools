@@ -13,7 +13,7 @@ from srctools.vmf import VMF, Entity, Output
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, Tuple
+from typing import List, Dict, Iterator, Union, Optional, Tuple, BinaryIO
 
 
 try:
@@ -28,7 +28,9 @@ __all__ = [
 ]
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
-
+HEADER_1 = '<4si'  # Header section before the lump list.
+HEADER_LUMP = '<3i4s'  # Header section for each lump.
+HEADER_2 = '<i'  # Header section after the lumps.
 
 def get_struct(file, format):
     """Get a structure from a file."""
@@ -192,8 +194,18 @@ class StaticPropFlags(Flag):
     NO_SELF_SHADOWING = 0x80
 
     # These are set in the secondary flags section.
+    NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
     BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
 
+    @property
+    def value_prim(self) -> int:
+        """Return the data for the original flag byte."""
+        return self.value & 0xFF
+
+    @property
+    def value_sec(self) -> int:
+        """Return the data for the secondary flag byte."""
+        return self.value >> 8
 
 class BSP:
     """A BSP file."""
@@ -214,7 +226,7 @@ class BSP:
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
-            magic_name, bsp_version = get_struct(file, '4si')
+            magic_name, bsp_version = get_struct(file, HEADER_1)
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
             if self.version is None:
@@ -229,11 +241,7 @@ class BSP:
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                offset, length, version, ident = get_struct(
-                    file,
-                    # 3 ints and a 4-long char array
-                    '<3i4s',
-                )
+                offset, length, version, ident = get_struct(file, HEADER_LUMP)
                 lump_id = BSP_LUMPS(index)
                 self.lumps[lump_id] = Lump(
                     lump_id,
@@ -242,7 +250,7 @@ class BSP:
                 )
                 lump_offsets[lump_id] = offset, length
 
-            [self.map_revision] = get_struct(file, 'i')
+            [self.map_revision] = get_struct(file, HEADER_2)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
@@ -295,27 +303,28 @@ class BSP:
 
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
-            file.write(BSP_MAGIC)
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
             if isinstance(self.version, VERSIONS):
-                file.write(struct.pack('<i', self.version.value))
+                version = self.version.value
             else:
-                file.write(struct.pack('<i', self.version))
+                version = self.version
+
+            file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
 
             # Write headers.
             for lump_name in BSP_LUMPS:
                 lump = self.lumps[lump_name]
                 fixup_loc[lump_name] = file.tell()
                 file.write(struct.pack(
-                    '<8xi4s',
-                    # offset,
-                    # length,
+                    HEADER_LUMP,
+                    0,  # offset
+                    0,  # length
                     lump.version,
                     bytes(lump.ident),
                 ))
 
             # After lump headers, the map revision...
-            file.write(struct.pack('<i', self.map_revision))
+            file.write(struct.pack(HEADER_2, self.map_revision))
 
             # Then each lump.
             for lump_name in LUMP_WRITE_ORDER:
@@ -432,10 +441,14 @@ class BSP:
         data_file = BytesIO(pak_lump.data)
 
         zip_file = ZipFile(data_file, mode='a')
-        # If exception, abort, so we don't need try: or with:
+        # If exception, abort, so we don't need try: or with:.
+        # Because this is purely in memory, there are no actual resources here
+        # and we don't actually care about not closing the zip file or BytesIO.
         yield zip_file
         # Explicitly close to finalise the footer.
         zip_file.close()
+        # Note: because data is bytes, CPython won't end up doing any copying
+        # here.
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
@@ -659,39 +672,22 @@ class BSP:
                 disable_on_xbox,
             )
 
-    def write_static_props(self, props: List['StaticProp']):
+    def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump."""
 
-        # First generate an optimised visleafs block.
-        # Each prop stores a pointer into the list of leafs and a leaf count.
-        # So we want to remove redundant entries in that.
-        # This can be done in a brute-force manner - for each new section,
-        # add to a dict it and all prefixes/suffixes. Then they won't require
-        # a new part.
-        visleafs = []
+        # First generate the visleaf and model-names block.
+        # Unfortunately it seems reusing visleaf parts isn't possible.
+        leaf_array = []  # type: List[int]
+        leaf_offsets = []  # type: List[int]
 
         models = set()
 
         for prop in props:
-            visleafs.append(prop.visleafs)
+            leaf_offsets.append(len(leaf_array))
+            leaf_array.extend(prop.visleafs)
             models.add(prop.model)
 
-        visleafs.sort(key=len, reverse=True)
-        leaf_array = []  # type: List[int]
-        leaf_offsets = {}  # type: Dict[Tuple[int, ...], int]
-
-        for leaf in visleafs:
-            tup = tuple(sorted(leaf))
-            if tup not in leaf_offsets:
-                # Add to the table.
-                pos = len(leaf_array)
-                leaf_array.extend(leaf)
-                for off in range(1, len(leaf)):
-                    leaf_offsets[tup[off:]] = pos + off
-                    leaf_offsets[tup[:-off]] = pos
-
-                leaf_offsets[tup] = pos
-
+        # Lock down the order of the names.
         model_list = list(models)
         model_ind = {
             mdl: i
@@ -710,7 +706,7 @@ class BSP:
         prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
-        for prop in props:
+        for leaf_off, prop in zip(leaf_offsets, props):
             prop_lump.write(struct.pack(
                 '<6fH',
                 prop.origin.x,
@@ -724,10 +720,10 @@ class BSP:
 
             prop_lump.write(struct.pack(
                 '<HHBBifffff',
-                leaf_offsets[tuple(sorted(prop.visleafs))],
+                leaf_off,
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value & 0xFF,
+                prop.flags.value_prim,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -764,14 +760,14 @@ class BSP:
                 ))
 
             if game_lump.version >= 10:
-                prop_lump.write(struct.pack('<I', prop.flags.value >> 8))
+                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
             if game_lump.version >= 11:
-                # Unknown padding/data
-                prop_lump.write(b'\0\0\0\0')
+                # Unknown padding/data, though it's always zero.
 
-                prop_lump.write(struct.pack('<f', prop.scaling))
+                prop_lump.write(struct.pack('<xxxxf', prop.scaling))
             elif game_lump.version >= 9:
+                # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
         game_lump.data = prop_lump.getvalue()
@@ -786,14 +782,14 @@ class Lump:
         typ: BSP_LUMPS,
         version: int,
         ident: bytes,
-    ):
+    ) -> None:
         """This should not be constructed outside a BSP."""
         self.type = typ
         self.version = version
         self.ident = [int(x) for x in ident]
         self.data = b''
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
             self.type.name,
             self.version,
@@ -822,14 +818,14 @@ class GameLump:
         flags: int,
         version: int,
         data: bytes,
-    ):
+    ) -> None:
         """This should not be constructed outside a BSP."""
         self.id = lump_id
         self.flags = flags
         self.version = version
         self.data = data
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
             repr(self.id)[1:],
             self.flags,
@@ -873,7 +869,7 @@ class StaticProp:
         tint: Vec=Vec(255, 255, 255),  # Rendercolor
         renderfx: int=255,
         disable_on_xbox: bool=False,
-    ):
+    ) -> None:
         self.model = model
         self.origin = origin
         self.angles = angles
@@ -901,7 +897,7 @@ class StaticProp:
         self.renderfx = renderfx
         self.disable_on_xbox = disable_on_xbox
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
             self.model,
             self.skin,

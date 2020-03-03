@@ -2,7 +2,7 @@
 import io
 from collections import OrderedDict
 from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
-from enum import Enum
+from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
 
@@ -10,14 +10,14 @@ from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
-from srctools.bsp import BSP
+from srctools.bsp import BSP, BSP_LUMPS
 from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
     VirtualFileSystem,
 )
 from srctools.mdl import Model
 from srctools.vmt import Material, VarType
-from srctools.sndscript import Sound
+from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
 
 LOGGER = srctools.logger.get_logger(__name__)
@@ -33,19 +33,20 @@ SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
 
 class FileType(Enum):
     """Types of files we might pack."""
-    GENERIC = 0  # Other file types.
-    SOUNDSCRIPT = 1  # Should be added to the manifest
+    GENERIC = auto_enum()  # Other file types.
+    SOUNDSCRIPT = auto_enum()  # Should be added to the manifest
 
-    GAME_SOUND = 2  # 'world.blah' sound - lookup the soundscript, and raw files.
+    GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
+    PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
 
     # Assume these files are present even
     # if we can't find them. (rt_ textures for example.)
     # also don't bother looking for dependencies.
-    WHITELIST = 3
+    WHITELIST = auto_enum()
     
     # This file might be present - if it is pack it.
     # If not it's not an error.
-    OPTIONAL = 4
+    OPTIONAL = auto_enum()
     
     PARTICLE_FILE = 'pcf'  # Should be added to the manifest
     
@@ -186,6 +187,12 @@ class PackList:
         """
         filename = os.fspath(filename)
 
+        # Assume an empty filename is an optional value.
+        if not filename:
+            if data is not None:
+                raise ValueError('Data provided with no filename!')
+            return
+
         if '\t' in filename:
             raise ValueError(
                 'No tabs are allowed in filenames ({!r})'.format(filename)
@@ -194,6 +201,9 @@ class PackList:
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
             return  # This packs the soundscript and wav for us.
+        if data_type is FileType.PARTICLE:
+            # self.pack_particle(filename)  # TODO: Particle parsing
+            return  # This packs the PCF and material if required.
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
@@ -209,7 +219,11 @@ class PackList:
             data_type = FileType.MATERIAL
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if not filename.endswith(('.vmt', '.spr')):
+            if filename.endswith('.spr'):
+                # This is really wrong, spr materials don't exist anymore.
+                # Silently swap the extension.
+                filename = filename[:-3] + 'vmt'
+            elif not filename.endswith('.vmt'):
                 filename = filename + '.vmt'
         elif data_type is FileType.TEXTURE or (
             data_type is FileType.GENERIC and filename.endswith('.vtf')
@@ -316,6 +330,17 @@ class PackList:
         self._inject_files[folder, ext, data] = full_name
         return full_name
 
+    def inject_vscript(self, code: str, folder: str='inject') -> str:
+        """Specialised variant of inject_file() for VScript code specifically.
+
+        This returns the script name suitable for passing to Entity Scripts.
+        """
+        return self.inject_file(
+            code.encode('ascii'),
+            os.path.join('scripts/vscripts', folder), '.nut'
+            # Strip off the scripts/vscripts/ folder since it's implied.
+        )[17:]
+
     def pack_soundscript(self, sound_name: str):
         """Pack a soundscript or raw sound file."""
         # Blank means no sound is used.
@@ -383,7 +408,7 @@ class PackList:
 
         for name, sound in scripts.items():
             self.soundscripts[name] = path, [
-                snd.lstrip('*@#<>^)}$!?').replace('\\', '/')
+                snd.lstrip(SND_CHARS).replace('\\', '/')
                 for snd in sound.sounds
             ]
 
@@ -537,7 +562,13 @@ class PackList:
                 # any packing for them.
                 # Origin/angles might be set (brushes, instances) even for ents
                 # that don't use them.
-                if key in ('classname', 'hammerid', 'origin', 'angles', 'skin', 'pitch'):
+                if key in (
+                    'classname', 'hammerid',
+                    'origin', 'angles',
+                    'skin',
+                    'pitch',
+                    'skinset'
+                ):
                     continue
                 elif key == 'model':
                     # Models are set on all brush entities, and are always either
@@ -575,47 +606,98 @@ class PackList:
                     for script in value.split():
                         self.pack_file('scripts/vscripts/' + script)
                 elif val_type is KVTypes.STR_SPRITE:
-                    self.pack_file('materials/sprites/' + value, FileType.MATERIAL)
+                    if not value.casefold().startswith('sprites/'):
+                        value = 'sprites/' + value
+                    if not value.casefold().startswith('materials/'):
+                        value = 'materials/' + value
+
+                    self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_SOUND:
                     self.pack_soundscript(value)
 
+        # Handle resources that's coded into different entities with our
+        # internal database.
         for classname in vmf.by_class.keys():
             try:
                 res = CLASS_RESOURCES[classname]
             except KeyError:
                 continue
-            if callable(res):
+            if isinstance(res, list):
+                # Basic dependencies, if they're the same for any copy of this ent.
+                for file, filetype in res:
+                    self.pack_file(file, filetype)
+            else:
+                # Different stuff is packed based on keyvalues, so call a function.
                 for ent in vmf.by_class[classname]:
                     for file in res(ent):
-                        self.pack_file(file)
+                        if isinstance(file, tuple):
+                            self.pack_file(*file)  # Specify the file type too.
+                        else:
+                            self.pack_file(file)
+
+        # Handle worldspawn here - this is fairly special.
+        sky_name = vmf.spawn['skyname']
+        for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
+            self.pack_file(
+                'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
+                FileType.MATERIAL,
+            )
+            self.pack_file(
+                'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
+                FileType.MATERIAL,
+            )
+        self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
+
+        detail_script = vmf.spawn['detailvbsp']
+        if detail_script:
+            self.pack_file(detail_script, FileType.GENERIC)
+            try:
+                with self.fsys:
+                    detail_props = self.fsys.read_prop(detail_script, 'ansi')
+            except FileNotFoundError:
+                LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
+            except Exception:
+                LOGGER.warning(
+                    'Could not parse detail.vbsp file: ',
+                    exc_info=True
+                )
             else:
-                for file in res:
-                    self.pack_file(file)
+                # We only need to worry about models, the sprites are a single
+                # sheet packed above.
+                for prop in detail_props.iter_tree():
+                    if prop.name == 'model':
+                        self.pack_file(prop.value, FileType.MODEL)
 
     def pack_into_zip(
         self,
-        zip_file: ZipFile,
+        bsp: BSP,
         *,
         whitelist: Iterable[FileSystem]=(),
         blacklist: Iterable[FileSystem]=(),
-        ignore_vpk=True,
+        ignore_vpk: bool=True,
     ) -> None:
-        """Pack all our files into the given zipfile.
+        """Pack all our files into the packfile in the BSP.
 
         The filesys is used to find files to pack.
         Filesystems must be in the whitelist and not in the blacklist, if provided.
         If ignore_vpk is True, files in VPK won't be packed unless that system
         is in allow_filesys.
         """
-        existing_names = {
-            name.replace('\\', '/')
-            for name in zip_file.namelist()
-        }
+        # We need to rebuild the zipfile from scratch, so we can overwrite
+        # old data if required.
 
+        # First retrieve the data.
+        with bsp.packfile() as start_zip:
+            packed_files = {
+                info.filename.casefold(): (info.filename, start_zip.read(info))
+                for info in start_zip.infolist()
+            }  # type: Dict[str, Tuple[str, bytes]]
+
+        # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         all_systems = {
             sys for sys, prefix in
             self.fsys.systems
-        }
+        }  # type: Set[FileSystem]
 
         allowed = set(all_systems)
 
@@ -634,26 +716,30 @@ class PackList:
                 # Need to ensure / separators.
                 fname = file.filename.replace('\\', '/')
 
-                if file.virtual:
-                    # Always pack.
-                    zip_file.writestr(fname, file.data)
-                    continue
+                already_packed = fname.casefold() in packed_files
 
-                if file.filename in existing_names:
-                    # Already in the zip - cubemap patch files, or something
-                    # else has already added it. Ignore.
+                if file.data is not None:
+                    # Always pack, we've got custom data.
+                    packed_files[fname.casefold()] = (fname, file.data)
                     continue
 
                 try:
                     sys_file = self.fsys[file.filename]
                 except FileNotFoundError:
-                    if file.type is not FileType.OPTIONAL:
-                        print('WARNING: "{}" not packed!'.format(file.filename))
+                    if file.type is not FileType.OPTIONAL and not already_packed:
+                        LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                     continue
 
                 if self.fsys.get_system(sys_file) in allowed:
                     with sys_file.open_bin() as f:
-                        zip_file.writestr(fname, f.read())
+                        packed_files[fname.casefold()] = (fname, f.read())
+
+        LOGGER.info('Compressing packfile...')
+        with io.BytesIO() as new_data:
+            with ZipFile(new_data, 'w') as new_zip:
+                for fname, data in packed_files.values():
+                    new_zip.writestr(fname, data)
+            bsp.lumps[BSP_LUMPS.PAKFILE].data = new_data.getvalue()
 
     def eval_dependencies(self) -> None:
         """Add files to the list which need to also be packed.
@@ -670,23 +756,20 @@ class PackList:
                     if file._analysed:
                         continue
                     file._analysed = True
+                    todo = True
 
                     try:
                         if file.type is FileType.MATERIAL:
-                            if self._get_material_files(file):
-                                todo = True
+                            self._get_material_files(file)
                         elif file.type is FileType.MODEL:
                             self._get_model_files(file)
-                            todo = True
                         elif file.type is FileType.TEXTURE:
                             # Try packing the '.hdr.vtf' file as well if present.
                             # But don't recurse!
                             if not file.filename.endswith('.hdr.vtf'):
-                                self.pack_file(
-                                    file.filename[:-3] + 'hdr.vtf',
-                                    FileType.OPTIONAL
-                                )
-                                todo = True
+                                hdr_tex = file.filename[:-3] + 'hdr.vtf'
+                                if hdr_tex in self.fsys:
+                                    self.pack_file(hdr_tex)
                     except Exception as exc:
                         # Skip errors in the file format - means we can't find the dependencies.
                         LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
@@ -729,7 +812,7 @@ class PackList:
         for snd in mdl.find_sounds():
             self.pack_file(snd, FileType.GAME_SOUND)
 
-    def _get_material_files(self, file: PackFile):
+    def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
 
         parents = []  # type: List[str]
@@ -743,9 +826,6 @@ class PackList:
             else:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
-
-            # For 'patch' shaders, apply the originals.
-            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
         except FileNotFoundError:
             LOGGER.warning('File "{}" does not exist!', file.filename)
             return
@@ -757,10 +837,19 @@ class PackList:
             )
             return
 
+        try:
+            # For 'patch' shaders, apply the originals.
+            mat = mat.apply_patches(self.fsys, parent_func=parents.append)
+        except ValueError:
+            LOGGER.warning(
+                'Error parsing Patch shader in "{}":',
+                file.filename,
+                exc_info=True,
+            )
+            return
+
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL)
-
-        has_deps = bool(parents)
 
         for param_name, param_type, param_value in mat:
             param_value = param_value.casefold()
@@ -768,17 +857,7 @@ class PackList:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
                     continue
-                self.pack_file(
-                    'materials/' + param_value + '.vtf',
-                    FileType.TEXTURE,
-                )
-                has_deps = True
+                self.pack_file(param_value, FileType.TEXTURE)
             # Bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
-                self.pack_file(
-                    'materials/' + param_value + '.vmt',
-                    FileType.MATERIAL,
-                )
-                has_deps = True
-
-        return has_deps
+                self.pack_file(param_value, FileType.MATERIAL)

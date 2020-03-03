@@ -1,5 +1,7 @@
 """Parses SMD model/animation data."""
+import os
 import re
+from copy import deepcopy
 from operator import itemgetter
 
 import math
@@ -27,6 +29,12 @@ class Bone:
             'None',
         )
 
+    def __copy__(self):
+        return Bone(self.name, self.parent)
+
+    def __deepcopy__(self, memodict: dict=None):
+        return Bone(self.name, deepcopy(self.parent, memodict))
+
 
 class BoneFrame:
     """Represents a single frame of bone animation."""
@@ -36,6 +44,16 @@ class BoneFrame:
         self.bone = bone
         self.position = position
         self.rotation = rotation
+
+    def __copy__(self) -> 'BoneFrame':
+        return BoneFrame(self.bone, self.position, self.rotation)
+
+    def __deepcopy__(self, memodict: dict=None) -> 'BoneFrame':
+        return BoneFrame(
+            deepcopy(self.bone, memodict),
+            self.position.copy(),
+            self.rotation.copy(),
+        )
 
 
 class Vertex:
@@ -61,12 +79,24 @@ class Vertex:
         )
 
     def copy(self) -> 'Vertex':
+        """Copy the vertex."""
         return Vertex(
             self.pos.copy(),
             self.norm.copy(),
             self.tex_u,
             self.tex_v,
             self.links.copy(),
+        )
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict=None) -> 'Vertex':
+        return Vertex(
+            self.pos.copy(),
+            self.norm.copy(),
+            self.tex_u,
+            self.tex_v,
+            deepcopy(self.links, memodict),
         )
 
 
@@ -112,6 +142,18 @@ class Triangle:
             raise IndexError(item)
 
     def copy(self) -> 'Triangle':
+        """Duplicate this triangle."""
+        # Copy the points, they shouldn't be shared.
+        return Triangle(
+            self.mat,
+            self.point1.copy(),
+            self.point2.copy(),
+            self.point3.copy(),
+        )
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict=None) -> 'Triangle':
         """Duplicate this triangle."""
         return Triangle(
             self.mat,
@@ -163,12 +205,22 @@ class Mesh:
         self.animation = animation
         self.triangles = triangles
 
+    def __copy__(self):
+        return Mesh(self.bones, self.animation, self.triangles)
+
+    def __deepcopy__(self, memodict: dict=None):
+        return Mesh(
+            deepcopy(self.bones, memodict),
+            deepcopy(self.animation, memodict),
+            deepcopy(self.triangles, memodict),
+        )
+
     @staticmethod
     def blank(root_name: str) -> 'Mesh':
         """Create an empty mesh, with a single root bone."""
         root_bone = Bone(root_name, None)
         return Mesh(
-            {'static_prop': root_bone},
+            {root_name: root_bone},
             {0: [
                 BoneFrame(root_bone, Vec(), Vec())
             ]},
@@ -323,6 +375,11 @@ class Mesh:
                     exc.reason,
                     exc.start
                 ) from None
+
+            # We need to process the material name, it can have various things
+            # in it - ignored folders, file extensions.
+            mat_name = os.path.basename(mat_name.rstrip('\\/ \t\b\n\r'))
+
             # Grab the three lines.
             for i in range(3):
                 try:
@@ -447,6 +504,7 @@ class Mesh:
         mdl: 'Mesh',
         rotation: Vec=(0.0, 0.0, 0.0),
         offset: Vec=(0.0, 0.0, 0.0),
+        scale: float=1.0,
     ) -> None:
         """Append another model's geometry onto this one.
 
@@ -471,7 +529,99 @@ class Mesh:
                 vert.links[:] = bone_link
 
                 vert.norm.rotate(*rotation, round_vals=False)
+                vert.pos *= scale
                 vert.pos.rotate(*rotation, round_vals=False)
                 vert.pos += offset
 
             self.triangles.append(new_tri)
+
+    # The triangles required for a prism.
+    # Each sublist is a triangle.
+    # The tuples are (x, y, z, u, v).
+    _BBOX_MESH_DATA = [
+        [
+            (-1, -1, -1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 1.0),
+            (-1, +1, -1, 0.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, +1, +1, 1.0, 1.0),
+            (+1, +1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, +1, -1, 0.0, 0.0),
+            (+1, -1, +1, 1.0, 1.0),
+            (+1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, -1, -1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+            (-1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, -1, -1, 1.0, 1.0),
+            (-1, -1, -1, 0.0, 1.0),
+        ],
+        [
+            (+1, +1, +1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+            (+1, -1, +1, 0.0, 1.0),
+        ],
+        [
+            (-1, -1, -1, 0.0, 0.0),
+            (-1, -1, +1, 1.0, 0.0),
+            (-1, +1, +1, 1.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 0.0),
+            (+1, +1, +1, 1.0, 1.0),
+        ],
+        [
+            (+1, +1, -1, 0.0, 0.0),
+            (+1, +1, +1, 1.0, 0.0),
+            (+1, -1, +1, 1.0, 1.0),
+        ],
+        [
+            (+1, -1, -1, 0.0, 0.0),
+            (+1, -1, +1, 1.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+        ],
+        [
+            (-1, +1, -1, 0.0, 0.0),
+            (+1, +1, -1, 1.0, 0.0),
+            (+1, -1, -1, 1.0, 1.0),
+        ],
+        [
+            (+1, +1, +1, 0.0, 0.0),
+            (-1, +1, +1, 1.0, 0.0),
+            (-1, -1, +1, 1.0, 1.0),
+        ],
+    ]
+
+
+    @classmethod
+    def build_bbox(cls, root_bone: str, mat: str, bbox_min: Vec, bbox_max: Vec) -> 'Mesh':
+        """Construct a mesh for a bounding box."""
+        mesh = cls.blank(root_bone)
+        [root] = mesh.bones.values()
+        links = [(root, 1.0)]
+
+        bbox_min, bbox_max = Vec.bbox(bbox_min, bbox_max)
+
+        for tri_def in cls._BBOX_MESH_DATA:
+            tri = Triangle(mat, *[
+                Vertex(
+                    Vec(
+                        bbox_max.x if x > 0 else bbox_min.x,
+                        bbox_max.y if y > 0 else bbox_min.y,
+                        bbox_max.z if z > 0 else bbox_min.z,
+                    ), Vec(x, y, z).norm(),
+                    u, v, links.copy()
+                )
+                for x, y, z, u, v in tri_def
+            ])
+            mesh.triangles.append(tri)
+        return mesh

@@ -64,7 +64,7 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
         return val.x, val.y, val.z
 
     try:
-        str_x, str_y, str_z = val.split(' ')
+        str_x, str_y, str_z = val.split()
     except ValueError:
         return x, y, z
 
@@ -410,9 +410,9 @@ class Vec:
         )
 
         if round_vals:
-            self.x = round(self.x, 3)
-            self.y = round(self.y, 3)
-            self.z = round(self.z, 3)
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
 
         return self
 
@@ -536,7 +536,7 @@ class Vec:
         The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
-        horiz_dist = math.sqrt(self.x ** 2 + self.y ** 2)
+        horiz_dist = math.hypot(self.x, self.y)
         return Vec(
             math.degrees(math.atan2(-self.z, horiz_dist)),
             math.degrees(math.atan2(self.y, self.x)) % 360,

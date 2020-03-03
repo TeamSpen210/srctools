@@ -189,17 +189,18 @@ class Tokenizer:
         self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
 
-    def error(self, message: Union[str, Token], *args):
+    def error(self, message: Union[str, Token], *args) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token to indicate a wrong token,
-        or a string which will be formatted with the positional args.
+        or a string which will be {}-formatted with the positional args
+        if they are present.
         """
         if isinstance(message, Token):
             message = 'Unexpected token {}!'.format(message.name)
-        else:
+        elif args:
             message = message.format(*args)
         return self.error_type(
             message,
