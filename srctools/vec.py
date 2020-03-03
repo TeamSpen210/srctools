@@ -1008,8 +1008,162 @@ class Vec:
         When the body is exited safely, the quaternion is applied to
         the angle.
         """,
-    )
+    )        
+    
+class Angle:
+    """Represents a pitch-yaw-roll Euler angle.
 
+    All values are remapped to between 0-360 when set.
+    Addition and subtraction modify values, matrix-multiplication with Vec or Angle
+    rotates (RHS rotating LHS).
+    """
+    __slots__ = ['_pitch', '_yaw', '_roll']
+
+    def __init__(
+        self,
+        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
+        yaw: Union[int, float]=0.0,
+        roll: Union[int, float]=0.0,
+    ):
+        """Create an Angle.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the pitch argument), which will be
+        used for pitch, yaw, and roll. This includes Vectors and other Angles.
+        """
+        if isinstance(pitch, (int, float)):
+            self._pitch = float(pitch) % 360
+            self._yaw = float(yaw) % 360
+            self._roll = float(roll) % 360
+        else:
+            it = iter(pitch)
+            self._pitch = float(next(it, 0.0)) % 360
+            self._yaw = float(next(it, yaw)) % 360
+            self._roll = float(next(it, roll)) % 360
+
+    def copy(self) -> 'Angle':
+        """Create a duplicate of this vector."""
+        return Angle(self._pitch, self._yaw, self._roll)
+
+    @classmethod
+    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
+        """Convert a string in the form '(4 6 -4)' into an Angle.
+
+         If the string is unparsable, this uses the defaults.
+         The string can start with any of the (), {}, [], <> bracket
+         types, or none.
+
+         If the value is already a Angle, a copy will be returned.
+         """
+
+        pitch, yaw, roll = parse_vec_str(val, pitch, yaw, roll)
+        return cls(pitch, yaw, roll)
+
+    @property
+    def pitch(self):
+        """The Y-axis rotation, performed second."""
+        return self._pitch
+
+    @pitch.setter
+    def pitch(self, pitch):
+        self._pitch = float(pitch) % 360
+
+    @property
+    def yaw(self):
+        """The Z-axis rotation, performed last."""
+        return self._yaw
+
+    @yaw.setter
+    def yaw(self, yaw):
+        self._yaw = float(yaw) % 360
+
+    @property
+    def roll(self):
+        """The X-axis rotation, performed first."""
+        return self._roll
+
+    @roll.setter
+    def roll(self, roll):
+        self._roll = float(roll) % 360
+
+    def __repr__(self):
+        return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
+
+    def __mul__(self, other: float):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return Angle(
+                self._pitch * other,
+                self._yaw * other,
+                self._roll * other,
+            )
+        return NotImplemented
+
+    def __rmul__(self, other: float):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return Angle(
+                other * self._pitch,
+                other * self._yaw,
+                other * self._roll,
+            )
+        return NotImplemented
+
+    def __matmul__(self, other: Union['Angle']):
+        """Angle @ Angle rotates the first by the second.
+        """
+        if isinstance(other, Angle):
+            return other._rotate_angle(self)
+        else:
+            return NotImplemented
+
+    def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
+        """Vec @ Angle rotates the first by the second."""
+        if isinstance(other, Vec):
+            return other @ Quat.from_angle(self)
+        elif isinstance(other, Angle):
+            # Should always be done by __mul__!
+            return self._rotate_angle(other)
+
+    def _rotate_angle(self, target: 'Angle'):
+        """Rotate the target by this angle.
+        
+        Inefficient if we have more than one rotation to do.
+        """
+        quat = Quat()
+        quat @= target
+        quat @= self
+        return quat.to_angle()
+
+    class _Transform:
+        """Implements Angle.transform."""
+
+        def __init__(self, angle: 'Angle'):
+            self._angle = angle
+            self._quat = None  # type: Quat
+
+        def __enter__(self):
+            self._quat = Quat.from_angle(self._angle)
+            return self._quat
+
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            if exc_type is not None or self._quat is None:
+                return
+            new_ang = self._quat.to_angle()
+            self._angle._pitch = new_ang._pitch
+            self._angle._yaw = new_ang._yaw
+            self._angle._roll = new_ang._roll
+
+    transform = property(
+        fget=_Transform,
+        doc="""Perform transformations on this angle.
+
+        Used as a context manager, which returns a quaternion.
+        When the body is exited safely, the quaternion is applied to
+        the angle.
+        """,
+    )
 
 class Quat:
     """Represents a quaternion rotation."""
@@ -1188,162 +1342,6 @@ class Quat:
             +vy*(2*qy*qz - 2*qw*qx)
             +vz*(qw**2 - qx**2 - qy**2 + qz**2)
         )
-        
-    
-class Angle:
-    """Represents a pitch-yaw-roll Euler angle.
-
-    All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, matrix-multiplication with Vec or Angle
-    rotates (RHS rotating LHS).
-    """
-    __slots__ = ['_pitch', '_yaw', '_roll']
-
-    def __init__(
-        self,
-        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
-        yaw: Union[int, float]=0.0,
-        roll: Union[int, float]=0.0,
-    ):
-        """Create an Angle.
-
-        All values are converted to Floats automatically.
-        If no value is given, that axis will be set to 0.
-        An iterable can be passed in (as the pitch argument), which will be
-        used for pitch, yaw, and roll. This includes Vectors and other Angles.
-        """
-        if isinstance(pitch, (int, float)):
-            self._pitch = float(pitch) % 360
-            self._yaw = float(yaw) % 360
-            self._roll = float(roll) % 360
-        else:
-            it = iter(pitch)
-            self._pitch = float(next(it, 0.0)) % 360
-            self._yaw = float(next(it, yaw)) % 360
-            self._roll = float(next(it, roll)) % 360
-
-    def copy(self) -> 'Angle':
-        """Create a duplicate of this vector."""
-        return Angle(self._pitch, self._yaw, self._roll)
-
-    @classmethod
-    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
-        """Convert a string in the form '(4 6 -4)' into an Angle.
-
-         If the string is unparsable, this uses the defaults.
-         The string can start with any of the (), {}, [], <> bracket
-         types, or none.
-
-         If the value is already a Angle, a copy will be returned.
-         """
-
-        pitch, yaw, roll = parse_vec_str(val, pitch, yaw, roll)
-        return cls(pitch, yaw, roll)
-
-    @property
-    def pitch(self):
-        """The Y-axis rotation, performed second."""
-        return self._pitch
-
-    @pitch.setter
-    def pitch(self, pitch):
-        self._pitch = float(pitch) % 360
-
-    @property
-    def yaw(self):
-        """The Z-axis rotation, performed last."""
-        return self._yaw
-
-    @yaw.setter
-    def yaw(self, yaw):
-        self._yaw = float(yaw) % 360
-
-    @property
-    def roll(self):
-        """The X-axis rotation, performed first."""
-        return self._roll
-
-    @roll.setter
-    def roll(self, roll):
-        self._roll = float(roll) % 360
-
-    def __repr__(self):
-        return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
-
-    def __mul__(self, other: float):
-        """Angle * float multiplies each value."""
-        if isinstance(other, (int, float)):
-            return Angle(
-                self._pitch * other,
-                self._yaw * other,
-                self._roll * other,
-            )
-        return NotImplemented
-
-    def __rmul__(self, other: float):
-        """Angle * float multiplies each value."""
-        if isinstance(other, (int, float)):
-            return Angle(
-                other * self._pitch,
-                other * self._yaw,
-                other * self._roll,
-            )
-        return NotImplemented
-
-    def __matmul__(self, other: Union['Angle']):
-        """Angle @ Angle rotates the first by the second.
-        """
-        if isinstance(other, Angle):
-            return other._rotate_angle(self)
-        else:
-            return NotImplemented
-
-    def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
-        """Vec @ Angle rotates the first by the second."""
-        if isinstance(other, Vec):
-            return other @ Quat.from_angle(self)
-        elif isinstance(other, Angle):
-            # Should always be done by __mul__!
-            return self._rotate_angle(other)
-
-    def _rotate_angle(self, target: 'Angle'):
-        """Rotate the target by this angle.
-        
-        Inefficient if we have more than one rotation to do.
-        """
-        quat = Quat()
-        quat @= target
-        quat @= self
-        return quat.to_angle()
-
-    class _Transform:
-        """Implements Angle.transform."""
-
-        def __init__(self, angle: 'Angle'):
-            self._angle = angle
-            self._quat = None  # type: Quat
-
-        def __enter__(self):
-            self._quat = Quat.from_angle(self._angle)
-            return self._quat
-
-        def __exit__(self, exc_type, exc_val, exc_tb):
-            if exc_type is not None or self._quat is None:
-                return
-            new_ang = self._quat.to_angle()
-            self._angle._pitch = new_ang._pitch
-            self._angle._yaw = new_ang._yaw
-            self._angle._roll = new_ang._roll
-
-    transform = property(
-        fget=_Transform,
-        doc="""Perform transformations on this angle.
-
-        Used as a context manager, which returns a quaternion.
-        When the body is exited safely, the quaternion is applied to
-        the angle.
-        """,
-    )
 
 
 def _mk(x: float, y: float, z: float) -> Vec:
