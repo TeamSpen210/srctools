@@ -989,24 +989,23 @@ class Vec:
 
         def __init__(self, vec: 'Vec'):
             self._vec = vec
-            self._quat = None  # type: Quat
+            self._mat = None  # type: Matrix
 
         def __enter__(self):
-            self._quat = Quat()
-            return self._quat
+            self._mat = Matrix()
+            return self._mat
 
         def __exit__(self, exc_type, exc_val, exc_tb):
-            if exc_type is not None or self._quat is None:
-                return
-            self._quat._vec_rot(self._vec)
+            if exc_type is None and self._mat is not None:
+                self._mat._rotate_vec(self._vec)
 
     transform = property(
         fget=_Transform,
         doc="""Perform rotations on this Vector efficently.
 
-        Used as a context manager, which returns a quaternion.
-        When the body is exited safely, the quaternion is applied to
-        the angle.
+        Used as a context manager, which returns a rotation matrix.
+        When the body is exited safely, the matrix is applied to
+        the vector.
         """,
     )
     
@@ -1121,20 +1120,27 @@ class Angle:
     def __rmatmul__(self, other: Union[Vec, 'Angle', int]):
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Vec):
-            return other @ Quat.from_angle(self)
+            return other @ Matrix.from_angle(self)
         elif isinstance(other, Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
+            
+    def __imatmul__(self, other: Union['Angle', 'Matrix', 'Quat']) -> 'Angle':
+        """Rotate ourselves by another value."""
+        temp = self @ other
+        self.pitch = temp.pitch
+        self.yaw = temp.yaw
+        self.roll = temp.roll
 
     def _rotate_angle(self, target: 'Angle'):
         """Rotate the target by this angle.
         
         Inefficient if we have more than one rotation to do.
         """
-        quat = Quat()
-        quat @= target
-        quat @= self
-        return quat.to_angle()
+        mat = Matrix()
+        mat @= target
+        mat @= self
+        return mat.to_angle()
 
     class _Transform:
         """Implements Angle.transform."""
@@ -1195,7 +1201,7 @@ class Matrix:
         self.cb = cb
         self.cc = cc
 
-    def copy(self) -> Matrix:
+    def copy(self) -> 'Matrix':
         return Matrix(
             self.aa, self.ab, self.ac,
             self.ba, self.bb, self.bc,
@@ -1213,22 +1219,21 @@ class Matrix:
         x, y = axes
         return getattr(self, 'abc'[y] + 'abc'[x])
 
-    def __setitem__(self, axes: Tuple[int, int] value: float) -> None:
+    def __setitem__(self, axes: Tuple[int, int], value: float) -> None:
         x, y = axes
         setattr(self, 'abc'[y] + 'abc'[x], float(value))
 
-    def rotate_vec(self, vec: Vec) -> Vec:
+    def _rotate_vec(self, vec: Vec) -> Vec:
         """Rotate a Vec by ourselves."""
         x = vec.x
         y = vec.y
         z = vec.z
-        return Vec(
-            round((x * self.aa) + (y * self.ab) + (z * self.ac), 6),
-            round((x * self.ba) + (y * self.bb) + (z * self.bc), 6),
-            round((x * self.ca) + (y * self.cb) + (z * self.cc), 6),
-        )
+        vec.x = round((x * self.aa) + (y * self.ab) + (z * self.ac), 6)
+        vec.y = round((x * self.ba) + (y * self.bb) + (z * self.bc), 6)
+        vec.z = round((x * self.ca) + (y * self.cb) + (z * self.cc), 6)
 
-    def rotate_by_mat(self, other: 'RotationMatrix'):
+
+    def _rotate_by_mat(self, other: 'RotationMatrix'):
         """Multiply ourselves by another rotation matrix."""
 
         # We don't use A row after the first 3, so we can re-assign.
@@ -1263,7 +1268,7 @@ class Matrix:
     @classmethod
     def yaw(cls, yaw):
         """Return the rotation matrix rotating around yaw/z."""
-        ang = math.radians(yaw)
+        ang = math.radians(-yaw)  # Source yaw is reverse to standard notation.
         return cls(
             math.cos(ang), -math.sin(ang), 0,
             math.sin(ang), math.cos(ang), 0,
@@ -1287,11 +1292,11 @@ class Matrix:
         # roll is the x axis
         # Need to do transformations in roll, pitch, yaw order
         if ang.roll:
-            self.rotate_by_mat(RotationMatrix.roll(ang.roll))  # X
+            self._rotate_by_mat(RotationMatrix.roll(ang.roll))  # X
         if ang.pitch:
-            self.rotate_by_mat(RotationMatrix.pitch(ang.pitch))  # Z
+            self._rotate_by_mat(RotationMatrix.pitch(ang.pitch))  # Z
         if ang.yaw:
-            self.rotate_by_mat(RotationMatrix.yaw(ang.yaw))  # Y
+            self._rotate_by_mat(RotationMatrix.yaw(ang.yaw))  # Y
 
     def to_angle(self) -> 'Angle':
         """Convert this to a pitch-yaw-roll angle."""
@@ -1309,20 +1314,20 @@ class Matrix:
     def __matmul__(self, other):
         copy = self.copy()
         if isinstance(other, Angle):
-            copy.rotate_by_angle(other)
+            copy._rotate_by_angle(other)
             return copy
         elif isinstance(other, RotationMatrix):
-            copy.rotate_by_mat(other)
+            copy._rotate_by_mat(other)
             return copy
         else:
             return NotImplemented
 
     def __imatmul__(self, other):
         if isinstance(other, Angle):
-            self.rotate_by_angle(other)
+            self._rotate_by_angle(other)
             return self
         elif isinstance(other, RotationMatrix):
-            self.rotate_by_mat(other)
+            self._rotate_by_mat(other)
             return self
         else:
             return NotImplemented
@@ -1330,7 +1335,7 @@ class Matrix:
     def __rmatmul__(self, other):
         if isinstance(other, Vec):
             copy = other.copy()
-            self.rotate_vec(copy)
+            self._rotate_vec(copy)
             return copy
         elif isinstance(other, Angle):
             raise TypeError("Can't rotate angle!")
@@ -1528,3 +1533,5 @@ def _mk(x: float, y: float, z: float) -> Vec:
     v.y = y
     v.z = z
     return v
+    
+
