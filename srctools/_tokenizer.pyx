@@ -179,11 +179,12 @@ cdef class Tokenizer:
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token to indicate a wrong token,
-        or a string which will be formatted with the positional args.
+        or a string which will be {}-formatted with the positional args
+        if they are present.
         """
         if isinstance(message, Token):
             message = f'Unexpected token {message.name}' '!'
-        else:
+        elif args:
             message = message.format(*args)
         return self._error(message)
 
@@ -566,6 +567,7 @@ cdef class Tokenizer:
 # This is entirely internal, users shouldn't access this.
 @cython.final
 @cython.embedsignature(False)
+@cython.internal
 cdef class _NewlinesIter:
     """Iterate over the tokens, skipping newlines."""
     cdef Tokenizer tok
@@ -642,8 +644,6 @@ def escape_text(str text not None: str) -> str:
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
 from cpython.object cimport PyTypeObject
-cdef char *tok_class_name = b"srctools.tokenizer.Tokenizer"
-cdef char *nliter_class_name = b"srctools.tokenizer.Tokenizer.skipping_newlines"
-(<PyTypeObject *>Tokenizer).tp_name = tok_class_name
-(<PyTypeObject *>_NewlinesIter).tp_name = nliter_class_name
+(<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
+(<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.Tokenizer.skipping_newlines"
 escape_text.__module__ = 'srctools.tokenizer'

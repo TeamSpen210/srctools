@@ -1,28 +1,39 @@
 """Reads and writes Soundscripts."""
 from enum import Enum
+from chunk import Chunk as WAVChunk
 
 from srctools import Property, conv_float
-
 from typing import (
-    Optional, Union, TypeVar,
+    Optional, Union, TypeVar, Callable,
     List, Tuple, Dict,
-    Iterable, Type, Callable,
-    TextIO,
+    TextIO, IO,
 )
+
+__all__ = [
+    'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
+    'Sound', 'wav_is_looped',
+]
+
+# All the prefixes wavs can have.
+SND_CHARS = '*@#<>^)}$!?'
 
 
 class Pitch(float, Enum):
+    """The constants permitted for sound pitches."""
     PITCH_NORM = 100.0
     PITCH_LOW = 95.0
     PITCH_HIGH = 120.0
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
 
 
 class VOLUME(Enum):
     """Special value, substitutes default volume (usually 1)."""
     VOL_NORM = 'VOL_NORM'
+
+    def __str__(self) -> str:
+        return self.name
 
 VOL_NORM = VOLUME.VOL_NORM
 
@@ -77,7 +88,7 @@ class Level(Enum):
     SNDLVL_150dB = 'SNDLVL_150dB'
     SNDLVL_180dB = 'SNDLVL_180dB'
     
-    def __str__(self):
+    def __str__(self) -> str:
         return self.name
     
 
@@ -114,7 +125,7 @@ def split_float(
         return out, out
 
 
-def join_float(val) -> str:
+def join_float(val: Tuple[float, float]) -> str:
     """Reverse split_float()."""
     low, high = val
     if low == high:
@@ -123,33 +134,68 @@ def join_float(val) -> str:
         return '{!s},{!s}'.format(low, high)
 
 
+def wav_is_looped(file: IO[bytes]) -> bool:
+    """Check if the provided wave file contains loop cue points.
+
+    This code is partially copied from wave.Wave_read.initfp().
+    """
+    first = WAVChunk(file, bigendian=False)
+    if first.getname() != b'RIFF':
+        raise ValueError('File does not start with RIFF id.')
+    if first.read(4) != b'WAVE':
+        raise ValueError('Not a WAVE file.')
+
+    while True:
+        try:
+            chunk = WAVChunk(file, bigendian=False)
+        except EOFError:
+            return False
+        if chunk.getname() == b'cue ':
+            return True
+        chunk.skip()
+
+
 class Sound:
-    """Represents a single sound in the list."""
+    """Represents a single soundscript."""
     def __init__(
         self,
         name: str,
         sounds: List[str],
-        volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]],
-        channel: Channel,
-        level: Tuple[Union[float, Level], Union[float, Level]],
-        pitch: Tuple[Union[float, Pitch], Union[float, Pitch]],
+        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=VOL_NORM,
+        channel: Channel=Channel.DEFAULT,
+        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=Level.SNDLVL_NORM,
+        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=Pitch.PITCH_NORM,
         
         # Operator stacks
-        stack_start: Optional[Property],
-        stack_update: Optional[Property],
-        stack_stop: Optional[Property],
-    ):
+        stack_start: Optional[Property]=None,
+        stack_update: Optional[Property]=None,
+        stack_stop: Optional[Property]=None,
+        use_v2: bool=False,
+    ) -> None:
         """Create a soundscript."""
         self.name = name
-        self.volume = volume
         self.sounds = sounds
         self.channel = channel
-        self.level = level
-        self.pitch = pitch
+        self.force_v2 = use_v2
+
+        if isinstance(volume, tuple):
+            self.volume = volume
+        else:
+            self.volume = volume, volume
+
+        if isinstance(level, tuple):
+            self.level = level
+        else:
+            self.level = level, level
+
+        if isinstance(pitch, tuple):
+            self.pitch = pitch
+        else:
+            self.pitch = pitch, pitch
         
-        self.stack_start = stack_start
-        self.stack_update = stack_update
-        self.stack_stop = stack_stop
+        self.stack_start = Property('', []) if stack_start is None else stack_start  # type: Property
+        self.stack_update = Property('', []) if stack_update is None else stack_update  # type: Property
+        self.stack_stop = Property('', []) if stack_stop is None else stack_stop  # type: Property
        
     @classmethod 
     def parse(cls, file: Property) -> Dict[str, 'Sound']:
@@ -177,7 +223,7 @@ class Sound:
             )
             
             # Either 1 "wave", or multiple in "rndwave".
-            wavs = []
+            wavs = []  # type: List[str]
             for prop in snd_prop:
                 if prop.name == 'wave':
                     wavs.append(prop.value)
@@ -221,69 +267,68 @@ class Sound:
                 start_stack,
                 update_stack,
                 stop_stack,
+                sound_version == 2,
             )
         return sounds
 
-    def export(self, sounds: Iterable['Sound'], file: TextIO):
-        """Write SoundScripts to a file.
+    def export(self, file: TextIO):
+        """Write a sound to a file.
         
-        Pass a file-like object open for text writing, and an iterable
-        of Sounds to write to the file.
+        Pass a file-like object open for text writing.
         """
-        for snd in sounds:
-            file.write('"{}"\n\t{{\n'.format(snd.name))
-            
-            file.write('\t' 'channel {}\n'.format(snd.channel.value))
-            
-            file.write('\t' 'soundlevel {}\n'.format(join_float(snd.level)))
-            
-            if snd.volume != (1, 1):
-                file.write('\tvolume {}\n'.format(join_float(snd.volume)))
-            if snd.pitch != (100, 100):
-                file.write('\tpitch {}\n'.format(join_float(snd.pitch)))
-            
-            if len(snd.sounds) > 1:
-                file.write('\trandwav\n\t\t{\n')
-                for wav in snd.sounds:
-                    file.write('\t\twave "{}"\n'.format(wav))
-                file.write('\t\t}\n')
-            else:
-                file.write('\twave "{}"\n'.format(snd.sounds[0]))
-            
-            if snd.stack_start or snd.stack_stop or snd.stack_update:
+        file.write('"{}"\n\t{{\n'.format(self.name))
+
+        file.write('\t' 'channel {}\n'.format(self.channel.value))
+
+        file.write('\t' 'soundlevel {}\n'.format(join_float(self.level)))
+
+        if self.volume != (1, 1):
+            file.write('\tvolume {}\n'.format(join_float(self.volume)))
+        if self.pitch != (100, 100):
+            file.write('\tpitch {}\n'.format(join_float(self.pitch)))
+
+        if len(self.sounds) > 1:
+            file.write('\trndwave\n\t\t{\n')
+            for wav in self.sounds:
+                file.write('\t\twave "{}"\n'.format(wav))
+            file.write('\t\t}\n')
+        else:
+            file.write('\twave "{}"\n'.format(self.sounds[0]))
+
+        if self.force_v2 or self.stack_start or self.stack_stop or self.stack_update:
+            file.write(
+                '\t' 'soundentry_version 2\n'
+                '\t' 'operator_stacks\n'
+                '\t\t' '{\n'
+            )
+            if self.stack_start:
                 file.write(
-                    '\t' 'soundentry_version 2\n'
-                    '\t' 'operator_stacks\n'
-                    '\t\t' '{\n'
+                    '\t\t' 'start_stack\n'
+                    '\t\t\t' '{\n'
                 )
-                if snd.stack_start:
-                    file.write(
-                        '\t\t' 'start_stack\n'
-                        '\t\t\t' '{\n'
-                    )
-                    for prop in snd.stack_start:
-                        for line in prop.export():
-                            file.write('\t\t\t' + line)
-                    file.write('\t\t\t}\n')
-                if snd.stack_update:
-                    file.write(
-                        '\t\t' 'update_stack\n'
-                        '\t\t\t' '{\n'
-                    )
-                    for prop in snd.stack_update:
-                        for line in prop.export():
-                            file.write('\t\t\t' + line)
-                    file.write('\t\t\t}\n')
-                if snd.stack_stop:
-                    file.write(
-                        '\t\t' 'stop_stack\n'
-                        '\t\t\t' '{\n'
-                    )
-                    for prop in snd.stack_stop:
-                        for line in prop.export():
-                            file.write('\t\t\t' + line)
-                    file.write('\t\t\t}\n')
-                file.write('\t\t}\n')
-            file.write('\t}\n')
+                for prop in self.stack_start:
+                    for line in prop.export():
+                        file.write('\t\t\t' + line)
+                file.write('\t\t\t}\n')
+            if self.stack_update:
+                file.write(
+                    '\t\t' 'update_stack\n'
+                    '\t\t\t' '{\n'
+                )
+                for prop in self.stack_update:
+                    for line in prop.export():
+                        file.write('\t\t\t' + line)
+                file.write('\t\t\t}\n')
+            if self.stack_stop:
+                file.write(
+                    '\t\t' 'stop_stack\n'
+                    '\t\t\t' '{\n'
+                )
+                for prop in self.stack_stop:
+                    for line in prop.export():
+                        file.write('\t\t\t' + line)
+                file.write('\t\t\t}\n')
+            file.write('\t\t}\n')
+        file.write('\t}\n')
 
 

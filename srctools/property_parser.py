@@ -70,6 +70,9 @@ from typing import (
     List, Tuple, Dict, Iterator,
     TypeVar,
     Iterable,
+    overload,
+    Callable,
+    Mapping,
 )
 
 
@@ -122,7 +125,7 @@ class NoKeyError(LookupError):
         return "No key " + self.key + "!"
 
 
-def _read_flag(flags: Dict[str, bool], flag_val: str) -> bool:
+def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
     """Check whether a flag is True or False."""
     flag_inv = flag_val[:1] == '!'
     if flag_inv:
@@ -174,7 +177,7 @@ class Property:
         return self._folded_name
 
     @name.setter
-    def name(self, new_name):
+    def name(self, new_name: Optional[str]) -> None:
         if new_name is None:
             self._folded_name = self.real_name = None
         else:
@@ -195,7 +198,7 @@ class Property:
     def parse(
         file_contents: Union[str, Iterator[str]],
         filename='',
-        flags: Dict[str, bool]=EmptyMapping,
+        flags: Mapping[str, bool]=EmptyMapping,
         allow_escapes: bool=True,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
@@ -567,6 +570,32 @@ class Property:
             return {item._folded_name: item.as_dict() for item in self}
         else:
             return self.value
+
+    @overload
+    def as_array(self) -> List[str]: ...
+
+    @overload
+    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
+
+    def as_array(self, *, conv: Callable[[str], T]=str) -> List[T]:
+        """Convert a property block into a list of values.
+
+        If the property is a single keyvalue, the single value will be
+        yielded. Otherwise, each child must be a single value and each
+        of those will be yielded. The name is ignored.
+        """
+        if self.has_children():
+            arr = []
+            for child in self.value:
+                if child.has_children():
+                    raise ValueError(
+                        'Cannot have sub-children in a '
+                        '"{}" array of values!'.format(self.real_name)
+                    )
+                arr.append(conv(child.value))
+            return arr
+        else:
+            return [conv(self.value)]
 
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.

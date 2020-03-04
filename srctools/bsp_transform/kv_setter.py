@@ -3,7 +3,7 @@
 This is useful to compute spawnflags, or to adjust keyvalues when the target
 entity's options can't be set to a fixup variable.
 """
-from srctools import conv_int, conv_bool
+from srctools import conv_int, conv_bool, Vec
 from srctools.bsp_transform import trans, Context
 from srctools.logger import get_logger
 
@@ -33,6 +33,17 @@ def kv_setter(ctx: Context) -> None:
         # Use fixup name if actually set.
         kv_value = setter['kv_value_local'] or setter['kv_value_global']
 
+        if conv_bool(setter['invert']):
+            kv_value = '0' if conv_bool(kv_value) else '1'
+        if conv_bool(setter['rotate']):
+            pos = Vec.from_str(kv_value).rotate_by_str(setter['angles'])
+            if conv_bool(setter['conv_ang']):  # Save converting back and forth.
+                kv_value = str(pos.to_angle())
+            else:
+                kv_value = str(pos)
+        elif conv_bool(setter['conv_ang']):
+            kv_value = str(Vec.from_str(kv_value).to_angle())
+
         if is_flags:
             try:
                 # Convert using Python's literal rules,
@@ -50,8 +61,18 @@ def kv_setter(ctx: Context) -> None:
         else:
             flag_mask = 1
             flag_enabled = False
+            kv_name = kv_name.strip()
 
         found_ent = None
+
+        if not is_flags and not kv_name and not setter.outputs:
+            # We have nothing to do?
+            LOGGER.warning(
+                'comp_kv_setter at ({}) is set to do nothing at all. '
+                'Provide a keyvalue to set, spawnflag to change or '
+                'outputs to append.',
+                setter['origin'],
+            )
 
         for found_ent in ctx.vmf.search(setter['target']):
             if is_flags:
@@ -60,8 +81,11 @@ def kv_setter(ctx: Context) -> None:
                     found_ent['spawnflags'] = spawnflags | flag_mask
                 else:
                     found_ent['spawnflags'] = spawnflags & ~flag_mask
-            else:
+            elif kv_name:  # Don't set empty KVs...
                 found_ent[kv_name] = kv_value
+
+            for out in setter.outputs:
+                found_ent.add_out(out.copy())
 
         if found_ent is None:
             LOGGER.warning(

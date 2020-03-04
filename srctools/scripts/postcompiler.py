@@ -1,6 +1,7 @@
 """Runs before VRAD, to run operations on the final BSP."""
 import argparse
 
+from srctools import Property
 from srctools.logger import init_logging
 from pathlib import Path
 import sys
@@ -77,18 +78,31 @@ def main(argv: List[str]) -> None:
     vmf = bsp_file.read_ent_data()
     LOGGER.info('Done!')
 
-    run_transformations(vmf, fsys, packlist)
+    studiomdl_path = conf.get(str, 'studiomdl')
+    if studiomdl_path:
+        studiomdl_loc = (game_info.root / studiomdl_path).resolve()
+        if not studiomdl_loc.exists():
+            LOGGER.warning('No studiomdl found at "{}"!', studiomdl_loc)
+            studiomdl_loc = None
+    else:
+        LOGGER.warning('No studiomdl path provided.')
+        studiomdl_loc = None
 
-    studiomdl_loc = conf.get(str, 'propcombine_studiomdl')
-    if studiomdl_loc and args.propcombine:
+    run_transformations(vmf, fsys, packlist, path, game_info, studiomdl_loc)
+
+    if studiomdl_loc is not None and args.propcombine:
         LOGGER.info('Combining props...')
         propcombine.combine(
             bsp_file,
             vmf,
             packlist,
             game_info,
-            game_info.root / studiomdl_loc,
-            game_info.root / conf.get(str, 'propcombine_qc_folder'),
+            studiomdl_loc,
+            [
+                game_info.root / folder
+                for folder in
+                conf.get(Property, 'propcombine_qc_folder').as_array(conv=Path)
+            ],
             conf.get(int, 'propcombine_auto_range'),
             conf.get(int, 'propcombine_min_cluster'),
         )
@@ -104,10 +118,10 @@ def main(argv: List[str]) -> None:
 
         packlist.eval_dependencies()
 
-    with bsp_file.packfile() as pak_zip:
-        packlist.pack_into_zip(pak_zip, blacklist=pack_blacklist)
+    packlist.pack_into_zip(bsp_file, blacklist=pack_blacklist, ignore_vpk=False)
 
-    LOGGER.info('Packed files: \n{}'.format('\n'.join(pak_zip.namelist())))
+    with bsp_file.packfile() as pak_zip:
+        LOGGER.info('Packed files: \n{}'.format('\n'.join(pak_zip.namelist())))
 
     LOGGER.info('Writing BSP...')
     bsp_file.save()

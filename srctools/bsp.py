@@ -28,7 +28,9 @@ __all__ = [
 ]
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
-
+HEADER_1 = '<4si'  # Header section before the lump list.
+HEADER_LUMP = '<3i4s'  # Header section for each lump.
+HEADER_2 = '<i'  # Header section after the lumps.
 
 def get_struct(file, format):
     """Get a structure from a file."""
@@ -224,7 +226,7 @@ class BSP:
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
-            magic_name, bsp_version = get_struct(file, '4si')
+            magic_name, bsp_version = get_struct(file, HEADER_1)
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
             if self.version is None:
@@ -239,11 +241,7 @@ class BSP:
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                offset, length, version, ident = get_struct(
-                    file,
-                    # 3 ints and a 4-long char array
-                    '<3i4s',
-                )
+                offset, length, version, ident = get_struct(file, HEADER_LUMP)
                 lump_id = BSP_LUMPS(index)
                 self.lumps[lump_id] = Lump(
                     lump_id,
@@ -252,7 +250,7 @@ class BSP:
                 )
                 lump_offsets[lump_id] = offset, length
 
-            [self.map_revision] = get_struct(file, 'i')
+            [self.map_revision] = get_struct(file, HEADER_2)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
@@ -306,26 +304,27 @@ class BSP:
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
-            file.write(BSP_MAGIC)
             if isinstance(self.version, VERSIONS):
-                file.write(struct.pack('<i', self.version.value))
+                version = self.version.value
             else:
-                file.write(struct.pack('<i', self.version))
+                version = self.version
+
+            file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
 
             # Write headers.
             for lump_name in BSP_LUMPS:
                 lump = self.lumps[lump_name]
                 fixup_loc[lump_name] = file.tell()
                 file.write(struct.pack(
-                    '<8xi4s',
-                    # offset,
-                    # length,
+                    HEADER_LUMP,
+                    0,  # offset
+                    0,  # length
                     lump.version,
                     bytes(lump.ident),
                 ))
 
             # After lump headers, the map revision...
-            file.write(struct.pack('<i', self.map_revision))
+            file.write(struct.pack(HEADER_2, self.map_revision))
 
             # Then each lump.
             for lump_name in LUMP_WRITE_ORDER:
@@ -442,10 +441,14 @@ class BSP:
         data_file = BytesIO(pak_lump.data)
 
         zip_file = ZipFile(data_file, mode='a')
-        # If exception, abort, so we don't need try: or with:
+        # If exception, abort, so we don't need try: or with:.
+        # Because this is purely in memory, there are no actual resources here
+        # and we don't actually care about not closing the zip file or BytesIO.
         yield zip_file
         # Explicitly close to finalise the footer.
         zip_file.close()
+        # Note: because data is bytes, CPython won't end up doing any copying
+        # here.
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:

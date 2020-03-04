@@ -24,17 +24,18 @@ def blank(uint width, uint height):
     return array.clone(img_template, 4 * width * height, zero=True)
 
 
-
 def ppm_convert(const byte[::1] pixels, uint width, uint height):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef uint img_off, off
     cdef Py_ssize_t size = 3 * width * height
 
-    cdef byte *buffer = <byte *> PyMem_Malloc(size + 16)
+    # b'P6 65536 65536 255\n' is 19 characters long.
+    # We shouldn't get a larger frame than that, it's already absurd.
+    cdef byte *buffer = <byte *> PyMem_Malloc(size + 19)
     try:
-        img_off = snprintf(<char *>buffer, 16, b'P6 %u %u 255\n', width, height)
+        img_off = snprintf(<char *>buffer, 19, b'P6 %u %u 255\n', width, height)
 
-        if img_off < 0:
+        if img_off < 0: # If it does fail just produce a blank file.
             return b''
 
         for off in range(width * height):
@@ -55,55 +56,83 @@ cdef inline byte upsample(byte bits, byte data) nogil:
     return data | (data >> bits)
 
 
-cdef inline int decomp565(RGB *rgb, byte a, byte b):
+cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
     """Decompress 565-packed data into RGB triplets."""
     rgb.r = upsample(5, (a & 0b00011111) << 3)
     rgb.g = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
     rgb.b = upsample(5, b & 0b11111000)
 
 
-def loader_rgba(mode: str):
-    """Make the RGB loader functions."""
-    cdef byte r_off = mode.index('r')
-    cdef byte g_off = mode.index('g')
-    cdef byte b_off = mode.index('b')
-    cdef byte a_off
-    try:
-        a_off = mode.index('a')
-    except ValueError:
-        def loader(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-            cdef uint offset
-            for offset in range(width * height):
-                pixels[4 * offset] = data[3 * offset + r_off]
-                pixels[4 * offset + 1] = data[3 * offset + g_off]
-                pixels[4 * offset + 2] = data[3 * offset + b_off]
-                pixels[4 * offset + 3] = 255
-    else:
-        def loader(byte[::1] pixels, const byte[::1] data, uint width, uint height):
-            cdef uint offset
-            for offset in range(width * height):
-                pixels[4 * offset] = data[4 * offset + r_off]
-                pixels[4 * offset + 1] = data[4 * offset + g_off]
-                pixels[4 * offset + 2] = data[4 * offset + b_off]
-                pixels[4 * offset + 3] = data[4 * offset + a_off]
-    return loader
+# These semantically operate differently, but are implemented the same.
+def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """Parse RGBA-ordered 8888 pixels."""
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 0]
+        pixels[4 * offset + 1] = data[4 * offset + 1]
+        pixels[4 * offset + 2] = data[4 * offset + 2]
+        pixels[4 * offset + 3] = data[4 * offset + 3]
+
+def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """Parse UVLX data, copying them into RGBA respectively."""
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 0]
+        pixels[4 * offset + 1] = data[4 * offset + 1]
+        pixels[4 * offset + 2] = data[4 * offset + 2]
+        pixels[4 * offset + 3] = data[4 * offset + 3]
+
+def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """Parse UVWQ data, copying them into RGBA respectively."""
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 0]
+        pixels[4 * offset + 1] = data[4 * offset + 1]
+        pixels[4 * offset + 2] = data[4 * offset + 2]
+        pixels[4 * offset + 3] = data[4 * offset + 3]
 
 
-load_rgba8888 = loader_rgba('rgba')
-load_bgra8888 = loader_rgba('bgra')
+def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 2]
+        pixels[4 * offset + 1] = data[4 * offset + 1]
+        pixels[4 * offset + 2] = data[4 * offset + 0]
+        pixels[4 * offset + 3] = data[4 * offset + 3]
 
 # This is totally the wrong order, but it's how it's actually ordered.
-load_argb8888 = loader_rgba('gbar')
-load_abgr8888 = loader_rgba('abgr')
+def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """This is toally wrong - it's actually in GBAR order."""
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 3]
+        pixels[4 * offset + 1] = data[4 * offset + 0]
+        pixels[4 * offset + 2] = data[4 * offset + 1]
+        pixels[4 * offset + 3] = data[4 * offset + 2]
 
-load_rgb888 = loader_rgba('rgb')
-load_bgr888 = loader_rgba('bgr')
+def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[4 * offset + 3]
+        pixels[4 * offset + 1] = data[4 * offset + 2]
+        pixels[4 * offset + 2] = data[4 * offset + 1]
+        pixels[4 * offset + 3] = data[4 * offset + 0]
 
+def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[3 * offset + 0]
+        pixels[4 * offset + 1] = data[3 * offset + 1]
+        pixels[4 * offset + 2] = data[3 * offset + 2]
+        pixels[4 * offset + 3] = 255
 
-# These semantically operate differently, but just have 4 channels.
-load_uvlx8888 = loader_rgba('rgba')
-load_uvwq8888 = loader_rgba('rgba')
-
+def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    cdef uint offset
+    for offset in range(width * height):
+        pixels[4 * offset] = data[3 * offset + 2]
+        pixels[4 * offset + 1] = data[3 * offset + 1]
+        pixels[4 * offset + 2] = data[3 * offset + 0]
+        pixels[4 * offset + 3] = 255
 
 def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Strange - skip byte."""
@@ -489,8 +518,6 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     if width % 4:
         block_wid += 1
 
-    # TODO: These alpha values aren't quite right.
-
     for block_y in range(0, height, 4):
         block_y //= 4
         for block_x in range(0, width, 4):
@@ -513,7 +540,7 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
                 alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
                 alpha[6] = 0
-                alpha[7] = 25
+                alpha[7] = 255
 
             # Now, load the colour blocks.
             decomp565(&c0, data[block_off + 8], data[block_off + 9])
@@ -541,18 +568,19 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 block_x, block_y,
                 do_alpha=False,
             )
-            # Concatenate the bits for the alpha values into a big integer.
+            # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
+            # value. It's in little-endian order!
+            # lookup = int.from_bytes(data[block_off + 2:8], 'little')
             lookup = 0
-            for i in range(12):
-                lookup |= data[block_off + i] << (8 * (11-i))
+            for i in range(6):
+                lookup |= data[block_off + 2 + 6 - i]
+                lookup <<= 8
 
             for i in range(16):
                 y = i // 4
                 x = i % 4
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha[
-                    (lookup >> (48-3*i)) & 0b111
-                ]
+                pixels[pos + 3] = alpha[(lookup >> (3*i)) & 0b111]
 
 # Don't do the high-def 16-bit resolution.
 
