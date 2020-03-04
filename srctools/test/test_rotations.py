@@ -1,51 +1,51 @@
 """Test rotations in srctools.vec."""
 from srctools.test import *
-from srctools import Vec, Rotation, Angle
+from srctools import Vec, Matrix, Angle
 
 
 def test_vec_identities() -> None:
     """Check that vectors in the same axis as the rotation don't get spun."""
     for ang in range(0, 360, 13):
         # Check the two constructors match.
-        assert Rotation.from_pitch(ang) == Rotation.from_angle(Angle(pitch=ang))
-        assert Rotation.from_yaw(ang) == Rotation.from_angle(Angle(yaw=ang))
-        assert Rotation.from_roll(ang) == Rotation.from_angle(Angle(roll=ang))
+        assert Matrix.from_pitch(ang) == Matrix.from_angle(Angle(pitch=ang))
+        assert Matrix.from_yaw(ang) == Matrix.from_angle(Angle(yaw=ang))
+        assert Matrix.from_roll(ang) == Matrix.from_angle(Angle(roll=ang))
         
         # Various magnitudes to test
         for mag in (-250, -1, 0, 1, 250):
-            assert_vec(Vec(y=mag) @ Rotation.from_pitch(ang), 0, mag, 0)
-            assert_vec(Vec(z=mag) @ Rotation.from_yaw(ang), 0, 0, mag)
-            assert_vec(Vec(x=mag) @ Rotation.from_roll(ang), mag, 0, 0)
+            assert_vec(Vec(y=mag) @ Matrix.from_pitch(ang), 0, mag, 0)
+            assert_vec(Vec(z=mag) @ Matrix.from_yaw(ang), 0, 0, mag)
+            assert_vec(Vec(x=mag) @ Matrix.from_roll(ang), mag, 0, 0)
 
 
 def test_vec_basic_yaw() -> None:
     """Check each direction rotates appropriately in yaw."""
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(0), 200, 0, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(0), 0, 150, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(0), 200, 0, 0)
+    assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(0), 0, 150, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(90), 0, 200, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(90), -150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(90), 0, 200, 0)
+    assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(90), -150, 0, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(180), -200, 0, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(180), 0, -150, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(180), -200, 0, 0)
+    assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(180), 0, -150, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_yaw(270), 0, -200, 0)
-    assert_vec(Vec(0, 150, 0) @ Rotation.from_yaw(270), 150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(270), 0, -200, 0)
+    assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(270), 150, 0, 0)
 
 
 def test_vec_basic_pitch():
     """Check each direction rotates appropriately in pitch."""
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_pitch(0), 200, 0, 0)
-    assert_vec(Vec(0, 0, 150) @ Rotation.from_pitch(0), 0, 0, 150)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(0), 200, 0, 0)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(0), 0, 0, 150)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_pitch(90), 0, 0, -200)
-    assert_vec(Vec(0, 0, 150) @ Rotation.from_pitch(90), 150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(90), 0, 0, -200)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(90), 150, 0, 0)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_pitch(180), -200, 0, 0)
-    assert_vec(Vec(0, 0, 150) @ Rotation.from_pitch(180), 0, 0, -150)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(180), -200, 0, 0)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(180), 0, 0, -150)
     
-    assert_vec(Vec(200, 0, 0) @ Rotation.from_pitch(270), 0, 0, 200)
-    assert_vec(Vec(0, 0, 150) @ Rotation.from_pitch(270), -150, 0, 0)
+    assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(270), 0, 0, 200)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(270), -150, 0, 0)
 
 
 def test_ang_matrix_roundtrip():
@@ -55,7 +55,7 @@ def test_ang_matrix_roundtrip():
         if vert < 0.99 or vert > 0.99:
             # If nearly vertical, gimbal lock prevents roundtrips.
             continue
-        mat = Rotation.from_angle(Angle(p, y, r))
+        mat = Matrix.from_angle(Angle(p, y, r))
         assert_ang(mat.to_angle(), p, y, r)
 
 
@@ -76,10 +76,10 @@ def test_matrix_roundtrip_pitch():
     # So instead check the rotation matrix is the same.
     for pitch in range(0, 360, 45):
         old_ang = Angle(pitch, 0, 0)
-        new_ang = Rotation.from_pitch(pitch).to_angle()
+        new_ang = Matrix.from_pitch(pitch).to_angle()
         assert_rot(
-            Rotation.from_angle(old_ang),
-            Rotation.from_angle(new_ang),
+            Matrix.from_angle(old_ang),
+            Matrix.from_angle(new_ang),
             (old_ang, new_ang),
         )
 
@@ -87,7 +87,7 @@ def test_matrix_roundtrip_pitch():
 def test_matrix_roundtrip_yaw():
     """Check converting to and from a Matrix does not change values."""
     for yaw in range(0, 360, 45):
-        mat = Rotation.from_yaw(yaw)
+        mat = Matrix.from_yaw(yaw)
         assert_ang(mat.to_angle(), 0, yaw, 0)
 
 
@@ -97,7 +97,7 @@ def test_matrix_roundtrip_roll():
         if roll in (90, -90):
             # Don't test gimbal lock.
             continue
-        mat = Rotation.from_roll(roll)
+        mat = Matrix.from_roll(roll)
         assert_ang(mat.to_angle(), 0, 0, roll)
 
 
@@ -137,7 +137,7 @@ def test_gen_check():
                 up_x, up_y, up_z
             ) = map(float, line[1:].split())
 
-            mat = Rotation.from_angle(Angle(pit, yaw, roll))
+            mat = Matrix.from_angle(Angle(pit, yaw, roll))
 
             # Then check rotating vectors works correctly.
             assert_vec(abs(X @ mat), for_x, for_y, for_z)

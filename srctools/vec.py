@@ -46,7 +46,7 @@ from typing import (
 )
 
 
-__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Rotation']
+__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Matrix']
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
@@ -994,23 +994,20 @@ class Vec:
     mag_sq = len_sq
 
     @contextlib.contextmanager
-    def transform(self) -> ContextManager['Rotation']:
+    def transform(self) -> ContextManager['Matrix']:
         """Perform rotations on this Vector efficiently.
 
         Used as a context manager, which returns a matrix.
         When the body is exited safely, the matrix is applied to
         the angle.
         """
-        mat = Rotation()
+        mat = Matrix()
         yield mat
         mat._vec_rot(self)
 
 
-class Rotation:
-    """Represents a rotation via a transformation matrix.
-    
-    The internal values are private, to allow changing the implementation.
-    """
+class Matrix:
+    """Represents a matrix via a transformation matrix."""
     __slots__ = [
         'aa', 'ab', 'ac',
         'ba', 'bb', 'bc',
@@ -1018,13 +1015,13 @@ class Rotation:
     ]
 
     def __init__(self) -> None:
-        """Create a rotation set to the identity transform."""
+        """Create a matrix set to the identity transform."""
         self.aa, self.ab, self.ac = 1.0, 0.0, 0.0
         self.ba, self.bb, self.bc = 0.0, 1.0, 0.0
         self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
 
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Rotation):
+        if isinstance(other, Matrix):
             return (
                 self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
                 self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
@@ -1034,16 +1031,16 @@ class Rotation:
         
     def __repr__(self) -> str:
         return (
-            'Rotation(\n'
-            '\t<{0.aa}, {0.ab}, {0.ac}>\n'
-            '\t<{0.ba}, {0.bb}, {0.bc}>\n'
-            '\t<{0.ca}, {0.cb}, {0.cc}>\n'
+            'Matrix('
+            '{0.aa} {0.ab} {0.ac}, '
+            '{0.ba} {0.bb} {0.bc}, '
+            '{0.ca} {0.cb} {0.cc}'
             ')'
         ).format(self)
 
-    def copy(self) -> 'Rotation':
+    def copy(self) -> 'Matrix':
         """Duplicate this matrix."""
-        rot = Rotation.__new__(Rotation)
+        rot = Matrix.__new__(Matrix)
 
         rot.aa, rot.ab, rot.ac = self.aa, self.ab, self.ac
         rot.ba, rot.bb, rot.bc = self.ba, self.bb, self.bc
@@ -1052,8 +1049,8 @@ class Rotation:
         return rot
 
     @classmethod
-    def from_pitch(cls, pitch: float) -> 'Rotation':
-        """Return the rotation representing a pitch rotation.
+    def from_pitch(cls, pitch: float) -> 'Matrix':
+        """Return the matrix representing a pitch rotation.
 
         This is a rotation around the Y axis.
         """
@@ -1070,8 +1067,8 @@ class Rotation:
         return rot
 
     @classmethod
-    def from_yaw(cls, yaw: float) -> 'Rotation':
-        """Return the rotation representing a yaw rotation.
+    def from_yaw(cls, yaw: float) -> 'Matrix':
+        """Return the matrix representing a yaw rotation.
 
         """
         rad_yaw = math.radians(yaw)
@@ -1087,7 +1084,7 @@ class Rotation:
         return rot
         
     @classmethod
-    def from_roll(cls, roll: float) -> 'Rotation':
+    def from_roll(cls, roll: float) -> 'Matrix':
         """Return the rotation representing a roll rotation.
 
         This is a rotation around the X axis.
@@ -1105,7 +1102,7 @@ class Rotation:
         return rot
         
     @classmethod
-    def from_angle(cls, angle: 'Angle') -> 'Rotation':
+    def from_angle(cls, angle: 'Angle') -> 'Matrix':
         """Return the rotation representing an Euler angle."""
         rot = cls()
         rot @= cls.from_roll(angle.roll)
@@ -1143,20 +1140,20 @@ class Rotation:
             )
 
     @overload
-    def __matmul__(self, other: 'Rotation') -> 'Rotation': ...
+    def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
-    def __matmul__(self, other: 'Angle') -> 'Rotation': ...
+    def __matmul__(self, other: 'Angle') -> 'Matrix': ...
     @overload
     def __matmul__(self, other: object) -> NotImplemented: ...
 
-    def __matmul__(self, other: object) -> 'Rotation':
-        if isinstance(other, Rotation):
+    def __matmul__(self, other: object) -> 'Matrix':
+        if isinstance(other, Matrix):
             mat = self.copy()
             mat._mat_mul(other)
             return mat
         elif isinstance(other, Angle):
             mat = self.copy()
-            mat._mat_mul(Rotation.from_angle(other))
+            mat._mat_mul(Matrix.from_angle(other))
             return mat
         else:
             return NotImplemented
@@ -1164,7 +1161,7 @@ class Rotation:
     @overload
     def __rmatmul__(self, other: Vec) -> Vec: ...
     @overload
-    def __rmatmul__(self, other: 'Rotation') -> 'Rotation': ...
+    def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
     @overload
@@ -1176,33 +1173,33 @@ class Rotation:
             self._vec_rot(result)
             return result
         elif isinstance(other, Angle):
-            mat = Rotation.from_angle(other)
+            mat = Matrix.from_angle(other)
             mat._mat_mul(self)
             return mat.to_angle()
-        elif isinstance(other, Rotation):
+        elif isinstance(other, Matrix):
             mat = other.copy()
             return mat._mat_mul(self)
         else:
             return NotImplemented
 
     @overload
-    def __imatmul__(self, other: 'Rotation') -> 'Rotation': ...
+    def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
-    def __imatmul__(self, other: 'Angle') -> 'Rotation': ...
+    def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
     @overload
     def __imatmul__(self, other: object) -> NotImplemented: ...
 
     def __imatmul__(self, other):
-        if isinstance(other, Rotation):
+        if isinstance(other, Matrix):
             self._mat_mul(other)
             return self
         elif isinstance(other, Angle):
-            self._mat_mul(Rotation.from_angle(other))
+            self._mat_mul(Matrix.from_angle(other))
             return self
         else:
             return NotImplemented
             
-    def _mat_mul(self, other: 'Rotation') -> None:
+    def _mat_mul(self, other: 'Matrix') -> None:
         """Rotate myself by the other matrix."""
         aa, ab, ac = self.aa, self.ab, self.ac
         ba, bb, bc = self.ba, self.bb, self.bc
@@ -1460,7 +1457,7 @@ class Angle:
     def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Vec):
-            return other @ Rotation.from_angle(self)
+            return other @ Matrix.from_angle(self)
         elif isinstance(other, Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
@@ -1471,20 +1468,20 @@ class Angle:
         
         Inefficient if we have more than one rotation to do.
         """
-        mat = Rotation()
+        mat = Matrix()
         mat @= target
         mat @= self
         return mat.to_angle()
 
     @contextlib.contextmanager
-    def transform(self) -> ContextManager[Rotation]:
+    def transform(self) -> ContextManager[Matrix]:
         """Perform transformations on this angle.
 
         Used as a context manager, which returns a matrix.
         When the body is exited safely, the matrix is applied to
         the angle.
         """
-        mat = Rotation()
+        mat = Matrix()
         yield mat
         new_ang = mat.to_angle()
         self._pitch = new_ang._pitch
