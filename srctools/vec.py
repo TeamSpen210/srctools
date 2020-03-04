@@ -1201,21 +1201,25 @@ class Matrix:
             
     def _mat_mul(self, other: 'Matrix') -> None:
         """Rotate myself by the other matrix."""
-        aa, ab, ac = self.aa, self.ab, self.ac
-        ba, bb, bc = self.ba, self.bb, self.bc
-        ca, cb, cc = self.ca, self.cb, self.cc
+        # We don't use A row after the first 3, so we can re-assign.
+        # 3-tuple unpacking is optimised.
+        self.aa, self.ab, self.ac = (
+            self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
+            self.aa * other.ab + self.ab * other.bb + self.ac * other.cb,
+            self.aa * other.ac + self.ab * other.bc + self.ac * other.cc,
+        )
 
-        self.aa = aa * other.aa + ab * other.ba + ac * other.ca
-        self.ab = aa * other.ab + ab * other.bb + ac * other.cb
-        self.ac = aa * other.ac + ab * other.bc + ac * other.cc
+        self.ba, self.bb, self.bc = (
+            self.ba * other.aa + self.bb * other.ba + self.bc * other.ca,
+            self.ba * other.ab + self.bb * other.bb + self.bc * other.cb,
+            self.ba * other.ac + self.bb * other.bc + self.bc * other.cc,
+        )
 
-        self.ba = ba * other.aa + bb * other.ba + bc * other.ca
-        self.bb = ba * other.ab + bb * other.bb + bc * other.cb
-        self.bc = ba * other.ac + bb * other.bc + bc * other.cc
-
-        self.ca = ca * other.aa + cb * other.ba + cc * other.ca
-        self.cb = ca * other.ab + cb * other.bb + cc * other.cb
-        self.cc = ca * other.ac + cb * other.bc + cc * other.cc
+        self.ca, self.cb, self.cc = (
+            self.ca * other.aa + self.cb * other.ba + self.cc * other.ca,
+            self.ca * other.ab + self.cb * other.bb + self.cc * other.cb,
+            self.ca * other.ac + self.cb * other.bc + self.cc * other.cc,
+        )
     
     def _vec_rot(self, vec: Vec) -> None:
         """Rotate a vector by our value."""
