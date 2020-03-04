@@ -1012,32 +1012,32 @@ class Rotation:
     The internal values are private, to allow changing the implementation.
     """
     __slots__ = [
-        'a', 'b', 'c', 
-        'd', 'e', 'f', 
-        'g', 'h', 'i'
+        'aa', 'ab', 'ac',
+        'ba', 'bb', 'bc',
+        'ca', 'cb', 'cc'
     ]
 
     def __init__(self) -> None:
         """Create a rotation set to the identity transform."""
-        self.a, self.b, self.c = 1.0, 0.0, 0.0
-        self.d, self.e, self.f = 0.0, 1.0, 0.0
-        self.g, self.h, self.i = 0.0, 0.0, 1.0
+        self.aa, self.ab, self.ac = 1.0, 0.0, 0.0
+        self.ba, self.bb, self.bc = 0.0, 1.0, 0.0
+        self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, Rotation):
             return (
-                self.a == other.a and self.b == other.b and self.c == other.c and
-                self.d == other.d and self.e == other.e and self.f == other.f and
-                self.g == other.g and self.h == other.h and self.i == other.i
+                self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
+                self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
+                self.ca == other.ca and self.cb == other.cb and self.cc == other.cc
             )
         return False
         
     def __repr__(self) -> str:
         return (
             'Rotation(\n'
-            '\t<{0.a}, {0.b}, {0.c}>\n'
-            '\t<{0.d}, {0.e}, {0.f}>\n'
-            '\t<{0.g}, {0.h}, {0.i}>\n'
+            '\t<{0.aa}, {0.ab}, {0.ac}>\n'
+            '\t<{0.ba}, {0.bb}, {0.bc}>\n'
+            '\t<{0.ca}, {0.cb}, {0.cc}>\n'
             ')'
         ).format(self)
 
@@ -1045,9 +1045,9 @@ class Rotation:
         """Duplicate this matrix."""
         rot = Rotation.__new__(Rotation)
 
-        rot.a, rot.b, rot.c = self.a, self.b, self.c
-        rot.d, rot.e, rot.f = self.d, self.e, self.f
-        rot.g, rot.h, rot.i = self.g, self.h, self.i
+        rot.aa, rot.ab, rot.ac = self.aa, self.ab, self.ac
+        rot.ba, rot.bb, rot.bc = self.ba, self.bb, self.bc
+        rot.ca, rot.cb, rot.cc = self.ca, self.cb, self.cc
 
         return rot
 
@@ -1063,9 +1063,9 @@ class Rotation:
 
         rot = cls.__new__(cls)
 
-        rot.a, rot.b, rot.c = cos, 0.0, sin
-        rot.d, rot.e, rot.f = 0.0, 1.0, 0.0
-        rot.g, rot.h, rot.i = -sin, 0.0, cos
+        rot.aa, rot.ab, rot.ac = cos, 0.0, sin
+        rot.ba, rot.bb, rot.bc = 0.0, 1.0, 0.0
+        rot.ca, rot.cb, rot.cc = -sin, 0.0, cos
 
         return rot
 
@@ -1080,9 +1080,9 @@ class Rotation:
 
         rot = cls.__new__(cls)
 
-        rot.a, rot.b, rot.c = cos, -sin, 0.0
-        rot.d, rot.e, rot.f = sin, cos, 0.0
-        rot.g, rot.h, rot.i = 0.0, 0.0, 1.0
+        rot.aa, rot.ab, rot.ac = cos, -sin, 0.0
+        rot.ba, rot.bb, rot.bc = sin, cos, 0.0
+        rot.ca, rot.cb, rot.cc = 0.0, 0.0, 1.0
 
         return rot
         
@@ -1098,9 +1098,9 @@ class Rotation:
 
         rot = cls.__new__(cls)
 
-        rot.a, rot.b, rot.c = 1.0, 0.0, 0.0
-        rot.d, rot.e, rot.f = 0.0, cos_r, -sin_r
-        rot.g, rot.h, rot.i = 0.0, sin_r, cos_r
+        rot.aa, rot.ab, rot.ac = 1.0, 0.0, 0.0
+        rot.ba, rot.bb, rot.bc = 0.0, cos_r, -sin_r
+        rot.ca, rot.cb, rot.cc = 0.0, sin_r, cos_r
 
         return rot
         
@@ -1117,15 +1117,15 @@ class Rotation:
         """Return an Euler angle replicating this rotation."""
 
         # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
-        for_x = self.a
-        for_y = self.b
-        for_z = self.c
-        left_x = self.d
-        left_y = self.e
-        left_z = self.f
+        for_x = self.aa
+        for_y = self.ab
+        for_z = self.ac
+        left_x = self.ba
+        left_y = self.bb
+        left_z = self.bc
         # up_x = self.g
         # up_y = self.h
-        up_z = self.i
+        up_z = self.cc
         
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
@@ -1204,21 +1204,21 @@ class Rotation:
             
     def _mat_mul(self, other: 'Rotation') -> None:
         """Rotate myself by the other matrix."""
-        a, b, c = self.a, self.b, self.c
-        d, e, f = self.d, self.e, self.f
-        g, h, i = self.g, self.h, self.i
+        aa, ab, ac = self.aa, self.ab, self.ac
+        ba, bb, bc = self.ba, self.bb, self.bc
+        ca, cb, cc = self.ca, self.cb, self.cc
 
-        self.a = a * other.a + b * other.d + c * other.g
-        self.b = a * other.b + b * other.e + c * other.h
-        self.c = a * other.c + b * other.f + c * other.i
+        self.aa = aa * other.aa + ab * other.ba + ac * other.ca
+        self.ab = aa * other.ab + ab * other.bb + ac * other.cb
+        self.ac = aa * other.ac + ab * other.bc + ac * other.cc
 
-        self.d = d * other.a + e * other.d + f * other.g
-        self.e = d * other.b + e * other.e + f * other.h
-        self.f = d * other.c + e * other.f + f * other.i
+        self.ba = ba * other.aa + bb * other.ba + bc * other.ca
+        self.bb = ba * other.ab + bb * other.bb + bc * other.cb
+        self.bc = ba * other.ac + bb * other.bc + bc * other.cc
 
-        self.g = g * other.a + h * other.d + i * other.g
-        self.h = g * other.b + h * other.e + i * other.h
-        self.i = g * other.c + h * other.f + i * other.i
+        self.ca = ca * other.aa + cb * other.ba + cc * other.ca
+        self.cb = ca * other.ab + cb * other.bb + cc * other.cb
+        self.cc = ca * other.ac + cb * other.bc + cc * other.cc
     
     def _vec_rot(self, vec: Vec) -> None:
         """Rotate a vector by our value."""
@@ -1226,9 +1226,9 @@ class Rotation:
         y = vec.y
         z = vec.z
 
-        vec.x = (x * self.a) + (y * self.b) + (z * self.c)
-        vec.y = (x * self.d) + (y * self.e) + (z * self.f)
-        vec.z = (x * self.g) + (y * self.h) + (z * self.i)
+        vec.x = (x * self.aa) + (y * self.ab) + (z * self.ac)
+        vec.y = (x * self.ba) + (y * self.bb) + (z * self.bc)
+        vec.z = (x * self.ca) + (y * self.cb) + (z * self.cc)
         
     
 class Angle:

@@ -144,15 +144,15 @@ def test_gen_check():
             assert_vec(abs(Y @ mat), left_x, left_y, left_z)
             assert_vec(abs(Z @ mat), up_x, up_y, up_z)
 
-            assert math.isclose(for_x, mat.a)
-            assert math.isclose(-for_y, mat.b)
-            assert math.isclose(for_z, mat.c)
+            assert math.isclose(for_x, mat.aa)
+            assert math.isclose(-for_y, mat.ab)
+            assert math.isclose(for_z, mat.ac)
 
-            assert math.isclose(left_x, mat.d)
-            assert math.isclose(-left_y, mat.e)
-            assert math.isclose(left_z, mat.f)
+            assert math.isclose(left_x, mat.ba)
+            assert math.isclose(-left_y, mat.bb)
+            assert math.isclose(left_z, mat.bc)
 
-            assert math.isclose(up_x, mat.g)
-            assert math.isclose(-up_y, mat.h)
-            assert math.isclose(up_z, mat.i)
+            assert math.isclose(up_x, mat.ca)
+            assert math.isclose(-up_y, mat.cb)
+            assert math.isclose(up_z, mat.cc)
 
