@@ -39,10 +39,9 @@ import math
 import contextlib
 
 from typing import (
-    Union, Tuple, overload,
+    Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    SupportsFloat, Iterator, Iterable,
-    ContextManager
+    SupportsFloat, Iterator, Iterable, ContextManager,
 )
 
 
@@ -1049,7 +1048,7 @@ class Matrix:
         return rot
 
     @classmethod
-    def from_pitch(cls, pitch: float) -> 'Matrix':
+    def from_pitch(cls: Type['Matrix'], pitch: float) -> 'Matrix':
         """Return the matrix representing a pitch rotation.
 
         This is a rotation around the Y axis.
@@ -1067,7 +1066,7 @@ class Matrix:
         return rot
 
     @classmethod
-    def from_yaw(cls, yaw: float) -> 'Matrix':
+    def from_yaw(cls: Type['Matrix'], yaw: float) -> 'Matrix':
         """Return the matrix representing a yaw rotation.
 
         """
@@ -1084,8 +1083,8 @@ class Matrix:
         return rot
         
     @classmethod
-    def from_roll(cls, roll: float) -> 'Matrix':
-        """Return the rotation representing a roll rotation.
+    def from_roll(cls: Type['Matrix'], roll: float) -> 'Matrix':
+        """Return the matrix representing a roll rotation.
 
         This is a rotation around the X axis.
         """
@@ -1120,8 +1119,8 @@ class Matrix:
         left_x = self.ba
         left_y = self.bb
         left_z = self.bc
-        # up_x = self.g
-        # up_y = self.h
+        # up_x = self.ca
+        # up_y = self.cb
         up_z = self.cc
         
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
@@ -1201,7 +1200,7 @@ class Matrix:
             
     def _mat_mul(self, other: 'Matrix') -> None:
         """Rotate myself by the other matrix."""
-        # We don't use A row after the first 3, so we can re-assign.
+        # We don't use each row after assigning to the set, so we can re-assign.
         # 3-tuple unpacking is optimised.
         self.aa, self.ab, self.ac = (
             self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
@@ -1247,7 +1246,7 @@ class Angle:
         pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
         yaw: Union[int, float]=0.0,
         roll: Union[int, float]=0.0,
-    ):
+    ) -> None:
         """Create an Angle.
 
         All values are converted to Floats automatically.
@@ -1428,7 +1427,7 @@ class Angle:
     @overload
     def __rmul__(self, other: object) -> NotImplemented: ...
 
-    def __rmul__(self, other: float):
+    def __rmul__(self, other):
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return Angle(
