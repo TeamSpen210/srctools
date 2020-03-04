@@ -1,4 +1,6 @@
 """Helpers for performing tests."""
+import itertools
+
 import srctools
 import pytest
 import math
@@ -76,7 +78,8 @@ def assert_rot(rot, exp_rot, msg=''):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    for pos in 'abcdefghi':
+    for row, col in itertools.product('abc', 'abc'):
+        pos = row + col
         if not math.isclose(
             getattr(rot, pos),
             getattr(exp_rot, pos),
