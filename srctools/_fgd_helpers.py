@@ -545,8 +545,11 @@ class HelperModel(Helper):
         self.model = model
 
     def overrides(self) -> Collection[HelperTypes]:
+        """Avoid some issues where other helpers break this one."""
         if self.model is None:
-            return ()  # When not set, this doesn't affect anything.
+            # If no model is provided, line() and similar helpers make
+            # the default cube size break
+            return [HelperTypes.LINE]
         else:
             return [HelperTypes.CUBE]
 
