@@ -905,6 +905,7 @@ res('prop_wall_projector',
     part('projected_wall_impact'),
     )
 
+res('rope_anchor', mat("materials/cable/cable.vmt"))
 res('rocket_turret_projectile',
     'models/props_bts/rocket.mdl',
     'materials/decals/scorchfade.vmt',
