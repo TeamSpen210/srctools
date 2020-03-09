@@ -76,7 +76,7 @@ EXT_TYPE = {
 }
 
 # noinspection PyProtectedMember
-from srctools._class_resources import CLASS_RESOURCES
+from srctools._class_resources import CLASS_RESOURCES, ALT_NAMES
 
 
 def load_fgd() -> FGD:

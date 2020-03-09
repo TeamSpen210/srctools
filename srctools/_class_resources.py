@@ -7,7 +7,7 @@ from typing import Iterator, Callable, Tuple, Union, List, Dict, Iterable
 from srctools.packlist import FileType
 from srctools import Entity, conv_int
 
-__all__ = ['CLASS_RESOURCES']
+__all__ = ['CLASS_RESOURCES', 'ALT_NAMES']
 
 #  For various entity classes, we know they require hardcoded files.
 # List them here - classname -> [(file, type), ...]
@@ -17,19 +17,30 @@ __all__ = ['CLASS_RESOURCES']
 ClassFunc = Callable[[Entity], Iterator[Union[str, Tuple[str, FileType]]]]
 CLASS_RESOURCES = {}  # type: Dict[str, Union[ClassFunc, Iterable[Tuple[str, FileType] ]]]
 INCLUDES = {}  # type: Dict[str, List[str]]
+ALT_NAMES = {}  # type: Dict[str, str]
 
 
-def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='') -> None:
-    """Add a class to class_resources, with each of the files it always uses."""
+def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', aliases: str='') -> None:
+    """Add a class to class_resources, with each of the files it always uses.
+
+    includes adds the resources of the other ent to this one if we spawn another.
+    aliases indicate additional classnames which are identical to ours.
+    """
     if items:
         CLASS_RESOURCES[cls] = [
             (file, FileType.GENERIC) if isinstance(file, str) else file
             for file in items
         ]
     else:
+        # Use a tuple here for empty ones, to save a bit of memory
+        # with the many ents that don't use resources.
         CLASS_RESOURCES[cls] = ()
     if includes:
         INCLUDES[cls] = includes.split()
+    if aliases:
+        for alt in aliases.split():
+            ALT_NAMES[alt] = cls
+            CLASS_RESOURCES[alt] = CLASS_RESOURCES[cls]
 
 
 def cls_func(func: ClassFunc) -> ClassFunc:
@@ -751,6 +762,7 @@ def move_rope(ent: Entity):
 
 # These classes are identical.
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
+ALT_NAMES['keyframe_rope'] = 'move_rope'
 
 res('phys_bone_follower')
 res('physics_entity_solver')
