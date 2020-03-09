@@ -126,6 +126,7 @@ res('ai_script_conditions')
 res('ai_sound')
 res('ai_speechfilter')
 res('ai_weaponmodifier')
+res('aiscripted_schedule')
 
 res('ambient_generic')  # Sound is a keyvalue
 res('ambient_music')
@@ -135,6 +136,7 @@ res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
 res('assault_assaultpoint')
 res('assault_rallypoint')
 
+res('asw_camera_control')
 res('asw_alien_goo',
     mdl('models/aliens/biomass/biomasshelix.mdl'),
     mdl('models/aliens/biomass/biomassl.mdl'),
@@ -326,28 +328,25 @@ res('asw_grub',
     part('grub_death'),
     part('grub_death_fire'),
     )
+res('asw_snow_volume')  # TODO: Uses an asw_emitter
+
+res('combine_mine',
+    mdl('models/props_combine/combine_mine01.mdl'),
+    sound('NPC_CombineMine.Hop'),
+    sound('NPC_CombineMine.FlipOver'),
+    sound('NPC_CombineMine.TurnOn'),
+    sound('NPC_CombineMine.TurnOff'),
+    sound('NPC_CombineMine.OpenHooks'),
+    sound('NPC_CombineMine.CloseHooks'),
+    sound('NPC_CombineMine.ActiveLoop'),
+    mat('materials/sprites/glow01.vmt'),
+    aliases='bounce_bomb combine_bouncemine'
+    )
 
 res('commentary_auto')
 res('commentary_dummy')
 res('commentary_zombie_spawner')
 
-res('comp_choreo_sceneset')
-res('comp_entity_finder')
-res('comp_entity_mover')
-res('comp_kv_setter')
-res('comp_numeric_transition')
-
-# Handled by srctools.bsp_transform.packing transforms.
-res('comp_pack')
-res('comp_pack_rename')
-res('comp_pack_replace_soundscript')
-res('comp_precache_model')
-res('comp_precache_sound')
-
-res('comp_propcombine_set')
-res('comp_scriptvar_setter')
-res('comp_trigger_coop')
-res('comp_trigger_p2_goo')
 
 res('env_airstrike_indoors')
 res('env_airstrike_outdoors')
@@ -369,9 +368,22 @@ res('env_bubbles', mat('materials/sprites/bubble.vmt'))
 @cls_func
 def env_break_shooter(ent: Entity):
     """Special behaviour on the 'model' KV."""
-    if conv_int(ent['modeltype']) == 1: # MODELTYPE_MODEL
+    if conv_int(ent['modeltype']) == 1:  # MODELTYPE_MODEL
         yield mdl(ent['model'])
     # Otherwise, a template name or a regular gib.
+
+
+res('env_citadel_energy_core',
+    mat('materials/effects/effects/strider_muzzle.vmt'),
+    mat('materials/effects/combinemuzzle2.vmt'),
+    mat('materials/effects/combinemuzzle2_dark.vmt'),
+    )
+res('env_credits',
+    'scripts/credits.txt',  # Script file with all the credits.
+    )
+res('env_detail_controller')
+res('env_dof_controller')
+res('env_embers', mat('materials/particle/fire.vmt'))
 
 res('env_dustpuff',
     mat("materials/particle/particle_smokegrenade.vmt"),
@@ -487,6 +499,7 @@ def env_portal_laser(ent: Entity):
     yield part('laser_start_glow')
     yield part('reflector_start_glow')
 
+res('env_projectedtexture')  # Texture handled by generic FGD parsing.
 res('env_rotorwash_emitter',
     mat('materials/effects/splashwake3.vmt'),  # Water ripples
     mat('materials/effects/splash1.vmt'),  # Over water
@@ -494,6 +507,12 @@ res('env_rotorwash_emitter',
     mat("materials/particle/particle_smokegrenade.vmt"),  # Over ground
     mat("materials/particle/particle_noisesphere.vmt"),
     )
+
+
+@cls_func
+def env_rotorshooter(ent: Entity):
+    """Inherits from env_shooter, so it just does that."""
+    env_shooter(ent)
 
 res('env_screeneffect',
     'materials/effects/stun.vmt',
@@ -514,6 +533,12 @@ def env_shooter(ent: Entity):
         )[conv_int(ent['spawnflags'])]
     except IndexError:
         pass
+    # Valve does this same check.
+    if ent['shootmodel'].casefold().endswith('.vmt'):
+        yield mat(ent['shootmodel'])
+    else:
+        yield mdl(ent['shootmodel'])
+
 
 res('env_spark',
     mat('materials/sprites/glow01.vmt'),
@@ -535,6 +560,8 @@ res('env_steam',
 res('env_steamjet', includes='env_steam')
 res('env_sun', mat('materials/sprites/light_glow02_add_noz.vmt'))
 res('env_texturetoggle')
+
+res('event_queue_saveload_proxy')
 
 res('filter_activator_class')
 res('filter_activator_classify')
@@ -592,11 +619,21 @@ def func_breakable_surf(ent: Entity):
 res('func_dust',
     'materials/particle/sparkles.vmt',
     )
+res('func_portal_bumper')
+res('func_portal_detector')
+res('func_portal_orientation')
+res('func_portalled')
 
-res('func_tankchange',
-    ('FuncTrackChange.Blocking', FileType.GAME_SOUND),
+res('func_tankchange', sound('FuncTrackChange.Blocking'))
+res('func_recharge',
+    sound('SuitRecharge.Deny'),
+    sound('SuitRecharge.Start'),
+    sound('SuitRecharge.ChargingLoop'),
     )
-
+res('gibshooter',
+    mdl('models/gibs/hgibs.mdl'),
+    mdl('models/germanygibs.mdl'),
+    )
 res('grenade_helicopter',  # Bomb dropped by npc_helicopter
     mdl("models/combine_helicopter/helicopter_bomb01.mdl"),
     sound("ReallyLoudSpark"),
@@ -604,7 +641,7 @@ res('grenade_helicopter',  # Bomb dropped by npc_helicopter
     sound("NPC_AttackHelicopterGrenade.PingCaptured"),
     sound("NPC_AttackHelicopterGrenade.HardImpact"),
     )
-
+res('hammer_updateignorelist')
 res('helicopter_chunk',  # Broken bits of npc_helicopter
     mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
     mdl("models/gibs/helicopter_brokenpiece_02.mdl"),
