@@ -1138,6 +1138,16 @@ class Matrix:
                 roll=0,  # Can't produce.
             )
 
+    def transpose(self) -> 'Matrix':
+        """Return the transpose of this matrix."""
+        rot = Matrix.__new__(Matrix)
+
+        rot.aa, rot.ab, rot.ac = self.aa, self.ba, self.ca
+        rot.ba, rot.bb, rot.bc = self.ab, self.bb, self.cb
+        rot.ca, rot.cb, rot.cc = self.ac, self.bc, self.cc
+
+        return rot
+
     @overload
     def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
