@@ -1,5 +1,6 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
+from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
@@ -576,6 +577,55 @@ del _init_helper_impl
 from srctools._fgd_helpers import *
 
 
+class AutoVisgroup:
+    """Represents one of the autovisgroup options that can be set.
+
+    Due to how these are coded into Hammer, our representation is rather strange.
+    We put all the groups into a single dictionary, and on each specify the name
+    of the parent. Note they're case-sensitive, and can include punctuation.
+    """
+    def __init__(self, name: str, parent: str) -> None:
+        self.name = name
+        self.parent = parent
+        self.ents = set()  # type: Set[str]
+
+    def __repr__(self) -> str:
+        return '<AutoVisgroup "{}">'.format(self.name)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name == other.name
+        return NotImplemented
+
+    def __ne__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name != other.name
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name < other.name
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name > other.name
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name <= other.name
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name >= other.name
+        return NotImplemented
+
+
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -1135,14 +1185,12 @@ class EntityDef:
 
         # Now apply EXT_AUTO_VISGROUP, since we have the classname.
         for auto_visgroup in ext_autovisgroups:
-            auto_visgroup.append(entity.classname)
-
-            for vis_a, vis_b, vis_c in zip(
-                auto_visgroup,
-                auto_visgroup[1:],
-                auto_visgroup[2:],
-            ):
-                fgd.auto_visgroups.setdefault((vis_a, vis_b), set()).add(vis_c)
+            for vis_parent, vis_name in zip(auto_visgroup, auto_visgroup[1:]):
+                try:
+                    visgroup = fgd.auto_visgroups[vis_name.casefold()]
+                except KeyError:
+                    visgroup = fgd.auto_visgroups[vis_name.casefold()] = AutoVisgroup(vis_name, vis_parent)
+                visgroup.ents.add(entity.classname)
 
         # Now parse keyvalues, and input/outputs
         for token, token_value in tok:
@@ -1583,11 +1631,13 @@ class FGD:
         self.mat_exclusions = set()  # type: Set[PurePosixPath]
 
         # Automatic visgroups.
-        # This maps a parent, folder to the entities that have that group.
-        # For example:
-        # ('Auto', 'World Details'): 'Props'
-        # ('World Details', 'Props') : 'prop_static'
-        self.auto_visgroups = {}  # type: Dict[Tuple[str, str], Set[str]]
+        # The way Valve implemented this is rather strange, so we need
+        # to match their data structure really to get good results.
+        # Despite it appearing hierachical in editor, we and Hammer store
+        # it flattened. Each visgroup has a parent (or None for auto), and then
+        # a list of the ents it contains.
+
+        self.auto_visgroups = {}  # type: Dict[str, AutoVisgroup]
 
     @classmethod
     def parse(
@@ -1760,6 +1810,54 @@ class FGD:
                 file.write('\t"{!s}"\n'.format(folder))
             file.write('\t]\n')
 
+        vis_by_parent = defaultdict(set)  # type: Dict[str, Set[AutoVisgroup]]
+        # Record the proper casing as well.
+        name_casing = {'auto': 'Auto'}
+        for visgroup in list(self.auto_visgroups.values()):
+            if not visgroup.parent:
+                visgroup.parent = 'Auto'
+            elif visgroup.parent.casefold() not in self.auto_visgroups:
+                # This is an "orphan" visgroup, not linked back to Auto.
+                # Connect it back there, by generating the parent.
+                parent_group = self.auto_visgroups[visgroup.parent.casefold()] = AutoVisgroup(visgroup.parent, 'Auto')
+                parent_group.ents.update(visgroup.ents)
+            vis_by_parent[visgroup.parent.casefold()].add(visgroup)
+            name_casing[visgroup.parent.casefold()] = visgroup.parent
+
+        # We need to sort these, so we write parents before children.
+        todo = set(vis_by_parent)
+        done = set()
+        while todo:
+            deferred = set()
+            for parent in todo:
+                # Special case the root, pretend that was written to the file.
+                if parent != 'auto':
+                    visgroup = self.auto_visgroups[parent.casefold()]
+                    if visgroup.parent.casefold() not in done:
+                        deferred.add(parent)
+                        continue
+                # Otherwise, the parent is done, so we can generate.
+                file.write('@AutoVisgroup = "{}"\n\t[\n'.format(name_casing[parent]))
+                for visgroup in sorted(vis_by_parent[parent]):
+                    file.write('\t"{}"\n\t\t[\n'.format(visgroup.name))
+                    for ent in sorted(visgroup.ents):
+                        file.write('\t\t"{}"\n'.format(ent))
+                    file.write('\t\t]\n')
+                file.write('\t]\n')
+                done.add(parent)
+
+            if todo == deferred:
+                # We looped without adding one. There's an invalid one or
+                # a loop or something.
+                raise ValueError(
+                    'Cannot export visgroups, '
+                    'loop present in names: {}'.format(','.join([
+                        '"{}" -> "{}"'.format(self.auto_visgroups[group].parent, group)
+                        for group in sorted(todo)
+                    ]))
+                )
+            todo = deferred
+
         for ent in self.sorted_ents():
             file.write('\n')
             ent.export(file)
@@ -1851,16 +1949,15 @@ class FGD:
                     vis_parent = tokeniser.expect(Token.STRING)
                     tokeniser.expect(Token.BRACK_OPEN)
 
-                    for tok, tok_value in tokeniser:
+                    for tok, vis_name in tokeniser:
                         if tok is Token.BRACK_CLOSE:
                             break
                         elif tok is Token.STRING:
                             # Folder
-                            vis_key = vis_parent, tok_value
                             try:
-                                vis_list = self.auto_visgroups[vis_key]
+                                visgroup = self.auto_visgroups[vis_name.casefold()]
                             except KeyError:
-                                vis_list = self.auto_visgroups[vis_key] = set()
+                                visgroup = self.auto_visgroups[vis_name.casefold()] = AutoVisgroup(vis_name, vis_parent)
 
                             tokeniser.expect(Token.BRACK_OPEN)
                             for ent_tok, ent_tok_value in tokeniser:
@@ -1868,7 +1965,7 @@ class FGD:
                                     break
                                 elif ent_tok is Token.STRING:
                                     # Entity
-                                    vis_list.add(ent_tok_value)
+                                    visgroup.ents.add(ent_tok_value)
                                 elif ent_tok is not Token.NEWLINE:
                                     raise tokeniser.error(ent_tok)
                         elif tok is not Token.NEWLINE:
