@@ -476,6 +476,13 @@ def env_portal_laser(ent: Entity):
     yield part('laser_start_glow')
     yield part('reflector_start_glow')
 
+res('env_rotorwash_emitter',
+    mat('materials/effects/splashwake3.vmt'),  # Water ripples
+    mat('materials/effects/splash1.vmt'),  # Over water
+    mat('materials/effects/splash2.vmt'),
+    mat("materials/particle/particle_smokegrenade.vmt"),  # Over ground
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
 
 res('env_screeneffect',
     'materials/effects/stun.vmt',
@@ -597,6 +604,37 @@ res('helicopter_chunk',  # Broken bits of npc_helicopter
     sound('BaseExplosionEffect.Sound'),
     sound('NPC_AttackHelicopter.Crash'),
     includes='env_smoketrail env_fire_trail ar2explosion'
+    )
+
+res('item_grubnugget',  # Antlion Grub Nugget
+    mdl('models/grub_nugget_small.mdl'),
+    mdl('models/grub_nugget_medium.mdl'),
+    mdl('models/grub_nugget_large.mdl'),
+    sound('GrubNugget.Touch'),
+    sound('NPC_Antlion_Grub.Explode'),
+    part('antlion_spit_player'),
+    )
+res('item_healthkit',
+    mdl('models/healthkit.mdl'),
+    sound('HealthKit.Touch'),
+    )
+res('item_healthvial',
+    mdl('models/healthvial.mdl'),
+    sound('HealthVial.Touch'),
+    )
+res('item_healthcharger',
+    mdl('models/props_combine/health_charger001.mdl'),
+    sound('WallHealth.Deny'),
+    sound('WallHealth.Start'),
+    sound('WallHealth.LoopingContinueCharge'),
+    sound('WallHealth.Recharge'),
+    )
+res('item_suitcharger',
+    mdl('models/props_combine/suit_charger001.mdl'),
+    sound('WallHealth.Deny'),
+    sound('WallHealth.Start'),
+    sound('WallHealth.LoopingContinueCharge'),
+    sound('WallHealth.Recharge'),
     )
 
 
