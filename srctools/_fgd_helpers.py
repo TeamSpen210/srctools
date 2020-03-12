@@ -638,6 +638,29 @@ class HelperLightSpot(Helper):
     TYPE = HelperTypes.ENT_LIGHT_CONE
 
 
+class HelperLightSpotBlackMesa(Helper):
+    """A new helper for Black Mesa's new spot entity."""
+    TYPE = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
+
+    def __init__(self, theta_kv: str, phi_kv: str, color_kv: str) -> None:
+        self.theta = theta_kv
+        self.phi = phi_kv
+        self.color = color_kv
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse newlightcone(theta, phi, lightcolor)."""
+        if len(args) != 3:
+            raise ValueError(
+                'Expected 3 arguments, got ({})!'.format(', '.join(args))
+            )
+        return cls(args[0], args[1], args[2])
+
+    def export(self) -> List[str]:
+        """Produce the arguments for iconsprite()."""
+        return [self.theta, self.phi, self.color]
+
+
 class HelperRope(Helper):
     """Specialized helper for displaying move_rope and keyframe_rope."""
     TYPE = HelperTypes.ENT_ROPE
