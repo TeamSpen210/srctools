@@ -622,11 +622,7 @@ class PackList:
                 res = CLASS_RESOURCES[classname]
             except KeyError:
                 continue
-            if isinstance(res, list):
-                # Basic dependencies, if they're the same for any copy of this ent.
-                for file, filetype in res:
-                    self.pack_file(file, filetype)
-            else:
+            if callable(res):
                 # Different stuff is packed based on keyvalues, so call a function.
                 for ent in vmf.by_class[classname]:
                     for file in res(ent):
@@ -634,6 +630,10 @@ class PackList:
                             self.pack_file(*file)  # Specify the file type too.
                         else:
                             self.pack_file(file)
+            else:
+                # Basic dependencies, if they're the same for any copy of this ent.
+                for file, filetype in res:
+                    self.pack_file(file, filetype)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
