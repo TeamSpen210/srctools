@@ -1,5 +1,6 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 import io
+import itertools
 from collections import OrderedDict
 from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
 from enum import Enum, auto as auto_enum
@@ -617,7 +618,8 @@ class PackList:
 
         # Handle resources that's coded into different entities with our
         # internal database.
-        for classname in vmf.by_class.keys():
+        # Use compress() to skip classnames that have no ents.
+        for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
             try:
                 res = CLASS_RESOURCES[classname]
             except KeyError:
