@@ -1822,6 +1822,7 @@ class FGD:
                 # This is an "orphan" visgroup, not linked back to Auto.
                 # Connect it back there, by generating the parent.
                 parent_group = self.auto_visgroups[visgroup.parent.casefold()] = AutoVisgroup(visgroup.parent, 'Auto')
+                vis_by_parent['auto'].add(parent_group)
                 parent_group.ents.update(visgroup.ents)
             vis_by_parent[visgroup.parent.casefold()].add(visgroup)
             name_casing[visgroup.parent.casefold()] = visgroup.parent
