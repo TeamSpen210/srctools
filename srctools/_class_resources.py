@@ -77,13 +77,16 @@ def mdl(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.MODEL)
 
+
 def mat(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.MATERIAL)
 
+
 def sound(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.GAME_SOUND)
+
 
 def part(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
@@ -374,7 +377,7 @@ def env_break_shooter(ent: Entity):
 
 
 res('env_citadel_energy_core',
-    mat('materials/effects/effects/strider_muzzle.vmt'),
+    mat('materials/effects/strider_muzzle.vmt'),
     mat('materials/effects/combinemuzzle2.vmt'),
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
@@ -478,26 +481,24 @@ def env_headcrabcanister(ent: Entity):
 res('env_laser')
 res('env_lightglow', mat('materials/sprites/light_glow02_add_noz.vmt'))
 res('env_lightrail_endpoint',
-    mat('effects/light_rail_endpoint'),
-    mat('effects/strider_muzzle'),
-    mat('effects/combinemuzzle2'),
-    mat('effects/combinemuzzle2_dark'),
+    mat('materials/effects/light_rail_endpoint.vmt'),
+    mat('materials/effects/strider_muzzle.vmt'),
+    mat('materials/effects/combinemuzzle2.vmt'),
+    mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
 res('env_physexplosion')
 res('env_physics_blocker')
 res('env_physimpact')
 
 
-@cls_func
-def env_portal_laser(ent: Entity):
-    """The P2 laser defaults to a model if not provided."""
-    if not ent['model']:
-        yield mdl('models/props/laser_emitter.mdl')
-    yield sound('Flesh.LaserBurn')
-    yield sound('Laser.BeamLoop')
-    yield sound('Player.PainSmall')
-    yield part('laser_start_glow')
-    yield part('reflector_start_glow')
+res('env_portal_laser',
+    mdl('models/props/laser_emitter.mdl'),
+    sound('Flesh.LaserBurn'),
+    sound('Laser.BeamLoop'),
+    sound('Player.PainSmall'),
+    part('laser_start_glow'),
+    part('reflector_start_glow'),
+    )
 
 res('env_projectedtexture')  # Texture handled by generic FGD parsing.
 res('env_rotorwash_emitter',
@@ -515,8 +516,8 @@ def env_rotorshooter(ent: Entity):
     env_shooter(ent)
 
 res('env_screeneffect',
-    'materials/effects/stun.vmt',
-    'materials/effects/introblur.vmt',
+    mat('materials/effects/stun.vmt'),
+    mat('materials/effects/introblur.vmt'),
     )
 
 
@@ -653,6 +654,18 @@ res('helicopter_chunk',  # Broken bits of npc_helicopter
     sound('NPC_AttackHelicopter.Crash'),
     includes='env_smoketrail env_fire_trail ar2explosion'
     )
+res('hunter_flechette',
+    mdl("models/weapons/hunter_flechette.mdl"),
+    mat("materials/sprites/light_glow02_noz.vmt"),
+    sound("NPC_Hunter.FlechetteNearmiss"),
+    sound("NPC_Hunter.FlechetteHitBody"),
+    sound("NPC_Hunter.FlechetteHitWorld"),
+    sound("NPC_Hunter.FlechettePreExplode"),
+    sound("NPC_Hunter.FlechetteExplode"),
+    part("hunter_flechette_trail_striderbuster"),
+    part("hunter_flechette_trail"),
+    part("hunter_projectile_explosion_1"),
+    )
 
 res('item_grubnugget',  # Antlion Grub Nugget
     mdl('models/grub_nugget_small.mdl'),
@@ -716,10 +729,10 @@ res('npc_barnacle',
     )
 res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
 res('npc_combine_cannon',
-    'models/combine_soldier.mdl',
-    'materials/effects/bluelaser1.vmt',
-    'materials/sprites/light_glow03.vmt',
-    ('NPC_Combine_Cannon.FireBullet', FileType.GAME_SOUND),
+    mdl('models/combine_soldier.mdl'),
+    mat('materials/effects/bluelaser1.vmt'),
+    mat('materials/sprites/light_glow03.vmt'),
+    sound('NPC_Combine_Cannon.FireBullet'),
     )
 
 res('npc_headcrab',
@@ -806,12 +819,12 @@ res('physics_entity_solver')
 res('physics_npc_solver')
 
 res('npc_rocket_turret',
-    'materials/effects/bluelaser1.vmt',
-    'materials/sprites/light_glow03.vmt',
-    'models/props_bts/rocket_sentry.mdl',
-    ('NPC_RocketTurret.LockingBeep', FileType.GAME_SOUND),
-    ('NPC_FloorTurret.LockedBeep', FileType.GAME_SOUND),
-    ('NPC_FloorTurret.RocketFire', FileType.GAME_SOUND),
+    mat('materials/effects/bluelaser1.vmt'),
+    mat('materials/sprites/light_glow03.vmt'),
+    mdl('models/props_bts/rocket_sentry.mdl'),
+    sound('NPC_RocketTurret.LockingBeep'),
+    sound('NPC_FloorTurret.LockedBeep'),
+    sound('NPC_FloorTurret.RocketFire'),
     includes='rocket_turret_projectile',
     )
 
@@ -907,9 +920,9 @@ res('prop_wall_projector',
 
 res('rope_anchor', mat("materials/cable/cable.vmt"))
 res('rocket_turret_projectile',
-    'models/props_bts/rocket.mdl',
-    'materials/decals/scorchfade.vmt',
-    ('NPC_FloorTurret.RocketFlyLoop', FileType.GAME_SOUND),
+    mdl('models/props_bts/rocket.mdl'),
+    mat('materials/decals/scorchfade.vmt'),
+    sound('NPC_FloorTurret.RocketFlyLoop'),
     )
 
 res('squadinsignia', "models/chefhat.mdl")  # Yeah.
@@ -1002,6 +1015,7 @@ res('trigger_wind')
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )
+res('waterbullet', 'models/weapons/w_bullet.mdl')
 
 
 # Now all of these have been done, apply 'includes' commands.
