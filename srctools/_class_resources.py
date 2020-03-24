@@ -331,6 +331,7 @@ res('asw_grub',
     part('grub_death'),
     part('grub_death_fire'),
     )
+res('asw_rope_anchor', mat("materials/cable/cable.vmt"))
 res('asw_snow_volume')  # TODO: Uses an asw_emitter
 
 res('combine_mine',
@@ -350,7 +351,7 @@ res('commentary_auto')
 res('commentary_dummy')
 res('commentary_zombie_spawner')
 
-
+res('ent_watery_leech', mdl("models/leech.mdl"))
 res('env_airstrike_indoors')
 res('env_airstrike_outdoors')
 res('env_ambient_light')
@@ -924,7 +925,10 @@ res('rocket_turret_projectile',
     mat('materials/decals/scorchfade.vmt'),
     sound('NPC_FloorTurret.RocketFlyLoop'),
     )
-
+res('spark_shower',
+    mat('materials/sprites/glow01.vmt'),
+    mat('materials/effects/yellowflare.vmt'),
+    )
 res('squadinsignia', "models/chefhat.mdl")  # Yeah.
 
 @cls_func
@@ -1007,7 +1011,11 @@ res('trigger_tonemap')
 res('trigger_transition')
 res('trigger_upgrade_laser_sight')
 res('trigger_vphysics_motion')
-res('trigger_waterydeath')
+res('trigger_waterydeath',
+    mdl("models/leech.mdl"),
+    sound("coast.leech_bites_loop"),
+    sound("coast.leech_water_churn_loop"),
+    )
 res('trigger_weapon_dissolve')
 res('trigger_weapon_strip')
 res('trigger_wind')
