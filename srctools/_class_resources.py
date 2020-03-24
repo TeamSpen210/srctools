@@ -2,6 +2,7 @@
 
 Those are ones that don't simply appear in keyvalues.
 """
+import itertools
 from typing import Callable, Tuple, Union, List, Dict, Iterable
 
 from srctools.packlist import FileType, PackList
@@ -558,6 +559,30 @@ res('env_smoketrail',
     mat("materials/particle/particle_smokegrenade.vmt"),
     mat("materials/particle/particle_noisesphere.vmt"),
     )
+
+
+@cls_func
+def env_smokestack(pack: PackList, ent: Entity) -> None:
+    """This tries using each numeric material that exists."""
+    pack.pack_file('materials/particle/SmokeStack.vmt', FileType.MATERIAL)
+
+    mat_base = ent['smokematerial'].casefold().replace('\\', '/')
+    if not mat_base:
+        return
+
+    if mat_base.endswith('.vmt'):
+        mat_base = mat_base[:-4]
+    if not mat_base.startswith('materials/'):
+        mat_base = 'materials/' + mat_base
+
+    pack.pack_file(mat_base + '.vmt', FileType.MATERIAL)
+    for i in itertools.count(1):
+        fname = '{}{}.vmt'.format(mat_base, i)
+        if fname in pack.fsys:
+            pack.pack_file(fname)
+        else:
+            break
+
 res('env_starfield',
     mat('materials/effects/spark_noz.vmt'),
     )
@@ -575,6 +600,7 @@ res('event_queue_saveload_proxy')
 res('filter_activator_class')
 res('filter_activator_classify')
 res('filter_activator_context')
+res('filter_activator_flag')
 res('filter_activator_hintgroup')
 res('filter_activator_infected_class')
 res('filter_activator_involume')
@@ -587,6 +613,7 @@ res('filter_activator_squad')
 res('filter_activator_surfacedata')
 res('filter_activator_team')
 res('filter_activator_tfteam')
+res('filter_damage_class')
 res('filter_base')
 res('filter_blood_control')
 res('filter_combineball_type')
@@ -635,6 +662,7 @@ def func_breakable_surf(pack: PackList, ent: Entity):
 res('func_dust',
     'materials/particle/sparkles.vmt',
     )
+res('func_movelinear')
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
@@ -682,6 +710,8 @@ res('hunter_flechette',
     part("hunter_projectile_explosion_1"),
     )
 
+res('info_constraint_anchor')
+
 res('item_grubnugget',  # Antlion Grub Nugget
     mdl('models/grub_nugget_small.mdl'),
     mdl('models/grub_nugget_medium.mdl'),
@@ -727,6 +757,85 @@ def item_teamflag(pack: PackList, ent: Entity) -> None:
             pack.pack_file(value + '_red.vmt', FileType.MATERIAL)
             pack.pack_file(value + '_blue.vmt', FileType.MATERIAL)
 
+
+@cls_func
+def npc_antlion(pack: PackList, ent: Entity):
+    """Antlions require different resources for the worker version."""
+    spawnflags = conv_int(ent['spawnflags'])
+    if spawnflags & (1 << 18):  # Is worker?
+        pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
+        pack.pack_file("blood_impact_antlion_worker_01", FileType.PARTICLE)
+        pack.pack_file("antlion_gib_02", FileType.PARTICLE)
+        pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
+
+        for fname, ftype in CLASS_RESOURCES['grenade_spit']:
+            pack.pack_file(fname, ftype)
+    else:
+        pack.pack_file("models/antlion.mdl", FileType.MODEL)
+        pack.pack_file("blood_impact_antlion_01")
+        pack.pack_file("AntlionGib", FileType.PARTICLE)
+
+    for i in ('1', '2', '3'):
+        for size in ('small', 'medium', 'large'):
+            pack.pack_file("models/gibs/antlion_gib_{}_{}.mdl".format(size, i), FileType.MODEL)
+
+    pack.pack_soundscript("NPC_Antlion.RunOverByVehicle")
+    pack.pack_soundscript("NPC_Antlion.MeleeAttack")
+    pack.pack_soundscript("NPC_Antlion.Footstep")
+    pack.pack_soundscript("NPC_Antlion.BurrowIn")
+    pack.pack_soundscript("NPC_Antlion.BurrowOut")
+    pack.pack_soundscript("NPC_Antlion.FootstepSoft")
+    pack.pack_soundscript("NPC_Antlion.FootstepHeavy")
+    pack.pack_soundscript("NPC_Antlion.MeleeAttackSingle")
+    pack.pack_soundscript("NPC_Antlion.MeleeAttackDouble")
+    pack.pack_soundscript("NPC_Antlion.Distracted")
+    pack.pack_soundscript("NPC_Antlion.Idle")
+    pack.pack_soundscript("NPC_Antlion.Pain")
+    pack.pack_soundscript("NPC_Antlion.Land")
+    pack.pack_soundscript("NPC_Antlion.WingsOpen")
+    pack.pack_soundscript("NPC_Antlion.LoopingAgitated")
+    pack.pack_soundscript("NPC_Antlion.Distracted")
+
+    # TODO: These are Episodic only..
+    pack.pack_soundscript("NPC_Antlion.PoisonBurstScream")
+    pack.pack_soundscript("NPC_Antlion.PoisonBurstScreamSubmerged")
+    pack.pack_soundscript("NPC_Antlion.PoisonBurstExplode")
+    pack.pack_soundscript("NPC_Antlion.MeleeAttack_Muffled")
+    pack.pack_soundscript("NPC_Antlion.TrappedMetal")
+    pack.pack_soundscript("NPC_Antlion.ZappedFlip")
+    pack.pack_soundscript("NPC_Antlion.PoisonShoot")
+    pack.pack_soundscript("NPC_Antlion.PoisonBall")
+
+res('npc_antlion_grub',
+    mdl("models/antlion_grub.mdl"),
+    mdl("models/antlion_grub_squashed.mdl"),
+    mat("materials/sprites/grubflare1.vmt"),
+    sound("NPC_Antlion_Grub.Idle"),
+    sound("NPC_Antlion_Grub.Alert"),
+    sound("NPC_Antlion_Grub.Stimulated"),
+    sound("NPC_Antlion_Grub.Die"),
+    sound("NPC_Antlion_Grub.Squish"),
+    part("GrubSquashBlood"),
+    part("GrubBlood"),
+    includes="item_grubnugget",
+    )
+
+
+@cls_func
+def npc_antlion_template_maker(pack: PackList, ent: Entity):
+    """Depending on KVs this may or may not spawn workers."""
+    # There will be an antlion present in the map, as the template
+    # NPC. So we don't need to add those resources.
+    if conv_int(ent['workerspawnrate']) > 0:
+        # It randomly spawns worker antlions, so load that resource set.
+        pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
+        pack.pack_file("blood_impact_antlion_worker_01", FileType.PARTICLE)
+        pack.pack_file("antlion_gib_02", FileType.PARTICLE)
+        pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
+
+        for fname, ftype in CLASS_RESOURCES['grenade_spit']:
+            pack.pack_file(fname, ftype)
+
 res('npc_barnacle',
     mdl('models/barnacle.mdl'),
     mdl("models/gibs/hgibs.mdl"),
@@ -749,6 +858,63 @@ res('npc_combine_cannon',
     mat('materials/sprites/light_glow03.vmt'),
     sound('NPC_Combine_Cannon.FireBullet'),
     )
+res('npc_zombie',
+    mdl("models/zombie/classic.mdl"),
+    mdl("models/zombie/classic_torso.mdl"),
+    mdl("models/zombie/classic_legs.mdl"),
+    sound("Zombie.FootstepRight"),
+    sound("Zombie.FootstepLeft"),
+    sound("Zombie.FootstepLeft"),
+    sound("Zombie.ScuffRight"),
+    sound("Zombie.ScuffLeft"),
+    sound("Zombie.AttackHit"),
+    sound("Zombie.AttackMiss"),
+    sound("Zombie.Pain"),
+    sound("Zombie.Die"),
+    sound("Zombie.Alert"),
+    sound("Zombie.Idle"),
+    sound("Zombie.Attack"),
+    sound("NPC_BaseZombie.Moan1"),
+    sound("NPC_BaseZombie.Moan2"),
+    sound("NPC_BaseZombie.Moan3"),
+    sound("NPC_BaseZombie.Moan4"),
+    )
+# Actually an alias, but we don't want to swap these.
+CLASS_RESOURCES['npc_zombie_torso'] = CLASS_RESOURCES['npc_zombie']
+
+res('npc_fastzombie',
+    mdl("models/zombie/fast.mdl"),
+    # TODO - Episodic only:
+        mdl("models/zombie/Fast_torso.mdl"),
+        sound("NPC_FastZombie.CarEnter1"),
+        sound("NPC_FastZombie.CarEnter2"),
+        sound("NPC_FastZombie.CarEnter3"),
+        sound("NPC_FastZombie.CarEnter4"),
+        sound("NPC_FastZombie.CarScream"),
+    mdl("models/gibs/fast_zombie_torso.mdl"),
+    mdl("models/gibs/fast_zombie_legs.mdl"),
+    sound("NPC_FastZombie.LeapAttack"),
+    sound("NPC_FastZombie.FootstepRight"),
+    sound("NPC_FastZombie.FootstepLeft"),
+    sound("NPC_FastZombie.AttackHit"),
+    sound("NPC_FastZombie.AttackMiss"),
+    sound("NPC_FastZombie.LeapAttack"),
+    sound("NPC_FastZombie.Attack"),
+    sound("NPC_FastZombie.Idle"),
+    sound("NPC_FastZombie.AlertFar"),
+    sound("NPC_FastZombie.AlertNear"),
+    sound("NPC_FastZombie.GallopLeft"),
+    sound("NPC_FastZombie.GallopRight"),
+    sound("NPC_FastZombie.Scream"),
+    sound("NPC_FastZombie.RangeAttack"),
+    sound("NPC_FastZombie.Frenzy"),
+    sound("NPC_FastZombie.NoSound"),
+    sound("NPC_FastZombie.Die"),
+    sound("NPC_FastZombie.Gurgle"),
+    sound("NPC_FastZombie.Moan1"),
+    )
+# Actually an alias, but we don't want to swap these.
+CLASS_RESOURCES['npc_fastzombie_torso'] = CLASS_RESOURCES['npc_fastzombie']
 
 res('npc_headcrab',
     mdl('models/headcrabclassic.mdl'),
