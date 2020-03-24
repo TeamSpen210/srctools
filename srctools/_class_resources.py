@@ -2,9 +2,9 @@
 
 Those are ones that don't simply appear in keyvalues.
 """
-from typing import Iterator, Callable, Tuple, Union, List, Dict, Iterable
+from typing import Callable, Tuple, Union, List, Dict, Iterable
 
-from srctools.packlist import FileType
+from srctools.packlist import FileType, PackList
 from srctools import Entity, conv_int
 
 __all__ = ['CLASS_RESOURCES', 'ALT_NAMES']
@@ -14,7 +14,7 @@ __all__ = ['CLASS_RESOURCES', 'ALT_NAMES']
 # Alternatively it's a function to call with the entity to do class-specific
 # behaviour, yielding files to pack.
 
-ClassFunc = Callable[[Entity], Iterator[Union[str, Tuple[str, FileType]]]]
+ClassFunc = Callable[[PackList, Entity], None]
 CLASS_RESOURCES = {}  # type: Dict[str, Union[ClassFunc, Iterable[Tuple[str, FileType] ]]]
 INCLUDES = {}  # type: Dict[str, List[str]]
 ALT_NAMES = {}  # type: Dict[str, str]
@@ -282,12 +282,13 @@ res('asw_egg',
     includes='asw_parasite',
     )
 
+
 @cls_func
-def asw_emitter(ent: Entity):
+def asw_emitter(pack: PackList, ent: Entity):
     """Complicated thing, probably can't fully process here."""
     template = ent['template']
     if template and template != 'None':
-        yield 'resource/particletemplates/{}.ptm'.format(template)
+        pack.pack_file('resource/particletemplates/{}.ptm'.format(template))
 
     # TODO: Read the following keys from the file:
     # - "material"
@@ -295,14 +296,15 @@ def asw_emitter(ent: Entity):
     # - "collisionsound"
     # - "collisiondecal"
 
-    yield mat('materials/effects/yellowflare.vmt')
+    pack.pack_file('materials/effects/yellowflare.vmt', FileType.MATERIAL)
+
 
 @cls_func
-def asw_env_explosion(ent: Entity):
+def asw_env_explosion(pack: PackList, ent: Entity):
     """Handle the no-sound spawnflag."""
-    yield part("asw_env_explosion")
+    pack.pack_file("asw_env_explosion", FileType.PARTICLE_SYSTEM)
     if (conv_int(ent['spawnflags']) & 0x00000010) == 0:
-        yield sound('ASW_Explosion.Explosion_Default')
+        pack.pack_file('ASW_Explosion.Explosion_Default', FileType.GAME_SOUND)
 
 res('asw_parasite',
     mdl('models/aliens/parasite/parasite.mdl'),
@@ -370,10 +372,10 @@ res('env_bubbles', mat('materials/sprites/bubble.vmt'))
 
 
 @cls_func
-def env_break_shooter(ent: Entity):
+def env_break_shooter(pack: PackList, ent: Entity):
     """Special behaviour on the 'model' KV."""
     if conv_int(ent['modeltype']) == 1:  # MODELTYPE_MODEL
-        yield mdl(ent['model'])
+        pack.pack_file(ent['model'], FileType.MODEL)
     # Otherwise, a template name or a regular gib.
 
 
@@ -403,10 +405,11 @@ res('env_fire_trail',
     mat("materials/particle/particle_noisesphere.vmt"),
     )
 
+
 @cls_func
-def env_fire(ent: Entity):
+def env_fire(pack: PackList, ent: Entity) -> None:
     """Two types of fire, with different resources."""
-    yield sound('Fire.Plasma')
+    pack.pack_file('Fire.Plasma', FileType.GAME_SOUND)
     fire_type = conv_int(ent['firetype'])
     if fire_type == 0:  # Natural
         flags = conv_int(ent['spawnflags'])
@@ -415,9 +418,10 @@ def env_fire(ent: Entity):
         else:
             suffix = '_smoke'  # env_fire_medium_smoke
         for name in ['tiny', 'small', 'medium', 'large']:
-            yield part('env_fire_{}{}'.format(name, suffix))
+            pack.pack_file('env_fire_{}{}'.format(name, suffix), FileType.PARTICLE_SYSTEM)
     elif fire_type == 1:  # Plasma
-        yield from CLASS_RESOURCES['_plasma']
+        for args in CLASS_RESOURCES['_plasma']:
+            pack.pack_file(*args)
 
 res('env_firesensor')
 res('env_firesource')
@@ -443,29 +447,29 @@ res('env_gunfire')
 
 
 @cls_func
-def env_headcrabcanister(ent: Entity):
+def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
     """Check if it spawns in skybox or not, and precache the headcrab."""
     flags = conv_int(ent['spawnflags'])
     if flags & 0x1 == 0:  # !SF_NO_IMPACT_SOUND
-        yield sound('HeadcrabCanister.Explosion')
-        yield sound('HeadcrabCanister.IncomingSound')
-        yield sound('HeadcrabCanister.SkyboxExplosion')
+        pack.pack_soundscript('HeadcrabCanister.Explosion')
+        pack.pack_soundscript('HeadcrabCanister.IncomingSound')
+        pack.pack_soundscript('HeadcrabCanister.SkyboxExplosion')
     if flags & 0x2 == 0:  # !SF_NO_LAUNCH_SOUND
-        yield sound('HeadcrabCanister.LaunchSound')
+        pack.pack_soundscript('HeadcrabCanister.LaunchSound')
     if flags & 0x1000 == 0:  # !SF_START_IMPACTED
-        yield mat('materials/sprites/smoke.vmt')
+        pack.pack_file('materials/sprites/smoke.vmt', FileType.MATERIAL)
 
     if flags & 0x80000 == 0:  # !SF_NO_IMPACT_EFFECTS
-        yield mat('particle/particle_noisesphere')  # AR2 explosion
+        pack.pack_file('particle/particle_noisesphere', FileType.MATERIAL)  # AR2 explosion
 
     # All three could be used, depending on exactly where the ent is and other
     # stuff we can't easily check.
-    yield mdl('models/props_combine/headcrabcannister01a.mdl')
-    yield mdl('models/props_combine/headcrabcannister01b.mdl')
-    yield mdl('models/props_combine/headcrabcannister01a_skybox.mdl')
+    pack.pack_file('models/props_combine/headcrabcannister01a.mdl', FileType.MODEL)
+    pack.pack_file('models/props_combine/headcrabcannister01b.mdl', FileType.MODEL)
+    pack.pack_file('models/props_combine/headcrabcannister01a_skybox.mdl', FileType.MODEL)
     
-    yield sound('HeadcrabCanister.AfterLanding')
-    yield sound('HeadcrabCanister.Open')
+    pack.pack_soundscript('HeadcrabCanister.AfterLanding')
+    pack.pack_soundscript('HeadcrabCanister.Open')
     # Also precache the appropriate headcrab's resources.
     try:
         headcrab = (
@@ -476,7 +480,8 @@ def env_headcrabcanister(ent: Entity):
     except IndexError:
         pass
     else:
-        yield from CLASS_RESOURCES[headcrab]
+        for args in CLASS_RESOURCES[headcrab]:
+            pack.pack_file(*args)
 
 
 res('env_laser')
@@ -512,9 +517,9 @@ res('env_rotorwash_emitter',
 
 
 @cls_func
-def env_rotorshooter(ent: Entity):
+def env_rotorshooter(pack: PackList, ent: Entity):
     """Inherits from env_shooter, so it just does that."""
-    env_shooter(ent)
+    env_shooter(pack, ent)
 
 res('env_screeneffect',
     mat('materials/effects/stun.vmt'),
@@ -523,23 +528,25 @@ res('env_screeneffect',
 
 
 @cls_func
-def env_shooter(ent: Entity):
+def env_shooter(pack: PackList, ent: Entity):
     """A hardcoded array of sounds to play."""
     try:
-        yield (
+        snd_name = (
             "Breakable.MatGlass", 
             "Breakable.MatWood", 
             "Breakable.MatMetal", 
             "Breakable.MatFlesh", 
             "Breakable.MatConcrete",
         )[conv_int(ent['spawnflags'])]
+        pack.pack_soundscript(snd_name)
     except IndexError:
         pass
+
     # Valve does this same check.
     if ent['shootmodel'].casefold().endswith('.vmt'):
-        yield mat(ent['shootmodel'])
+        pack.pack_file(ent['shootmodel'], FileType.MATERIAL)
     else:
-        yield mdl(ent['shootmodel'])
+        pack.pack_file(ent['shootmodel'], FileType.MODEL)
 
 
 res('env_spark',
@@ -602,21 +609,28 @@ res('filter_tf_player_can_cap')
 
 
 @cls_func
-def func_breakable_surf(ent: Entity):
+def func_breakable_surf(pack: PackList, ent: Entity):
     """Additional materials required for func_breakable_surf."""
-    yield 'models/brokenglass_piece.mdl'
+    pack.pack_file('models/brokenglass_piece.mdl', FileType.MODEL)
 
     surf_type = conv_int(ent['surfacetype'])
+
     if surf_type == 1:  # Tile
-        for num in '123':
-            for letter in 'abcd':
-                yield mat('materials/models/brokentile/tilebroken_0{}{}.vmt'.format(num, letter))
+        mat_type = 'tile'
     elif surf_type == 0:  # Glass
-        yield mat('materials/models/brokenglass/glassbroken_solid.vmt')
-        for num in '123':
-            for letter in 'abcd':
-                yield mat('materials/models/brokenglass/'
-                          'glassbroken_0{}{}.vmt'.format(num, letter))
+        mat_type = 'glass'
+        pack.pack_file('materials/models/brokenglass/glassbroken_solid.vmt', FileType.MATERIAL)
+    else:
+        # Unknown
+        return
+
+    for num in '123':
+        for letter in 'abcd':
+            pack.pack_file(
+                'materials/models/broken{0}/'
+                '{0}broken_0{1}{2}.vmt'.format(mat_type, num, letter),
+                FileType.MATERIAL,
+            )
 
 res('func_dust',
     'materials/particle/sparkles.vmt',
@@ -701,7 +715,7 @@ res('item_suitcharger',
 
 
 @cls_func
-def item_teamflag(ent: Entity) -> Iterator[str]:
+def item_teamflag(pack: PackList, ent: Entity) -> None:
     """This item has several special team-specific options."""
     for kvalue, prefix in [
         ('flag_icon', 'materials/vgui/'),
@@ -709,9 +723,9 @@ def item_teamflag(ent: Entity) -> Iterator[str]:
     ]:
         value = prefix + ent[kvalue]
         if value != prefix:
-            yield value + '.vmt'
-            yield value + '_red.vmt'
-            yield value + '_blue.vmt'
+            pack.pack_file(value + '.vmt', FileType.MATERIAL)
+            pack.pack_file(value + '_red.vmt', FileType.MATERIAL)
+            pack.pack_file(value + '_blue.vmt', FileType.MATERIAL)
 
 res('npc_barnacle',
     mdl('models/barnacle.mdl'),
@@ -800,7 +814,7 @@ res('npc_helicopter',
 
 
 @cls_func
-def move_rope(ent: Entity):
+def move_rope(pack: PackList, ent: Entity):
     """Implement move_rope and keyframe_rope resources."""
     old_shader_type = conv_int(ent['RopeShader'])
     if old_shader_type == 0:
@@ -931,14 +945,15 @@ res('spark_shower',
     )
 res('squadinsignia', "models/chefhat.mdl")  # Yeah.
 
+
 @cls_func
-def team_control_point(ent: Entity) -> Iterator[str]:
+def team_control_point(pack: PackList, ent: Entity) -> None:
     """Special '_locked' materials."""
     for kvalue in ['team_icon_0', 'team_icon_1', 'team_icon_2']:
         mat = ent[kvalue]
         if mat:
-            yield 'materials/{}.vmt'.format(mat)
-            yield 'materials/{}_locked.vmt'.format(mat)
+            pack.pack_file('materials/{}.vmt'.format(mat), FileType.MATERIAL)
+            pack.pack_file('materials/{}_locked.vmt'.format(mat), FileType.MATERIAL)
 
 res('trigger_active_weapon_detect')
 res('trigger_add_tf_player_condition')

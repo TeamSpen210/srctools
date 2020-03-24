@@ -76,9 +76,6 @@ EXT_TYPE = {
     if isinstance(filetype.value, str)
 }
 
-# noinspection PyProtectedMember
-from srctools._class_resources import CLASS_RESOURCES, ALT_NAMES
-
 
 def load_fgd() -> FGD:
     """Extract the local copy of FGD data.
@@ -627,11 +624,7 @@ class PackList:
             if callable(res):
                 # Different stuff is packed based on keyvalues, so call a function.
                 for ent in vmf.by_class[classname]:
-                    for file in res(ent):
-                        if isinstance(file, tuple):
-                            self.pack_file(*file)  # Specify the file type too.
-                        else:
-                            self.pack_file(file)
+                    res(self, ent)
             else:
                 # Basic dependencies, if they're the same for any copy of this ent.
                 for file, filetype in res:
@@ -863,3 +856,7 @@ class PackList:
             # Bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
                 self.pack_file(param_value, FileType.MATERIAL)
+
+
+# noinspection PyProtectedMember
+from srctools._class_resources import CLASS_RESOURCES, ALT_NAMES
