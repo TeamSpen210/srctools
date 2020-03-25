@@ -282,7 +282,10 @@ class VMF:
 
     def remove_brush(self, brush: 'Solid'):
         """Remove a world brush from this map."""
-        self.brushes.remove(brush)
+        try:
+            self.brushes.remove(brush)
+        except ValueError:
+            pass  # Already removed.
 
     def add_ent(self, item: 'Entity'):
         """Add an entity to the map.
@@ -299,9 +302,13 @@ class VMF:
         After this is called, the entity will no longer be exported.
         The object still exists, so it can be reused.
         """
-        self.entities.remove(item)
-        self.by_class[item['classname', None]].remove(item)
-        self.by_target[item['targetname', None]].remove(item)
+        try:
+            self.entities.remove(item)
+        except ValueError:
+            pass  # Already removed.
+
+        self.by_class[item['classname', None]].discard(item)
+        self.by_target[item['targetname', None]].discard(item)
 
         if item.id in self.ent_id:
             self.ent_id.remove(item.id)
