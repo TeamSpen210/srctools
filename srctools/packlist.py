@@ -706,6 +706,11 @@ class PackList:
         # Then remove blacklisted systems.
         allowed.difference_update(blacklist)
 
+        LOGGER.debug('Allowed filesystems:\n{}', '\n'.join([
+            ('+ ' if sys in allowed else '- ') + repr(sys) for sys, prefix in
+            self.fsys.systems
+        ]))
+
         with self.fsys:
             for file in self._files.values():
                 # Need to ensure / separators.
@@ -726,8 +731,11 @@ class PackList:
                     continue
 
                 if self.fsys.get_system(sys_file) in allowed:
+                    LOGGER.debug('ADD:  {}', fname)
                     with sys_file.open_bin() as f:
                         packed_files[fname.casefold()] = (fname, f.read())
+                else:
+                    LOGGER.debug('SKIP: {}', fname)
 
         LOGGER.info('Compressing packfile...')
         with io.BytesIO() as new_data:
