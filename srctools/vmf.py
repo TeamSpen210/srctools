@@ -12,7 +12,7 @@ from contextlib import suppress
 from typing import (
     Optional, Union, Any, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
-    Iterable, Iterator,
+    Iterable, Iterator, AbstractSet,
     NamedTuple,
 )
 
@@ -51,35 +51,70 @@ OUTPUT_SEP = chr(27)
 T = TypeVar('T')
 
 
-class IDMan(set):
-    """Allocate and manage a set of unique IDs."""
-    __slots__ = ()
+class IDMan(AbstractSet[int]):
+    """Allocate and manage a set of unique IDs.
 
-    def get_id(self, desired: int=-1) -> int:
+    This implements some of MutableSet, but the adding methods cannot
+    be used since the ID may need to change to ensure uniqueness.
+    """
+    def __init__(self, existing: Iterable[int] = ()):
+        """Initialise the ID manager."""
+        super().__init__()
+        self._used = set(existing)
+        # This is used to hint where we should start searching from.
+        # IDs from 1:search_pos must have been used already.
+        # search_pos and above may or may not have been used.
+
+        # The ID space is usually pretty fragmented, so we will tend to
+        # find blocks of unused IDs that we can instantly pass out.
+        self.search_pos = 1
+
+    def clear(self) -> None:
+        """Remove all IDs from the manager."""
+        self._used = set()
+        self.search_pos = 1
+
+    def get_id(self, desired: int = -1) -> int:
         """Get a valid ID."""
-
-        if desired == -1:
-            # Start with the lowest ID, and look upwards
-            desired = 1
-
-        if desired not in self:
+        if desired > 0 and desired not in self._used:
             # The desired ID is available!
-            self.add(desired)
+            self._used.add(desired)
             return desired
 
-        # Check every ID in order to find a valid one
-        for poss_id in itertools.count(start=1):
+        # Check every ID in order to find a valid one.
+        for poss_id in itertools.count(start=self.search_pos):
             if poss_id not in self:
-                self.add(poss_id)
+                self._used.add(poss_id)
+                self.search_pos = poss_id + 1
                 return poss_id
-        raise AssertionError("Count() never ends...")
+        raise AssertionError("get_id() should never end...")
+
+    def __len__(self) -> int:
+        return len(self._used)
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(self._used)
+
+    def __contains__(self, item: int) -> bool:
+        """Check if the given ID is registered."""
+        return item in self._used
+
+    def discard(self, element: int) -> None:
+        """Return the specified ID for others to use, or do nothing if already removed."""
+        self._used.discard(element)
+        if element < self.search_pos:
+            self.search_pos = element
+
+    def remove(self, element: int) -> None:
+        """Return the specified ID for others to use."""
+        self._used.remove(element)
+        if element < self.search_pos:
+            self.search_pos = element
 
 
 class NullIDMan(IDMan):
-    """An alternate Id manager which allows repeated IDs."""
-    __slots__ = ()
-
-    def get_id(self, desired=-1):
+    """An alternate ID manager which allows repeated IDs."""
+    def get_id(self, desired: int = -1) -> int:
         """Get a valid ID.
 
         If no desired one is passed, a unique one will be found.
@@ -89,7 +124,7 @@ class NullIDMan(IDMan):
         if desired == -1:
             return super().get_id()
         else:
-            self.add(desired)
+            self._used.add(desired)
             return desired
 
 
@@ -217,7 +252,7 @@ class VMF:
 
         If preserve_ids is False (default), various IDs will be changed to
         ensure they are unique when adding items to the VMF. If True they will
-        stay as default.
+        stay the same. New items will aquire a unique ID.
         """
         id_man = NullIDMan if preserve_ids else IDMan
         self.solid_id = id_man()  # All occupied solid ids
@@ -310,8 +345,7 @@ class VMF:
         self.by_class[item['classname', None]].discard(item)
         self.by_target[item['targetname', None]].discard(item)
 
-        if item.id in self.ent_id:
-            self.ent_id.remove(item.id)
+        self.ent_id.discard(item.id)
 
     def add_brushes(self, brushes: Iterable['Solid']):
         """Add multiple brushes to the map."""
@@ -1109,8 +1143,7 @@ class Solid:
 
     def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
-        if self.id in self.map.solid_id:
-            self.map.solid_id.remove(self.id)
+        self.map.solid_id.discard(self.id)
 
     def remove(self) -> None:
         """Remove this brush from the map."""
@@ -1321,7 +1354,11 @@ class Side:
             raise ValueError('Wrong number of solid planes in "' +
                              tree['plane', ''] +
                              '"')
-        planes = list(map(srctools.parse_vec_str, verts))
+        planes = [
+            srctools.parse_vec_str(verts[0]),
+            srctools.parse_vec_str(verts[1]),
+            srctools.parse_vec_str(verts[2]),
+        ]
 
         disp_tree = tree.find_key('dispinfo', [])
         if len(disp_tree) > 0:
@@ -1453,8 +1490,7 @@ class Side:
 
     def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
-        if self.id in self.map.face_id:
-            self.map.face_id.remove(self.id)
+        self.map.face_id.discard(self.id)
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Generate the highest and lowest points these planes form."""
@@ -1958,8 +1994,7 @@ class Entity:
 
     def __del__(self) -> None:
         """Forget this entity's ID when the object is destroyed."""
-        if self.id in self.map.ent_id:
-            self.map.ent_id.remove(self.id)
+        self.map.ent_id.discard(self.id)
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
@@ -2228,7 +2263,7 @@ class EntityGroup:
         editor_block = props.find_key('editor', [])
         return cls(
             vmf_file,
-            props['id'],
+            props.int('id', -1),
             vis_shown=editor_block.bool('visgroupshown', True),
             vis_auto_shown=editor_block.bool('visgroupsautoshown', True),
         )
