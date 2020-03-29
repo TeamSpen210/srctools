@@ -160,6 +160,7 @@ res('env_portal_laser',
     )
 
 res('env_projectedtexture')  # Texture handled by generic FGD parsing.
+res('env_ragdoll_boogie', sound('RagdollBoogie.Zap'))
 res('env_rotorwash_emitter',
     mat('materials/effects/splashwake3.vmt'),  # Water ripples
     mat('materials/effects/splash1.vmt'),  # Over water

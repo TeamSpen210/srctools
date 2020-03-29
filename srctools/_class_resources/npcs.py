@@ -1,6 +1,7 @@
 """NPC entities."""
 from srctools._class_resources import *
 
+
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity):
     """Antlions require different resources for the worker version."""
@@ -95,11 +96,59 @@ res('npc_barnacle',
     includes='npc_barnacle_tongue_tip',
     )
 res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
+res('npc_cscanner',
+    # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
+    # In episodic, npc_clawscanner is now available to force that specifically.
+    # TODO: Check the BSP name, pack shield in that case.
+    mdl("models/combine_scanner.mdl"),
+    mdl("models/gibs/scanner_gib01.mdl"),
+    mdl("models/gibs/scanner_gib02.mdl"),
+    mdl("models/gibs/scanner_gib02.mdl"),
+    mdl("models/gibs/scanner_gib04.mdl"),
+    mdl("models/gibs/scanner_gib05.mdl"),
+    mat("material/sprites/light_glow03.vmt"),
+    sound("NPC_CScanner.Shoot"),
+    sound("NPC_CScanner.Alert"),
+    sound("NPC_CScanner.Die"),
+    sound("NPC_CScanner.Combat"),
+    sound("NPC_CScanner.Idle"),
+    sound("NPC_CScanner.Pain"),
+    sound("NPC_CScanner.TakePhoto"),
+    sound("NPC_CScanner.AttackFlash"),
+    sound("NPC_CScanner.DiveBombFlyby"),
+    sound("NPC_CScanner.DiveBomb"),
+    sound("NPC_CScanner.DeployMine"),
+    sound("NPC_CScanner.FlyLoop"),
+    )
 res('npc_combine_cannon',
     mdl('models/combine_soldier.mdl'),
     mat('materials/effects/bluelaser1.vmt'),
     mat('materials/sprites/light_glow03.vmt'),
     sound('NPC_Combine_Cannon.FireBullet'),
+    )
+res('npc_clawscanner',
+    mdl("models/shield_scanner.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib2.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib3.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib4.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib5.mdl"),
+    mdl("models/gibs/Shield_Scanner_Gib6.mdl"),
+    mat("material/sprites/light_glow03.vmt"),
+
+    sound("NPC_SScanner.Shoot"),
+    sound("NPC_SScanner.Alert"),
+    sound("NPC_SScanner.Die"),
+    sound("NPC_SScanner.Combat"),
+    sound("NPC_SScanner.Idle"),
+    sound("NPC_SScanner.Pain"),
+    sound("NPC_SScanner.TakePhoto"),
+    sound("NPC_SScanner.AttackFlash"),
+    sound("NPC_SScanner.DiveBombFlyby"),
+    sound("NPC_SScanner.DiveBomb"),
+    sound("NPC_SScanner.DeployMine"),
+    sound("NPC_SScanner.FlyLoop"),
+    includes="combine_mine",
     )
 res('npc_zombie',
     mdl("models/zombie/classic.mdl"),
@@ -193,9 +242,8 @@ res('npc_headcrab_black',
     sound('NPC_HeadCrab.Gib'),
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
+    aliases='npc_headcrab_poison',
     )
-
-CLASS_RESOURCES['npc_headcrab_poison'] = CLASS_RESOURCES['npc_headcrab_black']  # Alias
 
 res('npc_headcrab_fast',
     mdl('models/headcrab.mdl'),
@@ -229,6 +277,34 @@ res('npc_rocket_turret',
     sound('NPC_FloorTurret.LockedBeep'),
     sound('NPC_FloorTurret.RocketFire'),
     includes='rocket_turret_projectile',
+    )
+res('npc_rollermine',
+    mdl("models/roller.mdl"),
+    mdl("models/roller_spikes.mdl"),
+    mat("materials/sprites/bluelight1.vmt"),
+    mat("materials/effects/rollerglow.vmt"),
+    mat("materials/sprites/rollermine_shock.vmt"),
+    mat("materials/sprites/rollermine_shock_yellow.vmt"),
+
+    sound("NPC_RollerMine.Taunt"),
+    sound("NPC_RollerMine.OpenSpikes"),
+    sound("NPC_RollerMine.Warn"),
+    sound("NPC_RollerMine.Shock"),
+    sound("NPC_RollerMine.ExplodeChirp"),
+    sound("NPC_RollerMine.Chirp"),
+    sound("NPC_RollerMine.ChirpRespond"),
+    sound("NPC_RollerMine.ExplodeChirpRespond"),
+    sound("NPC_RollerMine.JoltVehicle"),
+    sound("NPC_RollerMine.Tossed"),
+    sound("NPC_RollerMine.Hurt"),
+    sound("NPC_RollerMine.Roll"),
+    sound("NPC_RollerMine.RollWithSpikes"),
+    sound("NPC_RollerMine.Ping"),
+    sound("NPC_RollerMine.Held"),
+    sound("NPC_RollerMine.Reprogram"),
+
+    # TODO: Episodic only
+    sound("RagdollBoogie.Zap"),
     )
 
 res('npc_vehicledriver',

@@ -92,6 +92,11 @@ def part(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.PARTICLE)
 
+
+def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
+    """Add the resource matching the hardcoded set of sounds in button ents."""
+    pack.pack_soundscript('Buttons.snd{:d}'.format(conv_int(index)))
+
 # In alphabetical order:
 
 res('_firesmoke', *[
@@ -176,20 +181,20 @@ res('hunter_flechette',
     )
 
 res('info_constraint_anchor')
-
+res('lookdoorthinker')
 
 
 @cls_func
-def move_rope(pack: PackList, ent: Entity):
+def move_rope(pack: PackList, ent: Entity) -> None:
     """Implement move_rope and keyframe_rope resources."""
     old_shader_type = conv_int(ent['RopeShader'])
     if old_shader_type == 0:
-        yield 'materials/cable/cable.vmt'
+        pack.pack_file('materials/cable/cable.vmt', FileType.MATERIAL)
     elif old_shader_type == 1:
-        yield 'materials/cable/rope.vmt'
+        pack.pack_file('materials/cable/rope.vmt', FileType.MATERIAL)
     else:
-        yield 'materials/cable/chain.vmt'
-    yield 'materials/cable/rope_shadowdepth.vmt'
+        pack.pack_file('materials/cable/chain.vmt', FileType.MATERIAL)
+    pack.pack_file('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL)
 
 # These classes are identical.
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
@@ -211,7 +216,7 @@ res('point_hurt')
 res('point_prop_use_target')
 res('point_proximity_sensor')
 res('point_push')
-
+res('point_ragdollboogie', includes='env_ragdoll_boogie')
 res('point_spotlight',
     'materials/sprites/light_glow03.vmt',
     'materials/sprites/glow_test02.vmt',
@@ -243,12 +248,13 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )
-res('waterbullet', 'models/weapons/w_bullet.mdl')
+res('waterbullet', mdl('models/weapons/w_bullet.mdl'))
+res('window_pane', mdl('models/brokenglass_piece.mdl'))
 
 
 from srctools._class_resources import (
     ai_, asw_, env_, filters, func_,
-    item_, npcs, props, triggers
+    item_, logic, npcs, props, triggers,
 )
 # Now all of these have been done, apply 'includes' commands.
 _process_includes()

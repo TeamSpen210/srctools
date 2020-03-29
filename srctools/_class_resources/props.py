@@ -52,6 +52,16 @@ res('prop_monster_box',
     sound('DoSparkSmaller'),
     )
 
+res('prop_thumper',
+    mdl("models/props_combine/CombineThumper002.mdl"),
+    sound("coast.thumper_hit"),
+    sound("coast.thumper_ambient"),
+    sound("coast.thumper_dust"),
+    sound("coast.thumper_startup"),
+    sound("coast.thumper_shutdown"),
+    sound("coast.thumper_large_hit"),
+    )
+
 res('prop_under_button',
     mdl('models/props_underground/underground_testchamber_button.mdl'),
     sound('Portal.button_down'),
@@ -65,7 +75,7 @@ res('prop_wall_projector',
     mdl('models/props/wall_emitter.mdl'),
     sound('VFX.BridgeGlow'),
     sound('music.ctc_lbout'),
-    # sound('music.mapname_lbout')
+    # TODO: sound('music.map_name_here_lbout')
     sound('music.sp_all_maps_lbout'),
     part('projected_wall_impact'),
     )
