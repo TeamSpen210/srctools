@@ -39,15 +39,6 @@ class FileType(Enum):
 
     GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
     PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
-
-    # Assume these files are present even
-    # if we can't find them. (rt_ textures for example.)
-    # also don't bother looking for dependencies.
-    WHITELIST = auto_enum()
-    
-    # This file might be present - if it is pack it.
-    # If not it's not an error.
-    OPTIONAL = auto_enum()
     
     PARTICLE_FILE = 'pcf'  # Should be added to the manifest
     
@@ -93,17 +84,19 @@ class PackFile:
     
     data is raw data to pack directly, instead of from the filesystem.
     """
-    __slots__ = ['type', 'filename', 'data', '_analysed']
+    __slots__ = ['type', 'filename', 'data', '_analysed', 'optional']
     def __init__(
         self, 
         type: FileType,
         filename: str, 
-        data: bytes=None,
+        data: bytes = None,
+        optional: bool = False,
     ):
         self.type = type
         self.filename = filename
         self.data = data
-        # If we've checked for dependencies
+        self.optional = optional
+        # If we've checked for dependencies of this yet.
         self._analysed = False
 
     @property
@@ -171,6 +164,7 @@ class PackList:
         data_type: FileType=FileType.GENERIC,
         data: bytes=None,
         skinset: Set[int]=None,
+        optional: bool = False,
     ) -> None:
         """Queue the given file to be packed.
 
@@ -182,6 +176,8 @@ class PackList:
         If None (default), all skins may be used. Otherwise it is a set of
         skins. If all uses of a model restrict the skin, only those skins need
         to be packed.
+        If optional is set, this will be marked as optional so no errors occur
+        if it isn't in the filesystem.
         """
         filename = os.fspath(filename)
 
@@ -267,6 +263,10 @@ class PackList:
                 raise ValueError('"{}": two different data streams!'.format(filename))
             # else: we had an override, but asked to just pack now. That's fine.
 
+            # Override optional packing with required packing.
+            if not optional:
+                file.optional = False
+
             if file.type is data_type:
                 # Same, no problems - just packing on top.
                 return
@@ -275,8 +275,6 @@ class PackList:
                 file.type = data_type  # This is fine, we now know it has behaviour...
             elif data_type is FileType.GENERIC:
                 pass  # If we know it has behaviour already, that trumps generic.
-            elif data_type is FileType.WHITELIST:
-                file.type = data_type  # Blindly believe this.
             else:
                 raise ValueError('"{}": {} can\'t become a {}!'.format(
                     filename,
@@ -297,11 +295,7 @@ class PackList:
             if ext != '.txt':
                 raise ValueError('"{}" cannot be a soundscript!'.format(filename))
 
-        self._files[path] = PackFile(
-            data_type,
-            filename,
-            data,
-        )
+        self._files[path] = PackFile(data_type, filename, data, optional)
 
     def inject_file(self, data: bytes, folder: str, ext: str) -> str:
         """Inject a generated file into the map and return the full name.
@@ -555,6 +549,8 @@ class PackList:
             else:
                 skinset = None
 
+            value = ''  # type: str
+
             for key in set(ent.keys) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
@@ -726,7 +722,7 @@ class PackList:
                 try:
                     sys_file = self.fsys[file.filename]
                 except FileNotFoundError:
-                    if file.type is not FileType.OPTIONAL and not already_packed:
+                    if not file.optional and not already_packed:
                         LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                     continue
 
@@ -772,7 +768,7 @@ class PackList:
                             if not file.filename.endswith('.hdr.vtf'):
                                 hdr_tex = file.filename[:-3] + 'hdr.vtf'
                                 if hdr_tex in self.fsys:
-                                    self.pack_file(hdr_tex)
+                                    self.pack_file(hdr_tex, optional=True)
                     except Exception as exc:
                         # Skip errors in the file format - means we can't find the dependencies.
                         LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
@@ -788,7 +784,7 @@ class PackList:
             if component in self.fsys:
                 self.pack_file(component)
 
-        if file.virtual:
+        if file.data is not None:
             # We need to add that file onto the system, so it's loaded.
             virtual_system = VirtualFileSystem({
                 file.filename: file.data,
@@ -803,24 +799,25 @@ class PackList:
             try:
                 mdl = Model(self.fsys, self.fsys[file.filename])
             except FileNotFoundError:
-                LOGGER.warning('Can\'t find model "{}"!', file.filename)
+                if not file.optional:
+                    LOGGER.warning('Can\'t find model "{}"!', file.filename)
                 return
 
         for tex in mdl.iter_textures(self.skinsets.get(file.filename, None)):
-            self.pack_file(tex, FileType.MATERIAL)
+            self.pack_file(tex, FileType.MATERIAL, optional=file.optional)
 
-        for file in mdl.included_models:
-            self.pack_file(file.filename, FileType.MODEL)
+        for mdl_file in mdl.included_models:
+            self.pack_file(mdl_file.filename, FileType.MODEL, optional=file.optional)
 
         for snd in mdl.find_sounds():
-            self.pack_file(snd, FileType.GAME_SOUND)
+            self.pack_soundscript(snd)
 
     def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
 
         parents = []  # type: List[str]
         try:
-            if file.virtual:
+            if file.data is not None:
                 # Read directly from the data we have.
                 mat = Material.parse(
                     io.TextIOWrapper(io.BytesIO(file.data), encoding='utf8'),
@@ -830,7 +827,8 @@ class PackList:
                 with self.fsys, self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
         except FileNotFoundError:
-            LOGGER.warning('File "{}" does not exist!', file.filename)
+            if not file.optional:
+                LOGGER.warning('File "{}" does not exist!', file.filename)
             return
         except TokenSyntaxError as exc:
             LOGGER.warning(
@@ -852,7 +850,7 @@ class PackList:
             return
 
         for vmt in parents:
-            self.pack_file(vmt, FileType.MATERIAL)
+            self.pack_file(vmt, FileType.MATERIAL, optional=file.optional)
 
         for param_name, param_type, param_value in mat:
             param_value = param_value.casefold()
@@ -860,10 +858,10 @@ class PackList:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
                     continue
-                self.pack_file(param_value, FileType.TEXTURE)
-            # Bottommaterial for water brushes mainly.
+                self.pack_file(param_value, FileType.TEXTURE, optional=file.optional)
+            # $bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
-                self.pack_file(param_value, FileType.MATERIAL)
+                self.pack_file(param_value, FileType.MATERIAL, optional=file.optional)
 
 
 # noinspection PyProtectedMember
