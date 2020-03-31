@@ -63,7 +63,10 @@ def _process_includes() -> None:
                 resources = CLASS_RESOURCES[cls] = list(resources)
             for inc_cls in includes[:]:
                 if inc_cls not in INCLUDES:
-                    resources.extend(CLASS_RESOURCES[inc_cls])
+                    try:
+                        resources.extend(CLASS_RESOURCES[inc_cls])
+                    except KeyError:
+                        raise ValueError('{} included by {}!'.format(inc_cls, cls)) from None
                     includes.remove(inc_cls)
                     has_changed = True
             if not includes:
@@ -91,6 +94,15 @@ def sound(path: str) -> Tuple[str, FileType]:
 def part(path: str) -> Tuple[str, FileType]:
     """Convienence function."""
     return (path, FileType.PARTICLE)
+
+
+def pack_ent_class(pack: PackList, clsname: str) -> None:
+    """Call to pack another entity class."""
+    reslist = CLASS_RESOURCES[clsname]
+    if callable(reslist):
+        raise ValueError("Can't pack \"{}\", has a custom function!".format(clsname))
+    for fname, ftype in reslist:
+        pack.pack_file(fname, ftype)
 
 
 def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
@@ -138,7 +150,10 @@ res('combine_mine',
 res('commentary_auto')
 res('commentary_dummy')
 res('commentary_zombie_spawner')
-
+res('crossbow_bolt',
+    mdl('models/crossbow_bolt.mdl'),
+    mat('materials/sprites/light_glow02_noz.vmt'),
+    )
 res('ent_watery_leech', mdl("models/leech.mdl"))
 
 res('event_queue_saveload_proxy')
@@ -147,6 +162,9 @@ res('event_queue_saveload_proxy')
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),
     mdl('models/germanygibs.mdl'),
+    )
+res('grenade_ar2',  # Actually the SMG's grenade.
+    mdl("models/Weapons/ar2_grenade.mdl"),
     )
 res('grenade_helicopter',  # Bomb dropped by npc_helicopter
     mdl("models/combine_helicopter/helicopter_bomb01.mdl"),
@@ -182,6 +200,7 @@ res('hunter_flechette',
 
 res('info_constraint_anchor')
 res('lookdoorthinker')
+res('sparktrail', sound('DoSpark'))
 
 
 @cls_func
@@ -201,9 +220,15 @@ CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
 ALT_NAMES['keyframe_rope'] = 'move_rope'
 
 res('phys_bone_follower')
+res('physics_cannister')  # All in KVs.
 res('physics_entity_solver')
 res('physics_npc_solver')
 
+res('point_commentary_node',
+    mdl('models/extras/info_speech.mdl'),
+    includes='point_commentary_viewpoint',
+    )
+res('point_commentary_viewpoint', mat('materials/sprites/redglow1.vmt'))
 res('point_energy_ball_launcher',
     includes='prop_energy_ball',
     )
@@ -227,6 +252,11 @@ res('rocket_turret_projectile',
     mdl('models/props_bts/rocket.mdl'),
     mat('materials/decals/scorchfade.vmt'),
     sound('NPC_FloorTurret.RocketFlyLoop'),
+    )
+res('rpg_missile',
+    mdl("models/weapons/w_missile.mdl"),
+    mdl("models/weapons/w_missile_launch.mdl"),
+    mdl("models/weapons/w_missile_closed.mdl"),
     )
 res('spark_shower',
     mat('materials/sprites/glow01.vmt'),
@@ -255,6 +285,7 @@ res('window_pane', mdl('models/brokenglass_piece.mdl'))
 from srctools._class_resources import (
     ai_, asw_, env_, filters, func_,
     item_, logic, npcs, props, triggers,
+    weapons,
 )
 # Now all of these have been done, apply 'includes' commands.
 _process_includes()

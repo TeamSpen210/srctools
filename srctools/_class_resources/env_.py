@@ -37,6 +37,7 @@ res('env_credits',
     )
 res('env_detail_controller')
 res('env_dof_controller')
+res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
 res('env_embers', mat('materials/particle/fire.vmt'))
 
 res('env_dustpuff',

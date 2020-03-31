@@ -12,8 +12,7 @@ def npc_antlion(pack: PackList, ent: Entity):
         pack.pack_file("antlion_gib_02", FileType.PARTICLE)
         pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
 
-        for fname, ftype in CLASS_RESOURCES['grenade_spit']:
-            pack.pack_file(fname, ftype)
+        pack_ent_class(pack, 'grenade_spit')
     else:
         pack.pack_file("models/antlion.mdl", FileType.MODEL)
         pack.pack_file("blood_impact_antlion_01")
@@ -120,6 +119,71 @@ res('npc_cscanner',
     sound("NPC_CScanner.DeployMine"),
     sound("NPC_CScanner.FlyLoop"),
     )
+
+CIT_HEADS = [
+    "male_01.mdl",
+    "male_02.mdl",
+    "female_01.mdl",
+    "male_03.mdl",
+    "female_02.mdl",
+    "male_04.mdl",
+    "female_03.mdl",
+    "male_05.mdl",
+    "female_04.mdl",
+    "male_06.mdl",
+    "female_06.mdl",
+    "male_07.mdl",
+    "female_07.mdl",
+    "male_08.mdl",
+    "male_09.mdl",
+]
+
+
+@cls_func
+def npc_citizen(pack: PackList, ent: Entity) -> None:
+    """Cizizens have a complex set of precaching rules."""
+    if ent['targetname'] == 'matt':
+        # Special crowbar.
+        pack.pack_file("models/props_canal/mattpipe.mdl", FileType.MODEL)
+
+    pack.pack_soundscript("NPC_Citizen.FootstepLeft")
+    pack.pack_soundscript("NPC_Citizen.FootstepRight")
+    pack.pack_soundscript("NPC_Citizen.Die")
+
+    cit_type = conv_int(ent['citizentype'])
+
+    if cit_type == 0:  # Default
+        # TODO: Pick via mapname:
+        # { "trainstation",	CT_DOWNTRODDEN	},
+        # { "canals",		CT_REFUGEE		},
+        # { "town",			CT_REFUGEE		},
+        # { "coast",		CT_REFUGEE		},
+        # { "prison",		CT_DOWNTRODDEN	},
+        # { "c17",			CT_REBEL		},
+        # { "citadel",		CT_DOWNTRODDEN	},
+        for head in CIT_HEADS:
+            pack.pack_file('models/humans/group01/' + head, FileType.MODEL)
+            pack.pack_file('models/humans/group02/' + head, FileType.MODEL)
+            pack.pack_file('models/humans/group03/' + head, FileType.MODEL)
+            pack.pack_file('models/humans/group03m/' + head, FileType.MODEL)
+        return
+    elif cit_type == 1:  # Downtrodden
+        folder = 'group01'
+    elif cit_type == 2:  # Refugee
+        folder = 'group02'
+    elif cit_type == 3:  # Rebel
+        folder = 'group03'
+        # The rebels have an additional set of models.
+        for head in CIT_HEADS:
+            pack.pack_file('models/humans/group03m/' + head, FileType.MODEL)
+    elif cit_type == 4:  # Use model in KVs directly.
+        return
+    else:  # Invalid type?
+        return
+
+    for head in CIT_HEADS:
+        pack.pack_file('models/humans/{}/{}'.format(folder, head), FileType.MODEL)
+
 res('npc_combine_cannon',
     mdl('models/combine_soldier.mdl'),
     mat('materials/effects/bluelaser1.vmt'),
@@ -149,6 +213,16 @@ res('npc_clawscanner',
     sound("NPC_SScanner.DeployMine"),
     sound("NPC_SScanner.FlyLoop"),
     includes="combine_mine",
+    )
+res('npc_grenade_bugbait',
+    mdl("models/weapons/w_bugbait.mdl"),
+    sound("GrenadeBugBait.Splat"),
+    )
+res('npc_grenade_frag',
+    mdl("models/Weapons/w_grenade.mdl"),
+    mat('materials/sprites/redglow1.vmt'),
+    mat('materials/sprites/bluelaser1.vmt'),
+    sound("Grenade.Blip"),
     )
 res('npc_zombie',
     mdl("models/zombie/classic.mdl"),

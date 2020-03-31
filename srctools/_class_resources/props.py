@@ -5,6 +5,20 @@ from srctools._class_resources import *
 res('prop_floor_button')  # Model set in keyvalues.
 res('prop_floor_ball_button', mdl('models/props/ball_button.mdl'))
 res('prop_floor_cube_button', mdl('models/props/box_socket.mdl'))
+res('prop_combine_ball',
+    mat("materials/sprites/lgtning.vmt"),
+    sound("NPC_CombineBall.Launch"),
+    sound("NPC_CombineBall.KillImpact"),
+    sound("NPC_CombineBall.HoldingInPhysCannon"),
+    # TODO: Episodic version, and HL2-only version.
+    sound("NPC_CombineBall_Episodic.Explosion"),
+    sound("NPC_CombineBall_Episodic.WhizFlyby"),
+    sound("NPC_CombineBall_Episodic.Impact"),
+    # TODO: HL2-only:
+    sound("NPC_CombineBall.Explosion"),
+    sound("NPC_CombineBall.WhizFlyby"),
+    sound("NPC_CombineBall.Impact"),
+    )
 res('prop_button',
     mdl('models/props/switch001.mdl'),
     sound('Portal.button_down'),
