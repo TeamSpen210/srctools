@@ -141,6 +141,9 @@ class PackList:
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
 
+        # Cache of the models used for breakable chunks.
+        self._break_chunks = {}  # type: Optional[Dict[str, List[str]]]
+
         # For each model, defines the skins the model uses. None means at least
         # one use is unknown, so all skins could be used.
         self.skinsets = {}  # type: Dict[str, Optional[Set[int]]]
@@ -359,6 +362,32 @@ class PackList:
 
         for raw_file in sound:
             self.pack_file('sound/' + raw_file)
+
+    def pack_breakable_chunk(self, chunkname: str) -> None:
+        """Pack the generic gib model for the given chunk name."""
+        if self._break_chunks is None:
+            # Need to load the file.
+            self.pack_file('scripts/propdata.txt')
+            try:
+                propdata = self.fsys['scripts/propdata.txt']
+            except FileNotFoundError:
+                LOGGER.warning('No scripts/propdata.txt for breakable chunks!')
+                return
+            with propdata.open_str() as f:
+                props = Property.parse(f, 'scripts/propdata.txt', allow_escapes=False)
+            self._break_chunks = {}
+            for chunk_prop in props.find_children('BreakableModels'):
+                self._break_chunks[chunk_prop.name] = [
+                    prop.real_name for prop in chunk_prop
+                ]
+        try:
+            mdl_list = self._break_chunks[chunkname.casefold()]
+        except KeyError:
+            LOGGER.warning('Unknown gib chunks type "{}"!', chunkname)
+            return
+        for mdl in mdl_list:
+            self.pack_file(mdl, FileType.MODEL)
+
 
     def load_soundscript(
         self,
