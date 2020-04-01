@@ -26,7 +26,11 @@ res('prop_button',
     sound('Portal.button_locked'),
     sound('Portal.room1_TickTock'),
     )
-
+res('prop_dynamic',
+    sound("Metal.SawbladeStick"),
+    sound("PropaneTank.Burst"),
+    aliases='dynamic_prop',
+    )
 res('prop_energy_ball',
     mdl('models/effects/combineball.mdl'),
     mat('materials/effects/eball_finite_life.vmt'),
@@ -93,3 +97,4 @@ res('prop_wall_projector',
     sound('music.sp_all_maps_lbout'),
     part('projected_wall_impact'),
     )
+res('prop_ragdoll', aliases='physics_prop_ragdoll')

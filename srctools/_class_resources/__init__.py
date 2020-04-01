@@ -127,6 +127,7 @@ res('aiscripted_schedule')
 
 res('ambient_generic')  # Sound is a keyvalue
 res('ambient_music')
+res('apc_missile', includes='rpg_missile')  # Inherits from this.
 
 # The actual explosion itself.
 res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
@@ -154,10 +155,16 @@ res('crossbow_bolt',
     mdl('models/crossbow_bolt.mdl'),
     mat('materials/sprites/light_glow02_noz.vmt'),
     )
+res('cycler')
+res('cycler_blender')
+res('cycler_flex')
+res('cycler_weapon')
+res('cycler_wreckage')
 res('ent_watery_leech', mdl("models/leech.mdl"))
 
 res('event_queue_saveload_proxy')
-
+res('fish')
+res('floorturret_tipcontroller')
 
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),
@@ -166,6 +173,12 @@ res('gibshooter',
 res('grenade_ar2',  # Actually the SMG's grenade.
     mdl("models/Weapons/ar2_grenade.mdl"),
     )
+res('grenade_beam',
+    mdl('Models/weapons/flare.mdl'),  # Not visible, but loaded.
+    mat('materials/sprites/laser.vmt'),
+    sound("GrenadeBeam.HitSound"),
+    )
+res('grenade_beam_chaser')  # The back part of the glow following grenades.
 res('grenade_helicopter',  # Bomb dropped by npc_helicopter
     mdl("models/combine_helicopter/helicopter_bomb01.mdl"),
     sound("ReallyLoudSpark"),
@@ -199,6 +212,9 @@ res('hunter_flechette',
     )
 
 res('info_constraint_anchor')
+res('info_camera_link')
+res('info_darknessmode_lightsource')
+res('info_lighting_relative')
 res('lookdoorthinker')
 res('sparktrail', sound('DoSpark'))
 
@@ -224,6 +240,7 @@ res('physics_cannister')  # All in KVs.
 res('physics_entity_solver')
 res('physics_npc_solver')
 
+res('point_advanced_finder')
 res('point_commentary_node',
     mdl('models/extras/info_speech.mdl'),
     includes='point_commentary_viewpoint',
@@ -232,10 +249,16 @@ res('point_commentary_viewpoint', mat('materials/sprites/redglow1.vmt'))
 res('point_energy_ball_launcher',
     includes='prop_energy_ball',
     )
+res('point_entity_finder')
+res('point_entity_replace')
+res('point_flesh_effect_target')
 res('point_futbol_shooter', 
     sound('World.Wheatley.fire'),
     includes='prop_exploding_futbol',
     )
+res('point_gamestats_counter')
+res('point_message')
+res('point_message_localized')
 res('point_hurt')
 
 res('point_prop_use_target')
@@ -246,6 +269,16 @@ res('point_spotlight',
     'materials/sprites/light_glow03.vmt',
     'materials/sprites/glow_test02.vmt',
 )
+res('point_teleport')
+res('point_template')
+res('point_tesla', sound("sprites/physbeam.vmt"))  # Default material
+res('point_velocitysensor')
+res('point_viewcontrol')
+res('point_viewcontrol_multiplayer')
+res('point_viewcontrol_node')
+res('point_viewcontrol_survivor')
+res('point_viewproxy')
+res('point_weaponstrip')
 
 res('rope_anchor', mat("materials/cable/cable.vmt"))
 res('rocket_turret_projectile',
@@ -258,6 +291,8 @@ res('rpg_missile',
     mdl("models/weapons/w_missile_launch.mdl"),
     mdl("models/weapons/w_missile_closed.mdl"),
     )
+res('soundent')
+res('spraycan', sound("SprayCan.Paint"))
 res('spark_shower',
     mat('materials/sprites/glow01.vmt'),
     mat('materials/effects/yellowflare.vmt'),

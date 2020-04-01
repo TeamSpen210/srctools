@@ -103,21 +103,26 @@ def func_breakable_surf(pack: PackList, ent: Entity):
                 FileType.MATERIAL,
             )
 
-res('func_dust',
-    'materials/particle/sparkles.vmt',
-    )
+res('func_conveyor')
+res('func_clip_vphysics')
+res('func_dust', mat('materials/particle/sparkles.vmt'))
+res('func_dustcloud', mat('materials/particle/sparkles.vmt'))
+res('func_dustmotes', mat('materials/particle/sparkles.vmt'))
+res('func_fish_pool')
 res('func_healthcharger',
     sound("WallHealth.Deny"),
     sound("WallHealth.Start"),
     sound("WallHealth.LoopingContinueCharge"),
     sound("WallHealth.Recharge"),
     )
+res('func_illusionary')
+res('func_instance_io_proxy')
 res('func_movelinear')
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
 res('func_portalled')
-
+res('func_rotating', sound('DoorSound.Null'))
 
 # Subclass of that.
 @cls_func
@@ -131,3 +136,4 @@ res('func_recharge',
     sound('SuitRecharge.Start'),
     sound('SuitRecharge.ChargingLoop'),
     )
+res('func_weight_button')

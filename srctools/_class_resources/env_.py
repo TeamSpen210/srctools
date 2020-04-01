@@ -39,6 +39,7 @@ res('env_detail_controller')
 res('env_dof_controller')
 res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
 res('env_embers', mat('materials/particle/fire.vmt'))
+res('env_explosion', mat('materials/sprites/zerogxplode.vmt'))
 
 res('env_dustpuff',
     mat("materials/particle/particle_smokegrenade.vmt"),
@@ -140,6 +141,7 @@ def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
 
 
 res('env_laser')
+res('env_laserdot', mat('materials/sprites/redglow1.vmt'))
 res('env_lightglow', mat('materials/sprites/light_glow02_add_noz.vmt'))
 res('env_lightrail_endpoint',
     mat('materials/effects/light_rail_endpoint.vmt'),
@@ -147,9 +149,22 @@ res('env_lightrail_endpoint',
     mat('materials/effects/combinemuzzle2.vmt'),
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
+res('env_player_surface_trigger')
 res('env_physexplosion')
 res('env_physics_blocker')
 res('env_physimpact')
+res('env_physwire')
+res('env_quadratic_beam')
+res('env_rockettrail',
+    mat('materials/effects/muzzleflash1.vmt'),
+    mat('materials/effects/muzzleflash2.vmt'),
+    mat('materials/effects/muzzleflash3.vmt'),
+    mat('materials/effects/muzzleflash4.vmt'),
+    mat('materials/sprites/flamelet1.vmt'),
+    mat('materials/sprites/flamelet2.vmt'),
+    mat('materials/sprites/flamelet3.vmt'),
+    mat('materials/sprites/flamelet4.vmt'),
+    )
 
 res('env_portal_laser',
     mdl('models/props/laser_emitter.mdl'),
@@ -210,6 +225,9 @@ res('env_spark',
     mat('materials/effects/yellowflare.vmt'),
     sound('DoSpark'),
     )
+res('env_sprite', aliases='env_glow')
+res('env_sprite_clientside')
+res('env_sprite_oriented')
 res('env_smoketrail',
     mat("materials/particle/particle_smokegrenade.vmt"),
     mat("materials/particle/particle_noisesphere.vmt"),

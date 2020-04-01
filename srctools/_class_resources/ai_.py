@@ -3,6 +3,7 @@ from srctools._class_resources import *
 
 
 res('ai_ally_manager')
+res('ai_ally_speech_manager')
 res('ai_battle_line')
 res('ai_changehintgroup')
 res('ai_changetarget')
@@ -20,6 +21,7 @@ res('ai_goal_operator')
 res('ai_goal_police')
 res('ai_goal_standoff')
 res('ai_npc_eventresponsesystem')
+res('ai_hint')
 res('ai_relationship')
 res('ai_relationship_classify')
 res('ai_script_conditions')

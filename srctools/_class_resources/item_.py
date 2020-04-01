@@ -40,9 +40,9 @@ res('item_rpg_round',
     mdl('models/weapons/w_missile_closed.mdl'),
     aliases='item_ml_grenade',
     )
-res('item_ar2_grenade',
-    mdl('models/items/ar2_grenade.mdl'),
-    aliases='item_ammo_smg1_grenade',
+res('item_ammo_smg1_grenade',
+    mdl('models/items/ar2_grenade.mdl'),  # Has nothing to do with AR2s...
+    aliases='item_ar2_grenade',
     )
 res('item_box_sniper_rounds', mdl('models/items/boxsniperrounds.mdl'))
 res('item_box_buckshot', mdl('models/items/boxbuckshot.mdl'))
@@ -136,6 +136,11 @@ res('item_healthcharger',
     sound('WallHealth.LoopingContinueCharge'),
     sound('WallHealth.Recharge'),
     )
+res('item_sodacan',
+    mdl("models/can.mdl"),
+    sound("ItemSoda.Bounce")
+    )
+res('item_suit', mdl('models/items/hevsuit.mdl'))
 res('item_suitcharger',
     mdl('models/props_combine/suit_charger001.mdl'),
     sound('WallHealth.Deny'),

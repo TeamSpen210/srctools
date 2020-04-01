@@ -214,6 +214,25 @@ res('npc_clawscanner',
     sound("NPC_SScanner.FlyLoop"),
     includes="combine_mine",
     )
+res('npc_crow',
+    mdl("models/crow.mdl"),
+    sound("NPC_Crow.Hop"),
+    sound("NPC_Crow.Squawk"),
+    sound("NPC_Crow.Gib"),
+    sound("NPC_Crow.Idle"),
+    sound("NPC_Crow.Alert"),
+    sound("NPC_Crow.Die"),
+    sound("NPC_Crow.Pain"),
+    sound("NPC_Crow.Flap"),
+    )
+res('npc_dog',
+    mdl("models/dog.mdl"),
+    sound("Weapon_PhysCannon.Launch"),
+    mat("materials/sprites/orangelight1.vmt"),
+    mat("materials/sprites/physcannon_bluelight2.vmt"),
+    mat("materials/sprites/glow04_noz.vmt"),
+    )
+res('npc_eli', mdl("models/eli.mdl"))
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
@@ -224,29 +243,6 @@ res('npc_grenade_frag',
     mat('materials/sprites/bluelaser1.vmt'),
     sound("Grenade.Blip"),
     )
-res('npc_zombie',
-    mdl("models/zombie/classic.mdl"),
-    mdl("models/zombie/classic_torso.mdl"),
-    mdl("models/zombie/classic_legs.mdl"),
-    sound("Zombie.FootstepRight"),
-    sound("Zombie.FootstepLeft"),
-    sound("Zombie.FootstepLeft"),
-    sound("Zombie.ScuffRight"),
-    sound("Zombie.ScuffLeft"),
-    sound("Zombie.AttackHit"),
-    sound("Zombie.AttackMiss"),
-    sound("Zombie.Pain"),
-    sound("Zombie.Die"),
-    sound("Zombie.Alert"),
-    sound("Zombie.Idle"),
-    sound("Zombie.Attack"),
-    sound("NPC_BaseZombie.Moan1"),
-    sound("NPC_BaseZombie.Moan2"),
-    sound("NPC_BaseZombie.Moan3"),
-    sound("NPC_BaseZombie.Moan4"),
-    )
-# Actually an alias, but we don't want to swap these.
-CLASS_RESOURCES['npc_zombie_torso'] = CLASS_RESOURCES['npc_zombie']
 
 res('npc_fastzombie',
     mdl("models/zombie/fast.mdl"),
@@ -281,6 +277,18 @@ res('npc_fastzombie',
     )
 # Actually an alias, but we don't want to swap these.
 CLASS_RESOURCES['npc_fastzombie_torso'] = CLASS_RESOURCES['npc_fastzombie']
+
+res('npc_fisherman',
+    mdl("models/lostcoast/fisherman/fisherman.mdl"),
+    sound("NPC_Fisherman.FootstepLeft"),
+    sound("NPC_Fisherman.FootstepRight"),
+    sound("NPC_Fisherman.Die"),
+
+    # TODO: Choreo scenes.
+    # choreo("scenes/Expressions/FishermanIdle.vcd"),
+    # choreo("scenes/Expressions/FishermanAlert.vcd"),
+    # choreo("scenes/Expressions/FishermanCombat.vcd"),
+    )
 
 res('npc_headcrab',
     mdl('models/headcrabclassic.mdl'),
@@ -342,6 +350,94 @@ res('npc_helicopter',
     mat("materials/sprites/redglow1.vmt"),
     includes='helicopter_chunk grenade_helicopter',
     )
+res('npc_helicoptersensor')
+res('npc_hunter',
+    mdl("models/hunter.mdl"),
+
+    sound("NPC_Hunter.Idle"),
+    sound("NPC_Hunter.Scan"),
+    sound("NPC_Hunter.Alert"),
+    sound("NPC_Hunter.Pain"),
+    sound("NPC_Hunter.PreCharge"),
+    sound("NPC_Hunter.Angry"),
+    sound("NPC_Hunter.Death"),
+    sound("NPC_Hunter.FireMinigun"),
+    sound("NPC_Hunter.Footstep"),
+    sound("NPC_Hunter.BackFootstep"),
+    sound("NPC_Hunter.FlechetteVolleyWarn"),
+    sound("NPC_Hunter.FlechetteShoot"),
+    sound("NPC_Hunter.FlechetteShootLoop"),
+    sound("NPC_Hunter.FlankAnnounce"),
+    sound("NPC_Hunter.MeleeAnnounce"),
+    sound("NPC_Hunter.MeleeHit"),
+    sound("NPC_Hunter.TackleAnnounce"),
+    sound("NPC_Hunter.TackleHit"),
+    sound("NPC_Hunter.ChargeHitEnemy"),
+    sound("NPC_Hunter.ChargeHitWorld"),
+    sound("NPC_Hunter.FoundEnemy"),
+    sound("NPC_Hunter.FoundEnemyAck"),
+    sound("NPC_Hunter.DefendStrider"),
+    sound("NPC_Hunter.HitByVehicle"),
+
+    part("hunter_muzzle_flash"),
+    part("blood_impact_synth_01"),
+    part("blood_impact_synth_01_arc_parent"),
+    part("blood_spurt_synth_01"),
+    part("blood_drip_synth_01"),
+
+    # TODO: Choreo scenes
+    # choreo("scenes/npc/hunter/hunter_scan.vcd"),
+    # choreo("scenes/npc/hunter/hunter_eyeclose.vcd"),
+    # choreo("scenes/npc/hunter/hunter_roar.vcd"),
+    # choreo("scenes/npc/hunter/hunter_pain.vcd"),
+    # choreo("scenes/npc/hunter/hunter_eyedarts_top.vcd"),
+    # choreo("scenes/npc/hunter/hunter_eyedarts_bottom.vcd"),
+
+    mat("materials/effects/water_highlight.vmt"),
+
+    includes="hunter_flechette sparktrail",
+    )
+res('npc_manhack',
+    mdl("models/manhack.mdl"),
+    mat("materials/sprites/glow1.vmt"),
+
+    sound("NPC_Manhack.Die"),
+    sound("NPC_Manhack.Bat"),
+    sound("NPC_Manhack.Grind"),
+    sound("NPC_Manhack.Slice"),
+    sound("NPC_Manhack.EngineNoise"),
+    sound("NPC_Manhack.Unpack"),
+    sound("NPC_Manhack.ChargeAnnounce"),
+    sound("NPC_Manhack.ChargeEnd"),
+    sound("NPC_Manhack.Stunned"),
+    sound("NPC_Manhack.EngineSound1"),
+    sound("NPC_Manhack.EngineSound2"),
+    sound("NPC_Manhack.BladeSound"),
+    )
+
+
+@cls_func
+def npc_metropolice(pack: PackList, ent: Entity) -> None:
+    """If a spawnflag is set, a cheap model is used."""
+    if conv_int(ent['spawnflags']) & 5:
+        pack.pack_file("models/police_cheaple.mdl", FileType.MODEL)
+    else:
+        pack.pack_file("models/police.mdl", FileType.MODEL)
+    pack.pack_soundscript("NPC_Metropolice.Shove")
+    pack.pack_soundscript("NPC_MetroPolice.WaterSpeech")
+    pack.pack_soundscript("NPC_MetroPolice.HidingSpeech")
+    # TODO: pack.pack_sentence_group("METROPOLICE")
+
+res('npc_pigeon',
+    mdl("models/pigeon.mdl"),
+    sound("NPC_Pigeon.Idle"),
+
+    sound("NPC_Crow.Hop"),
+    sound("NPC_Crow.Squawk"),
+    sound("NPC_Crow.Gib"),
+    sound("NPC_Crow.Pain"),
+    sound("NPC_Crow.Die"),
+    )
 
 res('npc_rocket_turret',
     mat('materials/effects/bluelaser1.vmt'),
@@ -380,7 +476,41 @@ res('npc_rollermine',
     # TODO: Episodic only
     sound("RagdollBoogie.Zap"),
     )
+res('npc_seagull',
+    mdl("models/seagull.mdl"),
+    sound("NPC_Seagull.Idle"),
+    sound("NPC_Seagull.Pain"),
+
+    sound("NPC_Crow.Hop"),
+    sound("NPC_Crow.Squawk"),
+    sound("NPC_Crow.Gib"),
+    sound("NPC_Crow.Flap"),
+    )
 
 res('npc_vehicledriver',
     'models/roller_vehicledriver.mdl',
     )
+
+res('npc_zombie',
+    mdl("models/zombie/classic.mdl"),
+    mdl("models/zombie/classic_torso.mdl"),
+    mdl("models/zombie/classic_legs.mdl"),
+    sound("Zombie.FootstepRight"),
+    sound("Zombie.FootstepLeft"),
+    sound("Zombie.FootstepLeft"),
+    sound("Zombie.ScuffRight"),
+    sound("Zombie.ScuffLeft"),
+    sound("Zombie.AttackHit"),
+    sound("Zombie.AttackMiss"),
+    sound("Zombie.Pain"),
+    sound("Zombie.Die"),
+    sound("Zombie.Alert"),
+    sound("Zombie.Idle"),
+    sound("Zombie.Attack"),
+    sound("NPC_BaseZombie.Moan1"),
+    sound("NPC_BaseZombie.Moan2"),
+    sound("NPC_BaseZombie.Moan3"),
+    sound("NPC_BaseZombie.Moan4"),
+    )
+# Actually an alias, but we don't want to swap these.
+CLASS_RESOURCES['npc_zombie_torso'] = CLASS_RESOURCES['npc_zombie']
