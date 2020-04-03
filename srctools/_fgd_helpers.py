@@ -181,20 +181,16 @@ class HelperSphere(Helper):
         return cls(r, g, b, size_key)
 
     def export(self) -> List[str]:
-        """Export the helper.
-
-        If the key is the default it is omitted.
-        """
+        """Export the helper."""
         if self.r != 255.0 or self.g != 255.0 or self.b != 255.0:
             return [
-                # Even if "radius", we need to pass the arg to allow color.
                 self.size_key,
                 '{:g} {:g} {:g}'.format(self.r, self.g, self.b)
             ]
-        elif self.size_key != 'radius':
-            return [self.size_key]
-        else:
-            return []
+        # Always explicitly pass radius. If we use the default value,
+        # Hammer doesn't display the "camera" button in options to set
+        # the value to the distance to the entity.
+        return [self.size_key]
 
 
 class HelperLine(Helper):
