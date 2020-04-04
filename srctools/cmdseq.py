@@ -5,7 +5,7 @@ These set the arguments to the compile tools.
 from struct import Struct, unpack, pack
 from enum import Enum
 from collections import OrderedDict
-from typing import List, Optional, Dict, IO, Sequence, TypeVar, Type, Union
+from typing import List, Optional, Dict, IO, Sequence, Union
 
 
 ST_COMMAND = Struct('ci260s260sii260sii')
@@ -52,31 +52,19 @@ def pad_string(text: str, length: int) -> bytes:
 
 class Command:
     """A command to run."""
-
-    exe = None  # type: Union[str, SpecialCommand]
-
     def __init__(
         self,
-        enabled: bool,
-        # If it's a special command like 'Copy File'
-        special: int,
-        executable: str,
+        executable: Union[str, SpecialCommand],
         args: str,
-        # If enabled, ensure file exists...
-        ensure_check: bool,
-        ensure_file: str,
-        use_proc_win: bool,
-        no_wait: bool
+        *,
+        enabled: bool = True,
+        ensure_file: Optional[str] = None,
+        use_proc_win: bool = True,
+        no_wait: bool = False,
     ) -> None:
-
-        if special:
-            self.exe = SpecialCommand(special)
-        else:
-            self.exe = executable
-
+        self.exe = executable
         self.enabled = enabled
         self.args = args
-        self.ensure_check = ensure_check
         self.ensure_file = ensure_file
         self.use_proc_win = use_proc_win
         self.no_wait = no_wait
@@ -94,15 +82,23 @@ class Command:
         use_proc_win: int,
         no_wait: int=0,
     ) -> 'Command':
+        """Parse the command from the structure in the file."""
+        if is_special:
+            exe = SpecialCommand(is_special)
+        else:
+            exe = strip_cstring(executable)
+        if ensure_check:
+            ensure = strip_cstring(ensure_file)
+        else:
+            ensure = None
+
         return cls(
-            bool(is_enabled),
-            is_special,
-            strip_cstring(executable),
+            exe,
             strip_cstring(args),
-            bool(ensure_check),
-            strip_cstring(ensure_file),
-            bool(use_proc_win),
-            bool(no_wait),
+            ensure_file=ensure,
+            use_proc_win=bool(use_proc_win),
+            no_wait=bool(no_wait),
+            enabled=bool(is_enabled),
         )
         
     def __bool__(self) -> bool:
@@ -119,7 +115,7 @@ def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     """
     header = file.read(len(SEQ_HEADER))
     if header != SEQ_HEADER:
-        raise ValueError('Wrong header!')
+        raise ValueError('Wrong header: ', header)
         
     [version] = unpack('f', file.read(4))
         
@@ -161,14 +157,22 @@ def write(sequences: Dict[str, Sequence[Command]], file: IO[bytes]) -> None:
             else:
                 special = 0
                 exe = cmd.exe
+
+            if cmd.ensure_file is not None:
+                ensure_file = pad_string(cmd.ensure_file, 260)
+                has_ensure_file = 1
+            else:
+                ensure_file = bytes(260)
+                has_ensure_file = 0
+
             file.write(ST_COMMAND.pack(
-                bytes(cmd.enabled),
+                bytes([cmd.enabled]),
                 special,
                 pad_string(exe, 260),
                 pad_string(cmd.args, 260),
-                True, # is_long_filename
-                cmd.ensure_check,
-                pad_string(cmd.ensure_file, 260),
+                True,  # is_long_filename
+                has_ensure_file,
+                ensure_file,
                 cmd.use_proc_win,
                 cmd.no_wait,
             ))
