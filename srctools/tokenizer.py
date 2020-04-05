@@ -153,7 +153,7 @@ class Tokenizer:
     ) -> None:
         # Catch passing direct bytes far in advance.
         if isinstance(data, bytes):
-            raise ValueError(
+            raise TypeError(
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )

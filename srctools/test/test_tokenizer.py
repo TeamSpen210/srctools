@@ -451,3 +451,9 @@ def test_unicode_error_wrapping(py_c_token):
     with pytest.raises(TokenSyntaxError) as exc_info:
         list(tok)
     assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
+
+
+def test_early_binary_arg(py_c_token):
+    """Test that passing bytes values is caught before looping."""
+    with pytest.raises(TypeError):
+        py_c_token(b'test')

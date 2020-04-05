@@ -116,7 +116,7 @@ cdef class Tokenizer:
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
-            raise ValueError(
+            raise TypeError(
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )

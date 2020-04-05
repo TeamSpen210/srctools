@@ -1421,11 +1421,11 @@ int __pyx_module_is_main_srctools___tokenizer = 0;
 
 /* Implementation of 'srctools._tokenizer' */
 static PyObject *__pyx_builtin_ImportError;
-static PyObject *__pyx_builtin_ValueError;
-static PyObject *__pyx_builtin_AttributeError;
 static PyObject *__pyx_builtin_TypeError;
+static PyObject *__pyx_builtin_AttributeError;
 static PyObject *__pyx_builtin_NotImplementedError;
 static PyObject *__pyx_builtin_UnicodeDecodeError;
+static PyObject *__pyx_builtin_ValueError;
 static PyObject *__pyx_builtin_id;
 static PyObject *__pyx_builtin_StopIteration;
 static const char __pyx_k_X[] = "X";
@@ -2053,7 +2053,7 @@ static int __pyx_pf_8srctools_10_tokenizer_9Tokenizer_4__init__(struct __pyx_obj
  *     ):
  *         # Early warning for this particular error.
  *         if isinstance(data, bytes) or isinstance(data, bytearray):             # <<<<<<<<<<<<<<
- *             raise ValueError(
+ *             raise TypeError(
  *                 'Cannot parse binary data! Decode to the desired encoding, '
  */
   __pyx_t_2 = PyBytes_Check(__pyx_v_data); 
@@ -2072,11 +2072,11 @@ static int __pyx_pf_8srctools_10_tokenizer_9Tokenizer_4__init__(struct __pyx_obj
     /* "srctools/_tokenizer.pyx":119
  *         # Early warning for this particular error.
  *         if isinstance(data, bytes) or isinstance(data, bytearray):
- *             raise ValueError(             # <<<<<<<<<<<<<<
+ *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 'Cannot parse binary data! Decode to the desired encoding, '
  *                 'or wrap in io.TextIOWrapper() to decode gradually.'
  */
-    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 119, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -2086,7 +2086,7 @@ static int __pyx_pf_8srctools_10_tokenizer_9Tokenizer_4__init__(struct __pyx_obj
  *     ):
  *         # Early warning for this particular error.
  *         if isinstance(data, bytes) or isinstance(data, bytearray):             # <<<<<<<<<<<<<<
- *             raise ValueError(
+ *             raise TypeError(
  *                 'Cannot parse binary data! Decode to the desired encoding, '
  */
   }
@@ -8734,11 +8734,11 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_ImportError = __Pyx_GetBuiltinName(__pyx_n_s_ImportError); if (!__pyx_builtin_ImportError) __PYX_ERR(0, 15, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 119, __pyx_L1_error)
   __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 149, __pyx_L1_error)
-  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 157, __pyx_L1_error)
   __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 174, __pyx_L1_error)
   __pyx_builtin_UnicodeDecodeError = __Pyx_GetBuiltinName(__pyx_n_s_UnicodeDecodeError); if (!__pyx_builtin_UnicodeDecodeError) __PYX_ERR(0, 240, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 246, __pyx_L1_error)
   __pyx_builtin_id = __Pyx_GetBuiltinName(__pyx_n_s_id); if (!__pyx_builtin_id) __PYX_ERR(0, 585, __pyx_L1_error)
   __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 598, __pyx_L1_error)
   return 0;
@@ -8753,7 +8753,7 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   /* "srctools/_tokenizer.pyx":119
  *         # Early warning for this particular error.
  *         if isinstance(data, bytes) or isinstance(data, bytearray):
- *             raise ValueError(             # <<<<<<<<<<<<<<
+ *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 'Cannot parse binary data! Decode to the desired encoding, '
  *                 'or wrap in io.TextIOWrapper() to decode gradually.'
  */
