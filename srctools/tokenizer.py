@@ -5,11 +5,9 @@ This is used internally for parsing files.
 from enum import Enum
 
 from typing import (
-    Union, Optional,
+    Union, Optional, Type, Any,
     Iterable, Iterator,
-    Tuple,
-    Type,
-    List,
+    Tuple, List,
 )
 
 try:
@@ -37,14 +35,14 @@ class TokenSyntaxError(Exception):
         self.file = file
         self.line_num = line
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
             self.mess,
             self.file,
             self.line_num,
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Generate the complete error message.
 
         This includes the line number and file, if available.
@@ -82,7 +80,7 @@ class Token(Enum):
     PLUS = 15
 
     @property
-    def has_value(self):
+    def has_value(self) -> bool:
         """If true, this type has an associated value."""
         return self.value in (1, 3, 10)
 
@@ -153,6 +151,7 @@ class Tokenizer:
         allow_escapes: bool=True,
         allow_star_comments: bool=False,
     ) -> None:
+        # Catch passing direct bytes far in advance.
         if isinstance(data, bytes):
             raise ValueError(
                 'Cannot parse binary data! Decode to the desired encoding, '
@@ -208,7 +207,7 @@ class Tokenizer:
             self.line_num,
         )
 
-    def __reduce__(self):
+    def __reduce__(self) -> Any:
         """Disallow pickling Tokenizers.
 
         The files themselves usually are not pickleable, or are very
@@ -229,24 +228,32 @@ class Tokenizer:
             except StopIteration:
                 # Out of characters
                 return None
+            except UnicodeDecodeError as exc:
+                raise self.error("Could not decode file!") from exc
+
+            # Specifically catch passing binary data.
             if isinstance(chunk, bytes):
                 raise ValueError('Cannot parse binary data!')
             if not isinstance(chunk, str):
                 raise ValueError("Data was not a string!")
+
             self.char_index = 0
 
             try:
                 return chunk[0]
             except IndexError:
                 # Skip empty chunks (shouldn't be there.)
-                for chunk in self.chunk_iter:
-                    if isinstance(chunk, bytes):
-                        raise ValueError('Cannot parse binary data!')
-                    if not isinstance(chunk, str):
-                        raise ValueError("Data was not a string!")
-                    if chunk:
-                        self.cur_chunk = chunk
-                        return chunk[0]
+                try:
+                    for chunk in self.chunk_iter:
+                        if isinstance(chunk, bytes):
+                            raise ValueError('Cannot parse binary data!')
+                        if not isinstance(chunk, str):
+                            raise ValueError("Data was not a string!")
+                        if chunk:
+                            self.cur_chunk = chunk
+                            return chunk[0]
+                except UnicodeDecodeError as exc:
+                    raise self.error("Could not decode file!") from exc
                 # Out of characters after empty chunks
                 return None
 
@@ -435,7 +442,7 @@ class Tokenizer:
         # Call ourselves until EOF is returned
         return iter(self, (Token.EOF, None))
 
-    def push_back(self, tok: Token, value: str=None):
+    def push_back(self, tok: Token, value: str=None) -> None:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
@@ -473,8 +480,7 @@ class Tokenizer:
         self._pushback = tok_and_val
         return tok_and_val
 
-
-    def skipping_newlines(self):
+    def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
         """Iterate over the tokens, skipping newlines."""
         while True:
             tok_and_val = tok, tok_value = self()
@@ -520,7 +526,6 @@ def escape_text(text: str) -> str:
         replace('\t', '\\t').
         replace('\n', '\\n')
     )
-
 
 
 # This is available as both C and Python versions, plus the unprefixed

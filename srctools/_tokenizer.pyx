@@ -235,7 +235,10 @@ cdef class Tokenizer:
             return self.cur_chunk[self.char_index]
 
         # Retrieve a chunk from the iterable.
-        chunk_obj = next(self.chunk_iter, None)
+        try:
+            chunk_obj = next(self.chunk_iter, None)
+        except UnicodeDecodeError as exc:
+            raise self._error("Could not decode file!") from exc
         if chunk_obj is None:
             return -1
 
@@ -254,7 +257,10 @@ cdef class Tokenizer:
         # Use manual next to avoid re-calling iter() here,
         # or using list/tuple optimisations.
         while True:
-            chunk_obj = next(self.chunk_iter, None)
+            try:
+                chunk_obj = next(self.chunk_iter, None)
+            except UnicodeDecodeError as exc:
+                raise self._error("Could not decode file!") from exc
             if chunk_obj is None:
                 # Out of characters after empty chunks
                 return -1

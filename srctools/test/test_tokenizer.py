@@ -436,3 +436,18 @@ Error occurred on line 45, with file "a file".'''
     assert err.line_num == 250
     assert str(err) == '''test message
 Error occurred on line 250.'''
+
+
+def test_unicode_error_wrapping(py_c_token):
+    """Test that Unicode errors are wrapped into TokenSyntaxError."""
+    def raises_unicode():
+        yield "line of_"
+        yield "text\n"
+        raise UnicodeDecodeError('utf8', bytes(100), 1, 2, 'reason')
+
+    tok = py_c_token(raises_unicode())
+    assert tok() == (Token.STRING, "line")
+    assert tok() == (Token.STRING, "of_text")
+    with pytest.raises(TokenSyntaxError) as exc_info:
+        list(tok)
+    assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
