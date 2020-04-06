@@ -275,12 +275,13 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename: str, is_bytes: bool=False) -> None:
+    def __init__(self, filename: str, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
         self.filename = filename
         self.dir = _os.path.dirname(filename)
+        self.encoding = encoding
         self._temp_name = None
         self.is_bytes = is_bytes
         self.temp = None
@@ -299,10 +300,10 @@ class AtomicWriter:
         for i in _itertools.count(start=1):
             self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
             try:
-                self.temp = open(
-                    self._temp_name,
-                    'xb' if self.is_bytes else 'xt',
-                )
+                if self.is_bytes:
+                    self.temp = open(self._temp_name, 'xb')
+                else:
+                    self.temp = open(self._temp_name, 'xt', encoding=self.encoding)
                 break
             except FileExistsError:
                 pass
@@ -319,7 +320,6 @@ class AtomicWriter:
         tback: TracebackType,
     ) -> bool:
         # Pass to tempfile, which also closes().
-        temp_path = self.temp.name
         self.temp.__exit__(exc_type, exc_value, tback)
         self.temp = None
         if exc_type is not None:
