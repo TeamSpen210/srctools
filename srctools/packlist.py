@@ -388,7 +388,6 @@ class PackList:
         for mdl in mdl_list:
             self.pack_file(mdl, FileType.MODEL)
 
-
     def load_soundscript(
         self,
         file: File,
@@ -402,8 +401,17 @@ class PackList:
 
         The sounds registered by this soundscript are returned.
         """
-        with file.sys, file.open_str() as f:
-            props = Property.parse(f, file.path, allow_escapes=False)
+        try:
+            with file.sys, file.open_str() as f:
+                props = Property.parse(f, file.path, allow_escapes=False)
+        except FileNotFoundError:
+            # It doesn't exist, complain and pretend it's empty.
+            LOGGER.warning('Soundscript "{}" does not exist!', file.path)
+            return ()
+        except KeyValError:
+            LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
+            return ()
+
         return self._parse_soundscript(props, file.path, always_include)
 
     def _parse_soundscript(
@@ -425,7 +433,11 @@ class PackList:
                 SoundScriptMode.UNKNOWN
             )
 
-        scripts = Sound.parse(props)
+        try:
+            scripts = Sound.parse(props)
+        except ValueError:
+            LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
+            return ()
 
         for name, sound in scripts.items():
             self.soundscripts[name] = path, [
@@ -485,7 +497,13 @@ class PackList:
                     cache_key = -1
                     cache_files = None
 
-                file = self.fsys[prop.value]
+                try:
+                    file = self.fsys[prop.value]
+                except FileNotFoundError:
+                    LOGGER.warning('Soundscript "{}" does not exist!', prop.value)
+                    # Don't write anything into the cache, so we check this
+                    # every time.
+                    continue
                 cur_key = file.cache_key()
 
                 if cache_key != cur_key or cache_key == -1:
