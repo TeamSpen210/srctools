@@ -1832,7 +1832,7 @@ class FGD:
         done = set()
         while todo:
             deferred = set()
-            for parent in todo:
+            for parent in sorted(todo):
                 # Special case the root, pretend that was written to the file.
                 if parent != 'auto':
                     visgroup = self.auto_visgroups[parent.casefold()]
