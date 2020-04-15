@@ -8,8 +8,8 @@ from collections import OrderedDict
 from typing import List, Optional, Dict, IO, Sequence, Union
 
 
-ST_COMMAND = Struct('ci260s260sii260sii')
-ST_COMMAND_PRE_V2 = Struct('ci260s260sii260si')
+ST_COMMAND = Struct('Bi260s260sii260sii')
+ST_COMMAND_PRE_V2 = Struct('Bi260s260sii260si')
 
 SEQ_HEADER = b'Worldcraft Command Sequences\r\n\x1a'
 
@@ -166,7 +166,7 @@ def write(sequences: Dict[str, Sequence[Command]], file: IO[bytes]) -> None:
                 has_ensure_file = 0
 
             file.write(ST_COMMAND.pack(
-                bytes([cmd.enabled]),
+                cmd.enabled,
                 special,
                 pad_string(exe, 260),
                 pad_string(cmd.args, 260),
