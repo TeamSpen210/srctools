@@ -134,6 +134,7 @@ res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
 res('assault_assaultpoint')
 res('assault_rallypoint')
 
+res('bullseye_strider_focus', includes='npc_bullseye')  # Unchanged subclass.
 
 res('combine_mine',
     mdl('models/props_combine/combine_mine01.mdl'),
@@ -166,6 +167,7 @@ res('event_queue_saveload_proxy')
 res('fish')
 res('floorturret_tipcontroller')
 
+res('gib')
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),
     mdl('models/germanygibs.mdl'),
@@ -214,8 +216,23 @@ res('hunter_flechette',
 res('info_constraint_anchor')
 res('info_camera_link')
 res('info_darknessmode_lightsource')
+res('info_hint')
+res('info_ladder_dismount')
 res('info_lighting_relative')
+res('info_mass_center')
+res('info_node')
+res('info_node_hint')
+res('info_node_air')
+res('info_node_air_hint')
+res('info_node_climb')
+res('info_null')
+res('info_overlay_accessor')
+res('info_target')
+res('info_target_gunshipcrash')
+res('info_target_helicopter_crash')
+
 res('lookdoorthinker')
+res('raggib')
 res('sparktrail', sound('DoSpark'))
 
 
@@ -310,6 +327,8 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
             pack.pack_file('materials/{}_locked.vmt'.format(mat), FileType.MATERIAL)
 
 
+res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
+res('test_proxytoggle')
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )

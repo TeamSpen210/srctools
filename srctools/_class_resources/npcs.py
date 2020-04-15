@@ -95,6 +95,7 @@ res('npc_barnacle',
     includes='npc_barnacle_tongue_tip',
     )
 res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
+res('npc_bullseye')
 res('npc_cscanner',
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
     # In episodic, npc_clawscanner is now available to force that specifically.

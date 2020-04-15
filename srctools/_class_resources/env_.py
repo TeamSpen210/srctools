@@ -149,6 +149,8 @@ res('env_lightrail_endpoint',
     mat('materials/effects/combinemuzzle2.vmt'),
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
+res('env_microphone')
+res('env_hudhint')
 res('env_player_surface_trigger')
 res('env_physexplosion')
 res('env_physics_blocker')
