@@ -48,6 +48,8 @@ class FileType(Enum):
     MATERIAL = 'vmt'
     
     TEXTURE = 'vtf'  # May want .hdr.vtf too.
+
+    CHOREO = 'vcd'  # Choreographed scenes.
     
     # Requires lookup of vtx, vvd, phy files too - in the model data.
     # also any skins used.

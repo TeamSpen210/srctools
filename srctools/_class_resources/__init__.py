@@ -96,6 +96,11 @@ def part(path: str) -> Tuple[str, FileType]:
     return (path, FileType.PARTICLE)
 
 
+def choreo(path: str) -> Tuple[str, FileType]:
+    """Convienence function."""
+    return (path, FileType.CHOREO)
+
+
 def pack_ent_class(pack: PackList, clsname: str) -> None:
     """Call to pack another entity class."""
     reslist = CLASS_RESOURCES[clsname]
