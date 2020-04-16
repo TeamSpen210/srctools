@@ -122,11 +122,20 @@ res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
 res('func_portalled')
+
+
+@cls_func
+def func_pushable(pack: PackList, ent: Entity) -> None:
+    """Subclass of func_breakable."""
+    func_breakable(pack, ent)
+
+
 res('func_rotating', sound('DoorSound.Null'))
 
 # Subclass of that.
 @cls_func
 def func_physbox(pack: PackList, ent: Entity) -> None:
+    """Subclass of func_breakable."""
     func_breakable(pack, ent)
 
 

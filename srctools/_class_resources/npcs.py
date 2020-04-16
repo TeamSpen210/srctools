@@ -2,6 +2,22 @@
 from srctools._class_resources import *
 
 
+res('npc_advisor',
+    mdl("models/advisor.mdl"),
+    mat("materials/sprites/lgtning.vmt"),
+    mat("materials/sprites/greenglow1.vmt"),
+    sound("NPC_Advisor.Blast"),
+    sound("NPC_Advisor.Gib"),
+    sound("NPC_Advisor.Idle"),
+    sound("NPC_Advisor.Alert"),
+    sound("NPC_Advisor.Die"),
+    sound("NPC_Advisor.Pain"),
+    sound("NPC_Advisor.ObjectChargeUp"),
+    part("Advisor_Psychic_Beam"),
+    part("advisor_object_charge"),
+    )
+
+
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity):
     """Antlions require different resources for the worker version."""
@@ -95,6 +111,16 @@ res('npc_barnacle',
     includes='npc_barnacle_tongue_tip',
     )
 res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
+res('npc_barney',
+    mdl("models/barney.mdl"),
+    sound("NPC_Barney.FootstepLeft"),
+    sound("NPC_Barney.FootstepRight"),
+    sound("NPC_Barney.Die"),
+    choreo("scenes/Expressions/BarneyIdle.vcd"),
+    choreo("scenes/Expressions/BarneyAlert.vcd"),
+    choreo("scenes/Expressions/BarneyCombat.vcd"),
+    )
+res('npc_breen', mdl("models/breen.mdl"))
 res('npc_bullseye')
 res('npc_cscanner',
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
@@ -184,6 +210,78 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
 
     for head in CIT_HEADS:
         pack.pack_file('models/humans/{}/{}'.format(folder, head), FileType.MODEL)
+
+res('npc_combine_camera',
+    mdl("models/combine_camera/combine_camera.mdl"),
+    mat("materials/sprites/glow1.vmt"),
+    mat("materials/sprites/light_glow03.vmt"),
+    sound("NPC_CombineCamera.Move"),
+    sound("NPC_CombineCamera.BecomeIdle"),
+    sound("NPC_CombineCamera.Active"),
+    sound("NPC_CombineCamera.Click"),
+    sound("NPC_CombineCamera.Ping"),
+    sound("NPC_CombineCamera.Angry"),
+    sound("NPC_CombineCamera.Die"),
+    )
+
+
+@cls_func
+def npc_combinedropship(pack: PackList, ent: Entity) -> None:
+    """The Combine Dropship may spawn with a variety of cargo types."""
+    pack.pack_file("models/combine_dropship.mdl", FileType.MODEL)
+    pack.pack_soundscript("NPC_CombineDropship.RotorLoop")
+    pack.pack_soundscript("NPC_CombineDropship.FireLoop")
+    pack.pack_soundscript("NPC_CombineDropship.NearRotorLoop")
+    pack.pack_soundscript("NPC_CombineDropship.OnGroundRotorLoop")
+    pack.pack_soundscript("NPC_CombineDropship.DescendingWarningLoop")
+    pack.pack_soundscript("NPC_CombineDropship.NearRotorLoop")
+
+    cargo_type = conv_int(ent['cratetype'])
+    if cargo_type == -3:  # Spawns a prop_dynamic Jeep
+        pack.pack_file("models/buggy.mdl", FileType.MODEL)
+    elif cargo_type == -1:  # Strider
+        pack_ent_class(pack, 'npc_strider')
+    elif cargo_type == 1:  # Soldiers in a container.
+        pack_ent_class(pack, 'prop_dropship_container')
+    # Other valid values:
+    # -2 = Grabs the APC specified in KVs - that'll load its own resources.
+    #  0 = Roller Hopper, does nothing
+    #  2 = No cargo
+
+
+@cls_func
+def npc_combinegunship(pack: PackList, ent: Entity) -> None:
+    """This has the ability to spawn as the helicopter instead."""
+    if conv_int(ent['spawnflags']) & (1 << 13):
+        pack.pack_file("models/combine_helicopter.mdl", FileType.MODEL)
+        pack.pack_file("models/combine_helicopter_broken.mdl", FileType.MODEL)
+        pack_ent_class(pack, 'helicopter_chunk')
+    else:
+        pack.pack_file("models/gunship.mdl", FileType.MODEL)
+
+    pack.pack_file("materials/sprites/lgtning.vmt", FileType.MATERIAL)
+    pack.pack_file("materials/effects/ar2ground2", FileType.MATERIAL)
+    pack.pack_file("materials/effects/blueblackflash", FileType.MATERIAL)
+
+    pack.pack_soundscript("NPC_CombineGunship.SearchPing")
+    pack.pack_soundscript("NPC_CombineGunship.PatrolPing")
+    pack.pack_soundscript("NPC_Strider.Charge")
+    pack.pack_soundscript("NPC_Strider.Shoot")
+    pack.pack_soundscript("NPC_CombineGunship.SeeEnemy")
+    pack.pack_soundscript("NPC_CombineGunship.CannonStartSound")
+    pack.pack_soundscript("NPC_CombineGunship.Explode")
+    pack.pack_soundscript("NPC_CombineGunship.Pain")
+    pack.pack_soundscript("NPC_CombineGunship.CannonStopSound")
+
+    pack.pack_soundscript("NPC_CombineGunship.DyingSound")
+    pack.pack_soundscript("NPC_CombineGunship.CannonSound")
+    pack.pack_soundscript("NPC_CombineGunship.RotorSound")
+    pack.pack_soundscript("NPC_CombineGunship.ExhaustSound")
+    pack.pack_soundscript("NPC_CombineGunship.RotorBlastSound")
+
+    # TODO: if Episodic only
+    pack_ent_class(pack, 'env_citadel_energy_core')
+    pack.pack_file("materials/sprites/physbeam.vmt", FileType.MATERIAL)
 
 res('npc_combine_cannon',
     mdl('models/combine_soldier.mdl'),
@@ -284,11 +382,9 @@ res('npc_fisherman',
     sound("NPC_Fisherman.FootstepLeft"),
     sound("NPC_Fisherman.FootstepRight"),
     sound("NPC_Fisherman.Die"),
-
-    # TODO: Choreo scenes.
-    # choreo("scenes/Expressions/FishermanIdle.vcd"),
-    # choreo("scenes/Expressions/FishermanAlert.vcd"),
-    # choreo("scenes/Expressions/FishermanCombat.vcd"),
+    choreo("scenes/Expressions/FishermanIdle.vcd"),
+    choreo("scenes/Expressions/FishermanAlert.vcd"),
+    choreo("scenes/Expressions/FishermanCombat.vcd"),
     )
 
 res('npc_headcrab',
@@ -386,13 +482,12 @@ res('npc_hunter',
     part("blood_spurt_synth_01"),
     part("blood_drip_synth_01"),
 
-    # TODO: Choreo scenes
-    # choreo("scenes/npc/hunter/hunter_scan.vcd"),
-    # choreo("scenes/npc/hunter/hunter_eyeclose.vcd"),
-    # choreo("scenes/npc/hunter/hunter_roar.vcd"),
-    # choreo("scenes/npc/hunter/hunter_pain.vcd"),
-    # choreo("scenes/npc/hunter/hunter_eyedarts_top.vcd"),
-    # choreo("scenes/npc/hunter/hunter_eyedarts_bottom.vcd"),
+    choreo("scenes/npc/hunter/hunter_scan.vcd"),
+    choreo("scenes/npc/hunter/hunter_eyeclose.vcd"),
+    choreo("scenes/npc/hunter/hunter_roar.vcd"),
+    choreo("scenes/npc/hunter/hunter_pain.vcd"),
+    choreo("scenes/npc/hunter/hunter_eyedarts_top.vcd"),
+    choreo("scenes/npc/hunter/hunter_eyedarts_bottom.vcd"),
 
     mat("materials/effects/water_highlight.vmt"),
 
