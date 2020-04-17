@@ -150,6 +150,7 @@ res('env_lightrail_endpoint',
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
 res('env_microphone')
+res('env_movieexplosion', mat('materials/particle/particle_sphere.vmt'))
 res('env_hudhint')
 res('env_player_surface_trigger')
 res('env_physexplosion')
@@ -226,6 +227,14 @@ res('env_spark',
     mat('materials/sprites/glow01.vmt'),
     mat('materials/effects/yellowflare.vmt'),
     sound('DoSpark'),
+    )
+res('env_splash',
+    mat('materials/effects/splash2.vmt'),
+    mat('materials/effects/splashwake1.vmt'),
+    sound('Physics.WaterSplash'),
+    part('slime_splash_01'),
+    part('slime_splash_02'),
+    part('slime_splash_03'),
     )
 res('env_sprite', aliases='env_glow')
 res('env_sprite_clientside')

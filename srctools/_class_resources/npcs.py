@@ -610,3 +610,21 @@ res('npc_zombie',
     )
 # Actually an alias, but we don't want to swap these.
 CLASS_RESOURCES['npc_zombie_torso'] = CLASS_RESOURCES['npc_zombie']
+res('npc_zombine',
+    mdl("models/zombie/zombie_soldier.mdl"),
+    sound("Zombie.FootstepRight"),
+    sound("Zombie.FootstepLeft"),
+    sound("Zombine.ScuffRight"),
+    sound("Zombine.ScuffLeft"),
+    sound("Zombie.AttackHit"),
+    sound("Zombie.AttackMiss"),
+    sound("Zombine.Pain"),
+    sound("Zombine.Die"),
+    sound("Zombine.Alert"),
+    sound("Zombine.Idle"),
+    sound("Zombine.ReadyGrenade"),
+    sound("ATV_engine_null"),
+    sound("Zombine.Charge"),
+    sound("Zombie.Attack"),
+    includes='npc_zombie',
+    )

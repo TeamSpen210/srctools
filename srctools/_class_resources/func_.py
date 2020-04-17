@@ -103,6 +103,7 @@ def func_breakable_surf(pack: PackList, ent: Entity):
                 FileType.MATERIAL,
             )
 
+res('func_brush')
 res('func_conveyor')
 res('func_clip_vphysics')
 res('func_dust', mat('materials/particle/sparkles.vmt'))
