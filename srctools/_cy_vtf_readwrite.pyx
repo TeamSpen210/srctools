@@ -16,6 +16,12 @@ cdef struct RGB:
     byte g
     byte b
 
+# Offsets for the colour channels.
+DEF R = 0
+DEF G = 1
+DEF B = 2
+DEF A = 3
+
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
 
@@ -39,9 +45,9 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
             return b''
 
         for off in range(width * height):
-            buffer[img_off + 3*off] = pixels[4*off]
-            buffer[img_off + 3*off+1] = pixels[4*off+1]
-            buffer[img_off + 3*off+2] = pixels[4*off+2]
+            buffer[img_off + 3*off + R] = pixels[4*off]
+            buffer[img_off + 3*off + G] = pixels[4*off+1]
+            buffer[img_off + 3*off + B] = pixels[4*off+2]
 
         return buffer[:size+img_off]
     finally:
@@ -67,81 +73,83 @@ cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
 def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse RGBA-ordered 8888 pixels."""
     cdef Py_ssize_t offset
-    for offset in prange(0, width * height, 4, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 0]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 2]
-        pixels[4 * offset + 3] = data[4 * offset + 3]
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[4 * offset + 0]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 2]
+        pixels[4 * offset + A] = data[4 * offset + 3]
+
 
 def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVLX data, copying them into RGBA respectively."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 0]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 2]
-        pixels[4 * offset + 3] = data[4 * offset + 3]
+        pixels[4 * offset + R] = data[4 * offset + 0]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 2]
+        pixels[4 * offset + A] = data[4 * offset + 3]
+
 
 def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVWQ data, copying them into RGBA respectively."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 0]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 2]
-        pixels[4 * offset + 3] = data[4 * offset + 3]
+        pixels[4 * offset + R] = data[4 * offset + 0]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 2]
+        pixels[4 * offset + A] = data[4 * offset + 3]
 
 
 def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 2]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 0]
-        pixels[4 * offset + 3] = data[4 * offset + 3]
+        pixels[4 * offset + R] = data[4 * offset + 2]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 0]
+        pixels[4 * offset + A] = data[4 * offset + 3]
 
 # This is totally the wrong order, but it's how it's actually ordered.
 def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """This is toally wrong - it's actually in GBAR order."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 3]
-        pixels[4 * offset + 1] = data[4 * offset + 0]
-        pixels[4 * offset + 2] = data[4 * offset + 1]
-        pixels[4 * offset + 3] = data[4 * offset + 2]
+        pixels[4 * offset + R] = data[4 * offset + 3]
+        pixels[4 * offset + G] = data[4 * offset + 0]
+        pixels[4 * offset + B] = data[4 * offset + 1]
+        pixels[4 * offset + A] = data[4 * offset + 2]
 
 def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
-    for offset in prange(0, width * height, 4, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 3]
-        pixels[4 * offset + 1] = data[4 * offset + 2]
-        pixels[4 * offset + 2] = data[4 * offset + 1]
-        pixels[4 * offset + 3] = data[4 * offset + 0]
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[4 * offset + 3]
+        pixels[4 * offset + G] = data[4 * offset + 2]
+        pixels[4 * offset + B] = data[4 * offset + 1]
+        pixels[4 * offset + A] = data[4 * offset + 0]
 
 def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[3 * offset + 0]
-        pixels[4 * offset + 1] = data[3 * offset + 1]
-        pixels[4 * offset + 2] = data[3 * offset + 2]
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = data[3 * offset + 0]
+        pixels[4 * offset + G] = data[3 * offset + 1]
+        pixels[4 * offset + B] = data[3 * offset + 2]
+        pixels[4 * offset + A] = 255
 
 def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[3 * offset + 2]
-        pixels[4 * offset + 1] = data[3 * offset + 1]
-        pixels[4 * offset + 2] = data[3 * offset + 0]
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = data[3 * offset + 2]
+        pixels[4 * offset + G] = data[3 * offset + 1]
+        pixels[4 * offset + B] = data[3 * offset + 0]
+        pixels[4 * offset + A] = 255
 
 def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Strange - skip byte."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset] = data[4 * offset + 2]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 0]
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = data[4 * offset + 2]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 0]
+        pixels[4 * offset + A] = 255
 
 
 def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -151,10 +159,10 @@ def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
     for offset in prange(width * height, nogil=True, schedule='static'):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = col.r
-        pixels[4 * offset + 1] = col.g
-        pixels[4 * offset + 2] = col.b
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = col.r
+        pixels[4 * offset + G] = col.g
+        pixels[4 * offset + B] = col.b
+        pixels[4 * offset + A] = 255
 
 
 def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -164,10 +172,10 @@ def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
     for offset in prange(width * height, nogil=True, schedule='static'):
         decomp565(&col, data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = col.b
-        pixels[4 * offset + 1] = col.g
-        pixels[4 * offset + 2] = col.r
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = col.b
+        pixels[4 * offset + G] = col.g
+        pixels[4 * offset + B] = col.r
+        pixels[4 * offset + A] = 255
 
 
 def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -177,10 +185,10 @@ def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset+1] = (a & 0b11110000) | (a & 0b11110000) >> 4
-        pixels[4 * offset+2] = (a & 0b00001111) | (a & 0b00001111) << 4
-        pixels[4 * offset] = (b & 0b00001111) | (b & 0b00001111) << 4
-        pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
+        pixels[4 * offset + B] = (a & 0b11110000) | (a & 0b11110000) >> 4
+        pixels[4 * offset + G] = (a & 0b00001111) | (a & 0b00001111) << 4
+        pixels[4 * offset + R] = (b & 0b00001111) | (b & 0b00001111) << 4
+        pixels[4 * offset + A] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
 def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -190,10 +198,10 @@ def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
-        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
-        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
-        pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
+        pixels[4 * offset + R] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset + G] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset + B] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + A] = 255 if b & 0b10000000 else 0
 
 
 def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -203,25 +211,33 @@ def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
-        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
-        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
-        pixels[4 * offset+3] = 255
+        pixels[4 * offset + R] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset + G] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset + B] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + A] = 255
 
 
 def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B"""
     cdef Py_ssize_t offset
+    cdef byte color
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
-        pixels[4*offset+3] = 255
+        color = data[offset]
+        pixels[4*offset + R] = color
+        pixels[4*offset + G] = color
+        pixels[4*offset + B] = color
+        pixels[4*offset + A] = 255
 
 
 def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B + A"""
     cdef Py_ssize_t offset
+    cdef byte color
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
+        color = data[2*offset]
+        pixels[4*offset + R] = color
+        pixels[4*offset + G] = color
+        pixels[4*offset + B] = color
         pixels[4*offset+3] = data[2*offset+1]
 
 
@@ -231,7 +247,9 @@ def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Single alpha bytes."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
+        pixels[4*offset + R] = 0
+        pixels[4*offset + G] = 0
+        pixels[4*offset + B] = 0
         pixels[4*offset+3] = data[offset]
 
 
@@ -239,10 +257,10 @@ def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """UV-only, which is mapped to RG."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4*offset] = data[2*offset]
-        pixels[4*offset+1] = data[2*offset+1]
-        pixels[4*offset+2] = 0
-        pixels[4*offset+3] = 255
+        pixels[4*offset + R] = data[2*offset]
+        pixels[4*offset + G] = 0
+        pixels[4*offset + B] = 0
+        pixels[4*offset + A] = data[2*offset+1]
 
 
 def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -260,10 +278,10 @@ def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4*offset] = pixels[4*offset+1] = 0
             pixels[4*offset+2] = pixels[4*offset+3] = 0
         else:
-            pixels[4 * offset] = r
-            pixels[4 * offset + 1] = g
-            pixels[4 * offset + 2] = b
-            pixels[4 * offset + 3] = 255
+            pixels[4 * offset + R] = r
+            pixels[4 * offset + G] = g
+            pixels[4 * offset + B] = b
+            pixels[4 * offset + A] = 255
 
 
 def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -281,10 +299,10 @@ def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4*offset] = pixels[4*offset+1] = 0
             pixels[4*offset+2] = pixels[4*offset+3] = 0
         else:
-            pixels[4 * offset] = r
-            pixels[4 * offset + 1] = g
-            pixels[4 * offset + 2] = b
-            pixels[4 * offset + 3] = 255
+            pixels[4 * offset + R] = r
+            pixels[4 * offset + G] = g
+            pixels[4 * offset + B] = b
+            pixels[4 * offset + A] = 255
 
 
 def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -507,8 +525,8 @@ def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 y = off * 2 // 4
                 x = off * 2 % 4
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
-                pixels[pos + 3] = inp & 0b00001111 | (inp & 0b00001111) << 4
-                pixels[pos + 7] = inp & 0b11110000 | (inp & 0b11110000) >> 4
+                pixels[pos + A] = inp & 0b00001111 | (inp & 0b00001111) << 4
+                pixels[pos + A + 4] = inp & 0b11110000 | (inp & 0b11110000) >> 4
 
 
 def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -597,7 +615,7 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 y = i // 4
                 x = i % 4
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha[(lookup >> (3*i)) & 0b111]
+                pixels[pos + A] = alpha[(lookup >> (3*i)) & 0b111]
 
 # Don't do the high-def 16-bit resolution.
 
