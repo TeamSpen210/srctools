@@ -128,10 +128,15 @@ class ImageFormats(ImageAlignment, Enum):
     UVLX8888 = f(size=32)
 
     NONE = f()
+    # These two aren't supported by VTEX & VTFEdit, but are by the engine.
+    # They're useful for normal maps.
+    ATI1N = f(size=64)
+    ATI2N = f(size=128)
 
     @property
     def is_compressed(self) -> bool:
-        return self.name.startswith('DXT')
+        """Checks if the format is compressed in 4x4 blocks."""
+        return self.name.startswith('DXT') or self.name in ('ATI1N', 'ATI2N')
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
@@ -150,8 +155,18 @@ class ImageFormats(ImageAlignment, Enum):
 del f
 
 
-FORMAT_ORDER = dict(enumerate(ImageFormats.__members__.values()))  # type: Dict[int, ImageFormats]
+FORMAT_ORDER = {
+    ind: fmt
+    for ind, fmt in
+    enumerate(ImageFormats.__members__.values())
+    if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
+}
 FORMAT_ORDER[-1] = ImageFormats.NONE
+# Since these are semi-"internal" formats, the position has changed
+# in the enum. They're either 37 in 2013, or 34 in ASW+.
+# They're backward because why not.
+FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
+FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
 
 
 class VTFFlags(Flag):

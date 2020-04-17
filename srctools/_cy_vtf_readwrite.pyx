@@ -465,6 +465,55 @@ cdef inline void dxt_color_table(
             pixels[row + C0A] = table[off + 3]
 
 
+cdef inline void dxt_alpha_table(
+    byte[::1] pixels,
+    const byte[::1] data,
+    uint block_off,
+    uint block_wid,
+    uint block_x,
+    uint block_y,
+    uint layer,
+) nogil:
+    """Decode the DXT5 alpha block into pixels.
+
+    This is split out for ATI1/2N support as well.
+    """
+    cdef byte[8] alpha
+    cdef long long x, y, i, off, pos
+    cdef uint_least64_t lookup  # at least 48 bits!
+
+    alpha[0] = data[block_off]
+    alpha[1] = data[block_off + 1]
+
+    if alpha[0] >= alpha[1]:
+        alpha[2] = (6*alpha[0] + 1*alpha[1]) // 7
+        alpha[3] = (5*alpha[0] + 2*alpha[1]) // 7
+        alpha[4] = (4*alpha[0] + 3*alpha[1]) // 7
+        alpha[5] = (3*alpha[0] + 4*alpha[1]) // 7
+        alpha[6] = (2*alpha[0] + 5*alpha[1]) // 7
+        alpha[7] = (1*alpha[0] + 6*alpha[1]) // 7
+    else:
+        alpha[2] = (4*alpha[0] + 1*alpha[1]) // 5
+        alpha[3] = (3*alpha[0] + 2*alpha[1]) // 5
+        alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
+        alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
+        alpha[6] = 0
+        alpha[7] = 255
+    # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
+    # value. It's in little-endian order!
+    # lookup = int.from_bytes(data[block_off + 2:8], 'little')
+    lookup = 0
+    for i in range(6):
+        lookup |= data[block_off + 2 + 6 - i]
+        lookup <<= 8
+
+    for i in range(16):
+        y = i // 4
+        x = i % 4
+        pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
+        pixels[pos + layer] = alpha[(lookup >> (3*i)) & 0b111]
+
+
 def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
@@ -538,12 +587,10 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef uint x, y, i, off, pos
 
     cdef byte[16] color_table
-    cdef byte[8] alpha
 
     cdef RGB c0, c1
     cdef byte inp
 
-    cdef uint_least64_t lookup  # at least 48 bits!
 
     # All colours are opaque.
     color_table[C0A] = color_table[C1A] = 255
@@ -558,24 +605,6 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         for block_x in range(0, width, 4):
             block_x //= 4
             block_off = 16 * (block_wid * block_y + block_x)
-
-            alpha[0] = data[block_off]
-            alpha[1] = data[block_off + 1]
-
-            if alpha[0] >= alpha[1]:
-                alpha[2] = (6*alpha[0] + 1*alpha[1]) // 7
-                alpha[3] = (5*alpha[0] + 2*alpha[1]) // 7
-                alpha[4] = (4*alpha[0] + 3*alpha[1]) // 7
-                alpha[5] = (3*alpha[0] + 4*alpha[1]) // 7
-                alpha[6] = (2*alpha[0] + 5*alpha[1]) // 7
-                alpha[7] = (1*alpha[0] + 6*alpha[1]) // 7
-            else:
-                alpha[2] = (4*alpha[0] + 1*alpha[1]) // 5
-                alpha[3] = (3*alpha[0] + 2*alpha[1]) // 5
-                alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
-                alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
-                alpha[6] = 0
-                alpha[7] = 255
 
             # Now, load the colour blocks.
             decomp565(&c0, data[block_off + 8], data[block_off + 9])
@@ -603,19 +632,52 @@ def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
                 block_x, block_y,
                 do_alpha=False,
             )
-            # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
-            # value. It's in little-endian order!
-            # lookup = int.from_bytes(data[block_off + 2:8], 'little')
-            lookup = 0
-            for i in range(6):
-                lookup |= data[block_off + 2 + 6 - i]
-                lookup <<= 8
+            dxt_alpha_table(
+                pixels, data,
+                block_off, block_wid,
+                block_x, block_y,
+                A,
+            )
 
-            for i in range(16):
-                y = i // 4
-                x = i % 4
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + A] = alpha[(lookup >> (3*i)) & 0b111]
+
+def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """Load 'ATI2N' format data, also known as BC5.
+
+    This uses two copies of the DXT5 alpha block for data.
+    """
+    if width < 4 or height < 4:
+        raise ValueError('ATI2N format must be 4x4 at minimum!')
+
+    cdef uint block_wid, block_off, block_x, block_y
+    cdef uint x, y, i, off, pos
+    cdef Py_ssize_t offset
+
+    block_wid = width // 4
+    if width % 4:
+        block_wid += 1
+
+    for block_y in range(0, height, 4):
+        block_y //= 4
+        for block_x in range(0, width, 4):
+            block_x //= 4
+            block_off = 16 * (block_wid * block_y + block_x)
+
+            dxt_alpha_table(
+                pixels, data,
+                block_off, block_wid,
+                block_x, block_y,
+                R,
+            )
+            dxt_alpha_table(
+                pixels, data,
+                block_off+8, block_wid,
+                block_x, block_y,
+                G,
+            )
+    # Blank out the unused channels.
+    for offset in range(width * height):
+        pixels[4 * offset + B] = 0
+        pixels[4 * offset + A] = 255
 
 # Don't do the high-def 16-bit resolution.
 

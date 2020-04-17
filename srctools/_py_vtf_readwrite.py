@@ -329,6 +329,52 @@ def dxt_color_table(
         ) = table[byte & 0b00000011]
 
 
+def dxt_alpha_table(
+    pixels: array.array,
+    data: bytes,
+    block_off: int,
+    block_wid: int,
+    block_x: int,
+    block_y: int,
+    layer: int,
+):
+    """Decode the DXT5 alpha block into pixels.
+
+    This is split out for ATI1/2N support as well.
+    """
+    alpha0 = data[block_off]
+    alpha1 = data[block_off + 1]
+    if alpha0 >= alpha1:
+        alpha_table = [
+            alpha0,
+            alpha1,
+            (6 * alpha0 + 1 * alpha1) // 7,
+            (5 * alpha0 + 2 * alpha1) // 7,
+            (4 * alpha0 + 3 * alpha1) // 7,
+            (3 * alpha0 + 4 * alpha1) // 7,
+            (2 * alpha0 + 5 * alpha1) // 7,
+            (1 * alpha0 + 6 * alpha1) // 7,
+        ]
+    else:
+        alpha_table = [
+            alpha0,
+            alpha1,
+            (4 * alpha0 + 1 * alpha1) // 5,
+            (3 * alpha0 + 2 * alpha1) // 5,
+            (2 * alpha0 + 3 * alpha1) // 5,
+            (1 * alpha0 + 4 * alpha1) // 5,
+            0,
+            255
+        ]
+    # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
+    # value.
+    lookup = int.from_bytes(data[block_off + 2:block_off + (2 + 6)], 'little')
+    for i in range(16):
+        y, x = divmod(i, 4)
+        pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
+        pixels[pos + layer] = alpha_table[(lookup >> (3 * i)) & 0b111]
+
+
 def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
@@ -394,31 +440,6 @@ def load_dxt5(pixels, data, width, height):
             block_x //= 4
             block_off = 16 * (block_wid * block_y + block_x)
 
-            alpha0 = data[block_off]
-            alpha1 = data[block_off + 1]
-            if alpha0 >= alpha1:
-                alpha_table = [
-                    alpha0,
-                    alpha1,
-                    (6*alpha0 + 1*alpha1) // 7,
-                    (5*alpha0 + 2*alpha1) // 7,
-                    (4*alpha0 + 3*alpha1) // 7,
-                    (3*alpha0 + 4*alpha1) // 7,
-                    (2*alpha0 + 5*alpha1) // 7,
-                    (1*alpha0 + 6*alpha1) // 7,
-                ]
-            else:
-                alpha_table = [
-                    alpha0,
-                    alpha1,
-                    (4*alpha0 + 1*alpha1) // 5,
-                    (3*alpha0 + 2*alpha1) // 5,
-                    (2*alpha0 + 3*alpha1) // 5,
-                    (1*alpha0 + 4*alpha1) // 5,
-                    0,
-                    255
-                ]
-
             # Now, load the colour blocks.
             c0r, c0g, c0b = decomp565(data[block_off + 8], data[block_off + 9])
             c1r, c1g, c1b = decomp565(data[block_off + 10], data[block_off + 11])
@@ -444,13 +465,12 @@ def load_dxt5(pixels, data, width, height):
                 block_off+8, block_wid,
                 block_x, block_y,
             )
-            # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
-            # value.
-            lookup = int.from_bytes(data[block_off + 2:block_off + (2 + 6)], 'little')
-            for i in range(16):
-                y, x = divmod(i, 4)
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha_table[(lookup >> (3*i)) & 0b111]
+            dxt_alpha_table(
+                pixels, data,
+                block_off, block_wid,
+                block_x, block_y,
+                3,  # Put into alpha pixels
+            )
 
 # Don't do the high-def 16-bit resolution.
 
@@ -460,3 +480,38 @@ def load_dxt5(pixels, data, width, height):
 #     pixels[offset + 1] = data[data_off+2] << 8 + data[data_off+3]
 #     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
 #     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
+
+def load_ati2n(pixels, data, width, height):
+    """Load 'ATI2N' format data, also known as BC5.
+
+    This uses two copies of the DXT5 alpha block for data.
+    """
+    if width < 4 or height < 4:
+        raise ValueError('ATI2N format must be 4x4 at minimum!')
+
+    block_wid, mod = divmod(width, 4)
+    if mod:
+        block_wid += 1
+
+    for block_y in range(0, height, 4):
+        block_y //= 4
+        for block_x in range(0, width, 4):
+            block_x //= 4
+            block_off = 16 * (block_wid * block_y + block_x)
+
+            dxt_alpha_table(
+                pixels, data,
+                block_off, block_wid,
+                block_x, block_y,
+                0,  # R channel
+            )
+            dxt_alpha_table(
+                pixels, data,
+                block_off + 8, block_wid,
+                block_x, block_y,
+                1,  # G channel
+            )
+    # Blank out the unused channels.
+    for offset in range(width * height):
+        pixels[4 * offset + 2] = 0
+        pixels[4 * offset + 3] = 255
