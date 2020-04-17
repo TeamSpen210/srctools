@@ -203,6 +203,9 @@ class PackList:
         if data_type is FileType.PARTICLE:
             # self.pack_particle(filename)  # TODO: Particle parsing
             return  # This packs the PCF and material if required.
+        if data_type is FileType.CHOREO:
+            # self.pack_choreo(filename)  # TODO: Choreo scene parsing
+            return
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
@@ -232,6 +235,12 @@ class PackList:
                 filename = 'materials/' + filename
             if not filename.endswith('.vtf'):
                 filename = filename + '.vtf'
+        elif data_type is FileType.VSCRIPT_SQUIRREL or (
+            data_type is FileType.GENERIC and filename.endswith('.nut')
+        ):
+            data_type = FileType.VSCRIPT_SQUIRREL
+            if not filename.endswith('.nut'):
+                filename = filename + '.nut'
 
         path = unify_path(filename)
 
