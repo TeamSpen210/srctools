@@ -200,6 +200,7 @@ class Property:
         filename='',
         flags: Mapping[str, bool]=EmptyMapping,
         allow_escapes: bool=True,
+        single_line: bool=False,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
@@ -207,7 +208,10 @@ class Property:
         file_contents should be an iterable of strings or a single string.
         flags should be a mapping for additional flags to accept
         (which overrides defaults).
-        character_escapes allows choosing if \\t or similar escapes are parsed.
+        allow_escapes allows choosing if \\t or similar escapes are parsed.
+        If single_line is set, allow multiple properties to be on the same line.
+        This means unterminated strings will be caught late (if at all), but
+        it allows parsing some 'internal' data blocks.
         """
         # The block we are currently adding to.
 
@@ -330,11 +334,17 @@ class Property:
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
-                        # Specifically disallow multiple text on the same line.
+                        # Specifically disallow multiple text on the same line
+                        # normally.
                         # ("name" "value" "name2" "value2")
-                        raise tokenizer.error(
-                            "Cannot have multiple names on the same line!"
-                        )
+                        if single_line:
+                            cur_block.value.append(keyvalue)
+                            tokenizer.push_back(flag_token, flag_val)
+                            continue
+                        else:
+                            raise tokenizer.error(
+                                "Cannot have multiple names on the same line!"
+                            )
                     else:
                         # Otherwise, it's got nothing after.
                         # So insert the keyvalue, and check the token

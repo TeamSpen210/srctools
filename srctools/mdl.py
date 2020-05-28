@@ -7,6 +7,7 @@ from typing import (
 from enum import IntFlag, Enum
 from pathlib import PurePosixPath
 
+from srctools import Property
 from srctools.filesys import FileSystem, File
 from srctools.vec import Vec
 from struct import unpack, Struct, calcsize
@@ -322,6 +323,7 @@ def read_offset_array(file: BinaryIO, count: int) -> List[str]:
     return arr
     
 ST_VEC = Struct('fff')
+ST_PHY_HEADER = Struct('<iiil')
 
 
 def str_readvec(file: BinaryIO) -> Vec:
@@ -339,8 +341,19 @@ class Model:
         self._file = file
         self._sys = filesystem
         self.version = 49
+
+        self.phys_keyvalues = Property(None, [])
         with self._sys, self._file.open_bin() as f:
             self._load(f)
+
+        path = PurePosixPath(file.path)
+        try:
+            phy_file = filesystem[str(path.with_suffix('.phy'))]
+        except FileNotFoundError:
+            pass
+        else:
+            with filesystem, phy_file.open_bin() as f:
+                self._parse_phy(f, phy_file.path)
 
     def _load(self, f: BinaryIO) -> None:
         """Read data from the MDL file."""
@@ -746,6 +759,26 @@ class Model:
 
         for skin_ind, tex in enumerate(self.skins):
             self.skins[skin_ind] = [tex[i] for i in used_inds]
+
+    def _parse_phy(self, f: BinaryIO, filename: str) -> None:
+        """Parse the physics data file, if present.
+        """
+        [
+            size,
+            header_id,
+            solid_count,
+            checksum,
+        ] = ST_PHY_HEADER.unpack(f.read(ST_PHY_HEADER.size))
+        f.read(size - ST_PHY_HEADER.size)  # If the header is larger ever.
+        for solid in range(solid_count):
+            [solid_size] = str_read('i', f)
+            f.read(solid_size)  # Skip the header.
+        self.phys_keyvalues = Property.parse(
+            read_nullstr(f),
+            filename + ":keyvalues",
+            allow_escapes=False,
+            single_line=True,
+        )
 
     def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
         """Yield textures used by this model.

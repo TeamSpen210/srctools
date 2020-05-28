@@ -246,6 +246,10 @@ class PackList:
 
         if data_type is FileType.MODEL or filename.endswith('.mdl'):
             data_type = FileType.MODEL
+            if not filename.startswith('models/'):
+                filename = 'models/' + filename
+            if not filename.endswith('.mdl'):
+                filename = filename + '.mdl'
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
@@ -869,6 +873,9 @@ class PackList:
 
         for snd in mdl.find_sounds():
             self.pack_soundscript(snd)
+
+        for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
+            self.pack_file(break_mdl.value, FileType.MODEL, optional=file.optional)
 
     def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""
