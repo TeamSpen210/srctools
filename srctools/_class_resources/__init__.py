@@ -141,6 +141,17 @@ res('assault_rallypoint')
 
 res('bullseye_strider_focus', includes='npc_bullseye')  # Unchanged subclass.
 
+res('challenge_mode_end_node',
+    # Assumed based on console logs.
+    mdl("models/props/stopwatch_finish_line.mdl"),
+    *[sound("glados.dlc1_leaderboard{:02}".format(i)) for i in range(1, 24)]
+    )
+res('concussiveblast',
+    mat('materials/sprites/lgtning.vmt'),
+    mat('materials/effects/blueflare1.vmt'),
+    mat("materials/particle/particle_smokegrenade.vmt"),
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
 res('combine_mine',
     mdl('models/props_combine/combine_mine01.mdl'),
     sound('NPC_CombineMine.Hop'),

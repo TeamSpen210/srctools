@@ -118,7 +118,7 @@ res('func_healthcharger',
     )
 res('func_illusionary')
 res('func_instance_io_proxy')
-res('func_movelinear')
+res('func_movelinear', aliases='momentary_door')
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
