@@ -36,9 +36,12 @@ class Game:
             exp_path = self.parse_search_path(path)
             # Expand /* if at the end of paths.
             if exp_path.name == '*':
-                self.search_paths.extend(
-                    map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
-                )
+                try:
+                    self.search_paths.extend(
+                        map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                    )
+                except FileNotFoundError:
+                    pass
             # Handle folder_* too.
             elif exp_path.name.endswith('*'):
                 exp_path = exp_path.with_name(exp_path.name[:-1])
