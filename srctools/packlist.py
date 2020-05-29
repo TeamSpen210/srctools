@@ -215,6 +215,8 @@ class PackList:
                 always_include=True,
             )
 
+        filename = unify_path(filename)
+
         if data_type is FileType.MATERIAL or (
             data_type is FileType.GENERIC and filename.endswith('.vmt')
         ):
@@ -242,8 +244,6 @@ class PackList:
             if not filename.endswith('.nut'):
                 filename = filename + '.nut'
 
-        path = unify_path(filename)
-
         if data_type is FileType.MODEL or filename.endswith('.mdl'):
             data_type = FileType.MODEL
             if not filename.startswith('models/'):
@@ -264,7 +264,7 @@ class PackList:
                         self.skinsets[filename] = existing_skins | skinset
 
         try:
-            file = self._files[path]
+            file = self._files[filename]
         except KeyError:
             pass  # We need to make it.
         else:
@@ -301,7 +301,7 @@ class PackList:
                 ))
             return  # Don't re-add this.
 
-        start, ext = os.path.splitext(path)
+        start, ext = os.path.splitext(filename)
 
         # Try to promote generic to other types if known.
         if data_type is FileType.GENERIC:
@@ -313,7 +313,7 @@ class PackList:
             if ext != '.txt':
                 raise ValueError('"{}" cannot be a soundscript!'.format(filename))
 
-        self._files[path] = PackFile(data_type, filename, data, optional)
+        self._files[filename] = PackFile(data_type, filename, data, optional)
 
     def inject_file(self, data: bytes, folder: str, ext: str) -> str:
         """Inject a generated file into the map and return the full name.
