@@ -3,15 +3,16 @@ import os
 import struct
 import operator
 from enum import Enum
-from binascii import crc32 # The checksum method Valve uses
+from typing import Union, Dict, Optional, List, Tuple, Iterator, BinaryIO, IO
 
-from typing import Union, Dict, Optional, List, Tuple, Iterator, BinaryIO
+from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
 
 FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
+
 
 class OpenModes(Enum):
     """Modes for opening VPK files."""
@@ -24,23 +25,7 @@ class OpenModes(Enum):
         return self.value in 'wa'
 
 
-def checksum(data: bytes, prior=0):
-    """Compute the VPK checksum for a file.
-    
-    Passing a previous computation to allow calculating
-    repeatedly.
-    """
-    return crc32(data, prior)
-
-EMPTY_CHECKSUM = checksum(b'')  # Checksum of empty bytes - 0.
-
-
-def struct_file_read(fmt, file):
-    """Read struct data from a file."""
-    return struct.unpack(fmt, file.read(struct.calcsize(fmt)))
-
-
-def iter_nullstr(file: BinaryIO):
+def iter_nullstr(file: BinaryIO) -> Iterator[str]:
     """Read a null-terminated ASCII string from the file.
     
     This continuously yields strings, with empty strings 
@@ -65,7 +50,7 @@ def iter_nullstr(file: BinaryIO):
             chars.extend(char)
 
 
-def _write_nullstring(file, string):
+def _write_nullstring(file: IO[bytes], string: str) -> None:
     """Write a null-terminated ASCII string back to the file."""
     if string:
         file.write(string.encode('ascii') + b'\x00')
@@ -341,7 +326,7 @@ class VPK:
                 raise  # In read mode, don't overwrite and error when reading.
 
         with dirfile:
-            vpk_sig, version, tree_length = struct_file_read('<III', dirfile)
+            vpk_sig, version, tree_length = struct_read('<III', dirfile)
             
             if vpk_sig != VPK_SIG:
                 raise ValueError('Bad VPK directory signature!')
@@ -357,7 +342,7 @@ class VPK:
                     ext_md5_size,
                     dir_md5_size,
                     sig_size,
-                ) = struct_file_read('<4I', dirfile)
+                ) = struct_read('<4I', dirfile)
                 
             self.header_len = dirfile.tell() + tree_length
             
@@ -370,7 +355,7 @@ class VPK:
                 for directory in iter_nullstr(dirfile):
                     dir_dict = ext_dict.setdefault(directory, {})
                     for file in iter_nullstr(dirfile):
-                        crc, index_len, arch_ind, offset, arch_len, end = struct_file_read('<IHHIIH', dirfile)
+                        crc, index_len, arch_ind, offset, arch_len, end = struct_read('<IHHIIH', dirfile)
                         if arch_ind == DIR_ARCH_INDEX:
                             arch_ind = None
                             
