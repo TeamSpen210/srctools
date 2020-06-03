@@ -446,6 +446,8 @@ class Property:
           none is provided.
         - This prefers keys located closer to the end of the value list.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
@@ -465,6 +467,8 @@ class Property:
           default value, or raise NoKeyError if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
@@ -482,6 +486,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return int(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -495,6 +501,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return float(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -508,6 +516,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
         except LookupError:  # base for NoKeyError and KeyError
@@ -519,6 +529,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
         except LookupError:  # key not present, defaults.
@@ -531,6 +543,9 @@ class Property:
           blank properties will be added automatically
         - path should be a tuple of names, or a single string.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
+
         current_prop = self
         if isinstance(path, tuple):
             # Search through each item in the tree!
@@ -824,6 +839,8 @@ class Property:
         After execution, this tree will have only one sub-Property for
         each of the given names. This ignores leaf Properties.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         folded_names = [name.casefold() for name in names]
         new_list = []
         merge = {
@@ -831,12 +848,13 @@ class Property:
             for name in
             names
         }
-        if self.has_children():
-            for item in self.value[:]:  # type: Property
-                if item._folded_name in folded_names:
-                    merge[item._folded_name].value.extend(item.value)
-                else:
-                    new_list.append(item)
+
+        for item in self.value[:]:  # type: Property
+            if item._folded_name in folded_names:
+                merge[item._folded_name].value.extend(item.value)
+            else:
+                new_list.append(item)
+
         for prop_name in names:
             prop = merge[prop_name.casefold()]
             if len(prop.value) > 0:
@@ -929,6 +947,8 @@ class Property:
         >>> print(repr(prop))
         Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         return _Builder(self)
 
 
