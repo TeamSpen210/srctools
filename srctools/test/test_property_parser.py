@@ -268,9 +268,37 @@ def test_build():
                 b.replace2('above2')
 
     assert_tree(parse_result, prop)
+
+def test_build_exc() -> None:
+    """Test the with statement handles exceptions correctly."""
+    class Exc(Exception):
+        pass
+
+    prop = Property('Root', [])
+
+    with pytest.raises(Exc):  # Should not swallow.
+        with prop.build() as build:
+            build.prop('Hi')
+            raise Exc
+    # Exception doesn't rollback.
+    assert_tree(Property('Root', [
+        Property('prop', 'Hi'),
+    ]), prop)
+
+    prop.clear()
+
+    with prop.build() as build:
+        build.leaf('value')
+        with pytest.raises(Exc):
+            with build.subprop as sub:
+                raise Exc
+    assert_tree(Property('Root', [
+        Property('leaf', 'value'),
+        Property('subprop', []),
+    ]), prop)
     
 
-def test_parse_fails(py_c_token):
+def test_parse_fails(py_c_token) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
     def t(text):
         """Test a string to ensure it fails parsing."""
