@@ -955,22 +955,29 @@ class Property:
 class _Builder:
     """Allows constructing property trees using with: chains.
 
-    This is the object you
+    This is the builder you get directly, which is interacted with for
+    all the hierachies.
     """
     def __init__(self, parent: Property):
         self._parents = [parent]
 
     def __getattr__(self, name: str) -> '_BuilderElem':
+        """Accesses by attribute produce a prop with that name.
+
+        For all Python keywords a trailing underscore is ignored.
+        """
         return _BuilderElem(self, self._keywords.get(name, name))
 
     def __getitem__(self, name: str) -> '_BuilderElem':
+        """This allows accessing names dynamicallyt easily, or names which aren't identifiers."""
         return _BuilderElem(self, name)
 
     def __enter__(self) -> '_Builder':
         """Start a property block."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Ends the property block."""
         pass
 
     def __iter__(self) -> Iterator[Union[Property, '_Builder']]:
@@ -982,7 +989,11 @@ class _Builder:
 
 # noinspection PyProtectedMember
 class _BuilderElem:
-    """Allows constructing property trees using with: chains."""
+    """Allows constructing property trees using with: chains.
+
+    This is produced when indexing or accessing attributes on the builder,
+    and is then called or used as a context manager to enter the builder.
+    """
     def __init__(self, builder: _Builder, name: str):
         self._builder = builder
         self._name = name
