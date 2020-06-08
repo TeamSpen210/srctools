@@ -3,7 +3,11 @@ import os
 import struct
 import operator
 from enum import Enum
-from typing import Union, Dict, Optional, List, Tuple, Iterator, BinaryIO, IO
+from types import TracebackType
+from typing import (
+    Union, Dict, Optional, List, Tuple, Iterator, BinaryIO, IO,
+    Type,
+)
 
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
@@ -21,7 +25,8 @@ class OpenModes(Enum):
     APPEND = 'a'
 
     @property
-    def writable(self):
+    def writable(self) -> bool:
+        """Check if this mode allows modifying the VPK."""
         return self.value in 'wa'
 
 
@@ -72,39 +77,39 @@ def get_arch_filename(prefix='pak01', index: int=None):
 
 
 def _get_file_parts(value: FileName, relative_to='') -> Tuple[str, str, str]:
-        """Get folder, name, ext parts from a string/tuple.
-        
-        Possible arguments:
-            'fold/ers/name.ext'
-            ('fold/ers', 'name.ext')
-            ('fold/ers', 'name', 'ext')
-        """
-        if isinstance(value, str):
-            path, filename = os.path.split(value)
-            ext = ''
-        elif len(value) == 2:
-            path, filename = value
-            ext = ''
-        else:
-            path, filename, ext = value
-        
-        if not ext and '.' in filename:
-            filename, ext = filename.rsplit('.', 1)
+    """Get folder, name, ext parts from a string/tuple.
 
-        if relative_to:
-            path = os.path.relpath(path, relative_to)
+    Possible arguments:
+        'fold/ers/name.ext'
+        ('fold/ers', 'name.ext')
+        ('fold/ers', 'name', 'ext')
+    """
+    if isinstance(value, str):
+        path, filename = os.path.split(value)
+        ext = ''
+    elif len(value) == 2:
+        path, filename = value
+        ext = ''
+    else:
+        path, filename, ext = value
 
-        # Strip '/' off the end, and './' from the beginning.
-        path = os.path.normpath(path).replace('\\', '/').rstrip('/')
+    if not ext and '.' in filename:
+        filename, ext = filename.rsplit('.', 1)
 
-        # Special case - empty path gets returned as '.'...
-        if path == '.':
-            path = ''
-            
-        return path, filename, ext
+    if relative_to:
+        path = os.path.relpath(path, relative_to)
+
+    # Strip '/' off the end, and './' from the beginning.
+    path = os.path.normpath(path).replace('\\', '/').rstrip('/')
+
+    # Special case - empty path gets returned as '.'...
+    if path == '.':
+        path = ''
+
+    return path, filename, ext
 
 
-def _join_file_parts(path, filename, ext):
+def _join_file_parts(path: str, filename: str, ext: str) -> str:
     """Join together path components to the full path.
     
     Any of the segments can be blank, to skip them.
@@ -165,7 +170,7 @@ class FileInfo:
         return _join_file_parts(self.dir, self._filename, self.ext)
     name = filename
         
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '<VPK File: "{}">'.format(
             _join_file_parts(self.dir, self._filename, self.ext),
         )
@@ -175,7 +180,7 @@ class FileInfo:
         """The total size of this file."""
         return self.arch_len + len(self.start_data)
         
-    def read(self):
+    def read(self) -> bytes:
         """Return the contents for this file."""
         if self.arch_len:
             if self.arch_index is None:
@@ -188,7 +193,7 @@ class FileInfo:
         else:
             return self.start_data
             
-    def verify(self):
+    def verify(self) -> bool:
         """Check this file matches the checksum."""
         chk = checksum(self.start_data)
         if self.arch_len:
@@ -207,7 +212,7 @@ class FileInfo:
                     )
         return chk == self.crc
            
-    def write(self, data: bytes, arch_index=None):
+    def write(self, data: bytes, arch_index: Optional[int]=None) -> None:
         """Replace this file with the given byte data.
         
         arch_index is the pak_01_000 file to put data into (or None for _dir).
@@ -267,7 +272,7 @@ class VPK:
             raise ValueError("Invalid version ({}) - must be 1 or 2!".format(version))
 
         self.folder = self.file_prefix = ''
-        self.path = dir_file
+        self.path = dir_file  # Sets the above correctly + checks.
 
         # fileinfo[extension][directory][filename]
         self._fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
@@ -282,13 +287,13 @@ class VPK:
         
         self.load_dirfile()
         
-    def _check_writable(self):
+    def _check_writable(self) -> None:
         """Verify that this is writable."""
         if not self.mode.writable:
             raise ValueError("Can't write with this mode!")
 
     @property
-    def path(self):
+    def path(self) -> str:
         """Return the location of the directory VPK file."""
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
@@ -303,7 +308,7 @@ class VPK:
         self.folder = folder
         self.file_prefix = filename[:-8]
 
-    def load_dirfile(self):
+    def load_dirfile(self) -> None:
         """Read in the directory file to get all filenames.
         
         This erases all changes in the file.
@@ -385,9 +390,8 @@ class VPK:
                     break
 
             self.footer_data = dirfile.read()
-    
 
-    def write_dirfile(self):
+    def write_dirfile(self) -> None:
         """Write the directory file with the changes.
         
         This must be performed after writing to the VPK.
@@ -441,10 +445,15 @@ class VPK:
             file.seek(struct.calcsize('<II'))  # Skip signature and version
             file.write(struct.pack('<I', dir_len))
                 
-    def __enter__(self):
+    def __enter__(self) -> 'VPK':
         return self
     
-    def __exit__(self, exc_type, exc_value, exc_trace):
+    def __exit__(
+        self,
+        exc_type: Type[BaseException],
+        exc_value: BaseException,
+        exc_trace: TracebackType,
+    ) -> None:
         """When exiting a context sucessfully, the index will be saved."""
         if exc_type is None and self.mode.writable:
             self.write_dirfile()
@@ -467,7 +476,7 @@ class VPK:
                     _join_file_parts(path, filename, ext)
                 )) from None
                 
-    def __delitem__(self, item: FileName):
+    def __delitem__(self, item: FileName) -> None:
         """Delete a file.
         
         Possible arguments:
@@ -510,6 +519,7 @@ class VPK:
         return count
 
     def __contains__(self, item: FileName) -> bool:
+        """Check if the specified filename is present in the VPK."""
         path, filename, ext = _get_file_parts(item)
 
         try:
@@ -526,7 +536,7 @@ class VPK:
                     with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 
-    def new_file(self, filename: FileName, root: str=None) -> FileInfo:
+    def new_file(self, filename: FileName, root: Optional[str] = None) -> FileInfo:
         """Create the given file, making it empty by default.
         
         If root is set, files are treated as relative to there,
@@ -562,13 +572,19 @@ class VPK:
         
         return info
 
-    def add_file(self, filename: FileName, data: bytes, root=None, arch_index=0):
+    def add_file(
+        self,
+        filename: FileName,
+        data: bytes,
+        root: Optional[str] = None,
+        arch_index: Optional[int] = 0,
+    ) -> None:
         """Add the given data to the VPK. 
         
         If root is set, files are treated as relative to there,
         otherwise the filename must be relative.
         arch_index is the pak01_xxx file to copy this to, if the length
-        is larger than self.dir_limit.
+        is larger than self.dir_limit. If None it's written to the _dir file.
         
         FileExistsError will be raised if the file is already present.
         """
