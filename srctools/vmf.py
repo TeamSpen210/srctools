@@ -3,6 +3,7 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 import io
+import re
 import itertools
 import operator
 import builtins
@@ -14,6 +15,7 @@ from typing import (
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
     NamedTuple, MutableMapping,
+    Pattern, Match,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -2038,10 +2040,11 @@ class EntityFixup(MutableMapping[str, str]):
 
     # Because of the int(), bool(), float() methods, we need to use builtins.*
     # for the type annotations.
-    __slots__ = ['_fixup']
+    __slots__ = ['_fixup', '_matcher']
 
     def __init__(self, fixup: Iterable[FixupTuple]=()):
         self._fixup = {}  # type: Dict[str, FixupTuple]
+        self._matcher = None  # type: Optional[Pattern[str]]
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
@@ -2079,6 +2082,7 @@ class EntityFixup(MutableMapping[str, str]):
     def clear(self) -> None:
         """Wipe all the $fixup values."""
         self._fixup.clear()
+        self._matcher = None
 
     def setdefault(self, var: str, default: T=None) -> Union[str, T]:
         """Return $key, but if not present set it to the default and return that."""
@@ -2138,12 +2142,15 @@ class EntityFixup(MutableMapping[str, str]):
                 if ind not in indexes:
                     self._fixup[folded_var] = FixupTuple(var, sval, ind)
                     break
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
         else:
             self._fixup[folded_var] = FixupTuple(
                 var,
                 sval,
                 self._fixup[folded_var].id,
             )
+            # self._matcher is still correct.
 
     def __delitem__(self, var: str) -> None:
         """Delete a instance $replace variable."""
@@ -2152,6 +2159,8 @@ class EntityFixup(MutableMapping[str, str]):
         var = var.casefold()
         if var in self._fixup:
             del self._fixup[var]
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
 
     def keys(self) -> Iterator[str]:
         """Iterate over all set variable names."""
@@ -2197,6 +2206,42 @@ class EntityFixup(MutableMapping[str, str]):
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
         return self.__class__.__name__ + '([' + items + '])'
+
+    def substitute(self, text: str, default: str=None) -> str:
+        """Substitute the fixup variables into the provided string.
+
+        Variables are found based on the defined values, so constructions such as
+        val$varval are valid (with no delimiter indicating the end of variables).
+        Longer matches are preferred. If the name after $ is not found at all,
+        a KeyError is raised, or if default is provided it is substituted.
+
+        Any key is valid if defined in the instance, but only a-z, 0-9 and _ is
+        detected for the default functionality.
+        """
+        if '$' not in text:
+            return text
+
+        # Cache the pattern used, we can reuse it whenever called again without
+        # adding new variables.
+        if self._matcher is None:
+            # Sort longer values first, so they are checked before smaller
+            # counterparts.
+            sections = list(map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True)))
+            sections.append('[a-z_][a-z0-9_]*')  # Then add on the default any-identifier check.
+            # $, plus any of the above parts.
+            self._matcher = re.compile('\\$({})'.format('|'.join(sections)), re.IGNORECASE)
+
+        def replacer(match: 'Match[str]') -> str:
+            """Handles the replacement semantics."""
+            varname = match.group(1)
+            try:
+                return self._fixup[varname.casefold()].value
+            except KeyError:
+                if default is None:
+                    raise KeyError('$' + varname) from None
+                return default
+
+        return self._matcher.sub(replacer, text)
 
     def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
