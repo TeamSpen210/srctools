@@ -13,7 +13,7 @@ from typing import (
     Optional, Union, Any, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
-    NamedTuple,
+    NamedTuple, MutableMapping,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -2026,7 +2026,7 @@ FixupTuple = NamedTuple('FixupTuple', [
 ])
 
 
-class EntityFixup:
+class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
@@ -2035,6 +2035,7 @@ class EntityFixup:
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
     """
+
     # Because of the int(), bool(), float() methods, we need to use builtins.*
     # for the type annotations.
     __slots__ = ['_fixup']
@@ -2079,19 +2080,20 @@ class EntityFixup:
         """Wipe all the $fixup values."""
         self._fixup.clear()
 
-    def update(self, other: Union['EntityFixup', Mapping[str, str]]) -> None:
-        """Copy the keys of the other item to this one.
-
-        Variable IDs are not preserved.
-        """
-        if isinstance(other, EntityFixup):
-            # Iterate over the internal tuples.
-            for var in other._fixup.values():
-                self[var.var] = var.value
+    def setdefault(self, var: str, default: T=None) -> Union[str, T]:
+        """Return $key, but if not present set it to the default and return that."""
+        if var[0] == '$':
+            var = var[1:]
+        folded_var = var.casefold()
+        if folded_var in self._fixup:
+            return self._fixup[folded_var].value
         else:
-            # Convert to dict - this all mapping types.
-            for key, value in dict(other).items():
-                self[key] = value
+            self[folded_var] = default
+            return default
+
+    def __len__(self) -> int:
+        """Return the number of defined keys."""
+        return len(self._fixup)
 
     @overload
     def __getitem__(self, key: str) -> str: ...
