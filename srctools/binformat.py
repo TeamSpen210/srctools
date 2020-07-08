@@ -56,7 +56,7 @@ def str_readvec(file: IO[bytes]) -> Vec:
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
 
 
-def checksum(data: bytes, prior=0):
+def checksum(data: bytes, prior=0) -> int:
     """Compute the VPK checksum for a file.
 
     Passing a previous computation to allow calculating

@@ -438,7 +438,7 @@ class Property:
         for block in self.find_all(*keys):
             yield from block
 
-    def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND):
+    def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND) -> 'Property':
         """Obtain the child Property with a given name.
 
         - If no child is found with the given name, this will return the

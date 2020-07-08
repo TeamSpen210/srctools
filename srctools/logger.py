@@ -10,7 +10,7 @@ import sys
 import io
 import traceback
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any
+from typing import Dict, Tuple, Union, Type, Callable, Any, cast
 
 
 class LogMessage:
@@ -209,7 +209,7 @@ def init_logging(
     If the exception is a BaseException, the app will quit silently.
     """
 
-    class NewLogRecord(logging.getLogRecordFactory()):
+    class NewLogRecord(cast(logging.LogRecord, logging.getLogRecordFactory())):
         """Allow passing an alias for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
 

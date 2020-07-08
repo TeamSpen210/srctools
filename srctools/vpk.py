@@ -50,7 +50,7 @@ def iter_nullstr(file: BinaryIO) -> Iterator[str]:
             else:
                 yield string
         elif char == b'':
-            raise Exception('Reached EOF without null-terminator in {}!'.format(bytes(chars)))
+            raise Exception('Reached EOF without null-terminator in {!r}!'.format(bytes(chars)))
         else:
             chars.extend(char)
 
@@ -73,7 +73,7 @@ def get_arch_filename(prefix='pak01', index: int=None):
     if index is None:
         return prefix + '_dir.vpk'
     else:
-        return '{}_{!s:>03}.vpk'.format(prefix, index)
+        return '{}_{:>03}.vpk'.format(prefix, index)
 
 
 def _get_file_parts(value: FileName, relative_to='') -> Tuple[str, str, str]:
