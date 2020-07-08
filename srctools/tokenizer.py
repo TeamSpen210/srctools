@@ -25,11 +25,11 @@ class TokenSyntaxError(Exception):
     line_num = The line where the error occurred.
     """
     def __init__(
-            self,
-            message: str,
-            file: Optional[str],
-            line: Optional[int]
-            ) -> None:
+        self,
+        message: str,
+        file: Optional[str],
+        line: Optional[int],
+    ) -> None:
         super().__init__()
         self.mess = message
         self.file = file
@@ -85,7 +85,7 @@ class Token(Enum):
         return self.value in (1, 3, 10)
 
 _PUSHBACK_VALS = {
-    Token.EOF: None,
+    Token.EOF: '',
     Token.NEWLINE: '\n',
 
     Token.BRACE_OPEN: '{',
@@ -107,9 +107,6 @@ _OPERATORS = {
     ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
-
-    # None is returned when no more characters...
-    None: Token.EOF,
 }
 
 
@@ -175,7 +172,7 @@ class Tokenizer:
             self.filename = None
 
         if error is None:
-            self.error_type = TokenSyntaxError
+            self.error_type = TokenSyntaxError  # type: Type[TokenSyntaxError]
         else:
             if not issubclass(error, TokenSyntaxError):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
@@ -257,7 +254,7 @@ class Tokenizer:
                 # Out of characters after empty chunks
                 return None
 
-    def __call__(self) -> Tuple[Token, Optional[str]]:
+    def __call__(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
         if self._pushback is not None:
             next_val = self._pushback
@@ -266,7 +263,9 @@ class Tokenizer:
 
         while True:
             next_char = self._next_char()
-            # First try simple operators & EOF.
+            if next_char is None:  # EOF, use a dummy string.
+                return Token.EOF, ''
+            # First try simple operators.
             try:
                 return _OPERATORS[next_char], next_char
             except KeyError:
@@ -440,13 +439,14 @@ class Tokenizer:
 
     def __iter__(self) -> Iterator[Tuple[Token, str]]:
         # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, None))
+        return iter(self, (Token.EOF, ''))
 
     def push_back(self, tok: Token, value: str=None) -> None:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value should be the original value, or None
+        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
+        for other token types.
         """
         if self._pushback is not None:
             raise ValueError('Token already pushed back!')
@@ -454,21 +454,10 @@ class Tokenizer:
             raise ValueError(repr(tok) + ' is not a Token!')
 
         try:
-            real_value = _PUSHBACK_VALS[tok]
+            value = _PUSHBACK_VALS[tok]
         except KeyError:
             if value is None:
-                value = ''
-            elif not isinstance(value, str):
-                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
-                    value, tok.name
-                )) from None
-        else:
-            if value is None:
-                value = real_value
-            elif real_value != value:
-                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
-                    value, tok.name
-                )) from None
+                raise ValueError('Value required for {!r}!'.format(tok.name)) from None
 
         self._pushback = (tok, value)
 
@@ -489,7 +478,7 @@ class Tokenizer:
             elif tok is not Token.NEWLINE:
                 yield tok_and_val
 
-    def expect(self, token: Token, skip_newline: bool=True) -> Optional[str]:
+    def expect(self, token: Token, skip_newline: bool=True) -> str:
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.

@@ -40,7 +40,7 @@ cdef:
     object EMPTY_ITER = iter('')
 
     # Reuse a single tuple for these, since the value is constant.
-    tuple EOF_TUP = (Token.EOF, None)
+    tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
 
     tuple COLON_TUP = (Token.COLON, ':')
@@ -489,7 +489,8 @@ cdef class Tokenizer:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value should be the original value, or None
+        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
+        for other token types.
         """
         if self.pushback_tok is not None:
             raise ValueError('Token already pushed back!')
@@ -501,9 +502,12 @@ cdef class Tokenizer:
         cdef str real_value
 
         if tok_val == 0: # EOF
-            real_value = None
-        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
             real_value = ''
+        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+            # The value can be anything, so just accept this.
+            self.pushback_tok = tok
+            self.pushback_val = value
+            return
         elif tok_val == 2:  # NEWLINE
             real_value = '\n'
         elif tok_val == 5:  # BRACE_OPEN
@@ -521,18 +525,10 @@ cdef class Tokenizer:
         elif tok_val == 15:  # PLUS
             real_value = '+'
         else:
-            raise ValueError('Unknown token value!')
+            raise ValueError(f'Unknown token {tok!r}')
 
-        # If no value provided, use the default (operators)
         if value is None:
-            value = real_value
-        # A type which needs a value provided...
-        elif real_value == '':
-            value = '' if value is None else value
-        elif not isinstance(value, str):
-            raise ValueError(
-                f'Invalid value provided ({value!r}) for {tok.name}' '!'
-            ) from None
+            raise ValueError(f'Value required for {tok!r}' '!') from None
 
         self.pushback_tok = tok
         self.pushback_val = value
@@ -594,8 +590,10 @@ cdef class _NewlinesIter:
         while True:
             tok_and_val = self.tok.next_token()
 
+            # Only our code is doing next_token here, so the tuples are
+            # going to be this same instance.
             if tok_and_val is EOF_TUP:
-                raise StopIteration
+                raise StopIteration()
             elif tok_and_val is not NEWLINE_TUP:
                 return tok_and_val
 
