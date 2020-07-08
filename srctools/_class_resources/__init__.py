@@ -183,6 +183,7 @@ res('event_queue_saveload_proxy')
 res('fish')
 res('floorturret_tipcontroller')
 
+res('game_ui')
 res('gib')
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),

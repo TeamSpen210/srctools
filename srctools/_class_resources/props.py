@@ -1,5 +1,7 @@
 """Prop entities."""
+from srctools import Property, KeyValError, NoKeyError
 from srctools._class_resources import *
+from srctools.mdl import Model
 
 
 res('prop_floor_button')  # Model set in keyvalues.
@@ -19,6 +21,7 @@ res('prop_combine_ball',
     sound("NPC_CombineBall.WhizFlyby"),
     sound("NPC_CombineBall.Impact"),
     )
+res('prop_coreball', mdl('models/props_combine/coreball.mdl'))
 res('prop_button',
     mdl('models/props/switch001.mdl'),
     sound('Portal.button_down'),
@@ -26,10 +29,18 @@ res('prop_button',
     sound('Portal.button_locked'),
     sound('Portal.room1_TickTock'),
     )
+
 res('prop_dynamic',
     sound("Metal.SawbladeStick"),
     sound("PropaneTank.Burst"),
     aliases='dynamic_prop',
+    )
+res('prop_dropship_container',
+    mdl('models/combine_dropship_container.mdl'),
+    mdl('models/gibs/helicopter_brokenpiece_01.mdl'),
+    mdl('models/gibs/helicopter_brokenpiece_02.mdl'),
+    mdl('models/gibs/helicopter_brokenpiece_03.mdl'),
+    mdl('models/gibs/hgibs.mdl'),
     )
 res('prop_energy_ball',
     mdl('models/effects/combineball.mdl'),
@@ -98,3 +109,4 @@ res('prop_wall_projector',
     part('projected_wall_impact'),
     )
 res('prop_ragdoll', aliases='physics_prop_ragdoll')
+res('prop_scalable')
