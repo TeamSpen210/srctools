@@ -155,7 +155,7 @@ def make_overlay(
     v_repeat: float=1,
     swap: bool=False,
     render_order: int=0,
-    ) -> 'Entity':
+) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
     - origin is the center point of the overlay.
@@ -168,7 +168,7 @@ def make_overlay(
     - If swap is true, the texture will be rotated 90.
     """
     if swap:
-        uax, vax = vax, uax
+        uax, vax = vax, -uax
 
     u_dist = uax.mag()/2
     v_dist = vax.mag()/2
@@ -180,24 +180,24 @@ def make_overlay(
         angles='0 0 0',  # Not actually used by VBSP!
         # Ensure it's not exactly on the edge plane.
         origin=(origin + normal).join(' '),
-        basisNormal=normal.join(' '),
-        basisOrigin=origin.join(' '),
-        basisU=basis_u.join(' '),
-        basisV=basis_v.join(' '),
+        basisnormal=normal.join(' '),
+        basisorigin=origin.join(' '),
+        basisu=basis_u.join(' '),
+        basisv=basis_v.join(' '),
 
         material=material,
         sides=' '.join(str(side.id) for side in surfaces),
-        renderOrder=render_order,
+        renderorder=render_order,
 
-        startU='0',
-        startV='0',
-        endU=str(u_repeat),
-        endV=str(v_repeat),
+        startu='0',
+        startv='0',
+        endu=format(u_repeat, 'g'),
+        endv=format(v_repeat, 'g'),
 
-        uv0='{} {} 0'.format(-u_dist, -v_dist),
-        uv1='{} {} 0'.format(-u_dist, v_dist),
-        uv2='{} {} 0'.format(u_dist, v_dist),
-        uv3='{} {} 0'.format(u_dist, -v_dist),
+        uv0='{:g} {:g} 0'.format(-u_dist, -v_dist),
+        uv1='{:g} {:g} 0'.format(-u_dist, v_dist),
+        uv2='{:g} {:g} 0'.format(u_dist, v_dist),
+        uv3='{:g} {:g} 0'.format(u_dist, -v_dist),
     )
 
 
