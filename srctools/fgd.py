@@ -52,7 +52,7 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 3
+BIN_FORMAT_VERSION = 4
 
 
 class FGDParseError(TokenSyntaxError):
@@ -456,8 +456,9 @@ class BinStrDict:
 
         file.write(_fmt_32bit.pack(len(inv_list)))
         for txt in inv_list:
-            file.write(_fmt_16bit.pack(len(txt)))
-            file.write(txt.encode('utf8'))
+            encoded = txt.encode('utf8')
+            file.write(_fmt_16bit.pack(len(encoded)))
+            file.write(encoded)
 
     @staticmethod       
     def unserialise(file: BinaryIO) -> Callable[[], str]:
