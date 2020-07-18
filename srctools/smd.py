@@ -13,6 +13,10 @@ from typing import (
 
 from srctools import Vec
 
+__all__ = [
+    'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
+]
+
 
 class Bone:
     """Represents a single bone."""
