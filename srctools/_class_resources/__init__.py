@@ -165,6 +165,18 @@ res('combine_mine',
     aliases='bounce_bomb combine_bouncemine'
     )
 
+@cls_func
+def color_correction(pack: PackList, ent: Entity) -> None:
+    """Pack the color correction file."""
+    pack.pack_file(ent['filename'])
+
+
+@cls_func
+def color_correction_volume(pack: PackList, ent: Entity) -> None:
+    """Pack the color correction file for this too."""
+    pack.pack_file(ent['filename'])
+
+
 res('commentary_auto')
 res('commentary_dummy')
 res('commentary_zombie_spawner')
@@ -360,6 +372,14 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
 res('test_proxytoggle')
+
+
+@cls_func
+def vgui_movie_display(pack: PackList, ent: Entity):
+    """Mark the BIK movie as being used, though it can't be packed."""
+    pack.pack_file(ent['MovieFilename'])
+
+
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )

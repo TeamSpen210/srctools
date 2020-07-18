@@ -24,6 +24,14 @@ res('logic_multicompare')
 res('logic_navigation')
 res('logic_parent')
 res('logic_playerinfo')
+
+
+@cls_func
+def logic_playmovie(pack: PackList, ent: Entity):
+    """Mark the BIK movie as being used, though it can't be packed."""
+    pack.pack_file('media/' + ent['MovieFilename'])
+
+
 res('logic_playerproxy')
 res('logic_random_outputs')
 res('logic_register_activator')
