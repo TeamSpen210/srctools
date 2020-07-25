@@ -771,47 +771,61 @@ class VMF:
         p2: Vec,
         thick: float=16,
         mat: str='tools/toolsnodraw',
+        inner_mat: str='',
     ) -> List['Solid']:
-        """Create 6 brushes to surround the given region."""
+        """Create 6 brushes to surround the given region.
+
+        If inner_mat is not specified, it's set to mat.
+        """
+        if not inner_mat:
+            inner_mat = mat
         b_min, b_max = Vec.bbox(p1, p2)
 
         top = self.make_prism(
             Vec(b_min.x, b_min.y, b_max.z),
             Vec(b_max.x, b_max.y, b_max.z + thick),
             mat,
-        ).solid
+        )
 
         bottom = self.make_prism(
             Vec(b_min.x, b_min.y, b_min.z),
             Vec(b_max.x, b_max.y, b_min.z - thick),
             mat,
-        ).solid
+        )
 
         west = self.make_prism(
             Vec(b_min.x - thick, b_min.y, b_min.z),
             Vec(b_min.x, b_max.y, b_max.z),
             mat,
-        ).solid
+        )
 
         east = self.make_prism(
             Vec(b_max.x, b_min.y, b_min.z),
             Vec(b_max.x + thick, b_max.y, b_max.z),
             mat
-        ).solid
+        )
 
         north = self.make_prism(
             Vec(b_min.x, b_max.y, b_min.z),
             Vec(b_max.x, b_max.y + thick, b_max.z),
             mat,
-        ).solid
+        )
 
         south = self.make_prism(
             Vec(b_min.x, b_min.y - thick, b_min.z),
             Vec(b_max.x, b_min.y, b_max.z),
             mat,
-        ).solid
+        )
 
-        return [north, south, east, west, top, bottom]
+        top.bottom.mat = bottom.top.mat = inner_mat
+        east.west.mat = west.east.mat = inner_mat
+        north.south.mat = south.north.mat = inner_mat
+
+        return [
+            north.solid, south.solid,
+            east.solid, west.solid,
+            top.solid, bottom.solid,
+        ]
 
 
 class Camera:
