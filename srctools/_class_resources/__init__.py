@@ -275,9 +275,12 @@ res('light_dynamic')
 res('light_environment')
 res('light_spot')
 res('lookdoorthinker')
-res('raggib')
-res('sparktrail', sound('DoSpark'))
 
+res('mortarshell',
+    mat('materials/sprites/physbeam.vmt'),
+    mat('materials/effects/ar2ground2.vmt'),
+    sound('Weapon_Mortar.Impact'),
+    )
 
 @cls_func
 def move_rope(pack: PackList, ent: Entity) -> None:
@@ -340,6 +343,7 @@ res('point_viewcontrol_survivor')
 res('point_viewproxy')
 res('point_weaponstrip')
 
+res('raggib')
 res('rope_anchor', mat("materials/cable/cable.vmt"))
 res('rocket_turret_projectile',
     mdl('models/props_bts/rocket.mdl'),
@@ -353,6 +357,7 @@ res('rpg_missile',
     )
 res('soundent')
 res('spraycan', sound("SprayCan.Paint"))
+res('sparktrail', sound('DoSpark'))
 res('spark_shower',
     mat('materials/sprites/glow01.vmt'),
     mat('materials/effects/yellowflare.vmt'),

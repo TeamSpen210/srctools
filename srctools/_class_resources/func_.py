@@ -157,6 +157,32 @@ res('func_precipitation',
     part("snow_outer"),
     )
 
+
+res('func_tank',
+    sound('Func_Tank.BeginUse'),
+    # Only if set to cannon, but that doesn't really matter too much.
+    sound('NPC_Combine_Cannon.FireBullet'),
+    )
+res('func_tankpulselaser', includes='func_tank grenade_beam')
+res('func_tanklaser', includes='func_tank')
+res('func_tankrocket', includes='func_tank rpg_missile')
+res('func_tankairboatgun',
+    sound('Airboat.FireGunLoop'),
+    sound('Airboat.FireGunRevDown'),
+    includes='func_tank',
+    )
+res('func_tankapcrocket',
+    sound('PropAPC.FireCannon'),
+    includes='func_tank apc_missile',
+    )
+res('func_tankmortar', includes='func_tank mortarshell')
+res('func_tankphyscannister', includes='func_tank')
+res('func_tank_combine_cannon',
+    mat('materials/effects/blueblacklargebeam.vmt'),
+    part('Weapon_Combine_Ion_Cannon'),
+    includes='func_tank',
+    )
+
 res('func_tankchange', sound('FuncTrackChange.Blocking'))
 res('func_recharge',
     sound('SuitRecharge.Deny'),
