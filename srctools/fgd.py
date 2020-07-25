@@ -973,7 +973,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         Either obj['name'], or obj['name', {tags}] is accepted.
         """
         if isinstance(name, str):
-            search_tags = set()
+            search_tags = None
         elif isinstance(name, tuple):
             name, search_tags = name
             search_tags = frozenset({t.casefold() for t in search_tags})
@@ -995,7 +995,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 key=lambda t: len(t[0]),
                 reverse=True,
             ):
-                if match_tags(search_tags, tags):
+                if search_tags is None or match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
         
