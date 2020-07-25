@@ -593,6 +593,8 @@ class PackList:
 
     def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
+        unknown_keys = set()
+
         for ent in vmf.entities:
             classname = ent['classname']
             try:
@@ -638,8 +640,10 @@ class PackList:
                     val_type = kv.type
                     default = kv.default
                 except KeyError:
-                    LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
-                                   key, ent['classname'])
+                    if (classname, key) not in unknown_keys:
+                        unknown_keys.add((ent_class.classname, key))
+                        LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
+                                       key, ent['classname'])
                     val_type = None  # Doesn't match any enum.
                     default = ''
 
