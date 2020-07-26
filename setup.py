@@ -31,6 +31,8 @@ setup(
         'srctools.scripts',
         'srctools.test',
         'srctools.bsp_transform',
+        'srctools.pyinstaller_hook',
+        'srctools._class_resources',
     ],
     # Setuptools automatically runs Cython, if available.
     ext_modules=cythonize([
