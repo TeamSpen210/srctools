@@ -702,6 +702,7 @@ class PackList:
             self.pack_file(
                 'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
                 FileType.MATERIAL,
+                optional=True,
             )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
 
