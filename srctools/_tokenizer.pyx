@@ -9,12 +9,8 @@ cdef extern from *:
     unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 # On Python 3.6+, convert stuff to PathLike.
-cdef object _conv_path
-try:
-    from os import fspath as _conv_path
-except ImportError:
-    # Default to just using str().
-    _conv_path = str
+cdef object os_fspath
+from os import fspath as os_fspath
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -137,18 +133,19 @@ cdef class Tokenizer:
         
         self.buf_reset()
 
-        if filename:
-            # Use os method to convert to string.
-            # We know this isn't a method.
-            with cython.optimize.unpack_method_calls(False):
-                self.filename = _conv_path(filename)
-        else:
-            # If a file-like object, automatically set to the filename.
+        if not filename:
+            # If we're given a file-like object, automatically set the filename.
             try:
-                self.filename = str(data.name)
+                filename = data.name
             except AttributeError:
-                # If not, a Falsey value is excluded by the exception message.
-                self.filename = ''
+                # If not, a Falsey filename means nothing is added to any
+                # KV exception message.
+                filename = ''
+        
+        # Use os method to convert to string.
+        # We know this isn't a method, so skip Cython's optimisation.
+        with cython.optimize.unpack_method_calls(False):
+            self.filename = os_fspath(filename)
 
         if error is None:
             self.error_type = TokenSyntaxError

@@ -289,7 +289,7 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename: str, is_bytes: bool=False, encoding: str='utf8') -> None:
+    def __init__(self, filename: _os.PathLike, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """

@@ -95,9 +95,9 @@ class File(Generic[FileSysT]):
 
 class FileSystem(Generic[_SysRefT, _FileDataT]):
     """Base class for different systems defining the interface."""
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, os.PathLike]) -> None:
         self.path = os.fspath(path)
-        self._ref = None  # type: Optional[_SysRefT]
+        self._ref: Optional[_SysRefT] = None
         self._ref_count = 0
 
     def open_ref(self) -> None:
@@ -219,7 +219,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
 
     def __init__(self, *systems: Union[ChildSysT, Tuple[str, ChildSysT]]) -> None:
         super().__init__('')
-        self.systems = []  # type: List[Tuple[ChildSysT, str]]
+        self.systems: List[Tuple[ChildSysT, str]] = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -297,7 +297,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
 
     def walk_folder(self, folder: str) -> Iterator[File]:
         """Walk folders, not repeating files."""
-        done = set()  # type: Set[str]
+        done: Set[str] = set()
         for file in self.walk_folder_repeat(folder):
             folded = file.path.casefold()
             if folded in done:
@@ -452,7 +452,7 @@ class RawFileSystem(FileSystem):
 
     This prohibits access to folders above the root.
     """
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, os.PathLike]):
         super().__init__(os.path.abspath(path))
 
     def __repr__(self):
@@ -531,9 +531,9 @@ class RawFileSystem(FileSystem):
 
 class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
     """Accesses files in a zip file."""
-    def __init__(self, path: str, zipfile: Optional[ZipFile]=None) -> None:
+    def __init__(self, path: Union[str, os.PathLike], zipfile: Optional[ZipFile]=None) -> None:
         super().__init__(path)
-        self._name_to_info = {}  # type: Dict[str, ZipInfo]
+        self._name_to_info: Dict[str, ZipInfo] = {}
 
         if zipfile is not None:
             # Use the zipfile directly, and don't close it.
@@ -617,10 +617,10 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
 
 class VPKFileSystem(FileSystem[VPK, VPKFile]):
     """Accesses files in a VPK file."""
-    def __init__(self, path: str):
+    def __init__(self, path: Union[str, os.PathLike]):
         super().__init__(path)
         # Used to enforce case-insensitivity.
-        self._name_to_file = {}  # type: Dict[str, VPKFile]
+        self._name_to_file: Dict[str, VPKFile] = {}
 
     def __repr__(self) -> str:
         return 'VPKFileSystem({!r})'.format(self.path)

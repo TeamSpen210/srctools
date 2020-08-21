@@ -3,18 +3,12 @@
 This is used internally for parsing files.
 """
 from enum import Enum
-
+from os import fspath as _conv_path, PathLike
 from typing import (
     Union, Optional, Type, Any,
     Iterable, Iterator,
     Tuple, List,
 )
-
-try:
-    from os import fspath as _conv_path, PathLike
-except ImportError:
-    _conv_path = str  # type: ignore
-    PathLike = str  # type: ignore
 
 
 class TokenSyntaxError(Exception):
@@ -142,7 +136,7 @@ class Tokenizer:
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: PathLike=None,
+        filename: Union[str, PathLike]=None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
