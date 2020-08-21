@@ -20,10 +20,9 @@ setup(
     keywords='',
     classifiers=[
         'License :: Public Domain',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
     ],
     packages=[
@@ -60,10 +59,9 @@ setup(
             'srctools_diff = srctools.scripts.diff:main',
         ],
     },
-    python_requires='>=3.4, <4',
+    python_requires='>=3.6, <4',
     install_requires=[
         'PyInstaller',
         'importlib_resources',
-        'aenum<3.6',
     ],
 )
