@@ -116,6 +116,7 @@ def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
 
 # In alphabetical order:
 
+res('_ballplayertoucher')
 res('_firesmoke', *[
     # env_fire_[tiny/small/medium/large][_smoke]
     part('env_fire_ ' + name + smoke)
@@ -126,7 +127,6 @@ res('_plasma',
     mat("materials/sprites/plasma1.vmt"),
     mat("materials/sprites/fire_floor.vmt"),
     )
-
 
 res('aiscripted_schedule')
 
@@ -297,6 +297,19 @@ def move_rope(pack: PackList, ent: Entity) -> None:
 # These classes are identical.
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
 ALT_NAMES['keyframe_rope'] = 'move_rope'
+
+res('passtime_ball',
+    mdl('models/passtime/ball/passtime_ball_halloween.mdl'),
+    mdl('models/passtime/ball/passtime_ball.mdl'),
+    mat("materials/passtime/passtime_balltrail_red.vmt"),
+    mat("materials/passtime/passtime_balltrail_blu.vmt"),
+    mat("materials/passtime/passtime_balltrail_unassigned.vmt"),
+    sound('Passtime.BallSmack'),
+    sound('Passtime.BallGet'),
+    sound('Passtime.BallIdle'),
+    sound('Passtime.BallHoming'),
+    includes='_ballplayertoucher',
+)
 
 res('phys_bone_follower')
 res('physics_cannister')  # All in KVs.

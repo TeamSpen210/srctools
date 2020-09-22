@@ -1,7 +1,6 @@
 """Prop entities."""
 from srctools import Property, KeyValError, NoKeyError
 from srctools._class_resources import *
-from srctools.mdl import Model
 
 
 res('prop_floor_button')  # Model set in keyvalues.
@@ -35,6 +34,8 @@ res('prop_dynamic',
     sound("PropaneTank.Burst"),
     aliases='dynamic_prop',
     )
+# The same class, but don't let these swap to each other!
+res('prop_dynamic_override', includes='prop_dynamic')
 res('prop_dropship_container',
     mdl('models/combine_dropship_container.mdl'),
     mdl('models/gibs/helicopter_brokenpiece_01.mdl'),
@@ -53,6 +54,16 @@ res('prop_energy_ball',
     sound('EnergyBall.AmbientLoop'),
     )
 
+res('prop_exploding_barrel',
+    mdl('models/props/coop_cementplant/exloding_barrel/exploding_barrel.mdl'),
+    mdl('models/props/coop_cementplant/exloding_barrel/exploding_barrel_top.mdl'),
+    mdl('models/props/coop_cementplant/exloding_barrel/exploding_barrel_bottom.mdl'),
+    sound('BaseGrenade.Explode'),
+    sound('Inferno.Start_IncGrenade'),
+    part('explosion_hegrenade_interior'),
+    part('dust_burning_engine'),
+    includes='prop_physics',
+    )
 res('prop_exploding_futbol',
     mdl('models/npcs/personality_sphere_angry.mdl'),
     part('bomb_trail'),
@@ -80,6 +91,15 @@ res('prop_monster_box',
     mdl('models/npcs/monsters/monster_a_box.mdl'),
     sound('DoSparkSmaller'),
     )
+res('prop_physics', aliases='physics_prop')
+# The same class, but don't let these swap to each other!
+res('prop_physics_override', includes='prop_physics')
+
+res('prop_testchamber_door',
+    mdl('models/props/portal_door_combined.mdl'),
+    sound('prop_portal_door.open'),
+    sound('prop_portal_door.close'),
+)
 
 res('prop_thumper',
     mdl("models/props_combine/CombineThumper002.mdl"),
