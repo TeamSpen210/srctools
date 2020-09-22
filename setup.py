@@ -1,4 +1,4 @@
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
 
 try:
     from Cython.Build import cythonize
@@ -25,14 +25,7 @@ setup(
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    packages=[
-        'srctools',
-        'srctools.scripts',
-        'srctools.test',
-        'srctools.bsp_transform',
-        'srctools.pyinstaller_hook',
-        'srctools._class_resources',
-    ],
+    packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
     ext_modules=cythonize([
         Extension(
