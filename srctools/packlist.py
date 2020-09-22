@@ -22,13 +22,6 @@ from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
 
 LOGGER = srctools.logger.get_logger(__name__)
-
-try:
-    from importlib.resources import open_binary
-except ImportError:
-    # Backport module for before Python 3.7
-    from importlib_resources import open_binary
-
 SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
 
 
@@ -75,10 +68,14 @@ def load_fgd() -> FGD:
 
     This allows the analysis to not depend on local files.
     """
-
-    from lzma import LZMAFile
-    with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
-        return FGD.unserialise(f)
+    import warnings
+    warnings.warn(
+        'Use FGD.engine_dbase() instead, '
+        'this has been moved there.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return FGD.engine_dbase()
 
 
 class PackFile:

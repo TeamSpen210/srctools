@@ -2018,6 +2018,23 @@ class FGD:
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
 
+    @classmethod
+    def engine_dbase(cls) -> 'FGD':
+        """Load and return a database of entity keyvalues and I/O.
+
+        This can be used to identify the kind of keys present on an entity.
+        Each call will parse this from scratch, so it is recommended to cache the
+        value if you are not modifying it.
+        """
+        try:
+            from importlib.resources import open_binary
+        except ImportError:
+            # Backport module for before Python 3.7
+            from importlib_resources import open_binary
+        from lzma import LZMAFile
+        with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
+            return cls.unserialise(f)
+
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
         try:
