@@ -2,10 +2,12 @@ from setuptools import setup, Extension, find_packages
 
 try:
     from Cython.Build import cythonize
+    cy_ext = '.pyx'
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
-    modules = []
-    cythonize = None
+    cy_ext = '.c'
+    def cythonize(mod):
+        return mod
 
 setup(
     name='srctools',
@@ -30,12 +32,12 @@ setup(
     ext_modules=cythonize([
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer.pyx"],
+            sources=["srctools/_tokenizer" + cy_ext],
             # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
-            sources=["srctools/_cy_vtf_readwrite.pyx"],
+            sources=["srctools/_cy_vtf_readwrite" + cy_ext],
             # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
     ]),
