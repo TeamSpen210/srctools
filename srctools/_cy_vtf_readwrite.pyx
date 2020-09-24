@@ -4,6 +4,7 @@ from cpython cimport array
 from libc.stdio cimport snprintf
 from libc.stdint cimport uint_least64_t
 from libc.stdlib cimport abort, malloc, free
+from libc.string cimport memcpy
 from cython.parallel cimport prange, parallel
 
 
@@ -69,44 +70,64 @@ cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
     rgb.b = upsample(5, b & 0b11111000)
 
 
+cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
+    """Compress RGB triplets into 565-packed data."""
+    return (
+        (r & 0b11111000) | (g >> 5),
+        (g << 5) & 0b11100000 | (b >> 3)
+    )
+
+
 # These semantically operate differently, but are implemented the same.
+# They're a special case, since we can just copy across.
 def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse RGBA-ordered 8888 pixels."""
-    cdef Py_ssize_t offset
-    for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset + R] = data[4 * offset + 0]
-        pixels[4 * offset + G] = data[4 * offset + 1]
-        pixels[4 * offset + B] = data[4 * offset + 2]
-        pixels[4 * offset + A] = data[4 * offset + 3]
+    memcpy(&pixels[0], &data[0], 4 * width * height)
+
+def save_rgba8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate RGBA-ordered 8888 pixels."""
+    memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
 def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVLX data, copying them into RGBA respectively."""
-    cdef Py_ssize_t offset
-    for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset + R] = data[4 * offset + 0]
-        pixels[4 * offset + G] = data[4 * offset + 1]
-        pixels[4 * offset + B] = data[4 * offset + 2]
-        pixels[4 * offset + A] = data[4 * offset + 3]
+    memcpy(&pixels[0], &data[0], 4 * width * height)
+
+
+def save_uvlx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate UVLX data, by copying RGBA data in that order."""
+    memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
 def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Parse UVWQ data, copying them into RGBA respectively."""
-    cdef Py_ssize_t offset
-    for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset + R] = data[4 * offset + 0]
-        pixels[4 * offset + G] = data[4 * offset + 1]
-        pixels[4 * offset + B] = data[4 * offset + 2]
-        pixels[4 * offset + A] = data[4 * offset + 3]
+    memcpy(&pixels[0], &data[0], 4 * width * height)
+
+
+def save_uvwq8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate UVWQ data, by copying RGBA data in that order."""
+    memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
 def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+    """Load BGRA format images."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset + R] = data[4 * offset + 2]
         pixels[4 * offset + G] = data[4 * offset + 1]
         pixels[4 * offset + B] = data[4 * offset + 0]
         pixels[4 * offset + A] = data[4 * offset + 3]
+
+
+def save_bgra8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate BGRA format images."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + B]
+        data[4 * offset + 1] = pixels[4 * offset + G]
+        data[4 * offset + 2] = pixels[4 * offset + R]
+        data[4 * offset + 3] = pixels[4 * offset + A]
+
 
 # This is totally the wrong order, but it's how it's actually ordered.
 def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -118,6 +139,7 @@ def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + B] = data[4 * offset + 1]
         pixels[4 * offset + A] = data[4 * offset + 2]
 
+
 def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -125,6 +147,7 @@ def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + G] = data[4 * offset + 2]
         pixels[4 * offset + B] = data[4 * offset + 1]
         pixels[4 * offset + A] = data[4 * offset + 0]
+
 
 def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
@@ -134,6 +157,16 @@ def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + B] = data[3 * offset + 2]
         pixels[4 * offset + A] = 255
 
+
+def save_rgb888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate RGB-format data, discarding alpha."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[3 * offset + 0] = pixels[4 * offset + R]
+        data[3 * offset + 1] = pixels[4 * offset + G]
+        data[3 * offset + 2] = pixels[4 * offset + B]
+
+
 def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -141,6 +174,16 @@ def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + G] = data[3 * offset + 1]
         pixels[4 * offset + B] = data[3 * offset + 0]
         pixels[4 * offset + A] = 255
+
+
+def save_bgr888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate BGR-format data, discarding alpha."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[3 * offset + 0] = pixels[4 * offset + B]
+        data[3 * offset + 1] = pixels[4 * offset + G]
+        data[3 * offset + 2] = pixels[4 * offset + R]
+
 
 def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Strange - skip byte."""
@@ -150,6 +193,16 @@ def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + G] = data[4 * offset + 1]
         pixels[4 * offset + B] = data[4 * offset + 0]
         pixels[4 * offset + A] = 255
+
+
+def save_bgrx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate BGR-format data, with an extra ignored byte."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + B]
+        data[4 * offset + 1] = pixels[4 * offset + G]
+        data[4 * offset + 2] = pixels[4 * offset + R]
+        data[4 * offset + 3] = 0
 
 
 def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -165,6 +218,17 @@ def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + A] = 255
 
 
+def save_rgb565(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate 565-format data, in RGB order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset + R],
+            pixels[4 * offset + G],
+            pixels[4 * offset + B],
+        )
+
+
 def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, packed into 2 bytes by dropping LSBs."""
     cdef Py_ssize_t offset
@@ -176,6 +240,17 @@ def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + G] = col.g
         pixels[4 * offset + B] = col.r
         pixels[4 * offset + A] = 255
+
+
+def save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate 565-format data, in BGR order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset + B],
+            pixels[4 * offset + G],
+            pixels[4 * offset + R],
+        )
 
 
 def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -229,6 +304,17 @@ def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset + A] = 255
 
 
+def save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save in greyscale."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4*offset + R]
+        g = pixels[4*offset + G]
+        b = pixels[4*offset + B]
+        data[offset] = (r + g + b) // 3
+
+
 def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """I8 format, R=G=B + A"""
     cdef Py_ssize_t offset
@@ -239,6 +325,18 @@ def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset + G] = color
         pixels[4*offset + B] = color
         pixels[4*offset+3] = data[2*offset+1]
+
+
+def save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save in greyscale, with alpha."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4*offset + R]
+        g = pixels[4*offset + G]
+        b = pixels[4*offset + B]
+        data[2 * offset + 0] = (r + g + b) // 3
+        data[2 * offset + 1] = pixels[4*offset + A]
 
 
 # ImageFormats.P8 is not implemented by Valve either.
@@ -253,6 +351,13 @@ def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset+3] = data[offset]
 
 
+def save_a8(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save just the alpha channel."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[offset] = pixels[4*offset + A]
+
+
 def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """UV-only, which is mapped to RG."""
     cdef Py_ssize_t offset
@@ -261,6 +366,14 @@ def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset + G] = 0
         pixels[4*offset + B] = 0
         pixels[4*offset + A] = data[2*offset+1]
+
+
+def save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate UV-format data, using RG."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset + 0] = pixels[4*offset + R]
+        data[2*offset + 1] = pixels[4*offset + A]
 
 
 def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -284,6 +397,21 @@ def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4 * offset + A] = 255
 
 
+def save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate RGB format, using pure blue for transparent pixels."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        if pixels[4*offset + A] < 128:
+            data[3 * offset + 0] = 0
+            data[3 * offset + 1] = 0
+            data[3 * offset + 2] = 255
+        else:
+            data[3 * offset + 0] = pixels[4*offset + R]
+            data[3 * offset + 1] = pixels[4*offset + G]
+            data[3 * offset + 2] = pixels[4*offset + B]
+
+
 def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """BGR format, with 'bluescreen' mode for alpha.
 
@@ -303,6 +431,21 @@ def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4 * offset + G] = g
             pixels[4 * offset + B] = b
             pixels[4 * offset + A] = 255
+
+
+def save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Generate BGR format, using pure blue for transparent pixels."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        if pixels[4*offset + A] < 128:
+            data[3 * offset + 0] = 255
+            data[3 * offset + 1] = 0
+            data[3 * offset + 2] = 0
+        else:
+            data[3 * offset + 0] = pixels[4*offset + B]
+            data[3 * offset + 1] = pixels[4*offset + G]
+            data[3 * offset + 2] = pixels[4*offset + R]
 
 
 def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
