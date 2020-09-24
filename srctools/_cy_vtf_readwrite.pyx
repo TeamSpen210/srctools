@@ -12,10 +12,8 @@ cdef extern from "squish.h" namespace "squish":
         kDxt1 # Use DXT1 compression.
         kDxt3 # Use DXT3 compression.
         kDxt5 # Use DXT5 compression.
-        kBc4  # Use BC4 compression.
-        kBc5  # Use BC5 compression.
-        kAti1n # Use ATI2N compression.
-        kAti2n # Use ATI2N compression.
+        kBc4  # Use BC4 / ATI1n compression.
+        kBc5  # Use BC5 / ATI2n compression.
         kColourClusterFit # Use a slow but high quality colour compressor (the default).
         kColourRangeFit # Use a fast but low quality colour compressor.
         kWeightColourByAlpha # Weight the colour by alpha during cluster fit (disabled by default).
@@ -475,12 +473,14 @@ def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
 
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
-    with nogil:
-        DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
+    DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
 
-        # Force back to 100% alpha.
-        for offset in prange(width * height, schedule='static'):
-            pixels[4 * offset + 3] = 255
+
+def save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save compressed DXT1 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+    CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
 
 
 def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -489,6 +489,13 @@ def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, ui
         raise ValueError('DXT format must be 4x4 at minimum!')
     with nogil:
         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
+
+
+def save_dxt1_onebitalpha(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+    CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
 
 
 def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -526,7 +533,17 @@ def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """
     if width < 4 or height < 4:
         raise ValueError('ATI2N format must be 4x4 at minimum!')
-    DecompressImage(&pixels[0], width, height, &data[0], kAti2n)
+    DecompressImage(&pixels[0], width, height, &data[0], kBc5)
+
+
+def save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save 'ATI2N' format data, also known as BC5.
+
+    This uses two copies of the DXT5 alpha block for data.
+    """
+    if width < 4 or height < 4:
+        raise ValueError('ATI2N format must be 4x4 at minimum!')
+    CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
 
 
 

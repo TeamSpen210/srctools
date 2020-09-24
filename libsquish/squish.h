@@ -53,29 +53,23 @@ enum
     //! Use BC5 compression.
     kBc5 = ( 1 << 4 ),
 
-    //! Use ATI1N compression.
-    kAti1n = ( 1 << 5),
-
-    //! Use ATI2N compression.
-    kAti2n = ( 1 << 6),
-
     //! Use a slow but high quality colour compressor (the default).
-    kColourClusterFit = ( 1 << 7 ),
+    kColourClusterFit = ( 1 << 5 ),
 
     //! Use a fast but low quality colour compressor.
-    kColourRangeFit = ( 1 << 8 ),
+    kColourRangeFit = ( 1 << 6 ),
 
     //! Weight the colour by alpha during cluster fit (disabled by default).
-    kWeightColourByAlpha = ( 1 << 9 ),
+    kWeightColourByAlpha = ( 1 << 7 ),
 
     //! Use a very slow but very high quality colour compressor.
-    kColourIterativeClusterFit = ( 1 << 10 ),
+    kColourIterativeClusterFit = ( 1 << 8 ),
 
     //! Source is BGRA rather than RGBA.
-    kSourceBGRA = ( 1 << 11 ),
+    kSourceBGRA = ( 1 << 9 ),
 
     //! Disable producing any alpha.
-    kForceOpaque = ( 1 << 12 ),
+    kForceOpaque = ( 1 << 10 ),
 };
 
 // -----------------------------------------------------------------------------
