@@ -40,7 +40,7 @@ static int FixFlags( int flags )
     // grab the flag bits
     int method = flags & ( kDxt1 | kDxt3 | kDxt5 | kBc4 | kBc5 );
     int fit = flags & ( kColourIterativeClusterFit | kColourClusterFit | kColourRangeFit );
-    int extra = flags & kWeightColourByAlpha;
+    int extra = flags & (kWeightColourByAlpha | kForceOpaque);
 
     // set defaults
     if ( method != kDxt3
@@ -135,13 +135,15 @@ void Decompress( u8* rgba, void const* block, int flags )
         colourBlock = reinterpret_cast< u8 const* >( block ) + 8;
 
     // decompress colour
-    DecompressColour( rgba, colourBlock, ( flags & kDxt1 ) != 0 );
+    DecompressColour( rgba, colourBlock, ( flags & kDxt1 ) != 0, ( flags & kForceOpaque ) == 0 );
 
     // decompress alpha separately if necessary
-    if( ( flags & kDxt3 ) != 0 )
-        DecompressAlphaDxt3( rgba, alphaBlock );
-    else if( ( flags & kDxt5 ) != 0 )
-        DecompressAlphaDxt5( rgba, alphaBlock );
+    if( (flags & kForceOpaque) == 0) {
+		if( ( flags & kDxt3 ) != 0 )
+			DecompressAlphaDxt3( rgba, alphaBlock );
+		else if( ( flags & kDxt5 ) != 0 )
+			DecompressAlphaDxt5( rgba, alphaBlock );
+    }
 }
 
 int GetStorageRequirements( int width, int height, int flags )

@@ -66,7 +66,10 @@ enum
     kColourIterativeClusterFit = ( 1 << 8 ),
 
     //! Source is BGRA rather than RGBA
-    kSourceBGRA = ( 1 << 9 )
+    kSourceBGRA = ( 1 << 9 ),
+
+    //! Disable producing any alpha
+    kForceOpaque = ( 1 << 10 ),
 };
 
 // -----------------------------------------------------------------------------

@@ -157,7 +157,7 @@ static int Unpack565( u8 const* packed, u8* colour )
     return value;
 }
 
-void DecompressColour( u8* rgba, void const* block, bool isDxt1 )
+void DecompressColour( u8* rgba, void const* block, bool isDxt1, bool setAlpha )
 {
     // get the block bytes
     u8 const* bytes = reinterpret_cast< u8 const* >( block );
@@ -187,7 +187,7 @@ void DecompressColour( u8* rgba, void const* block, bool isDxt1 )
 
     // fill in alpha for the intermediate values
     codes[8 + 3] = 255;
-    codes[12 + 3] = ( isDxt1 && a <= b ) ? 0 : 255;
+    codes[12 + 3] = ( setAlpha && isDxt1 && a <= b ) ? 0 : 255;
 
     // unpack the indices
     u8 indices[16];
