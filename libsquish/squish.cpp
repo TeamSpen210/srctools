@@ -38,7 +38,7 @@ namespace squish {
 static int FixFlags( int flags )
 {
     // grab the flag bits
-    int method = flags & ( kDxt1 | kDxt3 | kDxt5 | kBc4 | kBc5 );
+    int method = flags & ( kDxt1 | kDxt3 | kDxt5 | kBc4 | kBc5 | kAti1n | kAti2n );
     int fit = flags & ( kColourIterativeClusterFit | kColourClusterFit | kColourRangeFit );
     int extra = flags & (kWeightColourByAlpha | kForceOpaque);
 
@@ -46,7 +46,10 @@ static int FixFlags( int flags )
     if ( method != kDxt3
     &&   method != kDxt5
     &&   method != kBc4
-    &&   method != kBc5 )
+    &&   method != kBc5
+    &&   method != kAti1n
+    &&   method != kAti2n
+    )
     {
         method = kDxt1;
     }
@@ -127,6 +130,16 @@ void Decompress( u8* rgba, void const* block, int flags )
 {
     // fix any bad flags
     flags = FixFlags( flags );
+
+    if ((flags & kAti2n) != 0) {
+    	DecompressAlphaDxt5(rgba, block, 0);
+    	DecompressAlphaDxt5(rgba, reinterpret_cast< u8 const* >( block ) + 8, 1);
+		for( int i = 0; i < 16; ++i ) {
+			rgba[4*i + 2] = 0;
+			rgba[4*i + 3] = 255;
+		}
+    	return;
+    }
 
     // get the block locations
     void const* colourBlock = block;

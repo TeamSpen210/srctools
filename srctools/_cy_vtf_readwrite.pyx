@@ -14,6 +14,8 @@ cdef extern from "squish.h" namespace "squish":
         kDxt5 # Use DXT5 compression.
         kBc4  # Use BC4 compression.
         kBc5  # Use BC5 compression.
+        kAti1n # Use ATI2N compression.
+        kAti2n # Use ATI2N compression.
         kColourClusterFit # Use a slow but high quality colour compressor (the default).
         kColourRangeFit # Use a fast but low quality colour compressor.
         kWeightColourByAlpha # Weight the colour by alpha during cluster fit (disabled by default).
@@ -524,7 +526,8 @@ def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """
     if width < 4 or height < 4:
         raise ValueError('ATI2N format must be 4x4 at minimum!')
-    raise NotImplementedError
+    DecompressImage(&pixels[0], width, height, &data[0], kAti2n)
+
 
 
 # Don't do the high-def 16-bit resolution.

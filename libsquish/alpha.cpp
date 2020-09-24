@@ -294,7 +294,9 @@ void CompressAlphaDxt5( u8 const* rgba, int mask, void* block )
         WriteAlphaBlock7( min7, max7, indices7, block );
 }
 
-void DecompressAlphaDxt5( u8* rgba, void const* block )
+// ATI compression reuses this to compactly set U/V for normals, so
+// the off value allows setting those channels.
+void DecompressAlphaDxt5( u8* rgba, void const* block, int off)
 {
     // get the two alpha values
     u8 const* bytes = reinterpret_cast< u8 const* >( block );
@@ -344,7 +346,7 @@ void DecompressAlphaDxt5( u8* rgba, void const* block )
 
     // write out the indexed codebook values
     for( int i = 0; i < 16; ++i )
-        rgba[4*i + 3] = codes[indices[i]];
+        rgba[4*i + off] = codes[indices[i]];
 }
 
 } // namespace squish
