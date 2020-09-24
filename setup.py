@@ -1,5 +1,6 @@
 from setuptools import setup, Extension, find_packages
 import sys
+import os
 
 try:
     from Cython.Build import cythonize
@@ -11,6 +12,18 @@ except ImportError:
         return mod
 
 WIN = sys.platform.startswith('win')
+
+SQUISH_CPP = [
+    'libsquish/alpha.cpp',
+    'libsquish/clusterfit.cpp',
+    'libsquish/colourblock.cpp',
+    'libsquish/colourfit.cpp',
+    'libsquish/colourset.cpp',
+    'libsquish/maths.cpp',
+    'libsquish/rangefit.cpp',
+    'libsquish/singlecolourfit.cpp',
+    'libsquish/squish.cpp',
+]
 
 setup(
     name='srctools',
@@ -40,12 +53,16 @@ setup(
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
-            sources=["srctools/_cy_vtf_readwrite" + cy_ext],
-            extra_compile_args=[
-                '/openmp' if WIN else '-openmp',
-                # '/FAs',  # MS ASM dump
-            ],
-            extra_link_args=['/openmp' if WIN else '-openmp'],
+            include_dirs=[os.path.abspath("libsquish/")],
+            language='c++',
+            sources=[
+                "srctools/_cy_vtf_readwrite" + cy_ext,
+            ] + SQUISH_CPP,
+            # extra_compile_args=[
+            #     '/openmp' if WIN else '-openmp',
+            #     # '/FAs',  # MS ASM dump
+            # ],
+            # extra_link_args=['/openmp' if WIN else '-openmp'],
         ),
     ]),
 

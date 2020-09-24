@@ -2,11 +2,30 @@
 """Functions for reading/writing VTF data."""
 from cpython cimport array
 from libc.stdio cimport snprintf
-from libc.stdint cimport uint_least64_t
-from libc.stdlib cimport abort, malloc, free
+from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy
 from cython.parallel cimport prange, parallel
 
+cdef extern from "squish.h" namespace "squish":
+    ctypedef unsigned char u8;
+    cdef enum:
+        kDxt1 # Use DXT1 compression.
+        kDxt3 # Use DXT3 compression.
+        kDxt5 # Use DXT5 compression.
+        kBc4  # Use BC4 compression.
+        kBc5  # Use BC5 compression.
+        kColourClusterFit # Use a slow but high quality colour compressor (the default).
+        kColourRangeFit # Use a fast but low quality colour compressor.
+        kWeightColourByAlpha # Weight the colour by alpha during cluster fit (disabled by default).
+        kColourIterativeClusterFit # Use a very slow but very high quality colour compressor.
+        kSourceBGRA # Source is BGRA rather than RGBA
+        kForceOpaque # Force alpha to be opaque
+
+    # void CompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags, float *metric);
+    void CompressImage(u8 *rgba, int width, int height, void *blocks, int flags, float *metric) nogil;
+
+    # void DecompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags );
+    void DecompressImage(u8 *rgba, int width, int height, void *blocks, int flags ) nogil;
 
 cdef object img_template = array.array('B')
 ctypedef unsigned char byte
@@ -450,337 +469,52 @@ def save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, u
 
 def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT1 data."""
-    load_dxt1_impl(pixels, data, width, height, 255)
+    cdef Py_ssize_t offset
+
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+    with nogil:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
+
+        # Force back to 100% alpha.
+        for offset in prange(width * height, schedule='static'):
+            pixels[4 * offset + 3] = 255
 
 
 def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
-    load_dxt1_impl(pixels, data, width, height, 0)
-
-
-# Colour table indexes.
-DEF C0R = 0
-DEF C0G = 1
-DEF C0B = 2
-DEF C0A = 3
-
-DEF C1R = 4
-DEF C1G = 5
-DEF C1B = 6
-DEF C1A = 7
-
-DEF C2R = 8
-DEF C2G = 9
-DEF C2B = 10
-DEF C2A = 11
-
-DEF C3R = 12
-DEF C3G = 13
-DEF C3B = 14
-DEF C3A = 15
-
-cdef inline int load_dxt1_impl(
-    byte[::1] pixels,
-    const byte[::1] data,
-    uint width,
-    uint height,
-    byte black_alpha,
-) except 1:
-    """Does the actual decompression."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
-
-    cdef uint block_wid, block_off
-    cdef Py_ssize_t block_x, block_y  # OpenMP requires this to be signed.
-    cdef byte *color_table
-    cdef RGB c0, c1
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    # Make each thread have their own local color_table and c0/c1.
-    with nogil, parallel():
-        c0 = [0, 0, 0]
-        c1 = [0, 0, 0]
-        color_table = <byte *>malloc(16)
-        if color_table is NULL:
-            with gil:
-                raise MemoryError('Cannot allocate color_table!')
-        try:
-            # All but the 4th colour are opaque.
-            color_table[C0A] = color_table[C1A] = color_table[C2A] = 255
-
-            for block_y in prange(0, height //4, schedule='static'):
-                for block_x in range(0, width // 4):
-                    block_off = 8 * (block_wid * block_y + block_x)
-
-                    # First, load the 2 colors.
-                    decomp565(&c0, data[block_off], data[block_off+1])
-                    decomp565(&c1, data[block_off+2], data[block_off+3])
-
-                    color_table[C0B] = c0.r
-                    color_table[C0G] = c0.g
-                    color_table[C0R] = c0.b
-
-                    color_table[C1B] = c1.r
-                    color_table[C1G] = c1.g
-                    color_table[C1R] = c1.b
-
-                    # We store the lookup colors as bytes so we can directly copy them.
-
-                    # Equivalent to 16-bit comparison...
-                    if (
-                        data[block_off] > data[block_off+2] or
-                        data[block_off+1] > data[block_off+3]
-                    ):
-                        color_table[C2R] = (2*c0.b + c1.b) // 3
-                        color_table[C2G] = (2*c0.g + c1.g) // 3
-                        color_table[C2B] = (2*c0.r + c1.r) // 3
-
-                        color_table[C3R] = (c0.b + 2*c1.b) // 3
-                        color_table[C3G] = (c0.g + 2*c1.g) // 3
-                        color_table[C3B] = (c0.r + 2*c1.r) // 3
-                        color_table[C3A] = 255
-                    else:
-                        color_table[C2R] = (c0.b + c1.b) // 2
-                        color_table[C2G] = (c0.g + c1.g) // 2
-                        color_table[C2B] = (c0.r + c1.r) // 2
-
-                        color_table[C3R] = 0
-                        color_table[C3G] = 0
-                        color_table[C3B] = 0
-                        color_table[C3A] = black_alpha
-
-                    dxt_color_table(
-                        pixels, data, color_table,
-                        block_off, block_wid,
-                        block_x, block_y,
-                        do_alpha=True,
-                    )
-        finally:
-            free(color_table)
-
-
-cdef inline void dxt_color_table(
-    byte[::1] pixels,
-    const byte[::1] data,
-    byte *table,
-    uint block_off,
-    uint block_wid,
-    uint block_x,
-    uint block_y,
-    bint do_alpha,
-) nogil:
-    """Decodes the actual colour table into pixels."""
-    cdef unsigned int row, y
-    cdef byte inp, off
-    for y in range(4):
-        inp = data[block_off + 4 + y]
-        row = 16 * block_wid * (4 * block_y + y) + 16 * block_x
-
-        off = 4 * ((inp & 0b11000000) >> 6)
-        pixels[row + C3R] = table[off + 0]
-        pixels[row + C3G] = table[off + 1]
-        pixels[row + C3B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C3A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00110000) >> 4)
-        pixels[row + C2R] = table[off + 0]
-        pixels[row + C2G] = table[off + 1]
-        pixels[row + C2B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C2A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00001100) >> 2)
-        pixels[row + C1R] = table[off + 0]
-        pixels[row + C1G] = table[off + 1]
-        pixels[row + C1B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C1A] = table[off + 3]
-
-        off = 4 * (inp & 0b00000011)
-        pixels[row + C0R] = table[off + 0]
-        pixels[row + C0G] = table[off + 1]
-        pixels[row + C0B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C0A] = table[off + 3]
-
-
-cdef inline void dxt_alpha_table(
-    byte[::1] pixels,
-    const byte[::1] data,
-    uint block_off,
-    uint block_wid,
-    uint block_x,
-    uint block_y,
-    uint layer,
-) nogil:
-    """Decode the DXT5 alpha block into pixels.
-
-    This is split out for ATI1/2N support as well.
-    """
-    cdef byte[8] alpha
-    cdef long long x, y, i, off, pos
-    cdef uint_least64_t lookup  # at least 48 bits!
-
-    alpha[0] = data[block_off]
-    alpha[1] = data[block_off + 1]
-
-    if alpha[0] >= alpha[1]:
-        alpha[2] = (6*alpha[0] + 1*alpha[1]) // 7
-        alpha[3] = (5*alpha[0] + 2*alpha[1]) // 7
-        alpha[4] = (4*alpha[0] + 3*alpha[1]) // 7
-        alpha[5] = (3*alpha[0] + 4*alpha[1]) // 7
-        alpha[6] = (2*alpha[0] + 5*alpha[1]) // 7
-        alpha[7] = (1*alpha[0] + 6*alpha[1]) // 7
-    else:
-        alpha[2] = (4*alpha[0] + 1*alpha[1]) // 5
-        alpha[3] = (3*alpha[0] + 2*alpha[1]) // 5
-        alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
-        alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
-        alpha[6] = 0
-        alpha[7] = 255
-    # The alpha data is a 48-bit integer, where each 3 bits maps to an alpha
-    # value. It's in little-endian order!
-    # lookup = int.from_bytes(data[block_off + 2:8], 'little')
-    lookup = 0
-    for i in range(6):
-        lookup |= data[block_off + 2 + 6 - i]
-        lookup <<= 8
-
-    for i in range(16):
-        y = i // 4
-        x = i % 4
-        pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-        pixels[pos + layer] = alpha[(lookup >> (3*i)) & 0b111]
+    with nogil:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
 
 
 def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
+    DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
 
-    cdef uint block_wid, block_off, block_x, block_y
-    cdef uint x, y, off, pos
 
-    cdef byte[16] color_table
-
-    cdef RGB c0, c1
-    cdef byte inp
-
-    # All colours are opaque.
-    color_table[C0A] = color_table[C1A] = 255
-    color_table[C2A] = color_table[C3A] = 255
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    # for block_y in prange(0, height, 4, schedule='static', nogil=True):
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 16 * (block_wid * block_y + block_x)
-
-            # First, load the 2 colors.
-            decomp565(&c0, data[block_off + 8], data[block_off + 9])
-            decomp565(&c1, data[block_off + 10], data[block_off + 11])
-
-            color_table[C0R] = c0.b
-            color_table[C0G] = c0.g
-            color_table[C0B] = c0.r
-
-            color_table[C1R] = c1.b
-            color_table[C1G] = c1.g
-            color_table[C1B] = c1.r
-
-            color_table[C2R] = (2 * c0.b + c1.b) // 3
-            color_table[C2G] = (2 * c0.g + c1.g) // 3
-            color_table[C2B] = (2 * c0.r + c1.r) // 3
-
-            color_table[C3R] = (c0.b + 2 * c1.b) // 3
-            color_table[C3G] = (c0.g + 2 * c1.g) // 3
-            color_table[C3B] = (c0.r + 2 * c1.r) // 3
-
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off + 8, block_wid,
-                block_x, block_y,
-                do_alpha=False,
-            )
-            # Now add on the real alpha values.
-            for off in range(8):
-                inp = data[block_off + off]
-                y = off * 2 // 4
-                x = off * 2 % 4
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
-                pixels[pos + A] = inp & 0b00001111 | (inp & 0b00001111) << 4
-                pixels[pos + A + 4] = inp & 0b11110000 | (inp & 0b11110000) >> 4
+def save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Save compressed DXT3 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+    CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
 
 
 def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
-
-    cdef uint block_wid, block_off, block_x, block_y
-    cdef uint x, y, i, off, pos
-
-    cdef byte[16] color_table
-
-    cdef RGB c0, c1
-    cdef byte inp
+    DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
 
 
-    # All colours are opaque.
-    color_table[C0A] = color_table[C1A] = 255
-    color_table[C2A] = color_table[C3A] = 255
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 16 * (block_wid * block_y + block_x)
-
-            # Now, load the colour blocks.
-            decomp565(&c0, data[block_off + 8], data[block_off + 9])
-            decomp565(&c1, data[block_off + 10], data[block_off + 11])
-
-            color_table[C0R] = c0.b
-            color_table[C0G] = c0.g
-            color_table[C0B] = c0.r
-
-            color_table[C1R] = c1.b
-            color_table[C1G] = c1.g
-            color_table[C1B] = c1.r
-
-            color_table[C2R] = (2 * c0.b + c1.b) // 3
-            color_table[C2G] = (2 * c0.g + c1.g) // 3
-            color_table[C2B] = (2 * c0.r + c1.r) // 3
-
-            color_table[C3R] = (c0.b + 2 * c1.b) // 3
-            color_table[C3G] = (c0.g + 2 * c1.g) // 3
-            color_table[C3B] = (c0.r + 2 * c1.r) // 3
-
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off+8, block_wid,
-                block_x, block_y,
-                do_alpha=False,
-            )
-            dxt_alpha_table(
-                pixels, data,
-                block_off, block_wid,
-                block_x, block_y,
-                A,
-            )
+def save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+    """Load compressed DXT5 data."""
+    if width < 4 or height < 4:
+        raise ValueError('DXT format must be 4x4 at minimum!')
+    CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
 
 
 def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
@@ -790,37 +524,8 @@ def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     """
     if width < 4 or height < 4:
         raise ValueError('ATI2N format must be 4x4 at minimum!')
+    raise NotImplementedError
 
-    cdef uint block_wid, block_off, block_x, block_y
-    cdef uint x, y, i, off, pos
-    cdef Py_ssize_t offset
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 16 * (block_wid * block_y + block_x)
-
-            dxt_alpha_table(
-                pixels, data,
-                block_off, block_wid,
-                block_x, block_y,
-                R,
-            )
-            dxt_alpha_table(
-                pixels, data,
-                block_off+8, block_wid,
-                block_x, block_y,
-                G,
-            )
-    # Blank out the unused channels.
-    for offset in range(width * height):
-        pixels[4 * offset + B] = 0
-        pixels[4 * offset + A] = 255
 
 # Don't do the high-def 16-bit resolution.
 
