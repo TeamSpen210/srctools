@@ -3,6 +3,7 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 import io
+import re
 import itertools
 import operator
 import builtins
@@ -13,7 +14,8 @@ from typing import (
     Optional, Union, Any, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
-    NamedTuple,
+    NamedTuple, MutableMapping,
+    Pattern, Match,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
@@ -153,7 +155,7 @@ def make_overlay(
     v_repeat: float=1,
     swap: bool=False,
     render_order: int=0,
-    ) -> 'Entity':
+) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
     - origin is the center point of the overlay.
@@ -166,7 +168,7 @@ def make_overlay(
     - If swap is true, the texture will be rotated 90.
     """
     if swap:
-        uax, vax = vax, uax
+        uax, vax = vax, -uax
 
     u_dist = uax.mag()/2
     v_dist = vax.mag()/2
@@ -178,24 +180,24 @@ def make_overlay(
         angles='0 0 0',  # Not actually used by VBSP!
         # Ensure it's not exactly on the edge plane.
         origin=(origin + normal).join(' '),
-        basisNormal=normal.join(' '),
-        basisOrigin=origin.join(' '),
-        basisU=basis_u.join(' '),
-        basisV=basis_v.join(' '),
+        basisnormal=normal.join(' '),
+        basisorigin=origin.join(' '),
+        basisu=basis_u.join(' '),
+        basisv=basis_v.join(' '),
 
         material=material,
         sides=' '.join(str(side.id) for side in surfaces),
-        renderOrder=render_order,
+        renderorder=render_order,
 
-        startU='0',
-        startV='0',
-        endU=str(u_repeat),
-        endV=str(v_repeat),
+        startu='0',
+        startv='0',
+        endu=format(u_repeat, 'g'),
+        endv=format(v_repeat, 'g'),
 
-        uv0='{} {} 0'.format(-u_dist, -v_dist),
-        uv1='{} {} 0'.format(-u_dist, v_dist),
-        uv2='{} {} 0'.format(u_dist, v_dist),
-        uv3='{} {} 0'.format(u_dist, -v_dist),
+        uv0='{:g} {:g} 0'.format(-u_dist, -v_dist),
+        uv1='{:g} {:g} 0'.format(-u_dist, v_dist),
+        uv2='{:g} {:g} 0'.format(u_dist, v_dist),
+        uv3='{:g} {:g} 0'.format(u_dist, -v_dist),
     )
 
 
@@ -769,47 +771,61 @@ class VMF:
         p2: Vec,
         thick: float=16,
         mat: str='tools/toolsnodraw',
+        inner_mat: str='',
     ) -> List['Solid']:
-        """Create 6 brushes to surround the given region."""
+        """Create 6 brushes to surround the given region.
+
+        If inner_mat is not specified, it's set to mat.
+        """
+        if not inner_mat:
+            inner_mat = mat
         b_min, b_max = Vec.bbox(p1, p2)
 
         top = self.make_prism(
             Vec(b_min.x, b_min.y, b_max.z),
             Vec(b_max.x, b_max.y, b_max.z + thick),
             mat,
-        ).solid
+        )
 
         bottom = self.make_prism(
             Vec(b_min.x, b_min.y, b_min.z),
             Vec(b_max.x, b_max.y, b_min.z - thick),
             mat,
-        ).solid
+        )
 
         west = self.make_prism(
             Vec(b_min.x - thick, b_min.y, b_min.z),
             Vec(b_min.x, b_max.y, b_max.z),
             mat,
-        ).solid
+        )
 
         east = self.make_prism(
             Vec(b_max.x, b_min.y, b_min.z),
             Vec(b_max.x + thick, b_max.y, b_max.z),
             mat
-        ).solid
+        )
 
         north = self.make_prism(
             Vec(b_min.x, b_max.y, b_min.z),
             Vec(b_max.x, b_max.y + thick, b_max.z),
             mat,
-        ).solid
+        )
 
         south = self.make_prism(
             Vec(b_min.x, b_min.y - thick, b_min.z),
             Vec(b_max.x, b_min.y, b_max.z),
             mat,
-        ).solid
+        )
 
-        return [north, south, east, west, top, bottom]
+        top.bottom.mat = bottom.top.mat = inner_mat
+        east.west.mat = west.east.mat = inner_mat
+        north.south.mat = south.north.mat = inner_mat
+
+        return [
+            north.solid, south.solid,
+            east.solid, west.solid,
+            top.solid, bottom.solid,
+        ]
 
 
 class Camera:
@@ -2026,7 +2042,7 @@ FixupTuple = NamedTuple('FixupTuple', [
 ])
 
 
-class EntityFixup:
+class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
@@ -2035,12 +2051,14 @@ class EntityFixup:
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
     """
+
     # Because of the int(), bool(), float() methods, we need to use builtins.*
     # for the type annotations.
-    __slots__ = ['_fixup']
+    __slots__ = ['_fixup', '_matcher']
 
     def __init__(self, fixup: Iterable[FixupTuple]=()):
         self._fixup = {}  # type: Dict[str, FixupTuple]
+        self._matcher = None  # type: Optional[Pattern[str]]
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
@@ -2078,20 +2096,22 @@ class EntityFixup:
     def clear(self) -> None:
         """Wipe all the $fixup values."""
         self._fixup.clear()
+        self._matcher = None
 
-    def update(self, other: Union['EntityFixup', Mapping[str, str]]) -> None:
-        """Copy the keys of the other item to this one.
-
-        Variable IDs are not preserved.
-        """
-        if isinstance(other, EntityFixup):
-            # Iterate over the internal tuples.
-            for var in other._fixup.values():
-                self[var.var] = var.value
+    def setdefault(self, var: str, default: T=None) -> Union[str, T]:
+        """Return $key, but if not present set it to the default and return that."""
+        if var[0] == '$':
+            var = var[1:]
+        folded_var = var.casefold()
+        if folded_var in self._fixup:
+            return self._fixup[folded_var].value
         else:
-            # Convert to dict - this all mapping types.
-            for key, value in dict(other).items():
-                self[key] = value
+            self[folded_var] = default
+            return default
+
+    def __len__(self) -> int:
+        """Return the number of defined keys."""
+        return len(self._fixup)
 
     @overload
     def __getitem__(self, key: str) -> str: ...
@@ -2136,12 +2156,15 @@ class EntityFixup:
                 if ind not in indexes:
                     self._fixup[folded_var] = FixupTuple(var, sval, ind)
                     break
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
         else:
             self._fixup[folded_var] = FixupTuple(
                 var,
                 sval,
                 self._fixup[folded_var].id,
             )
+            # self._matcher is still correct.
 
     def __delitem__(self, var: str) -> None:
         """Delete a instance $replace variable."""
@@ -2150,6 +2173,8 @@ class EntityFixup:
         var = var.casefold()
         if var in self._fixup:
             del self._fixup[var]
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
 
     def keys(self) -> Iterator[str]:
         """Iterate over all set variable names."""
@@ -2195,6 +2220,42 @@ class EntityFixup:
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
         return self.__class__.__name__ + '([' + items + '])'
+
+    def substitute(self, text: str, default: str=None) -> str:
+        """Substitute the fixup variables into the provided string.
+
+        Variables are found based on the defined values, so constructions such as
+        val$varval are valid (with no delimiter indicating the end of variables).
+        Longer matches are preferred. If the name after $ is not found at all,
+        a KeyError is raised, or if default is provided it is substituted.
+
+        Any key is valid if defined in the instance, but only a-z, 0-9 and _ is
+        detected for the default functionality.
+        """
+        if '$' not in text:
+            return text
+
+        # Cache the pattern used, we can reuse it whenever called again without
+        # adding new variables.
+        if self._matcher is None:
+            # Sort longer values first, so they are checked before smaller
+            # counterparts.
+            sections = list(map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True)))
+            sections.append('[a-z_][a-z0-9_]*')  # Then add on the default any-identifier check.
+            # $, plus any of the above parts.
+            self._matcher = re.compile('\\$({})'.format('|'.join(sections)), re.IGNORECASE)
+
+        def replacer(match: 'Match[str]') -> str:
+            """Handles the replacement semantics."""
+            varname = match.group(1)
+            try:
+                return self._fixup[varname.casefold()].value
+            except KeyError:
+                if default is None:
+                    raise KeyError('$' + varname) from None
+                return default
+
+        return self._matcher.sub(replacer, text)
 
     def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.

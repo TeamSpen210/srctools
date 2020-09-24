@@ -1,11 +1,12 @@
 """Transformations that can be applied to the BSP file."""
+from decimal import Decimal
 from pathlib import Path
-from typing import Callable, Dict, Tuple, List
+from typing import Callable, Dict, Tuple, List, Any
 
 from srctools import FileSystem, VMF, Output, Entity, FGD
 from srctools.bsp import BSP
 from srctools.logger import get_logger
-from srctools.packlist import PackList, load_fgd
+from srctools.packlist import PackList
 from srctools.game import Game
 
 
@@ -35,24 +36,45 @@ class Context:
         self.bsp = bsp
         self.pack = pack
         self.bsp_path = Path(bsp.filename)
-        self.fgd = fgd or load_fgd()
+        self.fgd = fgd or FGD.engine_dbase()
         self.game = game
         self.studiomdl = studiomdl_loc
 
-        self._io_remaps = {}  # type: Dict[Tuple[str, str], List[Output]]
+        self._io_remaps = {}  # type: Dict[Tuple[str, str], Tuple[List[Output], bool]]
         self._ent_code = {}  # type: Dict[Entity, str]
 
-    def add_io_remap(self, name: str, *outputs: Output) -> None:
+    def add_io_remap(self, name: str, *outputs: Output, remove: bool=True) -> None:
         """Register an output to be replaced.
 
         This is used to convert inputs to comp_ entities into their real
         forms. The output name in the output is the input that will be replaced.
+
+        If remove is set to False, the original output will be kept.
+        If the name is blank, this does nothing.
         """
+        if not name:
+            return
+
         name = name.casefold()
         for out in outputs:
             inp_name = out.output.casefold()
             out.output = ''
-            self._io_remaps.setdefault((name, inp_name), []).append(out)
+            key = (name, inp_name)
+            try:
+                out_list, old_remove = self._io_remaps[key]
+            except KeyError:
+                self._io_remaps[key] = ([out], remove)
+            else:
+                out_list.append(out)
+                # Only allow removing if all remaps have requested it.
+                if old_remove and not remove:
+                    self._io_remaps[key] = (out_list, False)
+
+    def add_io_remap_removal(self, name: str, inp_name: str) -> None:
+        """Special case of add_io_remap, request that this output should be removed."""
+        key = (name.casefold(), inp_name.casefold())
+        if key not in self._io_remaps:
+            self._io_remaps[key] = ([], True)
 
     def add_code(self, ent: Entity, code: str) -> None:
         """Register VScript code to be run on spawn for this entity.
@@ -71,11 +93,12 @@ TransFunc = Callable[[Context], None]
 TRANSFORMS = {}  # type: Dict[str, TransFunc]
 
 
-def trans(name: str) -> Callable[[TransFunc], TransFunc]:
+def trans(name: str, *, priority: int=0) -> Callable[[TransFunc], TransFunc]:
     """Add a transformation procedure to the list."""
     def deco(func: TransFunc) -> TransFunc:
         """Stores the transformation."""
         TRANSFORMS[name] = func
+        func.priority = priority
         return func
     return deco
 
@@ -92,7 +115,10 @@ def run_transformations(
     """Run all transformations."""
     context = Context(filesys, vmf, pack, bsp, game, studiomdl_loc=studiomdl_loc)
 
-    for func_name, func in TRANSFORMS.items():
+    for func_name, func in sorted(
+        TRANSFORMS.items(),
+        key=lambda tup: tup[1].priority,
+    ):
         LOGGER.info('Running "{}"...', func_name)
         func(context)
 
@@ -106,30 +132,49 @@ def run_transformations(
     if context._io_remaps:
         LOGGER.info('Remapping outputs...')
         for ent in vmf.entities:
-            for out in ent.outputs[:]:
-                try:
-                    remaps = context._io_remaps[
-                        out.target.casefold(),
-                        out.input.casefold(),
-                    ]
-                except KeyError:
-                    continue
-                ent.outputs.remove(out)
-                for new_out in remaps:
-                    ent.outputs.append(Output(
-                        out.output,
-                        new_out.target,
-                        new_out.input,
-                        new_out.params or out.params,
-                        out.delay + new_out.delay,
-                        only_once=new_out.only_once and out.only_once,
-                    ))
+            todo = ent.outputs[:]
+            # Recursively convert only up to 500 times.
+            # Arbitrary limit, should be sufficient.
+            for _ in range(500):
+                if not todo:
+                    break
+                deferred = []
+                for out in todo:
+                    try:
+                        remaps, should_remove = context._io_remaps[
+                            out.target.casefold(),
+                            out.input.casefold(),
+                        ]
+                    except KeyError:
+                        continue
+                    if should_remove:
+                        ent.outputs.remove(out)
+                    for rep_out in remaps:
+                        new_out = Output(
+                            out.output,
+                            rep_out.target,
+                            rep_out.input,
+                            rep_out.params or out.params,
+                            out.delay + rep_out.delay,
+                            only_once=rep_out.only_once and out.only_once,
+                        )
+                        ent.outputs.append(new_out)
+                        deferred.append(new_out)
+                todo = deferred
+            else:
+                LOGGER.error(
+                    'Entity "{}" ({}) has infinite loop when expanding '
+                    ' compiler outputs to real ones! Final output list: \n{}',
+                    ent['targetname'], ent['classname'],
+                    '\n'.join(['* {}\n'.format(out) for out in ent.outputs])
+                )
 
 
 def _load() -> None:
     """Import all submodules.
 
-    This loads the transformations.
+    This loads the transformations. We do it in a function to allow discarding
+    the output.
     """
     from srctools.bsp_transform import (
         antline,
@@ -138,6 +183,7 @@ def _load() -> None:
         globals,
         instancing,
         kv_setter,
+        logic,
         numeric_transition,
         movement,
         packing,

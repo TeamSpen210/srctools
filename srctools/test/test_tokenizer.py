@@ -186,6 +186,29 @@ def test_pushback(py_c_token):
     check_tokens(tokens, prop_parse_tokens)
 
 
+def test_call_next(py_c_token):
+    """Test that tok() functions, and it can be mixed with iteration."""
+    Tokenizer = py_c_token
+    tok = Tokenizer('''{ "test" } "test" { + } ''', 'file')
+
+    tok_type, tok_value = tok()
+    assert tok_type is Token.BRACE_OPEN and tok_value == '{'
+
+    it1 = iter(tok)
+
+    assert next(it1) == (Token.STRING, "test")
+    assert tok() == (Token.BRACE_CLOSE, '}')
+    assert next(it1) == (Token.STRING, "test")
+    assert next(it1) == (Token.BRACE_OPEN, '{')
+    assert tok() == (Token.PLUS, '+')
+    # Another iterator doesn't restart.
+    assert next(iter(tok)) == (Token.BRACE_CLOSE, '}')
+    assert tok() == (Token.EOF, '')
+
+    with pytest.raises(StopIteration):
+        next(it1)
+
+
 def test_star_comments(py_c_token):
     """Test disallowing /* */ comments."""
     Tokenizer = py_c_token

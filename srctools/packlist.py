@@ -22,13 +22,6 @@ from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
 
 LOGGER = srctools.logger.get_logger(__name__)
-
-try:
-    from importlib.resources import open_binary
-except ImportError:
-    # Backport module for before Python 3.7
-    from importlib_resources import open_binary
-
 SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
 
 
@@ -75,10 +68,14 @@ def load_fgd() -> FGD:
 
     This allows the analysis to not depend on local files.
     """
-
-    from lzma import LZMAFile
-    with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
-        return FGD.unserialise(f)
+    import warnings
+    warnings.warn(
+        'Use FGD.engine_dbase() instead, '
+        'this has been moved there.',
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return FGD.engine_dbase()
 
 
 class PackFile:
@@ -215,6 +212,8 @@ class PackList:
                 always_include=True,
             )
 
+        filename = unify_path(filename)
+
         if data_type is FileType.MATERIAL or (
             data_type is FileType.GENERIC and filename.endswith('.vmt')
         ):
@@ -242,10 +241,12 @@ class PackList:
             if not filename.endswith('.nut'):
                 filename = filename + '.nut'
 
-        path = unify_path(filename)
-
         if data_type is FileType.MODEL or filename.endswith('.mdl'):
             data_type = FileType.MODEL
+            if not filename.startswith('models/'):
+                filename = 'models/' + filename
+            if not filename.endswith('.mdl'):
+                filename = filename + '.mdl'
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
@@ -260,7 +261,7 @@ class PackList:
                         self.skinsets[filename] = existing_skins | skinset
 
         try:
-            file = self._files[path]
+            file = self._files[filename]
         except KeyError:
             pass  # We need to make it.
         else:
@@ -297,7 +298,7 @@ class PackList:
                 ))
             return  # Don't re-add this.
 
-        start, ext = os.path.splitext(path)
+        start, ext = os.path.splitext(filename)
 
         # Try to promote generic to other types if known.
         if data_type is FileType.GENERIC:
@@ -309,7 +310,7 @@ class PackList:
             if ext != '.txt':
                 raise ValueError('"{}" cannot be a soundscript!'.format(filename))
 
-        self._files[path] = PackFile(data_type, filename, data, optional)
+        self._files[filename] = PackFile(data_type, filename, data, optional)
 
     def inject_file(self, data: bytes, folder: str, ext: str) -> str:
         """Inject a generated file into the map and return the full name.
@@ -589,6 +590,8 @@ class PackList:
 
     def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
+        unknown_keys = set()
+
         for ent in vmf.entities:
             classname = ent['classname']
             try:
@@ -634,8 +637,10 @@ class PackList:
                     val_type = kv.type
                     default = kv.default
                 except KeyError:
-                    LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
-                                   key, ent['classname'])
+                    if (classname, key) not in unknown_keys:
+                        unknown_keys.add((ent_class.classname, key))
+                        LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
+                                       key, ent['classname'])
                     val_type = None  # Doesn't match any enum.
                     default = ''
 
@@ -694,6 +699,7 @@ class PackList:
             self.pack_file(
                 'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
                 FileType.MATERIAL,
+                optional=True,
             )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
 
@@ -869,6 +875,9 @@ class PackList:
 
         for snd in mdl.find_sounds():
             self.pack_soundscript(snd)
+
+        for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
+            self.pack_file(break_mdl.value, FileType.MODEL, optional=file.optional)
 
     def _get_material_files(self, file: PackFile) -> None:
         """Find any needed files for a material."""

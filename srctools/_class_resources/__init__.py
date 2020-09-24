@@ -116,6 +116,7 @@ def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
 
 # In alphabetical order:
 
+res('_ballplayertoucher')
 res('_firesmoke', *[
     # env_fire_[tiny/small/medium/large][_smoke]
     part('env_fire_ ' + name + smoke)
@@ -126,7 +127,6 @@ res('_plasma',
     mat("materials/sprites/plasma1.vmt"),
     mat("materials/sprites/fire_floor.vmt"),
     )
-
 
 res('aiscripted_schedule')
 
@@ -141,6 +141,17 @@ res('assault_rallypoint')
 
 res('bullseye_strider_focus', includes='npc_bullseye')  # Unchanged subclass.
 
+res('challenge_mode_end_node',
+    # Assumed based on console logs.
+    mdl("models/props/stopwatch_finish_line.mdl"),
+    *[sound("glados.dlc1_leaderboard{:02}".format(i)) for i in range(1, 24)]
+    )
+res('concussiveblast',
+    mat('materials/sprites/lgtning.vmt'),
+    mat('materials/effects/blueflare1.vmt'),
+    mat("materials/particle/particle_smokegrenade.vmt"),
+    mat("materials/particle/particle_noisesphere.vmt"),
+    )
 res('combine_mine',
     mdl('models/props_combine/combine_mine01.mdl'),
     sound('NPC_CombineMine.Hop'),
@@ -153,6 +164,18 @@ res('combine_mine',
     mat('materials/sprites/glow01.vmt'),
     aliases='bounce_bomb combine_bouncemine'
     )
+
+@cls_func
+def color_correction(pack: PackList, ent: Entity) -> None:
+    """Pack the color correction file."""
+    pack.pack_file(ent['filename'])
+
+
+@cls_func
+def color_correction_volume(pack: PackList, ent: Entity) -> None:
+    """Pack the color correction file for this too."""
+    pack.pack_file(ent['filename'])
+
 
 res('commentary_auto')
 res('commentary_dummy')
@@ -172,6 +195,7 @@ res('event_queue_saveload_proxy')
 res('fish')
 res('floorturret_tipcontroller')
 
+res('game_ui')
 res('gib')
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),
@@ -251,9 +275,12 @@ res('light_dynamic')
 res('light_environment')
 res('light_spot')
 res('lookdoorthinker')
-res('raggib')
-res('sparktrail', sound('DoSpark'))
 
+res('mortarshell',
+    mat('materials/sprites/physbeam.vmt'),
+    mat('materials/effects/ar2ground2.vmt'),
+    sound('Weapon_Mortar.Impact'),
+    )
 
 @cls_func
 def move_rope(pack: PackList, ent: Entity) -> None:
@@ -270,6 +297,19 @@ def move_rope(pack: PackList, ent: Entity) -> None:
 # These classes are identical.
 CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
 ALT_NAMES['keyframe_rope'] = 'move_rope'
+
+res('passtime_ball',
+    mdl('models/passtime/ball/passtime_ball_halloween.mdl'),
+    mdl('models/passtime/ball/passtime_ball.mdl'),
+    mat("materials/passtime/passtime_balltrail_red.vmt"),
+    mat("materials/passtime/passtime_balltrail_blu.vmt"),
+    mat("materials/passtime/passtime_balltrail_unassigned.vmt"),
+    sound('Passtime.BallSmack'),
+    sound('Passtime.BallGet'),
+    sound('Passtime.BallIdle'),
+    sound('Passtime.BallHoming'),
+    includes='_ballplayertoucher',
+)
 
 res('phys_bone_follower')
 res('physics_cannister')  # All in KVs.
@@ -316,6 +356,7 @@ res('point_viewcontrol_survivor')
 res('point_viewproxy')
 res('point_weaponstrip')
 
+res('raggib')
 res('rope_anchor', mat("materials/cable/cable.vmt"))
 res('rocket_turret_projectile',
     mdl('models/props_bts/rocket.mdl'),
@@ -329,6 +370,7 @@ res('rpg_missile',
     )
 res('soundent')
 res('spraycan', sound("SprayCan.Paint"))
+res('sparktrail', sound('DoSpark'))
 res('spark_shower',
     mat('materials/sprites/glow01.vmt'),
     mat('materials/effects/yellowflare.vmt'),
@@ -348,6 +390,14 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
 res('test_proxytoggle')
+
+
+@cls_func
+def vgui_movie_display(pack: PackList, ent: Entity):
+    """Mark the BIK movie as being used, though it can't be packed."""
+    pack.pack_file(ent['MovieFilename'])
+
+
 res('vgui_screen',
     'materials/engine/writez.vmt',
     )

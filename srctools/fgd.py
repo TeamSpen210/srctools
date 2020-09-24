@@ -1,5 +1,6 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
+import re
 from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
@@ -52,7 +53,7 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 3
+BIN_FORMAT_VERSION = 4
 
 
 class FGDParseError(TokenSyntaxError):
@@ -326,16 +327,38 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
         raise tok.error(token)
 
 
-def _write_longstring(file: IO[str], text: str) -> None:
-    """Write potentially long strings to the file, splitting with + if needed."""
-    if len(text) <= 128:
-        file.write('"{}"'.format(text))
-    else:
-        file.write(' + '.join([
-            '"{}"'.format(st)
-            for st in
-            srctools.partition(text, 128)
-        ]))
+def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
+    """Write potentially long strings to the file, splitting with + if needed.
+
+    The game parser has a max size of 8192 bytes for the text, but can only
+    handle 1024 bytes of text in a string. So we need to split after that.
+    """
+    LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
+    sections = []
+    remaining = text
+    while len(remaining) > LIMIT:
+        # First, look for any \ns and split on those. This is a nice stopping
+        # point, and also prevents separating the "\" from "n". Then add 2
+        # so we leave the \n in the first block.
+        split_pos = remaining.rfind('\\n', 0, LIMIT) + 2
+        if split_pos > 128:  # Don't do for very small sections.
+            sections.append(f'"{remaining[:split_pos]}"')
+            remaining = remaining[split_pos:]
+            continue
+        # Next try splitting at any whitespace, and then leave that in the
+        # first block.
+        split_pos = remaining.rfind(' ', 0, LIMIT) + 1
+        if split_pos == (-1 + 1):
+            # Not found, just split exactly at the end.
+            split_pos = LIMIT
+        sections.append(f'"{remaining[:split_pos]}"')
+        remaining = remaining[split_pos:]
+
+    # Lastly add any remaining text that didn't get split off.
+    if remaining:
+        sections.append(f'"{remaining}"')
+
+    file.write((' +\n' + indent).join(sections))
 
 
 def read_tags(tok: Tokenizer) -> FrozenSet[str]:
@@ -428,7 +451,7 @@ class BinStrDict:
     """
     
     def __init__(self) -> None:
-        self._dict = {}
+        self._dict: Dict[str, int] = {}
         self.cur_index = 0
         
     def __call__(self, string: str) -> bytes:
@@ -456,8 +479,9 @@ class BinStrDict:
 
         file.write(_fmt_32bit.pack(len(inv_list)))
         for txt in inv_list:
-            file.write(_fmt_16bit.pack(len(txt)))
-            file.write(txt.encode('utf8'))
+            encoded = txt.encode('utf8')
+            file.write(_fmt_16bit.pack(len(encoded)))
+            file.write(encoded)
 
     @staticmethod       
     def unserialise(file: BinaryIO) -> Callable[[], str]:
@@ -737,7 +761,7 @@ class KeyValues:
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
@@ -913,7 +937,7 @@ class IODef:
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
         file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
@@ -972,7 +996,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         Either obj['name'], or obj['name', {tags}] is accepted.
         """
         if isinstance(name, str):
-            search_tags = set()
+            search_tags = None
         elif isinstance(name, tuple):
             name, search_tags = name
             search_tags = frozenset({t.casefold() for t in search_tags})
@@ -994,7 +1018,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 key=lambda t: len(t[0]),
                 reverse=True,
             ):
-                if match_tags(search_tags, tags):
+                if search_tags is None or match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
         
@@ -1323,6 +1347,13 @@ class EntityDef:
                 else:
                     raise tok.error('Too many attributes for keyvalue!\n{!r}', attrs)
 
+                if val_typ is ValueTypes.BOOL:
+                    # These are old aliases, change them to proper bools.
+                    if default.casefold() == 'yes':
+                        default = '1'
+                    elif default.casefold() == 'no':
+                        default = '0'
+
                 if val_typ.has_list:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
@@ -1480,7 +1511,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -1986,6 +2017,23 @@ class FGD:
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
+
+    @classmethod
+    def engine_dbase(cls) -> 'FGD':
+        """Load and return a database of entity keyvalues and I/O.
+
+        This can be used to identify the kind of keys present on an entity.
+        Each call will parse this from scratch, so it is recommended to cache the
+        value if you are not modifying it.
+        """
+        try:
+            from importlib.resources import open_binary
+        except ImportError:
+            # Backport module for before Python 3.7
+            from importlib_resources import open_binary
+        from lzma import LZMAFile
+        with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
+            return cls.unserialise(f)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""

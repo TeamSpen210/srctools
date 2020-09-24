@@ -118,7 +118,7 @@ res('func_healthcharger',
     )
 res('func_illusionary')
 res('func_instance_io_proxy')
-res('func_movelinear')
+res('func_movelinear', aliases='momentary_door')
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
@@ -139,6 +139,49 @@ def func_physbox(pack: PackList, ent: Entity) -> None:
     """Subclass of func_breakable."""
     func_breakable(pack, ent)
 
+res('func_precipitation',
+    mat("materials/effects/fleck_ash1.vmt"),
+    mat("materials/effects/fleck_ash2.vmt"),
+    mat("materials/effects/fleck_ash3.vmt"),
+    mat("materials/effects/ember_swirling001.vmt"),
+    mat("materials/particle/rain.vmt"),
+    mat("materials/particle/snow.vmt"),
+    part("rain_storm"),
+    part("rain_storm_screen"),
+    part("rain_storm_outer"),
+    part("rain"),
+    part("rain_outer"),
+    part("ash"),
+    part("ash_outer"),
+    part("snow"),
+    part("snow_outer"),
+    )
+
+
+res('func_tank',
+    sound('Func_Tank.BeginUse'),
+    # Only if set to cannon, but that doesn't really matter too much.
+    sound('NPC_Combine_Cannon.FireBullet'),
+    )
+res('func_tankpulselaser', includes='func_tank grenade_beam')
+res('func_tanklaser', includes='func_tank')
+res('func_tankrocket', includes='func_tank rpg_missile')
+res('func_tankairboatgun',
+    sound('Airboat.FireGunLoop'),
+    sound('Airboat.FireGunRevDown'),
+    includes='func_tank',
+    )
+res('func_tankapcrocket',
+    sound('PropAPC.FireCannon'),
+    includes='func_tank apc_missile',
+    )
+res('func_tankmortar', includes='func_tank mortarshell')
+res('func_tankphyscannister', includes='func_tank')
+res('func_tank_combine_cannon',
+    mat('materials/effects/blueblacklargebeam.vmt'),
+    part('Weapon_Combine_Ion_Cannon'),
+    includes='func_tank',
+    )
 
 res('func_tankchange', sound('FuncTrackChange.Blocking'))
 res('func_recharge',
