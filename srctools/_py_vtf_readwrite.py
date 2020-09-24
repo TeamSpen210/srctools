@@ -40,44 +40,69 @@ def decomp565(a: int, b: int):
     )
 
 
-def loader_rgba(mode: str):
-    """Make the RGB loader functions."""
+def compress565(r: int, g: int, b: int):
+    """Compress an RGB triplet into 565-packed data."""
+    # RRRRRGGG GGGBBBBB
+    return (
+        (r & 0b11111000) | (g >> 5),
+        (g << 5) & 0b11100000 | (b >> 3)
+    )
+
+
+def saveload_rgba(mode: str):
+    """Make the RGB save and load functions."""
     r_off = mode.index('r')
     g_off = mode.index('g')
     b_off = mode.index('b')
     try:
         a_off = mode.index('a')
     except ValueError:
-        def loader(pixels, data, width, height):
+        def loader(pixels: array.array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[3 * offset + r_off]
                 pixels[4 * offset + 1] = data[3 * offset + g_off]
                 pixels[4 * offset + 2] = data[3 * offset + b_off]
                 pixels[4 * offset + 3] = 255
+
+        def saver(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+            for offset in range(width * height):
+                data[3 * offset + r_off] = pixels[4 * offset]
+                data[3 * offset + g_off] = pixels[4 * offset + 1]
+                data[3 * offset + b_off] = pixels[4 * offset + 2]
     else:
-        def loader(pixels, data, width, height):
+        def loader(pixels: array.array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[4 * offset + r_off]
                 pixels[4 * offset + 1] = data[4 * offset + g_off]
                 pixels[4 * offset + 2] = data[4 * offset + b_off]
                 pixels[4 * offset + 3] = data[4 * offset + a_off]
-    return loader
+
+        def saver(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+            for offset in range(width * height):
+                data[3 * offset + r_off] = pixels[4 * offset]
+                data[3 * offset + g_off] = pixels[4 * offset + 1]
+                data[3 * offset + b_off] = pixels[4 * offset + 2]
+                data[3 * offset + a_off] = pixels[4 * offset + 3]
+
+    loader.__name__ = 'load_' + mode
+    saver.__name__ = 'save_' + mode
+    return loader, saver
 
 
-load_rgba8888 = loader_rgba('rgba')
-load_bgra8888 = loader_rgba('bgra')
+load_rgba8888, save_rgba8888 = saveload_rgba('rgba')
+load_bgra8888, save_bgra8888 = saveload_rgba('bgra')
 
 # This is totally the wrong order, but it's how it's actually ordered.
-load_argb8888 = loader_rgba('gbar')
-load_abgr8888 = loader_rgba('abgr')
+load_argb8888, save_argb8888 = saveload_rgba('gbar')
+load_abgr8888, save_abgr8888 = saveload_rgba('abgr')
 
-load_rgb888 = loader_rgba('rgb')
-load_bgr888 = loader_rgba('bgr')
+load_rgb888, save_rgb888 = saveload_rgba('rgb')
+load_bgr888, save_bgr888 = saveload_rgba('bgr')
 
 
 # These semantically operate differently, but just have 4 channels.
-load_uvlx8888 = loader_rgba('rgba')
-load_uvwq8888 = loader_rgba('rgba')
+load_uvlx8888, save_uvlx8888 = saveload_rgba('rgba')
+load_uvwq8888, save_uvwq8888 = saveload_rgba('rgba')
 
 
 def load_bgrx8888(pixels: array.array, data: bytes, width: int, height: int) -> None:
@@ -87,6 +112,14 @@ def load_bgrx8888(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset + 1] = data[4 * offset + 1]
         pixels[4 * offset + 2] = data[4 * offset + 0]
         pixels[4 * offset + 3] = 255
+
+
+def save_bgrx8888(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """Strange - skip byte."""
+    for offset in range(width * height):
+        data[4 * offset + 2] = pixels[4 * offset]
+        data[4 * offset + 1] = pixels[4 * offset + 1]
+        data[4 * offset + 0] = pixels[4 * offset + 2]
 
 
 def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> None:
@@ -100,6 +133,16 @@ def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
+def save_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+    """RGB format, packed into 2 bytes by dropping LSBs."""
+    for offset in range(width * height):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset],
+            pixels[4 * offset + 1],
+            pixels[4 * offset + 2],
+        )
+
+
 def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
@@ -111,6 +154,15 @@ def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
+def save_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+    """BGR format, packed into 2 bytes by dropping LSBs."""
+    for offset in range(width * height):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset + 2],
+            pixels[4 * offset + 1],
+            pixels[4 * offset],
+        )
+
 def load_bgra4444(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
@@ -120,6 +172,18 @@ def load_bgra4444(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset+2] = (a & 0b00001111) | (a & 0b00001111) << 4
         pixels[4 * offset] = (b & 0b00001111) | (b & 0b00001111) << 4
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
+
+
+def save_bgra4444(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
+    for offset in range(width * height):
+        r = pixels[4 * offset]
+        g = pixels[4 * offset + 1]
+        b = pixels[4 * offset + 2]
+        a = pixels[4 * offset + 3]
+
+        data[2 * offset] = (b & 0b11110000) | (g >> 4)
+        data[2 * offset + 1] = (r & 0b11110000) | (a >> 4)
 
 
 def load_bgra5551(pixels: array.array, data: bytes, width: int, height: int) -> None:
@@ -151,6 +215,16 @@ def load_i8(pixels: array.array, data: bytes, width: int, height: int) -> None:
         pixels[4*offset+3] = 255
 
 
+def save_i8(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """Save in greyscale."""
+    for offset in range(width * height):
+        data[offset] = (
+            pixels[4 * offset] +
+            pixels[4 * offset + 1] +
+            pixels[4 * offset + 2]
+        ) // 3
+
+
 def load_ia88(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
     for offset in range(width * height):
@@ -158,13 +232,30 @@ def load_ia88(pixels: array.array, data: bytes, width: int, height: int) -> None
         pixels[4*offset+3] = data[2*offset+1]
 
 
+def save_ia88(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """I8 format, R=G=B + A"""
+    for offset in range(width * height):
+        data[2 * offset] = (
+            pixels[4 * offset] +
+            pixels[4 * offset + 1] +
+            pixels[4 * offset + 2]
+        ) // 3
+        data[2 * offset + 1] = pixels[4 * offset + 3]
+
 # ImageFormats.P8 is not implemented by Valve either.
+
 
 def load_a8(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Single alpha bytes."""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
         pixels[4*offset+3] = data[offset]
+
+
+def save_a8(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """Single alpha bytes."""
+    for offset in range(width * height):
+        data[offset] = pixels[4 * offset + 3]
 
 
 def load_uv88(pixels: array.array, data: bytes, width: int, height: int) -> None:
@@ -174,6 +265,13 @@ def load_uv88(pixels: array.array, data: bytes, width: int, height: int) -> None
         pixels[4*offset+1] = data[2*offset+1]
         pixels[4*offset+2] = 0
         pixels[4*offset+3] = 255
+
+
+def save_uv88(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """UV-only, which is mapped to RG."""
+    for offset in range(width * height):
+        data[2*offset] = pixels[4*offset]
+        data[2*offset+1] = pixels[4*offset+1]
 
 
 def load_rgb888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
@@ -195,6 +293,22 @@ def load_rgb888_bluescreen(pixels: array.array, data: bytes, width: int, height:
             pixels[4 * offset + 3] = 255
 
 
+def save_rgb888_bluescreen(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """RGB format, with 'bluescreen' mode for alpha.
+
+    Transparent pixels are made blue.
+    """
+    for offset in range(width * height):
+        if pixels[4 * offset + 3] < 128:
+            data[3 * offset] = 0
+            data[3 * offset + 1] = 0
+            data[3 * offset + 2] = 255
+        else:
+            data[3 * offset] = pixels[4 * offset]
+            data[3 * offset + 1] = pixels[4 * offset + 1]
+            data[3 * offset + 2] = pixels[4 * offset + 2]
+
+
 def load_bgr888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """BGR format, with 'bluescreen' mode for alpha.
 
@@ -212,6 +326,22 @@ def load_bgr888_bluescreen(pixels: array.array, data: bytes, width: int, height:
             pixels[4 * offset + 1] = g
             pixels[4 * offset + 2] = b
             pixels[4 * offset + 3] = 255
+
+
+def save_bgr888_bluescreen(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """BGR format, with 'bluescreen' mode for alpha.
+
+    Transparent pixels are made blue.
+    """
+    for offset in range(width * height):
+        if pixels[4 * offset + 3] < 128:
+            data[3 * offset + 2] = 0
+            data[3 * offset + 1] = 0
+            data[3 * offset] = 255
+        else:
+            data[3 * offset + 2] = pixels[4 * offset]
+            data[3 * offset + 1] = pixels[4 * offset + 1]
+            data[3 * offset] = pixels[4 * offset + 2]
 
 
 def load_dxt1(pixels: array.array, data: bytes, width: int, height: int) -> None:
