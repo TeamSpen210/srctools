@@ -114,6 +114,12 @@ class ValueTypes(Enum):
     INST_VAR_DEF = 'instance_parm'  # $fixup definition
     INST_VAR_REP = 'instance_variable'  # $fixup usage
 
+    # Format extensions.
+    EXT_STR_TEXTURE = 'texture'  # A VTF, mainly for env_projectedtexture.
+    EXT_VEC_DIRECTION = 'vec_dir'  # A vector which should be rotated, but not translated.
+    EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
+    EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
+
     @property
     def has_list(self) -> bool:
         """Is this a flag or choices value, and needs a [] list?"""
@@ -127,6 +133,12 @@ class ValueTypes(Enum):
             'integer', 'boolean', 'string', 'float', 'script',
             'vector', 'target_destination', 'color255'
         )
+
+    @property
+    def extension(self) -> bool:
+        """Is this an extension to the format?"""
+        return self.name.startswith('EXT_')
+
 
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
@@ -148,10 +160,14 @@ VALUE_TO_IO_DECAY = {
 VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.TARG_NODE_SOURCE] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.ANGLE_NEG_PITCH] = ValueTypes.FLOAT
+VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLE_PITCH] = ValueTypes.FLOAT
 
 VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_DIRECTION] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.ANGLES] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 # Only one color type present.
 VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
@@ -220,6 +236,11 @@ class HelperTypes(Enum):
     # current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
 
+    @property
+    def extension(self) -> bool:
+        """Is this an extension to the format?"""
+        return self.name.startswith('EXT_')
+
     
 # Ordered list of value types, for encoding in the binary
 # format. All must be here, new ones should be added at the end.
@@ -268,6 +289,10 @@ VALUE_TYPE_ORDER = [
 
     ValueTypes.STR_VSCRIPT_SINGLE,
     ValueTypes.ENT_HANDLE,
+    ValueTypes.EXT_STR_TEXTURE,
+    ValueTypes.EXT_ANGLE_PITCH,
+    ValueTypes.EXT_ANGLES_LOCAL,
+    ValueTypes.EXT_VEC_DIRECTION,
 ]
 
 # Ditto for entity types.
@@ -659,6 +684,11 @@ class KeyValues:
     * For choices it's a list of (value, name, tags) tuples.
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
+    __slots__ = [
+        'name', 'type', 'default',
+        'disp_name', 'desc', 'val_list',
+        'readonly', 'reportable',
+    ]
     def __init__(
         self,
         name: str,
@@ -866,7 +896,7 @@ class KeyValues:
             
             if value_type is ValueTypes.CHOICES:
                 [val_count] = _read_struct(_fmt_16bit, file)
-                val_list = [0] * val_count
+                val_list: List[tuple] = [()] * val_count
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
                     val_list[ind] = (from_dict(), from_dict(), tags)
@@ -884,6 +914,7 @@ class KeyValues:
 
 class IODef:
     """Represents an input or output for an entity."""
+    __slots__ = ['name', 'type', 'desc']
     def __init__(self, name, val_type: ValueTypes, description: str=''):
         self.name = name
         self.type = val_type
@@ -1623,11 +1654,14 @@ class EntityDef:
             # We temporarily store strings, then evaluate later on.
             ent.bases.append(from_dict())  # type: ignore
 
+        count: int
+        val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
+        cls: Type[Union[KeyValues, IODef]]
         for count, val_map, cls in [
             (kv_count, ent.keyvalues, KeyValues),
             (inp_count, ent.inputs, IODef),
             (out_count, ent.outputs, IODef),
-        ]:  # type: int, Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]], Type[Union[KeyValues, IODef]]
+        ]:
             for _ in range(count):
                 [tag_count] = _read_struct(_fmt_8bit, file)
                 if tag_count == 0:
@@ -1659,14 +1693,14 @@ class FGD:
         self._parse_list = set()
 
         # Entity definitions
-        self.entities = {}  # type: Dict[str, EntityDef]
+        self.entities: Dict[str, EntityDef] = {}
 
         # Maximum bounding box of map
         self.map_size_min = 0
         self.map_size_max = 0
 
         # Directories we have excluded.
-        self.mat_exclusions = set()  # type: Set[PurePosixPath]
+        self.mat_exclusions: Set[PurePosixPath] = set()
 
         # Automatic visgroups.
         # The way Valve implemented this is rather strange, so we need
@@ -1675,7 +1709,7 @@ class FGD:
         # it flattened. Each visgroup has a parent (or None for auto), and then
         # a list of the ents it contains.
 
-        self.auto_visgroups = {}  # type: Dict[str, AutoVisgroup]
+        self.auto_visgroups: Dict[str, AutoVisgroup] = {}
 
     @classmethod
     def parse(
@@ -1848,7 +1882,7 @@ class FGD:
                 file.write('\t"{!s}"\n'.format(folder))
             file.write('\t]\n')
 
-        vis_by_parent = defaultdict(set)  # type: Dict[str, Set[AutoVisgroup]]
+        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
@@ -2108,7 +2142,8 @@ class FGD:
         # one after each other.
         dictionary.serialise(file)
         file.write(ent_data.getvalue())
-      
+        # print('Dict size: ', format(dictionary.cur_index / (1 << 16), '%'))
+
     @classmethod  
     def unserialise(cls, file: BinaryIO) -> 'FGD':
         """Unpack data from FGD.serialise() to return the original data.
@@ -2141,6 +2176,3 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
-
-
-
