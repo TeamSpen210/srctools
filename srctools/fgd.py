@@ -1,6 +1,5 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
-import re
 from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
@@ -24,7 +23,8 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'AutoVisgroup',
+    'match_tags', 'validate_tags',
 
     # From srctools._fgd_helpers
     'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
@@ -46,14 +46,14 @@ _fmt_16bit = Struct('>H')
 _fmt_32bit = Struct('>I')
 _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
-_fmt_ent_header = Struct('<BBBBB')
+_fmt_ent_header = Struct('<BBBBBB')
 
 
 def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 4
+BIN_FORMAT_VERSION = 5
 
 
 class FGDParseError(TokenSyntaxError):
@@ -493,12 +493,12 @@ class BinStrDict:
         [length] = _read_struct(_fmt_32bit, file)
         inv_list = [''] * length
         for ind in range(length):
-            [str_len] = _read_struct(_fmt_16bit, file)
+            [str_len] = _fmt_16bit.unpack(file.read(2))
             inv_list[ind] = file.read(str_len).decode('utf8')
 
         def lookup() -> str:
             """Read the index from the file, and return the string it matches."""
-            [index] = _read_struct(_fmt_16bit, file)
+            [index] = _fmt_16bit.unpack(file.read(2))
             return inv_list[index]
         
         return lookup
@@ -816,6 +816,7 @@ class KeyValues:
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
                 power = int(math.log2(val))
+                assert power < 128, "Spawnflags are too big for packing into a byte!"
                 if default:  # Pack the default as the MSB.
                     power |= 128
                 file.write(_fmt_8bit.pack(power))
@@ -1564,8 +1565,11 @@ class EntityDef:
             len(self.keyvalues),
             len(self.inputs),
             len(self.outputs),
+            # Write the classname here, not using BinStrDict.
+            # They're going to be unique, so there's no benefit.
+            len(self.classname),
         ))
-        file.write(str_dict(self.classname))
+        file.write(self.classname.encode())
         
         for base_ent in self.bases:
             file.write(str_dict(base_ent.classname))
@@ -1608,10 +1612,11 @@ class EntityDef:
             kv_count,
             inp_count,
             out_count,
-        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int
+            clsname_length,
+        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int, int
         
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
-        ent.classname = from_dict()
+        ent.classname = file.read(clsname_length).decode('utf8')
         ent.desc = ''
         
         for _ in range(base_count):
