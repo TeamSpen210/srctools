@@ -82,11 +82,13 @@ cdef inline byte upsample(byte bits, byte data) nogil:
     return data | (data >> bits)
 
 
-cdef inline void decomp565(RGB *rgb, byte a, byte b) nogil:
+cdef inline RGB decomp565(byte a, byte b) nogil:
     """Decompress 565-packed data into RGB triplets."""
-    rgb.r = upsample(5, (a & 0b00011111) << 3)
-    rgb.g = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
-    rgb.b = upsample(5, b & 0b11111000)
+    return {
+        'r': upsample(5, (a & 0b00011111) << 3),
+        'g': upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)),
+        'b': upsample(5, b & 0b11111000),
+    }
 
 
 cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
@@ -229,7 +231,7 @@ def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
     cdef Py_ssize_t offset
     cdef RGB col
     for offset in prange(width * height, nogil=True, schedule='static'):
-        decomp565(&col, data[2 * offset], data[2 * offset + 1])
+        col = decomp565(data[2 * offset], data[2 * offset + 1])
 
         pixels[4 * offset + R] = col.r
         pixels[4 * offset + G] = col.g
@@ -253,7 +255,7 @@ def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
     cdef Py_ssize_t offset
     cdef RGB col
     for offset in prange(width * height, nogil=True, schedule='static'):
-        decomp565(&col, data[2 * offset], data[2 * offset + 1])
+        col = decomp565(data[2 * offset], data[2 * offset + 1])
 
         pixels[4 * offset + R] = col.b
         pixels[4 * offset + G] = col.g
