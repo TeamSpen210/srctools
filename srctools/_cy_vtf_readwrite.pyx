@@ -440,9 +440,9 @@ def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4*offset + R] = data[2*offset]
-        pixels[4*offset + G] = 0
+        pixels[4*offset + G] = data[2*offset+1]
         pixels[4*offset + B] = 0
-        pixels[4*offset + A] = data[2*offset+1]
+        pixels[4*offset + A] = 0
 
 
 def save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
@@ -450,7 +450,7 @@ def save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         data[2*offset + 0] = pixels[4*offset + R]
-        data[2*offset + 1] = pixels[4*offset + A]
+        data[2*offset + 1] = pixels[4*offset + G]
 
 
 def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
