@@ -13,12 +13,19 @@ def ppm_convert(pixels, width, height) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     header = b'P6 %i %i 255\n' % (width, height)
     img_off = len(header)
-    buffer = bytearray(img_off + 3 * width * height)
+    pix_count = width * height
+    buffer = bytearray(img_off + 3 * pix_count)
+    # Memoryviews to avoid making temp objects.
+    view_src = memoryview(pixels)
+    view_dest = memoryview(buffer)
 
-    buffer[0:img_off] = header
+    view_dest[0:img_off] = header
 
-    for off in range(width * height):
-        buffer[img_off+3*off:img_off+3*off + 3] = pixels[4*off:4*off + 3]
+    # Our image data is in RGBARGBARGBA format, but PPM wants just
+    # RGBRGBRGB. Copying in 3 slices means we can skip a Python loop.
+    view_dest[img_off:img_off + 4*pix_count:3] = view_src[::4]
+    view_dest[img_off+1:img_off + 4*pix_count+1:3] = view_src[1::4]
+    view_dest[img_off+2:img_off + 4*pix_count+2:3] = view_src[2::4]
 
     return bytes(buffer)
 
