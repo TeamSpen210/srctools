@@ -10,7 +10,7 @@ import os
 from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
-from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues
+from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, EntityTypes
 from srctools.bsp import BSP, BSP_LUMPS
 from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
@@ -590,15 +590,26 @@ class PackList:
 
     def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
+        # Don't show the same keyvalue warning twice, it's just noise.
         unknown_keys = set()
+
+        # Definitions for the common keyvalues on all entities.
+        try:
+            base_entity = fgd['_CBaseEntity_']
+        except KeyError:
+            LOGGER.warning('No CBaseEntity definition!')
+            base_entity = EntityDef(EntityTypes.BASE)
 
         for ent in vmf.entities:
             classname = ent['classname']
             try:
                 ent_class = fgd[classname]
             except KeyError:
-                LOGGER.warning('Unknown class "{}"!', classname)
-                continue
+                if classname not in unknown_keys:
+                    LOGGER.warning('Unknown class "{}"!', classname)
+                    unknown_keys.add(classname)
+                # Fall back to generic keyvalues.
+                ent_class = base_entity
 
             if ent['skinset'] != '':
                 # Special key for us - if set this is a list of skins this
@@ -637,12 +648,13 @@ class PackList:
                     val_type = kv.type
                     default = kv.default
                 except KeyError:
-                    if (classname, key) not in unknown_keys:
+                    # Suppress this error for unknown classes, we already
+                    # showed a warning above.
+                    if ent_class is not base_entity and (classname, key) not in unknown_keys:
                         unknown_keys.add((ent_class.classname, key))
                         LOGGER.warning('Unknown keyvalue "{}" for ent of type "{}"!',
                                        key, ent['classname'])
-                    val_type = None  # Doesn't match any enum.
-                    default = ''
+                    continue
 
                 value = ent[key, default]
 
@@ -650,15 +662,12 @@ class PackList:
                 if not value:
                     continue
 
-                if classname == 'env_projectedtexture' and key == 'texturename':
-                    # Special case - this is a VTF, not a material.
-                    self.pack_file(value, FileType.TEXTURE)
-                    continue
-
                 if val_type is KVTypes.STR_MATERIAL:
                     self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_MODEL:
                     self.pack_file(value, FileType.MODEL)
+                elif val_type is KVTypes.EXT_STR_TEXTURE:
+                    self.pack_file(value, FileType.TEXTURE)
                 elif val_type is KVTypes.STR_VSCRIPT:
                     for script in value.split():
                         self.pack_file('scripts/vscripts/' + script)
