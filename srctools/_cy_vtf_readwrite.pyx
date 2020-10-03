@@ -101,46 +101,46 @@ cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
 
 # These semantically operate differently, but are implemented the same.
 # They're a special case, since we can just copy across.
-def load_rgba8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_copy(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Parse RGBA-ordered 8888 pixels."""
     memcpy(&pixels[0], &data[0], 4 * width * height)
 
-def save_rgba8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_copy(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate RGBA-ordered 8888 pixels."""
     memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
-def load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Parse UVLX data, copying them into RGBA respectively."""
     memcpy(&pixels[0], &data[0], 4 * width * height)
 
 
-def save_uvlx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_uvlx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate UVLX data, by copying RGBA data in that order."""
     memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
-def load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Parse UVWQ data, copying them into RGBA respectively."""
     memcpy(&pixels[0], &data[0], 4 * width * height)
 
 
-def save_uvwq8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_uvwq8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate UVWQ data, by copying RGBA data in that order."""
     memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
-def load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load BGRA format images."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4 * offset + R] = data[4 * offset + 2]
-        pixels[4 * offset + G] = data[4 * offset + 1]
         pixels[4 * offset + B] = data[4 * offset + 0]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + R] = data[4 * offset + 2]
         pixels[4 * offset + A] = data[4 * offset + 3]
 
 
-def save_bgra8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgra8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGRA format images."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -151,7 +151,7 @@ def save_bgra8888(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
 
 
 # This is totally the wrong order, but it's how it's actually ordered.
-def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """This is toally wrong - it's actually in GBAR order."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -161,7 +161,7 @@ def load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + A] = data[4 * offset + 2]
 
 
-def save_argb8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_argb8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """This is toally wrong - it's actually in GBAR order."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -171,7 +171,7 @@ def save_argb8888(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[4 * offset + 3] = pixels[4 * offset + R]
 
 
-def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset + R] = data[4 * offset + 3]
@@ -180,7 +180,7 @@ def load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + A] = data[4 * offset + 0]
 
 
-def save_abgr8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_abgr8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate ABGR-ordered data."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -190,7 +190,7 @@ def save_abgr8888(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[4 * offset + 3] = pixels[4 * offset + R]
 
 
-def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset + R] = data[3 * offset + 0]
@@ -199,7 +199,7 @@ def load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + A] = 255
 
 
-def save_rgb888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_rgb888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate RGB-format data, discarding alpha."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -208,7 +208,7 @@ def save_rgb888(const byte[::1] pixels, byte[::1] data, uint width, uint height)
         data[3 * offset + 2] = pixels[4 * offset + B]
 
 
-def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         pixels[4 * offset + R] = data[3 * offset + 2]
@@ -217,7 +217,7 @@ def load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + A] = 255
 
 
-def save_bgr888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgr888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGR-format data, discarding alpha."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -226,7 +226,7 @@ def save_bgr888(const byte[::1] pixels, byte[::1] data, uint width, uint height)
         data[3 * offset + 2] = pixels[4 * offset + R]
 
 
-def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Strange - skip byte."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -236,7 +236,7 @@ def load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + A] = 255
 
 
-def save_bgrx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgrx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGR-format data, with an extra ignored byte."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -246,7 +246,7 @@ def save_bgrx8888(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[4 * offset + 3] = 0
 
 
-def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """RGB format, packed into 2 bytes by dropping LSBs."""
     cdef Py_ssize_t offset
     cdef RGB col
@@ -259,7 +259,7 @@ def load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + A] = 255
 
 
-def save_rgb565(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_rgb565(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate 565-format data, in RGB order."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -270,7 +270,7 @@ def save_rgb565(const byte[::1] pixels, byte[::1] data, uint width, uint height)
         )
 
 
-def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     cdef Py_ssize_t offset
     cdef RGB col
@@ -283,7 +283,7 @@ def load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height)
         pixels[4 * offset + A] = 255
 
 
-def save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate 565-format data, in BGR order."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -294,20 +294,20 @@ def save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint height)
         )
 
 
-def load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     cdef Py_ssize_t offset
     cdef byte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset + B] = (a & 0b11110000) | (a & 0b11110000) >> 4
-        pixels[4 * offset + G] = (a & 0b00001111) | (a & 0b00001111) << 4
+        pixels[4 * offset + G] = (a & 0b11110000) | (a & 0b11110000) >> 4
+        pixels[4 * offset + B] = (a & 0b00001111) | (a & 0b00001111) << 4
         pixels[4 * offset + R] = (b & 0b00001111) | (b & 0b00001111) << 4
         pixels[4 * offset + A] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGRA format images, using only 4 bits each."""
     cdef Py_ssize_t offset
     cdef byte a, b
@@ -316,7 +316,7 @@ def save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
 
 
-def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     cdef Py_ssize_t offset
     cdef byte a, b
@@ -329,7 +329,7 @@ def load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + A] = 255 if b & 0b10000000 else 0
 
 
-def save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGRA format images, using 5 bits for color and 1 for alpha."""
     cdef Py_ssize_t offset
     cdef byte r, g, b, a
@@ -343,7 +343,7 @@ def save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110) | (a >> 7)
 
 
-def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, 5 bits per color, alpha ignored."""
     cdef Py_ssize_t offset
     cdef byte a, b
@@ -356,7 +356,7 @@ def load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
         pixels[4 * offset + A] = 255
 
 
-def save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGR format images, using 5 bits for color and 1 spare bit."""
     cdef Py_ssize_t offset
     cdef byte r, g, b
@@ -369,7 +369,7 @@ def save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint heigh
         data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110)
 
 
-def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B"""
     cdef Py_ssize_t offset
     cdef byte color
@@ -381,7 +381,7 @@ def load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset + A] = 255
 
 
-def save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save in greyscale."""
     cdef Py_ssize_t offset
     cdef byte r, g, b
@@ -392,7 +392,7 @@ def save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height):
         data[offset] = (r + g + b) // 3
 
 
-def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B + A"""
     cdef Py_ssize_t offset
     cdef byte color
@@ -404,7 +404,7 @@ def load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset+3] = data[2*offset+1]
 
 
-def save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save in greyscale, with alpha."""
     cdef Py_ssize_t offset
     cdef byte r, g, b
@@ -418,7 +418,7 @@ def save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
 
 # ImageFormats.P8 is not implemented by Valve either.
 
-def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Single alpha bytes."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -428,14 +428,14 @@ def load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset+3] = data[offset]
 
 
-def save_a8(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_a8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save just the alpha channel."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
         data[offset] = pixels[4*offset + A]
 
 
-def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """UV-only, which is mapped to RG."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -445,7 +445,7 @@ def load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height):
         pixels[4*offset + A] = 0
 
 
-def save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate UV-format data, using RG."""
     cdef Py_ssize_t offset
     for offset in prange(width * height, nogil=True, schedule='static'):
@@ -453,7 +453,7 @@ def save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height):
         data[2*offset + 1] = pixels[4*offset + G]
 
 
-def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """RGB format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -474,7 +474,7 @@ def load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4 * offset + A] = 255
 
 
-def save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate RGB format, using pure blue for transparent pixels."""
     cdef Py_ssize_t offset
     cdef byte r, g, b
@@ -489,7 +489,7 @@ def save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, u
             data[3 * offset + 2] = pixels[4*offset + B]
 
 
-def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -510,7 +510,7 @@ def load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, u
             pixels[4 * offset + A] = 255
 
 
-def save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGR format, using pure blue for transparent pixels."""
     cdef Py_ssize_t offset
     cdef byte r, g, b
@@ -525,7 +525,7 @@ def save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, u
             data[3 * offset + 2] = pixels[4*offset + R]
 
 
-def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data."""
     cdef Py_ssize_t offset
 
@@ -534,14 +534,14 @@ def load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
 
 
-def save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT1 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
 
 
-def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
@@ -549,42 +549,42 @@ def load_dxt1_onebitalpha(byte[::1] pixels, const byte[::1] data, uint width, ui
         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
 
 
-def save_dxt1_onebitalpha(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
 
 
-def load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
 
 
-def save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT3 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
 
 
-def load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
 
 
-def save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         raise ValueError('DXT format must be 4x4 at minimum!')
     CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
 
 
-def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
+cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load 'ATI2N' format data, also known as BC5.
 
     This uses two copies of the DXT5 alpha block for data.
@@ -594,7 +594,7 @@ def load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height):
     DecompressImage(&pixels[0], width, height, &data[0], kBc5)
 
 
-def save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height):
+cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save 'ATI2N' format data, also known as BC5.
 
     This uses two copies of the DXT5 alpha block for data.
@@ -603,13 +603,76 @@ def save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height):
         raise ValueError('ATI2N format must be 4x4 at minimum!')
     CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
 
+# Use a structure to match format names to the functions.
+# This way they can all be cdef, and not have duplicate object conversion
+# code.
+ctypedef struct Format:
+    char *name
+    bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+    bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
 
 
-# Don't do the high-def 16-bit resolution.
+cdef Format[30] FORMATS = [
+    Format("RGBA8888", &load_copy, &save_copy),
+    Format("ABGR8888", &load_abgr8888, &save_abgr8888),
+    Format("RGB888", &load_rgb888, &save_rgb888),
+    Format("BGR888", &load_bgr888, &save_bgr888),
+    Format("RGB565", &load_rgb565, &save_rgb565),
+    Format("I8", &load_i8, &save_i8),
+    Format("IA88", &load_ia88, &save_ia88),
+    Format("P8", NULL, NULL),  # Never implemented by Valve.
+    Format("A8", &load_a8, &save_a8),
+    Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
+    Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
+    Format("ARGB8888", &load_argb8888, &save_argb8888),
+    Format("BGRA8888", &load_bgra8888, &save_bgra8888),
+    Format("DXT1", &load_dxt1, &save_dxt1),
+    Format("DXT3", &load_dxt3, &save_dxt3),
+    Format("DXT5", &load_dxt5, &save_dxt5),
+    Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
+    Format("BGR565", &load_bgr565, &save_bgr565),
+    Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
+    Format("BGRA4444", &load_bgra4444, &save_bgra4444),
+    Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
+    Format("BGRA5551", &load_bgra5551, &save_bgra5551),
+    Format("UV88", &load_uv88, &save_uv88),
+    Format("UVWQ8888", &load_copy, &save_copy),
+    # Don't do the high-def 16-bit resolutions.
+    Format("RGBA16161616F", NULL, NULL),
+    Format("RGBA16161616", NULL, NULL),
+    Format("UVLX8888", &load_copy, &save_copy),
+    # This doesn't match the actual engine struct, just the order of
+    # the Python enum.
+    Format("NONE", NULL, NULL),
+    Format("ATI1N", NULL, NULL),
+    Format("ATI2N", &load_ati2n, &save_ati2n),
+]
 
-# def load_rgba16161616f(pixels, offset, data, data_off):
-#     """16-bit RGBA format - max resolution."""
-#     pixels[offset] = data[data_off] << 8 + data[data_off+1]
-#     pixels[offset + 1] = data[data_off+2] << 8 + data[data_off+3]
-#     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
-#     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
+
+def init(formats: 'srctools.vtf.ImageFormats') -> None:
+    """Verify that the Python enum matches our array."""
+    cdef int index
+    cdef const char *name
+    for fmt in formats:
+        index = fmt.index
+        assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
+        assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+
+
+def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+    """Load pixels from data in the given format."""
+    cdef int index = fmt.index
+    # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+    if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
+        FORMATS[index].load(pixels, data, width, height)
+    else:
+        raise NotImplementedError(f"Loading {fmt.name} not implemented!")
+
+
+def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
+    cdef int index = fmt.index
+    if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
+        FORMATS[index].save(pixels, data, width, height)
+    else:
+        raise NotImplementedError(f"Saving {fmt.name} not implemented!")
+

@@ -72,7 +72,7 @@ CUBES_WITH_SPHERE = list(CubeSide)  # type: List[CubeSide]
 CUBES = CUBES_WITH_SPHERE[:-1]  # Remove the Sphere type, for 7.5+
 
 
-class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
+class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
     # Force object-style comparisons, so formats with the same counts
     # compare different.
@@ -84,16 +84,20 @@ class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
     __ne__ = object.__ne__
     __hash__ = object.__hash__
 
+_ind = -1
+
 
 def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
+    global _ind
     if l:
         r = g = b = l
         size = l + a
     if not size:
         size = r + g + b + a
+    _ind += 1
 
-    return r, g, b, a, size
+    return r, g, b, a, size, _ind
 
 
 class ImageFormats(ImageAlignment, Enum):
@@ -152,11 +156,15 @@ class ImageFormats(ImageAlignment, Enum):
         else:
             return self.size * width * height // 8
 
-del f
+del f, _ind
+# Initialise the internal mapping in the format modules.
+_format_funcs.init(ImageFormats)
+if _cy_format_funcs is not _py_format_funcs:
+    _py_format_funcs.init(ImageFormats)
 
 
 FORMAT_ORDER = {
-    ind: fmt
+    fmt.index: fmt
     for ind, fmt in
     enumerate(ImageFormats.__members__.values())
     if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
@@ -298,13 +306,7 @@ class Frame:
 
         stream.seek(file_off)
         data = stream.read(fmt.frame_size(self.width, self.height))
-        try:
-            loader = getattr(_format_funcs, "load_" + fmt.name.casefold())
-        except AttributeError:
-            raise NotImplementedError(
-                "Loading {} not implemented!".format(fmt.name)
-            ) from None
-        loader(self._data, data, self.width, self.height)
+        _format_funcs.load(fmt, self._data, data, self.width, self.height)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel."""
@@ -356,8 +358,8 @@ class Frame:
         """Convert the given frame into a Tkinter PhotoImage."""
         self.load()
 
-        from tkinter import PhotoImage
-        return PhotoImage(
+        import tkinter
+        return tkinter.PhotoImage(
             master=tk,
             # Convert it to PPM format, which Tkinter understands natively.
             # That requires a bunch of data crunching, so the code is Cythonised

@@ -1,7 +1,16 @@
 """Functions for reading/writing VTF data."""
 import array
 import itertools
-from typing import Tuple, List
+from typing import Tuple, List, Dict, Callable, Iterable, TYPE_CHECKING
+
+
+if TYPE_CHECKING:
+    from srctools.vtf import ImageFormats
+else:
+    ImageFormats = 'ImageFormats'
+
+_SAVE: Dict[ImageFormats, Callable[[array.array, bytearray, int, int], None]] = {}
+_LOAD: Dict[ImageFormats, Callable[[array.array, bytes, int, int], None]] = {}
 
 
 def blank(width: int, height: int) -> array.array:
@@ -54,6 +63,38 @@ def compress565(r: int, g: int, b: int):
         (r & 0b11111000) | (g >> 5),
         (g << 5) & 0b11100000 | (b >> 3)
     )
+
+
+def init(formats: Iterable[ImageFormats]) -> None:
+    """Create a mapping from formats to functions."""
+    glob = globals()
+    for fmt in formats:
+        try:
+            _LOAD[fmt] = glob['load_' + fmt.name.casefold()]
+        except KeyError:
+            pass
+        try:
+            _SAVE[fmt] = glob['save_' + fmt.name.casefold()]
+        except KeyError:
+            pass
+
+
+def load(fmt: ImageFormats, pixels: array.array, data: bytes, width: int, height: int) -> None:
+    """Load pixels from data in the given format."""
+    try:
+        func = _LOAD[fmt]
+    except KeyError:
+        raise NotImplementedError(f"Loading {fmt.name} not implemented!") from None
+    func(pixels, data, width, height)
+
+
+def save(fmt: ImageFormats, pixels: array.array, data: bytearray, width: int, height: int) -> None:
+    """Save pixels from data in the given format."""
+    try:
+        func = _SAVE[fmt]
+    except KeyError:
+        raise NotImplementedError(f"Saving {fmt.name} not implemented!") from None
+    func(pixels, data, width, height)
 
 
 def saveload_rgba(mode: str):
