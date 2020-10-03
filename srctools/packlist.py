@@ -662,6 +662,8 @@ class PackList:
                 elif val_type is KVTypes.STR_VSCRIPT:
                     for script in value.split():
                         self.pack_file('scripts/vscripts/' + script)
+                elif val_type is KVTypes.STR_VSCRIPT_SINGLE:
+                    self.pack_file('scripts/vscripts/' + value)
                 elif val_type is KVTypes.STR_SPRITE:
                     if not value.casefold().startswith('sprites/'):
                         value = 'sprites/' + value
