@@ -53,10 +53,12 @@ setup(
             'srctools_dump_parms = srctools.scripts.dump_parms:main',
             'srctools_diff = srctools.scripts.diff:main',
         ],
+        'pyinstaller40': [
+            'hook-dirs = srctools._pyinstaller:get_hook_dirs',
+        ]
     },
     python_requires='>=3.6, <4',
     install_requires=[
-        'PyInstaller',
         'importlib_resources',
     ],
 )
