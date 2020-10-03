@@ -3,7 +3,7 @@
 from cpython cimport array
 from libc.stdio cimport snprintf
 from libc.stdlib cimport malloc, free
-from libc.string cimport memcpy
+from libc.string cimport memcpy, memset
 from cython.parallel cimport prange, parallel
 
 cdef extern from "squish.h" namespace "squish":
@@ -99,34 +99,14 @@ cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
     )
 
 
-# These semantically operate differently, but are implemented the same.
-# They're a special case, since we can just copy across.
+# There's a few formats that just do RGBA. This is a special case, since we can just copy across.
+# memcpy is going to be more efficient than manual code.
 cdef bint load_copy(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Parse RGBA-ordered 8888 pixels."""
     memcpy(&pixels[0], &data[0], 4 * width * height)
 
 cdef bint save_copy(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate RGBA-ordered 8888 pixels."""
-    memcpy(&data[0], &pixels[0], 4 * width * height)
-
-
-cdef bint load_uvlx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
-    """Parse UVLX data, copying them into RGBA respectively."""
-    memcpy(&pixels[0], &data[0], 4 * width * height)
-
-
-cdef bint save_uvlx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
-    """Generate UVLX data, by copying RGBA data in that order."""
-    memcpy(&data[0], &pixels[0], 4 * width * height)
-
-
-cdef bint load_uvwq8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
-    """Parse UVWQ data, copying them into RGBA respectively."""
-    memcpy(&pixels[0], &data[0], 4 * width * height)
-
-
-cdef bint save_uvwq8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
-    """Generate UVWQ data, by copying RGBA data in that order."""
     memcpy(&data[0], &pixels[0], 4 * width * height)
 
 
@@ -421,11 +401,10 @@ cdef bint save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint hei
 cdef bint load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Single alpha bytes."""
     cdef Py_ssize_t offset
+    # Set RGB to zero in bulk, instead of doing it in the loop.
+    memset(&pixels[0], 0, width * height)
     for offset in prange(width * height, nogil=True, schedule='static'):
-        pixels[4*offset + R] = 0
-        pixels[4*offset + G] = 0
-        pixels[4*offset + B] = 0
-        pixels[4*offset+3] = data[offset]
+        pixels[4*offset + A] = data[offset]
 
 
 cdef bint save_a8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
@@ -442,7 +421,7 @@ cdef bint load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint hei
         pixels[4*offset + R] = data[2*offset]
         pixels[4*offset + G] = data[2*offset+1]
         pixels[4*offset + B] = 0
-        pixels[4*offset + A] = 0
+        pixels[4*offset + A] = 255
 
 
 cdef bint save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
