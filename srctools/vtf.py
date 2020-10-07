@@ -18,13 +18,7 @@ from typing import (
     TYPE_CHECKING, Type, Collection,
 )
 
-
-try:
-    from enum import Enum, Flag
-except ImportError:
-    from aenum import Enum, Flag  # type: ignore
-
-# Only import while type checking, so these expensive libraries are only used
+# Only import while type checking, so these expensive libraries are only loaded
 # if the user used them elsewhere.
 if TYPE_CHECKING:
     from PIL.Image import Image as PIL_Image
