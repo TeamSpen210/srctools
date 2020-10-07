@@ -3,18 +3,19 @@
 After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
-import itertools
 from array import array
+from enum import Enum, Flag
+from collections import namedtuple
+import itertools
 import math
 import struct
 import warnings
-from collections import namedtuple
 
 from srctools import Vec
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type,
+    TYPE_CHECKING, Type, Collection,
 )
 
 
@@ -31,6 +32,7 @@ if TYPE_CHECKING:
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
+# For type-checking purposes make it think the Cython version is the Python one.
 
 # noinspection PyProtectedMember
 from srctools import _py_vtf_readwrite as _py_format_funcs
@@ -45,15 +47,15 @@ if not TYPE_CHECKING:
         pass
 
 
-# The _vtf_readwrite module contains load_FORMATNAME() functions which
+# The _vtf_readwrite module contains save/load functions which
 # convert the VTF data into a uniform 32-bit RGBA block, which we can then
 # parse.
 # That works for everything except RGBA16161616 (used for HDR cubemaps), which
 # is 16-bit for each channel. We can't do much about that.
 
 __all__ = [
-    'VTF', 'Frame',
-    'ResourceID', 'CubeSide', 'ImageFormats', 'VTFFlags'
+    'VTF', 'Frame', 'FilterMode',
+    'ResourceID', 'CubeSide', 'ImageFormats', 'VTFFlags',
 ]
 
 
@@ -68,9 +70,12 @@ class CubeSide(Enum):
     SPHERE = 6
 
 
-CUBES_WITH_SPHERE = list(CubeSide)  # type: List[CubeSide]
-CUBES = CUBES_WITH_SPHERE[:-1]  # Remove the Sphere type, for 7.5+
-_BLANK_PIXEL = array('B', b'\x00\x00\x00\xFF')
+CUBES_WITH_SPHERE: Collection[CubeSide] = list(CubeSide)
+# Remove the Sphere type, for 7.5+
+CUBES: Collection[CubeSide] = CUBES_WITH_SPHERE[:-1]
+
+# One black, opaque pixel for creating blank images.
+_BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
 class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
@@ -87,7 +92,7 @@ class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
 _ind = -1
 
 
-def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
+def f(r=0, g=0, b=0, a=0, *, l=0, size=0, index=0):
     """Helper function to construct ImageFormats."""
     global _ind
     if l:
@@ -97,7 +102,7 @@ def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
         size = r + g + b + a
     _ind += 1
 
-    return r, g, b, a, size, _ind
+    return r, g, b, a, size, (index or _ind)
 
 
 class ImageFormats(ImageAlignment, Enum):
@@ -109,7 +114,7 @@ class ImageFormats(ImageAlignment, Enum):
     RGB565 = f(5, 6, 5, 0)
     I8 = f(a=0, l=8)
     IA88 = f(a=8, l=8)
-    P8 = f()  # Palletted, not used.
+    P8 = f()  # Using a palette somehow - was never implemented by Valve.
     A8 = f(a=8)
     # Blue = alpha channel too
     RGB888_BLUESCREEN = f(8, 8, 8)
@@ -131,11 +136,11 @@ class ImageFormats(ImageAlignment, Enum):
     RGBA16161616 = f(16, 16, 16, 16)
     UVLX8888 = f(size=32)
 
-    NONE = f()
+    NONE = f(index=-1)
     # These two aren't supported by VTEX & VTFEdit, but are by the engine.
     # They're useful for normal maps.
-    ATI1N = f(size=64)
-    ATI2N = f(size=128)
+    ATI1N = f(size=64, index=35)
+    ATI2N = f(size=128, index=34)
 
     @property
     def is_compressed(self) -> bool:
@@ -165,16 +170,13 @@ if _cy_format_funcs is not _py_format_funcs:
 
 FORMAT_ORDER = {
     fmt.index: fmt
-    for ind, fmt in
-    enumerate(ImageFormats.__members__.values())
-    if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
+    for fmt in ImageFormats.__members__.values()
 }
-FORMAT_ORDER[-1] = ImageFormats.NONE
 # Since these are semi-"internal" formats, the position has changed
 # in the enum. They're either 37 in 2013, or 34 in ASW+.
 # They're backward because why not.
-FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
-FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
+FORMAT_ORDER[37] = ImageFormats.ATI2N
+FORMAT_ORDER[38] = ImageFormats.ATI1N
 
 
 class VTFFlags(Flag):
