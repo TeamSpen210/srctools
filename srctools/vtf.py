@@ -235,6 +235,14 @@ class ResourceID(bytes, Enum):
     KEYVALUES = b'KVD'
 
 
+class FilterMode(Enum):
+    """The algorithm to use for generating mipmaps."""
+    NEAREST = UPPER_LEFT = 0  # Just use the upper-left pixel.
+    UPPER_RIGHT = 1  # Just use the upper-right pixel.
+    LOWER_LEFT = 2  # Just use the lower-left pixel.
+    LOWER_RIGHT = 3  # Just use the lower-right pixel.
+    BILINEAR = AVERAGE = 4  # Average the four pixels
+
 Resource = namedtuple('Resource', 'flags data')
 
 Pixel = namedtuple('Pixel', 'r g b a')
@@ -307,6 +315,15 @@ class Frame:
         stream.seek(file_off)
         data = stream.read(fmt.frame_size(self.width, self.height))
         _format_funcs.load(fmt, self._data, data, self.width, self.height)
+
+    def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
+        """Regenerate this image from the provided frame, which is twice the size."""
+        if 2 * self.width != larger.width or 2 * self.height != larger.height:
+            raise ValueError("Larger image must be exactly twice the size!")
+        if self._data is None:
+            self._data = _format_funcs.blank(self.width, self.height)
+        if larger._data is not None:
+            _format_funcs.scale_down(filter, self.width, self.height, larger._data, self._data)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel."""

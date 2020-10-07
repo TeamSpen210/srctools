@@ -74,6 +74,42 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
         free(buffer)
 
 
+def scale_down(
+    filt: 'FilterMode',
+    uint width, uint height,
+    const byte[::1] src, byte[::1] dest,
+) -> None:
+    """Scale down the image to this smaller size."""
+    cdef int filter_val = filt.value
+    cdef Py_ssize_t x, y, pos_off, off, off2, channel
+    if filter_val in (0, 1, 2, 3):  # Nearest-neighbour.
+        # 0 = upper-left, 3 = lower-right
+        pos_off = 8 * width if filt.value >= 2 else 0
+        if filt.value & 1:
+            pos_off += 4
+        # for off in range(0, 4 * width * height, 4):
+        for y in prange(height, nogil=True, schedule='static'):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 8 * (2 * width * y + x)
+                for channel in range(4):
+                    dest[off + channel] = src[off2 + pos_off + channel]
+    elif filter_val == 5:  # Bilinear
+        for y in prange(height, nogil=True, schedule='static'):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 8 * (2 * width * y + x)
+                for channel in range(4):
+                    dest[off + channel] = (
+                        src[off2 + channel] +
+                        src[off2 + channel + 4] +
+                        src[off2 + 8 * width + channel] +
+                        src[off2 + 8 * width + channel + 4]
+                    ) // 4
+    else:
+        raise ValueError(f"Unknown filter {filt}")
+
+
 cdef inline byte upsample(byte bits, byte data) nogil:
     """Stretch bits worth of data to fill the byte.
 

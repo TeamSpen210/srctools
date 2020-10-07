@@ -5,9 +5,10 @@ from typing import Tuple, List, Dict, Callable, Iterable, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from srctools.vtf import ImageFormats
+    from srctools.vtf import ImageFormats, FilterMode
 else:
     ImageFormats = 'ImageFormats'
+    FilterMode = 'FilterMode'
 
 _SAVE: Dict[ImageFormats, Callable[[array.array, bytearray, int, int], None]] = {}
 _LOAD: Dict[ImageFormats, Callable[[array.array, bytes, int, int], None]] = {}
@@ -95,6 +96,39 @@ def save(fmt: ImageFormats, pixels: array.array, data: bytearray, width: int, he
     except KeyError:
         raise NotImplementedError(f"Saving {fmt.name} not implemented!") from None
     func(pixels, data, width, height)
+
+
+def scale_down(
+    filt: FilterMode,
+    width: int, height: int,
+    src: array.array, dest: array.array,
+) -> None:
+    """Scale down the image to this smaller size."""
+    if filt.value in (0, 1, 2, 3):  # Nearest-neighbour.
+        # 0 = upper-left, 3 = lower-right
+        pos_off = 8 * width if filt.value >= 2 else 0
+        if filt.value & 1:
+            pos_off += 4
+        # for off in range(0, 4 * width * height, 4):
+        for y in range(height):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 8 * (2 * width * y + x)
+                dest[off:off+4] = src[off2 + pos_off: off2 + pos_off + 4]
+    elif filt.name == 'BILINEAR':
+        for y in range(height):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 8 * (2 * width * y + x)
+                for channel in (0, 1, 2, 3):
+                    dest[off + channel] = (
+                        src[off2 + channel] +
+                        src[off2 + channel + 4] +
+                        src[off2 + 8 * width + channel] +
+                        src[off2 + 8 * width + channel + 4]
+                    ) // 4
+    else:
+        raise ValueError(f"Unknown filter {filt}!")
 
 
 def saveload_rgba(mode: str):
