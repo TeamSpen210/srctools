@@ -309,7 +309,7 @@ class Frame:
 
         # DXT formats cannot have smaller than 4x4 images.
         # So don't actually load the data for these - it should be blank.
-        if not fmt.is_compressed and (self.width < 4 or self.height < 4):
+        if fmt.is_compressed and (self.width < 4 or self.height < 4):
             return
 
         stream.seek(file_off)
