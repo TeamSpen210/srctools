@@ -312,6 +312,58 @@ class Frame:
         data = stream.read(fmt.frame_size(self.width, self.height))
         _format_funcs.load(fmt, self._data, data, self.width, self.height)
 
+    def clear(self) -> None:
+        """This clears the contents of the frame.
+
+        If the VTF is saved, this will be generated from the larger mipmaps.
+        """
+        self._data = self._fileinfo = None
+
+    @overload
+    def copy_from(self, source: 'Frame') -> None: ...
+    @overload
+    def copy_from(
+        self,
+        source: Union[bytes, bytearray, array, memoryview],
+        format: ImageFormats = ImageFormats.RGBA8888,
+    ) -> None: ...
+
+    def copy_from(
+        self,
+        source: Union['Frame', bytes, bytearray, array, memoryview],
+        format: ImageFormats = ImageFormats.RGBA8888,
+    ) -> None:
+        """Overwrite this frame with other data.
+
+        The source can be another Frame, or any buffer with bytes-format data.
+        """
+        if isinstance(source, Frame):
+            if self.width != source.width or self.height != source.height:
+                raise ValueError("Tried copying from a frame of a different size!")
+            source.load()
+            if self._data is None:  # Duplicate the other array
+                self._data = source._data[:]
+            else: # Copy the other array onto us
+                self._data[:] = source._data
+        else:
+            if self._data is None:
+                self._data = _BLANK_PIXEL * (self.width * self.height)
+            view = memoryview(source)
+            # For efficiency, our functions assume the view is contiguous.
+            # If it isn't, make a copy to force that.
+            if not view.c_contiguous:
+                view = view.tobytes()
+
+            # We also have to verify format size.
+            required_size = format.frame_size(self.width, self.height)
+            if len(view) != required_size:
+                raise ValueError(
+                    f"Expected {required_size} bytes "
+                    f"for {self.width}x{self.height} {format} image, "
+                    f"got {len(view)} bytes!"
+                )
+            _format_funcs.load(format, self._data, view, self.width, self.height)
+
     def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
         """Regenerate this image from the provided frame, which is twice the size."""
         if 2 * self.width != larger.width or 2 * self.height != larger.height:
