@@ -1,6 +1,5 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
-from cpython cimport array
 from libc.stdio cimport snprintf
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy, memset
@@ -27,7 +26,6 @@ cdef extern from "squish.h" namespace "squish":
     # void DecompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags );
     void DecompressImage(u8 *rgba, int width, int height, void *blocks, int flags ) nogil;
 
-cdef object img_template = array.array('B')
 ctypedef unsigned char byte
 ctypedef unsigned int uint
 
@@ -44,10 +42,6 @@ DEF A = 3
 
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
-
-def blank(uint width, uint height):
-    """Construct a blank image of the desired size."""
-    return array.clone(img_template, 4 * width * height, zero=True)
 
 
 def ppm_convert(const byte[::1] pixels, uint width, uint height):
@@ -665,7 +659,7 @@ cdef Format[30] FORMATS = [
 
 
 def init(formats: 'srctools.vtf.ImageFormats') -> None:
-    """Verify that the Python enum matches our array."""
+    """Verify that the Python enum matches our array of functions."""
     cdef int index
     cdef const char *name
     for fmt in formats:

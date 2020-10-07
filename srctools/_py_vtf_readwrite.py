@@ -1,6 +1,5 @@
 """Functions for reading/writing VTF data."""
 import array
-import itertools
 from typing import Tuple, List, Dict, Callable, Iterable, TYPE_CHECKING
 
 
@@ -12,11 +11,6 @@ else:
 
 _SAVE: Dict[ImageFormats, Callable[[array.array, bytearray, int, int], None]] = {}
 _LOAD: Dict[ImageFormats, Callable[[array.array, bytes, int, int], None]] = {}
-
-
-def blank(width: int, height: int) -> array.array:
-    """Construct a blank image of the desired size."""
-    return array.array('B', itertools.repeat(0, times=width * height * 4))
 
 
 def ppm_convert(pixels, width, height) -> bytes:

@@ -70,7 +70,7 @@ class CubeSide(Enum):
 
 CUBES_WITH_SPHERE = list(CubeSide)  # type: List[CubeSide]
 CUBES = CUBES_WITH_SPHERE[:-1]  # Remove the Sphere type, for 7.5+
-
+_BLANK_PIXEL = array('B', b'\x00\x00\x00\xFF')
 
 class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
@@ -290,7 +290,7 @@ class Frame:
     def load(self) -> None:
         """If the image has not been loaded, load it from the file stream."""
         if self._data is None:
-            self._data = _format_funcs.blank(self.width, self.height)
+            self._data = _BLANK_PIXEL * (self.width * self.height)
 
         if self._fileinfo is None:
             return
@@ -321,7 +321,7 @@ class Frame:
         if 2 * self.width != larger.width or 2 * self.height != larger.height:
             raise ValueError("Larger image must be exactly twice the size!")
         if self._data is None:
-            self._data = _format_funcs.blank(self.width, self.height)
+            self._data = _BLANK_PIXEL * (self.width * self.height)
         if larger._data is not None:
             _format_funcs.scale_down(filter, self.width, self.height, larger._data, self._data)
 
