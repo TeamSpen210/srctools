@@ -483,6 +483,7 @@ class VTF:
         self.resources = {}  # type: Dict[Union[ResourceID, bytes], Resource]
         self.sheet_info = list(sheet_info)
         self.flags = flags
+        self.frame_count = frames
         self.high_format = fmt
         self.low_format = thumb_fmt
 
@@ -498,6 +499,7 @@ class VTF:
         else:
             depth_iter = range(depth)
 
+        mip_count = 0
         for mip_count in itertools.count():
             for frame in range(frames):
                 for cube_or_depth in depth_iter:
@@ -510,6 +512,7 @@ class VTF:
 
             width >>= 1
             height >>= 1
+        self.mipmap_count = mip_count
 
     @classmethod    
     def read(cls: 'Type[VTF]', file: IO[bytes]) -> 'VTF':
@@ -548,6 +551,8 @@ class VTF:
 
         vtf.width = width
         vtf.height = height
+        vtf.frame_count = frame_count
+        vtf.mipmap_count = mipmap_count
         vtf.flags = VTFFlags(flags)
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
         vtf.bumpmap_scale = bumpmap_scale
