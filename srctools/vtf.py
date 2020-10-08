@@ -143,6 +143,8 @@ class ImageFormats(ImageAlignment, Enum):
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
+        if self.name == 'NONE':
+            return 0
         if self.is_compressed:
             block_wid, mod = divmod(width, 4)
             if mod:
