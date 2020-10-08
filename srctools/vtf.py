@@ -363,13 +363,23 @@ class Frame:
             _format_funcs.load(format, self._data, view, self.width, self.height)
 
     def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
-        """Regenerate this image from the provided frame, which is twice the size."""
-        if 2 * self.width != larger.width or 2 * self.height != larger.height:
-            raise ValueError("Larger image must be exactly twice the size!")
+        """Regenerate this image from the next mipmap.
+
+        The larger image must either have the same dimension, or exactly double.
+        """
+        if not (
+            self.width == larger.width or 2 * self.width == larger.width
+        ) or not (
+            self.height == larger.height or 2 * self.height == larger.height
+        ):
+            raise ValueError(
+                "Larger image must be exactly twice or the same size: "
+                f"{larger.width}x{larger.height} -> {self.width}x{self.height}"
+            )
         if self._data is None:
             self._data = _BLANK_PIXEL * (self.width * self.height)
         if larger._data is not None:
-            _format_funcs.scale_down(filter, self.width, self.height, larger._data, self._data)
+            _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
 
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel."""

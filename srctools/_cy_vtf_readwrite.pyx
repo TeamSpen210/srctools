@@ -70,38 +70,65 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
 
 def scale_down(
     filt: 'FilterMode',
+    uint src_width, uint src_height,
     uint width, uint height,
     const byte[::1] src, byte[::1] dest,
 ) -> None:
-    """Scale down the image to this smaller size."""
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
     cdef int filter_val = filt.value
     cdef Py_ssize_t x, y, pos_off, off, off2, channel
-    if filter_val in (0, 1, 2, 3):  # Nearest-neighbour.
-        # 0 = upper-left, 3 = lower-right
-        pos_off = 8 * width if filt.value >= 2 else 0
-        if filt.value & 1:
-            pos_off += 4
-        # for off in range(0, 4 * width * height, 4):
+    cdef Py_ssize_t vert_off, horiz_off, per_row, per_column
+
+    # We allow the dimensions to remain the same.
+    # So figure out the offsets we need to pick the right pixels.
+    # per_row/column is the multiples needed to skip to the upper-left pixel.
+    # horiz/vertical_off is the offset to the lower-right pixel in each dimension.
+    if width != src_width:
+        horiz_off, per_column = 4, 2
+    else:
+        horiz_off, per_column = 0, 1
+    if height != src_height:
+        vert_off, per_row = 4 * per_column * width, 2 * per_column * width
+    else:
+        vert_off, per_row = 0, per_column * width
+
+    if filter_val == 4:  # Bilinear
         for y in prange(height, nogil=True, schedule='static'):
             for x in range(width):
                 off = 4 * (width * y + x)
-                off2 = 8 * (2 * width * y + x)
-                for channel in range(4):
-                    dest[off + channel] = src[off2 + pos_off + channel]
-    elif filter_val == 4:  # Bilinear
-        for y in prange(height, nogil=True, schedule='static'):
-            for x in range(width):
-                off = 4 * (width * y + x)
-                off2 = 8 * (2 * width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
                 for channel in range(4):
                     dest[off + channel] = (
                         src[off2 + channel] +
-                        src[off2 + channel + 4] +
-                        src[off2 + 8 * width + channel] +
-                        src[off2 + 8 * width + channel + 4]
+                        src[off2 + channel + horiz_off] +
+                        src[off2 + channel + vert_off] +
+                        src[off2 + channel + vert_off + horiz_off]
                     ) // 4
+        return
+
+    # Otherwise, nearest-neighbour.
+    elif filter_val == 0:  # upper-left
+        pos_off = 0
+    elif filter_val == 1:  # upper-right
+        pos_off = horiz_off
+    elif filter_val == 2:  # lower-left
+        pos_off = vert_off
+    elif filter_val == 3:  # lower-right
+        pos_off = vert_off + horiz_off
     else:
         raise ValueError(f"Unknown filter {filt}")
+
+    # for off in range(0, 4 * width * height, 4):
+    for y in prange(height, nogil=True, schedule='static'):
+        for x in range(width):
+            off = 4 * (width * y + x)
+            off2 = 4 * (per_row * y + per_column * x)
+            for channel in range(4):
+                dest[off + channel] = src[off2 + pos_off + channel]
 
 
 cdef inline byte upsample(byte bits, byte data) nogil:

@@ -94,32 +94,50 @@ def save(fmt: ImageFormats, pixels: array.array, data: bytearray, width: int, he
 
 def scale_down(
     filt: FilterMode,
+    src_width: int, src_height: int,
     width: int, height: int,
     src: array.array, dest: array.array,
 ) -> None:
-    """Scale down the image to this smaller size."""
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
+    # We allow the dimensions to remain the same.
+    # So figure out the offsets we need to pick the right pixels.
+    # per_row/column is the multiples needed to skip to the upper-left pixel.
+    # horiz/vertical_off is the offset to the lower-right pixel in each dimension.
+    if width != src_width:
+        horiz_off, per_column = 4, 2
+    else:
+        horiz_off, per_column = 0, 1
+    if height != src_height:
+        vert_off, per_row = 4 * per_column * width, 2 * per_column * width
+    else:
+        vert_off, per_row = 0, per_column * width
+
     if filt.value in (0, 1, 2, 3):  # Nearest-neighbour.
         # 0 = upper-left, 3 = lower-right
-        pos_off = 8 * width if filt.value >= 2 else 0
-        if filt.value & 1:
-            pos_off += 4
-        # for off in range(0, 4 * width * height, 4):
+        pos_off = [
+            0, horiz_off,
+            vert_off, vert_off + horiz_off,
+        ][filt.value]
         for y in range(height):
             for x in range(width):
                 off = 4 * (width * y + x)
-                off2 = 8 * (2 * width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
                 dest[off:off+4] = src[off2 + pos_off: off2 + pos_off + 4]
     elif filt.value == 4:  # Bilinear
         for y in range(height):
             for x in range(width):
                 off = 4 * (width * y + x)
-                off2 = 8 * (2 * width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
                 for channel in (0, 1, 2, 3):
                     dest[off + channel] = (
                         src[off2 + channel] +
-                        src[off2 + channel + 4] +
-                        src[off2 + 8 * width + channel] +
-                        src[off2 + 8 * width + channel + 4]
+                        src[off2 + channel + horiz_off] +
+                        src[off2 + channel + vert_off] +
+                        src[off2 + channel + vert_off + horiz_off]
                     ) // 4
     else:
         raise ValueError(f"Unknown filter {filt}!")
