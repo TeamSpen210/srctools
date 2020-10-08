@@ -578,9 +578,9 @@ cdef bint load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint hei
 
 cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT1 data."""
-    if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
 
 
 cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
