@@ -88,7 +88,7 @@ def scale_down(
                 off2 = 8 * (2 * width * y + x)
                 for channel in range(4):
                     dest[off + channel] = src[off2 + pos_off + channel]
-    elif filter_val == 5:  # Bilinear
+    elif filter_val == 4:  # Bilinear
         for y in prange(height, nogil=True, schedule='static'):
             for x in range(width):
                 off = 4 * (width * y + x)

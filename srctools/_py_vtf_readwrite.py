@@ -109,7 +109,7 @@ def scale_down(
                 off = 4 * (width * y + x)
                 off2 = 8 * (2 * width * y + x)
                 dest[off:off+4] = src[off2 + pos_off: off2 + pos_off + 4]
-    elif filt.name == 'BILINEAR':
+    elif filt.value == 4:  # Bilinear
         for y in range(height):
             for x in range(width):
                 off = 4 * (width * y + x)

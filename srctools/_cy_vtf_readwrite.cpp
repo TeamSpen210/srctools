@@ -1003,8 +1003,8 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB;
-struct __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
-typedef struct __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+typedef struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 typedef struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 
@@ -1028,7 +1028,7 @@ struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB {
  *     """Compress RGB triplets into 565-packed data."""
  *     return (
  */
-struct __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
+struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f0;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f1;
 };
@@ -1854,7 +1854,7 @@ static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
 static CYTHON_INLINE __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_f_8srctools_17_cy_vtf_readwrite_upsample(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8srctools_17_cy_vtf_readwrite_decomp565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
-static CYTHON_INLINE __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
+static CYTHON_INLINE __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
@@ -2896,7 +2896,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
  *                 off2 = 8 * (2 * width * y + x)
  *                 for channel in range(4):             # <<<<<<<<<<<<<<
  *                     dest[off + channel] = src[off2 + pos_off + channel]
- *     elif filter_val == 5:  # Bilinear
+ *     elif filter_val == 4:  # Bilinear
  */
                                 for (__pyx_t_11 = 0; __pyx_t_11 < 4; __pyx_t_11+=1) {
                                   __pyx_v_channel = __pyx_t_11;
@@ -2905,7 +2905,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
  *                 off2 = 8 * (2 * width * y + x)
  *                 for channel in range(4):
  *                     dest[off + channel] = src[off2 + pos_off + channel]             # <<<<<<<<<<<<<<
- *     elif filter_val == 5:  # Bilinear
+ *     elif filter_val == 4:  # Bilinear
  *         for y in prange(height, nogil=True, schedule='static'):
  */
                                   __pyx_t_12 = ((__pyx_v_off2 + __pyx_v_pos_off) + __pyx_v_channel);
@@ -2953,11 +2953,11 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
  *         pos_off = 8 * width if filt.value >= 2 else 0
  */
     break;
-    case 5:
+    case 4:
 
     /* "srctools/_cy_vtf_readwrite.pyx":92
  *                     dest[off + channel] = src[off2 + pos_off + channel]
- *     elif filter_val == 5:  # Bilinear
+ *     elif filter_val == 4:  # Bilinear
  *         for y in prange(height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
  *             for x in range(width):
  *                 off = 4 * (width * y + x)
@@ -2998,7 +2998,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
                               __pyx_v_x = ((Py_ssize_t)0xbad0bad0);
 
                               /* "srctools/_cy_vtf_readwrite.pyx":93
- *     elif filter_val == 5:  # Bilinear
+ *     elif filter_val == 4:  # Bilinear
  *         for y in prange(height, nogil=True, schedule='static'):
  *             for x in range(width):             # <<<<<<<<<<<<<<
  *                 off = 4 * (width * y + x)
@@ -3099,7 +3099,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
 
         /* "srctools/_cy_vtf_readwrite.pyx":92
  *                     dest[off + channel] = src[off2 + pos_off + channel]
- *     elif filter_val == 5:  # Bilinear
+ *     elif filter_val == 4:  # Bilinear
  *         for y in prange(height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
  *             for x in range(width):
  *                 off = 4 * (width * y + x)
@@ -3119,7 +3119,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_2scale_down(CYTHON_UNUSE
     /* "srctools/_cy_vtf_readwrite.pyx":91
  *                 for channel in range(4):
  *                     dest[off + channel] = src[off2 + pos_off + channel]
- *     elif filter_val == 5:  # Bilinear             # <<<<<<<<<<<<<<
+ *     elif filter_val == 4:  # Bilinear             # <<<<<<<<<<<<<<
  *         for y in prange(height, nogil=True, schedule='static'):
  *             for x in range(width):
  */
@@ -3267,9 +3267,9 @@ static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8s
  *     return (
  */
 
-static CYTHON_INLINE __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
-  __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
-  __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
+static CYTHON_INLINE __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
+  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
+  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
 
   /* "srctools/_cy_vtf_readwrite.pyx":127
  *     """Compress RGB triplets into 565-packed data."""
@@ -5265,7 +5265,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_rgb565", 0);
@@ -5569,7 +5569,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_a2b5c____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_bgr565", 0);
