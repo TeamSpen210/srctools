@@ -73,7 +73,7 @@ CUBES: Collection[CubeSide] = CUBES_WITH_SPHERE[:-1]
 # One black, opaque pixel for creating blank images.
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
-class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
+class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size ind')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
     # Force object-style comparisons, so formats with the same counts
     # compare different.
