@@ -4,42 +4,76 @@ After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
 from array import array
+from enum import Enum, Flag
+from collections import namedtuple
+import itertools
 import math
 import struct
-from collections import namedtuple
-from enum import Enum
+import warnings
+from io import BytesIO
 
-from srctools import Vec
+from srctools import Vec, binformat, EmptyMapping
 
-from typing import IO, Dict, List, Optional, Tuple, Iterable, Union
+from typing import (
+    IO, Dict, List, Optional, Tuple, Iterable, Union,
+    TYPE_CHECKING, Type, Collection, overload, NamedTuple, TypeVar, Generic,
+    Mapping,
+)
+
+# Only import while type checking, so these expensive libraries are only loaded
+# if the user used them elsewhere.
+if TYPE_CHECKING:
+    from PIL.Image import Image as PIL_Image
+    import tkinter
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
+# For type-checking purposes make it think the Cython version is the Python one.
 
 # noinspection PyProtectedMember
 from srctools import _py_vtf_readwrite as _py_format_funcs
-try:
-    # noinspection PyUnresolvedReferences, PyProtectedMember
-    from srctools import _cy_vtf_readwrite as _cy_format_funcs # type: ignore
-    _format_funcs = _cy_format_funcs  # type: ignore
-except ImportError:
-    # Type checker only reads this branch.
-    _format_funcs = _py_format_funcs
+_cy_format_funcs = _format_funcs = _py_format_funcs
+
+if not TYPE_CHECKING:
+    try:
+        # noinspection PyUnresolvedReferences, PyProtectedMember
+        from srctools import _cy_vtf_readwrite as _cy_format_funcs  # type: ignore
+        _format_funcs = _cy_format_funcs  # type: ignore
+    except ImportError:
+        pass
 
 
-# The _vtf_readwrite module contains load_FORMATNAME() functions which
+# The _vtf_readwrite module contains save/load functions which
 # convert the VTF data into a uniform 32-bit RGBA block, which we can then
 # parse.
 # That works for everything except RGBA16161616 (used for HDR cubemaps), which
 # is 16-bit for each channel. We can't do much about that.
 
 __all__ = [
-    'VTF',
-    'ResourceID',
+    'VTF', 'Frame', 'FilterMode',
+    'ResourceID', 'CubeSide', 'ImageFormats', 'VTFFlags',
 ]
 
 
-class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
+class CubeSide(Enum):
+    """The sides of a cubemap texture."""
+    RIGHT = 0
+    LEFT = 1
+    BACK = 2
+    FRONT = 3
+    UP = 4
+    DOWN = 5
+    SPHERE = 6
+
+
+CUBES_WITH_SPHERE: Collection[CubeSide] = list(CubeSide)
+# Remove the Sphere type, for 7.5+
+CUBES: Collection[CubeSide] = CUBES_WITH_SPHERE[:-1]
+
+# One black, opaque pixel for creating blank images.
+_BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
+
+class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
     """Raw image mode, pixel counts or object(), bytes per pixel."""
     # Force object-style comparisons, so formats with the same counts
     # compare different.
@@ -51,16 +85,20 @@ class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size')):
     __ne__ = object.__ne__
     __hash__ = object.__hash__
 
+_ind = -1
+
 
 def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
+    global _ind
     if l:
         r = g = b = l
         size = l + a
     if not size:
         size = r + g + b + a
+    _ind += 1
 
-    return r, g, b, a, size
+    return r, g, b, a, size, _ind
 
 
 class ImageFormats(ImageAlignment, Enum):
@@ -72,7 +110,7 @@ class ImageFormats(ImageAlignment, Enum):
     RGB565 = f(5, 6, 5, 0)
     I8 = f(a=0, l=8)
     IA88 = f(a=8, l=8)
-    P8 = f()  # Palletted, not used.
+    P8 = f()  # Using a palette somehow - was never implemented by Valve.
     A8 = f(a=8)
     # Blue = alpha channel too
     RGB888_BLUESCREEN = f(8, 8, 8)
@@ -95,10 +133,21 @@ class ImageFormats(ImageAlignment, Enum):
     UVLX8888 = f(size=32)
 
     NONE = f()
+    # These two aren't supported by VTEX & VTFEdit, but are by the engine.
+    # They're useful for normal maps.
+    ATI1N = f(size=64)
+    ATI2N = f(size=128)
+
+    @property
+    def is_compressed(self) -> bool:
+        """Checks if the format is compressed in 4x4 blocks."""
+        return self.name.startswith('DXT') or self.name in ('ATI1N', 'ATI2N')
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
-        if self.name in ('DXT1', 'DXT3', 'DXT5', 'DXT1_ONEBITALPHA'):
+        if self.name == 'NONE':
+            return 0
+        if self.is_compressed:
             block_wid, mod = divmod(width, 4)
             if mod:
                 block_wid += 1
@@ -110,11 +159,74 @@ class ImageFormats(ImageAlignment, Enum):
         else:
             return self.size * width * height // 8
 
-del f
+    def bin_value(self, asw: bool) -> int:
+        """Return the enum value for the given format.
+
+        This is tricky, since for ATIxN it is different in ASW+.
+        """
+        if self is ImageFormats.NONE:
+            return -1
+        elif self is ImageFormats.ATI1N:
+            return 35 if asw else 38
+        elif self is ImageFormats.ATI2N:
+            return 34 if asw else 37
+        else:
+            return self.ind
+
+del f, _ind
+# Initialise the internal mapping in the format modules.
+_format_funcs.init(ImageFormats)
+if _cy_format_funcs is not _py_format_funcs:
+    _py_format_funcs.init(ImageFormats)
 
 
-FORMAT_ORDER = dict(enumerate(ImageFormats))  # type: Dict[int, ImageFormats]
-FORMAT_ORDER[-1] = ImageFormats.NONE
+FORMAT_ORDER = {
+    fmt.ind: fmt
+    for fmt in ImageFormats.__members__.values()
+    if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
+}
+# Since these are semi-"internal" formats, the position has changed
+# in the enum. They're either 37 in 2013, or 34 in ASW+.
+# They're backward because why not.
+FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
+FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
+
+
+class VTFFlags(Flag):
+    """The various image flags that may be set."""
+    EMPTY = 0
+    # Flags from the *.txt config file
+    POINT_SAMPLE = 0x00000001
+    TRILINEAR = 0x00000002
+    CLAMP_S = 0x00000004
+    CLAMP_T = 0x00000008
+    ANISOTROPIC = 0x00000010
+    HINT_DXT5 = 0x00000020
+    PWL_CORRECTED = 0x00000040
+    NORMAL = 0x00000080
+    NO_MIP = 0x00000100
+    NO_LOD = 0x00000200
+    ALL_MIPS = 0x00000400
+    PROCEDURAL = 0x00000800
+
+    # These are automatically generated by vtex from the texture data.
+    ONEBITALPHA = 0x00001000
+    EIGHTBITALPHA = 0x00002000
+
+    # Newer flags from the *.txt config file
+    ENVMAP = 0x00004000
+    RENDER_TARGET = 0x00008000
+    DEPTH_RENDER_TARGET = 0x00010000
+    NO_DEBUG_OVERRIDE = 0x00020000
+    SINGLE_COPY = 0x00040000
+    PRE_SRGB = 0x00080000
+
+    NO_DEPTH_BUFFER = 0x00800000
+
+    CLAMP_U = 0x02000000
+    VERTEX_TEXTURE = 0x04000000
+    SS_BUMP = 0x08000000
+    BORDER = 0x20000000
 
 
 class ResourceID(bytes, Enum):
@@ -138,8 +250,17 @@ class ResourceID(bytes, Enum):
     KEYVALUES = b'KVD'
 
 
+class FilterMode(Enum):
+    """The algorithm to use for generating mipmaps."""
+    NEAREST = UPPER_LEFT = 0  # Just use the upper-left pixel.
+    UPPER_RIGHT = 1  # Just use the upper-right pixel.
+    LOWER_LEFT = 2  # Just use the lower-left pixel.
+    LOWER_RIGHT = 3  # Just use the lower-right pixel.
+    BILINEAR = AVERAGE = 4  # Average the four pixels
+
 Resource = namedtuple('Resource', 'flags data')
 
+Pixel = namedtuple('Pixel', 'r g b a')
 
 _HEADER = struct.Struct(
     '<'    # Align
@@ -159,26 +280,186 @@ _HEADER = struct.Struct(
 )
 
 
-def _blank_frame(width: int, height: int) -> array:
-    """Construct a blank image of the desired size."""
-    return _format_funcs.blank(width, height)
+class Frame:
+    """A single frame of a VTF. This should not be constructed independently.
 
+    This is lazy, so it will only read from the file when actually used.
+    """
+    __slots__ = [
+        'width',
+        'height',
+        '_data',
+        '_fileinfo',
+    ]
+    def __init__(
+        self,
+        width: int,
+        height: int,
+    ) -> None:
+        """Private constructor, creates a blank image of this size."""
+        self.width = width
+        self.height = height
+        self._data = None  # type: Optional[array]
+        self._fileinfo = None  # type: Optional[Tuple[IO[bytes], int, ImageFormats]]
 
-def _load_frame(
-    fmt: ImageFormats,
-    pixels: array,
-    data: bytes,
-    width: int,
-    height: int,
-) -> None:
-    """Load in pixels from VTF data."""
-    try:
-        loader = getattr(_format_funcs, "load_" + fmt.name.casefold())
-    except AttributeError:
-        raise NotImplementedError(
-            "Loading {} not implemented!".format(fmt.name)
-        ) from None
-    loader(pixels, data, width, height)
+    def load(self) -> None:
+        """If the image has not been loaded, load it from the file stream."""
+        if self._data is None:
+            self._data = _BLANK_PIXEL * (self.width * self.height)
+
+        if self._fileinfo is None:
+            return
+
+        stream, file_off, fmt = self._fileinfo
+        self._fileinfo = None
+
+        if getattr(stream, 'closed', False):
+            warnings.warn(
+                'VTF image frame read after stream was closed!\n'
+                'If passing in a stream, close the VTF before closing '
+                'the file.',
+                ResourceWarning,
+                source=stream,
+            )
+
+        stream.seek(file_off)
+        data = stream.read(fmt.frame_size(self.width, self.height))
+        _format_funcs.load(fmt, self._data, data, self.width, self.height)
+
+    def clear(self) -> None:
+        """This clears the contents of the frame.
+
+        If the VTF is saved, this will be generated from the larger mipmaps.
+        """
+        self._data = self._fileinfo = None
+
+    @overload
+    def copy_from(self, source: 'Frame') -> None: ...
+    @overload
+    def copy_from(
+        self,
+        source: Union[bytes, bytearray, array, memoryview],
+        format: ImageFormats = ImageFormats.RGBA8888,
+    ) -> None: ...
+
+    def copy_from(
+        self,
+        source: Union['Frame', bytes, bytearray, array, memoryview],
+        format: ImageFormats = ImageFormats.RGBA8888,
+    ) -> None:
+        """Overwrite this frame with other data.
+
+        The source can be another Frame, or any buffer with bytes-format data.
+        """
+        if isinstance(source, Frame):
+            if self.width != source.width or self.height != source.height:
+                raise ValueError("Tried copying from a frame of a different size!")
+            source.load()
+            if self._data is None:  # Duplicate the other array
+                self._data = source._data[:]
+            else: # Copy the other array onto us
+                self._data[:] = source._data
+        else:
+            if self._data is None:
+                self._data = _BLANK_PIXEL * (self.width * self.height)
+            view = memoryview(source)
+            # For efficiency, our functions assume the view is contiguous.
+            # If it isn't, make a copy to force that.
+            if not view.c_contiguous:
+                view = view.tobytes()
+
+            # We also have to verify format size.
+            required_size = format.frame_size(self.width, self.height)
+            if len(view) != required_size:
+                raise ValueError(
+                    f"Expected {required_size} bytes "
+                    f"for {self.width}x{self.height} {format} image, "
+                    f"got {len(view)} bytes!"
+                )
+            _format_funcs.load(format, self._data, view, self.width, self.height)
+
+    def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
+        """Regenerate this image from the next mipmap.
+
+        The larger image must either have the same dimension, or exactly double.
+        """
+        if not (
+            self.width == larger.width or 2 * self.width == larger.width
+        ) or not (
+            self.height == larger.height or 2 * self.height == larger.height
+        ):
+            raise ValueError(
+                "Larger image must be exactly twice or the same size: "
+                f"{larger.width}x{larger.height} -> {self.width}x{self.height}"
+            )
+        if self._data is None:
+            self._data = _BLANK_PIXEL * (self.width * self.height)
+        if larger._data is not None:
+            _format_funcs.scale_down(filter, larger.width, larger.height, self.width, self.height, larger._data, self._data)
+
+    def __getitem__(self, item: Tuple[int, int]) -> Pixel:
+        """Retrieve an individual pixel."""
+        self.load()
+        x, y = item
+        if x > self.width or y > self.height:
+            raise IndexError(item)
+        off = x * self.width + y
+        return Pixel._make(self._data[off: off + 4])
+
+    def __setitem__(
+        self,
+        item: Tuple[int, int],
+        data: Tuple[int, int, int, int],
+    ) -> None:
+        """Set an individual pixel."""
+        self.load()
+
+        x, y = item
+        if x > self.width or y > self.height:
+            raise IndexError(item)
+        off = x * self.width + y
+        [
+            self._data[off],
+            self._data[off + 1],
+            self._data[off + 2],
+            self._data[off + 3],
+        ] = data
+
+    def to_PIL(self) -> 'PIL_Image':
+        """Convert the given frame into a PIL image.
+
+        Requires Pillow to be installed.
+        """
+        self.load()
+
+        from PIL.Image import frombuffer
+        return frombuffer(
+            'RGBA',
+            (self.width, self.height),
+            self._data,
+            'raw',
+            'RGBA',
+            0,
+            1,
+        ).copy()
+
+    def to_tkinter(self, tk: 'tkinter.Misc' = None) -> 'tkinter.PhotoImage':
+        """Convert the given frame into a Tkinter PhotoImage."""
+        self.load()
+
+        import tkinter
+        return tkinter.PhotoImage(
+            master=tk,
+            # Convert it to PPM format, which Tkinter understands natively.
+            # That requires a bunch of data crunching, so the code is Cythonised
+            # if possible.
+            data=_format_funcs.ppm_convert(
+                self._data,
+                self.width,
+                self.height,
+            ),
+        )
+
 
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
@@ -186,12 +467,12 @@ class VTF:
         self, 
         width: int,
         height: int,
-        version=(7, 5),
-        ref=Vec(0, 0, 0),
-        frames=1,
-        bump_scale=1.0,
-        sheet_info: Iterable['SheetSequence']=(),
-        flags: int=0,
+        version: Tuple[int, int]=(7, 5),
+        ref: Vec=Vec(0, 0, 0),
+        frames: int=1,
+        bump_scale: float=1.0,
+        sheet_info: Mapping[int, 'SheetSequence']=EmptyMapping,
+        flags: VTFFlags=VTFFlags.EMPTY,
         fmt: ImageFormats=ImageFormats.RGBA8888,
         thumb_fmt: ImageFormats=ImageFormats.DXT1,
         depth: int=1,
@@ -205,36 +486,61 @@ class VTF:
             raise ValueError("Height must be a power of 2!")
         if frames < 1:
             raise ValueError("Invalid frame count!")
-        
+
+        # If it's a cubemap, depth must be 1.
+        if VTFFlags.ENVMAP in flags:
+            if depth != 1:
+                raise ValueError(
+                    "Cubemaps must have a depth "
+                    "of 1, not {!r}".format(depth)
+                )
+        elif depth < 1:
+            raise ValueError("Depth must be positive!")
+
         self.width = width
         self.height = height
         self.depth = depth
 
         self.version = version
         self.reflectivity = ref
-        self.bump_scale = bump_scale
+        self.bumpmap_scale = bump_scale
         self.resources = {}  # type: Dict[Union[ResourceID, bytes], Resource]
-        self.sheet_info = list(sheet_info)
+        self.sheet_info = dict(sheet_info)
         self.flags = flags
-        self.high_format = fmt
+        self.frame_count = frames
+        self.format = fmt
         self.low_format = thumb_fmt
-        
-        self._frames = [
-            _blank_frame(width, height)
-            for _ in range(frames)
-        ]
-        self._low_res = _blank_frame(16, 16)
+
+        # (frame, depth/cubemap, mipmap) -> frame
+        self._frames = {}  # type: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
+        self._low_res = Frame(16, 16)
+
+        if VTFFlags.ENVMAP in flags:
+            if version[1] == 5:
+                depth_iter = CUBES  # type: Iterable[Union[int, CubeSide]]
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(depth)
+
+        mip_count = 0
+        for mip_count in itertools.count():
+            for frame in range(frames):
+                for cube_or_depth in depth_iter:
+                    self._frames[frame, cube_or_depth, mip_count] = Frame(width, height)
+
+            # Once either is 1 large, we have no more mipmaps.
+            # Create the frame first, so we still create the final 1-large frame.
+            if width <= 1 or height <= 1:
+                break
+
+            width >>= 1
+            height >>= 1
+        self.mipmap_count = mip_count
 
     @classmethod    
-    def read(
-        cls,
-        file: IO[bytes],
-        mipmap: int=0,
-    ) -> 'VTF':
-        """Read in a VTF file.
-
-        If specified, mipmap will read in a shrunken image.
-        """
+    def read(cls: 'Type[VTF]', file: IO[bytes]) -> 'VTF':
+        """Read in a VTF file."""
         signature = file.read(4)
         if signature != b'VTF\0':
             raise ValueError('Bad file signature!')
@@ -247,33 +553,33 @@ class VTF:
                     version_major, version_minor,
                 )
             )
-        
-        vtf = cls.__new__(cls)  # type: VTF
+
+        vtf = cls.__new__(cls)
         
         (
             header_size,
             width,
             height,
-            vtf.flags,
+            flags,
             frame_count,
             first_frame_index,
             ref_r, ref_g, ref_b,
-            vtf.bumpmap_scale,
+            bumpmap_scale,
             high_format,
             mipmap_count,
             low_format,
             low_width, low_height,
-        ) = _HEADER.unpack(file.read(_HEADER.size))
+        ) = _HEADER.unpack(file.read(_HEADER.size))  # type: int, int, int, int, int, int, float, float, float, float, int, int, int, int, int
 
-        vtf.width = max(width >> mipmap, 1)
-        vtf.height = max(height >> mipmap, 1)
-        
-        vtf._frames = [
-            _blank_frame(width, height)
-            for _ in range(frame_count)
-        ]
-        
+        vtf._frames = {}
+
+        vtf.width = width
+        vtf.height = height
+        vtf.frame_count = frame_count
+        vtf.mipmap_count = mipmap_count
+        vtf.flags = VTFFlags(flags)
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
+        vtf.bumpmap_scale = bumpmap_scale
         vtf.format = fmt = FORMAT_ORDER[high_format]
         vtf.version = version_major, version_minor
         vtf.low_format = low_fmt = FORMAT_ORDER[low_format]
@@ -285,16 +591,19 @@ class VTF:
         vtf.depth = 1
         if version_minor >= 2:
             [vtf.depth] = struct.unpack('H', file.read(2))
+        if vtf.depth <= 0:
+            vtf.depth = 1
 
-        low_res_offset = high_res_offset = None
+        low_res_offset = high_res_offset = None  # type: Optional[int]
 
         vtf.resources = {}
+        vtf.sheet_info = {}
 
         # Read resources.
         if version_minor >= 3:
             [num_resources] = struct.unpack('<3xI8x', file.read(15))
             for i in range(num_resources):
-                [res_id, flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
+                [res_id, res_flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
                 if res_id in vtf.resources:
                     raise ValueError(
                         'Duplicate resource ID "{}"!'.format(res_id)
@@ -310,15 +619,15 @@ class VTF:
                         res_id = ResourceID(res_id)
                     except ValueError:
                         pass  # Custom.
-                    vtf.resources[res_id] = Resource(flags, data)
+                    vtf.resources[res_id] = Resource(res_flags, data)
 
-            for res_id, (flags, data) in vtf.resources.items():
-                if not flags & 0x02:
+            for res_id, (res_flags, data) in vtf.resources.items():
+                if not res_flags & 0x02:
                     # There's actual data elsewhere in the file.
                     file.seek(data)
                     [size] = struct.unpack('I', file.read(4))
-                    data = file.read(size)
-                    vtf.resources[res_id] = Resource(flags, data)
+                    res_data = file.read(size)
+                    vtf.resources[res_id] = Resource(res_flags, res_data)
 
             if low_res_offset is None and low_fmt is not ImageFormats.NONE:
                 raise ValueError('Missing low-res thumbnail resource!')
@@ -327,7 +636,7 @@ class VTF:
 
             if ResourceID.PARTICLE_SHEET in vtf.resources:
                 vtf.sheet_info = SheetSequence.from_resource(
-                    vtf.resources[ResourceID.PARTICLE_SHEET].data
+                    vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
                 )
 
         else:
@@ -338,65 +647,251 @@ class VTF:
         if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
             return vtf
 
-        vtf._low_res = _blank_frame(low_width, low_height)
+        vtf._low_res = Frame(low_width, low_height)
         if low_fmt is not ImageFormats.NONE:
-            file.seek(low_res_offset)
-            _load_frame(
-                low_fmt,
-                vtf._low_res,
-                file.read(low_fmt.frame_size(low_width, low_height)),
-                low_width,
-                low_height
-            )
+            vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 
-        file.seek(high_res_offset)
-        for frame_ind in range(frame_count):
-            for data_mipmap in reversed(range(mipmap_count)):
-                mip_width = max(width >> data_mipmap, 1)
-                mip_height = max(height >> data_mipmap, 1)
-                mip_data = file.read(fmt.frame_size(mip_width, mip_height))
-                if data_mipmap == mipmap:
-                    _load_frame(
-                        fmt,
-                        vtf._frames[frame_ind],
-                        mip_data,
-                        mip_width,
-                        mip_height,
+        # If cubemaps are present, we iterate that for depth.
+        # Otherwise it's the depth value.
+        if VTFFlags.ENVMAP in vtf.flags:
+            # For version 7.5, the spheremap is skipped.
+            if version_minor == 5:
+                depth_iter = CUBES  # type: Iterable[Union[int, CubeSide]]
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(vtf.depth)
+
+        for data_mipmap in reversed(range(mipmap_count)):
+            mip_width = max(width >> data_mipmap, 1)
+            mip_height = max(height >> data_mipmap, 1)
+            for frame_ind in range(frame_count):
+                for depth_or_cube in depth_iter:
+                    frame = vtf._frames[
+                        frame_ind,
+                        depth_or_cube,
+                        data_mipmap,
+                    ] = Frame(mip_width, mip_height)
+                    # noinspection PyProtectedMember
+                    frame._fileinfo = (file, high_res_offset, fmt)
+                    high_res_offset += fmt.frame_size(mip_width, mip_height)
+        return vtf
+
+    def save(
+        self,
+        file: IO[bytes],
+        version: Optional[Tuple[int, int]]=None,
+        sheet_seq_version: int=1,
+        asw_or_later: bool=True,
+    ) -> None:
+        """Write out the VTF file to this.
+
+        If a version is specified, this overrides the one in the object.
+        The particle system version needs to be specified here.
+        If ATI1N or ATI2N used, whether the engine is ASW or later needs to
+        be specified.
+        """
+        deferred = binformat.DeferredWrites(file)
+        file.write(b'VTF\0')
+        if version is None:
+            version = self.version
+        version_major, version_minor = version
+
+        if version_major != 7 or not (0 <= version_minor <= 5):
+            raise ValueError(
+                "VTF version {}.{} is not "
+                "between 7.0-7.5!".format(
+                    version_major, version_minor,
+                )
+            )
+        file.write(struct.pack('<II', version_major, version_minor))
+
+        deferred.defer('header_size', '<I')
+        file.write(_HEADER.pack(
+            0,
+            self.width,
+            self.height,
+            self.flags.value,
+            self.frame_count,
+            0,  # Todo: First frame index?
+            *self.reflectivity,
+            self.bumpmap_scale,
+            self.format.bin_value(asw_or_later),
+            self.mipmap_count,
+            self.low_format.bin_value(asw_or_later),
+            self._low_res.width, self._low_res.height,
+        ))
+
+        # For volumetric textures, multiple layers. (Cannot be used with faces.)
+        if version_minor >= 2:
+            file.write(struct.pack('<H', self.depth))
+        elif self.depth > 1:
+            raise ValueError('Cannot use volumetric textures with versions before 7.2!')
+
+        # Read resources.
+        if version_minor >= 3:
+            res_count = len(self.resources) + 2  # low/high format are always present.
+            if self.sheet_info:
+                res_count += 1
+            file.write(struct.pack('<3xI8x', res_count))
+            for res_id, res in self.resources.items():
+                if isinstance(res.data, bytes):
+                    # It's later in the file.
+                    file.write(struct.pack('<3sB', getattr(res_id, 'value', res_id), res.flags & ~0x02))
+                    deferred.defer(('res', res_id), '<I', write=True)
+                else:
+                    # Just here.
+                    file.write(struct.pack('<3sBI', res_id, res.flags | 0x02, res.data))
+
+            # These are always present in the resource.
+            file.write(struct.pack('<3sB', ResourceID.LOW_RES.value, 0))
+            deferred.defer('low_res', '<I', write=True)
+            file.write(struct.pack('<3sB', ResourceID.HIGH_RES.value, 0))
+            deferred.defer('high_res', '<I', write=True)
+            if self.sheet_info:
+                file.write(struct.pack('<3sB', ResourceID.PARTICLE_SHEET.value, 0))
+                deferred.defer('particle', '<I', write=True)
+        else:
+            file.write(bytes(15))  # Pad to 80 bytes.
+
+        deferred.set_data('header_size', file.tell())
+        if version_minor >= 3:
+            # Write the data itself.
+            for res_id, res in self.resources.items():
+                if isinstance(res.data, bytes):
+                    # There's actual data elsewhere in the file.
+                    deferred.set_data(('res', res_id), file.tell())
+                    file.write(struct.pack('<I', len(res.data)))
+                    file.write(res.data)
+            if self.sheet_info:
+                particle_data = SheetSequence.make_data(self.sheet_info)
+                deferred.set_data('particle', file.tell())
+                file.write(struct.pack('<I', len(particle_data)))
+                file.write(particle_data)
+
+        self.compute_mipmaps()
+        self._low_res.load()
+
+        if version_minor >= 3:
+            deferred.set_data('low_res', file.tell())
+        data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
+        _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
+        file.write(data)
+
+        # If cubemaps are present, we iterate that for depth.
+        # Otherwise it's the depth value.
+        depth_iter: Iterable[Union[int, CubeSide]]
+        if VTFFlags.ENVMAP in self.flags:
+            # For version 7.5, the spheremap is skipped.
+            if version_minor == 5:
+                depth_iter = CUBES
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(self.depth)
+
+        if version_minor >= 3:
+            deferred.set_data('high_res', file.tell())
+        for data_mipmap in reversed(range(self.mipmap_count)):
+            for frame_ind in range(self.frame_count):
+                for depth_or_cube in depth_iter:
+                    frame = self._frames[
+                        frame_ind,
+                        depth_or_cube,
+                        data_mipmap,
+                    ]
+                    data = bytearray(self.format.frame_size(frame.width, frame.height))
+                    _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
+                    file.write(data)
+        deferred.write()
+
+    def __enter__(self) -> 'VTF':
+        """The VTF file can be used as a context manager.
+
+        This will close the streams if any frames still have them open.
+        """
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Close the streams if any frames still have them open."""
+        for frame in self._frames.values():
+            frame._fileinfo = None
+
+    def load(self) -> None:
+        """Fully load all image frames from the VTF.
+
+        This allows closing the file stream.
+        """
+        for frame in self._frames.values():
+            frame.load()
+        self._low_res.load()
+
+    def clear_mipmaps(self, *, after: int = 0) -> None:
+        """Erase the contents of all mipmaps smaller than the given size.
+
+        When saved or compute_mipmaps() is called, these empty mipmaps will
+        be recomputed from the largest mipmap.
+        By default this clears all but the largest mipmap.
+        """
+        for (ind, depth_side, mipmap), frame in self._frames.items():
+            if mipmap > after:
+                frame.clear()
+        self._low_res.clear()
+
+    def compute_mipmaps(self, filter: FilterMode=FilterMode.BILINEAR) -> None:
+        """Regenerate all mipmaps that have previously been cleared."""
+        self.load()
+        depth_iter: Collection[Union[int, CubeSide]]
+        if VTFFlags.ENVMAP in self.flags:
+            # For version 7.5, the spheremap is skipped.
+            if self.version == (7, 5):
+                depth_iter = CUBES
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(self.depth)
+        for frame in range(self.frame_count):
+            for depth_side in depth_iter:
+                # Force to blank if cleared.
+                self._frames[frame, depth_side, 0].load()
+                for mipmap in range(1, self.mipmap_count):
+                    self._frames[frame, depth_side, mipmap].rescale_from(
+                        self._frames[frame, depth_side, mipmap - 1],
+                        filter,
                     )
 
-        return vtf
-        
+        # Also regenerate the low-res format.
+        if self.low_format is not ImageFormats.NONE:
+            for mipmap in range(self.mipmap_count):
+                frame = self.get(mipmap=mipmap)
+                if frame.width//2 == self._low_res.width and frame.height//2 == self._low_res.height:
+                    self._low_res.rescale_from(frame, filter)
+
     def __len__(self) -> int:
         """The length of a VTF is the number of image frames."""
         return len(self._frames)
 
-    def to_PIL(self, frame: int):
-        """Convert the given frame into a PIL image.
+    def get(
+        self, *,
+        frame: int = 0,
+        depth: int = 0,
+        side: CubeSide = None,
+        mipmap: int = 0,
+    ) -> Frame:
+        """Get a specific image frame.
 
-        Requires Pillow to be installed.
+        If the texture is a cubemap, a side must be provided and depth must be 0.
         """
-        from PIL.Image import frombuffer
-        return frombuffer(
-            'RGBA',
-            (self.width, self.height),
-            self._frames[frame],
-            'raw',
-            'RGBA',
-            0,
-            1,
-        )
+        if side is not None and depth != 0:
+            raise TypeError('Side and depth are mutually exclusive!')
+        if VTFFlags.ENVMAP in self.flags:
+            if side is None:
+                raise ValueError('Side must be provided for cubemaps!')
+            depth_side = side
+        else:
+            depth_side = depth
+        return self._frames[frame, depth_side, mipmap]
 
-    def to_tkinter(self, frame: int, tk=None):
-        """Convert the given frame into a Tkinter PhotoImage."""
-        from tkinter import PhotoImage
-        return PhotoImage(
-            master=tk,
-            data=_format_funcs.ppm_convert(
-                self._frames[frame],
-                self.width,
-                self.height,
-            ),
-        )
 
 TexCoord = namedtuple('TexCoord', ['left', 'top', 'right', 'bottom'])
 
@@ -407,7 +902,7 @@ class SheetSequence:
 
     def __init__(
         self,
-        frames: List[Tuple[float, TexCoord]],
+        frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]],
         clamp: bool,
         duration: float,
     ):
@@ -416,7 +911,7 @@ class SheetSequence:
         self.duration = duration
 
     @classmethod
-    def from_resource(cls, data: bytes) -> List[Optional['SheetSequence']]:
+    def from_resource(cls, data: bytes) -> Dict[str, 'SheetSequence']:
         """Decode from the resource data."""
         (
             version,
@@ -427,7 +922,7 @@ class SheetSequence:
         if version > 1:
             raise ValueError('Unknown version {}!'.format(version))
 
-        sequences = [None] * SheetSequence.MAX_COUNT  # type: List[Optional['SheetSequence']]
+        sequences: Dict[str, SheetSequence] = {}
         if sequence_count > SheetSequence.MAX_COUNT:
             raise ValueError('Cannot have more than {} sequences ({})!'.format(
                 SheetSequence.MAX_COUNT,
@@ -442,11 +937,12 @@ class SheetSequence:
                 total_time,
             ) = struct.unpack_from('<Ixxx?If', data, offset)
             offset += 16
-            # seq_num = _
-            if not (0 <= seq_num < 64):
+            if not (0 <= seq_num < SheetSequence.MAX_COUNT):
                 raise ValueError('Invalid sequence number {}!'.format(seq_num))
+            if seq_num in sequences:
+                raise ValueError('Duplicate sequence number {}!'.format(seq_num))
 
-            frames = [None] * frame_count
+            frames = []  # type: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]]
 
             for frame_ind in range(frame_count):
                 [duration] = struct.unpack_from('<f', data, offset)
@@ -455,32 +951,62 @@ class SheetSequence:
                 if version == 0:
                     # Only one in the file, repeated 4 times.
                     tex_coord = TexCoord._make(struct.unpack_from('<4f', data, offset))
-                    samples = [tex_coord, tex_coord, tex_coord, tex_coord]
+                    frames.append((duration, tex_coord, tex_coord, tex_coord, tex_coord))
                     offset += 16
                 else:
-                    samples = [
-                        TexCoord._make(struct.unpack_from('<4f', data, offset+off))
-                        for off in (0, 16, 32, 48)
-                    ]
+                    frames.append((
+                        duration,
+                        TexCoord._make(struct.unpack_from('<4f', data, offset)),
+                        TexCoord._make(struct.unpack_from('<4f', data, offset + 16)),
+                        TexCoord._make(struct.unpack_from('<4f', data, offset + 32)),
+                        TexCoord._make(struct.unpack_from('<4f', data, offset + 48)),
+                    ))
                     offset += 64
-
-                frames[frame_ind] = (duration, samples)
 
             sequences[seq_num] = SheetSequence(frames, clamp, total_time)
 
-        return list(filter(None, sequences))
-        
-# Add support for the imghdr module. 
-def test_vtf(h, f):
+        return sequences
+
+    @classmethod
+    def make_data(cls, seq: Mapping[int, 'SheetSequence'], version: int=0) -> bytes:
+        """Write out the binary form of this."""
+        file = BytesIO()
+
+        if version > 1:
+            raise ValueError('Unknown version {}!'.format(version))
+
+        file.write(struct.pack('<II', version, len(seq)))
+        for seq_num, seq in seq.items():
+            file.write(struct.pack(
+                '<Ixxx?If',
+                seq_num,
+                seq.clamp,
+                len(seq.frames),
+                seq.duration,
+            ))
+            for i, (duration, tex_a, tex_b, tex_c, tex_d) in enumerate(seq.frames):
+                file.write(struct.pack('<f4f', duration, *tex_a))
+                if version == 1: # We have an additional 3 coords.
+                    file.write(struct.pack('<4f', *tex_b))
+                    file.write(struct.pack('<4f', *tex_c))
+                    file.write(struct.pack('<4f', *tex_d))
+
+        return file.getvalue()
+
+# Add support for the imghdr module.
+
+
+def test_vtf(h: bytes, f: IO[bytes]) -> Optional[str]:
     """Source Engine Valve Texture Format."""
     if h[:4] == b'VTF\0':
         try:
             version_major, version_minor = struct.unpack('II', h[4:12])
         except struct.error:
-            return
+            return None
         if version_major == 7 and (0 <= version_minor <= 5):
             return 'source_vtf'
-            
+    return None
+
 import imghdr
 imghdr.test_vtf = test_vtf
 imghdr.tests.append(test_vtf)
