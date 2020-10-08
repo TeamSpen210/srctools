@@ -1,7 +1,7 @@
 """Common code for handling binary formats."""
 from binascii import crc32
 from struct import unpack, calcsize, Struct
-from typing import IO, List
+from typing import IO, List, Hashable, Dict, Tuple, Union
 from srctools import Vec
 
 ST_VEC = Struct('fff')
@@ -66,3 +66,54 @@ def checksum(data: bytes, prior=0) -> int:
 
 
 EMPTY_CHECKSUM = checksum(b'')  # Checksum of empty bytes - 0.
+
+
+class DeferredWrites:
+    """Several formats expect offsets to be written pointing to latter locations.
+
+    This makes these easier to write, by initially writing null data, then returning to fill it later.
+    The key can be any hashable type.
+    """
+    def __init__(self, file: IO[bytes]) -> None:
+        self.file = file
+        # Position to write to, and the struct format to use.
+        self.loc: Dict[Hashable, Tuple[int, Struct]] = {}
+        # Then the bytes to write there.
+        self.data: Dict[Hashable, bytes] = {}
+
+    def defer(self, key: Hashable, fmt: Union[str, Struct], write=False) -> None:
+        """Mark that the given format data is going to be written here.
+
+        If write is true, write null bytes.
+        """
+        if isinstance(fmt, str):
+            fmt = Struct(fmt)
+        self.loc[key] = (self.file.tell(), fmt)
+        if write:
+            self.file.write(bytes(fmt.size))
+
+    def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]):
+        """Specify the data for the given key. Data is the same as pack()."""
+        off, fmt = self.loc[key]
+        self.data[key] = packed = fmt.pack(*data)
+        assert len(packed) == fmt.size
+
+    def pos_of(self, key: Hashable) -> int:
+        """Return the previously marked offset with the given name."""
+        off, fmt = self.loc[key]
+        return off
+
+    def write(self) -> None:
+        """Write out all the data. All values should have been set."""
+        prev_pos = self.file.tell()
+        for key, (off, fmt) in self.loc.items():
+            try:
+                data = self.data.pop(key)
+            except KeyError:
+                raise ValueError(f'No data for key "{key}"!') from None
+            self.file.seek(off)
+            self.file.write(data)
+        self.loc.clear()
+        if self.data:
+            raise ValueError(f'Data not specified for keys {list(self.loc)}!')
+        self.file.seek(prev_pos)

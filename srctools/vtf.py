@@ -10,12 +10,14 @@ import itertools
 import math
 import struct
 import warnings
+from io import BytesIO
 
-from srctools import Vec
+from srctools import Vec, binformat, EmptyMapping
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type, Collection,
+    TYPE_CHECKING, Type, Collection, overload, NamedTuple, TypeVar, Generic,
+    Mapping,
 )
 
 # Only import while type checking, so these expensive libraries are only loaded
@@ -156,6 +158,20 @@ class ImageFormats(ImageAlignment, Enum):
             return self.size * block_wid * block_height // 8
         else:
             return self.size * width * height // 8
+
+    def bin_value(self, asw: bool) -> int:
+        """Return the enum value for the given format.
+
+        This is tricky, since for ATIxN it is different in ASW+.
+        """
+        if self is ImageFormats.NONE:
+            return -1
+        elif self is ImageFormats.ATI1N:
+            return 35 if asw else 38
+        elif self is ImageFormats.ATI2N:
+            return 34 if asw else 37
+        else:
+            return self.ind
 
 del f, _ind
 # Initialise the internal mapping in the format modules.
@@ -455,7 +471,7 @@ class VTF:
         ref: Vec=Vec(0, 0, 0),
         frames: int=1,
         bump_scale: float=1.0,
-        sheet_info: Iterable['SheetSequence']=(),
+        sheet_info: Mapping[int, 'SheetSequence']=EmptyMapping,
         flags: VTFFlags=VTFFlags.EMPTY,
         fmt: ImageFormats=ImageFormats.RGBA8888,
         thumb_fmt: ImageFormats=ImageFormats.DXT1,
@@ -489,10 +505,10 @@ class VTF:
         self.reflectivity = ref
         self.bumpmap_scale = bump_scale
         self.resources = {}  # type: Dict[Union[ResourceID, bytes], Resource]
-        self.sheet_info = list(sheet_info)
+        self.sheet_info = dict(sheet_info)
         self.flags = flags
         self.frame_count = frames
-        self.high_format = fmt
+        self.format = fmt
         self.low_format = thumb_fmt
 
         # (frame, depth/cubemap, mipmap) -> frame
@@ -581,6 +597,7 @@ class VTF:
         low_res_offset = high_res_offset = None  # type: Optional[int]
 
         vtf.resources = {}
+        vtf.sheet_info = {}
 
         # Read resources.
         if version_minor >= 3:
@@ -619,7 +636,7 @@ class VTF:
 
             if ResourceID.PARTICLE_SHEET in vtf.resources:
                 vtf.sheet_info = SheetSequence.from_resource(
-                    vtf.resources[ResourceID.PARTICLE_SHEET].data
+                    vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
                 )
 
         else:
@@ -660,6 +677,134 @@ class VTF:
                     high_res_offset += fmt.frame_size(mip_width, mip_height)
         return vtf
 
+    def save(
+        self,
+        file: IO[bytes],
+        version: Optional[Tuple[int, int]]=None,
+        sheet_seq_version: int=1,
+        asw_or_later: bool=True,
+    ) -> None:
+        """Write out the VTF file to this.
+
+        If a version is specified, this overrides the one in the object.
+        The particle system version needs to be specified here.
+        If ATI1N or ATI2N used, whether the engine is ASW or later needs to
+        be specified.
+        """
+        deferred = binformat.DeferredWrites(file)
+        file.write(b'VTF\0')
+        if version is None:
+            version = self.version
+        version_major, version_minor = version
+
+        if version_major != 7 or not (0 <= version_minor <= 5):
+            raise ValueError(
+                "VTF version {}.{} is not "
+                "between 7.0-7.5!".format(
+                    version_major, version_minor,
+                )
+            )
+        file.write(struct.pack('<II', version_major, version_minor))
+
+        deferred.defer('header_size', '<I')
+        file.write(_HEADER.pack(
+            0,
+            self.width,
+            self.height,
+            self.flags.value,
+            self.frame_count,
+            0,  # Todo: First frame index?
+            *self.reflectivity,
+            self.bumpmap_scale,
+            self.format.bin_value(asw_or_later),
+            self.mipmap_count,
+            self.low_format.bin_value(asw_or_later),
+            self._low_res.width, self._low_res.height,
+        ))
+
+        # For volumetric textures, multiple layers. (Cannot be used with faces.)
+        if version_minor >= 2:
+            file.write(struct.pack('<H', self.depth))
+        elif self.depth > 1:
+            raise ValueError('Cannot use volumetric textures with versions before 7.2!')
+
+        # Read resources.
+        if version_minor >= 3:
+            res_count = len(self.resources) + 2  # low/high format are always present.
+            if self.sheet_info:
+                res_count += 1
+            file.write(struct.pack('<3xI8x', res_count))
+            for res_id, res in self.resources.items():
+                if isinstance(res.data, bytes):
+                    # It's later in the file.
+                    file.write(struct.pack('<3sB', getattr(res_id, 'value', res_id), res.flags & ~0x02))
+                    deferred.defer(('res', res_id), '<I', write=True)
+                else:
+                    # Just here.
+                    file.write(struct.pack('<3sBI', res_id, res.flags | 0x02, res.data))
+
+            # These are always present in the resource.
+            file.write(struct.pack('<3sB', ResourceID.LOW_RES.value, 0))
+            deferred.defer('low_res', '<I', write=True)
+            file.write(struct.pack('<3sB', ResourceID.HIGH_RES.value, 0))
+            deferred.defer('high_res', '<I', write=True)
+            if self.sheet_info:
+                file.write(struct.pack('<3sB', ResourceID.PARTICLE_SHEET.value, 0))
+                deferred.defer('particle', '<I', write=True)
+        else:
+            file.write(bytes(15))  # Pad to 80 bytes.
+
+        deferred.set_data('header_size', file.tell())
+        if version_minor >= 3:
+            # Write the data itself.
+            for res_id, res in self.resources.items():
+                if isinstance(res.data, bytes):
+                    # There's actual data elsewhere in the file.
+                    deferred.set_data(('res', res_id), file.tell())
+                    file.write(struct.pack('<I', len(res.data)))
+                    file.write(res.data)
+            if self.sheet_info:
+                particle_data = SheetSequence.make_data(self.sheet_info)
+                deferred.set_data('particle', file.tell())
+                file.write(struct.pack('<I', len(particle_data)))
+                file.write(particle_data)
+
+        self.compute_mipmaps()
+        self._low_res.load()
+
+        if version_minor >= 3:
+            deferred.set_data('low_res', file.tell())
+        data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
+        _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
+        file.write(data)
+
+        # If cubemaps are present, we iterate that for depth.
+        # Otherwise it's the depth value.
+        depth_iter: Iterable[Union[int, CubeSide]]
+        if VTFFlags.ENVMAP in self.flags:
+            # For version 7.5, the spheremap is skipped.
+            if version_minor == 5:
+                depth_iter = CUBES
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(self.depth)
+
+        if version_minor >= 3:
+            deferred.set_data('high_res', file.tell())
+        for data_mipmap in reversed(range(self.mipmap_count)):
+            for frame_ind in range(self.frame_count):
+                for depth_or_cube in depth_iter:
+                    frame = self._frames[
+                        frame_ind,
+                        depth_or_cube,
+                        data_mipmap,
+                    ]
+                    data = bytearray(self.format.frame_size(frame.width, frame.height))
+                    _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
+                    file.write(data)
+        deferred.write()
+
     def __enter__(self) -> 'VTF':
         """The VTF file can be used as a context manager.
 
@@ -679,7 +824,49 @@ class VTF:
         """
         for frame in self._frames.values():
             frame.load()
-        
+        self._low_res.load()
+
+    def clear_mipmaps(self, *, after: int = 0) -> None:
+        """Erase the contents of all mipmaps smaller than the given size.
+
+        When saved or compute_mipmaps() is called, these empty mipmaps will
+        be recomputed from the largest mipmap.
+        By default this clears all but the largest mipmap.
+        """
+        for (ind, depth_side, mipmap), frame in self._frames.items():
+            if mipmap > after:
+                frame.clear()
+        self._low_res.clear()
+
+    def compute_mipmaps(self, filter: FilterMode=FilterMode.BILINEAR) -> None:
+        """Regenerate all mipmaps that have previously been cleared."""
+        self.load()
+        depth_iter: Collection[Union[int, CubeSide]]
+        if VTFFlags.ENVMAP in self.flags:
+            # For version 7.5, the spheremap is skipped.
+            if self.version == (7, 5):
+                depth_iter = CUBES
+            else:
+                depth_iter = CUBES_WITH_SPHERE
+        else:
+            depth_iter = range(self.depth)
+        for frame in range(self.frame_count):
+            for depth_side in depth_iter:
+                # Force to blank if cleared.
+                self._frames[frame, depth_side, 0].load()
+                for mipmap in range(1, self.mipmap_count):
+                    self._frames[frame, depth_side, mipmap].rescale_from(
+                        self._frames[frame, depth_side, mipmap - 1],
+                        filter,
+                    )
+
+        # Also regenerate the low-res format.
+        if self.low_format is not ImageFormats.NONE:
+            for mipmap in range(self.mipmap_count):
+                frame = self.get(mipmap=mipmap)
+                if frame.width//2 == self._low_res.width and frame.height//2 == self._low_res.height:
+                    self._low_res.rescale_from(frame, filter)
+
     def __len__(self) -> int:
         """The length of a VTF is the number of image frames."""
         return len(self._frames)
@@ -724,7 +911,7 @@ class SheetSequence:
         self.duration = duration
 
     @classmethod
-    def from_resource(cls, data: bytes) -> List[Optional['SheetSequence']]:
+    def from_resource(cls, data: bytes) -> Dict[str, 'SheetSequence']:
         """Decode from the resource data."""
         (
             version,
@@ -735,7 +922,7 @@ class SheetSequence:
         if version > 1:
             raise ValueError('Unknown version {}!'.format(version))
 
-        sequences = [None] * SheetSequence.MAX_COUNT  # type: List[Optional['SheetSequence']]
+        sequences: Dict[str, SheetSequence] = {}
         if sequence_count > SheetSequence.MAX_COUNT:
             raise ValueError('Cannot have more than {} sequences ({})!'.format(
                 SheetSequence.MAX_COUNT,
@@ -750,9 +937,10 @@ class SheetSequence:
                 total_time,
             ) = struct.unpack_from('<Ixxx?If', data, offset)
             offset += 16
-            # seq_num = _
-            if not (0 <= seq_num < 64):
+            if not (0 <= seq_num < SheetSequence.MAX_COUNT):
                 raise ValueError('Invalid sequence number {}!'.format(seq_num))
+            if seq_num in sequences:
+                raise ValueError('Duplicate sequence number {}!'.format(seq_num))
 
             frames = []  # type: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]]
 
@@ -777,7 +965,33 @@ class SheetSequence:
 
             sequences[seq_num] = SheetSequence(frames, clamp, total_time)
 
-        return list(filter(None, sequences))
+        return sequences
+
+    @classmethod
+    def make_data(cls, seq: Mapping[int, 'SheetSequence'], version: int=0) -> bytes:
+        """Write out the binary form of this."""
+        file = BytesIO()
+
+        if version > 1:
+            raise ValueError('Unknown version {}!'.format(version))
+
+        file.write(struct.pack('<II', version, len(seq)))
+        for seq_num, seq in seq.items():
+            file.write(struct.pack(
+                '<Ixxx?If',
+                seq_num,
+                seq.clamp,
+                len(seq.frames),
+                seq.duration,
+            ))
+            for i, (duration, tex_a, tex_b, tex_c, tex_d) in enumerate(seq.frames):
+                file.write(struct.pack('<f4f', duration, *tex_a))
+                if version == 1: # We have an additional 3 coords.
+                    file.write(struct.pack('<4f', *tex_b))
+                    file.write(struct.pack('<4f', *tex_c))
+                    file.write(struct.pack('<4f', *tex_d))
+
+        return file.getvalue()
 
 # Add support for the imghdr module.
 
