@@ -663,14 +663,14 @@ def init(formats: 'srctools.vtf.ImageFormats') -> None:
     cdef int index
     cdef const char *name
     for fmt in formats:
-        index = fmt.index
+        index = fmt.ind
         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
 
 
 def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
     """Load pixels from data in the given format."""
-    cdef int index = fmt.index
+    cdef int index = fmt.ind
     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
         FORMATS[index].load(pixels, data, width, height)
@@ -679,7 +679,7 @@ def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[:
 
 
 def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
-    cdef int index = fmt.index
+    cdef int index = fmt.ind
     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
         FORMATS[index].save(pixels, data, width, height)
     else:

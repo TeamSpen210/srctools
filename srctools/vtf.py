@@ -86,7 +86,7 @@ class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size index')):
 _ind = -1
 
 
-def f(r=0, g=0, b=0, a=0, *, l=0, size=0, index=0):
+def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
     """Helper function to construct ImageFormats."""
     global _ind
     if l:
@@ -96,7 +96,7 @@ def f(r=0, g=0, b=0, a=0, *, l=0, size=0, index=0):
         size = r + g + b + a
     _ind += 1
 
-    return r, g, b, a, size, (index or _ind)
+    return r, g, b, a, size, _ind
 
 
 class ImageFormats(ImageAlignment, Enum):
@@ -130,11 +130,11 @@ class ImageFormats(ImageAlignment, Enum):
     RGBA16161616 = f(16, 16, 16, 16)
     UVLX8888 = f(size=32)
 
-    NONE = f(index=-1)
+    NONE = f()
     # These two aren't supported by VTEX & VTFEdit, but are by the engine.
     # They're useful for normal maps.
-    ATI1N = f(size=64, index=35)
-    ATI2N = f(size=128, index=34)
+    ATI1N = f(size=64)
+    ATI2N = f(size=128)
 
     @property
     def is_compressed(self) -> bool:
@@ -163,14 +163,15 @@ if _cy_format_funcs is not _py_format_funcs:
 
 
 FORMAT_ORDER = {
-    fmt.index: fmt
+    fmt.ind: fmt
     for fmt in ImageFormats.__members__.values()
+    if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
 }
 # Since these are semi-"internal" formats, the position has changed
 # in the enum. They're either 37 in 2013, or 34 in ASW+.
 # They're backward because why not.
-FORMAT_ORDER[37] = ImageFormats.ATI2N
-FORMAT_ORDER[38] = ImageFormats.ATI1N
+FORMAT_ORDER[34] = FORMAT_ORDER[37] = ImageFormats.ATI2N
+FORMAT_ORDER[35] = FORMAT_ORDER[38] = ImageFormats.ATI1N
 
 
 class VTFFlags(Flag):
