@@ -1003,8 +1003,8 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB;
-struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
-typedef struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+struct __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+typedef struct __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 typedef struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 
@@ -1028,17 +1028,17 @@ struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB {
  *     """Compress RGB triplets into 565-packed data."""
  *     return (
  */
-struct __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
+struct __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f0;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f1;
 };
 
-/* "srctools/_cy_vtf_readwrite.pyx":618
- * # This way they can all be cdef, and not have duplicate object conversion
- * # code.
- * ctypedef struct Format:             # <<<<<<<<<<<<<<
- *     char *name
- *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+/* "srctools/_cy_vtf_readwrite.pyx":647
+ * 
+ *     This uses two copies of the DXT5 alpha block for data.
+ *     """             # <<<<<<<<<<<<<<
+ *     if width >= 4 and height >= 4:
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
  */
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format {
   char *name;
@@ -1791,6 +1791,9 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_unsigned_int(unsigned int value)
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_unsigned_char(unsigned char value);
 
+/* CIntToPy.proto */
+static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
+
 /* MemviewSliceCopyTemplate.proto */
 static __Pyx_memviewslice
 __pyx_memoryview_copy_new_contig(const __Pyx_memviewslice *from_mvs,
@@ -1809,9 +1812,6 @@ static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
 
 /* CIntToPy.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyInt_From_int(int value);
-
-/* CIntToPy.proto */
-static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE char __Pyx_PyInt_As_char(PyObject *);
@@ -1854,7 +1854,7 @@ static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
 static CYTHON_INLINE __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_f_8srctools_17_cy_vtf_readwrite_upsample(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8srctools_17_cy_vtf_readwrite_decomp565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
-static CYTHON_INLINE __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
+static CYTHON_INLINE __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
@@ -3267,9 +3267,9 @@ static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8s
  *     return (
  */
 
-static CYTHON_INLINE __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
-  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
-  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
+static CYTHON_INLINE __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
+  __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
+  __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
 
   /* "srctools/_cy_vtf_readwrite.pyx":127
  *     """Compress RGB triplets into 565-packed data."""
@@ -5265,7 +5265,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_rgb565", 0);
@@ -5569,7 +5569,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_2e570____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_5c3fe____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_bgr565", 0);
@@ -8630,24 +8630,24 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888_bluescreen(__Pyx_me
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
+  Py_ssize_t __pyx_v_offset;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_t_3;
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
+  Py_ssize_t __pyx_t_6;
+  Py_ssize_t __pyx_t_7;
   __Pyx_RefNannySetupContext("load_dxt1", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":541
+  /* "srctools/_cy_vtf_readwrite.pyx":540
+ *     """Load compressed DXT1 data."""
  *     cdef Py_ssize_t offset
- * 
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
   __pyx_t_2 = ((__pyx_v_width < 4) != 0);
   if (!__pyx_t_2) {
@@ -8658,40 +8658,139 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1(__Pyx_memviewslice __
   __pyx_t_2 = ((__pyx_v_height < 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":542
- * 
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
- * 
+    /* "srctools/_cy_vtf_readwrite.pyx":543
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 542, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 542, __pyx_L1_error)
+    {
+        #ifdef WITH_THREAD
+        PyThreadState *_save;
+        Py_UNBLOCK_THREADS
+        __Pyx_FastGIL_Remember();
+        #endif
+        /*try:*/ {
+          __pyx_t_3 = (__pyx_v_width * __pyx_v_height);
+          if ((1 == 0)) abort();
+          {
+              #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+                  #undef likely
+                  #undef unlikely
+                  #define likely(x)   (x)
+                  #define unlikely(x) (x)
+              #endif
+              __pyx_t_5 = (__pyx_t_3 - 0 + 1 - 1/abs(1)) / 1;
+              if (__pyx_t_5 > 0)
+              {
+                  #ifdef _OPENMP
+                  #pragma omp parallel private(__pyx_t_6)
+                  #endif /* _OPENMP */
+                  {
+                      #ifdef _OPENMP
+                      #pragma omp for firstprivate(__pyx_v_offset) lastprivate(__pyx_v_offset) schedule(static)
+                      #endif /* _OPENMP */
+                      for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_5; __pyx_t_4++){
+                          {
+                              __pyx_v_offset = (Py_ssize_t)(0 + 1 * __pyx_t_4);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":541
+                              /* "srctools/_cy_vtf_readwrite.pyx":544
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ */
+                              __pyx_t_6 = (4 * __pyx_v_offset);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":545
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 1);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":546
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":547
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF             # <<<<<<<<<<<<<<
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0xFF;
+                          }
+                      }
+                  }
+              }
+          }
+          #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+              #undef likely
+              #undef unlikely
+              #define likely(x)   __builtin_expect(!!(x), 1)
+              #define unlikely(x) __builtin_expect(!!(x), 0)
+          #endif
+        }
+
+        /* "srctools/_cy_vtf_readwrite.pyx":543
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ */
+        /*finally:*/ {
+          /*normal exit:*/{
+            #ifdef WITH_THREAD
+            __Pyx_FastGIL_Forget();
+            Py_BLOCK_THREADS
+            #endif
+            goto __pyx_L8;
+          }
+          __pyx_L8:;
+        }
+    }
+
+    /* "srctools/_cy_vtf_readwrite.pyx":540
+ *     """Load compressed DXT1 data."""
  *     cdef Py_ssize_t offset
- * 
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
+    goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":543
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":549
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_5)) )))), (squish::kDxt1 | squish::kForceOpaque));
+  /*else*/ {
+    __pyx_t_6 = 0;
+    __pyx_t_7 = 0;
+    squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_7)) )))), (squish::kDxt1 | squish::kForceOpaque));
+  }
+  __pyx_L3:;
 
   /* "srctools/_cy_vtf_readwrite.pyx":537
  * 
@@ -8703,17 +8802,11 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1(__Pyx_memviewslice __
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load_dxt1", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":546
+/* "srctools/_cy_vtf_readwrite.pyx":552
  * 
  * 
  * cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
@@ -8734,7 +8827,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1(__Pyx_memviewslice __
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save_dxt1", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":548
+  /* "srctools/_cy_vtf_readwrite.pyx":554
  * cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT1 data."""
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
@@ -8752,20 +8845,20 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1(__Pyx_memviewslice __
   __pyx_L4_bool_binop_done:;
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":549
+    /* "srctools/_cy_vtf_readwrite.pyx":555
  *     """Save compressed DXT1 data."""
  *     if width < 4 or height < 4:
  *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
  *     CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 549, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 555, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 549, __pyx_L1_error)
+    __PYX_ERR(0, 555, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":548
+    /* "srctools/_cy_vtf_readwrite.pyx":554
  * cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT1 data."""
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
@@ -8774,7 +8867,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1(__Pyx_memviewslice __
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":550
+  /* "srctools/_cy_vtf_readwrite.pyx":556
  *     if width < 4 or height < 4:
  *         raise ValueError('DXT format must be 4x4 at minimum!')
  *     CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)             # <<<<<<<<<<<<<<
@@ -8785,7 +8878,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1(__Pyx_memviewslice __
   __pyx_t_5 = 0;
   squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_5)) )))), (squish::kDxt1 | squish::kForceOpaque), NULL);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":546
+  /* "srctools/_cy_vtf_readwrite.pyx":552
  * 
  * 
  * cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
@@ -8805,33 +8898,33 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1(__Pyx_memviewslice __
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":553
+/* "srctools/_cy_vtf_readwrite.pyx":559
  * 
  * 
  * cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
+  Py_ssize_t __pyx_v_offset;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_t_3;
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
+  Py_ssize_t __pyx_t_6;
+  Py_ssize_t __pyx_t_7;
   __Pyx_RefNannySetupContext("load_dxt1_alpha", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":555
- * cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+  /* "srctools/_cy_vtf_readwrite.pyx":562
  *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     with nogil:
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
   __pyx_t_2 = ((__pyx_v_width < 4) != 0);
   if (!__pyx_t_2) {
@@ -8842,102 +8935,160 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha(__Pyx_memviewsl
   __pyx_t_2 = ((__pyx_v_height < 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":556
- *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     with nogil:
+    /* "srctools/_cy_vtf_readwrite.pyx":565
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ */
+    {
+        #ifdef WITH_THREAD
+        PyThreadState *_save;
+        Py_UNBLOCK_THREADS
+        __Pyx_FastGIL_Remember();
+        #endif
+        /*try:*/ {
+          __pyx_t_3 = (__pyx_v_width * __pyx_v_height);
+          if ((1 == 0)) abort();
+          {
+              #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+                  #undef likely
+                  #undef unlikely
+                  #define likely(x)   (x)
+                  #define unlikely(x) (x)
+              #endif
+              __pyx_t_5 = (__pyx_t_3 - 0 + 1 - 1/abs(1)) / 1;
+              if (__pyx_t_5 > 0)
+              {
+                  #ifdef _OPENMP
+                  #pragma omp parallel private(__pyx_t_6)
+                  #endif /* _OPENMP */
+                  {
+                      #ifdef _OPENMP
+                      #pragma omp for firstprivate(__pyx_v_offset) lastprivate(__pyx_v_offset) schedule(static)
+                      #endif /* _OPENMP */
+                      for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_5; __pyx_t_4++){
+                          {
+                              __pyx_v_offset = (Py_ssize_t)(0 + 1 * __pyx_t_4);
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":566
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ */
+                              __pyx_t_6 = (4 * __pyx_v_offset);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":567
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 1);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":568
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":569
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF             # <<<<<<<<<<<<<<
+ *     else:
  *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 556, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 556, __pyx_L1_error)
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0xFF;
+                          }
+                      }
+                  }
+              }
+          }
+          #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+              #undef likely
+              #undef unlikely
+              #define likely(x)   __builtin_expect(!!(x), 1)
+              #define unlikely(x) __builtin_expect(!!(x), 0)
+          #endif
+        }
 
-    /* "srctools/_cy_vtf_readwrite.pyx":555
- * cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
- *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     with nogil:
+        /* "srctools/_cy_vtf_readwrite.pyx":565
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
  */
+        /*finally:*/ {
+          /*normal exit:*/{
+            #ifdef WITH_THREAD
+            __Pyx_FastGIL_Forget();
+            Py_BLOCK_THREADS
+            #endif
+            goto __pyx_L8;
+          }
+          __pyx_L8:;
+        }
+    }
+
+    /* "srctools/_cy_vtf_readwrite.pyx":562
+ *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
+ *     cdef Py_ssize_t offset
+ *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ */
+    goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":557
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     with nogil:             # <<<<<<<<<<<<<<
- *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
- * 
- */
-  {
-      #ifdef WITH_THREAD
-      PyThreadState *_save;
-      Py_UNBLOCK_THREADS
-      __Pyx_FastGIL_Remember();
-      #endif
-      /*try:*/ {
-
-        /* "srctools/_cy_vtf_readwrite.pyx":558
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     with nogil:
+  /* "srctools/_cy_vtf_readwrite.pyx":571
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
  *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-        __pyx_t_4 = 0;
-        __pyx_t_5 = 0;
-        squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt1);
-      }
-
-      /* "srctools/_cy_vtf_readwrite.pyx":557
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     with nogil:             # <<<<<<<<<<<<<<
- *         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
- * 
- */
-      /*finally:*/ {
-        /*normal exit:*/{
-          #ifdef WITH_THREAD
-          __Pyx_FastGIL_Forget();
-          Py_BLOCK_THREADS
-          #endif
-          goto __pyx_L8;
-        }
-        __pyx_L8:;
-      }
+  /*else*/ {
+    __pyx_t_6 = 0;
+    __pyx_t_7 = 0;
+    squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_7)) )))), squish::kDxt1);
   }
+  __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":553
+  /* "srctools/_cy_vtf_readwrite.pyx":559
  * 
  * 
  * cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load_dxt1_alpha", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":561
+/* "srctools/_cy_vtf_readwrite.pyx":574
  * 
  * 
  * cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
@@ -8945,112 +9096,89 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha(__Pyx_memviewsl
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  Py_ssize_t __pyx_t_3;
   Py_ssize_t __pyx_t_4;
-  Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save_dxt1_alpha", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":563
+  /* "srctools/_cy_vtf_readwrite.pyx":576
  * cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
  */
-  __pyx_t_2 = ((__pyx_v_width < 4) != 0);
-  if (!__pyx_t_2) {
+  __pyx_t_2 = ((__pyx_v_width >= 4) != 0);
+  if (__pyx_t_2) {
   } else {
     __pyx_t_1 = __pyx_t_2;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = ((__pyx_v_height < 4) != 0);
+  __pyx_t_2 = ((__pyx_v_height >= 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":564
- *     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
+    /* "srctools/_cy_vtf_readwrite.pyx":578
+ *     if width >= 4 and height >= 4:
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)             # <<<<<<<<<<<<<<
+ * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 564, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 564, __pyx_L1_error)
+    __pyx_t_3 = 0;
+    __pyx_t_4 = 0;
+    squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_3)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_4)) )))), squish::kDxt1, NULL);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":563
+    /* "srctools/_cy_vtf_readwrite.pyx":576
  * cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":565
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt1, NULL);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":561
+  /* "srctools/_cy_vtf_readwrite.pyx":574
  * 
  * 
  * cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save_dxt1_alpha", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":568
+/* "srctools/_cy_vtf_readwrite.pyx":581
  * 
  * 
  * cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT3 data."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
+  Py_ssize_t __pyx_v_offset;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
-  Py_ssize_t __pyx_t_4;
+  long __pyx_t_3;
+  long __pyx_t_4;
   Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
+  Py_ssize_t __pyx_t_6;
+  Py_ssize_t __pyx_t_7;
   __Pyx_RefNannySetupContext("load_dxt3", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":570
- * cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+  /* "srctools/_cy_vtf_readwrite.pyx":584
  *     """Load compressed DXT3 data."""
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
   __pyx_t_2 = ((__pyx_v_width < 4) != 0);
   if (!__pyx_t_2) {
@@ -9061,67 +9189,105 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3(__Pyx_memviewslice __
   __pyx_t_2 = ((__pyx_v_height < 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":571
- *     """Load compressed DXT3 data."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
- * 
+    /* "srctools/_cy_vtf_readwrite.pyx":587
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in range(0, 4 * width * height, 4):             # <<<<<<<<<<<<<<
+ *             pixels[offset] = 0
+ *             pixels[offset + 1] = 0
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 571, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 571, __pyx_L1_error)
+    __pyx_t_3 = ((4 * __pyx_v_width) * __pyx_v_height);
+    __pyx_t_4 = __pyx_t_3;
+    for (__pyx_t_5 = 0; __pyx_t_5 < __pyx_t_4; __pyx_t_5+=4) {
+      __pyx_v_offset = __pyx_t_5;
 
-    /* "srctools/_cy_vtf_readwrite.pyx":570
- * cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+      /* "srctools/_cy_vtf_readwrite.pyx":588
+ *         # They still exist in small mipmaps.
+ *         for offset in range(0, 4 * width * height, 4):
+ *             pixels[offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[offset + 1] = 0
+ *             pixels[offset + 2] = 0
+ */
+      __pyx_t_6 = __pyx_v_offset;
+      *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+      /* "srctools/_cy_vtf_readwrite.pyx":589
+ *         for offset in range(0, 4 * width * height, 4):
+ *             pixels[offset] = 0
+ *             pixels[offset + 1] = 0             # <<<<<<<<<<<<<<
+ *             pixels[offset + 2] = 0
+ *             pixels[offset + 2] = 0xFF
+ */
+      __pyx_t_6 = (__pyx_v_offset + 1);
+      *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+      /* "srctools/_cy_vtf_readwrite.pyx":590
+ *             pixels[offset] = 0
+ *             pixels[offset + 1] = 0
+ *             pixels[offset + 2] = 0             # <<<<<<<<<<<<<<
+ *             pixels[offset + 2] = 0xFF
+ *     else:
+ */
+      __pyx_t_6 = (__pyx_v_offset + 2);
+      *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+      /* "srctools/_cy_vtf_readwrite.pyx":591
+ *             pixels[offset + 1] = 0
+ *             pixels[offset + 2] = 0
+ *             pixels[offset + 2] = 0xFF             # <<<<<<<<<<<<<<
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
+ */
+      __pyx_t_6 = (__pyx_v_offset + 2);
+      *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0xFF;
+    }
+
+    /* "srctools/_cy_vtf_readwrite.pyx":584
  *     """Load compressed DXT3 data."""
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
+    goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":572
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt3)             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":593
+ *             pixels[offset + 2] = 0xFF
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt3)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt3);
+  /*else*/ {
+    __pyx_t_6 = 0;
+    __pyx_t_7 = 0;
+    squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_7)) )))), squish::kDxt3);
+  }
+  __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":568
+  /* "srctools/_cy_vtf_readwrite.pyx":581
  * 
  * 
  * cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT3 data."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load_dxt3", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":575
+/* "srctools/_cy_vtf_readwrite.pyx":596
  * 
  * 
  * cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Save compressed DXT3 data."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
@@ -9129,112 +9295,89 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3(__Pyx_memviewslice __
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  Py_ssize_t __pyx_t_3;
   Py_ssize_t __pyx_t_4;
-  Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save_dxt3", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":577
+  /* "srctools/_cy_vtf_readwrite.pyx":598
  * cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT3 data."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
  */
-  __pyx_t_2 = ((__pyx_v_width < 4) != 0);
-  if (!__pyx_t_2) {
+  __pyx_t_2 = ((__pyx_v_width >= 4) != 0);
+  if (__pyx_t_2) {
   } else {
     __pyx_t_1 = __pyx_t_2;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = ((__pyx_v_height < 4) != 0);
+  __pyx_t_2 = ((__pyx_v_height >= 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":578
- *     """Save compressed DXT3 data."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
+    /* "srctools/_cy_vtf_readwrite.pyx":600
+ *     if width >= 4 and height >= 4:
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)             # <<<<<<<<<<<<<<
+ * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 578, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 578, __pyx_L1_error)
+    __pyx_t_3 = 0;
+    __pyx_t_4 = 0;
+    squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_3)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_4)) )))), squish::kDxt3, NULL);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":577
+    /* "srctools/_cy_vtf_readwrite.pyx":598
  * cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Save compressed DXT3 data."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":579
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt3, NULL);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":575
+  /* "srctools/_cy_vtf_readwrite.pyx":596
  * 
  * 
  * cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Save compressed DXT3 data."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save_dxt3", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":582
+/* "srctools/_cy_vtf_readwrite.pyx":603
  * 
  * 
  * cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
+  Py_ssize_t __pyx_v_offset;
   int __pyx_r;
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_t_3;
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
+  Py_ssize_t __pyx_t_6;
+  Py_ssize_t __pyx_t_7;
   __Pyx_RefNannySetupContext("load_dxt5", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":584
- * cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+  /* "srctools/_cy_vtf_readwrite.pyx":606
  *     """Load compressed DXT5 data."""
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
   __pyx_t_2 = ((__pyx_v_width < 4) != 0);
   if (!__pyx_t_2) {
@@ -9245,67 +9388,160 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5(__Pyx_memviewslice __
   __pyx_t_2 = ((__pyx_v_height < 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":585
- *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
- * 
+    /* "srctools/_cy_vtf_readwrite.pyx":609
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 585, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 585, __pyx_L1_error)
+    {
+        #ifdef WITH_THREAD
+        PyThreadState *_save;
+        Py_UNBLOCK_THREADS
+        __Pyx_FastGIL_Remember();
+        #endif
+        /*try:*/ {
+          __pyx_t_3 = (__pyx_v_width * __pyx_v_height);
+          if ((1 == 0)) abort();
+          {
+              #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+                  #undef likely
+                  #undef unlikely
+                  #define likely(x)   (x)
+                  #define unlikely(x) (x)
+              #endif
+              __pyx_t_5 = (__pyx_t_3 - 0 + 1 - 1/abs(1)) / 1;
+              if (__pyx_t_5 > 0)
+              {
+                  #ifdef _OPENMP
+                  #pragma omp parallel private(__pyx_t_6)
+                  #endif /* _OPENMP */
+                  {
+                      #ifdef _OPENMP
+                      #pragma omp for firstprivate(__pyx_v_offset) lastprivate(__pyx_v_offset) schedule(static)
+                      #endif /* _OPENMP */
+                      for (__pyx_t_4 = 0; __pyx_t_4 < __pyx_t_5; __pyx_t_4++){
+                          {
+                              __pyx_v_offset = (Py_ssize_t)(0 + 1 * __pyx_t_4);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":584
- * cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+                              /* "srctools/_cy_vtf_readwrite.pyx":610
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ */
+                              __pyx_t_6 = (4 * __pyx_v_offset);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":611
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 1);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":612
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0;
+
+                              /* "srctools/_cy_vtf_readwrite.pyx":613
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
+ *             pixels[4 * offset + 2] = 0xFF             # <<<<<<<<<<<<<<
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
+ */
+                              __pyx_t_6 = ((4 * __pyx_v_offset) + 2);
+                              *((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )) = 0xFF;
+                          }
+                      }
+                  }
+              }
+          }
+          #if ((defined(__APPLE__) || defined(__OSX__)) && (defined(__GNUC__) && (__GNUC__ > 2 || (__GNUC__ == 2 && (__GNUC_MINOR__ > 95)))))
+              #undef likely
+              #undef unlikely
+              #define likely(x)   __builtin_expect(!!(x), 1)
+              #define unlikely(x) __builtin_expect(!!(x), 0)
+          #endif
+        }
+
+        /* "srctools/_cy_vtf_readwrite.pyx":609
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset] = 0
+ *             pixels[4 * offset + 1] = 0
+ */
+        /*finally:*/ {
+          /*normal exit:*/{
+            #ifdef WITH_THREAD
+            __Pyx_FastGIL_Forget();
+            Py_BLOCK_THREADS
+            #endif
+            goto __pyx_L8;
+          }
+          __pyx_L8:;
+        }
+    }
+
+    /* "srctools/_cy_vtf_readwrite.pyx":606
  *     """Load compressed DXT5 data."""
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
+    goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":586
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt5)             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":615
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kDxt5)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt5);
+  /*else*/ {
+    __pyx_t_6 = 0;
+    __pyx_t_7 = 0;
+    squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_6)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_7)) )))), squish::kDxt5);
+  }
+  __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":582
+  /* "srctools/_cy_vtf_readwrite.pyx":603
  * 
  * 
  * cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
+ *     cdef Py_ssize_t offset
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load_dxt5", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":589
+/* "srctools/_cy_vtf_readwrite.pyx":618
  * 
  * 
  * cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
@@ -9313,86 +9549,63 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5(__Pyx_memviewslice __
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  Py_ssize_t __pyx_t_3;
   Py_ssize_t __pyx_t_4;
-  Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save_dxt5", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":591
+  /* "srctools/_cy_vtf_readwrite.pyx":620
  * cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
  */
-  __pyx_t_2 = ((__pyx_v_width < 4) != 0);
-  if (!__pyx_t_2) {
+  __pyx_t_2 = ((__pyx_v_width >= 4) != 0);
+  if (__pyx_t_2) {
   } else {
     __pyx_t_1 = __pyx_t_2;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = ((__pyx_v_height < 4) != 0);
+  __pyx_t_2 = ((__pyx_v_height >= 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":592
- *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
+    /* "srctools/_cy_vtf_readwrite.pyx":622
+ *     if width >= 4 and height >= 4:
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)             # <<<<<<<<<<<<<<
+ * 
  * 
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 592, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 592, __pyx_L1_error)
+    __pyx_t_3 = 0;
+    __pyx_t_4 = 0;
+    squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_3)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_4)) )))), squish::kDxt5, NULL);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":591
+    /* "srctools/_cy_vtf_readwrite.pyx":620
  * cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
+ *     if width >= 4 and height >= 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just skip if not.
+ *         CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":593
- *     if width < 4 or height < 4:
- *         raise ValueError('DXT format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)             # <<<<<<<<<<<<<<
- * 
- * 
- */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kDxt5, NULL);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":589
+  /* "srctools/_cy_vtf_readwrite.pyx":618
  * 
  * 
  * cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
  *     """Load compressed DXT5 data."""
- *     if width < 4 or height < 4:
+ *     if width >= 4 and height >= 4:
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save_dxt5", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":596
+/* "srctools/_cy_vtf_readwrite.pyx":625
  * 
  * 
  * cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
@@ -9413,12 +9626,12 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n(__Pyx_memviewslice _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load_ati2n", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":601
+  /* "srctools/_cy_vtf_readwrite.pyx":630
  *     This uses two copies of the DXT5 alpha block for data.
  *     """
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kBc5)
+ *     cdef Py_ssize_t offset             # <<<<<<<<<<<<<<
+ *     if width < 4 or height < 4:
+ *         # DXT format must be 4x4 at minimum. So just write black.
  */
   __pyx_t_2 = ((__pyx_v_width < 4) != 0);
   if (!__pyx_t_2) {
@@ -9431,40 +9644,40 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n(__Pyx_memviewslice _
   __pyx_L4_bool_binop_done:;
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":602
+    /* "srctools/_cy_vtf_readwrite.pyx":631
  *     """
- *     if width < 4 or height < 4:
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kBc5)
- * 
+ *     cdef Py_ssize_t offset
+ *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 602, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 631, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 602, __pyx_L1_error)
+    __PYX_ERR(0, 631, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":601
+    /* "srctools/_cy_vtf_readwrite.pyx":630
  *     This uses two copies of the DXT5 alpha block for data.
  *     """
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kBc5)
+ *     cdef Py_ssize_t offset             # <<<<<<<<<<<<<<
+ *     if width < 4 or height < 4:
+ *         # DXT format must be 4x4 at minimum. So just write black.
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":603
+  /* "srctools/_cy_vtf_readwrite.pyx":632
+ *     cdef Py_ssize_t offset
  *     if width < 4 or height < 4:
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     DecompressImage(&pixels[0], width, height, &data[0], kBc5)             # <<<<<<<<<<<<<<
- * 
- * 
+ *         # DXT format must be 4x4 at minimum. So just write black.             # <<<<<<<<<<<<<<
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
  */
   __pyx_t_4 = 0;
   __pyx_t_5 = 0;
   squish::DecompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kBc5);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":596
+  /* "srctools/_cy_vtf_readwrite.pyx":625
  * 
  * 
  * cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
@@ -9484,12 +9697,12 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n(__Pyx_memviewslice _
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":606
- * 
- * 
- * cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
- *     """Save 'ATI2N' format data, also known as BC5.
- * 
+/* "srctools/_cy_vtf_readwrite.pyx":635
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
  */
 
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n(__Pyx_memviewslice __pyx_v_pixels, __Pyx_memviewslice __pyx_v_data, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_width, __pyx_t_8srctools_17_cy_vtf_readwrite_uint __pyx_v_height) {
@@ -9497,91 +9710,68 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n(__Pyx_memviewslice _
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   int __pyx_t_2;
-  PyObject *__pyx_t_3 = NULL;
+  Py_ssize_t __pyx_t_3;
   Py_ssize_t __pyx_t_4;
-  Py_ssize_t __pyx_t_5;
-  int __pyx_lineno = 0;
-  const char *__pyx_filename = NULL;
-  int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save_ati2n", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":611
- *     This uses two copies of the DXT5 alpha block for data.
- *     """
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
+  /* "srctools/_cy_vtf_readwrite.pyx":640
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kBc5)             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
-  __pyx_t_2 = ((__pyx_v_width < 4) != 0);
-  if (!__pyx_t_2) {
+  __pyx_t_2 = ((__pyx_v_width >= 4) != 0);
+  if (__pyx_t_2) {
   } else {
     __pyx_t_1 = __pyx_t_2;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = ((__pyx_v_height < 4) != 0);
+  __pyx_t_2 = ((__pyx_v_height >= 4) != 0);
   __pyx_t_1 = __pyx_t_2;
   __pyx_L4_bool_binop_done:;
-  if (unlikely(__pyx_t_1)) {
+  if (__pyx_t_1) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":612
- *     """
- *     if width < 4 or height < 4:
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
+    /* "srctools/_cy_vtf_readwrite.pyx":642
+ *         DecompressImage(&pixels[0], width, height, &data[0], kBc5)
  * 
+ *              # <<<<<<<<<<<<<<
+ * cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+ *     """Save 'ATI2N' format data, also known as BC5.
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 612, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_Raise(__pyx_t_3, 0, 0, 0);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 612, __pyx_L1_error)
+    __pyx_t_3 = 0;
+    __pyx_t_4 = 0;
+    squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_3)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_4)) )))), squish::kBc5, NULL);
 
-    /* "srctools/_cy_vtf_readwrite.pyx":611
- *     This uses two copies of the DXT5 alpha block for data.
- *     """
- *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
+    /* "srctools/_cy_vtf_readwrite.pyx":640
+ *             pixels[4 * offset + 2] = 0xFF
+ *     else:
+ *         DecompressImage(&pixels[0], width, height, &data[0], kBc5)             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":613
- *     if width < 4 or height < 4:
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')
- *     CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)             # <<<<<<<<<<<<<<
- * 
- * # Use a structure to match format names to the functions.
- */
-  __pyx_t_4 = 0;
-  __pyx_t_5 = 0;
-  squish::CompressImage((&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte const  *) __pyx_v_pixels.data) + __pyx_t_4)) )))), __pyx_v_width, __pyx_v_height, (&(*((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) ( /* dim=0 */ ((char *) (((__pyx_t_8srctools_17_cy_vtf_readwrite_byte *) __pyx_v_data.data) + __pyx_t_5)) )))), squish::kBc5, NULL);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":606
- * 
- * 
- * cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:             # <<<<<<<<<<<<<<
- *     """Save 'ATI2N' format data, also known as BC5.
- * 
+  /* "srctools/_cy_vtf_readwrite.pyx":635
+ *         # They still exist in small mipmaps.
+ *         for offset in prange(width * height, nogil=True, schedule='static'):
+ *             pixels[4 * offset] = 0             # <<<<<<<<<<<<<<
+ *             pixels[4 * offset + 1] = 0
+ *             pixels[4 * offset + 2] = 0
  */
 
   /* function exit code */
   __pyx_r = 0;
-  goto __pyx_L0;
-  __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_3);
-  __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save_ati2n", __pyx_clineno, __pyx_lineno, __pyx_filename);
-  __pyx_r = 1;
-  __pyx_L0:;
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":661
- * 
- * 
- * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
- *     """Verify that the Python enum matches our array of functions."""
- *     cdef int index
+/* "srctools/_cy_vtf_readwrite.pyx":690
+ *     Format("RGBA16161616", NULL, NULL),
+ *     Format("UVLX8888", &load_copy, &save_copy),
+ *     # This doesn't match the actual engine struct, just the order of             # <<<<<<<<<<<<<<
+ *     # the Python enum.
+ *     Format("NONE", NULL, NULL),
  */
 
 /* Python wrapper */
@@ -9618,37 +9808,37 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("init", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":665
- *     cdef int index
- *     cdef const char *name
- *     for fmt in formats:             # <<<<<<<<<<<<<<
- *         index = fmt.ind
- *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
+  /* "srctools/_cy_vtf_readwrite.pyx":694
+ *     Format("NONE", NULL, NULL),
+ *     Format("ATI1N", NULL, NULL),
+ *     Format("ATI2N", &load_ati2n, &save_ati2n),             # <<<<<<<<<<<<<<
+ * ]
+ * 
  */
   if (likely(PyList_CheckExact(__pyx_v_formats)) || PyTuple_CheckExact(__pyx_v_formats)) {
     __pyx_t_1 = __pyx_v_formats; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_formats); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 665, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_formats); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 694, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 665, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 694, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 665, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 694, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 665, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 694, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 665, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 694, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 665, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 694, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -9658,7 +9848,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 665, __pyx_L1_error)
+          else __PYX_ERR(0, 694, __pyx_L1_error)
         }
         break;
       }
@@ -9667,25 +9857,25 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
     __Pyx_XDECREF_SET(__pyx_v_fmt, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_cy_vtf_readwrite.pyx":666
- *     cdef const char *name
- *     for fmt in formats:
- *         index = fmt.ind             # <<<<<<<<<<<<<<
- *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
- *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+    /* "srctools/_cy_vtf_readwrite.pyx":695
+ *     Format("ATI1N", NULL, NULL),
+ *     Format("ATI2N", &load_ati2n, &save_ati2n),
+ * ]             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 666, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 695, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 666, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 695, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_v_index = __pyx_t_5;
 
-    /* "srctools/_cy_vtf_readwrite.pyx":667
- *     for fmt in formats:
- *         index = fmt.ind
- *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))             # <<<<<<<<<<<<<<
- *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+    /* "srctools/_cy_vtf_readwrite.pyx":696
+ *     Format("ATI2N", &load_ati2n, &save_ati2n),
+ * ]
+ *              # <<<<<<<<<<<<<<
  * 
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(!Py_OptimizeFlag)) {
@@ -9695,70 +9885,70 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
         __pyx_t_8 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
         if (unlikely(__pyx_t_8 == 0)) {
           PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-          __PYX_ERR(0, 667, __pyx_L1_error)
+          __PYX_ERR(0, 696, __pyx_L1_error)
         }
         __pyx_t_6 = (__pyx_v_index < (__pyx_t_7 / __pyx_t_8));
       }
       if (unlikely(!(__pyx_t_6 != 0))) {
         PyErr_SetNone(PyExc_AssertionError);
-        __PYX_ERR(0, 667, __pyx_L1_error)
+        __PYX_ERR(0, 696, __pyx_L1_error)
       }
     }
     #endif
 
-    /* "srctools/_cy_vtf_readwrite.pyx":668
- *         index = fmt.ind
- *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
- *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name             # <<<<<<<<<<<<<<
+    /* "srctools/_cy_vtf_readwrite.pyx":697
+ * ]
  * 
- * 
+ *              # <<<<<<<<<<<<<<
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
+ *     """Verify that the Python enum matches our array of functions."""
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(!Py_OptimizeFlag)) {
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 668, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 697, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 668, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 697, __pyx_L1_error)
       if (unlikely(__pyx_t_4 == Py_None)) {
         PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-        __PYX_ERR(0, 668, __pyx_L1_error)
+        __PYX_ERR(0, 697, __pyx_L1_error)
       }
-      __pyx_t_9 = PyUnicode_AsASCIIString(((PyObject*)__pyx_t_4)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 668, __pyx_L1_error)
+      __pyx_t_9 = PyUnicode_AsASCIIString(((PyObject*)__pyx_t_4)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 697, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyBytes_FromString((__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 668, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyBytes_FromString((__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 697, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_6 = (__Pyx_PyBytes_Equals(__pyx_t_9, __pyx_t_4, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 668, __pyx_L1_error)
+      __pyx_t_6 = (__Pyx_PyBytes_Equals(__pyx_t_9, __pyx_t_4, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 697, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (unlikely(!__pyx_t_6)) {
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 668, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 697, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_9 = PyTuple_Pack(1, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 668, __pyx_L1_error)
+        __pyx_t_9 = PyTuple_Pack(1, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 697, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         PyErr_SetObject(PyExc_AssertionError, __pyx_t_9);
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        __PYX_ERR(0, 668, __pyx_L1_error)
+        __PYX_ERR(0, 697, __pyx_L1_error)
       }
     }
     #endif
 
-    /* "srctools/_cy_vtf_readwrite.pyx":665
- *     cdef int index
- *     cdef const char *name
- *     for fmt in formats:             # <<<<<<<<<<<<<<
- *         index = fmt.ind
- *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
+    /* "srctools/_cy_vtf_readwrite.pyx":694
+ *     Format("NONE", NULL, NULL),
+ *     Format("ATI1N", NULL, NULL),
+ *     Format("ATI2N", &load_ati2n, &save_ati2n),             # <<<<<<<<<<<<<<
+ * ]
+ * 
  */
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":661
- * 
- * 
- * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
- *     """Verify that the Python enum matches our array of functions."""
- *     cdef int index
+  /* "srctools/_cy_vtf_readwrite.pyx":690
+ *     Format("RGBA16161616", NULL, NULL),
+ *     Format("UVLX8888", &load_copy, &save_copy),
+ *     # This doesn't match the actual engine struct, just the order of             # <<<<<<<<<<<<<<
+ *     # the Python enum.
+ *     Format("NONE", NULL, NULL),
  */
 
   /* function exit code */
@@ -9777,12 +9967,12 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":671
- * 
- * 
- * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     """Load pixels from data in the given format."""
- *     cdef int index = fmt.ind
+/* "srctools/_cy_vtf_readwrite.pyx":700
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
+ *     """Verify that the Python enum matches our array of functions."""
+ *     cdef int index             # <<<<<<<<<<<<<<
+ *     cdef const char *name
+ *     for fmt in formats:
  */
 
 /* Python wrapper */
@@ -9830,29 +10020,29 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_7load(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_pixels)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 1); __PYX_ERR(0, 671, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 1); __PYX_ERR(0, 700, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 2); __PYX_ERR(0, 671, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 2); __PYX_ERR(0, 700, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 3); __PYX_ERR(0, 671, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 3); __PYX_ERR(0, 700, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_height)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 4); __PYX_ERR(0, 671, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 4); __PYX_ERR(0, 700, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "load") < 0)) __PYX_ERR(0, 671, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "load") < 0)) __PYX_ERR(0, 700, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -9864,14 +10054,14 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_7load(PyObject *__pyx_se
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
     }
     __pyx_v_fmt = values[0];
-    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 671, __pyx_L3_error)
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[2], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 671, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 671, __pyx_L3_error)
-    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 671, __pyx_L3_error)
+    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 700, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[2], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 700, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 700, __pyx_L3_error)
+    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 700, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 671, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 700, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -9904,25 +10094,25 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":673
- * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
- *     """Load pixels from data in the given format."""
- *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
- *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
+  /* "srctools/_cy_vtf_readwrite.pyx":702
+ *     cdef int index
+ *     cdef const char *name
+ *     for fmt in formats:             # <<<<<<<<<<<<<<
+ *         index = fmt.ind
+ *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 673, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 702, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 673, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 702, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_index = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":675
- *     cdef int index = fmt.ind
- *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
- *         FORMATS[index].load(pixels, data, width, height)
- *     else:
+  /* "srctools/_cy_vtf_readwrite.pyx":704
+ *     for fmt in formats:
+ *         index = fmt.ind
+ *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))             # <<<<<<<<<<<<<<
+ *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+ * 
  */
   __pyx_t_4 = (0 <= __pyx_v_index);
   if (__pyx_t_4) {
@@ -9930,7 +10120,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_6 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
     if (unlikely(__pyx_t_6 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-      __PYX_ERR(0, 675, __pyx_L1_error)
+      __PYX_ERR(0, 704, __pyx_L1_error)
     }
     __pyx_t_4 = (__pyx_v_index < (__pyx_t_5 / __pyx_t_6));
   }
@@ -9945,34 +10135,34 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   __pyx_L4_bool_binop_done:;
   if (likely(__pyx_t_3)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":676
- *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
- *         FORMATS[index].load(pixels, data, width, height)             # <<<<<<<<<<<<<<
- *     else:
- *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")
+    /* "srctools/_cy_vtf_readwrite.pyx":705
+ *         index = fmt.ind
+ *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
+ *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name             # <<<<<<<<<<<<<<
+ * 
+ * 
  */
-    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).load(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 676, __pyx_L1_error)
+    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).load(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 705, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":675
- *     cdef int index = fmt.ind
- *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
- *         FORMATS[index].load(pixels, data, width, height)
- *     else:
+    /* "srctools/_cy_vtf_readwrite.pyx":704
+ *     for fmt in formats:
+ *         index = fmt.ind
+ *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))             # <<<<<<<<<<<<<<
+ *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+ * 
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":678
- *         FORMATS[index].load(pixels, data, width, height)
- *     else:
- *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":707
+ *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
  * 
- * 
+ *              # <<<<<<<<<<<<<<
+ * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+ *     """Load pixels from data in the given format."""
  */
   /*else*/ {
-    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 678, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 707, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_8 = 0;
     __pyx_t_9 = 127;
@@ -9980,9 +10170,9 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_8 += 8;
     __Pyx_GIVEREF(__pyx_kp_u_Loading);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Loading);
-    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 678, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 707, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 678, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 707, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_9 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_9) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_9;
@@ -9994,24 +10184,24 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_8 += 17;
     __Pyx_GIVEREF(__pyx_kp_u_not_implemented);
     PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_not_implemented);
-    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 678, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 707, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 678, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 707, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 678, __pyx_L1_error)
+    __PYX_ERR(0, 707, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":671
- * 
- * 
- * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     """Load pixels from data in the given format."""
- *     cdef int index = fmt.ind
+  /* "srctools/_cy_vtf_readwrite.pyx":700
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
+ *     """Verify that the Python enum matches our array of functions."""
+ *     cdef int index             # <<<<<<<<<<<<<<
+ *     cdef const char *name
+ *     for fmt in formats:
  */
 
   /* function exit code */
@@ -10031,12 +10221,12 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":681
- * 
- * 
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
+/* "srctools/_cy_vtf_readwrite.pyx":710
+ * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+ *     """Load pixels from data in the given format."""
+ *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  */
 
 /* Python wrapper */
@@ -10083,29 +10273,29 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_9save(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_pixels)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 1); __PYX_ERR(0, 681, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 1); __PYX_ERR(0, 710, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 2); __PYX_ERR(0, 681, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 2); __PYX_ERR(0, 710, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 3); __PYX_ERR(0, 681, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 3); __PYX_ERR(0, 710, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_height)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 4); __PYX_ERR(0, 681, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 4); __PYX_ERR(0, 710, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "save") < 0)) __PYX_ERR(0, 681, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "save") < 0)) __PYX_ERR(0, 710, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -10117,14 +10307,14 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_9save(PyObject *__pyx_se
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
     }
     __pyx_v_fmt = values[0];
-    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[1], 0); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 681, __pyx_L3_error)
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 681, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 681, __pyx_L3_error)
-    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 681, __pyx_L3_error)
+    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[1], 0); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 710, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 710, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 710, __pyx_L3_error)
+    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 710, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 681, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 710, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10157,24 +10347,24 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":682
- * 
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
- *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
- *         FORMATS[index].save(pixels, data, width, height)
+  /* "srctools/_cy_vtf_readwrite.pyx":711
+ *     """Load pixels from data in the given format."""
+ *     cdef int index = fmt.ind
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))             # <<<<<<<<<<<<<<
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
+ *         FORMATS[index].load(pixels, data, width, height)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 682, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 711, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 682, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 711, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_index = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":683
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
+  /* "srctools/_cy_vtf_readwrite.pyx":712
  *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:             # <<<<<<<<<<<<<<
- *         FORMATS[index].save(pixels, data, width, height)
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
+ *         FORMATS[index].load(pixels, data, width, height)
  *     else:
  */
   __pyx_t_4 = (0 <= __pyx_v_index);
@@ -10183,7 +10373,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_6 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
     if (unlikely(__pyx_t_6 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-      __PYX_ERR(0, 683, __pyx_L1_error)
+      __PYX_ERR(0, 712, __pyx_L1_error)
     }
     __pyx_t_4 = (__pyx_v_index < (__pyx_t_5 / __pyx_t_6));
   }
@@ -10198,33 +10388,34 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
   __pyx_L4_bool_binop_done:;
   if (likely(__pyx_t_3)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":684
- *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
- *         FORMATS[index].save(pixels, data, width, height)             # <<<<<<<<<<<<<<
+    /* "srctools/_cy_vtf_readwrite.pyx":713
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
+ *         FORMATS[index].load(pixels, data, width, height)             # <<<<<<<<<<<<<<
  *     else:
- *         raise NotImplementedError(f"Saving {fmt.name} not implemented!")
+ *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")
  */
-    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).save(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 684, __pyx_L1_error)
+    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).save(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 713, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":683
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
+    /* "srctools/_cy_vtf_readwrite.pyx":712
  *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:             # <<<<<<<<<<<<<<
- *         FORMATS[index].save(pixels, data, width, height)
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
+ *         FORMATS[index].load(pixels, data, width, height)
  *     else:
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":686
- *         FORMATS[index].save(pixels, data, width, height)
+  /* "srctools/_cy_vtf_readwrite.pyx":715
+ *         FORMATS[index].load(pixels, data, width, height)
  *     else:
- *         raise NotImplementedError(f"Saving {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
+ *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
+ * 
  * 
  */
   /*else*/ {
-    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 686, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 715, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_8 = 0;
     __pyx_t_9 = 127;
@@ -10232,9 +10423,9 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_8 += 7;
     __Pyx_GIVEREF(__pyx_kp_u_Saving);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Saving);
-    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 686, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 715, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 686, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 715, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_9 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_9) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_9;
@@ -10246,24 +10437,24 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_8 += 17;
     __Pyx_GIVEREF(__pyx_kp_u_not_implemented);
     PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_not_implemented);
-    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 686, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 715, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 686, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 715, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 686, __pyx_L1_error)
+    __PYX_ERR(0, 715, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":681
- * 
- * 
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
+  /* "srctools/_cy_vtf_readwrite.pyx":710
+ * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+ *     """Load pixels from data in the given format."""
+ *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  */
 
   /* function exit code */
@@ -24192,7 +24383,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 61, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 104, __pyx_L1_error)
-  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 678, __pyx_L1_error)
+  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 707, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 148, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 151, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
@@ -24208,25 +24399,25 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":542
- * 
+  /* "srctools/_cy_vtf_readwrite.pyx":555
+ *     """Save compressed DXT1 data."""
  *     if width < 4 or height < 4:
  *         raise ValueError('DXT format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
+ *     CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
  * 
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_DXT_format_must_be_4x4_at_minimu); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 542, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_DXT_format_must_be_4x4_at_minimu); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 555, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":602
+  /* "srctools/_cy_vtf_readwrite.pyx":631
  *     """
- *     if width < 4 or height < 4:
- *         raise ValueError('ATI2N format must be 4x4 at minimum!')             # <<<<<<<<<<<<<<
- *     DecompressImage(&pixels[0], width, height, &data[0], kBc5)
- * 
+ *     cdef Py_ssize_t offset
+ *     if width < 4 or height < 4:             # <<<<<<<<<<<<<<
+ *         # DXT format must be 4x4 at minimum. So just write black.
+ *         # They still exist in small mipmaps.
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_ATI2N_format_must_be_4x4_at_mini); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 602, __pyx_L1_error)
+  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_ATI2N_format_must_be_4x4_at_mini); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 631, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__3);
   __Pyx_GIVEREF(__pyx_tuple__3);
 
@@ -24446,41 +24637,41 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__24);
   __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(5, 0, 12, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_scale_down, 71, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 71, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":661
- * 
- * 
- * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
- *     """Verify that the Python enum matches our array of functions."""
- *     cdef int index
+  /* "srctools/_cy_vtf_readwrite.pyx":690
+ *     Format("RGBA16161616", NULL, NULL),
+ *     Format("UVLX8888", &load_copy, &save_copy),
+ *     # This doesn't match the actual engine struct, just the order of             # <<<<<<<<<<<<<<
+ *     # the Python enum.
+ *     Format("NONE", NULL, NULL),
  */
-  __pyx_tuple__26 = PyTuple_Pack(4, __pyx_n_s_formats, __pyx_n_s_index, __pyx_n_s_name, __pyx_n_s_fmt); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 661, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(4, __pyx_n_s_formats, __pyx_n_s_index, __pyx_n_s_name, __pyx_n_s_fmt); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 690, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__26);
   __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_init, 661, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 661, __pyx_L1_error)
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_init, 690, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 690, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":671
- * 
- * 
- * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     """Load pixels from data in the given format."""
- *     cdef int index = fmt.ind
+  /* "srctools/_cy_vtf_readwrite.pyx":700
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
+ *     """Verify that the Python enum matches our array of functions."""
+ *     cdef int index             # <<<<<<<<<<<<<<
+ *     cdef const char *name
+ *     for fmt in formats:
  */
-  __pyx_tuple__28 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 671, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 700, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__28);
   __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_load, 671, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 671, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_load, 700, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 700, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":681
- * 
- * 
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
+  /* "srctools/_cy_vtf_readwrite.pyx":710
+ * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+ *     """Load pixels from data in the given format."""
+ *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  */
-  __pyx_tuple__30 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 681, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 710, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__30);
   __Pyx_GIVEREF(__pyx_tuple__30);
-  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_save, 681, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 681, __pyx_L1_error)
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_save, 710, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 710, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -24956,342 +25147,342 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_scale_down, __pyx_t_1) < 0) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":625
+  /* "srctools/_cy_vtf_readwrite.pyx":654
+ * # Use a structure to match format names to the functions.
+ * # This way they can all be cdef, and not have duplicate object conversion
+ * # code.             # <<<<<<<<<<<<<<
+ * ctypedef struct Format:
+ *     char *name
+ */
+  __pyx_t_2.name = ((char *)"RGBA8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":655
+ * # This way they can all be cdef, and not have duplicate object conversion
+ * # code.
+ * ctypedef struct Format:             # <<<<<<<<<<<<<<
+ *     char *name
+ *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+ */
+  __pyx_t_3.name = ((char *)"ABGR8888");
+  __pyx_t_3.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_abgr8888);
+  __pyx_t_3.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_abgr8888);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":656
+ * # code.
+ * ctypedef struct Format:
+ *     char *name             # <<<<<<<<<<<<<<
+ *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+ *     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
+ */
+  __pyx_t_4.name = ((char *)"RGB888");
+  __pyx_t_4.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888);
+  __pyx_t_4.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":657
+ * ctypedef struct Format:
+ *     char *name
+ *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1             # <<<<<<<<<<<<<<
+ *     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
+ * 
+ */
+  __pyx_t_5.name = ((char *)"BGR888");
+  __pyx_t_5.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888);
+  __pyx_t_5.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":658
+ *     char *name
+ *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+ *     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_6.name = ((char *)"RGB565");
+  __pyx_t_6.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb565);
+  __pyx_t_6.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":659
+ *     bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+ *     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
+ *              # <<<<<<<<<<<<<<
+ * 
+ * cdef Format[30] FORMATS = [
+ */
+  __pyx_t_7.name = ((char *)"I8");
+  __pyx_t_7.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_i8);
+  __pyx_t_7.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_i8);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":660
+ *     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
+ * 
+ *              # <<<<<<<<<<<<<<
+ * cdef Format[30] FORMATS = [
+ *     Format("RGBA8888", &load_copy, &save_copy),
+ */
+  __pyx_t_8.name = ((char *)"IA88");
+  __pyx_t_8.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ia88);
+  __pyx_t_8.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88);
+
+  /* "srctools/_cy_vtf_readwrite.pyx":661
+ * 
+ * 
+ * cdef Format[30] FORMATS = [             # <<<<<<<<<<<<<<
+ *     Format("RGBA8888", &load_copy, &save_copy),
+ *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
+ */
+  __pyx_t_9.name = ((char *)"P8");
+  __pyx_t_9.load = NULL;
+  __pyx_t_9.save = NULL;
+
+  /* "srctools/_cy_vtf_readwrite.pyx":662
  * 
  * cdef Format[30] FORMATS = [
  *     Format("RGBA8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
  *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
  *     Format("RGB888", &load_rgb888, &save_rgb888),
  */
-  __pyx_t_2.name = ((char *)"RGBA8888");
-  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
-  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
+  __pyx_t_10.name = ((char *)"A8");
+  __pyx_t_10.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_a8);
+  __pyx_t_10.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_a8);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":626
+  /* "srctools/_cy_vtf_readwrite.pyx":663
  * cdef Format[30] FORMATS = [
  *     Format("RGBA8888", &load_copy, &save_copy),
  *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),             # <<<<<<<<<<<<<<
  *     Format("RGB888", &load_rgb888, &save_rgb888),
  *     Format("BGR888", &load_bgr888, &save_bgr888),
  */
-  __pyx_t_3.name = ((char *)"ABGR8888");
-  __pyx_t_3.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_abgr8888);
-  __pyx_t_3.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_abgr8888);
+  __pyx_t_11.name = ((char *)"RGB888_BLUESCREEN");
+  __pyx_t_11.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888_bluescreen);
+  __pyx_t_11.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888_bluescreen);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":627
+  /* "srctools/_cy_vtf_readwrite.pyx":664
  *     Format("RGBA8888", &load_copy, &save_copy),
  *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
  *     Format("RGB888", &load_rgb888, &save_rgb888),             # <<<<<<<<<<<<<<
  *     Format("BGR888", &load_bgr888, &save_bgr888),
  *     Format("RGB565", &load_rgb565, &save_rgb565),
  */
-  __pyx_t_4.name = ((char *)"RGB888");
-  __pyx_t_4.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888);
-  __pyx_t_4.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888);
+  __pyx_t_12.name = ((char *)"BGR888_BLUESCREEN");
+  __pyx_t_12.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888_bluescreen);
+  __pyx_t_12.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888_bluescreen);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":628
+  /* "srctools/_cy_vtf_readwrite.pyx":665
  *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
  *     Format("RGB888", &load_rgb888, &save_rgb888),
  *     Format("BGR888", &load_bgr888, &save_bgr888),             # <<<<<<<<<<<<<<
  *     Format("RGB565", &load_rgb565, &save_rgb565),
  *     Format("I8", &load_i8, &save_i8),
  */
-  __pyx_t_5.name = ((char *)"BGR888");
-  __pyx_t_5.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888);
-  __pyx_t_5.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888);
+  __pyx_t_13.name = ((char *)"ARGB8888");
+  __pyx_t_13.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_argb8888);
+  __pyx_t_13.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_argb8888);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":629
+  /* "srctools/_cy_vtf_readwrite.pyx":666
  *     Format("RGB888", &load_rgb888, &save_rgb888),
  *     Format("BGR888", &load_bgr888, &save_bgr888),
  *     Format("RGB565", &load_rgb565, &save_rgb565),             # <<<<<<<<<<<<<<
  *     Format("I8", &load_i8, &save_i8),
  *     Format("IA88", &load_ia88, &save_ia88),
  */
-  __pyx_t_6.name = ((char *)"RGB565");
-  __pyx_t_6.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb565);
-  __pyx_t_6.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565);
+  __pyx_t_14.name = ((char *)"BGRA8888");
+  __pyx_t_14.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888);
+  __pyx_t_14.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra8888);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":630
+  /* "srctools/_cy_vtf_readwrite.pyx":667
  *     Format("BGR888", &load_bgr888, &save_bgr888),
  *     Format("RGB565", &load_rgb565, &save_rgb565),
  *     Format("I8", &load_i8, &save_i8),             # <<<<<<<<<<<<<<
  *     Format("IA88", &load_ia88, &save_ia88),
  *     Format("P8", NULL, NULL),  # Never implemented by Valve.
  */
-  __pyx_t_7.name = ((char *)"I8");
-  __pyx_t_7.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_i8);
-  __pyx_t_7.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_i8);
+  __pyx_t_15.name = ((char *)"DXT1");
+  __pyx_t_15.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1);
+  __pyx_t_15.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":631
+  /* "srctools/_cy_vtf_readwrite.pyx":668
  *     Format("RGB565", &load_rgb565, &save_rgb565),
  *     Format("I8", &load_i8, &save_i8),
  *     Format("IA88", &load_ia88, &save_ia88),             # <<<<<<<<<<<<<<
  *     Format("P8", NULL, NULL),  # Never implemented by Valve.
  *     Format("A8", &load_a8, &save_a8),
  */
-  __pyx_t_8.name = ((char *)"IA88");
-  __pyx_t_8.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ia88);
-  __pyx_t_8.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88);
+  __pyx_t_16.name = ((char *)"DXT3");
+  __pyx_t_16.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3);
+  __pyx_t_16.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":632
+  /* "srctools/_cy_vtf_readwrite.pyx":669
  *     Format("I8", &load_i8, &save_i8),
  *     Format("IA88", &load_ia88, &save_ia88),
  *     Format("P8", NULL, NULL),  # Never implemented by Valve.             # <<<<<<<<<<<<<<
  *     Format("A8", &load_a8, &save_a8),
  *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
  */
-  __pyx_t_9.name = ((char *)"P8");
-  __pyx_t_9.load = NULL;
-  __pyx_t_9.save = NULL;
+  __pyx_t_17.name = ((char *)"DXT5");
+  __pyx_t_17.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5);
+  __pyx_t_17.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":633
+  /* "srctools/_cy_vtf_readwrite.pyx":670
  *     Format("IA88", &load_ia88, &save_ia88),
  *     Format("P8", NULL, NULL),  # Never implemented by Valve.
  *     Format("A8", &load_a8, &save_a8),             # <<<<<<<<<<<<<<
  *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
  *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
  */
-  __pyx_t_10.name = ((char *)"A8");
-  __pyx_t_10.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_a8);
-  __pyx_t_10.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_a8);
+  __pyx_t_18.name = ((char *)"BGRX8888");
+  __pyx_t_18.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx8888);
+  __pyx_t_18.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx8888);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":634
+  /* "srctools/_cy_vtf_readwrite.pyx":671
  *     Format("P8", NULL, NULL),  # Never implemented by Valve.
  *     Format("A8", &load_a8, &save_a8),
  *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),             # <<<<<<<<<<<<<<
  *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
  *     Format("ARGB8888", &load_argb8888, &save_argb8888),
  */
-  __pyx_t_11.name = ((char *)"RGB888_BLUESCREEN");
-  __pyx_t_11.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888_bluescreen);
-  __pyx_t_11.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888_bluescreen);
+  __pyx_t_19.name = ((char *)"BGR565");
+  __pyx_t_19.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr565);
+  __pyx_t_19.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":635
+  /* "srctools/_cy_vtf_readwrite.pyx":672
  *     Format("A8", &load_a8, &save_a8),
  *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
  *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),             # <<<<<<<<<<<<<<
  *     Format("ARGB8888", &load_argb8888, &save_argb8888),
  *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
  */
-  __pyx_t_12.name = ((char *)"BGR888_BLUESCREEN");
-  __pyx_t_12.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888_bluescreen);
-  __pyx_t_12.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888_bluescreen);
+  __pyx_t_20.name = ((char *)"BGRX5551");
+  __pyx_t_20.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx5551);
+  __pyx_t_20.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx5551);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":636
+  /* "srctools/_cy_vtf_readwrite.pyx":673
  *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
  *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
  *     Format("ARGB8888", &load_argb8888, &save_argb8888),             # <<<<<<<<<<<<<<
  *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
  *     Format("DXT1", &load_dxt1, &save_dxt1),
  */
-  __pyx_t_13.name = ((char *)"ARGB8888");
-  __pyx_t_13.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_argb8888);
-  __pyx_t_13.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_argb8888);
+  __pyx_t_21.name = ((char *)"BGRA4444");
+  __pyx_t_21.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra4444);
+  __pyx_t_21.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":637
+  /* "srctools/_cy_vtf_readwrite.pyx":674
  *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
  *     Format("ARGB8888", &load_argb8888, &save_argb8888),
  *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),             # <<<<<<<<<<<<<<
  *     Format("DXT1", &load_dxt1, &save_dxt1),
  *     Format("DXT3", &load_dxt3, &save_dxt3),
  */
-  __pyx_t_14.name = ((char *)"BGRA8888");
-  __pyx_t_14.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888);
-  __pyx_t_14.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra8888);
+  __pyx_t_22.name = ((char *)"DXT1_ONEBITALPHA");
+  __pyx_t_22.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha);
+  __pyx_t_22.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":638
+  /* "srctools/_cy_vtf_readwrite.pyx":675
  *     Format("ARGB8888", &load_argb8888, &save_argb8888),
  *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
  *     Format("DXT1", &load_dxt1, &save_dxt1),             # <<<<<<<<<<<<<<
  *     Format("DXT3", &load_dxt3, &save_dxt3),
  *     Format("DXT5", &load_dxt5, &save_dxt5),
  */
-  __pyx_t_15.name = ((char *)"DXT1");
-  __pyx_t_15.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1);
-  __pyx_t_15.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1);
+  __pyx_t_23.name = ((char *)"BGRA5551");
+  __pyx_t_23.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra5551);
+  __pyx_t_23.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra5551);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":639
+  /* "srctools/_cy_vtf_readwrite.pyx":676
  *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
  *     Format("DXT1", &load_dxt1, &save_dxt1),
  *     Format("DXT3", &load_dxt3, &save_dxt3),             # <<<<<<<<<<<<<<
  *     Format("DXT5", &load_dxt5, &save_dxt5),
  *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
  */
-  __pyx_t_16.name = ((char *)"DXT3");
-  __pyx_t_16.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3);
-  __pyx_t_16.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3);
+  __pyx_t_24.name = ((char *)"UV88");
+  __pyx_t_24.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_uv88);
+  __pyx_t_24.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_uv88);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":640
+  /* "srctools/_cy_vtf_readwrite.pyx":677
  *     Format("DXT1", &load_dxt1, &save_dxt1),
  *     Format("DXT3", &load_dxt3, &save_dxt3),
  *     Format("DXT5", &load_dxt5, &save_dxt5),             # <<<<<<<<<<<<<<
  *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
  *     Format("BGR565", &load_bgr565, &save_bgr565),
  */
-  __pyx_t_17.name = ((char *)"DXT5");
-  __pyx_t_17.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5);
-  __pyx_t_17.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5);
+  __pyx_t_25.name = ((char *)"UVWQ8888");
+  __pyx_t_25.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
+  __pyx_t_25.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":641
- *     Format("DXT3", &load_dxt3, &save_dxt3),
- *     Format("DXT5", &load_dxt5, &save_dxt5),
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),             # <<<<<<<<<<<<<<
- *     Format("BGR565", &load_bgr565, &save_bgr565),
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
- */
-  __pyx_t_18.name = ((char *)"BGRX8888");
-  __pyx_t_18.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx8888);
-  __pyx_t_18.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx8888);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":642
+  /* "srctools/_cy_vtf_readwrite.pyx":679
  *     Format("DXT5", &load_dxt5, &save_dxt5),
  *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
  *     Format("BGR565", &load_bgr565, &save_bgr565),             # <<<<<<<<<<<<<<
  *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
  *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
  */
-  __pyx_t_19.name = ((char *)"BGR565");
-  __pyx_t_19.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr565);
-  __pyx_t_19.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565);
+  __pyx_t_26.name = ((char *)"RGBA16161616F");
+  __pyx_t_26.load = NULL;
+  __pyx_t_26.save = NULL;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":643
+  /* "srctools/_cy_vtf_readwrite.pyx":680
  *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
  *     Format("BGR565", &load_bgr565, &save_bgr565),
  *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),             # <<<<<<<<<<<<<<
  *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
  *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
  */
-  __pyx_t_20.name = ((char *)"BGRX5551");
-  __pyx_t_20.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx5551);
-  __pyx_t_20.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx5551);
+  __pyx_t_27.name = ((char *)"RGBA16161616");
+  __pyx_t_27.load = NULL;
+  __pyx_t_27.save = NULL;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":644
+  /* "srctools/_cy_vtf_readwrite.pyx":681
  *     Format("BGR565", &load_bgr565, &save_bgr565),
  *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
  *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),             # <<<<<<<<<<<<<<
  *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
  *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
  */
-  __pyx_t_21.name = ((char *)"BGRA4444");
-  __pyx_t_21.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra4444);
-  __pyx_t_21.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444);
+  __pyx_t_28.name = ((char *)"UVLX8888");
+  __pyx_t_28.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
+  __pyx_t_28.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":645
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),             # <<<<<<<<<<<<<<
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
- *     Format("UV88", &load_uv88, &save_uv88),
- */
-  __pyx_t_22.name = ((char *)"DXT1_ONEBITALPHA");
-  __pyx_t_22.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha);
-  __pyx_t_22.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":646
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),             # <<<<<<<<<<<<<<
- *     Format("UV88", &load_uv88, &save_uv88),
- *     Format("UVWQ8888", &load_copy, &save_copy),
- */
-  __pyx_t_23.name = ((char *)"BGRA5551");
-  __pyx_t_23.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra5551);
-  __pyx_t_23.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra5551);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":647
+  /* "srctools/_cy_vtf_readwrite.pyx":684
  *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
  *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
  *     Format("UV88", &load_uv88, &save_uv88),             # <<<<<<<<<<<<<<
  *     Format("UVWQ8888", &load_copy, &save_copy),
  *     # Don't do the high-def 16-bit resolutions.
  */
-  __pyx_t_24.name = ((char *)"UV88");
-  __pyx_t_24.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_uv88);
-  __pyx_t_24.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_uv88);
+  __pyx_t_29.name = ((char *)"NONE");
+  __pyx_t_29.load = NULL;
+  __pyx_t_29.save = NULL;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":648
+  /* "srctools/_cy_vtf_readwrite.pyx":685
  *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
  *     Format("UV88", &load_uv88, &save_uv88),
  *     Format("UVWQ8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
  *     # Don't do the high-def 16-bit resolutions.
  *     Format("RGBA16161616F", NULL, NULL),
  */
-  __pyx_t_25.name = ((char *)"UVWQ8888");
-  __pyx_t_25.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
-  __pyx_t_25.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":650
- *     Format("UVWQ8888", &load_copy, &save_copy),
- *     # Don't do the high-def 16-bit resolutions.
- *     Format("RGBA16161616F", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("RGBA16161616", NULL, NULL),
- *     Format("UVLX8888", &load_copy, &save_copy),
- */
-  __pyx_t_26.name = ((char *)"RGBA16161616F");
-  __pyx_t_26.load = NULL;
-  __pyx_t_26.save = NULL;
-
-  /* "srctools/_cy_vtf_readwrite.pyx":651
- *     # Don't do the high-def 16-bit resolutions.
- *     Format("RGBA16161616F", NULL, NULL),
- *     Format("RGBA16161616", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("UVLX8888", &load_copy, &save_copy),
- *     # This doesn't match the actual engine struct, just the order of
- */
-  __pyx_t_27.name = ((char *)"RGBA16161616");
-  __pyx_t_27.load = NULL;
-  __pyx_t_27.save = NULL;
-
-  /* "srctools/_cy_vtf_readwrite.pyx":652
- *     Format("RGBA16161616F", NULL, NULL),
- *     Format("RGBA16161616", NULL, NULL),
- *     Format("UVLX8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
- *     # This doesn't match the actual engine struct, just the order of
- *     # the Python enum.
- */
-  __pyx_t_28.name = ((char *)"UVLX8888");
-  __pyx_t_28.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
-  __pyx_t_28.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":655
- *     # This doesn't match the actual engine struct, just the order of
- *     # the Python enum.
- *     Format("NONE", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("ATI1N", NULL, NULL),
- *     Format("ATI2N", &load_ati2n, &save_ati2n),
- */
-  __pyx_t_29.name = ((char *)"NONE");
-  __pyx_t_29.load = NULL;
-  __pyx_t_29.save = NULL;
-
-  /* "srctools/_cy_vtf_readwrite.pyx":656
- *     # the Python enum.
- *     Format("NONE", NULL, NULL),
- *     Format("ATI1N", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("ATI2N", &load_ati2n, &save_ati2n),
- * ]
- */
   __pyx_t_30.name = ((char *)"ATI1N");
   __pyx_t_30.load = NULL;
   __pyx_t_30.save = NULL;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":657
- *     Format("NONE", NULL, NULL),
- *     Format("ATI1N", NULL, NULL),
- *     Format("ATI2N", &load_ati2n, &save_ati2n),             # <<<<<<<<<<<<<<
- * ]
- * 
+  /* "srctools/_cy_vtf_readwrite.pyx":686
+ *     Format("UV88", &load_uv88, &save_uv88),
+ *     Format("UVWQ8888", &load_copy, &save_copy),
+ *     # Don't do the high-def 16-bit resolutions.             # <<<<<<<<<<<<<<
+ *     Format("RGBA16161616F", NULL, NULL),
+ *     Format("RGBA16161616", NULL, NULL),
  */
   __pyx_t_31.name = ((char *)"ATI2N");
   __pyx_t_31.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n);
   __pyx_t_31.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":624
+  /* "srctools/_cy_vtf_readwrite.pyx":653
  * 
- * 
- * cdef Format[30] FORMATS = [             # <<<<<<<<<<<<<<
- *     Format("RGBA8888", &load_copy, &save_copy),
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
+ * # Use a structure to match format names to the functions.
+ * # This way they can all be cdef, and not have duplicate object conversion             # <<<<<<<<<<<<<<
+ * # code.
+ * ctypedef struct Format:
  */
   __pyx_t_32[0] = __pyx_t_2;
   __pyx_t_32[1] = __pyx_t_3;
@@ -25325,40 +25516,40 @@ if (!__Pyx_RefNanny) {
   __pyx_t_32[29] = __pyx_t_31;
   memcpy(&(__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[0]), __pyx_t_32, sizeof(__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[0]) * (30));
 
-  /* "srctools/_cy_vtf_readwrite.pyx":661
- * 
- * 
- * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":690
+ *     Format("RGBA16161616", NULL, NULL),
+ *     Format("UVLX8888", &load_copy, &save_copy),
+ *     # This doesn't match the actual engine struct, just the order of             # <<<<<<<<<<<<<<
+ *     # the Python enum.
+ *     Format("NONE", NULL, NULL),
+ */
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_5init, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 690, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_init, __pyx_t_1) < 0) __PYX_ERR(0, 690, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+  /* "srctools/_cy_vtf_readwrite.pyx":700
+ * def init(formats: 'srctools.vtf.ImageFormats') -> None:
  *     """Verify that the Python enum matches our array of functions."""
- *     cdef int index
+ *     cdef int index             # <<<<<<<<<<<<<<
+ *     cdef const char *name
+ *     for fmt in formats:
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_5init, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 661, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_7load, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 700, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_init, __pyx_t_1) < 0) __PYX_ERR(0, 661, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load, __pyx_t_1) < 0) __PYX_ERR(0, 700, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":671
- * 
- * 
- * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
+  /* "srctools/_cy_vtf_readwrite.pyx":710
+ * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
  *     """Load pixels from data in the given format."""
- *     cdef int index = fmt.ind
+ *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
+ *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+ *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_7load, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 671, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_9save, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 710, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load, __pyx_t_1) < 0) __PYX_ERR(0, 671, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-
-  /* "srctools/_cy_vtf_readwrite.pyx":681
- * 
- * 
- * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
- *     cdef int index = fmt.ind
- *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
- */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_9save, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 681, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_save, __pyx_t_1) < 0) __PYX_ERR(0, 681, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_save, __pyx_t_1) < 0) __PYX_ERR(0, 710, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "srctools/_cy_vtf_readwrite.pyx":1
@@ -28785,6 +28976,37 @@ __pyx_fail:
     }
 }
 
+/* CIntToPy */
+  static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
+    const long neg_one = (long) ((long) 0 - (long) 1), const_zero = (long) 0;
+    const int is_unsigned = neg_one > const_zero;
+    if (is_unsigned) {
+        if (sizeof(long) < sizeof(long)) {
+            return PyInt_FromLong((long) value);
+        } else if (sizeof(long) <= sizeof(unsigned long)) {
+            return PyLong_FromUnsignedLong((unsigned long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
+            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
+#endif
+        }
+    } else {
+        if (sizeof(long) <= sizeof(long)) {
+            return PyInt_FromLong((long) value);
+#ifdef HAVE_LONG_LONG
+        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
+            return PyLong_FromLongLong((PY_LONG_LONG) value);
+#endif
+        }
+    }
+    {
+        int one = 1; int little = (int)*(unsigned char *)&one;
+        unsigned char *bytes = (unsigned char *)&value;
+        return _PyLong_FromByteArray(bytes, sizeof(long),
+                                     little, !is_unsigned);
+    }
+}
+
 /* MemviewSliceCopyTemplate */
   static __Pyx_memviewslice
 __pyx_memoryview_copy_new_contig(const __Pyx_memviewslice *from_mvs,
@@ -29446,37 +29668,6 @@ raise_neg_overflow:
         int one = 1; int little = (int)*(unsigned char *)&one;
         unsigned char *bytes = (unsigned char *)&value;
         return _PyLong_FromByteArray(bytes, sizeof(int),
-                                     little, !is_unsigned);
-    }
-}
-
-/* CIntToPy */
-  static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value) {
-    const long neg_one = (long) ((long) 0 - (long) 1), const_zero = (long) 0;
-    const int is_unsigned = neg_one > const_zero;
-    if (is_unsigned) {
-        if (sizeof(long) < sizeof(long)) {
-            return PyInt_FromLong((long) value);
-        } else if (sizeof(long) <= sizeof(unsigned long)) {
-            return PyLong_FromUnsignedLong((unsigned long) value);
-#ifdef HAVE_LONG_LONG
-        } else if (sizeof(long) <= sizeof(unsigned PY_LONG_LONG)) {
-            return PyLong_FromUnsignedLongLong((unsigned PY_LONG_LONG) value);
-#endif
-        }
-    } else {
-        if (sizeof(long) <= sizeof(long)) {
-            return PyInt_FromLong((long) value);
-#ifdef HAVE_LONG_LONG
-        } else if (sizeof(long) <= sizeof(PY_LONG_LONG)) {
-            return PyLong_FromLongLong((PY_LONG_LONG) value);
-#endif
-        }
-    }
-    {
-        int one = 1; int little = (int)*(unsigned char *)&one;
-        unsigned char *bytes = (unsigned char *)&value;
-        return _PyLong_FromByteArray(bytes, sizeof(long),
                                      little, !is_unsigned);
     }
 }

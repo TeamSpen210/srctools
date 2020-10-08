@@ -439,7 +439,14 @@ def load_dxt1_impl(
 ):
     """Does the actual decompression."""
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+        return
 
     block_wid, mod = divmod(width, 4)
     if mod:
@@ -584,7 +591,14 @@ def dxt_alpha_table(
 def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+        return
 
     block_wid, mod = divmod(width, 4)
     if mod:
@@ -634,7 +648,14 @@ def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None
 def load_dxt5(pixels, data, width, height):
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+        return
 
     block_wid, mod = divmod(width, 4)
     if mod:
@@ -693,7 +714,14 @@ def load_ati2n(pixels, data, width, height):
     This uses two copies of the DXT5 alpha block for data.
     """
     if width < 4 or height < 4:
-        raise ValueError('ATI2N format must be 4x4 at minimum!')
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+        return
 
     block_wid, mod = divmod(width, 4)
     if mod:

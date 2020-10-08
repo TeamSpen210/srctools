@@ -537,10 +537,16 @@ cdef bint save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint wi
 cdef bint load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data."""
     cdef Py_ssize_t offset
-
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
 
 
 cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
@@ -552,45 +558,68 @@ cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint hei
 
 cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
+    cdef Py_ssize_t offset
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    with nogil:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
         DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
 
 
 cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
-    if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
 
 
 cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT3 data."""
+    cdef Py_ssize_t offset
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
 
 
 cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save compressed DXT3 data."""
-    if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
 
 
 cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT5 data."""
+    cdef Py_ssize_t offset
     if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
 
 
 cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT5 data."""
-    if width < 4 or height < 4:
-        raise ValueError('DXT format must be 4x4 at minimum!')
-    CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
 
 
 cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
@@ -598,9 +627,17 @@ cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint he
 
     This uses two copies of the DXT5 alpha block for data.
     """
+    cdef Py_ssize_t offset
     if width < 4 or height < 4:
-        raise ValueError('ATI2N format must be 4x4 at minimum!')
-    DecompressImage(&pixels[0], width, height, &data[0], kBc5)
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kBc5)
 
 
 cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
@@ -608,9 +645,9 @@ cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint he
 
     This uses two copies of the DXT5 alpha block for data.
     """
-    if width < 4 or height < 4:
-        raise ValueError('ATI2N format must be 4x4 at minimum!')
-    CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
 
 # Use a structure to match format names to the functions.
 # This way they can all be cdef, and not have duplicate object conversion
