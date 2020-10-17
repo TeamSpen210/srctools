@@ -7,6 +7,7 @@ from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
 
+from srctools import conv_bool
 from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
@@ -601,6 +602,10 @@ class PackList:
             base_entity = EntityDef(EntityTypes.BASE)
 
         for ent in vmf.entities:
+            # Allow opting out packing specific entities.
+            if conv_bool(ent.keys.pop('srctools_nopack', '')):
+                continue
+
             classname = ent['classname']
             try:
                 ent_class = fgd[classname]
@@ -621,7 +626,7 @@ class PackList:
             else:
                 skinset = None
 
-            value = ''  # type: str
+            value: str
 
             for key in set(ent.keys) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
