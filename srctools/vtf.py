@@ -185,6 +185,7 @@ FORMAT_ORDER = {
     for fmt in ImageFormats.__members__.values()
     if fmt.name not in ('NONE', 'ATI1N', 'ATI2N')
 }
+FORMAT_ORDER[-1] = ImageFormats.NONE
 # Since these are semi-"internal" formats, the position has changed
 # in the enum. They're either 37 in 2013, or 34 in ASW+.
 # They're backward because why not.
