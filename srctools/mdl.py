@@ -2,7 +2,7 @@
 from typing import (
     Union, Iterator, Iterable,
     List, Dict, Tuple, NamedTuple,
-    BinaryIO,
+    BinaryIO, Sequence,
 )
 from enum import IntFlag, Enum
 from pathlib import PurePosixPath
@@ -40,6 +40,16 @@ MDLSequence = NamedTuple('Sequence', [
     # More after here.
     ('keyvalues', str),
 ])
+
+# All the file extensions used for models.
+MDL_EXTS: Sequence[str] = [
+    '.mdl',
+    '.phy',
+    '.dx90.vtx',
+    '.dx80.vtx',
+    '.sw.vtx',
+    '.vvd',
+]
 
 
 class Flags(IntFlag):

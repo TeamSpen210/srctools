@@ -17,7 +17,7 @@ from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
     VirtualFileSystem,
 )
-from srctools.mdl import Model
+from srctools.mdl import Model, MDL_EXTS
 from srctools.vmt import Material, VarType
 from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
@@ -856,10 +856,9 @@ class PackList:
     def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
-        self.pack_file(filename + '.vvd')  # Must be present.
 
         # Some of these are optional.
-        for ext in ['.phy', '.vtx', '.sw.vtx', '.dx80.vtx', '.dx90.vtx']:
+        for ext in MDL_EXTS:
             component = filename + ext
             if component in self.fsys:
                 self.pack_file(component)
