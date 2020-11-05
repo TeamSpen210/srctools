@@ -4,6 +4,7 @@
 import contextlib
 
 from io import BytesIO
+from enum import Enum, Flag
 import itertools
 
 from zipfile import ZipFile
@@ -15,11 +16,6 @@ import struct
 
 from typing import List, Dict, Iterator, Union, Optional, Tuple, BinaryIO
 
-
-try:
-    from enum import Enum, Flag
-except ImportError:
-    from aenum import Enum, Flag  # type: ignore
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
