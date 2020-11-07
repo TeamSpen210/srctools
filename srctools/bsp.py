@@ -11,11 +11,11 @@ from zipfile import ZipFile
 
 from srctools import AtomicWriter, Vec, conv_int
 from srctools.vmf import VMF, Entity, Output
-from srctools.binformat import struct_read
+from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, Tuple, BinaryIO
+from typing import List, Dict, Iterator, Union, Optional, BinaryIO
 
 
 __all__ = [
@@ -284,19 +284,14 @@ class BSP:
 
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
-        # This gets difficult. The offsets need to be written before we know
-        # what they are. So write empty bytes, record that location then go
-        # back to fill them in after we actually determine where they are.
-        # We use either BSP_LUMPS enums or game-lump byte IDs for dict keys.
-
-        # Location of the header field.
-        fixup_loc = {}  # type: Dict[Union[BSP_LUMPS, bytes], int]
-        # The data to write.
-        fixup_data = {}  # type: Dict[Union[BSP_LUMPS, bytes], bytes]
 
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
+            # Needed to allow writing out the header before we know the position
+            # data will be.
+            defer = DeferredWrites(file)
+
             if isinstance(self.version, VERSIONS):
                 version = self.version.value
             else:
@@ -307,7 +302,7 @@ class BSP:
             # Write headers.
             for lump_name in BSP_LUMPS:
                 lump = self.lumps[lump_name]
-                fixup_loc[lump_name] = file.tell()
+                defer.defer(lump_name, '<ii')
                 file.write(struct.pack(
                     HEADER_LUMP,
                     0,  # offset
@@ -334,32 +329,25 @@ class BSP:
                             game_lump.flags,
                             game_lump.version,
                         ))
-                        fixup_loc[game_lump.id] = file.tell()  # Offset goes here.
-                        file.write(struct.pack('<4xi', len(game_lump.data)))
+                        defer.defer(game_lump.id, '<i', write=True)
+                        file.write(struct.pack('<i', len(game_lump.data)))
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        fixup_data[game_lump.id] = struct.pack('<i', file.tell())
+                        defer.set_data(game_lump.id, file.tell())
                         file.write(game_lump.data)
                     # Length of the game lump is current - start.
-                    fixup_data[lump_name] = struct.pack(
-                        '<ii',
+                    defer.set_data(
+                        lump_name,
                         lump_start,
                         file.tell() - lump_start,
                     )
                 else:
                     # Normal lump.
-                    fixup_data[lump_name] = struct.pack(
-                        '<ii',
-                        file.tell(),
-                        len(lump.data),
-                    )
+                    defer.set_data(lump_name, file.tell(), len(lump.data))
                     file.write(lump.data)
-
-            # Now apply all the fixups we deferred.
-            for fixup_key in fixup_loc:
-                file.seek(fixup_loc[fixup_key])
-                file.write(fixup_data[fixup_key])
+            # Apply all the deferred writes.
+            defer.write()
 
     def read_header(self) -> None:
         """No longer used."""
