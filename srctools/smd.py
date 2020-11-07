@@ -8,9 +8,14 @@ import math
 from typing import (
     List, Optional, Dict, Tuple, Iterator, Iterable, Union,
     BinaryIO,
+    Any,
 )
 
 from srctools import Vec
+
+__all__ = [
+    'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
+]
 
 
 class Bone:
@@ -34,6 +39,22 @@ class Bone:
 
     def __deepcopy__(self, memodict: dict=None):
         return Bone(self.name, deepcopy(self.parent, memodict))
+
+    def __eq__(self, other: Any) -> bool:
+        if self is other:
+            return True
+        if isinstance(other, Bone):
+            return self.name == other.name
+        return NotImplemented
+
+    def __ne__(self, other: Any) -> bool:
+        if isinstance(other, Bone):
+            return self.name != other.name
+        return NotImplemented
+
+    def __hash__(self) -> int:
+        """Allow use as a dict key."""
+        return hash(self.name)
 
 
 class BoneFrame:

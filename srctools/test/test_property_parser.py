@@ -1,4 +1,5 @@
 import pytest
+
 from srctools.property_parser import Property, KeyValError, NoKeyError
 from srctools.tokenizer import C_Tokenizer, Py_Tokenizer
 from srctools import property_parser as pp_mod
@@ -267,9 +268,37 @@ def test_build():
                 b.replace2('above2')
 
     assert_tree(parse_result, prop)
+
+def test_build_exc() -> None:
+    """Test the with statement handles exceptions correctly."""
+    class Exc(Exception):
+        pass
+
+    prop = Property('Root', [])
+
+    with pytest.raises(Exc):  # Should not swallow.
+        with prop.build() as build:
+            build.prop('Hi')
+            raise Exc
+    # Exception doesn't rollback.
+    assert_tree(Property('Root', [
+        Property('prop', 'Hi'),
+    ]), prop)
+
+    prop.clear()
+
+    with prop.build() as build:
+        build.leaf('value')
+        with pytest.raises(Exc):
+            with build.subprop as sub:
+                raise Exc
+    assert_tree(Property('Root', [
+        Property('leaf', 'value'),
+        Property('subprop', []),
+    ]), prop)
     
 
-def test_parse_fails(py_c_token):
+def test_parse_fails(py_c_token) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
     def t(text):
         """Test a string to ensure it fails parsing."""
@@ -469,3 +498,39 @@ def test_bool():
     assert bool(Property('Name', [
         Property('Key', 'Value')
     ])) is True
+
+
+def test_blockfuncs_fail_on_leaf() -> None:
+    """Check that methods requiring a block fail on a leaf property."""
+    leaf = Property('Name', 'blah')
+    with pytest.raises(ValueError):
+        for _ in leaf.find_all("blah"):
+            pass
+    with pytest.raises(ValueError):
+        leaf.find_key("blah")
+    with pytest.raises(ValueError):
+        for _ in leaf:
+            pass
+    with pytest.raises(ValueError):
+        leaf['blah']
+    with pytest.raises(ValueError):
+        leaf['blah'] = 't'
+    with pytest.raises(ValueError):
+        leaf.int('blah')
+    with pytest.raises(ValueError):
+        leaf.bool('blah')
+    with pytest.raises(ValueError):
+        leaf.float('blah')
+    with pytest.raises(ValueError):
+        leaf.vec('blah')
+    with pytest.raises(ValueError):
+        len(leaf)
+    with pytest.raises(ValueError):
+        with leaf.build():
+            pass
+    with pytest.raises(ValueError):
+        leaf.ensure_exists('blah')
+    with pytest.raises(ValueError):
+        leaf.set_key(("blah", "another"), 45)
+    with pytest.raises(ValueError):
+        leaf.merge_children()

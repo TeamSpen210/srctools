@@ -1,24 +1,27 @@
 """Runs before VRAD, to run operations on the final BSP."""
 import argparse
+import datetime
+import sys
+from logging import FileHandler
+from pathlib import Path
 
 from srctools import Property
-from srctools.logger import init_logging
-from pathlib import Path
-import sys
+from srctools.logger import init_logging, Formatter
+
 
 # Put the logs in the executable folders.
 LOGGER = init_logging(Path(sys.argv[0]).with_name('postcompiler.log'))
 
+from srctools.fgd import FGD
 from srctools.bsp import BSP, BSP_LUMPS
 from srctools.bsp_transform import run_transformations
-from srctools.packlist import PackList, load_fgd
+from srctools.packlist import PackList
 from srctools.scripts import config
 from srctools.compiler import propcombine
 from typing import List
 
 
 def main(argv: List[str]) -> None:
-    LOGGER.info('Srctools postcompiler hook started!')
 
     parser = argparse.ArgumentParser(
         description="Modifies the BSP file, allowing additional entities "
@@ -36,6 +39,11 @@ def main(argv: List[str]) -> None:
         action="store_true",
         help="Allow merging static props together.",
     )
+    parser.add_argument(
+        "--showgroups",
+        action="store_true",
+        help="Show propcombined props, by setting their tint to 0 255 0",
+    )
 
     parser.add_argument(
         "map",
@@ -49,9 +57,19 @@ def main(argv: List[str]) -> None:
     # Also if it's the VMF file, make it the BSP.
     path = Path(args.map).with_suffix('.bsp')
 
+    # Open and start writing to the map's log file.
+    handler = FileHandler(path.with_suffix('.log'))
+    handler.setFormatter(Formatter(
+        # One letter for level name
+        '[{levelname}] {module}.{funcName}(): {message}',
+        style='{',
+    ))
+    LOGGER.addHandler(handler)
+
+    LOGGER.info('Srctools postcompiler hook started at {}!', datetime.datetime.now().isoformat())
     LOGGER.info("Map path is {}", path)
 
-    conf, game_info, fsys, pack_blacklist = config.parse(path)
+    conf, game_info, fsys, pack_blacklist, plugins = config.parse(path)
 
     fsys.open_ref()
 
@@ -63,7 +81,7 @@ def main(argv: List[str]) -> None:
         '\n'.join([sys.path for sys, prefix in fsys.systems]),
     )
 
-    fgd = load_fgd()
+    fgd = FGD.engine_dbase()
 
     LOGGER.info('Loading soundscripts...')
     packlist.load_soundscript_manifest(
@@ -88,7 +106,10 @@ def main(argv: List[str]) -> None:
         LOGGER.warning('No studiomdl path provided.')
         studiomdl_loc = None
 
-    run_transformations(vmf, fsys, packlist, path, game_info, studiomdl_loc)
+    for plugin in plugins:
+        plugin.load()
+
+    run_transformations(vmf, fsys, packlist, bsp_file, game_info, studiomdl_loc)
 
     if studiomdl_loc is not None and args.propcombine:
         LOGGER.info('Combining props...')
@@ -105,8 +126,12 @@ def main(argv: List[str]) -> None:
             ],
             conf.get(int, 'propcombine_auto_range'),
             conf.get(int, 'propcombine_min_cluster'),
+            debug_tint=args.showgroups,
         )
         LOGGER.info('Done!')
+    else:  # Strip these if they're present.
+        for ent in vmf.by_class['comp_propcombine_set']:
+             ent.remove()
 
     bsp_file.lumps[BSP_LUMPS.ENTITIES].data = bsp_file.write_ent_data(vmf)
 

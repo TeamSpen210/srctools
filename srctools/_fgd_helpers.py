@@ -181,20 +181,16 @@ class HelperSphere(Helper):
         return cls(r, g, b, size_key)
 
     def export(self) -> List[str]:
-        """Export the helper.
-
-        If the key is the default it is omitted.
-        """
+        """Export the helper."""
         if self.r != 255.0 or self.g != 255.0 or self.b != 255.0:
             return [
-                # Even if "radius", we need to pass the arg to allow color.
                 self.size_key,
                 '{:g} {:g} {:g}'.format(self.r, self.g, self.b)
             ]
-        elif self.size_key != 'radius':
-            return [self.size_key]
-        else:
-            return []
+        # Always explicitly pass radius. If we use the default value,
+        # Hammer doesn't display the "camera" button in options to set
+        # the value to the distance to the entity.
+        return [self.size_key]
 
 
 class HelperLine(Helper):
@@ -545,8 +541,11 @@ class HelperModel(Helper):
         self.model = model
 
     def overrides(self) -> Collection[HelperTypes]:
+        """Avoid some issues where other helpers break this one."""
         if self.model is None:
-            return ()  # When not set, this doesn't affect anything.
+            # If no model is provided, line() and similar helpers make
+            # the default cube size break
+            return [HelperTypes.LINE]
         else:
             return [HelperTypes.CUBE]
 
@@ -633,6 +632,29 @@ class HelperLight(Helper):
 class HelperLightSpot(Helper):
     """Specialized helper for displaying spotlight previews."""
     TYPE = HelperTypes.ENT_LIGHT_CONE
+
+
+class HelperLightSpotBlackMesa(Helper):
+    """A new helper for Black Mesa's new spot entity."""
+    TYPE = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
+
+    def __init__(self, theta_kv: str, phi_kv: str, color_kv: str) -> None:
+        self.theta = theta_kv
+        self.phi = phi_kv
+        self.color = color_kv
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse newlightcone(theta, phi, lightcolor)."""
+        if len(args) != 3:
+            raise ValueError(
+                'Expected 3 arguments, got ({})!'.format(', '.join(args))
+            )
+        return cls(args[0], args[1], args[2])
+
+    def export(self) -> List[str]:
+        """Produce the arguments for iconsprite()."""
+        return [self.theta, self.phi, self.color]
 
 
 class HelperRope(Helper):

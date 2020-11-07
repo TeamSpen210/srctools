@@ -1,5 +1,6 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
+from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
@@ -22,7 +23,8 @@ from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'AutoVisgroup',
+    'match_tags', 'validate_tags',
 
     # From srctools._fgd_helpers
     'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
@@ -44,14 +46,14 @@ _fmt_16bit = Struct('>H')
 _fmt_32bit = Struct('>I')
 _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
-_fmt_ent_header = Struct('<BBBBB')
+_fmt_ent_header = Struct('<BBBBBB')
 
 
 def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 3
+BIN_FORMAT_VERSION = 5
 
 
 class FGDParseError(TokenSyntaxError):
@@ -112,6 +114,12 @@ class ValueTypes(Enum):
     INST_VAR_DEF = 'instance_parm'  # $fixup definition
     INST_VAR_REP = 'instance_variable'  # $fixup usage
 
+    # Format extensions.
+    EXT_STR_TEXTURE = 'texture'  # A VTF, mainly for env_projectedtexture.
+    EXT_VEC_DIRECTION = 'vec_dir'  # A vector which should be rotated, but not translated.
+    EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
+    EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
+
     @property
     def has_list(self) -> bool:
         """Is this a flag or choices value, and needs a [] list?"""
@@ -125,6 +133,12 @@ class ValueTypes(Enum):
             'integer', 'boolean', 'string', 'float', 'script',
             'vector', 'target_destination', 'color255'
         )
+
+    @property
+    def extension(self) -> bool:
+        """Is this an extension to the format?"""
+        return self.name.startswith('EXT_')
+
 
 VALUE_TYPE_LOOKUP = {
     typ.value: typ
@@ -146,10 +160,14 @@ VALUE_TO_IO_DECAY = {
 VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.TARG_NODE_SOURCE] = ValueTypes.INT
 VALUE_TO_IO_DECAY[ValueTypes.ANGLE_NEG_PITCH] = ValueTypes.FLOAT
+VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLE_PITCH] = ValueTypes.FLOAT
 
 VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_DIRECTION] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.ANGLES] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 # Only one color type present.
 VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
@@ -207,6 +225,8 @@ class HelperTypes(Enum):
     ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
     ENT_WORLDTEXT = 'worldtext'  # Renders 3D text in-world.
 
+    ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  # New helper added in Black Mesa
+
     # Format extensions.
 
     # Indicates this entity is only available in the given games.
@@ -215,6 +235,11 @@ class HelperTypes(Enum):
     # Convenience only used in parsing, adds @AutoVisgroup parents for the
     # current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
+
+    @property
+    def extension(self) -> bool:
+        """Is this an extension to the format?"""
+        return self.name.startswith('EXT_')
 
     
 # Ordered list of value types, for encoding in the binary
@@ -264,6 +289,10 @@ VALUE_TYPE_ORDER = [
 
     ValueTypes.STR_VSCRIPT_SINGLE,
     ValueTypes.ENT_HANDLE,
+    ValueTypes.EXT_STR_TEXTURE,
+    ValueTypes.EXT_ANGLE_PITCH,
+    ValueTypes.EXT_ANGLES_LOCAL,
+    ValueTypes.EXT_VEC_DIRECTION,
 ]
 
 # Ditto for entity types.
@@ -323,16 +352,38 @@ def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
         raise tok.error(token)
 
 
-def _write_longstring(file: IO[str], text: str) -> None:
-    """Write potentially long strings to the file, splitting with + if needed."""
-    if len(text) <= 128:
-        file.write('"{}"'.format(text))
-    else:
-        file.write(' + '.join([
-            '"{}"'.format(st)
-            for st in
-            srctools.partition(text, 128)
-        ]))
+def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
+    """Write potentially long strings to the file, splitting with + if needed.
+
+    The game parser has a max size of 8192 bytes for the text, but can only
+    handle 1024 bytes of text in a string. So we need to split after that.
+    """
+    LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
+    sections = []
+    remaining = text
+    while len(remaining) > LIMIT:
+        # First, look for any \ns and split on those. This is a nice stopping
+        # point, and also prevents separating the "\" from "n". Then add 2
+        # so we leave the \n in the first block.
+        split_pos = remaining.rfind('\\n', 0, LIMIT) + 2
+        if split_pos > 128:  # Don't do for very small sections.
+            sections.append(f'"{remaining[:split_pos]}"')
+            remaining = remaining[split_pos:]
+            continue
+        # Next try splitting at any whitespace, and then leave that in the
+        # first block.
+        split_pos = remaining.rfind(' ', 0, LIMIT) + 1
+        if split_pos == (-1 + 1):
+            # Not found, just split exactly at the end.
+            split_pos = LIMIT
+        sections.append(f'"{remaining[:split_pos]}"')
+        remaining = remaining[split_pos:]
+
+    # Lastly add any remaining text that didn't get split off.
+    if remaining:
+        sections.append(f'"{remaining}"')
+
+    file.write((' +\n' + indent).join(sections))
 
 
 def read_tags(tok: Tokenizer) -> FrozenSet[str]:
@@ -425,7 +476,7 @@ class BinStrDict:
     """
     
     def __init__(self) -> None:
-        self._dict = {}
+        self._dict: Dict[str, int] = {}
         self.cur_index = 0
         
     def __call__(self, string: str) -> bytes:
@@ -453,8 +504,9 @@ class BinStrDict:
 
         file.write(_fmt_32bit.pack(len(inv_list)))
         for txt in inv_list:
-            file.write(_fmt_16bit.pack(len(txt)))
-            file.write(txt.encode('utf8'))
+            encoded = txt.encode('utf8')
+            file.write(_fmt_16bit.pack(len(encoded)))
+            file.write(encoded)
 
     @staticmethod       
     def unserialise(file: BinaryIO) -> Callable[[], str]:
@@ -466,12 +518,12 @@ class BinStrDict:
         [length] = _read_struct(_fmt_32bit, file)
         inv_list = [''] * length
         for ind in range(length):
-            [str_len] = _read_struct(_fmt_16bit, file)
+            [str_len] = _fmt_16bit.unpack(file.read(2))
             inv_list[ind] = file.read(str_len).decode('utf8')
 
         def lookup() -> str:
             """Read the index from the file, and return the string it matches."""
-            [index] = _read_struct(_fmt_16bit, file)
+            [index] = _fmt_16bit.unpack(file.read(2))
             return inv_list[index]
         
         return lookup
@@ -513,7 +565,7 @@ class Helper:
     def parse(cls, args: List[str]) -> 'Helper':
         """Parse this helper from the given arguments.
 
-        The default implementation expects one argument only.
+        The default implementation expects no arguments.
         """
         if args:
             raise ValueError(
@@ -576,6 +628,55 @@ del _init_helper_impl
 from srctools._fgd_helpers import *
 
 
+class AutoVisgroup:
+    """Represents one of the autovisgroup options that can be set.
+
+    Due to how these are coded into Hammer, our representation is rather strange.
+    We put all the groups into a single dictionary, and on each specify the name
+    of the parent. Note they're case-sensitive, and can include punctuation.
+    """
+    def __init__(self, name: str, parent: str) -> None:
+        self.name = name
+        self.parent = parent
+        self.ents = set()  # type: Set[str]
+
+    def __repr__(self) -> str:
+        return '<AutoVisgroup "{}">'.format(self.name)
+
+    def __hash__(self) -> int:
+        return hash(self.name)
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name == other.name
+        return NotImplemented
+
+    def __ne__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name != other.name
+        return NotImplemented
+
+    def __lt__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name < other.name
+        return NotImplemented
+
+    def __gt__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name > other.name
+        return NotImplemented
+
+    def __le__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name <= other.name
+        return NotImplemented
+
+    def __ge__(self, other) -> bool:
+        if isinstance(other, AutoVisgroup):
+            return self.name >= other.name
+        return NotImplemented
+
+
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -583,6 +684,11 @@ class KeyValues:
     * For choices it's a list of (value, name, tags) tuples.
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
+    __slots__ = [
+        'name', 'type', 'default',
+        'disp_name', 'desc', 'val_list',
+        'readonly', 'reportable',
+    ]
     def __init__(
         self,
         name: str,
@@ -685,7 +791,7 @@ class KeyValues:
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
@@ -740,6 +846,7 @@ class KeyValues:
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
                 power = int(math.log2(val))
+                assert power < 128, "Spawnflags are too big for packing into a byte!"
                 if default:  # Pack the default as the MSB.
                     power |= 128
                 file.write(_fmt_8bit.pack(power))
@@ -789,7 +896,7 @@ class KeyValues:
             
             if value_type is ValueTypes.CHOICES:
                 [val_count] = _read_struct(_fmt_16bit, file)
-                val_list = [0] * val_count
+                val_list: List[tuple] = [()] * val_count
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
                     val_list[ind] = (from_dict(), from_dict(), tags)
@@ -807,6 +914,7 @@ class KeyValues:
 
 class IODef:
     """Represents an input or output for an entity."""
+    __slots__ = ['name', 'type', 'desc']
     def __init__(self, name, val_type: ValueTypes, description: str=''):
         self.name = name
         self.type = val_type
@@ -861,7 +969,7 @@ class IODef:
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
         file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
@@ -920,7 +1028,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         Either obj['name'], or obj['name', {tags}] is accepted.
         """
         if isinstance(name, str):
-            search_tags = set()
+            search_tags = None
         elif isinstance(name, tuple):
             name, search_tags = name
             search_tags = frozenset({t.casefold() for t in search_tags})
@@ -942,7 +1050,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 key=lambda t: len(t[0]),
                 reverse=True,
             ):
-                if match_tags(search_tags, tags):
+                if search_tags is None or match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
         
@@ -1135,14 +1243,12 @@ class EntityDef:
 
         # Now apply EXT_AUTO_VISGROUP, since we have the classname.
         for auto_visgroup in ext_autovisgroups:
-            auto_visgroup.append(entity.classname)
-
-            for vis_a, vis_b, vis_c in zip(
-                auto_visgroup,
-                auto_visgroup[1:],
-                auto_visgroup[2:],
-            ):
-                fgd.auto_visgroups.setdefault((vis_a, vis_b), set()).add(vis_c)
+            for vis_parent, vis_name in zip(auto_visgroup, auto_visgroup[1:]):
+                try:
+                    visgroup = fgd.auto_visgroups[vis_name.casefold()]
+                except KeyError:
+                    visgroup = fgd.auto_visgroups[vis_name.casefold()] = AutoVisgroup(vis_name, vis_parent)
+                visgroup.ents.add(entity.classname)
 
         # Now parse keyvalues, and input/outputs
         for token, token_value in tok:
@@ -1272,6 +1378,13 @@ class EntityDef:
                     disp_name = name
                 else:
                     raise tok.error('Too many attributes for keyvalue!\n{!r}', attrs)
+
+                if val_typ is ValueTypes.BOOL:
+                    # These are old aliases, change them to proper bools.
+                    if default.casefold() == 'yes':
+                        default = '1'
+                    elif default.casefold() == 'no':
+                        default = '0'
 
                 if val_typ.has_list:
                     if has_equal is not Token.EQUALS:
@@ -1430,7 +1543,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'))
+            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -1483,8 +1596,11 @@ class EntityDef:
             len(self.keyvalues),
             len(self.inputs),
             len(self.outputs),
+            # Write the classname here, not using BinStrDict.
+            # They're going to be unique, so there's no benefit.
+            len(self.classname),
         ))
-        file.write(str_dict(self.classname))
+        file.write(self.classname.encode())
         
         for base_ent in self.bases:
             file.write(str_dict(base_ent.classname))
@@ -1527,21 +1643,25 @@ class EntityDef:
             kv_count,
             inp_count,
             out_count,
-        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int
+            clsname_length,
+        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int, int
         
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
-        ent.classname = from_dict()
+        ent.classname = file.read(clsname_length).decode('utf8')
         ent.desc = ''
         
         for _ in range(base_count):
             # We temporarily store strings, then evaluate later on.
             ent.bases.append(from_dict())  # type: ignore
 
+        count: int
+        val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
+        cls: Type[Union[KeyValues, IODef]]
         for count, val_map, cls in [
             (kv_count, ent.keyvalues, KeyValues),
             (inp_count, ent.inputs, IODef),
             (out_count, ent.outputs, IODef),
-        ]:  # type: int, Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]], Type[Union[KeyValues, IODef]]
+        ]:
             for _ in range(count):
                 [tag_count] = _read_struct(_fmt_8bit, file)
                 if tag_count == 0:
@@ -1573,21 +1693,23 @@ class FGD:
         self._parse_list = set()
 
         # Entity definitions
-        self.entities = {}  # type: Dict[str, EntityDef]
+        self.entities: Dict[str, EntityDef] = {}
 
         # Maximum bounding box of map
         self.map_size_min = 0
         self.map_size_max = 0
 
         # Directories we have excluded.
-        self.mat_exclusions = set()  # type: Set[PurePosixPath]
+        self.mat_exclusions: Set[PurePosixPath] = set()
 
         # Automatic visgroups.
-        # This maps a parent, folder to the entities that have that group.
-        # For example:
-        # ('Auto', 'World Details'): 'Props'
-        # ('World Details', 'Props') : 'prop_static'
-        self.auto_visgroups = {}  # type: Dict[Tuple[str, str], Set[str]]
+        # The way Valve implemented this is rather strange, so we need
+        # to match their data structure really to get good results.
+        # Despite it appearing hierachical in editor, we and Hammer store
+        # it flattened. Each visgroup has a parent (or None for auto), and then
+        # a list of the ents it contains.
+
+        self.auto_visgroups: Dict[str, AutoVisgroup] = {}
 
     @classmethod
     def parse(
@@ -1760,6 +1882,55 @@ class FGD:
                 file.write('\t"{!s}"\n'.format(folder))
             file.write('\t]\n')
 
+        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
+        # Record the proper casing as well.
+        name_casing = {'auto': 'Auto'}
+        for visgroup in list(self.auto_visgroups.values()):
+            if not visgroup.parent:
+                visgroup.parent = 'Auto'
+            elif visgroup.parent.casefold() not in self.auto_visgroups:
+                # This is an "orphan" visgroup, not linked back to Auto.
+                # Connect it back there, by generating the parent.
+                parent_group = self.auto_visgroups[visgroup.parent.casefold()] = AutoVisgroup(visgroup.parent, 'Auto')
+                vis_by_parent['auto'].add(parent_group)
+                parent_group.ents.update(visgroup.ents)
+            vis_by_parent[visgroup.parent.casefold()].add(visgroup)
+            name_casing[visgroup.parent.casefold()] = visgroup.parent
+
+        # We need to sort these, so we write parents before children.
+        todo = set(vis_by_parent)
+        done = set()
+        while todo:
+            deferred = set()
+            for parent in sorted(todo):
+                # Special case the root, pretend that was written to the file.
+                if parent != 'auto':
+                    visgroup = self.auto_visgroups[parent.casefold()]
+                    if visgroup.parent.casefold() not in done:
+                        deferred.add(parent)
+                        continue
+                # Otherwise, the parent is done, so we can generate.
+                file.write('@AutoVisgroup = "{}"\n\t[\n'.format(name_casing[parent]))
+                for visgroup in sorted(vis_by_parent[parent]):
+                    file.write('\t"{}"\n\t\t[\n'.format(visgroup.name))
+                    for ent in sorted(visgroup.ents):
+                        file.write('\t\t"{}"\n'.format(ent))
+                    file.write('\t\t]\n')
+                file.write('\t]\n')
+                done.add(parent)
+
+            if todo == deferred:
+                # We looped without adding one. There's an invalid one or
+                # a loop or something.
+                raise ValueError(
+                    'Cannot export visgroups, '
+                    'loop present in names: {}'.format(','.join([
+                        '"{}" -> "{}"'.format(self.auto_visgroups[group].parent, group)
+                        for group in sorted(todo)
+                    ]))
+                )
+            todo = deferred
+
         for ent in self.sorted_ents():
             file.write('\n')
             ent.export(file)
@@ -1851,16 +2022,15 @@ class FGD:
                     vis_parent = tokeniser.expect(Token.STRING)
                     tokeniser.expect(Token.BRACK_OPEN)
 
-                    for tok, tok_value in tokeniser:
+                    for tok, vis_name in tokeniser:
                         if tok is Token.BRACK_CLOSE:
                             break
                         elif tok is Token.STRING:
                             # Folder
-                            vis_key = vis_parent, tok_value
                             try:
-                                vis_list = self.auto_visgroups[vis_key]
+                                visgroup = self.auto_visgroups[vis_name.casefold()]
                             except KeyError:
-                                vis_list = self.auto_visgroups[vis_key] = set()
+                                visgroup = self.auto_visgroups[vis_name.casefold()] = AutoVisgroup(vis_name, vis_parent)
 
                             tokeniser.expect(Token.BRACK_OPEN)
                             for ent_tok, ent_tok_value in tokeniser:
@@ -1868,7 +2038,7 @@ class FGD:
                                     break
                                 elif ent_tok is Token.STRING:
                                     # Entity
-                                    vis_list.add(ent_tok_value)
+                                    visgroup.ents.add(ent_tok_value)
                                 elif ent_tok is not Token.NEWLINE:
                                     raise tokeniser.error(ent_tok)
                         elif tok is not Token.NEWLINE:
@@ -1886,6 +2056,23 @@ class FGD:
                     EntityDef.parse(self, tokeniser, ent_type, eval_bases)
                 else:
                     raise tokeniser.error('Bad keyword {!r}', token_value)
+
+    @classmethod
+    def engine_dbase(cls) -> 'FGD':
+        """Load and return a database of entity keyvalues and I/O.
+
+        This can be used to identify the kind of keys present on an entity.
+        Each call will parse this from scratch, so it is recommended to cache the
+        value if you are not modifying it.
+        """
+        try:
+            from importlib.resources import open_binary
+        except ImportError:
+            # Backport module for before Python 3.7
+            from importlib_resources import open_binary
+        from lzma import LZMAFile
+        with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
+            return cls.unserialise(f)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
@@ -1955,7 +2142,8 @@ class FGD:
         # one after each other.
         dictionary.serialise(file)
         file.write(ent_data.getvalue())
-      
+        # print('Dict size: ', format(dictionary.cur_index / (1 << 16), '%'))
+
     @classmethod  
     def unserialise(cls, file: BinaryIO) -> 'FGD':
         """Unpack data from FGD.serialise() to return the original data.
@@ -1988,6 +2176,3 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
-
-
-

@@ -1,9 +1,8 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
+from typing import Union, List, Optional
 from pathlib import Path
 import os
 import sys
-from typing import Union, List
-
 import itertools
 
 from srctools import Property
@@ -36,9 +35,12 @@ class Game:
             exp_path = self.parse_search_path(path)
             # Expand /* if at the end of paths.
             if exp_path.name == '*':
-                self.search_paths.extend(
-                    map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
-                )
+                try:
+                    self.search_paths.extend(
+                        map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                    )
+                except FileNotFoundError:
+                    pass
             # Handle folder_* too.
             elif exp_path.name.endswith('*'):
                 exp_path = exp_path.with_name(exp_path.name[:-1])
@@ -92,7 +94,7 @@ class Game:
         for path in self.search_paths:
             if path.is_dir():
                 raw_folders.append(path)
-                for ind in range(1, 100):
+                for ind in itertools.count(1):
                     vpk = (path / 'pak{:02}_dir.vpk'.format(ind))
                     if vpk.is_file():
                         vpks.append(vpk)
@@ -119,13 +121,27 @@ class Game:
     def bin_folder(self) -> Path:
         """Retrieve the location of the bin/ folder."""
         folder = self.path.parent / 'bin'
-        # Variant in some versions.
-        if (folder / 'win32').is_dir():
-            return folder / 'win32'
+
+        # Engine branches supporting 64-bit have binaries in win64/win32
+        # subfolders. So on Windows check for those.
+        if sys.platform.startswith('win'):
+            # "..W6432" is the key containing the REAL processor if we're
+            # in WOW64 mode.
+            machine = os.environ.get(
+                "PROCESSOR_ARCHITEW6432",
+                os.environ.get('PROCESSOR_ARCHITECTURE')
+            )
+            if machine.endswith('64'):
+                bit_folder = folder / 'win64'
+                if bit_folder.exists():
+                    return bit_folder
+            bit_folder = folder / 'win32'
+            if bit_folder.is_dir():
+                return bit_folder
         return folder
 
 
-def find_gameinfo(argv=sys.argv) -> Game:
+def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
     """Locate the game we're in, if launched as a a compiler.
     
     This checks the following:
@@ -134,6 +150,9 @@ def find_gameinfo(argv=sys.argv) -> Game:
     * the VPROJECT environment variable
     * the current folder and all parents.
     """
+    if argv is None:
+        argv = sys.argv
+
     for i, value in enumerate(argv):
         if value.casefold() in ('-vproject', '-game'):
             try:

@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 from typing import Tuple, Dict, List, Iterable, Optional
 import math
 
-from srctools.compiler.propcombine import MDL_EXTS
+from srctools.mdl import MDL_EXTS
 from srctools.smd import Mesh
 
 import srctools.logger
@@ -46,7 +46,7 @@ def find_closest(
     src_norm: Vec,
 ) -> nodes.Node:
     """Search through all the nodes to find the one most aligned to this."""
-    best_node = None  # type: Optional[nodes.Node]
+    best_node: Optional[nodes.Node] = None
     best_dist = math.inf
 
     # We're looking for if the point is inside the cylinder projecting out
@@ -72,14 +72,15 @@ def find_closest(
 
     if best_node is None:
         if node.ent['targetname']:
-            name = f'"{node.ent["targetname"]}" '
+            name = ' "{}"'.format(node.ent["targetname"])
         else:
             name = ''
         raise ValueError(
-            f'No destination found for '
+            'No destination found for '
             f'junction {name} at ({node.origin})!'
         )
     # Mark the node as having an input, for sanity checking purposes.
+    # Note that nodes can have multiple inputs, if they're merging paths.
     best_node.has_input = True
 
     return best_node
@@ -93,16 +94,25 @@ def vactube_transform(ctx: Context) -> None:
         # No vactubes.
         return
     LOGGER.info('{} vactube nodes found.', len(all_nodes))
+    LOGGER.debug('Nodes: {}', all_nodes)
 
     if ctx.studiomdl is None:
-        LOGGER.error('Vactubes present, but no studioMDL path provided!')
-        return
+        raise ValueError(
+            'Vactubes present, but no studioMDL path provided! '
+            'Set the path to studiomdl.exe in srctools.vdf.'
+        )
 
     obj_count, vac_objects, objects_code = objects.parse(ctx.vmf, ctx.pack)
+    groups = set(objects_code)
+
+    if not obj_count:
+        raise ValueError(
+            'Vactube nodes present, but no objects. '
+            'You need to add comp_vactube_objects to your map '
+            'to define the contents.'
+        )
 
     LOGGER.info('{} vactube objects found.', obj_count)
-    if not obj_count:
-        return  # Nothing for inside vactubes.
 
     # Now join all the nodes to each other.
     # Tubes only have 90 degree bends, so a system should mostly be formed
@@ -125,30 +135,36 @@ def vactube_transform(ctx: Context) -> None:
         inputs_by_norm.items()
     ]
 
-    sources = []  # type: List[nodes.Spawner]
+    sources: List[nodes.Spawner] = []
 
     LOGGER.info('Linking nodes...')
     for node in all_nodes:
         # Destroyers (or Droppers) have no inputs.
         if isinstance(node, nodes.Destroyer):
             continue
-        node.output = find_closest(
-            norm_inputs,
-            node,
-            node.vec_point(1.0),
-            node.output_norm(),
-        )
-        if isinstance(node, nodes.Splitter):
-            node.output_sec = find_closest(
+        for dest_type in node.out_types:
+            node.outputs[dest_type] = find_closest(
                 norm_inputs,
                 node,
-                node.vec_point(1.0, sec=True),
-                node.output_sec_norm(),
+                node.vec_point(1.0, dest_type),
+                node.output_norm(dest_type),
             )
         if isinstance(node, nodes.Spawner):
             sources.append(node)
+            if node.group not in groups:
+                group_warn = (
+                    f'Node {node} uses group "{node.group}", '
+                    'which has no objects registered!'
+                )
+                if '' in groups:
+                    # Fall back to ignoring the group, using the default
+                    # blank one which is present.
+                    LOGGER.warning("{} Using blank group.", group_warn)
+                    node.group = ""
+                else:
+                    raise ValueError(group_warn)
 
-    # Run through them again, check to see if any miss inpus.
+    # Run through them again, check to see if any miss inputs.
     for node in all_nodes:
         if not node.has_input:
             raise ValueError(
@@ -243,7 +259,7 @@ def vactube_transform(ctx: Context) -> None:
         anims_by_start[anim.start_node].append(anim)
 
     # And create a dict to link droppers to the animation they want.
-    dropper_to_anim = {}   # type: Dict[nodes.Dropper, animations.Animation]
+    dropper_to_anim: Dict[nodes.Dropper, animations.Animation] = {}
 
     for start_node, anims in anims_by_start.items():
         spawn_maker = start_node.ent
@@ -279,9 +295,10 @@ def vactube_transform(ctx: Context) -> None:
         code = [f'// Node: {start_node.ent["targetname"]}, {start_node.origin}']
         for anim in anims:
             target = anim.end_node
+            anim_speed = anim.start_node.speed
             pass_code = ','.join([
                 f'Output({time:.2f}, "{node.ent["targetname"]}", '
-                f'{node.tv_name()})'
+                f'{node.tv_code(anim_speed)})'
                 for time, node in anim.pass_points
             ])
             cube_name = 'null'
@@ -289,14 +306,17 @@ def vactube_transform(ctx: Context) -> None:
                 cube_model = target.cube['model'].replace('\\', '/')
                 cube_skin = conv_int(target.cube['skin'])
                 try:
-                    cube_name = vac_objects[cube_model, cube_skin].id
+                    cube_name = vac_objects[start_node.group, cube_model, cube_skin].id
                 except KeyError:
                     LOGGER.warning(
-                        'Cube model "{}" doesn\'t '
-                        'travel in vactubes!\n\n'
-                        'Add a comp_vactube_object entity.',
-                        cube_model,
+                        'Cube model "{}", skin {} is not a type of cube travelling '
+                        'in this vactube!\n\n'
+                        'Add a comp_vactube_object entity with this cube model'
+                        # Mention groups if they're used, otherwise it's not important.
+                        + (f' with the group "{start_node.group}".' if start_node.group else '.'),
+                        cube_model, cube_skin,
                     )
+                    continue  # Skip this animation so it's not broken.
                 else:
                     dropper_to_anim[target] = anim
             code.append(
@@ -304,12 +324,18 @@ def vactube_transform(ctx: Context) -> None:
                 f'{cube_name}, [{pass_code}]);'
             )
         spawn_maker['vscripts'] = ' '.join([
-            'srctools/vac_anim.nut', objects_code,
+            'srctools/vac_anim.nut', objects_code[start_node.group],
             ctx.pack.inject_vscript('\n'.join(code)),
         ])
 
     # Now, go through each dropper and generate their logic.
     for dropper, anim in dropper_to_anim.items():
+        # Pick the appropriate output to fire once left the dropper.
+        if dropper.cube['classname'] == 'prop_monster_box':
+            cube_input = 'BecomeMonster'
+        else:
+            cube_input = 'EnablePortalFunnel'
+
         ctx.add_io_remap(
             dropper.ent['targetname'],
             # Used to dissolve the existing cube when respawning.
@@ -320,5 +346,6 @@ def vactube_transform(ctx: Context) -> None:
                 anim.start_node.ent['targetname'],
                 'RunScriptCode',
                 f'{anim.name}.req_spawn = true',
-            )
+            ),
+            Output('CubeReleased', '!activator', cube_input),
         )

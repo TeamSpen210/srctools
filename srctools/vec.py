@@ -439,13 +439,13 @@ class Vec:
 
     @staticmethod
     @overload
-    def bbox(points: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    def bbox(_point: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
     @staticmethod
     @overload
     def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
 
     @staticmethod
-    def bbox(*points):
+    def bbox(*points: Union[Iterable['Vec'], 'Vec']) -> Tuple['Vec', 'Vec']:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -455,12 +455,12 @@ class Vec:
         # The error messages match those produced by min()/max().
         if len(points) == 1 and not isinstance(points[0], Vec):
             try:
-                [[first, *points]] = points
+                [[first, *point_coll]] = points
             except ValueError:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             try:
-                first, *points = points
+                first, *point_coll = points
             except ValueError:
                 raise TypeError(
                     'Vec.bbox() expected at '
@@ -469,7 +469,7 @@ class Vec:
 
         bbox_min = Vec(first)
         bbox_max = bbox_min.copy()
-        for point in points:
+        for point in point_coll:
             bbox_min.min(point)
             bbox_max.max(point)
         return bbox_min, bbox_max

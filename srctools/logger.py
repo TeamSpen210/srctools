@@ -10,7 +10,7 @@ import sys
 import io
 import traceback
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any
+from typing import Dict, Tuple, Union, Type, Callable, Any, cast
 
 
 class LogMessage:
@@ -107,25 +107,26 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
 
 class Formatter(logging.Formatter):
     """Override exception handling."""
-    EXC_KEYWORDS = ['importlib', 'cx_freeze']
-    def formatException(self, ei):
-        """Ignore importlib and cx_freeze."""
+    SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
+    def formatException(self, ei: Tuple[Type[BaseException], BaseException, TracebackType]) -> str:
+        """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
         buffer = io.StringIO()
 
-        trace = exc_tb  # type: TracebackType
+        trace = exc_tb
 
         try:
             while trace is not None:
                 filename = trace.tb_frame.f_code.co_filename.casefold()
-                if 'importlib' not in filename and 'cx_freeze' not in filename:
+                if all(keyword not in filename for keyword in self.SKIP_LIBS):
                     break
                 trace = trace.tb_next
 
             if trace is None:
-                # All importlib, allow that.
+                # It's to do with these libraries themselves? Show the full
+                # traceback.
                 trace = exc_tb
-        except Exception:
+        except Exception:  # Something failed, keep the original.
             trace = exc_tb
 
         for line in traceback.TracebackException(exc_type, exc_value, trace).format():
@@ -209,7 +210,7 @@ def init_logging(
     If the exception is a BaseException, the app will quit silently.
     """
 
-    class NewLogRecord(logging.getLogRecordFactory()):
+    class NewLogRecord(cast(logging.LogRecord, logging.getLogRecordFactory())):
         """Allow passing an alias for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
 

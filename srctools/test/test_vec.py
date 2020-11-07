@@ -175,13 +175,13 @@ def test_scalar(py_c_vec):
                 # Check forward and reverse fails.
                 with pytest.raises(TypeError):
                     op_func(targ, obj)
-                    pytest.fail('Forward ' + op_name)
+                    pytest.fail('Vec ' + op_name + 'Scalar succeeded.')
                 with pytest.raises(TypeError):
                     op_func(obj, targ)
-                    pytest.fail('Reverse ' + op_name)
+                    pytest.fail('Scalar ' + op_name + ' Vec succeeded.')
                 with pytest.raises(TypeError):
                     op_ifunc(targ, obj)
-                    pytest.fail('Inplace ' + op_name)
+                    pytest.fail('Vec ' + op_name + '= scalar succeeded.')
 
                 assert_vec(
                     op_func(targ, num),
@@ -402,31 +402,30 @@ def test_vector_mult_fail(py_c_vec):
         ('divmod', divmod),
     ]
     for name, func in funcs:
-        msg = 'Expected TypeError from vec {} vec'.format(name)
-        raises = pytest.raises(TypeError)
+        msg = 'Expected TypError from vec {} vec'.format(name)
         for num in VALID_ZERONUMS:
             for num2 in VALID_NUMS:
                 # Test the whole value, then each axis individually
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
-
-                with raises:
+                
+                with raises_typeerror:
                     divmod(Vec(0, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, 0, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, num, 0), Vec(num2, num2, num2))
                     pytest.fail(msg)
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(0, num2, num2))
                     pytest.fail(msg)
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(num2, 0, num2))
                     pytest.fail(msg)
-                with raises:
+                with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(num2, num2, 0))
                     pytest.fail(msg)
 

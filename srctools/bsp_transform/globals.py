@@ -6,6 +6,7 @@ from typing import Dict, Tuple, List
 from srctools.bsp_transform import trans, Context
 from srctools.logger import get_logger
 from srctools import Output
+from srctools.packlist import FileType
 
 
 LOGGER = get_logger(__name__)
@@ -52,16 +53,22 @@ def vscript_init_code(ctx: Context):
         ctx.add_code(ent, code)
 
 
-@trans('VScript RunScriptCode Strings')
-def vscript_runscriptcode_strings(ctx: Context):
-    """Allow writing strings in RunScriptCode inputs.
+@trans('VScript RunScript Inputs')
+def vscript_runscript_inputs(ctx: Context):
+    """Handle RunScript* inputs.
+
+    For RunScriptCode, allow using quotes in the parameter.
 
     This is done by using ` as a replacement for double-quotes,
     then synthesising a script file and using RunScriptFile to execute it.
+    For RunScriptFile, ensure the file is packed.
     """
     for ent in ctx.vmf.entities:
         for out in ent.outputs:
-            if out.input.casefold() != 'runscriptcode':
+            inp_name = out.input.casefold()
+            if inp_name == 'runscriptfile':
+                ctx.pack.pack_file('scripts/vscripts/' + out.params, FileType.VSCRIPT_SQUIRREL)
+            if inp_name != 'runscriptcode':
                 continue
             if '`' not in out.params:
                 continue
@@ -69,7 +76,7 @@ def vscript_runscriptcode_strings(ctx: Context):
             out.input = 'RunScriptFile'
 
 
-@trans('Optimise logic_auto')
+@trans('Optimise logic_auto', priority=50)
 def optimise_logic_auto(ctx: Context):
     """Merge logic_auto entities to simplify the map."""
 
@@ -94,7 +101,8 @@ def optimise_logic_auto(ctx: Context):
             spawnflags=int(only_once),
         ).outputs = outputs
 
-@trans('Strip Entities')
+
+@trans('Strip Entities', priority=50)
 def strip_ents(ctx: Context):
     """Strip useless entities from the map."""
     for clsname in [
@@ -106,4 +114,13 @@ def strip_ents(ctx: Context):
     ]:
         for ent in ctx.vmf.by_class[clsname]:
             ent.remove()
-            
+
+    # Strip extra keys added in the engine.
+    to_remove = []
+    for ent in ctx.vmf.entities:
+        to_remove.clear()
+        for key, value in ent.keys.items():
+            if 'divider' in key and value == "":
+                to_remove.append(key)
+        for key in to_remove:
+            del ent.keys[key]

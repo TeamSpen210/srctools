@@ -9,12 +9,8 @@ cdef extern from *:
     unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 # On Python 3.6+, convert stuff to PathLike.
-cdef object _conv_path
-try:
-    from os import fspath as _conv_path
-except ImportError:
-    # Default to just using str().
-    _conv_path = str
+cdef object os_fspath
+from os import fspath as os_fspath
 
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
@@ -40,7 +36,7 @@ cdef:
     object EMPTY_ITER = iter('')
 
     # Reuse a single tuple for these, since the value is constant.
-    tuple EOF_TUP = (Token.EOF, None)
+    tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
 
     tuple COLON_TUP = (Token.COLON, ':')
@@ -116,7 +112,7 @@ cdef class Tokenizer:
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
-            raise ValueError(
+            raise TypeError(
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )
@@ -137,18 +133,19 @@ cdef class Tokenizer:
         
         self.buf_reset()
 
-        if filename:
-            # Use os method to convert to string.
-            # We know this isn't a method.
-            with cython.optimize.unpack_method_calls(False):
-                self.filename = _conv_path(filename)
-        else:
-            # If a file-like object, automatically set to the filename.
+        if not filename:
+            # If we're given a file-like object, automatically set the filename.
             try:
-                self.filename = str(data.name)
+                filename = data.name
             except AttributeError:
-                # If not, a Falsey value is excluded by the exception message.
-                self.filename = ''
+                # If not, a Falsey filename means nothing is added to any
+                # KV exception message.
+                filename = ''
+        
+        # Use os method to convert to string.
+        # We know this isn't a method, so skip Cython's optimisation.
+        with cython.optimize.unpack_method_calls(False):
+            self.filename = os_fspath(filename)
 
         if error is None:
             self.error_type = TokenSyntaxError
@@ -235,7 +232,10 @@ cdef class Tokenizer:
             return self.cur_chunk[self.char_index]
 
         # Retrieve a chunk from the iterable.
-        chunk_obj = next(self.chunk_iter, None)
+        try:
+            chunk_obj = next(self.chunk_iter, None)
+        except UnicodeDecodeError as exc:
+            raise self._error("Could not decode file!") from exc
         if chunk_obj is None:
             return -1
 
@@ -254,7 +254,10 @@ cdef class Tokenizer:
         # Use manual next to avoid re-calling iter() here,
         # or using list/tuple optimisations.
         while True:
-            chunk_obj = next(self.chunk_iter, None)
+            try:
+                chunk_obj = next(self.chunk_iter, None)
+            except UnicodeDecodeError as exc:
+                raise self._error("Could not decode file!") from exc
             if chunk_obj is None:
                 # Out of characters after empty chunks
                 return -1
@@ -483,7 +486,8 @@ cdef class Tokenizer:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value should be the original value, or None
+        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
+        for other token types.
         """
         if self.pushback_tok is not None:
             raise ValueError('Token already pushed back!')
@@ -495,9 +499,12 @@ cdef class Tokenizer:
         cdef str real_value
 
         if tok_val == 0: # EOF
-            real_value = None
-        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
             real_value = ''
+        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+            # The value can be anything, so just accept this.
+            self.pushback_tok = tok
+            self.pushback_val = value
+            return
         elif tok_val == 2:  # NEWLINE
             real_value = '\n'
         elif tok_val == 5:  # BRACE_OPEN
@@ -515,18 +522,10 @@ cdef class Tokenizer:
         elif tok_val == 15:  # PLUS
             real_value = '+'
         else:
-            raise ValueError('Unknown token value!')
+            raise ValueError(f'Unknown token {tok!r}')
 
-        # If no value provided, use the default (operators)
         if value is None:
-            value = real_value
-        # A type which needs a value provided...
-        elif real_value == '':
-            value = '' if value is None else value
-        elif not isinstance(value, str):
-            raise ValueError(
-                f'Invalid value provided ({value!r}) for {tok.name}' '!'
-            ) from None
+            raise ValueError(f'Value required for {tok!r}' '!') from None
 
         self.pushback_tok = tok
         self.pushback_val = value
@@ -588,8 +587,10 @@ cdef class _NewlinesIter:
         while True:
             tok_and_val = self.tok.next_token()
 
+            # Only our code is doing next_token here, so the tuples are
+            # going to be this same instance.
             if tok_and_val is EOF_TUP:
-                raise StopIteration
+                raise StopIteration()
             elif tok_and_val is not NEWLINE_TUP:
                 return tok_and_val
 

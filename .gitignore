@@ -8,8 +8,11 @@ __pycache__/
 
 .idea/
 
-# Pytest
-.cache/
+# Pytest, Mypy, Pytype
+.cache
+.pytest_cache
+.pytype
+.mypy_cache
 
 # =========================
 # Operating System Files

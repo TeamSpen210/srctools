@@ -186,6 +186,29 @@ def test_pushback(py_c_token):
     check_tokens(tokens, prop_parse_tokens)
 
 
+def test_call_next(py_c_token):
+    """Test that tok() functions, and it can be mixed with iteration."""
+    Tokenizer = py_c_token
+    tok = Tokenizer('''{ "test" } "test" { + } ''', 'file')
+
+    tok_type, tok_value = tok()
+    assert tok_type is Token.BRACE_OPEN and tok_value == '{'
+
+    it1 = iter(tok)
+
+    assert next(it1) == (Token.STRING, "test")
+    assert tok() == (Token.BRACE_CLOSE, '}')
+    assert next(it1) == (Token.STRING, "test")
+    assert next(it1) == (Token.BRACE_OPEN, '{')
+    assert tok() == (Token.PLUS, '+')
+    # Another iterator doesn't restart.
+    assert next(iter(tok)) == (Token.BRACE_CLOSE, '}')
+    assert tok() == (Token.EOF, '')
+
+    with pytest.raises(StopIteration):
+        next(it1)
+
+
 def test_star_comments(py_c_token):
     """Test disallowing /* */ comments."""
     Tokenizer = py_c_token
@@ -436,3 +459,24 @@ Error occurred on line 45, with file "a file".'''
     assert err.line_num == 250
     assert str(err) == '''test message
 Error occurred on line 250.'''
+
+
+def test_unicode_error_wrapping(py_c_token):
+    """Test that Unicode errors are wrapped into TokenSyntaxError."""
+    def raises_unicode():
+        yield "line of_"
+        yield "text\n"
+        raise UnicodeDecodeError('utf8', bytes(100), 1, 2, 'reason')
+
+    tok = py_c_token(raises_unicode())
+    assert tok() == (Token.STRING, "line")
+    assert tok() == (Token.STRING, "of_text")
+    with pytest.raises(TokenSyntaxError) as exc_info:
+        list(tok)
+    assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
+
+
+def test_early_binary_arg(py_c_token):
+    """Test that passing bytes values is caught before looping."""
+    with pytest.raises(TypeError):
+        py_c_token(b'test')

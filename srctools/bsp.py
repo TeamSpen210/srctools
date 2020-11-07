@@ -4,22 +4,19 @@
 import contextlib
 
 from io import BytesIO
+from enum import Enum, Flag
 import itertools
 
 from zipfile import ZipFile
 
 from srctools import AtomicWriter, Vec, conv_int
 from srctools.vmf import VMF, Entity, Output
+from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, Tuple, BinaryIO
+from typing import List, Dict, Iterator, Union, Optional, BinaryIO
 
-
-try:
-    from enum import Enum, Flag
-except ImportError:
-    from aenum import Enum, Flag  # type: ignore
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
@@ -27,16 +24,11 @@ __all__ = [
     'StaticProp', 'StaticPropFlags',
 ]
 
+
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
-
-def get_struct(file, format):
-    """Get a structure from a file."""
-    length = struct.calcsize(format)
-    data = file.read(length)
-    return struct.unpack_from(format, data)
 
 
 class VERSIONS(Enum):
@@ -207,6 +199,7 @@ class StaticPropFlags(Flag):
         """Return the data for the secondary flag byte."""
         return self.value >> 8
 
+
 class BSP:
     """A BSP file."""
     def __init__(self, filename: str, version: VERSIONS=None):
@@ -226,7 +219,7 @@ class BSP:
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
-            magic_name, bsp_version = get_struct(file, HEADER_1)
+            magic_name, bsp_version = struct_read(HEADER_1, file)
             assert magic_name == BSP_MAGIC, 'Not a BSP file!'
 
             if self.version is None:
@@ -241,7 +234,7 @@ class BSP:
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                offset, length, version, ident = get_struct(file, HEADER_LUMP)
+                offset, length, version, ident = struct_read(HEADER_LUMP, file)
                 lump_id = BSP_LUMPS(index)
                 self.lumps[lump_id] = Lump(
                     lump_id,
@@ -250,7 +243,7 @@ class BSP:
                 )
                 lump_offsets[lump_id] = offset, length
 
-            [self.map_revision] = get_struct(file, HEADER_2)
+            [self.map_revision] = struct_read(HEADER_2, file)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
@@ -291,19 +284,14 @@ class BSP:
 
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
-        # This gets difficult. The offsets need to be written before we know
-        # what they are. So write empty bytes, record that location then go
-        # back to fill them in after we actually determine where they are.
-        # We use either BSP_LUMPS enums or game-lump byte IDs for dict keys.
-
-        # Location of the header field.
-        fixup_loc = {}  # type: Dict[Union[BSP_LUMPS, bytes], int]
-        # The data to write.
-        fixup_data = {}  # type: Dict[Union[BSP_LUMPS, bytes], bytes]
 
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
+            # Needed to allow writing out the header before we know the position
+            # data will be.
+            defer = DeferredWrites(file)
+
             if isinstance(self.version, VERSIONS):
                 version = self.version.value
             else:
@@ -314,7 +302,7 @@ class BSP:
             # Write headers.
             for lump_name in BSP_LUMPS:
                 lump = self.lumps[lump_name]
-                fixup_loc[lump_name] = file.tell()
+                defer.defer(lump_name, '<ii')
                 file.write(struct.pack(
                     HEADER_LUMP,
                     0,  # offset
@@ -341,32 +329,25 @@ class BSP:
                             game_lump.flags,
                             game_lump.version,
                         ))
-                        fixup_loc[game_lump.id] = file.tell()  # Offset goes here.
-                        file.write(struct.pack('<4xi', len(game_lump.data)))
+                        defer.defer(game_lump.id, '<i', write=True)
+                        file.write(struct.pack('<i', len(game_lump.data)))
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        fixup_data[game_lump.id] = struct.pack('<i', file.tell())
+                        defer.set_data(game_lump.id, file.tell())
                         file.write(game_lump.data)
                     # Length of the game lump is current - start.
-                    fixup_data[lump_name] = struct.pack(
-                        '<ii',
+                    defer.set_data(
+                        lump_name,
                         lump_start,
                         file.tell() - lump_start,
                     )
                 else:
                     # Normal lump.
-                    fixup_data[lump_name] = struct.pack(
-                        '<ii',
-                        file.tell(),
-                        len(lump.data),
-                    )
+                    defer.set_data(lump_name, file.tell(), len(lump.data))
                     file.write(lump.data)
-
-            # Now apply all the fixups we deferred.
-            for fixup_key in fixup_loc:
-                file.seek(fixup_loc[fixup_key])
-                file.write(fixup_data[fixup_key])
+            # Apply all the deferred writes.
+            defer.write()
 
     def read_header(self) -> None:
         """No longer used."""
@@ -545,9 +526,9 @@ class BSP:
     @staticmethod
     def _read_static_props_models(static_lump: BytesIO) -> Iterator[str]:
         """Read the static prop dictionary from the lump."""
-        [dict_num] = get_struct(static_lump, '<i')
+        [dict_num] = struct_read('<i', static_lump)
         for _ in range(dict_num):
-            [padded_name] = get_struct(static_lump, '<128s')
+            [padded_name] = struct_read('<128s', static_lump)
             # Strip null chars off the end, and convert to a str.
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
@@ -570,16 +551,16 @@ class BSP:
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
 
-        [visleaf_count] = get_struct(static_lump, '<i')
-        visleaf_list = list(get_struct(static_lump, 'H' * visleaf_count))
+        [visleaf_count] = struct_read('<i', static_lump)
+        visleaf_list = list(struct_read('H' * visleaf_count, static_lump))
 
-        [prop_count] = get_struct(static_lump, '<i')
+        [prop_count] = struct_read('<i', static_lump)
 
         for i in range(prop_count):
-            origin = Vec(get_struct(static_lump, 'fff'))
-            angles = Vec(get_struct(static_lump, 'fff'))
+            origin = Vec(struct_read('fff', static_lump))
+            angles = Vec(struct_read('fff', static_lump))
 
-            [model_ind] = get_struct(static_lump, '<H')
+            [model_ind] = struct_read('<H', static_lump)
 
             (
                 first_leaf,
@@ -589,20 +570,20 @@ class BSP:
                 skin,
                 min_fade,
                 max_fade,
-            ) = get_struct(static_lump, '<HHBBiff')
+            ) = struct_read('<HHBBiff', static_lump)
 
             model_name = model_dict[model_ind]
 
             visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
-            lighting_origin = Vec(get_struct(static_lump, '<fff'))
+            lighting_origin = Vec(struct_read('<fff', static_lump))
 
             if version >= 5:
-                fade_scale = get_struct(static_lump, '<f')[0]
+                fade_scale = struct_read('<f', static_lump)[0]
             else:
                 fade_scale = 1  # default
 
             if version in (6, 7):
-                min_dx_level, max_dx_level = get_struct(static_lump, '<HH')
+                min_dx_level, max_dx_level = struct_read('<HH', static_lump)
             else:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
@@ -613,14 +594,14 @@ class BSP:
                     max_cpu_level,
                     min_gpu_level,
                     max_gpu_level,
-                ) = get_struct(static_lump, 'BBBB')
+                ) = struct_read('BBBB', static_lump)
             else:
                 # None
                 min_cpu_level = max_cpu_level = 0
                 min_gpu_level = max_gpu_level = 0
 
             if version >= 7:
-                r, g, b, renderfx = get_struct(static_lump, 'BBBB')
+                r, g, b, renderfx = struct_read('BBBB', static_lump)
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
             else:
@@ -630,11 +611,11 @@ class BSP:
 
             if version >= 11:
                 # Unknown data, though it's float-like.
-                unknown_1 = get_struct(static_lump, '<i')
+                unknown_1 = struct_read('<i', static_lump)
 
             if version >= 10:
                 # Extra flags, post-CSGO.
-                flags |= get_struct(static_lump, '<I')[0] << 8
+                flags |= struct_read('<I', static_lump)[0] << 8
 
             flags = StaticPropFlags(flags)
 
@@ -643,10 +624,10 @@ class BSP:
 
             if version >= 11:
                 # XBox support was removed. Instead this is the scaling factor.
-                [scaling] = get_struct(static_lump, "<f")
+                [scaling] = struct_read("<f", static_lump)
             elif version >= 9:
                 # The single boolean byte also produces 3 pad bytes.
-                [disable_on_xbox] = get_struct(static_lump, '<?xxx')
+                [disable_on_xbox] = struct_read('<?xxx', static_lump)
 
             yield StaticProp(
                 model_name,
