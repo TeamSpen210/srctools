@@ -33,19 +33,34 @@ def test_vec_basic_yaw() -> None:
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(270), 150, 0, 0)
 
 
-def test_vec_basic_pitch():
+def test_vec_basic_pitch() -> None:
     """Check each direction rotates appropriately in pitch."""
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(0), 200, 0, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(0), 0, 0, 150)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(90), 0, 0, -200)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(90), 150, 0, 0)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(180), -200, 0, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(180), 0, 0, -150)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(270), 0, 0, 200)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(270), -150, 0, 0)
+
+
+def test_vec_basic_roll():
+    """Check each direction rotates appropriately in roll."""
+    assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(0), 0, 200, 0)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(0), 0, 0, 150)
+
+    assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(90), 0, 0, 200)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(90), 0, -150, 0)
+
+    assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(180), 0, -200, 0)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(180), 0, 0, -150)
+
+    assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(270), 0, 0, -200)
+    assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(270), 0, 150, 0)
 
 
 def test_ang_matrix_roundtrip():
