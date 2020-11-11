@@ -1103,10 +1103,34 @@ class Matrix:
     @classmethod
     def from_angle(cls, angle: 'Angle') -> 'Matrix':
         """Return the rotation representing an Euler angle."""
-        rot = cls()
-        rot @= cls.from_roll(angle.roll)
-        rot @= cls.from_pitch(angle.pitch)
-        rot @= cls.from_yaw(angle.yaw)
+        rad_pitch = math.radians(angle.pitch)
+        cos_p = math.cos(rad_pitch)
+        sin_p = math.sin(rad_pitch)
+        rad_yaw = math.radians(angle.yaw)
+        sin_y = math.sin(rad_yaw)
+        cos_y = math.cos(rad_yaw)
+        rad_roll = math.radians(angle.roll)
+        cos_r = math.cos(rad_roll)
+        sin_r = math.sin(rad_roll)
+
+        rot = cls.__new__(cls)
+
+        rot.aa = cos_p * cos_y
+        rot.ab = cos_p * sin_y
+        rot.ac = -sin_p
+
+        cos_r_cos_y = cos_r * cos_y
+        cos_r_sin_y = cos_r * sin_y
+        sin_r_cos_y = sin_r * cos_y
+        sin_r_sin_y = sin_r * sin_y
+
+        rot.ba = sin_p * sin_r_cos_y - cos_r_sin_y
+        rot.bb = sin_p * sin_r_sin_y + cos_r_cos_y
+        rot.bc = sin_r * cos_p
+
+        rot.ca = (sin_p * cos_r_cos_y + sin_r_sin_y)
+        rot.cb = (sin_p * cos_r_sin_y - sin_r_cos_y)
+        rot.cc = cos_r * cos_p
         return rot
 
     def to_angle(self) -> 'Angle':
