@@ -1059,9 +1059,9 @@ class Matrix:
 
         rot = cls.__new__(cls)
 
-        rot.aa, rot.ab, rot.ac = cos, 0.0, sin
+        rot.aa, rot.ab, rot.ac = cos, 0.0, -sin
         rot.ba, rot.bb, rot.bc = 0.0, 1.0, 0.0
-        rot.ca, rot.cb, rot.cc = -sin, 0.0, cos
+        rot.ca, rot.cb, rot.cc = sin, 0.0, cos
 
         return rot
 
@@ -1076,8 +1076,8 @@ class Matrix:
 
         rot = cls.__new__(cls)
 
-        rot.aa, rot.ab, rot.ac = cos, -sin, 0.0
-        rot.ba, rot.bb, rot.bc = sin, cos, 0.0
+        rot.aa, rot.ab, rot.ac = cos, sin, 0.0
+        rot.ba, rot.bb, rot.bc = -sin, cos, 0.0
         rot.ca, rot.cb, rot.cc = 0.0, 0.0, 1.0
 
         return rot
@@ -1095,8 +1095,8 @@ class Matrix:
         rot = cls.__new__(cls)
 
         rot.aa, rot.ab, rot.ac = 1.0, 0.0, 0.0
-        rot.ba, rot.bb, rot.bc = 0.0, cos_r, -sin_r
-        rot.ca, rot.cb, rot.cc = 0.0, sin_r, cos_r
+        rot.ba, rot.bb, rot.bc = 0.0, cos_r, sin_r
+        rot.ca, rot.cb, rot.cc = 0.0, -sin_r, cos_r
 
         return rot
         
@@ -1126,15 +1126,15 @@ class Matrix:
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
             return Angle(
-                yaw=-math.degrees(math.atan2(for_y, for_x)),
-                pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
-                roll=-math.degrees(math.atan2(left_z, up_z)),
+                yaw=math.degrees(math.atan2(for_y, for_x)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=math.degrees(math.atan2(left_z, up_z)),
             )
         else:
             # Vertical, gimbal lock (yaw=roll)...
             return Angle(
-                yaw=-math.degrees(math.atan2(-left_x, left_y)),
-                pitch=-math.degrees(math.atan2(-for_z, horiz_dist)),
+                yaw=math.degrees(math.atan2(-left_x, left_y)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=0,  # Can't produce.
             )
 
@@ -1235,11 +1235,10 @@ class Matrix:
         x = vec.x
         y = vec.y
         z = vec.z
+        vec.x = (x * self.aa) + (y * self.ba) + (z * self.ca)
+        vec.y = (x * self.ab) + (y * self.bb) + (z * self.cb)
+        vec.z = (x * self.ac) + (y * self.bc) + (z * self.cc)
 
-        vec.x = (x * self.aa) + (y * self.ab) + (z * self.ac)
-        vec.y = (x * self.ba) + (y * self.bb) + (z * self.bc)
-        vec.z = (x * self.ca) + (y * self.cb) + (z * self.cc)
-        
     
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
