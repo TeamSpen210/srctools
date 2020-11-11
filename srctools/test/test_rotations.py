@@ -134,7 +134,93 @@ def test_single_axis():
                 )
 
 
-def test_gen_check():
+def old_mat_mul(
+    self,
+    a: float, b: float, c: float,
+    d: float, e: float, f: float,
+    g: float, h: float, i: float,
+) -> None:
+    """Code from an earlier version of Vec, that does rotation.
+
+    This just does the matrix multiplication.
+    """
+    x, y, z = self.x, self.y, self.z
+
+    self.x = (x * a) + (y * b) + (z * c)
+    self.y = (x * d) + (y * e) + (z * f)
+    self.z = (x * g) + (y * h) + (z * i)
+
+
+def old_rotate(
+    self,
+    pitch: float=0.0,
+    yaw: float=0.0,
+    roll: float=0.0
+) -> 'Vec':
+    """Code from an earlier version of Vec, that does rotation."""
+    # pitch is in the y axis
+    # yaw is the z axis
+    # roll is the x axis
+
+    rad_pitch = math.radians(pitch)
+    rad_yaw = math.radians(yaw)
+    rad_roll = math.radians(roll)
+    cos_p = math.cos(rad_pitch)
+    cos_y = math.cos(rad_yaw)
+    cos_r = math.cos(rad_roll)
+
+    sin_p = math.sin(rad_pitch)
+    sin_y = math.sin(rad_yaw)
+    sin_r = math.sin(rad_roll)
+
+    # Need to do transformations in roll, pitch, yaw order
+    old_mat_mul(  # Roll = X
+        self,
+        1, 0, 0,
+        0, cos_r, -sin_r,
+        0, sin_r, cos_r,
+    )
+
+    old_mat_mul(  # Pitch = Y
+        self,
+        cos_p, 0, sin_p,
+        0, 1, 0,
+        -sin_p, 0, cos_p,
+    )
+
+    old_mat_mul(  # Yaw = Z
+        self,
+        cos_y, -sin_y, 0,
+        sin_y, cos_y, 0,
+        0, 0, 1,
+    )
+    return self
+
+
+def test_old_rotation() -> None:
+    """Verify that the code matches the results from the earlier Vec.rotate code."""
+    for pitch in range(0, 360, 15):
+        for yaw in range(0, 360, 15):
+            for roll in range(0, 360, 15):
+                ang = Angle(pitch, yaw, roll)
+                mat = Matrix.from_angle(ang)
+
+                # Construct a matrix directly from 3 vector rotations.
+                old_mat = Matrix()
+                old_mat.aa, old_mat.ab, old_mat.ac = old_rotate(Vec(x=1), pitch, yaw, roll)
+                old_mat.ba, old_mat.bb, old_mat.bc = old_rotate(Vec(y=1), pitch, yaw, roll)
+                old_mat.ca, old_mat.cb, old_mat.cc = old_rotate(Vec(z=1), pitch, yaw, roll)
+
+                assert_rot(mat, old_mat, ang)
+                old = old_rotate(Vec(128, 0, 0), pitch, yaw, roll)
+
+                by_ang = Vec(128, 0, 0) @ ang
+                by_mat = Vec(128, 0, 0) @ mat
+                assert_vec(by_ang, old.x, old.y, old.z, ang, tol=1e-1)
+                assert_vec(by_mat, old.x, old.y, old.z, ang, tol=1e-1)
+
+
+def test_gen_check() -> None:
     """Do an exhaustive check on all rotation math using data from the engine."""
     X = Vec(x=1)
     Y = Vec(y=1)
@@ -155,9 +241,9 @@ def test_gen_check():
             mat = Matrix.from_angle(Angle(pit, yaw, roll))
 
             # Then check rotating vectors works correctly.
-            assert_vec(abs(X @ mat), for_x, for_y, for_z)
-            assert_vec(abs(Y @ mat), left_x, left_y, left_z)
-            assert_vec(abs(Z @ mat), up_x, up_y, up_z)
+            assert_vec(X @ mat, for_x, -for_y, for_z)
+            assert_vec(Y @ mat, left_x, -left_y, left_z)
+            assert_vec(Z @ mat, up_x, -up_y, up_z)
 
             assert math.isclose(for_x, mat.aa)
             assert math.isclose(-for_y, mat.ab)
@@ -170,4 +256,3 @@ def test_gen_check():
             assert math.isclose(up_x, mat.ca)
             assert math.isclose(-up_y, mat.cb)
             assert math.isclose(up_z, mat.cc)
-
