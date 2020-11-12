@@ -531,8 +531,8 @@ class Vec:
         if not x and not y and z:
             return 'z'
         raise ValueError(
-            '({}, {}, {}) is '
-            'not an on-axis vector!'.format(self.x, self.y, self.z)
+            f'({self.x:g}, {self.y:g}, {self.z:g}) is '
+            f'not an on-axis vector!'
         )
 
     def to_angle(self, roll: float=0) -> 'Vec':
@@ -840,12 +840,7 @@ class Vec:
         This strips off the .0 if no decimal portion exists.
         """
         # :g strips the .0 off of floats if it's an integer.
-        return '{x:g}{delim}{y:g}{delim}{z:g}'.format(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            delim=delim,
-        )
+        return f'{self.x:g}{delim}{self.y:g}{delim}{self.z:g}'
 
     def __str__(self):
         """Return the values, separated by spaces.
@@ -853,7 +848,7 @@ class Vec:
         This is the main format in Valve's file formats.
         This strips off the .0 if no decimal portion exists.
         """
-        return "{:g} {:g} {:g}".format(self.x, self.y, self.z)
+        return f"{self.x:g} {self.y:g} {self.z:g}"
 
     def __repr__(self):
         """Code required to reproduce this vector."""
@@ -877,7 +872,7 @@ class Vec:
             return self.y
         elif ind == 2 or ind == "z":
             return self.z
-        raise KeyError('Invalid axis: {!r}'.format(ind))
+        raise KeyError(f'Invalid axis: {ind!r}')
 
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -892,7 +887,7 @@ class Vec:
         elif ind == 2 or ind == "z":
             self.z = float(val)
         else:
-            raise KeyError('Invalid axis: {!r}'.format(ind))
+            raise KeyError(f'Invalid axis: {ind!r}')
 
     def other_axes(self, axis: str) -> Tuple[float, float]:
         """Get the values for the other two axes."""
