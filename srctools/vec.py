@@ -974,12 +974,12 @@ class Matrix:
         
     def __repr__(self) -> str:
         return (
-            'Matrix('
-            '{0.aa} {0.ab} {0.ac}, '
-            '{0.ba} {0.bb} {0.bc}, '
-            '{0.ca} {0.cb} {0.cc}'
-            ')'
-        ).format(self)
+            '<Matrix '
+            f'{self.aa:.3} {self.ab:.3} {self.ac:.3}, '
+            f'{self.ba:.3} {self.bb:.3} {self.bc:.3}, '
+            f'{self.ca:.3} {self.cb:.3} {self.cc:.3}'
+            '>'
+        )
 
     def copy(self) -> 'Matrix':
         """Duplicate this matrix."""
