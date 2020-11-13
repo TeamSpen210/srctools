@@ -241,18 +241,19 @@ def test_gen_check() -> None:
             mat = Matrix.from_angle(Angle(pit, yaw, roll))
 
             # Then check rotating vectors works correctly.
-            assert_vec(X @ mat, for_x, -for_y, for_z)
-            assert_vec(Y @ mat, left_x, -left_y, left_z)
-            assert_vec(Z @ mat, up_x, -up_y, up_z)
+            # The engine actually gave us a right vector, so we need to flip that.
+            assert_vec(X @ mat, for_x, for_y, for_z)
+            assert_vec(Y @ mat, -left_x, -left_y, -left_z)
+            assert_vec(Z @ mat, up_x, up_y, up_z)
 
-            assert math.isclose(for_x, mat.aa)
-            assert math.isclose(-for_y, mat.ab)
-            assert math.isclose(for_z, mat.ac)
+            assert math.isclose(for_x, mat.aa, abs_tol=EPSILON)
+            assert math.isclose(for_y, mat.ab, abs_tol=EPSILON)
+            assert math.isclose(for_z, mat.ac, abs_tol=EPSILON)
 
-            assert math.isclose(left_x, mat.ba)
-            assert math.isclose(-left_y, mat.bb)
-            assert math.isclose(left_z, mat.bc)
+            assert math.isclose(-left_x, mat.ba, abs_tol=EPSILON)
+            assert math.isclose(-left_y, mat.bb, abs_tol=EPSILON)
+            assert math.isclose(-left_z, mat.bc, abs_tol=EPSILON)
 
-            assert math.isclose(up_x, mat.ca)
-            assert math.isclose(-up_y, mat.cb)
-            assert math.isclose(up_z, mat.cc)
+            assert math.isclose(up_x, mat.ca, abs_tol=EPSILON)
+            assert math.isclose(up_y, mat.cb, abs_tol=EPSILON)
+            assert math.isclose(up_z, mat.cc, abs_tol=EPSILON)
