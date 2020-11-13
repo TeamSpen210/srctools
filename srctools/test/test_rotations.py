@@ -257,3 +257,12 @@ def test_gen_check() -> None:
             assert math.isclose(up_x, mat.ca, abs_tol=EPSILON)
             assert math.isclose(up_y, mat.cb, abs_tol=EPSILON)
             assert math.isclose(up_z, mat.cc, abs_tol=EPSILON)
+
+            # Also test Matrix.from_basis().
+            x = Vec(for_x, for_y, for_z)
+            y = -Vec(left_x, left_y, left_z)
+            z = Vec(up_x, up_y, up_z)
+            assert_rot(Matrix.from_basis(x=x, y=y, z=z), mat)
+            assert_rot(Matrix.from_basis(x=x, y=y), mat)
+            assert_rot(Matrix.from_basis(y=y, z=z), mat)
+            assert_rot(Matrix.from_basis(x=x, z=z), mat)

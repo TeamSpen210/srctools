@@ -1128,6 +1128,43 @@ class Matrix:
 
         return rot
 
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, y: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'Matrix':
+        """Construct a matrix from at least two basis vectors.
+
+        The third is computed, if not provided.
+        """
+        if x is None and y is not None and z is not None:
+            x = Vec.cross(y, z)
+        elif y is None and x is not None and z is not None:
+            y = Vec.cross(z, x)
+        elif z is None and x is not None and y is not None:
+            z = Vec.cross(x, y)
+        elif x is None and y is None and z is None:
+            raise TypeError('At least two vectors must be provided!')
+        mat = cls.__new__(cls)
+        mat.aa, mat.ab, mat.ac = x.norm()
+        mat.ba, mat.bb, mat.bc = y.norm()
+        mat.ca, mat.cb, mat.cc = z.norm()
+        return mat
+
     @overload
     def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
@@ -1362,6 +1399,35 @@ class Angle:
             if axis3 is not None:
                 ang[axis3] = val3[axis3] if isinstance(val3, Angle) else val3
         return ang
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, y: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'Angle':
+        """Return the rotation which results in the specified local axes.
+
+        At least two must be specified, with the third computed if necessary.
+        """
+        return Matrix.from_basis(x=x, y=y, z=z).to_angle()
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
