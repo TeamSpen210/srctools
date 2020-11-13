@@ -37,6 +37,7 @@ Rotates LHS by RHS:
 """
 import math
 import contextlib
+import warnings
 
 from typing import (
     Union, Tuple, overload, Type,
@@ -349,26 +350,6 @@ class Vec:
                 vec[axis3] = val3[axis3] if isinstance(val3, Vec) else val3
         return vec
 
-    def _mat_mul(
-        self,
-        a: float, b: float, c: float,
-        d: float, e: float, f: float,
-        g: float, h: float, i: float,
-    ) -> None:
-        """Multiply this vector by a 3x3 rotation matrix.
-
-        Used for Vec.rotate().
-        The matrix should follow the following pattern:
-        [ a b c ]
-        [ d e f ]
-        [ g h i ]
-        """
-        x, y, z = self.x, self.y, self.z
-
-        self.x = (x * a) + (y * b) + (z * c)
-        self.y = (x * d) + (y * e) + (z * f)
-        self.z = (x * g) + (y * h) + (z * i)
-
     def rotate(
         self,
         pitch: float=0.0,
@@ -383,59 +364,27 @@ class Vec:
         If round is True, all values will be rounded to 3 decimals
         (since these calculations always have small inprecision.)
         """
-        # pitch is in the y axis
-        # yaw is the z axis
-        # roll is the x axis
-
-        rad_pitch = math.radians(pitch)
-        rad_yaw = math.radians(yaw)
-        rad_roll = math.radians(roll)
-        cos_p = math.cos(rad_pitch)
-        cos_y = math.cos(rad_yaw)
-        cos_r = math.cos(rad_roll)
-
-        sin_p = math.sin(rad_pitch)
-        sin_y = math.sin(rad_yaw)
-        sin_r = math.sin(rad_roll)
-
-        # Need to do transformations in roll, pitch, yaw order
-        self._mat_mul(  # Roll = X
-            1, 0, 0,
-            0, cos_r, -sin_r,
-            0, sin_r, cos_r,
-        )
-
-        self._mat_mul(  # Pitch = Y
-            cos_p, 0, sin_p,
-            0, 1, 0,
-            -sin_p, 0, cos_p,
-        )
-
-        self._mat_mul(  # Yaw = Z
-            cos_y, -sin_y, 0,
-            sin_y, cos_y, 0,
-            0, 0, 1,
-        )
-
+        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning)
+        val = self @ Angle(pitch, yaw, roll)
         if round_vals:
-            self.x = round(self.x, 6)
-            self.y = round(self.y, 6)
-            self.z = round(self.z, 6)
+            val.x = round(val.x, 6)
+            val.y = round(val.y, 6)
+            val.z = round(val.z, 6)
 
-        return self
+        return val
 
     def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
         """
-        pitch, yaw, roll = parse_vec_str(ang, pitch, yaw, roll)
-        return self.rotate(
-            pitch,
-            yaw,
-            roll,
-            round_vals,
-        )
+        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning)
+        val = self @ Angle.from_str(ang, pitch, yaw, roll)
+        if round_vals:
+            val.x = round(val.x, 6)
+            val.y = round(val.y, 6)
+            val.z = round(val.z, 6)
+        return val
 
     @staticmethod
     @overload
