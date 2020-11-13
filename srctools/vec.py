@@ -484,42 +484,30 @@ class Vec:
             f'not an on-axis vector!'
         )
 
-    def to_angle(self, roll: float=0) -> 'Vec':
+    def to_angle(self, roll: float=0) -> 'Angle':
         """Convert a normal to a Source Engine angle.
 
         A +x axis vector will result in a 0, 0, 0 angle. The roll is not
         affected by the direction of the normal.
 
-        The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
+        The inverse of this is `Vec(x=1) @ Angle(pitch, yaw, roll)`.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.hypot(self.x, self.y)
-        return Vec(
+        return Angle(
             math.degrees(math.atan2(-self.z, horiz_dist)),
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=90) -> 'Vec':
+    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
-        vector. Stride determines the angles chosen - the normal must point
-        in one of these.
+        vector.
         """
-        angle = self.to_angle()
-        for roll in range(0, 360, stride):
-            result = Vec(z=1).rotate(angle.x, angle.y, roll)
-            if result == z_norm:
-                angle.z = roll
-                return angle
-        else:
-            raise ValueError(
-                'Normal of {} does not have a valid angle'
-                ' in ({}, {}, z) at increments of {}'.format(
-                    z_norm, angle.x, angle.y, stride,
-                )
-            )
+        warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
+        return Matrix.from_basis(x=self, z=z_norm).to_angle()
 
     def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
