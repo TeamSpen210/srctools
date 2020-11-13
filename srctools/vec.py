@@ -91,7 +91,12 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
         return x, y, z
 
 
-Vec_tuple = NamedTuple('Vec_tuple', [('x', float), ('y', float), ('z', float)])
+class Vec_tuple(NamedTuple):
+    """An immutable tuple, useful for dictionary keys."""
+    x: float
+    y: float
+    z: float
+
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -779,7 +784,7 @@ class Vec:
         # :g strips the .0 off of floats if it's an integer.
         return f'{self.x:g}{delim}{self.y:g}{delim}{self.z:g}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the values, separated by spaces.
 
         This is the main format in Valve's file formats.
@@ -787,9 +792,9 @@ class Vec:
         """
         return f"{self.x:g} {self.y:g} {self.z:g}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return self.__class__.__name__ + "(" + self.join() + ")"
+        return f"Vec({self.x:g}, {self.y:g}, {self.z:g})"
 
     def __iter__(self) -> Iterator[float]:
         """Allow iterating through the dimensions."""
@@ -909,8 +914,8 @@ class Vec:
         given the parent's origin and angles.
         """
         if angles is not None:
-            self.rotate(angles[0], angles[1], angles[2])
-        self.__iadd__(origin)
+            self @= Angle(angles)
+        self += origin
 
     def norm_mask(self, normal: 'Vec') -> 'Vec':
         """Subtract the components of this vector not in the direction of the normal.
@@ -951,14 +956,14 @@ class Matrix:
         self.ba, self.bb, self.bc = 0.0, 1.0, 0.0
         self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
 
-    def __eq__(self, other: object) -> bool:
+    def __eq__(self, other: object) -> object:
         if isinstance(other, Matrix):
             return (
                 self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
                 self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
                 self.ca == other.ca and self.cb == other.cb and self.cc == other.cc
             )
-        return False
+        return NotImplemented
         
     def __repr__(self) -> str:
         return (
@@ -1324,7 +1329,7 @@ class Angle:
         self._roll = float(roll) % 360 % 360
 
     def __repr__(self) -> str:
-        return 'Angle({0._pitch:g}, {0._yaw:g}, {0._roll:g})'.format(self)
+        return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
 
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Angle as a tuple."""
@@ -1427,7 +1432,7 @@ class Angle:
         - p, y, r
         Useful in conjunction with a loop to apply commands to all values.
         """
-        if ind in (0, 'p', 'pit','pitch'):
+        if ind in (0, 'p', 'pit', 'pitch'):
             return self._pitch
         elif ind in (1, 'y', 'yaw'):
             return self._yaw
@@ -1441,7 +1446,7 @@ class Angle:
         This accepts either 0,1,2 or 'x','y','z' to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
-        if ind in (0, 'p', 'pit','pitch'):
+        if ind in (0, 'p', 'pit', 'pitch'):
             self._pitch = float(val) % 360.0 % 360.0
         elif ind in (1, 'y', 'yaw'):
             self._yaw = float(val) % 360.0 % 360.0
