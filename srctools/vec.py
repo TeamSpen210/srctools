@@ -1077,6 +1077,18 @@ class Matrix:
         rot.cc = cos_r * cos_p
         return rot
 
+    def forward(self) -> 'Vec':
+        """Return a normalised vector pointing in the +X direction."""
+        return Vec(self.aa, self.ab, self.ac)
+
+    def left(self) -> 'Vec':
+        """Return a normalised vector pointing in the +Y direction."""
+        return Vec(self.ba, self.bb, self.bc)
+
+    def up(self) -> 'Vec':
+        """Return a normalised vector pointing in the +Z direction."""
+        return Vec(self.ca, self.cb, self.cc)
+
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
 
