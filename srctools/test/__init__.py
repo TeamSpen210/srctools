@@ -1,7 +1,12 @@
 """Helpers for performing tests."""
 import itertools
 
-from srctools.vec import Py_Vec, Cy_Vec, Py_parse_vec_str, Cy_parse_vec_str
+from srctools.vec import (
+    Py_Vec, Cy_Vec,
+    Py_Angle, Cy_Angle,
+    Py_Matrix, Cy_Matrix,
+    Py_parse_vec_str, Cy_parse_vec_str,
+)
 from srctools import vec as vec_mod
 import pytest
 import math
@@ -98,21 +103,33 @@ def assert_rot(rot, exp_rot, msg=''):
 
 
 if Py_Vec is Cy_Vec:
-    parms = [(Py_Vec, Py_parse_vec_str)]
+    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str)]
     names = ['Python']
     print('No _vec! ')
 else:
-    parms = [(Py_Vec, Py_parse_vec_str), (Cy_Vec, Cy_parse_vec_str)]
+    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str),
+             (Cy_Vec, Cy_Angle, Cy_Matrix, Cy_parse_vec_str)]
     names = ['Python', 'Cython']
 
 
 @pytest.fixture(params=parms, ids=names)
 def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""
-    global Vec, parse_vec_str
     orig_vec = vec_mod.Vec
+    orig_Matrix = vec_mod.Matrix
+    orig_Angle = vec_mod.Angle
     orig_parse = vec_mod.parse_vec_str
-    vec_mod.Vec, vec_mod.parse_vec_str = Vec, parse_vec_str = request.param
-    yield None
-    vec_mod.Vec = Vec = orig_vec
-    vec_mod.parse_vec_str = parse_vec_str = orig_parse
+
+    try:
+        (
+            vec_mod.Vec,
+            vec_mod.Matrix,
+            vec_mod.Angle,
+            vec_mod.parse_vec_str,
+        ) = request.param
+        yield request.param
+    finally:
+        vec_mod.Vec = orig_vec
+        vec_mod.Matrix = orig_Matrix
+        vec_mod.Angle = orig_Angle
+        vec_mod.parse_vec_str = orig_parse

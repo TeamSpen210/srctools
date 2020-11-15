@@ -5,8 +5,6 @@ import copy
 import operator as op
 from srctools.test import *
 from srctools import Vec_tuple, vec as vec_mod
-from srctools.vec import parse_vec_str
-from typing import Type
 
 try:
     from importlib.resources import path as import_file_path
@@ -56,7 +54,7 @@ def test_construction(py_c_vec):
     
     This tests Vec(), Vec.from_str() and parse_vec_str().
     """
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(Vec(x, y, z), x, y, z)
         assert_vec(Vec(x, y), x, y, 0)
@@ -139,7 +137,7 @@ def test_construction(py_c_vec):
 
 def test_with_axes(py_c_vec):
     """Test the with_axes() constructor."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for axis, u, v in ['xyz', 'yxz', 'zxy']:
         for num in VALID_ZERONUMS:
             vec = Vec.with_axes(axis, num)
@@ -162,7 +160,7 @@ def test_with_axes(py_c_vec):
 
 def test_unary_ops(py_c_vec):
     """Test -vec and +vec."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_NUMS):
         assert_vec(-Vec(x, y, z), -x, -y, -z)
         assert_vec(+Vec(x, y, z), +x, +y, +z)
@@ -170,7 +168,7 @@ def test_unary_ops(py_c_vec):
 
 def test_mag(py_c_vec):
     """Test magnitude methods."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
         vec = Vec(x, y, z)
         mag = vec.mag()
@@ -193,7 +191,7 @@ def test_mag(py_c_vec):
 
 def test_contains(py_c_vec):
     # Match to list.__contains__
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for num in VALID_NUMS:
         for x, y, z in iter_vec(VALID_NUMS):
             assert (num in Vec(x, y, z)) == (num in [x, y, z])
@@ -205,7 +203,7 @@ def test_scalar(py_c_vec):
     For +, -, *, /, // and % calling with a scalar should perform the
     operation on x, y, and z
     """
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     operators = [
         ('+', op.add, op.iadd, VALID_ZERONUMS),
         ('-', op.sub, op.isub, VALID_ZERONUMS),
@@ -279,7 +277,7 @@ def test_vec_to_vec(py_c_vec):
     For +, -, two Vectors apply the operations to all values.
     Dot and cross products do something different.
     """
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     operators = [
         ('+', op.add, op.iadd),
         ('-', op.sub, op.isub),
@@ -390,7 +388,7 @@ def test_vec_to_vec(py_c_vec):
 
 def test_scalar_zero(py_c_vec):
     """Check zero behaviour with division ops."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_NUMS):
         vec = Vec(x, y, z)
         assert_vec(0 / vec, 0, 0, 0)
@@ -422,7 +420,7 @@ def test_scalar_zero(py_c_vec):
 
 def test_divmod_vec_scalar(py_c_vec):
     """Test divmod(vec, scalar)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for x, y, z in iter_vec(VALID_ZERONUMS):
         for num in VALID_NUMS:
@@ -433,7 +431,7 @@ def test_divmod_vec_scalar(py_c_vec):
 
 def test_divmod_scalar_vec(py_c_vec):
     """Test divmod(scalar, vec)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for x, y, z in iter_vec(VALID_NUMS):
         for num in VALID_ZERONUMS:
@@ -444,7 +442,7 @@ def test_divmod_scalar_vec(py_c_vec):
 
 def test_vector_mult_fail(py_c_vec):
     """Test *, /, //, %, divmod always fails between vectors."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     funcs = [
         ('*', op.mul),
@@ -488,7 +486,7 @@ def test_vector_mult_fail(py_c_vec):
 
 def test_order(py_c_vec):
     """Test ordering operations (>, <, <=, >=, ==)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     comp_ops = [op.eq, op.le, op.lt, op.ge, op.gt, op.ne]
 
@@ -526,7 +524,7 @@ def test_order(py_c_vec):
 
 def test_binop_fail(py_c_vec):
     """Test binary operations with invalid operands."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     vec = Vec()
     operations = [
@@ -554,7 +552,7 @@ def test_binop_fail(py_c_vec):
 
 def test_axis(py_c_vec):
     """Test the Vec.axis() function."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for num in VALID_NUMS:
         assert Vec(num, 0, 0).axis() == 'x', num
@@ -588,7 +586,7 @@ def test_axis(py_c_vec):
 
 def test_other_axes(py_c_vec):
     """Test Vec.other_axes()."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     bad_args = ['p', '', 0, 1, 2, False, Vec(2, 3, 5)]
     for x, y, z in iter_vec(VALID_NUMS):
@@ -604,7 +602,7 @@ def test_other_axes(py_c_vec):
 
 def test_abs(py_c_vec):
     """Test the function of abs(Vec)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
@@ -612,7 +610,7 @@ def test_abs(py_c_vec):
 
 def test_bool(py_c_vec):
     """Test bool() applied to Vec."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     # Empty vector is False
     assert not Vec(0, 0, 0)
@@ -630,7 +628,7 @@ def test_bool(py_c_vec):
 
 def test_len(py_c_vec):
     """Test len(Vec)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     # len(Vec) is the number of non-zero axes.
 
@@ -664,7 +662,7 @@ INVALID_KEYS = [
 
 def test_getitem(py_c_vec):
     """Test vec[x] with various args."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     v = Vec(1.5, 3.5, -8.7)
 
     assert v[0] == 1.5
@@ -710,7 +708,7 @@ def test_getitem(py_c_vec):
 
 def test_setitem(py_c_vec):
     """Test vec[x]=y with various args."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for ind, axis in enumerate('xyz'):
         vec1 = Vec()
@@ -731,7 +729,7 @@ def test_setitem(py_c_vec):
 
 def test_vec_constants(py_c_vec):
     """Check some of the constants assigned to Vec."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     assert Vec.N == Vec.north == Vec(y=1)
     assert Vec.S == Vec.south == Vec(y=-1)
@@ -800,7 +798,7 @@ ROUND_VALS = [
 
 def test_round(py_c_vec):
     """Test round(Vec)."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for from_val, to_val in ROUND_VALS:
         assert_vec(round(Vec(from_val, from_val, from_val)), to_val, to_val, to_val)
@@ -823,7 +821,7 @@ MINMAX_VALUES += [(b, a) for a,b in MINMAX_VALUES]
 
 def test_minmax(py_c_vec):
     """Test Vec.min() and Vec.max()."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     vec_a = Vec()
     vec_b = Vec()
@@ -848,7 +846,8 @@ def test_minmax(py_c_vec):
 
 def test_copy_pickle(py_c_vec):
     """Test pickling and unpickling and copying Vectors."""
-    vec_mod.Vec = Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec_mod.Vec = Vec
 
     test_data = 1.5, 0.2827, 2.3464545636e47
 
@@ -879,7 +878,7 @@ def test_copy_pickle(py_c_vec):
 
     # Ensure both produce the same pickle - so they can be interchanged.
     cy_pick = pickle.dumps(Cy_Vec(test_data))
-    py_pick = pickle.dumps(Cy_Vec(test_data))
+    py_pick = pickle.dumps(Py_Vec(test_data))
 
     assert cy_pick == py_pick == pick
 

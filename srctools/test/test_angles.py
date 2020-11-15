@@ -1,5 +1,5 @@
 from srctools import Angle
-from srctools.test import assert_ang, iter_vec
+from srctools.test import *
 
 
 VALID_NUMS = [
@@ -11,8 +11,9 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
-def test_construction():
+def test_construction(py_c_vec):
     """Check various parts of the constructor - Vec(), Vec.from_str()."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
     
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
         assert_ang(Angle(pit, yaw, rol), pit, yaw, rol)
@@ -79,8 +80,9 @@ def test_construction():
         assert test_val == Angle.from_str('34.5 38.4 -23 -38', roll=val).roll
 
 
-def test_with_axes():
+def test_with_axes(py_c_vec):
     """Test the with_axes() constructor."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     for axis, u, v in [
         ('pitch', 'yaw', 'roll'),

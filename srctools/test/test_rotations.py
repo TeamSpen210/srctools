@@ -3,8 +3,10 @@ from srctools.test import *
 from srctools import Vec, Matrix, Angle
 
 
-def test_vec_identities() -> None:
+def test_vec_identities(py_c_vec) -> None:
     """Check that vectors in the same axis as the rotation don't get spun."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for ang in range(0, 360, 13):
         # Check the two constructors match.
         assert Matrix.from_pitch(ang) == Matrix.from_angle(Angle(pitch=ang))
@@ -18,8 +20,10 @@ def test_vec_identities() -> None:
             assert_vec(Vec(x=mag) @ Matrix.from_roll(ang), mag, 0, 0)
 
 
-def test_vec_basic_yaw() -> None:
+def test_vec_basic_yaw(py_c_vec) -> None:
     """Check each direction rotates appropriately in yaw."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(0), 200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(0), 0, 150, 0)
     
@@ -33,8 +37,10 @@ def test_vec_basic_yaw() -> None:
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(270), 150, 0, 0)
 
 
-def test_vec_basic_pitch() -> None:
+def test_vec_basic_pitch(py_c_vec) -> None:
     """Check each direction rotates appropriately in pitch."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(0), 200, 0, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(0), 0, 0, 150)
 
@@ -48,8 +54,10 @@ def test_vec_basic_pitch() -> None:
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(270), -150, 0, 0)
 
 
-def test_vec_basic_roll():
+def test_vec_basic_roll(py_c_vec):
     """Check each direction rotates appropriately in roll."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(0), 0, 200, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(0), 0, 0, 150)
 
@@ -63,8 +71,10 @@ def test_vec_basic_roll():
     assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(270), 0, 150, 0)
 
 
-def test_ang_matrix_roundtrip():
+def test_ang_matrix_roundtrip(py_c_vec):
     """Check converting to and from a Matrix does not change values."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for p, y, r in iter_vec(range(0, 360, 90)):
         vert = Vec(x=1).rotate(p, y, r).z
         if vert < 0.99 or vert > 0.99:
@@ -74,8 +84,10 @@ def test_ang_matrix_roundtrip():
         assert_ang(mat.to_angle(), p, y, r)
 
 
-def test_to_angle_roundtrip():
+def test_to_angle_roundtrip(py_c_vec):
     """Check Vec.to_angle() roundtrips."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for x, y, z in iter_vec((-1, 0, 1)):
         if x == y == z == 0:
             continue
@@ -84,8 +96,10 @@ def test_to_angle_roundtrip():
         assert_vec(Vec(x=1).rotate(*ang), norm.x, norm.y, norm.z, ang)
 
 
-def test_matrix_roundtrip_pitch():
+def test_matrix_roundtrip_pitch(py_c_vec):
     """Check converting to and from a Matrix does not change values."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     # We can't directly check the resulted value, some of these produce
     # gimbal lock and can't be recovered.
     # So instead check the rotation matrix is the same.
@@ -99,15 +113,19 @@ def test_matrix_roundtrip_pitch():
         )
 
 
-def test_matrix_roundtrip_yaw():
+def test_matrix_roundtrip_yaw(py_c_vec):
     """Check converting to and from a Matrix does not change values."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for yaw in range(0, 360, 45):
         mat = Matrix.from_yaw(yaw)
         assert_ang(mat.to_angle(), 0, yaw, 0)
 
 
-def test_matrix_roundtrip_roll():
+def test_matrix_roundtrip_roll(py_c_vec):
     """Check converting to and from a Matrix does not change values."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for roll in range(0, 360, 45):
         if roll in (90, -90):
             # Don't test gimbal lock.
@@ -116,8 +134,10 @@ def test_matrix_roundtrip_roll():
         assert_ang(mat.to_angle(), 0, 0, roll)
 
 
-def test_single_axis():
+def test_single_axis(py_c_vec):
     """In each axis, two rotations should be the same as adding."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     # Pitch gives gimbal lock and breaks recovery of the values.
     for axis in ('yaw', 'roll'):
         for ang1 in range(0, 360, 45):
@@ -197,8 +217,10 @@ def old_rotate(
     return self
 
 
-def test_old_rotation() -> None:
+def test_old_rotation(py_c_vec) -> None:
     """Verify that the code matches the results from the earlier Vec.rotate code."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     for pitch in range(0, 360, 15):
         for yaw in range(0, 360, 15):
             for roll in range(0, 360, 15):
@@ -220,8 +242,10 @@ def test_old_rotation() -> None:
                 assert_vec(by_mat, old.x, old.y, old.z, ang, tol=1e-1)
 
 
-def test_gen_check() -> None:
+def test_gen_check(py_c_vec) -> None:
     """Do an exhaustive check on all rotation math using data from the engine."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
     X = Vec(x=1)
     Y = Vec(y=1)
     Z = Vec(z=1)
