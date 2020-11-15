@@ -386,17 +386,16 @@ class Vec:
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
 
-        If round is True, all values will be rounded to 3 decimals
+        If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
         """
         warnings.warn("Use vec @ Angle() instead.", DeprecationWarning)
-        val = self @ Angle(pitch, yaw, roll)
+        self @= Angle(pitch, yaw, roll)
         if round_vals:
-            val.x = round(val.x, 6)
-            val.y = round(val.y, 6)
-            val.z = round(val.z, 6)
-
-        return val
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
+        return self
 
     def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
@@ -404,12 +403,12 @@ class Vec:
         If the string cannot be parsed, use the passed in values instead.
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning)
-        val = self @ Angle.from_str(ang, pitch, yaw, roll)
+        self @= Angle.from_str(ang, pitch, yaw, roll)
         if round_vals:
-            val.x = round(val.x, 6)
-            val.y = round(val.y, 6)
-            val.z = round(val.z, 6)
-        return val
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
+        return self
 
     @staticmethod
     @overload
