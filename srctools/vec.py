@@ -943,7 +943,7 @@ class Vec:
         This effectively translates local-space offsets to a global location,
         given the parent's origin and angles.
         """
-        angles = to_matrix(angles)
+        mat = to_matrix(angles)
         mat._vec_rot(self)
         self += origin
 
