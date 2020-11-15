@@ -46,7 +46,11 @@ from typing import (
 )
 
 
-__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple', 'Angle', 'Matrix']
+__all__ = [
+    'parse_vec_str', 'to_matrix',
+    'Vec', 'Vec_tuple',
+    'Angle', 'Matrix',
+]
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
@@ -89,6 +93,22 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
         )
     except ValueError:
         return x, y, z
+
+
+def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
+    """Convert various values to a rotation matrix.
+
+    Vectors will be treated as angles, and None as the identity.
+    """
+    if value is None:
+        return Matrix()
+    elif isinstance(value, Matrix):
+        return value
+    elif isinstance(value, Angle):
+        return Matrix.from_angle(value)
+    else:
+        [p, y, r] = value
+        return Matrix.from_angle(Angle(p, y, r))
 
 
 class Vec_tuple(NamedTuple):
