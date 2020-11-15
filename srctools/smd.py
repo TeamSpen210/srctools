@@ -1,6 +1,7 @@
 """Parses SMD model/animation data."""
 import os
 import re
+import warnings
 from copy import deepcopy
 from operator import itemgetter
 
@@ -16,6 +17,8 @@ from srctools import Vec
 __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
 ]
+
+from srctools.vec import to_matrix, Angle, Matrix
 
 
 class Bone:
@@ -61,10 +64,14 @@ class BoneFrame:
     """Represents a single frame of bone animation."""
     __slots__ = ('bone', 'position', 'rotation')
 
-    def __init__(self, bone: Bone, position: Vec, rotation: Vec):
+    def __init__(self, bone: Bone, position: Vec, rotation: Angle):
         self.bone = bone
         self.position = position
-        self.rotation = rotation
+        if isinstance(rotation, Vec):
+            warnings.warn("Use Angle, not Vec.", DeprecationWarning)
+            self.rotation = Angle(rotation)
+        else:
+            self.rotation = rotation
 
     def __copy__(self) -> 'BoneFrame':
         return BoneFrame(self.bone, self.position, self.rotation)
@@ -243,7 +250,7 @@ class Mesh:
         return Mesh(
             {root_name: root_bone},
             {0: [
-                BoneFrame(root_bone, Vec(), Vec())
+                BoneFrame(root_bone, Vec(), Angle())
             ]},
             [],
         )
@@ -368,7 +375,7 @@ class Mesh:
                 try:
                     byt_ind, byt_x, byt_y, byt_z, byt_pit, byt_yaw, byt_rol = line.split()
                     pos = Vec(float(byt_x), float(byt_y), float(byt_z))
-                    rot = Vec(float(byt_pit), float(byt_yaw), float(byt_rol))
+                    rot = Angle(float(byt_pit), float(byt_yaw), float(byt_rol))
                 except ValueError:
                     raise ParseError(line_num, 'Invalid line!') from None
                 try:
@@ -523,7 +530,7 @@ class Mesh:
     def append_model(
         self,
         mdl: 'Mesh',
-        rotation: Vec=(0.0, 0.0, 0.0),
+        rotation: Union[Angle, Matrix, Vec, None]=None,
         offset: Vec=(0.0, 0.0, 0.0),
         scale: float=1.0,
     ) -> None:
@@ -543,15 +550,16 @@ class Mesh:
             raise ValueError('No root bone?')
 
         bone_link = [(root_bone, 1.0)]
+        matrix = to_matrix(rotation)
 
         for orig_tri in mdl.triangles:
             new_tri = orig_tri.copy()
             for vert in new_tri:
                 vert.links[:] = bone_link
 
-                vert.norm.rotate(*rotation, round_vals=False)
+                vert.norm @= matrix
                 vert.pos *= scale
-                vert.pos.rotate(*rotation, round_vals=False)
+                vert.pos @= matrix
                 vert.pos += offset
 
             self.triangles.append(new_tri)
