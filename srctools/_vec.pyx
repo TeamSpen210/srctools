@@ -69,6 +69,11 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
         vec.y = (<Vec>value).val.y
         vec.z = (<Vec>value).val.z
         return True
+    elif isinstance(value, Angle):
+        vec.x = (<Angle>value).val.x
+        vec.y = (<Angle>value).val.y
+        vec.z = (<Angle>value).val.z
+        return True
 
     try:
         str_x, str_y, str_z = (<unicode?>value).split(' ')
@@ -136,6 +141,40 @@ cdef inline unsigned char _conv_vec(
             raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
+cdef inline unsigned char _conv_angles(
+    vec_t *result,
+    object ang,
+    bint scalar,
+) except False:
+    """Convert some object to a unified Angle struct. 
+    
+    If scalar is True, allow int/float to set all axes.
+    """
+    cdef double x, y, z
+    if isinstance(ang, Angle):
+        result.x = (<Angle>ang).val.x
+        result.y = (<Angle>ang).val.y
+        result.z = (<Angle>ang).val.z
+    elif isinstance(ang, float) or isinstance(ang, int):
+        if scalar:
+            result.x = result.y = result.z = ang % 360.0 % 360.0
+        else:
+            # No need to do argument checks.
+            raise TypeError('Cannot use scalars here.')
+    elif isinstance(ang, tuple):
+        x, y, z = <tuple>ang
+        result.x = x % 360.0 % 360.0
+        result.y = y % 360.0 % 360.0
+        result.z = z % 360.0 % 360.0
+    else:
+        try:
+            result.x = <double?>ang.x % 360.0 % 360.0
+            result.y = <double?>ang.y % 360.0 % 360.0
+            result.z = <double?>ang.z % 360.0 % 360.0
+        except AttributeError:
+            raise TypeError(f'{type(ang)} is not an Angle-like object!')
+    return True
+
 
 cdef inline Py_UCS4 _conv_axis(object axis_obj) except -1:
     """Convert an x/y/z string to the matching character, or raise KeyError."""
@@ -150,7 +189,8 @@ cdef inline Py_UCS4 _conv_axis(object axis_obj) except -1:
 cdef inline double _vec_mag(vec_t *vec):
     return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
 
-cdef _vec_normalise(vec_t *out, vec_t *inp):
+cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
+    """Normalise the vector, writing to out. inp and out may be the same."""
     cdef double mag = _vec_mag(inp)
 
     if mag == 0:
@@ -186,7 +226,7 @@ cdef inline void _mat_mul(mat_t targ, mat_t rot):
     )
 
 
-cdef void _vec_rot(vec_t *vec, mat_t mat):
+cdef inline void _vec_rot(vec_t *vec, mat_t mat):
     """Rotate a vector by our value."""
     cdef double x = vec.x
     cdef double y = vec.y
@@ -194,6 +234,13 @@ cdef void _vec_rot(vec_t *vec, mat_t mat):
     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])
     vec.y = (x * mat[0][1]) + (y * mat[1][1]) + (z * mat[2][1])
     vec.z = (x * mat[0][2]) + (y * mat[1][2]) + (z * mat[2][2])
+
+
+cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
+    """Compute the cross product of A x B. """
+    res.x = a.y * b.z - a.z * b.y
+    res.y = a.z * b.x - a.x * b.z
+    res.z = a.x * b.y - a.y * b.x
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle):
@@ -1221,14 +1268,12 @@ cdef class Vec:
     def cross(self, other) -> 'Vec':
         """Return the cross product of both Vectors."""
         cdef vec_t oth
+        cdef Vec res
 
         _conv_vec(&oth, other, False)
-
-        return _vector(
-            self.val.y * oth.z - self.val.z * oth.y,
-            self.val.z * oth.x - self.val.x * oth.z,
-            self.val.x * oth.y - self.val.y * oth.x,
-        )
+        res = Vec.__new__(Vec)
+        _vec_cross(&res.val, &self.val, &oth)
+        return res
 
 
     def join(self, delim: str=', ') -> str:
@@ -1273,7 +1318,7 @@ cdef class Vec:
                     return self.val.y
                 elif ind == 2:
                     return self.val.z
-            raise KeyError(f'Invalid axis: {<int>ind!r}')
+            raise KeyError(f'Invalid axis: {ind!r}')
         else:
             ind = _conv_axis(ind_obj)
             if ind == "x":
@@ -1307,7 +1352,7 @@ cdef class Vec:
                 elif ind == 2:
                     self.val.z = val
                     return
-            raise KeyError(f'Invalid axis: {<int>ind!r}')
+            raise KeyError(f'Invalid axis: {ind!r}')
         else:
             ind = _conv_axis(ind_obj)
             if ind == "x":
@@ -1331,6 +1376,9 @@ cdef class Vec:
     #     mat._vec_rot(self)
 
 
+# Lots of temporaries are expected.
+@cython.freelist(16)
+@cython.final
 cdef class Matrix:
     """Represents a matrix via a transformation matrix."""
     cdef mat_t mat
@@ -1419,7 +1467,7 @@ cdef class Matrix:
         """Return the rotation representing an Euler angle."""
         cdef Matrix rot = Matrix.__new__(cls)
         cdef vec_t ang
-        _conv_vec(&ang, angle, scalar=False)
+        _conv_angles(&ang, angle, scalar=False)
         _mat_from_angle(rot.mat, &ang)
         return rot
 
@@ -1462,23 +1510,42 @@ cdef class Matrix:
 
         The third is computed, if not provided.
         """
-        # cdef Matrix mat
-        # cdef vec_t res_x, res_y, res_z
-        # if x is None:
-        #     if y is not None and z is not None:
-        #         x = Vec.cross(y, z)
-        # elif y is None and x is not None and z is not None:
-        #     y = Vec.cross(z, x)
-        # elif z is None and x is not None and y is not None:
-        #     z = Vec.cross(x, y)
-        # elif x is None and y is None and z is None:
-        #     raise TypeError('At least two vectors must be provided!')
+        cdef Matrix mat = Matrix.__new__(cls)
+        cdef vec_t res
 
-        mat = Matrix.__new__(cls)
+        if x is None:
+            if y is not None and z is not None:
+                _vec_cross(&res, &y.val, &z.val)
+            else:
+                raise TypeError('At least two vectors must be provided!')
+        else:
+            res = x.val
 
-        # mat.aa, mat.ab, mat.ac = x.norm()
-        # mat.ba, mat.bb, mat.bc = y.norm()
-        # mat.ca, mat.cb, mat.cc = z.norm()
+        _vec_normalise(&res, &res)
+        mat.mat[0] = res.x, res.y, res.z
+
+        if y is None:
+            if x is not None and z is not None:
+                _vec_cross(&res, &z.val, &x.val)
+            else:
+                raise TypeError('At least two vectors must be provided!')
+        else:
+            res = y.val
+
+        _vec_normalise(&res, &res)
+        mat.mat[1] = res.x, res.y, res.z
+
+        if z is None:
+            if x is not None and y is not None:
+                _vec_cross(&res, &x.val, &y.val)
+            else:
+                raise TypeError('At least two vectors must be provided!')
+        else:
+            res = z.val
+
+        _vec_normalise(&res, &res)
+        mat.mat[2] = res.x, res.y, res.z
+
         return mat
 
     def __matmul__(first, second):
@@ -1527,6 +1594,9 @@ cdef class Matrix:
             return NotImplemented
 
 
+# Lots of temporaries are expected.
+@cython.freelist(16)
+@cython.final
 cdef class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 
@@ -1595,7 +1665,7 @@ cdef class Angle:
 
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
-        return Angle(self._pitch, self._yaw, self._roll)
+        return _angle(self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
@@ -1614,29 +1684,29 @@ cdef class Angle:
     @property
     def pitch(self) -> float:
         """The Y-axis rotation, performed second."""
-        return self._pitch
+        return self.val.x
 
     @pitch.setter
-    def pitch(self, pitch: float) -> None:
-        self._pitch = float(pitch) % 360 % 360
+    def pitch(self, double pitch) -> None:
+        self.val.y = pitch % 360 % 360.0
 
     @property
     def yaw(self) -> float:
         """The Z-axis rotation, performed last."""
-        return self._yaw
+        return self.val.y
 
     @yaw.setter
-    def yaw(self, yaw: float) -> None:
-        self._yaw = float(yaw) % 360 % 360
+    def yaw(self, double yaw) -> None:
+        self.val.y = yaw % 360.0 % 360.0
 
     @property
     def roll(self) -> float:
         """The X-axis rotation, performed first."""
-        return self._roll
+        return self.val.z
 
     @roll.setter
-    def roll(self, roll: float) -> None:
-        self._roll = float(roll) % 360 % 360
+    def roll(self, double roll) -> None:
+        self.val.z = roll % 360.0 % 360.0
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -1645,14 +1715,14 @@ cdef class Angle:
         vectors.
         This strips off the .0 if no decimal portion exists.
         """
-        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
+        return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
 
     def __repr__(self) -> str:
-        return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+        return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
 
     def as_tuple(self):
         """Return the Angle as a tuple."""
-        return Vec_tuple(self._pitch, self._yaw, self._roll)
+        return Vec_tuple(self.val.x, self.val.y, self.val.z)
 
     def __iter__(self):
         """Iterating over the angles returns each value in turn."""
@@ -1661,11 +1731,11 @@ cdef class Angle:
 
     @staticmethod
     @cython.boundscheck(False)
-    def with_axes(*args) -> 'Vec':
-        """Create a Vector, given a number of axes and corresponding values.
+    def with_axes(*args):
+        """Create an Angle, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
-            vec = Vec()
+            vec = Angle()
             vec[axis1] = val1
             vec[axis2] = val2
             vec[axis3] = val3
@@ -1793,40 +1863,37 @@ cdef class Angle:
             (angle.val.z * scalar) % 360.0 % 360.0,
         )
 
-    # def __matmul__(self, other):
-    #     """Angle @ Angle rotates the first by the second.
-    #     """
-    #     if isinstance(other, Angle):
-    #         return other._rotate_angle(self)
-    #     else:
-    #         return NotImplemented
-    # 
-    # @overload
-    # def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
-    # @overload
-    # def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
-    # @overload
-    # def __rmatmul__(self, other: object) -> NotImplemented: ...
-    #
-    # def __rmatmul__(self, other):
-    #     """Vec @ Angle rotates the first by the second."""
-    #     if isinstance(other, Vec):
-    #         return other @ Matrix.from_angle(self)
-    #     elif isinstance(other, Angle):
-    #         # Should always be done by __mul__!
-    #         return self._rotate_angle(other)
-    #     return NotImplemented
-    #
-    # def _rotate_angle(self, target: 'Angle') -> 'Angle':
-    #     """Rotate the target by this angle.
-    #
-    #     Inefficient if we have more than one rotation to do.
-    #     """
-    #     mat = Matrix()
-    #     mat @= target
-    #     mat @= self
-    #     return mat.to_angle()
-    #
+    def __matmul__(first, second):
+        cdef mat_t temp1, temp2
+        if isinstance(first, Angle):
+            _mat_from_angle(temp1, &(<Angle>first).val)
+            if isinstance(second, Angle):
+                _mat_from_angle(temp2, &(<Angle>second).val)
+                _mat_mul(temp1, temp2)
+            elif isinstance(second, Matrix):
+                _mat_mul(temp1, (<Matrix>second).mat)
+            else:
+                return NotImplemented
+            res = Angle.__new__(Angle)
+            _mat_to_angle(&(<Angle>res).val, temp1)
+            return res
+        elif isinstance(second, Angle):
+            # These classes should do this themselves, but this is here for
+            # completeness.
+            _mat_from_angle(temp2, &(<Angle>second).val)
+            if isinstance(first, Matrix):
+                res = Matrix.__new__(Matrix)
+                memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
+                _mat_mul((<Matrix>res).mat, temp2)
+                return res
+            elif isinstance(first, Vec):
+                res = Vec.__new__(Vec)
+                memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
+                _vec_rot(&(<Vec>res).val, temp2)
+                return res
+
+        return NotImplemented
+
     # @contextlib.contextmanager
     # def transform(self) -> ContextManager[Matrix]:
     #     """Perform transformations on this angle.
