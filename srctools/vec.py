@@ -937,15 +937,15 @@ class Vec:
     def localise(
         self,
         origin: Union['Vec', Tuple3],
-        angles: Union['Vec', Tuple3]=None,
+        angles: Union['Angle', 'Matrix']=None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
         This effectively translates local-space offsets to a global location,
         given the parent's origin and angles.
         """
-        if angles is not None:
-            self @= Angle(angles)
+        angles = to_matrix(angles)
+        mat._vec_rot(self)
         self += origin
 
     def norm_mask(self, normal: 'Vec') -> 'Vec':
@@ -1081,7 +1081,7 @@ class Matrix:
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        rot = cls.__new__(cls)
+        rot: Matrix = cls.__new__(cls)
 
         rot.aa = cos_p * cos_y
         rot.ab = cos_p * sin_y
@@ -1183,7 +1183,7 @@ class Matrix:
             z = Vec.cross(x, y)
         elif x is None and y is None and z is None:
             raise TypeError('At least two vectors must be provided!')
-        mat = cls.__new__(cls)
+        mat: Matrix = cls.__new__(cls)
         mat.aa, mat.ab, mat.ac = x.norm()
         mat.ba, mat.bb, mat.bc = y.norm()
         mat.ca, mat.cb, mat.cc = z.norm()
