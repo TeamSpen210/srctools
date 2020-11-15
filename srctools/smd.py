@@ -559,8 +559,7 @@ class Mesh:
 
                 vert.norm @= matrix
                 vert.pos *= scale
-                vert.pos @= matrix
-                vert.pos += offset
+                vert.pos.localise(offset, matrix)
 
             self.triangles.append(new_tri)
 
