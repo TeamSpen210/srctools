@@ -390,7 +390,7 @@ class Vec:
         (since these calculations always have small inprecision.)
         """
         warnings.warn("Use vec @ Angle() instead.", DeprecationWarning)
-        self @= Angle(pitch, yaw, roll)
+        self @= Py_Angle(pitch, yaw, roll)
         if round_vals:
             self.x = round(self.x, 6)
             self.y = round(self.y, 6)
@@ -403,7 +403,7 @@ class Vec:
         If the string cannot be parsed, use the passed in values instead.
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning)
-        self @= Angle.from_str(ang, pitch, yaw, roll)
+        self @= Py_Angle.from_str(ang, pitch, yaw, roll)
         if round_vals:
             self.x = round(self.x, 6)
             self.y = round(self.y, 6)
@@ -531,7 +531,7 @@ class Vec:
         vector.
         """
         warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
-        return Matrix.from_basis(x=self, z=z_norm).to_angle()
+        return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
     def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
@@ -634,10 +634,10 @@ class Vec:
 
     def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
         """We need to define this, so it's in-place."""
-        if isinstance(other, Matrix):
+        if isinstance(other, Py_Matrix):
             mat = other
-        elif isinstance(other, Angle):
-            mat = Matrix.from_angle(other)
+        elif isinstance(other, Py_Angle):
+            mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
         mat._vec_rot(self)
@@ -976,7 +976,7 @@ class Matrix:
         self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
 
     def __eq__(self, other: object) -> object:
-        if isinstance(other, Matrix):
+        if isinstance(other, Py_Matrix):
             return (
                 self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
                 self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
@@ -1185,13 +1185,13 @@ class Matrix:
     def __matmul__(self, other: object) -> NotImplemented: ...
 
     def __matmul__(self, other: object) -> 'Matrix':
-        if isinstance(other, Matrix):
+        if isinstance(other, Py_Matrix):
             mat = self.copy()
             mat._mat_mul(other)
             return mat
-        elif isinstance(other, Angle):
+        elif isinstance(other, Py_Angle):
             mat = self.copy()
-            mat._mat_mul(Matrix.from_angle(other))
+            mat._mat_mul(Py_Matrix.from_angle(other))
             return mat
         else:
             return NotImplemented
@@ -1206,15 +1206,15 @@ class Matrix:
     def __rmatmul__(self, other: object) -> NotImplemented: ...
     
     def __rmatmul__(self, other):
-        if isinstance(other, Vec):
+        if isinstance(other, Py_Vec):
             result = other.copy()
             self._vec_rot(result)
             return result
-        elif isinstance(other, Angle):
-            mat = Matrix.from_angle(other)
+        elif isinstance(other, Py_Angle):
+            mat = Py_Matrix.from_angle(other)
             mat._mat_mul(self)
             return mat.to_angle()
-        elif isinstance(other, Matrix):
+        elif isinstance(other, Py_Matrix):
             mat = other.copy()
             return mat._mat_mul(self)
         else:
@@ -1228,11 +1228,11 @@ class Matrix:
     def __imatmul__(self, other: object) -> NotImplemented: ...
 
     def __imatmul__(self, other):
-        if isinstance(other, Matrix):
+        if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
-        elif isinstance(other, Angle):
-            self._mat_mul(Matrix.from_angle(other))
+        elif isinstance(other, Py_Angle):
+            self._mat_mul(Py_Matrix.from_angle(other))
             return self
         else:
             return NotImplemented
@@ -1414,11 +1414,11 @@ class Angle:
         axis will be used from the angle.
         """
         ang = cls()
-        ang[axis1] = val1[axis1] if isinstance(val1, Angle) else val1
+        ang[axis1] = val1[axis1] if isinstance(val1, Py_Angle) else val1
         if axis2 is not None:
-            ang[axis2] = val2[axis2] if isinstance(val2, Angle) else val2
+            ang[axis2] = val2[axis2] if isinstance(val2, Py_Angle) else val2
             if axis3 is not None:
-                ang[axis3] = val3[axis3] if isinstance(val3, Angle) else val3
+                ang[axis3] = val3[axis3] if isinstance(val3, Py_Angle) else val3
         return ang
 
     @classmethod
@@ -1521,7 +1521,7 @@ class Angle:
     def __matmul__(self, other):
         """Angle @ Angle rotates the first by the second.
         """
-        if isinstance(other, Angle):
+        if isinstance(other, Py_Angle):
             return other._rotate_angle(self)
         else:
             return NotImplemented
@@ -1535,9 +1535,9 @@ class Angle:
 
     def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
-        if isinstance(other, Vec):
-            return other @ Matrix.from_angle(self)
-        elif isinstance(other, Angle):
+        if isinstance(other, Py_Vec):
+            return other @ Py_Matrix.from_angle(self)
+        elif isinstance(other, Py_Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)
         return NotImplemented
