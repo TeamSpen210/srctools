@@ -101,7 +101,7 @@ def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
     Vectors will be treated as angles, and None as the identity.
     """
     if value is None:
-        return Matrix()
+        return Py_Matrix()
     elif isinstance(value, Matrix):
         return value
     elif isinstance(value, Angle):
@@ -518,7 +518,7 @@ class Vec:
         """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.hypot(self.x, self.y)
-        return Angle(
+        return Py_Angle(
             math.degrees(math.atan2(-self.z, horiz_dist)),
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
@@ -956,7 +956,7 @@ class Vec:
         When the body is exited safely, the matrix is applied to
         the angle.
         """
-        mat = Matrix()
+        mat = Py_Matrix()
         yield mat
         mat._vec_rot(self)
 
@@ -995,7 +995,7 @@ class Matrix:
 
     def copy(self) -> 'Matrix':
         """Duplicate this matrix."""
-        rot = Matrix.__new__(Matrix)
+        rot = Py_Matrix.__new__(Py_Matrix)
 
         rot.aa, rot.ab, rot.ac = self.aa, self.ab, self.ac
         rot.ba, rot.bb, rot.bc = self.ba, self.bb, self.bc
@@ -1117,14 +1117,14 @@ class Matrix:
         
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
-            return Angle(
+            return Py_Angle(
                 yaw=math.degrees(math.atan2(for_y, for_x)),
                 pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=math.degrees(math.atan2(left_z, up_z)),
             )
         else:
             # Vertical, gimbal lock (yaw=roll)...
-            return Angle(
+            return Py_Angle(
                 yaw=math.degrees(math.atan2(-left_x, left_y)),
                 pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
                 roll=0,  # Can't produce.
@@ -1132,7 +1132,7 @@ class Matrix:
 
     def transpose(self) -> 'Matrix':
         """Return the transpose of this matrix."""
-        rot = Matrix.__new__(Matrix)
+        rot = Py_Matrix.__new__(Py_Matrix)
 
         rot.aa, rot.ab, rot.ac = self.aa, self.ba, self.ca
         rot.ba, rot.bb, rot.bc = self.ab, self.bb, self.cb
@@ -1304,7 +1304,7 @@ class Angle:
 
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
-        return Angle(self._pitch, self._yaw, self._roll)
+        return Py_Angle(self._pitch, self._yaw, self._roll)
 
     @classmethod
     def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
@@ -1491,7 +1491,7 @@ class Angle:
     def __mul__(self, other):
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
-            return Angle(
+            return Py_Angle(
                 self._pitch * other,
                 self._yaw * other,
                 self._roll * other,
@@ -1506,7 +1506,7 @@ class Angle:
     def __rmul__(self, other):
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
-            return Angle(
+            return Py_Angle(
                 other * self._pitch,
                 other * self._yaw,
                 other * self._roll,
@@ -1547,7 +1547,7 @@ class Angle:
         
         Inefficient if we have more than one rotation to do.
         """
-        mat = Matrix()
+        mat = Py_Matrix()
         mat @= target
         mat @= self
         return mat.to_angle()
@@ -1560,7 +1560,7 @@ class Angle:
         When the body is exited safely, the matrix is applied to
         the angle.
         """
-        mat = Matrix()
+        mat = Py_Matrix()
         yield mat
         new_ang = mat.to_angle()
         self._pitch = new_ang._pitch
@@ -1586,14 +1586,20 @@ def _mk(x: float, y: float, z: float) -> Vec:
 
 Cy_Vec = Py_Vec = Vec
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
+Cy_Angle = Py_Angle = Angle
+Cy_Matrix = Py_Matrix = Matrix
 if not TYPE_CHECKING:
     try:
         # noinspection PyUnresolvedReferences, PyProtectedMember
         from srctools._vec import (
             Vec as Cy_Vec,
+            Angle as Cy_Angle,
+            Matrix as Cy_Matrix,
             parse_vec_str as Cy_parse_vec_str,
         )
         Vec = Cy_Vec
+        Angle = Cy_Angle
+        Matrix = Cy_Matrix
         parse_vec_str = Cy_parse_vec_str
     except ImportError:
         pass
