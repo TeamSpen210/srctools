@@ -1,14 +1,20 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Union, Iterator,
-    List, Dict, Set, Tuple, NamedTuple,
-    BinaryIO,
+    Union, Iterator, Iterable,
+    List, Dict, Tuple, NamedTuple,
+    BinaryIO, Sequence,
 )
 from enum import IntFlag, Enum
+from pathlib import PurePosixPath
 
+from srctools import Property
+from srctools.binformat import (
+    struct_read, read_nullstr, read_offset_array,
+    str_readvec,
+)
 from srctools.filesys import FileSystem, File
 from srctools.vec import Vec
-from struct import unpack, Struct, calcsize
+from struct import Struct
 
 
 IncludedMDL = NamedTuple('IncludedMDL', [
@@ -34,6 +40,16 @@ MDLSequence = NamedTuple('Sequence', [
     # More after here.
     ('keyvalues', str),
 ])
+
+# All the file extensions used for models.
+MDL_EXTS: Sequence[str] = [
+    '.mdl',
+    '.phy',
+    '.dx90.vtx',
+    '.dx80.vtx',
+    '.sw.vtx',
+    '.vvd',
+]
 
 
 class Flags(IntFlag):
@@ -275,56 +291,7 @@ ANIM_EVENT_BY_NAME = {
     if event.value not in (4001, 4002, 7001, 7002)
 }  # type: Dict[str, AnimEvents]
 
-
-def str_read(format, file: BinaryIO):
-    """Read a structure from the file."""
-    return unpack(format, file.read(calcsize(format)))
-
-
-def read_nullstr(file: BinaryIO, pos: int=None):
-    """Read a null-terminated string from the file."""
-    if pos is not None:
-        if pos == 0:
-            return ''
-        file.seek(pos)
-
-    text = []
-    while True:
-        char = file.read(1)
-        if char == b'\0':
-            return b''.join(text).decode('ascii')
-        if not char:
-            raise ValueError('Fell off end of file!')
-        text.append(char)
-
-
-def read_nullstr_array(file: BinaryIO, count: int) -> List[str]:
-    """Read consecutive null-terminated strings from the file."""
-    arr = [None] * count  # type: List[str]
-    if not count:
-        return arr
-
-    for i in range(count):
-        arr[i] = read_nullstr(file)
-    return arr
-
-
-def read_offset_array(file: BinaryIO, count: int):
-    """Read an array of offsets to null-terminated strings from the file."""
-    cdmat_offsets = str_read(str(count) + 'i', file)
-    arr = [None] * count  # type: List[str]
-
-    for ind, off in enumerate(cdmat_offsets):
-        file.seek(off)
-        arr[ind] = read_nullstr(file)
-    return arr
-    
-ST_VEC = Struct('fff')
-
-
-def str_readvec(file: BinaryIO) -> Vec:
-    """Read a vector from a file."""
-    return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
+ST_PHY_HEADER = Struct('<iiil')
 
 
 class Model:
@@ -337,10 +304,21 @@ class Model:
         self._file = file
         self._sys = filesystem
         self.version = 49
+
+        self.phys_keyvalues = Property(None, [])
         with self._sys, self._file.open_bin() as f:
             self._load(f)
 
-    def _load(self, f: BinaryIO):
+        path = PurePosixPath(file.path)
+        try:
+            phy_file = filesystem[str(path.with_suffix('.phy'))]
+        except FileNotFoundError:
+            pass
+        else:
+            with filesystem, phy_file.open_bin() as f:
+                self._parse_phy(f, phy_file.path)
+
+    def _load(self, f: BinaryIO) -> None:
         """Read data from the MDL file."""
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
@@ -350,7 +328,7 @@ class Model:
             name,
             file_len,
             # 4 bytes are unknown...
-        ) = str_read('i 4x 64s i', f)
+        ) = struct_read('i 4x 64s i', f)
 
         if not 44 <= self.version <= 49:
             raise ValueError('Unknown MDL version {}!'.format(self.version))
@@ -377,7 +355,7 @@ class Model:
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = str_read('11I', f)
+        ) = struct_read('11I', f)
 
         self.flags = Flags(flags)
 
@@ -390,10 +368,11 @@ class Model:
             skinref_count,  # Number of skin "groups"
             skin_count,   # Number of model skins.
             skinref_ind,  # Location of skins reference table.
-            
+
+            # The number of $body in the model (mstudiobodyparts_t).
             bodypart_count, bodypart_offset,
             attachment_count, attachment_offset,
-        ) = str_read('13i', f)
+        ) = struct_read('13i', f)
 
         (
             localnode_count,
@@ -426,7 +405,7 @@ class Model:
             # mstudioposeparamdesc_t
             localposeparam_count,
             localposeparam_index,
-        ) = str_read('15I', f)
+        ) = struct_read('15I', f)
 
         # VDC:
         # For anyone trying to follow along, as of this writing,
@@ -448,7 +427,7 @@ class Model:
             # mstudioiklock_t
             iklock_count,
             iklock_index,
-        ) = str_read('5I', f)
+        ) = struct_read('5I', f)
 
         (
             self.mass,  # Mass of object (float)
@@ -477,7 +456,7 @@ class Model:
 
             vertex_base,  # Placeholder for void*
             offset_base,  # Placeholder for void*
-        ) = str_read('f 11I', f)
+        ) = struct_read('f 11I', f)
 
         (
             # Used with $constantdirectionallight from the QC
@@ -496,25 +475,21 @@ class Model:
             # mstudioflexcontrollerui_t
             flexcontrollerui_count,
             flexcontrollerui_index,
-        ) = str_read('3b 5x 2I', f)
+        ) = struct_read('3b 5x 2I', f)
 
         # Build CDMaterials data
         f.seek(cdmat_offset)
         self.cdmaterials = read_offset_array(f, cdmat_count)
         
         for ind, cdmat in enumerate(self.cdmaterials):
-            cdmat = cdmat.replace('\\', '/')
-            if cdmat[-1:] != '/':
+            cdmat = cdmat.replace('\\', '/').lstrip('/')
+            if cdmat and cdmat[-1:] != '/':
                 cdmat += '/'
             self.cdmaterials[ind] = cdmat
-
-        # All models fallback to checking the texture at a root folder.
-        if '/' not in self.cdmaterials:
-            self.cdmaterials.append('/')
         
         # Build texture data
         f.seek(texture_offset)
-        self.textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
+        textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
         tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
@@ -527,11 +502,11 @@ class Model:
                 # 2 4-byte pointers in studiomdl to the material class, for
                 #      server and client - shouldn't be in the file...
                 # 40 bytes of unused space (for expansion...)
-                str_read('iii 4x 8x 40x', f)
+                struct_read('iii 4x 8x 40x', f)
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
-            self.textures[tex_ind] = (
+            textures[tex_ind] = (
                 read_nullstr(f, offset + name_offset),
                 flags,
                 used,
@@ -545,10 +520,22 @@ class Model:
         offset = 0
         for ind in range(skin_count):
             self.skins[ind] = [
-                self.textures[i][0]
+                textures[i][0].replace('\\', '/').lstrip('/')
                 for i in skin_group.unpack_from(ref_data, offset)
             ]
             offset += skin_group.size
+
+        # If models have folders, add those folders onto cdmaterials.
+        for tex, flags, used in textures:
+            tex = tex.replace('\\', '/')
+            if '/' in tex:
+                folder = tex.rsplit('/', 1)[0]
+                if folder not in self.cdmaterials:
+                    self.cdmaterials.append(folder)
+
+        # All models fallback to checking the texture at a root folder.
+        if '' not in self.cdmaterials:
+            self.cdmaterials.append('')
 
         f.seek(surfaceprop_index)
         self.surfaceprop = read_nullstr(f)
@@ -563,7 +550,7 @@ class Model:
         for i in range(includemodel_count):
             pos = f.tell()
             # This is two offsets from the start of the structures.
-            lbl_pos, filename_pos = str_read('II', f)
+            lbl_pos, filename_pos = struct_read('II', f)
             self.included_models[i] = IncludedMDL(
                 read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
                 read_nullstr(f, pos + filename_pos) if filename_pos else '',
@@ -571,12 +558,15 @@ class Model:
             # Then return to after that struct - 4 bytes * 2.
             f.seek(pos + 4 * 2)
 
-        self.sequences = self._read_sequences(f, sequence_off, sequence_count)
+        f.seek(sequence_off)
+        self.sequences = self._read_sequences(f, sequence_count)
+
+        f.seek(bodypart_offset)
+        self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
-    def _read_sequences(f: BinaryIO, off, count) -> List[MDLSequence]:
+    def _read_sequences(f: BinaryIO, count: int) -> List[MDLSequence]:
         """Split this off to decrease stack in main parse method."""
-        f.seek(off)
         sequences = [None] * count  # type: List[MDLSequence]
         for i in range(count):
             start_pos = f.tell()
@@ -589,7 +579,7 @@ class Model:
                 act_weight,
                 event_count,
                 event_pos,
-            ) = str_read('8i', f)
+            ) = struct_read('8i', f)
             bbox_min = str_readvec(f)
             bbox_max = str_readvec(f)
 
@@ -598,7 +588,7 @@ class Model:
             (
                 keyvalue_pos,
                 keyvalue_size,
-            ) = str_read('116xii32x', f)
+            ) = struct_read('116xii32x', f)
             end_pos = f.tell()
 
             f.seek(start_pos + event_pos)
@@ -611,7 +601,7 @@ class Model:
                     event_flags,
                     event_options,
                     event_nameloc,
-                ) = str_read('fii64si', f)
+                ) = struct_read('fii64si', f)
                 event_end = f.tell()
 
                 # There are two event systems.
@@ -665,7 +655,95 @@ class Model:
 
         return sequences
 
-    def iter_textures(self, skins: Set[int]=None) -> Iterator[str]:
+    def _cull_skins_table(self, f: BinaryIO, body_count: int) -> None:
+        """Fix the table of used skins to correspond to those actually used.
+
+        StudioMDL is rather messy, and adds many extra columns that are not used
+        on the actual model.
+        We're following  mstudiobodyparts_t -> mstudiomodel_t -> mstudiomesh_t -> material.
+        """
+        used_inds = set()
+
+        # Iterate through bodygroups.
+        for body_ind in range(body_count):
+            body_start = f.tell()
+            (
+                body_name_off,  # Offset to find the bodygroup name
+                model_count,  # Number of models in this group
+                base,  # Unknown
+                model_off,
+            ) = struct_read('iiii', f)
+            body_end = f.tell()
+
+            f.seek(body_start + model_off)
+            for model_ind in range(model_count):
+                model_start = f.tell()
+                (
+                    mdl_name,
+                    mdl_type,
+                    bound_radius,
+                    mesh_count,
+                    mesh_off,
+                    num_verts,
+                    vert_off,
+                    tangent_off,
+                    attach_count,
+                    attach_ind,
+                    eyeball_count,
+                    eyeball_ind,
+                    # Two void* pointers,
+                    # 32 empty bytes
+                ) = struct_read('64s i f 9i 8x 32x', f)
+                model_end = f.tell()
+
+                f.seek(model_start + mesh_off)
+                for mesh_ind in range(mesh_count):
+                    (
+                        material,
+                        mesh_model_ind,
+                        mesh_vert_count,
+                        mesh_vert_off,
+                        mesh_flex_count,
+                        mesh_flex_ind,
+                        mesh_mat_type,
+                        mesh_mat_param,
+                        mesh_id,
+                        mesh_cent_x,
+                        mesh_cent_y,
+                        mesh_cent_z,
+                        # Void pointer
+                        # Array of LOD vertex counts ints, 8 of them
+                        # 8 unused int spaces.
+                    ) = struct_read('9i 3f 4x 32x 32x', f)
+                    used_inds.add(material)
+
+                f.seek(model_end)
+            f.seek(body_end)
+
+        for skin_ind, tex in enumerate(self.skins):
+            self.skins[skin_ind] = [tex[i] for i in used_inds]
+
+    def _parse_phy(self, f: BinaryIO, filename: str) -> None:
+        """Parse the physics data file, if present.
+        """
+        [
+            size,
+            header_id,
+            solid_count,
+            checksum,
+        ] = ST_PHY_HEADER.unpack(f.read(ST_PHY_HEADER.size))
+        f.read(size - ST_PHY_HEADER.size)  # If the header is larger ever.
+        for solid in range(solid_count):
+            [solid_size] = struct_read('i', f)
+            f.read(solid_size)  # Skip the header.
+        self.phys_keyvalues = Property.parse(
+            read_nullstr(f),
+            filename + ":keyvalues",
+            allow_escapes=False,
+            single_line=True,
+        )
+
+    def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the
@@ -682,12 +760,16 @@ class Model:
                     # Default to skin 0.
                     paths.update(self.skins[0])
         else:
-            paths = {tex[0] for tex in self.textures}
+            paths = {
+                tex
+                for texgroup in self.skins
+                for tex in texgroup
+            }
 
         with self._sys:
             for tex in paths:
                 for folder in self.cdmaterials:
-                    full = 'materials/{}{}.vmt'.format(folder, tex)
+                    full = str(PurePosixPath('materials', folder, tex).with_suffix('.vmt'))
                     if full in self._sys:
                         yield full
                         break

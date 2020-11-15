@@ -1,4 +1,5 @@
 import pytest
+
 from srctools.property_parser import Property, KeyValError, NoKeyError
 from srctools.tokenizer import C_Tokenizer, Py_Tokenizer
 from srctools import property_parser as pp_mod
@@ -128,13 +129,13 @@ text"
         "Replaced" "toreplace" [test_enabled]
         "Replaced" "alsothis"  [test_enabled]
         
-        "Replaced" "shouldbe"
-        "Replaced" "toreplace" [!test_disabled]
-        "Replaced" "alsothis"  [!test_disabled]
+        "Replaced" "shouldbe2"
+        "Replaced" "toreplace2" [!test_disabled]
+        "Replaced" "alsothis2"  [!test_disabled]
 
         "Replaced"
             {
-            "shouldbe" "replaced"
+            "shouldbe3" "replaced3"
             "prop2" "blah"
             }
         "Replaced" [test_enabled]
@@ -145,13 +146,13 @@ text"
         
         "Replaced"
             {
-            "shouldbe" "replaced"
+            "shouldbe4" "replaced4"
             "prop2" "blah"
             }
         "Replaced" [!test_disabled]
             {
-            "lambda" "should"
-            "replace" "above"
+            "lambda2" "should2"
+            "replace2" "above2"
             }
         }
 '''
@@ -185,15 +186,15 @@ parse_result = P(None, [
         P('FlagAllows', 'This'),
         P('Replaced', 'toreplace'),
         P('Replaced', 'alsothis'),
-        P('Replaced', 'toreplace'),
-        P('Replaced', 'alsothis'),
+        P('Replaced', 'toreplace2'),
+        P('Replaced', 'alsothis2'),
         P('Replaced', [
             P('lambda', 'should'),
             P('replace', 'above'),
         ]),
         P('Replaced', [
-            P('lambda', 'should'),
-            P('replace', 'above'),
+            P('lambda2', 'should2'),
+            P('replace2', 'above2'),
         ])
     ])
 ])
@@ -211,7 +212,7 @@ def test_parse(py_c_token):
             'test_disabled': False,
         }
     )
-    assert_tree(result, parse_result)
+    assert_tree(parse_result, result)
 
     # Test the whole string can be passed too.
     result = Property.parse(
@@ -221,10 +222,10 @@ def test_parse(py_c_token):
             'test_disabled': False,
         },
     )
-    assert_tree(result, parse_result)
+    assert_tree(parse_result, result)
 
     # Check export roundtrips.
-    assert_tree(Property.parse(parse_result.export()), parse_result)
+    assert_tree(parse_result, Property.parse(parse_result.export()))
     
 def test_build():
     """Test the .build() constructor."""
@@ -257,19 +258,47 @@ def test_build():
             b.FlagAllows('This')
             b.Replaced('toreplace')
             b.Replaced('alsothis')
-            b.Replaced('toreplace')
-            b.Replaced('alsothis')
+            b.Replaced('toreplace2')
+            b.Replaced('alsothis2')
             with b.Replaced:
                 b.lambda_('should')
                 b.replace('above')
             with b.Replaced:
-                b['lambda']('should')
-                b.replace('above')
+                b['lambda2']('should2')
+                b.replace2('above2')
 
     assert_tree(parse_result, prop)
+
+def test_build_exc() -> None:
+    """Test the with statement handles exceptions correctly."""
+    class Exc(Exception):
+        pass
+
+    prop = Property('Root', [])
+
+    with pytest.raises(Exc):  # Should not swallow.
+        with prop.build() as build:
+            build.prop('Hi')
+            raise Exc
+    # Exception doesn't rollback.
+    assert_tree(Property('Root', [
+        Property('prop', 'Hi'),
+    ]), prop)
+
+    prop.clear()
+
+    with prop.build() as build:
+        build.leaf('value')
+        with pytest.raises(Exc):
+            with build.subprop as sub:
+                raise Exc
+    assert_tree(Property('Root', [
+        Property('leaf', 'value'),
+        Property('subprop', []),
+    ]), prop)
     
 
-def test_parse_fails(py_c_token):
+def test_parse_fails(py_c_token) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
     def t(text):
         """Test a string to ensure it fails parsing."""
@@ -469,3 +498,39 @@ def test_bool():
     assert bool(Property('Name', [
         Property('Key', 'Value')
     ])) is True
+
+
+def test_blockfuncs_fail_on_leaf() -> None:
+    """Check that methods requiring a block fail on a leaf property."""
+    leaf = Property('Name', 'blah')
+    with pytest.raises(ValueError):
+        for _ in leaf.find_all("blah"):
+            pass
+    with pytest.raises(ValueError):
+        leaf.find_key("blah")
+    with pytest.raises(ValueError):
+        for _ in leaf:
+            pass
+    with pytest.raises(ValueError):
+        leaf['blah']
+    with pytest.raises(ValueError):
+        leaf['blah'] = 't'
+    with pytest.raises(ValueError):
+        leaf.int('blah')
+    with pytest.raises(ValueError):
+        leaf.bool('blah')
+    with pytest.raises(ValueError):
+        leaf.float('blah')
+    with pytest.raises(ValueError):
+        leaf.vec('blah')
+    with pytest.raises(ValueError):
+        len(leaf)
+    with pytest.raises(ValueError):
+        with leaf.build():
+            pass
+    with pytest.raises(ValueError):
+        leaf.ensure_exists('blah')
+    with pytest.raises(ValueError):
+        leaf.set_key(("blah", "another"), 45)
+    with pytest.raises(ValueError):
+        leaf.merge_children()

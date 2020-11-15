@@ -1,9 +1,8 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
+from typing import Union, List, Optional
 from pathlib import Path
 import os
 import sys
-from typing import Union, List
-
 import itertools
 
 from srctools import Property
@@ -33,7 +32,23 @@ class Game:
         self.search_paths = []  # type: List[Path]
 
         for path in fsystems.find_children('SearchPaths'):
-            self.search_paths.append(self.parse_search_path(self.path.parent, path))
+            exp_path = self.parse_search_path(path)
+            # Expand /* if at the end of paths.
+            if exp_path.name == '*':
+                try:
+                    self.search_paths.extend(
+                        map(exp_path.parent.joinpath, os.listdir(exp_path.parent))
+                    )
+                except FileNotFoundError:
+                    pass
+            # Handle folder_* too.
+            elif exp_path.name.endswith('*'):
+                exp_path = exp_path.with_name(exp_path.name[:-1])
+                self.search_paths.extend(
+                    filter(Path.is_dir, exp_path.glob(exp_path.name))
+                )
+            else:
+                self.search_paths.append(exp_path)
 
         # Add DLC folders based on the first/bin folder.
         try:
@@ -53,11 +68,13 @@ class Game:
             # Force including 'platform', for Hammer assets.
             self.search_paths.append(self.path.parent / 'platform')
 
-    def parse_search_path(self, root: Path, prop: Property) -> Path:
-        """Evaluate options like |gameinfo_path|."""
+    @property
+    def root(self) -> Path:
+        """Return the game's root folder."""
+        return self.path.parent
 
-        if '|' not in prop.value:
-            return (root / prop.value).absolute()
+    def parse_search_path(self, prop: Property) -> Path:
+        """Evaluate options like |gameinfo_path|."""
         if prop.value.startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -65,17 +82,24 @@ class Game:
         # But, the game (public/filesystem_init.cpp) doesn't actually, it
         # assumes Steam has included the needed VPKs.
         if prop.value.startswith('|all_source_engine_paths|'):
-            return (root / prop.value[25:]).absolute()
+            return (self.root / prop.value[25:]).absolute()
+
+        return (self.root / prop.value).absolute()
 
     def get_filesystem(self) -> FileSystemChain:
         """Build a chained filesystem from the search paths."""
         vpks = []
         raw_folders = []
+
         for path in self.search_paths:
             if path.is_dir():
                 raw_folders.append(path)
-                if (path / 'pak01_dir.vpk').is_file():
-                    vpks.append(path / 'pak01_dir.vpk')
+                for ind in itertools.count(1):
+                    vpk = (path / 'pak{:02}_dir.vpk'.format(ind))
+                    if vpk.is_file():
+                        vpks.append(vpk)
+                    else:
+                        break
                 continue
 
             if not path.suffix:
@@ -97,13 +121,27 @@ class Game:
     def bin_folder(self) -> Path:
         """Retrieve the location of the bin/ folder."""
         folder = self.path.parent / 'bin'
-        # Variant in some versions.
-        if (folder / 'win32').is_dir():
-            return folder / 'win32'
+
+        # Engine branches supporting 64-bit have binaries in win64/win32
+        # subfolders. So on Windows check for those.
+        if sys.platform.startswith('win'):
+            # "..W6432" is the key containing the REAL processor if we're
+            # in WOW64 mode.
+            machine = os.environ.get(
+                "PROCESSOR_ARCHITEW6432",
+                os.environ.get('PROCESSOR_ARCHITECTURE')
+            )
+            if machine.endswith('64'):
+                bit_folder = folder / 'win64'
+                if bit_folder.exists():
+                    return bit_folder
+            bit_folder = folder / 'win32'
+            if bit_folder.is_dir():
+                return bit_folder
         return folder
 
 
-def find_gameinfo(argv=sys.argv) -> Game:
+def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
     """Locate the game we're in, if launched as a a compiler.
     
     This checks the following:
@@ -112,6 +150,9 @@ def find_gameinfo(argv=sys.argv) -> Game:
     * the VPROJECT environment variable
     * the current folder and all parents.
     """
+    if argv is None:
+        argv = sys.argv
+
     for i, value in enumerate(argv):
         if value.casefold() in ('-vproject', '-game'):
             try:
@@ -136,4 +177,4 @@ def find_gameinfo(argv=sys.argv) -> Game:
                 path = folder / GINFO
                 if path.exists():
                     return Game(path)
-            raise ValueError("Couldn't find gameinfo.txt!")
+    raise ValueError("Couldn't find gameinfo.txt!")

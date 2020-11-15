@@ -1,13 +1,24 @@
 import itertools as _itertools
 import os as _os
-import string as _string
 from collections import abc as _abc
-from typing import Union, Type, TypeVar, Iterator, Sequence, List, Container
+from typing import (
+    Union, Type, TypeVar, Iterator, Sequence, List, Container,
+    IO, Optional,
+    Mapping,
+    MutableMapping,
+    Any,
+    overload,
+    Iterable,
+    Tuple,
+    SupportsFloat,
+)
 from types import TracebackType
 
 
 __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str',
+    'Angle', 'Matrix',
+
     'NoKeyError', 'KeyValError', 'Property',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
 
@@ -25,8 +36,15 @@ __all__ = [
     'GameID',
 ]
 
-# _FILE_CHARS = set(_string.ascii_letters + _string.digits + '-_ .|')
-_FILE_CHARS = set('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789-_ .|')
+# import string
+# _FILE_CHARS = frozenset(string.ascii_letters + string.digits + '-_ .|')
+_FILE_CHARS = frozenset(
+    'abcdefghijklmnopqrstuvwxyz'
+    'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+    '0123456789'
+    '-_ .|'
+)
+ValT = TypeVar('ValT')
 
 
 def clean_line(line: str) -> str:
@@ -129,7 +147,7 @@ def bool_as_int(val: object) -> str:
         return '0'
 
 
-BOOL_LOOKUP = {
+BOOL_LOOKUP: Mapping[Union[str, bool, int, None], bool] = {
     False: False,
     0: False,
     '0': False,
@@ -148,7 +166,7 @@ BOOL_LOOKUP = {
 }
 
 
-def conv_bool(val: Union[str, bool, None], default=False):
+def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT, float]:
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
@@ -165,7 +183,7 @@ def conv_bool(val: Union[str, bool, None], default=False):
         return BOOL_LOOKUP.get(val.casefold(), default)
 
 
-def conv_float(val, default=0.0):
+def conv_float(val: str, default: ValT = 0.0) -> Union[ValT, float]:
     """Converts a string to an float, using a default if it fails.
 
     """
@@ -175,7 +193,7 @@ def conv_float(val, default=0.0):
         return default
 
 
-def conv_int(val: str, default=0):
+def conv_int(val: str, default: ValT = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
     """
@@ -184,7 +202,8 @@ def conv_int(val: str, default=0):
     except (ValueError, TypeError):
         return default
 
-class _EmptyMapping(_abc.MutableMapping):
+
+class _EmptyMapping(MutableMapping[Any, Any]):
     """A Mapping class which is always empty.
 
     Any modifications will be ignored.
@@ -193,51 +212,54 @@ class _EmptyMapping(_abc.MutableMapping):
     """
     __slots__ = []
 
-    def __call__(self):
+    def __call__(self) -> '_EmptyMapping':
         # Just in case someone tries to instantiate this
         return self
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "srctools.EmptyMapping"
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: Any) -> Any:
         """All key acesses fail."""
         raise KeyError(key)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: Any, value: Any) -> None:
         """All key setting suceeds."""
         pass
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: Any) -> None:
         """All key deletions fail."""
         raise KeyError(key)
 
-    def __contains__(self, key):
+    def __contains__(self, key: Any) -> bool:
         """EmptyMapping does not have any keys."""
         return False
 
-    def get(self, key, default=None):
+    def get(self, key: Any, default: ValT=None) -> ValT:
         """get() or setdefault() always returns the default item."""
         return default
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         """EmptyMapping is falsey."""
         return False
 
-    def __len__(self):
+    def __len__(self) -> int:
         """EmptyMapping is 0 long."""
         return 0
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Any]:
         """Iteration yields no values."""
         return iter(())
-
 
     # Mutable functions
     setdefault = get
 
-    @staticmethod
-    def update(*args, **kargs):
+    @overload
+    def update(self, __m: Mapping[Any, Any], **kwargs: Any) -> None: ...
+    @overload
+    def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
+
+    def update(self, *args, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
@@ -245,14 +267,13 @@ class _EmptyMapping(_abc.MutableMapping):
 
     __marker = object()
 
-    def pop(self, key, default=__marker):
+    def pop(self, key: Any, default: ValT = __marker) -> ValT:
         """Returns the default value, or raises KeyError if not present."""
         if default is self.__marker:
             raise KeyError(key)
         return default
 
-
-    def popitem(self):
+    def popitem(self) -> Any:
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
 
@@ -270,15 +291,16 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename: str, is_bytes: bool=False) -> None:
+    def __init__(self, filename: _os.PathLike, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
         self.filename = filename
         self.dir = _os.path.dirname(filename)
+        self.encoding = encoding
         self._temp_name = None
         self.is_bytes = is_bytes
-        self.temp = None
+        self.temp = None  # type: Optional[IO]
 
     def make_tempfile(self) -> None:
         """Create the temporary file object."""
@@ -294,10 +316,10 @@ class AtomicWriter:
         for i in _itertools.count(start=1):
             self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
             try:
-                self.temp = open(
-                    self._temp_name,
-                    'xb' if self.is_bytes else 'xt',
-                )
+                if self.is_bytes:
+                    self.temp = open(self._temp_name, 'xb')
+                else:
+                    self.temp = open(self._temp_name, 'xt', encoding=self.encoding)
                 break
             except FileExistsError:
                 pass
@@ -312,11 +334,11 @@ class AtomicWriter:
         exc_type: Type[BaseException],
         exc_value: BaseException,
         tback: TracebackType,
-    ) -> bool:
+    ) -> None:
         # Pass to tempfile, which also closes().
-        temp_path = self.temp.name
-        self.temp.__exit__(exc_type, exc_value, tback)
-        self.temp = None
+        if self.temp is not None:
+            self.temp.__exit__(exc_type, exc_value, tback)
+            self.temp = None
         if exc_type is not None:
             # An exception occurred, clean up.
             try:
@@ -327,14 +349,14 @@ class AtomicWriter:
             # No exception, commit changes
             _os.replace(self._temp_name, self.filename)
 
-        return False  # Don't cancel the exception.
+        return None  # Don't cancel the exception.
 
 
 # Import these, so people can reference 'srctools.Vec' instead of
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
-from srctools.vec import Vec, Vec_tuple, parse_vec_str
+from srctools.vec import Vec, Vec_tuple, parse_vec_str, Angle, Matrix
 from srctools.property_parser import NoKeyError, KeyValError, Property
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis

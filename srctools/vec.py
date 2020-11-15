@@ -13,40 +13,71 @@ Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
 dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
 when used in math operations and comparing values.
 
-Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 3 index access.
+Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 2 index access.
 
+Rotations are represented by Euler angles, but modifications need to be
+performed using matrices.
 
+Rotations are implemented as a matrix-multiplication, where the left is rotated
+by the right. Vectors can be rotated by matrices and angles and matrices
+can be rotated by angles, but not vice-versa.
+
+Scales magnitude:
+ - Vec * Scalar
+ - Scalar * Vec
+ - Angle * Scalar
+ - Scalar * Angle
+
+Rotates LHS by RHS:
+ - Vec @ Angle
+ - Vec @ Matrix
+ - Angle @ Angle
+ - Angle @ Matrix
+ - Matrix @ Matrix
 """
 import math
+import contextlib
+import warnings
 
 from typing import (
-    Union, Tuple, SupportsFloat, Iterator, Iterable, NamedTuple,
-    overload,
-    Dict, TYPE_CHECKING,
+    Union, Tuple, overload, Type, TYPE_CHECKING,
+    Dict, NamedTuple,
+    SupportsFloat, Iterator, Iterable, ContextManager,
 )
 
 
-__all__ = ['parse_vec_str', 'Vec', 'Vec_tuple']
+__all__ = [
+    'parse_vec_str', 'to_matrix',
+    'Vec', 'Vec_tuple',
+    'Angle', 'Matrix',
+]
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
 
-def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
-     If the string is unparsable, this uses the defaults (x,y,z).
-     The string can start with any of the (), {}, [], <> bracket
-     types.
+    If the string is unparsable, this uses the defaults (x,y,z).
+    The string can start with any of the (), {}, [], <> bracket
+    types.
 
      If the 'string' is actually a Vec, the values will be returned.
      """
-    if isinstance(val, Py_Vec):
+    if isinstance(val, str):
+        pass  # Fast path to skip the below code.
+    elif isinstance(val, Py_Vec):
         return val.x, val.y, val.z
+    elif isinstance(val, Angle):
+        return val.pitch, val.yaw, val.roll
+    else:
+        # Not a string.
+        return x, y, z
 
     try:
-        str_x, str_y, str_z = val.split(' ')
+        str_x, str_y, str_z = val.split()
     except ValueError:
         return x, y, z
 
@@ -64,7 +95,28 @@ def parse_vec_str(val: Union[str, 'Vec'], x=0.0, y=0.0, z=0.0) -> Tuple3:
         return x, y, z
 
 
-Vec_tuple = NamedTuple('Vec_tuple', [('x', float), ('y', float), ('z', float)])
+def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
+    """Convert various values to a rotation matrix.
+
+    Vectors will be treated as angles, and None as the identity.
+    """
+    if value is None:
+        return Matrix()
+    elif isinstance(value, Matrix):
+        return value
+    elif isinstance(value, Angle):
+        return Matrix.from_angle(value)
+    else:
+        [p, y, r] = value
+        return Matrix.from_angle(Angle(p, y, r))
+
+
+class Vec_tuple(NamedTuple):
+    """An immutable tuple, useful for dictionary keys."""
+    x: float
+    y: float
+    z: float
+
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -132,17 +184,13 @@ def __i{func}__(self, other: Union['Vec', tuple, float]):
         self.x {op}= other[0]
         self.y {op}= other[1]
         self.z {op}= other[2]
-    else:
+    elif isinstance(other, (int, float)):
         orig = self.x, self.y, self.z
-        try:
-            self.x {op}= other
-            self.y {op}= other
-            self.z {op}= other
-        except TypeError as e:
-            self.x, self.y, self.z = orig
-            raise TypeError(
-                'Cannot add {{}} to Vector!'.format(type(other))
-            ) from e
+        self.x {op}= other
+        self.y {op}= other
+        self.z {op}= other
+    else:
+        return NotImplemented
     return self
 '''
 
@@ -279,14 +327,35 @@ class Vec:
         return cls(x, y, z)
 
     @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Vec']) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Vec'],
+        axis2: str, val2: Union[float, 'Vec'],
+        axis3: str, val3: Union[float, 'Vec'],
+    ) -> 'Vec': ...
+
+    @classmethod
     def with_axes(
         cls,
         axis1: str,
         val1: Union[float, 'Vec'],
         axis2: str=None,
-        val2: Union[float, 'Vec']=None,
+        val2: Union[float, 'Vec']=0.0,
         axis3: str=None,
-        val3: Union[float, 'Vec']=None
+        val3: Union[float, 'Vec']=0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -306,26 +375,6 @@ class Vec:
                 vec[axis3] = val3[axis3] if isinstance(val3, Py_Vec) else val3
         return vec
 
-    def _mat_mul(
-        self,
-        a: float, b: float, c: float,
-        d: float, e: float, f: float,
-        g: float, h: float, i: float,
-    ) -> None:
-        """Multiply this vector by a 3x3 rotation matrix.
-
-        Used for Vec.rotate().
-        The matrix should follow the following pattern:
-        [ a b c ]
-        [ d e f ]
-        [ g h i ]
-        """
-        x, y, z = self.x, self.y, self.z
-
-        self.x = (x * a) + (y * b) + (z * c)
-        self.y = (x * d) + (y * e) + (z * f)
-        self.z = (x * g) + (y * h) + (z * i)
-
     def rotate(
         self,
         pitch: float=0.0,
@@ -337,48 +386,15 @@ class Vec:
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
 
-        If round is True, all values will be rounded to 3 decimals
+        If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
         """
-        # pitch is in the y axis
-        # yaw is the z axis
-        # roll is the x axis
-
-        rad_pitch = math.radians(pitch)
-        rad_yaw = math.radians(yaw)
-        rad_roll = math.radians(roll)
-        cos_p = math.cos(rad_pitch)
-        cos_y = math.cos(rad_yaw)
-        cos_r = math.cos(rad_roll)
-
-        sin_p = math.sin(rad_pitch)
-        sin_y = math.sin(rad_yaw)
-        sin_r = math.sin(rad_roll)
-
-        # Need to do transformations in roll, pitch, yaw order
-        self._mat_mul(  # Roll = X
-            1, 0, 0,
-            0, cos_r, -sin_r,
-            0, sin_r, cos_r,
-        )
-
-        self._mat_mul(  # Pitch = Y
-            cos_p, 0, sin_p,
-            0, 1, 0,
-            -sin_p, 0, cos_p,
-        )
-
-        self._mat_mul(  # Yaw = Z
-            cos_y, -sin_y, 0,
-            sin_y, cos_y, 0,
-            0, 0, 1,
-        )
-
+        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning)
+        self @= Angle(pitch, yaw, roll)
         if round_vals:
-            self.x = round(self.x, 3)
-            self.y = round(self.y, 3)
-            self.z = round(self.z, 3)
-
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
         return self
 
     def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
@@ -386,23 +402,23 @@ class Vec:
 
         If the string cannot be parsed, use the passed in values instead.
         """
-        pitch, yaw, roll = parse_vec_str(ang, pitch, yaw, roll)
-        return self.rotate(
-            pitch,
-            yaw,
-            roll,
-            round_vals,
-        )
+        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning)
+        self @= Angle.from_str(ang, pitch, yaw, roll)
+        if round_vals:
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
+        return self
 
     @staticmethod
     @overload
-    def bbox(points: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    def bbox(_point: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
     @staticmethod
     @overload
     def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
 
     @staticmethod
-    def bbox(*points):
+    def bbox(*points: Union[Iterable['Vec'], 'Vec']) -> Tuple['Vec', 'Vec']:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -412,12 +428,12 @@ class Vec:
         # The error messages match those produced by min()/max().
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
-                [[first, *points]] = points
+                [[first, *point_coll]] = points
             except ValueError:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             try:
-                first, *points = points
+                first, *point_coll = points
             except ValueError:
                 raise TypeError(
                     'Vec.bbox() expected at '
@@ -426,7 +442,7 @@ class Vec:
 
         bbox_min = Py_Vec(first)
         bbox_max = bbox_min.copy()
-        for point in points:
+        for point in point_coll:
             bbox_min.min(point)
             bbox_max.max(point)
         return bbox_min, bbox_max
@@ -488,46 +504,34 @@ class Vec:
         if not x and not y and z:
             return 'z'
         raise ValueError(
-            '({}, {}, {}) is '
-            'not an on-axis vector!'.format(self.x, self.y, self.z)
+            f'({self.x:g}, {self.y:g}, {self.z:g}) is '
+            f'not an on-axis vector!'
         )
 
-    def to_angle(self, roll: float=0) -> 'Vec':
+    def to_angle(self, roll: float=0) -> 'Angle':
         """Convert a normal to a Source Engine angle.
 
         A +x axis vector will result in a 0, 0, 0 angle. The roll is not
         affected by the direction of the normal.
 
-        The inverse of this is `Vec(x=1).rotate(pitch, yaw, roll)`.
+        The inverse of this is `Vec(x=1) @ Angle(pitch, yaw, roll)`.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
-        horiz_dist = math.sqrt(self.x ** 2 + self.y ** 2)
-        return Py_Vec(
+        horiz_dist = math.hypot(self.x, self.y)
+        return Angle(
             math.degrees(math.atan2(-self.z, horiz_dist)),
             math.degrees(math.atan2(self.y, self.x)) % 360,
             roll,
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=90) -> 'Vec':
+    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
-        vector. Stride determines the angles chosen - the normal must point
-        in one of these.
+        vector.
         """
-        angle = self.to_angle()
-        for roll in range(0, 360, stride):
-            result = Py_Vec(z=1).rotate(angle.x, angle.y, roll)
-            if result == z_norm:
-                angle.z = roll
-                return angle
-        else:
-            raise ValueError(
-                'Normal of {} does not have a valid angle'
-                ' in ({}, {}, z) at increments of {}'.format(
-                    z_norm, angle.x, angle.y, stride,
-                )
-            )
+        warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
+        return Matrix.from_basis(x=self, z=z_norm).to_angle()
 
     def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
@@ -628,6 +632,17 @@ class Vec:
         else:
             return Py_Vec(x1, y1, z1), Py_Vec(x2, y2, z2)
 
+    def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+        """We need to define this, so it's in-place."""
+        if isinstance(other, Matrix):
+            mat = other
+        elif isinstance(other, Angle):
+            mat = Matrix.from_angle(other)
+        else:
+            return NotImplemented
+        mat._vec_rot(self)
+        return self
+
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
         return self.x != 0 or self.y != 0 or self.z != 0
@@ -692,7 +707,6 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Py_Vec):
             return (
@@ -735,7 +749,6 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        Otherwise the other value will be compared with the magnitude.
         """
         if isinstance(other, Py_Vec):
             return (
@@ -788,24 +801,19 @@ class Vec:
         This strips off the .0 if no decimal portion exists.
         """
         # :g strips the .0 off of floats if it's an integer.
-        return '{x:g}{delim}{y:g}{delim}{z:g}'.format(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            delim=delim,
-        )
+        return f'{self.x:g}{delim}{self.y:g}{delim}{self.z:g}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the values, separated by spaces.
 
         This is the main format in Valve's file formats.
         This strips off the .0 if no decimal portion exists.
         """
-        return "{:g} {:g} {:g}".format(self.x, self.y, self.z)
+        return f"{self.x:g} {self.y:g} {self.z:g}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return self.__class__.__name__ + "(" + self.join() + ")"
+        return f"Vec({self.x:g}, {self.y:g}, {self.z:g})"
 
     def __iter__(self) -> Iterator[float]:
         """Allow iterating through the dimensions."""
@@ -825,7 +833,7 @@ class Vec:
             return self.y
         elif ind == 2 or ind == "z":
             return self.z
-        raise KeyError('Invalid axis: {!r}'.format(ind))
+        raise KeyError(f'Invalid axis: {ind!r}')
 
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -840,7 +848,7 @@ class Vec:
         elif ind == 2 or ind == "z":
             self.z = float(val)
         else:
-            raise KeyError('Invalid axis: {!r}'.format(ind))
+            raise KeyError(f'Invalid axis: {ind!r}')
 
     def other_axes(self, axis: str) -> Tuple[float, float]:
         """Get the values for the other two axes."""
@@ -917,16 +925,16 @@ class Vec:
     def localise(
         self,
         origin: Union['Vec', Tuple3],
-        angles: Union['Vec', Tuple3]=None,
+        angles: Union['Angle', 'Matrix']=None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
         This effectively translates local-space offsets to a global location,
         given the parent's origin and angles.
         """
-        if angles is not None:
-            self.rotate(angles[0], angles[1], angles[2])
-        self.__iadd__(origin)
+        mat = to_matrix(angles)
+        mat._vec_rot(self)
+        self += origin
 
     def norm_mask(self, normal: 'Vec') -> 'Vec':
         """Subtract the components of this vector not in the direction of the normal.
@@ -939,6 +947,625 @@ class Vec:
 
     len = mag
     mag_sq = len_sq
+
+    @contextlib.contextmanager
+    def transform(self) -> ContextManager['Matrix']:
+        """Perform rotations on this Vector efficiently.
+
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
+        the angle.
+        """
+        mat = Matrix()
+        yield mat
+        mat._vec_rot(self)
+
+
+class Matrix:
+    """Represents a matrix via a transformation matrix."""
+    __slots__ = [
+        'aa', 'ab', 'ac',
+        'ba', 'bb', 'bc',
+        'ca', 'cb', 'cc'
+    ]
+
+    def __init__(self) -> None:
+        """Create a matrix set to the identity transform."""
+        self.aa, self.ab, self.ac = 1.0, 0.0, 0.0
+        self.ba, self.bb, self.bc = 0.0, 1.0, 0.0
+        self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
+
+    def __eq__(self, other: object) -> object:
+        if isinstance(other, Matrix):
+            return (
+                self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
+                self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
+                self.ca == other.ca and self.cb == other.cb and self.cc == other.cc
+            )
+        return NotImplemented
+        
+    def __repr__(self) -> str:
+        return (
+            '<Matrix '
+            f'{self.aa:.3} {self.ab:.3} {self.ac:.3}, '
+            f'{self.ba:.3} {self.bb:.3} {self.bc:.3}, '
+            f'{self.ca:.3} {self.cb:.3} {self.cc:.3}'
+            '>'
+        )
+
+    def copy(self) -> 'Matrix':
+        """Duplicate this matrix."""
+        rot = Matrix.__new__(Matrix)
+
+        rot.aa, rot.ab, rot.ac = self.aa, self.ab, self.ac
+        rot.ba, rot.bb, rot.bc = self.ba, self.bb, self.bc
+        rot.ca, rot.cb, rot.cc = self.ca, self.cb, self.cc
+
+        return rot
+
+    @classmethod
+    def from_pitch(cls: Type['Matrix'], pitch: float) -> 'Matrix':
+        """Return the matrix representing a pitch rotation.
+
+        This is a rotation around the Y axis.
+        """
+        rad_pitch = math.radians(pitch)
+        cos = math.cos(rad_pitch)
+        sin = math.sin(rad_pitch)
+
+        rot = cls.__new__(cls)
+
+        rot.aa, rot.ab, rot.ac = cos, 0.0, -sin
+        rot.ba, rot.bb, rot.bc = 0.0, 1.0, 0.0
+        rot.ca, rot.cb, rot.cc = sin, 0.0, cos
+
+        return rot
+
+    @classmethod
+    def from_yaw(cls: Type['Matrix'], yaw: float) -> 'Matrix':
+        """Return the matrix representing a yaw rotation.
+
+        """
+        rad_yaw = math.radians(yaw)
+        sin = math.sin(rad_yaw)
+        cos = math.cos(rad_yaw)
+
+        rot = cls.__new__(cls)
+
+        rot.aa, rot.ab, rot.ac = cos, sin, 0.0
+        rot.ba, rot.bb, rot.bc = -sin, cos, 0.0
+        rot.ca, rot.cb, rot.cc = 0.0, 0.0, 1.0
+
+        return rot
+        
+    @classmethod
+    def from_roll(cls: Type['Matrix'], roll: float) -> 'Matrix':
+        """Return the matrix representing a roll rotation.
+
+        This is a rotation around the X axis.
+        """
+        rad_roll = math.radians(roll)
+        cos_r = math.cos(rad_roll)
+        sin_r = math.sin(rad_roll)
+
+        rot = cls.__new__(cls)
+
+        rot.aa, rot.ab, rot.ac = 1.0, 0.0, 0.0
+        rot.ba, rot.bb, rot.bc = 0.0, cos_r, sin_r
+        rot.ca, rot.cb, rot.cc = 0.0, -sin_r, cos_r
+
+        return rot
+        
+    @classmethod
+    def from_angle(cls, angle: 'Angle') -> 'Matrix':
+        """Return the rotation representing an Euler angle."""
+        rad_pitch = math.radians(angle.pitch)
+        cos_p = math.cos(rad_pitch)
+        sin_p = math.sin(rad_pitch)
+        rad_yaw = math.radians(angle.yaw)
+        sin_y = math.sin(rad_yaw)
+        cos_y = math.cos(rad_yaw)
+        rad_roll = math.radians(angle.roll)
+        cos_r = math.cos(rad_roll)
+        sin_r = math.sin(rad_roll)
+
+        rot: Matrix = cls.__new__(cls)
+
+        rot.aa = cos_p * cos_y
+        rot.ab = cos_p * sin_y
+        rot.ac = -sin_p
+
+        cos_r_cos_y = cos_r * cos_y
+        cos_r_sin_y = cos_r * sin_y
+        sin_r_cos_y = sin_r * cos_y
+        sin_r_sin_y = sin_r * sin_y
+
+        rot.ba = sin_p * sin_r_cos_y - cos_r_sin_y
+        rot.bb = sin_p * sin_r_sin_y + cos_r_cos_y
+        rot.bc = sin_r * cos_p
+
+        rot.ca = (sin_p * cos_r_cos_y + sin_r_sin_y)
+        rot.cb = (sin_p * cos_r_sin_y - sin_r_cos_y)
+        rot.cc = cos_r * cos_p
+        return rot
+
+    def forward(self) -> 'Vec':
+        """Return a normalised vector pointing in the +X direction."""
+        return Py_Vec(self.aa, self.ab, self.ac)
+
+    def left(self) -> 'Vec':
+        """Return a normalised vector pointing in the +Y direction."""
+        return Py_Vec(self.ba, self.bb, self.bc)
+
+    def up(self) -> 'Vec':
+        """Return a normalised vector pointing in the +Z direction."""
+        return Py_Vec(self.ca, self.cb, self.cc)
+
+    def to_angle(self) -> 'Angle':
+        """Return an Euler angle replicating this rotation."""
+
+        # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
+        for_x = self.aa
+        for_y = self.ab
+        for_z = self.ac
+        left_x = self.ba
+        left_y = self.bb
+        left_z = self.bc
+        # up_x = self.ca
+        # up_y = self.cb
+        up_z = self.cc
+        
+        horiz_dist = math.sqrt(for_x**2 + for_y**2)
+        if horiz_dist > 0.001:
+            return Angle(
+                yaw=math.degrees(math.atan2(for_y, for_x)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=math.degrees(math.atan2(left_z, up_z)),
+            )
+        else:
+            # Vertical, gimbal lock (yaw=roll)...
+            return Angle(
+                yaw=math.degrees(math.atan2(-left_x, left_y)),
+                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
+                roll=0,  # Can't produce.
+            )
+
+    def transpose(self) -> 'Matrix':
+        """Return the transpose of this matrix."""
+        rot = Matrix.__new__(Matrix)
+
+        rot.aa, rot.ab, rot.ac = self.aa, self.ba, self.ca
+        rot.ba, rot.bb, rot.bc = self.ab, self.bb, self.cb
+        rot.ca, rot.cb, rot.cc = self.ac, self.bc, self.cc
+
+        return rot
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, y: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, z: Vec) -> 'Matrix': ...
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'Matrix':
+        """Construct a matrix from at least two basis vectors.
+
+        The third is computed, if not provided.
+        """
+        if x is None and y is not None and z is not None:
+            x = Vec.cross(y, z)
+        elif y is None and x is not None and z is not None:
+            y = Vec.cross(z, x)
+        elif z is None and x is not None and y is not None:
+            z = Vec.cross(x, y)
+        elif x is None and y is None and z is None:
+            raise TypeError('At least two vectors must be provided!')
+        mat: Matrix = cls.__new__(cls)
+        mat.aa, mat.ab, mat.ac = x.norm()
+        mat.ba, mat.bb, mat.bc = y.norm()
+        mat.ca, mat.cb, mat.cc = z.norm()
+        return mat
+
+    @overload
+    def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
+    def __matmul__(self, other: 'Angle') -> 'Matrix': ...
+    @overload
+    def __matmul__(self, other: object) -> NotImplemented: ...
+
+    def __matmul__(self, other: object) -> 'Matrix':
+        if isinstance(other, Matrix):
+            mat = self.copy()
+            mat._mat_mul(other)
+            return mat
+        elif isinstance(other, Angle):
+            mat = self.copy()
+            mat._mat_mul(Matrix.from_angle(other))
+            return mat
+        else:
+            return NotImplemented
+
+    @overload
+    def __rmatmul__(self, other: Vec) -> Vec: ...
+    @overload
+    def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
+    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __rmatmul__(self, other: object) -> NotImplemented: ...
+    
+    def __rmatmul__(self, other):
+        if isinstance(other, Vec):
+            result = other.copy()
+            self._vec_rot(result)
+            return result
+        elif isinstance(other, Angle):
+            mat = Matrix.from_angle(other)
+            mat._mat_mul(self)
+            return mat.to_angle()
+        elif isinstance(other, Matrix):
+            mat = other.copy()
+            return mat._mat_mul(self)
+        else:
+            return NotImplemented
+
+    @overload
+    def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
+    @overload
+    def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
+    @overload
+    def __imatmul__(self, other: object) -> NotImplemented: ...
+
+    def __imatmul__(self, other):
+        if isinstance(other, Matrix):
+            self._mat_mul(other)
+            return self
+        elif isinstance(other, Angle):
+            self._mat_mul(Matrix.from_angle(other))
+            return self
+        else:
+            return NotImplemented
+            
+    def _mat_mul(self, other: 'Matrix') -> None:
+        """Rotate myself by the other matrix."""
+        # We don't use each row after assigning to the set, so we can re-assign.
+        # 3-tuple unpacking is optimised.
+        self.aa, self.ab, self.ac = (
+            self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
+            self.aa * other.ab + self.ab * other.bb + self.ac * other.cb,
+            self.aa * other.ac + self.ab * other.bc + self.ac * other.cc,
+        )
+
+        self.ba, self.bb, self.bc = (
+            self.ba * other.aa + self.bb * other.ba + self.bc * other.ca,
+            self.ba * other.ab + self.bb * other.bb + self.bc * other.cb,
+            self.ba * other.ac + self.bb * other.bc + self.bc * other.cc,
+        )
+
+        self.ca, self.cb, self.cc = (
+            self.ca * other.aa + self.cb * other.ba + self.cc * other.ca,
+            self.ca * other.ab + self.cb * other.bb + self.cc * other.cb,
+            self.ca * other.ac + self.cb * other.bc + self.cc * other.cc,
+        )
+    
+    def _vec_rot(self, vec: Vec) -> None:
+        """Rotate a vector by our value."""
+        x = vec.x
+        y = vec.y
+        z = vec.z
+        vec.x = (x * self.aa) + (y * self.ba) + (z * self.ca)
+        vec.y = (x * self.ab) + (y * self.bb) + (z * self.cb)
+        vec.z = (x * self.ac) + (y * self.bc) + (z * self.cc)
+
+    
+class Angle:
+    """Represents a pitch-yaw-roll Euler angle.
+
+    All values are remapped to between 0-360 when set.
+    Addition and subtraction modify values, matrix-multiplication with 
+    Vec, Angle or Matrix rotates (RHS rotating LHS).
+    """
+    # We have to double-modulus because -1e-14 % 360.0 = 360.0.
+    __slots__ = ['_pitch', '_yaw', '_roll']
+    
+    def __init__(
+        self,
+        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
+        yaw: Union[int, float]=0.0,
+        roll: Union[int, float]=0.0,
+    ) -> None:
+        """Create an Angle.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the pitch argument), which will be
+        used for pitch, yaw, and roll. This includes Vectors and other Angles.
+        """
+        if isinstance(pitch, (int, float)):
+            self._pitch = float(pitch) % 360 % 360
+            self._yaw = float(yaw) % 360 % 360
+            self._roll = float(roll) % 360 % 360
+        else:
+            it = iter(pitch)
+            self._pitch = float(next(it, 0.0)) % 360 % 360
+            self._yaw = float(next(it, yaw)) % 360 % 360
+            self._roll = float(next(it, roll)) % 360 % 360
+
+    def copy(self) -> 'Angle':
+        """Create a duplicate of this vector."""
+        return Angle(self._pitch, self._yaw, self._roll)
+
+    @classmethod
+    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
+        """Convert a string in the form '(4 6 -4)' into an Angle.
+
+         If the string is unparsable, this uses the defaults.
+         The string can start with any of the (), {}, [], <> bracket
+         types, or none.
+
+         If the value is already a Angle, a copy will be returned.
+         """
+
+        pitch, yaw, roll = parse_vec_str(val, pitch, yaw, roll)
+        return cls(pitch, yaw, roll)
+
+    @property
+    def pitch(self) -> float:
+        """The Y-axis rotation, performed second."""
+        return self._pitch
+
+    @pitch.setter
+    def pitch(self, pitch: float) -> None:
+        self._pitch = float(pitch) % 360 % 360
+
+    @property
+    def yaw(self) -> float:
+        """The Z-axis rotation, performed last."""
+        return self._yaw
+
+    @yaw.setter
+    def yaw(self, yaw: float) -> None:
+        self._yaw = float(yaw) % 360 % 360
+
+    @property
+    def roll(self) -> float:
+        """The X-axis rotation, performed first."""
+        return self._roll
+
+    @roll.setter
+    def roll(self, roll: float) -> None:
+        self._roll = float(roll) % 360 % 360
+
+    def __str__(self) -> str:
+        """Return the values, separated by spaces.
+
+        This is the main format in Valve's file formats, though identical to
+        vectors.
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
+
+    def __repr__(self) -> str:
+        return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+
+    def as_tuple(self) -> Tuple[float, float, float]:
+        """Return the Angle as a tuple."""
+        return Vec_tuple(self._pitch, self._yaw, self._roll)
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._pitch
+        yield self._yaw
+        yield self._roll
+
+    @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Angle']) -> 'Angle':
+        ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+    ) -> 'Angle':
+        ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+        axis3: str, val3: Union[float, 'Angle'],
+    ) -> 'Angle':
+        ...
+
+    @classmethod
+    def with_axes(
+        cls,
+        axis1: str,
+        val1: Union[float, 'Angle'],
+        axis2: str = None,
+        val2: Union[float, 'Angle'] = 0.0,
+        axis3: str = None,
+        val3: Union[float, 'Angle'] = 0.0,
+    ) -> 'Angle':
+        """Create an Angle, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            ang = Angle()
+            ang[axis1] = val1
+            ang[axis2] = val2
+            ang[axis3] = val3
+        The magnitudes can also be Angles, in which case the matching
+        axis will be used from the angle.
+        """
+        ang = cls()
+        ang[axis1] = val1[axis1] if isinstance(val1, Angle) else val1
+        if axis2 is not None:
+            ang[axis2] = val2[axis2] if isinstance(val2, Angle) else val2
+            if axis3 is not None:
+                ang[axis3] = val3[axis3] if isinstance(val3, Angle) else val3
+        return ang
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, y: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, y: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    @overload
+    def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
+
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'Angle':
+        """Return the rotation which results in the specified local axes.
+
+        At least two must be specified, with the third computed if necessary.
+        """
+        return Matrix.from_basis(x=x, y=y, z=z).to_angle()
+
+    def __getitem__(self, ind: Union[str, int]) -> float:
+        """Allow reading values by index instead of name if desired.
+
+        This accepts the following indexes to read values:
+        - 0, 1, 2
+        - pitch, yaw, roll
+        - pit, yaw, rol
+        - p, y, r
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind in (0, 'p', 'pit', 'pitch'):
+            return self._pitch
+        elif ind in (1, 'y', 'yaw'):
+            return self._yaw
+        elif ind in (2, 'r', 'rol', 'roll'):
+            return self._roll
+        raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    def __setitem__(self, ind: Union[str, int], val: float) -> None:
+        """Allow editing values by index instead of name if desired.
+
+        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind in (0, 'p', 'pit', 'pitch'):
+            self._pitch = float(val) % 360.0 % 360.0
+        elif ind in (1, 'y', 'yaw'):
+            self._yaw = float(val) % 360.0 % 360.0
+        elif ind in (2, 'r', 'rol', 'roll'):
+            self._roll = float(val) % 360.0 % 360.0
+        else:
+            raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    @overload
+    def __mul__(self, other: Union[int, float]) -> 'Angle': ...
+    @overload
+    def __mul__(self, other: object) -> NotImplemented: ...
+
+    def __mul__(self, other):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return Angle(
+                self._pitch * other,
+                self._yaw * other,
+                self._roll * other,
+            )
+        return NotImplemented
+
+    @overload
+    def __rmul__(self, other: Union[int, float]) -> 'Angle': ...
+    @overload
+    def __rmul__(self, other: object) -> NotImplemented: ...
+
+    def __rmul__(self, other):
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return Angle(
+                other * self._pitch,
+                other * self._yaw,
+                other * self._roll,
+            )
+        return NotImplemented
+
+    @overload
+    def __matmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __matmul__(self, other: object) -> NotImplemented: ...
+
+    def __matmul__(self, other):
+        """Angle @ Angle rotates the first by the second.
+        """
+        if isinstance(other, Angle):
+            return other._rotate_angle(self)
+        else:
+            return NotImplemented
+
+    @overload
+    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+    @overload
+    def __rmatmul__(self, other: object) -> NotImplemented: ...
+
+    def __rmatmul__(self, other):
+        """Vec @ Angle rotates the first by the second."""
+        if isinstance(other, Vec):
+            return other @ Matrix.from_angle(self)
+        elif isinstance(other, Angle):
+            # Should always be done by __mul__!
+            return self._rotate_angle(other)
+        return NotImplemented
+
+    def _rotate_angle(self, target: 'Angle') -> 'Angle':
+        """Rotate the target by this angle.
+        
+        Inefficient if we have more than one rotation to do.
+        """
+        mat = Matrix()
+        mat @= target
+        mat @= self
+        return mat.to_angle()
+
+    @contextlib.contextmanager
+    def transform(self) -> ContextManager[Matrix]:
+        """Perform transformations on this angle.
+
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
+        the angle.
+        """
+        mat = Matrix()
+        yield mat
+        new_ang = mat.to_angle()
+        self._pitch = new_ang._pitch
+        self._yaw = new_ang._yaw
+        self._roll = new_ang._roll
 
 
 def _mk(x: float, y: float, z: float) -> Vec:

@@ -3,6 +3,7 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 import io
+import re
 import itertools
 import operator
 import builtins
@@ -12,11 +13,13 @@ from contextlib import suppress
 from typing import (
     Optional, Union, Any, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
-    Iterable, Iterator,
+    Iterable, Iterator, AbstractSet,
+    NamedTuple, MutableMapping,
+    Pattern, Match,
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec
+from srctools.vec import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 
@@ -50,34 +53,70 @@ OUTPUT_SEP = chr(27)
 T = TypeVar('T')
 
 
-class IDMan(set):
-    """Allocate and manage a set of unique IDs."""
-    __slots__ = ()
+class IDMan(AbstractSet[int]):
+    """Allocate and manage a set of unique IDs.
 
-    def get_id(self, desired: int=-1) -> int:
+    This implements some of MutableSet, but the adding methods cannot
+    be used since the ID may need to change to ensure uniqueness.
+    """
+    def __init__(self, existing: Iterable[int] = ()):
+        """Initialise the ID manager."""
+        super().__init__()
+        self._used = set(existing)
+        # This is used to hint where we should start searching from.
+        # IDs from 1:search_pos must have been used already.
+        # search_pos and above may or may not have been used.
+
+        # The ID space is usually pretty fragmented, so we will tend to
+        # find blocks of unused IDs that we can instantly pass out.
+        self.search_pos = 1
+
+    def clear(self) -> None:
+        """Remove all IDs from the manager."""
+        self._used = set()
+        self.search_pos = 1
+
+    def get_id(self, desired: int = -1) -> int:
         """Get a valid ID."""
-
-        if desired == -1:
-            # Start with the lowest ID, and look upwards
-            desired = 1
-
-        if desired not in self:
+        if desired > 0 and desired not in self._used:
             # The desired ID is available!
-            self.add(desired)
+            self._used.add(desired)
             return desired
 
-        # Check every ID in order to find a valid one
-        for poss_id in itertools.count(start=1):
+        # Check every ID in order to find a valid one.
+        for poss_id in itertools.count(start=self.search_pos):
             if poss_id not in self:
-                self.add(poss_id)
+                self._used.add(poss_id)
+                self.search_pos = poss_id + 1
                 return poss_id
+        raise AssertionError("get_id() should never end...")
+
+    def __len__(self) -> int:
+        return len(self._used)
+
+    def __iter__(self) -> Iterator[int]:
+        return iter(self._used)
+
+    def __contains__(self, item: int) -> bool:
+        """Check if the given ID is registered."""
+        return item in self._used
+
+    def discard(self, element: int) -> None:
+        """Return the specified ID for others to use, or do nothing if already removed."""
+        self._used.discard(element)
+        if element < self.search_pos:
+            self.search_pos = element
+
+    def remove(self, element: int) -> None:
+        """Return the specified ID for others to use."""
+        self._used.remove(element)
+        if element < self.search_pos:
+            self.search_pos = element
 
 
 class NullIDMan(IDMan):
-    """An alternate Id manager which allows repeated IDs."""
-    __slots__ = ()
-
-    def get_id(self, desired=-1):
+    """An alternate ID manager which allows repeated IDs."""
+    def get_id(self, desired: int = -1) -> int:
         """Get a valid ID.
 
         If no desired one is passed, a unique one will be found.
@@ -87,18 +126,16 @@ class NullIDMan(IDMan):
         if desired == -1:
             return super().get_id()
         else:
-            self.add(desired)
+            self._used.add(desired)
             return desired
 
 
 def overlay_bounds(over: 'Entity') -> Tuple[Vec, Vec]:
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
-    angles = Vec.from_str(over['angles'])
+    mat = Matrix.from_angle(Angle.from_str(over['angles']))
     return Vec.bbox(
-        (origin + Vec.from_str(over['uv' + str(x)]).rotate(
-            angles.x, angles.y, angles.z,
-        ))
+        (origin + Vec.from_str(over['uv' + str(x)]) @ mat)
         for x in
         range(4)
     )
@@ -116,7 +153,7 @@ def make_overlay(
     v_repeat: float=1,
     swap: bool=False,
     render_order: int=0,
-    ) -> 'Entity':
+) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
     - origin is the center point of the overlay.
@@ -129,55 +166,50 @@ def make_overlay(
     - If swap is true, the texture will be rotated 90.
     """
     if swap:
-        uax, vax = vax, uax
+        uax, vax = vax, -uax
 
     u_dist = uax.mag()/2
     v_dist = vax.mag()/2
     basis_u = uax.norm()
     basis_v = vax.norm()
 
-    if normal.x < 0 or normal.y < 0:
-        basis_v *= -1
-    if normal.z < 0:
-        basis_u *= -1
-
     return vmf.create_ent(
         classname='info_overlay',
         angles='0 0 0',  # Not actually used by VBSP!
-        origin=origin.join(' '),
-
-        basisNormal=normal.join(' '),
-        basisOrigin=origin.join(' '),
-        basisU=basis_u.join(' '),
-        basisV=basis_v.join(' '),
+        # Ensure it's not exactly on the edge plane.
+        origin=(origin + normal).join(' '),
+        basisnormal=normal.join(' '),
+        basisorigin=origin.join(' '),
+        basisu=basis_u.join(' '),
+        basisv=basis_v.join(' '),
 
         material=material,
         sides=' '.join(str(side.id) for side in surfaces),
-        renderOrder=render_order,
+        renderorder=render_order,
 
-        startU='0',
-        startV='0',
-        endU=str(u_repeat),
-        endV=str(v_repeat),
+        startu='0',
+        startv='0',
+        endu=format(u_repeat, 'g'),
+        endv=format(v_repeat, 'g'),
 
-        uv0='-{} -{} 0'.format(u_dist, v_dist),
-        uv1='-{} {} 0'.format(u_dist, v_dist),
-        uv2='{} {} 0'.format(u_dist, v_dist),
-        uv3='{} -{} 0'.format(u_dist, v_dist),
+        uv0='{:g} {:g} 0'.format(-u_dist, -v_dist),
+        uv1='{:g} {:g} 0'.format(-u_dist, v_dist),
+        uv2='{:g} {:g} 0'.format(u_dist, v_dist),
+        uv3='{:g} {:g} 0'.format(u_dist, -v_dist),
     )
 
 
-def localise_overlay(over: 'Entity', origin: Vec, angles: Vec=None) -> None:
+def localise_overlay(over: 'Entity', origin: Vec, angles: Union[Angle, Matrix]=None) -> None:
     """Rotate an overlay like what is done in instances."""
     if angles is not None:
         for key in ('basisNormal', 'basisU', 'basisV'):
-            ang = Vec.from_str(over[key]).rotate(angles.x, angles.y, angles.z)
+            ang = Vec.from_str(over[key]) @ angles
             over[key] = ang.join(' ')
     else:
-        angles = Vec(0, 0, 0)
+        angles = Matrix()
 
     for key in ('basisOrigin', 'origin'):
-        ang = Vec.from_str(over[key]).rotate(angles.x, angles.y, angles.z)
+        ang = Vec.from_str(over[key]) @ angles
         ang += origin
         over[key] = ang.join(' ')
 
@@ -220,7 +252,7 @@ class VMF:
 
         If preserve_ids is False (default), various IDs will be changed to
         ensure they are unique when adding items to the VMF. If True they will
-        stay as default.
+        stay the same. New items will aquire a unique ID.
         """
         id_man = NullIDMan if preserve_ids else IDMan
         self.solid_id = id_man()  # All occupied solid ids
@@ -245,7 +277,6 @@ class VMF:
         # to.
         self.spawn = spawn or Entity(self)  # type: Entity
         self.spawn.solids = self.brushes
-        self.spawn.hidden_brushes = self.brushes
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion'))
@@ -286,7 +317,10 @@ class VMF:
 
     def remove_brush(self, brush: 'Solid'):
         """Remove a world brush from this map."""
-        self.brushes.remove(brush)
+        try:
+            self.brushes.remove(brush)
+        except ValueError:
+            pass  # Already removed.
 
     def add_ent(self, item: 'Entity'):
         """Add an entity to the map.
@@ -303,12 +337,15 @@ class VMF:
         After this is called, the entity will no longer be exported.
         The object still exists, so it can be reused.
         """
-        self.entities.remove(item)
-        self.by_class[item['classname', None]].remove(item)
-        self.by_target[item['targetname', None]].remove(item)
+        try:
+            self.entities.remove(item)
+        except ValueError:
+            pass  # Already removed.
 
-        if item.id in self.ent_id:
-            self.ent_id.remove(item.id)
+        self.by_class[item['classname', None]].discard(item)
+        self.by_target[item['targetname', None]].discard(item)
+
+        self.ent_id.discard(item.id)
 
     def add_brushes(self, brushes: Iterable['Solid']):
         """Add multiple brushes to the map."""
@@ -425,7 +462,7 @@ class VMF:
     def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
     @overload
     def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False) -> str:
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False):
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -455,12 +492,12 @@ class VMF:
         dest_file.write('\t"prefab" "' +
                         srctools.bool_as_int(self.is_prefab) + '"\n}\n')
 
-        if not minimal:
-            dest_file.write('visgroups\n{\n')
-            for vis in self.vis_tree:
-                vis.export(dest_file, ind='\t')
-            dest_file.write('}\n')
+        dest_file.write('visgroups\n{\n')
+        for vis in self.vis_tree:
+            vis.export(dest_file, ind='\t')
+        dest_file.write('}\n')
 
+        if not minimal:
             dest_file.write('viewsettings\n{\n')
             dest_file.write('\t"bSnapToGrid" "' +
                             srctools.bool_as_int(self.snap_grid) + '"\n')
@@ -509,6 +546,7 @@ class VMF:
             dest_file.write('}\n')
 
         if ret_string:
+            assert isinstance(dest_file, io.StringIO)
             string = dest_file.getvalue()
             dest_file.close()
             return string
@@ -584,6 +622,29 @@ class VMF:
                     else:
                         if out.target == name:  # target
                             yield out
+
+    def search(self, name: str) -> Iterator['Entity']:
+        """Yield all entities that fit this search string.
+
+        This can be the exact targetname, end-* matching,
+        or the exact classname.
+        """
+        name = name.casefold()
+        if not name:
+            return
+
+        if name[-1] == '*':
+            name = name[:-1]
+            for ent_name, ents in self.by_target.items():
+                if ent_name is not None and ent_name.casefold().startswith(name):
+                    yield from ents
+        else:
+            for ent_name, ents in self.by_target.items():
+                if ent_name is not None and ent_name.casefold() == name:
+                    yield from ents
+
+            if name in self.by_class:
+                yield from self.by_class[name]
 
     def make_prism(
         self,
@@ -708,47 +769,61 @@ class VMF:
         p2: Vec,
         thick: float=16,
         mat: str='tools/toolsnodraw',
+        inner_mat: str='',
     ) -> List['Solid']:
-        """Create 6 brushes to surround the given region."""
+        """Create 6 brushes to surround the given region.
+
+        If inner_mat is not specified, it's set to mat.
+        """
+        if not inner_mat:
+            inner_mat = mat
         b_min, b_max = Vec.bbox(p1, p2)
 
         top = self.make_prism(
             Vec(b_min.x, b_min.y, b_max.z),
             Vec(b_max.x, b_max.y, b_max.z + thick),
             mat,
-        ).solid
+        )
 
         bottom = self.make_prism(
             Vec(b_min.x, b_min.y, b_min.z),
             Vec(b_max.x, b_max.y, b_min.z - thick),
             mat,
-        ).solid
+        )
 
         west = self.make_prism(
             Vec(b_min.x - thick, b_min.y, b_min.z),
             Vec(b_min.x, b_max.y, b_max.z),
             mat,
-        ).solid
+        )
 
         east = self.make_prism(
             Vec(b_max.x, b_min.y, b_min.z),
             Vec(b_max.x + thick, b_max.y, b_max.z),
             mat
-        ).solid
+        )
 
         north = self.make_prism(
             Vec(b_min.x, b_max.y, b_min.z),
             Vec(b_max.x, b_max.y + thick, b_max.z),
             mat,
-        ).solid
+        )
 
         south = self.make_prism(
             Vec(b_min.x, b_min.y - thick, b_min.z),
             Vec(b_max.x, b_min.y, b_max.z),
             mat,
-        ).solid
+        )
 
-        return [north, south, east, west, top, bottom]
+        top.bottom.mat = bottom.top.mat = inner_mat
+        east.west.mat = west.east.mat = inner_mat
+        north.south.mat = south.north.mat = inner_mat
+
+        return [
+            north.solid, south.solid,
+            east.solid, west.solid,
+            top.solid, bottom.solid,
+        ]
 
 
 class Camera:
@@ -871,7 +946,7 @@ class VisGroup:
         vis_id: int,
         name: str,
         color: Vec=(255, 255, 255),
-        children: List['VisGroup']=(),
+        children: Iterable['VisGroup']=(),
     ):
         self.vmf = vmf
         self.name = name
@@ -977,7 +1052,7 @@ class Solid:
             vmf_file or self.map,
             des_id,
             sides,
-            self.visgroup_ids if keep_vis else (),
+            self.visgroup_ids if keep_vis else (),  # type: ignore
             self.hidden if keep_vis else False,
             self.group_id,
             self.vis_shown if keep_vis else True,
@@ -1078,13 +1153,11 @@ class Solid:
         return st
 
     def __iter__(self) -> Iterator['Side']:
-        for s in self.sides:
-            yield s
+        return iter(self.sides)
 
     def __del__(self) -> None:
         """Forget this solid's ID when the object is destroyed."""
-        if self.id in self.map.solid_id:
-            self.map.solid_id.remove(self.id)
+        self.map.solid_id.discard(self.id)
 
     def remove(self) -> None:
         """Remove this brush from the map."""
@@ -1110,8 +1183,9 @@ class Solid:
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: Vec, angles: Vec=None):
+    def localise(self, origin: Vec, angles: Union[Angle, Matrix]=None):
         """Shift this brush by the given origin/angles."""
+        angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
             s.localise(origin, angles)
 
@@ -1167,16 +1241,23 @@ class UVAxis:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
-    def rotate(self, angles: Vec) -> 'UVAxis':
+    def rotate(self, angles: Angle) -> 'UVAxis':
         """Rotate the axis by a vector.
 
         This doesn't handle offsets correctly.
         """
-        return self.localise(Vec(), angles)
+        vec = self.vec() @ angles
+        return UVAxis(
+            vec.x,
+            vec.y,
+            vec.z,
+            self.offset,
+            self.scale,
+        )
 
-    def localise(self, origin: Vec, angles: Vec) -> 'UVAxis':
+    def localise(self, origin: Vec, angles: Angle) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
-        vec = self.vec().rotate(*angles)
+        vec = self.vec() @ angles
 
         # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
         offset = self.offset - origin.dot(vec) / self.scale
@@ -1244,8 +1325,7 @@ class Side:
     def __init__(
         self,
         vmf_file: VMF,
-        # Must be 3 Vecs, or 3-item iterables.
-        planes: List[Iterable[float]],
+        planes: List[Union[Tuple[float, float, float], Vec]],
         des_id: int=-1,
         lightmap: int=16,
         smoothing: int=0,
@@ -1253,7 +1333,7 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis]=None,
         vaxis: Optional[UVAxis]=None,
-        disp_data: dict=None,
+        disp_data: Optional[Dict[str, Any]]=None,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1279,7 +1359,7 @@ class Side:
             self.disp_is_subdiv = srctools.conv_bool(
                 disp_data.get('subdiv', '_'), False)
             self.disp_allowed_verts = disp_data.get('allowed_verts', {})
-            self.disp_data = {}
+            self.disp_data = {}  # type: Dict[str, List[str]]
             for v in _DISP_ROWS:
                 self.disp_data[v] = disp_data.get(v, [])
             self.is_disp = True
@@ -1296,7 +1376,11 @@ class Side:
             raise ValueError('Wrong number of solid planes in "' +
                              tree['plane', ''] +
                              '"')
-        planes = list(map(srctools.parse_vec_str, verts))
+        planes = [
+            srctools.parse_vec_str(verts[0]),
+            srctools.parse_vec_str(verts[1]),
+            srctools.parse_vec_str(verts[2]),
+        ]
 
         disp_tree = tree.find_key('dispinfo', [])
         if len(disp_tree) > 0:
@@ -1316,7 +1400,7 @@ class Side:
                     rows.sort(key=lambda x: srctools.conv_int(x.name[3:]))
                     disp_data[v] = [v.value for v in rows]
         else:
-            disp_data = None
+            disp_data = None  # type: Optional[Dict[str, Any]]
 
         return cls(
             vmf_file,
@@ -1352,7 +1436,7 @@ class Side:
             disp_data['subdiv'] = self.disp_is_subdiv
             disp_data['allowed_verts'] = self.disp_allowed_verts
         else:
-            disp_data = None
+            disp_data = None  # type: Optional[Dict[str, Any]]
 
         if vmf_file is not None and des_id == -1:
             des_id = self.id
@@ -1428,8 +1512,7 @@ class Side:
 
     def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
-        if self.id in self.map.face_id:
-            self.map.face_id.remove(self.id)
+        self.map.face_id.discard(self.id)
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Generate the highest and lowest points these planes form."""
@@ -1461,16 +1544,14 @@ class Side:
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Vec=None) -> None:
+    def localise(self, origin: Vec, angles: Union[Matrix, Angle]=None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.
         """
+        angles = to_matrix(angles)  # Only do this once.
         for p in self.planes:
             p.localise(origin, angles)
-
-        if angles is None:
-            angles = Vec()
 
         self.uaxis = self.uaxis.localise(origin, angles)
         self.vaxis = self.vaxis.localise(origin, angles)
@@ -1498,15 +1579,17 @@ class Side:
 
         return point_2.cross(point_1).norm()
 
-    def scale(self, value: float) -> None:
+    def scale_set(self, value: float) -> None:
         self.uaxis.scale = value
         self.vaxis.scale = value
-    scale = property(fset=scale, doc='Set both scale attributes easily.')
+    scale = property(fset=scale_set, doc='Set both scale attributes easily.')
 
-    def offset(self, value: float) -> None:
+    def offset_set(self, value: float) -> None:
         self.uaxis.offset = value
         self.vaxis.offset = value
-    offset = property(fset=offset, doc='Set both offset attributes easily.')
+    offset = property(fset=offset_set, doc='Set both offset attributes easily.')
+
+    del scale_set, offset_set
 
 
 class Entity:
@@ -1529,7 +1612,7 @@ class Entity:
         outputs: List['Output']=None,
         solids: List[Solid]=None,
         hidden: bool=False,
-        groups: List['EntityGroup']=(),
+        groups: Iterable['EntityGroup']=(),
         vis_ids=(),
         vis_shown: bool=True,
         vis_auto_shown: bool=True,
@@ -1771,15 +1854,20 @@ class Entity:
         """Remove this entity from the map."""
         self.map.remove_ent(self)
 
-    def make_unique(self) -> 'Entity':
-        """Ensure this entity is uniquely named, by adding a numeric suffix."""
-        orig_name = self['targetname']
+    def make_unique(self, unnamed_prefix='') -> 'Entity':
+        """Ensure this entity is uniquely named, by adding a numeric suffix.
 
-        self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        If the entity doesn't start with a name, it will use the parameter.
+        """
+        orig_name = self['targetname']
+        if orig_name:
+            self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
+        else:
+            orig_name = unnamed_prefix
         
         base_name = orig_name.rstrip('0123456789')
 
-        if self.map.by_target[orig_name]:
+        if self.map.by_target[base_name]:
             # Check every index in order.
             for i in itertools.count(start=1):
                 name = base_name + str(i)
@@ -1887,7 +1975,7 @@ class Entity:
                 del self.keys[k]
                 break
 
-    def get(self, key: str, default: T='') -> Union[str, T]:
+    def get(self, key: str, default: Union[str, T]='') -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -1926,8 +2014,7 @@ class Entity:
 
     def __del__(self) -> None:
         """Forget this entity's ID when the object is destroyed."""
-        if self.id in self.map.ent_id:
-            self.map.ent_id.remove(self.id)
+        self.map.ent_id.discard(self.id)
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Get two vectors representing the space this entity takes up."""
@@ -1952,10 +2039,14 @@ class Entity:
             return Vec.from_str(self['origin'])
 
 # One $fixup variable with replacement.
-FixupTuple = namedtuple('FixupTuple', 'var value id')
+FixupTuple = NamedTuple('FixupTuple', [
+    ('var', str),
+    ('value', str),
+    ('id', int),
+])
 
 
-class EntityFixup:
+class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
@@ -1964,19 +2055,21 @@ class EntityFixup:
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
     """
-    # Because of the int(), bool(), float() methods, we need to use builtins
+
+    # Because of the int(), bool(), float() methods, we need to use builtins.*
     # for the type annotations.
-    __slots__ = ['_fixup']
+    __slots__ = ['_fixup', '_matcher']
 
     def __init__(self, fixup: Iterable[FixupTuple]=()):
-        self._fixup = {}
+        self._fixup = {}  # type: Dict[str, FixupTuple]
+        self._matcher = None  # type: Optional[Pattern[str]]
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes = set()
-        extra_vals = []
+        used_indexes = set()  # type: Set[int]
+        extra_vals = []  # type: List[FixupTuple]
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -2007,15 +2100,22 @@ class EntityFixup:
     def clear(self) -> None:
         """Wipe all the $fixup values."""
         self._fixup.clear()
+        self._matcher = None
 
-    def update(self, other: Union['EntityFixup', Mapping[str, str]]) -> None:
-        """Copy the keys of the other item to this one.
+    def setdefault(self, var: str, default: T=None) -> Union[str, T]:
+        """Return $key, but if not present set it to the default and return that."""
+        if var[0] == '$':
+            var = var[1:]
+        folded_var = var.casefold()
+        if folded_var in self._fixup:
+            return self._fixup[folded_var].value
+        else:
+            self[folded_var] = default
+            return default
 
-        Variable IDs are not preserved.
-        """
-        # Convert to dict - this handles EntityFixup + other mappings
-        for key, value in dict(other).items():
-            self[key] = value
+    def __len__(self) -> int:
+        """Return the number of defined keys."""
+        return len(self._fixup)
 
     @overload
     def __getitem__(self, key: str) -> str: ...
@@ -2042,11 +2142,11 @@ class EntityFixup:
         if var[0] == '$':
             var = var[1:]
 
-            val = (
-                ('1' if val else '0')
-                if isinstance(val, bool)
-                else str(val)
-            )
+        sval = (
+            ('1' if val else '0')
+            if isinstance(val, bool)
+            else str(val)
+        )
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
@@ -2058,14 +2158,17 @@ class EntityFixup:
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(var, val, ind)
+                    self._fixup[folded_var] = FixupTuple(var, sval, ind)
                     break
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
         else:
             self._fixup[folded_var] = FixupTuple(
                 var,
-                val,
+                sval,
                 self._fixup[folded_var].id,
             )
+            # self._matcher is still correct.
 
     def __delitem__(self, var: str) -> None:
         """Delete a instance $replace variable."""
@@ -2074,6 +2177,8 @@ class EntityFixup:
         var = var.casefold()
         if var in self._fixup:
             del self._fixup[var]
+            # We've changed the keys so this needs to be regenerated.
+            self._matcher = None
 
     def keys(self) -> Iterator[str]:
         """Iterate over all set variable names."""
@@ -2120,7 +2225,43 @@ class EntityFixup:
         )
         return self.__class__.__name__ + '([' + items + '])'
 
-    def int(self, key: str, def_: T=0) -> Union[builtins.int, T]:
+    def substitute(self, text: str, default: str=None) -> str:
+        """Substitute the fixup variables into the provided string.
+
+        Variables are found based on the defined values, so constructions such as
+        val$varval are valid (with no delimiter indicating the end of variables).
+        Longer matches are preferred. If the name after $ is not found at all,
+        a KeyError is raised, or if default is provided it is substituted.
+
+        Any key is valid if defined in the instance, but only a-z, 0-9 and _ is
+        detected for the default functionality.
+        """
+        if '$' not in text:
+            return text
+
+        # Cache the pattern used, we can reuse it whenever called again without
+        # adding new variables.
+        if self._matcher is None:
+            # Sort longer values first, so they are checked before smaller
+            # counterparts.
+            sections = list(map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True)))
+            sections.append('[a-z_][a-z0-9_]*')  # Then add on the default any-identifier check.
+            # $, plus any of the above parts.
+            self._matcher = re.compile('\\$({})'.format('|'.join(sections)), re.IGNORECASE)
+
+        def replacer(match: 'Match[str]') -> str:
+            """Handles the replacement semantics."""
+            varname = match.group(1)
+            try:
+                return self._fixup[varname.casefold()].value
+            except KeyError:
+                if default is None:
+                    raise KeyError('$' + varname) from None
+                return default
+
+        return self._matcher.sub(replacer, text)
+
+    def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(fixup[key]), but with a default value if missing or
@@ -2131,7 +2272,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(fixup[key]), but with a default value if missing or
@@ -2142,7 +2283,7 @@ class EntityFixup:
         except (ValueError, TypeError):
             return def_
 
-    def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
         """Return a fixup interpreted as a boolean.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -2187,7 +2328,7 @@ class EntityGroup:
         editor_block = props.find_key('editor', [])
         return cls(
             vmf_file,
-            props['id'],
+            props.int('id', -1),
             vis_shown=editor_block.bool('visgroupshown', True),
             vis_auto_shown=editor_block.bool('visgroupsautoshown', True),
         )

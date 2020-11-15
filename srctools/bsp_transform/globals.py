@@ -1,10 +1,12 @@
 """Apply transformations that work on (almost) all entities."""
+import itertools
 from collections import defaultdict
 from typing import Dict, Tuple, List
 
 from srctools.bsp_transform import trans, Context
 from srctools.logger import get_logger
 from srctools import Output
+from srctools.packlist import FileType
 
 
 LOGGER = get_logger(__name__)
@@ -34,43 +36,47 @@ def vscript_init_code(ctx: Context):
     """Add vscript_init_code keyvalues.
 
     The specified code is appended as a script file to the end of the scripts.
+    vscript_init_code2, 3 etc will also be added in order if they exist.
     """
     for ent in ctx.vmf.entities:
-        code = ent['vscript_init_code']
+        code = ent.keys.pop('vscript_init_code', '')
+
         if not code:
             continue
-        init_scripts = ent['vscripts'].split()
-        init_scripts.append(ctx.pack.inject_file(
-            code.replace('`', '"').encode('utf8'),
-            'scripts/vscripts/inject',
-            'nut'
-        )[17:])  # Don't include scripts/vscripts/
-        ent['vscripts'] = ' '.join(init_scripts)
-        del ent['vscript_init_code']
+
+        for i in itertools.count(2):
+            extra = ent.keys.pop('vscript_init_code' + str(i), '')
+            if not extra:
+                break
+            code += '\n' + extra
+
+        ctx.add_code(ent, code)
 
 
-@trans('VScript RunScriptCode Strings')
-def vscript_runscriptcode_strings(ctx: Context):
-    """Allow writing strings in RunScriptCode inputs.
+@trans('VScript RunScript Inputs')
+def vscript_runscript_inputs(ctx: Context):
+    """Handle RunScript* inputs.
+
+    For RunScriptCode, allow using quotes in the parameter.
 
     This is done by using ` as a replacement for double-quotes,
     then synthesising a script file and using RunScriptFile to execute it.
+    For RunScriptFile, ensure the file is packed.
     """
     for ent in ctx.vmf.entities:
         for out in ent.outputs:
-            if out.input.casefold() != 'runscriptcode':
+            inp_name = out.input.casefold()
+            if inp_name == 'runscriptfile':
+                ctx.pack.pack_file('scripts/vscripts/' + out.params, FileType.VSCRIPT_SQUIRREL)
+            if inp_name != 'runscriptcode':
                 continue
             if '`' not in out.params:
                 continue
-            out.params = ctx.pack.inject_file(
-                out.params.replace('`', '"').encode('utf8'),
-                'scripts/vscripts/inject',
-                'nut'
-            )[17:]  # Don't include scripts/vscripts/
+            out.params = ctx.pack.inject_vscript(out.params.replace('`', '"'))
             out.input = 'RunScriptFile'
 
 
-@trans('Optimise logic_auto')
+@trans('Optimise logic_auto', priority=50)
 def optimise_logic_auto(ctx: Context):
     """Merge logic_auto entities to simplify the map."""
 
@@ -94,3 +100,27 @@ def optimise_logic_auto(ctx: Context):
             origin='0 0 0',
             spawnflags=int(only_once),
         ).outputs = outputs
+
+
+@trans('Strip Entities', priority=50)
+def strip_ents(ctx: Context):
+    """Strip useless entities from the map."""
+    for clsname in [
+        # None of these are defined by the engine itself.
+        # If present they're useless.
+        'hammer_notes',
+        'func_instance_parms',
+        'func_instance_origin',
+    ]:
+        for ent in ctx.vmf.by_class[clsname]:
+            ent.remove()
+
+    # Strip extra keys added in the engine.
+    to_remove = []
+    for ent in ctx.vmf.entities:
+        to_remove.clear()
+        for key, value in ent.keys.items():
+            if 'divider' in key and value == "":
+                to_remove.append(key)
+        for key in to_remove:
+            del ent.keys[key]

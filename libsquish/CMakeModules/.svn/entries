@@ -1,0 +1,41 @@
+8
+
+dir
+103
+https://svn.code.sf.net/p/libsquish/code/trunk/CMakeModules
+https://svn.code.sf.net/p/libsquish/code
+
+
+
+2015-10-08T08:01:47.212130Z
+67
+roettger
+
+
+svn:special svn:externals svn:needs-lock
+
+
+
+
+
+
+
+
+
+
+
+d1da18a7-0d7c-4e8b-a45e-7863643f1f45
+
+FindlibSquish.cmake
+file
+
+
+
+
+2016-09-23T08:12:08.000000Z
+4198fd5097a17032a5aa39355b11abc8
+2015-10-08T08:01:47.212130Z
+67
+roettger
+has-props
+

@@ -56,9 +56,6 @@ def get_parm_type(name: str) -> VarType:
     # collected - no need to keep it around.
     del sys.modules['srctools._shaderdb']
 
-    # Additional values is missed by the search code.
-    _SHADER_PARAM_TYPES['bottommaterial'] = VarType.MATERIAL
-
     # Redirect this to always call the normal function.
     get_parm_type.__code__ = _get_parm_type_real.__code__
     return _get_parm_type_real(name)
@@ -115,8 +112,8 @@ class Material:
         # Open the parameters body.
         tok.expect(Tok.BRACE_OPEN)
         
-        params = {}
-        proxies = []
+        params = {}  # type: Dict[str, Union[str, Property]]
+        proxies = []  # type: List[Property]
         
         # Look for parameter names
         for token, param_name in tok:
@@ -137,7 +134,7 @@ class Material:
                 pass
             elif token is Tok.NEWLINE:
                 # Name by itself: '%compilenodraw' etc...
-                param_value = None
+                param_value = ''
                 # We need to check there's a newline after that - for proxies, 
                 # or errors.
                 token, ignored = tok()
@@ -300,10 +297,19 @@ class Material:
             for name, prop in parent._params.items()
         }
 
-        for prop in self._params.get('insert', ()):
-            if prop.has_children():
-                raise ValueError('Append contains blocks?')
-            new_params[prop.name] = prop.value
+        # Empty strings in these delete the value.
+        # Despite the name, both seem to do the same thing.
+        for name in ['insert', 'replace']:
+            for prop in self._params.get(name, ()):
+                if prop.has_children():
+                    raise ValueError(name.title() + ' contains blocks?')
+                if prop.value == '':
+                    try:
+                        del new_params[prop.name]
+                    except KeyError:
+                        pass
+                else:
+                    new_params[prop.name] = prop.value
 
         return Material(
             parent.shader,

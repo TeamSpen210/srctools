@@ -70,6 +70,9 @@ from typing import (
     List, Tuple, Dict, Iterator,
     TypeVar,
     Iterable,
+    overload,
+    Callable,
+    Mapping,
 )
 
 
@@ -122,7 +125,7 @@ class NoKeyError(LookupError):
         return "No key " + self.key + "!"
 
 
-def _read_flag(flags: Dict[str, bool], flag_val: str) -> bool:
+def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
     """Check whether a flag is True or False."""
     flag_inv = flag_val[:1] == '!'
     if flag_inv:
@@ -174,7 +177,7 @@ class Property:
         return self._folded_name
 
     @name.setter
-    def name(self, new_name):
+    def name(self, new_name: Optional[str]) -> None:
         if new_name is None:
             self._folded_name = self.real_name = None
         else:
@@ -195,7 +198,9 @@ class Property:
     def parse(
         file_contents: Union[str, Iterator[str]],
         filename='',
-        flags: Dict[str, bool]=EmptyMapping,
+        flags: Mapping[str, bool]=EmptyMapping,
+        allow_escapes: bool=True,
+        single_line: bool=False,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
@@ -203,6 +208,10 @@ class Property:
         file_contents should be an iterable of strings or a single string.
         flags should be a mapping for additional flags to accept
         (which overrides defaults).
+        allow_escapes allows choosing if \\t or similar escapes are parsed.
+        If single_line is set, allow multiple properties to be on the same line.
+        This means unterminated strings will be caught late (if at all), but
+        it allows parsing some 'internal' data blocks.
         """
         # The block we are currently adding to.
 
@@ -210,7 +219,10 @@ class Property:
         # just outputs its children when exported. This way we can handle
         # multiple root blocks in the file, while still returning a single
         # Property object which has all the methods.
-        cur_block = Property(None, [])
+        # Skip calling __init__ for speed.
+        cur_block = Property.__new__(Property)
+        cur_block._folded_name = cur_block.real_name = None
+        cur_block.value = []
 
         # A queue of the properties we are currently in (outside to inside).
         open_properties = [cur_block]
@@ -227,6 +239,7 @@ class Property:
             filename,
             KeyValError,
             string_bracket=True,
+            allow_escapes=allow_escapes,
         )
 
         # Do we require a block to be opened next? ("name"\n must have { next.)
@@ -244,7 +257,7 @@ class Property:
                         'A "name" "value" line cannot then open a block.',
                     )
                 requires_block = can_flag_replace = False
-                cur_block = cur_block[-1]
+                cur_block = cur_block.value[-1]
                 cur_block.value = []
                 open_properties.append(cur_block)
                 continue
@@ -259,6 +272,12 @@ class Property:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
+                # Skip calling __init__ for speed. Value needs to be set
+                # before using this, since it's unset here.
+                keyvalue = Property.__new__(Property)
+                keyvalue._folded_name = sys.intern(token_value.casefold())
+                keyvalue.real_name = sys.intern(token_value)
+
                 # We need to check the next token to figure out what kind of
                 # prop it is.
                 prop_type, prop_value = tokenizer()
@@ -269,16 +288,18 @@ class Property:
                     tokenizer.expect(NEWLINE)
                     requires_block = True
                     if _read_flag(flags, prop_value):
+                        keyvalue.value = []
+
                         # Special function - if the last prop was a
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
                             cur_block.value[-1].real_name == token_value and
-                            cur_block.value[-1].has_children()
+                            type(cur_block.value[-1].value) == list
                         ):
-                            cur_block.value[-1] = Property(token_value, [])
+                            cur_block.value[-1] = keyvalue
                         else:
-                            cur_block.append(Property(token_value, []))
+                            cur_block.value.append(keyvalue)
                         # Can't do twice in a row
                         can_flag_replace = False
 
@@ -292,7 +313,7 @@ class Property:
                         )
                     requires_block = False
 
-                    keyvalue = Property(token_value, prop_value)
+                    keyvalue.value = prop_value
 
                     # Check for flags.
                     flag_token, flag_val = tokenizer()
@@ -305,33 +326,42 @@ class Property:
                             if (
                                 can_flag_replace and
                                 cur_block.value[-1].real_name == token_value and
-                                not cur_block.value[-1].has_children()
+                                type(cur_block.value[-1].value) == str
                             ):
                                 cur_block.value[-1] = keyvalue
                             else:
-                                cur_block.append(keyvalue)
+                                cur_block.value.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
-                        # Specifically disallow multiple text on the same line.
+                        # Specifically disallow multiple text on the same line
+                        # normally.
                         # ("name" "value" "name2" "value2")
-                        raise tokenizer.error(
-                            "Cannot have multiple names on the same line!"
-                        )
+                        if single_line:
+                            cur_block.value.append(keyvalue)
+                            tokenizer.push_back(flag_token, flag_val)
+                            continue
+                        else:
+                            raise tokenizer.error(
+                                "Cannot have multiple names on the same line!"
+                            )
                     else:
                         # Otherwise, it's got nothing after.
                         # So insert the keyvalue, and check the token
                         # in the next loop. This allows braces to be
                         # on the same line.
-                        cur_block.append(keyvalue)
+                        cur_block.value.append(keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
-                else:  # Something else - treat this as a block, and
-                    # then re-evaluate this in the next loop.
+                else:
+                    # Something else - treat this as a block, and
+                    # then re-evaluate the token in the next loop.
+                    keyvalue.value = []
+
                     requires_block = True
                     can_flag_replace = False
-                    cur_block.append(Property(token_value, []))
+                    cur_block.value.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
@@ -408,7 +438,7 @@ class Property:
         for block in self.find_all(*keys):
             yield from block
 
-    def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND):
+    def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND) -> 'Property':
         """Obtain the child Property with a given name.
 
         - If no child is found with the given name, this will return the
@@ -416,6 +446,8 @@ class Property:
           none is provided.
         - This prefers keys located closer to the end of the value list.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
@@ -435,6 +467,8 @@ class Property:
           default value, or raise NoKeyError if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         for prop in reversed(self.value):  # type: Property
             if prop._folded_name == key:
@@ -452,6 +486,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return int(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -465,6 +501,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return float(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
@@ -478,6 +516,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
         except LookupError:  # base for NoKeyError and KeyError
@@ -489,6 +529,8 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
         except LookupError:  # key not present, defaults.
@@ -501,6 +543,9 @@ class Property:
           blank properties will be added automatically
         - path should be a tuple of names, or a single string.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
+
         current_prop = self
         if isinstance(path, tuple):
             # Search through each item in the tree!
@@ -550,6 +595,32 @@ class Property:
             return {item._folded_name: item.as_dict() for item in self}
         else:
             return self.value
+
+    @overload
+    def as_array(self) -> List[str]: ...
+
+    @overload
+    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
+
+    def as_array(self, *, conv: Callable[[str], T]=str) -> List[T]:
+        """Convert a property block into a list of values.
+
+        If the property is a single keyvalue, the single value will be
+        yielded. Otherwise, each child must be a single value and each
+        of those will be yielded. The name is ignored.
+        """
+        if self.has_children():
+            arr = []
+            for child in self.value:
+                if child.has_children():
+                    raise ValueError(
+                        'Cannot have sub-children in a '
+                        '"{}" array of values!'.format(self.real_name)
+                    )
+                arr.append(conv(child.value))
+            return arr
+        else:
+            return [conv(self.value)]
 
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
@@ -768,6 +839,8 @@ class Property:
         After execution, this tree will have only one sub-Property for
         each of the given names. This ignores leaf Properties.
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         folded_names = [name.casefold() for name in names]
         new_list = []
         merge = {
@@ -775,12 +848,13 @@ class Property:
             for name in
             names
         }
-        if self.has_children():
-            for item in self.value[:]:  # type: Property
-                if item._folded_name in folded_names:
-                    merge[item._folded_name].value.extend(item.value)
-                else:
-                    new_list.append(item)
+
+        for item in self.value[:]:  # type: Property
+            if item._folded_name in folded_names:
+                merge[item._folded_name].value.extend(item.value)
+            else:
+                new_list.append(item)
+
         for prop_name in names:
             prop = merge[prop_name.casefold()]
             if len(prop.value) > 0:
@@ -873,28 +947,37 @@ class Property:
         >>> print(repr(prop))
         Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
         """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
         return _Builder(self)
 
 
 class _Builder:
     """Allows constructing property trees using with: chains.
 
-    This is the object you
+    This is the builder you get directly, which is interacted with for
+    all the hierachies.
     """
     def __init__(self, parent: Property):
         self._parents = [parent]
 
     def __getattr__(self, name: str) -> '_BuilderElem':
+        """Accesses by attribute produce a prop with that name.
+
+        For all Python keywords a trailing underscore is ignored.
+        """
         return _BuilderElem(self, self._keywords.get(name, name))
 
     def __getitem__(self, name: str) -> '_BuilderElem':
+        """This allows accessing names dynamicallyt easily, or names which aren't identifiers."""
         return _BuilderElem(self, name)
 
     def __enter__(self) -> '_Builder':
         """Start a property block."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+        """Ends the property block."""
         pass
 
     def __iter__(self) -> Iterator[Union[Property, '_Builder']]:
@@ -906,7 +989,11 @@ class _Builder:
 
 # noinspection PyProtectedMember
 class _BuilderElem:
-    """Allows constructing property trees using with: chains."""
+    """Allows constructing property trees using with: chains.
+
+    This is produced when indexing or accessing attributes on the builder,
+    and is then called or used as a context manager to enter the builder.
+    """
     def __init__(self, builder: _Builder, name: str):
         self._builder = builder
         self._name = name

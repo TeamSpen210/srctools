@@ -1,13 +1,31 @@
-# cython: language_level=3, boundscheck=False
+# cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
-from cpython cimport array
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
-from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.stdio cimport snprintf
-from libc.stdint cimport uint_least64_t
+from libc.stdlib cimport malloc, free
+from libc.string cimport memcpy, memset
+from cython.parallel cimport prange, parallel
 
+cdef extern from "squish.h" namespace "squish":
+    ctypedef unsigned char u8;
+    cdef enum:
+        kDxt1 # Use DXT1 compression.
+        kDxt3 # Use DXT3 compression.
+        kDxt5 # Use DXT5 compression.
+        kBc4  # Use BC4 / ATI1n compression.
+        kBc5  # Use BC5 / ATI2n compression.
+        kColourClusterFit # Use a slow but high quality colour compressor (the default).
+        kColourRangeFit # Use a fast but low quality colour compressor.
+        kWeightColourByAlpha # Weight the colour by alpha during cluster fit (disabled by default).
+        kColourIterativeClusterFit # Use a very slow but very high quality colour compressor.
+        kSourceBGRA # Source is BGRA rather than RGBA
+        kForceOpaque # Force alpha to be opaque
 
-cdef object img_template = array.array('B', [])
+    # void CompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags, float *metric);
+    void CompressImage(u8 *rgba, int width, int height, void *blocks, int flags, float *metric) nogil;
+
+    # void DecompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags );
+    void DecompressImage(u8 *rgba, int width, int height, void *blocks, int flags ) nogil;
+
 ctypedef unsigned char byte
 ctypedef unsigned int uint
 
@@ -16,32 +34,101 @@ cdef struct RGB:
     byte g
     byte b
 
+# Offsets for the colour channels.
+DEF R = 0
+DEF G = 1
+DEF B = 2
+DEF A = 3
 
-def blank(uint width, uint height):
-    """Construct a blank image of the desired size."""
-    return array.clone(img_template, 4 * width * height, zero=True)
+# We specify all the arrays are C-contiguous, since we're the only one using
+# these functions directly.
 
 
-def ppm_convert(array.array[unsigned char] pixels, uint width, uint height):
+def ppm_convert(const byte[::1] pixels, uint width, uint height):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef uint img_off, off
     cdef Py_ssize_t size = 3 * width * height
 
-    cdef byte *buffer = <byte *> PyMem_Malloc(size + 16)
+    # b'P6 65536 65536 255\n' is 19 characters long.
+    # We shouldn't get a larger frame than that, it's already absurd.
+    cdef byte *buffer = <byte *> malloc(size + 19)
     try:
-        img_off = snprintf(<char *>buffer, 16, b'P6 %u %u 255\n', width, height)
+        img_off = snprintf(<char *>buffer, 19, b'P6 %u %u 255\n', width, height)
 
-        if img_off < 0:
+        if img_off < 0: # If it does fail just produce a blank file.
             return b''
 
         for off in range(width * height):
-            buffer[img_off + 3*off] = pixels[4*off]
-            buffer[img_off + 3*off+1] = pixels[4*off+1]
-            buffer[img_off + 3*off+2] = pixels[4*off+2]
+            buffer[img_off + 3*off + R] = pixels[4*off]
+            buffer[img_off + 3*off + G] = pixels[4*off+1]
+            buffer[img_off + 3*off + B] = pixels[4*off+2]
 
-        return PyBytes_FromStringAndSize(<char *>buffer, size + img_off)
+        return buffer[:size+img_off]
     finally:
-        PyMem_Free(buffer)
+        free(buffer)
+
+
+def scale_down(
+    filt: 'FilterMode',
+    uint src_width, uint src_height,
+    uint width, uint height,
+    const byte[::1] src, byte[::1] dest,
+) -> None:
+    """Scale down the image to this smaller size.
+
+    This is simplified for mipmap generation only:
+    either dimension may be the same, or be scaled exactly half.
+    """
+    cdef int filter_val = filt.value
+    cdef Py_ssize_t x, y, pos_off, off, off2, channel
+    cdef Py_ssize_t vert_off, horiz_off, per_row, per_column
+
+    # We allow the dimensions to remain the same.
+    # So figure out the offsets we need to pick the right pixels.
+    # per_row/column is the multiples needed to skip to the upper-left pixel.
+    # horiz/vertical_off is the offset to the lower-right pixel in each dimension.
+    if width != src_width:
+        horiz_off, per_column = 4, 2
+    else:
+        horiz_off, per_column = 0, 1
+    if height != src_height:
+        vert_off, per_row = 4 * per_column * width, 2 * per_column * width
+    else:
+        vert_off, per_row = 0, per_column * width
+
+    if filter_val == 4:  # Bilinear
+        for y in prange(height, nogil=True, schedule='static'):
+            for x in range(width):
+                off = 4 * (width * y + x)
+                off2 = 4 * (per_row * y + per_column * x)
+                for channel in range(4):
+                    dest[off + channel] = (
+                        src[off2 + channel] +
+                        src[off2 + channel + horiz_off] +
+                        src[off2 + channel + vert_off] +
+                        src[off2 + channel + vert_off + horiz_off]
+                    ) // 4
+        return
+
+    # Otherwise, nearest-neighbour.
+    elif filter_val == 0:  # upper-left
+        pos_off = 0
+    elif filter_val == 1:  # upper-right
+        pos_off = horiz_off
+    elif filter_val == 2:  # lower-left
+        pos_off = vert_off
+    elif filter_val == 3:  # lower-right
+        pos_off = vert_off + horiz_off
+    else:
+        raise ValueError(f"Unknown filter {filt}")
+
+    # for off in range(0, 4 * width * height, 4):
+    for y in prange(height, nogil=True, schedule='static'):
+        for x in range(width):
+            off = 4 * (width * y + x)
+            off2 = 4 * (per_row * y + per_column * x)
+            for channel in range(4):
+                dest[off + channel] = src[off2 + pos_off + channel]
 
 
 cdef inline byte upsample(byte bits, byte data) nogil:
@@ -52,175 +139,364 @@ cdef inline byte upsample(byte bits, byte data) nogil:
     return data | (data >> bits)
 
 
-cdef inline int decomp565(RGB *rgb, byte a, byte b):
+cdef inline RGB decomp565(byte a, byte b) nogil:
     """Decompress 565-packed data into RGB triplets."""
-    rgb.r = upsample(5, (a & 0b00011111) << 3)
-    rgb.g = upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3))
-    rgb.b = upsample(5, b & 0b11111000)
+    return {
+        'r': upsample(5, (a & 0b00011111) << 3),
+        'g': upsample(6, ((b & 0b00000111) << 5) | ((a & 0b11100000) >> 3)),
+        'b': upsample(5, b & 0b11111000),
+    }
 
 
-def loader_rgba(mode: str):
-    """Make the RGB loader functions."""
-    cdef byte r_off = mode.index('r')
-    cdef byte g_off = mode.index('g')
-    cdef byte b_off = mode.index('b')
-    cdef byte a_off
-    try:
-        a_off = mode.index('a')
-    except ValueError:
-        def loader(byte[:] pixels, const byte[:] data, uint width, uint height):
-            cdef uint offset
-            for offset in range(width * height):
-                pixels[4 * offset] = data[3 * offset + r_off]
-                pixels[4 * offset + 1] = data[3 * offset + g_off]
-                pixels[4 * offset + 2] = data[3 * offset + b_off]
-                pixels[4 * offset + 3] = 255
-    else:
-        def loader(byte[:] pixels, const byte[:] data, uint width, uint height):
-            cdef uint offset
-            for offset in range(width * height):
-                pixels[4 * offset] = data[4 * offset + r_off]
-                pixels[4 * offset + 1] = data[4 * offset + g_off]
-                pixels[4 * offset + 2] = data[4 * offset + b_off]
-                pixels[4 * offset + 3] = data[4 * offset + a_off]
-    return loader
+cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
+    """Compress RGB triplets into 565-packed data."""
+    return (
+        (r & 0b11111000) | (g >> 5),
+        (g << 5) & 0b11100000 | (b >> 3)
+    )
 
 
-load_rgba8888 = loader_rgba('rgba')
-load_bgra8888 = loader_rgba('bgra')
+# There's a few formats that just do RGBA. This is a special case, since we can just copy across.
+# memcpy is going to be more efficient than manual code.
+cdef bint load_copy(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    """Parse RGBA-ordered 8888 pixels."""
+    memcpy(&pixels[0], &data[0], 4 * width * height)
+
+cdef bint save_copy(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate RGBA-ordered 8888 pixels."""
+    memcpy(&data[0], &pixels[0], 4 * width * height)
+
+
+cdef bint load_bgra8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    """Load BGRA format images."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + B] = data[4 * offset + 0]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + R] = data[4 * offset + 2]
+        pixels[4 * offset + A] = data[4 * offset + 3]
+
+
+cdef bint save_bgra8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGRA format images."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + B]
+        data[4 * offset + 1] = pixels[4 * offset + G]
+        data[4 * offset + 2] = pixels[4 * offset + R]
+        data[4 * offset + 3] = pixels[4 * offset + A]
+
 
 # This is totally the wrong order, but it's how it's actually ordered.
-load_argb8888 = loader_rgba('gbar')
-load_abgr8888 = loader_rgba('abgr')
-
-load_rgb888 = loader_rgba('rgb')
-load_bgr888 = loader_rgba('bgr')
-
-
-# These semantically operate differently, but just have 4 channels.
-load_uvlx8888 = loader_rgba('rgba')
-load_uvwq8888 = loader_rgba('rgba')
+cdef bint load_argb8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    """This is toally wrong - it's actually in GBAR order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[4 * offset + 3]
+        pixels[4 * offset + G] = data[4 * offset + 0]
+        pixels[4 * offset + B] = data[4 * offset + 1]
+        pixels[4 * offset + A] = data[4 * offset + 2]
 
 
-def load_bgrx8888(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_argb8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """This is toally wrong - it's actually in GBAR order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + G]
+        data[4 * offset + 1] = pixels[4 * offset + B]
+        data[4 * offset + 2] = pixels[4 * offset + A]
+        data[4 * offset + 3] = pixels[4 * offset + R]
+
+
+cdef bint load_abgr8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[4 * offset + 3]
+        pixels[4 * offset + G] = data[4 * offset + 2]
+        pixels[4 * offset + B] = data[4 * offset + 1]
+        pixels[4 * offset + A] = data[4 * offset + 0]
+
+
+cdef bint save_abgr8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate ABGR-ordered data."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + A]
+        data[4 * offset + 1] = pixels[4 * offset + B]
+        data[4 * offset + 2] = pixels[4 * offset + G]
+        data[4 * offset + 3] = pixels[4 * offset + R]
+
+
+cdef bint load_rgb888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[3 * offset + 0]
+        pixels[4 * offset + G] = data[3 * offset + 1]
+        pixels[4 * offset + B] = data[3 * offset + 2]
+        pixels[4 * offset + A] = 255
+
+
+cdef bint save_rgb888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate RGB-format data, discarding alpha."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[3 * offset + 0] = pixels[4 * offset + R]
+        data[3 * offset + 1] = pixels[4 * offset + G]
+        data[3 * offset + 2] = pixels[4 * offset + B]
+
+
+cdef bint load_bgr888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[3 * offset + 2]
+        pixels[4 * offset + G] = data[3 * offset + 1]
+        pixels[4 * offset + B] = data[3 * offset + 0]
+        pixels[4 * offset + A] = 255
+
+
+cdef bint save_bgr888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGR-format data, discarding alpha."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[3 * offset + 0] = pixels[4 * offset + B]
+        data[3 * offset + 1] = pixels[4 * offset + G]
+        data[3 * offset + 2] = pixels[4 * offset + R]
+
+
+cdef bint load_bgrx8888(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Strange - skip byte."""
-    cdef uint offset
-    for offset in range(width * height):
-        pixels[4 * offset] = data[4 * offset + 2]
-        pixels[4 * offset + 1] = data[4 * offset + 1]
-        pixels[4 * offset + 2] = data[4 * offset + 0]
-        pixels[4 * offset + 3] = 255
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4 * offset + R] = data[4 * offset + 2]
+        pixels[4 * offset + G] = data[4 * offset + 1]
+        pixels[4 * offset + B] = data[4 * offset + 0]
+        pixels[4 * offset + A] = 255
 
 
-def load_rgb565(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgrx8888(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGR-format data, with an extra ignored byte."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[4 * offset + 0] = pixels[4 * offset + B]
+        data[4 * offset + 1] = pixels[4 * offset + G]
+        data[4 * offset + 2] = pixels[4 * offset + R]
+        data[4 * offset + 3] = 0
+
+
+cdef bint load_rgb565(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """RGB format, packed into 2 bytes by dropping LSBs."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef RGB col
-    for offset in range(width * height):
-        decomp565(&col, data[2 * offset], data[2 * offset + 1])
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        col = decomp565(data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = col.r
-        pixels[4 * offset + 1] = col.g
-        pixels[4 * offset + 2] = col.b
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = col.r
+        pixels[4 * offset + G] = col.g
+        pixels[4 * offset + B] = col.b
+        pixels[4 * offset + A] = 255
 
 
-def load_bgr565(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_rgb565(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate 565-format data, in RGB order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset + R],
+            pixels[4 * offset + G],
+            pixels[4 * offset + B],
+        )
+
+
+cdef bint load_bgr565(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, packed into 2 bytes by dropping LSBs."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef RGB col
-    for offset in range(width * height):
-        decomp565(&col, data[2 * offset], data[2 * offset + 1])
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        col = decomp565(data[2 * offset], data[2 * offset + 1])
 
-        pixels[4 * offset] = col.b
-        pixels[4 * offset + 1] = col.g
-        pixels[4 * offset + 2] = col.r
-        pixels[4 * offset + 3] = 255
+        pixels[4 * offset + R] = col.b
+        pixels[4 * offset + G] = col.g
+        pixels[4 * offset + B] = col.r
+        pixels[4 * offset + A] = 255
 
 
-def load_bgra4444(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate 565-format data, in BGR order."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset], data[2 * offset + 1] = compress565(
+            pixels[4 * offset + B],
+            pixels[4 * offset + G],
+            pixels[4 * offset + R],
+        )
+
+
+cdef bint load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset+1] = (a & 0b11110000) | (a & 0b11110000) >> 4
-        pixels[4 * offset+2] = (a & 0b00001111) | (a & 0b00001111) << 4
-        pixels[4 * offset] = (b & 0b00001111) | (b & 0b00001111) << 4
-        pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
+        pixels[4 * offset + G] = (a & 0b11110000) | (a & 0b11110000) >> 4
+        pixels[4 * offset + B] = (a & 0b00001111) | (a & 0b00001111) << 4
+        pixels[4 * offset + R] = (b & 0b00001111) | (b & 0b00001111) << 4
+        pixels[4 * offset + A] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def load_bgra5551(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGRA format images, using only 4 bits each."""
+    cdef Py_ssize_t offset
+    cdef byte a, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
+        data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+
+
+cdef bint load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
-        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
-        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
-        pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
+        pixels[4 * offset + R] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset + G] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset + B] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + A] = 255 if b & 0b10000000 else 0
 
 
-def load_bgrx5551(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGRA format images, using 5 bits for color and 1 for alpha."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b, a
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4 * offset + R]
+        g = pixels[4 * offset + G]
+        b = pixels[4 * offset + B]
+        a = pixels[4 * offset + A]
+        #BBBBBGGG  GGRRRRRA
+        data[2 * offset + 0] = (b & 0b11111000) | (g >> 5)
+        data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110) | (a >> 7)
+
+
+cdef bint load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, 5 bits per color, alpha ignored."""
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte a, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
-        pixels[4 * offset] = upsample(5, (b & 0b01111100) << 1)
-        pixels[4 * offset+1] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
-        pixels[4 * offset+2] = upsample(5, (a & 0b00011111) << 3)
-        pixels[4 * offset+3] = 255
+        pixels[4 * offset + R] = upsample(5, (b & 0b01111100) << 1)
+        pixels[4 * offset + G] = upsample(5, (a & 0b11100000) >> 2 | (b & 0b00000011) << 6)
+        pixels[4 * offset + B] = upsample(5, (a & 0b00011111) << 3)
+        pixels[4 * offset + A] = 255
 
 
-def load_i8(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGR format images, using 5 bits for color and 1 spare bit."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4 * offset + R]
+        g = pixels[4 * offset + G]
+        b = pixels[4 * offset + B]
+        #BBBBBGGG  GGRRRRRX
+        data[2 * offset + 0] = (b & 0b11111000) | (g >> 5)
+        data[2 * offset + 1] = ((g << 6) & 0b11000000) | ((r >> 2) & 0b00111110)
+
+
+cdef bint load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B"""
-    cdef uint offset
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
-        pixels[4*offset+3] = 255
+    cdef Py_ssize_t offset
+    cdef byte color
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        color = data[offset]
+        pixels[4*offset + R] = color
+        pixels[4*offset + G] = color
+        pixels[4*offset + B] = color
+        pixels[4*offset + A] = 255
 
 
-def load_ia88(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save in greyscale."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4*offset + R]
+        g = pixels[4*offset + G]
+        b = pixels[4*offset + B]
+        data[offset] = (r + g + b) // 3
+
+
+cdef bint load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B + A"""
-    cdef uint offset
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
+    cdef Py_ssize_t offset
+    cdef byte color
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        color = data[2*offset]
+        pixels[4*offset + R] = color
+        pixels[4*offset + G] = color
+        pixels[4*offset + B] = color
         pixels[4*offset+3] = data[2*offset+1]
+
+
+cdef bint save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save in greyscale, with alpha."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        r = pixels[4*offset + R]
+        g = pixels[4*offset + G]
+        b = pixels[4*offset + B]
+        data[2 * offset + 0] = (r + g + b) // 3
+        data[2 * offset + 1] = pixels[4*offset + A]
 
 
 # ImageFormats.P8 is not implemented by Valve either.
 
-def load_a8(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint load_a8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Single alpha bytes."""
-    cdef uint offset
-    for offset in range(width * height):
-        pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
-        pixels[4*offset+3] = data[offset]
+    cdef Py_ssize_t offset
+    # Set RGB to zero in bulk, instead of doing it in the loop.
+    memset(&pixels[0], 0, width * height)
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4*offset + A] = data[offset]
 
 
-def load_uv88(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_a8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save just the alpha channel."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[offset] = pixels[4*offset + A]
+
+
+cdef bint load_uv88(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """UV-only, which is mapped to RG."""
-    cdef uint offset
-    for offset in range(width * height):
-        pixels[4*offset] = data[2*offset]
-        pixels[4*offset+1] = data[2*offset+1]
-        pixels[4*offset+2] = 0
-        pixels[4*offset+3] = 255
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        pixels[4*offset + R] = data[2*offset]
+        pixels[4*offset + G] = data[2*offset+1]
+        pixels[4*offset + B] = 0
+        pixels[4*offset + A] = 255
 
 
-def load_rgb888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_uv88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate UV-format data, using RG."""
+    cdef Py_ssize_t offset
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        data[2*offset + 0] = pixels[4*offset + R]
+        data[2*offset + 1] = pixels[4*offset + G]
+
+
+cdef bint load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """RGB format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
     """
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte r, g, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset]
         g = data[3 * offset + 1]
         b = data[3 * offset + 2]
@@ -228,20 +504,35 @@ def load_rgb888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint 
             pixels[4*offset] = pixels[4*offset+1] = 0
             pixels[4*offset+2] = pixels[4*offset+3] = 0
         else:
-            pixels[4 * offset] = r
-            pixels[4 * offset + 1] = g
-            pixels[4 * offset + 2] = b
-            pixels[4 * offset + 3] = 255
+            pixels[4 * offset + R] = r
+            pixels[4 * offset + G] = g
+            pixels[4 * offset + B] = b
+            pixels[4 * offset + A] = 255
 
 
-def load_bgr888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate RGB format, using pure blue for transparent pixels."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        if pixels[4*offset + A] < 128:
+            data[3 * offset + 0] = 0
+            data[3 * offset + 1] = 0
+            data[3 * offset + 2] = 255
+        else:
+            data[3 * offset + 0] = pixels[4*offset + R]
+            data[3 * offset + 1] = pixels[4*offset + G]
+            data[3 * offset + 2] = pixels[4*offset + B]
+
+
+cdef bint load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
     """
-    cdef uint offset
+    cdef Py_ssize_t offset
     cdef byte r, g, b
-    for offset in range(width * height):
+    for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset + 2]
         g = data[3 * offset + 1]
         b = data[3 * offset]
@@ -249,313 +540,212 @@ def load_bgr888_bluescreen(byte[:] pixels, const byte[:] data, uint width, uint 
             pixels[4*offset] = pixels[4*offset+1] = 0
             pixels[4*offset+2] = pixels[4*offset+3] = 0
         else:
-            pixels[4 * offset] = r
-            pixels[4 * offset + 1] = g
-            pixels[4 * offset + 2] = b
-            pixels[4 * offset + 3] = 255
+            pixels[4 * offset + R] = r
+            pixels[4 * offset + G] = g
+            pixels[4 * offset + B] = b
+            pixels[4 * offset + A] = 255
 
 
-def load_dxt1(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_bgr888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Generate BGR format, using pure blue for transparent pixels."""
+    cdef Py_ssize_t offset
+    cdef byte r, g, b
+    for offset in prange(width * height, nogil=True, schedule='static'):
+        if pixels[4*offset + A] < 128:
+            data[3 * offset + 0] = 255
+            data[3 * offset + 1] = 0
+            data[3 * offset + 2] = 0
+        else:
+            data[3 * offset + 0] = pixels[4*offset + B]
+            data[3 * offset + 1] = pixels[4*offset + G]
+            data[3 * offset + 2] = pixels[4*offset + R]
+
+
+cdef bint load_dxt1(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data."""
-    load_dxt1_impl(pixels, data, width, height, 255)
+    cdef Py_ssize_t offset
+    if width < 4 or height < 4:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque)
 
 
-def load_dxt1_onebitalpha(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_dxt1(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save compressed DXT1 data."""
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt1 | kForceOpaque, NULL)
+
+
+cdef bint load_dxt1_alpha(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
-    load_dxt1_impl(pixels, data, width, height, 0)
+    cdef Py_ssize_t offset
+    if width < 4 or height < 4:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt1)
 
 
-# Colour table indexes.
-DEF C0R = 0
-DEF C0G = 1
-DEF C0B = 2
-DEF C0A = 3
-
-DEF C1R = 4
-DEF C1G = 5
-DEF C1B = 6
-DEF C1A = 7
-
-DEF C2R = 8
-DEF C2G = 9
-DEF C2B = 10
-DEF C2A = 11
-
-DEF C3R = 12
-DEF C3G = 13
-DEF C3B = 14
-DEF C3A = 15
-
-cdef inline load_dxt1_impl(
-    byte[:] pixels,
-    const byte[:] data,
-    uint width,
-    uint height,
-    byte black_alpha,
-):
-    """Does the actual decompression."""
-    cdef uint block_wid, block_off, block_x, block_y
-
-    cdef byte[16] color_table
-
-    cdef RGB c0, c1
-
-    # All but the 4th colour are opaque.
-    color_table[C0A] = color_table[C1A] = color_table[C2A] = 255
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 8 * (block_wid * block_y + block_x)
-
-            # First, load the 2 colors.
-            decomp565(&c0, data[block_off], data[block_off+1])
-            decomp565(&c1, data[block_off+2], data[block_off+3])
-
-            color_table[C0B] = c0.r
-            color_table[C0G] = c0.g
-            color_table[C0R] = c0.b
-            
-            color_table[C1B] = c1.r
-            color_table[C1G] = c1.g
-            color_table[C1R] = c1.b
-
-            # We store the lookup colors as bytes so we can directly copy them.
-
-            # Equivalent to 16-bit comparison...
-            if (
-                data[block_off] > data[block_off+2] or
-                data[block_off+1] > data[block_off+3]
-            ):
-                color_table[C2R] = (2*c0.b + c1.b) // 3
-                color_table[C2G] = (2*c0.g + c1.g) // 3
-                color_table[C2B] = (2*c0.r + c1.r) // 3
-
-                color_table[C3R] = (c0.b + 2*c1.b) // 3
-                color_table[C3G] = (c0.g + 2*c1.g) // 3
-                color_table[C3B] = (c0.r + 2*c1.r) // 3
-                color_table[C3A] = 255
-            else:
-                color_table[C2R] = (c0.b + c1.b) // 2
-                color_table[C2G] = (c0.g + c1.g) // 2
-                color_table[C2B] = (c0.r + c1.r) // 2
-
-                color_table[C3R] = 0
-                color_table[C3G] = 0
-                color_table[C3B] = 0
-                color_table[C3A] = black_alpha
-
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off, block_wid,
-                block_x, block_y,
-                do_alpha=True,
-            )
+cdef bint save_dxt1_alpha(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt1, NULL)
 
 
-cdef inline void dxt_color_table(
-    byte[:] pixels,
-    const byte[:] data,
-    byte *table,
-    uint block_off,
-    uint block_wid,
-    uint block_x,
-    uint block_y,
-    bint do_alpha,
-):
-    """Decodes the actual colour table into pixels."""
-    cdef unsigned int row, y
-    cdef byte inp, off
-    for y in range(4):
-        inp = data[block_off + 4 + y]
-        row = 16 * block_wid * (4 * block_y + y) + 16 * block_x
-
-        off = 4 * ((inp & 0b11000000) >> 6)
-        pixels[row + C0R] = table[off + 0]
-        pixels[row + C0G] = table[off + 1]
-        pixels[row + C0B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C0A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00110000) >> 4)
-        pixels[row + C1R] = table[off + 0]
-        pixels[row + C1G] = table[off + 1]
-        pixels[row + C1B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C1A] = table[off + 3]
-
-        off = 4 * ((inp & 0b00001100) >> 2)
-        pixels[row + C2R] = table[off + 0]
-        pixels[row + C2G] = table[off + 1]
-        pixels[row + C2B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C2A] = table[off + 3]
-
-        off = 4 * (inp & 0b00000011)
-        pixels[row + C3R] = table[off + 0]
-        pixels[row + C3G] = table[off + 1]
-        pixels[row + C3B] = table[off + 2]
-        if do_alpha:
-            pixels[row + C3A] = table[off + 3]
-
-
-def load_dxt3(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint load_dxt3(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT3 data."""
-    cdef uint block_wid, block_off, block_x, block_y
-    cdef uint x, y, off, pos
-
-    cdef byte[16] color_table
-
-    cdef RGB c0, c1
-    cdef byte inp
-
-    # All colours are opaque.
-    color_table[C0A] = color_table[C1A] = 255
-    color_table[C2A] = color_table[C3A] = 255
-
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
-
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 16 * (block_wid * block_y + block_x)
-
-            # First, load the 2 colors.
-            decomp565(&c0, data[block_off + 8], data[block_off + 9])
-            decomp565(&c1, data[block_off + 10], data[block_off + 11])
-
-            color_table[C0R] = c0.b
-            color_table[C0G] = c0.g
-            color_table[C0B] = c0.r
-
-            color_table[C1R] = c1.b
-            color_table[C1G] = c1.g
-            color_table[C1B] = c1.r
-
-            color_table[C2R] = (2 * c0.b + c1.b) // 3
-            color_table[C2G] = (2 * c0.g + c1.g) // 3
-            color_table[C2B] = (2 * c0.r + c1.r) // 3
-
-            color_table[C3R] = (c0.b + 2 * c1.b) // 3
-            color_table[C3G] = (c0.g + 2 * c1.g) // 3
-            color_table[C3B] = (c0.r + 2 * c1.r) // 3
-
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off + 8, block_wid,
-                block_x, block_y,
-                do_alpha=False,
-            )
-            # Now add on the real alpha values.
-            for off in range(8):
-                inp = data[block_off + off]
-                y = off * 2 // 4
-                x = off * 2 % 4
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
-                pixels[pos + 3] = inp & 0b00001111 | (inp & 0b00001111) << 4
-                pixels[pos + 7] = inp & 0b11110000 | (inp & 0b11110000) >> 4
+    cdef Py_ssize_t offset
+    if width < 4 or height < 4:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in range(0, 4 * width * height, 4):
+            pixels[offset] = 0
+            pixels[offset + 1] = 0
+            pixels[offset + 2] = 0
+            pixels[offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt3)
 
 
-def load_dxt5(byte[:] pixels, const byte[:] data, uint width, uint height):
+cdef bint save_dxt3(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save compressed DXT3 data."""
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt3, NULL)
+
+
+cdef bint load_dxt5(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """Load compressed DXT5 data."""
+    cdef Py_ssize_t offset
+    if width < 4 or height < 4:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kDxt5)
 
-    cdef uint block_wid, block_off, block_x, block_y
-    cdef uint x, y, i, off, pos
 
-    cdef byte[16] color_table
-    cdef byte[8] alpha
+cdef bint save_dxt5(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Load compressed DXT5 data."""
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kDxt5, NULL)
 
-    cdef RGB c0, c1
-    cdef byte inp
 
-    cdef uint_least64_t lookup  # at least 48 bits!
+cdef bint load_ati2n(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
+    """Load 'ATI2N' format data, also known as BC5.
 
-    # All colours are opaque.
-    color_table[C0A] = color_table[C1A] = 255
-    color_table[C2A] = color_table[C3A] = 255
+    This uses two copies of the DXT5 alpha block for data.
+    """
+    cdef Py_ssize_t offset
+    if width < 4 or height < 4:
+        # DXT format must be 4x4 at minimum. So just write black.
+        # They still exist in small mipmaps.
+        for offset in prange(width * height, nogil=True, schedule='static'):
+            pixels[4 * offset] = 0
+            pixels[4 * offset + 1] = 0
+            pixels[4 * offset + 2] = 0
+            pixels[4 * offset + 2] = 0xFF
+    else:
+        DecompressImage(&pixels[0], width, height, &data[0], kBc5)
 
-    block_wid = width // 4
-    if width % 4:
-        block_wid += 1
 
-    # TODO: These alpha values aren't quite right.
+cdef bint save_ati2n(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
+    """Save 'ATI2N' format data, also known as BC5.
 
-    for block_y in range(0, height, 4):
-        block_y //= 4
-        for block_x in range(0, width, 4):
-            block_x //= 4
-            block_off = 16 * (block_wid * block_y + block_x)
+    This uses two copies of the DXT5 alpha block for data.
+    """
+    if width >= 4 and height >= 4:
+        # DXT format must be 4x4 at minimum. So just skip if not.
+        CompressImage(&pixels[0], width, height, &data[0], kBc5, NULL)
 
-            alpha[0] = data[block_off]
-            alpha[1] = data[block_off + 1]
+# Use a structure to match format names to the functions.
+# This way they can all be cdef, and not have duplicate object conversion
+# code.
+ctypedef struct Format:
+    char *name
+    bint (*load)(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1
+    bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
 
-            if alpha[0] >= alpha[1]:
-                alpha[2] = (6*alpha[0] + 1*alpha[1]) // 7
-                alpha[3] = (5*alpha[0] + 2*alpha[1]) // 7
-                alpha[4] = (4*alpha[0] + 3*alpha[1]) // 7
-                alpha[5] = (3*alpha[0] + 4*alpha[1]) // 7
-                alpha[6] = (2*alpha[0] + 5*alpha[1]) // 7
-                alpha[7] = (1*alpha[0] + 6*alpha[1]) // 7
-            else:
-                alpha[2] = (4*alpha[0] + 1*alpha[1]) // 5
-                alpha[3] = (3*alpha[0] + 2*alpha[1]) // 5
-                alpha[4] = (2*alpha[0] + 3*alpha[1]) // 5
-                alpha[5] = (1*alpha[0] + 4*alpha[1]) // 5
-                alpha[6] = 0
-                alpha[7] = 25
 
-            # Now, load the colour blocks.
-            decomp565(&c0, data[block_off + 8], data[block_off + 9])
-            decomp565(&c1, data[block_off + 10], data[block_off + 11])
+cdef Format[30] FORMATS = [
+    Format("RGBA8888", &load_copy, &save_copy),
+    Format("ABGR8888", &load_abgr8888, &save_abgr8888),
+    Format("RGB888", &load_rgb888, &save_rgb888),
+    Format("BGR888", &load_bgr888, &save_bgr888),
+    Format("RGB565", &load_rgb565, &save_rgb565),
+    Format("I8", &load_i8, &save_i8),
+    Format("IA88", &load_ia88, &save_ia88),
+    Format("P8", NULL, NULL),  # Never implemented by Valve.
+    Format("A8", &load_a8, &save_a8),
+    Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
+    Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
+    Format("ARGB8888", &load_argb8888, &save_argb8888),
+    Format("BGRA8888", &load_bgra8888, &save_bgra8888),
+    Format("DXT1", &load_dxt1, &save_dxt1),
+    Format("DXT3", &load_dxt3, &save_dxt3),
+    Format("DXT5", &load_dxt5, &save_dxt5),
+    Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
+    Format("BGR565", &load_bgr565, &save_bgr565),
+    Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
+    Format("BGRA4444", &load_bgra4444, &save_bgra4444),
+    Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
+    Format("BGRA5551", &load_bgra5551, &save_bgra5551),
+    Format("UV88", &load_uv88, &save_uv88),
+    Format("UVWQ8888", &load_copy, &save_copy),
+    # Don't do the high-def 16-bit resolutions.
+    Format("RGBA16161616F", NULL, NULL),
+    Format("RGBA16161616", NULL, NULL),
+    Format("UVLX8888", &load_copy, &save_copy),
+    # This doesn't match the actual engine struct, just the order of
+    # the Python enum.
+    Format("NONE", NULL, NULL),
+    Format("ATI1N", NULL, NULL),
+    Format("ATI2N", &load_ati2n, &save_ati2n),
+]
 
-            color_table[C0R] = c0.b
-            color_table[C0G] = c0.g
-            color_table[C0B] = c0.r
 
-            color_table[C1R] = c1.b
-            color_table[C1G] = c1.g
-            color_table[C1B] = c1.r
+def init(formats: 'srctools.vtf.ImageFormats') -> None:
+    """Verify that the Python enum matches our array of functions."""
+    cdef int index
+    cdef const char *name
+    for fmt in formats:
+        index = fmt.ind
+        assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
+        assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
 
-            color_table[C2R] = (2 * c0.b + c1.b) // 3
-            color_table[C2G] = (2 * c0.g + c1.g) // 3
-            color_table[C2B] = (2 * c0.r + c1.r) // 3
 
-            color_table[C3R] = (c0.b + 2 * c1.b) // 3
-            color_table[C3G] = (c0.g + 2 * c1.g) // 3
-            color_table[C3B] = (c0.r + 2 * c1.r) // 3
+def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
+    """Load pixels from data in the given format."""
+    cdef int index = fmt.ind
+    # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
+    if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
+        FORMATS[index].load(pixels, data, width, height)
+    else:
+        raise NotImplementedError(f"Loading {fmt.name} not implemented!")
 
-            dxt_color_table(
-                pixels, data, color_table,
-                block_off+8, block_wid,
-                block_x, block_y,
-                do_alpha=False,
-            )
-            # Concatenate the bits for the alpha values into a big integer.
-            lookup = 0
-            for i in range(12):
-                lookup |= data[block_off + i] << (8 * (11-i))
 
-            for i in range(16):
-                y = i // 4
-                x = i % 4
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
-                pixels[pos + 3] = alpha[
-                    (lookup >> (48-3*i)) & 0b111
-                ]
+def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
+    cdef int index = fmt.ind
+    if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
+        FORMATS[index].save(pixels, data, width, height)
+    else:
+        raise NotImplementedError(f"Saving {fmt.name} not implemented!")
 
-# Don't do the high-def 16-bit resolution.
-
-# def load_rgba16161616f(pixels, offset, data, data_off):
-#     """16-bit RGBA format - max resolution."""
-#     pixels[offset] = data[data_off] << 8 + data[data_off+1]
-#     pixels[offset + 1] = data[data_off+2] << 8 + data[data_off+3]
-#     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
-#     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]

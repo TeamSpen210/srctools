@@ -1,11 +1,29 @@
-from setuptools import setup, Extension
+from setuptools import setup, Extension, find_packages
+import sys
+import os
 
 try:
     from Cython.Build import cythonize
+    cy_ext = '.pyx'
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
-    modules = []
-    cythonize = None
+    cy_ext = '.c'
+    def cythonize(mod):
+        return mod
+
+WIN = sys.platform.startswith('win')
+
+SQUISH_CPP = [
+    'libsquish/alpha.cpp',
+    'libsquish/clusterfit.cpp',
+    'libsquish/colourblock.cpp',
+    'libsquish/colourfit.cpp',
+    'libsquish/colourset.cpp',
+    'libsquish/maths.cpp',
+    'libsquish/rangefit.cpp',
+    'libsquish/singlecolourfit.cpp',
+    'libsquish/squish.cpp',
+]
 
 setup(
     name='srctools',
@@ -20,36 +38,42 @@ setup(
     keywords='',
     classifiers=[
         'License :: Public Domain',
-        'Programming Language :: Python :: 3.4',
-        'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
     ],
-    packages=[
-        'srctools',
-        'srctools.scripts',
-        'srctools.test',
-        'srctools.bsp_transform',
-    ],
+    packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
     ext_modules=cythonize([
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer.pyx"],
+            sources=["srctools/_tokenizer" + cy_ext],
+            # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
-            sources=["srctools/_cy_vtf_readwrite.pyx"],
+            include_dirs=[os.path.abspath("libsquish/")],
+            language='c++',
+            sources=[
+                "srctools/_cy_vtf_readwrite" + cy_ext,
+            ] + SQUISH_CPP,
+            extra_compile_args=[
+                '/openmp' if WIN else '-openmp',
+                 # '/FAs',  # MS ASM dump
+            ],
+            extra_link_args=['/openmp' if WIN else '-openmp'],
         ),
         Extension(
             "srctools._vec",
-            sources=["srctools/_vec.pyx"],
+            sources=["srctools/_vec" + cy_ext],
         ),
     ]),
 
     package_data={'srctools': [
         'fgd.lzma',
         'srctools.fgd',
+        'py.typed',
     ]},
 
     entry_points={
@@ -57,13 +81,12 @@ setup(
             'srctools_dump_parms = srctools.scripts.dump_parms:main',
             'srctools_diff = srctools.scripts.diff:main',
         ],
+        'pyinstaller40': [
+            'hook-dirs = srctools._pyinstaller:get_hook_dirs',
+        ]
     },
-    python_requires='>=3.4, <4',
+    python_requires='>=3.6, <4',
     install_requires=[
-        'cx_Freeze',
         'importlib_resources',
-        'aenum<3.6',
-
     ],
-    ]
 )

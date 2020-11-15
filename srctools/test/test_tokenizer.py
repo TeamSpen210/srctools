@@ -62,13 +62,13 @@ prop_parse_tokens = [
     (T.STRING, "Replaced"), (T.STRING, "toreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
     (T.STRING, "Replaced"), (T.STRING, "alsothis"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
     T.NEWLINE,
-    (T.STRING, "Replaced"), (T.STRING, "shouldbe"), T.NEWLINE,
-    (T.STRING, "Replaced"), (T.STRING, "toreplace"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
-    (T.STRING, "Replaced"), (T.STRING, "alsothis"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "shouldbe2"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "toreplace2"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
+    (T.STRING, "Replaced"), (T.STRING, "alsothis2"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
     T.NEWLINE,
     (T.STRING, "Replaced"), T.NEWLINE,
     T.BRACE_OPEN, T.NEWLINE,
-    (T.STRING, "shouldbe"), (T.STRING, "replaced"), T.NEWLINE,
+    (T.STRING, "shouldbe3"), (T.STRING, "replaced3"), T.NEWLINE,
     (T.STRING, "prop2"), (T.STRING, "blah"), T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
     (T.STRING, "Replaced"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
@@ -79,13 +79,13 @@ prop_parse_tokens = [
     T.NEWLINE,
     (T.STRING, "Replaced"), T.NEWLINE,
     T.BRACE_OPEN, T.NEWLINE,
-    (T.STRING, "shouldbe"), (T.STRING, "replaced"), T.NEWLINE,
+    (T.STRING, "shouldbe4"), (T.STRING, "replaced4"), T.NEWLINE,
     (T.STRING, "prop2"), (T.STRING, "blah"), T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
     (T.STRING, "Replaced"), (T.PROP_FLAG, "!test_disabled"), T.NEWLINE,
     T.BRACE_OPEN, T.NEWLINE,
-    (T.STRING, "lambda"), (T.STRING, "should"), T.NEWLINE,
-    (T.STRING, "replace"), (T.STRING, "above"), T.NEWLINE,
+    (T.STRING, "lambda2"), (T.STRING, "should2"), T.NEWLINE,
+    (T.STRING, "replace2"), (T.STRING, "above2"), T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
 ]
@@ -184,6 +184,87 @@ def test_pushback(py_c_token):
         else:
             tokens.append((tok_type, tok_value))
     check_tokens(tokens, prop_parse_tokens)
+
+
+def test_call_next(py_c_token):
+    """Test that tok() functions, and it can be mixed with iteration."""
+    Tokenizer = py_c_token
+    tok = Tokenizer('''{ "test" } "test" { + } ''', 'file')
+
+    tok_type, tok_value = tok()
+    assert tok_type is Token.BRACE_OPEN and tok_value == '{'
+
+    it1 = iter(tok)
+
+    assert next(it1) == (Token.STRING, "test")
+    assert tok() == (Token.BRACE_CLOSE, '}')
+    assert next(it1) == (Token.STRING, "test")
+    assert next(it1) == (Token.BRACE_OPEN, '{')
+    assert tok() == (Token.PLUS, '+')
+    # Another iterator doesn't restart.
+    assert next(iter(tok)) == (Token.BRACE_CLOSE, '}')
+    assert tok() == (Token.EOF, '')
+
+    with pytest.raises(StopIteration):
+        next(it1)
+
+
+def test_star_comments(py_c_token):
+    """Test disallowing /* */ comments."""
+    Tokenizer = py_c_token
+
+    text = '''\
+    "blah"
+        {
+        "a" "b"
+    /*
+        "c" "d"
+        }
+    "second"
+        {
+    */
+        }
+    '''
+
+    with pytest.raises(TokenSyntaxError):
+        # Default = false
+        for tok, tok_value in py_c_token(text):
+            pass
+
+    with pytest.raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token(text, allow_star_comments=False):
+            pass
+
+
+    check_tokens(py_c_token(text, allow_star_comments=True), [
+        (Token.STRING, "blah"), Token.NEWLINE,
+        Token.BRACE_OPEN, Token.NEWLINE,
+        (Token.STRING, "a"), (Token.STRING, "b"), Token.NEWLINE,
+        Token.NEWLINE,
+        Token.BRACE_CLOSE, Token.NEWLINE,
+    ])
+
+    # Test with one string per chunk:
+    for tok, tok_value in py_c_token(list(text), allow_star_comments=True):
+        pass
+
+    # Check line number is correct.
+    tokenizer = py_c_token(text, allow_star_comments=True)
+    for tok, tok_value in tokenizer:
+        if tok is Token.BRACE_CLOSE:
+            assert 10 == tokenizer.line_num
+
+    # Check unterminated comments are invalid.
+    with pytest.raises(TokenSyntaxError):
+        for tok, tok_value in py_c_token(text.replace('*/', ''), allow_star_comments=True):
+            pass
+
+    # Test some edge cases with multiple asterisks:
+    for tok, tok_value in py_c_token('"blah"\n/**/', allow_star_comments=True):
+        pass
+
+    for tok, tok_value in py_c_token('"blah"\n/*\n **/', allow_star_comments=True):
+        pass
 
 
 def test_bom(py_c_token):
@@ -378,3 +459,24 @@ Error occurred on line 45, with file "a file".'''
     assert err.line_num == 250
     assert str(err) == '''test message
 Error occurred on line 250.'''
+
+
+def test_unicode_error_wrapping(py_c_token):
+    """Test that Unicode errors are wrapped into TokenSyntaxError."""
+    def raises_unicode():
+        yield "line of_"
+        yield "text\n"
+        raise UnicodeDecodeError('utf8', bytes(100), 1, 2, 'reason')
+
+    tok = py_c_token(raises_unicode())
+    assert tok() == (Token.STRING, "line")
+    assert tok() == (Token.STRING, "of_text")
+    with pytest.raises(TokenSyntaxError) as exc_info:
+        list(tok)
+    assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
+
+
+def test_early_binary_arg(py_c_token):
+    """Test that passing bytes values is caught before looping."""
+    with pytest.raises(TypeError):
+        py_c_token(b'test')

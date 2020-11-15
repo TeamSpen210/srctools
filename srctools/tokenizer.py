@@ -3,20 +3,12 @@
 This is used internally for parsing files.
 """
 from enum import Enum
-
+from os import fspath as _conv_path, PathLike
 from typing import (
-    Union, Optional,
+    Union, Optional, Type, Any,
     Iterable, Iterator,
-    Tuple,
-    Type,
-    List,
+    Tuple, List,
 )
-
-try:
-    from os import fspath as _conv_path, PathLike
-except ImportError:
-    _conv_path = str  # type: ignore
-    PathLike = str  # type: ignore
 
 
 class TokenSyntaxError(Exception):
@@ -27,24 +19,24 @@ class TokenSyntaxError(Exception):
     line_num = The line where the error occurred.
     """
     def __init__(
-            self,
-            message: str,
-            file: Optional[str],
-            line: Optional[int]
-            ) -> None:
+        self,
+        message: str,
+        file: Optional[str],
+        line: Optional[int],
+    ) -> None:
         super().__init__()
         self.mess = message
         self.file = file
         self.line_num = line
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
             self.mess,
             self.file,
             self.line_num,
             )
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Generate the complete error message.
 
         This includes the line number and file, if available.
@@ -82,12 +74,12 @@ class Token(Enum):
     PLUS = 15
 
     @property
-    def has_value(self):
+    def has_value(self) -> bool:
         """If true, this type has an associated value."""
         return self.value in (1, 3, 10)
 
 _PUSHBACK_VALS = {
-    Token.EOF: None,
+    Token.EOF: '',
     Token.NEWLINE: '\n',
 
     Token.BRACE_OPEN: '{',
@@ -109,9 +101,6 @@ _OPERATORS = {
     ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
-
-    # None is returned when no more characters...
-    None: Token.EOF,
 }
 
 
@@ -135,17 +124,27 @@ class Tokenizer:
     """Processes text data into groups of tokens.
 
     This mainly groups strings and removes comments.
+
+    Due to many inconsistencies in Valve's parsing of files,
+    several options are available to control whether different
+    syntaxes are accepted:
+        * string_bracket parses [bracket] blocks as a single string-like block.
+          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        * allow_escapes controls whether \\n-style escapes are expanded.
+        * allow_star_comments if enabled allows /* */ comments.
     """
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: PathLike=None,
+        filename: Union[str, PathLike]=None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
+        allow_star_comments: bool=False,
     ) -> None:
+        # Catch passing direct bytes far in advance.
         if isinstance(data, bytes):
-            raise ValueError(
+            raise TypeError(
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )
@@ -167,7 +166,7 @@ class Tokenizer:
             self.filename = None
 
         if error is None:
-            self.error_type = TokenSyntaxError
+            self.error_type = TokenSyntaxError  # type: Type[TokenSyntaxError]
         else:
             if not issubclass(error, TokenSyntaxError):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
@@ -175,21 +174,23 @@ class Tokenizer:
 
         self.string_bracket = bool(string_bracket)
         self.allow_escapes = bool(allow_escapes)
+        self.allow_star_comments = bool(allow_star_comments)
         # If set, this token will be returned next.
         self._pushback = None  # type: Optional[Tuple[Token, str]]
         self.line_num = 1
 
-    def error(self, message: Union[str, Token], *args):
+    def error(self, message: Union[str, Token], *args) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token to indicate a wrong token,
-        or a string which will be formatted with the positional args.
+        or a string which will be {}-formatted with the positional args
+        if they are present.
         """
         if isinstance(message, Token):
             message = 'Unexpected token {}!'.format(message.name)
-        else:
+        elif args:
             message = message.format(*args)
         return self.error_type(
             message,
@@ -197,7 +198,7 @@ class Tokenizer:
             self.line_num,
         )
 
-    def __reduce__(self):
+    def __reduce__(self) -> Any:
         """Disallow pickling Tokenizers.
 
         The files themselves usually are not pickleable, or are very
@@ -218,28 +219,36 @@ class Tokenizer:
             except StopIteration:
                 # Out of characters
                 return None
+            except UnicodeDecodeError as exc:
+                raise self.error("Could not decode file!") from exc
+
+            # Specifically catch passing binary data.
             if isinstance(chunk, bytes):
                 raise ValueError('Cannot parse binary data!')
             if not isinstance(chunk, str):
                 raise ValueError("Data was not a string!")
+
             self.char_index = 0
 
             try:
                 return chunk[0]
             except IndexError:
                 # Skip empty chunks (shouldn't be there.)
-                for chunk in self.chunk_iter:
-                    if isinstance(chunk, bytes):
-                        raise ValueError('Cannot parse binary data!')
-                    if not isinstance(chunk, str):
-                        raise ValueError("Data was not a string!")
-                    if chunk:
-                        self.cur_chunk = chunk
-                        return chunk[0]
+                try:
+                    for chunk in self.chunk_iter:
+                        if isinstance(chunk, bytes):
+                            raise ValueError('Cannot parse binary data!')
+                        if not isinstance(chunk, str):
+                            raise ValueError("Data was not a string!")
+                        if chunk:
+                            self.cur_chunk = chunk
+                            return chunk[0]
+                except UnicodeDecodeError as exc:
+                    raise self.error("Could not decode file!") from exc
                 # Out of characters after empty chunks
                 return None
 
-    def __call__(self) -> Tuple[Token, Optional[str]]:
+    def __call__(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
         if self._pushback is not None:
             next_val = self._pushback
@@ -248,7 +257,9 @@ class Tokenizer:
 
         while True:
             next_char = self._next_char()
-            # First try simple operators & EOF.
+            if next_char is None:  # EOF, use a dummy string.
+                return Token.EOF, ''
+            # First try simple operators.
             try:
                 return _OPERATORS[next_char], next_char
             except KeyError:
@@ -265,18 +276,55 @@ class Tokenizer:
             elif next_char == '/':
                 # The next must be another slash! (//)
                 comment_next = self._next_char()
-                if comment_next != '/':
+                if comment_next == '*':
+                    # /* comment.
+                    if self.allow_star_comments:
+                        comment_start = self.line_num
+                        while True:
+                            next_char = self._next_char()
+                            if next_char is None:
+                                raise self.error(
+                                    'Unclosed /* comment '
+                                    '(starting on line {})!',
+                                    comment_start,
+                                )
+                            elif next_char == '\n':
+                                self.line_num += 1
+                            elif next_char == '*':
+                                # Check next next character!
+                                next_next_char = self._next_char()
+                                if next_next_char is None:
+                                    raise self.error(
+                                        'Unclosed /* comment '
+                                        '(starting on line {})!',
+                                        comment_start,
+                                    )
+                                elif next_next_char == '/':
+                                    break
+                                else:
+                                    # We need to reparse this, to ensure
+                                    # "**/" parses correctly!
+                                    self.char_index -= 1
+                    else:
+                        raise self.error(
+                            '/**/-style comments are not allowed!'
+                        )
+                elif comment_next != '/':
                     raise self.error(
+                        'Single slash found, '
+                        'instead of two for a comment (// or /* */)!'
+                        if self.allow_star_comments else
                         'Single slash found, '
                         'instead of two for a comment (//)!'
                     )
-                # Skip to end of line
-                while True:
-                    next_char = self._next_char()
-                    if next_char == '\n' or next_char is None:
-                        break
-                # We want to produce the token for the end character.
-                self.char_index -= 1
+                else:
+                    # Skip to end of line
+                    while True:
+                        next_char = self._next_char()
+                        if next_char == '\n' or next_char is None:
+                            break
+                    # We want to produce the token for the end character.
+                    self.char_index -= 1
 
             # Strings
             elif next_char == '"':
@@ -290,6 +338,8 @@ class Tokenizer:
                     elif next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
+                        if escape is None:
+                            raise self.error('No character to escape!')
                         try:
                             next_char = ESCAPES[escape]
                         except KeyError:
@@ -298,9 +348,10 @@ class Tokenizer:
                             else:
                                 next_char = '\\' + escape
                                 # raise self.error('Unknown escape "\\{}" in {}!', escape, self.cur_chunk)
-                    elif next_char is None:
+                    if next_char is None:
                         raise self.error('Unterminated string!')
-                    value_chars.append(next_char)
+                    else:
+                        value_chars.append(next_char)
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
@@ -382,13 +433,14 @@ class Tokenizer:
 
     def __iter__(self) -> Iterator[Tuple[Token, str]]:
         # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, None))
+        return iter(self, (Token.EOF, ''))
 
-    def push_back(self, tok: Token, value: str=None):
+    def push_back(self, tok: Token, value: str=None) -> None:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value should be the original value, or None
+        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
+        for other token types.
         """
         if self._pushback is not None:
             raise ValueError('Token already pushed back!')
@@ -396,21 +448,10 @@ class Tokenizer:
             raise ValueError(repr(tok) + ' is not a Token!')
 
         try:
-            real_value = _PUSHBACK_VALS[tok]
+            value = _PUSHBACK_VALS[tok]
         except KeyError:
             if value is None:
-                value = ''
-            elif not isinstance(value, str):
-                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
-                    value, tok.name
-                )) from None
-        else:
-            if value is None:
-                value = real_value
-            elif real_value != value:
-                raise ValueError('Invalid value provided ({!r}) for {}!'.format(
-                    value, tok.name
-                )) from None
+                raise ValueError('Value required for {!r}!'.format(tok.name)) from None
 
         self._pushback = (tok, value)
 
@@ -422,8 +463,7 @@ class Tokenizer:
         self._pushback = tok_and_val
         return tok_and_val
 
-
-    def skipping_newlines(self):
+    def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
         """Iterate over the tokens, skipping newlines."""
         while True:
             tok_and_val = tok, tok_value = self()
@@ -432,7 +472,7 @@ class Tokenizer:
             elif tok is not Token.NEWLINE:
                 yield tok_and_val
 
-    def expect(self, token: Token, skip_newline: bool=True) -> Optional[str]:
+    def expect(self, token: Token, skip_newline: bool=True) -> str:
         """Consume the next token, which should be the given type.
 
         If it is not, this raises an error.
@@ -469,7 +509,6 @@ def escape_text(text: str) -> str:
         replace('\t', '\\t').
         replace('\n', '\\n')
     )
-
 
 
 # This is available as both C and Python versions, plus the unprefixed
