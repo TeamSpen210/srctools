@@ -613,6 +613,17 @@ class Vec:
         else:
             return Vec(x1, y1, z1), Vec(x2, y2, z2)
 
+    def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+        """We need to define this, so it's in-place."""
+        if isinstance(other, Matrix):
+            mat = other
+        elif isinstance(other, Angle):
+            mat = Matrix.from_angle(other)
+        else:
+            return NotImplemented
+        mat._vec_rot(self)
+        return self
+
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
         return self.x != 0 or self.y != 0 or self.z != 0
