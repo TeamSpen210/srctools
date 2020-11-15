@@ -1339,6 +1339,15 @@ class Angle:
     def roll(self, roll: float) -> None:
         self._roll = float(roll) % 360 % 360
 
+    def __str__(self) -> str:
+        """Return the values, separated by spaces.
+
+        This is the main format in Valve's file formats, though identical to
+        vectors.
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
+
     def __repr__(self) -> str:
         return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
 
