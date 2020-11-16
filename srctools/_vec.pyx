@@ -51,15 +51,21 @@ DEF PI = 3.141592653589793238462643383279502884197
 DEF rad_2_deg = 180.0 / PI
 DEF deg_2_rad = PI / 180.0
 
+cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
+    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef object _make_tuple(double x, double y, double z):
+cdef object _make_tuple(x, y, z):
     # Fast-construct a Vec_tuple. We make a normal tuple (fast),
     # then assign the namedtuple type. The type is on the heap
     # so we need to incref it.
     cdef tuple tup = (x, y, z)
-    Py_INCREF(Vec_tuple)
-    (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
-    return tup
+    if USE_TYPE_INTERNALS:
+        Py_INCREF(Vec_tuple)
+        (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
+        return tup
+    else: # Not CPython, use more correct method.
+        with cython.optimize.unpack_method_calls(False):
+            return Vec_tuple._make(*tup)
 
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
@@ -158,7 +164,7 @@ cdef inline unsigned char _conv_angles(
         result.z = (<Angle>ang).val.z
     elif isinstance(ang, float) or isinstance(ang, int):
         if scalar:
-            result.x = result.y = result.z = ang % 360.0 % 360.0
+            result.x = result.y = result.z = <double>ang % 360.0 % 360.0
         else:
             # No need to do argument checks.
             raise TypeError('Cannot use scalars here.')
@@ -169,9 +175,9 @@ cdef inline unsigned char _conv_angles(
         result.z = z % 360.0 % 360.0
     else:
         try:
-            result.x = <double?>ang.x % 360.0 % 360.0
-            result.y = <double?>ang.y % 360.0 % 360.0
-            result.z = <double?>ang.z % 360.0 % 360.0
+            result.x = <double>ang.x % 360.0 % 360.0
+            result.y = <double>ang.y % 360.0 % 360.0
+            result.z = <double>ang.z % 360.0 % 360.0
         except AttributeError:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
