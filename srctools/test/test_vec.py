@@ -885,7 +885,7 @@ def test_copy_pickle(py_c_vec):
 
 def test_bbox(py_c_vec):
     """Test the functionality of Vec.bbox()."""
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     # No arguments
     with raises_typeerror:
@@ -947,7 +947,7 @@ def test_vmf_rotation(py_c_vec):
 
     Use a compiled map to check the functionality of Vec.rotate().
     """
-    Vec = py_c_vec
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
     from srctools.bsp import BSP
     import srctools.test
