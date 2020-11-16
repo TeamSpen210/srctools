@@ -69,6 +69,12 @@ cdef inline object _make_tuple(x, y, z):
             return Vec_tuple._make(*tup)
 
 
+cdef inline double norm_ang(double val):
+    """Normalise an angle to 0-360."""
+    # We have to double-modulus because -1e-14 % 360.0 = 360.0.
+    return val % 360.0 % 360.0
+
+
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
 
@@ -149,11 +155,7 @@ cdef inline unsigned char _conv_vec(
             raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
-cdef inline unsigned char _conv_angles(
-    vec_t *result,
-    object ang,
-    bint scalar,
-) except False:
+cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:
     """Convert some object to a unified Angle struct. 
     
     If scalar is True, allow int/float to set all axes.
@@ -164,21 +166,17 @@ cdef inline unsigned char _conv_angles(
         result.y = (<Angle>ang).val.y
         result.z = (<Angle>ang).val.z
     elif isinstance(ang, float) or isinstance(ang, int):
-        if scalar:
-            result.x = result.y = result.z = <double>ang % 360.0 % 360.0
-        else:
-            # No need to do argument checks.
-            raise TypeError('Cannot use scalars here.')
+        raise TypeError('Cannot convert scalars to an Angle!')
     elif isinstance(ang, tuple):
         x, y, z = <tuple>ang
-        result.x = x % 360.0 % 360.0
-        result.y = y % 360.0 % 360.0
-        result.z = z % 360.0 % 360.0
+        result.x = norm_ang(x)
+        result.y = norm_ang(y)
+        result.z = norm_ang(z)
     else:
         try:
-            result.x = <double>ang.x % 360.0 % 360.0
-            result.y = <double>ang.y % 360.0 % 360.0
-            result.z = <double>ang.z % 360.0 % 360.0
+            result.x = norm_ang(ang.x)
+            result.y = norm_ang(ang.y)
+            result.z = norm_ang(ang.z)
         except AttributeError:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
@@ -1554,7 +1552,7 @@ cdef class Matrix:
         """Return the rotation representing an Euler angle."""
         cdef Matrix rot = Matrix.__new__(cls)
         cdef vec_t ang
-        _conv_angles(&ang, angle, scalar=False)
+        _conv_angles(&ang, angle)
         _mat_from_angle(rot.mat, &ang)
         return rot
 
@@ -1691,7 +1689,6 @@ cdef class Angle:
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
-    # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     cdef vec_t val
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
@@ -1704,9 +1701,9 @@ cdef class Angle:
         """
         cdef tuple tup
         if isinstance(pitch, float) or isinstance(pitch, int):
-            self.val.x = <double>pitch % 360 % 360.0
-            self.val.y = <double>yaw % 360 % 360.0
-            self.val.z = <double>roll % 360 % 360.0
+            self.val.x = norm_ang(pitch)
+            self.val.y = norm_ang(yaw)
+            self.val.z = norm_ang(roll)
         elif isinstance(pitch, Angle):
             self.val.x = (<Angle>pitch).val.x
             self.val.y = (<Angle>pitch).val.y
@@ -1714,41 +1711,41 @@ cdef class Angle:
         elif isinstance(pitch, tuple):
             tup = <tuple>pitch
             if len(tup) >= 1:
-                self.val.x = <double?>(tup[0]) % 360 % 360.0
+                self.val.x = norm_ang(tup[0])
             else:
                 self.val.x = 0.0
 
             if len(tup) >= 2:
-                self.val.y = <double?>(tup[1]) % 360 % 360.0
+                self.val.y = norm_ang(tup[1])
             else:
-                self.val.y = yaw
+                self.val.y = norm_ang(yaw)
 
             if len(tup) >= 3:
-                self.val.z = <double?>(tup[2]) % 360 % 360.0
+                self.val.z = norm_ang(tup[2])
             else:
-                self.val.z = roll
+                self.val.z = norm_ang(roll)
 
         else:
             it = iter(pitch)
             try:
-                self.val.x = next(it)
+                self.val.x = norm_ang(next(it))
             except StopIteration:
-                self.val.x = 0
-                self.val.y = <double?>yaw % 360 % 360.0
-                self.val.z = <double?>roll % 360 % 360.0
+                self.val.x = 0.0
+                self.val.y = norm_ang(yaw)
+                self.val.z = norm_ang(roll)
                 return
 
             try:
-                self.val.y = next(it)
+                self.val.y = norm_ang(next(it))
             except StopIteration:
-                self.val.y = <double?>yaw % 360 % 360.0
-                self.val.z = <double?>roll % 360 % 360.0
+                self.val.y = norm_ang(yaw)
+                self.val.z = norm_ang(roll)
                 return
 
             try:
-                self.val.z = next(it)
+                self.val.z = norm_ang(next(it))
             except StopIteration:
-                self.val.z = <double?>roll % 360 % 360.0
+                self.val.z = norm_ang(roll)
 
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
@@ -1775,7 +1772,7 @@ cdef class Angle:
 
     @pitch.setter
     def pitch(self, double pitch) -> None:
-        self.val.y = pitch % 360 % 360.0
+        self.val.y = norm_ang(pitch)
 
     @property
     def yaw(self) -> float:
@@ -1784,7 +1781,7 @@ cdef class Angle:
 
     @yaw.setter
     def yaw(self, double yaw) -> None:
-        self.val.y = yaw % 360.0 % 360.0
+        self.val.y = norm_ang(yaw)
 
     @property
     def roll(self) -> float:
@@ -1793,7 +1790,7 @@ cdef class Angle:
 
     @roll.setter
     def roll(self, double roll) -> None:
-        self.val.z = roll % 360.0 % 360.0
+        self.val.z = norm_ang(roll)
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -1846,17 +1843,17 @@ cdef class Angle:
                 if isinstance(axis_val, Angle):
                     ang.val.x = (<Angle>axis_val).val.x
                 else:
-                    ang.val.x = (<double?>axis_val) % 360 % 360
+                    ang.val.x = norm_ang(axis_val)
             elif axis in ('y', 'yaw'):
                 if isinstance(axis_val, Angle):
                     ang.val.y = (<Angle>axis_val).val.y
                 else:
-                    ang.val.y = (<double?>axis_val) % 360 % 360
+                    ang.val.y = norm_ang(axis_val)
             elif axis in ('r', 'rol', 'roll'):
                 if isinstance(axis_val, Angle):
                     ang.val.z = (<Angle>axis_val).val.z
                 else:
-                    ang.val.z = (<double?>axis_val) % 360 % 360
+                    ang.val.z = norm_ang(axis_val)
 
         return ang
 
@@ -1912,7 +1909,7 @@ cdef class Angle:
         """
         cdef str key
         cdef int index
-        val = val % 360.0 % 360.0
+        val = norm_ang(val)
 
         if isinstance(pos, int):
             index = pos
@@ -1945,9 +1942,9 @@ cdef class Angle:
         else:
             return NotImplemented
         return _angle(
-            (angle.val.x * scalar) % 360.0 % 360.0,
-            (angle.val.y * scalar) % 360.0 % 360.0,
-            (angle.val.z * scalar) % 360.0 % 360.0,
+            norm_ang(angle.val.x * scalar),
+            norm_ang(angle.val.y * scalar),
+            norm_ang(angle.val.z * scalar),
         )
 
     def __matmul__(first, second):

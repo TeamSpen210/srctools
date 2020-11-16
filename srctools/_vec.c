@@ -865,7 +865,7 @@ struct __pyx_t_8srctools_4_vec_vec_t {
  */
 typedef double __pyx_t_8srctools_4_vec_mat_t[3][3];
 
-/* "srctools/_vec.pyx":289
+/* "srctools/_vec.pyx":287
  * 
  * @cython.final
  * cdef class VecIter:             # <<<<<<<<<<<<<<
@@ -879,7 +879,7 @@ struct __pyx_obj_8srctools_4_vec_VecIter {
 };
 
 
-/* "srctools/_vec.pyx":317
+/* "srctools/_vec.pyx":315
  * 
  * @cython.final
  * cdef class AngleIter:             # <<<<<<<<<<<<<<
@@ -893,7 +893,7 @@ struct __pyx_obj_8srctools_4_vec_AngleIter {
 };
 
 
-/* "srctools/_vec.pyx":345
+/* "srctools/_vec.pyx":343
  * 
  * @cython.final
  * cdef class VecTransform:             # <<<<<<<<<<<<<<
@@ -907,7 +907,7 @@ struct __pyx_obj_8srctools_4_vec_VecTransform {
 };
 
 
-/* "srctools/_vec.pyx":373
+/* "srctools/_vec.pyx":371
  * 
  * @cython.final
  * cdef class AngleTransform:             # <<<<<<<<<<<<<<
@@ -921,7 +921,7 @@ struct __pyx_obj_8srctools_4_vec_AngleTransform {
 };
 
 
-/* "srctools/_vec.pyx":400
+/* "srctools/_vec.pyx":398
  * @cython.freelist(16)
  * @cython.final
  * cdef class Vec:             # <<<<<<<<<<<<<<
@@ -935,7 +935,7 @@ struct __pyx_obj_8srctools_4_vec_Vec {
 };
 
 
-/* "srctools/_vec.pyx":1469
+/* "srctools/_vec.pyx":1467
  * @cython.freelist(16)
  * @cython.final
  * cdef class Matrix:             # <<<<<<<<<<<<<<
@@ -948,7 +948,7 @@ struct __pyx_obj_8srctools_4_vec_Matrix {
 };
 
 
-/* "srctools/_vec.pyx":1687
+/* "srctools/_vec.pyx":1685
  * @cython.freelist(16)
  * @cython.final
  * cdef class Angle:             # <<<<<<<<<<<<<<
@@ -962,7 +962,7 @@ struct __pyx_obj_8srctools_4_vec_Angle {
 
 
 
-/* "srctools/_vec.pyx":400
+/* "srctools/_vec.pyx":398
  * @cython.freelist(16)
  * @cython.final
  * cdef class Vec:             # <<<<<<<<<<<<<<
@@ -1056,6 +1056,9 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
 #else
 #define __Pyx_PyObject_Call(func, arg, kw) PyObject_Call(func, arg, kw)
 #endif
+
+/* None.proto */
+static CYTHON_INLINE double __Pyx_mod_double(double, double);
 
 /* RaiseTooManyValuesToUnpack.proto */
 static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected);
@@ -1233,9 +1236,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 
 /* PyObjectCallOneArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
-
-/* None.proto */
-static CYTHON_INLINE double __Pyx_mod_double(double, double);
 
 /* ArgTypeTest.proto */
 #define __Pyx_ArgTypeTest(obj, type, none_allowed, name, exact)\
@@ -1517,9 +1517,10 @@ static PyObject *__pyx_v_8srctools_4_vec_Vec_tuple = 0;
 static CYTHON_INLINE struct __pyx_obj_8srctools_4_vec_Vec *__pyx_f_8srctools_4_vec__vector(double, double, double); /*proto*/
 static CYTHON_INLINE struct __pyx_obj_8srctools_4_vec_Angle *__pyx_f_8srctools_4_vec__angle(double, double, double); /*proto*/
 static CYTHON_INLINE PyObject *__pyx_f_8srctools_4_vec__make_tuple(PyObject *, PyObject *, PyObject *); /*proto*/
+static CYTHON_INLINE double __pyx_f_8srctools_4_vec_norm_ang(double); /*proto*/
 static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srctools_4_vec_vec_t *, PyObject *, double, double, double); /*proto*/
 static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __pyx_t_8srctools_4_vec_vec_t *, PyObject *, int); /*proto*/
-static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct __pyx_t_8srctools_4_vec_vec_t *, PyObject *, int); /*proto*/
+static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct __pyx_t_8srctools_4_vec_vec_t *, PyObject *); /*proto*/
 static CYTHON_INLINE double __pyx_f_8srctools_4_vec__vec_mag(struct __pyx_t_8srctools_4_vec_vec_t *); /*proto*/
 static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_8srctools_4_vec_vec_t *, struct __pyx_t_8srctools_4_vec_vec_t *); /*proto*/
 static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*)[3], double (*)[3]); /*proto*/
@@ -1559,14 +1560,14 @@ static const char __pyx_k_r[] = "r";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
 static const char __pyx_k_z[] = "z";
-static const char __pyx_k__2[] = "!";
-static const char __pyx_k__5[] = "(";
-static const char __pyx_k__6[] = ", ";
+static const char __pyx_k__3[] = "!";
+static const char __pyx_k__6[] = "(";
+static const char __pyx_k__7[] = ", ";
 static const char __pyx_k_mk[] = "_mk";
 static const char __pyx_k_Vec[] = "Vec(";
-static const char __pyx_k__13[] = " ";
-static const char __pyx_k__14[] = ")";
-static const char __pyx_k__15[] = ">";
+static const char __pyx_k__14[] = " ";
+static const char __pyx_k__15[] = ")";
+static const char __pyx_k__16[] = ">";
 static const char __pyx_k_ang[] = "ang";
 static const char __pyx_k_new[] = "__new__";
 static const char __pyx_k_pit[] = "pit";
@@ -1668,6 +1669,7 @@ static const char __pyx_k_is_not_an_Angle_like_object[] = " is not an Angle-like
 static const char __pyx_k_Cannot_floor_divide_2_Vectors[] = "Cannot floor-divide 2 Vectors.";
 static const char __pyx_k_Angle_with_axis_takes_2_4_or_6_p[] = "Angle.with_axis() takes 2, 4 or 6 positional arguments but ";
 static const char __pyx_k_At_least_two_vectors_must_be_pro[] = "At least two vectors must be provided!";
+static const char __pyx_k_Cannot_convert_scalars_to_an_Ang[] = "Cannot convert scalars to an Angle!";
 static const char __pyx_k_Vec_bbox_expected_at_least_1_arg[] = "Vec.bbox() expected at least 1 argument, got 0.";
 static const char __pyx_k_Vec_tuple_is_not_a_tuple_subclas[] = "Vec_tuple is not a tuple subclass!";
 static const char __pyx_k_Vec_with_axis_takes_2_4_or_6_pos[] = "Vec.with_axis() takes 2, 4 or 6 positional arguments but ";
@@ -1682,6 +1684,7 @@ static PyObject *__pyx_n_s_AttributeError;
 static PyObject *__pyx_n_s_B;
 static PyObject *__pyx_kp_u_Bad_operation;
 static PyObject *__pyx_kp_u_Called_with_non_vectors;
+static PyObject *__pyx_kp_u_Cannot_convert_scalars_to_an_Ang;
 static PyObject *__pyx_kp_u_Cannot_divide_2_Vectors;
 static PyObject *__pyx_kp_u_Cannot_floor_divide_2_Vectors;
 static PyObject *__pyx_kp_u_Cannot_modulus_2_Vectors;
@@ -1716,12 +1719,12 @@ static PyObject *__pyx_n_s_Vec_tuple;
 static PyObject *__pyx_kp_u_Vec_tuple_is_not_a_tuple_subclas;
 static PyObject *__pyx_kp_u_Vec_with_axis_takes_2_4_or_6_pos;
 static PyObject *__pyx_n_s_W;
-static PyObject *__pyx_kp_u__13;
 static PyObject *__pyx_kp_u__14;
 static PyObject *__pyx_kp_u__15;
-static PyObject *__pyx_kp_u__2;
-static PyObject *__pyx_kp_u__5;
+static PyObject *__pyx_kp_u__16;
+static PyObject *__pyx_kp_u__3;
 static PyObject *__pyx_kp_u__6;
+static PyObject *__pyx_kp_u__7;
 static PyObject *__pyx_n_s_ang;
 static PyObject *__pyx_n_s_arg_count;
 static PyObject *__pyx_n_s_args;
@@ -1937,31 +1940,32 @@ static PyObject *__pyx_int_2;
 static PyObject *__pyx_int_6;
 static PyObject *__pyx_int_neg_1;
 static PyObject *__pyx_tuple_;
-static PyObject *__pyx_tuple__3;
+static PyObject *__pyx_tuple__2;
 static PyObject *__pyx_tuple__4;
-static PyObject *__pyx_tuple__7;
+static PyObject *__pyx_tuple__5;
 static PyObject *__pyx_tuple__8;
 static PyObject *__pyx_tuple__9;
 static PyObject *__pyx_tuple__10;
 static PyObject *__pyx_tuple__11;
 static PyObject *__pyx_tuple__12;
-static PyObject *__pyx_tuple__16;
+static PyObject *__pyx_tuple__13;
 static PyObject *__pyx_tuple__17;
 static PyObject *__pyx_tuple__18;
 static PyObject *__pyx_tuple__19;
-static PyObject *__pyx_tuple__21;
+static PyObject *__pyx_tuple__20;
 static PyObject *__pyx_tuple__22;
 static PyObject *__pyx_tuple__23;
 static PyObject *__pyx_tuple__24;
 static PyObject *__pyx_tuple__25;
 static PyObject *__pyx_tuple__26;
 static PyObject *__pyx_tuple__27;
-static PyObject *__pyx_tuple__29;
-static PyObject *__pyx_tuple__31;
-static PyObject *__pyx_codeobj__20;
-static PyObject *__pyx_codeobj__28;
-static PyObject *__pyx_codeobj__30;
-static PyObject *__pyx_codeobj__32;
+static PyObject *__pyx_tuple__28;
+static PyObject *__pyx_tuple__30;
+static PyObject *__pyx_tuple__32;
+static PyObject *__pyx_codeobj__21;
+static PyObject *__pyx_codeobj__29;
+static PyObject *__pyx_codeobj__31;
+static PyObject *__pyx_codeobj__33;
 /* Late includes */
 
 /* "srctools/_vec.pyx":18
@@ -2286,6 +2290,43 @@ static CYTHON_INLINE PyObject *__pyx_f_8srctools_4_vec__make_tuple(PyObject *__p
 /* "srctools/_vec.pyx":72
  * 
  * 
+ * cdef inline double norm_ang(double val):             # <<<<<<<<<<<<<<
+ *     """Normalise an angle to 0-360."""
+ *     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
+ */
+
+static CYTHON_INLINE double __pyx_f_8srctools_4_vec_norm_ang(double __pyx_v_val) {
+  double __pyx_r;
+  __Pyx_RefNannyDeclarations
+  __Pyx_RefNannySetupContext("norm_ang", 0);
+
+  /* "srctools/_vec.pyx":75
+ *     """Normalise an angle to 0-360."""
+ *     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
+ *     return val % 360.0 % 360.0             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_r = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_val, 360.0), 360.0);
+  goto __pyx_L0;
+
+  /* "srctools/_vec.pyx":72
+ * 
+ * 
+ * cdef inline double norm_ang(double val):             # <<<<<<<<<<<<<<
+ *     """Normalise an angle to 0-360."""
+ *     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
+ */
+
+  /* function exit code */
+  __pyx_L0:;
+  __Pyx_RefNannyFinishContext();
+  return __pyx_r;
+}
+
+/* "srctools/_vec.pyx":78
+ * 
+ * 
  * cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:             # <<<<<<<<<<<<<<
  *     cdef unicode str_x, str_y, str_z
  * 
@@ -2314,7 +2355,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_parse_vec_str", 0);
 
-  /* "srctools/_vec.pyx":75
+  /* "srctools/_vec.pyx":81
  *     cdef unicode str_x, str_y, str_z
  * 
  *     if isinstance(value, Vec):             # <<<<<<<<<<<<<<
@@ -2325,7 +2366,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":76
+    /* "srctools/_vec.pyx":82
  * 
  *     if isinstance(value, Vec):
  *         vec.x = (<Vec>value).val.x             # <<<<<<<<<<<<<<
@@ -2335,7 +2376,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_value)->val.x;
     __pyx_v_vec->x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":77
+    /* "srctools/_vec.pyx":83
  *     if isinstance(value, Vec):
  *         vec.x = (<Vec>value).val.x
  *         vec.y = (<Vec>value).val.y             # <<<<<<<<<<<<<<
@@ -2345,7 +2386,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_value)->val.y;
     __pyx_v_vec->y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":78
+    /* "srctools/_vec.pyx":84
  *         vec.x = (<Vec>value).val.x
  *         vec.y = (<Vec>value).val.y
  *         vec.z = (<Vec>value).val.z             # <<<<<<<<<<<<<<
@@ -2355,7 +2396,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_value)->val.z;
     __pyx_v_vec->z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":79
+    /* "srctools/_vec.pyx":85
  *         vec.y = (<Vec>value).val.y
  *         vec.z = (<Vec>value).val.z
  *         return True             # <<<<<<<<<<<<<<
@@ -2365,7 +2406,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":75
+    /* "srctools/_vec.pyx":81
  *     cdef unicode str_x, str_y, str_z
  * 
  *     if isinstance(value, Vec):             # <<<<<<<<<<<<<<
@@ -2374,7 +2415,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":80
+  /* "srctools/_vec.pyx":86
  *         vec.z = (<Vec>value).val.z
  *         return True
  *     elif isinstance(value, Angle):             # <<<<<<<<<<<<<<
@@ -2385,7 +2426,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":81
+    /* "srctools/_vec.pyx":87
  *         return True
  *     elif isinstance(value, Angle):
  *         vec.x = (<Angle>value).val.x             # <<<<<<<<<<<<<<
@@ -2395,7 +2436,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_value)->val.x;
     __pyx_v_vec->x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":82
+    /* "srctools/_vec.pyx":88
  *     elif isinstance(value, Angle):
  *         vec.x = (<Angle>value).val.x
  *         vec.y = (<Angle>value).val.y             # <<<<<<<<<<<<<<
@@ -2405,7 +2446,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_value)->val.y;
     __pyx_v_vec->y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":83
+    /* "srctools/_vec.pyx":89
  *         vec.x = (<Angle>value).val.x
  *         vec.y = (<Angle>value).val.y
  *         vec.z = (<Angle>value).val.z             # <<<<<<<<<<<<<<
@@ -2415,7 +2456,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_value)->val.z;
     __pyx_v_vec->z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":84
+    /* "srctools/_vec.pyx":90
  *         vec.y = (<Angle>value).val.y
  *         vec.z = (<Angle>value).val.z
  *         return True             # <<<<<<<<<<<<<<
@@ -2425,7 +2466,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":80
+    /* "srctools/_vec.pyx":86
  *         vec.z = (<Vec>value).val.z
  *         return True
  *     elif isinstance(value, Angle):             # <<<<<<<<<<<<<<
@@ -2434,7 +2475,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":86
+  /* "srctools/_vec.pyx":92
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -2450,19 +2491,19 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __Pyx_XGOTREF(__pyx_t_6);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":87
+      /* "srctools/_vec.pyx":93
  * 
  *     try:
  *         str_x, str_y, str_z = (<unicode?>value).split()             # <<<<<<<<<<<<<<
  *     except ValueError:
  *         vec.x = x
  */
-      if (!(likely(PyUnicode_CheckExact(__pyx_v_value))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 87, __pyx_L4_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_v_value))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 93, __pyx_L4_error)
       if (unlikely(__pyx_v_value == Py_None)) {
         PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "split");
-        __PYX_ERR(0, 87, __pyx_L4_error)
+        __PYX_ERR(0, 93, __pyx_L4_error)
       }
-      __pyx_t_7 = PyUnicode_Split(((PyObject*)__pyx_v_value), ((PyObject *)NULL), -1L); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 87, __pyx_L4_error)
+      __pyx_t_7 = PyUnicode_Split(((PyObject*)__pyx_v_value), ((PyObject *)NULL), -1L); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 93, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_7);
       if (1) {
         PyObject* sequence = __pyx_t_7;
@@ -2470,7 +2511,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
         if (unlikely(size != 3)) {
           if (size > 3) __Pyx_RaiseTooManyValuesError(3);
           else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-          __PYX_ERR(0, 87, __pyx_L4_error)
+          __PYX_ERR(0, 93, __pyx_L4_error)
         }
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
         __pyx_t_8 = PyList_GET_ITEM(sequence, 0); 
@@ -2480,18 +2521,18 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
         __Pyx_INCREF(__pyx_t_9);
         __Pyx_INCREF(__pyx_t_10);
         #else
-        __pyx_t_8 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 87, __pyx_L4_error)
+        __pyx_t_8 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 93, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_8);
-        __pyx_t_9 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 87, __pyx_L4_error)
+        __pyx_t_9 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 93, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_9);
-        __pyx_t_10 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 87, __pyx_L4_error)
+        __pyx_t_10 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 93, __pyx_L4_error)
         __Pyx_GOTREF(__pyx_t_10);
         #endif
         __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       }
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_8))||((__pyx_t_8) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_8)->tp_name), 0))) __PYX_ERR(0, 87, __pyx_L4_error)
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_9))||((__pyx_t_9) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_9)->tp_name), 0))) __PYX_ERR(0, 87, __pyx_L4_error)
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_10))||((__pyx_t_10) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_10)->tp_name), 0))) __PYX_ERR(0, 87, __pyx_L4_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_8))||((__pyx_t_8) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_8)->tp_name), 0))) __PYX_ERR(0, 93, __pyx_L4_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_9))||((__pyx_t_9) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_9)->tp_name), 0))) __PYX_ERR(0, 93, __pyx_L4_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_10))||((__pyx_t_10) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_10)->tp_name), 0))) __PYX_ERR(0, 93, __pyx_L4_error)
       __pyx_v_str_x = ((PyObject*)__pyx_t_8);
       __pyx_t_8 = 0;
       __pyx_v_str_y = ((PyObject*)__pyx_t_9);
@@ -2499,7 +2540,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
       __pyx_v_str_z = ((PyObject*)__pyx_t_10);
       __pyx_t_10 = 0;
 
-      /* "srctools/_vec.pyx":86
+      /* "srctools/_vec.pyx":92
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -2517,7 +2558,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "srctools/_vec.pyx":88
+    /* "srctools/_vec.pyx":94
  *     try:
  *         str_x, str_y, str_z = (<unicode?>value).split()
  *     except ValueError:             # <<<<<<<<<<<<<<
@@ -2527,12 +2568,12 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_11 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_11) {
       __Pyx_AddTraceback("srctools._vec._parse_vec_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_10, &__pyx_t_9) < 0) __PYX_ERR(0, 88, __pyx_L6_except_error)
+      if (__Pyx_GetException(&__pyx_t_7, &__pyx_t_10, &__pyx_t_9) < 0) __PYX_ERR(0, 94, __pyx_L6_except_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_GOTREF(__pyx_t_9);
 
-      /* "srctools/_vec.pyx":89
+      /* "srctools/_vec.pyx":95
  *         str_x, str_y, str_z = (<unicode?>value).split()
  *     except ValueError:
  *         vec.x = x             # <<<<<<<<<<<<<<
@@ -2541,7 +2582,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
       __pyx_v_vec->x = __pyx_v_x;
 
-      /* "srctools/_vec.pyx":90
+      /* "srctools/_vec.pyx":96
  *     except ValueError:
  *         vec.x = x
  *         vec.y = y             # <<<<<<<<<<<<<<
@@ -2550,7 +2591,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
       __pyx_v_vec->y = __pyx_v_y;
 
-      /* "srctools/_vec.pyx":91
+      /* "srctools/_vec.pyx":97
  *         vec.x = x
  *         vec.y = y
  *         vec.z = z             # <<<<<<<<<<<<<<
@@ -2559,7 +2600,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
       __pyx_v_vec->z = __pyx_v_z;
 
-      /* "srctools/_vec.pyx":92
+      /* "srctools/_vec.pyx":98
  *         vec.y = y
  *         vec.z = z
  *         return True             # <<<<<<<<<<<<<<
@@ -2575,7 +2616,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     goto __pyx_L6_except_error;
     __pyx_L6_except_error:;
 
-    /* "srctools/_vec.pyx":86
+    /* "srctools/_vec.pyx":92
  *         return True
  * 
  *     try:             # <<<<<<<<<<<<<<
@@ -2596,21 +2637,21 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_L9_try_end:;
   }
 
-  /* "srctools/_vec.pyx":94
+  /* "srctools/_vec.pyx":100
  *         return True
  * 
  *     if str_x[0] in '({[<':             # <<<<<<<<<<<<<<
  *         str_x = str_x[1:]
  *     if str_z[-1] in ')}]>':
  */
-  __pyx_t_12 = __Pyx_GetItemInt_Unicode(__pyx_v_str_x, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_12 == (Py_UCS4)-1)) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_GetItemInt_Unicode(__pyx_v_str_x, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_12 == (Py_UCS4)-1)) __PYX_ERR(0, 100, __pyx_L1_error)
   switch (__pyx_t_12) {
     case 40:
     case 60:
     case 91:
     case 0x7B:
 
-    /* "srctools/_vec.pyx":95
+    /* "srctools/_vec.pyx":101
  * 
  *     if str_x[0] in '({[<':
  *         str_x = str_x[1:]             # <<<<<<<<<<<<<<
@@ -2619,14 +2660,14 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
     if (unlikely(__pyx_v_str_x == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 95, __pyx_L1_error)
+      __PYX_ERR(0, 101, __pyx_L1_error)
     }
-    __pyx_t_9 = __Pyx_PyUnicode_Substring(__pyx_v_str_x, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 95, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyUnicode_Substring(__pyx_v_str_x, 1, PY_SSIZE_T_MAX); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 101, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF_SET(__pyx_v_str_x, ((PyObject*)__pyx_t_9));
     __pyx_t_9 = 0;
 
-    /* "srctools/_vec.pyx":94
+    /* "srctools/_vec.pyx":100
  *         return True
  * 
  *     if str_x[0] in '({[<':             # <<<<<<<<<<<<<<
@@ -2637,21 +2678,21 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     default: break;
   }
 
-  /* "srctools/_vec.pyx":96
+  /* "srctools/_vec.pyx":102
  *     if str_x[0] in '({[<':
  *         str_x = str_x[1:]
  *     if str_z[-1] in ')}]>':             # <<<<<<<<<<<<<<
  *         str_z = str_z[:-1]
  *     try:
  */
-  __pyx_t_12 = __Pyx_GetItemInt_Unicode(__pyx_v_str_z, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(__pyx_t_12 == (Py_UCS4)-1)) __PYX_ERR(0, 96, __pyx_L1_error)
+  __pyx_t_12 = __Pyx_GetItemInt_Unicode(__pyx_v_str_z, -1L, long, 1, __Pyx_PyInt_From_long, 0, 1, 1); if (unlikely(__pyx_t_12 == (Py_UCS4)-1)) __PYX_ERR(0, 102, __pyx_L1_error)
   switch (__pyx_t_12) {
     case 41:
     case 62:
     case 93:
     case 0x7D:
 
-    /* "srctools/_vec.pyx":97
+    /* "srctools/_vec.pyx":103
  *         str_x = str_x[1:]
  *     if str_z[-1] in ')}]>':
  *         str_z = str_z[:-1]             # <<<<<<<<<<<<<<
@@ -2660,14 +2701,14 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
     if (unlikely(__pyx_v_str_z == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 97, __pyx_L1_error)
+      __PYX_ERR(0, 103, __pyx_L1_error)
     }
-    __pyx_t_9 = __Pyx_PyUnicode_Substring(__pyx_v_str_z, 0, -1L); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 97, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyUnicode_Substring(__pyx_v_str_z, 0, -1L); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 103, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF_SET(__pyx_v_str_z, ((PyObject*)__pyx_t_9));
     __pyx_t_9 = 0;
 
-    /* "srctools/_vec.pyx":96
+    /* "srctools/_vec.pyx":102
  *     if str_x[0] in '({[<':
  *         str_x = str_x[1:]
  *     if str_z[-1] in ')}]>':             # <<<<<<<<<<<<<<
@@ -2678,7 +2719,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     default: break;
   }
 
-  /* "srctools/_vec.pyx":98
+  /* "srctools/_vec.pyx":104
  *     if str_z[-1] in ')}]>':
  *         str_z = str_z[:-1]
  *     try:             # <<<<<<<<<<<<<<
@@ -2694,37 +2735,37 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __Pyx_XGOTREF(__pyx_t_4);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":99
+      /* "srctools/_vec.pyx":105
  *         str_z = str_z[:-1]
  *     try:
  *         vec.x = float(str_x)             # <<<<<<<<<<<<<<
  *         vec.y = float(str_y)
  *         vec.z = float(str_z)
  */
-      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_x); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 99, __pyx_L12_error)
+      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_x); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 105, __pyx_L12_error)
       __pyx_v_vec->x = __pyx_t_3;
 
-      /* "srctools/_vec.pyx":100
+      /* "srctools/_vec.pyx":106
  *     try:
  *         vec.x = float(str_x)
  *         vec.y = float(str_y)             # <<<<<<<<<<<<<<
  *         vec.z = float(str_z)
  *     except ValueError:
  */
-      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_y); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 100, __pyx_L12_error)
+      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_y); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 106, __pyx_L12_error)
       __pyx_v_vec->y = __pyx_t_3;
 
-      /* "srctools/_vec.pyx":101
+      /* "srctools/_vec.pyx":107
  *         vec.x = float(str_x)
  *         vec.y = float(str_y)
  *         vec.z = float(str_z)             # <<<<<<<<<<<<<<
  *     except ValueError:
  *         vec.x = x
  */
-      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_z); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 101, __pyx_L12_error)
+      __pyx_t_3 = __Pyx_PyObject_AsDouble(__pyx_v_str_z); if (unlikely(__pyx_t_3 == ((double)((double)-1)) && PyErr_Occurred())) __PYX_ERR(0, 107, __pyx_L12_error)
       __pyx_v_vec->z = __pyx_t_3;
 
-      /* "srctools/_vec.pyx":98
+      /* "srctools/_vec.pyx":104
  *     if str_z[-1] in ')}]>':
  *         str_z = str_z[:-1]
  *     try:             # <<<<<<<<<<<<<<
@@ -2742,7 +2783,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-    /* "srctools/_vec.pyx":102
+    /* "srctools/_vec.pyx":108
  *         vec.y = float(str_y)
  *         vec.z = float(str_z)
  *     except ValueError:             # <<<<<<<<<<<<<<
@@ -2752,12 +2793,12 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_t_11 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_11) {
       __Pyx_AddTraceback("srctools._vec._parse_vec_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_9, &__pyx_t_10, &__pyx_t_7) < 0) __PYX_ERR(0, 102, __pyx_L14_except_error)
+      if (__Pyx_GetException(&__pyx_t_9, &__pyx_t_10, &__pyx_t_7) < 0) __PYX_ERR(0, 108, __pyx_L14_except_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_GOTREF(__pyx_t_10);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "srctools/_vec.pyx":103
+      /* "srctools/_vec.pyx":109
  *         vec.z = float(str_z)
  *     except ValueError:
  *         vec.x = x             # <<<<<<<<<<<<<<
@@ -2766,7 +2807,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
       __pyx_v_vec->x = __pyx_v_x;
 
-      /* "srctools/_vec.pyx":104
+      /* "srctools/_vec.pyx":110
  *     except ValueError:
  *         vec.x = x
  *         vec.y = y             # <<<<<<<<<<<<<<
@@ -2775,7 +2816,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
  */
       __pyx_v_vec->y = __pyx_v_y;
 
-      /* "srctools/_vec.pyx":105
+      /* "srctools/_vec.pyx":111
  *         vec.x = x
  *         vec.y = y
  *         vec.z = z             # <<<<<<<<<<<<<<
@@ -2791,7 +2832,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     goto __pyx_L14_except_error;
     __pyx_L14_except_error:;
 
-    /* "srctools/_vec.pyx":98
+    /* "srctools/_vec.pyx":104
  *     if str_z[-1] in ')}]>':
  *         str_z = str_z[:-1]
  *     try:             # <<<<<<<<<<<<<<
@@ -2811,7 +2852,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
     __pyx_L17_try_end:;
   }
 
-  /* "srctools/_vec.pyx":106
+  /* "srctools/_vec.pyx":112
  *         vec.y = y
  *         vec.z = z
  *     return True             # <<<<<<<<<<<<<<
@@ -2821,7 +2862,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
   __pyx_r = 1;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":72
+  /* "srctools/_vec.pyx":78
  * 
  * 
  * cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:             # <<<<<<<<<<<<<<
@@ -2845,7 +2886,7 @@ static unsigned char __pyx_f_8srctools_4_vec__parse_vec_str(struct __pyx_t_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":109
+/* "srctools/_vec.pyx":115
  * 
  * 
  * def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):             # <<<<<<<<<<<<<<
@@ -2911,7 +2952,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_1parse_vec_str(PyObject *__pyx_self, P
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "parse_vec_str") < 0)) __PYX_ERR(0, 109, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "parse_vec_str") < 0)) __PYX_ERR(0, 115, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -2928,24 +2969,24 @@ static PyObject *__pyx_pw_8srctools_4_vec_1parse_vec_str(PyObject *__pyx_self, P
     }
     __pyx_v_val = values[0];
     if (values[1]) {
-      __pyx_v_x = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_x == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+      __pyx_v_x = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_x == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L3_error)
     } else {
       __pyx_v_x = ((double)0.0);
     }
     if (values[2]) {
-      __pyx_v_y = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_y == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+      __pyx_v_y = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_y == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L3_error)
     } else {
       __pyx_v_y = ((double)0.0);
     }
     if (values[3]) {
-      __pyx_v_z = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_z == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 109, __pyx_L3_error)
+      __pyx_v_z = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_z == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 115, __pyx_L3_error)
     } else {
       __pyx_v_z = ((double)0.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("parse_vec_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 109, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("parse_vec_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 115, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.parse_vec_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -2972,16 +3013,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_parse_vec_str(CYTHON_UNUSED PyObject *
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("parse_vec_str", 0);
 
-  /* "srctools/_vec.pyx":119
+  /* "srctools/_vec.pyx":125
  *      """
  *     cdef vec_t vec
  *     _parse_vec_str(&vec, val, x, y, z)             # <<<<<<<<<<<<<<
  *     return _make_tuple(vec.x, vec.y, vec.z)
  * 
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_vec), __pyx_v_val, __pyx_v_x, __pyx_v_y, __pyx_v_z); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 119, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_vec), __pyx_v_val, __pyx_v_x, __pyx_v_y, __pyx_v_z); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 125, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":120
+  /* "srctools/_vec.pyx":126
  *     cdef vec_t vec
  *     _parse_vec_str(&vec, val, x, y, z)
  *     return _make_tuple(vec.x, vec.y, vec.z)             # <<<<<<<<<<<<<<
@@ -2989,13 +3030,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_parse_vec_str(CYTHON_UNUSED PyObject *
  * cdef inline unsigned char _conv_vec(
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_vec.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_vec.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_vec.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_vec.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_vec.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_vec.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_5 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_t_2, __pyx_t_3, __pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 126, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
@@ -3004,7 +3045,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_parse_vec_str(CYTHON_UNUSED PyObject *
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":109
+  /* "srctools/_vec.pyx":115
  * 
  * 
  * def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):             # <<<<<<<<<<<<<<
@@ -3026,7 +3067,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_parse_vec_str(CYTHON_UNUSED PyObject *
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":122
+/* "srctools/_vec.pyx":128
  *     return _make_tuple(vec.x, vec.y, vec.z)
  * 
  * cdef inline unsigned char _conv_vec(             # <<<<<<<<<<<<<<
@@ -3057,7 +3098,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_conv_vec", 0);
 
-  /* "srctools/_vec.pyx":131
+  /* "srctools/_vec.pyx":137
  *     If scalar is True, allow int/float to set all axes.
  *     """
  *     if isinstance(vec, Vec):             # <<<<<<<<<<<<<<
@@ -3068,7 +3109,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":132
+    /* "srctools/_vec.pyx":138
  *     """
  *     if isinstance(vec, Vec):
  *         result.x = (<Vec>vec).val.x             # <<<<<<<<<<<<<<
@@ -3078,7 +3119,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_vec)->val.x;
     __pyx_v_result->x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":133
+    /* "srctools/_vec.pyx":139
  *     if isinstance(vec, Vec):
  *         result.x = (<Vec>vec).val.x
  *         result.y = (<Vec>vec).val.y             # <<<<<<<<<<<<<<
@@ -3088,7 +3129,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_vec)->val.y;
     __pyx_v_result->y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":134
+    /* "srctools/_vec.pyx":140
  *         result.x = (<Vec>vec).val.x
  *         result.y = (<Vec>vec).val.y
  *         result.z = (<Vec>vec).val.z             # <<<<<<<<<<<<<<
@@ -3098,7 +3139,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_vec)->val.z;
     __pyx_v_result->z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":131
+    /* "srctools/_vec.pyx":137
  *     If scalar is True, allow int/float to set all axes.
  *     """
  *     if isinstance(vec, Vec):             # <<<<<<<<<<<<<<
@@ -3108,7 +3149,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":135
+  /* "srctools/_vec.pyx":141
  *         result.y = (<Vec>vec).val.y
  *         result.z = (<Vec>vec).val.z
  *     elif isinstance(vec, float) or isinstance(vec, int):             # <<<<<<<<<<<<<<
@@ -3128,7 +3169,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":136
+    /* "srctools/_vec.pyx":142
  *         result.z = (<Vec>vec).val.z
  *     elif isinstance(vec, float) or isinstance(vec, int):
  *         if scalar:             # <<<<<<<<<<<<<<
@@ -3138,19 +3179,19 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     __pyx_t_2 = (__pyx_v_scalar != 0);
     if (likely(__pyx_t_2)) {
 
-      /* "srctools/_vec.pyx":137
+      /* "srctools/_vec.pyx":143
  *     elif isinstance(vec, float) or isinstance(vec, int):
  *         if scalar:
  *             result.x = result.y = result.z = vec             # <<<<<<<<<<<<<<
  *         else:
  *             # No need to do argument checks.
  */
-      __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_v_vec); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 137, __pyx_L1_error)
+      __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_v_vec); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 143, __pyx_L1_error)
       __pyx_v_result->x = __pyx_t_3;
       __pyx_v_result->y = __pyx_t_3;
       __pyx_v_result->z = __pyx_t_3;
 
-      /* "srctools/_vec.pyx":136
+      /* "srctools/_vec.pyx":142
  *         result.z = (<Vec>vec).val.z
  *     elif isinstance(vec, float) or isinstance(vec, int):
  *         if scalar:             # <<<<<<<<<<<<<<
@@ -3160,7 +3201,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":140
+    /* "srctools/_vec.pyx":146
  *         else:
  *             # No need to do argument checks.
  *             raise TypeError('Cannot use scalars here.')             # <<<<<<<<<<<<<<
@@ -3168,15 +3209,15 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
  *         result.x, result.y, result.z = <tuple>vec
  */
     /*else*/ {
-      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 140, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_Raise(__pyx_t_5, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __PYX_ERR(0, 140, __pyx_L1_error)
+      __PYX_ERR(0, 146, __pyx_L1_error)
     }
     __pyx_L6:;
 
-    /* "srctools/_vec.pyx":135
+    /* "srctools/_vec.pyx":141
  *         result.y = (<Vec>vec).val.y
  *         result.z = (<Vec>vec).val.z
  *     elif isinstance(vec, float) or isinstance(vec, int):             # <<<<<<<<<<<<<<
@@ -3186,7 +3227,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":141
+  /* "srctools/_vec.pyx":147
  *             # No need to do argument checks.
  *             raise TypeError('Cannot use scalars here.')
  *     elif isinstance(vec, tuple):             # <<<<<<<<<<<<<<
@@ -3197,7 +3238,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":142
+    /* "srctools/_vec.pyx":148
  *             raise TypeError('Cannot use scalars here.')
  *     elif isinstance(vec, tuple):
  *         result.x, result.y, result.z = <tuple>vec             # <<<<<<<<<<<<<<
@@ -3212,7 +3253,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       if (unlikely(size != 3)) {
         if (size > 3) __Pyx_RaiseTooManyValuesError(3);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 142, __pyx_L1_error)
+        __PYX_ERR(0, 148, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
       __pyx_t_6 = PyTuple_GET_ITEM(sequence, 0); 
@@ -3222,28 +3263,28 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       __Pyx_INCREF(__pyx_t_7);
       __Pyx_INCREF(__pyx_t_8);
       #else
-      __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 148, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 148, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_8 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 142, __pyx_L1_error)
+      __pyx_t_8 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 148, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       #endif
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 142, __pyx_L1_error)
+      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 148, __pyx_L1_error)
     }
-    __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L1_error)
+    __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_7); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L1_error)
+    __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_7); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 142, __pyx_L1_error)
+    __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __pyx_v_result->x = __pyx_t_3;
     __pyx_v_result->y = __pyx_t_9;
     __pyx_v_result->z = __pyx_t_10;
 
-    /* "srctools/_vec.pyx":141
+    /* "srctools/_vec.pyx":147
  *             # No need to do argument checks.
  *             raise TypeError('Cannot use scalars here.')
  *     elif isinstance(vec, tuple):             # <<<<<<<<<<<<<<
@@ -3253,7 +3294,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":144
+  /* "srctools/_vec.pyx":150
  *         result.x, result.y, result.z = <tuple>vec
  *     else:
  *         try:             # <<<<<<<<<<<<<<
@@ -3270,46 +3311,46 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       __Pyx_XGOTREF(__pyx_t_13);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":145
+        /* "srctools/_vec.pyx":151
  *     else:
  *         try:
  *             result.x = vec.x             # <<<<<<<<<<<<<<
  *             result.y = vec.y
  *             result.z = vec.z
  */
-        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_x); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 145, __pyx_L7_error)
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_x); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 151, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 145, __pyx_L7_error)
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L7_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_result->x = __pyx_t_10;
 
-        /* "srctools/_vec.pyx":146
+        /* "srctools/_vec.pyx":152
  *         try:
  *             result.x = vec.x
  *             result.y = vec.y             # <<<<<<<<<<<<<<
  *             result.z = vec.z
  *         except AttributeError:
  */
-        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 146, __pyx_L7_error)
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 152, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 146, __pyx_L7_error)
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 152, __pyx_L7_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_result->y = __pyx_t_10;
 
-        /* "srctools/_vec.pyx":147
+        /* "srctools/_vec.pyx":153
  *             result.x = vec.x
  *             result.y = vec.y
  *             result.z = vec.z             # <<<<<<<<<<<<<<
  *         except AttributeError:
  *             raise TypeError(f'{type(vec)} is not a Vec-like object!')
  */
-        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_z); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 147, __pyx_L7_error)
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_vec, __pyx_n_s_z); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 153, __pyx_L7_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 147, __pyx_L7_error)
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 153, __pyx_L7_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_result->z = __pyx_t_10;
 
-        /* "srctools/_vec.pyx":144
+        /* "srctools/_vec.pyx":150
  *         result.x, result.y, result.z = <tuple>vec
  *     else:
  *         try:             # <<<<<<<<<<<<<<
@@ -3327,7 +3368,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
 
-      /* "srctools/_vec.pyx":148
+      /* "srctools/_vec.pyx":154
  *             result.y = vec.y
  *             result.z = vec.z
  *         except AttributeError:             # <<<<<<<<<<<<<<
@@ -3337,34 +3378,34 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
       __pyx_t_14 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_AttributeError);
       if (__pyx_t_14) {
         __Pyx_AddTraceback("srctools._vec._conv_vec", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_8, &__pyx_t_7) < 0) __PYX_ERR(0, 148, __pyx_L9_except_error)
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_8, &__pyx_t_7) < 0) __PYX_ERR(0, 154, __pyx_L9_except_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_8);
         __Pyx_GOTREF(__pyx_t_7);
 
-        /* "srctools/_vec.pyx":149
+        /* "srctools/_vec.pyx":155
  *             result.z = vec.z
  *         except AttributeError:
  *             raise TypeError(f'{type(vec)} is not a Vec-like object!')             # <<<<<<<<<<<<<<
  *     return True
  * 
  */
-        __pyx_t_6 = __Pyx_PyObject_FormatSimple(((PyObject *)Py_TYPE(__pyx_v_vec)), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 149, __pyx_L9_except_error)
+        __pyx_t_6 = __Pyx_PyObject_FormatSimple(((PyObject *)Py_TYPE(__pyx_v_vec)), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 155, __pyx_L9_except_error)
         __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_15 = __Pyx_PyUnicode_Concat(__pyx_t_6, __pyx_kp_u_is_not_a_Vec_like_object); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 149, __pyx_L9_except_error)
+        __pyx_t_15 = __Pyx_PyUnicode_Concat(__pyx_t_6, __pyx_kp_u_is_not_a_Vec_like_object); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 155, __pyx_L9_except_error)
         __Pyx_GOTREF(__pyx_t_15);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_15); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 149, __pyx_L9_except_error)
+        __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_15); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 155, __pyx_L9_except_error)
         __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
         __Pyx_Raise(__pyx_t_6, 0, 0, 0);
         __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __PYX_ERR(0, 149, __pyx_L9_except_error)
+        __PYX_ERR(0, 155, __pyx_L9_except_error)
       }
       goto __pyx_L9_except_error;
       __pyx_L9_except_error:;
 
-      /* "srctools/_vec.pyx":144
+      /* "srctools/_vec.pyx":150
  *         result.x, result.y, result.z = <tuple>vec
  *     else:
  *         try:             # <<<<<<<<<<<<<<
@@ -3381,17 +3422,17 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":150
+  /* "srctools/_vec.pyx":156
  *         except AttributeError:
  *             raise TypeError(f'{type(vec)} is not a Vec-like object!')
  *     return True             # <<<<<<<<<<<<<<
  * 
- * cdef inline unsigned char _conv_angles(
+ * cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:
  */
   __pyx_r = 1;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":122
+  /* "srctools/_vec.pyx":128
  *     return _make_tuple(vec.x, vec.y, vec.z)
  * 
  * cdef inline unsigned char _conv_vec(             # <<<<<<<<<<<<<<
@@ -3413,15 +3454,15 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_vec(struct __py
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":152
+/* "srctools/_vec.pyx":158
  *     return True
  * 
- * cdef inline unsigned char _conv_angles(             # <<<<<<<<<<<<<<
- *     vec_t *result,
- *     object ang,
+ * cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:             # <<<<<<<<<<<<<<
+ *     """Convert some object to a unified Angle struct.
+ * 
  */
 
-static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct __pyx_t_8srctools_4_vec_vec_t *__pyx_v_result, PyObject *__pyx_v_ang, int __pyx_v_scalar) {
+static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct __pyx_t_8srctools_4_vec_vec_t *__pyx_v_result, PyObject *__pyx_v_ang) {
   double __pyx_v_x;
   double __pyx_v_y;
   double __pyx_v_z;
@@ -3431,11 +3472,11 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   int __pyx_t_2;
   double __pyx_t_3;
   int __pyx_t_4;
-  double __pyx_t_5;
+  PyObject *__pyx_t_5 = NULL;
   PyObject *__pyx_t_6 = NULL;
   PyObject *__pyx_t_7 = NULL;
   PyObject *__pyx_t_8 = NULL;
-  PyObject *__pyx_t_9 = NULL;
+  double __pyx_t_9;
   double __pyx_t_10;
   PyObject *__pyx_t_11 = NULL;
   PyObject *__pyx_t_12 = NULL;
@@ -3447,7 +3488,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_conv_angles", 0);
 
-  /* "srctools/_vec.pyx":162
+  /* "srctools/_vec.pyx":164
  *     """
  *     cdef double x, y, z
  *     if isinstance(ang, Angle):             # <<<<<<<<<<<<<<
@@ -3458,7 +3499,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":163
+    /* "srctools/_vec.pyx":165
  *     cdef double x, y, z
  *     if isinstance(ang, Angle):
  *         result.x = (<Angle>ang).val.x             # <<<<<<<<<<<<<<
@@ -3468,7 +3509,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_ang)->val.x;
     __pyx_v_result->x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":164
+    /* "srctools/_vec.pyx":166
  *     if isinstance(ang, Angle):
  *         result.x = (<Angle>ang).val.x
  *         result.y = (<Angle>ang).val.y             # <<<<<<<<<<<<<<
@@ -3478,17 +3519,17 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_ang)->val.y;
     __pyx_v_result->y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":165
+    /* "srctools/_vec.pyx":167
  *         result.x = (<Angle>ang).val.x
  *         result.y = (<Angle>ang).val.y
  *         result.z = (<Angle>ang).val.z             # <<<<<<<<<<<<<<
  *     elif isinstance(ang, float) or isinstance(ang, int):
- *         if scalar:
+ *         raise TypeError('Cannot convert scalars to an Angle!')
  */
     __pyx_t_3 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_ang)->val.z;
     __pyx_v_result->z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":162
+    /* "srctools/_vec.pyx":164
  *     """
  *     cdef double x, y, z
  *     if isinstance(ang, Angle):             # <<<<<<<<<<<<<<
@@ -3498,12 +3539,12 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":166
+  /* "srctools/_vec.pyx":168
  *         result.y = (<Angle>ang).val.y
  *         result.z = (<Angle>ang).val.z
  *     elif isinstance(ang, float) or isinstance(ang, int):             # <<<<<<<<<<<<<<
- *         if scalar:
- *             result.x = result.y = result.z = <double>ang % 360.0 % 360.0
+ *         raise TypeError('Cannot convert scalars to an Angle!')
+ *     elif isinstance(ang, tuple):
  */
   __pyx_t_1 = PyFloat_Check(__pyx_v_ang); 
   __pyx_t_4 = (__pyx_t_1 != 0);
@@ -3516,167 +3557,130 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   __pyx_t_1 = (__pyx_t_4 != 0);
   __pyx_t_2 = __pyx_t_1;
   __pyx_L4_bool_binop_done:;
-  if (__pyx_t_2) {
+  if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":167
+    /* "srctools/_vec.pyx":169
  *         result.z = (<Angle>ang).val.z
  *     elif isinstance(ang, float) or isinstance(ang, int):
- *         if scalar:             # <<<<<<<<<<<<<<
- *             result.x = result.y = result.z = <double>ang % 360.0 % 360.0
- *         else:
- */
-    __pyx_t_2 = (__pyx_v_scalar != 0);
-    if (likely(__pyx_t_2)) {
-
-      /* "srctools/_vec.pyx":168
- *     elif isinstance(ang, float) or isinstance(ang, int):
- *         if scalar:
- *             result.x = result.y = result.z = <double>ang % 360.0 % 360.0             # <<<<<<<<<<<<<<
- *         else:
- *             # No need to do argument checks.
- */
-      __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_v_ang); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 168, __pyx_L1_error)
-      __pyx_t_5 = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_3), 360.0), 360.0);
-      __pyx_v_result->x = __pyx_t_5;
-      __pyx_v_result->y = __pyx_t_5;
-      __pyx_v_result->z = __pyx_t_5;
-
-      /* "srctools/_vec.pyx":167
- *         result.z = (<Angle>ang).val.z
- *     elif isinstance(ang, float) or isinstance(ang, int):
- *         if scalar:             # <<<<<<<<<<<<<<
- *             result.x = result.y = result.z = <double>ang % 360.0 % 360.0
- *         else:
- */
-      goto __pyx_L6;
-    }
-
-    /* "srctools/_vec.pyx":171
- *         else:
- *             # No need to do argument checks.
- *             raise TypeError('Cannot use scalars here.')             # <<<<<<<<<<<<<<
+ *         raise TypeError('Cannot convert scalars to an Angle!')             # <<<<<<<<<<<<<<
  *     elif isinstance(ang, tuple):
  *         x, y, z = <tuple>ang
  */
-    /*else*/ {
-      __pyx_t_6 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple_, NULL); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 171, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_6);
-      __Pyx_Raise(__pyx_t_6, 0, 0, 0);
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-      __PYX_ERR(0, 171, __pyx_L1_error)
-    }
-    __pyx_L6:;
+    __pyx_t_5 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 169, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __Pyx_Raise(__pyx_t_5, 0, 0, 0);
+    __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __PYX_ERR(0, 169, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":166
+    /* "srctools/_vec.pyx":168
  *         result.y = (<Angle>ang).val.y
  *         result.z = (<Angle>ang).val.z
  *     elif isinstance(ang, float) or isinstance(ang, int):             # <<<<<<<<<<<<<<
- *         if scalar:
- *             result.x = result.y = result.z = <double>ang % 360.0 % 360.0
+ *         raise TypeError('Cannot convert scalars to an Angle!')
+ *     elif isinstance(ang, tuple):
  */
-    goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":172
- *             # No need to do argument checks.
- *             raise TypeError('Cannot use scalars here.')
+  /* "srctools/_vec.pyx":170
+ *     elif isinstance(ang, float) or isinstance(ang, int):
+ *         raise TypeError('Cannot convert scalars to an Angle!')
  *     elif isinstance(ang, tuple):             # <<<<<<<<<<<<<<
  *         x, y, z = <tuple>ang
- *         result.x = x % 360.0 % 360.0
+ *         result.x = norm_ang(x)
  */
   __pyx_t_2 = PyTuple_Check(__pyx_v_ang); 
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":173
- *             raise TypeError('Cannot use scalars here.')
+    /* "srctools/_vec.pyx":171
+ *         raise TypeError('Cannot convert scalars to an Angle!')
  *     elif isinstance(ang, tuple):
  *         x, y, z = <tuple>ang             # <<<<<<<<<<<<<<
- *         result.x = x % 360.0 % 360.0
- *         result.y = y % 360.0 % 360.0
+ *         result.x = norm_ang(x)
+ *         result.y = norm_ang(y)
  */
-    __pyx_t_6 = __pyx_v_ang;
-    __Pyx_INCREF(__pyx_t_6);
-    if (likely(__pyx_t_6 != Py_None)) {
-      PyObject* sequence = __pyx_t_6;
+    __pyx_t_5 = __pyx_v_ang;
+    __Pyx_INCREF(__pyx_t_5);
+    if (likely(__pyx_t_5 != Py_None)) {
+      PyObject* sequence = __pyx_t_5;
       Py_ssize_t size = __Pyx_PySequence_SIZE(sequence);
       if (unlikely(size != 3)) {
         if (size > 3) __Pyx_RaiseTooManyValuesError(3);
         else if (size >= 0) __Pyx_RaiseNeedMoreValuesError(size);
-        __PYX_ERR(0, 173, __pyx_L1_error)
+        __PYX_ERR(0, 171, __pyx_L1_error)
       }
       #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-      __pyx_t_7 = PyTuple_GET_ITEM(sequence, 0); 
-      __pyx_t_8 = PyTuple_GET_ITEM(sequence, 1); 
-      __pyx_t_9 = PyTuple_GET_ITEM(sequence, 2); 
+      __pyx_t_6 = PyTuple_GET_ITEM(sequence, 0); 
+      __pyx_t_7 = PyTuple_GET_ITEM(sequence, 1); 
+      __pyx_t_8 = PyTuple_GET_ITEM(sequence, 2); 
+      __Pyx_INCREF(__pyx_t_6);
       __Pyx_INCREF(__pyx_t_7);
       __Pyx_INCREF(__pyx_t_8);
-      __Pyx_INCREF(__pyx_t_9);
       #else
-      __pyx_t_7 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_t_6 = PySequence_ITEM(sequence, 0); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 171, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_6);
+      __pyx_t_7 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
-      __pyx_t_8 = PySequence_ITEM(sequence, 1); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 173, __pyx_L1_error)
+      __pyx_t_8 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 171, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
-      __pyx_t_9 = PySequence_ITEM(sequence, 2); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 173, __pyx_L1_error)
-      __Pyx_GOTREF(__pyx_t_9);
       #endif
-      __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     } else {
-      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 173, __pyx_L1_error)
+      __Pyx_RaiseNoneNotIterableError(); __PYX_ERR(0, 171, __pyx_L1_error)
     }
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_7); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 173, __pyx_L1_error)
+    __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __pyx_t_9 = __pyx_PyFloat_AsDouble(__pyx_t_7); if (unlikely((__pyx_t_9 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 173, __pyx_L1_error)
+    __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_8); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 171, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_9); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 173, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __pyx_v_x = __pyx_t_5;
-    __pyx_v_y = __pyx_t_3;
+    __pyx_v_x = __pyx_t_3;
+    __pyx_v_y = __pyx_t_9;
     __pyx_v_z = __pyx_t_10;
 
-    /* "srctools/_vec.pyx":174
+    /* "srctools/_vec.pyx":172
  *     elif isinstance(ang, tuple):
  *         x, y, z = <tuple>ang
- *         result.x = x % 360.0 % 360.0             # <<<<<<<<<<<<<<
- *         result.y = y % 360.0 % 360.0
- *         result.z = z % 360.0 % 360.0
+ *         result.x = norm_ang(x)             # <<<<<<<<<<<<<<
+ *         result.y = norm_ang(y)
+ *         result.z = norm_ang(z)
  */
-    __pyx_v_result->x = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_x, 360.0), 360.0);
+    __pyx_v_result->x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_x);
 
-    /* "srctools/_vec.pyx":175
+    /* "srctools/_vec.pyx":173
  *         x, y, z = <tuple>ang
- *         result.x = x % 360.0 % 360.0
- *         result.y = y % 360.0 % 360.0             # <<<<<<<<<<<<<<
- *         result.z = z % 360.0 % 360.0
+ *         result.x = norm_ang(x)
+ *         result.y = norm_ang(y)             # <<<<<<<<<<<<<<
+ *         result.z = norm_ang(z)
  *     else:
  */
-    __pyx_v_result->y = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_y, 360.0), 360.0);
+    __pyx_v_result->y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_y);
 
-    /* "srctools/_vec.pyx":176
- *         result.x = x % 360.0 % 360.0
- *         result.y = y % 360.0 % 360.0
- *         result.z = z % 360.0 % 360.0             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":174
+ *         result.x = norm_ang(x)
+ *         result.y = norm_ang(y)
+ *         result.z = norm_ang(z)             # <<<<<<<<<<<<<<
  *     else:
  *         try:
  */
-    __pyx_v_result->z = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_z, 360.0), 360.0);
+    __pyx_v_result->z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_z);
 
-    /* "srctools/_vec.pyx":172
- *             # No need to do argument checks.
- *             raise TypeError('Cannot use scalars here.')
+    /* "srctools/_vec.pyx":170
+ *     elif isinstance(ang, float) or isinstance(ang, int):
+ *         raise TypeError('Cannot convert scalars to an Angle!')
  *     elif isinstance(ang, tuple):             # <<<<<<<<<<<<<<
  *         x, y, z = <tuple>ang
- *         result.x = x % 360.0 % 360.0
+ *         result.x = norm_ang(x)
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":178
- *         result.z = z % 360.0 % 360.0
+  /* "srctools/_vec.pyx":176
+ *         result.z = norm_ang(z)
  *     else:
  *         try:             # <<<<<<<<<<<<<<
- *             result.x = <double>ang.x % 360.0 % 360.0
- *             result.y = <double>ang.y % 360.0 % 360.0
+ *             result.x = norm_ang(ang.x)
+ *             result.y = norm_ang(ang.y)
  */
   /*else*/ {
     {
@@ -3688,66 +3692,66 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
       __Pyx_XGOTREF(__pyx_t_13);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":179
+        /* "srctools/_vec.pyx":177
  *     else:
  *         try:
- *             result.x = <double>ang.x % 360.0 % 360.0             # <<<<<<<<<<<<<<
- *             result.y = <double>ang.y % 360.0 % 360.0
- *             result.z = <double>ang.z % 360.0 % 360.0
+ *             result.x = norm_ang(ang.x)             # <<<<<<<<<<<<<<
+ *             result.y = norm_ang(ang.y)
+ *             result.z = norm_ang(ang.z)
  */
-        __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 179, __pyx_L7_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 179, __pyx_L7_error)
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_v_result->x = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_10), 360.0), 360.0);
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_x); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 177, __pyx_L6_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 177, __pyx_L6_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __pyx_v_result->x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_10);
 
-        /* "srctools/_vec.pyx":180
+        /* "srctools/_vec.pyx":178
  *         try:
- *             result.x = <double>ang.x % 360.0 % 360.0
- *             result.y = <double>ang.y % 360.0 % 360.0             # <<<<<<<<<<<<<<
- *             result.z = <double>ang.z % 360.0 % 360.0
+ *             result.x = norm_ang(ang.x)
+ *             result.y = norm_ang(ang.y)             # <<<<<<<<<<<<<<
+ *             result.z = norm_ang(ang.z)
  *         except AttributeError:
  */
-        __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_y); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 180, __pyx_L7_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 180, __pyx_L7_error)
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_v_result->y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_10), 360.0), 360.0);
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 178, __pyx_L6_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 178, __pyx_L6_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __pyx_v_result->y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_10);
 
-        /* "srctools/_vec.pyx":181
- *             result.x = <double>ang.x % 360.0 % 360.0
- *             result.y = <double>ang.y % 360.0 % 360.0
- *             result.z = <double>ang.z % 360.0 % 360.0             # <<<<<<<<<<<<<<
+        /* "srctools/_vec.pyx":179
+ *             result.x = norm_ang(ang.x)
+ *             result.y = norm_ang(ang.y)
+ *             result.z = norm_ang(ang.z)             # <<<<<<<<<<<<<<
  *         except AttributeError:
  *             raise TypeError(f'{type(ang)} is not an Angle-like object!')
  */
-        __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 181, __pyx_L7_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_6); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 181, __pyx_L7_error)
-        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-        __pyx_v_result->z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_10), 360.0), 360.0);
+        __pyx_t_5 = __Pyx_PyObject_GetAttrStr(__pyx_v_ang, __pyx_n_s_z); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 179, __pyx_L6_error)
+        __Pyx_GOTREF(__pyx_t_5);
+        __pyx_t_10 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_10 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 179, __pyx_L6_error)
+        __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+        __pyx_v_result->z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_10);
 
-        /* "srctools/_vec.pyx":178
- *         result.z = z % 360.0 % 360.0
+        /* "srctools/_vec.pyx":176
+ *         result.z = norm_ang(z)
  *     else:
  *         try:             # <<<<<<<<<<<<<<
- *             result.x = <double>ang.x % 360.0 % 360.0
- *             result.y = <double>ang.y % 360.0 % 360.0
+ *             result.x = norm_ang(ang.x)
+ *             result.y = norm_ang(ang.y)
  */
       }
       __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_13); __pyx_t_13 = 0;
-      goto __pyx_L12_try_end;
-      __pyx_L7_error:;
+      goto __pyx_L11_try_end;
+      __pyx_L6_error:;
+      __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
       __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_XDECREF(__pyx_t_8); __pyx_t_8 = 0;
-      __Pyx_XDECREF(__pyx_t_9); __pyx_t_9 = 0;
 
-      /* "srctools/_vec.pyx":182
- *             result.y = <double>ang.y % 360.0 % 360.0
- *             result.z = <double>ang.z % 360.0 % 360.0
+      /* "srctools/_vec.pyx":180
+ *             result.y = norm_ang(ang.y)
+ *             result.z = norm_ang(ang.z)
  *         except AttributeError:             # <<<<<<<<<<<<<<
  *             raise TypeError(f'{type(ang)} is not an Angle-like object!')
  *     return True
@@ -3755,51 +3759,51 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
       __pyx_t_14 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_AttributeError);
       if (__pyx_t_14) {
         __Pyx_AddTraceback("srctools._vec._conv_angles", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_9, &__pyx_t_8) < 0) __PYX_ERR(0, 182, __pyx_L9_except_error)
-        __Pyx_GOTREF(__pyx_t_6);
-        __Pyx_GOTREF(__pyx_t_9);
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_8, &__pyx_t_7) < 0) __PYX_ERR(0, 180, __pyx_L8_except_error)
+        __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_8);
+        __Pyx_GOTREF(__pyx_t_7);
 
-        /* "srctools/_vec.pyx":183
- *             result.z = <double>ang.z % 360.0 % 360.0
+        /* "srctools/_vec.pyx":181
+ *             result.z = norm_ang(ang.z)
  *         except AttributeError:
  *             raise TypeError(f'{type(ang)} is not an Angle-like object!')             # <<<<<<<<<<<<<<
  *     return True
  * 
  */
-        __pyx_t_7 = __Pyx_PyObject_FormatSimple(((PyObject *)Py_TYPE(__pyx_v_ang)), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 183, __pyx_L9_except_error)
-        __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_15 = __Pyx_PyUnicode_Concat(__pyx_t_7, __pyx_kp_u_is_not_an_Angle_like_object); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 183, __pyx_L9_except_error)
+        __pyx_t_6 = __Pyx_PyObject_FormatSimple(((PyObject *)Py_TYPE(__pyx_v_ang)), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 181, __pyx_L8_except_error)
+        __Pyx_GOTREF(__pyx_t_6);
+        __pyx_t_15 = __Pyx_PyUnicode_Concat(__pyx_t_6, __pyx_kp_u_is_not_an_Angle_like_object); if (unlikely(!__pyx_t_15)) __PYX_ERR(0, 181, __pyx_L8_except_error)
         __Pyx_GOTREF(__pyx_t_15);
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_15); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 183, __pyx_L9_except_error)
-        __Pyx_GOTREF(__pyx_t_7);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_15); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 181, __pyx_L8_except_error)
+        __Pyx_GOTREF(__pyx_t_6);
         __Pyx_DECREF(__pyx_t_15); __pyx_t_15 = 0;
-        __Pyx_Raise(__pyx_t_7, 0, 0, 0);
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-        __PYX_ERR(0, 183, __pyx_L9_except_error)
+        __Pyx_Raise(__pyx_t_6, 0, 0, 0);
+        __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
+        __PYX_ERR(0, 181, __pyx_L8_except_error)
       }
-      goto __pyx_L9_except_error;
-      __pyx_L9_except_error:;
+      goto __pyx_L8_except_error;
+      __pyx_L8_except_error:;
 
-      /* "srctools/_vec.pyx":178
- *         result.z = z % 360.0 % 360.0
+      /* "srctools/_vec.pyx":176
+ *         result.z = norm_ang(z)
  *     else:
  *         try:             # <<<<<<<<<<<<<<
- *             result.x = <double>ang.x % 360.0 % 360.0
- *             result.y = <double>ang.y % 360.0 % 360.0
+ *             result.x = norm_ang(ang.x)
+ *             result.y = norm_ang(ang.y)
  */
       __Pyx_XGIVEREF(__pyx_t_11);
       __Pyx_XGIVEREF(__pyx_t_12);
       __Pyx_XGIVEREF(__pyx_t_13);
       __Pyx_ExceptionReset(__pyx_t_11, __pyx_t_12, __pyx_t_13);
       goto __pyx_L1_error;
-      __pyx_L12_try_end:;
+      __pyx_L11_try_end:;
     }
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":184
+  /* "srctools/_vec.pyx":182
  *         except AttributeError:
  *             raise TypeError(f'{type(ang)} is not an Angle-like object!')
  *     return True             # <<<<<<<<<<<<<<
@@ -3809,20 +3813,20 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   __pyx_r = 1;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":152
+  /* "srctools/_vec.pyx":158
  *     return True
  * 
- * cdef inline unsigned char _conv_angles(             # <<<<<<<<<<<<<<
- *     vec_t *result,
- *     object ang,
+ * cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:             # <<<<<<<<<<<<<<
+ *     """Convert some object to a unified Angle struct.
+ * 
  */
 
   /* function exit code */
   __pyx_L1_error:;
+  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_XDECREF(__pyx_t_7);
   __Pyx_XDECREF(__pyx_t_8);
-  __Pyx_XDECREF(__pyx_t_9);
   __Pyx_XDECREF(__pyx_t_15);
   __Pyx_AddTraceback("srctools._vec._conv_angles", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
@@ -3831,7 +3835,7 @@ static CYTHON_INLINE unsigned char __pyx_f_8srctools_4_vec__conv_angles(struct _
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":187
+/* "srctools/_vec.pyx":185
  * 
  * 
  * cdef inline double _vec_mag(vec_t *vec):             # <<<<<<<<<<<<<<
@@ -3844,7 +3848,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec__vec_mag(struct __pyx_t_8src
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_vec_mag", 0);
 
-  /* "srctools/_vec.pyx":188
+  /* "srctools/_vec.pyx":186
  * 
  * cdef inline double _vec_mag(vec_t *vec):
  *     return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)             # <<<<<<<<<<<<<<
@@ -3854,7 +3858,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec__vec_mag(struct __pyx_t_8src
   __pyx_r = sqrt(((pow(__pyx_v_vec->x, 2.0) + pow(__pyx_v_vec->y, 2.0)) + pow(__pyx_v_vec->z, 2.0)));
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":187
+  /* "srctools/_vec.pyx":185
  * 
  * 
  * cdef inline double _vec_mag(vec_t *vec):             # <<<<<<<<<<<<<<
@@ -3868,7 +3872,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec__vec_mag(struct __pyx_t_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":190
+/* "srctools/_vec.pyx":188
  *     return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
  * 
  * cdef inline void _vec_normalise(vec_t *out, vec_t *inp):             # <<<<<<<<<<<<<<
@@ -3882,7 +3886,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("_vec_normalise", 0);
 
-  /* "srctools/_vec.pyx":192
+  /* "srctools/_vec.pyx":190
  * cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
  *     """Normalise the vector, writing to out. inp and out may be the same."""
  *     cdef double mag = _vec_mag(inp)             # <<<<<<<<<<<<<<
@@ -3891,7 +3895,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
  */
   __pyx_v_mag = __pyx_f_8srctools_4_vec__vec_mag(__pyx_v_inp);
 
-  /* "srctools/_vec.pyx":194
+  /* "srctools/_vec.pyx":192
  *     cdef double mag = _vec_mag(inp)
  * 
  *     if mag == 0:             # <<<<<<<<<<<<<<
@@ -3901,7 +3905,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
   __pyx_t_1 = ((__pyx_v_mag == 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":196
+    /* "srctools/_vec.pyx":194
  *     if mag == 0:
  *         # Vec(0, 0, 0).norm = Vec(0, 0, 0), as a special case.
  *         out.x = out.y = out.z = 0             # <<<<<<<<<<<<<<
@@ -3912,7 +3916,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
     __pyx_v_out->y = 0.0;
     __pyx_v_out->z = 0.0;
 
-    /* "srctools/_vec.pyx":194
+    /* "srctools/_vec.pyx":192
  *     cdef double mag = _vec_mag(inp)
  * 
  *     if mag == 0:             # <<<<<<<<<<<<<<
@@ -3922,7 +3926,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":199
+  /* "srctools/_vec.pyx":197
  *     else:
  *         # Disable ZeroDivisionError check, we just checked that.
  *         with cython.cdivision(True):             # <<<<<<<<<<<<<<
@@ -3931,7 +3935,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
  */
   /*else*/ {
 
-    /* "srctools/_vec.pyx":200
+    /* "srctools/_vec.pyx":198
  *         # Disable ZeroDivisionError check, we just checked that.
  *         with cython.cdivision(True):
  *             out.x = inp.x / mag             # <<<<<<<<<<<<<<
@@ -3940,7 +3944,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
  */
     __pyx_v_out->x = (__pyx_v_inp->x / __pyx_v_mag);
 
-    /* "srctools/_vec.pyx":201
+    /* "srctools/_vec.pyx":199
  *         with cython.cdivision(True):
  *             out.x = inp.x / mag
  *             out.y = inp.y / mag             # <<<<<<<<<<<<<<
@@ -3949,7 +3953,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
  */
     __pyx_v_out->y = (__pyx_v_inp->y / __pyx_v_mag);
 
-    /* "srctools/_vec.pyx":202
+    /* "srctools/_vec.pyx":200
  *             out.x = inp.x / mag
  *             out.y = inp.y / mag
  *             out.z = inp.z / mag             # <<<<<<<<<<<<<<
@@ -3960,7 +3964,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":190
+  /* "srctools/_vec.pyx":188
  *     return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
  * 
  * cdef inline void _vec_normalise(vec_t *out, vec_t *inp):             # <<<<<<<<<<<<<<
@@ -3972,7 +3976,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_normalise(struct __pyx_t_
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":205
+/* "srctools/_vec.pyx":203
  * 
  * 
  * cdef inline void _mat_mul(mat_t targ, mat_t rot):             # <<<<<<<<<<<<<<
@@ -3987,7 +3991,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
   double __pyx_t_3;
   __Pyx_RefNannySetupContext("_mat_mul", 0);
 
-  /* "srctools/_vec.pyx":209
+  /* "srctools/_vec.pyx":207
  *     # We don't use each row after assigning to the set, so we can re-assign.
  *     targ[0][0], targ[0][1], targ[0][2] = (
  *         (targ[0][0]) * (rot[0][0]) + (targ[0][1]) * (rot[1][0]) + (targ[0][2]) * (rot[2][0]),             # <<<<<<<<<<<<<<
@@ -3996,7 +4000,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_1 = (((((__pyx_v_targ[0])[0]) * ((__pyx_v_rot[0])[0])) + (((__pyx_v_targ[0])[1]) * ((__pyx_v_rot[1])[0]))) + (((__pyx_v_targ[0])[2]) * ((__pyx_v_rot[2])[0])));
 
-  /* "srctools/_vec.pyx":210
+  /* "srctools/_vec.pyx":208
  *     targ[0][0], targ[0][1], targ[0][2] = (
  *         (targ[0][0]) * (rot[0][0]) + (targ[0][1]) * (rot[1][0]) + (targ[0][2]) * (rot[2][0]),
  *         targ[0][0] * rot[0][1] + targ[0][1] * rot[1][1] + targ[0][2] * rot[2][1],             # <<<<<<<<<<<<<<
@@ -4005,7 +4009,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_2 = (((((__pyx_v_targ[0])[0]) * ((__pyx_v_rot[0])[1])) + (((__pyx_v_targ[0])[1]) * ((__pyx_v_rot[1])[1]))) + (((__pyx_v_targ[0])[2]) * ((__pyx_v_rot[2])[1])));
 
-  /* "srctools/_vec.pyx":211
+  /* "srctools/_vec.pyx":209
  *         (targ[0][0]) * (rot[0][0]) + (targ[0][1]) * (rot[1][0]) + (targ[0][2]) * (rot[2][0]),
  *         targ[0][0] * rot[0][1] + targ[0][1] * rot[1][1] + targ[0][2] * rot[2][1],
  *         targ[0][0] * rot[0][2] + targ[0][1] * rot[1][2] + targ[0][2] * rot[2][2],             # <<<<<<<<<<<<<<
@@ -4014,7 +4018,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_3 = (((((__pyx_v_targ[0])[0]) * ((__pyx_v_rot[0])[2])) + (((__pyx_v_targ[0])[1]) * ((__pyx_v_rot[1])[2]))) + (((__pyx_v_targ[0])[2]) * ((__pyx_v_rot[2])[2])));
 
-  /* "srctools/_vec.pyx":208
+  /* "srctools/_vec.pyx":206
  *     """Rotate target by the rotator matrix."""
  *     # We don't use each row after assigning to the set, so we can re-assign.
  *     targ[0][0], targ[0][1], targ[0][2] = (             # <<<<<<<<<<<<<<
@@ -4025,7 +4029,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
   ((__pyx_v_targ[0])[1]) = __pyx_t_2;
   ((__pyx_v_targ[0])[2]) = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":215
+  /* "srctools/_vec.pyx":213
  * 
  *     targ[1][0], targ[1][1], targ[1][2] = (
  *         targ[1][0] * rot[0][0] + targ[1][1] * rot[1][0] + targ[1][2] * rot[2][0],             # <<<<<<<<<<<<<<
@@ -4034,7 +4038,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_3 = (((((__pyx_v_targ[1])[0]) * ((__pyx_v_rot[0])[0])) + (((__pyx_v_targ[1])[1]) * ((__pyx_v_rot[1])[0]))) + (((__pyx_v_targ[1])[2]) * ((__pyx_v_rot[2])[0])));
 
-  /* "srctools/_vec.pyx":216
+  /* "srctools/_vec.pyx":214
  *     targ[1][0], targ[1][1], targ[1][2] = (
  *         targ[1][0] * rot[0][0] + targ[1][1] * rot[1][0] + targ[1][2] * rot[2][0],
  *         targ[1][0] * rot[0][1] + targ[1][1] * rot[1][1] + targ[1][2] * rot[2][1],             # <<<<<<<<<<<<<<
@@ -4043,7 +4047,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_2 = (((((__pyx_v_targ[1])[0]) * ((__pyx_v_rot[0])[1])) + (((__pyx_v_targ[1])[1]) * ((__pyx_v_rot[1])[1]))) + (((__pyx_v_targ[1])[2]) * ((__pyx_v_rot[2])[1])));
 
-  /* "srctools/_vec.pyx":217
+  /* "srctools/_vec.pyx":215
  *         targ[1][0] * rot[0][0] + targ[1][1] * rot[1][0] + targ[1][2] * rot[2][0],
  *         targ[1][0] * rot[0][1] + targ[1][1] * rot[1][1] + targ[1][2] * rot[2][1],
  *         targ[1][0] * rot[0][2] + targ[1][1] * rot[1][2] + targ[1][2] * rot[2][2],             # <<<<<<<<<<<<<<
@@ -4052,7 +4056,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_1 = (((((__pyx_v_targ[1])[0]) * ((__pyx_v_rot[0])[2])) + (((__pyx_v_targ[1])[1]) * ((__pyx_v_rot[1])[2]))) + (((__pyx_v_targ[1])[2]) * ((__pyx_v_rot[2])[2])));
 
-  /* "srctools/_vec.pyx":214
+  /* "srctools/_vec.pyx":212
  *     )
  * 
  *     targ[1][0], targ[1][1], targ[1][2] = (             # <<<<<<<<<<<<<<
@@ -4063,7 +4067,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
   ((__pyx_v_targ[1])[1]) = __pyx_t_2;
   ((__pyx_v_targ[1])[2]) = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":221
+  /* "srctools/_vec.pyx":219
  * 
  *     targ[2][0], targ[2][1], targ[2][2] = (
  *         targ[2][0] * rot[0][0] + targ[2][1] * rot[1][0] + targ[2][2] * rot[2][0],             # <<<<<<<<<<<<<<
@@ -4072,7 +4076,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_1 = (((((__pyx_v_targ[2])[0]) * ((__pyx_v_rot[0])[0])) + (((__pyx_v_targ[2])[1]) * ((__pyx_v_rot[1])[0]))) + (((__pyx_v_targ[2])[2]) * ((__pyx_v_rot[2])[0])));
 
-  /* "srctools/_vec.pyx":222
+  /* "srctools/_vec.pyx":220
  *     targ[2][0], targ[2][1], targ[2][2] = (
  *         targ[2][0] * rot[0][0] + targ[2][1] * rot[1][0] + targ[2][2] * rot[2][0],
  *         targ[2][0] * rot[0][1] + targ[2][1] * rot[1][1] + targ[2][2] * rot[2][1],             # <<<<<<<<<<<<<<
@@ -4081,7 +4085,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_2 = (((((__pyx_v_targ[2])[0]) * ((__pyx_v_rot[0])[1])) + (((__pyx_v_targ[2])[1]) * ((__pyx_v_rot[1])[1]))) + (((__pyx_v_targ[2])[2]) * ((__pyx_v_rot[2])[1])));
 
-  /* "srctools/_vec.pyx":223
+  /* "srctools/_vec.pyx":221
  *         targ[2][0] * rot[0][0] + targ[2][1] * rot[1][0] + targ[2][2] * rot[2][0],
  *         targ[2][0] * rot[0][1] + targ[2][1] * rot[1][1] + targ[2][2] * rot[2][1],
  *         targ[2][0] * rot[0][2] + targ[2][1] * rot[1][2] + targ[2][2] * rot[2][2],             # <<<<<<<<<<<<<<
@@ -4090,7 +4094,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
  */
   __pyx_t_3 = (((((__pyx_v_targ[2])[0]) * ((__pyx_v_rot[0])[2])) + (((__pyx_v_targ[2])[1]) * ((__pyx_v_rot[1])[2]))) + (((__pyx_v_targ[2])[2]) * ((__pyx_v_rot[2])[2])));
 
-  /* "srctools/_vec.pyx":220
+  /* "srctools/_vec.pyx":218
  *     )
  * 
  *     targ[2][0], targ[2][1], targ[2][2] = (             # <<<<<<<<<<<<<<
@@ -4101,7 +4105,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
   ((__pyx_v_targ[2])[1]) = __pyx_t_2;
   ((__pyx_v_targ[2])[2]) = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":205
+  /* "srctools/_vec.pyx":203
  * 
  * 
  * cdef inline void _mat_mul(mat_t targ, mat_t rot):             # <<<<<<<<<<<<<<
@@ -4113,7 +4117,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_mul(double (*__pyx_v_targ
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":227
+/* "srctools/_vec.pyx":225
  * 
  * 
  * cdef inline void _vec_rot(vec_t *vec, mat_t mat):             # <<<<<<<<<<<<<<
@@ -4129,7 +4133,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
   double __pyx_t_1;
   __Pyx_RefNannySetupContext("_vec_rot", 0);
 
-  /* "srctools/_vec.pyx":229
+  /* "srctools/_vec.pyx":227
  * cdef inline void _vec_rot(vec_t *vec, mat_t mat):
  *     """Rotate a vector by our value."""
  *     cdef double x = vec.x             # <<<<<<<<<<<<<<
@@ -4139,7 +4143,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
   __pyx_t_1 = __pyx_v_vec->x;
   __pyx_v_x = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":230
+  /* "srctools/_vec.pyx":228
  *     """Rotate a vector by our value."""
  *     cdef double x = vec.x
  *     cdef double y = vec.y             # <<<<<<<<<<<<<<
@@ -4149,7 +4153,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
   __pyx_t_1 = __pyx_v_vec->y;
   __pyx_v_y = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":231
+  /* "srctools/_vec.pyx":229
  *     cdef double x = vec.x
  *     cdef double y = vec.y
  *     cdef double z = vec.z             # <<<<<<<<<<<<<<
@@ -4159,7 +4163,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
   __pyx_t_1 = __pyx_v_vec->z;
   __pyx_v_z = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":232
+  /* "srctools/_vec.pyx":230
  *     cdef double y = vec.y
  *     cdef double z = vec.z
  *     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])             # <<<<<<<<<<<<<<
@@ -4168,7 +4172,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
  */
   __pyx_v_vec->x = (((__pyx_v_x * ((__pyx_v_mat[0])[0])) + (__pyx_v_y * ((__pyx_v_mat[1])[0]))) + (__pyx_v_z * ((__pyx_v_mat[2])[0])));
 
-  /* "srctools/_vec.pyx":233
+  /* "srctools/_vec.pyx":231
  *     cdef double z = vec.z
  *     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])
  *     vec.y = (x * mat[0][1]) + (y * mat[1][1]) + (z * mat[2][1])             # <<<<<<<<<<<<<<
@@ -4177,7 +4181,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
  */
   __pyx_v_vec->y = (((__pyx_v_x * ((__pyx_v_mat[0])[1])) + (__pyx_v_y * ((__pyx_v_mat[1])[1]))) + (__pyx_v_z * ((__pyx_v_mat[2])[1])));
 
-  /* "srctools/_vec.pyx":234
+  /* "srctools/_vec.pyx":232
  *     vec.x = (x * mat[0][0]) + (y * mat[1][0]) + (z * mat[2][0])
  *     vec.y = (x * mat[0][1]) + (y * mat[1][1]) + (z * mat[2][1])
  *     vec.z = (x * mat[0][2]) + (y * mat[1][2]) + (z * mat[2][2])             # <<<<<<<<<<<<<<
@@ -4186,7 +4190,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
  */
   __pyx_v_vec->z = (((__pyx_v_x * ((__pyx_v_mat[0])[2])) + (__pyx_v_y * ((__pyx_v_mat[1])[2]))) + (__pyx_v_z * ((__pyx_v_mat[2])[2])));
 
-  /* "srctools/_vec.pyx":227
+  /* "srctools/_vec.pyx":225
  * 
  * 
  * cdef inline void _vec_rot(vec_t *vec, mat_t mat):             # <<<<<<<<<<<<<<
@@ -4198,7 +4202,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_rot(struct __pyx_t_8srcto
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":237
+/* "srctools/_vec.pyx":235
  * 
  * 
  * cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):             # <<<<<<<<<<<<<<
@@ -4210,7 +4214,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_cross(struct __pyx_t_8src
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_vec_cross", 0);
 
-  /* "srctools/_vec.pyx":239
+  /* "srctools/_vec.pyx":237
  * cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
  *     """Compute the cross product of A x B. """
  *     res.x = a.y * b.z - a.z * b.y             # <<<<<<<<<<<<<<
@@ -4219,7 +4223,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_cross(struct __pyx_t_8src
  */
   __pyx_v_res->x = ((__pyx_v_a->y * __pyx_v_b->z) - (__pyx_v_a->z * __pyx_v_b->y));
 
-  /* "srctools/_vec.pyx":240
+  /* "srctools/_vec.pyx":238
  *     """Compute the cross product of A x B. """
  *     res.x = a.y * b.z - a.z * b.y
  *     res.y = a.z * b.x - a.x * b.z             # <<<<<<<<<<<<<<
@@ -4228,7 +4232,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_cross(struct __pyx_t_8src
  */
   __pyx_v_res->y = ((__pyx_v_a->z * __pyx_v_b->x) - (__pyx_v_a->x * __pyx_v_b->z));
 
-  /* "srctools/_vec.pyx":241
+  /* "srctools/_vec.pyx":239
  *     res.x = a.y * b.z - a.z * b.y
  *     res.y = a.z * b.x - a.x * b.z
  *     res.z = a.x * b.y - a.y * b.x             # <<<<<<<<<<<<<<
@@ -4237,7 +4241,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_cross(struct __pyx_t_8src
  */
   __pyx_v_res->z = ((__pyx_v_a->x * __pyx_v_b->y) - (__pyx_v_a->y * __pyx_v_b->x));
 
-  /* "srctools/_vec.pyx":237
+  /* "srctools/_vec.pyx":235
  * 
  * 
  * cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):             # <<<<<<<<<<<<<<
@@ -4249,7 +4253,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__vec_cross(struct __pyx_t_8src
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":244
+/* "srctools/_vec.pyx":242
  * 
  * 
  * cdef void _mat_from_angle(mat_t res, vec_t *angle):             # <<<<<<<<<<<<<<
@@ -4274,7 +4278,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_mat_from_angle", 0);
 
-  /* "srctools/_vec.pyx":246
+  /* "srctools/_vec.pyx":244
  * cdef void _mat_from_angle(mat_t res, vec_t *angle):
  *     cdef double cos_r_cos_y, cos_r_sin_y, sin_r_cos_y, sin_r_sin_y
  *     cdef double rad_pitch = deg_2_rad * angle.x             # <<<<<<<<<<<<<<
@@ -4283,7 +4287,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_rad_pitch = (0.017453292519943295 * __pyx_v_angle->x);
 
-  /* "srctools/_vec.pyx":247
+  /* "srctools/_vec.pyx":245
  *     cdef double cos_r_cos_y, cos_r_sin_y, sin_r_cos_y, sin_r_sin_y
  *     cdef double rad_pitch = deg_2_rad * angle.x
  *     cdef double cos_p = math.cos(rad_pitch)             # <<<<<<<<<<<<<<
@@ -4292,7 +4296,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_cos_p = cos(__pyx_v_rad_pitch);
 
-  /* "srctools/_vec.pyx":248
+  /* "srctools/_vec.pyx":246
  *     cdef double rad_pitch = deg_2_rad * angle.x
  *     cdef double cos_p = math.cos(rad_pitch)
  *     cdef double sin_p = math.sin(rad_pitch)             # <<<<<<<<<<<<<<
@@ -4301,7 +4305,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_sin_p = sin(__pyx_v_rad_pitch);
 
-  /* "srctools/_vec.pyx":249
+  /* "srctools/_vec.pyx":247
  *     cdef double cos_p = math.cos(rad_pitch)
  *     cdef double sin_p = math.sin(rad_pitch)
  *     cdef double rad_yaw = deg_2_rad * angle.y             # <<<<<<<<<<<<<<
@@ -4310,7 +4314,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_rad_yaw = (0.017453292519943295 * __pyx_v_angle->y);
 
-  /* "srctools/_vec.pyx":250
+  /* "srctools/_vec.pyx":248
  *     cdef double sin_p = math.sin(rad_pitch)
  *     cdef double rad_yaw = deg_2_rad * angle.y
  *     cdef double sin_y = math.sin(rad_yaw)             # <<<<<<<<<<<<<<
@@ -4319,7 +4323,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_sin_y = sin(__pyx_v_rad_yaw);
 
-  /* "srctools/_vec.pyx":251
+  /* "srctools/_vec.pyx":249
  *     cdef double rad_yaw = deg_2_rad * angle.y
  *     cdef double sin_y = math.sin(rad_yaw)
  *     cdef double cos_y = math.cos(rad_yaw)             # <<<<<<<<<<<<<<
@@ -4328,7 +4332,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_cos_y = cos(__pyx_v_rad_yaw);
 
-  /* "srctools/_vec.pyx":252
+  /* "srctools/_vec.pyx":250
  *     cdef double sin_y = math.sin(rad_yaw)
  *     cdef double cos_y = math.cos(rad_yaw)
  *     cdef double rad_roll = deg_2_rad * angle.z             # <<<<<<<<<<<<<<
@@ -4337,7 +4341,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_rad_roll = (0.017453292519943295 * __pyx_v_angle->z);
 
-  /* "srctools/_vec.pyx":253
+  /* "srctools/_vec.pyx":251
  *     cdef double cos_y = math.cos(rad_yaw)
  *     cdef double rad_roll = deg_2_rad * angle.z
  *     cdef double cos_r = math.cos(rad_roll)             # <<<<<<<<<<<<<<
@@ -4346,7 +4350,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_cos_r = cos(__pyx_v_rad_roll);
 
-  /* "srctools/_vec.pyx":254
+  /* "srctools/_vec.pyx":252
  *     cdef double rad_roll = deg_2_rad * angle.z
  *     cdef double cos_r = math.cos(rad_roll)
  *     cdef double sin_r = math.sin(rad_roll)             # <<<<<<<<<<<<<<
@@ -4355,7 +4359,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_sin_r = sin(__pyx_v_rad_roll);
 
-  /* "srctools/_vec.pyx":256
+  /* "srctools/_vec.pyx":254
  *     cdef double sin_r = math.sin(rad_roll)
  * 
  *     res[0][0] = cos_p * cos_y             # <<<<<<<<<<<<<<
@@ -4364,7 +4368,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[0])[0]) = (__pyx_v_cos_p * __pyx_v_cos_y);
 
-  /* "srctools/_vec.pyx":257
+  /* "srctools/_vec.pyx":255
  * 
  *     res[0][0] = cos_p * cos_y
  *     res[0][1] = cos_p * sin_y             # <<<<<<<<<<<<<<
@@ -4373,7 +4377,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[0])[1]) = (__pyx_v_cos_p * __pyx_v_sin_y);
 
-  /* "srctools/_vec.pyx":258
+  /* "srctools/_vec.pyx":256
  *     res[0][0] = cos_p * cos_y
  *     res[0][1] = cos_p * sin_y
  *     res[0][2] = -sin_p             # <<<<<<<<<<<<<<
@@ -4382,7 +4386,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[0])[2]) = (-__pyx_v_sin_p);
 
-  /* "srctools/_vec.pyx":260
+  /* "srctools/_vec.pyx":258
  *     res[0][2] = -sin_p
  * 
  *     cos_r_cos_y = cos_r * cos_y             # <<<<<<<<<<<<<<
@@ -4391,7 +4395,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_cos_r_cos_y = (__pyx_v_cos_r * __pyx_v_cos_y);
 
-  /* "srctools/_vec.pyx":261
+  /* "srctools/_vec.pyx":259
  * 
  *     cos_r_cos_y = cos_r * cos_y
  *     cos_r_sin_y = cos_r * sin_y             # <<<<<<<<<<<<<<
@@ -4400,7 +4404,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_cos_r_sin_y = (__pyx_v_cos_r * __pyx_v_sin_y);
 
-  /* "srctools/_vec.pyx":262
+  /* "srctools/_vec.pyx":260
  *     cos_r_cos_y = cos_r * cos_y
  *     cos_r_sin_y = cos_r * sin_y
  *     sin_r_cos_y = sin_r * cos_y             # <<<<<<<<<<<<<<
@@ -4409,7 +4413,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_sin_r_cos_y = (__pyx_v_sin_r * __pyx_v_cos_y);
 
-  /* "srctools/_vec.pyx":263
+  /* "srctools/_vec.pyx":261
  *     cos_r_sin_y = cos_r * sin_y
  *     sin_r_cos_y = sin_r * cos_y
  *     sin_r_sin_y = sin_r * sin_y             # <<<<<<<<<<<<<<
@@ -4418,7 +4422,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   __pyx_v_sin_r_sin_y = (__pyx_v_sin_r * __pyx_v_sin_y);
 
-  /* "srctools/_vec.pyx":265
+  /* "srctools/_vec.pyx":263
  *     sin_r_sin_y = sin_r * sin_y
  * 
  *     res[1][0] = sin_p * sin_r_cos_y - cos_r_sin_y             # <<<<<<<<<<<<<<
@@ -4427,7 +4431,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[1])[0]) = ((__pyx_v_sin_p * __pyx_v_sin_r_cos_y) - __pyx_v_cos_r_sin_y);
 
-  /* "srctools/_vec.pyx":266
+  /* "srctools/_vec.pyx":264
  * 
  *     res[1][0] = sin_p * sin_r_cos_y - cos_r_sin_y
  *     res[1][1] = sin_p * sin_r_sin_y + cos_r_cos_y             # <<<<<<<<<<<<<<
@@ -4436,7 +4440,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[1])[1]) = ((__pyx_v_sin_p * __pyx_v_sin_r_sin_y) + __pyx_v_cos_r_cos_y);
 
-  /* "srctools/_vec.pyx":267
+  /* "srctools/_vec.pyx":265
  *     res[1][0] = sin_p * sin_r_cos_y - cos_r_sin_y
  *     res[1][1] = sin_p * sin_r_sin_y + cos_r_cos_y
  *     res[1][2] = sin_r * cos_p             # <<<<<<<<<<<<<<
@@ -4445,7 +4449,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[1])[2]) = (__pyx_v_sin_r * __pyx_v_cos_p);
 
-  /* "srctools/_vec.pyx":269
+  /* "srctools/_vec.pyx":267
  *     res[1][2] = sin_r * cos_p
  * 
  *     res[2][0] = sin_p * cos_r_cos_y + sin_r_sin_y             # <<<<<<<<<<<<<<
@@ -4454,7 +4458,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[2])[0]) = ((__pyx_v_sin_p * __pyx_v_cos_r_cos_y) + __pyx_v_sin_r_sin_y);
 
-  /* "srctools/_vec.pyx":270
+  /* "srctools/_vec.pyx":268
  * 
  *     res[2][0] = sin_p * cos_r_cos_y + sin_r_sin_y
  *     res[2][1] = sin_p * cos_r_sin_y - sin_r_cos_y             # <<<<<<<<<<<<<<
@@ -4463,7 +4467,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[2])[1]) = ((__pyx_v_sin_p * __pyx_v_cos_r_sin_y) - __pyx_v_sin_r_cos_y);
 
-  /* "srctools/_vec.pyx":271
+  /* "srctools/_vec.pyx":269
  *     res[2][0] = sin_p * cos_r_cos_y + sin_r_sin_y
  *     res[2][1] = sin_p * cos_r_sin_y - sin_r_cos_y
  *     res[2][2] = cos_r * cos_p             # <<<<<<<<<<<<<<
@@ -4472,7 +4476,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
  */
   ((__pyx_v_res[2])[2]) = (__pyx_v_cos_r * __pyx_v_cos_p);
 
-  /* "srctools/_vec.pyx":244
+  /* "srctools/_vec.pyx":242
  * 
  * 
  * cdef void _mat_from_angle(mat_t res, vec_t *angle):             # <<<<<<<<<<<<<<
@@ -4484,7 +4488,7 @@ static void __pyx_f_8srctools_4_vec__mat_from_angle(double (*__pyx_v_res)[3], st
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":274
+/* "srctools/_vec.pyx":272
  * 
  * 
  * cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):             # <<<<<<<<<<<<<<
@@ -4498,7 +4502,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("_mat_to_angle", 0);
 
-  /* "srctools/_vec.pyx":276
+  /* "srctools/_vec.pyx":274
  * cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
  *     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
  *     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)             # <<<<<<<<<<<<<<
@@ -4507,7 +4511,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
  */
   __pyx_v_horiz_dist = sqrt((pow(((__pyx_v_mat[0])[0]), 2.0) + pow(((__pyx_v_mat[0])[1]), 2.0)));
 
-  /* "srctools/_vec.pyx":277
+  /* "srctools/_vec.pyx":275
  *     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
  *     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
  *     if horiz_dist > 0.001:             # <<<<<<<<<<<<<<
@@ -4517,7 +4521,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
   __pyx_t_1 = ((__pyx_v_horiz_dist > 0.001) != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":278
+    /* "srctools/_vec.pyx":276
  *     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
  *     if horiz_dist > 0.001:
  *         ang.x = rad_2_deg * math.atan2(mat[0][1], mat[0][0])             # <<<<<<<<<<<<<<
@@ -4526,7 +4530,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
  */
     __pyx_v_ang->x = (57.29577951308232 * atan2(((__pyx_v_mat[0])[1]), ((__pyx_v_mat[0])[0])));
 
-    /* "srctools/_vec.pyx":279
+    /* "srctools/_vec.pyx":277
  *     if horiz_dist > 0.001:
  *         ang.x = rad_2_deg * math.atan2(mat[0][1], mat[0][0])
  *         ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)             # <<<<<<<<<<<<<<
@@ -4535,7 +4539,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
  */
     __pyx_v_ang->y = (57.29577951308232 * atan2((-((__pyx_v_mat[0])[2])), __pyx_v_horiz_dist));
 
-    /* "srctools/_vec.pyx":280
+    /* "srctools/_vec.pyx":278
  *         ang.x = rad_2_deg * math.atan2(mat[0][1], mat[0][0])
  *         ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)
  *         ang.z = rad_2_deg * math.atan2(mat[1][2], mat[2][2])             # <<<<<<<<<<<<<<
@@ -4544,7 +4548,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
  */
     __pyx_v_ang->z = (57.29577951308232 * atan2(((__pyx_v_mat[1])[2]), ((__pyx_v_mat[2])[2])));
 
-    /* "srctools/_vec.pyx":277
+    /* "srctools/_vec.pyx":275
  *     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
  *     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
  *     if horiz_dist > 0.001:             # <<<<<<<<<<<<<<
@@ -4554,7 +4558,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":283
+  /* "srctools/_vec.pyx":281
  *     else:
  *         # Vertical, gimbal lock (yaw=roll)...
  *         ang.x = rad_2_deg * math.atan2(-mat[1][0], mat[1][1])             # <<<<<<<<<<<<<<
@@ -4564,7 +4568,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
   /*else*/ {
     __pyx_v_ang->x = (57.29577951308232 * atan2((-((__pyx_v_mat[1])[0])), ((__pyx_v_mat[1])[1])));
 
-    /* "srctools/_vec.pyx":284
+    /* "srctools/_vec.pyx":282
  *         # Vertical, gimbal lock (yaw=roll)...
  *         ang.x = rad_2_deg * math.atan2(-mat[1][0], mat[1][1])
  *         ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)             # <<<<<<<<<<<<<<
@@ -4573,7 +4577,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
  */
     __pyx_v_ang->y = (57.29577951308232 * atan2((-((__pyx_v_mat[0])[2])), __pyx_v_horiz_dist));
 
-    /* "srctools/_vec.pyx":285
+    /* "srctools/_vec.pyx":283
  *         ang.x = rad_2_deg * math.atan2(-mat[1][0], mat[1][1])
  *         ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)
  *         ang.z = 0.0  # Can't produce.             # <<<<<<<<<<<<<<
@@ -4584,7 +4588,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":274
+  /* "srctools/_vec.pyx":272
  * 
  * 
  * cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):             # <<<<<<<<<<<<<<
@@ -4596,7 +4600,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_4_vec__mat_to_angle(struct __pyx_t_8
   __Pyx_RefNannyFinishContext();
 }
 
-/* "srctools/_vec.pyx":294
+/* "srctools/_vec.pyx":292
  *     cdef unsigned char index
  * 
  *     def __cinit__(self, Vec vec not None):             # <<<<<<<<<<<<<<
@@ -4633,7 +4637,7 @@ static int __pyx_pw_8srctools_4_vec_7VecIter_1__cinit__(PyObject *__pyx_v_self, 
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 294, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 292, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -4644,13 +4648,13 @@ static int __pyx_pw_8srctools_4_vec_7VecIter_1__cinit__(PyObject *__pyx_v_self, 
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 294, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 292, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.VecIter.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vec), __pyx_ptype_8srctools_4_vec_Vec, 0, "vec", 0))) __PYX_ERR(0, 294, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vec), __pyx_ptype_8srctools_4_vec_Vec, 0, "vec", 0))) __PYX_ERR(0, 292, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_7VecIter___cinit__(((struct __pyx_obj_8srctools_4_vec_VecIter *)__pyx_v_self), __pyx_v_vec);
 
   /* function exit code */
@@ -4667,7 +4671,7 @@ static int __pyx_pf_8srctools_4_vec_7VecIter___cinit__(struct __pyx_obj_8srctool
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "srctools/_vec.pyx":295
+  /* "srctools/_vec.pyx":293
  * 
  *     def __cinit__(self, Vec vec not None):
  *         self.vec = vec             # <<<<<<<<<<<<<<
@@ -4680,7 +4684,7 @@ static int __pyx_pf_8srctools_4_vec_7VecIter___cinit__(struct __pyx_obj_8srctool
   __Pyx_DECREF(((PyObject *)__pyx_v_self->vec));
   __pyx_v_self->vec = __pyx_v_vec;
 
-  /* "srctools/_vec.pyx":296
+  /* "srctools/_vec.pyx":294
  *     def __cinit__(self, Vec vec not None):
  *         self.vec = vec
  *         self.index = 0             # <<<<<<<<<<<<<<
@@ -4689,7 +4693,7 @@ static int __pyx_pf_8srctools_4_vec_7VecIter___cinit__(struct __pyx_obj_8srctool
  */
   __pyx_v_self->index = 0;
 
-  /* "srctools/_vec.pyx":294
+  /* "srctools/_vec.pyx":292
  *     cdef unsigned char index
  * 
  *     def __cinit__(self, Vec vec not None):             # <<<<<<<<<<<<<<
@@ -4703,7 +4707,7 @@ static int __pyx_pf_8srctools_4_vec_7VecIter___cinit__(struct __pyx_obj_8srctool
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":298
+/* "srctools/_vec.pyx":296
  *         self.index = 0
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -4729,7 +4733,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_2__iter__(struct __pyx_obj_8s
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_vec.pyx":299
+  /* "srctools/_vec.pyx":297
  * 
  *     def __iter__(self):
  *         return self             # <<<<<<<<<<<<<<
@@ -4741,7 +4745,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_2__iter__(struct __pyx_obj_8s
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":298
+  /* "srctools/_vec.pyx":296
  *         self.index = 0
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -4756,7 +4760,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_2__iter__(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":301
+/* "srctools/_vec.pyx":299
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -4789,7 +4793,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__next__", 0);
 
-  /* "srctools/_vec.pyx":302
+  /* "srctools/_vec.pyx":300
  * 
  *     def __next__(self):
  *         if self.index == 3:             # <<<<<<<<<<<<<<
@@ -4799,7 +4803,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
   __pyx_t_1 = ((__pyx_v_self->index == 3) != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":303
+    /* "srctools/_vec.pyx":301
  *     def __next__(self):
  *         if self.index == 3:
  *             raise StopIteration             # <<<<<<<<<<<<<<
@@ -4807,9 +4811,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  *         if self.index == 1:
  */
     __Pyx_Raise(__pyx_builtin_StopIteration, 0, 0, 0);
-    __PYX_ERR(0, 303, __pyx_L1_error)
+    __PYX_ERR(0, 301, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":302
+    /* "srctools/_vec.pyx":300
  * 
  *     def __next__(self):
  *         if self.index == 3:             # <<<<<<<<<<<<<<
@@ -4818,7 +4822,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":304
+  /* "srctools/_vec.pyx":302
  *         if self.index == 3:
  *             raise StopIteration
  *         self.index += 1             # <<<<<<<<<<<<<<
@@ -4827,7 +4831,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  */
   __pyx_v_self->index = (__pyx_v_self->index + 1);
 
-  /* "srctools/_vec.pyx":305
+  /* "srctools/_vec.pyx":303
  *             raise StopIteration
  *         self.index += 1
  *         if self.index == 1:             # <<<<<<<<<<<<<<
@@ -4837,7 +4841,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
   switch (__pyx_v_self->index) {
     case 1:
 
-    /* "srctools/_vec.pyx":306
+    /* "srctools/_vec.pyx":304
  *         self.index += 1
  *         if self.index == 1:
  *             return self.vec.val.x             # <<<<<<<<<<<<<<
@@ -4845,13 +4849,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  *             return self.vec.val.y
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->vec->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 306, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->vec->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 304, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":305
+    /* "srctools/_vec.pyx":303
  *             raise StopIteration
  *         self.index += 1
  *         if self.index == 1:             # <<<<<<<<<<<<<<
@@ -4861,7 +4865,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
     break;
     case 2:
 
-    /* "srctools/_vec.pyx":308
+    /* "srctools/_vec.pyx":306
  *             return self.vec.val.x
  *         elif self.index == 2:
  *             return self.vec.val.y             # <<<<<<<<<<<<<<
@@ -4869,13 +4873,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  *             # Drop our reference.
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->vec->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 308, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->vec->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 306, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":307
+    /* "srctools/_vec.pyx":305
  *         if self.index == 1:
  *             return self.vec.val.x
  *         elif self.index == 2:             # <<<<<<<<<<<<<<
@@ -4885,7 +4889,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
     break;
     case 3:
 
-    /* "srctools/_vec.pyx":311
+    /* "srctools/_vec.pyx":309
  *         elif self.index == 3:
  *             # Drop our reference.
  *             ret = self.vec.val.z             # <<<<<<<<<<<<<<
@@ -4895,7 +4899,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
     __pyx_t_3 = __pyx_v_self->vec->val.z;
     __pyx_v_ret = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":312
+    /* "srctools/_vec.pyx":310
  *             # Drop our reference.
  *             ret = self.vec.val.z
  *             self.vec = None             # <<<<<<<<<<<<<<
@@ -4908,7 +4912,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
     __Pyx_DECREF(((PyObject *)__pyx_v_self->vec));
     __pyx_v_self->vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)Py_None);
 
-    /* "srctools/_vec.pyx":313
+    /* "srctools/_vec.pyx":311
  *             ret = self.vec.val.z
  *             self.vec = None
  *             return ret             # <<<<<<<<<<<<<<
@@ -4916,13 +4920,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
  * 
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_ret); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 313, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_ret); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 311, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":309
+    /* "srctools/_vec.pyx":307
  *         elif self.index == 2:
  *             return self.vec.val.y
  *         elif self.index == 3:             # <<<<<<<<<<<<<<
@@ -4933,7 +4937,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
     default: break;
   }
 
-  /* "srctools/_vec.pyx":301
+  /* "srctools/_vec.pyx":299
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -4954,7 +4958,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_7VecIter_4__next__(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":322
+/* "srctools/_vec.pyx":320
  *     cdef unsigned char index
  * 
  *     def __cinit__(self, Angle ang not None):             # <<<<<<<<<<<<<<
@@ -4991,7 +4995,7 @@ static int __pyx_pw_8srctools_4_vec_9AngleIter_1__cinit__(PyObject *__pyx_v_self
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 322, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 320, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -5002,13 +5006,13 @@ static int __pyx_pw_8srctools_4_vec_9AngleIter_1__cinit__(PyObject *__pyx_v_self
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 322, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 320, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.AngleIter.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_ang), __pyx_ptype_8srctools_4_vec_Angle, 0, "ang", 0))) __PYX_ERR(0, 322, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_ang), __pyx_ptype_8srctools_4_vec_Angle, 0, "ang", 0))) __PYX_ERR(0, 320, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_9AngleIter___cinit__(((struct __pyx_obj_8srctools_4_vec_AngleIter *)__pyx_v_self), __pyx_v_ang);
 
   /* function exit code */
@@ -5025,7 +5029,7 @@ static int __pyx_pf_8srctools_4_vec_9AngleIter___cinit__(struct __pyx_obj_8srcto
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "srctools/_vec.pyx":323
+  /* "srctools/_vec.pyx":321
  * 
  *     def __cinit__(self, Angle ang not None):
  *         self.ang = ang             # <<<<<<<<<<<<<<
@@ -5038,7 +5042,7 @@ static int __pyx_pf_8srctools_4_vec_9AngleIter___cinit__(struct __pyx_obj_8srcto
   __Pyx_DECREF(((PyObject *)__pyx_v_self->ang));
   __pyx_v_self->ang = __pyx_v_ang;
 
-  /* "srctools/_vec.pyx":324
+  /* "srctools/_vec.pyx":322
  *     def __cinit__(self, Angle ang not None):
  *         self.ang = ang
  *         self.index = 0             # <<<<<<<<<<<<<<
@@ -5047,7 +5051,7 @@ static int __pyx_pf_8srctools_4_vec_9AngleIter___cinit__(struct __pyx_obj_8srcto
  */
   __pyx_v_self->index = 0;
 
-  /* "srctools/_vec.pyx":322
+  /* "srctools/_vec.pyx":320
  *     cdef unsigned char index
  * 
  *     def __cinit__(self, Angle ang not None):             # <<<<<<<<<<<<<<
@@ -5061,7 +5065,7 @@ static int __pyx_pf_8srctools_4_vec_9AngleIter___cinit__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":326
+/* "srctools/_vec.pyx":324
  *         self.index = 0
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -5087,7 +5091,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_2__iter__(struct __pyx_obj_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_vec.pyx":327
+  /* "srctools/_vec.pyx":325
  * 
  *     def __iter__(self):
  *         return self             # <<<<<<<<<<<<<<
@@ -5099,7 +5103,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_2__iter__(struct __pyx_obj_
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":326
+  /* "srctools/_vec.pyx":324
  *         self.index = 0
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -5114,7 +5118,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_2__iter__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":329
+/* "srctools/_vec.pyx":327
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -5147,7 +5151,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__next__", 0);
 
-  /* "srctools/_vec.pyx":330
+  /* "srctools/_vec.pyx":328
  * 
  *     def __next__(self):
  *         if self.index == 3:             # <<<<<<<<<<<<<<
@@ -5157,7 +5161,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
   __pyx_t_1 = ((__pyx_v_self->index == 3) != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":331
+    /* "srctools/_vec.pyx":329
  *     def __next__(self):
  *         if self.index == 3:
  *             raise StopIteration             # <<<<<<<<<<<<<<
@@ -5165,9 +5169,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  *         if self.index == 1:
  */
     __Pyx_Raise(__pyx_builtin_StopIteration, 0, 0, 0);
-    __PYX_ERR(0, 331, __pyx_L1_error)
+    __PYX_ERR(0, 329, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":330
+    /* "srctools/_vec.pyx":328
  * 
  *     def __next__(self):
  *         if self.index == 3:             # <<<<<<<<<<<<<<
@@ -5176,7 +5180,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  */
   }
 
-  /* "srctools/_vec.pyx":332
+  /* "srctools/_vec.pyx":330
  *         if self.index == 3:
  *             raise StopIteration
  *         self.index += 1             # <<<<<<<<<<<<<<
@@ -5185,7 +5189,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  */
   __pyx_v_self->index = (__pyx_v_self->index + 1);
 
-  /* "srctools/_vec.pyx":333
+  /* "srctools/_vec.pyx":331
  *             raise StopIteration
  *         self.index += 1
  *         if self.index == 1:             # <<<<<<<<<<<<<<
@@ -5195,7 +5199,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
   switch (__pyx_v_self->index) {
     case 1:
 
-    /* "srctools/_vec.pyx":334
+    /* "srctools/_vec.pyx":332
  *         self.index += 1
  *         if self.index == 1:
  *             return self.ang.val.x             # <<<<<<<<<<<<<<
@@ -5203,13 +5207,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  *             return self.ang.val.y
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->ang->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 334, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->ang->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 332, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":333
+    /* "srctools/_vec.pyx":331
  *             raise StopIteration
  *         self.index += 1
  *         if self.index == 1:             # <<<<<<<<<<<<<<
@@ -5219,7 +5223,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
     break;
     case 2:
 
-    /* "srctools/_vec.pyx":336
+    /* "srctools/_vec.pyx":334
  *             return self.ang.val.x
  *         elif self.index == 2:
  *             return self.ang.val.y             # <<<<<<<<<<<<<<
@@ -5227,13 +5231,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  *             # Drop our reference.
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->ang->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 336, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->ang->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 334, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":335
+    /* "srctools/_vec.pyx":333
  *         if self.index == 1:
  *             return self.ang.val.x
  *         elif self.index == 2:             # <<<<<<<<<<<<<<
@@ -5243,7 +5247,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
     break;
     case 3:
 
-    /* "srctools/_vec.pyx":339
+    /* "srctools/_vec.pyx":337
  *         elif self.index == 3:
  *             # Drop our reference.
  *             ret = self.ang.val.z             # <<<<<<<<<<<<<<
@@ -5253,7 +5257,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
     __pyx_t_3 = __pyx_v_self->ang->val.z;
     __pyx_v_ret = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":340
+    /* "srctools/_vec.pyx":338
  *             # Drop our reference.
  *             ret = self.ang.val.z
  *             self.ang = None             # <<<<<<<<<<<<<<
@@ -5266,7 +5270,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
     __Pyx_DECREF(((PyObject *)__pyx_v_self->ang));
     __pyx_v_self->ang = ((struct __pyx_obj_8srctools_4_vec_Angle *)Py_None);
 
-    /* "srctools/_vec.pyx":341
+    /* "srctools/_vec.pyx":339
  *             ret = self.ang.val.z
  *             self.ang = None
  *             return ret             # <<<<<<<<<<<<<<
@@ -5274,13 +5278,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
  * 
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_ret); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 341, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_ret); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 339, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_r = __pyx_t_2;
     __pyx_t_2 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":337
+    /* "srctools/_vec.pyx":335
  *         elif self.index == 2:
  *             return self.ang.val.y
  *         elif self.index == 3:             # <<<<<<<<<<<<<<
@@ -5291,7 +5295,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
     default: break;
   }
 
-  /* "srctools/_vec.pyx":329
+  /* "srctools/_vec.pyx":327
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -5312,7 +5316,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_9AngleIter_4__next__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":349
+/* "srctools/_vec.pyx":347
  *     cdef Matrix mat
  *     cdef Vec vec
  *     def __cinit__(self, Vec vec not None):             # <<<<<<<<<<<<<<
@@ -5349,7 +5353,7 @@ static int __pyx_pw_8srctools_4_vec_12VecTransform_1__cinit__(PyObject *__pyx_v_
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 349, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 347, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -5360,13 +5364,13 @@ static int __pyx_pw_8srctools_4_vec_12VecTransform_1__cinit__(PyObject *__pyx_v_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 349, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 347, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.VecTransform.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vec), __pyx_ptype_8srctools_4_vec_Vec, 0, "vec", 0))) __PYX_ERR(0, 349, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_vec), __pyx_ptype_8srctools_4_vec_Vec, 0, "vec", 0))) __PYX_ERR(0, 347, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_12VecTransform___cinit__(((struct __pyx_obj_8srctools_4_vec_VecTransform *)__pyx_v_self), __pyx_v_vec);
 
   /* function exit code */
@@ -5383,7 +5387,7 @@ static int __pyx_pf_8srctools_4_vec_12VecTransform___cinit__(struct __pyx_obj_8s
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "srctools/_vec.pyx":350
+  /* "srctools/_vec.pyx":348
  *     cdef Vec vec
  *     def __cinit__(self, Vec vec not None):
  *         self.vec = vec             # <<<<<<<<<<<<<<
@@ -5396,7 +5400,7 @@ static int __pyx_pf_8srctools_4_vec_12VecTransform___cinit__(struct __pyx_obj_8s
   __Pyx_DECREF(((PyObject *)__pyx_v_self->vec));
   __pyx_v_self->vec = __pyx_v_vec;
 
-  /* "srctools/_vec.pyx":351
+  /* "srctools/_vec.pyx":349
  *     def __cinit__(self, Vec vec not None):
  *         self.vec = vec
  *         self.mat = None             # <<<<<<<<<<<<<<
@@ -5409,7 +5413,7 @@ static int __pyx_pf_8srctools_4_vec_12VecTransform___cinit__(struct __pyx_obj_8s
   __Pyx_DECREF(((PyObject *)__pyx_v_self->mat));
   __pyx_v_self->mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)Py_None);
 
-  /* "srctools/_vec.pyx":349
+  /* "srctools/_vec.pyx":347
  *     cdef Matrix mat
  *     cdef Vec vec
  *     def __cinit__(self, Vec vec not None):             # <<<<<<<<<<<<<<
@@ -5423,7 +5427,7 @@ static int __pyx_pf_8srctools_4_vec_12VecTransform___cinit__(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":353
+/* "srctools/_vec.pyx":351
  *         self.mat = None
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -5457,14 +5461,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__enter__", 0);
 
-  /* "srctools/_vec.pyx":354
+  /* "srctools/_vec.pyx":352
  * 
  *     def __enter__(self):
  *         self.mat = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  *         self.mat.mat[0] = [1.0, 0.0, 0.0]
  *         self.mat.mat[1] = [0.0, 1.0, 0.0]
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 354, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 352, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __Pyx_GIVEREF(((PyObject *)__pyx_t_1));
   __Pyx_GOTREF(__pyx_v_self->mat);
@@ -5472,7 +5476,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   __pyx_v_self->mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":355
+  /* "srctools/_vec.pyx":353
  *     def __enter__(self):
  *         self.mat = Matrix.__new__(Matrix)
  *         self.mat.mat[0] = [1.0, 0.0, 0.0]             # <<<<<<<<<<<<<<
@@ -5484,7 +5488,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   __pyx_t_2[2] = 0.0;
   memcpy(&((__pyx_v_self->mat->mat[0])[0]), __pyx_t_2, sizeof((__pyx_v_self->mat->mat[0])[0]) * (3));
 
-  /* "srctools/_vec.pyx":356
+  /* "srctools/_vec.pyx":354
  *         self.mat = Matrix.__new__(Matrix)
  *         self.mat.mat[0] = [1.0, 0.0, 0.0]
  *         self.mat.mat[1] = [0.0, 1.0, 0.0]             # <<<<<<<<<<<<<<
@@ -5496,7 +5500,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   __pyx_t_3[2] = 0.0;
   memcpy(&((__pyx_v_self->mat->mat[1])[0]), __pyx_t_3, sizeof((__pyx_v_self->mat->mat[1])[0]) * (3));
 
-  /* "srctools/_vec.pyx":357
+  /* "srctools/_vec.pyx":355
  *         self.mat.mat[0] = [1.0, 0.0, 0.0]
  *         self.mat.mat[1] = [0.0, 1.0, 0.0]
  *         self.mat.mat[2] = [0.0, 0.0, 1.0]             # <<<<<<<<<<<<<<
@@ -5508,7 +5512,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   __pyx_t_4[2] = 1.0;
   memcpy(&((__pyx_v_self->mat->mat[2])[0]), __pyx_t_4, sizeof((__pyx_v_self->mat->mat[2])[0]) * (3));
 
-  /* "srctools/_vec.pyx":358
+  /* "srctools/_vec.pyx":356
  *         self.mat.mat[1] = [0.0, 1.0, 0.0]
  *         self.mat.mat[2] = [0.0, 0.0, 1.0]
  *         return self.mat             # <<<<<<<<<<<<<<
@@ -5520,7 +5524,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   __pyx_r = ((PyObject *)__pyx_v_self->mat);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":353
+  /* "srctools/_vec.pyx":351
  *         self.mat = None
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -5539,7 +5543,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_2__enter__(struct __pyx
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":360
+/* "srctools/_vec.pyx":358
  *         return self.mat
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):             # <<<<<<<<<<<<<<
@@ -5585,17 +5589,17 @@ static PyObject *__pyx_pw_8srctools_4_vec_12VecTransform_5__exit__(PyObject *__p
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_exc_val)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 360, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 358, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_exc_tb)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 360, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 358, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 360, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 358, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -5610,7 +5614,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_12VecTransform_5__exit__(PyObject *__p
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 360, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 358, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.VecTransform.__exit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -5631,7 +5635,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
   int __pyx_t_3;
   __Pyx_RefNannySetupContext("__exit__", 0);
 
-  /* "srctools/_vec.pyx":362
+  /* "srctools/_vec.pyx":360
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (
  *             self.mat is not None and             # <<<<<<<<<<<<<<
@@ -5646,7 +5650,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":363
+  /* "srctools/_vec.pyx":361
  *         if (
  *             self.mat is not None and
  *             self.vec is not None and             # <<<<<<<<<<<<<<
@@ -5661,7 +5665,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":364
+  /* "srctools/_vec.pyx":362
  *             self.mat is not None and
  *             self.vec is not None and
  *             exc_type is None and             # <<<<<<<<<<<<<<
@@ -5676,7 +5680,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":365
+  /* "srctools/_vec.pyx":363
  *             self.vec is not None and
  *             exc_type is None and
  *             exc_val is None and             # <<<<<<<<<<<<<<
@@ -5691,7 +5695,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":366
+  /* "srctools/_vec.pyx":364
  *             exc_type is None and
  *             exc_val is None and
  *             exc_tb is None             # <<<<<<<<<<<<<<
@@ -5703,7 +5707,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
   __pyx_t_1 = __pyx_t_3;
   __pyx_L4_bool_binop_done:;
 
-  /* "srctools/_vec.pyx":361
+  /* "srctools/_vec.pyx":359
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (             # <<<<<<<<<<<<<<
@@ -5712,7 +5716,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
  */
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":368
+    /* "srctools/_vec.pyx":366
  *             exc_tb is None
  *         ):
  *             _vec_rot(&self.vec.val, self.mat.mat)             # <<<<<<<<<<<<<<
@@ -5721,7 +5725,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
  */
     __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_self->vec->val), __pyx_v_self->mat->mat);
 
-    /* "srctools/_vec.pyx":361
+    /* "srctools/_vec.pyx":359
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (             # <<<<<<<<<<<<<<
@@ -5730,7 +5734,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
  */
   }
 
-  /* "srctools/_vec.pyx":369
+  /* "srctools/_vec.pyx":367
  *         ):
  *             _vec_rot(&self.vec.val, self.mat.mat)
  *         return False             # <<<<<<<<<<<<<<
@@ -5742,7 +5746,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
   __pyx_r = Py_False;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":360
+  /* "srctools/_vec.pyx":358
  *         return self.mat
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):             # <<<<<<<<<<<<<<
@@ -5757,7 +5761,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_12VecTransform_4__exit__(struct __pyx_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":377
+/* "srctools/_vec.pyx":375
  *     cdef Matrix mat
  *     cdef Angle ang
  *     def __cinit__(self, Angle ang not None):             # <<<<<<<<<<<<<<
@@ -5794,7 +5798,7 @@ static int __pyx_pw_8srctools_4_vec_14AngleTransform_1__cinit__(PyObject *__pyx_
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 377, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 375, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -5805,13 +5809,13 @@ static int __pyx_pw_8srctools_4_vec_14AngleTransform_1__cinit__(PyObject *__pyx_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 377, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 375, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.AngleTransform.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_ang), __pyx_ptype_8srctools_4_vec_Angle, 0, "ang", 0))) __PYX_ERR(0, 377, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_ang), __pyx_ptype_8srctools_4_vec_Angle, 0, "ang", 0))) __PYX_ERR(0, 375, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_14AngleTransform___cinit__(((struct __pyx_obj_8srctools_4_vec_AngleTransform *)__pyx_v_self), __pyx_v_ang);
 
   /* function exit code */
@@ -5828,7 +5832,7 @@ static int __pyx_pf_8srctools_4_vec_14AngleTransform___cinit__(struct __pyx_obj_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "srctools/_vec.pyx":378
+  /* "srctools/_vec.pyx":376
  *     cdef Angle ang
  *     def __cinit__(self, Angle ang not None):
  *         self.ang = ang             # <<<<<<<<<<<<<<
@@ -5841,7 +5845,7 @@ static int __pyx_pf_8srctools_4_vec_14AngleTransform___cinit__(struct __pyx_obj_
   __Pyx_DECREF(((PyObject *)__pyx_v_self->ang));
   __pyx_v_self->ang = __pyx_v_ang;
 
-  /* "srctools/_vec.pyx":379
+  /* "srctools/_vec.pyx":377
  *     def __cinit__(self, Angle ang not None):
  *         self.ang = ang
  *         self.mat = None             # <<<<<<<<<<<<<<
@@ -5854,7 +5858,7 @@ static int __pyx_pf_8srctools_4_vec_14AngleTransform___cinit__(struct __pyx_obj_
   __Pyx_DECREF(((PyObject *)__pyx_v_self->mat));
   __pyx_v_self->mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)Py_None);
 
-  /* "srctools/_vec.pyx":377
+  /* "srctools/_vec.pyx":375
  *     cdef Matrix mat
  *     cdef Angle ang
  *     def __cinit__(self, Angle ang not None):             # <<<<<<<<<<<<<<
@@ -5868,7 +5872,7 @@ static int __pyx_pf_8srctools_4_vec_14AngleTransform___cinit__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":381
+/* "srctools/_vec.pyx":379
  *         self.mat = None
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -5899,14 +5903,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_2__enter__(struct __p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__enter__", 0);
 
-  /* "srctools/_vec.pyx":382
+  /* "srctools/_vec.pyx":380
  * 
  *     def __enter__(self):
  *         self.mat = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  *         _mat_from_angle(self.mat.mat, &self.ang.val)
  *         return self.mat
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 382, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 380, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __Pyx_GIVEREF(((PyObject *)__pyx_t_1));
   __Pyx_GOTREF(__pyx_v_self->mat);
@@ -5914,7 +5918,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_2__enter__(struct __p
   __pyx_v_self->mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":383
+  /* "srctools/_vec.pyx":381
  *     def __enter__(self):
  *         self.mat = Matrix.__new__(Matrix)
  *         _mat_from_angle(self.mat.mat, &self.ang.val)             # <<<<<<<<<<<<<<
@@ -5923,7 +5927,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_2__enter__(struct __p
  */
   __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_self->mat->mat, (&__pyx_v_self->ang->val));
 
-  /* "srctools/_vec.pyx":384
+  /* "srctools/_vec.pyx":382
  *         self.mat = Matrix.__new__(Matrix)
  *         _mat_from_angle(self.mat.mat, &self.ang.val)
  *         return self.mat             # <<<<<<<<<<<<<<
@@ -5935,7 +5939,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_2__enter__(struct __p
   __pyx_r = ((PyObject *)__pyx_v_self->mat);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":381
+  /* "srctools/_vec.pyx":379
  *         self.mat = None
  * 
  *     def __enter__(self):             # <<<<<<<<<<<<<<
@@ -5954,7 +5958,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_2__enter__(struct __p
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":386
+/* "srctools/_vec.pyx":384
  *         return self.mat
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):             # <<<<<<<<<<<<<<
@@ -6000,17 +6004,17 @@ static PyObject *__pyx_pw_8srctools_4_vec_14AngleTransform_5__exit__(PyObject *_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_exc_val)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 386, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 1); __PYX_ERR(0, 384, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_exc_tb)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 386, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, 2); __PYX_ERR(0, 384, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 386, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__exit__") < 0)) __PYX_ERR(0, 384, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 3) {
       goto __pyx_L5_argtuple_error;
@@ -6025,7 +6029,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_14AngleTransform_5__exit__(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 386, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__exit__", 1, 3, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 384, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.AngleTransform.__exit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6050,7 +6054,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__exit__", 0);
 
-  /* "srctools/_vec.pyx":388
+  /* "srctools/_vec.pyx":386
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (
  *             self.mat is not None and             # <<<<<<<<<<<<<<
@@ -6065,14 +6069,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":389
+  /* "srctools/_vec.pyx":387
  *         if (
  *             self.mat is not None and
  *             self.vec is not None and             # <<<<<<<<<<<<<<
  *             exc_type is None and
  *             exc_val is None and
  */
-  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vec); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 389, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_v_self), __pyx_n_s_vec); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 387, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = (__pyx_t_4 != Py_None);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
@@ -6083,7 +6087,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":390
+  /* "srctools/_vec.pyx":388
  *             self.mat is not None and
  *             self.vec is not None and
  *             exc_type is None and             # <<<<<<<<<<<<<<
@@ -6098,7 +6102,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":391
+  /* "srctools/_vec.pyx":389
  *             self.vec is not None and
  *             exc_type is None and
  *             exc_val is None and             # <<<<<<<<<<<<<<
@@ -6113,7 +6117,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
     goto __pyx_L4_bool_binop_done;
   }
 
-  /* "srctools/_vec.pyx":392
+  /* "srctools/_vec.pyx":390
  *             exc_type is None and
  *             exc_val is None and
  *             exc_tb is None             # <<<<<<<<<<<<<<
@@ -6125,7 +6129,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
   __pyx_t_1 = __pyx_t_3;
   __pyx_L4_bool_binop_done:;
 
-  /* "srctools/_vec.pyx":387
+  /* "srctools/_vec.pyx":385
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (             # <<<<<<<<<<<<<<
@@ -6134,7 +6138,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
  */
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":394
+    /* "srctools/_vec.pyx":392
  *             exc_tb is None
  *         ):
  *             _mat_to_angle(&self.ang.val, self.mat.mat)             # <<<<<<<<<<<<<<
@@ -6143,7 +6147,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
  */
     __pyx_f_8srctools_4_vec__mat_to_angle((&__pyx_v_self->ang->val), __pyx_v_self->mat->mat);
 
-    /* "srctools/_vec.pyx":387
+    /* "srctools/_vec.pyx":385
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):
  *         if (             # <<<<<<<<<<<<<<
@@ -6152,7 +6156,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
  */
   }
 
-  /* "srctools/_vec.pyx":395
+  /* "srctools/_vec.pyx":393
  *         ):
  *             _mat_to_angle(&self.ang.val, self.mat.mat)
  *         return False             # <<<<<<<<<<<<<<
@@ -6164,7 +6168,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
   __pyx_r = Py_False;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":386
+  /* "srctools/_vec.pyx":384
  *         return self.mat
  * 
  *     def __exit__(self, exc_type, exc_val, exc_tb):             # <<<<<<<<<<<<<<
@@ -6183,7 +6187,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_14AngleTransform_4__exit__(struct __py
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":434
+/* "srctools/_vec.pyx":432
  * 
  *     @property
  *     def x(self):             # <<<<<<<<<<<<<<
@@ -6213,7 +6217,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1x___get__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":436
+  /* "srctools/_vec.pyx":434
  *     def x(self):
  *         """The X axis of the vector."""
  *         return self.val.x             # <<<<<<<<<<<<<<
@@ -6221,13 +6225,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1x___get__(struct __pyx_obj_8srct
  *     @x.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 436, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 434, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":434
+  /* "srctools/_vec.pyx":432
  * 
  *     @property
  *     def x(self):             # <<<<<<<<<<<<<<
@@ -6246,7 +6250,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1x___get__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":439
+/* "srctools/_vec.pyx":437
  * 
  *     @x.setter
  *     def x(self, value):             # <<<<<<<<<<<<<<
@@ -6276,17 +6280,17 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1x_2__set__(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":440
+  /* "srctools/_vec.pyx":438
  *     @x.setter
  *     def x(self, value):
  *         self.val.x = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 440, __pyx_L1_error)
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 438, __pyx_L1_error)
   __pyx_v_self->val.x = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":439
+  /* "srctools/_vec.pyx":437
  * 
  *     @x.setter
  *     def x(self, value):             # <<<<<<<<<<<<<<
@@ -6305,7 +6309,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1x_2__set__(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":443
+/* "srctools/_vec.pyx":441
  * 
  *     @property
  *     def y(self):             # <<<<<<<<<<<<<<
@@ -6335,7 +6339,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1y___get__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":445
+  /* "srctools/_vec.pyx":443
  *     def y(self):
  *         """The Y axis of the vector."""
  *         return self.val.y             # <<<<<<<<<<<<<<
@@ -6343,13 +6347,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1y___get__(struct __pyx_obj_8srct
  *     @y.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 445, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 443, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":443
+  /* "srctools/_vec.pyx":441
  * 
  *     @property
  *     def y(self):             # <<<<<<<<<<<<<<
@@ -6368,7 +6372,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1y___get__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":448
+/* "srctools/_vec.pyx":446
  * 
  *     @y.setter
  *     def y(self, value):             # <<<<<<<<<<<<<<
@@ -6398,17 +6402,17 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1y_2__set__(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":449
+  /* "srctools/_vec.pyx":447
  *     @y.setter
  *     def y(self, value):
  *         self.val.y = value             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 449, __pyx_L1_error)
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 447, __pyx_L1_error)
   __pyx_v_self->val.y = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":448
+  /* "srctools/_vec.pyx":446
  * 
  *     @y.setter
  *     def y(self, value):             # <<<<<<<<<<<<<<
@@ -6427,7 +6431,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1y_2__set__(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":452
+/* "srctools/_vec.pyx":450
  * 
  *     @property
  *     def z(self):             # <<<<<<<<<<<<<<
@@ -6457,7 +6461,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1z___get__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":453
+  /* "srctools/_vec.pyx":451
  *     @property
  *     def z(self):
  *         return self.val.z             # <<<<<<<<<<<<<<
@@ -6465,13 +6469,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1z___get__(struct __pyx_obj_8srct
  *     @z.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 453, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 451, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":452
+  /* "srctools/_vec.pyx":450
  * 
  *     @property
  *     def z(self):             # <<<<<<<<<<<<<<
@@ -6490,7 +6494,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_1z___get__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":456
+/* "srctools/_vec.pyx":454
  * 
  *     @z.setter
  *     def z(self, value):             # <<<<<<<<<<<<<<
@@ -6520,17 +6524,17 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1z_2__set__(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":458
+  /* "srctools/_vec.pyx":456
  *     def z(self, value):
  *         """The Z axis of the vector."""
  *         self.val.z = value             # <<<<<<<<<<<<<<
  * 
  *     def __init__ (
  */
-  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 458, __pyx_L1_error)
+  __pyx_t_1 = __pyx_PyFloat_AsDouble(__pyx_v_value); if (unlikely((__pyx_t_1 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 456, __pyx_L1_error)
   __pyx_v_self->val.z = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":456
+  /* "srctools/_vec.pyx":454
  * 
  *     @z.setter
  *     def z(self, value):             # <<<<<<<<<<<<<<
@@ -6549,7 +6553,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_1z_2__set__(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":460
+/* "srctools/_vec.pyx":458
  *         self.val.z = value
  * 
  *     def __init__ (             # <<<<<<<<<<<<<<
@@ -6613,7 +6617,7 @@ static int __pyx_pw_8srctools_4_vec_3Vec_1__init__(PyObject *__pyx_v_self, PyObj
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 460, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 458, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -6633,7 +6637,7 @@ static int __pyx_pw_8srctools_4_vec_3Vec_1__init__(PyObject *__pyx_v_self, PyObj
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 460, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 458, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -6668,7 +6672,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_vec.pyx":474
+  /* "srctools/_vec.pyx":472
  *         """
  *         cdef tuple tup
  *         if isinstance(x, float) or isinstance(x, int):             # <<<<<<<<<<<<<<
@@ -6688,37 +6692,37 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":475
+    /* "srctools/_vec.pyx":473
  *         cdef tuple tup
  *         if isinstance(x, float) or isinstance(x, int):
  *             self.val.x = x             # <<<<<<<<<<<<<<
  *             self.val.y = y
  *             self.val.z = z
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_x); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 475, __pyx_L1_error)
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_x); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 473, __pyx_L1_error)
     __pyx_v_self->val.x = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":476
+    /* "srctools/_vec.pyx":474
  *         if isinstance(x, float) or isinstance(x, int):
  *             self.val.x = x
  *             self.val.y = y             # <<<<<<<<<<<<<<
  *             self.val.z = z
  *         elif isinstance(x, Vec):
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 476, __pyx_L1_error)
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 474, __pyx_L1_error)
     __pyx_v_self->val.y = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":477
+    /* "srctools/_vec.pyx":475
  *             self.val.x = x
  *             self.val.y = y
  *             self.val.z = z             # <<<<<<<<<<<<<<
  *         elif isinstance(x, Vec):
  *             self.val.x = (<Vec>x).val.x
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 477, __pyx_L1_error)
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 475, __pyx_L1_error)
     __pyx_v_self->val.z = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":474
+    /* "srctools/_vec.pyx":472
  *         """
  *         cdef tuple tup
  *         if isinstance(x, float) or isinstance(x, int):             # <<<<<<<<<<<<<<
@@ -6728,7 +6732,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":478
+  /* "srctools/_vec.pyx":476
  *             self.val.y = y
  *             self.val.z = z
  *         elif isinstance(x, Vec):             # <<<<<<<<<<<<<<
@@ -6739,7 +6743,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":479
+    /* "srctools/_vec.pyx":477
  *             self.val.z = z
  *         elif isinstance(x, Vec):
  *             self.val.x = (<Vec>x).val.x             # <<<<<<<<<<<<<<
@@ -6749,7 +6753,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_x)->val.x;
     __pyx_v_self->val.x = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":480
+    /* "srctools/_vec.pyx":478
  *         elif isinstance(x, Vec):
  *             self.val.x = (<Vec>x).val.x
  *             self.val.y = (<Vec>x).val.y             # <<<<<<<<<<<<<<
@@ -6759,7 +6763,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_x)->val.y;
     __pyx_v_self->val.y = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":481
+    /* "srctools/_vec.pyx":479
  *             self.val.x = (<Vec>x).val.x
  *             self.val.y = (<Vec>x).val.y
  *             self.val.z = (<Vec>x).val.z             # <<<<<<<<<<<<<<
@@ -6769,7 +6773,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_x)->val.z;
     __pyx_v_self->val.z = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":478
+    /* "srctools/_vec.pyx":476
  *             self.val.y = y
  *             self.val.z = z
  *         elif isinstance(x, Vec):             # <<<<<<<<<<<<<<
@@ -6779,7 +6783,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":482
+  /* "srctools/_vec.pyx":480
  *             self.val.y = (<Vec>x).val.y
  *             self.val.z = (<Vec>x).val.z
  *         elif isinstance(x, tuple):             # <<<<<<<<<<<<<<
@@ -6790,7 +6794,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":483
+    /* "srctools/_vec.pyx":481
  *             self.val.z = (<Vec>x).val.z
  *         elif isinstance(x, tuple):
  *             tup = <tuple>x             # <<<<<<<<<<<<<<
@@ -6802,7 +6806,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     __pyx_v_tup = ((PyObject*)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "srctools/_vec.pyx":484
+    /* "srctools/_vec.pyx":482
  *         elif isinstance(x, tuple):
  *             tup = <tuple>x
  *             if len(tup) >= 1:             # <<<<<<<<<<<<<<
@@ -6811,13 +6815,13 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 484, __pyx_L1_error)
+      __PYX_ERR(0, 482, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 484, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 482, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 1) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":485
+      /* "srctools/_vec.pyx":483
  *             tup = <tuple>x
  *             if len(tup) >= 1:
  *                 self.val.x = tup[0]             # <<<<<<<<<<<<<<
@@ -6826,15 +6830,15 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 485, __pyx_L1_error)
+        __PYX_ERR(0, 483, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 485, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 483, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 485, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 483, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_v_self->val.x = __pyx_t_4;
 
-      /* "srctools/_vec.pyx":484
+      /* "srctools/_vec.pyx":482
  *         elif isinstance(x, tuple):
  *             tup = <tuple>x
  *             if len(tup) >= 1:             # <<<<<<<<<<<<<<
@@ -6844,7 +6848,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":487
+    /* "srctools/_vec.pyx":485
  *                 self.val.x = tup[0]
  *             else:
  *                 self.val.x = 0             # <<<<<<<<<<<<<<
@@ -6856,7 +6860,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     }
     __pyx_L6:;
 
-    /* "srctools/_vec.pyx":489
+    /* "srctools/_vec.pyx":487
  *                 self.val.x = 0
  * 
  *             if len(tup) >= 2:             # <<<<<<<<<<<<<<
@@ -6865,13 +6869,13 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 489, __pyx_L1_error)
+      __PYX_ERR(0, 487, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 489, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 487, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 2) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":490
+      /* "srctools/_vec.pyx":488
  * 
  *             if len(tup) >= 2:
  *                 self.val.y = tup[1]             # <<<<<<<<<<<<<<
@@ -6880,15 +6884,15 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 490, __pyx_L1_error)
+        __PYX_ERR(0, 488, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 490, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 488, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 490, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 488, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_v_self->val.y = __pyx_t_4;
 
-      /* "srctools/_vec.pyx":489
+      /* "srctools/_vec.pyx":487
  *                 self.val.x = 0
  * 
  *             if len(tup) >= 2:             # <<<<<<<<<<<<<<
@@ -6898,7 +6902,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L7;
     }
 
-    /* "srctools/_vec.pyx":492
+    /* "srctools/_vec.pyx":490
  *                 self.val.y = tup[1]
  *             else:
  *                 self.val.y = y             # <<<<<<<<<<<<<<
@@ -6906,12 +6910,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  *             if len(tup) >= 3:
  */
     /*else*/ {
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 492, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 490, __pyx_L1_error)
       __pyx_v_self->val.y = __pyx_t_4;
     }
     __pyx_L7:;
 
-    /* "srctools/_vec.pyx":494
+    /* "srctools/_vec.pyx":492
  *                 self.val.y = y
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
@@ -6920,13 +6924,13 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 494, __pyx_L1_error)
+      __PYX_ERR(0, 492, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 494, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 492, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 3) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":495
+      /* "srctools/_vec.pyx":493
  * 
  *             if len(tup) >= 3:
  *                 self.val.z = tup[2]             # <<<<<<<<<<<<<<
@@ -6935,15 +6939,15 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 495, __pyx_L1_error)
+        __PYX_ERR(0, 493, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 495, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 493, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 495, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 493, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
       __pyx_v_self->val.z = __pyx_t_4;
 
-      /* "srctools/_vec.pyx":494
+      /* "srctools/_vec.pyx":492
  *                 self.val.y = y
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
@@ -6953,7 +6957,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L8;
     }
 
-    /* "srctools/_vec.pyx":497
+    /* "srctools/_vec.pyx":495
  *                 self.val.z = tup[2]
  *             else:
  *                 self.val.z = z             # <<<<<<<<<<<<<<
@@ -6961,12 +6965,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  *         else:
  */
     /*else*/ {
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 497, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 495, __pyx_L1_error)
       __pyx_v_self->val.z = __pyx_t_4;
     }
     __pyx_L8:;
 
-    /* "srctools/_vec.pyx":482
+    /* "srctools/_vec.pyx":480
  *             self.val.y = (<Vec>x).val.y
  *             self.val.z = (<Vec>x).val.z
  *         elif isinstance(x, tuple):             # <<<<<<<<<<<<<<
@@ -6976,7 +6980,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":500
+  /* "srctools/_vec.pyx":498
  * 
  *         else:
  *             it = iter(x)             # <<<<<<<<<<<<<<
@@ -6984,12 +6988,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  *                 self.val.x = next(it)
  */
   /*else*/ {
-    __pyx_t_5 = PyObject_GetIter(__pyx_v_x); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 500, __pyx_L1_error)
+    __pyx_t_5 = PyObject_GetIter(__pyx_v_x); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 498, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_v_it = __pyx_t_5;
     __pyx_t_5 = 0;
 
-    /* "srctools/_vec.pyx":501
+    /* "srctools/_vec.pyx":499
  *         else:
  *             it = iter(x)
  *             try:             # <<<<<<<<<<<<<<
@@ -7005,20 +7009,20 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __Pyx_XGOTREF(__pyx_t_9);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":502
+        /* "srctools/_vec.pyx":500
  *             it = iter(x)
  *             try:
  *                 self.val.x = next(it)             # <<<<<<<<<<<<<<
  *             except StopIteration:
  *                 self.val.x = 0
  */
-        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 502, __pyx_L9_error)
+        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 500, __pyx_L9_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 502, __pyx_L9_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 500, __pyx_L9_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_self->val.x = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":501
+        /* "srctools/_vec.pyx":499
  *         else:
  *             it = iter(x)
  *             try:             # <<<<<<<<<<<<<<
@@ -7033,7 +7037,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_L9_error:;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":503
+      /* "srctools/_vec.pyx":501
  *             try:
  *                 self.val.x = next(it)
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -7043,12 +7047,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Vec.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 503, __pyx_L11_except_error)
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 501, __pyx_L11_except_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_12);
 
-        /* "srctools/_vec.pyx":504
+        /* "srctools/_vec.pyx":502
  *                 self.val.x = next(it)
  *             except StopIteration:
  *                 self.val.x = 0             # <<<<<<<<<<<<<<
@@ -7057,27 +7061,27 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
  */
         __pyx_v_self->val.x = 0.0;
 
-        /* "srctools/_vec.pyx":505
+        /* "srctools/_vec.pyx":503
  *             except StopIteration:
  *                 self.val.x = 0
  *                 self.val.y = y             # <<<<<<<<<<<<<<
  *                 self.val.z = z
  *                 return
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 505, __pyx_L11_except_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 503, __pyx_L11_except_error)
         __pyx_v_self->val.y = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":506
+        /* "srctools/_vec.pyx":504
  *                 self.val.x = 0
  *                 self.val.y = y
  *                 self.val.z = z             # <<<<<<<<<<<<<<
  *                 return
  * 
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 506, __pyx_L11_except_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 504, __pyx_L11_except_error)
         __pyx_v_self->val.z = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":507
+        /* "srctools/_vec.pyx":505
  *                 self.val.y = y
  *                 self.val.z = z
  *                 return             # <<<<<<<<<<<<<<
@@ -7093,7 +7097,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L11_except_error;
       __pyx_L11_except_error:;
 
-      /* "srctools/_vec.pyx":501
+      /* "srctools/_vec.pyx":499
  *         else:
  *             it = iter(x)
  *             try:             # <<<<<<<<<<<<<<
@@ -7114,7 +7118,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_L14_try_end:;
     }
 
-    /* "srctools/_vec.pyx":509
+    /* "srctools/_vec.pyx":507
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7130,20 +7134,20 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __Pyx_XGOTREF(__pyx_t_7);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":510
+        /* "srctools/_vec.pyx":508
  * 
  *             try:
  *                 self.val.y = next(it)             # <<<<<<<<<<<<<<
  *             except StopIteration:
  *                 self.val.y = y
  */
-        __pyx_t_12 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 510, __pyx_L17_error)
+        __pyx_t_12 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 508, __pyx_L17_error)
         __Pyx_GOTREF(__pyx_t_12);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_12); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 510, __pyx_L17_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_12); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 508, __pyx_L17_error)
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
         __pyx_v_self->val.y = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":509
+        /* "srctools/_vec.pyx":507
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7160,7 +7164,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":511
+      /* "srctools/_vec.pyx":509
  *             try:
  *                 self.val.y = next(it)
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -7170,32 +7174,32 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Vec.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_12, &__pyx_t_11, &__pyx_t_5) < 0) __PYX_ERR(0, 511, __pyx_L19_except_error)
+        if (__Pyx_GetException(&__pyx_t_12, &__pyx_t_11, &__pyx_t_5) < 0) __PYX_ERR(0, 509, __pyx_L19_except_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_5);
 
-        /* "srctools/_vec.pyx":512
+        /* "srctools/_vec.pyx":510
  *                 self.val.y = next(it)
  *             except StopIteration:
  *                 self.val.y = y             # <<<<<<<<<<<<<<
  *                 self.val.z = z
  *                 return
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 512, __pyx_L19_except_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_y); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 510, __pyx_L19_except_error)
         __pyx_v_self->val.y = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":513
+        /* "srctools/_vec.pyx":511
  *             except StopIteration:
  *                 self.val.y = y
  *                 self.val.z = z             # <<<<<<<<<<<<<<
  *                 return
  * 
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 513, __pyx_L19_except_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 511, __pyx_L19_except_error)
         __pyx_v_self->val.z = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":514
+        /* "srctools/_vec.pyx":512
  *                 self.val.y = y
  *                 self.val.z = z
  *                 return             # <<<<<<<<<<<<<<
@@ -7211,7 +7215,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L19_except_error;
       __pyx_L19_except_error:;
 
-      /* "srctools/_vec.pyx":509
+      /* "srctools/_vec.pyx":507
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7232,7 +7236,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_L22_try_end:;
     }
 
-    /* "srctools/_vec.pyx":516
+    /* "srctools/_vec.pyx":514
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7248,20 +7252,20 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __Pyx_XGOTREF(__pyx_t_9);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":517
+        /* "srctools/_vec.pyx":515
  * 
  *             try:
  *                 self.val.z = next(it)             # <<<<<<<<<<<<<<
  *             except StopIteration:
  *                 self.val.z = z
  */
-        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 517, __pyx_L25_error)
+        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 515, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 517, __pyx_L25_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 515, __pyx_L25_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
         __pyx_v_self->val.z = __pyx_t_4;
 
-        /* "srctools/_vec.pyx":516
+        /* "srctools/_vec.pyx":514
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7278,7 +7282,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":518
+      /* "srctools/_vec.pyx":516
  *             try:
  *                 self.val.z = next(it)
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -7288,19 +7292,19 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Vec.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 518, __pyx_L27_except_error)
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 516, __pyx_L27_except_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_12);
 
-        /* "srctools/_vec.pyx":519
+        /* "srctools/_vec.pyx":517
  *                 self.val.z = next(it)
  *             except StopIteration:
  *                 self.val.z = z             # <<<<<<<<<<<<<<
  * 
  *     def copy(self):
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 519, __pyx_L27_except_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_z); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 517, __pyx_L27_except_error)
         __pyx_v_self->val.z = __pyx_t_4;
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
@@ -7310,7 +7314,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
       goto __pyx_L27_except_error;
       __pyx_L27_except_error:;
 
-      /* "srctools/_vec.pyx":516
+      /* "srctools/_vec.pyx":514
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -7332,7 +7336,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":460
+  /* "srctools/_vec.pyx":458
  *         self.val.z = value
  * 
  *     def __init__ (             # <<<<<<<<<<<<<<
@@ -7356,7 +7360,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec___init__(struct __pyx_obj_8srctools_4_v
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":521
+/* "srctools/_vec.pyx":519
  *                 self.val.z = z
  * 
  *     def copy(self):             # <<<<<<<<<<<<<<
@@ -7387,7 +7391,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_2copy(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("copy", 0);
 
-  /* "srctools/_vec.pyx":523
+  /* "srctools/_vec.pyx":521
  *     def copy(self):
  *         """Create a duplicate of this vector."""
  *         return _vector(self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -7395,13 +7399,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_2copy(struct __pyx_obj_8srctools_
  *     def __copy__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 523, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 521, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":521
+  /* "srctools/_vec.pyx":519
  *                 self.val.z = z
  * 
  *     def copy(self):             # <<<<<<<<<<<<<<
@@ -7420,7 +7424,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_2copy(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":525
+/* "srctools/_vec.pyx":523
  *         return _vector(self.val.x, self.val.y, self.val.z)
  * 
  *     def __copy__(self):             # <<<<<<<<<<<<<<
@@ -7451,7 +7455,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_4__copy__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__copy__", 0);
 
-  /* "srctools/_vec.pyx":527
+  /* "srctools/_vec.pyx":525
  *     def __copy__(self):
  *         """Create a duplicate of this vector."""
  *         return _vector(self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -7459,13 +7463,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_4__copy__(struct __pyx_obj_8srcto
  *     def __reduce__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 527, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 525, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":525
+  /* "srctools/_vec.pyx":523
  *         return _vector(self.val.x, self.val.y, self.val.z)
  * 
  *     def __copy__(self):             # <<<<<<<<<<<<<<
@@ -7484,7 +7488,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_4__copy__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":529
+/* "srctools/_vec.pyx":527
  *         return _vector(self.val.x, self.val.y, self.val.z)
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -7518,7 +7522,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_6__reduce__(struct __pyx_obj_8src
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "srctools/_vec.pyx":530
+  /* "srctools/_vec.pyx":528
  * 
  *     def __reduce__(self):
  *         return unpickle_func, (self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -7526,13 +7530,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_6__reduce__(struct __pyx_obj_8src
  *     @classmethod
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_1);
@@ -7543,7 +7547,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_6__reduce__(struct __pyx_obj_8src
   __pyx_t_1 = 0;
   __pyx_t_2 = 0;
   __pyx_t_3 = 0;
-  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 530, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 528, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_INCREF(__pyx_v_8srctools_4_vec_unpickle_func);
   __Pyx_GIVEREF(__pyx_v_8srctools_4_vec_unpickle_func);
@@ -7555,7 +7559,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_6__reduce__(struct __pyx_obj_8src
   __pyx_t_3 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":529
+  /* "srctools/_vec.pyx":527
  *         return _vector(self.val.x, self.val.y, self.val.z)
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -7577,7 +7581,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_6__reduce__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":533
+/* "srctools/_vec.pyx":531
  * 
  *     @classmethod
  *     def from_str(cls, value, double x=0, double y=0, double z=0):             # <<<<<<<<<<<<<<
@@ -7642,7 +7646,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_9from_str(PyObject *__pyx_v_cls, 
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_str") < 0)) __PYX_ERR(0, 533, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_str") < 0)) __PYX_ERR(0, 531, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7659,24 +7663,24 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_9from_str(PyObject *__pyx_v_cls, 
     }
     __pyx_v_value = values[0];
     if (values[1]) {
-      __pyx_v_x = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_x == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
+      __pyx_v_x = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_x == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L3_error)
     } else {
       __pyx_v_x = ((double)0.0);
     }
     if (values[2]) {
-      __pyx_v_y = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_y == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
+      __pyx_v_y = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_y == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L3_error)
     } else {
       __pyx_v_y = ((double)0.0);
     }
     if (values[3]) {
-      __pyx_v_z = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_z == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 533, __pyx_L3_error)
+      __pyx_v_z = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_z == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 531, __pyx_L3_error)
     } else {
       __pyx_v_z = ((double)0.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("from_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 533, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("from_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 531, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.from_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7700,28 +7704,28 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_8from_str(CYTHON_UNUSED PyTypeObj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_str", 0);
 
-  /* "srctools/_vec.pyx":542
+  /* "srctools/_vec.pyx":540
  *         If the value is already a vector, a copy will be returned.
  *         """
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         _parse_vec_str(&vec.val, value, x, y, z)
  *         return vec
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 542, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 540, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":543
+  /* "srctools/_vec.pyx":541
  *         """
  *         cdef Vec vec = Vec.__new__(Vec)
  *         _parse_vec_str(&vec.val, value, x, y, z)             # <<<<<<<<<<<<<<
  *         return vec
  * 
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_vec->val), __pyx_v_value, __pyx_v_x, __pyx_v_y, __pyx_v_z); if (unlikely(__pyx_t_2 == ((unsigned char)0))) __PYX_ERR(0, 543, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_vec->val), __pyx_v_value, __pyx_v_x, __pyx_v_y, __pyx_v_z); if (unlikely(__pyx_t_2 == ((unsigned char)0))) __PYX_ERR(0, 541, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":544
+  /* "srctools/_vec.pyx":542
  *         cdef Vec vec = Vec.__new__(Vec)
  *         _parse_vec_str(&vec.val, value, x, y, z)
  *         return vec             # <<<<<<<<<<<<<<
@@ -7733,7 +7737,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_8from_str(CYTHON_UNUSED PyTypeObj
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":533
+  /* "srctools/_vec.pyx":531
  * 
  *     @classmethod
  *     def from_str(cls, value, double x=0, double y=0, double z=0):             # <<<<<<<<<<<<<<
@@ -7753,7 +7757,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_8from_str(CYTHON_UNUSED PyTypeObj
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":548
+/* "srctools/_vec.pyx":546
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -7807,17 +7811,17 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("with_axes", 0);
 
-  /* "srctools/_vec.pyx":559
+  /* "srctools/_vec.pyx":557
  *         axis will be used from the vector.
  *         """
  *         cdef Py_ssize_t arg_count = len(args)             # <<<<<<<<<<<<<<
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  */
-  __pyx_t_1 = PyTuple_GET_SIZE(__pyx_v_args); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 559, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_GET_SIZE(__pyx_v_args); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 557, __pyx_L1_error)
   __pyx_v_arg_count = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":560
+  /* "srctools/_vec.pyx":558
  *         """
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):             # <<<<<<<<<<<<<<
@@ -7837,14 +7841,14 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (unlikely(__pyx_t_3)) {
 
-    /* "srctools/_vec.pyx":562
+    /* "srctools/_vec.pyx":560
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  *                 f'Vec.with_axis() takes 2, 4 or 6 positional arguments '             # <<<<<<<<<<<<<<
  *                 f'but {arg_count} were given'
  *             )
  */
-    __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 562, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 560, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_1 = 0;
     __pyx_t_5 = 127;
@@ -7853,14 +7857,14 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
     __Pyx_GIVEREF(__pyx_kp_u_Vec_with_axis_takes_2_4_or_6_pos);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_kp_u_Vec_with_axis_takes_2_4_or_6_pos);
 
-    /* "srctools/_vec.pyx":563
+    /* "srctools/_vec.pyx":561
  *             raise TypeError(
  *                 f'Vec.with_axis() takes 2, 4 or 6 positional arguments '
  *                 f'but {arg_count} were given'             # <<<<<<<<<<<<<<
  *             )
  * 
  */
-    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_arg_count, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 563, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_arg_count, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 561, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_1 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_6);
@@ -7871,32 +7875,32 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
     __Pyx_GIVEREF(__pyx_kp_u_were_given);
     PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u_were_given);
 
-    /* "srctools/_vec.pyx":562
+    /* "srctools/_vec.pyx":560
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  *                 f'Vec.with_axis() takes 2, 4 or 6 positional arguments '             # <<<<<<<<<<<<<<
  *                 f'but {arg_count} were given'
  *             )
  */
-    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 562, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 560, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":561
+    /* "srctools/_vec.pyx":559
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 f'Vec.with_axis() takes 2, 4 or 6 positional arguments '
  *                 f'but {arg_count} were given'
  */
-    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 561, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 559, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __PYX_ERR(0, 561, __pyx_L1_error)
+    __PYX_ERR(0, 559, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":560
+    /* "srctools/_vec.pyx":558
  *         """
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):             # <<<<<<<<<<<<<<
@@ -7905,19 +7909,19 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  */
   }
 
-  /* "srctools/_vec.pyx":566
+  /* "srctools/_vec.pyx":564
  *             )
  * 
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef Py_UCS4 axis
  *         cdef unsigned char i
  */
-  __pyx_t_4 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 566, __pyx_L1_error)
+  __pyx_t_4 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 564, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_4));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "srctools/_vec.pyx":569
+  /* "srctools/_vec.pyx":567
  *         cdef Py_UCS4 axis
  *         cdef unsigned char i
  *         for i in range(0, arg_count, 2):             # <<<<<<<<<<<<<<
@@ -7929,7 +7933,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=2) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "srctools/_vec.pyx":570
+    /* "srctools/_vec.pyx":568
  *         cdef unsigned char i
  *         for i in range(0, arg_count, 2):
  *             axis_val = args[i+1]             # <<<<<<<<<<<<<<
@@ -7937,12 +7941,12 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  *             if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
  */
     __pyx_t_9 = (__pyx_v_i + 1);
-    __pyx_t_4 = __Pyx_GetItemInt_Tuple(__pyx_v_args, __pyx_t_9, long, 1, __Pyx_PyInt_From_long, 0, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 570, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt_Tuple(__pyx_v_args, __pyx_t_9, long, 1, __Pyx_PyInt_From_long, 0, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 568, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v_axis_val, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":571
+    /* "srctools/_vec.pyx":569
  *         for i in range(0, arg_count, 2):
  *             axis_val = args[i+1]
  *             axis_obj = args[i]             # <<<<<<<<<<<<<<
@@ -7954,7 +7958,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
     __Pyx_XDECREF_SET(__pyx_v_axis_obj, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":572
+    /* "srctools/_vec.pyx":570
  *             axis_val = args[i+1]
  *             axis_obj = args[i]
  *             if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:             # <<<<<<<<<<<<<<
@@ -7970,25 +7974,25 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
     }
     if (unlikely(__pyx_v_axis_obj == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 572, __pyx_L1_error)
+      __PYX_ERR(0, 570, __pyx_L1_error)
     }
-    __pyx_t_11 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_axis_obj)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 572, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_axis_obj)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 570, __pyx_L1_error)
     __pyx_t_10 = ((__pyx_t_11 == 1) != 0);
     __pyx_t_3 = __pyx_t_10;
     __pyx_L7_bool_binop_done:;
     if (likely(__pyx_t_3)) {
 
-      /* "srctools/_vec.pyx":573
+      /* "srctools/_vec.pyx":571
  *             axis_obj = args[i]
  *             if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
  *                 axis = (<str>axis_obj)[0]             # <<<<<<<<<<<<<<
  *             else:
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  */
-      __pyx_t_5 = __Pyx_GetItemInt_Unicode(__pyx_v_axis_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_5 == (Py_UCS4)-1)) __PYX_ERR(0, 573, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Unicode(__pyx_v_axis_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_5 == (Py_UCS4)-1)) __PYX_ERR(0, 571, __pyx_L1_error)
       __pyx_v_axis = __pyx_t_5;
 
-      /* "srctools/_vec.pyx":572
+      /* "srctools/_vec.pyx":570
  *             axis_val = args[i+1]
  *             axis_obj = args[i]
  *             if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:             # <<<<<<<<<<<<<<
@@ -7998,7 +8002,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":575
+    /* "srctools/_vec.pyx":573
  *                 axis = (<str>axis_obj)[0]
  *             else:
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')             # <<<<<<<<<<<<<<
@@ -8006,7 +8010,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  *                 if isinstance(axis_val, Vec):
  */
     /*else*/ {
-      __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 575, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 573, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_11 = 0;
       __pyx_t_5 = 127;
@@ -8014,30 +8018,30 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       __pyx_t_11 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 575, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 573, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
       __pyx_t_11 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
       __Pyx_GIVEREF(__pyx_t_6);
       PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_6);
       __pyx_t_6 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_11 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u__2);
-      __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_11, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 575, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u__3);
+      __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_11, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 573, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 575, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 573, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 575, __pyx_L1_error)
+      __PYX_ERR(0, 573, __pyx_L1_error)
     }
     __pyx_L6:;
 
-    /* "srctools/_vec.pyx":576
+    /* "srctools/_vec.pyx":574
  *             else:
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  *             if axis == 'x':             # <<<<<<<<<<<<<<
@@ -8047,7 +8051,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
     switch (__pyx_v_axis) {
       case 0x78:
 
-      /* "srctools/_vec.pyx":577
+      /* "srctools/_vec.pyx":575
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  *             if axis == 'x':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8058,7 +8062,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       __pyx_t_10 = (__pyx_t_3 != 0);
       if (__pyx_t_10) {
 
-        /* "srctools/_vec.pyx":578
+        /* "srctools/_vec.pyx":576
  *             if axis == 'x':
  *                 if isinstance(axis_val, Vec):
  *                     vec.val.x = (<Vec>axis_val).val.x             # <<<<<<<<<<<<<<
@@ -8068,7 +8072,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_axis_val)->val.x;
         __pyx_v_vec->val.x = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":577
+        /* "srctools/_vec.pyx":575
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  *             if axis == 'x':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8078,7 +8082,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         goto __pyx_L9;
       }
 
-      /* "srctools/_vec.pyx":580
+      /* "srctools/_vec.pyx":578
  *                     vec.val.x = (<Vec>axis_val).val.x
  *                 else:
  *                     vec.val.x = axis_val             # <<<<<<<<<<<<<<
@@ -8086,12 +8090,12 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  *                 if isinstance(axis_val, Vec):
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 580, __pyx_L1_error)
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 578, __pyx_L1_error)
         __pyx_v_vec->val.x = __pyx_t_12;
       }
       __pyx_L9:;
 
-      /* "srctools/_vec.pyx":576
+      /* "srctools/_vec.pyx":574
  *             else:
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  *             if axis == 'x':             # <<<<<<<<<<<<<<
@@ -8101,7 +8105,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       break;
       case 0x79:
 
-      /* "srctools/_vec.pyx":582
+      /* "srctools/_vec.pyx":580
  *                     vec.val.x = axis_val
  *             elif axis == 'y':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8112,7 +8116,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       __pyx_t_3 = (__pyx_t_10 != 0);
       if (__pyx_t_3) {
 
-        /* "srctools/_vec.pyx":583
+        /* "srctools/_vec.pyx":581
  *             elif axis == 'y':
  *                 if isinstance(axis_val, Vec):
  *                     vec.val.y = (<Vec>axis_val).val.y             # <<<<<<<<<<<<<<
@@ -8122,7 +8126,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_axis_val)->val.y;
         __pyx_v_vec->val.y = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":582
+        /* "srctools/_vec.pyx":580
  *                     vec.val.x = axis_val
  *             elif axis == 'y':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8132,7 +8136,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         goto __pyx_L10;
       }
 
-      /* "srctools/_vec.pyx":585
+      /* "srctools/_vec.pyx":583
  *                     vec.val.y = (<Vec>axis_val).val.y
  *                 else:
  *                     vec.val.y = axis_val             # <<<<<<<<<<<<<<
@@ -8140,12 +8144,12 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  *                 if isinstance(axis_val, Vec):
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 585, __pyx_L1_error)
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 583, __pyx_L1_error)
         __pyx_v_vec->val.y = __pyx_t_12;
       }
       __pyx_L10:;
 
-      /* "srctools/_vec.pyx":581
+      /* "srctools/_vec.pyx":579
  *                 else:
  *                     vec.val.x = axis_val
  *             elif axis == 'y':             # <<<<<<<<<<<<<<
@@ -8155,7 +8159,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       break;
       case 0x7A:
 
-      /* "srctools/_vec.pyx":587
+      /* "srctools/_vec.pyx":585
  *                     vec.val.y = axis_val
  *             elif axis == 'z':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8166,7 +8170,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       __pyx_t_10 = (__pyx_t_3 != 0);
       if (__pyx_t_10) {
 
-        /* "srctools/_vec.pyx":588
+        /* "srctools/_vec.pyx":586
  *             elif axis == 'z':
  *                 if isinstance(axis_val, Vec):
  *                     vec.val.z = (<Vec>axis_val).val.z             # <<<<<<<<<<<<<<
@@ -8176,7 +8180,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_axis_val)->val.z;
         __pyx_v_vec->val.z = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":587
+        /* "srctools/_vec.pyx":585
  *                     vec.val.y = axis_val
  *             elif axis == 'z':
  *                 if isinstance(axis_val, Vec):             # <<<<<<<<<<<<<<
@@ -8186,7 +8190,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
         goto __pyx_L11;
       }
 
-      /* "srctools/_vec.pyx":590
+      /* "srctools/_vec.pyx":588
  *                     vec.val.z = (<Vec>axis_val).val.z
  *                 else:
  *                     vec.val.z = axis_val             # <<<<<<<<<<<<<<
@@ -8194,12 +8198,12 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 590, __pyx_L1_error)
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 588, __pyx_L1_error)
         __pyx_v_vec->val.z = __pyx_t_12;
       }
       __pyx_L11:;
 
-      /* "srctools/_vec.pyx":586
+      /* "srctools/_vec.pyx":584
  *                 else:
  *                     vec.val.y = axis_val
  *             elif axis == 'z':             # <<<<<<<<<<<<<<
@@ -8209,14 +8213,14 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       break;
       default:
 
-      /* "srctools/_vec.pyx":592
+      /* "srctools/_vec.pyx":590
  *                     vec.val.z = axis_val
  *             else:
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')             # <<<<<<<<<<<<<<
  * 
  *         return vec
  */
-      __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 592, __pyx_L1_error)
+      __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 590, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_t_11 = 0;
       __pyx_t_5 = 127;
@@ -8224,31 +8228,31 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
       __pyx_t_11 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 592, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 590, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
       __pyx_t_11 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
       __Pyx_GIVEREF(__pyx_t_6);
       PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_t_6);
       __pyx_t_6 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_11 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u__2);
-      __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_11, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 592, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u__3);
+      __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_11, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 590, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 592, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 590, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __Pyx_Raise(__pyx_t_4, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __PYX_ERR(0, 592, __pyx_L1_error)
+      __PYX_ERR(0, 590, __pyx_L1_error)
       break;
     }
   }
 
-  /* "srctools/_vec.pyx":594
+  /* "srctools/_vec.pyx":592
  *                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
  * 
  *         return vec             # <<<<<<<<<<<<<<
@@ -8260,7 +8264,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
   __pyx_r = __pyx_v_vec;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":548
+  /* "srctools/_vec.pyx":546
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -8283,7 +8287,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_10wit
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":596
+/* "srctools/_vec.pyx":594
  *         return vec
  * 
  *     def rotate(             # <<<<<<<<<<<<<<
@@ -8350,7 +8354,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_13rot
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotate") < 0)) __PYX_ERR(0, 596, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotate") < 0)) __PYX_ERR(0, 594, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -8367,25 +8371,25 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_13rot
       }
     }
     if (values[0]) {
-      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 598, __pyx_L3_error)
+      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 596, __pyx_L3_error)
     } else {
       __pyx_v_pitch = ((double)0.0);
     }
     if (values[1]) {
-      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 599, __pyx_L3_error)
+      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 597, __pyx_L3_error)
     } else {
       __pyx_v_yaw = ((double)0.0);
     }
     if (values[2]) {
-      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 600, __pyx_L3_error)
+      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 598, __pyx_L3_error)
     } else {
       __pyx_v_roll = ((double)0.0);
     }
     if (values[3]) {
-      __pyx_v_round_vals = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_round_vals == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 601, __pyx_L3_error)
+      __pyx_v_round_vals = __Pyx_PyObject_IsTrue(values[3]); if (unlikely((__pyx_v_round_vals == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 599, __pyx_L3_error)
     } else {
 
-      /* "srctools/_vec.pyx":601
+      /* "srctools/_vec.pyx":599
  *         double yaw: float=0.0,
  *         double roll: float=0.0,
  *         bint round_vals: bool=True,             # <<<<<<<<<<<<<<
@@ -8397,7 +8401,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_13rot
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("rotate", 0, 0, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 596, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("rotate", 0, 0, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 594, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.rotate", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8405,7 +8409,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_13rot
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_8srctools_4_vec_3Vec_12rotate(((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_self), __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll, __pyx_v_round_vals);
 
-  /* "srctools/_vec.pyx":596
+  /* "srctools/_vec.pyx":594
  *         return vec
  * 
  *     def rotate(             # <<<<<<<<<<<<<<
@@ -8432,7 +8436,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("rotate", 0);
 
-  /* "srctools/_vec.pyx":612
+  /* "srctools/_vec.pyx":610
  *         cdef vec_t angle
  *         cdef mat_t matrix
  *         angle.x = pitch             # <<<<<<<<<<<<<<
@@ -8441,7 +8445,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   __pyx_v_angle.x = __pyx_v_pitch;
 
-  /* "srctools/_vec.pyx":613
+  /* "srctools/_vec.pyx":611
  *         cdef mat_t matrix
  *         angle.x = pitch
  *         angle.y = yaw             # <<<<<<<<<<<<<<
@@ -8450,7 +8454,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   __pyx_v_angle.y = __pyx_v_yaw;
 
-  /* "srctools/_vec.pyx":614
+  /* "srctools/_vec.pyx":612
  *         angle.x = pitch
  *         angle.y = yaw
  *         angle.z = roll             # <<<<<<<<<<<<<<
@@ -8459,7 +8463,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   __pyx_v_angle.z = __pyx_v_roll;
 
-  /* "srctools/_vec.pyx":616
+  /* "srctools/_vec.pyx":614
  *         angle.z = roll
  * 
  *         _mat_from_angle(matrix, &angle)             # <<<<<<<<<<<<<<
@@ -8468,7 +8472,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_matrix, (&__pyx_v_angle));
 
-  /* "srctools/_vec.pyx":617
+  /* "srctools/_vec.pyx":615
  * 
  *         _mat_from_angle(matrix, &angle)
  *         _vec_rot(&self.val, matrix)             # <<<<<<<<<<<<<<
@@ -8477,7 +8481,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_self->val), __pyx_v_matrix);
 
-  /* "srctools/_vec.pyx":619
+  /* "srctools/_vec.pyx":617
  *         _vec_rot(&self.val, matrix)
  * 
  *         if round_vals:             # <<<<<<<<<<<<<<
@@ -8487,14 +8491,62 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
   __pyx_t_1 = (__pyx_v_round_vals != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":620
+    /* "srctools/_vec.pyx":618
  * 
  *         if round_vals:
  *             self.val.x = round(self.val.x, ROUND_TO)             # <<<<<<<<<<<<<<
  *             self.val.y = round(self.val.y, ROUND_TO)
  *             self.val.z = round(self.val.z, ROUND_TO)
  */
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 620, __pyx_L1_error)
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 618, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 618, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_6);
+    __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 618, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 618, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_v_self->val.x = __pyx_t_4;
+
+    /* "srctools/_vec.pyx":619
+ *         if round_vals:
+ *             self.val.x = round(self.val.x, ROUND_TO)
+ *             self.val.y = round(self.val.y, ROUND_TO)             # <<<<<<<<<<<<<<
+ *             self.val.z = round(self.val.z, ROUND_TO)
+ * 
+ */
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 619, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 619, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_6);
+    __pyx_t_2 = 0;
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 619, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 619, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+    __pyx_v_self->val.y = __pyx_t_4;
+
+    /* "srctools/_vec.pyx":620
+ *             self.val.x = round(self.val.x, ROUND_TO)
+ *             self.val.y = round(self.val.y, ROUND_TO)
+ *             self.val.z = round(self.val.z, ROUND_TO)             # <<<<<<<<<<<<<<
+ * 
+ *         return self
+ */
+    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
@@ -8509,57 +8561,9 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_v_self->val.x = __pyx_t_4;
-
-    /* "srctools/_vec.pyx":621
- *         if round_vals:
- *             self.val.x = round(self.val.x, ROUND_TO)
- *             self.val.y = round(self.val.y, ROUND_TO)             # <<<<<<<<<<<<<<
- *             self.val.z = round(self.val.z, ROUND_TO)
- * 
- */
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 621, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 621, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_GIVEREF(__pyx_t_2);
-    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_6);
-    __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 621, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 621, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __pyx_v_self->val.y = __pyx_t_4;
-
-    /* "srctools/_vec.pyx":622
- *             self.val.x = round(self.val.x, ROUND_TO)
- *             self.val.y = round(self.val.y, ROUND_TO)
- *             self.val.z = round(self.val.z, ROUND_TO)             # <<<<<<<<<<<<<<
- * 
- *         return self
- */
-    __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 622, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 622, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_GIVEREF(__pyx_t_2);
-    PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_t_2);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_int_6);
-    __pyx_t_2 = 0;
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_3, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 622, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_2); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 622, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
     __pyx_v_self->val.z = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":619
+    /* "srctools/_vec.pyx":617
  *         _vec_rot(&self.val, matrix)
  * 
  *         if round_vals:             # <<<<<<<<<<<<<<
@@ -8568,7 +8572,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
  */
   }
 
-  /* "srctools/_vec.pyx":624
+  /* "srctools/_vec.pyx":622
  *             self.val.z = round(self.val.z, ROUND_TO)
  * 
  *         return self             # <<<<<<<<<<<<<<
@@ -8580,7 +8584,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
   __pyx_r = __pyx_v_self;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":596
+  /* "srctools/_vec.pyx":594
  *         return vec
  * 
  *     def rotate(             # <<<<<<<<<<<<<<
@@ -8600,7 +8604,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_12rot
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":626
+/* "srctools/_vec.pyx":624
  *         return self
  * 
  *     def rotate_by_str(             # <<<<<<<<<<<<<<
@@ -8674,7 +8678,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_15rot
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotate_by_str") < 0)) __PYX_ERR(0, 626, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotate_by_str") < 0)) __PYX_ERR(0, 624, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -8693,25 +8697,25 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_15rot
     }
     __pyx_v_ang = values[0];
     if (values[1]) {
-      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 629, __pyx_L3_error)
+      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 627, __pyx_L3_error)
     } else {
       __pyx_v_pitch = ((double)0.0);
     }
     if (values[2]) {
-      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 630, __pyx_L3_error)
+      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 628, __pyx_L3_error)
     } else {
       __pyx_v_yaw = ((double)0.0);
     }
     if (values[3]) {
-      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 631, __pyx_L3_error)
+      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 629, __pyx_L3_error)
     } else {
       __pyx_v_roll = ((double)0.0);
     }
     if (values[4]) {
-      __pyx_v_round_vals = __Pyx_PyObject_IsTrue(values[4]); if (unlikely((__pyx_v_round_vals == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 632, __pyx_L3_error)
+      __pyx_v_round_vals = __Pyx_PyObject_IsTrue(values[4]); if (unlikely((__pyx_v_round_vals == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 630, __pyx_L3_error)
     } else {
 
-      /* "srctools/_vec.pyx":632
+      /* "srctools/_vec.pyx":630
  *         double yaw=0.0,
  *         double roll=0.0,
  *         bint round_vals=True,             # <<<<<<<<<<<<<<
@@ -8723,7 +8727,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_15rot
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("rotate_by_str", 0, 1, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 626, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("rotate_by_str", 0, 1, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 624, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.rotate_by_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8731,7 +8735,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_15rot
   __pyx_L4_argument_unpacking_done:;
   __pyx_r = __pyx_pf_8srctools_4_vec_3Vec_14rotate_by_str(((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_self), __pyx_v_ang, __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll, __pyx_v_round_vals);
 
-  /* "srctools/_vec.pyx":626
+  /* "srctools/_vec.pyx":624
  *         return self
  * 
  *     def rotate_by_str(             # <<<<<<<<<<<<<<
@@ -8759,16 +8763,16 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("rotate_by_str", 0);
 
-  /* "srctools/_vec.pyx":641
+  /* "srctools/_vec.pyx":639
  *         cdef mat_t matrix
  * 
  *         _parse_vec_str(&angle, ang, pitch, yaw, roll)             # <<<<<<<<<<<<<<
  *         _mat_from_angle(matrix, &angle)
  *         _vec_rot(&self.val, matrix)
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_angle), __pyx_v_ang, __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 641, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_angle), __pyx_v_ang, __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 639, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":642
+  /* "srctools/_vec.pyx":640
  * 
  *         _parse_vec_str(&angle, ang, pitch, yaw, roll)
  *         _mat_from_angle(matrix, &angle)             # <<<<<<<<<<<<<<
@@ -8777,7 +8781,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
  */
   __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_matrix, (&__pyx_v_angle));
 
-  /* "srctools/_vec.pyx":643
+  /* "srctools/_vec.pyx":641
  *         _parse_vec_str(&angle, ang, pitch, yaw, roll)
  *         _mat_from_angle(matrix, &angle)
  *         _vec_rot(&self.val, matrix)             # <<<<<<<<<<<<<<
@@ -8786,7 +8790,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
  */
   __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_self->val), __pyx_v_matrix);
 
-  /* "srctools/_vec.pyx":645
+  /* "srctools/_vec.pyx":643
  *         _vec_rot(&self.val, matrix)
  * 
  *         if round_vals:             # <<<<<<<<<<<<<<
@@ -8796,14 +8800,62 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
   __pyx_t_2 = (__pyx_v_round_vals != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":646
+    /* "srctools/_vec.pyx":644
  * 
  *         if round_vals:
  *             self.val.x = round(self.val.x, ROUND_TO)             # <<<<<<<<<<<<<<
  *             self.val.y = round(self.val.y, ROUND_TO)
  *             self.val.z = round(self.val.z, ROUND_TO)
  */
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 646, __pyx_L1_error)
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 644, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 644, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_6);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 644, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 644, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_v_self->val.x = __pyx_t_5;
+
+    /* "srctools/_vec.pyx":645
+ *         if round_vals:
+ *             self.val.x = round(self.val.x, ROUND_TO)
+ *             self.val.y = round(self.val.y, ROUND_TO)             # <<<<<<<<<<<<<<
+ *             self.val.z = round(self.val.z, ROUND_TO)
+ * 
+ */
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 645, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 645, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_4);
+    __Pyx_GIVEREF(__pyx_t_3);
+    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
+    __Pyx_INCREF(__pyx_int_6);
+    __Pyx_GIVEREF(__pyx_int_6);
+    PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_6);
+    __pyx_t_3 = 0;
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 645, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_3);
+    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 645, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+    __pyx_v_self->val.y = __pyx_t_5;
+
+    /* "srctools/_vec.pyx":646
+ *             self.val.x = round(self.val.x, ROUND_TO)
+ *             self.val.y = round(self.val.y, ROUND_TO)
+ *             self.val.z = round(self.val.z, ROUND_TO)             # <<<<<<<<<<<<<<
+ * 
+ *         return self
+ */
+    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 646, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 646, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
@@ -8818,57 +8870,9 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 646, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->val.x = __pyx_t_5;
-
-    /* "srctools/_vec.pyx":647
- *         if round_vals:
- *             self.val.x = round(self.val.x, ROUND_TO)
- *             self.val.y = round(self.val.y, ROUND_TO)             # <<<<<<<<<<<<<<
- *             self.val.z = round(self.val.z, ROUND_TO)
- * 
- */
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 647, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 647, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_GIVEREF(__pyx_t_3);
-    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_6);
-    __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 647, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 647, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_v_self->val.y = __pyx_t_5;
-
-    /* "srctools/_vec.pyx":648
- *             self.val.x = round(self.val.x, ROUND_TO)
- *             self.val.y = round(self.val.y, ROUND_TO)
- *             self.val.z = round(self.val.z, ROUND_TO)             # <<<<<<<<<<<<<<
- * 
- *         return self
- */
-    __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 648, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = PyTuple_New(2); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 648, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_4);
-    __Pyx_GIVEREF(__pyx_t_3);
-    PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_t_3);
-    __Pyx_INCREF(__pyx_int_6);
-    __Pyx_GIVEREF(__pyx_int_6);
-    PyTuple_SET_ITEM(__pyx_t_4, 1, __pyx_int_6);
-    __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_4, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 648, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_3);
-    __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_t_3); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 648, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_v_self->val.z = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":645
+    /* "srctools/_vec.pyx":643
  *         _vec_rot(&self.val, matrix)
  * 
  *         if round_vals:             # <<<<<<<<<<<<<<
@@ -8877,7 +8881,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
  */
   }
 
-  /* "srctools/_vec.pyx":650
+  /* "srctools/_vec.pyx":648
  *             self.val.z = round(self.val.z, ROUND_TO)
  * 
  *         return self             # <<<<<<<<<<<<<<
@@ -8889,7 +8893,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
   __pyx_r = __pyx_v_self;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":626
+  /* "srctools/_vec.pyx":624
  *         return self
  * 
  *     def rotate_by_str(             # <<<<<<<<<<<<<<
@@ -8909,7 +8913,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_14rot
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":653
+/* "srctools/_vec.pyx":651
  * 
  *     @staticmethod
  *     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
@@ -8969,63 +8973,63 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("bbox", 0);
 
-  /* "srctools/_vec.pyx":659
+  /* "srctools/_vec.pyx":657
  *         Returns a (min, max) tuple.
  *         """
  *         cdef Vec bbox_min = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef Vec bbox_max = Vec.__new__(Vec)
  *         cdef Vec sing_vec
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 659, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 657, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_bbox_min = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":660
+  /* "srctools/_vec.pyx":658
  *         """
  *         cdef Vec bbox_min = Vec.__new__(Vec)
  *         cdef Vec bbox_max = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef Vec sing_vec
  *         cdef vec_t vec
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 660, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 658, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_bbox_max = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":667
+  /* "srctools/_vec.pyx":665
  *         # The error messages match those produced by min()/max().
  * 
  *         if len(points) == 1:             # <<<<<<<<<<<<<<
  *             if isinstance(points[0], Vec):
  *                 # Special case, don't iter over the vec, just copy.
  */
-  __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 667, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 665, __pyx_L1_error)
   __pyx_t_3 = ((__pyx_t_2 == 1) != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":668
+    /* "srctools/_vec.pyx":666
  * 
  *         if len(points) == 1:
  *             if isinstance(points[0], Vec):             # <<<<<<<<<<<<<<
  *                 # Special case, don't iter over the vec, just copy.
  *                 sing_vec = <Vec>points[0]
  */
-    __pyx_t_1 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 668, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 666, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Vec); 
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_4 = (__pyx_t_3 != 0);
     if (__pyx_t_4) {
 
-      /* "srctools/_vec.pyx":670
+      /* "srctools/_vec.pyx":668
  *             if isinstance(points[0], Vec):
  *                 # Special case, don't iter over the vec, just copy.
  *                 sing_vec = <Vec>points[0]             # <<<<<<<<<<<<<<
  *                 bbox_min.val = sing_vec.val
  *                 bbox_max.val = sing_vec.val
  */
-      __pyx_t_1 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 670, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 668, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_5 = __pyx_t_1;
       __Pyx_INCREF(__pyx_t_5);
@@ -9033,7 +9037,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_v_sing_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_5);
       __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":671
+      /* "srctools/_vec.pyx":669
  *                 # Special case, don't iter over the vec, just copy.
  *                 sing_vec = <Vec>points[0]
  *                 bbox_min.val = sing_vec.val             # <<<<<<<<<<<<<<
@@ -9043,7 +9047,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_6 = __pyx_v_sing_vec->val;
       __pyx_v_bbox_min->val = __pyx_t_6;
 
-      /* "srctools/_vec.pyx":672
+      /* "srctools/_vec.pyx":670
  *                 sing_vec = <Vec>points[0]
  *                 bbox_min.val = sing_vec.val
  *                 bbox_max.val = sing_vec.val             # <<<<<<<<<<<<<<
@@ -9053,7 +9057,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_6 = __pyx_v_sing_vec->val;
       __pyx_v_bbox_max->val = __pyx_t_6;
 
-      /* "srctools/_vec.pyx":673
+      /* "srctools/_vec.pyx":671
  *                 bbox_min.val = sing_vec.val
  *                 bbox_max.val = sing_vec.val
  *                 return bbox_min, bbox_max             # <<<<<<<<<<<<<<
@@ -9061,7 +9065,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  *             try:
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 673, __pyx_L1_error)
+      __pyx_t_5 = PyTuple_New(2); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 671, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_INCREF(((PyObject *)__pyx_v_bbox_min));
       __Pyx_GIVEREF(((PyObject *)__pyx_v_bbox_min));
@@ -9073,7 +9077,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_5 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":668
+      /* "srctools/_vec.pyx":666
  * 
  *         if len(points) == 1:
  *             if isinstance(points[0], Vec):             # <<<<<<<<<<<<<<
@@ -9082,22 +9086,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
     }
 
-    /* "srctools/_vec.pyx":674
+    /* "srctools/_vec.pyx":672
  *                 bbox_max.val = sing_vec.val
  *                 return bbox_min, bbox_max
  *             points_iter = iter(points[0])             # <<<<<<<<<<<<<<
  *             try:
  *                 first = next(points_iter)
  */
-    __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 674, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 672, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
-    __pyx_t_1 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 674, __pyx_L1_error)
+    __pyx_t_1 = PyObject_GetIter(__pyx_t_5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 672, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
     __pyx_v_points_iter = __pyx_t_1;
     __pyx_t_1 = 0;
 
-    /* "srctools/_vec.pyx":675
+    /* "srctools/_vec.pyx":673
  *                 return bbox_min, bbox_max
  *             points_iter = iter(points[0])
  *             try:             # <<<<<<<<<<<<<<
@@ -9113,19 +9117,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __Pyx_XGOTREF(__pyx_t_9);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":676
+        /* "srctools/_vec.pyx":674
  *             points_iter = iter(points[0])
  *             try:
  *                 first = next(points_iter)             # <<<<<<<<<<<<<<
  *             except StopIteration:
  *                 raise ValueError('Empty iterator!') from None
  */
-        __pyx_t_1 = __Pyx_PyIter_Next(__pyx_v_points_iter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 676, __pyx_L5_error)
+        __pyx_t_1 = __Pyx_PyIter_Next(__pyx_v_points_iter); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 674, __pyx_L5_error)
         __Pyx_GOTREF(__pyx_t_1);
         __pyx_v_first = __pyx_t_1;
         __pyx_t_1 = 0;
 
-        /* "srctools/_vec.pyx":675
+        /* "srctools/_vec.pyx":673
  *                 return bbox_min, bbox_max
  *             points_iter = iter(points[0])
  *             try:             # <<<<<<<<<<<<<<
@@ -9141,7 +9145,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":677
+      /* "srctools/_vec.pyx":675
  *             try:
  *                 first = next(points_iter)
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -9151,28 +9155,28 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Vec.bbox", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_11) < 0) __PYX_ERR(0, 677, __pyx_L7_except_error)
+        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_5, &__pyx_t_11) < 0) __PYX_ERR(0, 675, __pyx_L7_except_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_11);
 
-        /* "srctools/_vec.pyx":678
+        /* "srctools/_vec.pyx":676
  *                 first = next(points_iter)
  *             except StopIteration:
  *                 raise ValueError('Empty iterator!') from None             # <<<<<<<<<<<<<<
  * 
  *             _conv_vec(&bbox_min.val, first, scalar=False)
  */
-        __pyx_t_12 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__3, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 678, __pyx_L7_except_error)
+        __pyx_t_12 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 676, __pyx_L7_except_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_Raise(__pyx_t_12, 0, 0, Py_None);
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __PYX_ERR(0, 678, __pyx_L7_except_error)
+        __PYX_ERR(0, 676, __pyx_L7_except_error)
       }
       goto __pyx_L7_except_error;
       __pyx_L7_except_error:;
 
-      /* "srctools/_vec.pyx":675
+      /* "srctools/_vec.pyx":673
  *                 return bbox_min, bbox_max
  *             points_iter = iter(points[0])
  *             try:             # <<<<<<<<<<<<<<
@@ -9187,16 +9191,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_L10_try_end:;
     }
 
-    /* "srctools/_vec.pyx":680
+    /* "srctools/_vec.pyx":678
  *                 raise ValueError('Empty iterator!') from None
  * 
  *             _conv_vec(&bbox_min.val, first, scalar=False)             # <<<<<<<<<<<<<<
  *             bbox_max.val = bbox_min.val
  * 
  */
-    __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_bbox_min->val), __pyx_v_first, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 680, __pyx_L1_error)
+    __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_bbox_min->val), __pyx_v_first, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 678, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":681
+    /* "srctools/_vec.pyx":679
  * 
  *             _conv_vec(&bbox_min.val, first, scalar=False)
  *             bbox_max.val = bbox_min.val             # <<<<<<<<<<<<<<
@@ -9206,7 +9210,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
     __pyx_t_6 = __pyx_v_bbox_min->val;
     __pyx_v_bbox_max->val = __pyx_t_6;
 
-    /* "srctools/_vec.pyx":683
+    /* "srctools/_vec.pyx":681
  *             bbox_max.val = bbox_min.val
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -9222,7 +9226,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __Pyx_XGOTREF(__pyx_t_7);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":684
+        /* "srctools/_vec.pyx":682
  * 
  *             try:
  *                 while True:             # <<<<<<<<<<<<<<
@@ -9231,28 +9235,28 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
         while (1) {
 
-          /* "srctools/_vec.pyx":685
+          /* "srctools/_vec.pyx":683
  *             try:
  *                 while True:
  *                     point = next(points_iter)             # <<<<<<<<<<<<<<
  *                     _conv_vec(&vec, point, scalar=False)
  * 
  */
-          __pyx_t_11 = __Pyx_PyIter_Next(__pyx_v_points_iter); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 685, __pyx_L13_error)
+          __pyx_t_11 = __Pyx_PyIter_Next(__pyx_v_points_iter); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 683, __pyx_L13_error)
           __Pyx_GOTREF(__pyx_t_11);
           __Pyx_XDECREF_SET(__pyx_v_point, __pyx_t_11);
           __pyx_t_11 = 0;
 
-          /* "srctools/_vec.pyx":686
+          /* "srctools/_vec.pyx":684
  *                 while True:
  *                     point = next(points_iter)
  *                     _conv_vec(&vec, point, scalar=False)             # <<<<<<<<<<<<<<
  * 
  *                     if bbox_max.val.x < vec.x:
  */
-          __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_point, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 686, __pyx_L13_error)
+          __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_point, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 684, __pyx_L13_error)
 
-          /* "srctools/_vec.pyx":688
+          /* "srctools/_vec.pyx":686
  *                     _conv_vec(&vec, point, scalar=False)
  * 
  *                     if bbox_max.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -9262,7 +9266,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_max->val.x < __pyx_v_vec.x) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":689
+            /* "srctools/_vec.pyx":687
  * 
  *                     if bbox_max.val.x < vec.x:
  *                         bbox_max.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -9272,7 +9276,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.x;
             __pyx_v_bbox_max->val.x = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":688
+            /* "srctools/_vec.pyx":686
  *                     _conv_vec(&vec, point, scalar=False)
  * 
  *                     if bbox_max.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -9281,7 +9285,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
           }
 
-          /* "srctools/_vec.pyx":691
+          /* "srctools/_vec.pyx":689
  *                         bbox_max.val.x = vec.x
  * 
  *                     if bbox_max.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -9291,7 +9295,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_max->val.y < __pyx_v_vec.y) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":692
+            /* "srctools/_vec.pyx":690
  * 
  *                     if bbox_max.val.y < vec.y:
  *                         bbox_max.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -9301,7 +9305,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.y;
             __pyx_v_bbox_max->val.y = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":691
+            /* "srctools/_vec.pyx":689
  *                         bbox_max.val.x = vec.x
  * 
  *                     if bbox_max.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -9310,7 +9314,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
           }
 
-          /* "srctools/_vec.pyx":694
+          /* "srctools/_vec.pyx":692
  *                         bbox_max.val.y = vec.y
  * 
  *                     if bbox_max.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -9320,7 +9324,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_max->val.z < __pyx_v_vec.z) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":695
+            /* "srctools/_vec.pyx":693
  * 
  *                     if bbox_max.val.z < vec.z:
  *                         bbox_max.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -9330,7 +9334,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.z;
             __pyx_v_bbox_max->val.z = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":694
+            /* "srctools/_vec.pyx":692
  *                         bbox_max.val.y = vec.y
  * 
  *                     if bbox_max.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -9339,7 +9343,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
           }
 
-          /* "srctools/_vec.pyx":697
+          /* "srctools/_vec.pyx":695
  *                         bbox_max.val.z = vec.z
  * 
  *                     if bbox_min.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -9349,7 +9353,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_min->val.x > __pyx_v_vec.x) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":698
+            /* "srctools/_vec.pyx":696
  * 
  *                     if bbox_min.val.x > vec.x:
  *                         bbox_min.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -9359,7 +9363,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.x;
             __pyx_v_bbox_min->val.x = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":697
+            /* "srctools/_vec.pyx":695
  *                         bbox_max.val.z = vec.z
  * 
  *                     if bbox_min.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -9368,7 +9372,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
           }
 
-          /* "srctools/_vec.pyx":700
+          /* "srctools/_vec.pyx":698
  *                         bbox_min.val.x = vec.x
  * 
  *                     if bbox_min.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -9378,7 +9382,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_min->val.y > __pyx_v_vec.y) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":701
+            /* "srctools/_vec.pyx":699
  * 
  *                     if bbox_min.val.y > vec.y:
  *                         bbox_min.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -9388,7 +9392,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.y;
             __pyx_v_bbox_min->val.y = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":700
+            /* "srctools/_vec.pyx":698
  *                         bbox_min.val.x = vec.x
  * 
  *                     if bbox_min.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -9397,7 +9401,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
           }
 
-          /* "srctools/_vec.pyx":703
+          /* "srctools/_vec.pyx":701
  *                         bbox_min.val.y = vec.y
  * 
  *                     if bbox_min.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -9407,7 +9411,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           __pyx_t_4 = ((__pyx_v_bbox_min->val.z > __pyx_v_vec.z) != 0);
           if (__pyx_t_4) {
 
-            /* "srctools/_vec.pyx":704
+            /* "srctools/_vec.pyx":702
  * 
  *                     if bbox_min.val.z > vec.z:
  *                         bbox_min.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -9417,7 +9421,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
             __pyx_t_14 = __pyx_v_vec.z;
             __pyx_v_bbox_min->val.z = __pyx_t_14;
 
-            /* "srctools/_vec.pyx":703
+            /* "srctools/_vec.pyx":701
  *                         bbox_min.val.y = vec.y
  * 
  *                     if bbox_min.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -9427,7 +9431,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
           }
         }
 
-        /* "srctools/_vec.pyx":683
+        /* "srctools/_vec.pyx":681
  *             bbox_max.val = bbox_min.val
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -9445,7 +9449,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":705
+      /* "srctools/_vec.pyx":703
  *                     if bbox_min.val.z > vec.z:
  *                         bbox_min.val.z = vec.z
  *             except StopIteration:             # <<<<<<<<<<<<<<
@@ -9460,7 +9464,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       goto __pyx_L15_except_error;
       __pyx_L15_except_error:;
 
-      /* "srctools/_vec.pyx":683
+      /* "srctools/_vec.pyx":681
  *             bbox_max.val = bbox_min.val
  * 
  *             try:             # <<<<<<<<<<<<<<
@@ -9480,7 +9484,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_L18_try_end:;
     }
 
-    /* "srctools/_vec.pyx":667
+    /* "srctools/_vec.pyx":665
  *         # The error messages match those produced by min()/max().
  * 
  *         if len(points) == 1:             # <<<<<<<<<<<<<<
@@ -9490,31 +9494,31 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":707
+  /* "srctools/_vec.pyx":705
  *             except StopIteration:
  *                 pass
  *         elif len(points) == 0:             # <<<<<<<<<<<<<<
  *             raise TypeError(
  *                 'Vec.bbox() expected at '
  */
-  __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 707, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 705, __pyx_L1_error)
   __pyx_t_4 = ((__pyx_t_2 == 0) != 0);
   if (unlikely(__pyx_t_4)) {
 
-    /* "srctools/_vec.pyx":708
+    /* "srctools/_vec.pyx":706
  *                 pass
  *         elif len(points) == 0:
  *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 'Vec.bbox() expected at '
  *                 'least 1 argument, got 0.'
  */
-    __pyx_t_11 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 708, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 706, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_Raise(__pyx_t_11, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
-    __PYX_ERR(0, 708, __pyx_L1_error)
+    __PYX_ERR(0, 706, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":707
+    /* "srctools/_vec.pyx":705
  *             except StopIteration:
  *                 pass
  *         elif len(points) == 0:             # <<<<<<<<<<<<<<
@@ -9523,7 +9527,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
   }
 
-  /* "srctools/_vec.pyx":714
+  /* "srctools/_vec.pyx":712
  *         else:
  *             # Tuple-specific.
  *             _conv_vec(&bbox_min.val, points[0], scalar=False)             # <<<<<<<<<<<<<<
@@ -9531,12 +9535,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  * 
  */
   /*else*/ {
-    __pyx_t_11 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 714, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_GetItemInt_Tuple(__pyx_v_points, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 712, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
-    __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_bbox_min->val), __pyx_t_11, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 714, __pyx_L1_error)
+    __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_bbox_min->val), __pyx_t_11, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 712, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-    /* "srctools/_vec.pyx":715
+    /* "srctools/_vec.pyx":713
  *             # Tuple-specific.
  *             _conv_vec(&bbox_min.val, points[0], scalar=False)
  *             bbox_max.val = bbox_min.val             # <<<<<<<<<<<<<<
@@ -9546,40 +9550,40 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
     __pyx_t_6 = __pyx_v_bbox_min->val;
     __pyx_v_bbox_max->val = __pyx_t_6;
 
-    /* "srctools/_vec.pyx":717
+    /* "srctools/_vec.pyx":715
  *             bbox_max.val = bbox_min.val
  * 
  *             for i in range(1, len(points)):             # <<<<<<<<<<<<<<
  *                 point = points[i]
  *                 _conv_vec(&vec, point, scalar=False)
  */
-    __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 717, __pyx_L1_error)
+    __pyx_t_2 = PyTuple_GET_SIZE(__pyx_v_points); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 715, __pyx_L1_error)
     __pyx_t_15 = __pyx_t_2;
     for (__pyx_t_16 = 1; __pyx_t_16 < __pyx_t_15; __pyx_t_16+=1) {
       __pyx_v_i = __pyx_t_16;
 
-      /* "srctools/_vec.pyx":718
+      /* "srctools/_vec.pyx":716
  * 
  *             for i in range(1, len(points)):
  *                 point = points[i]             # <<<<<<<<<<<<<<
  *                 _conv_vec(&vec, point, scalar=False)
  * 
  */
-      __pyx_t_11 = __Pyx_GetItemInt_Tuple(__pyx_v_points, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 718, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_GetItemInt_Tuple(__pyx_v_points, __pyx_v_i, Py_ssize_t, 1, PyInt_FromSsize_t, 0, 1, 1); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 716, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_XDECREF_SET(__pyx_v_point, __pyx_t_11);
       __pyx_t_11 = 0;
 
-      /* "srctools/_vec.pyx":719
+      /* "srctools/_vec.pyx":717
  *             for i in range(1, len(points)):
  *                 point = points[i]
  *                 _conv_vec(&vec, point, scalar=False)             # <<<<<<<<<<<<<<
  * 
  *                 if bbox_max.val.x < vec.x:
  */
-      __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_point, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 719, __pyx_L1_error)
+      __pyx_t_13 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_point, 0); if (unlikely(__pyx_t_13 == ((unsigned char)0))) __PYX_ERR(0, 717, __pyx_L1_error)
 
-      /* "srctools/_vec.pyx":721
+      /* "srctools/_vec.pyx":719
  *                 _conv_vec(&vec, point, scalar=False)
  * 
  *                 if bbox_max.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -9589,7 +9593,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_max->val.x < __pyx_v_vec.x) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":722
+        /* "srctools/_vec.pyx":720
  * 
  *                 if bbox_max.val.x < vec.x:
  *                     bbox_max.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -9599,7 +9603,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.x;
         __pyx_v_bbox_max->val.x = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":721
+        /* "srctools/_vec.pyx":719
  *                 _conv_vec(&vec, point, scalar=False)
  * 
  *                 if bbox_max.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -9608,7 +9612,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
       }
 
-      /* "srctools/_vec.pyx":724
+      /* "srctools/_vec.pyx":722
  *                     bbox_max.val.x = vec.x
  * 
  *                 if bbox_max.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -9618,7 +9622,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_max->val.y < __pyx_v_vec.y) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":725
+        /* "srctools/_vec.pyx":723
  * 
  *                 if bbox_max.val.y < vec.y:
  *                     bbox_max.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -9628,7 +9632,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.y;
         __pyx_v_bbox_max->val.y = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":724
+        /* "srctools/_vec.pyx":722
  *                     bbox_max.val.x = vec.x
  * 
  *                 if bbox_max.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -9637,7 +9641,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
       }
 
-      /* "srctools/_vec.pyx":727
+      /* "srctools/_vec.pyx":725
  *                     bbox_max.val.y = vec.y
  * 
  *                 if bbox_max.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -9647,7 +9651,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_max->val.z < __pyx_v_vec.z) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":728
+        /* "srctools/_vec.pyx":726
  * 
  *                 if bbox_max.val.z < vec.z:
  *                     bbox_max.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -9657,7 +9661,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.z;
         __pyx_v_bbox_max->val.z = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":727
+        /* "srctools/_vec.pyx":725
  *                     bbox_max.val.y = vec.y
  * 
  *                 if bbox_max.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -9666,7 +9670,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
       }
 
-      /* "srctools/_vec.pyx":730
+      /* "srctools/_vec.pyx":728
  *                     bbox_max.val.z = vec.z
  * 
  *                 if bbox_min.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -9676,7 +9680,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_min->val.x > __pyx_v_vec.x) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":731
+        /* "srctools/_vec.pyx":729
  * 
  *                 if bbox_min.val.x > vec.x:
  *                     bbox_min.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -9686,7 +9690,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.x;
         __pyx_v_bbox_min->val.x = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":730
+        /* "srctools/_vec.pyx":728
  *                     bbox_max.val.z = vec.z
  * 
  *                 if bbox_min.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -9695,7 +9699,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
       }
 
-      /* "srctools/_vec.pyx":733
+      /* "srctools/_vec.pyx":731
  *                     bbox_min.val.x = vec.x
  * 
  *                 if bbox_min.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -9705,7 +9709,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_min->val.y > __pyx_v_vec.y) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":734
+        /* "srctools/_vec.pyx":732
  * 
  *                 if bbox_min.val.y > vec.y:
  *                     bbox_min.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -9715,7 +9719,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.y;
         __pyx_v_bbox_min->val.y = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":733
+        /* "srctools/_vec.pyx":731
  *                     bbox_min.val.x = vec.x
  * 
  *                 if bbox_min.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -9724,7 +9728,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  */
       }
 
-      /* "srctools/_vec.pyx":736
+      /* "srctools/_vec.pyx":734
  *                     bbox_min.val.y = vec.y
  * 
  *                 if bbox_min.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -9734,7 +9738,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
       __pyx_t_4 = ((__pyx_v_bbox_min->val.z > __pyx_v_vec.z) != 0);
       if (__pyx_t_4) {
 
-        /* "srctools/_vec.pyx":737
+        /* "srctools/_vec.pyx":735
  * 
  *                 if bbox_min.val.z > vec.z:
  *                     bbox_min.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -9744,7 +9748,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
         __pyx_t_14 = __pyx_v_vec.z;
         __pyx_v_bbox_min->val.z = __pyx_t_14;
 
-        /* "srctools/_vec.pyx":736
+        /* "srctools/_vec.pyx":734
  *                     bbox_min.val.y = vec.y
  * 
  *                 if bbox_min.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -9756,7 +9760,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":739
+  /* "srctools/_vec.pyx":737
  *                     bbox_min.val.z = vec.z
  * 
  *         return bbox_min, bbox_max             # <<<<<<<<<<<<<<
@@ -9764,7 +9768,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 739, __pyx_L1_error)
+  __pyx_t_11 = PyTuple_New(2); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 737, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_11);
   __Pyx_INCREF(((PyObject *)__pyx_v_bbox_min));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_bbox_min));
@@ -9776,7 +9780,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
   __pyx_t_11 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":653
+  /* "srctools/_vec.pyx":651
  * 
  *     @staticmethod
  *     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
@@ -9804,7 +9808,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_16bbox(CYTHON_UNUSED PyObject *__
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":742
+/* "srctools/_vec.pyx":740
  * 
  * 
  *     def axis(self) -> str:             # <<<<<<<<<<<<<<
@@ -9841,7 +9845,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("axis", 0);
 
-  /* "srctools/_vec.pyx":744
+  /* "srctools/_vec.pyx":742
  *     def axis(self) -> str:
  *         """For a normal vector, return the axis it is on."""
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -9865,7 +9869,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":745
+    /* "srctools/_vec.pyx":743
  *         """For a normal vector, return the axis it is on."""
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             return 'x'             # <<<<<<<<<<<<<<
@@ -9877,7 +9881,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
     __pyx_r = __pyx_n_u_x;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":744
+    /* "srctools/_vec.pyx":742
  *     def axis(self) -> str:
  *         """For a normal vector, return the axis it is on."""
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -9886,7 +9890,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
  */
   }
 
-  /* "srctools/_vec.pyx":746
+  /* "srctools/_vec.pyx":744
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             return 'x'
  *         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -9910,7 +9914,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __pyx_L8_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":747
+    /* "srctools/_vec.pyx":745
  *             return 'x'
  *         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             return 'y'             # <<<<<<<<<<<<<<
@@ -9922,7 +9926,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
     __pyx_r = __pyx_n_u_y;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":746
+    /* "srctools/_vec.pyx":744
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             return 'x'
  *         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -9931,7 +9935,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
  */
   }
 
-  /* "srctools/_vec.pyx":748
+  /* "srctools/_vec.pyx":746
  *         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             return 'y'
  *         if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -9955,7 +9959,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __pyx_L12_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":749
+    /* "srctools/_vec.pyx":747
  *             return 'y'
  *         if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
  *             return 'z'             # <<<<<<<<<<<<<<
@@ -9967,7 +9971,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
     __pyx_r = __pyx_n_u_z;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":748
+    /* "srctools/_vec.pyx":746
  *         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             return 'y'
  *         if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -9976,24 +9980,24 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
  */
   }
 
-  /* "srctools/_vec.pyx":751
+  /* "srctools/_vec.pyx":749
  *             return 'z'
  *         raise ValueError(
  *             f'({self.val.x:g}, {self.val.y:g}, {self.val.z:g}) is '             # <<<<<<<<<<<<<<
  *             'not an on-axis vector!'
  *         )
  */
-  __pyx_t_3 = PyTuple_New(7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __pyx_t_3 = PyTuple_New(7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __pyx_t_4 = 0;
   __pyx_t_5 = 127;
-  __Pyx_INCREF(__pyx_kp_u__5);
+  __Pyx_INCREF(__pyx_kp_u__6);
   __pyx_t_4 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__5);
-  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u__5);
-  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__6);
+  PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u__6);
+  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_Format(__pyx_t_6, __pyx_n_u_g); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Format(__pyx_t_6, __pyx_n_u_g); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -10001,13 +10005,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_7);
   PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_7);
   __pyx_t_7 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_4 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__6);
-  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__7);
+  __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
-  __pyx_t_6 = __Pyx_PyObject_Format(__pyx_t_7, __pyx_n_u_g); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __pyx_t_6 = __Pyx_PyObject_Format(__pyx_t_7, __pyx_n_u_g); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
@@ -10015,13 +10019,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_6);
   PyTuple_SET_ITEM(__pyx_t_3, 3, __pyx_t_6);
   __pyx_t_6 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_4 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_3, 4, __pyx_kp_u__6);
-  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_3, 4, __pyx_kp_u__7);
+  __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_7 = __Pyx_PyObject_Format(__pyx_t_6, __pyx_n_u_g); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyObject_Format(__pyx_t_6, __pyx_n_u_g); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
   __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -10033,25 +10037,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   __pyx_t_4 += 27;
   __Pyx_GIVEREF(__pyx_kp_u_is_not_an_on_axis_vector);
   PyTuple_SET_ITEM(__pyx_t_3, 6, __pyx_kp_u_is_not_an_on_axis_vector);
-  __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_3, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 751, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_3, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "srctools/_vec.pyx":750
+  /* "srctools/_vec.pyx":748
  *         if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
  *             return 'z'
  *         raise ValueError(             # <<<<<<<<<<<<<<
  *             f'({self.val.x:g}, {self.val.y:g}, {self.val.z:g}) is '
  *             'not an on-axis vector!'
  */
-  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 750, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_7); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 748, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_Raise(__pyx_t_3, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __PYX_ERR(0, 750, __pyx_L1_error)
+  __PYX_ERR(0, 748, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":742
+  /* "srctools/_vec.pyx":740
  * 
  * 
  *     def axis(self) -> str:             # <<<<<<<<<<<<<<
@@ -10072,7 +10076,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_18axis(struct __pyx_obj_8srctools
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":756
+/* "srctools/_vec.pyx":754
  * 
  *     @cython.boundscheck(False)
  *     def other_axes(self, object axis) -> 'Tuple[float, float]':             # <<<<<<<<<<<<<<
@@ -10111,7 +10115,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("other_axes", 0);
 
-  /* "srctools/_vec.pyx":759
+  /* "srctools/_vec.pyx":757
  *         """Get the values for the other two axes."""
  *         cdef char axis_chr
  *         if isinstance(axis, str) and len(<str>axis) == 1:             # <<<<<<<<<<<<<<
@@ -10127,25 +10131,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
   }
   if (unlikely(__pyx_v_axis == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 759, __pyx_L1_error)
+    __PYX_ERR(0, 757, __pyx_L1_error)
   }
-  __pyx_t_4 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_axis)); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 759, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_axis)); if (unlikely(__pyx_t_4 == ((Py_ssize_t)-1))) __PYX_ERR(0, 757, __pyx_L1_error)
   __pyx_t_3 = ((__pyx_t_4 == 1) != 0);
   __pyx_t_1 = __pyx_t_3;
   __pyx_L4_bool_binop_done:;
   if (likely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":760
+    /* "srctools/_vec.pyx":758
  *         cdef char axis_chr
  *         if isinstance(axis, str) and len(<str>axis) == 1:
  *             axis_chr = (<str>axis)[0]             # <<<<<<<<<<<<<<
  *         else:
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  */
-    __pyx_t_5 = __Pyx_GetItemInt_Unicode(__pyx_v_axis, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_5 == (Py_UCS4)-1)) __PYX_ERR(0, 760, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_GetItemInt_Unicode(__pyx_v_axis, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 0); if (unlikely(__pyx_t_5 == (Py_UCS4)-1)) __PYX_ERR(0, 758, __pyx_L1_error)
     __pyx_v_axis_chr = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":759
+    /* "srctools/_vec.pyx":757
  *         """Get the values for the other two axes."""
  *         cdef char axis_chr
  *         if isinstance(axis, str) and len(<str>axis) == 1:             # <<<<<<<<<<<<<<
@@ -10155,7 +10159,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":762
+  /* "srctools/_vec.pyx":760
  *             axis_chr = (<str>axis)[0]
  *         else:
  *             raise KeyError(f'Invalid axis {axis!r}' '!')             # <<<<<<<<<<<<<<
@@ -10163,7 +10167,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
  *             return self.val.y, self.val.z
  */
   /*else*/ {
-    __pyx_t_6 = PyTuple_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 762, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(3); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 760, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
@@ -10171,30 +10175,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     __pyx_t_4 += 13;
     __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
     PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_kp_u_Invalid_axis);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 762, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 760, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7);
     __Pyx_GIVEREF(__pyx_t_7);
     PyTuple_SET_ITEM(__pyx_t_6, 1, __pyx_t_7);
     __pyx_t_7 = 0;
-    __Pyx_INCREF(__pyx_kp_u__2);
+    __Pyx_INCREF(__pyx_kp_u__3);
     __pyx_t_4 += 1;
-    __Pyx_GIVEREF(__pyx_kp_u__2);
-    PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_kp_u__2);
-    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_6, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 762, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__3);
+    PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_kp_u__3);
+    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_6, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 760, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 762, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 760, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_Raise(__pyx_t_6, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
-    __PYX_ERR(0, 762, __pyx_L1_error)
+    __PYX_ERR(0, 760, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":763
+  /* "srctools/_vec.pyx":761
  *         else:
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  *         if axis_chr == b'x':             # <<<<<<<<<<<<<<
@@ -10204,7 +10208,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
   switch (__pyx_v_axis_chr) {
     case 'x':
 
-    /* "srctools/_vec.pyx":764
+    /* "srctools/_vec.pyx":762
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  *         if axis_chr == b'x':
  *             return self.val.y, self.val.z             # <<<<<<<<<<<<<<
@@ -10212,11 +10216,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
  *             return self.val.x, self.val.z
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 764, __pyx_L1_error)
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 762, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 764, __pyx_L1_error)
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 762, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 764, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 762, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_GIVEREF(__pyx_t_6);
     PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6);
@@ -10228,7 +10232,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":763
+    /* "srctools/_vec.pyx":761
  *         else:
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  *         if axis_chr == b'x':             # <<<<<<<<<<<<<<
@@ -10238,7 +10242,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     break;
     case 'y':
 
-    /* "srctools/_vec.pyx":766
+    /* "srctools/_vec.pyx":764
  *             return self.val.y, self.val.z
  *         elif axis_chr == b'y':
  *             return self.val.x, self.val.z             # <<<<<<<<<<<<<<
@@ -10246,11 +10250,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
  *             return self.val.x, self.val.y
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 766, __pyx_L1_error)
+    __pyx_t_8 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 764, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 766, __pyx_L1_error)
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 764, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 766, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 764, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_8);
     PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_t_8);
@@ -10262,7 +10266,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":765
+    /* "srctools/_vec.pyx":763
  *         if axis_chr == b'x':
  *             return self.val.y, self.val.z
  *         elif axis_chr == b'y':             # <<<<<<<<<<<<<<
@@ -10272,7 +10276,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     break;
     case 'z':
 
-    /* "srctools/_vec.pyx":768
+    /* "srctools/_vec.pyx":766
  *             return self.val.x, self.val.z
  *         elif axis_chr == b'z':
  *             return self.val.x, self.val.y             # <<<<<<<<<<<<<<
@@ -10280,11 +10284,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 768, __pyx_L1_error)
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 766, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 768, __pyx_L1_error)
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 766, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 768, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 766, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_GIVEREF(__pyx_t_6);
     PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6);
@@ -10296,7 +10300,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":767
+    /* "srctools/_vec.pyx":765
  *         elif axis_chr == b'y':
  *             return self.val.x, self.val.z
  *         elif axis_chr == b'z':             # <<<<<<<<<<<<<<
@@ -10306,14 +10310,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     break;
     default:
 
-    /* "srctools/_vec.pyx":770
+    /* "srctools/_vec.pyx":768
  *             return self.val.x, self.val.y
  *         else:
  *             raise KeyError(f'Invalid axis {axis!r}' '!')             # <<<<<<<<<<<<<<
  * 
  *     def as_tuple(self) -> 'Tuple[float, float, float]':
  */
-    __pyx_t_8 = PyTuple_New(3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 770, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(3); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 768, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
@@ -10321,30 +10325,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
     __pyx_t_4 += 13;
     __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
     PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_kp_u_Invalid_axis);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 770, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_axis), __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 768, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7);
     __Pyx_GIVEREF(__pyx_t_7);
     PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_t_7);
     __pyx_t_7 = 0;
-    __Pyx_INCREF(__pyx_kp_u__2);
+    __Pyx_INCREF(__pyx_kp_u__3);
     __pyx_t_4 += 1;
-    __Pyx_GIVEREF(__pyx_kp_u__2);
-    PyTuple_SET_ITEM(__pyx_t_8, 2, __pyx_kp_u__2);
-    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_8, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 770, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__3);
+    PyTuple_SET_ITEM(__pyx_t_8, 2, __pyx_kp_u__3);
+    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_8, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 768, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 770, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 768, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_Raise(__pyx_t_8, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __PYX_ERR(0, 770, __pyx_L1_error)
+    __PYX_ERR(0, 768, __pyx_L1_error)
     break;
   }
 
-  /* "srctools/_vec.pyx":756
+  /* "srctools/_vec.pyx":754
  * 
  *     @cython.boundscheck(False)
  *     def other_axes(self, object axis) -> 'Tuple[float, float]':             # <<<<<<<<<<<<<<
@@ -10365,7 +10369,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_20other_axes(struct __pyx_obj_8sr
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":772
+/* "srctools/_vec.pyx":770
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  * 
  *     def as_tuple(self) -> 'Tuple[float, float, float]':             # <<<<<<<<<<<<<<
@@ -10399,7 +10403,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_22as_tuple(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("as_tuple", 0);
 
-  /* "srctools/_vec.pyx":776
+  /* "srctools/_vec.pyx":774
  *         # Use tuple.__new__(cls, iterable) instead of calling the
  *         # Python __new__.
  *         return _make_tuple(self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -10407,13 +10411,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_22as_tuple(struct __pyx_obj_8srct
  *     def to_angle(self, double roll: float=0):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 776, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 774, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 776, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 774, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 776, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 774, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_t_1, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 776, __pyx_L1_error)
+  __pyx_t_4 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_t_1, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 774, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -10422,7 +10426,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_22as_tuple(struct __pyx_obj_8srct
   __pyx_t_4 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":772
+  /* "srctools/_vec.pyx":770
  *             raise KeyError(f'Invalid axis {axis!r}' '!')
  * 
  *     def as_tuple(self) -> 'Tuple[float, float, float]':             # <<<<<<<<<<<<<<
@@ -10444,7 +10448,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_22as_tuple(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":778
+/* "srctools/_vec.pyx":776
  *         return _make_tuple(self.val.x, self.val.y, self.val.z)
  * 
  *     def to_angle(self, double roll: float=0):             # <<<<<<<<<<<<<<
@@ -10484,7 +10488,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_25to_angle(PyObject *__pyx_v_self
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "to_angle") < 0)) __PYX_ERR(0, 778, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "to_angle") < 0)) __PYX_ERR(0, 776, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -10495,14 +10499,14 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_25to_angle(PyObject *__pyx_v_self
       }
     }
     if (values[0]) {
-      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 778, __pyx_L3_error)
+      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 776, __pyx_L3_error)
     } else {
       __pyx_v_roll = ((double)0.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("to_angle", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 778, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("to_angle", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 776, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.to_angle", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10525,7 +10529,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_24to_angle(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("to_angle", 0);
 
-  /* "srctools/_vec.pyx":787
+  /* "srctools/_vec.pyx":785
  *         """
  *         # Pitch is applied first, so we need to reconstruct the x-value.
  *         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)             # <<<<<<<<<<<<<<
@@ -10534,7 +10538,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_24to_angle(struct __pyx_obj_8srct
  */
   __pyx_v_horiz_dist = sqrt((pow(__pyx_v_self->val.x, 2.0) + pow(__pyx_v_self->val.y, 2.0)));
 
-  /* "srctools/_vec.pyx":789
+  /* "srctools/_vec.pyx":787
  *         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
  * 
  *         return _angle(             # <<<<<<<<<<<<<<
@@ -10543,20 +10547,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_24to_angle(struct __pyx_obj_8srct
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":792
+  /* "srctools/_vec.pyx":790
  *             rad_2_deg * math.atan2(-self.val.z, horiz_dist),
  *             (math.atan2(self.val.y, self.val.x) * rad_2_deg) % 360.0,
  *             roll,             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__angle((57.29577951308232 * atan2((-__pyx_v_self->val.z), __pyx_v_horiz_dist)), __Pyx_mod_double((atan2(__pyx_v_self->val.y, __pyx_v_self->val.x) * 57.29577951308232), 360.0), __pyx_v_roll)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 789, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__angle((57.29577951308232 * atan2((-__pyx_v_self->val.z), __pyx_v_horiz_dist)), __Pyx_mod_double((atan2(__pyx_v_self->val.y, __pyx_v_self->val.x) * 57.29577951308232), 360.0), __pyx_v_roll)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 787, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":778
+  /* "srctools/_vec.pyx":776
  *         return _make_tuple(self.val.x, self.val.y, self.val.z)
  * 
  *     def to_angle(self, double roll: float=0):             # <<<<<<<<<<<<<<
@@ -10575,7 +10579,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_24to_angle(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":795
+/* "srctools/_vec.pyx":793
  *         )
  * 
  *     def rotation_around(self, double rot: float=90) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -10615,7 +10619,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_27rot
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotation_around") < 0)) __PYX_ERR(0, 795, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "rotation_around") < 0)) __PYX_ERR(0, 793, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -10626,14 +10630,14 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_27rot
       }
     }
     if (values[0]) {
-      __pyx_v_rot = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_rot == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 795, __pyx_L3_error)
+      __pyx_v_rot = __pyx_PyFloat_AsDouble(values[0]); if (unlikely((__pyx_v_rot == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 793, __pyx_L3_error)
     } else {
       __pyx_v_rot = ((double)90.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("rotation_around", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 795, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("rotation_around", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 793, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.rotation_around", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10662,19 +10666,19 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("rotation_around", 0);
 
-  /* "srctools/_vec.pyx":797
+  /* "srctools/_vec.pyx":795
  *     def rotation_around(self, double rot: float=90) -> 'Vec':
  *         """For an axis-aligned normal, return the angles which rotate around it."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         vec.val.x = vec.val.y = vec.val.z = 0.0
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 797, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 795, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":798
+  /* "srctools/_vec.pyx":796
  *         """For an axis-aligned normal, return the angles which rotate around it."""
  *         cdef Vec vec = Vec.__new__(Vec)
  *         vec.val.x = vec.val.y = vec.val.z = 0.0             # <<<<<<<<<<<<<<
@@ -10685,7 +10689,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   __pyx_v_vec->val.y = 0.0;
   __pyx_v_vec->val.z = 0.0;
 
-  /* "srctools/_vec.pyx":800
+  /* "srctools/_vec.pyx":798
  *         vec.val.x = vec.val.y = vec.val.z = 0.0
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -10709,7 +10713,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":801
+    /* "srctools/_vec.pyx":799
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             vec.val.z = math.copysign(rot, self.val.x)             # <<<<<<<<<<<<<<
@@ -10718,7 +10722,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
  */
     __pyx_v_vec->val.z = copysign(__pyx_v_rot, __pyx_v_self->val.x);
 
-    /* "srctools/_vec.pyx":800
+    /* "srctools/_vec.pyx":798
  *         vec.val.x = vec.val.y = vec.val.z = 0.0
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -10728,7 +10732,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":802
+  /* "srctools/_vec.pyx":800
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             vec.val.z = math.copysign(rot, self.val.x)
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -10752,7 +10756,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   __pyx_L7_bool_binop_done:;
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":803
+    /* "srctools/_vec.pyx":801
  *             vec.val.z = math.copysign(rot, self.val.x)
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             vec.val.x = math.copysign(rot, self.val.y)             # <<<<<<<<<<<<<<
@@ -10761,7 +10765,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
  */
     __pyx_v_vec->val.x = copysign(__pyx_v_rot, __pyx_v_self->val.y);
 
-    /* "srctools/_vec.pyx":802
+    /* "srctools/_vec.pyx":800
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
  *             vec.val.z = math.copysign(rot, self.val.x)
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
@@ -10771,7 +10775,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":804
+  /* "srctools/_vec.pyx":802
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             vec.val.x = math.copysign(rot, self.val.y)
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -10795,7 +10799,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   __pyx_L10_bool_binop_done:;
   if (likely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":805
+    /* "srctools/_vec.pyx":803
  *             vec.val.x = math.copysign(rot, self.val.y)
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
  *             vec.val.y = math.copysign(rot, self.val.z)             # <<<<<<<<<<<<<<
@@ -10804,7 +10808,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
  */
     __pyx_v_vec->val.y = copysign(__pyx_v_rot, __pyx_v_self->val.z);
 
-    /* "srctools/_vec.pyx":804
+    /* "srctools/_vec.pyx":802
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  *             vec.val.x = math.copysign(rot, self.val.y)
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -10814,7 +10818,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":807
+  /* "srctools/_vec.pyx":805
  *             vec.val.y = math.copysign(rot, self.val.z)
  *         else:
  *             raise ValueError(             # <<<<<<<<<<<<<<
@@ -10823,24 +10827,24 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
  */
   /*else*/ {
 
-    /* "srctools/_vec.pyx":808
+    /* "srctools/_vec.pyx":806
  *         else:
  *             raise ValueError(
  *                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '             # <<<<<<<<<<<<<<
  *                 'not an on-axis vector!'
  *             )
  */
-    __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
-    __Pyx_INCREF(__pyx_kp_u__5);
+    __Pyx_INCREF(__pyx_kp_u__6);
     __pyx_t_4 += 1;
-    __Pyx_GIVEREF(__pyx_kp_u__5);
-    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u__5);
-    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__6);
+    PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u__6);
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -10848,13 +10852,13 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     __Pyx_GIVEREF(__pyx_t_7);
     PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_7);
     __pyx_t_7 = 0;
-    __Pyx_INCREF(__pyx_kp_u__6);
+    __Pyx_INCREF(__pyx_kp_u__7);
     __pyx_t_4 += 2;
-    __Pyx_GIVEREF(__pyx_kp_u__6);
-    PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__6);
-    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__7);
+    PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__7);
+    __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimple(__pyx_t_7, __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
@@ -10862,13 +10866,13 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     __Pyx_GIVEREF(__pyx_t_6);
     PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_6);
     __pyx_t_6 = 0;
-    __Pyx_INCREF(__pyx_kp_u__6);
+    __Pyx_INCREF(__pyx_kp_u__7);
     __pyx_t_4 += 2;
-    __Pyx_GIVEREF(__pyx_kp_u__6);
-    PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__6);
-    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__7);
+    PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__7);
+    __pyx_t_6 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -10880,27 +10884,27 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
     __pyx_t_4 += 27;
     __Pyx_GIVEREF(__pyx_kp_u_is_not_an_on_axis_vector);
     PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u_is_not_an_on_axis_vector);
-    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 808, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 806, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "srctools/_vec.pyx":807
+    /* "srctools/_vec.pyx":805
  *             vec.val.y = math.copysign(rot, self.val.z)
  *         else:
  *             raise ValueError(             # <<<<<<<<<<<<<<
  *                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '
  *                 'not an on-axis vector!'
  */
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 807, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 805, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 807, __pyx_L1_error)
+    __PYX_ERR(0, 805, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":811
+  /* "srctools/_vec.pyx":809
  *                 'not an on-axis vector!'
  *             )
  *         return vec             # <<<<<<<<<<<<<<
@@ -10912,7 +10916,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   __pyx_r = __pyx_v_vec;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":795
+  /* "srctools/_vec.pyx":793
  *         )
  * 
  *     def rotation_around(self, double rot: float=90) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -10934,7 +10938,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_26rot
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":813
+/* "srctools/_vec.pyx":811
  *         return vec
  * 
  *     def __abs__(self):             # <<<<<<<<<<<<<<
@@ -10968,7 +10972,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_28__abs__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__abs__", 0);
 
-  /* "srctools/_vec.pyx":815
+  /* "srctools/_vec.pyx":813
  *     def __abs__(self):
  *         """Performing abs() on a Vec takes the absolute value of all axes."""
  *         return _vector(             # <<<<<<<<<<<<<<
@@ -10977,20 +10981,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_28__abs__(struct __pyx_obj_8srcto
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":818
+  /* "srctools/_vec.pyx":816
  *             abs(self.val.x),
  *             abs(self.val.y),
  *             abs(self.val.z),             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(fabs(__pyx_v_self->val.x), fabs(__pyx_v_self->val.y), fabs(__pyx_v_self->val.z))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 815, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(fabs(__pyx_v_self->val.x), fabs(__pyx_v_self->val.y), fabs(__pyx_v_self->val.z))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 813, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":813
+  /* "srctools/_vec.pyx":811
  *         return vec
  * 
  *     def __abs__(self):             # <<<<<<<<<<<<<<
@@ -11009,7 +11013,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_28__abs__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":821
+/* "srctools/_vec.pyx":819
  *         )
  * 
  *     def __neg__(self):             # <<<<<<<<<<<<<<
@@ -11043,7 +11047,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__neg__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__neg__", 0);
 
-  /* "srctools/_vec.pyx":823
+  /* "srctools/_vec.pyx":821
  *     def __neg__(self):
  *         """The inverted form of a Vector has inverted axes."""
  *         return _vector(             # <<<<<<<<<<<<<<
@@ -11052,20 +11056,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__neg__(struct __pyx_obj_8srcto
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":826
+  /* "srctools/_vec.pyx":824
  *             -self.val.x,
  *             -self.val.y,
  *             -self.val.z,             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector((-__pyx_v_self->val.x), (-__pyx_v_self->val.y), (-__pyx_v_self->val.z))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 823, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector((-__pyx_v_self->val.x), (-__pyx_v_self->val.y), (-__pyx_v_self->val.z))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 821, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":821
+  /* "srctools/_vec.pyx":819
  *         )
  * 
  *     def __neg__(self):             # <<<<<<<<<<<<<<
@@ -11084,7 +11088,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_30__neg__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":829
+/* "srctools/_vec.pyx":827
  *         )
  * 
  *     def __pos__(self):             # <<<<<<<<<<<<<<
@@ -11118,7 +11122,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__pos__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__pos__", 0);
 
-  /* "srctools/_vec.pyx":831
+  /* "srctools/_vec.pyx":829
  *     def __pos__(self):
  *         """+ on a Vector simply copies it."""
  *         return _vector(             # <<<<<<<<<<<<<<
@@ -11127,20 +11131,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__pos__(struct __pyx_obj_8srcto
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":834
+  /* "srctools/_vec.pyx":832
  *             self.val.x,
  *             self.val.y,
  *             self.val.z,             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 831, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 829, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":829
+  /* "srctools/_vec.pyx":827
  *         )
  * 
  *     def __pos__(self):             # <<<<<<<<<<<<<<
@@ -11159,7 +11163,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_32__pos__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":837
+/* "srctools/_vec.pyx":835
  *         )
  * 
  *     def __contains__(self, val) -> bool:             # <<<<<<<<<<<<<<
@@ -11202,7 +11206,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__contains__", 0);
 
-  /* "srctools/_vec.pyx":840
+  /* "srctools/_vec.pyx":838
  *         """Check to see if an axis is set to the given value."""
  *         cdef double val_d
  *         try:             # <<<<<<<<<<<<<<
@@ -11218,17 +11222,17 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":841
+      /* "srctools/_vec.pyx":839
  *         cdef double val_d
  *         try:
  *             val_d = val             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError): # Non-floats should return False!
  *             return False
  */
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_val); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 841, __pyx_L3_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_val); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 839, __pyx_L3_error)
       __pyx_v_val_d = __pyx_t_4;
 
-      /* "srctools/_vec.pyx":840
+      /* "srctools/_vec.pyx":838
  *         """Check to see if an axis is set to the given value."""
  *         cdef double val_d
  *         try:             # <<<<<<<<<<<<<<
@@ -11242,7 +11246,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":842
+    /* "srctools/_vec.pyx":840
  *         try:
  *             val_d = val
  *         except (TypeError, ValueError): # Non-floats should return False!             # <<<<<<<<<<<<<<
@@ -11252,12 +11256,12 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__contains__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 842, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 840, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":843
+      /* "srctools/_vec.pyx":841
  *             val_d = val
  *         except (TypeError, ValueError): # Non-floats should return False!
  *             return False             # <<<<<<<<<<<<<<
@@ -11273,7 +11277,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":840
+    /* "srctools/_vec.pyx":838
  *         """Check to see if an axis is set to the given value."""
  *         cdef double val_d
  *         try:             # <<<<<<<<<<<<<<
@@ -11294,7 +11298,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":844
+  /* "srctools/_vec.pyx":842
  *         except (TypeError, ValueError): # Non-floats should return False!
  *             return False
  *         if val_d == self.val.x:             # <<<<<<<<<<<<<<
@@ -11304,7 +11308,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   __pyx_t_9 = ((__pyx_v_val_d == __pyx_v_self->val.x) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":845
+    /* "srctools/_vec.pyx":843
  *             return False
  *         if val_d == self.val.x:
  *             return True             # <<<<<<<<<<<<<<
@@ -11314,7 +11318,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":844
+    /* "srctools/_vec.pyx":842
  *         except (TypeError, ValueError): # Non-floats should return False!
  *             return False
  *         if val_d == self.val.x:             # <<<<<<<<<<<<<<
@@ -11323,7 +11327,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
  */
   }
 
-  /* "srctools/_vec.pyx":846
+  /* "srctools/_vec.pyx":844
  *         if val_d == self.val.x:
  *             return True
  *         if val_d == self.val.y:             # <<<<<<<<<<<<<<
@@ -11333,7 +11337,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   __pyx_t_9 = ((__pyx_v_val_d == __pyx_v_self->val.y) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":847
+    /* "srctools/_vec.pyx":845
  *             return True
  *         if val_d == self.val.y:
  *             return True             # <<<<<<<<<<<<<<
@@ -11343,7 +11347,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":846
+    /* "srctools/_vec.pyx":844
  *         if val_d == self.val.x:
  *             return True
  *         if val_d == self.val.y:             # <<<<<<<<<<<<<<
@@ -11352,7 +11356,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
  */
   }
 
-  /* "srctools/_vec.pyx":848
+  /* "srctools/_vec.pyx":846
  *         if val_d == self.val.y:
  *             return True
  *         if val_d == self.val.z:             # <<<<<<<<<<<<<<
@@ -11362,7 +11366,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   __pyx_t_9 = ((__pyx_v_val_d == __pyx_v_self->val.z) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":849
+    /* "srctools/_vec.pyx":847
  *             return True
  *         if val_d == self.val.z:
  *             return True             # <<<<<<<<<<<<<<
@@ -11372,7 +11376,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":848
+    /* "srctools/_vec.pyx":846
  *         if val_d == self.val.y:
  *             return True
  *         if val_d == self.val.z:             # <<<<<<<<<<<<<<
@@ -11381,7 +11385,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
  */
   }
 
-  /* "srctools/_vec.pyx":850
+  /* "srctools/_vec.pyx":848
  *         if val_d == self.val.z:
  *             return True
  *         return False             # <<<<<<<<<<<<<<
@@ -11391,7 +11395,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":837
+  /* "srctools/_vec.pyx":835
  *         )
  * 
  *     def __contains__(self, val) -> bool:             # <<<<<<<<<<<<<<
@@ -11411,7 +11415,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_34__contains__(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":854
+/* "srctools/_vec.pyx":852
  *     # Non-in-place operators. Arg 1 may not be a Vec.
  * 
  *     def __add__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -11455,7 +11459,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__add__", 0);
 
-  /* "srctools/_vec.pyx":861
+  /* "srctools/_vec.pyx":859
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11471,25 +11475,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":862
+      /* "srctools/_vec.pyx":860
  * 
  *         try:
  *             _conv_vec(&vec_a, obj_a, scalar=True)             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 862, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 860, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":863
+      /* "srctools/_vec.pyx":861
  *         try:
  *             _conv_vec(&vec_a, obj_a, scalar=True)
  *             _conv_vec(&vec_b, obj_b, scalar=True)             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError):
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 863, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 861, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":861
+      /* "srctools/_vec.pyx":859
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11503,7 +11507,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":864
+    /* "srctools/_vec.pyx":862
  *             _conv_vec(&vec_a, obj_a, scalar=True)
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
@@ -11513,12 +11517,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__add__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 864, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 862, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":865
+      /* "srctools/_vec.pyx":863
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -11536,7 +11540,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":861
+    /* "srctools/_vec.pyx":859
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11557,19 +11561,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":867
+  /* "srctools/_vec.pyx":865
  *             return NotImplemented
  * 
  *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         result.val.x = vec_a.x + vec_b.x
  *         result.val.y = vec_a.y + vec_b.y
  */
-  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 867, __pyx_L1_error)
+  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 865, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_8));
   __pyx_v_result = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_8);
   __pyx_t_8 = 0;
 
-  /* "srctools/_vec.pyx":868
+  /* "srctools/_vec.pyx":866
  * 
  *         cdef Vec result = Vec.__new__(Vec)
  *         result.val.x = vec_a.x + vec_b.x             # <<<<<<<<<<<<<<
@@ -11578,7 +11582,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.x = (__pyx_v_vec_a.x + __pyx_v_vec_b.x);
 
-  /* "srctools/_vec.pyx":869
+  /* "srctools/_vec.pyx":867
  *         cdef Vec result = Vec.__new__(Vec)
  *         result.val.x = vec_a.x + vec_b.x
  *         result.val.y = vec_a.y + vec_b.y             # <<<<<<<<<<<<<<
@@ -11587,7 +11591,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.y = (__pyx_v_vec_a.y + __pyx_v_vec_b.y);
 
-  /* "srctools/_vec.pyx":870
+  /* "srctools/_vec.pyx":868
  *         result.val.x = vec_a.x + vec_b.x
  *         result.val.y = vec_a.y + vec_b.y
  *         result.val.z = vec_a.z + vec_b.z             # <<<<<<<<<<<<<<
@@ -11596,7 +11600,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.z = (__pyx_v_vec_a.z + __pyx_v_vec_b.z);
 
-  /* "srctools/_vec.pyx":871
+  /* "srctools/_vec.pyx":869
  *         result.val.y = vec_a.y + vec_b.y
  *         result.val.z = vec_a.z + vec_b.z
  *         return result             # <<<<<<<<<<<<<<
@@ -11608,7 +11612,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
   __pyx_r = ((PyObject *)__pyx_v_result);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":854
+  /* "srctools/_vec.pyx":852
  *     # Non-in-place operators. Arg 1 may not be a Vec.
  * 
  *     def __add__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -11630,7 +11634,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_36__add__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":873
+/* "srctools/_vec.pyx":871
  *         return result
  * 
  *     def __sub__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -11674,7 +11678,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__sub__", 0);
 
-  /* "srctools/_vec.pyx":880
+  /* "srctools/_vec.pyx":878
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11690,25 +11694,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":881
+      /* "srctools/_vec.pyx":879
  * 
  *         try:
  *             _conv_vec(&vec_a, obj_a, scalar=True)             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 881, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_a), __pyx_v_obj_a, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 879, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":882
+      /* "srctools/_vec.pyx":880
  *         try:
  *             _conv_vec(&vec_a, obj_a, scalar=True)
  *             _conv_vec(&vec_b, obj_b, scalar=True)             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError):
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 882, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_b), __pyx_v_obj_b, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 880, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":880
+      /* "srctools/_vec.pyx":878
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11722,7 +11726,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":883
+    /* "srctools/_vec.pyx":881
  *             _conv_vec(&vec_a, obj_a, scalar=True)
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
@@ -11732,12 +11736,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__sub__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 883, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 881, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":884
+      /* "srctools/_vec.pyx":882
  *             _conv_vec(&vec_b, obj_b, scalar=True)
  *         except (TypeError, ValueError):
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -11755,7 +11759,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":880
+    /* "srctools/_vec.pyx":878
  *         cdef vec_t vec_a, vec_b
  * 
  *         try:             # <<<<<<<<<<<<<<
@@ -11776,19 +11780,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":886
+  /* "srctools/_vec.pyx":884
  *             return NotImplemented
  * 
  *         cdef Vec result = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         result.val.x = vec_a.x - vec_b.x
  *         result.val.y = vec_a.y - vec_b.y
  */
-  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 886, __pyx_L1_error)
+  __pyx_t_8 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 884, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_8));
   __pyx_v_result = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_8);
   __pyx_t_8 = 0;
 
-  /* "srctools/_vec.pyx":887
+  /* "srctools/_vec.pyx":885
  * 
  *         cdef Vec result = Vec.__new__(Vec)
  *         result.val.x = vec_a.x - vec_b.x             # <<<<<<<<<<<<<<
@@ -11797,7 +11801,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.x = (__pyx_v_vec_a.x - __pyx_v_vec_b.x);
 
-  /* "srctools/_vec.pyx":888
+  /* "srctools/_vec.pyx":886
  *         cdef Vec result = Vec.__new__(Vec)
  *         result.val.x = vec_a.x - vec_b.x
  *         result.val.y = vec_a.y - vec_b.y             # <<<<<<<<<<<<<<
@@ -11806,7 +11810,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.y = (__pyx_v_vec_a.y - __pyx_v_vec_b.y);
 
-  /* "srctools/_vec.pyx":889
+  /* "srctools/_vec.pyx":887
  *         result.val.x = vec_a.x - vec_b.x
  *         result.val.y = vec_a.y - vec_b.y
  *         result.val.z = vec_a.z - vec_b.z             # <<<<<<<<<<<<<<
@@ -11815,7 +11819,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
  */
   __pyx_v_result->val.z = (__pyx_v_vec_a.z - __pyx_v_vec_b.z);
 
-  /* "srctools/_vec.pyx":890
+  /* "srctools/_vec.pyx":888
  *         result.val.y = vec_a.y - vec_b.y
  *         result.val.z = vec_a.z - vec_b.z
  *         return result             # <<<<<<<<<<<<<<
@@ -11827,7 +11831,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
   __pyx_r = ((PyObject *)__pyx_v_result);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":873
+  /* "srctools/_vec.pyx":871
  *         return result
  * 
  *     def __sub__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -11849,7 +11853,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_38__sub__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":892
+/* "srctools/_vec.pyx":890
  *         return result
  * 
  *     def __mul__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -11890,19 +11894,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__mul__", 0);
 
-  /* "srctools/_vec.pyx":894
+  /* "srctools/_vec.pyx":892
  *     def __mul__(obj_a, obj_b):
  *         """Vector * scalar operation."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef double scalar
  *         # Vector * Vector is disallowed.
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 894, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 892, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":897
+  /* "srctools/_vec.pyx":895
  *         cdef double scalar
  *         # Vector * Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -11923,26 +11927,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":899
+    /* "srctools/_vec.pyx":897
  *         if isinstance(obj_a, (int, float)):
  *             # scalar * vector
  *             scalar = obj_a             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar * vec.val.x
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 899, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 897, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":900
+    /* "srctools/_vec.pyx":898
  *             # scalar * vector
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
  *             vec.val.x = scalar * vec.val.x
  *             vec.val.y = scalar * vec.val.y
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 900, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 898, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":901
+    /* "srctools/_vec.pyx":899
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar * vec.val.x             # <<<<<<<<<<<<<<
@@ -11951,7 +11955,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.x = (__pyx_v_scalar * __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":902
+    /* "srctools/_vec.pyx":900
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar * vec.val.x
  *             vec.val.y = scalar * vec.val.y             # <<<<<<<<<<<<<<
@@ -11960,7 +11964,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.y = (__pyx_v_scalar * __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":903
+    /* "srctools/_vec.pyx":901
  *             vec.val.x = scalar * vec.val.x
  *             vec.val.y = scalar * vec.val.y
  *             vec.val.z = scalar * vec.val.z             # <<<<<<<<<<<<<<
@@ -11969,7 +11973,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.z = (__pyx_v_scalar * __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":897
+    /* "srctools/_vec.pyx":895
  *         cdef double scalar
  *         # Vector * Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -11979,7 +11983,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":904
+  /* "srctools/_vec.pyx":902
  *             vec.val.y = scalar * vec.val.y
  *             vec.val.z = scalar * vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12000,26 +12004,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":906
+    /* "srctools/_vec.pyx":904
  *         elif isinstance(obj_b, (int, float)):
  *             # vector * scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
  *             scalar = obj_b
  *             vec.val.x = vec.val.x * scalar
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 906, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 904, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":907
+    /* "srctools/_vec.pyx":905
  *             # vector * scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b             # <<<<<<<<<<<<<<
  *             vec.val.x = vec.val.x * scalar
  *             vec.val.y = vec.val.y * scalar
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 907, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 905, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":908
+    /* "srctools/_vec.pyx":906
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b
  *             vec.val.x = vec.val.x * scalar             # <<<<<<<<<<<<<<
@@ -12028,7 +12032,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.x = (__pyx_v_vec->val.x * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":909
+    /* "srctools/_vec.pyx":907
  *             scalar = obj_b
  *             vec.val.x = vec.val.x * scalar
  *             vec.val.y = vec.val.y * scalar             # <<<<<<<<<<<<<<
@@ -12037,7 +12041,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.y = (__pyx_v_vec->val.y * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":910
+    /* "srctools/_vec.pyx":908
  *             vec.val.x = vec.val.x * scalar
  *             vec.val.y = vec.val.y * scalar
  *             vec.val.z = vec.val.z * scalar             # <<<<<<<<<<<<<<
@@ -12046,7 +12050,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
     __pyx_v_vec->val.z = (__pyx_v_vec->val.z * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":904
+    /* "srctools/_vec.pyx":902
  *             vec.val.y = scalar * vec.val.y
  *             vec.val.z = scalar * vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12056,7 +12060,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":912
+  /* "srctools/_vec.pyx":910
  *             vec.val.z = vec.val.z * scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12076,20 +12080,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":913
+    /* "srctools/_vec.pyx":911
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot multiply 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 913, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 911, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 913, __pyx_L1_error)
+    __PYX_ERR(0, 911, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":912
+    /* "srctools/_vec.pyx":910
  *             vec.val.z = vec.val.z * scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12098,7 +12102,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
  */
   }
 
-  /* "srctools/_vec.pyx":916
+  /* "srctools/_vec.pyx":914
  *         else:
  *             # Both vector-like or vector * something else.
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -12113,7 +12117,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":917
+  /* "srctools/_vec.pyx":915
  *             # Both vector-like or vector * something else.
  *             return NotImplemented
  *         return vec             # <<<<<<<<<<<<<<
@@ -12125,7 +12129,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":892
+  /* "srctools/_vec.pyx":890
  *         return result
  * 
  *     def __mul__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12145,7 +12149,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_40__mul__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":919
+/* "srctools/_vec.pyx":917
  *         return vec
  * 
  *     def __truediv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12186,19 +12190,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__truediv__", 0);
 
-  /* "srctools/_vec.pyx":921
+  /* "srctools/_vec.pyx":919
  *     def __truediv__(obj_a, obj_b):
  *         """Vector / scalar operation."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef double scalar
  *         # Vector / Vector is disallowed.
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 921, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 919, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":924
+  /* "srctools/_vec.pyx":922
  *         cdef double scalar
  *         # Vector / Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12219,26 +12223,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":926
+    /* "srctools/_vec.pyx":924
  *         if isinstance(obj_a, (int, float)):
  *             # scalar / vector
  *             scalar = obj_a             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar / vec.val.x
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 926, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 924, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":927
+    /* "srctools/_vec.pyx":925
  *             # scalar / vector
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
  *             vec.val.x = scalar / vec.val.x
  *             vec.val.y = scalar / vec.val.y
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 927, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 925, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":928
+    /* "srctools/_vec.pyx":926
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar / vec.val.x             # <<<<<<<<<<<<<<
@@ -12247,11 +12251,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 928, __pyx_L1_error)
+      __PYX_ERR(0, 926, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = (__pyx_v_scalar / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":929
+    /* "srctools/_vec.pyx":927
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar / vec.val.x
  *             vec.val.y = scalar / vec.val.y             # <<<<<<<<<<<<<<
@@ -12260,11 +12264,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 929, __pyx_L1_error)
+      __PYX_ERR(0, 927, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = (__pyx_v_scalar / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":930
+    /* "srctools/_vec.pyx":928
  *             vec.val.x = scalar / vec.val.x
  *             vec.val.y = scalar / vec.val.y
  *             vec.val.z = scalar / vec.val.z             # <<<<<<<<<<<<<<
@@ -12273,11 +12277,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 930, __pyx_L1_error)
+      __PYX_ERR(0, 928, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = (__pyx_v_scalar / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":924
+    /* "srctools/_vec.pyx":922
  *         cdef double scalar
  *         # Vector / Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12287,7 +12291,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":931
+  /* "srctools/_vec.pyx":929
  *             vec.val.y = scalar / vec.val.y
  *             vec.val.z = scalar / vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12308,26 +12312,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":933
+    /* "srctools/_vec.pyx":931
  *         elif isinstance(obj_b, (int, float)):
  *             # vector / scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
  *             scalar = obj_b
  *             vec.val.x = vec.val.x / scalar
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 933, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 931, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":934
+    /* "srctools/_vec.pyx":932
  *             # vector / scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b             # <<<<<<<<<<<<<<
  *             vec.val.x = vec.val.x / scalar
  *             vec.val.y = vec.val.y / scalar
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 934, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 932, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":935
+    /* "srctools/_vec.pyx":933
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b
  *             vec.val.x = vec.val.x / scalar             # <<<<<<<<<<<<<<
@@ -12336,11 +12340,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 935, __pyx_L1_error)
+      __PYX_ERR(0, 933, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = (__pyx_v_vec->val.x / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":936
+    /* "srctools/_vec.pyx":934
  *             scalar = obj_b
  *             vec.val.x = vec.val.x / scalar
  *             vec.val.y = vec.val.y / scalar             # <<<<<<<<<<<<<<
@@ -12349,11 +12353,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 936, __pyx_L1_error)
+      __PYX_ERR(0, 934, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = (__pyx_v_vec->val.y / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":937
+    /* "srctools/_vec.pyx":935
  *             vec.val.x = vec.val.x / scalar
  *             vec.val.y = vec.val.y / scalar
  *             vec.val.z = vec.val.z / scalar             # <<<<<<<<<<<<<<
@@ -12362,11 +12366,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 937, __pyx_L1_error)
+      __PYX_ERR(0, 935, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = (__pyx_v_vec->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":931
+    /* "srctools/_vec.pyx":929
  *             vec.val.y = scalar / vec.val.y
  *             vec.val.z = scalar / vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12376,7 +12380,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":939
+  /* "srctools/_vec.pyx":937
  *             vec.val.z = vec.val.z / scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12396,20 +12400,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":940
+    /* "srctools/_vec.pyx":938
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot divide 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 940, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 938, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 940, __pyx_L1_error)
+    __PYX_ERR(0, 938, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":939
+    /* "srctools/_vec.pyx":937
  *             vec.val.z = vec.val.z / scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12418,7 +12422,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
  */
   }
 
-  /* "srctools/_vec.pyx":943
+  /* "srctools/_vec.pyx":941
  *         else:
  *             # Both vector-like or vector * something else.
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -12433,7 +12437,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":944
+  /* "srctools/_vec.pyx":942
  *             # Both vector-like or vector * something else.
  *             return NotImplemented
  *         return vec             # <<<<<<<<<<<<<<
@@ -12445,7 +12449,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":919
+  /* "srctools/_vec.pyx":917
  *         return vec
  * 
  *     def __truediv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12465,7 +12469,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_42__truediv__(PyObject *__pyx_v_o
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":946
+/* "srctools/_vec.pyx":944
  *         return vec
  * 
  *     def __floordiv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12506,19 +12510,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__floordiv__", 0);
 
-  /* "srctools/_vec.pyx":948
+  /* "srctools/_vec.pyx":946
  *     def __floordiv__(obj_a, obj_b):
  *         """Vector // scalar operation."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef double scalar
  *         # Vector // Vector is disallowed.
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 948, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 946, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":951
+  /* "srctools/_vec.pyx":949
  *         cdef double scalar
  *         # Vector // Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12539,26 +12543,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":953
+    /* "srctools/_vec.pyx":951
  *         if isinstance(obj_a, (int, float)):
  *             # scalar // vector
  *             scalar = obj_a             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar // vec.val.x
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 953, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 951, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":954
+    /* "srctools/_vec.pyx":952
  *             # scalar // vector
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
  *             vec.val.x = scalar // vec.val.x
  *             vec.val.y = scalar // vec.val.y
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 954, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 952, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":955
+    /* "srctools/_vec.pyx":953
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar // vec.val.x             # <<<<<<<<<<<<<<
@@ -12567,11 +12571,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 955, __pyx_L1_error)
+      __PYX_ERR(0, 953, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = floor(__pyx_v_scalar / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":956
+    /* "srctools/_vec.pyx":954
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar // vec.val.x
  *             vec.val.y = scalar // vec.val.y             # <<<<<<<<<<<<<<
@@ -12580,11 +12584,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 956, __pyx_L1_error)
+      __PYX_ERR(0, 954, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = floor(__pyx_v_scalar / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":957
+    /* "srctools/_vec.pyx":955
  *             vec.val.x = scalar // vec.val.x
  *             vec.val.y = scalar // vec.val.y
  *             vec.val.z = scalar // vec.val.z             # <<<<<<<<<<<<<<
@@ -12593,11 +12597,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 957, __pyx_L1_error)
+      __PYX_ERR(0, 955, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = floor(__pyx_v_scalar / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":951
+    /* "srctools/_vec.pyx":949
  *         cdef double scalar
  *         # Vector // Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12607,7 +12611,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":958
+  /* "srctools/_vec.pyx":956
  *             vec.val.y = scalar // vec.val.y
  *             vec.val.z = scalar // vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12628,26 +12632,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":960
+    /* "srctools/_vec.pyx":958
  *         elif isinstance(obj_b, (int, float)):
  *             # vector // scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
  *             scalar = obj_b
  *             vec.val.x = vec.val.x // scalar
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 960, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 958, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":961
+    /* "srctools/_vec.pyx":959
  *             # vector // scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b             # <<<<<<<<<<<<<<
  *             vec.val.x = vec.val.x // scalar
  *             vec.val.y = vec.val.y // scalar
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 961, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 959, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":962
+    /* "srctools/_vec.pyx":960
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b
  *             vec.val.x = vec.val.x // scalar             # <<<<<<<<<<<<<<
@@ -12656,11 +12660,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 962, __pyx_L1_error)
+      __PYX_ERR(0, 960, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = floor(__pyx_v_vec->val.x / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":963
+    /* "srctools/_vec.pyx":961
  *             scalar = obj_b
  *             vec.val.x = vec.val.x // scalar
  *             vec.val.y = vec.val.y // scalar             # <<<<<<<<<<<<<<
@@ -12669,11 +12673,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 963, __pyx_L1_error)
+      __PYX_ERR(0, 961, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = floor(__pyx_v_vec->val.y / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":964
+    /* "srctools/_vec.pyx":962
  *             vec.val.x = vec.val.x // scalar
  *             vec.val.y = vec.val.y // scalar
  *             vec.val.z = vec.val.z // scalar             # <<<<<<<<<<<<<<
@@ -12682,11 +12686,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 964, __pyx_L1_error)
+      __PYX_ERR(0, 962, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = floor(__pyx_v_vec->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":958
+    /* "srctools/_vec.pyx":956
  *             vec.val.y = scalar // vec.val.y
  *             vec.val.z = scalar // vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12696,7 +12700,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":966
+  /* "srctools/_vec.pyx":964
  *             vec.val.z = vec.val.z // scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12716,20 +12720,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":967
+    /* "srctools/_vec.pyx":965
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot floor-divide 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 967, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 965, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 967, __pyx_L1_error)
+    __PYX_ERR(0, 965, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":966
+    /* "srctools/_vec.pyx":964
  *             vec.val.z = vec.val.z // scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -12738,7 +12742,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
  */
   }
 
-  /* "srctools/_vec.pyx":970
+  /* "srctools/_vec.pyx":968
  *         else:
  *             # Both vector-like or vector * something else.
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -12753,7 +12757,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":971
+  /* "srctools/_vec.pyx":969
  *             # Both vector-like or vector * something else.
  *             return NotImplemented
  *         return vec             # <<<<<<<<<<<<<<
@@ -12765,7 +12769,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":946
+  /* "srctools/_vec.pyx":944
  *         return vec
  * 
  *     def __floordiv__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12785,7 +12789,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_44__floordiv__(PyObject *__pyx_v_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":973
+/* "srctools/_vec.pyx":971
  *         return vec
  * 
  *     def __mod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -12826,19 +12830,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__mod__", 0);
 
-  /* "srctools/_vec.pyx":975
+  /* "srctools/_vec.pyx":973
  *     def __mod__(obj_a, obj_b):
  *         """Vector % scalar operation."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef double scalar
  *         # Vector % Vector is disallowed.
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 975, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 973, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":978
+  /* "srctools/_vec.pyx":976
  *         cdef double scalar
  *         # Vector % Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12859,26 +12863,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":980
+    /* "srctools/_vec.pyx":978
  *         if isinstance(obj_a, (int, float)):
  *             # scalar % vector
  *             scalar = obj_a             # <<<<<<<<<<<<<<
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar % vec.val.x
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 980, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 978, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":981
+    /* "srctools/_vec.pyx":979
  *             # scalar % vector
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)             # <<<<<<<<<<<<<<
  *             vec.val.x = scalar % vec.val.x
  *             vec.val.y = scalar % vec.val.y
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 981, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_b, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 979, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":982
+    /* "srctools/_vec.pyx":980
  *             scalar = obj_a
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar % vec.val.x             # <<<<<<<<<<<<<<
@@ -12887,11 +12891,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 982, __pyx_L1_error)
+      __PYX_ERR(0, 980, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":983
+    /* "srctools/_vec.pyx":981
  *             _conv_vec(&vec.val, obj_b, scalar=False)
  *             vec.val.x = scalar % vec.val.x
  *             vec.val.y = scalar % vec.val.y             # <<<<<<<<<<<<<<
@@ -12900,11 +12904,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 983, __pyx_L1_error)
+      __PYX_ERR(0, 981, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":984
+    /* "srctools/_vec.pyx":982
  *             vec.val.x = scalar % vec.val.x
  *             vec.val.y = scalar % vec.val.y
  *             vec.val.z = scalar % vec.val.z             # <<<<<<<<<<<<<<
@@ -12913,11 +12917,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 984, __pyx_L1_error)
+      __PYX_ERR(0, 982, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = __Pyx_mod_double(__pyx_v_scalar, __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":978
+    /* "srctools/_vec.pyx":976
  *         cdef double scalar
  *         # Vector % Vector is disallowed.
  *         if isinstance(obj_a, (int, float)):             # <<<<<<<<<<<<<<
@@ -12927,7 +12931,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":985
+  /* "srctools/_vec.pyx":983
  *             vec.val.y = scalar % vec.val.y
  *             vec.val.z = scalar % vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -12948,26 +12952,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":987
+    /* "srctools/_vec.pyx":985
  *         elif isinstance(obj_b, (int, float)):
  *             # vector % scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)             # <<<<<<<<<<<<<<
  *             scalar = obj_b
  *             vec.val.x = vec.val.x % scalar
  */
-    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 987, __pyx_L1_error)
+    __pyx_t_6 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec->val), __pyx_v_obj_a, 0); if (unlikely(__pyx_t_6 == ((unsigned char)0))) __PYX_ERR(0, 985, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":988
+    /* "srctools/_vec.pyx":986
  *             # vector % scalar.
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b             # <<<<<<<<<<<<<<
  *             vec.val.x = vec.val.x % scalar
  *             vec.val.y = vec.val.y % scalar
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 988, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 986, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":989
+    /* "srctools/_vec.pyx":987
  *             _conv_vec(&vec.val, obj_a, scalar=False)
  *             scalar = obj_b
  *             vec.val.x = vec.val.x % scalar             # <<<<<<<<<<<<<<
@@ -12976,11 +12980,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 989, __pyx_L1_error)
+      __PYX_ERR(0, 987, __pyx_L1_error)
     }
     __pyx_v_vec->val.x = __Pyx_mod_double(__pyx_v_vec->val.x, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":990
+    /* "srctools/_vec.pyx":988
  *             scalar = obj_b
  *             vec.val.x = vec.val.x % scalar
  *             vec.val.y = vec.val.y % scalar             # <<<<<<<<<<<<<<
@@ -12989,11 +12993,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 990, __pyx_L1_error)
+      __PYX_ERR(0, 988, __pyx_L1_error)
     }
     __pyx_v_vec->val.y = __Pyx_mod_double(__pyx_v_vec->val.y, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":991
+    /* "srctools/_vec.pyx":989
  *             vec.val.x = vec.val.x % scalar
  *             vec.val.y = vec.val.y % scalar
  *             vec.val.z = vec.val.z % scalar             # <<<<<<<<<<<<<<
@@ -13002,11 +13006,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 991, __pyx_L1_error)
+      __PYX_ERR(0, 989, __pyx_L1_error)
     }
     __pyx_v_vec->val.z = __Pyx_mod_double(__pyx_v_vec->val.z, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":985
+    /* "srctools/_vec.pyx":983
  *             vec.val.y = scalar % vec.val.y
  *             vec.val.z = scalar % vec.val.z
  *         elif isinstance(obj_b, (int, float)):             # <<<<<<<<<<<<<<
@@ -13016,7 +13020,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":993
+  /* "srctools/_vec.pyx":991
  *             vec.val.z = vec.val.z % scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -13036,20 +13040,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   __pyx_L8_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":994
+    /* "srctools/_vec.pyx":992
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 994, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 992, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 994, __pyx_L1_error)
+    __PYX_ERR(0, 992, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":993
+    /* "srctools/_vec.pyx":991
  *             vec.val.z = vec.val.z % scalar
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -13058,7 +13062,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
  */
   }
 
-  /* "srctools/_vec.pyx":997
+  /* "srctools/_vec.pyx":995
  *         else:
  *             # Both vector-like or vector * something else.
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -13073,7 +13077,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":998
+  /* "srctools/_vec.pyx":996
  *             # Both vector-like or vector * something else.
  *             return NotImplemented
  *         return vec             # <<<<<<<<<<<<<<
@@ -13085,7 +13089,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":973
+  /* "srctools/_vec.pyx":971
  *         return vec
  * 
  *     def __mod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -13105,7 +13109,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_46__mod__(PyObject *__pyx_v_obj_a
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1000
+/* "srctools/_vec.pyx":998
  *         return vec
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -13143,7 +13147,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__matmul__", 0);
 
-  /* "srctools/_vec.pyx":1003
+  /* "srctools/_vec.pyx":1001
  *         cdef mat_t temp
  *         cdef Vec res
  *         if isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -13154,19 +13158,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1004
+    /* "srctools/_vec.pyx":1002
  *         cdef Vec res
  *         if isinstance(first, Vec):
  *             res = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *             res.val = (<Vec>first).val
  *             if isinstance(second, Angle):
  */
-    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1004, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1002, __pyx_L1_error)
     __Pyx_GOTREF(((PyObject *)__pyx_t_3));
     __pyx_v_res = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "srctools/_vec.pyx":1005
+    /* "srctools/_vec.pyx":1003
  *         if isinstance(first, Vec):
  *             res = Vec.__new__(Vec)
  *             res.val = (<Vec>first).val             # <<<<<<<<<<<<<<
@@ -13176,7 +13180,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_first)->val;
     __pyx_v_res->val = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":1006
+    /* "srctools/_vec.pyx":1004
  *             res = Vec.__new__(Vec)
  *             res.val = (<Vec>first).val
  *             if isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -13187,7 +13191,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1007
+      /* "srctools/_vec.pyx":1005
  *             res.val = (<Vec>first).val
  *             if isinstance(second, Angle):
  *                 _mat_from_angle(temp, &(<Angle>second).val)             # <<<<<<<<<<<<<<
@@ -13196,7 +13200,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
       __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_second)->val));
 
-      /* "srctools/_vec.pyx":1008
+      /* "srctools/_vec.pyx":1006
  *             if isinstance(second, Angle):
  *                 _mat_from_angle(temp, &(<Angle>second).val)
  *                 _vec_rot(&res.val, temp)             # <<<<<<<<<<<<<<
@@ -13205,7 +13209,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
       __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_res->val), __pyx_v_temp);
 
-      /* "srctools/_vec.pyx":1009
+      /* "srctools/_vec.pyx":1007
  *                 _mat_from_angle(temp, &(<Angle>second).val)
  *                 _vec_rot(&res.val, temp)
  *                 return res             # <<<<<<<<<<<<<<
@@ -13217,7 +13221,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
       __pyx_r = ((PyObject *)__pyx_v_res);
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1006
+      /* "srctools/_vec.pyx":1004
  *             res = Vec.__new__(Vec)
  *             res.val = (<Vec>first).val
  *             if isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -13226,7 +13230,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
     }
 
-    /* "srctools/_vec.pyx":1010
+    /* "srctools/_vec.pyx":1008
  *                 _vec_rot(&res.val, temp)
  *                 return res
  *             elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -13237,7 +13241,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1011
+      /* "srctools/_vec.pyx":1009
  *                 return res
  *             elif isinstance(second, Matrix):
  *                 _vec_rot(&res.val, (<Matrix>second).mat)             # <<<<<<<<<<<<<<
@@ -13246,7 +13250,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
       __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_res->val), ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_second)->mat);
 
-      /* "srctools/_vec.pyx":1012
+      /* "srctools/_vec.pyx":1010
  *             elif isinstance(second, Matrix):
  *                 _vec_rot(&res.val, (<Matrix>second).mat)
  *                 return res             # <<<<<<<<<<<<<<
@@ -13258,7 +13262,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
       __pyx_r = ((PyObject *)__pyx_v_res);
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1010
+      /* "srctools/_vec.pyx":1008
  *                 _vec_rot(&res.val, temp)
  *                 return res
  *             elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -13267,7 +13271,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
     }
 
-    /* "srctools/_vec.pyx":1003
+    /* "srctools/_vec.pyx":1001
  *         cdef mat_t temp
  *         cdef Vec res
  *         if isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -13276,7 +13280,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
  */
   }
 
-  /* "srctools/_vec.pyx":1013
+  /* "srctools/_vec.pyx":1011
  *                 _vec_rot(&res.val, (<Matrix>second).mat)
  *                 return res
  *         return NotImplemented             # <<<<<<<<<<<<<<
@@ -13288,7 +13292,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
   __pyx_r = __pyx_builtin_NotImplemented;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1000
+  /* "srctools/_vec.pyx":998
  *         return vec
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -13309,7 +13313,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_48__matmul__(PyObject *__pyx_v_fi
 }
 #endif /*!(#if PY_VERSION_HEX >= 0x03050000)*/
 
-/* "srctools/_vec.pyx":1017
+/* "srctools/_vec.pyx":1015
  *     # In-place operators. Self is always a Vec.
  * 
  *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
@@ -13351,7 +13355,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__iadd__", 0);
 
-  /* "srctools/_vec.pyx":1023
+  /* "srctools/_vec.pyx":1021
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13367,16 +13371,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":1024
+      /* "srctools/_vec.pyx":1022
  *         cdef vec_t vec_other
  *         try:
  *             _conv_vec(&vec_other, other, scalar=True)             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError):
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1024, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1022, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":1023
+      /* "srctools/_vec.pyx":1021
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13390,7 +13394,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":1025
+    /* "srctools/_vec.pyx":1023
  *         try:
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
@@ -13400,12 +13404,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__iadd__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1025, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1023, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":1026
+      /* "srctools/_vec.pyx":1024
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -13423,7 +13427,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":1023
+    /* "srctools/_vec.pyx":1021
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13444,7 +13448,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":1028
+  /* "srctools/_vec.pyx":1026
  *             return NotImplemented
  * 
  *         self.val.x += vec_other.x             # <<<<<<<<<<<<<<
@@ -13453,7 +13457,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.x = (__pyx_v_self->val.x + __pyx_v_vec_other.x);
 
-  /* "srctools/_vec.pyx":1029
+  /* "srctools/_vec.pyx":1027
  * 
  *         self.val.x += vec_other.x
  *         self.val.y += vec_other.y             # <<<<<<<<<<<<<<
@@ -13462,7 +13466,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.y = (__pyx_v_self->val.y + __pyx_v_vec_other.y);
 
-  /* "srctools/_vec.pyx":1030
+  /* "srctools/_vec.pyx":1028
  *         self.val.x += vec_other.x
  *         self.val.y += vec_other.y
  *         self.val.z += vec_other.z             # <<<<<<<<<<<<<<
@@ -13471,7 +13475,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.z = (__pyx_v_self->val.z + __pyx_v_vec_other.z);
 
-  /* "srctools/_vec.pyx":1032
+  /* "srctools/_vec.pyx":1030
  *         self.val.z += vec_other.z
  * 
  *         return self             # <<<<<<<<<<<<<<
@@ -13483,7 +13487,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1017
+  /* "srctools/_vec.pyx":1015
  *     # In-place operators. Self is always a Vec.
  * 
  *     def __iadd__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
@@ -13504,7 +13508,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_50__iadd__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1034
+/* "srctools/_vec.pyx":1032
  *         return self
  * 
  *     def __isub__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
@@ -13546,7 +13550,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__isub__", 0);
 
-  /* "srctools/_vec.pyx":1040
+  /* "srctools/_vec.pyx":1038
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13562,16 +13566,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":1041
+      /* "srctools/_vec.pyx":1039
  *         cdef vec_t vec_other
  *         try:
  *             _conv_vec(&vec_other, other, scalar=True)             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError):
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1041, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_other), __pyx_v_other, 1); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1039, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":1040
+      /* "srctools/_vec.pyx":1038
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13585,7 +13589,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":1042
+    /* "srctools/_vec.pyx":1040
  *         try:
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
@@ -13595,12 +13599,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__isub__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1042, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1040, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":1043
+      /* "srctools/_vec.pyx":1041
  *             _conv_vec(&vec_other, other, scalar=True)
  *         except (TypeError, ValueError):
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -13618,7 +13622,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":1040
+    /* "srctools/_vec.pyx":1038
  *         """
  *         cdef vec_t vec_other
  *         try:             # <<<<<<<<<<<<<<
@@ -13639,7 +13643,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":1045
+  /* "srctools/_vec.pyx":1043
  *             return NotImplemented
  * 
  *         self.val.x -= vec_other.x             # <<<<<<<<<<<<<<
@@ -13648,7 +13652,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.x = (__pyx_v_self->val.x - __pyx_v_vec_other.x);
 
-  /* "srctools/_vec.pyx":1046
+  /* "srctools/_vec.pyx":1044
  * 
  *         self.val.x -= vec_other.x
  *         self.val.y -= vec_other.y             # <<<<<<<<<<<<<<
@@ -13657,7 +13661,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.y = (__pyx_v_self->val.y - __pyx_v_vec_other.y);
 
-  /* "srctools/_vec.pyx":1047
+  /* "srctools/_vec.pyx":1045
  *         self.val.x -= vec_other.x
  *         self.val.y -= vec_other.y
  *         self.val.z -= vec_other.z             # <<<<<<<<<<<<<<
@@ -13666,7 +13670,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
  */
   __pyx_v_self->val.z = (__pyx_v_self->val.z - __pyx_v_vec_other.z);
 
-  /* "srctools/_vec.pyx":1049
+  /* "srctools/_vec.pyx":1047
  *         self.val.z -= vec_other.z
  * 
  *         return self             # <<<<<<<<<<<<<<
@@ -13678,7 +13682,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1034
+  /* "srctools/_vec.pyx":1032
  *         return self
  * 
  *     def __isub__(self, other: 'Union[Vec, tuple, float]'):             # <<<<<<<<<<<<<<
@@ -13699,7 +13703,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_52__isub__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1051
+/* "srctools/_vec.pyx":1049
  *         return self
  * 
  *     def __imul__(self, object other: float):             # <<<<<<<<<<<<<<
@@ -13722,7 +13726,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_55__imul__(PyObject *__pyx_v_self
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__imul__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1051, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1049, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -13750,14 +13754,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__imul__", 0);
 
-  /* "srctools/_vec.pyx":1057
+  /* "srctools/_vec.pyx":1055
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
  *             scalar = other
  *             self.val.x *= scalar
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1057, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1055, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -13767,7 +13771,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1057, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1055, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -13777,7 +13781,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":1058
+    /* "srctools/_vec.pyx":1056
  *         cdef double scalar
  *         if isinstance(other, (int, float)):
  *             scalar = other             # <<<<<<<<<<<<<<
@@ -13786,7 +13790,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":1059
+    /* "srctools/_vec.pyx":1057
  *         if isinstance(other, (int, float)):
  *             scalar = other
  *             self.val.x *= scalar             # <<<<<<<<<<<<<<
@@ -13795,7 +13799,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
     __pyx_v_self->val.x = (__pyx_v_self->val.x * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1060
+    /* "srctools/_vec.pyx":1058
  *             scalar = other
  *             self.val.x *= scalar
  *             self.val.y *= scalar             # <<<<<<<<<<<<<<
@@ -13804,7 +13808,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
     __pyx_v_self->val.y = (__pyx_v_self->val.y * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1061
+    /* "srctools/_vec.pyx":1059
  *             self.val.x *= scalar
  *             self.val.y *= scalar
  *             self.val.z *= scalar             # <<<<<<<<<<<<<<
@@ -13813,7 +13817,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
     __pyx_v_self->val.z = (__pyx_v_self->val.z * __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1062
+    /* "srctools/_vec.pyx":1060
  *             self.val.y *= scalar
  *             self.val.z *= scalar
  *             return self             # <<<<<<<<<<<<<<
@@ -13825,7 +13829,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1057
+    /* "srctools/_vec.pyx":1055
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
@@ -13834,34 +13838,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":1063
+  /* "srctools/_vec.pyx":1061
  *             self.val.z *= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
  *             raise TypeError("Cannot multiply 2 Vectors.")
  *         else:
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1063, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1061, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":1064
+    /* "srctools/_vec.pyx":1062
  *             return self
  *         elif isinstance(other, Vec):
  *             raise TypeError("Cannot multiply 2 Vectors.")             # <<<<<<<<<<<<<<
  *         else:
  *             return NotImplemented
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__7, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1064, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1062, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 1064, __pyx_L1_error)
+    __PYX_ERR(0, 1062, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1063
+    /* "srctools/_vec.pyx":1061
  *             self.val.z *= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
@@ -13870,7 +13874,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":1066
+  /* "srctools/_vec.pyx":1064
  *             raise TypeError("Cannot multiply 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -13884,7 +13888,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":1051
+  /* "srctools/_vec.pyx":1049
  *         return self
  * 
  *     def __imul__(self, object other: float):             # <<<<<<<<<<<<<<
@@ -13903,7 +13907,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_54__imul__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1068
+/* "srctools/_vec.pyx":1066
  *             return NotImplemented
  * 
  *     def __itruediv__(self, other: float):             # <<<<<<<<<<<<<<
@@ -13926,7 +13930,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_57__itruediv__(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__itruediv__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1068, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1066, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -13954,14 +13958,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__itruediv__", 0);
 
-  /* "srctools/_vec.pyx":1074
+  /* "srctools/_vec.pyx":1072
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
  *             scalar = other
  *             self.val.x /= scalar
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1074, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -13971,7 +13975,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1074, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1072, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -13981,7 +13985,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":1075
+    /* "srctools/_vec.pyx":1073
  *         cdef double scalar
  *         if isinstance(other, (int, float)):
  *             scalar = other             # <<<<<<<<<<<<<<
@@ -13990,7 +13994,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":1076
+    /* "srctools/_vec.pyx":1074
  *         if isinstance(other, (int, float)):
  *             scalar = other
  *             self.val.x /= scalar             # <<<<<<<<<<<<<<
@@ -13999,11 +14003,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1076, __pyx_L1_error)
+      __PYX_ERR(0, 1074, __pyx_L1_error)
     }
     __pyx_v_self->val.x = (__pyx_v_self->val.x / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1077
+    /* "srctools/_vec.pyx":1075
  *             scalar = other
  *             self.val.x /= scalar
  *             self.val.y /= scalar             # <<<<<<<<<<<<<<
@@ -14012,11 +14016,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1077, __pyx_L1_error)
+      __PYX_ERR(0, 1075, __pyx_L1_error)
     }
     __pyx_v_self->val.y = (__pyx_v_self->val.y / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1078
+    /* "srctools/_vec.pyx":1076
  *             self.val.x /= scalar
  *             self.val.y /= scalar
  *             self.val.z /= scalar             # <<<<<<<<<<<<<<
@@ -14025,11 +14029,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1078, __pyx_L1_error)
+      __PYX_ERR(0, 1076, __pyx_L1_error)
     }
     __pyx_v_self->val.z = (__pyx_v_self->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1079
+    /* "srctools/_vec.pyx":1077
  *             self.val.y /= scalar
  *             self.val.z /= scalar
  *             return self             # <<<<<<<<<<<<<<
@@ -14041,7 +14045,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1074
+    /* "srctools/_vec.pyx":1072
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
@@ -14050,34 +14054,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
   }
 
-  /* "srctools/_vec.pyx":1080
+  /* "srctools/_vec.pyx":1078
  *             self.val.z /= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
  *             raise TypeError("Cannot divide 2 Vectors.")
  *         else:
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1080, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1078, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":1081
+    /* "srctools/_vec.pyx":1079
  *             return self
  *         elif isinstance(other, Vec):
  *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
  *         else:
  *             return NotImplemented
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1081, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1079, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 1081, __pyx_L1_error)
+    __PYX_ERR(0, 1079, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1080
+    /* "srctools/_vec.pyx":1078
  *             self.val.z /= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
@@ -14086,7 +14090,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
  */
   }
 
-  /* "srctools/_vec.pyx":1083
+  /* "srctools/_vec.pyx":1081
  *             raise TypeError("Cannot divide 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -14100,7 +14104,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":1068
+  /* "srctools/_vec.pyx":1066
  *             return NotImplemented
  * 
  *     def __itruediv__(self, other: float):             # <<<<<<<<<<<<<<
@@ -14119,7 +14123,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_56__itruediv__(struct __pyx_obj_8
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1085
+/* "srctools/_vec.pyx":1083
  *             return NotImplemented
  * 
  *     def __ifloordiv__(self, other: float):             # <<<<<<<<<<<<<<
@@ -14142,7 +14146,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_59__ifloordiv__(PyObject *__pyx_v
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__ifloordiv__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1085, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1083, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -14170,14 +14174,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__ifloordiv__", 0);
 
-  /* "srctools/_vec.pyx":1091
+  /* "srctools/_vec.pyx":1089
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
  *             scalar = other
  *             self.val.x //= scalar
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1091, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1089, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14187,7 +14191,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1091, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1089, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14197,7 +14201,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":1092
+    /* "srctools/_vec.pyx":1090
  *         cdef double scalar
  *         if isinstance(other, (int, float)):
  *             scalar = other             # <<<<<<<<<<<<<<
@@ -14206,7 +14210,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":1093
+    /* "srctools/_vec.pyx":1091
  *         if isinstance(other, (int, float)):
  *             scalar = other
  *             self.val.x //= scalar             # <<<<<<<<<<<<<<
@@ -14215,11 +14219,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1093, __pyx_L1_error)
+      __PYX_ERR(0, 1091, __pyx_L1_error)
     }
     __pyx_v_self->val.x = floor(__pyx_v_self->val.x / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1094
+    /* "srctools/_vec.pyx":1092
  *             scalar = other
  *             self.val.x //= scalar
  *             self.val.y //= scalar             # <<<<<<<<<<<<<<
@@ -14228,11 +14232,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1094, __pyx_L1_error)
+      __PYX_ERR(0, 1092, __pyx_L1_error)
     }
     __pyx_v_self->val.y = floor(__pyx_v_self->val.y / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1095
+    /* "srctools/_vec.pyx":1093
  *             self.val.x //= scalar
  *             self.val.y //= scalar
  *             self.val.z //= scalar             # <<<<<<<<<<<<<<
@@ -14241,11 +14245,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1095, __pyx_L1_error)
+      __PYX_ERR(0, 1093, __pyx_L1_error)
     }
     __pyx_v_self->val.z = floor(__pyx_v_self->val.z / __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1096
+    /* "srctools/_vec.pyx":1094
  *             self.val.y //= scalar
  *             self.val.z //= scalar
  *             return self             # <<<<<<<<<<<<<<
@@ -14257,7 +14261,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1091
+    /* "srctools/_vec.pyx":1089
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
@@ -14266,34 +14270,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
   }
 
-  /* "srctools/_vec.pyx":1097
+  /* "srctools/_vec.pyx":1095
  *             self.val.z //= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
  *             raise TypeError("Cannot floor-divide 2 Vectors.")
  *         else:
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1097, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1095, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":1098
+    /* "srctools/_vec.pyx":1096
  *             return self
  *         elif isinstance(other, Vec):
  *             raise TypeError("Cannot floor-divide 2 Vectors.")             # <<<<<<<<<<<<<<
  *         else:
  *             return NotImplemented
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1098, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1096, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 1098, __pyx_L1_error)
+    __PYX_ERR(0, 1096, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1097
+    /* "srctools/_vec.pyx":1095
  *             self.val.z //= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
@@ -14302,7 +14306,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
  */
   }
 
-  /* "srctools/_vec.pyx":1100
+  /* "srctools/_vec.pyx":1098
  *             raise TypeError("Cannot floor-divide 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -14316,7 +14320,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":1085
+  /* "srctools/_vec.pyx":1083
  *             return NotImplemented
  * 
  *     def __ifloordiv__(self, other: float):             # <<<<<<<<<<<<<<
@@ -14335,7 +14339,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_58__ifloordiv__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1102
+/* "srctools/_vec.pyx":1100
  *             return NotImplemented
  * 
  *     def __imod__(self, other: float):             # <<<<<<<<<<<<<<
@@ -14358,7 +14362,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_61__imod__(PyObject *__pyx_v_self
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__imod__ (wrapper)", 0);
   assert(__pyx_arg_other); {
-    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1102, __pyx_L3_error)
+    __pyx_v_other = __pyx_PyFloat_AsDouble(__pyx_arg_other); if (unlikely((__pyx_v_other == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1100, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -14386,14 +14390,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__imod__", 0);
 
-  /* "srctools/_vec.pyx":1108
+  /* "srctools/_vec.pyx":1106
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
  *             scalar = other
  *             self.val.x %= scalar
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1108, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = PyInt_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14403,7 +14407,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
     __pyx_t_1 = __pyx_t_4;
     goto __pyx_L4_bool_binop_done;
   }
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1108, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1106, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_4 = PyFloat_Check(__pyx_t_2); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -14413,7 +14417,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
   __pyx_t_3 = (__pyx_t_1 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":1109
+    /* "srctools/_vec.pyx":1107
  *         cdef double scalar
  *         if isinstance(other, (int, float)):
  *             scalar = other             # <<<<<<<<<<<<<<
@@ -14422,7 +14426,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
     __pyx_v_scalar = __pyx_v_other;
 
-    /* "srctools/_vec.pyx":1110
+    /* "srctools/_vec.pyx":1108
  *         if isinstance(other, (int, float)):
  *             scalar = other
  *             self.val.x %= scalar             # <<<<<<<<<<<<<<
@@ -14431,11 +14435,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1110, __pyx_L1_error)
+      __PYX_ERR(0, 1108, __pyx_L1_error)
     }
     __pyx_v_self->val.x = __Pyx_mod_double(__pyx_v_self->val.x, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1111
+    /* "srctools/_vec.pyx":1109
  *             scalar = other
  *             self.val.x %= scalar
  *             self.val.y %= scalar             # <<<<<<<<<<<<<<
@@ -14444,11 +14448,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1111, __pyx_L1_error)
+      __PYX_ERR(0, 1109, __pyx_L1_error)
     }
     __pyx_v_self->val.y = __Pyx_mod_double(__pyx_v_self->val.y, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1112
+    /* "srctools/_vec.pyx":1110
  *             self.val.x %= scalar
  *             self.val.y %= scalar
  *             self.val.z %= scalar             # <<<<<<<<<<<<<<
@@ -14457,11 +14461,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
     if (unlikely(__pyx_v_scalar == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1112, __pyx_L1_error)
+      __PYX_ERR(0, 1110, __pyx_L1_error)
     }
     __pyx_v_self->val.z = __Pyx_mod_double(__pyx_v_self->val.z, __pyx_v_scalar);
 
-    /* "srctools/_vec.pyx":1113
+    /* "srctools/_vec.pyx":1111
  *             self.val.y %= scalar
  *             self.val.z %= scalar
  *             return self             # <<<<<<<<<<<<<<
@@ -14473,7 +14477,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1108
+    /* "srctools/_vec.pyx":1106
  *         """
  *         cdef double scalar
  *         if isinstance(other, (int, float)):             # <<<<<<<<<<<<<<
@@ -14482,34 +14486,34 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":1114
+  /* "srctools/_vec.pyx":1112
  *             self.val.z %= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
  *             raise TypeError("Cannot modulus 2 Vectors.")
  *         else:
  */
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1114, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_other); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1112, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = __Pyx_TypeCheck(__pyx_t_2, __pyx_ptype_8srctools_4_vec_Vec); 
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_1 = (__pyx_t_3 != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":1115
+    /* "srctools/_vec.pyx":1113
  *             return self
  *         elif isinstance(other, Vec):
  *             raise TypeError("Cannot modulus 2 Vectors.")             # <<<<<<<<<<<<<<
  *         else:
  *             return NotImplemented
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__10, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1115, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1113, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-    __PYX_ERR(0, 1115, __pyx_L1_error)
+    __PYX_ERR(0, 1113, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1114
+    /* "srctools/_vec.pyx":1112
  *             self.val.z %= scalar
  *             return self
  *         elif isinstance(other, Vec):             # <<<<<<<<<<<<<<
@@ -14518,7 +14522,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":1117
+  /* "srctools/_vec.pyx":1115
  *             raise TypeError("Cannot modulus 2 Vectors.")
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -14532,7 +14536,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":1102
+  /* "srctools/_vec.pyx":1100
  *             return NotImplemented
  * 
  *     def __imod__(self, other: float):             # <<<<<<<<<<<<<<
@@ -14551,7 +14555,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_60__imod__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1119
+/* "srctools/_vec.pyx":1117
  *             return NotImplemented
  * 
  *     def __imatmul__(self, other):             # <<<<<<<<<<<<<<
@@ -14587,7 +14591,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("__imatmul__", 0);
 
-  /* "srctools/_vec.pyx":1122
+  /* "srctools/_vec.pyx":1120
  *         """@= operation: rotate the vector by a matrix/angle."""
  *         cdef mat_t temp
  *         if isinstance(other, Angle):             # <<<<<<<<<<<<<<
@@ -14598,7 +14602,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1123
+    /* "srctools/_vec.pyx":1121
  *         cdef mat_t temp
  *         if isinstance(other, Angle):
  *             _mat_from_angle(temp, &(<Angle>other).val)             # <<<<<<<<<<<<<<
@@ -14607,7 +14611,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
  */
     __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_other)->val));
 
-    /* "srctools/_vec.pyx":1124
+    /* "srctools/_vec.pyx":1122
  *         if isinstance(other, Angle):
  *             _mat_from_angle(temp, &(<Angle>other).val)
  *             _vec_rot(&self.val, temp)             # <<<<<<<<<<<<<<
@@ -14616,7 +14620,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
  */
     __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_self->val), __pyx_v_temp);
 
-    /* "srctools/_vec.pyx":1122
+    /* "srctools/_vec.pyx":1120
  *         """@= operation: rotate the vector by a matrix/angle."""
  *         cdef mat_t temp
  *         if isinstance(other, Angle):             # <<<<<<<<<<<<<<
@@ -14626,7 +14630,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1125
+  /* "srctools/_vec.pyx":1123
  *             _mat_from_angle(temp, &(<Angle>other).val)
  *             _vec_rot(&self.val, temp)
  *         elif isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -14637,7 +14641,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1126
+    /* "srctools/_vec.pyx":1124
  *             _vec_rot(&self.val, temp)
  *         elif isinstance(other, Matrix):
  *             _vec_rot(&self.val, (<Matrix>other).mat)             # <<<<<<<<<<<<<<
@@ -14646,7 +14650,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
  */
     __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_self->val), ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_other)->mat);
 
-    /* "srctools/_vec.pyx":1125
+    /* "srctools/_vec.pyx":1123
  *             _mat_from_angle(temp, &(<Angle>other).val)
  *             _vec_rot(&self.val, temp)
  *         elif isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -14656,7 +14660,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1128
+  /* "srctools/_vec.pyx":1126
  *             _vec_rot(&self.val, (<Matrix>other).mat)
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -14671,7 +14675,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1129
+  /* "srctools/_vec.pyx":1127
  *         else:
  *             return NotImplemented
  *         return self             # <<<<<<<<<<<<<<
@@ -14683,7 +14687,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1119
+  /* "srctools/_vec.pyx":1117
  *             return NotImplemented
  * 
  *     def __imatmul__(self, other):             # <<<<<<<<<<<<<<
@@ -14699,7 +14703,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_62__imatmul__(struct __pyx_obj_8s
 }
 #endif /*!(#if PY_VERSION_HEX >= 0x03050000)*/
 
-/* "srctools/_vec.pyx":1131
+/* "srctools/_vec.pyx":1129
  *         return self
  * 
  *     def __divmod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -14747,31 +14751,31 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__divmod__", 0);
 
-  /* "srctools/_vec.pyx":1134
+  /* "srctools/_vec.pyx":1132
  *         """Divide the vector by a scalar, returning the result and remainder."""
  *         cdef Vec vec
  *         cdef Vec res_1 = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef Vec res_2 = Vec.__new__(Vec)
  *         cdef double other_d
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1134, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1132, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_res_1 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1135
+  /* "srctools/_vec.pyx":1133
  *         cdef Vec vec
  *         cdef Vec res_1 = Vec.__new__(Vec)
  *         cdef Vec res_2 = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         cdef double other_d
  * 
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1135, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1133, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_res_2 = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1138
+  /* "srctools/_vec.pyx":1136
  *         cdef double other_d
  * 
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -14791,20 +14795,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   __pyx_L4_bool_binop_done:;
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":1139
+    /* "srctools/_vec.pyx":1137
  * 
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError("Cannot divide 2 Vectors.")             # <<<<<<<<<<<<<<
  *         elif isinstance(obj_a, Vec):
  *             # vec / val
  */
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1139, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__9, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1137, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 1139, __pyx_L1_error)
+    __PYX_ERR(0, 1137, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1138
+    /* "srctools/_vec.pyx":1136
  *         cdef double other_d
  * 
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -14813,7 +14817,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
   }
 
-  /* "srctools/_vec.pyx":1140
+  /* "srctools/_vec.pyx":1138
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError("Cannot divide 2 Vectors.")
  *         elif isinstance(obj_a, Vec):             # <<<<<<<<<<<<<<
@@ -14824,7 +14828,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_vec.pyx":1142
+    /* "srctools/_vec.pyx":1140
  *         elif isinstance(obj_a, Vec):
  *             # vec / val
  *             vec = <Vec>obj_a             # <<<<<<<<<<<<<<
@@ -14836,7 +14840,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
     __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "srctools/_vec.pyx":1143
+    /* "srctools/_vec.pyx":1141
  *             # vec / val
  *             vec = <Vec>obj_a
  *             try:             # <<<<<<<<<<<<<<
@@ -14852,17 +14856,17 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __Pyx_XGOTREF(__pyx_t_7);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1144
+        /* "srctools/_vec.pyx":1142
  *             vec = <Vec>obj_a
  *             try:
  *                 other_d = <double ?>obj_b             # <<<<<<<<<<<<<<
  *             except TypeError:
  *                 return NotImplemented
  */
-        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1144, __pyx_L6_error)
+        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_b); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1142, __pyx_L6_error)
         __pyx_v_other_d = ((double)__pyx_t_8);
 
-        /* "srctools/_vec.pyx":1143
+        /* "srctools/_vec.pyx":1141
  *             # vec / val
  *             vec = <Vec>obj_a
  *             try:             # <<<<<<<<<<<<<<
@@ -14877,7 +14881,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __pyx_L6_error:;
       __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "srctools/_vec.pyx":1145
+      /* "srctools/_vec.pyx":1143
  *             try:
  *                 other_d = <double ?>obj_b
  *             except TypeError:             # <<<<<<<<<<<<<<
@@ -14887,12 +14891,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError);
       if (__pyx_t_9) {
         __Pyx_AddTraceback("srctools._vec.Vec.__divmod__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_10, &__pyx_t_11) < 0) __PYX_ERR(0, 1145, __pyx_L8_except_error)
+        if (__Pyx_GetException(&__pyx_t_1, &__pyx_t_10, &__pyx_t_11) < 0) __PYX_ERR(0, 1143, __pyx_L8_except_error)
         __Pyx_GOTREF(__pyx_t_1);
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_GOTREF(__pyx_t_11);
 
-        /* "srctools/_vec.pyx":1146
+        /* "srctools/_vec.pyx":1144
  *                 other_d = <double ?>obj_b
  *             except TypeError:
  *                 return NotImplemented             # <<<<<<<<<<<<<<
@@ -14910,7 +14914,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       goto __pyx_L8_except_error;
       __pyx_L8_except_error:;
 
-      /* "srctools/_vec.pyx":1143
+      /* "srctools/_vec.pyx":1141
  *             # vec / val
  *             vec = <Vec>obj_a
  *             try:             # <<<<<<<<<<<<<<
@@ -14931,7 +14935,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __pyx_L11_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1150
+    /* "srctools/_vec.pyx":1148
  *             # We put % first, since Cython then produces a 'divmod' error.
  * 
  *             res_2.val.x = vec.val.x % other_d             # <<<<<<<<<<<<<<
@@ -14940,11 +14944,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1150, __pyx_L1_error)
+      __PYX_ERR(0, 1148, __pyx_L1_error)
     }
     __pyx_v_res_2->val.x = __Pyx_mod_double(__pyx_v_vec->val.x, __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1151
+    /* "srctools/_vec.pyx":1149
  * 
  *             res_2.val.x = vec.val.x % other_d
  *             res_1.val.x = vec.val.x // other_d             # <<<<<<<<<<<<<<
@@ -14953,11 +14957,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1151, __pyx_L1_error)
+      __PYX_ERR(0, 1149, __pyx_L1_error)
     }
     __pyx_v_res_1->val.x = floor(__pyx_v_vec->val.x / __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1152
+    /* "srctools/_vec.pyx":1150
  *             res_2.val.x = vec.val.x % other_d
  *             res_1.val.x = vec.val.x // other_d
  *             res_2.val.y = vec.val.y % other_d             # <<<<<<<<<<<<<<
@@ -14966,11 +14970,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1152, __pyx_L1_error)
+      __PYX_ERR(0, 1150, __pyx_L1_error)
     }
     __pyx_v_res_2->val.y = __Pyx_mod_double(__pyx_v_vec->val.y, __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1153
+    /* "srctools/_vec.pyx":1151
  *             res_1.val.x = vec.val.x // other_d
  *             res_2.val.y = vec.val.y % other_d
  *             res_1.val.y = vec.val.y // other_d             # <<<<<<<<<<<<<<
@@ -14979,11 +14983,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1153, __pyx_L1_error)
+      __PYX_ERR(0, 1151, __pyx_L1_error)
     }
     __pyx_v_res_1->val.y = floor(__pyx_v_vec->val.y / __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1154
+    /* "srctools/_vec.pyx":1152
  *             res_2.val.y = vec.val.y % other_d
  *             res_1.val.y = vec.val.y // other_d
  *             res_2.val.z = vec.val.z % other_d             # <<<<<<<<<<<<<<
@@ -14992,11 +14996,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1154, __pyx_L1_error)
+      __PYX_ERR(0, 1152, __pyx_L1_error)
     }
     __pyx_v_res_2->val.z = __Pyx_mod_double(__pyx_v_vec->val.z, __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1155
+    /* "srctools/_vec.pyx":1153
  *             res_1.val.y = vec.val.y // other_d
  *             res_2.val.z = vec.val.z % other_d
  *             res_1.val.z = vec.val.z // other_d             # <<<<<<<<<<<<<<
@@ -15005,11 +15009,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_other_d == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1155, __pyx_L1_error)
+      __PYX_ERR(0, 1153, __pyx_L1_error)
     }
     __pyx_v_res_1->val.z = floor(__pyx_v_vec->val.z / __pyx_v_other_d);
 
-    /* "srctools/_vec.pyx":1140
+    /* "srctools/_vec.pyx":1138
  *         if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError("Cannot divide 2 Vectors.")
  *         elif isinstance(obj_a, Vec):             # <<<<<<<<<<<<<<
@@ -15019,7 +15023,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1156
+  /* "srctools/_vec.pyx":1154
  *             res_2.val.z = vec.val.z % other_d
  *             res_1.val.z = vec.val.z // other_d
  *         elif isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -15030,7 +15034,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   __pyx_t_2 = (__pyx_t_3 != 0);
   if (likely(__pyx_t_2)) {
 
-    /* "srctools/_vec.pyx":1158
+    /* "srctools/_vec.pyx":1156
  *         elif isinstance(obj_b, Vec):
  *             # val / vec
  *             vec = <Vec>obj_b             # <<<<<<<<<<<<<<
@@ -15042,7 +15046,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
     __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_11);
     __pyx_t_11 = 0;
 
-    /* "srctools/_vec.pyx":1159
+    /* "srctools/_vec.pyx":1157
  *             # val / vec
  *             vec = <Vec>obj_b
  *             try:             # <<<<<<<<<<<<<<
@@ -15058,17 +15062,17 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1160
+        /* "srctools/_vec.pyx":1158
  *             vec = <Vec>obj_b
  *             try:
  *                 other_d = <double ?>obj_a             # <<<<<<<<<<<<<<
  *             except TypeError:
  *                 return NotImplemented
  */
-        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1160, __pyx_L14_error)
+        __pyx_t_8 = __pyx_PyFloat_AsDouble(__pyx_v_obj_a); if (unlikely((__pyx_t_8 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1158, __pyx_L14_error)
         __pyx_v_other_d = ((double)__pyx_t_8);
 
-        /* "srctools/_vec.pyx":1159
+        /* "srctools/_vec.pyx":1157
  *             # val / vec
  *             vec = <Vec>obj_b
  *             try:             # <<<<<<<<<<<<<<
@@ -15085,7 +15089,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __Pyx_XDECREF(__pyx_t_10); __pyx_t_10 = 0;
       __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
 
-      /* "srctools/_vec.pyx":1161
+      /* "srctools/_vec.pyx":1159
  *             try:
  *                 other_d = <double ?>obj_a
  *             except TypeError:             # <<<<<<<<<<<<<<
@@ -15095,12 +15099,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __pyx_t_9 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError);
       if (__pyx_t_9) {
         __Pyx_AddTraceback("srctools._vec.Vec.__divmod__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_10, &__pyx_t_1) < 0) __PYX_ERR(0, 1161, __pyx_L16_except_error)
+        if (__Pyx_GetException(&__pyx_t_11, &__pyx_t_10, &__pyx_t_1) < 0) __PYX_ERR(0, 1159, __pyx_L16_except_error)
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_10);
         __Pyx_GOTREF(__pyx_t_1);
 
-        /* "srctools/_vec.pyx":1162
+        /* "srctools/_vec.pyx":1160
  *                 other_d = <double ?>obj_a
  *             except TypeError:
  *                 return NotImplemented             # <<<<<<<<<<<<<<
@@ -15118,7 +15122,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       goto __pyx_L16_except_error;
       __pyx_L16_except_error:;
 
-      /* "srctools/_vec.pyx":1159
+      /* "srctools/_vec.pyx":1157
  *             # val / vec
  *             vec = <Vec>obj_b
  *             try:             # <<<<<<<<<<<<<<
@@ -15139,7 +15143,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
       __pyx_L19_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1164
+    /* "srctools/_vec.pyx":1162
  *                 return NotImplemented
  * 
  *             res_2.val.x = other_d % vec.val.x             # <<<<<<<<<<<<<<
@@ -15148,11 +15152,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1164, __pyx_L1_error)
+      __PYX_ERR(0, 1162, __pyx_L1_error)
     }
     __pyx_v_res_2->val.x = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":1165
+    /* "srctools/_vec.pyx":1163
  * 
  *             res_2.val.x = other_d % vec.val.x
  *             res_1.val.x = other_d // vec.val.x             # <<<<<<<<<<<<<<
@@ -15161,11 +15165,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.x == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1165, __pyx_L1_error)
+      __PYX_ERR(0, 1163, __pyx_L1_error)
     }
     __pyx_v_res_1->val.x = floor(__pyx_v_other_d / __pyx_v_vec->val.x);
 
-    /* "srctools/_vec.pyx":1166
+    /* "srctools/_vec.pyx":1164
  *             res_2.val.x = other_d % vec.val.x
  *             res_1.val.x = other_d // vec.val.x
  *             res_2.val.y = other_d % vec.val.y             # <<<<<<<<<<<<<<
@@ -15174,11 +15178,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1166, __pyx_L1_error)
+      __PYX_ERR(0, 1164, __pyx_L1_error)
     }
     __pyx_v_res_2->val.y = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":1167
+    /* "srctools/_vec.pyx":1165
  *             res_1.val.x = other_d // vec.val.x
  *             res_2.val.y = other_d % vec.val.y
  *             res_1.val.y = other_d // vec.val.y             # <<<<<<<<<<<<<<
@@ -15187,11 +15191,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.y == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1167, __pyx_L1_error)
+      __PYX_ERR(0, 1165, __pyx_L1_error)
     }
     __pyx_v_res_1->val.y = floor(__pyx_v_other_d / __pyx_v_vec->val.y);
 
-    /* "srctools/_vec.pyx":1168
+    /* "srctools/_vec.pyx":1166
  *             res_2.val.y = other_d % vec.val.y
  *             res_1.val.y = other_d // vec.val.y
  *             res_2.val.z = other_d % vec.val.z             # <<<<<<<<<<<<<<
@@ -15200,11 +15204,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float divmod()");
-      __PYX_ERR(0, 1168, __pyx_L1_error)
+      __PYX_ERR(0, 1166, __pyx_L1_error)
     }
     __pyx_v_res_2->val.z = __Pyx_mod_double(__pyx_v_other_d, __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":1169
+    /* "srctools/_vec.pyx":1167
  *             res_1.val.y = other_d // vec.val.y
  *             res_2.val.z = other_d % vec.val.z
  *             res_1.val.z = other_d // vec.val.z             # <<<<<<<<<<<<<<
@@ -15213,11 +15217,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  */
     if (unlikely(__pyx_v_vec->val.z == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "float division");
-      __PYX_ERR(0, 1169, __pyx_L1_error)
+      __PYX_ERR(0, 1167, __pyx_L1_error)
     }
     __pyx_v_res_1->val.z = floor(__pyx_v_other_d / __pyx_v_vec->val.z);
 
-    /* "srctools/_vec.pyx":1156
+    /* "srctools/_vec.pyx":1154
  *             res_2.val.z = vec.val.z % other_d
  *             res_1.val.z = vec.val.z // other_d
  *         elif isinstance(obj_b, Vec):             # <<<<<<<<<<<<<<
@@ -15227,7 +15231,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1171
+  /* "srctools/_vec.pyx":1169
  *             res_1.val.z = other_d // vec.val.z
  *         else:
  *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
@@ -15235,15 +15239,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  *         return res_1, res_2
  */
   /*else*/ {
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__11, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1171, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1169, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 1171, __pyx_L1_error)
+    __PYX_ERR(0, 1169, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1173
+  /* "srctools/_vec.pyx":1171
  *             raise TypeError("Called with non-vectors??")
  * 
  *         return res_1, res_2             # <<<<<<<<<<<<<<
@@ -15251,7 +15255,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
  *     def __bool__(self) -> bool:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1173, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1171, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_res_1));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_res_1));
@@ -15263,7 +15267,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1131
+  /* "srctools/_vec.pyx":1129
  *         return self
  * 
  *     def __divmod__(obj_a, obj_b):             # <<<<<<<<<<<<<<
@@ -15287,7 +15291,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_64__divmod__(PyObject *__pyx_v_ob
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1175
+/* "srctools/_vec.pyx":1173
  *         return res_1, res_2
  * 
  *     def __bool__(self) -> bool:             # <<<<<<<<<<<<<<
@@ -15314,7 +15318,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   int __pyx_t_1;
   __Pyx_RefNannySetupContext("__bool__", 0);
 
-  /* "srctools/_vec.pyx":1177
+  /* "srctools/_vec.pyx":1175
  *     def __bool__(self) -> bool:
  *         """Vectors are True if any axis is non-zero."""
  *         if self.val.x != 0:             # <<<<<<<<<<<<<<
@@ -15324,7 +15328,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   __pyx_t_1 = ((__pyx_v_self->val.x != 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1178
+    /* "srctools/_vec.pyx":1176
  *         """Vectors are True if any axis is non-zero."""
  *         if self.val.x != 0:
  *             return True             # <<<<<<<<<<<<<<
@@ -15334,7 +15338,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1177
+    /* "srctools/_vec.pyx":1175
  *     def __bool__(self) -> bool:
  *         """Vectors are True if any axis is non-zero."""
  *         if self.val.x != 0:             # <<<<<<<<<<<<<<
@@ -15343,7 +15347,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
  */
   }
 
-  /* "srctools/_vec.pyx":1179
+  /* "srctools/_vec.pyx":1177
  *         if self.val.x != 0:
  *             return True
  *         if self.val.y != 0:             # <<<<<<<<<<<<<<
@@ -15353,7 +15357,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   __pyx_t_1 = ((__pyx_v_self->val.y != 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1180
+    /* "srctools/_vec.pyx":1178
  *             return True
  *         if self.val.y != 0:
  *             return True             # <<<<<<<<<<<<<<
@@ -15363,7 +15367,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1179
+    /* "srctools/_vec.pyx":1177
  *         if self.val.x != 0:
  *             return True
  *         if self.val.y != 0:             # <<<<<<<<<<<<<<
@@ -15372,7 +15376,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
  */
   }
 
-  /* "srctools/_vec.pyx":1181
+  /* "srctools/_vec.pyx":1179
  *         if self.val.y != 0:
  *             return True
  *         if self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -15382,7 +15386,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   __pyx_t_1 = ((__pyx_v_self->val.z != 0.0) != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1182
+    /* "srctools/_vec.pyx":1180
  *             return True
  *         if self.val.z != 0:
  *             return True             # <<<<<<<<<<<<<<
@@ -15392,7 +15396,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
     __pyx_r = 1;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1181
+    /* "srctools/_vec.pyx":1179
  *         if self.val.y != 0:
  *             return True
  *         if self.val.z != 0:             # <<<<<<<<<<<<<<
@@ -15401,7 +15405,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
  */
   }
 
-  /* "srctools/_vec.pyx":1183
+  /* "srctools/_vec.pyx":1181
  *         if self.val.z != 0:
  *             return True
  *         return False             # <<<<<<<<<<<<<<
@@ -15411,7 +15415,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   __pyx_r = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1175
+  /* "srctools/_vec.pyx":1173
  *         return res_1, res_2
  * 
  *     def __bool__(self) -> bool:             # <<<<<<<<<<<<<<
@@ -15425,7 +15429,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_66__bool__(struct __pyx_obj_8srctools_4
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1185
+/* "srctools/_vec.pyx":1183
  *         return False
  * 
  *     def __len__(self):             # <<<<<<<<<<<<<<
@@ -15455,7 +15459,7 @@ static Py_ssize_t __pyx_pf_8srctools_4_vec_3Vec_68__len__(struct __pyx_obj_8srct
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__len__", 0);
 
-  /* "srctools/_vec.pyx":1189
+  /* "srctools/_vec.pyx":1187
  *         return (
  *             (self.val.x != 0) +
  *             (self.val.y != 0) +             # <<<<<<<<<<<<<<
@@ -15465,7 +15469,7 @@ static Py_ssize_t __pyx_pf_8srctools_4_vec_3Vec_68__len__(struct __pyx_obj_8srct
   __pyx_r = (((__pyx_v_self->val.x != 0.0) + (__pyx_v_self->val.y != 0.0)) + (__pyx_v_self->val.z != 0.0));
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1185
+  /* "srctools/_vec.pyx":1183
  *         return False
  * 
  *     def __len__(self):             # <<<<<<<<<<<<<<
@@ -15479,7 +15483,7 @@ static Py_ssize_t __pyx_pf_8srctools_4_vec_3Vec_68__len__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1195
+/* "srctools/_vec.pyx":1193
  *     # All the comparisons are similar, so we can use richcmp to
  *     # nicely combine the parsing code.
  *     def __richcmp__(self, other_obj, int op):             # <<<<<<<<<<<<<<
@@ -15518,7 +15522,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__richcmp__", 0);
 
-  /* "srctools/_vec.pyx":1202
+  /* "srctools/_vec.pyx":1200
  *         """
  *         cdef vec_t other
  *         try:             # <<<<<<<<<<<<<<
@@ -15534,16 +15538,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_vec.pyx":1203
+      /* "srctools/_vec.pyx":1201
  *         cdef vec_t other
  *         try:
  *             _conv_vec(&other, other_obj, False)             # <<<<<<<<<<<<<<
  *         except (TypeError, ValueError):
  *             return NotImplemented
  */
-      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_other), __pyx_v_other_obj, 0); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1203, __pyx_L3_error)
+      __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_other), __pyx_v_other_obj, 0); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1201, __pyx_L3_error)
 
-      /* "srctools/_vec.pyx":1202
+      /* "srctools/_vec.pyx":1200
  *         """
  *         cdef vec_t other
  *         try:             # <<<<<<<<<<<<<<
@@ -15557,7 +15561,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     goto __pyx_L8_try_end;
     __pyx_L3_error:;
 
-    /* "srctools/_vec.pyx":1204
+    /* "srctools/_vec.pyx":1202
  *         try:
  *             _conv_vec(&other, other_obj, False)
  *         except (TypeError, ValueError):             # <<<<<<<<<<<<<<
@@ -15567,12 +15571,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_5 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_TypeError) || __Pyx_PyErr_ExceptionMatches(__pyx_builtin_ValueError);
     if (__pyx_t_5) {
       __Pyx_AddTraceback("srctools._vec.Vec.__richcmp__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1204, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_6, &__pyx_t_7, &__pyx_t_8) < 0) __PYX_ERR(0, 1202, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_6);
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_GOTREF(__pyx_t_8);
 
-      /* "srctools/_vec.pyx":1205
+      /* "srctools/_vec.pyx":1203
  *             _conv_vec(&other, other_obj, False)
  *         except (TypeError, ValueError):
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -15590,7 +15594,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_vec.pyx":1202
+    /* "srctools/_vec.pyx":1200
  *         """
  *         cdef vec_t other
  *         try:             # <<<<<<<<<<<<<<
@@ -15611,7 +15615,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_L8_try_end:;
   }
 
-  /* "srctools/_vec.pyx":1207
+  /* "srctools/_vec.pyx":1205
  *             return NotImplemented
  * 
  *         if op == Py_EQ:             # <<<<<<<<<<<<<<
@@ -15621,7 +15625,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_EQ) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":1208
+    /* "srctools/_vec.pyx":1206
  * 
  *         if op == Py_EQ:
  *             return (             # <<<<<<<<<<<<<<
@@ -15630,7 +15634,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1209
+    /* "srctools/_vec.pyx":1207
  *         if op == Py_EQ:
  *             return (
  *                 self.val.x == other.x and             # <<<<<<<<<<<<<<
@@ -15640,14 +15644,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x == __pyx_v_other.x);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1209, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1207, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L12_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1210
+    /* "srctools/_vec.pyx":1208
  *             return (
  *                 self.val.x == other.x and
  *                 self.val.y == other.y and             # <<<<<<<<<<<<<<
@@ -15657,14 +15661,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y == __pyx_v_other.y);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1210, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1208, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L12_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1211
+    /* "srctools/_vec.pyx":1209
  *                 self.val.x == other.x and
  *                 self.val.y == other.y and
  *                 self.val.z == other.z             # <<<<<<<<<<<<<<
@@ -15672,7 +15676,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         elif op == Py_NE:
  */
     __pyx_t_9 = (__pyx_v_self->val.z == __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1211, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1209, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -15681,7 +15685,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1207
+    /* "srctools/_vec.pyx":1205
  *             return NotImplemented
  * 
  *         if op == Py_EQ:             # <<<<<<<<<<<<<<
@@ -15690,7 +15694,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1213
+  /* "srctools/_vec.pyx":1211
  *                 self.val.z == other.z
  *             )
  *         elif op == Py_NE:             # <<<<<<<<<<<<<<
@@ -15700,7 +15704,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_NE) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":1214
+    /* "srctools/_vec.pyx":1212
  *             )
  *         elif op == Py_NE:
  *             return (             # <<<<<<<<<<<<<<
@@ -15709,7 +15713,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1215
+    /* "srctools/_vec.pyx":1213
  *         elif op == Py_NE:
  *             return (
  *                 self.val.x != other.x or             # <<<<<<<<<<<<<<
@@ -15719,14 +15723,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x != __pyx_v_other.x);
     if (!__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1215, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1213, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L15_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1216
+    /* "srctools/_vec.pyx":1214
  *             return (
  *                 self.val.x != other.x or
  *                 self.val.y != other.y or             # <<<<<<<<<<<<<<
@@ -15736,14 +15740,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y != __pyx_v_other.y);
     if (!__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1216, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1214, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L15_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1217
+    /* "srctools/_vec.pyx":1215
  *                 self.val.x != other.x or
  *                 self.val.y != other.y or
  *                 self.val.z != other.z             # <<<<<<<<<<<<<<
@@ -15751,7 +15755,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         elif op == Py_LT:
  */
     __pyx_t_9 = (__pyx_v_self->val.z != __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1217, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1215, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -15760,7 +15764,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1213
+    /* "srctools/_vec.pyx":1211
  *                 self.val.z == other.z
  *             )
  *         elif op == Py_NE:             # <<<<<<<<<<<<<<
@@ -15769,7 +15773,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1219
+  /* "srctools/_vec.pyx":1217
  *                 self.val.z != other.z
  *             )
  *         elif op == Py_LT:             # <<<<<<<<<<<<<<
@@ -15779,7 +15783,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_LT) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":1220
+    /* "srctools/_vec.pyx":1218
  *             )
  *         elif op == Py_LT:
  *             return (             # <<<<<<<<<<<<<<
@@ -15788,7 +15792,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1221
+    /* "srctools/_vec.pyx":1219
  *         elif op == Py_LT:
  *             return (
  *                 self.val.x < other.x and             # <<<<<<<<<<<<<<
@@ -15798,14 +15802,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x < __pyx_v_other.x);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1221, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1219, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L18_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1222
+    /* "srctools/_vec.pyx":1220
  *             return (
  *                 self.val.x < other.x and
  *                 self.val.y < other.y and             # <<<<<<<<<<<<<<
@@ -15815,14 +15819,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y < __pyx_v_other.y);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1222, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1220, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L18_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1223
+    /* "srctools/_vec.pyx":1221
  *                 self.val.x < other.x and
  *                 self.val.y < other.y and
  *                 self.val.z < other.z             # <<<<<<<<<<<<<<
@@ -15830,7 +15834,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         elif op == Py_GT:
  */
     __pyx_t_9 = (__pyx_v_self->val.z < __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1223, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1221, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -15839,7 +15843,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1219
+    /* "srctools/_vec.pyx":1217
  *                 self.val.z != other.z
  *             )
  *         elif op == Py_LT:             # <<<<<<<<<<<<<<
@@ -15848,7 +15852,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1225
+  /* "srctools/_vec.pyx":1223
  *                 self.val.z < other.z
  *             )
  *         elif op == Py_GT:             # <<<<<<<<<<<<<<
@@ -15858,7 +15862,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_GT) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":1226
+    /* "srctools/_vec.pyx":1224
  *             )
  *         elif op == Py_GT:
  *             return (             # <<<<<<<<<<<<<<
@@ -15867,7 +15871,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1227
+    /* "srctools/_vec.pyx":1225
  *         elif op == Py_GT:
  *             return (
  *                 self.val.x > other.x and             # <<<<<<<<<<<<<<
@@ -15877,14 +15881,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x > __pyx_v_other.x);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1227, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1225, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L21_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1228
+    /* "srctools/_vec.pyx":1226
  *             return (
  *                 self.val.x > other.x and
  *                 self.val.y > other.y and             # <<<<<<<<<<<<<<
@@ -15894,14 +15898,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y > __pyx_v_other.y);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1228, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1226, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L21_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1229
+    /* "srctools/_vec.pyx":1227
  *                 self.val.x > other.x and
  *                 self.val.y > other.y and
  *                 self.val.z > other.z             # <<<<<<<<<<<<<<
@@ -15909,7 +15913,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         elif op == Py_LE:
  */
     __pyx_t_9 = (__pyx_v_self->val.z > __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1229, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1227, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -15918,7 +15922,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1225
+    /* "srctools/_vec.pyx":1223
  *                 self.val.z < other.z
  *             )
  *         elif op == Py_GT:             # <<<<<<<<<<<<<<
@@ -15927,7 +15931,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1231
+  /* "srctools/_vec.pyx":1229
  *                 self.val.z > other.z
  *             )
  *         elif op == Py_LE:             # <<<<<<<<<<<<<<
@@ -15937,7 +15941,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_LE) != 0);
   if (__pyx_t_9) {
 
-    /* "srctools/_vec.pyx":1232
+    /* "srctools/_vec.pyx":1230
  *             )
  *         elif op == Py_LE:
  *             return (             # <<<<<<<<<<<<<<
@@ -15946,7 +15950,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1233
+    /* "srctools/_vec.pyx":1231
  *         elif op == Py_LE:
  *             return (
  *                 self.val.x <= other.x and             # <<<<<<<<<<<<<<
@@ -15956,14 +15960,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x <= __pyx_v_other.x);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1233, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1231, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L24_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1234
+    /* "srctools/_vec.pyx":1232
  *             return (
  *                 self.val.x <= other.x and
  *                 self.val.y <= other.y and             # <<<<<<<<<<<<<<
@@ -15973,14 +15977,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y <= __pyx_v_other.y);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1234, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1232, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L24_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1235
+    /* "srctools/_vec.pyx":1233
  *                 self.val.x <= other.x and
  *                 self.val.y <= other.y and
  *                 self.val.z <= other.z             # <<<<<<<<<<<<<<
@@ -15988,7 +15992,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         elif op == Py_GE:
  */
     __pyx_t_9 = (__pyx_v_self->val.z <= __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1235, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1233, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -15997,7 +16001,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1231
+    /* "srctools/_vec.pyx":1229
  *                 self.val.z > other.z
  *             )
  *         elif op == Py_LE:             # <<<<<<<<<<<<<<
@@ -16006,7 +16010,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1237
+  /* "srctools/_vec.pyx":1235
  *                 self.val.z <= other.z
  *             )
  *         elif op == Py_GE:             # <<<<<<<<<<<<<<
@@ -16016,7 +16020,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   __pyx_t_9 = ((__pyx_v_op == Py_GE) != 0);
   if (likely(__pyx_t_9)) {
 
-    /* "srctools/_vec.pyx":1238
+    /* "srctools/_vec.pyx":1236
  *             )
  *         elif op == Py_GE:
  *             return (             # <<<<<<<<<<<<<<
@@ -16025,7 +16029,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
     __Pyx_XDECREF(__pyx_r);
 
-    /* "srctools/_vec.pyx":1239
+    /* "srctools/_vec.pyx":1237
  *         elif op == Py_GE:
  *             return (
  *                 self.val.x >= other.x and             # <<<<<<<<<<<<<<
@@ -16035,14 +16039,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.x >= __pyx_v_other.x);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1239, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1237, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L27_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1240
+    /* "srctools/_vec.pyx":1238
  *             return (
  *                 self.val.x >= other.x and
  *                 self.val.y >= other.y and             # <<<<<<<<<<<<<<
@@ -16052,14 +16056,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_9 = (__pyx_v_self->val.y >= __pyx_v_other.y);
     if (__pyx_t_9) {
     } else {
-      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1240, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1238, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_8 = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L27_bool_binop_done;
     }
 
-    /* "srctools/_vec.pyx":1241
+    /* "srctools/_vec.pyx":1239
  *                 self.val.x >= other.x and
  *                 self.val.y >= other.y and
  *                 self.val.z >= other.z             # <<<<<<<<<<<<<<
@@ -16067,7 +16071,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *         else:
  */
     __pyx_t_9 = (__pyx_v_self->val.z >= __pyx_v_other.z);
-    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1241, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyBool_FromLong(__pyx_t_9); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1239, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_8 = __pyx_t_7;
     __pyx_t_7 = 0;
@@ -16076,7 +16080,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
     __pyx_t_8 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1237
+    /* "srctools/_vec.pyx":1235
  *                 self.val.z <= other.z
  *             )
  *         elif op == Py_GE:             # <<<<<<<<<<<<<<
@@ -16085,7 +16089,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  */
   }
 
-  /* "srctools/_vec.pyx":1244
+  /* "srctools/_vec.pyx":1242
  *             )
  *         else:
  *             raise RuntimeError('Bad operation!')             # <<<<<<<<<<<<<<
@@ -16093,14 +16097,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
  *     def max(self, other):
  */
   /*else*/ {
-    __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__12, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1244, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__13, NULL); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1242, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_Raise(__pyx_t_8, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __PYX_ERR(0, 1244, __pyx_L1_error)
+    __PYX_ERR(0, 1242, __pyx_L1_error)
   }
 
-  /* "srctools/_vec.pyx":1195
+  /* "srctools/_vec.pyx":1193
  *     # All the comparisons are similar, so we can use richcmp to
  *     # nicely combine the parsing code.
  *     def __richcmp__(self, other_obj, int op):             # <<<<<<<<<<<<<<
@@ -16121,7 +16125,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_70__richcmp__(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1246
+/* "srctools/_vec.pyx":1244
  *             raise RuntimeError('Bad operation!')
  * 
  *     def max(self, other):             # <<<<<<<<<<<<<<
@@ -16155,16 +16159,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("max", 0);
 
-  /* "srctools/_vec.pyx":1249
+  /* "srctools/_vec.pyx":1247
  *         """Set this vector's values to the maximum of the two vectors."""
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
  *         if self.val.x < vec.x:
  *             self.val.x = vec.x
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1249, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1247, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1250
+  /* "srctools/_vec.pyx":1248
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -16174,7 +16178,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.x < __pyx_v_vec.x) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1251
+    /* "srctools/_vec.pyx":1249
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x < vec.x:
  *             self.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -16184,7 +16188,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.x;
     __pyx_v_self->val.x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1250
+    /* "srctools/_vec.pyx":1248
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x < vec.x:             # <<<<<<<<<<<<<<
@@ -16193,7 +16197,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1253
+  /* "srctools/_vec.pyx":1251
  *             self.val.x = vec.x
  * 
  *         if self.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -16203,7 +16207,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.y < __pyx_v_vec.y) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1254
+    /* "srctools/_vec.pyx":1252
  * 
  *         if self.val.y < vec.y:
  *             self.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -16213,7 +16217,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.y;
     __pyx_v_self->val.y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1253
+    /* "srctools/_vec.pyx":1251
  *             self.val.x = vec.x
  * 
  *         if self.val.y < vec.y:             # <<<<<<<<<<<<<<
@@ -16222,7 +16226,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1256
+  /* "srctools/_vec.pyx":1254
  *             self.val.y = vec.y
  * 
  *         if self.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -16232,7 +16236,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.z < __pyx_v_vec.z) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1257
+    /* "srctools/_vec.pyx":1255
  * 
  *         if self.val.z < vec.z:
  *             self.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -16242,7 +16246,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.z;
     __pyx_v_self->val.z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1256
+    /* "srctools/_vec.pyx":1254
  *             self.val.y = vec.y
  * 
  *         if self.val.z < vec.z:             # <<<<<<<<<<<<<<
@@ -16251,7 +16255,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1246
+  /* "srctools/_vec.pyx":1244
  *             raise RuntimeError('Bad operation!')
  * 
  *     def max(self, other):             # <<<<<<<<<<<<<<
@@ -16271,7 +16275,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_72max(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1259
+/* "srctools/_vec.pyx":1257
  *             self.val.z = vec.z
  * 
  *     def min(self, other):             # <<<<<<<<<<<<<<
@@ -16305,16 +16309,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("min", 0);
 
-  /* "srctools/_vec.pyx":1262
+  /* "srctools/_vec.pyx":1260
  *         """Set this vector's values to be the minimum of the two vectors."""
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)             # <<<<<<<<<<<<<<
  *         if self.val.x > vec.x:
  *             self.val.x = vec.x
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1262, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1260, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1263
+  /* "srctools/_vec.pyx":1261
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -16324,7 +16328,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.x > __pyx_v_vec.x) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1264
+    /* "srctools/_vec.pyx":1262
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x > vec.x:
  *             self.val.x = vec.x             # <<<<<<<<<<<<<<
@@ -16334,7 +16338,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.x;
     __pyx_v_self->val.x = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1263
+    /* "srctools/_vec.pyx":1261
  *         cdef vec_t vec
  *         _conv_vec(&vec, other, scalar=False)
  *         if self.val.x > vec.x:             # <<<<<<<<<<<<<<
@@ -16343,7 +16347,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1266
+  /* "srctools/_vec.pyx":1264
  *             self.val.x = vec.x
  * 
  *         if self.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -16353,7 +16357,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.y > __pyx_v_vec.y) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1267
+    /* "srctools/_vec.pyx":1265
  * 
  *         if self.val.y > vec.y:
  *             self.val.y = vec.y             # <<<<<<<<<<<<<<
@@ -16363,7 +16367,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.y;
     __pyx_v_self->val.y = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1266
+    /* "srctools/_vec.pyx":1264
  *             self.val.x = vec.x
  * 
  *         if self.val.y > vec.y:             # <<<<<<<<<<<<<<
@@ -16372,7 +16376,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1269
+  /* "srctools/_vec.pyx":1267
  *             self.val.y = vec.y
  * 
  *         if self.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -16382,7 +16386,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
   __pyx_t_2 = ((__pyx_v_self->val.z > __pyx_v_vec.z) != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1270
+    /* "srctools/_vec.pyx":1268
  * 
  *         if self.val.z > vec.z:
  *             self.val.z = vec.z             # <<<<<<<<<<<<<<
@@ -16392,7 +16396,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
     __pyx_t_3 = __pyx_v_vec.z;
     __pyx_v_self->val.z = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1269
+    /* "srctools/_vec.pyx":1267
  *             self.val.y = vec.y
  * 
  *         if self.val.z > vec.z:             # <<<<<<<<<<<<<<
@@ -16401,7 +16405,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
  */
   }
 
-  /* "srctools/_vec.pyx":1259
+  /* "srctools/_vec.pyx":1257
  *             self.val.z = vec.z
  * 
  *     def min(self, other):             # <<<<<<<<<<<<<<
@@ -16421,7 +16425,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_74min(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1272
+/* "srctools/_vec.pyx":1270
  *             self.val.z = vec.z
  * 
  *     def __round__(self, object n=0):             # <<<<<<<<<<<<<<
@@ -16462,7 +16466,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_77__round__(PyObject *__pyx_v_sel
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__round__") < 0)) __PYX_ERR(0, 1272, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__round__") < 0)) __PYX_ERR(0, 1270, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -16476,7 +16480,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_77__round__(PyObject *__pyx_v_sel
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__round__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1272, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__round__", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1270, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.__round__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -16501,26 +16505,74 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__round__(struct __pyx_obj_8src
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__round__", 0);
 
-  /* "srctools/_vec.pyx":1274
+  /* "srctools/_vec.pyx":1272
  *     def __round__(self, object n=0):
  *         """Performing round() on a Vec rounds each axis."""
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  * 
  *         vec.val.x = round(self.val.x, n)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1274, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1272, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1276
+  /* "srctools/_vec.pyx":1274
  *         cdef Vec vec = Vec.__new__(Vec)
  * 
  *         vec.val.x = round(self.val.x, n)             # <<<<<<<<<<<<<<
  *         vec.val.y = round(self.val.y, n)
  *         vec.val.z = round(self.val.z, n)
  */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1276, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
+  __Pyx_INCREF(__pyx_v_n);
+  __Pyx_GIVEREF(__pyx_v_n);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1274, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1274, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_vec->val.x = __pyx_t_3;
+
+  /* "srctools/_vec.pyx":1275
+ * 
+ *         vec.val.x = round(self.val.x, n)
+ *         vec.val.y = round(self.val.y, n)             # <<<<<<<<<<<<<<
+ *         vec.val.z = round(self.val.z, n)
+ * 
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1275, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1275, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_2);
+  __Pyx_GIVEREF(__pyx_t_1);
+  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
+  __Pyx_INCREF(__pyx_v_n);
+  __Pyx_GIVEREF(__pyx_v_n);
+  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
+  __pyx_t_1 = 0;
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1275, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
+  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1275, __pyx_L1_error)
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_v_vec->val.y = __pyx_t_3;
+
+  /* "srctools/_vec.pyx":1276
+ *         vec.val.x = round(self.val.x, n)
+ *         vec.val.y = round(self.val.y, n)
+ *         vec.val.z = round(self.val.z, n)             # <<<<<<<<<<<<<<
+ * 
+ *         return vec
+ */
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1276, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -16535,57 +16587,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__round__(struct __pyx_obj_8src
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1276, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_vec->val.x = __pyx_t_3;
-
-  /* "srctools/_vec.pyx":1277
- * 
- *         vec.val.x = round(self.val.x, n)
- *         vec.val.y = round(self.val.y, n)             # <<<<<<<<<<<<<<
- *         vec.val.z = round(self.val.z, n)
- * 
- */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
-  __Pyx_INCREF(__pyx_v_n);
-  __Pyx_GIVEREF(__pyx_v_n);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1277, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1277, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __pyx_v_vec->val.y = __pyx_t_3;
-
-  /* "srctools/_vec.pyx":1278
- *         vec.val.x = round(self.val.x, n)
- *         vec.val.y = round(self.val.y, n)
- *         vec.val.z = round(self.val.z, n)             # <<<<<<<<<<<<<<
- * 
- *         return vec
- */
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_2);
-  __Pyx_GIVEREF(__pyx_t_1);
-  PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
-  __Pyx_INCREF(__pyx_v_n);
-  __Pyx_GIVEREF(__pyx_v_n);
-  PyTuple_SET_ITEM(__pyx_t_2, 1, __pyx_v_n);
-  __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_round, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1278, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_1);
-  __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  __pyx_t_3 = __pyx_PyFloat_AsDouble(__pyx_t_1); if (unlikely((__pyx_t_3 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1278, __pyx_L1_error)
-  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_vec->val.z = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":1280
+  /* "srctools/_vec.pyx":1278
  *         vec.val.z = round(self.val.z, n)
  * 
  *         return vec             # <<<<<<<<<<<<<<
@@ -16597,7 +16601,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__round__(struct __pyx_obj_8src
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1272
+  /* "srctools/_vec.pyx":1270
  *             self.val.z = vec.z
  * 
  *     def __round__(self, object n=0):             # <<<<<<<<<<<<<<
@@ -16618,7 +16622,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_76__round__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1282
+/* "srctools/_vec.pyx":1280
  *         return vec
  * 
  *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
@@ -16631,7 +16635,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_ob
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("_mag_sq", 0);
 
-  /* "srctools/_vec.pyx":1283
+  /* "srctools/_vec.pyx":1281
  * 
  *     cdef inline double _mag_sq(self):
  *         return self.val.x**2 + self.val.y**2 + self.val.z**2             # <<<<<<<<<<<<<<
@@ -16641,7 +16645,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_ob
   __pyx_r = ((pow(__pyx_v_self->val.x, 2.0) + pow(__pyx_v_self->val.y, 2.0)) + pow(__pyx_v_self->val.z, 2.0));
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1282
+  /* "srctools/_vec.pyx":1280
  *         return vec
  * 
  *     cdef inline double _mag_sq(self):             # <<<<<<<<<<<<<<
@@ -16655,7 +16659,7 @@ static CYTHON_INLINE double __pyx_f_8srctools_4_vec_3Vec__mag_sq(struct __pyx_ob
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1285
+/* "srctools/_vec.pyx":1283
  *         return self.val.x**2 + self.val.y**2 + self.val.z**2
  * 
  *     def mag_sq(self):             # <<<<<<<<<<<<<<
@@ -16686,7 +16690,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_78mag_sq(struct __pyx_obj_8srctoo
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("mag_sq", 0);
 
-  /* "srctools/_vec.pyx":1287
+  /* "srctools/_vec.pyx":1285
  *     def mag_sq(self):
  *         """Compute the distance from the vector and the origin."""
  *         return self._mag_sq()             # <<<<<<<<<<<<<<
@@ -16694,13 +16698,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_78mag_sq(struct __pyx_obj_8srctoo
  *     def len_sq(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1287, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1285, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1285
+  /* "srctools/_vec.pyx":1283
  *         return self.val.x**2 + self.val.y**2 + self.val.z**2
  * 
  *     def mag_sq(self):             # <<<<<<<<<<<<<<
@@ -16719,7 +16723,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_78mag_sq(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1289
+/* "srctools/_vec.pyx":1287
  *         return self._mag_sq()
  * 
  *     def len_sq(self):             # <<<<<<<<<<<<<<
@@ -16750,7 +16754,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80len_sq(struct __pyx_obj_8srctoo
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("len_sq", 0);
 
-  /* "srctools/_vec.pyx":1291
+  /* "srctools/_vec.pyx":1289
  *     def len_sq(self):
  *         """Compute the distance from the vector and the origin."""
  *         return self._mag_sq()             # <<<<<<<<<<<<<<
@@ -16758,13 +16762,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80len_sq(struct __pyx_obj_8srctoo
  *     def mag(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1291, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec_3Vec__mag_sq(__pyx_v_self)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1289, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1289
+  /* "srctools/_vec.pyx":1287
  *         return self._mag_sq()
  * 
  *     def len_sq(self):             # <<<<<<<<<<<<<<
@@ -16783,7 +16787,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_80len_sq(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1293
+/* "srctools/_vec.pyx":1291
  *         return self._mag_sq()
  * 
  *     def mag(self):             # <<<<<<<<<<<<<<
@@ -16814,7 +16818,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_82mag(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("mag", 0);
 
-  /* "srctools/_vec.pyx":1295
+  /* "srctools/_vec.pyx":1293
  *     def mag(self):
  *         """Compute the distance from the vector and the origin."""
  *         return _vec_mag(&self.val)             # <<<<<<<<<<<<<<
@@ -16822,13 +16826,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_82mag(struct __pyx_obj_8srctools_
  *     def len(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec__vec_mag((&__pyx_v_self->val))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1295, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec__vec_mag((&__pyx_v_self->val))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1293, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1293
+  /* "srctools/_vec.pyx":1291
  *         return self._mag_sq()
  * 
  *     def mag(self):             # <<<<<<<<<<<<<<
@@ -16847,7 +16851,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_82mag(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1297
+/* "srctools/_vec.pyx":1295
  *         return _vec_mag(&self.val)
  * 
  *     def len(self):             # <<<<<<<<<<<<<<
@@ -16878,7 +16882,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_84len(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("len", 0);
 
-  /* "srctools/_vec.pyx":1299
+  /* "srctools/_vec.pyx":1297
  *     def len(self):
  *         """Compute the distance from the vector and the origin."""
  *         return _vec_mag(&self.val)             # <<<<<<<<<<<<<<
@@ -16886,13 +16890,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_84len(struct __pyx_obj_8srctools_
  *     def norm(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec__vec_mag((&__pyx_v_self->val))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1299, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_f_8srctools_4_vec__vec_mag((&__pyx_v_self->val))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1297, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1297
+  /* "srctools/_vec.pyx":1295
  *         return _vec_mag(&self.val)
  * 
  *     def len(self):             # <<<<<<<<<<<<<<
@@ -16911,7 +16915,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_84len(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1301
+/* "srctools/_vec.pyx":1299
  *         return _vec_mag(&self.val)
  * 
  *     def norm(self):             # <<<<<<<<<<<<<<
@@ -16943,19 +16947,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_86norm(struct __pyx_obj_8srctools
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("norm", 0);
 
-  /* "srctools/_vec.pyx":1308
+  /* "srctools/_vec.pyx":1306
  *          The vector is left unchanged if it is equal to (0,0,0).
  *          """
  *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         _vec_normalise(&vec.val, &self.val)
  *         return vec
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1308, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1306, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1309
+  /* "srctools/_vec.pyx":1307
  *          """
  *         cdef Vec vec = Vec.__new__(Vec)
  *         _vec_normalise(&vec.val, &self.val)             # <<<<<<<<<<<<<<
@@ -16964,7 +16968,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_86norm(struct __pyx_obj_8srctools
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_vec->val), (&__pyx_v_self->val));
 
-  /* "srctools/_vec.pyx":1310
+  /* "srctools/_vec.pyx":1308
  *         cdef Vec vec = Vec.__new__(Vec)
  *         _vec_normalise(&vec.val, &self.val)
  *         return vec             # <<<<<<<<<<<<<<
@@ -16976,7 +16980,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_86norm(struct __pyx_obj_8srctools
   __pyx_r = ((PyObject *)__pyx_v_vec);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1301
+  /* "srctools/_vec.pyx":1299
  *         return _vec_mag(&self.val)
  * 
  *     def norm(self):             # <<<<<<<<<<<<<<
@@ -16996,7 +17000,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_86norm(struct __pyx_obj_8srctools
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1312
+/* "srctools/_vec.pyx":1310
  *         return vec
  * 
  *     def norm_mask(self, normal: 'Vec') -> 'Vec':             # <<<<<<<<<<<<<<
@@ -17014,7 +17018,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pw_8srctools_4_vec_3Vec_89nor
   struct __pyx_obj_8srctools_4_vec_Vec *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("norm_mask (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_normal), __pyx_ptype_8srctools_4_vec_Vec, 1, "normal", 0))) __PYX_ERR(0, 1312, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_normal), __pyx_ptype_8srctools_4_vec_Vec, 1, "normal", 0))) __PYX_ERR(0, 1310, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_3Vec_88norm_mask(((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_self), ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_normal));
 
   /* function exit code */
@@ -17038,16 +17042,16 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_88nor
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("norm_mask", 0);
 
-  /* "srctools/_vec.pyx":1320
+  /* "srctools/_vec.pyx":1318
  *         cdef vec_t norm
  * 
  *         _conv_vec(&norm, normal, False)             # <<<<<<<<<<<<<<
  * 
  *         _vec_normalise(&norm, &norm)
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_norm), ((PyObject *)__pyx_v_normal), 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1320, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_norm), ((PyObject *)__pyx_v_normal), 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1318, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1322
+  /* "srctools/_vec.pyx":1320
  *         _conv_vec(&norm, normal, False)
  * 
  *         _vec_normalise(&norm, &norm)             # <<<<<<<<<<<<<<
@@ -17056,7 +17060,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_88nor
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_norm), (&__pyx_v_norm));
 
-  /* "srctools/_vec.pyx":1326
+  /* "srctools/_vec.pyx":1324
  *         cdef double dot = (
  *             self.val.x * norm.x +
  *             self.val.y * norm.y +             # <<<<<<<<<<<<<<
@@ -17065,7 +17069,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_88nor
  */
   __pyx_v_dot = (((__pyx_v_self->val.x * __pyx_v_norm.x) + (__pyx_v_self->val.y * __pyx_v_norm.y)) + (__pyx_v_self->val.z * __pyx_v_norm.z));
 
-  /* "srctools/_vec.pyx":1330
+  /* "srctools/_vec.pyx":1328
  *         )
  * 
  *         return _vector(             # <<<<<<<<<<<<<<
@@ -17074,20 +17078,20 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_88nor
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
 
-  /* "srctools/_vec.pyx":1333
+  /* "srctools/_vec.pyx":1331
  *             norm.x * dot,
  *             norm.y * dot,
  *             norm.z * dot,             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_2 = ((PyObject *)__pyx_f_8srctools_4_vec__vector((__pyx_v_norm.x * __pyx_v_dot), (__pyx_v_norm.y * __pyx_v_dot), (__pyx_v_norm.z * __pyx_v_dot))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1330, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_f_8srctools_4_vec__vector((__pyx_v_norm.x * __pyx_v_dot), (__pyx_v_norm.y * __pyx_v_dot), (__pyx_v_norm.z * __pyx_v_dot))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1328, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1312
+  /* "srctools/_vec.pyx":1310
  *         return vec
  * 
  *     def norm_mask(self, normal: 'Vec') -> 'Vec':             # <<<<<<<<<<<<<<
@@ -17106,7 +17110,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_88nor
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1337
+/* "srctools/_vec.pyx":1335
  * 
  * 
  *     def dot(self, other) -> float:             # <<<<<<<<<<<<<<
@@ -17139,16 +17143,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_90dot(struct __pyx_obj_8srctools_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("dot", 0);
 
-  /* "srctools/_vec.pyx":1341
+  /* "srctools/_vec.pyx":1339
  *         cdef vec_t oth
  * 
  *         _conv_vec(&oth, other, False)             # <<<<<<<<<<<<<<
  * 
  *         return (
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_oth), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1341, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_oth), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1339, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1343
+  /* "srctools/_vec.pyx":1341
  *         _conv_vec(&oth, other, False)
  * 
  *         return (             # <<<<<<<<<<<<<<
@@ -17157,20 +17161,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_90dot(struct __pyx_obj_8srctools_
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":1345
+  /* "srctools/_vec.pyx":1343
  *         return (
  *             self.val.x * oth.x +
  *             self.val.y * oth.y +             # <<<<<<<<<<<<<<
  *             self.val.z * oth.z
  *         )
  */
-  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_self->val.x * __pyx_v_oth.x) + (__pyx_v_self->val.y * __pyx_v_oth.y)) + (__pyx_v_self->val.z * __pyx_v_oth.z))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1345, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble((((__pyx_v_self->val.x * __pyx_v_oth.x) + (__pyx_v_self->val.y * __pyx_v_oth.y)) + (__pyx_v_self->val.z * __pyx_v_oth.z))); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1343, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1337
+  /* "srctools/_vec.pyx":1335
  * 
  * 
  *     def dot(self, other) -> float:             # <<<<<<<<<<<<<<
@@ -17189,7 +17193,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_90dot(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1349
+/* "srctools/_vec.pyx":1347
  *         )
  * 
  *     def cross(self, other) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -17223,28 +17227,28 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_92cro
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("cross", 0);
 
-  /* "srctools/_vec.pyx":1354
+  /* "srctools/_vec.pyx":1352
  *         cdef Vec res
  * 
  *         _conv_vec(&oth, other, False)             # <<<<<<<<<<<<<<
  *         res = Vec.__new__(Vec)
  *         _vec_cross(&res.val, &self.val, &oth)
  */
-  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_oth), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1354, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_oth), __pyx_v_other, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1352, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1355
+  /* "srctools/_vec.pyx":1353
  * 
  *         _conv_vec(&oth, other, False)
  *         res = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *         _vec_cross(&res.val, &self.val, &oth)
  *         return res
  */
-  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1355, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1353, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_2));
   __pyx_v_res = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":1356
+  /* "srctools/_vec.pyx":1354
  *         _conv_vec(&oth, other, False)
  *         res = Vec.__new__(Vec)
  *         _vec_cross(&res.val, &self.val, &oth)             # <<<<<<<<<<<<<<
@@ -17253,7 +17257,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_92cro
  */
   __pyx_f_8srctools_4_vec__vec_cross((&__pyx_v_res->val), (&__pyx_v_self->val), (&__pyx_v_oth));
 
-  /* "srctools/_vec.pyx":1357
+  /* "srctools/_vec.pyx":1355
  *         res = Vec.__new__(Vec)
  *         _vec_cross(&res.val, &self.val, &oth)
  *         return res             # <<<<<<<<<<<<<<
@@ -17265,7 +17269,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_92cro
   __pyx_r = __pyx_v_res;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1349
+  /* "srctools/_vec.pyx":1347
  *         )
  * 
  *     def cross(self, other) -> 'Vec':             # <<<<<<<<<<<<<<
@@ -17285,7 +17289,7 @@ static struct __pyx_obj_8srctools_4_vec_Vec *__pyx_pf_8srctools_4_vec_3Vec_92cro
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1360
+/* "srctools/_vec.pyx":1358
  * 
  * 
  *     def join(self, delim: str=', ') -> str:             # <<<<<<<<<<<<<<
@@ -17307,7 +17311,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_95join(PyObject *__pyx_v_self, Py
   {
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_delim,0};
     PyObject* values[1] = {0};
-    values[0] = ((PyObject*)__pyx_kp_u__6);
+    values[0] = ((PyObject*)__pyx_kp_u__7);
     if (unlikely(__pyx_kwds)) {
       Py_ssize_t kw_args;
       const Py_ssize_t pos_args = PyTuple_GET_SIZE(__pyx_args);
@@ -17326,7 +17330,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_95join(PyObject *__pyx_v_self, Py
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "join") < 0)) __PYX_ERR(0, 1360, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "join") < 0)) __PYX_ERR(0, 1358, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -17340,13 +17344,13 @@ static PyObject *__pyx_pw_8srctools_4_vec_3Vec_95join(PyObject *__pyx_v_self, Py
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("join", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1360, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("join", 0, 0, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1358, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Vec.join", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_delim), (&PyUnicode_Type), 1, "delim", 1))) __PYX_ERR(0, 1360, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_delim), (&PyUnicode_Type), 1, "delim", 1))) __PYX_ERR(0, 1358, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_3Vec_94join(((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_self), __pyx_v_delim);
 
   /* function exit code */
@@ -17371,7 +17375,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("join", 0);
 
-  /* "srctools/_vec.pyx":1366
+  /* "srctools/_vec.pyx":1364
  *         """
  *         # :g strips the .0 off of floats if it's an integer.
  *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'             # <<<<<<<<<<<<<<
@@ -17379,13 +17383,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
  *     def __str__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17393,16 +17397,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
   __pyx_t_2 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_5);
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -17410,16 +17414,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyUnicode_Unicode(__pyx_v_delim); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
   __pyx_t_2 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_4);
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_4);
   __pyx_t_4 = 0;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17427,14 +17431,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1366, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1364, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject*)__pyx_t_5);
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1360
+  /* "srctools/_vec.pyx":1358
  * 
  * 
  *     def join(self, delim: str=', ') -> str:             # <<<<<<<<<<<<<<
@@ -17455,7 +17459,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_94join(struct __pyx_obj_8srctools
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1368
+/* "srctools/_vec.pyx":1366
  *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
  * 
  *     def __str__(self):             # <<<<<<<<<<<<<<
@@ -17493,7 +17497,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__str__", 0);
 
-  /* "srctools/_vec.pyx":1374
+  /* "srctools/_vec.pyx":1372
  *         This strips off the .0 if no decimal portion exists.
  *         """
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"             # <<<<<<<<<<<<<<
@@ -17501,13 +17505,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
  *     def __repr__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17515,13 +17519,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u__13);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u__14);
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -17529,13 +17533,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_kp_u__13);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_kp_u__14);
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17543,14 +17547,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1374, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1372, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1368
+  /* "srctools/_vec.pyx":1366
  *         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
  * 
  *     def __str__(self):             # <<<<<<<<<<<<<<
@@ -17571,7 +17575,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_96__str__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1376
+/* "srctools/_vec.pyx":1374
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -17609,7 +17613,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_vec.pyx":1378
+  /* "srctools/_vec.pyx":1376
  *     def __repr__(self):
  *         """Code required to reproduce this vector."""
  *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"             # <<<<<<<<<<<<<<
@@ -17617,7 +17621,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
  *     def __iter__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
@@ -17625,9 +17629,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   __pyx_t_2 += 4;
   __Pyx_GIVEREF(__pyx_kp_u_Vec);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Vec);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17635,13 +17639,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__6);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__7);
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -17649,13 +17653,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__6);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__7);
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -17663,18 +17667,18 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 5, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__14);
+  __Pyx_INCREF(__pyx_kp_u__15);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__14);
-  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__14);
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1378, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__15);
+  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__15);
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1376, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1376
+  /* "srctools/_vec.pyx":1374
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -17695,7 +17699,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_98__repr__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1380
+/* "srctools/_vec.pyx":1378
  *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -17726,7 +17730,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_100__iter__(struct __pyx_obj_8src
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_vec.pyx":1381
+  /* "srctools/_vec.pyx":1379
  * 
  *     def __iter__(self):
  *         return VecIter.__new__(VecIter, self)             # <<<<<<<<<<<<<<
@@ -17734,19 +17738,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_100__iter__(struct __pyx_obj_8src
  *     def __getitem__(self, ind_obj: 'Union[str, int]') -> float:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1381, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1379, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_self));
-  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecIter), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1381, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecIter), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1379, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_2));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1380
+  /* "srctools/_vec.pyx":1378
  *         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -17766,7 +17770,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_100__iter__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1383
+/* "srctools/_vec.pyx":1381
  *         return VecIter.__new__(VecIter, self)
  * 
  *     def __getitem__(self, ind_obj: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
@@ -17812,7 +17816,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getitem__", 0);
 
-  /* "srctools/_vec.pyx":1390
+  /* "srctools/_vec.pyx":1388
  *         """
  *         cdef Py_UCS4 ind
  *         if isinstance(ind_obj, int):             # <<<<<<<<<<<<<<
@@ -17823,7 +17827,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1391
+    /* "srctools/_vec.pyx":1389
  *         cdef Py_UCS4 ind
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -17839,17 +17843,17 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1392
+        /* "srctools/_vec.pyx":1390
  *         if isinstance(ind_obj, int):
  *             try:
  *                 ind = ind_obj             # <<<<<<<<<<<<<<
  *             except (TypeError, ValueError, OverflowError):
  *                 pass
  */
-        __pyx_t_6 = __Pyx_PyObject_AsPy_UCS4(__pyx_v_ind_obj); if (unlikely((__pyx_t_6 == (Py_UCS4)-1) && PyErr_Occurred())) __PYX_ERR(0, 1392, __pyx_L4_error)
+        __pyx_t_6 = __Pyx_PyObject_AsPy_UCS4(__pyx_v_ind_obj); if (unlikely((__pyx_t_6 == (Py_UCS4)-1) && PyErr_Occurred())) __PYX_ERR(0, 1390, __pyx_L4_error)
         __pyx_v_ind = __pyx_t_6;
 
-        /* "srctools/_vec.pyx":1391
+        /* "srctools/_vec.pyx":1389
  *         cdef Py_UCS4 ind
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -17858,7 +17862,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  */
       }
 
-      /* "srctools/_vec.pyx":1396
+      /* "srctools/_vec.pyx":1394
  *                 pass
  *             else:
  *                 if ind == 0:             # <<<<<<<<<<<<<<
@@ -17867,7 +17871,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  */
       /*else:*/ {
 
-        /* "srctools/_vec.pyx":1400
+        /* "srctools/_vec.pyx":1398
  *                 elif ind == 1:
  *                     return self.val.y
  *                 elif ind == 2:             # <<<<<<<<<<<<<<
@@ -17877,7 +17881,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
         switch (__pyx_v_ind) {
           case 0:
 
-          /* "srctools/_vec.pyx":1397
+          /* "srctools/_vec.pyx":1395
  *             else:
  *                 if ind == 0:
  *                     return self.val.x             # <<<<<<<<<<<<<<
@@ -17885,13 +17889,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *                     return self.val.y
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1397, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1395, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1396
+          /* "srctools/_vec.pyx":1394
  *                 pass
  *             else:
  *                 if ind == 0:             # <<<<<<<<<<<<<<
@@ -17901,7 +17905,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
           break;
           case 1:
 
-          /* "srctools/_vec.pyx":1399
+          /* "srctools/_vec.pyx":1397
  *                     return self.val.x
  *                 elif ind == 1:
  *                     return self.val.y             # <<<<<<<<<<<<<<
@@ -17909,13 +17913,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *                     return self.val.z
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1399, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1397, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1398
+          /* "srctools/_vec.pyx":1396
  *                 if ind == 0:
  *                     return self.val.x
  *                 elif ind == 1:             # <<<<<<<<<<<<<<
@@ -17925,7 +17929,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
           break;
           case 2:
 
-          /* "srctools/_vec.pyx":1401
+          /* "srctools/_vec.pyx":1399
  *                     return self.val.y
  *                 elif ind == 2:
  *                     return self.val.z             # <<<<<<<<<<<<<<
@@ -17933,13 +17937,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *         else:
  */
           __Pyx_XDECREF(__pyx_r);
-          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1401, __pyx_L6_except_error)
+          __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1399, __pyx_L6_except_error)
           __Pyx_GOTREF(__pyx_t_7);
           __pyx_r = __pyx_t_7;
           __pyx_t_7 = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1400
+          /* "srctools/_vec.pyx":1398
  *                 elif ind == 1:
  *                     return self.val.y
  *                 elif ind == 2:             # <<<<<<<<<<<<<<
@@ -17956,7 +17960,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       goto __pyx_L9_try_end;
       __pyx_L4_error:;
 
-      /* "srctools/_vec.pyx":1393
+      /* "srctools/_vec.pyx":1391
  *             try:
  *                 ind = ind_obj
  *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
@@ -17971,7 +17975,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       goto __pyx_L6_except_error;
       __pyx_L6_except_error:;
 
-      /* "srctools/_vec.pyx":1391
+      /* "srctools/_vec.pyx":1389
  *         cdef Py_UCS4 ind
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -17997,14 +18001,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       __pyx_L9_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1402
+    /* "srctools/_vec.pyx":1400
  *                 elif ind == 2:
  *                     return self.val.z
  *             raise KeyError(f'Invalid axis: {ind!r}' '!')             # <<<<<<<<<<<<<<
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
  */
-    __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1402, __pyx_L1_error)
+    __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __pyx_t_9 = 0;
     __pyx_t_6 = 127;
@@ -18012,9 +18016,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
     __pyx_t_9 += 14;
     __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis_2);
     PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_kp_u_Invalid_axis_2);
-    __pyx_t_10 = PyUnicode_FromOrdinal(__pyx_v_ind); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1402, __pyx_L1_error)
+    __pyx_t_10 = PyUnicode_FromOrdinal(__pyx_v_ind); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 1400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_10), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1402, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_10), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_6 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_6) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_6;
@@ -18022,21 +18026,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
     __Pyx_GIVEREF(__pyx_t_11);
     PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_11);
     __pyx_t_11 = 0;
-    __Pyx_INCREF(__pyx_kp_u__2);
+    __Pyx_INCREF(__pyx_kp_u__3);
     __pyx_t_9 += 1;
-    __Pyx_GIVEREF(__pyx_kp_u__2);
-    PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__2);
-    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1402, __pyx_L1_error)
+    __Pyx_GIVEREF(__pyx_kp_u__3);
+    PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__3);
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1402, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1400, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __Pyx_Raise(__pyx_t_7, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-    __PYX_ERR(0, 1402, __pyx_L1_error)
+    __PYX_ERR(0, 1400, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1390
+    /* "srctools/_vec.pyx":1388
  *         """
  *         cdef Py_UCS4 ind
  *         if isinstance(ind_obj, int):             # <<<<<<<<<<<<<<
@@ -18045,7 +18049,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  */
   }
 
-  /* "srctools/_vec.pyx":1404
+  /* "srctools/_vec.pyx":1402
  *             raise KeyError(f'Invalid axis: {ind!r}' '!')
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:             # <<<<<<<<<<<<<<
@@ -18062,25 +18066,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
     }
     if (unlikely(__pyx_v_ind_obj == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1404, __pyx_L1_error)
+      __PYX_ERR(0, 1402, __pyx_L1_error)
     }
-    __pyx_t_9 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind_obj)); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1404, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind_obj)); if (unlikely(__pyx_t_9 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1402, __pyx_L1_error)
     __pyx_t_12 = ((__pyx_t_9 == 1) != 0);
     __pyx_t_2 = __pyx_t_12;
     __pyx_L11_bool_binop_done:;
     if (likely(__pyx_t_2)) {
 
-      /* "srctools/_vec.pyx":1405
+      /* "srctools/_vec.pyx":1403
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
  *                 ind = (<str>ind_obj)[0]             # <<<<<<<<<<<<<<
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  */
-      __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_ind_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 1405, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_ind_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 1403, __pyx_L1_error)
       __pyx_v_ind = __pyx_t_6;
 
-      /* "srctools/_vec.pyx":1404
+      /* "srctools/_vec.pyx":1402
  *             raise KeyError(f'Invalid axis: {ind!r}' '!')
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:             # <<<<<<<<<<<<<<
@@ -18090,7 +18094,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       goto __pyx_L10;
     }
 
-    /* "srctools/_vec.pyx":1407
+    /* "srctools/_vec.pyx":1405
  *                 ind = (<str>ind_obj)[0]
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')             # <<<<<<<<<<<<<<
@@ -18098,7 +18102,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *             if ind == "x":
  */
     /*else*/ {
-      __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1407, __pyx_L1_error)
+      __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1405, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_9 = 0;
       __pyx_t_6 = 127;
@@ -18106,30 +18110,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       __pyx_t_9 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1407, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1405, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __pyx_t_6 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_6) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_6;
       __pyx_t_9 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_11);
       __Pyx_GIVEREF(__pyx_t_11);
       PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_11);
       __pyx_t_11 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_9 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__2);
-      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1407, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__3);
+      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1405, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1407, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1405, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __Pyx_Raise(__pyx_t_7, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __PYX_ERR(0, 1407, __pyx_L1_error)
+      __PYX_ERR(0, 1405, __pyx_L1_error)
     }
     __pyx_L10:;
 
-    /* "srctools/_vec.pyx":1409
+    /* "srctools/_vec.pyx":1407
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *             if ind == "x":             # <<<<<<<<<<<<<<
@@ -18139,7 +18143,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
     switch (__pyx_v_ind) {
       case 0x78:
 
-      /* "srctools/_vec.pyx":1410
+      /* "srctools/_vec.pyx":1408
  * 
  *             if ind == "x":
  *                 return self.val.x             # <<<<<<<<<<<<<<
@@ -18147,13 +18151,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *                 return self.val.y
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1410, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1408, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1409
+      /* "srctools/_vec.pyx":1407
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *             if ind == "x":             # <<<<<<<<<<<<<<
@@ -18163,7 +18167,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       break;
       case 0x79:
 
-      /* "srctools/_vec.pyx":1412
+      /* "srctools/_vec.pyx":1410
  *                 return self.val.x
  *             elif ind == "y":
  *                 return self.val.y             # <<<<<<<<<<<<<<
@@ -18171,13 +18175,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *                 return self.val.z
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1412, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1410, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1411
+      /* "srctools/_vec.pyx":1409
  *             if ind == "x":
  *                 return self.val.x
  *             elif ind == "y":             # <<<<<<<<<<<<<<
@@ -18187,7 +18191,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       break;
       case 0x7A:
 
-      /* "srctools/_vec.pyx":1414
+      /* "srctools/_vec.pyx":1412
  *                 return self.val.y
  *             elif ind == "z":
  *                 return self.val.z             # <<<<<<<<<<<<<<
@@ -18195,13 +18199,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1414, __pyx_L1_error)
+      __pyx_t_7 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1412, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_r = __pyx_t_7;
       __pyx_t_7 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1413
+      /* "srctools/_vec.pyx":1411
  *             elif ind == "y":
  *                 return self.val.y
  *             elif ind == "z":             # <<<<<<<<<<<<<<
@@ -18211,14 +18215,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       break;
       default:
 
-      /* "srctools/_vec.pyx":1416
+      /* "srctools/_vec.pyx":1414
  *                 return self.val.z
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')             # <<<<<<<<<<<<<<
  * 
  *     def __setitem__(self, ind_obj, double val: float) -> None:
  */
-      __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1416, __pyx_L1_error)
+      __pyx_t_7 = PyTuple_New(3); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1414, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __pyx_t_9 = 0;
       __pyx_t_6 = 127;
@@ -18226,31 +18230,31 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
       __pyx_t_9 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1416, __pyx_L1_error)
+      __pyx_t_11 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1414, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __pyx_t_6 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_6) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_6;
       __pyx_t_9 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_11);
       __Pyx_GIVEREF(__pyx_t_11);
       PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_11);
       __pyx_t_11 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_9 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__2);
-      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1416, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_7, 2, __pyx_kp_u__3);
+      __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_7, 3, __pyx_t_9, __pyx_t_6); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 1414, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_11);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1416, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_11); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1414, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
       __Pyx_Raise(__pyx_t_7, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
-      __PYX_ERR(0, 1416, __pyx_L1_error)
+      __PYX_ERR(0, 1414, __pyx_L1_error)
       break;
     }
   }
 
-  /* "srctools/_vec.pyx":1383
+  /* "srctools/_vec.pyx":1381
  *         return VecIter.__new__(VecIter, self)
  * 
  *     def __getitem__(self, ind_obj: 'Union[str, int]') -> float:             # <<<<<<<<<<<<<<
@@ -18271,7 +18275,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_102__getitem__(struct __pyx_obj_8
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1418
+/* "srctools/_vec.pyx":1416
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *     def __setitem__(self, ind_obj, double val: float) -> None:             # <<<<<<<<<<<<<<
@@ -18294,7 +18298,7 @@ static int __pyx_pw_8srctools_4_vec_3Vec_105__setitem__(PyObject *__pyx_v_self, 
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setitem__ (wrapper)", 0);
   assert(__pyx_arg_val); {
-    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1418, __pyx_L3_error)
+    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1416, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -18329,7 +18333,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setitem__", 0);
 
-  /* "srctools/_vec.pyx":1426
+  /* "srctools/_vec.pyx":1424
  *         cdef Py_UCS4 ind
  * 
  *         if isinstance(ind_obj, int):             # <<<<<<<<<<<<<<
@@ -18340,7 +18344,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1427
+    /* "srctools/_vec.pyx":1425
  * 
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -18356,17 +18360,17 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       __Pyx_XGOTREF(__pyx_t_5);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1428
+        /* "srctools/_vec.pyx":1426
  *         if isinstance(ind_obj, int):
  *             try:
  *                 ind = ind_obj             # <<<<<<<<<<<<<<
  *             except (TypeError, ValueError, OverflowError):
  *                 pass
  */
-        __pyx_t_6 = __Pyx_PyObject_AsPy_UCS4(__pyx_v_ind_obj); if (unlikely((__pyx_t_6 == (Py_UCS4)-1) && PyErr_Occurred())) __PYX_ERR(0, 1428, __pyx_L4_error)
+        __pyx_t_6 = __Pyx_PyObject_AsPy_UCS4(__pyx_v_ind_obj); if (unlikely((__pyx_t_6 == (Py_UCS4)-1) && PyErr_Occurred())) __PYX_ERR(0, 1426, __pyx_L4_error)
         __pyx_v_ind = __pyx_t_6;
 
-        /* "srctools/_vec.pyx":1427
+        /* "srctools/_vec.pyx":1425
  * 
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -18375,7 +18379,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
       }
 
-      /* "srctools/_vec.pyx":1432
+      /* "srctools/_vec.pyx":1430
  *                 pass
  *             else:
  *                 if ind == 0:             # <<<<<<<<<<<<<<
@@ -18384,7 +18388,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
       /*else:*/ {
 
-        /* "srctools/_vec.pyx":1438
+        /* "srctools/_vec.pyx":1436
  *                     self.val.y = val
  *                     return
  *                 elif ind == 2:             # <<<<<<<<<<<<<<
@@ -18394,7 +18398,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
         switch (__pyx_v_ind) {
           case 0:
 
-          /* "srctools/_vec.pyx":1433
+          /* "srctools/_vec.pyx":1431
  *             else:
  *                 if ind == 0:
  *                     self.val.x = val             # <<<<<<<<<<<<<<
@@ -18403,7 +18407,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
           __pyx_v_self->val.x = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":1434
+          /* "srctools/_vec.pyx":1432
  *                 if ind == 0:
  *                     self.val.x = val
  *                     return             # <<<<<<<<<<<<<<
@@ -18413,7 +18417,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1432
+          /* "srctools/_vec.pyx":1430
  *                 pass
  *             else:
  *                 if ind == 0:             # <<<<<<<<<<<<<<
@@ -18423,7 +18427,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
           break;
           case 1:
 
-          /* "srctools/_vec.pyx":1436
+          /* "srctools/_vec.pyx":1434
  *                     return
  *                 elif ind == 1:
  *                     self.val.y = val             # <<<<<<<<<<<<<<
@@ -18432,7 +18436,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
           __pyx_v_self->val.y = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":1437
+          /* "srctools/_vec.pyx":1435
  *                 elif ind == 1:
  *                     self.val.y = val
  *                     return             # <<<<<<<<<<<<<<
@@ -18442,7 +18446,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1435
+          /* "srctools/_vec.pyx":1433
  *                     self.val.x = val
  *                     return
  *                 elif ind == 1:             # <<<<<<<<<<<<<<
@@ -18452,7 +18456,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
           break;
           case 2:
 
-          /* "srctools/_vec.pyx":1439
+          /* "srctools/_vec.pyx":1437
  *                     return
  *                 elif ind == 2:
  *                     self.val.z = val             # <<<<<<<<<<<<<<
@@ -18461,7 +18465,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
           __pyx_v_self->val.z = __pyx_v_val;
 
-          /* "srctools/_vec.pyx":1440
+          /* "srctools/_vec.pyx":1438
  *                 elif ind == 2:
  *                     self.val.z = val
  *                     return             # <<<<<<<<<<<<<<
@@ -18471,7 +18475,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
           __pyx_r = 0;
           goto __pyx_L7_except_return;
 
-          /* "srctools/_vec.pyx":1438
+          /* "srctools/_vec.pyx":1436
  *                     self.val.y = val
  *                     return
  *                 elif ind == 2:             # <<<<<<<<<<<<<<
@@ -18488,7 +18492,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       goto __pyx_L9_try_end;
       __pyx_L4_error:;
 
-      /* "srctools/_vec.pyx":1429
+      /* "srctools/_vec.pyx":1427
  *             try:
  *                 ind = ind_obj
  *             except (TypeError, ValueError, OverflowError):             # <<<<<<<<<<<<<<
@@ -18503,7 +18507,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       goto __pyx_L6_except_error;
       __pyx_L6_except_error:;
 
-      /* "srctools/_vec.pyx":1427
+      /* "srctools/_vec.pyx":1425
  * 
  *         if isinstance(ind_obj, int):
  *             try:             # <<<<<<<<<<<<<<
@@ -18529,29 +18533,29 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       __pyx_L9_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1441
+    /* "srctools/_vec.pyx":1439
  *                     self.val.z = val
  *                     return
  *             raise KeyError(f'Invalid axis: {ind!r}')             # <<<<<<<<<<<<<<
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
  */
-    __pyx_t_8 = PyUnicode_FromOrdinal(__pyx_v_ind); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1441, __pyx_L1_error)
+    __pyx_t_8 = PyUnicode_FromOrdinal(__pyx_v_ind); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1439, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
-    __pyx_t_9 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_8), __pyx_empty_unicode); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1441, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_t_8), __pyx_empty_unicode); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1439, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
-    __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1441, __pyx_L1_error)
+    __pyx_t_8 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_9); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1439, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1441, __pyx_L1_error)
+    __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1439, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_9);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
     __Pyx_Raise(__pyx_t_9, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-    __PYX_ERR(0, 1441, __pyx_L1_error)
+    __PYX_ERR(0, 1439, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1426
+    /* "srctools/_vec.pyx":1424
  *         cdef Py_UCS4 ind
  * 
  *         if isinstance(ind_obj, int):             # <<<<<<<<<<<<<<
@@ -18560,7 +18564,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
   }
 
-  /* "srctools/_vec.pyx":1443
+  /* "srctools/_vec.pyx":1441
  *             raise KeyError(f'Invalid axis: {ind!r}')
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:             # <<<<<<<<<<<<<<
@@ -18577,25 +18581,25 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
     }
     if (unlikely(__pyx_v_ind_obj == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1443, __pyx_L1_error)
+      __PYX_ERR(0, 1441, __pyx_L1_error)
     }
-    __pyx_t_11 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind_obj)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1443, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_GET_LENGTH(((PyObject*)__pyx_v_ind_obj)); if (unlikely(__pyx_t_11 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1441, __pyx_L1_error)
     __pyx_t_10 = ((__pyx_t_11 == 1) != 0);
     __pyx_t_2 = __pyx_t_10;
     __pyx_L11_bool_binop_done:;
     if (likely(__pyx_t_2)) {
 
-      /* "srctools/_vec.pyx":1444
+      /* "srctools/_vec.pyx":1442
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
  *                 ind = (<str>ind_obj)[0]             # <<<<<<<<<<<<<<
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  */
-      __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_ind_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 1444, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_GetItemInt_Unicode(__pyx_v_ind_obj, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(__pyx_t_6 == (Py_UCS4)-1)) __PYX_ERR(0, 1442, __pyx_L1_error)
       __pyx_v_ind = __pyx_t_6;
 
-      /* "srctools/_vec.pyx":1443
+      /* "srctools/_vec.pyx":1441
  *             raise KeyError(f'Invalid axis: {ind!r}')
  *         else:
  *             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:             # <<<<<<<<<<<<<<
@@ -18605,7 +18609,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       goto __pyx_L10;
     }
 
-    /* "srctools/_vec.pyx":1446
+    /* "srctools/_vec.pyx":1444
  *                 ind = (<str>ind_obj)[0]
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')             # <<<<<<<<<<<<<<
@@ -18613,7 +18617,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  *             if ind == "x":
  */
     /*else*/ {
-      __pyx_t_9 = PyTuple_New(3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1446, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1444, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __pyx_t_11 = 0;
       __pyx_t_6 = 127;
@@ -18621,30 +18625,30 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       __pyx_t_11 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_8 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1446, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1444, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_t_6 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) > __pyx_t_6) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) : __pyx_t_6;
       __pyx_t_11 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8);
       __Pyx_GIVEREF(__pyx_t_8);
       PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_t_8);
       __pyx_t_8 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_11 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_kp_u__2);
-      __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_9, 3, __pyx_t_11, __pyx_t_6); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1446, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_kp_u__3);
+      __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_9, 3, __pyx_t_11, __pyx_t_6); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1444, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1446, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1444, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_Raise(__pyx_t_9, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __PYX_ERR(0, 1446, __pyx_L1_error)
+      __PYX_ERR(0, 1444, __pyx_L1_error)
     }
     __pyx_L10:;
 
-    /* "srctools/_vec.pyx":1448
+    /* "srctools/_vec.pyx":1446
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *             if ind == "x":             # <<<<<<<<<<<<<<
@@ -18654,7 +18658,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
     switch (__pyx_v_ind) {
       case 0x78:
 
-      /* "srctools/_vec.pyx":1449
+      /* "srctools/_vec.pyx":1447
  * 
  *             if ind == "x":
  *                 self.val.x = val             # <<<<<<<<<<<<<<
@@ -18663,7 +18667,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
       __pyx_v_self->val.x = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1448
+      /* "srctools/_vec.pyx":1446
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *             if ind == "x":             # <<<<<<<<<<<<<<
@@ -18673,7 +18677,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       break;
       case 0x79:
 
-      /* "srctools/_vec.pyx":1451
+      /* "srctools/_vec.pyx":1449
  *                 self.val.x = val
  *             elif ind == "y":
  *                 self.val.y = val             # <<<<<<<<<<<<<<
@@ -18682,7 +18686,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
       __pyx_v_self->val.y = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1450
+      /* "srctools/_vec.pyx":1448
  *             if ind == "x":
  *                 self.val.x = val
  *             elif ind == "y":             # <<<<<<<<<<<<<<
@@ -18692,7 +18696,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       break;
       case 0x7A:
 
-      /* "srctools/_vec.pyx":1453
+      /* "srctools/_vec.pyx":1451
  *                 self.val.y = val
  *             elif ind == "z":
  *                 self.val.z = val             # <<<<<<<<<<<<<<
@@ -18701,7 +18705,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
  */
       __pyx_v_self->val.z = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1452
+      /* "srctools/_vec.pyx":1450
  *             elif ind == "y":
  *                 self.val.y = val
  *             elif ind == "z":             # <<<<<<<<<<<<<<
@@ -18711,14 +18715,14 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       break;
       default:
 
-      /* "srctools/_vec.pyx":1455
+      /* "srctools/_vec.pyx":1453
  *                 self.val.z = val
  *             else:
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')             # <<<<<<<<<<<<<<
  * 
  *     def transform(self):
  */
-      __pyx_t_9 = PyTuple_New(3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1455, __pyx_L1_error)
+      __pyx_t_9 = PyTuple_New(3); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1453, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __pyx_t_11 = 0;
       __pyx_t_6 = 127;
@@ -18726,31 +18730,31 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
       __pyx_t_11 += 13;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_axis);
       PyTuple_SET_ITEM(__pyx_t_9, 0, __pyx_kp_u_Invalid_axis);
-      __pyx_t_8 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1455, __pyx_L1_error)
+      __pyx_t_8 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_ind_obj), __pyx_empty_unicode); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1453, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __pyx_t_6 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) > __pyx_t_6) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) : __pyx_t_6;
       __pyx_t_11 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8);
       __Pyx_GIVEREF(__pyx_t_8);
       PyTuple_SET_ITEM(__pyx_t_9, 1, __pyx_t_8);
       __pyx_t_8 = 0;
-      __Pyx_INCREF(__pyx_kp_u__2);
+      __Pyx_INCREF(__pyx_kp_u__3);
       __pyx_t_11 += 1;
-      __Pyx_GIVEREF(__pyx_kp_u__2);
-      PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_kp_u__2);
-      __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_9, 3, __pyx_t_11, __pyx_t_6); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1455, __pyx_L1_error)
+      __Pyx_GIVEREF(__pyx_kp_u__3);
+      PyTuple_SET_ITEM(__pyx_t_9, 2, __pyx_kp_u__3);
+      __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_9, 3, __pyx_t_11, __pyx_t_6); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1453, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_8);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1455, __pyx_L1_error)
+      __pyx_t_9 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_8); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 1453, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
       __Pyx_Raise(__pyx_t_9, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-      __PYX_ERR(0, 1455, __pyx_L1_error)
+      __PYX_ERR(0, 1453, __pyx_L1_error)
       break;
     }
   }
 
-  /* "srctools/_vec.pyx":1418
+  /* "srctools/_vec.pyx":1416
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *     def __setitem__(self, ind_obj, double val: float) -> None:             # <<<<<<<<<<<<<<
@@ -18771,7 +18775,7 @@ static int __pyx_pf_8srctools_4_vec_3Vec_104__setitem__(struct __pyx_obj_8srctoo
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1457
+/* "srctools/_vec.pyx":1455
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *     def transform(self):             # <<<<<<<<<<<<<<
@@ -18803,7 +18807,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_106transform(struct __pyx_obj_8sr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("transform", 0);
 
-  /* "srctools/_vec.pyx":1464
+  /* "srctools/_vec.pyx":1462
  *         the angle.
  *         """
  *         return VecTransform.__new__(VecTransform, self)             # <<<<<<<<<<<<<<
@@ -18811,19 +18815,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_106transform(struct __pyx_obj_8sr
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1464, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1462, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_self));
-  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecTransform(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecTransform), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1464, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_VecTransform(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_VecTransform), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1462, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_2));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1457
+  /* "srctools/_vec.pyx":1455
  *                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
  * 
  *     def transform(self):             # <<<<<<<<<<<<<<
@@ -18843,7 +18847,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_3Vec_106transform(struct __pyx_obj_8sr
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1473
+/* "srctools/_vec.pyx":1471
  *     cdef mat_t mat
  * 
  *     def __init__(self) -> None:             # <<<<<<<<<<<<<<
@@ -18879,7 +18883,7 @@ static int __pyx_pf_8srctools_4_vec_6Matrix___init__(struct __pyx_obj_8srctools_
   double __pyx_t_3[3];
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_vec.pyx":1475
+  /* "srctools/_vec.pyx":1473
  *     def __init__(self) -> None:
  *         """Create a matrix set to the identity transform."""
  *         self.mat[0] = [1.0, 0.0, 0.0]             # <<<<<<<<<<<<<<
@@ -18891,7 +18895,7 @@ static int __pyx_pf_8srctools_4_vec_6Matrix___init__(struct __pyx_obj_8srctools_
   __pyx_t_1[2] = 0.0;
   memcpy(&((__pyx_v_self->mat[0])[0]), __pyx_t_1, sizeof((__pyx_v_self->mat[0])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1476
+  /* "srctools/_vec.pyx":1474
  *         """Create a matrix set to the identity transform."""
  *         self.mat[0] = [1.0, 0.0, 0.0]
  *         self.mat[1] = [0.0, 1.0, 0.0]             # <<<<<<<<<<<<<<
@@ -18903,7 +18907,7 @@ static int __pyx_pf_8srctools_4_vec_6Matrix___init__(struct __pyx_obj_8srctools_
   __pyx_t_2[2] = 0.0;
   memcpy(&((__pyx_v_self->mat[1])[0]), __pyx_t_2, sizeof((__pyx_v_self->mat[1])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1477
+  /* "srctools/_vec.pyx":1475
  *         self.mat[0] = [1.0, 0.0, 0.0]
  *         self.mat[1] = [0.0, 1.0, 0.0]
  *         self.mat[2] = [0.0, 0.0, 1.0]             # <<<<<<<<<<<<<<
@@ -18915,7 +18919,7 @@ static int __pyx_pf_8srctools_4_vec_6Matrix___init__(struct __pyx_obj_8srctools_
   __pyx_t_3[2] = 1.0;
   memcpy(&((__pyx_v_self->mat[2])[0]), __pyx_t_3, sizeof((__pyx_v_self->mat[2])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1473
+  /* "srctools/_vec.pyx":1471
  *     cdef mat_t mat
  * 
  *     def __init__(self) -> None:             # <<<<<<<<<<<<<<
@@ -18929,7 +18933,7 @@ static int __pyx_pf_8srctools_4_vec_6Matrix___init__(struct __pyx_obj_8srctools_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1479
+/* "srctools/_vec.pyx":1477
  *         self.mat[2] = [0.0, 0.0, 1.0]
  * 
  *     def __eq__(self, other: object) -> object:             # <<<<<<<<<<<<<<
@@ -18961,7 +18965,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__eq__", 0);
 
-  /* "srctools/_vec.pyx":1480
+  /* "srctools/_vec.pyx":1478
  * 
  *     def __eq__(self, other: object) -> object:
  *         if isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -18972,7 +18976,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1481
+    /* "srctools/_vec.pyx":1479
  *     def __eq__(self, other: object) -> object:
  *         if isinstance(other, Matrix):
  *             return self.mat == (<Matrix>other).mat             # <<<<<<<<<<<<<<
@@ -18980,13 +18984,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
  * 
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = __Pyx_PyBool_FromLong((__pyx_v_self->mat == ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_other)->mat)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1481, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyBool_FromLong((__pyx_v_self->mat == ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_other)->mat)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1479, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_r = __pyx_t_3;
     __pyx_t_3 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1480
+    /* "srctools/_vec.pyx":1478
  * 
  *     def __eq__(self, other: object) -> object:
  *         if isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -18995,7 +18999,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
  */
   }
 
-  /* "srctools/_vec.pyx":1482
+  /* "srctools/_vec.pyx":1480
  *         if isinstance(other, Matrix):
  *             return self.mat == (<Matrix>other).mat
  *         return NotImplemented             # <<<<<<<<<<<<<<
@@ -19007,7 +19011,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
   __pyx_r = __pyx_builtin_NotImplemented;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1479
+  /* "srctools/_vec.pyx":1477
  *         self.mat[2] = [0.0, 0.0, 1.0]
  * 
  *     def __eq__(self, other: object) -> object:             # <<<<<<<<<<<<<<
@@ -19026,7 +19030,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_2__eq__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1484
+/* "srctools/_vec.pyx":1482
  *         return NotImplemented
  * 
  *     def __repr__(self) -> str:             # <<<<<<<<<<<<<<
@@ -19060,7 +19064,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_vec.pyx":1485
+  /* "srctools/_vec.pyx":1483
  * 
  *     def __repr__(self) -> str:
  *         return (             # <<<<<<<<<<<<<<
@@ -19069,14 +19073,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":1486
+  /* "srctools/_vec.pyx":1484
  *     def __repr__(self) -> str:
  *         return (
  *             '<Matrix '             # <<<<<<<<<<<<<<
  *             f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '
  *             f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '
  */
-  __pyx_t_1 = PyTuple_New(19); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1486, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(19); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1484, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
@@ -19085,16 +19089,16 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_kp_u_Matrix);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Matrix);
 
-  /* "srctools/_vec.pyx":1487
+  /* "srctools/_vec.pyx":1485
  *         return (
  *             '<Matrix '
  *             f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '             # <<<<<<<<<<<<<<
  *             f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '
  *             f'{self.mat[2][0]:.3} {self.mat[2][1]:.3} {self.mat[2][2]:.3}'
  */
-  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[0])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[0])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -19102,13 +19106,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__13);
-  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__14);
+  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -19116,13 +19120,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__13);
-  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[2])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__14);
+  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[0])[2])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1485, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -19130,21 +19134,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 5, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__6);
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__7);
 
-  /* "srctools/_vec.pyx":1488
+  /* "srctools/_vec.pyx":1486
  *             '<Matrix '
  *             f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '
  *             f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '             # <<<<<<<<<<<<<<
  *             f'{self.mat[2][0]:.3} {self.mat[2][1]:.3} {self.mat[2][2]:.3}'
  *             '>'
  */
-  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[0])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -19152,13 +19156,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 7, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 8, __pyx_kp_u__13);
-  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 8, __pyx_kp_u__14);
+  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[1])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -19166,13 +19170,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 9, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 10, __pyx_kp_u__13);
-  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 10, __pyx_kp_u__14);
+  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[1])[2])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1488, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1486, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -19180,21 +19184,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 11, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 12, __pyx_kp_u__6);
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 12, __pyx_kp_u__7);
 
-  /* "srctools/_vec.pyx":1489
+  /* "srctools/_vec.pyx":1487
  *             f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '
  *             f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '
  *             f'{self.mat[2][0]:.3} {self.mat[2][1]:.3} {self.mat[2][2]:.3}'             # <<<<<<<<<<<<<<
  *             '>'
  *         )
  */
-  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[0])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[0])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -19202,13 +19206,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 13, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 14, __pyx_kp_u__13);
-  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 14, __pyx_kp_u__14);
+  __pyx_t_5 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[1])); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_kp_u_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -19216,13 +19220,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 15, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 16, __pyx_kp_u__13);
-  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[2])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 16, __pyx_kp_u__14);
+  __pyx_t_4 = PyFloat_FromDouble(((__pyx_v_self->mat[2])[2])); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1489, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_kp_u_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1487, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -19230,26 +19234,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 17, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__15);
+  __Pyx_INCREF(__pyx_kp_u__16);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__15);
-  PyTuple_SET_ITEM(__pyx_t_1, 18, __pyx_kp_u__15);
+  __Pyx_GIVEREF(__pyx_kp_u__16);
+  PyTuple_SET_ITEM(__pyx_t_1, 18, __pyx_kp_u__16);
 
-  /* "srctools/_vec.pyx":1486
+  /* "srctools/_vec.pyx":1484
  *     def __repr__(self) -> str:
  *         return (
  *             '<Matrix '             # <<<<<<<<<<<<<<
  *             f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '
  *             f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '
  */
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 19, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1486, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 19, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1484, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1484
+  /* "srctools/_vec.pyx":1482
  *         return NotImplemented
  * 
  *     def __repr__(self) -> str:             # <<<<<<<<<<<<<<
@@ -19270,7 +19274,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_4__repr__(struct __pyx_obj_8sr
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1493
+/* "srctools/_vec.pyx":1491
  *         )
  * 
  *     def copy(self) -> 'Matrix':             # <<<<<<<<<<<<<<
@@ -19302,19 +19306,19 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("copy", 0);
 
-  /* "srctools/_vec.pyx":1495
+  /* "srctools/_vec.pyx":1493
  *     def copy(self) -> 'Matrix':
  *         """Duplicate this matrix."""
  *         cdef Matrix copy = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  *         memcpy(copy.mat, self.mat, sizeof(mat_t))
  *         return copy
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1495, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1493, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_copy = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1496
+  /* "srctools/_vec.pyx":1494
  *         """Duplicate this matrix."""
  *         cdef Matrix copy = Matrix.__new__(Matrix)
  *         memcpy(copy.mat, self.mat, sizeof(mat_t))             # <<<<<<<<<<<<<<
@@ -19323,7 +19327,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
   (void)(memcpy(__pyx_v_copy->mat, __pyx_v_self->mat, (sizeof(__pyx_t_8srctools_4_vec_mat_t))));
 
-  /* "srctools/_vec.pyx":1497
+  /* "srctools/_vec.pyx":1495
  *         cdef Matrix copy = Matrix.__new__(Matrix)
  *         memcpy(copy.mat, self.mat, sizeof(mat_t))
  *         return copy             # <<<<<<<<<<<<<<
@@ -19335,7 +19339,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_r = __pyx_v_copy;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1493
+  /* "srctools/_vec.pyx":1491
  *         )
  * 
  *     def copy(self) -> 'Matrix':             # <<<<<<<<<<<<<<
@@ -19355,7 +19359,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1500
+/* "srctools/_vec.pyx":1498
  * 
  *     @classmethod
  *     def from_pitch(cls, double pitch):             # <<<<<<<<<<<<<<
@@ -19375,7 +19379,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_6Matrix_9from_pitch(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("from_pitch (wrapper)", 0);
   assert(__pyx_arg_pitch); {
-    __pyx_v_pitch = __pyx_PyFloat_AsDouble(__pyx_arg_pitch); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1500, __pyx_L3_error)
+    __pyx_v_pitch = __pyx_PyFloat_AsDouble(__pyx_arg_pitch); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1498, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -19407,7 +19411,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_pitch", 0);
 
-  /* "srctools/_vec.pyx":1505
+  /* "srctools/_vec.pyx":1503
  *         This is a rotation around the Y axis.
  *         """
  *         cdef double rad_pitch = deg_2_rad * pitch             # <<<<<<<<<<<<<<
@@ -19416,7 +19420,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
  */
   __pyx_v_rad_pitch = (0.017453292519943295 * __pyx_v_pitch);
 
-  /* "srctools/_vec.pyx":1506
+  /* "srctools/_vec.pyx":1504
  *         """
  *         cdef double rad_pitch = deg_2_rad * pitch
  *         cdef double cos = math.cos(rad_pitch)             # <<<<<<<<<<<<<<
@@ -19425,7 +19429,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
  */
   __pyx_v_cos = cos(__pyx_v_rad_pitch);
 
-  /* "srctools/_vec.pyx":1507
+  /* "srctools/_vec.pyx":1505
  *         cdef double rad_pitch = deg_2_rad * pitch
  *         cdef double cos = math.cos(rad_pitch)
  *         cdef double sin = math.sin(rad_pitch)             # <<<<<<<<<<<<<<
@@ -19434,7 +19438,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
  */
   __pyx_v_sin = sin(__pyx_v_rad_pitch);
 
-  /* "srctools/_vec.pyx":1509
+  /* "srctools/_vec.pyx":1507
  *         cdef double sin = math.sin(rad_pitch)
  * 
  *         cdef Matrix rot = cls.__new__(cls)             # <<<<<<<<<<<<<<
@@ -19443,15 +19447,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
  */
   if (unlikely(((PyObject *)__pyx_v_cls) == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object.__new__(X): X is not a type object (NoneType)");
-    __PYX_ERR(0, 1509, __pyx_L1_error)
+    __PYX_ERR(0, 1507, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1509, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1507, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1509, __pyx_L1_error)
+  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1507, __pyx_L1_error)
   __pyx_v_rot = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1511
+  /* "srctools/_vec.pyx":1509
  *         cdef Matrix rot = cls.__new__(cls)
  * 
  *         rot.mat[0] = cos, 0.0, -sin             # <<<<<<<<<<<<<<
@@ -19466,7 +19470,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1512
+  /* "srctools/_vec.pyx":1510
  * 
  *         rot.mat[0] = cos, 0.0, -sin
  *         rot.mat[1] = 0.0, 1.0, 0.0             # <<<<<<<<<<<<<<
@@ -19481,7 +19485,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":1513
+  /* "srctools/_vec.pyx":1511
  *         rot.mat[0] = cos, 0.0, -sin
  *         rot.mat[1] = 0.0, 1.0, 0.0
  *         rot.mat[2] = sin, 0.0, cos             # <<<<<<<<<<<<<<
@@ -19496,7 +19500,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1515
+  /* "srctools/_vec.pyx":1513
  *         rot.mat[2] = sin, 0.0, cos
  * 
  *         return rot             # <<<<<<<<<<<<<<
@@ -19508,7 +19512,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   __pyx_r = ((PyObject *)__pyx_v_rot);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1500
+  /* "srctools/_vec.pyx":1498
  * 
  *     @classmethod
  *     def from_pitch(cls, double pitch):             # <<<<<<<<<<<<<<
@@ -19528,7 +19532,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_8from_pitch(PyTypeObject *__py
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1518
+/* "srctools/_vec.pyx":1516
  * 
  *     @classmethod
  *     def from_yaw(cls, double yaw):             # <<<<<<<<<<<<<<
@@ -19548,7 +19552,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_6Matrix_11from_yaw(PyObject *__pyx_v_c
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("from_yaw (wrapper)", 0);
   assert(__pyx_arg_yaw); {
-    __pyx_v_yaw = __pyx_PyFloat_AsDouble(__pyx_arg_yaw); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1518, __pyx_L3_error)
+    __pyx_v_yaw = __pyx_PyFloat_AsDouble(__pyx_arg_yaw); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1516, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -19580,7 +19584,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_yaw", 0);
 
-  /* "srctools/_vec.pyx":1522
+  /* "srctools/_vec.pyx":1520
  * 
  *         """
  *         cdef double rad_yaw = deg_2_rad * yaw             # <<<<<<<<<<<<<<
@@ -19589,7 +19593,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
  */
   __pyx_v_rad_yaw = (0.017453292519943295 * __pyx_v_yaw);
 
-  /* "srctools/_vec.pyx":1523
+  /* "srctools/_vec.pyx":1521
  *         """
  *         cdef double rad_yaw = deg_2_rad * yaw
  *         cdef double sin = math.sin(rad_yaw)             # <<<<<<<<<<<<<<
@@ -19598,7 +19602,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
  */
   __pyx_v_sin = sin(__pyx_v_rad_yaw);
 
-  /* "srctools/_vec.pyx":1524
+  /* "srctools/_vec.pyx":1522
  *         cdef double rad_yaw = deg_2_rad * yaw
  *         cdef double sin = math.sin(rad_yaw)
  *         cdef double cos = math.cos(rad_yaw)             # <<<<<<<<<<<<<<
@@ -19607,7 +19611,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
  */
   __pyx_v_cos = cos(__pyx_v_rad_yaw);
 
-  /* "srctools/_vec.pyx":1526
+  /* "srctools/_vec.pyx":1524
  *         cdef double cos = math.cos(rad_yaw)
  * 
  *         cdef Matrix rot = cls.__new__(cls)             # <<<<<<<<<<<<<<
@@ -19616,15 +19620,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
  */
   if (unlikely(((PyObject *)__pyx_v_cls) == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object.__new__(X): X is not a type object (NoneType)");
-    __PYX_ERR(0, 1526, __pyx_L1_error)
+    __PYX_ERR(0, 1524, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1526, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1524, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1526, __pyx_L1_error)
+  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1524, __pyx_L1_error)
   __pyx_v_rot = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1528
+  /* "srctools/_vec.pyx":1526
  *         cdef Matrix rot = cls.__new__(cls)
  * 
  *         rot.mat[0] = cos, sin, 0.0             # <<<<<<<<<<<<<<
@@ -19639,7 +19643,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1529
+  /* "srctools/_vec.pyx":1527
  * 
  *         rot.mat[0] = cos, sin, 0.0
  *         rot.mat[1] = -sin, cos, 0.0             # <<<<<<<<<<<<<<
@@ -19654,7 +19658,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":1530
+  /* "srctools/_vec.pyx":1528
  *         rot.mat[0] = cos, sin, 0.0
  *         rot.mat[1] = -sin, cos, 0.0
  *         rot.mat[2] = 0.0, 0.0, 1.0             # <<<<<<<<<<<<<<
@@ -19669,7 +19673,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1532
+  /* "srctools/_vec.pyx":1530
  *         rot.mat[2] = 0.0, 0.0, 1.0
  * 
  *         return rot             # <<<<<<<<<<<<<<
@@ -19681,7 +19685,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   __pyx_r = ((PyObject *)__pyx_v_rot);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1518
+  /* "srctools/_vec.pyx":1516
  * 
  *     @classmethod
  *     def from_yaw(cls, double yaw):             # <<<<<<<<<<<<<<
@@ -19701,7 +19705,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_10from_yaw(PyTypeObject *__pyx
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1535
+/* "srctools/_vec.pyx":1533
  * 
  *     @classmethod
  *     def from_roll(cls, double roll):             # <<<<<<<<<<<<<<
@@ -19721,7 +19725,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_6Matrix_13from_roll(PyObject *__pyx_v_
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("from_roll (wrapper)", 0);
   assert(__pyx_arg_roll); {
-    __pyx_v_roll = __pyx_PyFloat_AsDouble(__pyx_arg_roll); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1535, __pyx_L3_error)
+    __pyx_v_roll = __pyx_PyFloat_AsDouble(__pyx_arg_roll); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1533, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -19752,7 +19756,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_roll", 0);
 
-  /* "srctools/_vec.pyx":1540
+  /* "srctools/_vec.pyx":1538
  *         This is a rotation around the X axis.
  *         """
  *         cdef double rad_roll = deg_2_rad * roll             # <<<<<<<<<<<<<<
@@ -19761,7 +19765,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
  */
   __pyx_v_rad_roll = (0.017453292519943295 * __pyx_v_roll);
 
-  /* "srctools/_vec.pyx":1541
+  /* "srctools/_vec.pyx":1539
  *         """
  *         cdef double rad_roll = deg_2_rad * roll
  *         cdef double cos = math.cos(rad_roll)             # <<<<<<<<<<<<<<
@@ -19770,7 +19774,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
  */
   __pyx_v_cos = cos(__pyx_v_rad_roll);
 
-  /* "srctools/_vec.pyx":1542
+  /* "srctools/_vec.pyx":1540
  *         cdef double rad_roll = deg_2_rad * roll
  *         cdef double cos = math.cos(rad_roll)
  *         cdef double sin = math.sin(rad_roll)             # <<<<<<<<<<<<<<
@@ -19779,7 +19783,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
  */
   __pyx_v_sin = sin(__pyx_v_rad_roll);
 
-  /* "srctools/_vec.pyx":1544
+  /* "srctools/_vec.pyx":1542
  *         cdef double sin = math.sin(rad_roll)
  * 
  *         cdef Matrix rot = cls.__new__(cls)             # <<<<<<<<<<<<<<
@@ -19788,15 +19792,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
  */
   if (unlikely(((PyObject *)__pyx_v_cls) == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object.__new__(X): X is not a type object (NoneType)");
-    __PYX_ERR(0, 1544, __pyx_L1_error)
+    __PYX_ERR(0, 1542, __pyx_L1_error)
   }
-  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1544, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_tp_new(((PyObject *)__pyx_v_cls), __pyx_empty_tuple); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1542, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1544, __pyx_L1_error)
+  if (!(likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix)))) __PYX_ERR(0, 1542, __pyx_L1_error)
   __pyx_v_rot = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1546
+  /* "srctools/_vec.pyx":1544
  *         cdef Matrix rot = cls.__new__(cls)
  * 
  *         rot.mat[0] = [1.0, 0.0, 0.0]             # <<<<<<<<<<<<<<
@@ -19808,7 +19812,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   __pyx_t_2[2] = 0.0;
   memcpy(&((__pyx_v_rot->mat[0])[0]), __pyx_t_2, sizeof((__pyx_v_rot->mat[0])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1547
+  /* "srctools/_vec.pyx":1545
  * 
  *         rot.mat[0] = [1.0, 0.0, 0.0]
  *         rot.mat[1] = [0.0, cos, sin]             # <<<<<<<<<<<<<<
@@ -19820,7 +19824,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   __pyx_t_3[2] = __pyx_v_sin;
   memcpy(&((__pyx_v_rot->mat[1])[0]), __pyx_t_3, sizeof((__pyx_v_rot->mat[1])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1548
+  /* "srctools/_vec.pyx":1546
  *         rot.mat[0] = [1.0, 0.0, 0.0]
  *         rot.mat[1] = [0.0, cos, sin]
  *         rot.mat[2] = [0.0, -sin, cos]             # <<<<<<<<<<<<<<
@@ -19832,7 +19836,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   __pyx_t_4[2] = __pyx_v_cos;
   memcpy(&((__pyx_v_rot->mat[2])[0]), __pyx_t_4, sizeof((__pyx_v_rot->mat[2])[0]) * (3));
 
-  /* "srctools/_vec.pyx":1550
+  /* "srctools/_vec.pyx":1548
  *         rot.mat[2] = [0.0, -sin, cos]
  * 
  *         return rot             # <<<<<<<<<<<<<<
@@ -19844,7 +19848,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   __pyx_r = ((PyObject *)__pyx_v_rot);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1535
+  /* "srctools/_vec.pyx":1533
  * 
  *     @classmethod
  *     def from_roll(cls, double roll):             # <<<<<<<<<<<<<<
@@ -19864,7 +19868,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_12from_roll(PyTypeObject *__py
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1553
+/* "srctools/_vec.pyx":1551
  * 
  *     @classmethod
  *     def from_angle(cls, angle):             # <<<<<<<<<<<<<<
@@ -19900,14 +19904,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_14from_angle(PyTypeObject *__p
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_angle", 0);
 
-  /* "srctools/_vec.pyx":1555
+  /* "srctools/_vec.pyx":1553
  *     def from_angle(cls, angle):
  *         """Return the rotation representing an Euler angle."""
  *         cdef Matrix rot = Matrix.__new__(cls)             # <<<<<<<<<<<<<<
  *         cdef vec_t ang
- *         _conv_angles(&ang, angle, scalar=False)
+ *         _conv_angles(&ang, angle)
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_new); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1555, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_new); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1553, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -19921,33 +19925,33 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_14from_angle(PyTypeObject *__p
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, ((PyObject *)__pyx_v_cls)) : __Pyx_PyObject_CallOneArg(__pyx_t_2, ((PyObject *)__pyx_v_cls));
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1555, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1553, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix))))) __PYX_ERR(0, 1555, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix))))) __PYX_ERR(0, 1553, __pyx_L1_error)
   __pyx_v_rot = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1557
+  /* "srctools/_vec.pyx":1555
  *         cdef Matrix rot = Matrix.__new__(cls)
  *         cdef vec_t ang
- *         _conv_angles(&ang, angle, scalar=False)             # <<<<<<<<<<<<<<
+ *         _conv_angles(&ang, angle)             # <<<<<<<<<<<<<<
  *         _mat_from_angle(rot.mat, &ang)
  *         return rot
  */
-  __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_angles((&__pyx_v_ang), __pyx_v_angle, 0); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1557, __pyx_L1_error)
+  __pyx_t_4 = __pyx_f_8srctools_4_vec__conv_angles((&__pyx_v_ang), __pyx_v_angle); if (unlikely(__pyx_t_4 == ((unsigned char)0))) __PYX_ERR(0, 1555, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1558
+  /* "srctools/_vec.pyx":1556
  *         cdef vec_t ang
- *         _conv_angles(&ang, angle, scalar=False)
+ *         _conv_angles(&ang, angle)
  *         _mat_from_angle(rot.mat, &ang)             # <<<<<<<<<<<<<<
  *         return rot
  * 
  */
   __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_rot->mat, (&__pyx_v_ang));
 
-  /* "srctools/_vec.pyx":1559
- *         _conv_angles(&ang, angle, scalar=False)
+  /* "srctools/_vec.pyx":1557
+ *         _conv_angles(&ang, angle)
  *         _mat_from_angle(rot.mat, &ang)
  *         return rot             # <<<<<<<<<<<<<<
  * 
@@ -19958,7 +19962,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_14from_angle(PyTypeObject *__p
   __pyx_r = ((PyObject *)__pyx_v_rot);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1553
+  /* "srctools/_vec.pyx":1551
  * 
  *     @classmethod
  *     def from_angle(cls, angle):             # <<<<<<<<<<<<<<
@@ -19980,7 +19984,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_14from_angle(PyTypeObject *__p
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1561
+/* "srctools/_vec.pyx":1559
  *         return rot
  * 
  *     def forward(self):             # <<<<<<<<<<<<<<
@@ -20011,7 +20015,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_16forward(struct __pyx_obj_8sr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("forward", 0);
 
-  /* "srctools/_vec.pyx":1563
+  /* "srctools/_vec.pyx":1561
  *     def forward(self):
  *         """Return a normalised vector pointing in the +X direction."""
  *         return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])             # <<<<<<<<<<<<<<
@@ -20019,13 +20023,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_16forward(struct __pyx_obj_8sr
  *     def left(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[0])[0]), ((__pyx_v_self->mat[0])[1]), ((__pyx_v_self->mat[0])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1563, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[0])[0]), ((__pyx_v_self->mat[0])[1]), ((__pyx_v_self->mat[0])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1561, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1561
+  /* "srctools/_vec.pyx":1559
  *         return rot
  * 
  *     def forward(self):             # <<<<<<<<<<<<<<
@@ -20044,7 +20048,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_16forward(struct __pyx_obj_8sr
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1565
+/* "srctools/_vec.pyx":1563
  *         return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])
  * 
  *     def left(self):             # <<<<<<<<<<<<<<
@@ -20075,7 +20079,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_18left(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("left", 0);
 
-  /* "srctools/_vec.pyx":1567
+  /* "srctools/_vec.pyx":1565
  *     def left(self):
  *         """Return a normalised vector pointing in the +Y direction."""
  *         return _vector(self.mat[1][0], self.mat[1][1], self.mat[1][2])             # <<<<<<<<<<<<<<
@@ -20083,13 +20087,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_18left(struct __pyx_obj_8srcto
  *     def up(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[1])[0]), ((__pyx_v_self->mat[1])[1]), ((__pyx_v_self->mat[1])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1567, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[1])[0]), ((__pyx_v_self->mat[1])[1]), ((__pyx_v_self->mat[1])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1565, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1565
+  /* "srctools/_vec.pyx":1563
  *         return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])
  * 
  *     def left(self):             # <<<<<<<<<<<<<<
@@ -20108,7 +20112,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_18left(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1569
+/* "srctools/_vec.pyx":1567
  *         return _vector(self.mat[1][0], self.mat[1][1], self.mat[1][2])
  * 
  *     def up(self):             # <<<<<<<<<<<<<<
@@ -20139,7 +20143,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_20up(struct __pyx_obj_8srctool
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("up", 0);
 
-  /* "srctools/_vec.pyx":1571
+  /* "srctools/_vec.pyx":1569
  *     def up(self):
  *         """Return a normalised vector pointing in the +Z direction."""
  *         return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])             # <<<<<<<<<<<<<<
@@ -20147,13 +20151,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_20up(struct __pyx_obj_8srctool
  *     def to_angle(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[2])[0]), ((__pyx_v_self->mat[2])[1]), ((__pyx_v_self->mat[2])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1571, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__vector(((__pyx_v_self->mat[2])[0]), ((__pyx_v_self->mat[2])[1]), ((__pyx_v_self->mat[2])[2]))); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1569, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1569
+  /* "srctools/_vec.pyx":1567
  *         return _vector(self.mat[1][0], self.mat[1][1], self.mat[1][2])
  * 
  *     def up(self):             # <<<<<<<<<<<<<<
@@ -20172,7 +20176,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_20up(struct __pyx_obj_8srctool
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1573
+/* "srctools/_vec.pyx":1571
  *         return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])
  * 
  *     def to_angle(self):             # <<<<<<<<<<<<<<
@@ -20204,19 +20208,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_22to_angle(struct __pyx_obj_8s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("to_angle", 0);
 
-  /* "srctools/_vec.pyx":1575
+  /* "srctools/_vec.pyx":1573
  *     def to_angle(self):
  *         """Return an Euler angle replicating this rotation."""
  *         cdef Angle ang = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
  *         _mat_to_angle(&ang.val, self.mat)
  *         return ang
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1575, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1573, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_ang = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1576
+  /* "srctools/_vec.pyx":1574
  *         """Return an Euler angle replicating this rotation."""
  *         cdef Angle ang = Angle.__new__(Angle)
  *         _mat_to_angle(&ang.val, self.mat)             # <<<<<<<<<<<<<<
@@ -20225,7 +20229,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_22to_angle(struct __pyx_obj_8s
  */
   __pyx_f_8srctools_4_vec__mat_to_angle((&__pyx_v_ang->val), __pyx_v_self->mat);
 
-  /* "srctools/_vec.pyx":1577
+  /* "srctools/_vec.pyx":1575
  *         cdef Angle ang = Angle.__new__(Angle)
  *         _mat_to_angle(&ang.val, self.mat)
  *         return ang             # <<<<<<<<<<<<<<
@@ -20237,7 +20241,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_22to_angle(struct __pyx_obj_8s
   __pyx_r = ((PyObject *)__pyx_v_ang);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1573
+  /* "srctools/_vec.pyx":1571
  *         return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])
  * 
  *     def to_angle(self):             # <<<<<<<<<<<<<<
@@ -20257,7 +20261,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_22to_angle(struct __pyx_obj_8s
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1579
+/* "srctools/_vec.pyx":1577
  *         return ang
  * 
  *     def transpose(self) -> 'Matrix':             # <<<<<<<<<<<<<<
@@ -20293,19 +20297,19 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("transpose", 0);
 
-  /* "srctools/_vec.pyx":1581
+  /* "srctools/_vec.pyx":1579
  *     def transpose(self) -> 'Matrix':
  *         """Return the transpose of this matrix."""
  *         cdef Matrix rot = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  * 
  *         rot.mat[0] = self.mat[0][0], self.mat[1][0], self.mat[2][0]
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1581, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1579, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_rot = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1583
+  /* "srctools/_vec.pyx":1581
  *         cdef Matrix rot = Matrix.__new__(Matrix)
  * 
  *         rot.mat[0] = self.mat[0][0], self.mat[1][0], self.mat[2][0]             # <<<<<<<<<<<<<<
@@ -20320,7 +20324,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1584
+  /* "srctools/_vec.pyx":1582
  * 
  *         rot.mat[0] = self.mat[0][0], self.mat[1][0], self.mat[2][0]
  *         rot.mat[1] = self.mat[0][1], self.mat[1][1], self.mat[2][1]             # <<<<<<<<<<<<<<
@@ -20335,7 +20339,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_3;
 
-  /* "srctools/_vec.pyx":1585
+  /* "srctools/_vec.pyx":1583
  *         rot.mat[0] = self.mat[0][0], self.mat[1][0], self.mat[2][0]
  *         rot.mat[1] = self.mat[0][1], self.mat[1][1], self.mat[2][1]
  *         rot.mat[2] = self.mat[0][2], self.mat[1][2], self.mat[2][2]             # <<<<<<<<<<<<<<
@@ -20350,7 +20354,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_2[1]) = __pyx_t_4;
   (__pyx_t_2[2]) = __pyx_t_5;
 
-  /* "srctools/_vec.pyx":1587
+  /* "srctools/_vec.pyx":1585
  *         rot.mat[2] = self.mat[0][2], self.mat[1][2], self.mat[2][2]
  * 
  *         return rot             # <<<<<<<<<<<<<<
@@ -20362,7 +20366,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_r = __pyx_v_rot;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1579
+  /* "srctools/_vec.pyx":1577
  *         return ang
  * 
  *     def transpose(self) -> 'Matrix':             # <<<<<<<<<<<<<<
@@ -20382,7 +20386,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1590
+/* "srctools/_vec.pyx":1588
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -20407,7 +20411,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pw_8srctools_4_vec_6Matrix
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_z,0};
     PyObject* values[3] = {0,0,0};
 
-    /* "srctools/_vec.pyx":1592
+    /* "srctools/_vec.pyx":1590
  *     def from_basis(
  *         cls, *,
  *         x: Vec=None,             # <<<<<<<<<<<<<<
@@ -20416,7 +20420,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pw_8srctools_4_vec_6Matrix
  */
     values[0] = (PyObject *)((struct __pyx_obj_8srctools_4_vec_Vec *)Py_None);
 
-    /* "srctools/_vec.pyx":1593
+    /* "srctools/_vec.pyx":1591
  *         cls, *,
  *         x: Vec=None,
  *         y: Vec=None,             # <<<<<<<<<<<<<<
@@ -20425,7 +20429,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pw_8srctools_4_vec_6Matrix
  */
     values[1] = (PyObject *)((struct __pyx_obj_8srctools_4_vec_Vec *)Py_None);
 
-    /* "srctools/_vec.pyx":1594
+    /* "srctools/_vec.pyx":1592
  *         x: Vec=None,
  *         y: Vec=None,
  *         z: Vec=None,             # <<<<<<<<<<<<<<
@@ -20449,7 +20453,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pw_8srctools_4_vec_6Matrix
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, 0, "from_basis") < 0)) __PYX_ERR(0, 1590, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, 0, "from_basis") < 0)) __PYX_ERR(0, 1588, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 0) {
       goto __pyx_L5_argtuple_error;
@@ -20461,18 +20465,18 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pw_8srctools_4_vec_6Matrix
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("from_basis", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1590, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("from_basis", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1588, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Matrix.from_basis", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), __pyx_ptype_8srctools_4_vec_Vec, 1, "x", 0))) __PYX_ERR(0, 1592, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y), __pyx_ptype_8srctools_4_vec_Vec, 1, "y", 0))) __PYX_ERR(0, 1593, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_z), __pyx_ptype_8srctools_4_vec_Vec, 1, "z", 0))) __PYX_ERR(0, 1594, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), __pyx_ptype_8srctools_4_vec_Vec, 1, "x", 0))) __PYX_ERR(0, 1590, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y), __pyx_ptype_8srctools_4_vec_Vec, 1, "y", 0))) __PYX_ERR(0, 1591, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_z), __pyx_ptype_8srctools_4_vec_Vec, 1, "z", 0))) __PYX_ERR(0, 1592, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_6Matrix_26from_basis(((PyTypeObject*)__pyx_v_cls), __pyx_v_x, __pyx_v_y, __pyx_v_z);
 
-  /* "srctools/_vec.pyx":1590
+  /* "srctools/_vec.pyx":1588
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -20510,14 +20514,14 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_basis", 0);
 
-  /* "srctools/_vec.pyx":1600
+  /* "srctools/_vec.pyx":1598
  *         The third is computed, if not provided.
  *         """
  *         cdef Matrix mat = Matrix.__new__(cls)             # <<<<<<<<<<<<<<
  *         cdef vec_t res
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_new); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1600, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_new); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1598, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_2))) {
@@ -20531,14 +20535,14 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   }
   __pyx_t_1 = (__pyx_t_3) ? __Pyx_PyObject_Call2Args(__pyx_t_2, __pyx_t_3, ((PyObject *)__pyx_v_cls)) : __Pyx_PyObject_CallOneArg(__pyx_t_2, ((PyObject *)__pyx_v_cls));
   __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1600, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1598, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix))))) __PYX_ERR(0, 1600, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Matrix))))) __PYX_ERR(0, 1598, __pyx_L1_error)
   __pyx_v_mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1603
+  /* "srctools/_vec.pyx":1601
  *         cdef vec_t res
  * 
  *         if x is None:             # <<<<<<<<<<<<<<
@@ -20549,7 +20553,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_t_5 = (__pyx_t_4 != 0);
   if (__pyx_t_5) {
 
-    /* "srctools/_vec.pyx":1604
+    /* "srctools/_vec.pyx":1602
  * 
  *         if x is None:
  *             if y is not None and z is not None:             # <<<<<<<<<<<<<<
@@ -20569,7 +20573,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     __pyx_L5_bool_binop_done:;
     if (likely(__pyx_t_5)) {
 
-      /* "srctools/_vec.pyx":1605
+      /* "srctools/_vec.pyx":1603
  *         if x is None:
  *             if y is not None and z is not None:
  *                 _vec_cross(&res, &y.val, &z.val)             # <<<<<<<<<<<<<<
@@ -20578,7 +20582,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
       __pyx_f_8srctools_4_vec__vec_cross((&__pyx_v_res), (&__pyx_v_y->val), (&__pyx_v_z->val));
 
-      /* "srctools/_vec.pyx":1604
+      /* "srctools/_vec.pyx":1602
  * 
  *         if x is None:
  *             if y is not None and z is not None:             # <<<<<<<<<<<<<<
@@ -20588,7 +20592,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
       goto __pyx_L4;
     }
 
-    /* "srctools/_vec.pyx":1607
+    /* "srctools/_vec.pyx":1605
  *                 _vec_cross(&res, &y.val, &z.val)
  *             else:
  *                 raise TypeError('At least two vectors must be provided!')             # <<<<<<<<<<<<<<
@@ -20596,15 +20600,15 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  *             res = x.val
  */
     /*else*/ {
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1607, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1605, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 1607, __pyx_L1_error)
+      __PYX_ERR(0, 1605, __pyx_L1_error)
     }
     __pyx_L4:;
 
-    /* "srctools/_vec.pyx":1603
+    /* "srctools/_vec.pyx":1601
  *         cdef vec_t res
  * 
  *         if x is None:             # <<<<<<<<<<<<<<
@@ -20614,7 +20618,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1609
+  /* "srctools/_vec.pyx":1607
  *                 raise TypeError('At least two vectors must be provided!')
  *         else:
  *             res = x.val             # <<<<<<<<<<<<<<
@@ -20627,7 +20631,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1611
+  /* "srctools/_vec.pyx":1609
  *             res = x.val
  * 
  *         _vec_normalise(&res, &res)             # <<<<<<<<<<<<<<
@@ -20636,7 +20640,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_res), (&__pyx_v_res));
 
-  /* "srctools/_vec.pyx":1612
+  /* "srctools/_vec.pyx":1610
  * 
  *         _vec_normalise(&res, &res)
  *         mat.mat[0] = res.x, res.y, res.z             # <<<<<<<<<<<<<<
@@ -20651,7 +20655,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_8[1]) = __pyx_t_10;
   (__pyx_t_8[2]) = __pyx_t_11;
 
-  /* "srctools/_vec.pyx":1614
+  /* "srctools/_vec.pyx":1612
  *         mat.mat[0] = res.x, res.y, res.z
  * 
  *         if y is None:             # <<<<<<<<<<<<<<
@@ -20662,7 +20666,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_t_4 = (__pyx_t_5 != 0);
   if (__pyx_t_4) {
 
-    /* "srctools/_vec.pyx":1615
+    /* "srctools/_vec.pyx":1613
  * 
  *         if y is None:
  *             if x is not None and z is not None:             # <<<<<<<<<<<<<<
@@ -20682,7 +20686,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     __pyx_L9_bool_binop_done:;
     if (likely(__pyx_t_4)) {
 
-      /* "srctools/_vec.pyx":1616
+      /* "srctools/_vec.pyx":1614
  *         if y is None:
  *             if x is not None and z is not None:
  *                 _vec_cross(&res, &z.val, &x.val)             # <<<<<<<<<<<<<<
@@ -20691,7 +20695,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
       __pyx_f_8srctools_4_vec__vec_cross((&__pyx_v_res), (&__pyx_v_z->val), (&__pyx_v_x->val));
 
-      /* "srctools/_vec.pyx":1615
+      /* "srctools/_vec.pyx":1613
  * 
  *         if y is None:
  *             if x is not None and z is not None:             # <<<<<<<<<<<<<<
@@ -20701,7 +20705,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
       goto __pyx_L8;
     }
 
-    /* "srctools/_vec.pyx":1618
+    /* "srctools/_vec.pyx":1616
  *                 _vec_cross(&res, &z.val, &x.val)
  *             else:
  *                 raise TypeError('At least two vectors must be provided!')             # <<<<<<<<<<<<<<
@@ -20709,15 +20713,15 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  *             res = y.val
  */
     /*else*/ {
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1618, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1616, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 1618, __pyx_L1_error)
+      __PYX_ERR(0, 1616, __pyx_L1_error)
     }
     __pyx_L8:;
 
-    /* "srctools/_vec.pyx":1614
+    /* "srctools/_vec.pyx":1612
  *         mat.mat[0] = res.x, res.y, res.z
  * 
  *         if y is None:             # <<<<<<<<<<<<<<
@@ -20727,7 +20731,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     goto __pyx_L7;
   }
 
-  /* "srctools/_vec.pyx":1620
+  /* "srctools/_vec.pyx":1618
  *                 raise TypeError('At least two vectors must be provided!')
  *         else:
  *             res = y.val             # <<<<<<<<<<<<<<
@@ -20740,7 +20744,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   }
   __pyx_L7:;
 
-  /* "srctools/_vec.pyx":1622
+  /* "srctools/_vec.pyx":1620
  *             res = y.val
  * 
  *         _vec_normalise(&res, &res)             # <<<<<<<<<<<<<<
@@ -20749,7 +20753,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_res), (&__pyx_v_res));
 
-  /* "srctools/_vec.pyx":1623
+  /* "srctools/_vec.pyx":1621
  * 
  *         _vec_normalise(&res, &res)
  *         mat.mat[1] = res.x, res.y, res.z             # <<<<<<<<<<<<<<
@@ -20764,7 +20768,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_8[1]) = __pyx_t_10;
   (__pyx_t_8[2]) = __pyx_t_9;
 
-  /* "srctools/_vec.pyx":1625
+  /* "srctools/_vec.pyx":1623
  *         mat.mat[1] = res.x, res.y, res.z
  * 
  *         if z is None:             # <<<<<<<<<<<<<<
@@ -20775,7 +20779,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_t_5 = (__pyx_t_4 != 0);
   if (__pyx_t_5) {
 
-    /* "srctools/_vec.pyx":1626
+    /* "srctools/_vec.pyx":1624
  * 
  *         if z is None:
  *             if x is not None and y is not None:             # <<<<<<<<<<<<<<
@@ -20795,7 +20799,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     __pyx_L13_bool_binop_done:;
     if (likely(__pyx_t_5)) {
 
-      /* "srctools/_vec.pyx":1627
+      /* "srctools/_vec.pyx":1625
  *         if z is None:
  *             if x is not None and y is not None:
  *                 _vec_cross(&res, &x.val, &y.val)             # <<<<<<<<<<<<<<
@@ -20804,7 +20808,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
       __pyx_f_8srctools_4_vec__vec_cross((&__pyx_v_res), (&__pyx_v_x->val), (&__pyx_v_y->val));
 
-      /* "srctools/_vec.pyx":1626
+      /* "srctools/_vec.pyx":1624
  * 
  *         if z is None:
  *             if x is not None and y is not None:             # <<<<<<<<<<<<<<
@@ -20814,7 +20818,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
       goto __pyx_L12;
     }
 
-    /* "srctools/_vec.pyx":1629
+    /* "srctools/_vec.pyx":1627
  *                 _vec_cross(&res, &x.val, &y.val)
  *             else:
  *                 raise TypeError('At least two vectors must be provided!')             # <<<<<<<<<<<<<<
@@ -20822,15 +20826,15 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  *             res = z.val
  */
     /*else*/ {
-      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__16, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1629, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1627, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 1629, __pyx_L1_error)
+      __PYX_ERR(0, 1627, __pyx_L1_error)
     }
     __pyx_L12:;
 
-    /* "srctools/_vec.pyx":1625
+    /* "srctools/_vec.pyx":1623
  *         mat.mat[1] = res.x, res.y, res.z
  * 
  *         if z is None:             # <<<<<<<<<<<<<<
@@ -20840,7 +20844,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
     goto __pyx_L11;
   }
 
-  /* "srctools/_vec.pyx":1631
+  /* "srctools/_vec.pyx":1629
  *                 raise TypeError('At least two vectors must be provided!')
  *         else:
  *             res = z.val             # <<<<<<<<<<<<<<
@@ -20853,7 +20857,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   }
   __pyx_L11:;
 
-  /* "srctools/_vec.pyx":1633
+  /* "srctools/_vec.pyx":1631
  *             res = z.val
  * 
  *         _vec_normalise(&res, &res)             # <<<<<<<<<<<<<<
@@ -20862,7 +20866,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_res), (&__pyx_v_res));
 
-  /* "srctools/_vec.pyx":1634
+  /* "srctools/_vec.pyx":1632
  * 
  *         _vec_normalise(&res, &res)
  *         mat.mat[2] = res.x, res.y, res.z             # <<<<<<<<<<<<<<
@@ -20877,7 +20881,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   (__pyx_t_8[1]) = __pyx_t_10;
   (__pyx_t_8[2]) = __pyx_t_11;
 
-  /* "srctools/_vec.pyx":1636
+  /* "srctools/_vec.pyx":1634
  *         mat.mat[2] = res.x, res.y, res.z
  * 
  *         return mat             # <<<<<<<<<<<<<<
@@ -20889,7 +20893,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   __pyx_r = __pyx_v_mat;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1590
+  /* "srctools/_vec.pyx":1588
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -20911,7 +20915,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1638
+/* "srctools/_vec.pyx":1636
  *         return mat
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -20954,7 +20958,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__matmul__", 0);
 
-  /* "srctools/_vec.pyx":1644
+  /* "srctools/_vec.pyx":1642
  *         cdef Matrix mat
  *         cdef Angle ang
  *         if isinstance(first, Matrix):             # <<<<<<<<<<<<<<
@@ -20965,19 +20969,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1645
+    /* "srctools/_vec.pyx":1643
  *         cdef Angle ang
  *         if isinstance(first, Matrix):
  *             mat = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  *             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
  *             if isinstance(second, Matrix):
  */
-    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1645, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1643, __pyx_L1_error)
     __Pyx_GOTREF(((PyObject *)__pyx_t_3));
     __pyx_v_mat = ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "srctools/_vec.pyx":1646
+    /* "srctools/_vec.pyx":1644
  *         if isinstance(first, Matrix):
  *             mat = Matrix.__new__(Matrix)
  *             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))             # <<<<<<<<<<<<<<
@@ -20986,7 +20990,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
     (void)(memcpy(__pyx_v_mat->mat, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_first)->mat, (sizeof(__pyx_t_8srctools_4_vec_mat_t))));
 
-    /* "srctools/_vec.pyx":1647
+    /* "srctools/_vec.pyx":1645
  *             mat = Matrix.__new__(Matrix)
  *             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
  *             if isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -20997,7 +21001,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1648
+      /* "srctools/_vec.pyx":1646
  *             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
  *             if isinstance(second, Matrix):
  *                 _mat_mul(mat.mat, (<Matrix>second).mat)             # <<<<<<<<<<<<<<
@@ -21006,7 +21010,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_mat->mat, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_second)->mat);
 
-      /* "srctools/_vec.pyx":1647
+      /* "srctools/_vec.pyx":1645
  *             mat = Matrix.__new__(Matrix)
  *             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
  *             if isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -21016,7 +21020,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
       goto __pyx_L4;
     }
 
-    /* "srctools/_vec.pyx":1649
+    /* "srctools/_vec.pyx":1647
  *             if isinstance(second, Matrix):
  *                 _mat_mul(mat.mat, (<Matrix>second).mat)
  *             elif isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -21027,7 +21031,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1650
+      /* "srctools/_vec.pyx":1648
  *                 _mat_mul(mat.mat, (<Matrix>second).mat)
  *             elif isinstance(second, Angle):
  *                 _mat_from_angle(temp, &(<Angle>second).val)             # <<<<<<<<<<<<<<
@@ -21036,7 +21040,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_second)->val));
 
-      /* "srctools/_vec.pyx":1651
+      /* "srctools/_vec.pyx":1649
  *             elif isinstance(second, Angle):
  *                 _mat_from_angle(temp, &(<Angle>second).val)
  *                 _mat_mul(mat.mat, temp)             # <<<<<<<<<<<<<<
@@ -21045,7 +21049,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_mat->mat, __pyx_v_temp);
 
-      /* "srctools/_vec.pyx":1649
+      /* "srctools/_vec.pyx":1647
  *             if isinstance(second, Matrix):
  *                 _mat_mul(mat.mat, (<Matrix>second).mat)
  *             elif isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -21055,7 +21059,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
       goto __pyx_L4;
     }
 
-    /* "srctools/_vec.pyx":1653
+    /* "srctools/_vec.pyx":1651
  *                 _mat_mul(mat.mat, temp)
  *             else:
  *                 return NotImplemented             # <<<<<<<<<<<<<<
@@ -21070,7 +21074,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     }
     __pyx_L4:;
 
-    /* "srctools/_vec.pyx":1654
+    /* "srctools/_vec.pyx":1652
  *             else:
  *                 return NotImplemented
  *             return mat             # <<<<<<<<<<<<<<
@@ -21082,7 +21086,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     __pyx_r = ((PyObject *)__pyx_v_mat);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1644
+    /* "srctools/_vec.pyx":1642
  *         cdef Matrix mat
  *         cdef Angle ang
  *         if isinstance(first, Matrix):             # <<<<<<<<<<<<<<
@@ -21091,7 +21095,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
   }
 
-  /* "srctools/_vec.pyx":1655
+  /* "srctools/_vec.pyx":1653
  *                 return NotImplemented
  *             return mat
  *         elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -21102,7 +21106,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (likely(__pyx_t_1)) {
 
-    /* "srctools/_vec.pyx":1656
+    /* "srctools/_vec.pyx":1654
  *             return mat
  *         elif isinstance(second, Matrix):
  *             if isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -21113,19 +21117,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1657
+      /* "srctools/_vec.pyx":1655
  *         elif isinstance(second, Matrix):
  *             if isinstance(first, Vec):
  *                 vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *                 _vec_rot(&vec.val, (<Matrix>second).mat)
  *                 return vec
  */
-      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1657, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1655, __pyx_L1_error)
       __Pyx_GOTREF(((PyObject *)__pyx_t_3));
       __pyx_v_vec = ((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "srctools/_vec.pyx":1658
+      /* "srctools/_vec.pyx":1656
  *             if isinstance(first, Vec):
  *                 vec = Vec.__new__(Vec)
  *                 _vec_rot(&vec.val, (<Matrix>second).mat)             # <<<<<<<<<<<<<<
@@ -21134,7 +21138,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__vec_rot((&__pyx_v_vec->val), ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_second)->mat);
 
-      /* "srctools/_vec.pyx":1659
+      /* "srctools/_vec.pyx":1657
  *                 vec = Vec.__new__(Vec)
  *                 _vec_rot(&vec.val, (<Matrix>second).mat)
  *                 return vec             # <<<<<<<<<<<<<<
@@ -21146,7 +21150,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
       __pyx_r = ((PyObject *)__pyx_v_vec);
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1656
+      /* "srctools/_vec.pyx":1654
  *             return mat
  *         elif isinstance(second, Matrix):
  *             if isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -21155,7 +21159,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
     }
 
-    /* "srctools/_vec.pyx":1660
+    /* "srctools/_vec.pyx":1658
  *                 _vec_rot(&vec.val, (<Matrix>second).mat)
  *                 return vec
  *             elif isinstance(first, Angle):             # <<<<<<<<<<<<<<
@@ -21166,19 +21170,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1661
+      /* "srctools/_vec.pyx":1659
  *                 return vec
  *             elif isinstance(first, Angle):
  *                 ang = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
  *                 _mat_from_angle(temp, &(<Angle>first).val)
  *                 _mat_mul(temp, (<Matrix>second).mat)
  */
-      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1661, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1659, __pyx_L1_error)
       __Pyx_GOTREF(((PyObject *)__pyx_t_3));
       __pyx_v_ang = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "srctools/_vec.pyx":1662
+      /* "srctools/_vec.pyx":1660
  *             elif isinstance(first, Angle):
  *                 ang = Angle.__new__(Angle)
  *                 _mat_from_angle(temp, &(<Angle>first).val)             # <<<<<<<<<<<<<<
@@ -21187,7 +21191,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_first)->val));
 
-      /* "srctools/_vec.pyx":1663
+      /* "srctools/_vec.pyx":1661
  *                 ang = Angle.__new__(Angle)
  *                 _mat_from_angle(temp, &(<Angle>first).val)
  *                 _mat_mul(temp, (<Matrix>second).mat)             # <<<<<<<<<<<<<<
@@ -21196,7 +21200,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_temp, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_second)->mat);
 
-      /* "srctools/_vec.pyx":1664
+      /* "srctools/_vec.pyx":1662
  *                 _mat_from_angle(temp, &(<Angle>first).val)
  *                 _mat_mul(temp, (<Matrix>second).mat)
  *                 _mat_to_angle(&ang.val, temp)             # <<<<<<<<<<<<<<
@@ -21205,7 +21209,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
       __pyx_f_8srctools_4_vec__mat_to_angle((&__pyx_v_ang->val), __pyx_v_temp);
 
-      /* "srctools/_vec.pyx":1665
+      /* "srctools/_vec.pyx":1663
  *                 _mat_mul(temp, (<Matrix>second).mat)
  *                 _mat_to_angle(&ang.val, temp)
  *                 return ang             # <<<<<<<<<<<<<<
@@ -21217,7 +21221,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
       __pyx_r = ((PyObject *)__pyx_v_ang);
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1660
+      /* "srctools/_vec.pyx":1658
  *                 _vec_rot(&vec.val, (<Matrix>second).mat)
  *                 return vec
  *             elif isinstance(first, Angle):             # <<<<<<<<<<<<<<
@@ -21226,7 +21230,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
     }
 
-    /* "srctools/_vec.pyx":1667
+    /* "srctools/_vec.pyx":1665
  *                 return ang
  *             else:
  *                 return NotImplemented             # <<<<<<<<<<<<<<
@@ -21240,7 +21244,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
       goto __pyx_L0;
     }
 
-    /* "srctools/_vec.pyx":1655
+    /* "srctools/_vec.pyx":1653
  *                 return NotImplemented
  *             return mat
  *         elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -21249,7 +21253,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  */
   }
 
-  /* "srctools/_vec.pyx":1669
+  /* "srctools/_vec.pyx":1667
  *                 return NotImplemented
  *         else:
  *             raise SystemError('Neither are Matrices?')             # <<<<<<<<<<<<<<
@@ -21257,14 +21261,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
  *     def __imatmul__(self, other):
  */
   /*else*/ {
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_SystemError, __pyx_tuple__17, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1669, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_SystemError, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1667, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 1669, __pyx_L1_error)
+    __PYX_ERR(0, 1667, __pyx_L1_error)
   }
 
-  /* "srctools/_vec.pyx":1638
+  /* "srctools/_vec.pyx":1636
  *         return mat
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -21287,7 +21291,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_28__matmul__(PyObject *__pyx_v
 }
 #endif /*!(#if PY_VERSION_HEX >= 0x03050000)*/
 
-/* "srctools/_vec.pyx":1671
+/* "srctools/_vec.pyx":1669
  *             raise SystemError('Neither are Matrices?')
  * 
  *     def __imatmul__(self, other):             # <<<<<<<<<<<<<<
@@ -21319,7 +21323,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
   int __pyx_t_2;
   __Pyx_RefNannySetupContext("__imatmul__", 0);
 
-  /* "srctools/_vec.pyx":1673
+  /* "srctools/_vec.pyx":1671
  *     def __imatmul__(self, other):
  *         cdef mat_t temp
  *         if isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -21330,7 +21334,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1674
+    /* "srctools/_vec.pyx":1672
  *         cdef mat_t temp
  *         if isinstance(other, Matrix):
  *             _mat_mul(self.mat, (<Matrix>other).mat)             # <<<<<<<<<<<<<<
@@ -21339,7 +21343,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
  */
     __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_self->mat, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_other)->mat);
 
-    /* "srctools/_vec.pyx":1675
+    /* "srctools/_vec.pyx":1673
  *         if isinstance(other, Matrix):
  *             _mat_mul(self.mat, (<Matrix>other).mat)
  *             return self             # <<<<<<<<<<<<<<
@@ -21351,7 +21355,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1673
+    /* "srctools/_vec.pyx":1671
  *     def __imatmul__(self, other):
  *         cdef mat_t temp
  *         if isinstance(other, Matrix):             # <<<<<<<<<<<<<<
@@ -21360,7 +21364,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
  */
   }
 
-  /* "srctools/_vec.pyx":1676
+  /* "srctools/_vec.pyx":1674
  *             _mat_mul(self.mat, (<Matrix>other).mat)
  *             return self
  *         elif isinstance(other, Angle):             # <<<<<<<<<<<<<<
@@ -21371,7 +21375,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1677
+    /* "srctools/_vec.pyx":1675
  *             return self
  *         elif isinstance(other, Angle):
  *             _mat_from_angle(temp, &(<Angle>other).val)             # <<<<<<<<<<<<<<
@@ -21380,7 +21384,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
  */
     __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_other)->val));
 
-    /* "srctools/_vec.pyx":1678
+    /* "srctools/_vec.pyx":1676
  *         elif isinstance(other, Angle):
  *             _mat_from_angle(temp, &(<Angle>other).val)
  *             _mat_mul(self.mat, temp)             # <<<<<<<<<<<<<<
@@ -21389,7 +21393,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
  */
     __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_self->mat, __pyx_v_temp);
 
-    /* "srctools/_vec.pyx":1679
+    /* "srctools/_vec.pyx":1677
  *             _mat_from_angle(temp, &(<Angle>other).val)
  *             _mat_mul(self.mat, temp)
  *             return self             # <<<<<<<<<<<<<<
@@ -21401,7 +21405,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
     __pyx_r = ((PyObject *)__pyx_v_self);
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1676
+    /* "srctools/_vec.pyx":1674
  *             _mat_mul(self.mat, (<Matrix>other).mat)
  *             return self
  *         elif isinstance(other, Angle):             # <<<<<<<<<<<<<<
@@ -21410,7 +21414,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
  */
   }
 
-  /* "srctools/_vec.pyx":1681
+  /* "srctools/_vec.pyx":1679
  *             return self
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
@@ -21424,7 +21428,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
     goto __pyx_L0;
   }
 
-  /* "srctools/_vec.pyx":1671
+  /* "srctools/_vec.pyx":1669
  *             raise SystemError('Neither are Matrices?')
  * 
  *     def __imatmul__(self, other):             # <<<<<<<<<<<<<<
@@ -21440,7 +21444,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_6Matrix_30__imatmul__(struct __pyx_obj
 }
 #endif /*!(#if PY_VERSION_HEX >= 0x03050000)*/
 
-/* "srctools/_vec.pyx":1697
+/* "srctools/_vec.pyx":1694
  *     cdef vec_t val
  * 
  *     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:             # <<<<<<<<<<<<<<
@@ -21504,7 +21508,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_1__init__(PyObject *__pyx_v_self, PyO
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 1697, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 1694, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -21524,7 +21528,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_1__init__(PyObject *__pyx_v_self, PyO
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1697, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 0, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1694, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Angle.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -21559,12 +21563,12 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_vec.pyx":1706
+  /* "srctools/_vec.pyx":1703
  *         """
  *         cdef tuple tup
  *         if isinstance(pitch, float) or isinstance(pitch, int):             # <<<<<<<<<<<<<<
- *             self.val.x = <double>pitch % 360 % 360.0
- *             self.val.y = <double>yaw % 360 % 360.0
+ *             self.val.x = norm_ang(pitch)
+ *             self.val.y = norm_ang(yaw)
  */
   __pyx_t_2 = PyFloat_Check(__pyx_v_pitch); 
   __pyx_t_3 = (__pyx_t_2 != 0);
@@ -21579,49 +21583,49 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1707
+    /* "srctools/_vec.pyx":1704
  *         cdef tuple tup
  *         if isinstance(pitch, float) or isinstance(pitch, int):
- *             self.val.x = <double>pitch % 360 % 360.0             # <<<<<<<<<<<<<<
- *             self.val.y = <double>yaw % 360 % 360.0
- *             self.val.z = <double>roll % 360 % 360.0
+ *             self.val.x = norm_ang(pitch)             # <<<<<<<<<<<<<<
+ *             self.val.y = norm_ang(yaw)
+ *             self.val.z = norm_ang(roll)
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_pitch); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1707, __pyx_L1_error)
-    __pyx_v_self->val.x = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_pitch); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1704, __pyx_L1_error)
+    __pyx_v_self->val.x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-    /* "srctools/_vec.pyx":1708
+    /* "srctools/_vec.pyx":1705
  *         if isinstance(pitch, float) or isinstance(pitch, int):
- *             self.val.x = <double>pitch % 360 % 360.0
- *             self.val.y = <double>yaw % 360 % 360.0             # <<<<<<<<<<<<<<
- *             self.val.z = <double>roll % 360 % 360.0
+ *             self.val.x = norm_ang(pitch)
+ *             self.val.y = norm_ang(yaw)             # <<<<<<<<<<<<<<
+ *             self.val.z = norm_ang(roll)
  *         elif isinstance(pitch, Angle):
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1708, __pyx_L1_error)
-    __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1705, __pyx_L1_error)
+    __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-    /* "srctools/_vec.pyx":1709
- *             self.val.x = <double>pitch % 360 % 360.0
- *             self.val.y = <double>yaw % 360 % 360.0
- *             self.val.z = <double>roll % 360 % 360.0             # <<<<<<<<<<<<<<
+    /* "srctools/_vec.pyx":1706
+ *             self.val.x = norm_ang(pitch)
+ *             self.val.y = norm_ang(yaw)
+ *             self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  *         elif isinstance(pitch, Angle):
  *             self.val.x = (<Angle>pitch).val.x
  */
-    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1709, __pyx_L1_error)
-    __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+    __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1706, __pyx_L1_error)
+    __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-    /* "srctools/_vec.pyx":1706
+    /* "srctools/_vec.pyx":1703
  *         """
  *         cdef tuple tup
  *         if isinstance(pitch, float) or isinstance(pitch, int):             # <<<<<<<<<<<<<<
- *             self.val.x = <double>pitch % 360 % 360.0
- *             self.val.y = <double>yaw % 360 % 360.0
+ *             self.val.x = norm_ang(pitch)
+ *             self.val.y = norm_ang(yaw)
  */
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1710
- *             self.val.y = <double>yaw % 360 % 360.0
- *             self.val.z = <double>roll % 360 % 360.0
+  /* "srctools/_vec.pyx":1707
+ *             self.val.y = norm_ang(yaw)
+ *             self.val.z = norm_ang(roll)
  *         elif isinstance(pitch, Angle):             # <<<<<<<<<<<<<<
  *             self.val.x = (<Angle>pitch).val.x
  *             self.val.y = (<Angle>pitch).val.y
@@ -21630,8 +21634,8 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1711
- *             self.val.z = <double>roll % 360 % 360.0
+    /* "srctools/_vec.pyx":1708
+ *             self.val.z = norm_ang(roll)
  *         elif isinstance(pitch, Angle):
  *             self.val.x = (<Angle>pitch).val.x             # <<<<<<<<<<<<<<
  *             self.val.y = (<Angle>pitch).val.y
@@ -21640,7 +21644,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_pitch)->val.x;
     __pyx_v_self->val.x = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":1712
+    /* "srctools/_vec.pyx":1709
  *         elif isinstance(pitch, Angle):
  *             self.val.x = (<Angle>pitch).val.x
  *             self.val.y = (<Angle>pitch).val.y             # <<<<<<<<<<<<<<
@@ -21650,7 +21654,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_pitch)->val.y;
     __pyx_v_self->val.y = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":1713
+    /* "srctools/_vec.pyx":1710
  *             self.val.x = (<Angle>pitch).val.x
  *             self.val.y = (<Angle>pitch).val.y
  *             self.val.z = (<Angle>pitch).val.z             # <<<<<<<<<<<<<<
@@ -21660,9 +21664,9 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     __pyx_t_4 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_pitch)->val.z;
     __pyx_v_self->val.z = __pyx_t_4;
 
-    /* "srctools/_vec.pyx":1710
- *             self.val.y = <double>yaw % 360 % 360.0
- *             self.val.z = <double>roll % 360 % 360.0
+    /* "srctools/_vec.pyx":1707
+ *             self.val.y = norm_ang(yaw)
+ *             self.val.z = norm_ang(roll)
  *         elif isinstance(pitch, Angle):             # <<<<<<<<<<<<<<
  *             self.val.x = (<Angle>pitch).val.x
  *             self.val.y = (<Angle>pitch).val.y
@@ -21670,7 +21674,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1714
+  /* "srctools/_vec.pyx":1711
  *             self.val.y = (<Angle>pitch).val.y
  *             self.val.z = (<Angle>pitch).val.z
  *         elif isinstance(pitch, tuple):             # <<<<<<<<<<<<<<
@@ -21681,62 +21685,62 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1715
+    /* "srctools/_vec.pyx":1712
  *             self.val.z = (<Angle>pitch).val.z
  *         elif isinstance(pitch, tuple):
  *             tup = <tuple>pitch             # <<<<<<<<<<<<<<
  *             if len(tup) >= 1:
- *                 self.val.x = <double?>(tup[0]) % 360 % 360.0
+ *                 self.val.x = norm_ang(tup[0])
  */
     __pyx_t_5 = __pyx_v_pitch;
     __Pyx_INCREF(__pyx_t_5);
     __pyx_v_tup = ((PyObject*)__pyx_t_5);
     __pyx_t_5 = 0;
 
-    /* "srctools/_vec.pyx":1716
+    /* "srctools/_vec.pyx":1713
  *         elif isinstance(pitch, tuple):
  *             tup = <tuple>pitch
  *             if len(tup) >= 1:             # <<<<<<<<<<<<<<
- *                 self.val.x = <double?>(tup[0]) % 360 % 360.0
+ *                 self.val.x = norm_ang(tup[0])
  *             else:
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1716, __pyx_L1_error)
+      __PYX_ERR(0, 1713, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1716, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1713, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 1) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1717
+      /* "srctools/_vec.pyx":1714
  *             tup = <tuple>pitch
  *             if len(tup) >= 1:
- *                 self.val.x = <double?>(tup[0]) % 360 % 360.0             # <<<<<<<<<<<<<<
+ *                 self.val.x = norm_ang(tup[0])             # <<<<<<<<<<<<<<
  *             else:
  *                 self.val.x = 0.0
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1717, __pyx_L1_error)
+        __PYX_ERR(0, 1714, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1717, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1714, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1717, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1714, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_v_self->val.x = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+      __pyx_v_self->val.x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-      /* "srctools/_vec.pyx":1716
+      /* "srctools/_vec.pyx":1713
  *         elif isinstance(pitch, tuple):
  *             tup = <tuple>pitch
  *             if len(tup) >= 1:             # <<<<<<<<<<<<<<
- *                 self.val.x = <double?>(tup[0]) % 360 % 360.0
+ *                 self.val.x = norm_ang(tup[0])
  *             else:
  */
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":1719
- *                 self.val.x = <double?>(tup[0]) % 360 % 360.0
+    /* "srctools/_vec.pyx":1716
+ *                 self.val.x = norm_ang(tup[0])
  *             else:
  *                 self.val.x = 0.0             # <<<<<<<<<<<<<<
  * 
@@ -21747,117 +21751,117 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     }
     __pyx_L6:;
 
-    /* "srctools/_vec.pyx":1721
+    /* "srctools/_vec.pyx":1718
  *                 self.val.x = 0.0
  * 
  *             if len(tup) >= 2:             # <<<<<<<<<<<<<<
- *                 self.val.y = <double?>(tup[1]) % 360 % 360.0
+ *                 self.val.y = norm_ang(tup[1])
  *             else:
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1721, __pyx_L1_error)
+      __PYX_ERR(0, 1718, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1721, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1718, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 2) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1722
+      /* "srctools/_vec.pyx":1719
  * 
  *             if len(tup) >= 2:
- *                 self.val.y = <double?>(tup[1]) % 360 % 360.0             # <<<<<<<<<<<<<<
+ *                 self.val.y = norm_ang(tup[1])             # <<<<<<<<<<<<<<
  *             else:
- *                 self.val.y = yaw
+ *                 self.val.y = norm_ang(yaw)
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1722, __pyx_L1_error)
+        __PYX_ERR(0, 1719, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1722, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 1, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1719, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1722, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1719, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+      __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-      /* "srctools/_vec.pyx":1721
+      /* "srctools/_vec.pyx":1718
  *                 self.val.x = 0.0
  * 
  *             if len(tup) >= 2:             # <<<<<<<<<<<<<<
- *                 self.val.y = <double?>(tup[1]) % 360 % 360.0
+ *                 self.val.y = norm_ang(tup[1])
  *             else:
  */
       goto __pyx_L7;
     }
 
-    /* "srctools/_vec.pyx":1724
- *                 self.val.y = <double?>(tup[1]) % 360 % 360.0
+    /* "srctools/_vec.pyx":1721
+ *                 self.val.y = norm_ang(tup[1])
  *             else:
- *                 self.val.y = yaw             # <<<<<<<<<<<<<<
+ *                 self.val.y = norm_ang(yaw)             # <<<<<<<<<<<<<<
  * 
  *             if len(tup) >= 3:
  */
     /*else*/ {
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1724, __pyx_L1_error)
-      __pyx_v_self->val.y = __pyx_t_4;
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1721, __pyx_L1_error)
+      __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
     }
     __pyx_L7:;
 
-    /* "srctools/_vec.pyx":1726
- *                 self.val.y = yaw
+    /* "srctools/_vec.pyx":1723
+ *                 self.val.y = norm_ang(yaw)
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
- *                 self.val.z = <double?>(tup[2]) % 360 % 360.0
+ *                 self.val.z = norm_ang(tup[2])
  *             else:
  */
     if (unlikely(__pyx_v_tup == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-      __PYX_ERR(0, 1726, __pyx_L1_error)
+      __PYX_ERR(0, 1723, __pyx_L1_error)
     }
-    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1726, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_GET_SIZE(__pyx_v_tup); if (unlikely(__pyx_t_6 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1723, __pyx_L1_error)
     __pyx_t_1 = ((__pyx_t_6 >= 3) != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1727
+      /* "srctools/_vec.pyx":1724
  * 
  *             if len(tup) >= 3:
- *                 self.val.z = <double?>(tup[2]) % 360 % 360.0             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(tup[2])             # <<<<<<<<<<<<<<
  *             else:
- *                 self.val.z = roll
+ *                 self.val.z = norm_ang(roll)
  */
       if (unlikely(__pyx_v_tup == Py_None)) {
         PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-        __PYX_ERR(0, 1727, __pyx_L1_error)
+        __PYX_ERR(0, 1724, __pyx_L1_error)
       }
-      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1727, __pyx_L1_error)
+      __pyx_t_5 = __Pyx_GetItemInt_Tuple(__pyx_v_tup, 2, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1724, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_5);
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1727, __pyx_L1_error)
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1724, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-      __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+      __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-      /* "srctools/_vec.pyx":1726
- *                 self.val.y = yaw
+      /* "srctools/_vec.pyx":1723
+ *                 self.val.y = norm_ang(yaw)
  * 
  *             if len(tup) >= 3:             # <<<<<<<<<<<<<<
- *                 self.val.z = <double?>(tup[2]) % 360 % 360.0
+ *                 self.val.z = norm_ang(tup[2])
  *             else:
  */
       goto __pyx_L8;
     }
 
-    /* "srctools/_vec.pyx":1729
- *                 self.val.z = <double?>(tup[2]) % 360 % 360.0
+    /* "srctools/_vec.pyx":1726
+ *                 self.val.z = norm_ang(tup[2])
  *             else:
- *                 self.val.z = roll             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  * 
  *         else:
  */
     /*else*/ {
-      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1729, __pyx_L1_error)
-      __pyx_v_self->val.z = __pyx_t_4;
+      __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1726, __pyx_L1_error)
+      __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
     }
     __pyx_L8:;
 
-    /* "srctools/_vec.pyx":1714
+    /* "srctools/_vec.pyx":1711
  *             self.val.y = (<Angle>pitch).val.y
  *             self.val.z = (<Angle>pitch).val.z
  *         elif isinstance(pitch, tuple):             # <<<<<<<<<<<<<<
@@ -21867,24 +21871,24 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1732
+  /* "srctools/_vec.pyx":1729
  * 
  *         else:
  *             it = iter(pitch)             # <<<<<<<<<<<<<<
  *             try:
- *                 self.val.x = next(it)
+ *                 self.val.x = norm_ang(next(it))
  */
   /*else*/ {
-    __pyx_t_5 = PyObject_GetIter(__pyx_v_pitch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1732, __pyx_L1_error)
+    __pyx_t_5 = PyObject_GetIter(__pyx_v_pitch); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1729, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     __pyx_v_it = __pyx_t_5;
     __pyx_t_5 = 0;
 
-    /* "srctools/_vec.pyx":1733
+    /* "srctools/_vec.pyx":1730
  *         else:
  *             it = iter(pitch)
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.x = next(it)
+ *                 self.val.x = norm_ang(next(it))
  *             except StopIteration:
  */
     {
@@ -21896,24 +21900,24 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __Pyx_XGOTREF(__pyx_t_9);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1734
+        /* "srctools/_vec.pyx":1731
  *             it = iter(pitch)
  *             try:
- *                 self.val.x = next(it)             # <<<<<<<<<<<<<<
+ *                 self.val.x = norm_ang(next(it))             # <<<<<<<<<<<<<<
  *             except StopIteration:
- *                 self.val.x = 0
+ *                 self.val.x = 0.0
  */
-        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1734, __pyx_L9_error)
+        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1731, __pyx_L9_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1734, __pyx_L9_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1731, __pyx_L9_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_v_self->val.x = __pyx_t_4;
+        __pyx_v_self->val.x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1733
+        /* "srctools/_vec.pyx":1730
  *         else:
  *             it = iter(pitch)
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.x = next(it)
+ *                 self.val.x = norm_ang(next(it))
  *             except StopIteration:
  */
       }
@@ -21924,53 +21928,53 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __pyx_L9_error:;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":1735
+      /* "srctools/_vec.pyx":1732
  *             try:
- *                 self.val.x = next(it)
+ *                 self.val.x = norm_ang(next(it))
  *             except StopIteration:             # <<<<<<<<<<<<<<
- *                 self.val.x = 0
- *                 self.val.y = <double?>yaw % 360 % 360.0
+ *                 self.val.x = 0.0
+ *                 self.val.y = norm_ang(yaw)
  */
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Angle.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 1735, __pyx_L11_except_error)
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 1732, __pyx_L11_except_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_12);
 
-        /* "srctools/_vec.pyx":1736
- *                 self.val.x = next(it)
+        /* "srctools/_vec.pyx":1733
+ *                 self.val.x = norm_ang(next(it))
  *             except StopIteration:
- *                 self.val.x = 0             # <<<<<<<<<<<<<<
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.x = 0.0             # <<<<<<<<<<<<<<
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)
  */
         __pyx_v_self->val.x = 0.0;
 
-        /* "srctools/_vec.pyx":1737
+        /* "srctools/_vec.pyx":1734
  *             except StopIteration:
- *                 self.val.x = 0
- *                 self.val.y = <double?>yaw % 360 % 360.0             # <<<<<<<<<<<<<<
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.x = 0.0
+ *                 self.val.y = norm_ang(yaw)             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(roll)
  *                 return
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1737, __pyx_L11_except_error)
-        __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1734, __pyx_L11_except_error)
+        __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1738
- *                 self.val.x = 0
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0             # <<<<<<<<<<<<<<
+        /* "srctools/_vec.pyx":1735
+ *                 self.val.x = 0.0
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  *                 return
  * 
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1738, __pyx_L11_except_error)
-        __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1735, __pyx_L11_except_error)
+        __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1739
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0
+        /* "srctools/_vec.pyx":1736
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)
  *                 return             # <<<<<<<<<<<<<<
  * 
  *             try:
@@ -21984,11 +21988,11 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       goto __pyx_L11_except_error;
       __pyx_L11_except_error:;
 
-      /* "srctools/_vec.pyx":1733
+      /* "srctools/_vec.pyx":1730
  *         else:
  *             it = iter(pitch)
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.x = next(it)
+ *                 self.val.x = norm_ang(next(it))
  *             except StopIteration:
  */
       __Pyx_XGIVEREF(__pyx_t_7);
@@ -22005,11 +22009,11 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __pyx_L14_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1741
+    /* "srctools/_vec.pyx":1738
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.y = next(it)
+ *                 self.val.y = norm_ang(next(it))
  *             except StopIteration:
  */
     {
@@ -22021,24 +22025,24 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __Pyx_XGOTREF(__pyx_t_7);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1742
+        /* "srctools/_vec.pyx":1739
  * 
  *             try:
- *                 self.val.y = next(it)             # <<<<<<<<<<<<<<
+ *                 self.val.y = norm_ang(next(it))             # <<<<<<<<<<<<<<
  *             except StopIteration:
- *                 self.val.y = <double?>yaw % 360 % 360.0
+ *                 self.val.y = norm_ang(yaw)
  */
-        __pyx_t_12 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1742, __pyx_L17_error)
+        __pyx_t_12 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 1739, __pyx_L17_error)
         __Pyx_GOTREF(__pyx_t_12);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_12); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1742, __pyx_L17_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_12); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1739, __pyx_L17_error)
         __Pyx_DECREF(__pyx_t_12); __pyx_t_12 = 0;
-        __pyx_v_self->val.y = __pyx_t_4;
+        __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1741
+        /* "srctools/_vec.pyx":1738
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.y = next(it)
+ *                 self.val.y = norm_ang(next(it))
  *             except StopIteration:
  */
       }
@@ -22051,44 +22055,44 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":1743
+      /* "srctools/_vec.pyx":1740
  *             try:
- *                 self.val.y = next(it)
+ *                 self.val.y = norm_ang(next(it))
  *             except StopIteration:             # <<<<<<<<<<<<<<
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)
  */
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Angle.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_12, &__pyx_t_11, &__pyx_t_5) < 0) __PYX_ERR(0, 1743, __pyx_L19_except_error)
+        if (__Pyx_GetException(&__pyx_t_12, &__pyx_t_11, &__pyx_t_5) < 0) __PYX_ERR(0, 1740, __pyx_L19_except_error)
         __Pyx_GOTREF(__pyx_t_12);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_5);
 
-        /* "srctools/_vec.pyx":1744
- *                 self.val.y = next(it)
+        /* "srctools/_vec.pyx":1741
+ *                 self.val.y = norm_ang(next(it))
  *             except StopIteration:
- *                 self.val.y = <double?>yaw % 360 % 360.0             # <<<<<<<<<<<<<<
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.y = norm_ang(yaw)             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(roll)
  *                 return
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1744, __pyx_L19_except_error)
-        __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_yaw); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1741, __pyx_L19_except_error)
+        __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1745
+        /* "srctools/_vec.pyx":1742
  *             except StopIteration:
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0             # <<<<<<<<<<<<<<
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  *                 return
  * 
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1745, __pyx_L19_except_error)
-        __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1742, __pyx_L19_except_error)
+        __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1746
- *                 self.val.y = <double?>yaw % 360 % 360.0
- *                 self.val.z = <double?>roll % 360 % 360.0
+        /* "srctools/_vec.pyx":1743
+ *                 self.val.y = norm_ang(yaw)
+ *                 self.val.z = norm_ang(roll)
  *                 return             # <<<<<<<<<<<<<<
  * 
  *             try:
@@ -22102,11 +22106,11 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       goto __pyx_L19_except_error;
       __pyx_L19_except_error:;
 
-      /* "srctools/_vec.pyx":1741
+      /* "srctools/_vec.pyx":1738
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.y = next(it)
+ *                 self.val.y = norm_ang(next(it))
  *             except StopIteration:
  */
       __Pyx_XGIVEREF(__pyx_t_9);
@@ -22123,11 +22127,11 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __pyx_L22_try_end:;
     }
 
-    /* "srctools/_vec.pyx":1748
+    /* "srctools/_vec.pyx":1745
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.z = next(it)
+ *                 self.val.z = norm_ang(next(it))
  *             except StopIteration:
  */
     {
@@ -22139,24 +22143,24 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __Pyx_XGOTREF(__pyx_t_9);
       /*try:*/ {
 
-        /* "srctools/_vec.pyx":1749
+        /* "srctools/_vec.pyx":1746
  * 
  *             try:
- *                 self.val.z = next(it)             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(next(it))             # <<<<<<<<<<<<<<
  *             except StopIteration:
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.z = norm_ang(roll)
  */
-        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1749, __pyx_L25_error)
+        __pyx_t_5 = __Pyx_PyIter_Next(__pyx_v_it); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1746, __pyx_L25_error)
         __Pyx_GOTREF(__pyx_t_5);
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1749, __pyx_L25_error)
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_t_5); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1746, __pyx_L25_error)
         __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
-        __pyx_v_self->val.z = __pyx_t_4;
+        __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
 
-        /* "srctools/_vec.pyx":1748
+        /* "srctools/_vec.pyx":1745
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.z = next(it)
+ *                 self.val.z = norm_ang(next(it))
  *             except StopIteration:
  */
       }
@@ -22169,30 +22173,30 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
       __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-      /* "srctools/_vec.pyx":1750
+      /* "srctools/_vec.pyx":1747
  *             try:
- *                 self.val.z = next(it)
+ *                 self.val.z = norm_ang(next(it))
  *             except StopIteration:             # <<<<<<<<<<<<<<
- *                 self.val.z = <double?>roll % 360 % 360.0
+ *                 self.val.z = norm_ang(roll)
  * 
  */
       __pyx_t_10 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
       if (__pyx_t_10) {
         __Pyx_AddTraceback("srctools._vec.Angle.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
-        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 1750, __pyx_L27_except_error)
+        if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_11, &__pyx_t_12) < 0) __PYX_ERR(0, 1747, __pyx_L27_except_error)
         __Pyx_GOTREF(__pyx_t_5);
         __Pyx_GOTREF(__pyx_t_11);
         __Pyx_GOTREF(__pyx_t_12);
 
-        /* "srctools/_vec.pyx":1751
- *                 self.val.z = next(it)
+        /* "srctools/_vec.pyx":1748
+ *                 self.val.z = norm_ang(next(it))
  *             except StopIteration:
- *                 self.val.z = <double?>roll % 360 % 360.0             # <<<<<<<<<<<<<<
+ *                 self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  * 
  *     def copy(self) -> 'Angle':
  */
-        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1751, __pyx_L27_except_error)
-        __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_4), 360.0), 360.0);
+        __pyx_t_4 = __pyx_PyFloat_AsDouble(__pyx_v_roll); if (unlikely((__pyx_t_4 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1748, __pyx_L27_except_error)
+        __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_4);
         __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
         __Pyx_XDECREF(__pyx_t_11); __pyx_t_11 = 0;
         __Pyx_XDECREF(__pyx_t_12); __pyx_t_12 = 0;
@@ -22201,11 +22205,11 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
       goto __pyx_L27_except_error;
       __pyx_L27_except_error:;
 
-      /* "srctools/_vec.pyx":1748
+      /* "srctools/_vec.pyx":1745
  *                 return
  * 
  *             try:             # <<<<<<<<<<<<<<
- *                 self.val.z = next(it)
+ *                 self.val.z = norm_ang(next(it))
  *             except StopIteration:
  */
       __Pyx_XGIVEREF(__pyx_t_7);
@@ -22223,7 +22227,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1697
+  /* "srctools/_vec.pyx":1694
  *     cdef vec_t val
  * 
  *     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:             # <<<<<<<<<<<<<<
@@ -22247,8 +22251,8 @@ static int __pyx_pf_8srctools_4_vec_5Angle___init__(struct __pyx_obj_8srctools_4
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1753
- *                 self.val.z = <double?>roll % 360 % 360.0
+/* "srctools/_vec.pyx":1750
+ *                 self.val.z = norm_ang(roll)
  * 
  *     def copy(self) -> 'Angle':             # <<<<<<<<<<<<<<
  *         """Create a duplicate of this vector."""
@@ -22278,7 +22282,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_2
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("copy", 0);
 
-  /* "srctools/_vec.pyx":1755
+  /* "srctools/_vec.pyx":1752
  *     def copy(self) -> 'Angle':
  *         """Create a duplicate of this vector."""
  *         return _angle(self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -22286,14 +22290,14 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_2
  *     @classmethod
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__angle(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1755, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_f_8srctools_4_vec__angle(__pyx_v_self->val.x, __pyx_v_self->val.y, __pyx_v_self->val.z)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1752, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1753
- *                 self.val.z = <double?>roll % 360 % 360.0
+  /* "srctools/_vec.pyx":1750
+ *                 self.val.z = norm_ang(roll)
  * 
  *     def copy(self) -> 'Angle':             # <<<<<<<<<<<<<<
  *         """Create a duplicate of this vector."""
@@ -22311,7 +22315,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_2
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1758
+/* "srctools/_vec.pyx":1755
  * 
  *     @classmethod
  *     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):             # <<<<<<<<<<<<<<
@@ -22376,7 +22380,7 @@ static PyObject *__pyx_pw_8srctools_4_vec_5Angle_5from_str(PyObject *__pyx_v_cls
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_str") < 0)) __PYX_ERR(0, 1758, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "from_str") < 0)) __PYX_ERR(0, 1755, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -22393,24 +22397,24 @@ static PyObject *__pyx_pw_8srctools_4_vec_5Angle_5from_str(PyObject *__pyx_v_cls
     }
     __pyx_v_val = values[0];
     if (values[1]) {
-      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1758, __pyx_L3_error)
+      __pyx_v_pitch = __pyx_PyFloat_AsDouble(values[1]); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1755, __pyx_L3_error)
     } else {
       __pyx_v_pitch = ((double)0.0);
     }
     if (values[2]) {
-      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1758, __pyx_L3_error)
+      __pyx_v_yaw = __pyx_PyFloat_AsDouble(values[2]); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1755, __pyx_L3_error)
     } else {
       __pyx_v_yaw = ((double)0.0);
     }
     if (values[3]) {
-      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1758, __pyx_L3_error)
+      __pyx_v_roll = __pyx_PyFloat_AsDouble(values[3]); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1755, __pyx_L3_error)
     } else {
       __pyx_v_roll = ((double)0.0);
     }
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("from_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1758, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("from_str", 0, 1, 4, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1755, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Angle.from_str", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -22434,28 +22438,28 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4from_str(CYTHON_UNUSED PyTypeO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_str", 0);
 
-  /* "srctools/_vec.pyx":1767
+  /* "srctools/_vec.pyx":1764
  *         If the value is already a Angle, a copy will be returned.
  *         """
  *         cdef Angle ang = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
  *         _parse_vec_str(&ang.val, val, pitch, yaw, roll)
  *         return ang
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1767, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1764, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_v_ang = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_vec.pyx":1768
+  /* "srctools/_vec.pyx":1765
  *         """
  *         cdef Angle ang = Angle.__new__(Angle)
  *         _parse_vec_str(&ang.val, val, pitch, yaw, roll)             # <<<<<<<<<<<<<<
  *         return ang
  * 
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_ang->val), __pyx_v_val, __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll); if (unlikely(__pyx_t_2 == ((unsigned char)0))) __PYX_ERR(0, 1768, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__parse_vec_str((&__pyx_v_ang->val), __pyx_v_val, __pyx_v_pitch, __pyx_v_yaw, __pyx_v_roll); if (unlikely(__pyx_t_2 == ((unsigned char)0))) __PYX_ERR(0, 1765, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1769
+  /* "srctools/_vec.pyx":1766
  *         cdef Angle ang = Angle.__new__(Angle)
  *         _parse_vec_str(&ang.val, val, pitch, yaw, roll)
  *         return ang             # <<<<<<<<<<<<<<
@@ -22467,7 +22471,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4from_str(CYTHON_UNUSED PyTypeO
   __pyx_r = ((PyObject *)__pyx_v_ang);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1758
+  /* "srctools/_vec.pyx":1755
  * 
  *     @classmethod
  *     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):             # <<<<<<<<<<<<<<
@@ -22487,7 +22491,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4from_str(CYTHON_UNUSED PyTypeO
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1772
+/* "srctools/_vec.pyx":1769
  * 
  *     @property
  *     def pitch(self) -> float:             # <<<<<<<<<<<<<<
@@ -22517,7 +22521,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_5pitch___get__(struct __pyx_obj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":1774
+  /* "srctools/_vec.pyx":1771
  *     def pitch(self) -> float:
  *         """The Y-axis rotation, performed second."""
  *         return self.val.x             # <<<<<<<<<<<<<<
@@ -22525,13 +22529,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_5pitch___get__(struct __pyx_obj
  *     @pitch.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1774, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1771, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1772
+  /* "srctools/_vec.pyx":1769
  * 
  *     @property
  *     def pitch(self) -> float:             # <<<<<<<<<<<<<<
@@ -22550,11 +22554,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_5pitch___get__(struct __pyx_obj
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1777
+/* "srctools/_vec.pyx":1774
  * 
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = pitch % 360 % 360.0
+ *         self.val.y = norm_ang(pitch)
  * 
  */
 
@@ -22569,7 +22573,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_5pitch_3__set__(PyObject *__pyx_v_sel
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   assert(__pyx_arg_pitch); {
-    __pyx_v_pitch = __pyx_PyFloat_AsDouble(__pyx_arg_pitch); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1777, __pyx_L3_error)
+    __pyx_v_pitch = __pyx_PyFloat_AsDouble(__pyx_arg_pitch); if (unlikely((__pyx_v_pitch == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1774, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -22589,20 +22593,20 @@ static int __pyx_pf_8srctools_4_vec_5Angle_5pitch_2__set__(struct __pyx_obj_8src
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":1778
+  /* "srctools/_vec.pyx":1775
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:
- *         self.val.y = pitch % 360 % 360.0             # <<<<<<<<<<<<<<
+ *         self.val.y = norm_ang(pitch)             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_pitch, 360.0), 360.0);
+  __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_pitch);
 
-  /* "srctools/_vec.pyx":1777
+  /* "srctools/_vec.pyx":1774
  * 
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = pitch % 360 % 360.0
+ *         self.val.y = norm_ang(pitch)
  * 
  */
 
@@ -22612,7 +22616,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_5pitch_2__set__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1781
+/* "srctools/_vec.pyx":1778
  * 
  *     @property
  *     def yaw(self) -> float:             # <<<<<<<<<<<<<<
@@ -22642,7 +22646,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_3yaw___get__(struct __pyx_obj_8
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":1783
+  /* "srctools/_vec.pyx":1780
  *     def yaw(self) -> float:
  *         """The Z-axis rotation, performed last."""
  *         return self.val.y             # <<<<<<<<<<<<<<
@@ -22650,13 +22654,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_3yaw___get__(struct __pyx_obj_8
  *     @yaw.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1783, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1780, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1781
+  /* "srctools/_vec.pyx":1778
  * 
  *     @property
  *     def yaw(self) -> float:             # <<<<<<<<<<<<<<
@@ -22675,11 +22679,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_3yaw___get__(struct __pyx_obj_8
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1786
+/* "srctools/_vec.pyx":1783
  * 
  *     @yaw.setter
  *     def yaw(self, double yaw) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = yaw % 360.0 % 360.0
+ *         self.val.y = norm_ang(yaw)
  * 
  */
 
@@ -22694,7 +22698,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_3yaw_3__set__(PyObject *__pyx_v_self,
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   assert(__pyx_arg_yaw); {
-    __pyx_v_yaw = __pyx_PyFloat_AsDouble(__pyx_arg_yaw); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1786, __pyx_L3_error)
+    __pyx_v_yaw = __pyx_PyFloat_AsDouble(__pyx_arg_yaw); if (unlikely((__pyx_v_yaw == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1783, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -22714,20 +22718,20 @@ static int __pyx_pf_8srctools_4_vec_5Angle_3yaw_2__set__(struct __pyx_obj_8srcto
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":1787
+  /* "srctools/_vec.pyx":1784
  *     @yaw.setter
  *     def yaw(self, double yaw) -> None:
- *         self.val.y = yaw % 360.0 % 360.0             # <<<<<<<<<<<<<<
+ *         self.val.y = norm_ang(yaw)             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_v_self->val.y = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_yaw, 360.0), 360.0);
+  __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_yaw);
 
-  /* "srctools/_vec.pyx":1786
+  /* "srctools/_vec.pyx":1783
  * 
  *     @yaw.setter
  *     def yaw(self, double yaw) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = yaw % 360.0 % 360.0
+ *         self.val.y = norm_ang(yaw)
  * 
  */
 
@@ -22737,7 +22741,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_3yaw_2__set__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1790
+/* "srctools/_vec.pyx":1787
  * 
  *     @property
  *     def roll(self) -> float:             # <<<<<<<<<<<<<<
@@ -22767,7 +22771,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4roll___get__(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
 
-  /* "srctools/_vec.pyx":1792
+  /* "srctools/_vec.pyx":1789
  *     def roll(self) -> float:
  *         """The X-axis rotation, performed first."""
  *         return self.val.z             # <<<<<<<<<<<<<<
@@ -22775,13 +22779,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4roll___get__(struct __pyx_obj_
  *     @roll.setter
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1792, __pyx_L1_error)
+  __pyx_t_1 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1789, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1790
+  /* "srctools/_vec.pyx":1787
  * 
  *     @property
  *     def roll(self) -> float:             # <<<<<<<<<<<<<<
@@ -22800,11 +22804,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_4roll___get__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1795
+/* "srctools/_vec.pyx":1792
  * 
  *     @roll.setter
  *     def roll(self, double roll) -> None:             # <<<<<<<<<<<<<<
- *         self.val.z = roll % 360.0 % 360.0
+ *         self.val.z = norm_ang(roll)
  * 
  */
 
@@ -22819,7 +22823,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_4roll_3__set__(PyObject *__pyx_v_self
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__ (wrapper)", 0);
   assert(__pyx_arg_roll); {
-    __pyx_v_roll = __pyx_PyFloat_AsDouble(__pyx_arg_roll); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1795, __pyx_L3_error)
+    __pyx_v_roll = __pyx_PyFloat_AsDouble(__pyx_arg_roll); if (unlikely((__pyx_v_roll == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1792, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -22839,20 +22843,20 @@ static int __pyx_pf_8srctools_4_vec_5Angle_4roll_2__set__(struct __pyx_obj_8srct
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__set__", 0);
 
-  /* "srctools/_vec.pyx":1796
+  /* "srctools/_vec.pyx":1793
  *     @roll.setter
  *     def roll(self, double roll) -> None:
- *         self.val.z = roll % 360.0 % 360.0             # <<<<<<<<<<<<<<
+ *         self.val.z = norm_ang(roll)             # <<<<<<<<<<<<<<
  * 
  *     def __str__(self) -> str:
  */
-  __pyx_v_self->val.z = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_roll, 360.0), 360.0);
+  __pyx_v_self->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_roll);
 
-  /* "srctools/_vec.pyx":1795
+  /* "srctools/_vec.pyx":1792
  * 
  *     @roll.setter
  *     def roll(self, double roll) -> None:             # <<<<<<<<<<<<<<
- *         self.val.z = roll % 360.0 % 360.0
+ *         self.val.z = norm_ang(roll)
  * 
  */
 
@@ -22862,8 +22866,8 @@ static int __pyx_pf_8srctools_4_vec_5Angle_4roll_2__set__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1798
- *         self.val.z = roll % 360.0 % 360.0
+/* "srctools/_vec.pyx":1795
+ *         self.val.z = norm_ang(roll)
  * 
  *     def __str__(self) -> str:             # <<<<<<<<<<<<<<
  *         """Return the values, separated by spaces.
@@ -22900,7 +22904,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__str__", 0);
 
-  /* "srctools/_vec.pyx":1805
+  /* "srctools/_vec.pyx":1802
  *         This strips off the .0 if no decimal portion exists.
  *         """
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"             # <<<<<<<<<<<<<<
@@ -22908,13 +22912,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
  *     def __repr__(self) -> str:
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(5); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -22922,13 +22926,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u__13);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_kp_u__14);
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -22936,13 +22940,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__13);
+  __Pyx_INCREF(__pyx_kp_u__14);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__13);
-  PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_kp_u__13);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__14);
+  PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_kp_u__14);
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -22950,15 +22954,15 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_t_5);
   __pyx_t_5 = 0;
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 5, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1802, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1798
- *         self.val.z = roll % 360.0 % 360.0
+  /* "srctools/_vec.pyx":1795
+ *         self.val.z = norm_ang(roll)
  * 
  *     def __str__(self) -> str:             # <<<<<<<<<<<<<<
  *         """Return the values, separated by spaces.
@@ -22978,7 +22982,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1807
+/* "srctools/_vec.pyx":1804
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
  * 
  *     def __repr__(self) -> str:             # <<<<<<<<<<<<<<
@@ -23012,7 +23016,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_vec.pyx":1808
+  /* "srctools/_vec.pyx":1805
  * 
  *     def __repr__(self) -> str:
  *         return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'             # <<<<<<<<<<<<<<
@@ -23020,7 +23024,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
  *     def as_tuple(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
@@ -23028,9 +23032,9 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   __pyx_t_2 += 6;
   __Pyx_GIVEREF(__pyx_kp_u_Angle);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Angle);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -23038,13 +23042,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 1, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__6);
-  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__7);
+  __pyx_t_5 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
-  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Format(__pyx_t_5, __pyx_n_u_g); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_3;
@@ -23052,13 +23056,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   __Pyx_GIVEREF(__pyx_t_4);
   PyTuple_SET_ITEM(__pyx_t_1, 3, __pyx_t_4);
   __pyx_t_4 = 0;
-  __Pyx_INCREF(__pyx_kp_u__6);
+  __Pyx_INCREF(__pyx_kp_u__7);
   __pyx_t_2 += 2;
-  __Pyx_GIVEREF(__pyx_kp_u__6);
-  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__6);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__7);
+  PyTuple_SET_ITEM(__pyx_t_1, 4, __pyx_kp_u__7);
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_g); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -23066,18 +23070,18 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   __Pyx_GIVEREF(__pyx_t_5);
   PyTuple_SET_ITEM(__pyx_t_1, 5, __pyx_t_5);
   __pyx_t_5 = 0;
-  __Pyx_INCREF(__pyx_kp_u__14);
+  __Pyx_INCREF(__pyx_kp_u__15);
   __pyx_t_2 += 1;
-  __Pyx_GIVEREF(__pyx_kp_u__14);
-  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__14);
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1808, __pyx_L1_error)
+  __Pyx_GIVEREF(__pyx_kp_u__15);
+  PyTuple_SET_ITEM(__pyx_t_1, 6, __pyx_kp_u__15);
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 7, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 1805, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1807
+  /* "srctools/_vec.pyx":1804
  *         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
  * 
  *     def __repr__(self) -> str:             # <<<<<<<<<<<<<<
@@ -23098,7 +23102,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8src
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1810
+/* "srctools/_vec.pyx":1807
  *         return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
  * 
  *     def as_tuple(self):             # <<<<<<<<<<<<<<
@@ -23136,7 +23140,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("as_tuple", 0);
 
-  /* "srctools/_vec.pyx":1812
+  /* "srctools/_vec.pyx":1809
  *     def as_tuple(self):
  *         """Return the Angle as a tuple."""
  *         return Vec_tuple(self.val.x, self.val.y, self.val.z)             # <<<<<<<<<<<<<<
@@ -23144,11 +23148,11 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
  *     def __iter__(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1812, __pyx_L1_error)
+  __pyx_t_2 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1809, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1812, __pyx_L1_error)
+  __pyx_t_3 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1809, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1812, __pyx_L1_error)
+  __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1809, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_INCREF(__pyx_v_8srctools_4_vec_Vec_tuple);
   __pyx_t_5 = __pyx_v_8srctools_4_vec_Vec_tuple; __pyx_t_6 = NULL;
@@ -23166,7 +23170,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_t_2, __pyx_t_3, __pyx_t_4};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23177,7 +23181,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_5)) {
     PyObject *__pyx_temp[4] = {__pyx_t_6, __pyx_t_2, __pyx_t_3, __pyx_t_4};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_5, __pyx_temp+1-__pyx_t_7, 3+__pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -23186,7 +23190,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   } else
   #endif
   {
-    __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_8 = PyTuple_New(3+__pyx_t_7); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_8);
     if (__pyx_t_6) {
       __Pyx_GIVEREF(__pyx_t_6); PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_t_6); __pyx_t_6 = NULL;
@@ -23200,7 +23204,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
     __pyx_t_2 = 0;
     __pyx_t_3 = 0;
     __pyx_t_4 = 0;
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1812, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_5, __pyx_t_8, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1809, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
   }
@@ -23209,7 +23213,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1810
+  /* "srctools/_vec.pyx":1807
  *         return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
  * 
  *     def as_tuple(self):             # <<<<<<<<<<<<<<
@@ -23234,7 +23238,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1814
+/* "srctools/_vec.pyx":1811
  *         return Vec_tuple(self.val.x, self.val.y, self.val.z)
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -23268,7 +23272,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_vec.pyx":1816
+  /* "srctools/_vec.pyx":1813
  *     def __iter__(self):
  *         """Iterating over the angles returns each value in turn."""
  *         return AngleIter.__new__(AngleIter)             # <<<<<<<<<<<<<<
@@ -23276,13 +23280,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleIter), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1816, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleIter), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1813, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
   __pyx_r = ((PyObject *)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1814
+  /* "srctools/_vec.pyx":1811
  *         return Vec_tuple(self.val.x, self.val.y, self.val.z)
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -23301,7 +23305,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1821
+/* "srctools/_vec.pyx":1818
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args):             # <<<<<<<<<<<<<<
@@ -23354,17 +23358,17 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("with_axes", 0);
 
-  /* "srctools/_vec.pyx":1832
+  /* "srctools/_vec.pyx":1829
  *         axis will be used from the vector.
  *         """
  *         cdef Py_ssize_t arg_count = len(args)             # <<<<<<<<<<<<<<
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  */
-  __pyx_t_1 = PyTuple_GET_SIZE(__pyx_v_args); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1832, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_GET_SIZE(__pyx_v_args); if (unlikely(__pyx_t_1 == ((Py_ssize_t)-1))) __PYX_ERR(0, 1829, __pyx_L1_error)
   __pyx_v_arg_count = __pyx_t_1;
 
-  /* "srctools/_vec.pyx":1833
+  /* "srctools/_vec.pyx":1830
  *         """
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):             # <<<<<<<<<<<<<<
@@ -23384,14 +23388,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (unlikely(__pyx_t_3)) {
 
-    /* "srctools/_vec.pyx":1835
+    /* "srctools/_vec.pyx":1832
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  *                 f'Angle.with_axis() takes 2, 4 or 6 positional arguments '             # <<<<<<<<<<<<<<
  *                 f'but {arg_count} were given'
  *             )
  */
-    __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1835, __pyx_L1_error)
+    __pyx_t_4 = PyTuple_New(3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1832, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_1 = 0;
     __pyx_t_5 = 127;
@@ -23400,14 +23404,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __Pyx_GIVEREF(__pyx_kp_u_Angle_with_axis_takes_2_4_or_6_p);
     PyTuple_SET_ITEM(__pyx_t_4, 0, __pyx_kp_u_Angle_with_axis_takes_2_4_or_6_p);
 
-    /* "srctools/_vec.pyx":1836
+    /* "srctools/_vec.pyx":1833
  *             raise TypeError(
  *                 f'Angle.with_axis() takes 2, 4 or 6 positional arguments '
  *                 f'but {arg_count} were given'             # <<<<<<<<<<<<<<
  *             )
  * 
  */
-    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_arg_count, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1836, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_From_Py_ssize_t(__pyx_v_arg_count, 0, ' ', 'd'); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1833, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_1 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
     __Pyx_GIVEREF(__pyx_t_6);
@@ -23418,32 +23422,32 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __Pyx_GIVEREF(__pyx_kp_u_were_given);
     PyTuple_SET_ITEM(__pyx_t_4, 2, __pyx_kp_u_were_given);
 
-    /* "srctools/_vec.pyx":1835
+    /* "srctools/_vec.pyx":1832
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(
  *                 f'Angle.with_axis() takes 2, 4 or 6 positional arguments '             # <<<<<<<<<<<<<<
  *                 f'but {arg_count} were given'
  *             )
  */
-    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1835, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_4, 3, __pyx_t_1, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1832, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":1834
+    /* "srctools/_vec.pyx":1831
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):
  *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 f'Angle.with_axis() takes 2, 4 or 6 positional arguments '
  *                 f'but {arg_count} were given'
  */
-    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1834, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_6); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1831, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __Pyx_Raise(__pyx_t_4, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-    __PYX_ERR(0, 1834, __pyx_L1_error)
+    __PYX_ERR(0, 1831, __pyx_L1_error)
 
-    /* "srctools/_vec.pyx":1833
+    /* "srctools/_vec.pyx":1830
  *         """
  *         cdef Py_ssize_t arg_count = len(args)
  *         if arg_count not in (2, 4, 6):             # <<<<<<<<<<<<<<
@@ -23452,19 +23456,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
  */
   }
 
-  /* "srctools/_vec.pyx":1839
+  /* "srctools/_vec.pyx":1836
  *             )
  * 
  *         cdef Angle ang = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
  *         cdef str axis
  *         cdef unsigned char i
  */
-  __pyx_t_4 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1839, __pyx_L1_error)
+  __pyx_t_4 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1836, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_4));
   __pyx_v_ang = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_4);
   __pyx_t_4 = 0;
 
-  /* "srctools/_vec.pyx":1842
+  /* "srctools/_vec.pyx":1839
  *         cdef str axis
  *         cdef unsigned char i
  *         for i in range(0, arg_count, 2):             # <<<<<<<<<<<<<<
@@ -23476,7 +23480,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
   for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=2) {
     __pyx_v_i = __pyx_t_8;
 
-    /* "srctools/_vec.pyx":1843
+    /* "srctools/_vec.pyx":1840
  *         cdef unsigned char i
  *         for i in range(0, arg_count, 2):
  *             axis_val = args[i+1]             # <<<<<<<<<<<<<<
@@ -23484,25 +23488,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
  *             if axis in ('p', 'pit', 'pitch'):
  */
     __pyx_t_9 = (__pyx_v_i + 1);
-    __pyx_t_4 = __Pyx_GetItemInt_Tuple(__pyx_v_args, __pyx_t_9, long, 1, __Pyx_PyInt_From_long, 0, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1843, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_GetItemInt_Tuple(__pyx_v_args, __pyx_t_9, long, 1, __Pyx_PyInt_From_long, 0, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1840, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v_axis_val, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":1844
+    /* "srctools/_vec.pyx":1841
  *         for i in range(0, arg_count, 2):
  *             axis_val = args[i+1]
  *             axis = args[i]             # <<<<<<<<<<<<<<
  *             if axis in ('p', 'pit', 'pitch'):
  *                 if isinstance(axis_val, Angle):
  */
-    if (!(likely(PyUnicode_CheckExact(PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i)))||((PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i)) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i))->tp_name), 0))) __PYX_ERR(0, 1844, __pyx_L1_error)
+    if (!(likely(PyUnicode_CheckExact(PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i)))||((PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i)) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i))->tp_name), 0))) __PYX_ERR(0, 1841, __pyx_L1_error)
     __pyx_t_4 = PyTuple_GET_ITEM(__pyx_v_args, __pyx_v_i);
     __Pyx_INCREF(__pyx_t_4);
     __Pyx_XDECREF_SET(__pyx_v_axis, ((PyObject*)__pyx_t_4));
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":1845
+    /* "srctools/_vec.pyx":1842
  *             axis_val = args[i+1]
  *             axis = args[i]
  *             if axis in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -23511,21 +23515,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
  */
     __Pyx_INCREF(__pyx_v_axis);
     __pyx_t_10 = __pyx_v_axis;
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1845, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1842, __pyx_L1_error)
     __pyx_t_11 = (__pyx_t_2 != 0);
     if (!__pyx_t_11) {
     } else {
       __pyx_t_3 = __pyx_t_11;
       goto __pyx_L7_bool_binop_done;
     }
-    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1845, __pyx_L1_error)
+    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1842, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_11 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
       goto __pyx_L7_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1845, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1842, __pyx_L1_error)
     __pyx_t_11 = (__pyx_t_2 != 0);
     __pyx_t_3 = __pyx_t_11;
     __pyx_L7_bool_binop_done:;
@@ -23533,7 +23537,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __pyx_t_11 = (__pyx_t_3 != 0);
     if (__pyx_t_11) {
 
-      /* "srctools/_vec.pyx":1846
+      /* "srctools/_vec.pyx":1843
  *             axis = args[i]
  *             if axis in ('p', 'pit', 'pitch'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
@@ -23544,17 +23548,17 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
       __pyx_t_3 = (__pyx_t_11 != 0);
       if (__pyx_t_3) {
 
-        /* "srctools/_vec.pyx":1847
+        /* "srctools/_vec.pyx":1844
  *             if axis in ('p', 'pit', 'pitch'):
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.x = (<Angle>axis_val).val.x             # <<<<<<<<<<<<<<
  *                 else:
- *                     ang.val.x = (<double?>axis_val) % 360 % 360
+ *                     ang.val.x = norm_ang(axis_val)
  */
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_axis_val)->val.x;
         __pyx_v_ang->val.x = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":1846
+        /* "srctools/_vec.pyx":1843
  *             axis = args[i]
  *             if axis in ('p', 'pit', 'pitch'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
@@ -23564,20 +23568,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
         goto __pyx_L10;
       }
 
-      /* "srctools/_vec.pyx":1849
+      /* "srctools/_vec.pyx":1846
  *                     ang.val.x = (<Angle>axis_val).val.x
  *                 else:
- *                     ang.val.x = (<double?>axis_val) % 360 % 360             # <<<<<<<<<<<<<<
+ *                     ang.val.x = norm_ang(axis_val)             # <<<<<<<<<<<<<<
  *             elif axis in ('y', 'yaw'):
  *                 if isinstance(axis_val, Angle):
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1849, __pyx_L1_error)
-        __pyx_v_ang->val.x = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_12), 360.0), 360.0);
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1846, __pyx_L1_error)
+        __pyx_v_ang->val.x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_12);
       }
       __pyx_L10:;
 
-      /* "srctools/_vec.pyx":1845
+      /* "srctools/_vec.pyx":1842
  *             axis_val = args[i+1]
  *             axis = args[i]
  *             if axis in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -23587,23 +23591,23 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":1850
+    /* "srctools/_vec.pyx":1847
  *                 else:
- *                     ang.val.x = (<double?>axis_val) % 360 % 360
+ *                     ang.val.x = norm_ang(axis_val)
  *             elif axis in ('y', 'yaw'):             # <<<<<<<<<<<<<<
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.y = (<Angle>axis_val).val.y
  */
     __Pyx_INCREF(__pyx_v_axis);
     __pyx_t_10 = __pyx_v_axis;
-    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1850, __pyx_L1_error)
+    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1847, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_11 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
       goto __pyx_L11_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1850, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1847, __pyx_L1_error)
     __pyx_t_11 = (__pyx_t_2 != 0);
     __pyx_t_3 = __pyx_t_11;
     __pyx_L11_bool_binop_done:;
@@ -23611,8 +23615,8 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __pyx_t_11 = (__pyx_t_3 != 0);
     if (__pyx_t_11) {
 
-      /* "srctools/_vec.pyx":1851
- *                     ang.val.x = (<double?>axis_val) % 360 % 360
+      /* "srctools/_vec.pyx":1848
+ *                     ang.val.x = norm_ang(axis_val)
  *             elif axis in ('y', 'yaw'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
  *                     ang.val.y = (<Angle>axis_val).val.y
@@ -23622,18 +23626,18 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
       __pyx_t_3 = (__pyx_t_11 != 0);
       if (__pyx_t_3) {
 
-        /* "srctools/_vec.pyx":1852
+        /* "srctools/_vec.pyx":1849
  *             elif axis in ('y', 'yaw'):
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.y = (<Angle>axis_val).val.y             # <<<<<<<<<<<<<<
  *                 else:
- *                     ang.val.y = (<double?>axis_val) % 360 % 360
+ *                     ang.val.y = norm_ang(axis_val)
  */
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_axis_val)->val.y;
         __pyx_v_ang->val.y = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":1851
- *                     ang.val.x = (<double?>axis_val) % 360 % 360
+        /* "srctools/_vec.pyx":1848
+ *                     ang.val.x = norm_ang(axis_val)
  *             elif axis in ('y', 'yaw'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
  *                     ang.val.y = (<Angle>axis_val).val.y
@@ -23642,22 +23646,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
         goto __pyx_L13;
       }
 
-      /* "srctools/_vec.pyx":1854
+      /* "srctools/_vec.pyx":1851
  *                     ang.val.y = (<Angle>axis_val).val.y
  *                 else:
- *                     ang.val.y = (<double?>axis_val) % 360 % 360             # <<<<<<<<<<<<<<
+ *                     ang.val.y = norm_ang(axis_val)             # <<<<<<<<<<<<<<
  *             elif axis in ('r', 'rol', 'roll'):
  *                 if isinstance(axis_val, Angle):
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1854, __pyx_L1_error)
-        __pyx_v_ang->val.y = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_12), 360.0), 360.0);
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1851, __pyx_L1_error)
+        __pyx_v_ang->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_12);
       }
       __pyx_L13:;
 
-      /* "srctools/_vec.pyx":1850
+      /* "srctools/_vec.pyx":1847
  *                 else:
- *                     ang.val.x = (<double?>axis_val) % 360 % 360
+ *                     ang.val.x = norm_ang(axis_val)
  *             elif axis in ('y', 'yaw'):             # <<<<<<<<<<<<<<
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.y = (<Angle>axis_val).val.y
@@ -23665,30 +23669,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
       goto __pyx_L6;
     }
 
-    /* "srctools/_vec.pyx":1855
+    /* "srctools/_vec.pyx":1852
  *                 else:
- *                     ang.val.y = (<double?>axis_val) % 360 % 360
+ *                     ang.val.y = norm_ang(axis_val)
  *             elif axis in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.z = (<Angle>axis_val).val.z
  */
     __Pyx_INCREF(__pyx_v_axis);
     __pyx_t_10 = __pyx_v_axis;
-    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1855, __pyx_L1_error)
+    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1852, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_11 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_3 = __pyx_t_2;
       goto __pyx_L14_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1855, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1852, __pyx_L1_error)
     __pyx_t_11 = (__pyx_t_2 != 0);
     if (!__pyx_t_11) {
     } else {
       __pyx_t_3 = __pyx_t_11;
       goto __pyx_L14_bool_binop_done;
     }
-    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1855, __pyx_L1_error)
+    __pyx_t_11 = (__Pyx_PyUnicode_Equals(__pyx_t_10, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_11 < 0)) __PYX_ERR(0, 1852, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_11 != 0);
     __pyx_t_3 = __pyx_t_2;
     __pyx_L14_bool_binop_done:;
@@ -23696,8 +23700,8 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __pyx_t_2 = (__pyx_t_3 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1856
- *                     ang.val.y = (<double?>axis_val) % 360 % 360
+      /* "srctools/_vec.pyx":1853
+ *                     ang.val.y = norm_ang(axis_val)
  *             elif axis in ('r', 'rol', 'roll'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
  *                     ang.val.z = (<Angle>axis_val).val.z
@@ -23707,18 +23711,18 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
       __pyx_t_3 = (__pyx_t_2 != 0);
       if (__pyx_t_3) {
 
-        /* "srctools/_vec.pyx":1857
+        /* "srctools/_vec.pyx":1854
  *             elif axis in ('r', 'rol', 'roll'):
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.z = (<Angle>axis_val).val.z             # <<<<<<<<<<<<<<
  *                 else:
- *                     ang.val.z = (<double?>axis_val) % 360 % 360
+ *                     ang.val.z = norm_ang(axis_val)
  */
         __pyx_t_12 = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_axis_val)->val.z;
         __pyx_v_ang->val.z = __pyx_t_12;
 
-        /* "srctools/_vec.pyx":1856
- *                     ang.val.y = (<double?>axis_val) % 360 % 360
+        /* "srctools/_vec.pyx":1853
+ *                     ang.val.y = norm_ang(axis_val)
  *             elif axis in ('r', 'rol', 'roll'):
  *                 if isinstance(axis_val, Angle):             # <<<<<<<<<<<<<<
  *                     ang.val.z = (<Angle>axis_val).val.z
@@ -23727,22 +23731,22 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
         goto __pyx_L17;
       }
 
-      /* "srctools/_vec.pyx":1859
+      /* "srctools/_vec.pyx":1856
  *                     ang.val.z = (<Angle>axis_val).val.z
  *                 else:
- *                     ang.val.z = (<double?>axis_val) % 360 % 360             # <<<<<<<<<<<<<<
+ *                     ang.val.z = norm_ang(axis_val)             # <<<<<<<<<<<<<<
  * 
  *         return ang
  */
       /*else*/ {
-        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1859, __pyx_L1_error)
-        __pyx_v_ang->val.z = __Pyx_mod_double(__Pyx_mod_double(((double)__pyx_t_12), 360.0), 360.0);
+        __pyx_t_12 = __pyx_PyFloat_AsDouble(__pyx_v_axis_val); if (unlikely((__pyx_t_12 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1856, __pyx_L1_error)
+        __pyx_v_ang->val.z = __pyx_f_8srctools_4_vec_norm_ang(__pyx_t_12);
       }
       __pyx_L17:;
 
-      /* "srctools/_vec.pyx":1855
+      /* "srctools/_vec.pyx":1852
  *                 else:
- *                     ang.val.y = (<double?>axis_val) % 360 % 360
+ *                     ang.val.y = norm_ang(axis_val)
  *             elif axis in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
  *                 if isinstance(axis_val, Angle):
  *                     ang.val.z = (<Angle>axis_val).val.z
@@ -23751,8 +23755,8 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
     __pyx_L6:;
   }
 
-  /* "srctools/_vec.pyx":1861
- *                     ang.val.z = (<double?>axis_val) % 360 % 360
+  /* "srctools/_vec.pyx":1858
+ *                     ang.val.z = norm_ang(axis_val)
  * 
  *         return ang             # <<<<<<<<<<<<<<
  * 
@@ -23763,7 +23767,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
   __pyx_r = ((PyObject *)__pyx_v_ang);
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1821
+  /* "srctools/_vec.pyx":1818
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args):             # <<<<<<<<<<<<<<
@@ -23787,7 +23791,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObj
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1864
+/* "srctools/_vec.pyx":1861
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -23812,7 +23816,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pw_8srctools_4_vec_5Angle_1
     static PyObject **__pyx_pyargnames[] = {&__pyx_n_s_x,&__pyx_n_s_y,&__pyx_n_s_z,0};
     PyObject* values[3] = {0,0,0};
 
-    /* "srctools/_vec.pyx":1866
+    /* "srctools/_vec.pyx":1863
  *     def from_basis(
  *         cls, *,
  *         x: Vec=None,             # <<<<<<<<<<<<<<
@@ -23821,7 +23825,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pw_8srctools_4_vec_5Angle_1
  */
     values[0] = (PyObject *)((struct __pyx_obj_8srctools_4_vec_Vec *)Py_None);
 
-    /* "srctools/_vec.pyx":1867
+    /* "srctools/_vec.pyx":1864
  *         cls, *,
  *         x: Vec=None,
  *         y: Vec=None,             # <<<<<<<<<<<<<<
@@ -23830,7 +23834,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pw_8srctools_4_vec_5Angle_1
  */
     values[1] = (PyObject *)((struct __pyx_obj_8srctools_4_vec_Vec *)Py_None);
 
-    /* "srctools/_vec.pyx":1868
+    /* "srctools/_vec.pyx":1865
  *         x: Vec=None,
  *         y: Vec=None,
  *         z: Vec=None,             # <<<<<<<<<<<<<<
@@ -23854,7 +23858,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pw_8srctools_4_vec_5Angle_1
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, 0, "from_basis") < 0)) __PYX_ERR(0, 1864, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, 0, "from_basis") < 0)) __PYX_ERR(0, 1861, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 0) {
       goto __pyx_L5_argtuple_error;
@@ -23866,18 +23870,18 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pw_8srctools_4_vec_5Angle_1
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("from_basis", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1864, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("from_basis", 1, 0, 0, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 1861, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._vec.Angle.from_basis", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), __pyx_ptype_8srctools_4_vec_Vec, 1, "x", 0))) __PYX_ERR(0, 1866, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y), __pyx_ptype_8srctools_4_vec_Vec, 1, "y", 0))) __PYX_ERR(0, 1867, __pyx_L1_error)
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_z), __pyx_ptype_8srctools_4_vec_Vec, 1, "z", 0))) __PYX_ERR(0, 1868, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_x), __pyx_ptype_8srctools_4_vec_Vec, 1, "x", 0))) __PYX_ERR(0, 1863, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_y), __pyx_ptype_8srctools_4_vec_Vec, 1, "y", 0))) __PYX_ERR(0, 1864, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_z), __pyx_ptype_8srctools_4_vec_Vec, 1, "z", 0))) __PYX_ERR(0, 1865, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_4_vec_5Angle_16from_basis(((PyTypeObject*)__pyx_v_cls), __pyx_v_x, __pyx_v_y, __pyx_v_z);
 
-  /* "srctools/_vec.pyx":1864
+  /* "srctools/_vec.pyx":1861
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -23906,7 +23910,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_1
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("from_basis", 0);
 
-  /* "srctools/_vec.pyx":1874
+  /* "srctools/_vec.pyx":1871
  *         At least two must be specified, with the third computed if necessary.
  *         """
  *         return Matrix.from_basis(x=x, y=y, z=z).to_angle()             # <<<<<<<<<<<<<<
@@ -23914,18 +23918,18 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_1
  *     def __getitem__(self, pos):
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_from_basis); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1874, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_from_basis); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1871, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1874, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyDict_NewPresized(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1871, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_x, ((PyObject *)__pyx_v_x)) < 0) __PYX_ERR(0, 1874, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_y, ((PyObject *)__pyx_v_y)) < 0) __PYX_ERR(0, 1874, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_z, ((PyObject *)__pyx_v_z)) < 0) __PYX_ERR(0, 1874, __pyx_L1_error)
-  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1874, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_x, ((PyObject *)__pyx_v_x)) < 0) __PYX_ERR(0, 1871, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_y, ((PyObject *)__pyx_v_y)) < 0) __PYX_ERR(0, 1871, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_3, __pyx_n_s_z, ((PyObject *)__pyx_v_z)) < 0) __PYX_ERR(0, 1871, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_empty_tuple, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1871, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_to_angle); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1874, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_t_4, __pyx_n_s_to_angle); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1871, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_4 = NULL;
@@ -23940,15 +23944,15 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_1
   }
   __pyx_t_1 = (__pyx_t_4) ? __Pyx_PyObject_CallOneArg(__pyx_t_3, __pyx_t_4) : __Pyx_PyObject_CallNoArg(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
-  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1874, __pyx_L1_error)
+  if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1871, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1874, __pyx_L1_error)
+  if (!(likely(((__pyx_t_1) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_1, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1871, __pyx_L1_error)
   __pyx_r = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_1);
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1864
+  /* "srctools/_vec.pyx":1861
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
@@ -23970,7 +23974,7 @@ static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_1
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1876
+/* "srctools/_vec.pyx":1873
  *         return Matrix.from_basis(x=x, y=y, z=z).to_angle()
  * 
  *     def __getitem__(self, pos):             # <<<<<<<<<<<<<<
@@ -24012,7 +24016,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__getitem__", 0);
 
-  /* "srctools/_vec.pyx":1889
+  /* "srctools/_vec.pyx":1886
  *         cdef int index
  * 
  *         if isinstance(pos, int):             # <<<<<<<<<<<<<<
@@ -24023,30 +24027,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1890
+    /* "srctools/_vec.pyx":1887
  * 
  *         if isinstance(pos, int):
  *             index = <int>pos             # <<<<<<<<<<<<<<
  *             if pos == 0:
  *                 return self.val.x
  */
-    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_v_pos); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1890, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_v_pos); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1887, __pyx_L1_error)
     __pyx_v_index = ((int)__pyx_t_3);
 
-    /* "srctools/_vec.pyx":1891
+    /* "srctools/_vec.pyx":1888
  *         if isinstance(pos, int):
  *             index = <int>pos
  *             if pos == 0:             # <<<<<<<<<<<<<<
  *                 return self.val.x
  *             if pos == 1:
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1891, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1888, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1891, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1888, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1892
+      /* "srctools/_vec.pyx":1889
  *             index = <int>pos
  *             if pos == 0:
  *                 return self.val.x             # <<<<<<<<<<<<<<
@@ -24054,13 +24058,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  *                 return self.val.y
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1892, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1889, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1891
+      /* "srctools/_vec.pyx":1888
  *         if isinstance(pos, int):
  *             index = <int>pos
  *             if pos == 0:             # <<<<<<<<<<<<<<
@@ -24069,20 +24073,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1893
+    /* "srctools/_vec.pyx":1890
  *             if pos == 0:
  *                 return self.val.x
  *             if pos == 1:             # <<<<<<<<<<<<<<
  *                 return self.val.y
  *             if pos == 2:
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1893, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1890, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1893, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1890, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1894
+      /* "srctools/_vec.pyx":1891
  *                 return self.val.x
  *             if pos == 1:
  *                 return self.val.y             # <<<<<<<<<<<<<<
@@ -24090,13 +24094,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  *                 return self.val.z
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1894, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1891, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1893
+      /* "srctools/_vec.pyx":1890
  *             if pos == 0:
  *                 return self.val.x
  *             if pos == 1:             # <<<<<<<<<<<<<<
@@ -24105,20 +24109,20 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1895
+    /* "srctools/_vec.pyx":1892
  *             if pos == 1:
  *                 return self.val.y
  *             if pos == 2:             # <<<<<<<<<<<<<<
  *                 return self.val.z
  *         elif isinstance(pos, str):
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_2, 2, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1895, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_2, 2, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1892, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1895, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1892, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1896
+      /* "srctools/_vec.pyx":1893
  *                 return self.val.y
  *             if pos == 2:
  *                 return self.val.z             # <<<<<<<<<<<<<<
@@ -24126,13 +24130,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  *             key = <str>pos
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1896, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1893, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1895
+      /* "srctools/_vec.pyx":1892
  *             if pos == 1:
  *                 return self.val.y
  *             if pos == 2:             # <<<<<<<<<<<<<<
@@ -24141,7 +24145,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1889
+    /* "srctools/_vec.pyx":1886
  *         cdef int index
  * 
  *         if isinstance(pos, int):             # <<<<<<<<<<<<<<
@@ -24151,7 +24155,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1897
+  /* "srctools/_vec.pyx":1894
  *             if pos == 2:
  *                 return self.val.z
  *         elif isinstance(pos, str):             # <<<<<<<<<<<<<<
@@ -24162,7 +24166,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1898
+    /* "srctools/_vec.pyx":1895
  *                 return self.val.z
  *         elif isinstance(pos, str):
  *             key = <str>pos             # <<<<<<<<<<<<<<
@@ -24174,7 +24178,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
     __pyx_v_key = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":1899
+    /* "srctools/_vec.pyx":1896
  *         elif isinstance(pos, str):
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -24183,21 +24187,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1899, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1896, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     if (!__pyx_t_6) {
     } else {
       __pyx_t_1 = __pyx_t_6;
       goto __pyx_L8_bool_binop_done;
     }
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1899, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1896, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_1 = __pyx_t_2;
       goto __pyx_L8_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1899, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1896, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     __pyx_t_1 = __pyx_t_6;
     __pyx_L8_bool_binop_done:;
@@ -24205,7 +24209,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
     __pyx_t_6 = (__pyx_t_1 != 0);
     if (__pyx_t_6) {
 
-      /* "srctools/_vec.pyx":1900
+      /* "srctools/_vec.pyx":1897
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):
  *                 return self.val.x             # <<<<<<<<<<<<<<
@@ -24213,13 +24217,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  *                 return self.val.y
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1900, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.x); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1897, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1899
+      /* "srctools/_vec.pyx":1896
  *         elif isinstance(pos, str):
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -24228,7 +24232,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1901
+    /* "srctools/_vec.pyx":1898
  *             if key in ('p', 'pit', 'pitch'):
  *                 return self.val.x
  *             elif key in ('y', 'yaw'):             # <<<<<<<<<<<<<<
@@ -24237,14 +24241,14 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 1901, __pyx_L1_error)
+    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 1898, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_6 = __pyx_t_2;
       goto __pyx_L11_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1901, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1898, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 != 0);
     __pyx_t_6 = __pyx_t_1;
     __pyx_L11_bool_binop_done:;
@@ -24252,7 +24256,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
     __pyx_t_1 = (__pyx_t_6 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1902
+      /* "srctools/_vec.pyx":1899
  *                 return self.val.x
  *             elif key in ('y', 'yaw'):
  *                 return self.val.y             # <<<<<<<<<<<<<<
@@ -24260,13 +24264,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  *                 return self.val.z
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1902, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.y); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1899, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1901
+      /* "srctools/_vec.pyx":1898
  *             if key in ('p', 'pit', 'pitch'):
  *                 return self.val.x
  *             elif key in ('y', 'yaw'):             # <<<<<<<<<<<<<<
@@ -24275,7 +24279,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1903
+    /* "srctools/_vec.pyx":1900
  *             elif key in ('y', 'yaw'):
  *                 return self.val.y
  *             elif key in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
@@ -24284,21 +24288,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1903, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1900, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_1 = __pyx_t_2;
       goto __pyx_L13_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1903, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1900, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     if (!__pyx_t_6) {
     } else {
       __pyx_t_1 = __pyx_t_6;
       goto __pyx_L13_bool_binop_done;
     }
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1903, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1900, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     __pyx_t_1 = __pyx_t_2;
     __pyx_L13_bool_binop_done:;
@@ -24306,7 +24310,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1904
+      /* "srctools/_vec.pyx":1901
  *                 return self.val.y
  *             elif key in ('r', 'rol', 'roll'):
  *                 return self.val.z             # <<<<<<<<<<<<<<
@@ -24314,13 +24318,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  * 
  */
       __Pyx_XDECREF(__pyx_r);
-      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1904, __pyx_L1_error)
+      __pyx_t_4 = PyFloat_FromDouble(__pyx_v_self->val.z); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1901, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
       __pyx_r = __pyx_t_4;
       __pyx_t_4 = 0;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1903
+      /* "srctools/_vec.pyx":1900
  *             elif key in ('y', 'yaw'):
  *                 return self.val.y
  *             elif key in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
@@ -24329,7 +24333,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
  */
     }
 
-    /* "srctools/_vec.pyx":1897
+    /* "srctools/_vec.pyx":1894
  *             if pos == 2:
  *                 return self.val.z
  *         elif isinstance(pos, str):             # <<<<<<<<<<<<<<
@@ -24339,26 +24343,26 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1905
+  /* "srctools/_vec.pyx":1902
  *             elif key in ('r', 'rol', 'roll'):
  *                 return self.val.z
  *         raise KeyError(f'Invalid axis: {pos!r}')             # <<<<<<<<<<<<<<
  * 
  *     def __setitem__(self, pos, double val) -> None:
  */
-  __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_pos), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1905, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_pos), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1902, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1905, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1902, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1905, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1902, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_Raise(__pyx_t_4, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __PYX_ERR(0, 1905, __pyx_L1_error)
+  __PYX_ERR(0, 1902, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1876
+  /* "srctools/_vec.pyx":1873
  *         return Matrix.from_basis(x=x, y=y, z=z).to_angle()
  * 
  *     def __getitem__(self, pos):             # <<<<<<<<<<<<<<
@@ -24380,7 +24384,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1907
+/* "srctools/_vec.pyx":1904
  *         raise KeyError(f'Invalid axis: {pos!r}')
  * 
  *     def __setitem__(self, pos, double val) -> None:             # <<<<<<<<<<<<<<
@@ -24403,7 +24407,7 @@ static int __pyx_pw_8srctools_4_vec_5Angle_21__setitem__(PyObject *__pyx_v_self,
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__setitem__ (wrapper)", 0);
   assert(__pyx_arg_val); {
-    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1907, __pyx_L3_error)
+    __pyx_v_val = __pyx_PyFloat_AsDouble(__pyx_arg_val); if (unlikely((__pyx_v_val == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1904, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L3_error:;
@@ -24435,17 +24439,17 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__setitem__", 0);
 
-  /* "srctools/_vec.pyx":1915
+  /* "srctools/_vec.pyx":1912
  *         cdef str key
  *         cdef int index
- *         val = val % 360.0 % 360.0             # <<<<<<<<<<<<<<
+ *         val = norm_ang(val)             # <<<<<<<<<<<<<<
  * 
  *         if isinstance(pos, int):
  */
-  __pyx_v_val = __Pyx_mod_double(__Pyx_mod_double(__pyx_v_val, 360.0), 360.0);
+  __pyx_v_val = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_val);
 
-  /* "srctools/_vec.pyx":1917
- *         val = val % 360.0 % 360.0
+  /* "srctools/_vec.pyx":1914
+ *         val = norm_ang(val)
  * 
  *         if isinstance(pos, int):             # <<<<<<<<<<<<<<
  *             index = pos
@@ -24455,30 +24459,30 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1918
+    /* "srctools/_vec.pyx":1915
  * 
  *         if isinstance(pos, int):
  *             index = pos             # <<<<<<<<<<<<<<
  *             if pos == 0:
  *                 self.val.x = val
  */
-    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_v_pos); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1918, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyInt_As_int(__pyx_v_pos); if (unlikely((__pyx_t_3 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 1915, __pyx_L1_error)
     __pyx_v_index = __pyx_t_3;
 
-    /* "srctools/_vec.pyx":1919
+    /* "srctools/_vec.pyx":1916
  *         if isinstance(pos, int):
  *             index = pos
  *             if pos == 0:             # <<<<<<<<<<<<<<
  *                 self.val.x = val
  *             if pos == 1:
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1919, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_0, 0, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1916, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1919, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1916, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1920
+      /* "srctools/_vec.pyx":1917
  *             index = pos
  *             if pos == 0:
  *                 self.val.x = val             # <<<<<<<<<<<<<<
@@ -24487,7 +24491,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.x = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1919
+      /* "srctools/_vec.pyx":1916
  *         if isinstance(pos, int):
  *             index = pos
  *             if pos == 0:             # <<<<<<<<<<<<<<
@@ -24496,20 +24500,20 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     }
 
-    /* "srctools/_vec.pyx":1921
+    /* "srctools/_vec.pyx":1918
  *             if pos == 0:
  *                 self.val.x = val
  *             if pos == 1:             # <<<<<<<<<<<<<<
  *                 self.val.y = val
  *             if pos == 2:
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1921, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_1, 1, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1918, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1921, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1918, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1922
+      /* "srctools/_vec.pyx":1919
  *                 self.val.x = val
  *             if pos == 1:
  *                 self.val.y = val             # <<<<<<<<<<<<<<
@@ -24518,7 +24522,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.y = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1921
+      /* "srctools/_vec.pyx":1918
  *             if pos == 0:
  *                 self.val.x = val
  *             if pos == 1:             # <<<<<<<<<<<<<<
@@ -24527,20 +24531,20 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     }
 
-    /* "srctools/_vec.pyx":1923
+    /* "srctools/_vec.pyx":1920
  *             if pos == 1:
  *                 self.val.y = val
  *             if pos == 2:             # <<<<<<<<<<<<<<
  *                 self.val.z = val
  *         elif isinstance(pos, str):
  */
-    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_2, 2, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1923, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyInt_EqObjC(__pyx_v_pos, __pyx_int_2, 2, 0); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1920, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1923, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_IsTrue(__pyx_t_4); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1920, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1924
+      /* "srctools/_vec.pyx":1921
  *                 self.val.y = val
  *             if pos == 2:
  *                 self.val.z = val             # <<<<<<<<<<<<<<
@@ -24549,7 +24553,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.z = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1923
+      /* "srctools/_vec.pyx":1920
  *             if pos == 1:
  *                 self.val.y = val
  *             if pos == 2:             # <<<<<<<<<<<<<<
@@ -24558,8 +24562,8 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     }
 
-    /* "srctools/_vec.pyx":1917
- *         val = val % 360.0 % 360.0
+    /* "srctools/_vec.pyx":1914
+ *         val = norm_ang(val)
  * 
  *         if isinstance(pos, int):             # <<<<<<<<<<<<<<
  *             index = pos
@@ -24568,7 +24572,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1925
+  /* "srctools/_vec.pyx":1922
  *             if pos == 2:
  *                 self.val.z = val
  *         elif isinstance(pos, str):             # <<<<<<<<<<<<<<
@@ -24579,7 +24583,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1926
+    /* "srctools/_vec.pyx":1923
  *                 self.val.z = val
  *         elif isinstance(pos, str):
  *             key = <str>pos             # <<<<<<<<<<<<<<
@@ -24591,7 +24595,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     __pyx_v_key = ((PyObject*)__pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_vec.pyx":1927
+    /* "srctools/_vec.pyx":1924
  *         elif isinstance(pos, str):
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -24600,21 +24604,21 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1927, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_p, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1924, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     if (!__pyx_t_6) {
     } else {
       __pyx_t_1 = __pyx_t_6;
       goto __pyx_L8_bool_binop_done;
     }
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1927, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pit, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1924, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_1 = __pyx_t_2;
       goto __pyx_L8_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1927, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_pitch, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1924, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     __pyx_t_1 = __pyx_t_6;
     __pyx_L8_bool_binop_done:;
@@ -24622,7 +24626,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     __pyx_t_6 = (__pyx_t_1 != 0);
     if (__pyx_t_6) {
 
-      /* "srctools/_vec.pyx":1928
+      /* "srctools/_vec.pyx":1925
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):
  *                 self.val.x = val             # <<<<<<<<<<<<<<
@@ -24631,7 +24635,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.x = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1927
+      /* "srctools/_vec.pyx":1924
  *         elif isinstance(pos, str):
  *             key = <str>pos
  *             if key in ('p', 'pit', 'pitch'):             # <<<<<<<<<<<<<<
@@ -24641,7 +24645,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
       goto __pyx_L7;
     }
 
-    /* "srctools/_vec.pyx":1929
+    /* "srctools/_vec.pyx":1926
  *             if key in ('p', 'pit', 'pitch'):
  *                 self.val.x = val
  *             elif key in ('y', 'yaw'):             # <<<<<<<<<<<<<<
@@ -24650,14 +24654,14 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 1929, __pyx_L1_error)
+    __pyx_t_1 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_y, Py_EQ)); if (unlikely(__pyx_t_1 < 0)) __PYX_ERR(0, 1926, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_6 = __pyx_t_2;
       goto __pyx_L11_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1929, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_yaw, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1926, __pyx_L1_error)
     __pyx_t_1 = (__pyx_t_2 != 0);
     __pyx_t_6 = __pyx_t_1;
     __pyx_L11_bool_binop_done:;
@@ -24665,7 +24669,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     __pyx_t_1 = (__pyx_t_6 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1930
+      /* "srctools/_vec.pyx":1927
  *                 self.val.x = val
  *             elif key in ('y', 'yaw'):
  *                 self.val.y = val             # <<<<<<<<<<<<<<
@@ -24674,7 +24678,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.y = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1929
+      /* "srctools/_vec.pyx":1926
  *             if key in ('p', 'pit', 'pitch'):
  *                 self.val.x = val
  *             elif key in ('y', 'yaw'):             # <<<<<<<<<<<<<<
@@ -24684,7 +24688,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
       goto __pyx_L7;
     }
 
-    /* "srctools/_vec.pyx":1931
+    /* "srctools/_vec.pyx":1928
  *             elif key in ('y', 'yaw'):
  *                 self.val.y = val
  *             elif key in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
@@ -24693,21 +24697,21 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
     __Pyx_INCREF(__pyx_v_key);
     __pyx_t_5 = __pyx_v_key;
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1931, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_r, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1928, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     if (!__pyx_t_2) {
     } else {
       __pyx_t_1 = __pyx_t_2;
       goto __pyx_L13_bool_binop_done;
     }
-    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1931, __pyx_L1_error)
+    __pyx_t_2 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_rol, Py_EQ)); if (unlikely(__pyx_t_2 < 0)) __PYX_ERR(0, 1928, __pyx_L1_error)
     __pyx_t_6 = (__pyx_t_2 != 0);
     if (!__pyx_t_6) {
     } else {
       __pyx_t_1 = __pyx_t_6;
       goto __pyx_L13_bool_binop_done;
     }
-    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1931, __pyx_L1_error)
+    __pyx_t_6 = (__Pyx_PyUnicode_Equals(__pyx_t_5, __pyx_n_u_roll, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 1928, __pyx_L1_error)
     __pyx_t_2 = (__pyx_t_6 != 0);
     __pyx_t_1 = __pyx_t_2;
     __pyx_L13_bool_binop_done:;
@@ -24715,7 +24719,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1932
+      /* "srctools/_vec.pyx":1929
  *                 self.val.y = val
  *             elif key in ('r', 'rol', 'roll'):
  *                 self.val.z = val             # <<<<<<<<<<<<<<
@@ -24724,7 +24728,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
  */
       __pyx_v_self->val.z = __pyx_v_val;
 
-      /* "srctools/_vec.pyx":1931
+      /* "srctools/_vec.pyx":1928
  *             elif key in ('y', 'yaw'):
  *                 self.val.y = val
  *             elif key in ('r', 'rol', 'roll'):             # <<<<<<<<<<<<<<
@@ -24734,7 +24738,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
     }
     __pyx_L7:;
 
-    /* "srctools/_vec.pyx":1925
+    /* "srctools/_vec.pyx":1922
  *             if pos == 2:
  *                 self.val.z = val
  *         elif isinstance(pos, str):             # <<<<<<<<<<<<<<
@@ -24744,26 +24748,26 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1933
+  /* "srctools/_vec.pyx":1930
  *             elif key in ('r', 'rol', 'roll'):
  *                 self.val.z = val
  *         raise KeyError(f'Invalid axis: {pos!r}')             # <<<<<<<<<<<<<<
  * 
  *     def __mul__(first, second):
  */
-  __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_pos), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1933, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_pos), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1930, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1933, __pyx_L1_error)
+  __pyx_t_7 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Invalid_axis_2, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 1930, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_7);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1933, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_KeyError, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1930, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
   __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
   __Pyx_Raise(__pyx_t_4, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-  __PYX_ERR(0, 1933, __pyx_L1_error)
+  __PYX_ERR(0, 1930, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1907
+  /* "srctools/_vec.pyx":1904
  *         raise KeyError(f'Invalid axis: {pos!r}')
  * 
  *     def __setitem__(self, pos, double val) -> None:             # <<<<<<<<<<<<<<
@@ -24783,7 +24787,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_20__setitem__(struct __pyx_obj_8srcto
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1935
+/* "srctools/_vec.pyx":1932
  *         raise KeyError(f'Invalid axis: {pos!r}')
  * 
  *     def __mul__(first, second):             # <<<<<<<<<<<<<<
@@ -24824,7 +24828,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__mul__", 0);
 
-  /* "srctools/_vec.pyx":1939
+  /* "srctools/_vec.pyx":1936
  *         cdef double scalar
  *         cdef Angle angle
  *         if isinstance(first, Angle) and isinstance(second, (int, float)):             # <<<<<<<<<<<<<<
@@ -24854,30 +24858,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
   __pyx_L4_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1940
+    /* "srctools/_vec.pyx":1937
  *         cdef Angle angle
  *         if isinstance(first, Angle) and isinstance(second, (int, float)):
  *             scalar = second             # <<<<<<<<<<<<<<
  *             angle = first
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_second); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1940, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_second); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1937, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":1941
+    /* "srctools/_vec.pyx":1938
  *         if isinstance(first, Angle) and isinstance(second, (int, float)):
  *             scalar = second
  *             angle = first             # <<<<<<<<<<<<<<
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):
  *             scalar = first
  */
-    if (!(likely(((__pyx_v_first) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_first, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1941, __pyx_L1_error)
+    if (!(likely(((__pyx_v_first) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_first, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1938, __pyx_L1_error)
     __pyx_t_6 = __pyx_v_first;
     __Pyx_INCREF(__pyx_t_6);
     __pyx_v_angle = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "srctools/_vec.pyx":1939
+    /* "srctools/_vec.pyx":1936
  *         cdef double scalar
  *         cdef Angle angle
  *         if isinstance(first, Angle) and isinstance(second, (int, float)):             # <<<<<<<<<<<<<<
@@ -24887,7 +24891,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1942
+  /* "srctools/_vec.pyx":1939
  *             scalar = second
  *             angle = first
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -24917,30 +24921,30 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
   __pyx_L8_bool_binop_done:;
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1943
+    /* "srctools/_vec.pyx":1940
  *             angle = first
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):
  *             scalar = first             # <<<<<<<<<<<<<<
  *             angle = second
  *         else:
  */
-    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_first); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1943, __pyx_L1_error)
+    __pyx_t_5 = __pyx_PyFloat_AsDouble(__pyx_v_first); if (unlikely((__pyx_t_5 == (double)-1) && PyErr_Occurred())) __PYX_ERR(0, 1940, __pyx_L1_error)
     __pyx_v_scalar = __pyx_t_5;
 
-    /* "srctools/_vec.pyx":1944
+    /* "srctools/_vec.pyx":1941
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):
  *             scalar = first
  *             angle = second             # <<<<<<<<<<<<<<
  *         else:
  *             return NotImplemented
  */
-    if (!(likely(((__pyx_v_second) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_second, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1944, __pyx_L1_error)
+    if (!(likely(((__pyx_v_second) == Py_None) || likely(__Pyx_TypeTest(__pyx_v_second, __pyx_ptype_8srctools_4_vec_Angle))))) __PYX_ERR(0, 1941, __pyx_L1_error)
     __pyx_t_6 = __pyx_v_second;
     __Pyx_INCREF(__pyx_t_6);
     __pyx_v_angle = ((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_t_6);
     __pyx_t_6 = 0;
 
-    /* "srctools/_vec.pyx":1942
+    /* "srctools/_vec.pyx":1939
  *             scalar = second
  *             angle = first
  *         elif isinstance(first, (int, float)) and isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -24950,12 +24954,12 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
     goto __pyx_L3;
   }
 
-  /* "srctools/_vec.pyx":1946
+  /* "srctools/_vec.pyx":1943
  *             angle = second
  *         else:
  *             return NotImplemented             # <<<<<<<<<<<<<<
  *         return _angle(
- *             (angle.val.x * scalar) % 360.0 % 360.0,
+ *             norm_ang(angle.val.x * scalar),
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
@@ -24965,29 +24969,29 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
   }
   __pyx_L3:;
 
-  /* "srctools/_vec.pyx":1947
+  /* "srctools/_vec.pyx":1944
  *         else:
  *             return NotImplemented
  *         return _angle(             # <<<<<<<<<<<<<<
- *             (angle.val.x * scalar) % 360.0 % 360.0,
- *             (angle.val.y * scalar) % 360.0 % 360.0,
+ *             norm_ang(angle.val.x * scalar),
+ *             norm_ang(angle.val.y * scalar),
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_vec.pyx":1950
- *             (angle.val.x * scalar) % 360.0 % 360.0,
- *             (angle.val.y * scalar) % 360.0 % 360.0,
- *             (angle.val.z * scalar) % 360.0 % 360.0,             # <<<<<<<<<<<<<<
+  /* "srctools/_vec.pyx":1947
+ *             norm_ang(angle.val.x * scalar),
+ *             norm_ang(angle.val.y * scalar),
+ *             norm_ang(angle.val.z * scalar),             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_6 = ((PyObject *)__pyx_f_8srctools_4_vec__angle(__Pyx_mod_double(__Pyx_mod_double((__pyx_v_angle->val.x * __pyx_v_scalar), 360.0), 360.0), __Pyx_mod_double(__Pyx_mod_double((__pyx_v_angle->val.y * __pyx_v_scalar), 360.0), 360.0), __Pyx_mod_double(__Pyx_mod_double((__pyx_v_angle->val.z * __pyx_v_scalar), 360.0), 360.0))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1947, __pyx_L1_error)
+  __pyx_t_6 = ((PyObject *)__pyx_f_8srctools_4_vec__angle(__pyx_f_8srctools_4_vec_norm_ang((__pyx_v_angle->val.x * __pyx_v_scalar)), __pyx_f_8srctools_4_vec_norm_ang((__pyx_v_angle->val.y * __pyx_v_scalar)), __pyx_f_8srctools_4_vec_norm_ang((__pyx_v_angle->val.z * __pyx_v_scalar)))); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1944, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_6);
   __pyx_r = __pyx_t_6;
   __pyx_t_6 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1935
+  /* "srctools/_vec.pyx":1932
  *         raise KeyError(f'Invalid axis: {pos!r}')
  * 
  *     def __mul__(first, second):             # <<<<<<<<<<<<<<
@@ -25007,7 +25011,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_22__mul__(PyObject *__pyx_v_fir
   return __pyx_r;
 }
 
-/* "srctools/_vec.pyx":1953
+/* "srctools/_vec.pyx":1950
  *         )
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -25045,7 +25049,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__matmul__", 0);
 
-  /* "srctools/_vec.pyx":1955
+  /* "srctools/_vec.pyx":1952
  *     def __matmul__(first, second):
  *         cdef mat_t temp1, temp2
  *         if isinstance(first, Angle):             # <<<<<<<<<<<<<<
@@ -25056,7 +25060,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_vec.pyx":1956
+    /* "srctools/_vec.pyx":1953
  *         cdef mat_t temp1, temp2
  *         if isinstance(first, Angle):
  *             _mat_from_angle(temp1, &(<Angle>first).val)             # <<<<<<<<<<<<<<
@@ -25065,7 +25069,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
     __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp1, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_first)->val));
 
-    /* "srctools/_vec.pyx":1957
+    /* "srctools/_vec.pyx":1954
  *         if isinstance(first, Angle):
  *             _mat_from_angle(temp1, &(<Angle>first).val)
  *             if isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -25076,7 +25080,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1958
+      /* "srctools/_vec.pyx":1955
  *             _mat_from_angle(temp1, &(<Angle>first).val)
  *             if isinstance(second, Angle):
  *                 _mat_from_angle(temp2, &(<Angle>second).val)             # <<<<<<<<<<<<<<
@@ -25085,7 +25089,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp2, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_second)->val));
 
-      /* "srctools/_vec.pyx":1959
+      /* "srctools/_vec.pyx":1956
  *             if isinstance(second, Angle):
  *                 _mat_from_angle(temp2, &(<Angle>second).val)
  *                 _mat_mul(temp1, temp2)             # <<<<<<<<<<<<<<
@@ -25094,7 +25098,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_temp1, __pyx_v_temp2);
 
-      /* "srctools/_vec.pyx":1957
+      /* "srctools/_vec.pyx":1954
  *         if isinstance(first, Angle):
  *             _mat_from_angle(temp1, &(<Angle>first).val)
  *             if isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -25104,7 +25108,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
       goto __pyx_L4;
     }
 
-    /* "srctools/_vec.pyx":1960
+    /* "srctools/_vec.pyx":1957
  *                 _mat_from_angle(temp2, &(<Angle>second).val)
  *                 _mat_mul(temp1, temp2)
  *             elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -25115,7 +25119,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1961
+      /* "srctools/_vec.pyx":1958
  *                 _mat_mul(temp1, temp2)
  *             elif isinstance(second, Matrix):
  *                 _mat_mul(temp1, (<Matrix>second).mat)             # <<<<<<<<<<<<<<
@@ -25124,7 +25128,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       __pyx_f_8srctools_4_vec__mat_mul(__pyx_v_temp1, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_second)->mat);
 
-      /* "srctools/_vec.pyx":1960
+      /* "srctools/_vec.pyx":1957
  *                 _mat_from_angle(temp2, &(<Angle>second).val)
  *                 _mat_mul(temp1, temp2)
  *             elif isinstance(second, Matrix):             # <<<<<<<<<<<<<<
@@ -25134,7 +25138,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
       goto __pyx_L4;
     }
 
-    /* "srctools/_vec.pyx":1963
+    /* "srctools/_vec.pyx":1960
  *                 _mat_mul(temp1, (<Matrix>second).mat)
  *             else:
  *                 return NotImplemented             # <<<<<<<<<<<<<<
@@ -25149,19 +25153,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     }
     __pyx_L4:;
 
-    /* "srctools/_vec.pyx":1964
+    /* "srctools/_vec.pyx":1961
  *             else:
  *                 return NotImplemented
  *             res = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
  *             _mat_to_angle(&(<Angle>res).val, temp1)
  *             return res
  */
-    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1964, __pyx_L1_error)
+    __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Angle(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1961, __pyx_L1_error)
     __Pyx_GOTREF(((PyObject *)__pyx_t_3));
     __pyx_v_res = ((PyObject *)__pyx_t_3);
     __pyx_t_3 = 0;
 
-    /* "srctools/_vec.pyx":1965
+    /* "srctools/_vec.pyx":1962
  *                 return NotImplemented
  *             res = Angle.__new__(Angle)
  *             _mat_to_angle(&(<Angle>res).val, temp1)             # <<<<<<<<<<<<<<
@@ -25170,7 +25174,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
     __pyx_f_8srctools_4_vec__mat_to_angle((&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_res)->val), __pyx_v_temp1);
 
-    /* "srctools/_vec.pyx":1966
+    /* "srctools/_vec.pyx":1963
  *             res = Angle.__new__(Angle)
  *             _mat_to_angle(&(<Angle>res).val, temp1)
  *             return res             # <<<<<<<<<<<<<<
@@ -25182,7 +25186,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     __pyx_r = __pyx_v_res;
     goto __pyx_L0;
 
-    /* "srctools/_vec.pyx":1955
+    /* "srctools/_vec.pyx":1952
  *     def __matmul__(first, second):
  *         cdef mat_t temp1, temp2
  *         if isinstance(first, Angle):             # <<<<<<<<<<<<<<
@@ -25191,7 +25195,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
   }
 
-  /* "srctools/_vec.pyx":1967
+  /* "srctools/_vec.pyx":1964
  *             _mat_to_angle(&(<Angle>res).val, temp1)
  *             return res
  *         elif isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -25202,7 +25206,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
   __pyx_t_1 = (__pyx_t_2 != 0);
   if (__pyx_t_1) {
 
-    /* "srctools/_vec.pyx":1970
+    /* "srctools/_vec.pyx":1967
  *             # These classes should do this themselves, but this is here for
  *             # completeness.
  *             _mat_from_angle(temp2, &(<Angle>second).val)             # <<<<<<<<<<<<<<
@@ -25211,7 +25215,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
     __pyx_f_8srctools_4_vec__mat_from_angle(__pyx_v_temp2, (&((struct __pyx_obj_8srctools_4_vec_Angle *)__pyx_v_second)->val));
 
-    /* "srctools/_vec.pyx":1971
+    /* "srctools/_vec.pyx":1968
  *             # completeness.
  *             _mat_from_angle(temp2, &(<Angle>second).val)
  *             if isinstance(first, Matrix):             # <<<<<<<<<<<<<<
@@ -25222,19 +25226,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     __pyx_t_2 = (__pyx_t_1 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_vec.pyx":1972
+      /* "srctools/_vec.pyx":1969
  *             _mat_from_angle(temp2, &(<Angle>second).val)
  *             if isinstance(first, Matrix):
  *                 res = Matrix.__new__(Matrix)             # <<<<<<<<<<<<<<
  *                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
  *                 _mat_mul((<Matrix>res).mat, temp2)
  */
-      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1972, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Matrix(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1969, __pyx_L1_error)
       __Pyx_GOTREF(((PyObject *)__pyx_t_3));
       __pyx_v_res = ((PyObject *)__pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "srctools/_vec.pyx":1973
+      /* "srctools/_vec.pyx":1970
  *             if isinstance(first, Matrix):
  *                 res = Matrix.__new__(Matrix)
  *                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))             # <<<<<<<<<<<<<<
@@ -25243,7 +25247,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       (void)(memcpy(((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_res)->mat, ((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_first)->mat, (sizeof(__pyx_t_8srctools_4_vec_mat_t))));
 
-      /* "srctools/_vec.pyx":1974
+      /* "srctools/_vec.pyx":1971
  *                 res = Matrix.__new__(Matrix)
  *                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
  *                 _mat_mul((<Matrix>res).mat, temp2)             # <<<<<<<<<<<<<<
@@ -25252,7 +25256,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       __pyx_f_8srctools_4_vec__mat_mul(((struct __pyx_obj_8srctools_4_vec_Matrix *)__pyx_v_res)->mat, __pyx_v_temp2);
 
-      /* "srctools/_vec.pyx":1975
+      /* "srctools/_vec.pyx":1972
  *                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
  *                 _mat_mul((<Matrix>res).mat, temp2)
  *                 return res             # <<<<<<<<<<<<<<
@@ -25264,7 +25268,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
       __pyx_r = __pyx_v_res;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1971
+      /* "srctools/_vec.pyx":1968
  *             # completeness.
  *             _mat_from_angle(temp2, &(<Angle>second).val)
  *             if isinstance(first, Matrix):             # <<<<<<<<<<<<<<
@@ -25273,7 +25277,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
     }
 
-    /* "srctools/_vec.pyx":1976
+    /* "srctools/_vec.pyx":1973
  *                 _mat_mul((<Matrix>res).mat, temp2)
  *                 return res
  *             elif isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -25284,19 +25288,19 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
     __pyx_t_1 = (__pyx_t_2 != 0);
     if (__pyx_t_1) {
 
-      /* "srctools/_vec.pyx":1977
+      /* "srctools/_vec.pyx":1974
  *                 return res
  *             elif isinstance(first, Vec):
  *                 res = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
  *                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
  *                 _vec_rot(&(<Vec>res).val, temp2)
  */
-      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1977, __pyx_L1_error)
+      __pyx_t_3 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_Vec(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 1974, __pyx_L1_error)
       __Pyx_GOTREF(((PyObject *)__pyx_t_3));
       __pyx_v_res = ((PyObject *)__pyx_t_3);
       __pyx_t_3 = 0;
 
-      /* "srctools/_vec.pyx":1978
+      /* "srctools/_vec.pyx":1975
  *             elif isinstance(first, Vec):
  *                 res = Vec.__new__(Vec)
  *                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))             # <<<<<<<<<<<<<<
@@ -25305,7 +25309,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       (void)(memcpy((&((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_res)->val), (&((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_first)->val), (sizeof(struct __pyx_t_8srctools_4_vec_vec_t))));
 
-      /* "srctools/_vec.pyx":1979
+      /* "srctools/_vec.pyx":1976
  *                 res = Vec.__new__(Vec)
  *                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
  *                 _vec_rot(&(<Vec>res).val, temp2)             # <<<<<<<<<<<<<<
@@ -25314,7 +25318,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
       __pyx_f_8srctools_4_vec__vec_rot((&((struct __pyx_obj_8srctools_4_vec_Vec *)__pyx_v_res)->val), __pyx_v_temp2);
 
-      /* "srctools/_vec.pyx":1980
+      /* "srctools/_vec.pyx":1977
  *                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
  *                 _vec_rot(&(<Vec>res).val, temp2)
  *                 return res             # <<<<<<<<<<<<<<
@@ -25326,7 +25330,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
       __pyx_r = __pyx_v_res;
       goto __pyx_L0;
 
-      /* "srctools/_vec.pyx":1976
+      /* "srctools/_vec.pyx":1973
  *                 _mat_mul((<Matrix>res).mat, temp2)
  *                 return res
  *             elif isinstance(first, Vec):             # <<<<<<<<<<<<<<
@@ -25335,7 +25339,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
     }
 
-    /* "srctools/_vec.pyx":1967
+    /* "srctools/_vec.pyx":1964
  *             _mat_to_angle(&(<Angle>res).val, temp1)
  *             return res
  *         elif isinstance(second, Angle):             # <<<<<<<<<<<<<<
@@ -25344,7 +25348,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
  */
   }
 
-  /* "srctools/_vec.pyx":1982
+  /* "srctools/_vec.pyx":1979
  *                 return res
  * 
  *         return NotImplemented             # <<<<<<<<<<<<<<
@@ -25356,7 +25360,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
   __pyx_r = __pyx_builtin_NotImplemented;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1953
+  /* "srctools/_vec.pyx":1950
  *         )
  * 
  *     def __matmul__(first, second):             # <<<<<<<<<<<<<<
@@ -25377,7 +25381,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_24__matmul__(PyObject *__pyx_v_
 }
 #endif /*!(#if PY_VERSION_HEX >= 0x03050000)*/
 
-/* "srctools/_vec.pyx":1984
+/* "srctools/_vec.pyx":1981
  *         return NotImplemented
  * 
  *     def transform(self):             # <<<<<<<<<<<<<<
@@ -25409,25 +25413,25 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_26transform(struct __pyx_obj_8s
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("transform", 0);
 
-  /* "srctools/_vec.pyx":1991
+  /* "srctools/_vec.pyx":1988
  *         the angle.
  *         """
  *         return AngleTransform.__new__(AngleTransform, self)             # <<<<<<<<<<<<<<
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1991, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1988, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_INCREF(((PyObject *)__pyx_v_self));
   __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
   PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_self));
-  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleTransform(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleTransform), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1991, __pyx_L1_error)
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleTransform(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleTransform), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1988, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_2));
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = ((PyObject *)__pyx_t_2);
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_vec.pyx":1984
+  /* "srctools/_vec.pyx":1981
  *         return NotImplemented
  * 
  *     def transform(self):             # <<<<<<<<<<<<<<
@@ -26696,6 +26700,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_B, __pyx_k_B, sizeof(__pyx_k_B), 0, 0, 1, 1},
   {&__pyx_kp_u_Bad_operation, __pyx_k_Bad_operation, sizeof(__pyx_k_Bad_operation), 0, 1, 0, 0},
   {&__pyx_kp_u_Called_with_non_vectors, __pyx_k_Called_with_non_vectors, sizeof(__pyx_k_Called_with_non_vectors), 0, 1, 0, 0},
+  {&__pyx_kp_u_Cannot_convert_scalars_to_an_Ang, __pyx_k_Cannot_convert_scalars_to_an_Ang, sizeof(__pyx_k_Cannot_convert_scalars_to_an_Ang), 0, 1, 0, 0},
   {&__pyx_kp_u_Cannot_divide_2_Vectors, __pyx_k_Cannot_divide_2_Vectors, sizeof(__pyx_k_Cannot_divide_2_Vectors), 0, 1, 0, 0},
   {&__pyx_kp_u_Cannot_floor_divide_2_Vectors, __pyx_k_Cannot_floor_divide_2_Vectors, sizeof(__pyx_k_Cannot_floor_divide_2_Vectors), 0, 1, 0, 0},
   {&__pyx_kp_u_Cannot_modulus_2_Vectors, __pyx_k_Cannot_modulus_2_Vectors, sizeof(__pyx_k_Cannot_modulus_2_Vectors), 0, 1, 0, 0},
@@ -26730,12 +26735,12 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_Vec_tuple_is_not_a_tuple_subclas, __pyx_k_Vec_tuple_is_not_a_tuple_subclas, sizeof(__pyx_k_Vec_tuple_is_not_a_tuple_subclas), 0, 1, 0, 0},
   {&__pyx_kp_u_Vec_with_axis_takes_2_4_or_6_pos, __pyx_k_Vec_with_axis_takes_2_4_or_6_pos, sizeof(__pyx_k_Vec_with_axis_takes_2_4_or_6_pos), 0, 1, 0, 0},
   {&__pyx_n_s_W, __pyx_k_W, sizeof(__pyx_k_W), 0, 0, 1, 1},
-  {&__pyx_kp_u__13, __pyx_k__13, sizeof(__pyx_k__13), 0, 1, 0, 0},
   {&__pyx_kp_u__14, __pyx_k__14, sizeof(__pyx_k__14), 0, 1, 0, 0},
   {&__pyx_kp_u__15, __pyx_k__15, sizeof(__pyx_k__15), 0, 1, 0, 0},
-  {&__pyx_kp_u__2, __pyx_k__2, sizeof(__pyx_k__2), 0, 1, 0, 0},
-  {&__pyx_kp_u__5, __pyx_k__5, sizeof(__pyx_k__5), 0, 1, 0, 0},
+  {&__pyx_kp_u__16, __pyx_k__16, sizeof(__pyx_k__16), 0, 1, 0, 0},
+  {&__pyx_kp_u__3, __pyx_k__3, sizeof(__pyx_k__3), 0, 1, 0, 0},
   {&__pyx_kp_u__6, __pyx_k__6, sizeof(__pyx_k__6), 0, 1, 0, 0},
+  {&__pyx_kp_u__7, __pyx_k__7, sizeof(__pyx_k__7), 0, 1, 0, 0},
   {&__pyx_n_s_ang, __pyx_k_ang, sizeof(__pyx_k_ang), 0, 0, 1, 1},
   {&__pyx_n_s_arg_count, __pyx_k_arg_count, sizeof(__pyx_k_arg_count), 0, 0, 1, 1},
   {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
@@ -26822,17 +26827,17 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_RuntimeError = __Pyx_GetBuiltinName(__pyx_n_s_RuntimeError); if (!__pyx_builtin_RuntimeError) __PYX_ERR(0, 46, __pyx_L1_error)
-  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 546, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 88, __pyx_L1_error)
-  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 140, __pyx_L1_error)
-  __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 148, __pyx_L1_error)
-  __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 303, __pyx_L1_error)
-  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 569, __pyx_L1_error)
-  __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(0, 575, __pyx_L1_error)
-  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 620, __pyx_L1_error)
-  __pyx_builtin_NotImplemented = __Pyx_GetBuiltinName(__pyx_n_s_NotImplemented); if (!__pyx_builtin_NotImplemented) __PYX_ERR(0, 865, __pyx_L1_error)
-  __pyx_builtin_OverflowError = __Pyx_GetBuiltinName(__pyx_n_s_OverflowError); if (!__pyx_builtin_OverflowError) __PYX_ERR(0, 1393, __pyx_L1_error)
-  __pyx_builtin_SystemError = __Pyx_GetBuiltinName(__pyx_n_s_SystemError); if (!__pyx_builtin_SystemError) __PYX_ERR(0, 1669, __pyx_L1_error)
+  __pyx_builtin_staticmethod = __Pyx_GetBuiltinName(__pyx_n_s_staticmethod); if (!__pyx_builtin_staticmethod) __PYX_ERR(0, 544, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 94, __pyx_L1_error)
+  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 154, __pyx_L1_error)
+  __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 301, __pyx_L1_error)
+  __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 567, __pyx_L1_error)
+  __pyx_builtin_KeyError = __Pyx_GetBuiltinName(__pyx_n_s_KeyError); if (!__pyx_builtin_KeyError) __PYX_ERR(0, 573, __pyx_L1_error)
+  __pyx_builtin_round = __Pyx_GetBuiltinName(__pyx_n_s_round); if (!__pyx_builtin_round) __PYX_ERR(0, 618, __pyx_L1_error)
+  __pyx_builtin_NotImplemented = __Pyx_GetBuiltinName(__pyx_n_s_NotImplemented); if (!__pyx_builtin_NotImplemented) __PYX_ERR(0, 863, __pyx_L1_error)
+  __pyx_builtin_OverflowError = __Pyx_GetBuiltinName(__pyx_n_s_OverflowError); if (!__pyx_builtin_OverflowError) __PYX_ERR(0, 1391, __pyx_L1_error)
+  __pyx_builtin_SystemError = __Pyx_GetBuiltinName(__pyx_n_s_SystemError); if (!__pyx_builtin_SystemError) __PYX_ERR(0, 1667, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -26842,126 +26847,137 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "srctools/_vec.pyx":140
+  /* "srctools/_vec.pyx":146
  *         else:
  *             # No need to do argument checks.
  *             raise TypeError('Cannot use scalars here.')             # <<<<<<<<<<<<<<
  *     elif isinstance(vec, tuple):
  *         result.x, result.y, result.z = <tuple>vec
  */
-  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_Cannot_use_scalars_here); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 140, __pyx_L1_error)
+  __pyx_tuple_ = PyTuple_Pack(1, __pyx_kp_u_Cannot_use_scalars_here); if (unlikely(!__pyx_tuple_)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple_);
   __Pyx_GIVEREF(__pyx_tuple_);
 
-  /* "srctools/_vec.pyx":678
+  /* "srctools/_vec.pyx":169
+ *         result.z = (<Angle>ang).val.z
+ *     elif isinstance(ang, float) or isinstance(ang, int):
+ *         raise TypeError('Cannot convert scalars to an Angle!')             # <<<<<<<<<<<<<<
+ *     elif isinstance(ang, tuple):
+ *         x, y, z = <tuple>ang
+ */
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_Cannot_convert_scalars_to_an_Ang); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__2);
+  __Pyx_GIVEREF(__pyx_tuple__2);
+
+  /* "srctools/_vec.pyx":676
  *                 first = next(points_iter)
  *             except StopIteration:
  *                 raise ValueError('Empty iterator!') from None             # <<<<<<<<<<<<<<
  * 
  *             _conv_vec(&bbox_min.val, first, scalar=False)
  */
-  __pyx_tuple__3 = PyTuple_Pack(1, __pyx_kp_u_Empty_iterator); if (unlikely(!__pyx_tuple__3)) __PYX_ERR(0, 678, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__3);
-  __Pyx_GIVEREF(__pyx_tuple__3);
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Empty_iterator); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 676, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__4);
+  __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "srctools/_vec.pyx":708
+  /* "srctools/_vec.pyx":706
  *                 pass
  *         elif len(points) == 0:
  *             raise TypeError(             # <<<<<<<<<<<<<<
  *                 'Vec.bbox() expected at '
  *                 'least 1 argument, got 0.'
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Vec_bbox_expected_at_least_1_arg); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 708, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__4);
-  __Pyx_GIVEREF(__pyx_tuple__4);
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_Vec_bbox_expected_at_least_1_arg); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 706, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__5);
+  __Pyx_GIVEREF(__pyx_tuple__5);
 
-  /* "srctools/_vec.pyx":913
+  /* "srctools/_vec.pyx":911
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot multiply 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-  __pyx_tuple__7 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__7)) __PYX_ERR(0, 913, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__7);
-  __Pyx_GIVEREF(__pyx_tuple__7);
+  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Cannot_multiply_2_Vectors); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 911, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__8);
+  __Pyx_GIVEREF(__pyx_tuple__8);
 
-  /* "srctools/_vec.pyx":940
+  /* "srctools/_vec.pyx":938
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot divide 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-  __pyx_tuple__8 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__8)) __PYX_ERR(0, 940, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__8);
-  __Pyx_GIVEREF(__pyx_tuple__8);
+  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Cannot_divide_2_Vectors); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 938, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__9);
+  __Pyx_GIVEREF(__pyx_tuple__9);
 
-  /* "srctools/_vec.pyx":967
+  /* "srctools/_vec.pyx":965
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot floor-divide 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-  __pyx_tuple__9 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__9)) __PYX_ERR(0, 967, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__9);
-  __Pyx_GIVEREF(__pyx_tuple__9);
+  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_Cannot_floor_divide_2_Vectors); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 965, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__10);
+  __Pyx_GIVEREF(__pyx_tuple__10);
 
-  /* "srctools/_vec.pyx":994
+  /* "srctools/_vec.pyx":992
  * 
  *         elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
  *             raise TypeError('Cannot modulus 2 Vectors.')             # <<<<<<<<<<<<<<
  *         else:
  *             # Both vector-like or vector * something else.
  */
-  __pyx_tuple__10 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__10)) __PYX_ERR(0, 994, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__10);
-  __Pyx_GIVEREF(__pyx_tuple__10);
+  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_u_Cannot_modulus_2_Vectors); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 992, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__11);
+  __Pyx_GIVEREF(__pyx_tuple__11);
 
-  /* "srctools/_vec.pyx":1171
+  /* "srctools/_vec.pyx":1169
  *             res_1.val.z = other_d // vec.val.z
  *         else:
  *             raise TypeError("Called with non-vectors??")             # <<<<<<<<<<<<<<
  * 
  *         return res_1, res_2
  */
-  __pyx_tuple__11 = PyTuple_Pack(1, __pyx_kp_u_Called_with_non_vectors); if (unlikely(!__pyx_tuple__11)) __PYX_ERR(0, 1171, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__11);
-  __Pyx_GIVEREF(__pyx_tuple__11);
+  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_u_Called_with_non_vectors); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 1169, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__12);
+  __Pyx_GIVEREF(__pyx_tuple__12);
 
-  /* "srctools/_vec.pyx":1244
+  /* "srctools/_vec.pyx":1242
  *             )
  *         else:
  *             raise RuntimeError('Bad operation!')             # <<<<<<<<<<<<<<
  * 
  *     def max(self, other):
  */
-  __pyx_tuple__12 = PyTuple_Pack(1, __pyx_kp_u_Bad_operation); if (unlikely(!__pyx_tuple__12)) __PYX_ERR(0, 1244, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__12);
-  __Pyx_GIVEREF(__pyx_tuple__12);
+  __pyx_tuple__13 = PyTuple_Pack(1, __pyx_kp_u_Bad_operation); if (unlikely(!__pyx_tuple__13)) __PYX_ERR(0, 1242, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__13);
+  __Pyx_GIVEREF(__pyx_tuple__13);
 
-  /* "srctools/_vec.pyx":1607
+  /* "srctools/_vec.pyx":1605
  *                 _vec_cross(&res, &y.val, &z.val)
  *             else:
  *                 raise TypeError('At least two vectors must be provided!')             # <<<<<<<<<<<<<<
  *         else:
  *             res = x.val
  */
-  __pyx_tuple__16 = PyTuple_Pack(1, __pyx_kp_u_At_least_two_vectors_must_be_pro); if (unlikely(!__pyx_tuple__16)) __PYX_ERR(0, 1607, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__16);
-  __Pyx_GIVEREF(__pyx_tuple__16);
+  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_u_At_least_two_vectors_must_be_pro); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 1605, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__17);
+  __Pyx_GIVEREF(__pyx_tuple__17);
 
-  /* "srctools/_vec.pyx":1669
+  /* "srctools/_vec.pyx":1667
  *                 return NotImplemented
  *         else:
  *             raise SystemError('Neither are Matrices?')             # <<<<<<<<<<<<<<
  * 
  *     def __imatmul__(self, other):
  */
-  __pyx_tuple__17 = PyTuple_Pack(1, __pyx_kp_u_Neither_are_Matrices); if (unlikely(!__pyx_tuple__17)) __PYX_ERR(0, 1669, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__17);
-  __Pyx_GIVEREF(__pyx_tuple__17);
+  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_u_Neither_are_Matrices); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 1667, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__18);
+  __Pyx_GIVEREF(__pyx_tuple__18);
 
   /* "srctools/_vec.pyx":46
  * # Sanity check.
@@ -26970,123 +26986,123 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * 
  */
-  __pyx_tuple__18 = PyTuple_Pack(1, __pyx_kp_u_Vec_tuple_is_not_a_tuple_subclas); if (unlikely(!__pyx_tuple__18)) __PYX_ERR(0, 46, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__18);
-  __Pyx_GIVEREF(__pyx_tuple__18);
+  __pyx_tuple__19 = PyTuple_Pack(1, __pyx_kp_u_Vec_tuple_is_not_a_tuple_subclas); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__19);
+  __Pyx_GIVEREF(__pyx_tuple__19);
 
-  /* "srctools/_vec.pyx":109
+  /* "srctools/_vec.pyx":115
  * 
  * 
  * def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):             # <<<<<<<<<<<<<<
  *     """Convert a string in the form '(4 6 -4)' into a set of floats.
  * 
  */
-  __pyx_tuple__19 = PyTuple_Pack(5, __pyx_n_s_val, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_z, __pyx_n_s_vec); if (unlikely(!__pyx_tuple__19)) __PYX_ERR(0, 109, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__19);
-  __Pyx_GIVEREF(__pyx_tuple__19);
-  __pyx_codeobj__20 = (PyObject*)__Pyx_PyCode_New(4, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__19, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_parse_vec_str, 109, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__20)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_tuple__20 = PyTuple_Pack(5, __pyx_n_s_val, __pyx_n_s_x, __pyx_n_s_y, __pyx_n_s_z, __pyx_n_s_vec); if (unlikely(!__pyx_tuple__20)) __PYX_ERR(0, 115, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__20);
+  __Pyx_GIVEREF(__pyx_tuple__20);
+  __pyx_codeobj__21 = (PyObject*)__Pyx_PyCode_New(4, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__20, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_parse_vec_str, 115, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__21)) __PYX_ERR(0, 115, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":407
+  /* "srctools/_vec.pyx":405
  *     # Various constants.
  *     INV_AXIS = {
  *         'x': ('y', 'z'),             # <<<<<<<<<<<<<<
  *         'y': ('x', 'z'),
  *         'z': ('x', 'y'),
  */
-  __pyx_tuple__21 = PyTuple_Pack(2, __pyx_n_u_y, __pyx_n_u_z); if (unlikely(!__pyx_tuple__21)) __PYX_ERR(0, 407, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__21);
-  __Pyx_GIVEREF(__pyx_tuple__21);
+  __pyx_tuple__22 = PyTuple_Pack(2, __pyx_n_u_y, __pyx_n_u_z); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 405, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__22);
+  __Pyx_GIVEREF(__pyx_tuple__22);
 
-  /* "srctools/_vec.pyx":408
+  /* "srctools/_vec.pyx":406
  *     INV_AXIS = {
  *         'x': ('y', 'z'),
  *         'y': ('x', 'z'),             # <<<<<<<<<<<<<<
  *         'z': ('x', 'y'),
  * 
  */
-  __pyx_tuple__22 = PyTuple_Pack(2, __pyx_n_u_x, __pyx_n_u_z); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 408, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__22);
-  __Pyx_GIVEREF(__pyx_tuple__22);
+  __pyx_tuple__23 = PyTuple_Pack(2, __pyx_n_u_x, __pyx_n_u_z); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 406, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__23);
+  __Pyx_GIVEREF(__pyx_tuple__23);
 
-  /* "srctools/_vec.pyx":409
+  /* "srctools/_vec.pyx":407
  *         'x': ('y', 'z'),
  *         'y': ('x', 'z'),
  *         'z': ('x', 'y'),             # <<<<<<<<<<<<<<
  * 
  *         ('y', 'z'): 'x',
  */
-  __pyx_tuple__23 = PyTuple_Pack(2, __pyx_n_u_x, __pyx_n_u_y); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 409, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__23);
-  __Pyx_GIVEREF(__pyx_tuple__23);
+  __pyx_tuple__24 = PyTuple_Pack(2, __pyx_n_u_x, __pyx_n_u_y); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 407, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__24);
+  __Pyx_GIVEREF(__pyx_tuple__24);
 
-  /* "srctools/_vec.pyx":415
+  /* "srctools/_vec.pyx":413
  *         ('x', 'y'): 'z',
  * 
  *         ('z', 'y'): 'x',             # <<<<<<<<<<<<<<
  *         ('z', 'x'): 'y',
  *         ('y', 'x'): 'z',
  */
-  __pyx_tuple__24 = PyTuple_Pack(2, __pyx_n_u_z, __pyx_n_u_y); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 415, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__24);
-  __Pyx_GIVEREF(__pyx_tuple__24);
+  __pyx_tuple__25 = PyTuple_Pack(2, __pyx_n_u_z, __pyx_n_u_y); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 413, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__25);
+  __Pyx_GIVEREF(__pyx_tuple__25);
 
-  /* "srctools/_vec.pyx":416
+  /* "srctools/_vec.pyx":414
  * 
  *         ('z', 'y'): 'x',
  *         ('z', 'x'): 'y',             # <<<<<<<<<<<<<<
  *         ('y', 'x'): 'z',
  *     }
  */
-  __pyx_tuple__25 = PyTuple_Pack(2, __pyx_n_u_z, __pyx_n_u_x); if (unlikely(!__pyx_tuple__25)) __PYX_ERR(0, 416, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__25);
-  __Pyx_GIVEREF(__pyx_tuple__25);
+  __pyx_tuple__26 = PyTuple_Pack(2, __pyx_n_u_z, __pyx_n_u_x); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 414, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__26);
+  __Pyx_GIVEREF(__pyx_tuple__26);
 
-  /* "srctools/_vec.pyx":417
+  /* "srctools/_vec.pyx":415
  *         ('z', 'y'): 'x',
  *         ('z', 'x'): 'y',
  *         ('y', 'x'): 'z',             # <<<<<<<<<<<<<<
  *     }
  *     # Vectors pointing in all cardinal directions.
  */
-  __pyx_tuple__26 = PyTuple_Pack(2, __pyx_n_u_y, __pyx_n_u_x); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 417, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__26);
-  __Pyx_GIVEREF(__pyx_tuple__26);
+  __pyx_tuple__27 = PyTuple_Pack(2, __pyx_n_u_y, __pyx_n_u_x); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 415, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__27);
+  __Pyx_GIVEREF(__pyx_tuple__27);
 
-  /* "srctools/_vec.pyx":548
+  /* "srctools/_vec.pyx":546
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args) -> 'Vec':             # <<<<<<<<<<<<<<
  *         """Create a Vector, given a number of axes and corresponding values.
  * 
  */
-  __pyx_tuple__27 = PyTuple_Pack(7, __pyx_n_s_args, __pyx_n_s_arg_count, __pyx_n_s_vec, __pyx_n_s_axis, __pyx_n_s_i, __pyx_n_s_axis_val, __pyx_n_s_axis_obj); if (unlikely(!__pyx_tuple__27)) __PYX_ERR(0, 548, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__27);
-  __Pyx_GIVEREF(__pyx_tuple__27);
-  __pyx_codeobj__28 = (PyObject*)__Pyx_PyCode_New(0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__27, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_with_axes, 548, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__28)) __PYX_ERR(0, 548, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(7, __pyx_n_s_args, __pyx_n_s_arg_count, __pyx_n_s_vec, __pyx_n_s_axis, __pyx_n_s_i, __pyx_n_s_axis_val, __pyx_n_s_axis_obj); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 546, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__28);
+  __Pyx_GIVEREF(__pyx_tuple__28);
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(0, 0, 7, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_with_axes, 546, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 546, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":653
+  /* "srctools/_vec.pyx":651
  * 
  *     @staticmethod
  *     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
  *         """Compute the bounding box for a set of points.
  * 
  */
-  __pyx_tuple__29 = PyTuple_Pack(9, __pyx_n_s_points, __pyx_n_s_bbox_min, __pyx_n_s_bbox_max, __pyx_n_s_sing_vec, __pyx_n_s_vec, __pyx_n_s_i, __pyx_n_s_points_iter, __pyx_n_s_first, __pyx_n_s_point); if (unlikely(!__pyx_tuple__29)) __PYX_ERR(0, 653, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__29);
-  __Pyx_GIVEREF(__pyx_tuple__29);
-  __pyx_codeobj__30 = (PyObject*)__Pyx_PyCode_New(0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__29, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_bbox, 653, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__30)) __PYX_ERR(0, 653, __pyx_L1_error)
+  __pyx_tuple__30 = PyTuple_Pack(9, __pyx_n_s_points, __pyx_n_s_bbox_min, __pyx_n_s_bbox_max, __pyx_n_s_sing_vec, __pyx_n_s_vec, __pyx_n_s_i, __pyx_n_s_points_iter, __pyx_n_s_first, __pyx_n_s_point); if (unlikely(!__pyx_tuple__30)) __PYX_ERR(0, 651, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__30);
+  __Pyx_GIVEREF(__pyx_tuple__30);
+  __pyx_codeobj__31 = (PyObject*)__Pyx_PyCode_New(0, 0, 9, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__30, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_bbox, 651, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__31)) __PYX_ERR(0, 651, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":1821
+  /* "srctools/_vec.pyx":1818
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args):             # <<<<<<<<<<<<<<
  *         """Create an Angle, given a number of axes and corresponding values.
  * 
  */
-  __pyx_tuple__31 = PyTuple_Pack(6, __pyx_n_s_args, __pyx_n_s_arg_count, __pyx_n_s_ang, __pyx_n_s_axis, __pyx_n_s_i, __pyx_n_s_axis_val); if (unlikely(!__pyx_tuple__31)) __PYX_ERR(0, 1821, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_tuple__31);
-  __Pyx_GIVEREF(__pyx_tuple__31);
-  __pyx_codeobj__32 = (PyObject*)__Pyx_PyCode_New(0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__31, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_with_axes, 1821, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__32)) __PYX_ERR(0, 1821, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(6, __pyx_n_s_args, __pyx_n_s_arg_count, __pyx_n_s_ang, __pyx_n_s_axis, __pyx_n_s_i, __pyx_n_s_axis_val); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 1818, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_tuple__32);
+  __Pyx_GIVEREF(__pyx_tuple__32);
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(0, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__vec_pyx, __pyx_n_s_with_axes, 1818, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 1818, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -27148,45 +27164,45 @@ static int __Pyx_modinit_type_init_code(void) {
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__Pyx_modinit_type_init_code", 0);
   /*--- Type init code ---*/
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_VecIter) < 0) __PYX_ERR(0, 289, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_VecIter) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_VecIter.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_8srctools_4_vec_VecIter.tp_dictoffset && __pyx_type_8srctools_4_vec_VecIter.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_8srctools_4_vec_VecIter.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_VecIter, (PyObject *)&__pyx_type_8srctools_4_vec_VecIter) < 0) __PYX_ERR(0, 289, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_VecIter, (PyObject *)&__pyx_type_8srctools_4_vec_VecIter) < 0) __PYX_ERR(0, 287, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_VecIter = &__pyx_type_8srctools_4_vec_VecIter;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_AngleIter) < 0) __PYX_ERR(0, 317, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_AngleIter) < 0) __PYX_ERR(0, 315, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_AngleIter.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_8srctools_4_vec_AngleIter.tp_dictoffset && __pyx_type_8srctools_4_vec_AngleIter.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_8srctools_4_vec_AngleIter.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_AngleIter, (PyObject *)&__pyx_type_8srctools_4_vec_AngleIter) < 0) __PYX_ERR(0, 317, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_AngleIter, (PyObject *)&__pyx_type_8srctools_4_vec_AngleIter) < 0) __PYX_ERR(0, 315, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_AngleIter = &__pyx_type_8srctools_4_vec_AngleIter;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_VecTransform) < 0) __PYX_ERR(0, 345, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_VecTransform) < 0) __PYX_ERR(0, 343, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_VecTransform.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_8srctools_4_vec_VecTransform.tp_dictoffset && __pyx_type_8srctools_4_vec_VecTransform.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_8srctools_4_vec_VecTransform.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_VecTransform, (PyObject *)&__pyx_type_8srctools_4_vec_VecTransform) < 0) __PYX_ERR(0, 345, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_VecTransform, (PyObject *)&__pyx_type_8srctools_4_vec_VecTransform) < 0) __PYX_ERR(0, 343, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_VecTransform = &__pyx_type_8srctools_4_vec_VecTransform;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_AngleTransform) < 0) __PYX_ERR(0, 373, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_AngleTransform) < 0) __PYX_ERR(0, 371, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_AngleTransform.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_8srctools_4_vec_AngleTransform.tp_dictoffset && __pyx_type_8srctools_4_vec_AngleTransform.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_8srctools_4_vec_AngleTransform.tp_getattro = __Pyx_PyObject_GenericGetAttrNoDict;
   }
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_AngleTransform, (PyObject *)&__pyx_type_8srctools_4_vec_AngleTransform) < 0) __PYX_ERR(0, 373, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_AngleTransform, (PyObject *)&__pyx_type_8srctools_4_vec_AngleTransform) < 0) __PYX_ERR(0, 371, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_AngleTransform = &__pyx_type_8srctools_4_vec_AngleTransform;
   __pyx_vtabptr_8srctools_4_vec_Vec = &__pyx_vtable_8srctools_4_vec_Vec;
   __pyx_vtable_8srctools_4_vec_Vec._mag_sq = (double (*)(struct __pyx_obj_8srctools_4_vec_Vec *))__pyx_f_8srctools_4_vec_3Vec__mag_sq;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 400, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 398, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_Vec.tp_print = 0;
   #endif
@@ -27195,7 +27211,7 @@ static int __Pyx_modinit_type_init_code(void) {
   }
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec___init__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec___init__.doc = __pyx_doc_8srctools_4_vec_3Vec___init__;
@@ -27205,7 +27221,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__abs__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__abs__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_28__abs__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_28__abs__.doc = __pyx_doc_8srctools_4_vec_3Vec_28__abs__;
@@ -27215,7 +27231,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__neg__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__neg__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_30__neg__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_30__neg__.doc = __pyx_doc_8srctools_4_vec_3Vec_30__neg__;
@@ -27225,7 +27241,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__pos__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__pos__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_32__pos__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_32__pos__.doc = __pyx_doc_8srctools_4_vec_3Vec_32__pos__;
@@ -27235,7 +27251,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__contains__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__contains__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_34__contains__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_34__contains__.doc = __pyx_doc_8srctools_4_vec_3Vec_34__contains__;
@@ -27245,7 +27261,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__add__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__add__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_36__add__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_36__add__.doc = __pyx_doc_8srctools_4_vec_3Vec_36__add__;
@@ -27255,7 +27271,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__sub__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__sub__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_38__sub__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_38__sub__.doc = __pyx_doc_8srctools_4_vec_3Vec_38__sub__;
@@ -27265,7 +27281,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__mul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__mul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_40__mul__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_40__mul__.doc = __pyx_doc_8srctools_4_vec_3Vec_40__mul__;
@@ -27275,7 +27291,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__truediv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__truediv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_42__truediv__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_42__truediv__.doc = __pyx_doc_8srctools_4_vec_3Vec_42__truediv__;
@@ -27285,7 +27301,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__floordiv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__floordiv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_44__floordiv__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_44__floordiv__.doc = __pyx_doc_8srctools_4_vec_3Vec_44__floordiv__;
@@ -27295,7 +27311,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__mod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__mod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_46__mod__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_46__mod__.doc = __pyx_doc_8srctools_4_vec_3Vec_46__mod__;
@@ -27305,7 +27321,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__iadd__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__iadd__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_50__iadd__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_50__iadd__.doc = __pyx_doc_8srctools_4_vec_3Vec_50__iadd__;
@@ -27315,7 +27331,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__isub__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__isub__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_52__isub__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_52__isub__.doc = __pyx_doc_8srctools_4_vec_3Vec_52__isub__;
@@ -27325,7 +27341,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_54__imul__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_54__imul__.doc = __pyx_doc_8srctools_4_vec_3Vec_54__imul__;
@@ -27335,7 +27351,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__itruediv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__itruediv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_56__itruediv__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_56__itruediv__.doc = __pyx_doc_8srctools_4_vec_3Vec_56__itruediv__;
@@ -27345,7 +27361,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__ifloordiv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__ifloordiv__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_58__ifloordiv__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_58__ifloordiv__.doc = __pyx_doc_8srctools_4_vec_3Vec_58__ifloordiv__;
@@ -27355,7 +27371,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_60__imod__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_60__imod__.doc = __pyx_doc_8srctools_4_vec_3Vec_60__imod__;
@@ -27366,7 +27382,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #if PY_VERSION_HEX >= 0x03050000
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imatmul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__imatmul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_62__imatmul__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_62__imatmul__.doc = __pyx_doc_8srctools_4_vec_3Vec_62__imatmul__;
@@ -27377,7 +27393,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__divmod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__divmod__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_64__divmod__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_64__divmod__.doc = __pyx_doc_8srctools_4_vec_3Vec_64__divmod__;
@@ -27387,7 +27403,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__len__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__len__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_68__len__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_68__len__.doc = __pyx_doc_8srctools_4_vec_3Vec_68__len__;
@@ -27397,7 +27413,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__str__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__str__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_96__str__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_96__str__.doc = __pyx_doc_8srctools_4_vec_3Vec_96__str__;
@@ -27407,7 +27423,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__repr__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__repr__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_98__repr__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_98__repr__.doc = __pyx_doc_8srctools_4_vec_3Vec_98__repr__;
@@ -27417,7 +27433,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__getitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__getitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_102__getitem__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_102__getitem__.doc = __pyx_doc_8srctools_4_vec_3Vec_102__getitem__;
@@ -27427,7 +27443,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__setitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 400, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Vec, "__setitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 398, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_3Vec_104__setitem__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_3Vec_104__setitem__.doc = __pyx_doc_8srctools_4_vec_3Vec_104__setitem__;
@@ -27435,10 +27451,10 @@ static int __Pyx_modinit_type_init_code(void) {
     }
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_type_8srctools_4_vec_Vec.tp_dict, __pyx_vtabptr_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 400, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Vec_2, (PyObject *)&__pyx_type_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 400, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_8srctools_4_vec_Vec.tp_dict, __pyx_vtabptr_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 398, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Vec_2, (PyObject *)&__pyx_type_8srctools_4_vec_Vec) < 0) __PYX_ERR(0, 398, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_Vec = &__pyx_type_8srctools_4_vec_Vec;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Matrix) < 0) __PYX_ERR(0, 1469, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Matrix) < 0) __PYX_ERR(0, 1467, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_Matrix.tp_print = 0;
   #endif
@@ -27447,7 +27463,7 @@ static int __Pyx_modinit_type_init_code(void) {
   }
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Matrix, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1469, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Matrix, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1467, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_6Matrix___init__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_6Matrix___init__.doc = __pyx_doc_8srctools_4_vec_6Matrix___init__;
@@ -27458,7 +27474,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #if PY_VERSION_HEX >= 0x03050000
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Matrix, "__matmul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1469, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Matrix, "__matmul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1467, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_6Matrix_28__matmul__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_6Matrix_28__matmul__.doc = __pyx_doc_8srctools_4_vec_6Matrix_28__matmul__;
@@ -27467,9 +27483,9 @@ static int __Pyx_modinit_type_init_code(void) {
   }
   #endif
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Matrix_2, (PyObject *)&__pyx_type_8srctools_4_vec_Matrix) < 0) __PYX_ERR(0, 1469, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Matrix_2, (PyObject *)&__pyx_type_8srctools_4_vec_Matrix) < 0) __PYX_ERR(0, 1467, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_Matrix = &__pyx_type_8srctools_4_vec_Matrix;
-  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Angle) < 0) __PYX_ERR(0, 1687, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_4_vec_Angle) < 0) __PYX_ERR(0, 1685, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_4_vec_Angle.tp_print = 0;
   #endif
@@ -27478,7 +27494,7 @@ static int __Pyx_modinit_type_init_code(void) {
   }
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__init__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle___init__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle___init__.doc = __pyx_doc_8srctools_4_vec_5Angle___init__;
@@ -27488,7 +27504,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__str__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__str__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle_6__str__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle_6__str__.doc = __pyx_doc_8srctools_4_vec_5Angle_6__str__;
@@ -27498,7 +27514,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__iter__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__iter__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle_12__iter__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle_12__iter__.doc = __pyx_doc_8srctools_4_vec_5Angle_12__iter__;
@@ -27508,7 +27524,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__getitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__getitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle_18__getitem__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle_18__getitem__.doc = __pyx_doc_8srctools_4_vec_5Angle_18__getitem__;
@@ -27518,7 +27534,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__setitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__setitem__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle_20__setitem__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle_20__setitem__.doc = __pyx_doc_8srctools_4_vec_5Angle_20__setitem__;
@@ -27528,7 +27544,7 @@ static int __Pyx_modinit_type_init_code(void) {
   #endif
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__mul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1687, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_4_vec_Angle, "__mul__"); if (unlikely(!wrapper)) __PYX_ERR(0, 1685, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_4_vec_5Angle_22__mul__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_4_vec_5Angle_22__mul__.doc = __pyx_doc_8srctools_4_vec_5Angle_22__mul__;
@@ -27536,7 +27552,7 @@ static int __Pyx_modinit_type_init_code(void) {
     }
   }
   #endif
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Angle_2, (PyObject *)&__pyx_type_8srctools_4_vec_Angle) < 0) __PYX_ERR(0, 1687, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_Angle_2, (PyObject *)&__pyx_type_8srctools_4_vec_Angle) < 0) __PYX_ERR(0, 1685, __pyx_L1_error)
   __pyx_ptype_8srctools_4_vec_Angle = &__pyx_type_8srctools_4_vec_Angle;
   __Pyx_RefNannyFinishContext();
   return 0;
@@ -27848,7 +27864,7 @@ if (!__Pyx_RefNanny) {
  * 
  * 
  */
-    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__18, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+    __pyx_t_2 = __Pyx_PyObject_Call(__pyx_builtin_RuntimeError, __pyx_tuple__19, NULL); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
     __Pyx_Raise(__pyx_t_2, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
@@ -27863,482 +27879,482 @@ if (!__Pyx_RefNanny) {
  */
   }
 
-  /* "srctools/_vec.pyx":109
+  /* "srctools/_vec.pyx":115
  * 
  * 
  * def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):             # <<<<<<<<<<<<<<
  *     """Convert a string in the form '(4 6 -4)' into a set of floats.
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_1parse_vec_str, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 109, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_1parse_vec_str, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_vec_str, __pyx_t_2) < 0) __PYX_ERR(0, 109, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_parse_vec_str, __pyx_t_2) < 0) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":407
+  /* "srctools/_vec.pyx":405
  *     # Various constants.
  *     INV_AXIS = {
  *         'x': ('y', 'z'),             # <<<<<<<<<<<<<<
  *         'y': ('x', 'z'),
  *         'z': ('x', 'y'),
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 407, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(9); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 405, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_x, __pyx_tuple__21) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_x, __pyx_tuple__22) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":408
+  /* "srctools/_vec.pyx":406
  *     INV_AXIS = {
  *         'x': ('y', 'z'),
  *         'y': ('x', 'z'),             # <<<<<<<<<<<<<<
  *         'z': ('x', 'y'),
  * 
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_y, __pyx_tuple__22) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_y, __pyx_tuple__23) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":409
+  /* "srctools/_vec.pyx":407
  *         'x': ('y', 'z'),
  *         'y': ('x', 'z'),
  *         'z': ('x', 'y'),             # <<<<<<<<<<<<<<
  * 
  *         ('y', 'z'): 'x',
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_z, __pyx_tuple__23) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_u_z, __pyx_tuple__24) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":411
+  /* "srctools/_vec.pyx":409
  *         'z': ('x', 'y'),
  * 
  *         ('y', 'z'): 'x',             # <<<<<<<<<<<<<<
  *         ('x', 'z'): 'y',
  *         ('x', 'y'): 'z',
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__21, __pyx_n_u_x) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__22, __pyx_n_u_x) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":412
+  /* "srctools/_vec.pyx":410
  * 
  *         ('y', 'z'): 'x',
  *         ('x', 'z'): 'y',             # <<<<<<<<<<<<<<
  *         ('x', 'y'): 'z',
  * 
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__22, __pyx_n_u_y) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__23, __pyx_n_u_y) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":413
+  /* "srctools/_vec.pyx":411
  *         ('y', 'z'): 'x',
  *         ('x', 'z'): 'y',
  *         ('x', 'y'): 'z',             # <<<<<<<<<<<<<<
  * 
  *         ('z', 'y'): 'x',
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__23, __pyx_n_u_z) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__24, __pyx_n_u_z) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":415
+  /* "srctools/_vec.pyx":413
  *         ('x', 'y'): 'z',
  * 
  *         ('z', 'y'): 'x',             # <<<<<<<<<<<<<<
  *         ('z', 'x'): 'y',
  *         ('y', 'x'): 'z',
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__24, __pyx_n_u_x) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__25, __pyx_n_u_x) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":416
+  /* "srctools/_vec.pyx":414
  * 
  *         ('z', 'y'): 'x',
  *         ('z', 'x'): 'y',             # <<<<<<<<<<<<<<
  *         ('y', 'x'): 'z',
  *     }
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__25, __pyx_n_u_y) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__26, __pyx_n_u_y) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
 
-  /* "srctools/_vec.pyx":417
+  /* "srctools/_vec.pyx":415
  *         ('z', 'y'): 'x',
  *         ('z', 'x'): 'y',
  *         ('y', 'x'): 'z',             # <<<<<<<<<<<<<<
  *     }
  *     # Vectors pointing in all cardinal directions.
  */
-  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__26, __pyx_n_u_z) < 0) __PYX_ERR(0, 407, __pyx_L1_error)
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_INV_AXIS, __pyx_t_2) < 0) __PYX_ERR(0, 406, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_tuple__27, __pyx_n_u_z) < 0) __PYX_ERR(0, 405, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_INV_AXIS, __pyx_t_2) < 0) __PYX_ERR(0, 404, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":421
+  /* "srctools/_vec.pyx":419
  *     # Vectors pointing in all cardinal directions.
  *     # Tuple.__new__() can't be unpacked...
  *     N = north = y_pos = _make_tuple(0, 1, 0)             # <<<<<<<<<<<<<<
  *     S = south = y_neg = _make_tuple(0, -1, 0)
  *     E = east = x_pos = _make_tuple(1, 0, 0)
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 421, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_1, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 419, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_N, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_N, __pyx_t_2) < 0) __PYX_ERR(0, 419, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_north, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_north, __pyx_t_2) < 0) __PYX_ERR(0, 419, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_y_pos, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_y_pos, __pyx_t_2) < 0) __PYX_ERR(0, 419, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":422
+  /* "srctools/_vec.pyx":420
  *     # Tuple.__new__() can't be unpacked...
  *     N = north = y_pos = _make_tuple(0, 1, 0)
  *     S = south = y_neg = _make_tuple(0, -1, 0)             # <<<<<<<<<<<<<<
  *     E = east = x_pos = _make_tuple(1, 0, 0)
  *     W = west = x_neg = _make_tuple(-1, 0, 0)
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_neg_1, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 422, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_neg_1, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 420, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_S, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_S, __pyx_t_2) < 0) __PYX_ERR(0, 420, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_south, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_south, __pyx_t_2) < 0) __PYX_ERR(0, 420, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_y_neg, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_y_neg, __pyx_t_2) < 0) __PYX_ERR(0, 420, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":423
+  /* "srctools/_vec.pyx":421
  *     N = north = y_pos = _make_tuple(0, 1, 0)
  *     S = south = y_neg = _make_tuple(0, -1, 0)
  *     E = east = x_pos = _make_tuple(1, 0, 0)             # <<<<<<<<<<<<<<
  *     W = west = x_neg = _make_tuple(-1, 0, 0)
  *     T = top = z_pos = _make_tuple(0, 0, 1)
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_1, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 423, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_1, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 421, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_E, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_E, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_east, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_east, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_x_pos, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_x_pos, __pyx_t_2) < 0) __PYX_ERR(0, 421, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":424
+  /* "srctools/_vec.pyx":422
  *     S = south = y_neg = _make_tuple(0, -1, 0)
  *     E = east = x_pos = _make_tuple(1, 0, 0)
  *     W = west = x_neg = _make_tuple(-1, 0, 0)             # <<<<<<<<<<<<<<
  *     T = top = z_pos = _make_tuple(0, 0, 1)
  *     B = bottom = z_neg = _make_tuple(0, 0, -1)
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_neg_1, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 424, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_neg_1, __pyx_int_0, __pyx_int_0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 422, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_W, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_W, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_west, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_west, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_x_neg, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_x_neg, __pyx_t_2) < 0) __PYX_ERR(0, 422, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":425
+  /* "srctools/_vec.pyx":423
  *     E = east = x_pos = _make_tuple(1, 0, 0)
  *     W = west = x_neg = _make_tuple(-1, 0, 0)
  *     T = top = z_pos = _make_tuple(0, 0, 1)             # <<<<<<<<<<<<<<
  *     B = bottom = z_neg = _make_tuple(0, 0, -1)
  * 
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_0, __pyx_int_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 425, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_0, __pyx_int_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 423, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_T, __pyx_t_2) < 0) __PYX_ERR(0, 425, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_T, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_top, __pyx_t_2) < 0) __PYX_ERR(0, 425, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_top, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_z_pos, __pyx_t_2) < 0) __PYX_ERR(0, 425, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_z_pos, __pyx_t_2) < 0) __PYX_ERR(0, 423, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":426
+  /* "srctools/_vec.pyx":424
  *     W = west = x_neg = _make_tuple(-1, 0, 0)
  *     T = top = z_pos = _make_tuple(0, 0, 1)
  *     B = bottom = z_neg = _make_tuple(0, 0, -1)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_0, __pyx_int_neg_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 426, __pyx_L1_error)
+  __pyx_t_2 = __pyx_f_8srctools_4_vec__make_tuple(__pyx_int_0, __pyx_int_0, __pyx_int_neg_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 424, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_B, __pyx_t_2) < 0) __PYX_ERR(0, 426, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_B, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bottom, __pyx_t_2) < 0) __PYX_ERR(0, 426, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bottom, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_z_neg, __pyx_t_2) < 0) __PYX_ERR(0, 426, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_z_neg, __pyx_t_2) < 0) __PYX_ERR(0, 424, __pyx_L1_error)
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_vec.pyx":533
+  /* "srctools/_vec.pyx":531
  * 
  *     @classmethod
  *     def from_str(cls, value, double x=0, double y=0, double z=0):             # <<<<<<<<<<<<<<
  *         """Convert a string in the form '(4 6 -4)' into a Vector.
  * 
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_from_str); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 533, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_from_str); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 531, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_vec.pyx":532
+  /* "srctools/_vec.pyx":530
  *         return unpickle_func, (self.val.x, self.val.y, self.val.z)
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_str(cls, value, double x=0, double y=0, double z=0):
  *         """Convert a string in the form '(4 6 -4)' into a Vector.
  */
-  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 532, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 530, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_from_str, __pyx_t_1) < 0) __PYX_ERR(0, 533, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_from_str, __pyx_t_1) < 0) __PYX_ERR(0, 531, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":548
+  /* "srctools/_vec.pyx":546
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args) -> 'Vec':             # <<<<<<<<<<<<<<
  *         """Create a Vector, given a number of axes and corresponding values.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_3Vec_11with_axes, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 548, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_3Vec_11with_axes, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 546, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_with_axes, __pyx_t_1) < 0) __PYX_ERR(0, 548, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_with_axes, __pyx_t_1) < 0) __PYX_ERR(0, 546, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":546
+  /* "srctools/_vec.pyx":544
  *         return vec
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     @cython.boundscheck(False)
  *     def with_axes(*args) -> 'Vec':
  */
-  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_with_axes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 548, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_with_axes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 546, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 546, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 544, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_with_axes, __pyx_t_2) < 0) __PYX_ERR(0, 548, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_with_axes, __pyx_t_2) < 0) __PYX_ERR(0, 546, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":653
+  /* "srctools/_vec.pyx":651
  * 
  *     @staticmethod
  *     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':             # <<<<<<<<<<<<<<
  *         """Compute the bounding box for a set of points.
  * 
  */
-  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_3Vec_17bbox, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 653, __pyx_L1_error)
+  __pyx_t_2 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_3Vec_17bbox, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 651, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bbox, __pyx_t_2) < 0) __PYX_ERR(0, 653, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bbox, __pyx_t_2) < 0) __PYX_ERR(0, 651, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":652
+  /* "srctools/_vec.pyx":650
  *         return self
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':
  *         """Compute the bounding box for a set of points.
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_bbox); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 653, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Vec, __pyx_n_s_bbox); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 651, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 652, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 650, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bbox, __pyx_t_1) < 0) __PYX_ERR(0, 653, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Vec->tp_dict, __pyx_n_s_bbox, __pyx_t_1) < 0) __PYX_ERR(0, 651, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Vec);
 
-  /* "srctools/_vec.pyx":1500
+  /* "srctools/_vec.pyx":1498
  * 
  *     @classmethod
  *     def from_pitch(cls, double pitch):             # <<<<<<<<<<<<<<
  *         """Return the matrix representing a pitch rotation.
  * 
  */
-  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_pitch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1500, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_pitch); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1498, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "srctools/_vec.pyx":1499
+  /* "srctools/_vec.pyx":1497
  *         return copy
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_pitch(cls, double pitch):
  *         """Return the matrix representing a pitch rotation.
  */
-  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1499, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1497, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_pitch, __pyx_t_2) < 0) __PYX_ERR(0, 1500, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_pitch, __pyx_t_2) < 0) __PYX_ERR(0, 1498, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Matrix);
 
-  /* "srctools/_vec.pyx":1518
+  /* "srctools/_vec.pyx":1516
  * 
  *     @classmethod
  *     def from_yaw(cls, double yaw):             # <<<<<<<<<<<<<<
  *         """Return the matrix representing a yaw rotation.
  * 
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_yaw); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1518, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_yaw); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1516, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_vec.pyx":1517
+  /* "srctools/_vec.pyx":1515
  *         return rot
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_yaw(cls, double yaw):
  *         """Return the matrix representing a yaw rotation.
  */
-  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1517, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1515, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_yaw, __pyx_t_1) < 0) __PYX_ERR(0, 1518, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_yaw, __pyx_t_1) < 0) __PYX_ERR(0, 1516, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Matrix);
 
-  /* "srctools/_vec.pyx":1535
+  /* "srctools/_vec.pyx":1533
  * 
  *     @classmethod
  *     def from_roll(cls, double roll):             # <<<<<<<<<<<<<<
  *         """Return the matrix representing a roll rotation.
  * 
  */
-  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_roll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1535, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_roll); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1533, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "srctools/_vec.pyx":1534
+  /* "srctools/_vec.pyx":1532
  *         return rot
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_roll(cls, double roll):
  *         """Return the matrix representing a roll rotation.
  */
-  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1534, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1532, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_roll, __pyx_t_2) < 0) __PYX_ERR(0, 1535, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_roll, __pyx_t_2) < 0) __PYX_ERR(0, 1533, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Matrix);
 
-  /* "srctools/_vec.pyx":1553
+  /* "srctools/_vec.pyx":1551
  * 
  *     @classmethod
  *     def from_angle(cls, angle):             # <<<<<<<<<<<<<<
  *         """Return the rotation representing an Euler angle."""
  *         cdef Matrix rot = Matrix.__new__(cls)
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_angle); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1553, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_angle); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1551, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_vec.pyx":1552
+  /* "srctools/_vec.pyx":1550
  *         return rot
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_angle(cls, angle):
  *         """Return the rotation representing an Euler angle."""
  */
-  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1552, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1550, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_angle, __pyx_t_1) < 0) __PYX_ERR(0, 1553, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_angle, __pyx_t_1) < 0) __PYX_ERR(0, 1551, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Matrix);
 
-  /* "srctools/_vec.pyx":1590
+  /* "srctools/_vec.pyx":1588
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
  *         cls, *,
  *         x: Vec=None,
  */
-  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_basis); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1590, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Matrix, __pyx_n_s_from_basis); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1588, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "srctools/_vec.pyx":1589
+  /* "srctools/_vec.pyx":1587
  *         return rot
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_basis(
  *         cls, *,
  */
-  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1589, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_Method_ClassMethod(__pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1587, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_basis, __pyx_t_2) < 0) __PYX_ERR(0, 1590, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix->tp_dict, __pyx_n_s_from_basis, __pyx_t_2) < 0) __PYX_ERR(0, 1588, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Matrix);
 
-  /* "srctools/_vec.pyx":1758
+  /* "srctools/_vec.pyx":1755
  * 
  *     @classmethod
  *     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):             # <<<<<<<<<<<<<<
  *         """Convert a string in the form '(4 6 -4)' into an Angle.
  * 
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_from_str); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1758, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_from_str); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1755, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_vec.pyx":1757
+  /* "srctools/_vec.pyx":1754
  *         return _angle(self.val.x, self.val.y, self.val.z)
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
  *         """Convert a string in the form '(4 6 -4)' into an Angle.
  */
-  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1757, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1754, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_from_str, __pyx_t_1) < 0) __PYX_ERR(0, 1758, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_from_str, __pyx_t_1) < 0) __PYX_ERR(0, 1755, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Angle);
 
-  /* "srctools/_vec.pyx":1821
+  /* "srctools/_vec.pyx":1818
  *     @staticmethod
  *     @cython.boundscheck(False)
  *     def with_axes(*args):             # <<<<<<<<<<<<<<
  *         """Create an Angle, given a number of axes and corresponding values.
  * 
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_5Angle_15with_axes, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1821, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_4_vec_5Angle_15with_axes, NULL, __pyx_n_s_srctools__vec); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1818, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_with_axes, __pyx_t_1) < 0) __PYX_ERR(0, 1821, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_with_axes, __pyx_t_1) < 0) __PYX_ERR(0, 1818, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Angle);
 
-  /* "srctools/_vec.pyx":1819
+  /* "srctools/_vec.pyx":1816
  * 
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     @cython.boundscheck(False)
  *     def with_axes(*args):
  */
-  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_with_axes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1821, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_1, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_with_axes); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1818, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1819, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_CallOneArg(__pyx_builtin_staticmethod, __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1816, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_with_axes, __pyx_t_2) < 0) __PYX_ERR(0, 1821, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_with_axes, __pyx_t_2) < 0) __PYX_ERR(0, 1818, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Angle);
 
-  /* "srctools/_vec.pyx":1864
+  /* "srctools/_vec.pyx":1861
  * 
  *     @classmethod
  *     def from_basis(             # <<<<<<<<<<<<<<
  *         cls, *,
  *         x: Vec=None,
  */
-  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_from_basis); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1864, __pyx_L1_error)
+  __Pyx_GetNameInClass(__pyx_t_2, (PyObject *)__pyx_ptype_8srctools_4_vec_Angle, __pyx_n_s_from_basis); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1861, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_vec.pyx":1863
+  /* "srctools/_vec.pyx":1860
  *         return ang
  * 
  *     @classmethod             # <<<<<<<<<<<<<<
  *     def from_basis(
  *         cls, *,
  */
-  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1863, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_Method_ClassMethod(__pyx_t_2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1860, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_from_basis, __pyx_t_1) < 0) __PYX_ERR(0, 1864, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_4_vec_Angle->tp_dict, __pyx_n_s_from_basis, __pyx_t_1) < 0) __PYX_ERR(0, 1861, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_4_vec_Angle);
 
@@ -28442,6 +28458,13 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_Call(PyObject *func, PyObject *arg
     return result;
 }
 #endif
+
+/* None */
+static CYTHON_INLINE double __Pyx_mod_double(double a, double b) {
+    double r = fmod(a, b);
+    r += ((r != 0) & ((r < 0) ^ (b < 0))) * b;
+    return r;
+}
 
 /* RaiseTooManyValuesToUnpack */
 static CYTHON_INLINE void __Pyx_RaiseTooManyValuesError(Py_ssize_t expected) {
@@ -29226,13 +29249,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObjec
     return result;
 }
 #endif
-
-/* None */
-static CYTHON_INLINE double __Pyx_mod_double(double a, double b) {
-    double r = fmod(a, b);
-    r += ((r != 0) & ((r < 0) ^ (b < 0))) * b;
-    return r;
-}
 
 /* ArgTypeTest */
 static int __Pyx__ArgTypeTest(PyObject *obj, PyTypeObject *type, const char *name, int exact)
