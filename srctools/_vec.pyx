@@ -72,7 +72,10 @@ cdef inline object _make_tuple(x, y, z):
 cdef inline double norm_ang(double val):
     """Normalise an angle to 0-360."""
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
-    return val % 360.0 % 360.0
+    val = math.fmod(val, 360.0)
+    if val < 0:
+        val += 360.0
+    return val
 
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
@@ -785,9 +788,9 @@ cdef class Vec:
         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
 
         return _angle(
-            rad_2_deg * math.atan2(-self.val.z, horiz_dist),
-            (math.atan2(self.val.y, self.val.x) * rad_2_deg) % 360.0,
-            roll,
+            norm_ang(rad_2_deg * math.atan2(-self.val.z, horiz_dist)),
+            norm_ang(math.atan2(self.val.y, self.val.x) * rad_2_deg),
+            norm_ang(roll),
         )
 
     def rotation_around(self, double rot: float=90) -> 'Vec':
@@ -1384,7 +1387,8 @@ cdef class Vec:
         This accepts either 0,1,2 or 'x','y','z' to read values.
         Useful in conjunction with a loop to apply commands to all values.
         """
-        cdef Py_UCS4 ind
+        cdef int ind
+        cdef Py_UCS4 chr
         if isinstance(ind_obj, int):
             try:
                 ind = ind_obj
@@ -1400,15 +1404,15 @@ cdef class Vec:
             raise KeyError(f'Invalid axis: {ind!r}' '!')
         else:
             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                ind = (<str>ind_obj)[0]
+                chr = (<str>ind_obj)[0]
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
-            if ind == "x":
+            if chr == "x":
                 return self.val.x
-            elif ind == "y":
+            elif chr == "y":
                 return self.val.y
-            elif ind == "z":
+            elif chr == "z":
                 return self.val.z
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
@@ -1419,8 +1423,8 @@ cdef class Vec:
         This accepts either 0,1,2 or 'x','y','z' to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
-        cdef Py_UCS4 ind
-
+        cdef int ind
+        cdef Py_UCS4 chr
         if isinstance(ind_obj, int):
             try:
                 ind = ind_obj
@@ -1439,15 +1443,15 @@ cdef class Vec:
             raise KeyError(f'Invalid axis: {ind!r}')
         else:
             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                ind = (<str>ind_obj)[0]
+                chr = (<str>ind_obj)[0]
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
-            if ind == "x":
+            if chr == "x":
                 self.val.x = val
-            elif ind == "y":
+            elif chr == "y":
                 self.val.y = val
-            elif ind == "z":
+            elif chr == "z":
                 self.val.z = val
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
@@ -1567,6 +1571,30 @@ cdef class Matrix:
     def up(self):
         """Return a normalised vector pointing in the +Z direction."""
         return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])
+
+    def __getitem__(self, item):
+        """Retrieve an individual matrix value by x, y position (0-2)."""
+        cdef int x, y
+        try:
+            x, y = item
+        except (ValueError, TypeError, OverflowError):
+            raise KeyError(f'Invalid coordinate {item!r}' '!')
+        if 0 <= x < 3 and 0 <= y < 3:
+            return self.mat[x][y]
+        else:
+            raise KeyError(f'Invalid coordinate {x}, {y}' '!')
+
+    def __setitem__(self, item, double value):
+        """Set an individual matrix value by x, y position (0-2)."""
+        cdef int x, y
+        try:
+            x, y = item
+        except (ValueError, TypeError, OverflowError):
+            raise KeyError(f'Invalid coordinate {item!r}' '!')
+        if 0 <= x < 3 and 0 <= y < 3:
+            self.mat[x][y] = value
+        else:
+            raise KeyError(f'Invalid coordinate {x}, {y}' '!')
 
     def to_angle(self):
         """Return an Euler angle replicating this rotation."""

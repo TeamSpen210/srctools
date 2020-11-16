@@ -960,6 +960,12 @@ class Vec:
         yield mat
         mat._vec_rot(self)
 
+_IND_TO_SLOT = {
+    (x, y): f'_{chr(ord("a")+x)}{chr(ord("a")+y)}'
+    for x in (0, 1, 2)
+    for y in (0, 1, 2)
+}
+
 
 class Matrix:
     """Represents a matrix via a transformation matrix."""
@@ -1013,11 +1019,11 @@ class Matrix:
         cos = math.cos(rad_pitch)
         sin = math.sin(rad_pitch)
 
-        rot = cls.__new__(cls)
+        rot: Matrix = cls.__new__(cls)
 
-        rot.aa, rot.ab, rot.ac = cos, 0.0, -sin
-        rot.ba, rot.bb, rot.bc = 0.0, 1.0, 0.0
-        rot.ca, rot.cb, rot.cc = sin, 0.0, cos
+        rot._aa, rot._ab, rot._ac = cos, 0.0, -sin
+        rot._ba, rot._bb, rot._bc = 0.0, 1.0, 0.0
+        rot._ca, rot._cb, rot._cc = sin, 0.0, cos
 
         return rot
 
@@ -1030,11 +1036,11 @@ class Matrix:
         sin = math.sin(rad_yaw)
         cos = math.cos(rad_yaw)
 
-        rot = cls.__new__(cls)
+        rot: Matrix = cls.__new__(cls)
 
-        rot.aa, rot.ab, rot.ac = cos, sin, 0.0
-        rot.ba, rot.bb, rot.bc = -sin, cos, 0.0
-        rot.ca, rot.cb, rot.cc = 0.0, 0.0, 1.0
+        rot._aa, rot._ab, rot._ac = cos, sin, 0.0
+        rot._ba, rot._bb, rot._bc = -sin, cos, 0.0
+        rot._ca, rot._cb, rot._cc = 0.0, 0.0, 1.0
 
         return rot
         
@@ -1048,11 +1054,11 @@ class Matrix:
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        rot = cls.__new__(cls)
+        rot: Matrix = cls.__new__(cls)
 
-        rot.aa, rot.ab, rot.ac = 1.0, 0.0, 0.0
-        rot.ba, rot.bb, rot.bc = 0.0, cos_r, sin_r
-        rot.ca, rot.cb, rot.cc = 0.0, -sin_r, cos_r
+        rot._aa, rot._ab, rot._ac = 1.0, 0.0, 0.0
+        rot._ba, rot._bb, rot._bc = 0.0, cos_r, sin_r
+        rot._ca, rot._cb, rot._cc = 0.0, -sin_r, cos_r
 
         return rot
         
@@ -1100,6 +1106,14 @@ class Matrix:
     def up(self) -> 'Vec':
         """Return a normalised vector pointing in the +Z direction."""
         return Py_Vec(self._ca, self._cb, self._cc)
+
+    def __getitem__(self, item: Tuple[int, int]) -> float:
+        """Retrieve an individual matrix value by x, y position (0-2)."""
+        return getattr(self, _IND_TO_SLOT[item])
+
+    def __setitem__(self, item: Tuple[int, int], value: float) -> None:
+        """Set an individual matrix value by x, y position (0-2)."""
+        setattr(self, _IND_TO_SLOT[item], value)
 
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
