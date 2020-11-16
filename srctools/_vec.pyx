@@ -61,6 +61,7 @@ cdef object _make_tuple(double x, double y, double z):
     (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
     return tup
 
+
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
 
@@ -174,16 +175,6 @@ cdef inline unsigned char _conv_angles(
         except AttributeError:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
-
-
-cdef inline Py_UCS4 _conv_axis(object axis_obj) except -1:
-    """Convert an x/y/z string to the matching character, or raise KeyError."""
-    cdef Py_UCS4 let
-    if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
-        let = (<str>axis_obj)[0]
-        if let in ('x', 'y', 'z'):
-            return let
-    raise KeyError(f'Invalid axis {axis_obj!r}' '!')
 
 
 cdef inline double _vec_mag(vec_t *vec):
@@ -341,7 +332,6 @@ cdef class AngleIter:
             return ret
 
 
-# Lots of temporaries are expected.
 @cython.freelist(16)
 @cython.final
 cdef class Vec:
@@ -515,7 +505,11 @@ cdef class Vec:
         cdef unsigned char i
         for i in range(0, arg_count, 2):
             axis_val = args[i+1]
-            axis = _conv_axis(args[i])
+            axis_obj = args[i]
+            if isinstance(axis_obj, str) and len(<str>axis_obj) == 1:
+                axis = (<str>axis_obj)[0]
+            else:
+                raise KeyError(f'Invalid axis {axis_obj!r}' '!')
             if axis == 'x':
                 if isinstance(axis_val, Vec):
                     vec.val.x = (<Vec>axis_val).val.x
@@ -531,6 +525,8 @@ cdef class Vec:
                     vec.val.z = (<Vec>axis_val).val.z
                 else:
                     vec.val.z = axis_val
+            else:
+                raise KeyError(f'Invalid axis {axis_obj!r}' '!')
 
         return vec
 
@@ -665,7 +661,6 @@ cdef class Vec:
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
-
         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
             return 'x'
         if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
@@ -673,20 +668,26 @@ cdef class Vec:
         if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
             return 'z'
         raise ValueError(
-            f'({self.val.x}, {self.val.y}, {self.val.z}) is '
+            f'({self.val.x:g}, {self.val.y:g}, {self.val.z:g}) is '
             'not an on-axis vector!'
         )
 
     @cython.boundscheck(False)
     def other_axes(self, object axis) -> 'Tuple[float, float]':
         """Get the values for the other two axes."""
-        cdef char axis_chr = _conv_axis(axis)
+        cdef char axis_chr
+        if isinstance(axis, str) and len(<str>axis) == 1:
+            axis_chr = (<str>axis)[0]
+        else:
+            raise KeyError(f'Invalid axis {axis!r}' '!')
         if axis_chr == b'x':
             return self.val.y, self.val.z
         elif axis_chr == b'y':
             return self.val.x, self.val.z
         elif axis_chr == b'z':
             return self.val.x, self.val.y
+        else:
+            raise KeyError(f'Invalid axis {axis!r}' '!')
 
     def as_tuple(self) -> 'Tuple[float, float, float]':
         """Return the Vector as a tuple."""
@@ -1318,18 +1319,24 @@ cdef class Vec:
                     return self.val.y
                 elif ind == 2:
                     return self.val.z
-            raise KeyError(f'Invalid axis: {ind!r}')
+            raise KeyError(f'Invalid axis: {ind!r}' '!')
         else:
-            ind = _conv_axis(ind_obj)
+            if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
+                ind = (<str>ind_obj)[0]
+            else:
+                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+
             if ind == "x":
                 return self.val.x
             elif ind == "y":
                 return self.val.y
             elif ind == "z":
                 return self.val.z
+            else:
+                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
 
-    def __setitem__(self, ind_obj: 'Union[str, int]', double val: float) -> None:
+    def __setitem__(self, ind_obj, double val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to edit values.
@@ -1354,13 +1361,19 @@ cdef class Vec:
                     return
             raise KeyError(f'Invalid axis: {ind!r}')
         else:
-            ind = _conv_axis(ind_obj)
+            if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
+                ind = (<str>ind_obj)[0]
+            else:
+                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+
             if ind == "x":
                 self.val.x = val
             elif ind == "y":
                 self.val.y = val
             elif ind == "z":
                 self.val.z = val
+            else:
+                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
 
     # @contextlib.contextmanager
@@ -1376,7 +1389,6 @@ cdef class Vec:
     #     mat._vec_rot(self)
 
 
-# Lots of temporaries are expected.
 @cython.freelist(16)
 @cython.final
 cdef class Matrix:
@@ -1617,9 +1629,9 @@ cdef class Angle:
         """
         cdef tuple tup
         if isinstance(pitch, float) or isinstance(pitch, int):
-            self.val.x = pitch % 360 % 360.0
-            self.val.y = yaw % 360 % 360.0
-            self.val.z = roll % 360 % 360.0
+            self.val.x = <double>pitch % 360 % 360.0
+            self.val.y = <double>yaw % 360 % 360.0
+            self.val.z = <double>roll % 360 % 360.0
         elif isinstance(pitch, Angle):
             self.val.x = (<Angle>pitch).val.x
             self.val.y = (<Angle>pitch).val.y
@@ -1627,17 +1639,17 @@ cdef class Angle:
         elif isinstance(pitch, tuple):
             tup = <tuple>pitch
             if len(tup) >= 1:
-                self.val.x = <double?>(tup[0]) % 360 % 36.0
+                self.val.x = <double?>(tup[0]) % 360 % 360.0
             else:
                 self.val.x = 0.0
 
             if len(tup) >= 2:
-                self.val.y = <double?>(tup[1]) % 360 % 36.0
+                self.val.y = <double?>(tup[1]) % 360 % 360.0
             else:
                 self.val.y = yaw
 
             if len(tup) >= 3:
-                self.val.z = <double?>(tup[2]) % 360 % 36.0
+                self.val.z = <double?>(tup[2]) % 360 % 360.0
             else:
                 self.val.z = roll
 
@@ -1647,21 +1659,21 @@ cdef class Angle:
                 self.val.x = next(it)
             except StopIteration:
                 self.val.x = 0
-                self.val.y = <double?>yaw % 360 % 36.0
-                self.val.z = <double?>roll % 360 % 36.0
+                self.val.y = <double?>yaw % 360 % 360.0
+                self.val.z = <double?>roll % 360 % 360.0
                 return
 
             try:
                 self.val.y = next(it)
             except StopIteration:
-                self.val.y = <double?>yaw % 360 % 36.0
-                self.val.z = <double?>roll % 360 % 36.0
+                self.val.y = <double?>yaw % 360 % 360.0
+                self.val.z = <double?>roll % 360 % 360.0
                 return
 
             try:
                 self.val.z = next(it)
             except StopIteration:
-                self.val.z = <double?>roll % 360 % 36.0
+                self.val.z = <double?>roll % 360 % 360.0
 
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
@@ -1759,17 +1771,17 @@ cdef class Angle:
                 if isinstance(axis_val, Angle):
                     ang.val.x = (<Angle>axis_val).val.x
                 else:
-                    ang.val.x = axis_val
+                    ang.val.x = (<double?>axis_val) % 360 % 360
             elif axis in ('y', 'yaw'):
                 if isinstance(axis_val, Angle):
                     ang.val.y = (<Angle>axis_val).val.y
                 else:
-                    ang.val.y = axis_val
+                    ang.val.y = (<double?>axis_val) % 360 % 360
             elif axis in ('r', 'rol', 'roll'):
                 if isinstance(axis_val, Angle):
                     ang.val.z = (<Angle>axis_val).val.z
                 else:
-                    ang.val.z = axis_val
+                    ang.val.z = (<double?>axis_val) % 360 % 360
 
         return ang
 
@@ -1800,7 +1812,7 @@ cdef class Angle:
         cdef int index
 
         if isinstance(pos, int):
-            index = pos
+            index = <int>pos
             if pos == 0:
                 return self.val.x
             if pos == 1:
