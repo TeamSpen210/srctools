@@ -70,7 +70,7 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
         pass  # Fast path to skip the below code.
     elif isinstance(val, Py_Vec):
         return val.x, val.y, val.z
-    elif isinstance(val, Angle):
+    elif isinstance(val, Py_Angle):
         return val.pitch, val.yaw, val.roll
     else:
         # Not a string.
@@ -323,7 +323,7 @@ class Vec:
          If the value is already a vector, a copy will be returned.
          """
 
-        x, y, z = parse_vec_str(val, x, y, z)
+        x, y, z = Py_parse_vec_str(val, x, y, z)
         return cls(x, y, z)
 
     @classmethod
@@ -964,32 +964,32 @@ class Vec:
 class Matrix:
     """Represents a matrix via a transformation matrix."""
     __slots__ = [
-        'aa', 'ab', 'ac',
-        'ba', 'bb', 'bc',
-        'ca', 'cb', 'cc'
+        '_aa', '_ab', '_ac',
+        '_ba', '_bb', '_bc',
+        '_ca', '_cb', '_cc'
     ]
 
     def __init__(self) -> None:
         """Create a matrix set to the identity transform."""
-        self.aa, self.ab, self.ac = 1.0, 0.0, 0.0
-        self.ba, self.bb, self.bc = 0.0, 1.0, 0.0
-        self.ca, self.cb, self.cc = 0.0, 0.0, 1.0
+        self._aa, self._ab, self._ac = 1.0, 0.0, 0.0
+        self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
+        self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
 
     def __eq__(self, other: object) -> object:
         if isinstance(other, Py_Matrix):
             return (
-                self.aa == other.aa and self.ab == other.ab and self.ac == other.ac and
-                self.ba == other.ba and self.bb == other.bb and self.bc == other.bc and
-                self.ca == other.ca and self.cb == other.cb and self.cc == other.cc
+                self._aa == other._aa and self._ab == other._ab and self._ac == other._ac and
+                self._ba == other._ba and self._bb == other._bb and self._bc == other._bc and
+                self._ca == other._ca and self._cb == other._cb and self._cc == other._cc
             )
         return NotImplemented
         
     def __repr__(self) -> str:
         return (
             '<Matrix '
-            f'{self.aa:.3} {self.ab:.3} {self.ac:.3}, '
-            f'{self.ba:.3} {self.bb:.3} {self.bc:.3}, '
-            f'{self.ca:.3} {self.cb:.3} {self.cc:.3}'
+            f'{self._aa:.3} {self._ab:.3} {self._ac:.3}, '
+            f'{self._ba:.3} {self._bb:.3} {self._bc:.3}, '
+            f'{self._ca:.3} {self._cb:.3} {self._cc:.3}'
             '>'
         )
 
@@ -997,9 +997,9 @@ class Matrix:
         """Duplicate this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
 
-        rot.aa, rot.ab, rot.ac = self.aa, self.ab, self.ac
-        rot.ba, rot.bb, rot.bc = self.ba, self.bb, self.bc
-        rot.ca, rot.cb, rot.cc = self.ca, self.cb, self.cc
+        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
+        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
+        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
 
         return rot
 
@@ -1071,49 +1071,49 @@ class Matrix:
 
         rot: Matrix = cls.__new__(cls)
 
-        rot.aa = cos_p * cos_y
-        rot.ab = cos_p * sin_y
-        rot.ac = -sin_p
+        rot._aa = cos_p * cos_y
+        rot._ab = cos_p * sin_y
+        rot._ac = -sin_p
 
         cos_r_cos_y = cos_r * cos_y
         cos_r_sin_y = cos_r * sin_y
         sin_r_cos_y = sin_r * cos_y
         sin_r_sin_y = sin_r * sin_y
 
-        rot.ba = sin_p * sin_r_cos_y - cos_r_sin_y
-        rot.bb = sin_p * sin_r_sin_y + cos_r_cos_y
-        rot.bc = sin_r * cos_p
+        rot._ba = sin_p * sin_r_cos_y - cos_r_sin_y
+        rot._bb = sin_p * sin_r_sin_y + cos_r_cos_y
+        rot._bc = sin_r * cos_p
 
-        rot.ca = (sin_p * cos_r_cos_y + sin_r_sin_y)
-        rot.cb = (sin_p * cos_r_sin_y - sin_r_cos_y)
-        rot.cc = cos_r * cos_p
+        rot._ca = (sin_p * cos_r_cos_y + sin_r_sin_y)
+        rot._cb = (sin_p * cos_r_sin_y - sin_r_cos_y)
+        rot._cc = cos_r * cos_p
         return rot
 
     def forward(self) -> 'Vec':
         """Return a normalised vector pointing in the +X direction."""
-        return Py_Vec(self.aa, self.ab, self.ac)
+        return Py_Vec(self._aa, self._ab, self._ac)
 
     def left(self) -> 'Vec':
         """Return a normalised vector pointing in the +Y direction."""
-        return Py_Vec(self.ba, self.bb, self.bc)
+        return Py_Vec(self._ba, self._bb, self._bc)
 
     def up(self) -> 'Vec':
         """Return a normalised vector pointing in the +Z direction."""
-        return Py_Vec(self.ca, self.cb, self.cc)
+        return Py_Vec(self._ca, self._cb, self._cc)
 
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
 
         # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
-        for_x = self.aa
-        for_y = self.ab
-        for_z = self.ac
-        left_x = self.ba
-        left_y = self.bb
-        left_z = self.bc
+        for_x = self._aa
+        for_y = self._ab
+        for_z = self._ac
+        left_x = self._ba
+        left_y = self._bb
+        left_z = self._bc
         # up_x = self.ca
         # up_y = self.cb
-        up_z = self.cc
+        up_z = self._cc
         
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
@@ -1134,9 +1134,9 @@ class Matrix:
         """Return the transpose of this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
 
-        rot.aa, rot.ab, rot.ac = self.aa, self.ba, self.ca
-        rot.ba, rot.bb, rot.bc = self.ab, self.bb, self.cb
-        rot.ca, rot.cb, rot.cc = self.ac, self.bc, self.cc
+        rot._aa, rot._ab, rot._ac = self._aa, self._ba, self._ca
+        rot._ba, rot._bb, rot._bc = self._ab, self._bb, self._cb
+        rot._ca, rot._cb, rot._cc = self._ac, self._bc, self._cc
 
         return rot
 
@@ -1172,9 +1172,9 @@ class Matrix:
         elif x is None and y is None and z is None:
             raise TypeError('At least two vectors must be provided!')
         mat: Matrix = cls.__new__(cls)
-        mat.aa, mat.ab, mat.ac = x.norm()
-        mat.ba, mat.bb, mat.bc = y.norm()
-        mat.ca, mat.cb, mat.cc = z.norm()
+        mat._aa, mat._ab, mat._ac = x.norm()
+        mat._ba, mat._bb, mat._bc = y.norm()
+        mat._ca, mat._cb, mat._cc = z.norm()
         return mat
 
     @overload
@@ -1241,22 +1241,22 @@ class Matrix:
         """Rotate myself by the other matrix."""
         # We don't use each row after assigning to the set, so we can re-assign.
         # 3-tuple unpacking is optimised.
-        self.aa, self.ab, self.ac = (
-            self.aa * other.aa + self.ab * other.ba + self.ac * other.ca,
-            self.aa * other.ab + self.ab * other.bb + self.ac * other.cb,
-            self.aa * other.ac + self.ab * other.bc + self.ac * other.cc,
+        self._aa, self._ab, self._ac = (
+            self._aa * other._aa + self._ab * other._ba + self._ac * other._ca,
+            self._aa * other._ab + self._ab * other._bb + self._ac * other._cb,
+            self._aa * other._ac + self._ab * other._bc + self._ac * other._cc,
         )
 
-        self.ba, self.bb, self.bc = (
-            self.ba * other.aa + self.bb * other.ba + self.bc * other.ca,
-            self.ba * other.ab + self.bb * other.bb + self.bc * other.cb,
-            self.ba * other.ac + self.bb * other.bc + self.bc * other.cc,
+        self._ba, self._bb, self._bc = (
+            self._ba * other._aa + self._bb * other._ba + self._bc * other._ca,
+            self._ba * other._ab + self._bb * other._bb + self._bc * other._cb,
+            self._ba * other._ac + self._bb * other._bc + self._bc * other._cc,
         )
 
-        self.ca, self.cb, self.cc = (
-            self.ca * other.aa + self.cb * other.ba + self.cc * other.ca,
-            self.ca * other.ab + self.cb * other.bb + self.cc * other.cb,
-            self.ca * other.ac + self.cb * other.bc + self.cc * other.cc,
+        self._ca, self._cb, self._cc = (
+            self._ca * other._aa + self._cb * other._ba + self._cc * other._ca,
+            self._ca * other._ab + self._cb * other._bb + self._cc * other._cb,
+            self._ca * other._ac + self._cb * other._bc + self._cc * other._cc,
         )
     
     def _vec_rot(self, vec: Vec) -> None:
@@ -1264,9 +1264,9 @@ class Matrix:
         x = vec.x
         y = vec.y
         z = vec.z
-        vec.x = (x * self.aa) + (y * self.ba) + (z * self.ca)
-        vec.y = (x * self.ab) + (y * self.bb) + (z * self.cb)
-        vec.z = (x * self.ac) + (y * self.bc) + (z * self.cc)
+        vec.x = (x * self._aa) + (y * self._ba) + (z * self._ca)
+        vec.y = (x * self._ab) + (y * self._bb) + (z * self._cb)
+        vec.z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
     
 class Angle:
@@ -1317,7 +1317,7 @@ class Angle:
          If the value is already a Angle, a copy will be returned.
          """
 
-        pitch, yaw, roll = parse_vec_str(val, pitch, yaw, roll)
+        pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
         return cls(pitch, yaw, roll)
 
     @property
@@ -1560,7 +1560,7 @@ class Angle:
         When the body is exited safely, the matrix is applied to
         the angle.
         """
-        mat = Py_Matrix()
+        mat = Py_Matrix.from_angle(self)
         yield mat
         new_ang = mat.to_angle()
         self._pitch = new_ang._pitch
