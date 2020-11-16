@@ -25,11 +25,11 @@ cdef inline Vec _vector(double x, double y, double z):
 
 cdef inline Angle _angle(double pitch, double yaw, double roll):
     """Make an Angle directly."""
-    cdef Angle vec = Angle.__new__(Angle)
-    vec.val.x = pitch
-    vec.val.y = yaw
-    vec.val.z = roll
-    return vec
+    cdef Angle ang = Angle.__new__(Angle)
+    ang.val.x = pitch
+    ang.val.y = yaw
+    ang.val.z = roll
+    return ang
 
 
 # Shared func that we use to do unpickling.
@@ -50,11 +50,12 @@ DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
 DEF rad_2_deg = 180.0 / PI
 DEF deg_2_rad = PI / 180.0
+DEF ROUND_TO = 6
 
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef object _make_tuple(x, y, z):
+cdef inline object _make_tuple(x, y, z):
     # Fast-construct a Vec_tuple. We make a normal tuple (fast),
     # then assign the namedtuple type. The type is on the heap
     # so we need to incref it.
@@ -83,7 +84,7 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
         return True
 
     try:
-        str_x, str_y, str_z = (<unicode?>value).split(' ')
+        str_x, str_y, str_z = (<unicode?>value).split()
     except ValueError:
         vec.x = x
         vec.y = y
@@ -283,6 +284,7 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
         ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)
         ang.z = 0.0  # Can't produce.
 
+
 @cython.final
 cdef class VecIter:
     """Implements iter(Vec)."""
@@ -309,7 +311,8 @@ cdef class VecIter:
             ret = self.vec.val.z
             self.vec = None
             return ret
-        
+
+
 @cython.final
 cdef class AngleIter:
     """Implements iter(Angle)."""
@@ -336,6 +339,60 @@ cdef class AngleIter:
             ret = self.ang.val.z
             self.ang = None
             return ret
+
+
+@cython.final
+cdef class VecTransform:
+    """Implements Vec.transform()."""
+    cdef Matrix mat
+    cdef Vec vec
+    def __cinit__(self, Vec vec not None):
+        self.vec = vec
+        self.mat = None
+
+    def __enter__(self):
+        self.mat = Matrix.__new__(Matrix)
+        self.mat.mat[0] = [1.0, 0.0, 0.0]
+        self.mat.mat[1] = [0.0, 1.0, 0.0]
+        self.mat.mat[2] = [0.0, 0.0, 1.0]
+        return self.mat
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if (
+            self.mat is not None and
+            self.vec is not None and
+            exc_type is None and 
+            exc_val is None and 
+            exc_tb is None
+        ):
+            _vec_rot(&self.vec.val, self.mat.mat)
+        return False
+
+
+@cython.final
+cdef class AngleTransform:
+    """Implements Angle.transform()."""
+    cdef Matrix mat
+    cdef Angle ang
+    def __cinit__(self, Angle ang not None):
+        self.ang = ang
+        self.mat = None
+
+    def __enter__(self):
+        self.mat = Matrix.__new__(Matrix)
+        _mat_from_angle(self.mat.mat, &self.ang.val)
+        return self.mat
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if (
+            self.mat is not None and
+            self.vec is not None and
+            exc_type is None and
+            exc_val is None and
+            exc_tb is None
+        ):
+            _mat_to_angle(&self.ang.val, self.mat.mat)
+        return False
 
 
 @cython.freelist(16)
@@ -550,7 +607,20 @@ cdef class Vec:
         If round is True, all values will be rounded to 3 decimals
         (since these calculations always have small inprecision.)
         """
-        self._rotate(pitch, yaw, roll, round_vals)
+        cdef vec_t angle
+        cdef mat_t matrix
+        angle.x = pitch
+        angle.y = yaw
+        angle.z = roll
+
+        _mat_from_angle(matrix, &angle)
+        _vec_rot(&self.val, matrix)
+
+        if round_vals:
+            self.val.x = round(self.val.x, ROUND_TO)
+            self.val.y = round(self.val.y, ROUND_TO)
+            self.val.z = round(self.val.z, ROUND_TO)
+
         return self
 
     def rotate_by_str(
@@ -566,13 +636,17 @@ cdef class Vec:
         If the string cannot be parsed, use the passed in values instead.
         """
         cdef vec_t angle
+        cdef mat_t matrix
+
         _parse_vec_str(&angle, ang, pitch, yaw, roll)
-        self._rotate(
-            angle.x,
-            angle.y,
-            angle.z,
-            round_vals,
-        )
+        _mat_from_angle(matrix, &angle)
+        _vec_rot(&self.val, matrix)
+
+        if round_vals:
+            self.val.x = round(self.val.x, ROUND_TO)
+            self.val.y = round(self.val.y, ROUND_TO)
+            self.val.z = round(self.val.z, ROUND_TO)
+
         return self
 
     @staticmethod
@@ -1341,7 +1415,6 @@ cdef class Vec:
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
-
     def __setitem__(self, ind_obj, double val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
@@ -1381,18 +1454,14 @@ cdef class Vec:
             else:
                 raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
+    def transform(self):
+        """Perform rotations on this Vector efficiently.
 
-    # @contextlib.contextmanager
-    # def transform(self) -> ContextManager['Matrix']:
-    #     """Perform rotations on this Vector efficiently.
-    #
-    #     Used as a context manager, which returns a matrix.
-    #     When the body is exited safely, the matrix is applied to
-    #     the angle.
-    #     """
-    #     mat = Matrix()
-    #     yield mat
-    #     mat._vec_rot(self)
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
+        the angle.
+        """
+        return VecTransform.__new__(VecTransform, self)
 
 
 @cython.freelist(16)
@@ -1415,9 +1484,9 @@ cdef class Matrix:
     def __repr__(self) -> str:
         return (
             '<Matrix '
-            f'{self[0][0]:.3} {self[0][1]:.3} {self[0][2]:.3}, '
-            f'{self[1][0]:.3} {self[1][1]:.3} {self[1][2]:.3}, '
-            f'{self[2][0]:.3} {self[2][1]:.3} {self[2][2]:.3}'
+            f'{self.mat[0][0]:.3} {self.mat[0][1]:.3} {self.mat[0][2]:.3}, '
+            f'{self.mat[1][0]:.3} {self.mat[1][1]:.3} {self.mat[1][2]:.3}, '
+            f'{self.mat[2][0]:.3} {self.mat[2][1]:.3} {self.mat[2][2]:.3}'
             '>'
         )
 
@@ -1912,17 +1981,11 @@ cdef class Angle:
 
         return NotImplemented
 
-    # @contextlib.contextmanager
-    # def transform(self) -> ContextManager[Matrix]:
-    #     """Perform transformations on this angle.
-    #
-    #     Used as a context manager, which returns a matrix.
-    #     When the body is exited safely, the matrix is applied to
-    #     the angle.
-    #     """
-    #     mat = Matrix()
-    #     yield mat
-    #     new_ang = mat.to_angle()
-    #     self._pitch = new_ang._pitch
-    #     self._yaw = new_ang._yaw
-    #     self._roll = new_ang._roll
+    def transform(self):
+        """Perform transformations on this angle.
+
+        Used as a context manager, which returns a matrix.
+        When the body is exited safely, the matrix is applied to
+        the angle.
+        """
+        return AngleTransform.__new__(AngleTransform, self)
