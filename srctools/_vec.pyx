@@ -72,9 +72,7 @@ cdef inline object _make_tuple(x, y, z):
 cdef inline double norm_ang(double val):
     """Normalise an angle to 0-360."""
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
-    val = math.fmod(val, 360.0)
-    if val < 0:
-        val += 360.0
+    val = val % 360.0 % 360.0
     return val
 
 
@@ -276,13 +274,13 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
     if horiz_dist > 0.001:
-        ang.x = rad_2_deg * math.atan2(mat[0][1], mat[0][0])
-        ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)
-        ang.z = rad_2_deg * math.atan2(mat[1][2], mat[2][2])
+        ang.x = norm_ang(rad_2_deg * math.atan2(-mat[0][2], horiz_dist))
+        ang.y = norm_ang(rad_2_deg * math.atan2(mat[0][1], mat[0][0]))
+        ang.z = norm_ang(rad_2_deg * math.atan2(mat[1][2], mat[2][2]))
     else:
         # Vertical, gimbal lock (yaw=roll)...
-        ang.x = rad_2_deg * math.atan2(-mat[1][0], mat[1][1])
-        ang.y = rad_2_deg * math.atan2(-mat[0][2], horiz_dist)
+        ang.x = norm_ang(rad_2_deg * math.atan2(-mat[0][2], horiz_dist))
+        ang.y = norm_ang(rad_2_deg * math.atan2(-mat[1][0], mat[1][1]))
         ang.z = 0.0  # Can't produce.
 
 
