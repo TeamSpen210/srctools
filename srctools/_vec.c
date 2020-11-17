@@ -1921,7 +1921,7 @@ static int __pyx_pf_8srctools_4_vec_5Angle_4roll_2__set__(struct __pyx_obj_8srct
 static PyObject *__pyx_pf_8srctools_4_vec_5Angle_6__str__(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_8srctools_4_vec_5Angle_8__repr__(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self); /* proto */
-static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self); /* proto */
+static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self); /* proto */
 static PyObject *__pyx_pf_8srctools_4_vec_5Angle_14with_axes(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_args); /* proto */
 static struct __pyx_obj_8srctools_4_vec_Angle *__pyx_pf_8srctools_4_vec_5Angle_16from_basis(CYTHON_UNUSED PyTypeObject *__pyx_v_cls, struct __pyx_obj_8srctools_4_vec_Vec *__pyx_v_x, struct __pyx_obj_8srctools_4_vec_Vec *__pyx_v_y, struct __pyx_obj_8srctools_4_vec_Vec *__pyx_v_z); /* proto */
 static PyObject *__pyx_pf_8srctools_4_vec_5Angle_18__getitem__(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self, PyObject *__pyx_v_pos); /* proto */
@@ -23950,7 +23950,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_10as_tuple(struct __pyx_obj_8sr
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
  *         """Iterating over the angles returns each value in turn."""
- *         return AngleIter.__new__(AngleIter)
+ *         return AngleIter.__new__(AngleIter, self)
  */
 
 /* Python wrapper */
@@ -23970,10 +23970,11 @@ static PyObject *__pyx_pw_8srctools_4_vec_5Angle_13__iter__(PyObject *__pyx_v_se
   return __pyx_r;
 }
 
-static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self) {
+static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(struct __pyx_obj_8srctools_4_vec_Angle *__pyx_v_self) {
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
+  PyObject *__pyx_t_2 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -23982,15 +23983,21 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct
   /* "srctools/_vec.pyx":1841
  *     def __iter__(self):
  *         """Iterating over the angles returns each value in turn."""
- *         return AngleIter.__new__(AngleIter)             # <<<<<<<<<<<<<<
+ *         return AngleIter.__new__(AngleIter, self)             # <<<<<<<<<<<<<<
  * 
  * 
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleIter), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1841, __pyx_L1_error)
-  __Pyx_GOTREF(((PyObject *)__pyx_t_1));
-  __pyx_r = ((PyObject *)__pyx_t_1);
-  __pyx_t_1 = 0;
+  __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1841, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(((PyObject *)__pyx_v_self));
+  __Pyx_GIVEREF(((PyObject *)__pyx_v_self));
+  PyTuple_SET_ITEM(__pyx_t_1, 0, ((PyObject *)__pyx_v_self));
+  __pyx_t_2 = ((PyObject *)__pyx_tp_new_8srctools_4_vec_AngleIter(((PyTypeObject *)__pyx_ptype_8srctools_4_vec_AngleIter), __pyx_t_1, NULL)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 1841, __pyx_L1_error)
+  __Pyx_GOTREF(((PyObject *)__pyx_t_2));
+  __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+  __pyx_r = ((PyObject *)__pyx_t_2);
+  __pyx_t_2 = 0;
   goto __pyx_L0;
 
   /* "srctools/_vec.pyx":1839
@@ -23998,12 +24005,13 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_12__iter__(CYTHON_UNUSED struct
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
  *         """Iterating over the angles returns each value in turn."""
- *         return AngleIter.__new__(AngleIter)
+ *         return AngleIter.__new__(AngleIter, self)
  */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_1);
+  __Pyx_XDECREF(__pyx_t_2);
   __Pyx_AddTraceback("srctools._vec.Angle.__iter__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;

@@ -1838,7 +1838,7 @@ cdef class Angle:
 
     def __iter__(self):
         """Iterating over the angles returns each value in turn."""
-        return AngleIter.__new__(AngleIter)
+        return AngleIter.__new__(AngleIter, self)
 
 
     @staticmethod
