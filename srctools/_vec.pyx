@@ -1791,6 +1791,9 @@ cdef class Angle:
         """
         cdef Angle ang = Angle.__new__(Angle)
         _parse_vec_str(&ang.val, val, pitch, yaw, roll)
+        ang.val.x = norm_ang(ang.val.x)
+        ang.val.y = norm_ang(ang.val.y)
+        ang.val.z = norm_ang(ang.val.z)
         return ang
 
     @property
