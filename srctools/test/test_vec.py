@@ -26,29 +26,6 @@ def iter_vec(nums):
                 yield x, y, z
 
 
-def assert_vec(vec, x, y, z, msg=''):
-    """Asserts that Vec is equal to (x,y,z)."""
-    # Don't show in pytest tracebacks.
-    __tracebackhide__ = True
-
-    assert type(vec).__name__ == 'Vec'
-
-    if not math.isclose(vec.x, x):
-        failed = 'x'
-    elif not math.isclose(vec.y, y):
-        failed = 'y'
-    elif not math.isclose(vec.z, z):
-        failed = 'z'
-    else:
-        # Success!
-        return
-
-    new_msg = "{!r}.{} != ({}, {}, {})".format(vec, failed, x, y, z)
-    if msg:
-        new_msg += ': ' + str(msg)
-    pytest.fail(new_msg)
-
-
 def test_construction(py_c_vec):
     """Check various parts of the constructor.
     
@@ -65,6 +42,7 @@ def test_construction(py_c_vec):
         assert_vec(Vec([x, y], z=z), x, y, z)
         assert_vec(Vec([x], y=y, z=z), x, y, z)
         assert_vec(Vec([x]), x, 0, 0)
+        assert_vec(Vec([]), 0, 0, 0)
         assert_vec(Vec([x, y]), x, y, 0)
         assert_vec(Vec([x, y, z]), x, y, z)
 
@@ -702,8 +680,12 @@ def test_getitem(py_c_vec):
     v.x = v.y = v.z = 0
 
     for invalid in INVALID_KEYS:
-        with raises_keyerror:
+        try:
             v[invalid]
+        except KeyError:
+            pass
+        else:
+            pytest.fail(f"Key succeeded: {invalid!r}")
 
 
 def test_setitem(py_c_vec):
@@ -721,9 +703,13 @@ def test_setitem(py_c_vec):
         assert_vec(vec1, vec2.x, vec2.y, vec2.z, axis)
 
     vec = Vec()
-    for invalid in ['4', '', -1, 4, 4.0, bool, slice(0, 1), Vec(2,3,4)]:
-        with pytest.raises(KeyError, message=repr(invalid)):
+    for invalid in INVALID_KEYS:
+        try:
             vec[invalid] = 8
+        except KeyError:
+            pass
+        else:
+            pytest.fail(f"Key succeeded: {invalid!r}")
         assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
 

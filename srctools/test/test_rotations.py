@@ -9,9 +9,9 @@ def test_vec_identities(py_c_vec) -> None:
 
     for ang in range(0, 360, 13):
         # Check the two constructors match.
-        assert Matrix.from_pitch(ang) == Matrix.from_angle(Angle(pitch=ang))
-        assert Matrix.from_yaw(ang) == Matrix.from_angle(Angle(yaw=ang))
-        assert Matrix.from_roll(ang) == Matrix.from_angle(Angle(roll=ang))
+        assert_rot(Matrix.from_pitch(ang), Matrix.from_angle(Angle(pitch=ang)))
+        assert_rot(Matrix.from_yaw(ang), Matrix.from_angle(Angle(yaw=ang)))
+        assert_rot(Matrix.from_roll(ang), Matrix.from_angle(Angle(roll=ang)))
         
         # Various magnitudes to test
         for mag in (-250, -1, 0, 1, 250):
@@ -229,9 +229,9 @@ def test_old_rotation(py_c_vec) -> None:
 
                 # Construct a matrix directly from 3 vector rotations.
                 old_mat = Matrix()
-                old_mat.aa, old_mat.ab, old_mat.ac = old_rotate(Vec(x=1), pitch, yaw, roll)
-                old_mat.ba, old_mat.bb, old_mat.bc = old_rotate(Vec(y=1), pitch, yaw, roll)
-                old_mat.ca, old_mat.cb, old_mat.cc = old_rotate(Vec(z=1), pitch, yaw, roll)
+                old_mat[0, 0], old_mat[0, 1], old_mat[0, 2] = old_rotate(Vec(x=1), pitch, yaw, roll)
+                old_mat[1, 0], old_mat[1, 1], old_mat[1, 2] = old_rotate(Vec(y=1), pitch, yaw, roll)
+                old_mat[2, 0], old_mat[2, 1], old_mat[2, 2] = old_rotate(Vec(z=1), pitch, yaw, roll)
 
                 assert_rot(mat, old_mat, ang)
                 old = old_rotate(Vec(128, 0, 0), pitch, yaw, roll)
@@ -270,17 +270,17 @@ def test_gen_check(py_c_vec) -> None:
             assert_vec(Y @ mat, -left_x, -left_y, -left_z)
             assert_vec(Z @ mat, up_x, up_y, up_z)
 
-            assert math.isclose(for_x, mat.aa, abs_tol=EPSILON)
-            assert math.isclose(for_y, mat.ab, abs_tol=EPSILON)
-            assert math.isclose(for_z, mat.ac, abs_tol=EPSILON)
+            assert math.isclose(for_x, mat[0, 0], abs_tol=EPSILON)
+            assert math.isclose(for_y, mat[0, 1], abs_tol=EPSILON)
+            assert math.isclose(for_z, mat[0, 2], abs_tol=EPSILON)
 
-            assert math.isclose(-left_x, mat.ba, abs_tol=EPSILON)
-            assert math.isclose(-left_y, mat.bb, abs_tol=EPSILON)
-            assert math.isclose(-left_z, mat.bc, abs_tol=EPSILON)
+            assert math.isclose(-left_x, mat[1, 0], abs_tol=EPSILON)
+            assert math.isclose(-left_y, mat[1, 1], abs_tol=EPSILON)
+            assert math.isclose(-left_z, mat[1, 2], abs_tol=EPSILON)
 
-            assert math.isclose(up_x, mat.ca, abs_tol=EPSILON)
-            assert math.isclose(up_y, mat.cb, abs_tol=EPSILON)
-            assert math.isclose(up_z, mat.cc, abs_tol=EPSILON)
+            assert math.isclose(up_x, mat[2, 0], abs_tol=EPSILON)
+            assert math.isclose(up_y, mat[2, 1], abs_tol=EPSILON)
+            assert math.isclose(up_z, mat[2, 2], abs_tol=EPSILON)
 
             # Also test Matrix.from_basis().
             x = Vec(for_x, for_y, for_z)

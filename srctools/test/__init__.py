@@ -84,19 +84,14 @@ def assert_rot(rot, exp_rot, msg=''):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    for row, col in itertools.product('abc', 'abc'):
-        pos = row + col
-        if not math.isclose(
-            getattr(rot, pos),
-            getattr(exp_rot, pos),
-            abs_tol=EPSILON,
-        ):
+    for x, y in itertools.product(range(3), range(3)):
+        if not math.isclose(rot[x, y], exp_rot[x, y], abs_tol=EPSILON):
             break
     else:
         # Success!
         return
 
-    new_msg = '{} != {}\nAxis: {}'.format(rot, exp_rot, pos)
+    new_msg = f'{rot} != {exp_rot}\nAxis: {x},{y}'
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
