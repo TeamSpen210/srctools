@@ -1095,6 +1095,31 @@ class Matrix:
         rot._cc = cos_r * cos_p
         return rot
 
+    @classmethod
+    def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> 'Matrix':
+        """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
+        x, y, z = Vec(axis).norm()
+        angle_rad = math.radians(angle)
+        cos = math.cos(angle_rad)
+        icos = 1 - cos
+        sin = math.sin(angle_rad)
+
+        mat: Matrix = cls.__new__(cls)
+
+        mat._aa = x*x * icos + cos
+        mat._ab = x*y * icos - z*sin
+        mat._ac = x*z * icos - y*sin
+
+        mat._ba = y*x * icos + z*sin
+        mat._bb = y*y * icos + cos
+        mat._bc = y*z * icos - x*sin
+
+        mat._ca = z*x * icos - y*sin
+        mat._cb = z*y * icos + x*sin
+        mat._cc = z*z * icos + cos
+
+        return mat
+
     def forward(self) -> 'Vec':
         """Return a normalised vector pointing in the +X direction."""
         return Py_Vec(self._aa, self._ab, self._ac)

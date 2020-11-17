@@ -1558,6 +1558,40 @@ cdef class Matrix:
         _mat_from_angle(rot.mat, &ang)
         return rot
 
+
+    @classmethod
+    def axis_angle(cls, object axis, double angle) -> 'Matrix':
+        """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
+        cdef vec_t vec_axis
+        cdef double sin, cos, icos, x, y, z
+        _conv_vec(&vec_axis, axis, scalar=False)
+        _vec_normalise(&vec_axis, &vec_axis)
+        angle *= deg_2_rad
+
+        cos = math.cos(angle)
+        icos = 1 - cos
+        sin = math.sin(angle)
+
+        x = vec_axis.x
+        y = vec_axis.y
+        z = vec_axis.z
+
+        cdef Matrix mat = Matrix.__new__(cls)
+
+        mat.mat[0][1] = x*x * icos + cos
+        mat.mat[0][2] = x*y * icos - z*sin
+        mat.mat[0][3] = x*z * icos - y*sin
+
+        mat.mat[1][0] = y*x * icos + z*sin
+        mat.mat[1][1] = y*y * icos + cos
+        mat.mat[1][2] = y*z * icos - x*sin
+
+        mat.mat[2][0] = z*x * icos - y*sin
+        mat.mat[2][1] = z*y * icos + x*sin
+        mat.mat[2][2] = z*z * icos + cos
+
+        return mat
+
     def forward(self):
         """Return a normalised vector pointing in the +X direction."""
         return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])
