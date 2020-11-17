@@ -1561,8 +1561,7 @@ class Angle:
         
         Inefficient if we have more than one rotation to do.
         """
-        mat = Py_Matrix()
-        mat @= target
+        mat = Py_Matrix.from_angle(target)
         mat @= self
         return mat.to_angle()
 
