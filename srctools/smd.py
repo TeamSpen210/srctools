@@ -120,6 +120,16 @@ class Vertex:
             deepcopy(self.links, memodict),
         )
 
+    def with_pos(self, pos: Vec, norm: Vec=None) -> 'Vertex':
+        """Copy this vertex, changing the position."""
+        if norm is None:
+            norm = self.norm
+        return Vertex(pos, norm, self.tex_u, self.tex_v, self.links)
+
+    def with_uv(self, u: float, v: float) -> 'Vertex':
+        """Copy this vertex, changing the UV."""
+        return Vertex(self.pos, self.norm, u, v, self.links)
+
 
 class Triangle:
     """Represents one triangle."""
