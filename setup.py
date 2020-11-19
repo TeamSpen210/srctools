@@ -64,6 +64,11 @@ setup(
             ],
             extra_link_args=['/openmp' if WIN else '-openmp'],
         ),
+        Extension(
+            "srctools._vec",
+            sources=["srctools/_vec" + cy_ext],
+            # extra_compile_args=['/FAs'],  # MS ASM dump
+        ),
     ]),
 
     package_data={'srctools': [

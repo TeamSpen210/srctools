@@ -19,7 +19,7 @@ from typing import (
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec
+from srctools.vec import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 
@@ -133,11 +133,9 @@ class NullIDMan(IDMan):
 def overlay_bounds(over: 'Entity') -> Tuple[Vec, Vec]:
     """Compute the bounding box of an overlay."""
     origin = Vec.from_str(over['origin'])
-    angles = Vec.from_str(over['angles'])
+    mat = Matrix.from_angle(Angle.from_str(over['angles']))
     return Vec.bbox(
-        (origin + Vec.from_str(over['uv' + str(x)]).rotate(
-            angles.x, angles.y, angles.z,
-        ))
+        (origin + Vec.from_str(over['uv' + str(x)]) @ mat)
         for x in
         range(4)
     )
@@ -201,17 +199,17 @@ def make_overlay(
     )
 
 
-def localise_overlay(over: 'Entity', origin: Vec, angles: Vec=None) -> None:
+def localise_overlay(over: 'Entity', origin: Vec, angles: Union[Angle, Matrix]=None) -> None:
     """Rotate an overlay like what is done in instances."""
     if angles is not None:
         for key in ('basisNormal', 'basisU', 'basisV'):
-            ang = Vec.from_str(over[key]).rotate(angles.x, angles.y, angles.z)
+            ang = Vec.from_str(over[key]) @ angles
             over[key] = ang.join(' ')
     else:
-        angles = Vec(0, 0, 0)
+        angles = Matrix()
 
     for key in ('basisOrigin', 'origin'):
-        ang = Vec.from_str(over[key]).rotate(angles.x, angles.y, angles.z)
+        ang = Vec.from_str(over[key]) @ angles
         ang += origin
         over[key] = ang.join(' ')
 
@@ -1185,8 +1183,9 @@ class Solid:
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: Vec, angles: Vec=None):
+    def localise(self, origin: Vec, angles: Union[Angle, Matrix]=None):
         """Shift this brush by the given origin/angles."""
+        angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
             s.localise(origin, angles)
 
@@ -1242,16 +1241,23 @@ class UVAxis:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
 
-    def rotate(self, angles: Vec) -> 'UVAxis':
+    def rotate(self, angles: Angle) -> 'UVAxis':
         """Rotate the axis by a vector.
 
         This doesn't handle offsets correctly.
         """
-        return self.localise(Vec(), angles)
+        vec = self.vec() @ angles
+        return UVAxis(
+            vec.x,
+            vec.y,
+            vec.z,
+            self.offset,
+            self.scale,
+        )
 
-    def localise(self, origin: Vec, angles: Vec) -> 'UVAxis':
+    def localise(self, origin: Vec, angles: Angle) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
-        vec = self.vec().rotate(*angles)
+        vec = self.vec() @ angles
 
         # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
         offset = self.offset - origin.dot(vec) / self.scale
@@ -1538,16 +1544,14 @@ class Side:
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Vec=None) -> None:
+    def localise(self, origin: Vec, angles: Union[Matrix, Angle]=None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.
         """
+        angles = to_matrix(angles)  # Only do this once.
         for p in self.planes:
             p.localise(origin, angles)
-
-        if angles is None:
-            angles = Vec()
 
         self.uaxis = self.uaxis.localise(origin, angles)
         self.vaxis = self.vaxis.localise(origin, angles)

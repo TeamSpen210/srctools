@@ -101,3 +101,5 @@ target/
 
 # Exclude Cython generated files.
 srctools/*.html
+
+.cache
