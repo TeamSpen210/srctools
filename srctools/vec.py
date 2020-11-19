@@ -1626,18 +1626,14 @@ Cy_Vec = Py_Vec = Vec
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
 Cy_Angle = Py_Angle = Angle
 Cy_Matrix = Py_Matrix = Matrix
-if not TYPE_CHECKING:
-    try:
-        # noinspection PyUnresolvedReferences, PyProtectedMember
-        from srctools._vec import (
-            Vec as Cy_Vec,
-            Angle as Cy_Angle,
-            Matrix as Cy_Matrix,
-            parse_vec_str as Cy_parse_vec_str,
-        )
-        Vec = Cy_Vec
-        Angle = Cy_Angle
-        Matrix = Cy_Matrix
-        parse_vec_str = Cy_parse_vec_str
-    except ImportError:
-        pass
+
+# Do it this way, so static analysis ignores this.
+_glob = globals()
+try:
+    from srctools import _vec
+except ImportError:
+    pass
+else:
+    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str']:
+        _glob[_name] = _glob['Cy_' + _name] = getattr(_vec, _name)
+    del _glob, _name, _vec
