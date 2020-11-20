@@ -10,12 +10,13 @@ import itertools
 from zipfile import ZipFile
 
 from srctools import AtomicWriter, Vec, conv_int
+from srctools.fgd import FGD, EntityDef, EntityTypes
 from srctools.vmf import VMF, Entity, Output
 from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, BinaryIO
+from typing import List, Dict, Iterator, Union, Optional, BinaryIO, Tuple
 
 
 __all__ = [
@@ -459,12 +460,12 @@ class BSP:
                     seen_spawn = True
                 else:
                     cur_ent = Entity(vmf)
+                continue
             elif line == b'}':
                 if cur_ent is None:
                     raise ValueError(
-                        'Too many closing brackets after {} ents'.format(
-                            len(vmf.entities)
-                        )
+                        f'Too many closing brackets after'
+                        f' {len(vmf.entities)} ents!'
                     )
                 if cur_ent is vmf.spawn:
                     if cur_ent['classname'] != 'worldspawn':
@@ -474,25 +475,38 @@ class BSP:
                     # list.
                     vmf.add_ent(cur_ent)
                 cur_ent = None
+                continue
             elif line == b'\x00':  # Null byte at end of lump.
                 if cur_ent is not None:
                     raise ValueError("Last entity didn't end!")
                 return vmf
-            else:
-                if cur_ent is None:
-                    raise ValueError("Keyvalue outside brackets!")
 
-                # Line is of the form <"key" "val">
-                key, value = line.split(b'" "')
-                decoded_key = key[1:].decode('ascii')
-                decoded_val = value[:-1].decode('ascii')
-                if 27 in value:
-                    # All outputs use the comma_sep, so we can ID them.
-                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_val)))
-                else:
-                    # Normal keyvalue.
-                    cur_ent[decoded_key] = decoded_val
-                    
+            if cur_ent is None:
+                raise ValueError("Keyvalue outside brackets!")
+
+            # Line is of the form <"key" "val">
+            key, value = line.split(b'" "')
+            decoded_key = key[1:].decode('ascii')
+            decoded_value = value[:-1].decode('ascii')
+
+            # Now, we need to figure out if this is a keyvalue,
+            # or connection.
+            # If we're L4D+, this is easy - they use 0x1D as separator.
+            # Before, it's a comma which is common in keyvalues.
+            # Assume it's an output if it has exactly 4 commas, and the last two
+            # successfully parse as numbers.
+            if 27 in value:
+                # All outputs use the comma_sep, so we can ID them.
+                cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+            elif value.count(b',') == 4:
+                try:
+                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                except ValueError:
+                    cur_ent[decoded_key] = decoded_value
+            else:
+                # Normal keyvalue.
+                cur_ent[decoded_key] = decoded_value
+
         # This keyvalue needs to be stored in the VMF object too.
         # The one in the entity is ignored.
         vmf.map_ver = conv_int(vmf.spawn['mapversion'], vmf.map_ver)
@@ -500,11 +514,13 @@ class BSP:
         return vmf
 
     @staticmethod
-    def write_ent_data(vmf: VMF) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None) -> bytes:
         """Generate the entity data lump.
         
         This accepts a VMF file like that returned from read_ent_data(). 
         Brushes are ignored, so the VMF must use *xx model references.
+
+        use_comma_sep can be used to force using either commas, or 0x1D in I/O.
         """
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
@@ -512,6 +528,8 @@ class BSP:
             for key, value in ent.keys.items():
                 out.write('"{}" "{}"\n'.format(key, value).encode('ascii'))
             for output in ent.outputs:
+                if use_comma_sep is not None:
+                    output.comma_sep = use_comma_sep
                 out.write(output._get_text().encode('ascii'))
             out.write(b'}\n')
         out.write(b'\x00')
