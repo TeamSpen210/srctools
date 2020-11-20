@@ -1080,10 +1080,6 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
 # Fix a bug in some typing versions - slots can't be used with generics.
 del _EntityView.__slots__
 
-# Cache the classes ourselves here.
-_Ent_View_KV = _EntityView[KeyValues]
-_Ent_View_IO = _EntityView[IODef]
-
 
 class EntityDef:
     """A definition for an entity."""
@@ -1105,9 +1101,9 @@ class EntityDef:
         self.desc = ''
         
         # Views for accessing data among all the entities.
-        self.kv = _Ent_View_KV(self, 'keyvalues', 'kv')  # type: _EntityView[KeyValues]
-        self.inp = _Ent_View_IO(self, 'inputs', 'inp')  # type: _EntityView[IODef]
-        self.out = _Ent_View_IO(self, 'outputs', 'out')  # type: _EntityView[IODef]
+        self.kv: _EntityView[KeyValues] = _EntityView(self, 'keyvalues', 'kv')
+        self.inp: _EntityView[IODef] = _EntityView(self, 'inputs', 'inp')
+        self.out: _EntityView[IODef] = _EntityView(self, 'outputs', 'out')
 
     @classmethod
     def parse(
