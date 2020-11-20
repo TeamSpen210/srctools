@@ -1,5 +1,6 @@
 """Parse FGD files, used to describe Hammer entities."""
 import itertools
+from copy import deepcopy
 from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
@@ -54,7 +55,8 @@ def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
 
 # Version number for the format.
 BIN_FORMAT_VERSION = 5
-
+# Cached result of FGD.engine_dbase().
+_ENGINE_FGD: Optional['FGD'] = None
 
 class FGDParseError(TokenSyntaxError):
     """Raised if the FGD contains invalid syntax."""
@@ -748,6 +750,20 @@ class KeyValues:
             self.reportable,
         )
 
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict) -> 'KeyValues':
+        return KeyValues(
+            self.name,
+            self.type,
+            self.disp_name,
+            self.default,
+            self.desc,
+            self.val_list.copy() if self.val_list else None,
+            self.readonly,
+            self.reportable,
+        )
+
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
         if self.type is ValueTypes.CHOICES:
@@ -932,6 +948,11 @@ class IODef:
 
     def copy(self) -> 'IODef':
         """Create a duplicate of this IODef."""
+        return IODef(self.name, self.type, self.desc)
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
 
     def __eq__(self, other: object) -> bool:
@@ -1471,6 +1492,61 @@ class EntityDef:
             return '<Entity Base "{}">'.format(self.classname)
         else:
             return '<Entity {}>'.format(self.classname)
+
+    def __deepcopy__(self, memodict: dict) -> 'EntityDef':
+        """Handle copying ourselves, to eliminate lookups when not required."""
+        copy = EntityDef.__new__(EntityDef)
+        copy.type = self.type
+        copy.classname = self.classname
+        copy.kv_order = self.kv_order.copy()
+        copy.bases = deepcopy(self.bases, memodict)
+        copy.helpers = deepcopy(self.helpers, memodict)
+        copy.desc = self.desc
+
+        # Avoid copy for these, we know the tags-map is immutable.
+        for attr in ['keyvalues', 'inputs', 'outputs']:
+            coll = {}
+            setattr(copy, attr, coll)
+            for key, tags_map in getattr(copy, attr).items():
+                coll[key] = {
+                    key: value.copy()
+                    for key, value in tags_map.items()
+                }
+        copy.kv = _EntityView(self, 'keyvalues', 'kv')
+        copy.inp = _EntityView(self, 'inputs', 'inp')
+        copy.out = _EntityView(self, 'outputs', 'out')
+        return copy
+
+    def __getstate__(self) -> tuple:
+        """Don't include EntityView while pickling."""
+        return (
+            self.type,
+            self.classname,
+            self.keyvalues,
+            self.inputs,
+            self.outputs,
+            self.kv_order,
+            self.bases,
+            self.helpers,
+            self.desc
+        )
+
+    def __setstate__(self, state: tuple) -> None:
+        """We can regenerate EntityView from scratch."""
+        (
+            self.type,
+            self.classname,
+            self.keyvalues,
+            self.inputs,
+            self.outputs,
+            self.kv_order,
+            self.bases,
+            self.helpers,
+            self.desc
+        ) = state
+        self.kv = _EntityView(self, 'keyvalues', 'kv')
+        self.inp = _EntityView(self, 'inputs', 'inp')
+        self.out = _EntityView(self, 'outputs', 'out')
 
     def get_helpers(self, typ: HelperT) -> Iterator[HelperT]:
         """Find all helpers with this specific type."""
@@ -2058,17 +2134,20 @@ class FGD:
         """Load and return a database of entity keyvalues and I/O.
 
         This can be used to identify the kind of keys present on an entity.
-        Each call will parse this from scratch, so it is recommended to cache the
-        value if you are not modifying it.
         """
-        try:
-            from importlib.resources import open_binary
-        except ImportError:
-            # Backport module for before Python 3.7
-            from importlib_resources import open_binary
-        from lzma import LZMAFile
-        with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
-            return cls.unserialise(f)
+        # It's pretty expensive to parse, so keep the original privately,
+        # returning a deep-copy.
+        global _ENGINE_FGD
+        if _ENGINE_FGD is None:
+            try:
+                from importlib.resources import open_binary
+            except ImportError:
+                # Backport module for before Python 3.7
+                from importlib_resources import open_binary
+            from lzma import LZMAFile
+            with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
+                return cls.unserialise(f)
+        return deepcopy(_ENGINE_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
