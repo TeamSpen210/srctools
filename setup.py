@@ -59,10 +59,10 @@ setup(
                 "srctools/_cy_vtf_readwrite" + cy_ext,
             ] + SQUISH_CPP,
             extra_compile_args=[
-                '/openmp' if WIN else '-openmp',
+                '/openmp' if WIN else '-fopenmp',
                  # '/FAs',  # MS ASM dump
             ],
-            extra_link_args=['/openmp' if WIN else '-openmp'],
+            extra_link_args=['/openmp' if WIN else '-fopenmp'],
         ),
         Extension(
             "srctools._vec",
