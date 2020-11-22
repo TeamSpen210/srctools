@@ -771,6 +771,64 @@ class BSP:
 
         game_lump.data = prop_lump.getvalue()
 
+    def vis_tree(self) -> 'VisTree':
+        """Parse the visleaf data to get the full node."""
+        # First parse everything, then link up the objects.
+        planes: List[Tuple[Vec, float]] = []
+        nodes: List[Tuple[VisTree, int, int]] = []
+        leafs: List[VisLeaf] = []
+
+        for x, y, z, dist, flags in struct.iter_unpack('<ffffi', self.lumps[BSP_LUMPS.PLANES].data):
+            planes.append((Vec(x, y, z), dist))
+
+        for (
+            plane_ind, neg_ind, pos_ind,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, face_count, area_ind,
+        ) in struct.iter_unpack('<iii6hHHh2x', self.lumps[BSP_LUMPS.NODES].data):
+            plane_norm, plane_dist = planes[plane_ind]
+            nodes.append((VisTree(
+                plane_norm, plane_dist,
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+            ), neg_ind, pos_ind))
+
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data.
+        if self.version.value <= 19:
+            leaf_fmt += '26x'
+
+        for i, (
+            contents,
+            cluster_ind, area_and_flags,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, num_faces,
+            first_brush, num_brushes,
+            water_ind
+        ) in enumerate(struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
+            leafs.append(VisLeaf(
+                i, area_and_flags,
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+                first_face, num_faces,
+                first_brush, num_brushes,
+                water_ind,
+            ))
+
+        for node, neg_ind, pos_ind in nodes:
+            if neg_ind < 0:
+                node.child_neg = leafs[-1 - neg_ind]
+            else:
+                node.child_neg = nodes[neg_ind][0]
+            if pos_ind < 0:
+                node.child_pos = leafs[-1 - pos_ind]
+            else:
+                node.child_pos = nodes[pos_ind][0]
+        # First node is the top of the tree.
+        return nodes[0][0]
+
 
 class Lump:
     """Represents a lump header in a BSP file.
@@ -903,3 +961,55 @@ class StaticProp:
             self.origin,
             self.angles,
         )
+
+class VisLeaf:
+    """A leaf in the visleaf data.
+
+    The bounds is defined implicitly by the parent node planes.
+    """
+    def __init__(
+        self,
+        leaf_id: int,
+        area_and_flags: int,
+        mins: Vec, maxes: Vec,
+        first_face: int,
+        face_count: int,
+        first_brush: int,
+        brush_count: int,
+        water_id: int,
+    ) -> None:
+        self.id = leaf_id
+        self.area =  area_and_flags & 0b1111111110000000
+        self.flags = area_and_flags & 0b0000000001111111
+        self.mins = mins
+        self.maxes = maxes
+        self.first_face = first_face
+        self.face_count = face_count
+        self.first_brush = first_brush
+        self.brush_count = brush_count
+        self.water_id = water_id
+
+
+class VisTree:
+    """A tree node in the visleaf data.
+
+    Each of these is a plane splitting the map in two, which then has a child
+    tree or visleaf on either side.
+    """
+    plane_norm: Vec
+    plane_dist: float
+    child_neg: Union['VisTree', VisLeaf]
+    child_pos: Union['VisTree', VisLeaf]
+
+    def __init__(
+        self,
+        norm: Vec, dist: float,
+        mins: Vec, maxes: Vec,
+    ) -> None:
+        self.plane_norm = norm
+        self.plane_dist = dist
+        self.mins = mins
+        self.maxes = maxes
+        # Replaced after.
+        self.child_neg = None  # type: ignore
+        self.child_pos = None  # type: ignore
