@@ -78,6 +78,7 @@ cdef inline double norm_ang(double val):
 
 cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
     cdef unicode str_x, str_y, str_z
+    cdef list split_value
 
     if isinstance(value, Vec):
         vec.x = (<Vec>value).val.x
@@ -90,13 +91,15 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
         vec.z = (<Angle>value).val.z
         return True
 
-    try:
-        str_x, str_y, str_z = (<unicode?>value).split()
-    except ValueError:
+    split_value = (<unicode?>value).split()
+    if len(split_value) != 3:
         vec.x = x
         vec.y = y
         vec.z = z
         return True
+    str_x = split_value[0]
+    str_y = split_value[1]
+    str_z = split_value[2]
 
     if str_x[0] in '({[<':
         str_x = str_x[1:]
@@ -125,6 +128,7 @@ def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
     cdef vec_t vec
     _parse_vec_str(&vec, val, x, y, z)
     return _make_tuple(vec.x, vec.y, vec.z)
+
 
 cdef inline unsigned char _conv_vec(
     vec_t *result,
@@ -284,6 +288,43 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
         ang.z = 0.0  # Can't produce.
 
 
+cdef inline void _mat_identity(mat_t matrix):
+    """Set the matrix to the identity transform."""
+    matrix[0] = [1.0, 0.0, 0.0]
+    matrix[1] = [0.0, 1.0, 0.0]
+    matrix[2] = [0.0, 0.0, 1.0]
+
+
+cdef bint _conv_matrix(mat_t result, object value) except True:
+    """Convert various values to a rotation matrix.
+
+    Vectors will be treated as angles, and None as the identity.
+    """
+    cdef vec_t ang
+    if value is None:
+        _mat_identity(result)
+    elif isinstance(value, Matrix):
+        memcpy(result, (<Matrix>value).mat, sizeof(mat_t))
+    elif isinstance(value, Angle):
+        _mat_from_angle(result, &(<Angle>value).val)
+    elif isinstance(value, Vec):
+        _mat_from_angle(result, &(<Vec>value).val)
+    else:
+        [ang.x, ang.y, ang.z] = value
+        _mat_from_angle(result, &ang)
+    return False
+
+
+def to_matrix(value) -> Matrix:
+    """Convert various values to a rotation matrix.
+
+    Vectors will be treated as angles, and None as the identity.
+    """
+    cdef Matrix result = Matrix.__new__(Matrix)
+    _conv_matrix(result.mat, value)
+    return result
+
+
 @cython.final
 cdef class VecIter:
     """Implements iter(Vec)."""
@@ -351,9 +392,6 @@ cdef class VecTransform:
 
     def __enter__(self):
         self.mat = Matrix.__new__(Matrix)
-        self.mat.mat[0] = [1.0, 0.0, 0.0]
-        self.mat.mat[1] = [0.0, 1.0, 0.0]
-        self.mat.mat[2] = [0.0, 0.0, 1.0]
         return self.mat
 
     def __exit__(self, exc_type, exc_val, exc_tb):
@@ -542,9 +580,9 @@ cdef class Vec:
         _parse_vec_str(&vec.val, value, x, y, z)
         return vec
 
-    @staticmethod
+    @classmethod
     @cython.boundscheck(False)
-    def with_axes(*args) -> 'Vec':
+    def with_axes(cls, *args) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -648,8 +686,8 @@ cdef class Vec:
 
         return self
 
-    @staticmethod
-    def bbox(*points: Vec) -> 'Tuple[Vec, Vec]':
+    @classmethod
+    def bbox(cls, *points: Vec) -> 'Tuple[Vec, Vec]':
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -1013,7 +1051,7 @@ cdef class Vec:
 
     # In-place operators. Self is always a Vec.
 
-    def __iadd__(self, other: 'Union[Vec, tuple, float]'):
+    def __iadd__(self, other):
         """+= operation.
 
         Like the normal one except without duplication.
@@ -1030,7 +1068,7 @@ cdef class Vec:
 
         return self
 
-    def __isub__(self, other: 'Union[Vec, tuple, float]'):
+    def __isub__(self, other):
         """-= operation.
 
         Like the normal one except without duplication.
@@ -1047,7 +1085,7 @@ cdef class Vec:
 
         return self
 
-    def __imul__(self, object other: float):
+    def __imul__(self, other):
         """*= operation.
 
         Like the normal one except without duplication.
@@ -1064,7 +1102,7 @@ cdef class Vec:
         else:
             return NotImplemented
 
-    def __itruediv__(self, other: float):
+    def __itruediv__(self, other):
         """/= operation.
 
         Like the normal one except without duplication.
@@ -1081,7 +1119,7 @@ cdef class Vec:
         else:
             return NotImplemented
 
-    def __ifloordiv__(self, other: float):
+    def __ifloordiv__(self, other):
         """//= operation.
 
         Like the normal one except without duplication.
@@ -1098,7 +1136,7 @@ cdef class Vec:
         else:
             return NotImplemented
 
-    def __imod__(self, other: float):
+    def __imod__(self, other):
         """%= operation.
 
         Like the normal one except without duplication.
@@ -1203,42 +1241,44 @@ cdef class Vec:
         except (TypeError, ValueError):
             return NotImplemented
 
+        # 'redundant' == True prevents the individual comparisons from trying
+        # to convert the result individually on failure.
         if op == Py_EQ:
             return (
                 self.val.x == other.x and
                 self.val.y == other.y and
                 self.val.z == other.z
-            )
+            ) == True
         elif op == Py_NE:
             return (
                 self.val.x != other.x or
                 self.val.y != other.y or
                 self.val.z != other.z
-            )
+            ) == True
         elif op == Py_LT:
             return (
                 self.val.x < other.x and
                 self.val.y < other.y and
                 self.val.z < other.z
-            )
+            ) == True
         elif op == Py_GT:
             return (
                 self.val.x > other.x and
                 self.val.y > other.y and
                 self.val.z > other.z
-            )
+            ) == True
         elif op == Py_LE:
             return (
                 self.val.x <= other.x and
                 self.val.y <= other.y and
                 self.val.z <= other.z
-            )
+            ) == True
         elif op == Py_GE:
             return (
                 self.val.x >= other.x and
                 self.val.y >= other.y and
                 self.val.z >= other.z
-            )
+            ) == True
         else:
             raise RuntimeError('Bad operation!')
 
@@ -1355,6 +1395,21 @@ cdef class Vec:
         _vec_cross(&res.val, &self.val, &oth)
         return res
 
+    def localise(self, object origin, object angles=None) -> None:
+        """Shift this point to be local to the given position and angles.
+
+        This effectively translates local-space offsets to a global location,
+        given the parent's origin and angles.
+        """
+        cdef mat_t matrix
+        cdef vec_t offset
+        _conv_matrix(matrix, angles)
+        _conv_vec(&offset, origin, scalar=False)
+        _vec_rot(&self.val, matrix)
+        self.val.x += offset.x
+        self.val.y += offset.y
+        self.val.z += offset.z
+
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
@@ -1364,7 +1419,7 @@ cdef class Vec:
         # :g strips the .0 off of floats if it's an integer.
         return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return the values, separated by spaces.
 
         This is the main format in Valve's file formats.
@@ -1372,14 +1427,14 @@ cdef class Vec:
         """
         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         """Code required to reproduce this vector."""
         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
 
     def __iter__(self):
         return VecIter.__new__(VecIter, self)
 
-    def __getitem__(self, ind_obj: 'Union[str, int]') -> float:
+    def __getitem__(self, ind_obj) -> float:
         """Allow reading values by index instead of name if desired.
 
         This accepts either 0,1,2 or 'x','y','z' to read values.
@@ -1472,9 +1527,7 @@ cdef class Matrix:
 
     def __init__(self) -> None:
         """Create a matrix set to the identity transform."""
-        self.mat[0] = [1.0, 0.0, 0.0]
-        self.mat[1] = [0.0, 1.0, 0.0]
-        self.mat[2] = [0.0, 0.0, 1.0]
+        _mat_identity(self.mat)
 
     def __eq__(self, other: object) -> object:
         if isinstance(other, Matrix):
@@ -1876,9 +1929,9 @@ cdef class Angle:
         return AngleIter.__new__(AngleIter, self)
 
 
-    @staticmethod
+    @classmethod
     @cython.boundscheck(False)
-    def with_axes(*args):
+    def with_axes(cls, *args):
         """Create an Angle, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
