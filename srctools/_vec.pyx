@@ -288,6 +288,45 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
         ang.z = 0.0  # Can't produce.
 
 
+cdef bint _mat_from_basis(mat_t mat, Vec x, Vec y, Vec z) except True:
+    """Implement the shared parts of Matrix/Angle .from_basis()."""
+    cdef vec_t res
+
+    if x is None:
+        if y is not None and z is not None:
+            _vec_cross(&res, &y.val, &z.val)
+        else:
+            raise TypeError('At least two vectors must be provided!')
+    else:
+        res = x.val
+
+    _vec_normalise(&res, &res)
+    mat[0] = res.x, res.y, res.z
+
+    if y is None:
+        if x is not None and z is not None:
+            _vec_cross(&res, &z.val, &x.val)
+        else:
+            raise TypeError('At least two vectors must be provided!')
+    else:
+        res = y.val
+
+    _vec_normalise(&res, &res)
+    mat[1] = res.x, res.y, res.z
+
+    if z is None:
+        if x is not None and y is not None:
+            _vec_cross(&res, &x.val, &y.val)
+        else:
+            raise TypeError('At least two vectors must be provided!')
+    else:
+        res = z.val
+
+    _vec_normalise(&res, &res)
+    mat[2] = res.x, res.y, res.z
+    return False
+
+
 cdef inline void _mat_identity(mat_t matrix):
     """Set the matrix to the identity transform."""
     matrix[0] = [1.0, 0.0, 0.0]
@@ -1709,41 +1748,7 @@ cdef class Matrix:
         The third is computed, if not provided.
         """
         cdef Matrix mat = Matrix.__new__(cls)
-        cdef vec_t res
-
-        if x is None:
-            if y is not None and z is not None:
-                _vec_cross(&res, &y.val, &z.val)
-            else:
-                raise TypeError('At least two vectors must be provided!')
-        else:
-            res = x.val
-
-        _vec_normalise(&res, &res)
-        mat.mat[0] = res.x, res.y, res.z
-
-        if y is None:
-            if x is not None and z is not None:
-                _vec_cross(&res, &z.val, &x.val)
-            else:
-                raise TypeError('At least two vectors must be provided!')
-        else:
-            res = y.val
-
-        _vec_normalise(&res, &res)
-        mat.mat[1] = res.x, res.y, res.z
-
-        if z is None:
-            if x is not None and y is not None:
-                _vec_cross(&res, &x.val, &y.val)
-            else:
-                raise TypeError('At least two vectors must be provided!')
-        else:
-            res = z.val
-
-        _vec_normalise(&res, &res)
-        mat.mat[2] = res.x, res.y, res.z
-
+        _mat_from_basis(mat.mat, x, y, z)
         return mat
 
     def __matmul__(first, second):
@@ -1984,7 +1989,12 @@ cdef class Angle:
 
         At least two must be specified, with the third computed if necessary.
         """
-        return Matrix.from_basis(x=x, y=y, z=z).to_angle()
+        cdef mat_t mat
+        cdef Angle ang = Angle.__new__(Angle)
+        _mat_from_basis(mat, x, y, z)
+        _mat_to_angle(&ang.val, mat)
+        return ang
+
 
     def __getitem__(self, pos):
         """Allow reading values by index instead of name if desired.
@@ -2001,11 +2011,11 @@ cdef class Angle:
 
         if isinstance(pos, int):
             index = <int>pos
-            if pos == 0:
+            if index == 0:
                 return self.val.x
-            if pos == 1:
+            if index == 1:
                 return self.val.y
-            if pos == 2:
+            if index == 2:
                 return self.val.z
         elif isinstance(pos, str):
             key = <str>pos
@@ -2028,12 +2038,12 @@ cdef class Angle:
         val = norm_ang(val)
 
         if isinstance(pos, int):
-            index = pos
-            if pos == 0:
+            index = <int>pos
+            if index == 0:
                 self.val.x = val
-            if pos == 1:
+            if index == 1:
                 self.val.y = val
-            if pos == 2:
+            if index == 2:
                 self.val.z = val
         elif isinstance(pos, str):
             key = <str>pos
