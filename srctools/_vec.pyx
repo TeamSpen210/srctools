@@ -1011,6 +1011,23 @@ cdef class Vec:
             norm_ang(roll),
         )
 
+    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
+        """Produce a Source Engine angle with roll.
+
+        The z_normal should point in +z, and must be at right angles to this
+        vector.
+        This is deprecated, use Matrix.from_basis().to_angle().
+        Stride is no longer used.
+        """
+        cdef mat_t mat
+        cdef Angle ang
+        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.from_basis().to_angle()', 1)
+        ang = Angle.__new__(Angle)
+
+        _mat_from_basis(mat, x=self, z=z_norm, y=None)
+        _mat_to_angle(&ang.val, mat)
+        return ang
+
     def rotation_around(self, double rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
         cdef Vec vec = Vec.__new__(Vec)
