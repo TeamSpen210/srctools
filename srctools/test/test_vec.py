@@ -137,7 +137,6 @@ def test_with_axes(py_c_vec):
             assert vec[c] == z, msg
 
 
-
 def test_unary_ops(py_c_vec):
     """Test -vec and +vec."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -579,7 +578,6 @@ def test_other_axes(py_c_vec):
             with raises_keyerror: vec.other_axes(invalid)
 
 
-
 def test_abs(py_c_vec):
     """Test the function of abs(Vec)."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -623,6 +621,70 @@ def test_len(py_c_vec):
         assert len(Vec(val, 0, val)) == 2
         assert len(Vec(val, val, -0)) == 2
         assert len(Vec(val, val, val)) == 3
+
+
+def test_iter_line(py_c_vec):
+    """Test Vec.iter_line()"""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11)):
+        assert_vec(pos, x, 5.82, -6.35)
+    for pos, y in zip(Vec(-4.36, 10.82, -6.35).iter_line(Vec(-4.36, 5.82, -6.35), 1), range(10, 4, -1)):
+        assert_vec(pos, -4.36, y + 0.82, -6.35)
+    for pos, z in zip(Vec(3.78, 12.98, -5.65).iter_line(Vec(3.78, 12.98, 6.35), 1), range(-6, 7)):
+        assert_vec(pos, 3.78, 12.98, z + 0.35)
+
+
+def test_iter_grid(py_c_vec):
+    """Test Vec.iter_grid()."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    it = Vec.iter_grid(Vec(35, 60, 90), Vec(40, 70, 110), 5)
+
+    assert_vec(next(it), 35, 60, 90)
+    assert_vec(next(it), 35, 60, 95)
+    assert_vec(next(it), 35, 60, 100)
+    assert_vec(next(it), 35, 60, 105)
+    assert_vec(next(it), 35, 60, 110)
+
+    assert_vec(next(it), 35, 65, 90)
+    assert_vec(next(it), 35, 65, 95)
+    assert_vec(next(it), 35, 65, 100)
+    assert_vec(next(it), 35, 65, 105)
+    assert_vec(next(it), 35, 65, 110)
+
+    assert_vec(next(it), 35, 70, 90)
+    assert_vec(next(it), 35, 70, 95)
+    assert_vec(next(it), 35, 70, 100)
+    assert_vec(next(it), 35, 70, 105)
+    assert_vec(next(it), 35, 70, 110)
+
+    assert_vec(next(it), 40, 60, 90)
+    assert_vec(next(it), 40, 60, 95)
+    assert_vec(next(it), 40, 60, 100)
+    assert_vec(next(it), 40, 60, 105)
+    assert_vec(next(it), 40, 60, 110)
+
+    assert_vec(next(it), 40, 65, 90)
+    assert_vec(next(it), 40, 65, 95)
+    assert_vec(next(it), 40, 65, 100)
+    assert_vec(next(it), 40, 65, 105)
+    assert_vec(next(it), 40, 65, 110)
+
+    assert_vec(next(it), 40, 70, 90)
+    assert_vec(next(it), 40, 70, 95)
+    assert_vec(next(it), 40, 70, 100)
+    assert_vec(next(it), 40, 70, 105)
+    assert_vec(next(it), 40, 70, 110)
+
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+    assert list(Vec.iter_grid(Vec(35, 40, 20), Vec(35, 40, 19))) == []
+    assert list(Vec.iter_grid(Vec(35, 40, 20), Vec(35, 40, 20))) == [Vec(35, 40, 20)]
+
 
 INVALID_KEYS = [
     '4',

@@ -45,6 +45,9 @@ from srctools.vec import _mk as unpickle_func, Vec_tuple
 if not issubclass(Vec_tuple, tuple):
     raise RuntimeError('Vec_tuple is not a tuple subclass!')
 
+# For convenience, an iterator which immediately fails.
+cdef object EMPTY_ITER = iter(())
+
 
 DEF PI = 3.141592653589793238462643383279502884197
 # Multiply to convert.
@@ -390,6 +393,80 @@ cdef class VecIter:
             ret = self.vec.val.z
             self.vec = None
             return ret
+
+
+@cython.final
+cdef class VecIterGrid:
+    """Implements Vec.iter_grid()."""
+    cdef:
+        long start_x
+        long start_y
+        long start_z
+
+        long stop_x
+        long stop_y
+        long stop_z
+
+        long cur_x
+        long cur_y
+        long cur_z
+
+        long stride
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef Vec vec
+        if self.cur_x > self.stop_x:
+            raise StopIteration
+
+        vec =_vector(self.cur_x, self.cur_y, self.cur_z)
+
+        self.cur_z += self.stride
+        if self.cur_z > self.stop_z:
+            self.cur_z = self.start_z
+            self.cur_y += self.stride
+            if self.cur_y > self.stop_y:
+                self.cur_y = self.start_y
+                self.cur_x += self.stride
+                # If greater, next raises StopIteration.
+
+        return vec
+
+
+@cython.final
+cdef class VecIterLine:
+    """Implements Vec.iter_line()."""
+    cdef:
+        vec_t start
+        vec_t diff
+        long stride
+        long cur_off
+        long max
+        vec_t end
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef Vec vec
+        if self.cur_off < 0:
+            raise StopIteration
+
+        if self.cur_off >= self.max:
+            # Be exact here.
+            vec = _vector(self.end.x, self.end.y, self.end.z)
+            self.cur_off = -1
+        else:
+            vec =_vector(
+                self.start.x + self.cur_off * self.diff.x,
+                self.start.y + self.cur_off * self.diff.y,
+                self.start.z + self.cur_off * self.diff.z,
+            )
+            self.cur_off += self.stride
+
+        return vec
 
 
 @cython.final
@@ -814,6 +891,64 @@ cdef class Vec:
 
         return bbox_min, bbox_max
 
+
+    @classmethod
+    def iter_grid(
+        cls,
+        min_pos,
+        max_pos,
+        stride=1,
+    ):
+        """Loop over points in a bounding box. All coordinates should be integers.
+
+        Both borders will be included.
+        """
+        cdef VecIterGrid it = VecIterGrid.__new__(VecIterGrid)
+        cdef vec_t mins
+        cdef vec_t maxs
+        _conv_vec(&mins, min_pos, scalar=True)
+        _conv_vec(&maxs, max_pos, scalar=True)
+
+        if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
+            return EMPTY_ITER
+        
+        it.cur_x = it.start_x = int(mins.x)
+        it.cur_y = it.start_y = int(mins.y)
+        it.cur_z = it.start_z = int(mins.z)
+
+        it.stop_x = int(maxs.x)
+        it.stop_y = int(maxs.y)
+        it.stop_z = int(maxs.z)
+
+        it.stride = stride
+
+        return it
+
+    def iter_line(self, end: 'Vec', stride: int=1):
+        """Yield points between this point and 'end' (including both endpoints).
+
+        Stride specifies the distance between each point.
+        If the distance is less than the stride, only end-points will be yielded.
+        If they are the same, that point will be yielded.
+        """
+        cdef vec_t offset, direction
+        cdef double length
+        cdef double pos
+        cdef VecIterLine it = VecIterLine.__new__(VecIterLine)
+        offset.x = end.val.x - self.val.x
+        offset.y = end.val.y - self.val.y
+        offset.z = end.val.z - self.val.z
+
+        length = _vec_mag(&offset)
+        _vec_normalise(&it.diff, &offset)
+
+        it.start = self.val
+        it.end = end.val
+        it.cur_off = 0
+        it.max = int(length)
+        it.stride = int(stride)
+
+        return it
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
