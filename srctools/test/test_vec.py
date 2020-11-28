@@ -18,12 +18,14 @@ raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
 
-
-def iter_vec(nums):
-    for x in nums:
-        for y in nums:
-            for z in nums:
-                yield x, y, z
+def test_matching_apis() -> None:
+    """Check each class pair has the same methods."""
+    def get_public(typ: type) -> set:
+        """Skip __dunder__ and _private attrs."""
+        return {name for name in vars(typ) if not name.startswith('_')}
+    assert get_public(vec_mod.Cy_Vec) == get_public(vec_mod.Py_Vec)
+    assert get_public(vec_mod.Cy_Matrix) == get_public(vec_mod.Py_Matrix)
+    assert get_public(vec_mod.Cy_Angle) == get_public(vec_mod.Py_Angle)
 
 
 def test_construction(py_c_vec):
