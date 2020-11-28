@@ -4,6 +4,7 @@ from libc cimport math
 from libc.string cimport memcpy
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
+from cpython.exc cimport PyErr_WarnEx
 cimport cython
 
 # Lightweight struct just holding the three values.
@@ -759,9 +760,14 @@ cdef class Vec:
 
         If round is True, all values will be rounded to 3 decimals
         (since these calculations always have small inprecision.)
+        
+        This is deprecated - use an Angle and the @ operator.
         """
         cdef vec_t angle
         cdef mat_t matrix
+
+        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle() instead.", 1)
+
         angle.x = pitch
         angle.y = yaw
         angle.z = roll
@@ -787,7 +793,9 @@ cdef class Vec:
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
+        This is deprecated - use Angle.from_str and the @ operator.
         """
+        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle.from_str() instead.", 1)
         cdef vec_t angle
         cdef mat_t matrix
 
