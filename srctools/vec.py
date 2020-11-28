@@ -529,17 +529,20 @@ class Vec:
 
         The z_normal should point in +z, and must be at right angles to this
         vector.
+        This is deprecated, use Matrix.from_basis().to_angle().
+        Stride is no longer used.
         """
         warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
         return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
     def rotation_around(self, rot: float=90) -> 'Vec':
         """For an axis-aligned normal, return the angles which rotate around it."""
-        if self.x:
+        warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
+        if self.x and not self.y and not self.z:
             return Py_Vec(z=math.copysign(rot, self.x))
-        elif self.y:
+        elif self.y and not self.x and not self.z:
             return Py_Vec(x=math.copysign(rot, self.y))
-        elif self.z:
+        elif self.z and not self.x and not self.y:
             return Py_Vec(y=math.copysign(rot, self.z))
         else:
             raise ValueError('Zero vector!')

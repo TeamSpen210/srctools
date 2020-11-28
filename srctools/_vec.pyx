@@ -1029,9 +1029,14 @@ cdef class Vec:
         return ang
 
     def rotation_around(self, double rot: float=90) -> 'Vec':
-        """For an axis-aligned normal, return the angles which rotate around it."""
+        """For an axis-aligned normal, return the angles which rotate around it.
+
+        This is deprecated, use Matrix.axis_angle().to_angle() which works
+        for any orientation and has a consistent direction.
+        """
         cdef Vec vec = Vec.__new__(Vec)
         vec.val.x = vec.val.y = vec.val.z = 0.0
+        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
 
         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
             vec.val.z = math.copysign(rot, self.val.x)
