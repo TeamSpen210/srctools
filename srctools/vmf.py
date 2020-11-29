@@ -7,6 +7,7 @@ import re
 import itertools
 import operator
 import builtins
+import warnings
 from collections import defaultdict, namedtuple
 from contextlib import suppress
 
@@ -1561,6 +1562,7 @@ class Side:
 
          This is for use in texture randomisation.
          """
+        warnings.warn('This is useless and will be removed.', DeprecationWarning)
         return (
             self.planes[0].join(' ') +
             self.planes[1].join(' ') +
