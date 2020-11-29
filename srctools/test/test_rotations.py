@@ -290,3 +290,16 @@ def test_gen_check(py_c_vec) -> None:
             assert_rot(Matrix.from_basis(x=x, y=y), mat)
             assert_rot(Matrix.from_basis(y=y, z=z), mat)
             assert_rot(Matrix.from_basis(x=x, z=z), mat)
+
+            # And Vec.cross().
+            assert_vec(Vec.cross(x, y), up_x, up_y, up_z, tol=1e-5)
+            assert_vec(Vec.cross(y, z), for_x, for_y, for_z, tol=1e-5)
+            assert_vec(Vec.cross(x, z), left_x, left_y, left_z, tol=1e-5)
+
+            assert_vec(Vec.cross(y, x), -up_x, -up_y, -up_z, tol=1e-5)
+            assert_vec(Vec.cross(z, y), -for_x, -for_y, -for_z, tol=1e-5)
+            assert_vec(Vec.cross(z, x), -left_x, -left_y, -left_z, tol=1e-5)
+
+            assert_vec(Vec.cross(x, x), 0, 0, 0)
+            assert_vec(Vec.cross(y, y), 0, 0, 0)
+            assert_vec(Vec.cross(z, z), 0, 0, 0)

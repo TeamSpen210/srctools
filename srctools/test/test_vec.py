@@ -1024,3 +1024,14 @@ def test_vmf_rotation(py_c_vec):
         assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3)
         assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3)
 
+
+def test_cross_product_axes(py_c_vec):
+    """Check all the cross product identities."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    assert_vec(Vec.cross(Vec(x=1), Vec(y=1)), 0, 0, 1)
+    assert_vec(Vec.cross(Vec(x=1), Vec(z=1)), 0, -1, 0)
+    assert_vec(Vec.cross(Vec(y=1), Vec(z=1)), 1, 0, 0)
+    assert_vec(Vec.cross(Vec(y=1), Vec(x=1)), 0, 0, -1)
+    assert_vec(Vec.cross(Vec(z=1), Vec(x=1)), 0, 1, 0)
+    assert_vec(Vec.cross(Vec(z=1), Vec(y=1)), -1, 0, 0)
