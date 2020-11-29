@@ -55,15 +55,16 @@ DEF PI = 3.141592653589793238462643383279502884197
 DEF rad_2_deg = 180.0 / PI
 DEF deg_2_rad = PI / 180.0
 DEF ROUND_TO = 6
+DEF TOL = 1e-6
 
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef inline object _make_tuple(x, y, z):
+cdef inline object _make_tuple(double x, double y, double z):
     # Fast-construct a Vec_tuple. We make a normal tuple (fast),
     # then assign the namedtuple type. The type is on the heap
     # so we need to incref it.
-    cdef tuple tup = (x, y, z)
+    cdef tuple tup = (round(x, ROUND_TO), round(y, ROUND_TO), round(z, ROUND_TO))
     if USE_TYPE_INTERNALS:
         Py_INCREF(Vec_tuple)
         (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
@@ -960,11 +961,16 @@ cdef class Vec:
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
-        if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
+        cdef bint x, y, z
+        # Treat extremely close to zero as zero.
+        x = abs(self.val.x) > TOL
+        y = abs(self.val.y) > TOL
+        z = abs(self.val.z) > TOL
+        if x and not y and not z:
             return 'x'
-        if self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
+        if not x and y and not z:
             return 'y'
-        if self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
+        if not x and not y and z:
             return 'z'
         raise ValueError(
             f'({self.val.x:g}, {self.val.y:g}, {self.val.z:g}) is '
@@ -1426,9 +1432,9 @@ cdef class Vec:
     def __len__(self):
         """The len() of a vector is the number of non-zero axes."""
         return (
-            (self.val.x != 0) +
-            (self.val.y != 0) +
-            (self.val.z != 0)
+            (abs(self.val.x) > TOL) +
+            (abs(self.val.y) > TOL) +
+            (abs(self.val.z) > TOL)
         )
 
     # All the comparisons are similar, so we can use richcmp to
@@ -1438,6 +1444,7 @@ cdef class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         cdef vec_t other
         try:
@@ -1447,44 +1454,45 @@ cdef class Vec:
 
         # 'redundant' == True prevents the individual comparisons from trying
         # to convert the result individually on failure.
+        # Use subtraction so that values within TOL are accepted.
         if op == Py_EQ:
             return (
-                self.val.x == other.x and
-                self.val.y == other.y and
-                self.val.z == other.z
+                abs(self.val.x - other.x) <= TOL and
+                abs(self.val.y - other.y) <= TOL and
+                abs(self.val.z - other.z) <= TOL
             ) == True
         elif op == Py_NE:
             return (
-                self.val.x != other.x or
-                self.val.y != other.y or
-                self.val.z != other.z
+                abs(self.val.x - other.x) > TOL or
+                abs(self.val.y - other.y) > TOL or
+                abs(self.val.z - other.z) > TOL
             ) == True
         elif op == Py_LT:
             return (
-                self.val.x < other.x and
-                self.val.y < other.y and
-                self.val.z < other.z
+                (other.x - self.val.x) > TOL and
+                (other.y - self.val.y) > TOL and
+                (other.z - self.val.z) > TOL
             ) == True
         elif op == Py_GT:
             return (
-                self.val.x > other.x and
-                self.val.y > other.y and
-                self.val.z > other.z
+                (self.val.x - other.x) > TOL and
+                (self.val.y - other.y) > TOL and
+                (self.val.z - other.z) > TOL
             ) == True
-        elif op == Py_LE:
+        elif op == Py_LE:  # !GT
             return (
-                self.val.x <= other.x and
-                self.val.y <= other.y and
-                self.val.z <= other.z
+                (self.val.x - other.x) <= TOL and
+                (self.val.y - other.y) <= TOL and
+                (self.val.z - other.z) <= TOL
             ) == True
-        elif op == Py_GE:
+        elif op == Py_GE: # !LT
             return (
-                self.val.x >= other.x and
-                self.val.y >= other.y and
-                self.val.z >= other.z
+                (other.x - self.val.x) <= TOL and
+                (other.y - self.val.y) <= TOL and
+                (other.z - self.val.z) <= TOL
             ) == True
         else:
-            raise RuntimeError('Bad operation!')
+            raise SystemError(f'Unknown operation {op!r}' '!')
 
     def max(self, other):
         """Set this vector's values to the maximum of the two vectors."""
@@ -1575,7 +1583,6 @@ cdef class Vec:
             norm.y * dot,
             norm.z * dot,
         )
-
 
     def dot(self, other) -> float:
         """Return the dot product of both Vectors."""

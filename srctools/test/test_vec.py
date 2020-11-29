@@ -538,6 +538,10 @@ def test_axis(py_c_vec):
         assert Vec(0, num, 0).axis() == 'y', num
         assert Vec(0, 0, num).axis() == 'z', num
 
+        assert Vec(num, 1e-8, -0.0000008).axis() == 'x', num
+        assert Vec(-1e-8, num, -0.0000008).axis() == 'y', num
+        assert Vec(-0.000000878, 0.0000003782, num).axis() == 'z', num
+
         with raises_valueerror:
             Vec(num, num, 0).axis()
 

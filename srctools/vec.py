@@ -40,9 +40,9 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, Type, TYPE_CHECKING,
+    Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    SupportsFloat, Iterator, Iterable, ContextManager,
+    Iterator, Iterable, ContextManager,
 )
 
 
@@ -494,9 +494,9 @@ class Vec:
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
-        x = self.x != 0
-        y = self.y != 0
-        z = self.z != 0
+        x = abs(self.x) > 1e-6
+        y = abs(self.y) > 1e-6
+        z = abs(self.z) > 1e-6
         if x and not y and not z:
             return 'x'
         if not x and y and not z:
@@ -655,14 +655,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
-            return other.x == self.x and other.y == self.y and other.z == self.z
+            return (
+                abs(other.x - self.x) < 1e-6 and
+                abs(other.y - self.y) < 1e-6 and
+                abs(other.z - self.z) < 1e-6
+            )
         elif isinstance(other, tuple):
             return (
-                self.x == other[0] and
-                self.y == other[1] and
-                self.z == other[2]
+                abs(self.x - other[0]) < 1e-6 and
+                abs(self.y - other[1]) < 1e-6 and
+                abs(self.z - other[2]) < 1e-6
             )
         else:
             return NotImplemented
@@ -672,14 +677,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
-            return other.x != self.x or other.y != self.y or other.z != self.z
+            return (
+                abs(other.x - self.x) >= 1e-6 or
+                abs(other.y - self.y) >= 1e-6 or
+                abs(other.z - self.z) >= 1e-6
+            )
         elif isinstance(other, tuple):
             return (
-                self.x != other[0] or
-                self.y != other[1] or
-                self.z != other[2]
+                abs(self.x - other[0]) >= 1e-6 or
+                abs(self.y - other[1]) >= 1e-6 or
+                abs(self.z - other[2]) >= 1e-6
             )
         else:
             return NotImplemented
@@ -689,18 +699,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
             return (
-                self.x < other.x and
-                self.y < other.y and
-                self.z < other.z
+                (other.x - self.x) > 1e-6 and
+                (other.y - self.y) > 1e-6 and
+                (other.z - self.z) > 1e-6
             )
         elif isinstance(other, tuple):
             return (
-                self.x < other[0] and
-                self.y < other[1] and
-                self.z < other[2]
+                (other[0] - self.x) > 1e-6 and
+                (other[1] - self.y) > 1e-6 and
+                (other[2] - self.z) > 1e-6
             )
         else:
             return NotImplemented
@@ -710,18 +721,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
             return (
-                self.x <= other.x and
-                self.y <= other.y and
-                self.z <= other.z
+                (self.x - other.x) <= 1e-6 and
+                (self.y - other.y) <= 1e-6 and
+                (self.z - other.z) <= 1e-6
             )
         elif isinstance(other, tuple):
             return (
-                self.x <= other[0] and
-                self.y <= other[1] and
-                self.z <= other[2]
+                (self.x - other[0]) <= 1e-6 and
+                (self.y - other[1]) <= 1e-6 and
+                (self.z - other[2]) <= 1e-6
             )
         else:
             return NotImplemented
@@ -731,18 +743,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
             return (
-                self.x > other.x and
-                self.y > other.y and
-                self.z > other.z
+                (self.x - other.x) > 1e-6 and
+                (self.y - other.y) > 1e-6 and
+                (self.z - other.z) > 1e-6
             )
         elif isinstance(other, tuple):
             return (
-                self.x > other[0] and
-                self.y > other[1] and
-                self.z > other[2]
+                (self.x > other[0]) > 1e-6 and
+                (self.y > other[1]) > 1e-6 and
+                (self.z > other[2]) > 1e-6
             )
         else:
             return NotImplemented
@@ -752,18 +765,19 @@ class Vec:
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
+        A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
             return (
-                self.x >= other.x and
-                self.y >= other.y and
-                self.z >= other.z
+                (other.x - self.x) <= 1e-6 and
+                (other.y - self.y) <= 1e-6 and
+                (other.z - self.z) <= 1e-6
             )
         elif isinstance(other, tuple):
             return (
-                self.x >= other[0] and
-                self.y >= other[1] and
-                self.z >= other[2]
+                (other[0] - self.x) <= 1e-6 and
+                (other[1] - self.y) <= 1e-6 and
+                (other[2] - self.z) <= 1e-6
             )
         else:
             return NotImplemented
@@ -865,7 +879,7 @@ class Vec:
 
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
-        return Vec_tuple(self.x, self.y, self.z)
+        return Vec_tuple(round(self.x, 6), round(self.y, 6), round(self.z, 6))
 
     def len_sq(self) -> float:
         """Return the magnitude squared, which is slightly faster."""
@@ -874,15 +888,15 @@ class Vec:
     def __len__(self) -> int:
         """The len() of a vector is the number of non-zero axes."""
         return (
-            (self.x != 0) +
-            (self.y != 0) +
-            (self.z != 0)
+            (abs(self.x) > 1e-6) +
+            (abs(self.y) > 1e-6) +
+            (abs(self.z) > 1e-6)
         )
 
     def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value.
         """
-        return val == self.x or val == self.y or val == self.z
+        return abs(val - self.x) < 1e-6 or abs(val - self.y) < 1e-6 or abs(val - self.z) < 1e-6
 
     def __neg__(self) -> 'Vec':
         """The inverted form of a Vector has inverted axes."""
