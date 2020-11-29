@@ -2,7 +2,7 @@
 """Functions for reading/writing VTF data."""
 from libc.stdio cimport snprintf
 from libc.stdlib cimport malloc, free
-from libc.string cimport memcpy, memset
+from libc.string cimport memcpy, memset, strncmp
 from cython.parallel cimport prange, parallel
 
 cdef extern from "squish.h" namespace "squish":
@@ -685,47 +685,50 @@ ctypedef struct Format:
     bint (*save)(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1
 
 
-cdef Format[30] FORMATS = [
-    Format("RGBA8888", &load_copy, &save_copy),
-    Format("ABGR8888", &load_abgr8888, &save_abgr8888),
-    Format("RGB888", &load_rgb888, &save_rgb888),
-    Format("BGR888", &load_bgr888, &save_bgr888),
-    Format("RGB565", &load_rgb565, &save_rgb565),
-    Format("I8", &load_i8, &save_i8),
-    Format("IA88", &load_ia88, &save_ia88),
-    Format("P8", NULL, NULL),  # Never implemented by Valve.
-    Format("A8", &load_a8, &save_a8),
-    Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
-    Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
-    Format("ARGB8888", &load_argb8888, &save_argb8888),
-    Format("BGRA8888", &load_bgra8888, &save_bgra8888),
-    Format("DXT1", &load_dxt1, &save_dxt1),
-    Format("DXT3", &load_dxt3, &save_dxt3),
-    Format("DXT5", &load_dxt5, &save_dxt5),
-    Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
-    Format("BGR565", &load_bgr565, &save_bgr565),
-    Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
-    Format("BGRA4444", &load_bgra4444, &save_bgra4444),
-    Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
-    Format("BGRA5551", &load_bgra5551, &save_bgra5551),
-    Format("UV88", &load_uv88, &save_uv88),
-    Format("UVWQ8888", &load_copy, &save_copy),
-    # Don't do the high-def 16-bit resolutions.
-    Format("RGBA16161616F", NULL, NULL),
-    Format("RGBA16161616", NULL, NULL),
-    Format("UVLX8888", &load_copy, &save_copy),
-    # This doesn't match the actual engine struct, just the order of
-    # the Python enum.
-    Format("NONE", NULL, NULL),
-    Format("ATI1N", NULL, NULL),
-    Format("ATI2N", &load_ati2n, &save_ati2n),
-]
+cdef Format[30] FORMATS
+# Assign directly to each, so Cython doesn't write these to a temp array first
+# in case an exception occurs.
+FORMATS[ 0] = Format("RGBA8888", &load_copy, &save_copy)
+FORMATS[ 1] = Format("ABGR8888", &load_abgr8888, &save_abgr8888)
+FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)
+FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)
+FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)
+FORMATS[ 5] = Format("I8", &load_i8, &save_i8)
+FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)
+FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.
+FORMATS[ 8] = Format("A8", &load_a8, &save_a8)
+FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)
+FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)
+FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)
+FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)
+FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)
+FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)
+FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)
+FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)
+FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)
+FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)
+FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)
+FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)
+FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)
+FORMATS[22] = Format("UV88", &load_uv88, &save_uv88)
+FORMATS[23] = Format("UVWQ8888", &load_copy, &save_copy)
+
+# Don't do the high-def 16-bit resolutions.
+FORMATS[24] = Format("RGBA16161616F", NULL, NULL)
+FORMATS[25] = Format("RGBA16161616", NULL, NULL)
+
+FORMATS[26] = Format("UVLX8888", &load_copy, &save_copy)
+
+# This doesn't match the actual engine struct, just the order of
+# the Python enum.
+FORMATS[27] = Format("NONE", NULL, NULL)
+FORMATS[28] = Format("ATI1N", NULL, NULL)
+FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)
 
 
 def init(formats: 'srctools.vtf.ImageFormats') -> None:
     """Verify that the Python enum matches our array of functions."""
     cdef int index
-    cdef const char *name
     for fmt in formats:
         index = fmt.ind
         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))

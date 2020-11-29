@@ -1003,8 +1003,8 @@ struct __pyx_MemviewEnum_obj;
 struct __pyx_memoryview_obj;
 struct __pyx_memoryviewslice_obj;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB;
-struct __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
-typedef struct __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+struct __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
+typedef struct __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc;
 struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 typedef struct __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_8srctools_17_cy_vtf_readwrite_Format;
 
@@ -1028,7 +1028,7 @@ struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB {
  *     """Compress RGB triplets into 565-packed data."""
  *     return (
  */
-struct __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
+struct __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc {
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f0;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte f1;
 };
@@ -1846,7 +1846,7 @@ static int __pyx_memoryview_thread_locks_used;
 static PyThread_type_lock __pyx_memoryview_thread_locks[8];
 static CYTHON_INLINE __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_f_8srctools_17_cy_vtf_readwrite_upsample(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8srctools_17_cy_vtf_readwrite_decomp565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
-static CYTHON_INLINE __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
+static CYTHON_INLINE __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte, __pyx_t_8srctools_17_cy_vtf_readwrite_byte); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_copy(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
 static int __pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888(__Pyx_memviewslice, __Pyx_memviewslice, __pyx_t_8srctools_17_cy_vtf_readwrite_uint, __pyx_t_8srctools_17_cy_vtf_readwrite_uint); /*proto*/
@@ -3404,9 +3404,9 @@ static CYTHON_INLINE struct __pyx_t_8srctools_17_cy_vtf_readwrite_RGB __pyx_f_8s
  *     return (
  */
 
-static CYTHON_INLINE __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
-  __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
-  __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
+static CYTHON_INLINE __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_f_8srctools_17_cy_vtf_readwrite_compress565(__pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_r, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_g, __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_v_b) {
+  __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_r;
+  __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_1;
 
   /* "srctools/_cy_vtf_readwrite.pyx":154
  *     """Compress RGB triplets into 565-packed data."""
@@ -5402,7 +5402,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_rgb565", 0);
@@ -5706,7 +5706,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565(__Pyx_memviewslice 
   Py_ssize_t __pyx_t_4;
   Py_ssize_t __pyx_t_5;
   Py_ssize_t __pyx_t_6;
-  __pyx_ctuple_11582____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
+  __pyx_ctuple_86ec8____dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__and___dunderpyx_t_8srctools_17_cy_vtf_readwrite_byte__etc __pyx_t_7;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_8;
   __pyx_t_8srctools_17_cy_vtf_readwrite_byte __pyx_t_9;
   __Pyx_RefNannySetupContext("save_bgr565", 0);
@@ -9973,7 +9973,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n(__Pyx_memviewslice _
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":725
+/* "srctools/_cy_vtf_readwrite.pyx":729
  * 
  * 
  * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
@@ -10015,9 +10015,9 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("init", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":729
+  /* "srctools/_cy_vtf_readwrite.pyx":732
+ *     """Verify that the Python enum matches our array of functions."""
  *     cdef int index
- *     cdef const char *name
  *     for fmt in formats:             # <<<<<<<<<<<<<<
  *         index = fmt.ind
  *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
@@ -10026,26 +10026,26 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
     __pyx_t_1 = __pyx_v_formats; __Pyx_INCREF(__pyx_t_1); __pyx_t_2 = 0;
     __pyx_t_3 = NULL;
   } else {
-    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_formats); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 729, __pyx_L1_error)
+    __pyx_t_2 = -1; __pyx_t_1 = PyObject_GetIter(__pyx_v_formats); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 732, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 729, __pyx_L1_error)
+    __pyx_t_3 = Py_TYPE(__pyx_t_1)->tp_iternext; if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 732, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_3)) {
       if (likely(PyList_CheckExact(__pyx_t_1))) {
         if (__pyx_t_2 >= PyList_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 729, __pyx_L1_error)
+        __pyx_t_4 = PyList_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 732, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 729, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 732, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       } else {
         if (__pyx_t_2 >= PyTuple_GET_SIZE(__pyx_t_1)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 729, __pyx_L1_error)
+        __pyx_t_4 = PyTuple_GET_ITEM(__pyx_t_1, __pyx_t_2); __Pyx_INCREF(__pyx_t_4); __pyx_t_2++; if (unlikely(0 < 0)) __PYX_ERR(0, 732, __pyx_L1_error)
         #else
-        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 729, __pyx_L1_error)
+        __pyx_t_4 = PySequence_ITEM(__pyx_t_1, __pyx_t_2); __pyx_t_2++; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 732, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
         #endif
       }
@@ -10055,7 +10055,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 729, __pyx_L1_error)
+          else __PYX_ERR(0, 732, __pyx_L1_error)
         }
         break;
       }
@@ -10064,20 +10064,20 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
     __Pyx_XDECREF_SET(__pyx_v_fmt, __pyx_t_4);
     __pyx_t_4 = 0;
 
-    /* "srctools/_cy_vtf_readwrite.pyx":730
- *     cdef const char *name
+    /* "srctools/_cy_vtf_readwrite.pyx":733
+ *     cdef int index
  *     for fmt in formats:
  *         index = fmt.ind             # <<<<<<<<<<<<<<
  *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
  *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
  */
-    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 730, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 733, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
-    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 730, __pyx_L1_error)
+    __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_4); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 733, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __pyx_v_index = __pyx_t_5;
 
-    /* "srctools/_cy_vtf_readwrite.pyx":731
+    /* "srctools/_cy_vtf_readwrite.pyx":734
  *     for fmt in formats:
  *         index = fmt.ind
  *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))             # <<<<<<<<<<<<<<
@@ -10092,18 +10092,18 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
         __pyx_t_8 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
         if (unlikely(__pyx_t_8 == 0)) {
           PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-          __PYX_ERR(0, 731, __pyx_L1_error)
+          __PYX_ERR(0, 734, __pyx_L1_error)
         }
         __pyx_t_6 = (__pyx_v_index < (__pyx_t_7 / __pyx_t_8));
       }
       if (unlikely(!(__pyx_t_6 != 0))) {
         PyErr_SetNone(PyExc_AssertionError);
-        __PYX_ERR(0, 731, __pyx_L1_error)
+        __PYX_ERR(0, 734, __pyx_L1_error)
       }
     }
     #endif
 
-    /* "srctools/_cy_vtf_readwrite.pyx":732
+    /* "srctools/_cy_vtf_readwrite.pyx":735
  *         index = fmt.ind
  *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
  *         assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name             # <<<<<<<<<<<<<<
@@ -10112,37 +10112,37 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
  */
     #ifndef CYTHON_WITHOUT_ASSERTIONS
     if (unlikely(!Py_OptimizeFlag)) {
-      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 732, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 735, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 732, __pyx_L1_error)
+      if (!(likely(PyUnicode_CheckExact(__pyx_t_4))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_4)->tp_name), 0))) __PYX_ERR(0, 735, __pyx_L1_error)
       if (unlikely(__pyx_t_4 == Py_None)) {
         PyErr_Format(PyExc_AttributeError, "'NoneType' object has no attribute '%.30s'", "encode");
-        __PYX_ERR(0, 732, __pyx_L1_error)
+        __PYX_ERR(0, 735, __pyx_L1_error)
       }
-      __pyx_t_9 = PyUnicode_AsASCIIString(((PyObject*)__pyx_t_4)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 732, __pyx_L1_error)
+      __pyx_t_9 = PyUnicode_AsASCIIString(((PyObject*)__pyx_t_4)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 735, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_9);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
-      __pyx_t_4 = __Pyx_PyBytes_FromString((__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 732, __pyx_L1_error)
+      __pyx_t_4 = __Pyx_PyBytes_FromString((__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 735, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_4);
-      __pyx_t_6 = (__Pyx_PyBytes_Equals(__pyx_t_9, __pyx_t_4, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 732, __pyx_L1_error)
+      __pyx_t_6 = (__Pyx_PyBytes_Equals(__pyx_t_9, __pyx_t_4, Py_EQ)); if (unlikely(__pyx_t_6 < 0)) __PYX_ERR(0, 735, __pyx_L1_error)
       __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       if (unlikely(!__pyx_t_6)) {
-        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 732, __pyx_L1_error)
+        __pyx_t_4 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 735, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_4);
-        __pyx_t_9 = PyTuple_Pack(1, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 732, __pyx_L1_error)
+        __pyx_t_9 = PyTuple_Pack(1, __pyx_t_4); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 735, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_9);
         __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
         PyErr_SetObject(PyExc_AssertionError, __pyx_t_9);
         __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
-        __PYX_ERR(0, 732, __pyx_L1_error)
+        __PYX_ERR(0, 735, __pyx_L1_error)
       }
     }
     #endif
 
-    /* "srctools/_cy_vtf_readwrite.pyx":729
+    /* "srctools/_cy_vtf_readwrite.pyx":732
+ *     """Verify that the Python enum matches our array of functions."""
  *     cdef int index
- *     cdef const char *name
  *     for fmt in formats:             # <<<<<<<<<<<<<<
  *         index = fmt.ind
  *         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
@@ -10150,7 +10150,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
   }
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":725
+  /* "srctools/_cy_vtf_readwrite.pyx":729
  * 
  * 
  * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
@@ -10174,7 +10174,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_4init(CYTHON_UNUSED PyOb
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":735
+/* "srctools/_cy_vtf_readwrite.pyx":738
  * 
  * 
  * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
@@ -10227,29 +10227,29 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_7load(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_pixels)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 1); __PYX_ERR(0, 735, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 1); __PYX_ERR(0, 738, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 2); __PYX_ERR(0, 735, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 2); __PYX_ERR(0, 738, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 3); __PYX_ERR(0, 735, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 3); __PYX_ERR(0, 738, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_height)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 4); __PYX_ERR(0, 735, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, 4); __PYX_ERR(0, 738, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "load") < 0)) __PYX_ERR(0, 735, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "load") < 0)) __PYX_ERR(0, 738, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -10261,14 +10261,14 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_7load(PyObject *__pyx_se
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
     }
     __pyx_v_fmt = values[0];
-    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 735, __pyx_L3_error)
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[2], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 735, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 735, __pyx_L3_error)
-    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 735, __pyx_L3_error)
+    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[1], PyBUF_WRITABLE); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 738, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[2], 0); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 738, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 738, __pyx_L3_error)
+    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 738, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 735, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("load", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 738, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._cy_vtf_readwrite.load", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10301,20 +10301,20 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("load", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":737
+  /* "srctools/_cy_vtf_readwrite.pyx":740
  * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:
  *     """Load pixels from data in the given format."""
  *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
  *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 737, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 740, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 737, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 740, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_index = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":739
+  /* "srctools/_cy_vtf_readwrite.pyx":742
  *     cdef int index = fmt.ind
  *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
@@ -10327,7 +10327,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_6 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
     if (unlikely(__pyx_t_6 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-      __PYX_ERR(0, 739, __pyx_L1_error)
+      __PYX_ERR(0, 742, __pyx_L1_error)
     }
     __pyx_t_4 = (__pyx_v_index < (__pyx_t_5 / __pyx_t_6));
   }
@@ -10342,16 +10342,16 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   __pyx_L4_bool_binop_done:;
   if (likely(__pyx_t_3)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":740
+    /* "srctools/_cy_vtf_readwrite.pyx":743
  *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:
  *         FORMATS[index].load(pixels, data, width, height)             # <<<<<<<<<<<<<<
  *     else:
  *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")
  */
-    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).load(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 740, __pyx_L1_error)
+    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).load(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 743, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":739
+    /* "srctools/_cy_vtf_readwrite.pyx":742
  *     cdef int index = fmt.ind
  *     # print("Index: ", index, "< ", (sizeof(FORMATS) // sizeof(Format)))
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].load != NULL:             # <<<<<<<<<<<<<<
@@ -10361,7 +10361,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":742
+  /* "srctools/_cy_vtf_readwrite.pyx":745
  *         FORMATS[index].load(pixels, data, width, height)
  *     else:
  *         raise NotImplementedError(f"Loading {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
@@ -10369,7 +10369,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
  * 
  */
   /*else*/ {
-    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 742, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_8 = 0;
     __pyx_t_9 = 127;
@@ -10377,9 +10377,9 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_8 += 8;
     __Pyx_GIVEREF(__pyx_kp_u_Loading);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Loading);
-    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 742, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 742, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_9 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_9) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_9;
@@ -10391,19 +10391,19 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
     __pyx_t_8 += 17;
     __Pyx_GIVEREF(__pyx_kp_u_not_implemented);
     PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_not_implemented);
-    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 742, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 742, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 745, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 742, __pyx_L1_error)
+    __PYX_ERR(0, 745, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":735
+  /* "srctools/_cy_vtf_readwrite.pyx":738
  * 
  * 
  * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
@@ -10428,7 +10428,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_6load(CYTHON_UNUSED PyOb
   return __pyx_r;
 }
 
-/* "srctools/_cy_vtf_readwrite.pyx":745
+/* "srctools/_cy_vtf_readwrite.pyx":748
  * 
  * 
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
@@ -10480,29 +10480,29 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_9save(PyObject *__pyx_se
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_pixels)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 1); __PYX_ERR(0, 745, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 1); __PYX_ERR(0, 748, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  2:
         if (likely((values[2] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_data)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 2); __PYX_ERR(0, 745, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 2); __PYX_ERR(0, 748, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  3:
         if (likely((values[3] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_width)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 3); __PYX_ERR(0, 745, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 3); __PYX_ERR(0, 748, __pyx_L3_error)
         }
         CYTHON_FALLTHROUGH;
         case  4:
         if (likely((values[4] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_height)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 4); __PYX_ERR(0, 745, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, 4); __PYX_ERR(0, 748, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "save") < 0)) __PYX_ERR(0, 745, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "save") < 0)) __PYX_ERR(0, 748, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 5) {
       goto __pyx_L5_argtuple_error;
@@ -10514,14 +10514,14 @@ static PyObject *__pyx_pw_8srctools_17_cy_vtf_readwrite_9save(PyObject *__pyx_se
       values[4] = PyTuple_GET_ITEM(__pyx_args, 4);
     }
     __pyx_v_fmt = values[0];
-    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[1], 0); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 745, __pyx_L3_error)
-    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 745, __pyx_L3_error)
-    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 745, __pyx_L3_error)
-    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 745, __pyx_L3_error)
+    __pyx_v_pixels = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte__const__(values[1], 0); if (unlikely(!__pyx_v_pixels.memview)) __PYX_ERR(0, 748, __pyx_L3_error)
+    __pyx_v_data = __Pyx_PyObject_to_MemoryviewSlice_dc_nn___pyx_t_8srctools_17_cy_vtf_readwrite_byte(values[2], PyBUF_WRITABLE); if (unlikely(!__pyx_v_data.memview)) __PYX_ERR(0, 748, __pyx_L3_error)
+    __pyx_v_width = __Pyx_PyInt_As_unsigned_int(values[3]); if (unlikely((__pyx_v_width == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 748, __pyx_L3_error)
+    __pyx_v_height = __Pyx_PyInt_As_unsigned_int(values[4]); if (unlikely((__pyx_v_height == (unsigned int)-1) && PyErr_Occurred())) __PYX_ERR(0, 748, __pyx_L3_error)
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 745, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("save", 1, 5, 5, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 748, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._cy_vtf_readwrite.save", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -10554,20 +10554,20 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("save", 0);
 
-  /* "srctools/_cy_vtf_readwrite.pyx":746
+  /* "srctools/_cy_vtf_readwrite.pyx":749
  * 
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
  *     cdef int index = fmt.ind             # <<<<<<<<<<<<<<
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
  *         FORMATS[index].save(pixels, data, width, height)
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 746, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_ind); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 746, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyInt_As_int(__pyx_t_1); if (unlikely((__pyx_t_2 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 749, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_v_index = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":747
+  /* "srctools/_cy_vtf_readwrite.pyx":750
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
  *     cdef int index = fmt.ind
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:             # <<<<<<<<<<<<<<
@@ -10580,7 +10580,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_6 = (sizeof(__pyx_t_8srctools_17_cy_vtf_readwrite_Format));
     if (unlikely(__pyx_t_6 == 0)) {
       PyErr_SetString(PyExc_ZeroDivisionError, "integer division or modulo by zero");
-      __PYX_ERR(0, 747, __pyx_L1_error)
+      __PYX_ERR(0, 750, __pyx_L1_error)
     }
     __pyx_t_4 = (__pyx_v_index < (__pyx_t_5 / __pyx_t_6));
   }
@@ -10595,16 +10595,16 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
   __pyx_L4_bool_binop_done:;
   if (likely(__pyx_t_3)) {
 
-    /* "srctools/_cy_vtf_readwrite.pyx":748
+    /* "srctools/_cy_vtf_readwrite.pyx":751
  *     cdef int index = fmt.ind
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
  *         FORMATS[index].save(pixels, data, width, height)             # <<<<<<<<<<<<<<
  *     else:
  *         raise NotImplementedError(f"Saving {fmt.name} not implemented!")
  */
-    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).save(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 748, __pyx_L1_error)
+    __pyx_t_3 = (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[__pyx_v_index]).save(__pyx_v_pixels, __pyx_v_data, __pyx_v_width, __pyx_v_height); if (unlikely(__pyx_t_3 == ((int)1))) __PYX_ERR(0, 751, __pyx_L1_error)
 
-    /* "srctools/_cy_vtf_readwrite.pyx":747
+    /* "srctools/_cy_vtf_readwrite.pyx":750
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:
  *     cdef int index = fmt.ind
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:             # <<<<<<<<<<<<<<
@@ -10614,14 +10614,14 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     goto __pyx_L3;
   }
 
-  /* "srctools/_cy_vtf_readwrite.pyx":750
+  /* "srctools/_cy_vtf_readwrite.pyx":753
  *         FORMATS[index].save(pixels, data, width, height)
  *     else:
  *         raise NotImplementedError(f"Saving {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
  * 
  */
   /*else*/ {
-    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 750, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 753, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_8 = 0;
     __pyx_t_9 = 127;
@@ -10629,9 +10629,9 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_8 += 7;
     __Pyx_GIVEREF(__pyx_kp_u_Saving);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Saving);
-    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 750, __pyx_L1_error)
+    __pyx_t_10 = __Pyx_PyObject_GetAttrStr(__pyx_v_fmt, __pyx_n_s_name); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 753, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_10);
-    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 750, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyObject_FormatSimple(__pyx_t_10, __pyx_empty_unicode); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 753, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
     __pyx_t_9 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) > __pyx_t_9) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_11) : __pyx_t_9;
@@ -10643,19 +10643,19 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_8save(CYTHON_UNUSED PyOb
     __pyx_t_8 += 17;
     __Pyx_GIVEREF(__pyx_kp_u_not_implemented);
     PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_not_implemented);
-    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 750, __pyx_L1_error)
+    __pyx_t_11 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_8, __pyx_t_9); if (unlikely(!__pyx_t_11)) __PYX_ERR(0, 753, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_11);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 750, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_NotImplementedError, __pyx_t_11); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 753, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_11); __pyx_t_11 = 0;
     __Pyx_Raise(__pyx_t_1, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-    __PYX_ERR(0, 750, __pyx_L1_error)
+    __PYX_ERR(0, 753, __pyx_L1_error)
   }
   __pyx_L3:;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":745
+  /* "srctools/_cy_vtf_readwrite.pyx":748
  * 
  * 
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
@@ -24593,7 +24593,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
   __pyx_builtin_range = __Pyx_GetBuiltinName(__pyx_n_s_range); if (!__pyx_builtin_range) __PYX_ERR(0, 61, __pyx_L1_error)
   __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 123, __pyx_L1_error)
-  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 742, __pyx_L1_error)
+  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 745, __pyx_L1_error)
   __pyx_builtin_MemoryError = __Pyx_GetBuiltinName(__pyx_n_s_MemoryError); if (!__pyx_builtin_MemoryError) __PYX_ERR(1, 148, __pyx_L1_error)
   __pyx_builtin_enumerate = __Pyx_GetBuiltinName(__pyx_n_s_enumerate); if (!__pyx_builtin_enumerate) __PYX_ERR(1, 151, __pyx_L1_error)
   __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(1, 2, __pyx_L1_error)
@@ -24825,41 +24825,41 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__22);
   __pyx_codeobj__23 = (PyObject*)__Pyx_PyCode_New(7, 0, 18, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__22, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_scale_down, 71, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__23)) __PYX_ERR(0, 71, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":725
+  /* "srctools/_cy_vtf_readwrite.pyx":729
  * 
  * 
  * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
  *     """Verify that the Python enum matches our array of functions."""
  *     cdef int index
  */
-  __pyx_tuple__24 = PyTuple_Pack(4, __pyx_n_s_formats, __pyx_n_s_index, __pyx_n_s_name, __pyx_n_s_fmt); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 725, __pyx_L1_error)
+  __pyx_tuple__24 = PyTuple_Pack(3, __pyx_n_s_formats, __pyx_n_s_index, __pyx_n_s_fmt); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 729, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__24);
   __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 4, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_init, 725, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 725, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_init, 729, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 729, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":735
+  /* "srctools/_cy_vtf_readwrite.pyx":738
  * 
  * 
  * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
  *     """Load pixels from data in the given format."""
  *     cdef int index = fmt.ind
  */
-  __pyx_tuple__26 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 735, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 738, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__26);
   __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_load, 735, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 735, __pyx_L1_error)
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_load, 738, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 738, __pyx_L1_error)
 
-  /* "srctools/_cy_vtf_readwrite.pyx":745
+  /* "srctools/_cy_vtf_readwrite.pyx":748
  * 
  * 
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
  *     cdef int index = fmt.ind
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
  */
-  __pyx_tuple__28 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 745, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(6, __pyx_n_s_fmt, __pyx_n_s_pixels, __pyx_n_s_data, __pyx_n_s_width, __pyx_n_s_height, __pyx_n_s_index); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 748, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__28);
   __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_save, 745, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 745, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(5, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__cy_vtf_readwrite_pyx, __pyx_n_s_save, 748, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 748, __pyx_L1_error)
 
   /* "View.MemoryView":286
  *         return self.name
@@ -25172,37 +25172,7 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec__cy_vtf_readwrite(PyObject *__pyx_
 {
   PyObject *__pyx_t_1 = NULL;
   __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_2;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_3;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_4;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_5;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_6;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_7;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_8;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_9;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_10;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_11;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_12;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_13;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_14;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_15;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_16;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_17;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_18;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_19;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_20;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_21;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_22;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_23;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_24;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_25;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_26;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_27;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_28;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_29;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_30;
-  __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_31;
-  static __pyx_t_8srctools_17_cy_vtf_readwrite_Format __pyx_t_32[30];
-  static PyThread_type_lock __pyx_t_33[8];
+  static PyThread_type_lock __pyx_t_3[8];
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -25334,409 +25304,400 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_scale_down, __pyx_t_1) < 0) __PYX_ERR(0, 71, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":689
- * 
- * cdef Format[30] FORMATS = [
- *     Format("RGBA8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
- *     Format("RGB888", &load_rgb888, &save_rgb888),
+  /* "srctools/_cy_vtf_readwrite.pyx":691
+ * # Assign directly to each, so Cython doesn't write these to a temp array first
+ * # in case an exception occurs.
+ * FORMATS[ 0] = Format("RGBA8888", &load_copy, &save_copy)             # <<<<<<<<<<<<<<
+ * FORMATS[ 1] = Format("ABGR8888", &load_abgr8888, &save_abgr8888)
+ * FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)
  */
   __pyx_t_2.name = ((char *)"RGBA8888");
   __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
   __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":690
- * cdef Format[30] FORMATS = [
- *     Format("RGBA8888", &load_copy, &save_copy),
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),             # <<<<<<<<<<<<<<
- *     Format("RGB888", &load_rgb888, &save_rgb888),
- *     Format("BGR888", &load_bgr888, &save_bgr888),
- */
-  __pyx_t_3.name = ((char *)"ABGR8888");
-  __pyx_t_3.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_abgr8888);
-  __pyx_t_3.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_abgr8888);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":691
- *     Format("RGBA8888", &load_copy, &save_copy),
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
- *     Format("RGB888", &load_rgb888, &save_rgb888),             # <<<<<<<<<<<<<<
- *     Format("BGR888", &load_bgr888, &save_bgr888),
- *     Format("RGB565", &load_rgb565, &save_rgb565),
- */
-  __pyx_t_4.name = ((char *)"RGB888");
-  __pyx_t_4.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888);
-  __pyx_t_4.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[0]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":692
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
- *     Format("RGB888", &load_rgb888, &save_rgb888),
- *     Format("BGR888", &load_bgr888, &save_bgr888),             # <<<<<<<<<<<<<<
- *     Format("RGB565", &load_rgb565, &save_rgb565),
- *     Format("I8", &load_i8, &save_i8),
+ * # in case an exception occurs.
+ * FORMATS[ 0] = Format("RGBA8888", &load_copy, &save_copy)
+ * FORMATS[ 1] = Format("ABGR8888", &load_abgr8888, &save_abgr8888)             # <<<<<<<<<<<<<<
+ * FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)
+ * FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)
  */
-  __pyx_t_5.name = ((char *)"BGR888");
-  __pyx_t_5.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888);
-  __pyx_t_5.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888);
+  __pyx_t_2.name = ((char *)"ABGR8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_abgr8888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_abgr8888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[1]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":693
- *     Format("RGB888", &load_rgb888, &save_rgb888),
- *     Format("BGR888", &load_bgr888, &save_bgr888),
- *     Format("RGB565", &load_rgb565, &save_rgb565),             # <<<<<<<<<<<<<<
- *     Format("I8", &load_i8, &save_i8),
- *     Format("IA88", &load_ia88, &save_ia88),
+ * FORMATS[ 0] = Format("RGBA8888", &load_copy, &save_copy)
+ * FORMATS[ 1] = Format("ABGR8888", &load_abgr8888, &save_abgr8888)
+ * FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)             # <<<<<<<<<<<<<<
+ * FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)
+ * FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)
  */
-  __pyx_t_6.name = ((char *)"RGB565");
-  __pyx_t_6.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb565);
-  __pyx_t_6.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565);
+  __pyx_t_2.name = ((char *)"RGB888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[2]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":694
- *     Format("BGR888", &load_bgr888, &save_bgr888),
- *     Format("RGB565", &load_rgb565, &save_rgb565),
- *     Format("I8", &load_i8, &save_i8),             # <<<<<<<<<<<<<<
- *     Format("IA88", &load_ia88, &save_ia88),
- *     Format("P8", NULL, NULL),  # Never implemented by Valve.
+ * FORMATS[ 1] = Format("ABGR8888", &load_abgr8888, &save_abgr8888)
+ * FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)
+ * FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)             # <<<<<<<<<<<<<<
+ * FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)
+ * FORMATS[ 5] = Format("I8", &load_i8, &save_i8)
  */
-  __pyx_t_7.name = ((char *)"I8");
-  __pyx_t_7.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_i8);
-  __pyx_t_7.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_i8);
+  __pyx_t_2.name = ((char *)"BGR888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[3]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":695
- *     Format("RGB565", &load_rgb565, &save_rgb565),
- *     Format("I8", &load_i8, &save_i8),
- *     Format("IA88", &load_ia88, &save_ia88),             # <<<<<<<<<<<<<<
- *     Format("P8", NULL, NULL),  # Never implemented by Valve.
- *     Format("A8", &load_a8, &save_a8),
+ * FORMATS[ 2] = Format("RGB888", &load_rgb888, &save_rgb888)
+ * FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)
+ * FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)             # <<<<<<<<<<<<<<
+ * FORMATS[ 5] = Format("I8", &load_i8, &save_i8)
+ * FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)
  */
-  __pyx_t_8.name = ((char *)"IA88");
-  __pyx_t_8.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ia88);
-  __pyx_t_8.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88);
+  __pyx_t_2.name = ((char *)"RGB565");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb565);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb565);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[4]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":696
- *     Format("I8", &load_i8, &save_i8),
- *     Format("IA88", &load_ia88, &save_ia88),
- *     Format("P8", NULL, NULL),  # Never implemented by Valve.             # <<<<<<<<<<<<<<
- *     Format("A8", &load_a8, &save_a8),
- *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
+ * FORMATS[ 3] = Format("BGR888", &load_bgr888, &save_bgr888)
+ * FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)
+ * FORMATS[ 5] = Format("I8", &load_i8, &save_i8)             # <<<<<<<<<<<<<<
+ * FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)
+ * FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.
  */
-  __pyx_t_9.name = ((char *)"P8");
-  __pyx_t_9.load = NULL;
-  __pyx_t_9.save = NULL;
+  __pyx_t_2.name = ((char *)"I8");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_i8);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_i8);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[5]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":697
- *     Format("IA88", &load_ia88, &save_ia88),
- *     Format("P8", NULL, NULL),  # Never implemented by Valve.
- *     Format("A8", &load_a8, &save_a8),             # <<<<<<<<<<<<<<
- *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
- *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
+ * FORMATS[ 4] = Format("RGB565", &load_rgb565, &save_rgb565)
+ * FORMATS[ 5] = Format("I8", &load_i8, &save_i8)
+ * FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)             # <<<<<<<<<<<<<<
+ * FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.
+ * FORMATS[ 8] = Format("A8", &load_a8, &save_a8)
  */
-  __pyx_t_10.name = ((char *)"A8");
-  __pyx_t_10.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_a8);
-  __pyx_t_10.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_a8);
+  __pyx_t_2.name = ((char *)"IA88");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ia88);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[6]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":698
- *     Format("P8", NULL, NULL),  # Never implemented by Valve.
- *     Format("A8", &load_a8, &save_a8),
- *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),             # <<<<<<<<<<<<<<
- *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
- *     Format("ARGB8888", &load_argb8888, &save_argb8888),
+ * FORMATS[ 5] = Format("I8", &load_i8, &save_i8)
+ * FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)
+ * FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.             # <<<<<<<<<<<<<<
+ * FORMATS[ 8] = Format("A8", &load_a8, &save_a8)
+ * FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)
  */
-  __pyx_t_11.name = ((char *)"RGB888_BLUESCREEN");
-  __pyx_t_11.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888_bluescreen);
-  __pyx_t_11.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888_bluescreen);
+  __pyx_t_2.name = ((char *)"P8");
+  __pyx_t_2.load = NULL;
+  __pyx_t_2.save = NULL;
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[7]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":699
- *     Format("A8", &load_a8, &save_a8),
- *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
- *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),             # <<<<<<<<<<<<<<
- *     Format("ARGB8888", &load_argb8888, &save_argb8888),
- *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
+ * FORMATS[ 6] = Format("IA88", &load_ia88, &save_ia88)
+ * FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.
+ * FORMATS[ 8] = Format("A8", &load_a8, &save_a8)             # <<<<<<<<<<<<<<
+ * FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)
+ * FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)
  */
-  __pyx_t_12.name = ((char *)"BGR888_BLUESCREEN");
-  __pyx_t_12.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888_bluescreen);
-  __pyx_t_12.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888_bluescreen);
+  __pyx_t_2.name = ((char *)"A8");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_a8);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_a8);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[8]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":700
- *     Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen),
- *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
- *     Format("ARGB8888", &load_argb8888, &save_argb8888),             # <<<<<<<<<<<<<<
- *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
- *     Format("DXT1", &load_dxt1, &save_dxt1),
+ * FORMATS[ 7] = Format("P8", NULL, NULL)  # Never implemented by Valve.
+ * FORMATS[ 8] = Format("A8", &load_a8, &save_a8)
+ * FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)             # <<<<<<<<<<<<<<
+ * FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)
+ * FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)
  */
-  __pyx_t_13.name = ((char *)"ARGB8888");
-  __pyx_t_13.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_argb8888);
-  __pyx_t_13.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_argb8888);
+  __pyx_t_2.name = ((char *)"RGB888_BLUESCREEN");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_rgb888_bluescreen);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_rgb888_bluescreen);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[9]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":701
- *     Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen),
- *     Format("ARGB8888", &load_argb8888, &save_argb8888),
- *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),             # <<<<<<<<<<<<<<
- *     Format("DXT1", &load_dxt1, &save_dxt1),
- *     Format("DXT3", &load_dxt3, &save_dxt3),
+ * FORMATS[ 8] = Format("A8", &load_a8, &save_a8)
+ * FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)
+ * FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)             # <<<<<<<<<<<<<<
+ * FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)
+ * FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)
  */
-  __pyx_t_14.name = ((char *)"BGRA8888");
-  __pyx_t_14.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888);
-  __pyx_t_14.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra8888);
+  __pyx_t_2.name = ((char *)"BGR888_BLUESCREEN");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr888_bluescreen);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr888_bluescreen);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[10]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":702
- *     Format("ARGB8888", &load_argb8888, &save_argb8888),
- *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
- *     Format("DXT1", &load_dxt1, &save_dxt1),             # <<<<<<<<<<<<<<
- *     Format("DXT3", &load_dxt3, &save_dxt3),
- *     Format("DXT5", &load_dxt5, &save_dxt5),
+ * FORMATS[ 9] = Format("RGB888_BLUESCREEN", &load_rgb888_bluescreen, &save_rgb888_bluescreen)
+ * FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)
+ * FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)             # <<<<<<<<<<<<<<
+ * FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)
+ * FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)
  */
-  __pyx_t_15.name = ((char *)"DXT1");
-  __pyx_t_15.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1);
-  __pyx_t_15.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1);
+  __pyx_t_2.name = ((char *)"ARGB8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_argb8888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_argb8888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[11]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":703
- *     Format("BGRA8888", &load_bgra8888, &save_bgra8888),
- *     Format("DXT1", &load_dxt1, &save_dxt1),
- *     Format("DXT3", &load_dxt3, &save_dxt3),             # <<<<<<<<<<<<<<
- *     Format("DXT5", &load_dxt5, &save_dxt5),
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
+ * FORMATS[10] = Format("BGR888_BLUESCREEN", &load_bgr888_bluescreen, &save_bgr888_bluescreen)
+ * FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)
+ * FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)             # <<<<<<<<<<<<<<
+ * FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)
+ * FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)
  */
-  __pyx_t_16.name = ((char *)"DXT3");
-  __pyx_t_16.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3);
-  __pyx_t_16.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3);
+  __pyx_t_2.name = ((char *)"BGRA8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra8888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra8888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[12]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":704
- *     Format("DXT1", &load_dxt1, &save_dxt1),
- *     Format("DXT3", &load_dxt3, &save_dxt3),
- *     Format("DXT5", &load_dxt5, &save_dxt5),             # <<<<<<<<<<<<<<
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
- *     Format("BGR565", &load_bgr565, &save_bgr565),
+ * FORMATS[11] = Format("ARGB8888", &load_argb8888, &save_argb8888)
+ * FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)
+ * FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)             # <<<<<<<<<<<<<<
+ * FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)
+ * FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)
  */
-  __pyx_t_17.name = ((char *)"DXT5");
-  __pyx_t_17.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5);
-  __pyx_t_17.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5);
+  __pyx_t_2.name = ((char *)"DXT1");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[13]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":705
- *     Format("DXT3", &load_dxt3, &save_dxt3),
- *     Format("DXT5", &load_dxt5, &save_dxt5),
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),             # <<<<<<<<<<<<<<
- *     Format("BGR565", &load_bgr565, &save_bgr565),
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
+ * FORMATS[12] = Format("BGRA8888", &load_bgra8888, &save_bgra8888)
+ * FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)
+ * FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)             # <<<<<<<<<<<<<<
+ * FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)
+ * FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)
  */
-  __pyx_t_18.name = ((char *)"BGRX8888");
-  __pyx_t_18.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx8888);
-  __pyx_t_18.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx8888);
+  __pyx_t_2.name = ((char *)"DXT3");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt3);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt3);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[14]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":706
- *     Format("DXT5", &load_dxt5, &save_dxt5),
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
- *     Format("BGR565", &load_bgr565, &save_bgr565),             # <<<<<<<<<<<<<<
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
+ * FORMATS[13] = Format("DXT1", &load_dxt1, &save_dxt1)
+ * FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)
+ * FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)             # <<<<<<<<<<<<<<
+ * FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)
+ * FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)
  */
-  __pyx_t_19.name = ((char *)"BGR565");
-  __pyx_t_19.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr565);
-  __pyx_t_19.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565);
+  __pyx_t_2.name = ((char *)"DXT5");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt5);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt5);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[15]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":707
- *     Format("BGRX8888", &load_bgrx8888, &save_bgrx8888),
- *     Format("BGR565", &load_bgr565, &save_bgr565),
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),             # <<<<<<<<<<<<<<
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
+ * FORMATS[14] = Format("DXT3", &load_dxt3, &save_dxt3)
+ * FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)
+ * FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)             # <<<<<<<<<<<<<<
+ * FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)
+ * FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)
  */
-  __pyx_t_20.name = ((char *)"BGRX5551");
-  __pyx_t_20.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx5551);
-  __pyx_t_20.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx5551);
+  __pyx_t_2.name = ((char *)"BGRX8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx8888);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx8888);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[16]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":708
- *     Format("BGR565", &load_bgr565, &save_bgr565),
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),             # <<<<<<<<<<<<<<
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
+ * FORMATS[15] = Format("DXT5", &load_dxt5, &save_dxt5)
+ * FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)
+ * FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)             # <<<<<<<<<<<<<<
+ * FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)
+ * FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)
  */
-  __pyx_t_21.name = ((char *)"BGRA4444");
-  __pyx_t_21.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra4444);
-  __pyx_t_21.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444);
+  __pyx_t_2.name = ((char *)"BGR565");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgr565);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgr565);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[17]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":709
- *     Format("BGRX5551", &load_bgrx5551, &save_bgrx5551),
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),             # <<<<<<<<<<<<<<
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
- *     Format("UV88", &load_uv88, &save_uv88),
+ * FORMATS[16] = Format("BGRX8888", &load_bgrx8888, &save_bgrx8888)
+ * FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)
+ * FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)             # <<<<<<<<<<<<<<
+ * FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)
+ * FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)
  */
-  __pyx_t_22.name = ((char *)"DXT1_ONEBITALPHA");
-  __pyx_t_22.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha);
-  __pyx_t_22.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha);
+  __pyx_t_2.name = ((char *)"BGRX5551");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgrx5551);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgrx5551);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[18]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":710
- *     Format("BGRA4444", &load_bgra4444, &save_bgra4444),
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),             # <<<<<<<<<<<<<<
- *     Format("UV88", &load_uv88, &save_uv88),
- *     Format("UVWQ8888", &load_copy, &save_copy),
+ * FORMATS[17] = Format("BGR565", &load_bgr565, &save_bgr565)
+ * FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)
+ * FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)             # <<<<<<<<<<<<<<
+ * FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)
+ * FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)
  */
-  __pyx_t_23.name = ((char *)"BGRA5551");
-  __pyx_t_23.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra5551);
-  __pyx_t_23.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra5551);
+  __pyx_t_2.name = ((char *)"BGRA4444");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra4444);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[19]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":711
- *     Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha),
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
- *     Format("UV88", &load_uv88, &save_uv88),             # <<<<<<<<<<<<<<
- *     Format("UVWQ8888", &load_copy, &save_copy),
- *     # Don't do the high-def 16-bit resolutions.
+ * FORMATS[18] = Format("BGRX5551", &load_bgrx5551, &save_bgrx5551)
+ * FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)
+ * FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)             # <<<<<<<<<<<<<<
+ * FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)
+ * FORMATS[22] = Format("UV88", &load_uv88, &save_uv88)
  */
-  __pyx_t_24.name = ((char *)"UV88");
-  __pyx_t_24.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_uv88);
-  __pyx_t_24.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_uv88);
+  __pyx_t_2.name = ((char *)"DXT1_ONEBITALPHA");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_dxt1_alpha);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_dxt1_alpha);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[20]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":712
- *     Format("BGRA5551", &load_bgra5551, &save_bgra5551),
- *     Format("UV88", &load_uv88, &save_uv88),
- *     Format("UVWQ8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
- *     # Don't do the high-def 16-bit resolutions.
- *     Format("RGBA16161616F", NULL, NULL),
+ * FORMATS[19] = Format("BGRA4444", &load_bgra4444, &save_bgra4444)
+ * FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)
+ * FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)             # <<<<<<<<<<<<<<
+ * FORMATS[22] = Format("UV88", &load_uv88, &save_uv88)
+ * FORMATS[23] = Format("UVWQ8888", &load_copy, &save_copy)
  */
-  __pyx_t_25.name = ((char *)"UVWQ8888");
-  __pyx_t_25.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
-  __pyx_t_25.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
+  __pyx_t_2.name = ((char *)"BGRA5551");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_bgra5551);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra5551);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[21]) = __pyx_t_2;
+
+  /* "srctools/_cy_vtf_readwrite.pyx":713
+ * FORMATS[20] = Format("DXT1_ONEBITALPHA", &load_dxt1_alpha, &save_dxt1_alpha)
+ * FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)
+ * FORMATS[22] = Format("UV88", &load_uv88, &save_uv88)             # <<<<<<<<<<<<<<
+ * FORMATS[23] = Format("UVWQ8888", &load_copy, &save_copy)
+ * 
+ */
+  __pyx_t_2.name = ((char *)"UV88");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_uv88);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_uv88);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[22]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":714
- *     Format("UVWQ8888", &load_copy, &save_copy),
- *     # Don't do the high-def 16-bit resolutions.
- *     Format("RGBA16161616F", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("RGBA16161616", NULL, NULL),
- *     Format("UVLX8888", &load_copy, &save_copy),
+ * FORMATS[21] = Format("BGRA5551", &load_bgra5551, &save_bgra5551)
+ * FORMATS[22] = Format("UV88", &load_uv88, &save_uv88)
+ * FORMATS[23] = Format("UVWQ8888", &load_copy, &save_copy)             # <<<<<<<<<<<<<<
+ * 
+ * # Don't do the high-def 16-bit resolutions.
  */
-  __pyx_t_26.name = ((char *)"RGBA16161616F");
-  __pyx_t_26.load = NULL;
-  __pyx_t_26.save = NULL;
+  __pyx_t_2.name = ((char *)"UVWQ8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[23]) = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":715
- *     # Don't do the high-def 16-bit resolutions.
- *     Format("RGBA16161616F", NULL, NULL),
- *     Format("RGBA16161616", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("UVLX8888", &load_copy, &save_copy),
- *     # This doesn't match the actual engine struct, just the order of
+  /* "srctools/_cy_vtf_readwrite.pyx":717
+ * 
+ * # Don't do the high-def 16-bit resolutions.
+ * FORMATS[24] = Format("RGBA16161616F", NULL, NULL)             # <<<<<<<<<<<<<<
+ * FORMATS[25] = Format("RGBA16161616", NULL, NULL)
+ * 
  */
-  __pyx_t_27.name = ((char *)"RGBA16161616");
-  __pyx_t_27.load = NULL;
-  __pyx_t_27.save = NULL;
+  __pyx_t_2.name = ((char *)"RGBA16161616F");
+  __pyx_t_2.load = NULL;
+  __pyx_t_2.save = NULL;
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[24]) = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":716
- *     Format("RGBA16161616F", NULL, NULL),
- *     Format("RGBA16161616", NULL, NULL),
- *     Format("UVLX8888", &load_copy, &save_copy),             # <<<<<<<<<<<<<<
- *     # This doesn't match the actual engine struct, just the order of
- *     # the Python enum.
+  /* "srctools/_cy_vtf_readwrite.pyx":718
+ * # Don't do the high-def 16-bit resolutions.
+ * FORMATS[24] = Format("RGBA16161616F", NULL, NULL)
+ * FORMATS[25] = Format("RGBA16161616", NULL, NULL)             # <<<<<<<<<<<<<<
+ * 
+ * FORMATS[26] = Format("UVLX8888", &load_copy, &save_copy)
  */
-  __pyx_t_28.name = ((char *)"UVLX8888");
-  __pyx_t_28.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
-  __pyx_t_28.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":719
- *     # This doesn't match the actual engine struct, just the order of
- *     # the Python enum.
- *     Format("NONE", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("ATI1N", NULL, NULL),
- *     Format("ATI2N", &load_ati2n, &save_ati2n),
- */
-  __pyx_t_29.name = ((char *)"NONE");
-  __pyx_t_29.load = NULL;
-  __pyx_t_29.save = NULL;
+  __pyx_t_2.name = ((char *)"RGBA16161616");
+  __pyx_t_2.load = NULL;
+  __pyx_t_2.save = NULL;
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[25]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":720
- *     # the Python enum.
- *     Format("NONE", NULL, NULL),
- *     Format("ATI1N", NULL, NULL),             # <<<<<<<<<<<<<<
- *     Format("ATI2N", &load_ati2n, &save_ati2n),
- * ]
+ * FORMATS[25] = Format("RGBA16161616", NULL, NULL)
+ * 
+ * FORMATS[26] = Format("UVLX8888", &load_copy, &save_copy)             # <<<<<<<<<<<<<<
+ * 
+ * # This doesn't match the actual engine struct, just the order of
  */
-  __pyx_t_30.name = ((char *)"ATI1N");
-  __pyx_t_30.load = NULL;
-  __pyx_t_30.save = NULL;
+  __pyx_t_2.name = ((char *)"UVLX8888");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_copy);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_copy);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[26]) = __pyx_t_2;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":721
- *     Format("NONE", NULL, NULL),
- *     Format("ATI1N", NULL, NULL),
- *     Format("ATI2N", &load_ati2n, &save_ati2n),             # <<<<<<<<<<<<<<
- * ]
- * 
+  /* "srctools/_cy_vtf_readwrite.pyx":724
+ * # This doesn't match the actual engine struct, just the order of
+ * # the Python enum.
+ * FORMATS[27] = Format("NONE", NULL, NULL)             # <<<<<<<<<<<<<<
+ * FORMATS[28] = Format("ATI1N", NULL, NULL)
+ * FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)
  */
-  __pyx_t_31.name = ((char *)"ATI2N");
-  __pyx_t_31.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n);
-  __pyx_t_31.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n);
-
-  /* "srctools/_cy_vtf_readwrite.pyx":688
- * 
- * 
- * cdef Format[30] FORMATS = [             # <<<<<<<<<<<<<<
- *     Format("RGBA8888", &load_copy, &save_copy),
- *     Format("ABGR8888", &load_abgr8888, &save_abgr8888),
- */
-  __pyx_t_32[0] = __pyx_t_2;
-  __pyx_t_32[1] = __pyx_t_3;
-  __pyx_t_32[2] = __pyx_t_4;
-  __pyx_t_32[3] = __pyx_t_5;
-  __pyx_t_32[4] = __pyx_t_6;
-  __pyx_t_32[5] = __pyx_t_7;
-  __pyx_t_32[6] = __pyx_t_8;
-  __pyx_t_32[7] = __pyx_t_9;
-  __pyx_t_32[8] = __pyx_t_10;
-  __pyx_t_32[9] = __pyx_t_11;
-  __pyx_t_32[10] = __pyx_t_12;
-  __pyx_t_32[11] = __pyx_t_13;
-  __pyx_t_32[12] = __pyx_t_14;
-  __pyx_t_32[13] = __pyx_t_15;
-  __pyx_t_32[14] = __pyx_t_16;
-  __pyx_t_32[15] = __pyx_t_17;
-  __pyx_t_32[16] = __pyx_t_18;
-  __pyx_t_32[17] = __pyx_t_19;
-  __pyx_t_32[18] = __pyx_t_20;
-  __pyx_t_32[19] = __pyx_t_21;
-  __pyx_t_32[20] = __pyx_t_22;
-  __pyx_t_32[21] = __pyx_t_23;
-  __pyx_t_32[22] = __pyx_t_24;
-  __pyx_t_32[23] = __pyx_t_25;
-  __pyx_t_32[24] = __pyx_t_26;
-  __pyx_t_32[25] = __pyx_t_27;
-  __pyx_t_32[26] = __pyx_t_28;
-  __pyx_t_32[27] = __pyx_t_29;
-  __pyx_t_32[28] = __pyx_t_30;
-  __pyx_t_32[29] = __pyx_t_31;
-  memcpy(&(__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[0]), __pyx_t_32, sizeof(__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[0]) * (30));
+  __pyx_t_2.name = ((char *)"NONE");
+  __pyx_t_2.load = NULL;
+  __pyx_t_2.save = NULL;
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[27]) = __pyx_t_2;
 
   /* "srctools/_cy_vtf_readwrite.pyx":725
+ * # the Python enum.
+ * FORMATS[27] = Format("NONE", NULL, NULL)
+ * FORMATS[28] = Format("ATI1N", NULL, NULL)             # <<<<<<<<<<<<<<
+ * FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)
+ * 
+ */
+  __pyx_t_2.name = ((char *)"ATI1N");
+  __pyx_t_2.load = NULL;
+  __pyx_t_2.save = NULL;
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[28]) = __pyx_t_2;
+
+  /* "srctools/_cy_vtf_readwrite.pyx":726
+ * FORMATS[27] = Format("NONE", NULL, NULL)
+ * FORMATS[28] = Format("ATI1N", NULL, NULL)
+ * FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)             # <<<<<<<<<<<<<<
+ * 
+ * 
+ */
+  __pyx_t_2.name = ((char *)"ATI2N");
+  __pyx_t_2.load = (&__pyx_f_8srctools_17_cy_vtf_readwrite_load_ati2n);
+  __pyx_t_2.save = (&__pyx_f_8srctools_17_cy_vtf_readwrite_save_ati2n);
+  (__pyx_v_8srctools_17_cy_vtf_readwrite_FORMATS[29]) = __pyx_t_2;
+
+  /* "srctools/_cy_vtf_readwrite.pyx":729
  * 
  * 
  * def init(formats: 'srctools.vtf.ImageFormats') -> None:             # <<<<<<<<<<<<<<
  *     """Verify that the Python enum matches our array of functions."""
  *     cdef int index
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_5init, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 725, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_5init, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 729, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_init, __pyx_t_1) < 0) __PYX_ERR(0, 725, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_init, __pyx_t_1) < 0) __PYX_ERR(0, 729, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":735
+  /* "srctools/_cy_vtf_readwrite.pyx":738
  * 
  * 
  * def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
  *     """Load pixels from data in the given format."""
  *     cdef int index = fmt.ind
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_7load, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 735, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_7load, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 738, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load, __pyx_t_1) < 0) __PYX_ERR(0, 735, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_load, __pyx_t_1) < 0) __PYX_ERR(0, 738, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_cy_vtf_readwrite.pyx":745
+  /* "srctools/_cy_vtf_readwrite.pyx":748
  * 
  * 
  * def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[::1] data, uint width, uint height) -> None:             # <<<<<<<<<<<<<<
  *     cdef int index = fmt.ind
  *     if 0 <= index < (sizeof(FORMATS) // sizeof(Format)) and FORMATS[index].save != NULL:
  */
-  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_9save, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 745, __pyx_L1_error)
+  __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_17_cy_vtf_readwrite_9save, NULL, __pyx_n_s_srctools__cy_vtf_readwrite); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 748, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_save, __pyx_t_1) < 0) __PYX_ERR(0, 745, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_save, __pyx_t_1) < 0) __PYX_ERR(0, 748, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
   /* "srctools/_cy_vtf_readwrite.pyx":1
@@ -25848,15 +25809,15 @@ if (!__Pyx_RefNanny) {
  *     PyThread_allocate_lock(),
  *     PyThread_allocate_lock(),
  */
-  __pyx_t_33[0] = PyThread_allocate_lock();
-  __pyx_t_33[1] = PyThread_allocate_lock();
-  __pyx_t_33[2] = PyThread_allocate_lock();
-  __pyx_t_33[3] = PyThread_allocate_lock();
-  __pyx_t_33[4] = PyThread_allocate_lock();
-  __pyx_t_33[5] = PyThread_allocate_lock();
-  __pyx_t_33[6] = PyThread_allocate_lock();
-  __pyx_t_33[7] = PyThread_allocate_lock();
-  memcpy(&(__pyx_memoryview_thread_locks[0]), __pyx_t_33, sizeof(__pyx_memoryview_thread_locks[0]) * (8));
+  __pyx_t_3[0] = PyThread_allocate_lock();
+  __pyx_t_3[1] = PyThread_allocate_lock();
+  __pyx_t_3[2] = PyThread_allocate_lock();
+  __pyx_t_3[3] = PyThread_allocate_lock();
+  __pyx_t_3[4] = PyThread_allocate_lock();
+  __pyx_t_3[5] = PyThread_allocate_lock();
+  __pyx_t_3[6] = PyThread_allocate_lock();
+  __pyx_t_3[7] = PyThread_allocate_lock();
+  memcpy(&(__pyx_memoryview_thread_locks[0]), __pyx_t_3, sizeof(__pyx_memoryview_thread_locks[0]) * (8));
 
   /* "View.MemoryView":549
  *         info.obj = self
