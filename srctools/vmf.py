@@ -52,6 +52,20 @@ OUTPUT_SEP = chr(27)
 
 
 T = TypeVar('T')
+# Types we allow for setting keyvalues. These we can stringify into something
+# matching Valve's usual encoding.
+# Other types are just str()ed, which might produce a bad result.
+ValidKVs = Union[str, int, bool, float, Vec, Angle]
+
+
+def conv_kv(val: ValidKVs) -> str:
+    """Convert a type into a string matching Valve's syntax."""
+    if val is True:
+        return '1'
+    elif val is False:
+        return '0'
+    else:
+        return str(val)
 
 
 class IDMan(AbstractSet[int]):
@@ -1608,7 +1622,7 @@ class Entity:
     def __init__(
         self,
         vmf_file: VMF,
-        keys: Dict[str, str]=EmptyMapping,
+        keys: Dict[str, ValidKVs]=EmptyMapping,
         fixup: Iterable['FixupTuple']=(),
         ent_id: int=-1,
         outputs: List['Output']=None,
@@ -1623,14 +1637,11 @@ class Entity:
         comments: str='',
     ):
         self.map = vmf_file
-        self.keys = {
-            # Ensure all values are strings. This allows passing ints and Vecs
-            # normally.
-            # If bool (special case), swap to 1/0.
-            k: str(int(v) if isinstance(v, bool) else v)
+        self.keys: Dict[str, str] = {
+            k: conv_kv(v)
             for k, v in
             keys.items()
-        }  # type: Dict[str, str]
+        }
         self.fixup = EntityFixup(fixup)
         self.outputs = outputs or []  # type: List[Output]
         self.solids = solids or []  # type: List[Solid]
@@ -1900,7 +1911,7 @@ class Entity:
     def __getitem__(self, key: str) -> str: ...
     @overload
     def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
-    def __getitem__(self, key: Union[str, T]) -> Union[str, T]:
+    def __getitem__(self, key: Union[str, Tuple[str, T]]) -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
         - This will return '' if the value is not present.
@@ -1925,7 +1936,7 @@ class Entity:
     def __setitem__(
         self,
         key: str,
-        val: Union[str, int, float, bool, Any],
+        val: ValidKVs,
     ) -> None:
         """Allow using [] syntax to save a keyvalue.
 
@@ -1933,28 +1944,27 @@ class Entity:
           differs by case.
         - Booleans are treated specially, all other types are stringified.
         """
-        if isinstance(val, bool):
-            val = '1' if val else '0'
+        str_val = conv_kv(val)
         key_fold = key.casefold()
         for k in self.keys:
             if k.casefold() == key_fold:
                 # Check case-insensitively for this key first
                 orig_val = self.keys.get(k)
-                self.keys[k] = str(val)
+                self.keys[k] = str_val
                 break
         else:
             orig_val = self.keys.get(key)
-            self.keys[key] = str(val)
+            self.keys[key] = str_val
 
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
             with suppress(KeyError):
                 self.map.by_class[orig_val].remove(self)
-            self.map.by_class[val].add(self)
+            self.map.by_class[str_val].add(self)
         elif key_fold == 'targetname':
             with suppress(KeyError):
                 self.map.by_target[orig_val].remove(self)
-            self.map.by_target[val].add(self)
+            self.map.by_target[str_val].add(self)
 
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
@@ -2139,16 +2149,12 @@ class EntityFixup(MutableMapping[str, str]):
             var = var[1:]
         return var.casefold() in self._fixup
 
-    def __setitem__(self, var: str, val: Union[builtins.int, builtins.float, str]) -> None:
+    def __setitem__(self, var: str, val: ValidKVs) -> None:
         """Set the value of an instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
 
-        sval = (
-            ('1' if val else '0')
-            if isinstance(val, bool)
-            else str(val)
-        )
+        sval = conv_kv(val)
 
         folded_var = var.casefold()
         if folded_var not in self._fixup:
@@ -2203,9 +2209,7 @@ class EntityFixup(MutableMapping[str, str]):
 
     def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the replace values into the VMF."""
-        for (key, value, index) in sorted(
-                self._fixup.values(), key=FixupTuple.id.__get__):
-
+        for (key, value, index) in sorted(self._fixup.values(), key=operator.attrgetter('id')):
             # When exporting, pad the index with zeros if needed
             buffer.write('{}\t"replace{:02}" "${} {}"\n'.format(
                 ind, index, key, value,
