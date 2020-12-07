@@ -463,9 +463,6 @@ class Mesh:
                         except KeyError:
                             raise ParseError(line_num, 'Unknown bone {}!', links_raw[off])
                         links.append((bone, float(links_raw[off+1])))
-                    remainder = 1.0 - math.fsum(weight for bone, weight in links)
-                    if remainder:
-                        links.append((parent, remainder))
                 else:
                     links = [(parent, 1.0)]
 
@@ -519,21 +516,24 @@ class Mesh:
             for tri in self.triangles:
                 file.write(tri.mat.encode('ascii') + b'\n')
                 for vert in tri:
-                    # Add the last link as the "main" one, which recieves
-                    # the amount not set by the other weights.
+                    # If there's only one bone, it's the first value.
+                    # Otherwise they're appended to the end and the first is
+                    # ignored (but must be valid).
                     assert len(vert.links) > 0
                     file.write(
                         b'%i\t%.6f %.6f %.6f\t'  # bone index, position XYZ
                         b'%.6f %.6f %.6f\t'  # Normal XYZ
-                        b'%.6f %.6f %i' % (  # UV, weight count.
-                            bone_indexes[vert.links[-1][0]],
+                        b'%.6f %.6f' % (  # UV
+                            bone_indexes[vert.links[0][0]],
                             vert.pos.x, vert.pos.y, vert.pos.z,
                             vert.norm.x, vert.norm.y, vert.norm.z,
-                            vert.tex_u, vert.tex_v, (len(vert.links) - 1)
+                            vert.tex_u, vert.tex_v,
                         )
                     )
-                    for bone, weight in vert.links[:-1]:
-                        file.write(b' %i %.6f' % (bone_indexes[bone], weight))
+                    if len(vert.links) > 1:
+                        file.write(b'%i' % (len(vert.links), ))
+                        for bone, weight in vert.links:
+                            file.write(b' %i %.6f' % (bone_indexes[bone], weight))
                     file.write(b'\n')
             file.write(b'end\n')
 
