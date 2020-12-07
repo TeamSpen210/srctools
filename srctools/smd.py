@@ -367,7 +367,7 @@ class Mesh:
     def _parse_smd_anim(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]):
         """Parse the 'skeleton' section of SMDs."""
         frames = {}
-        time = -999999999
+        time: Optional[int] = None
         for line_num, line in file_iter:
             if line.startswith((b'//', b'#', b';')):
                 continue
@@ -377,11 +377,13 @@ class Mesh:
                 except ValueError:
                     raise ParseError(line_num, 'Invalid time value!') from None
                 if time in frames:
-                    raise ValueError(line_num, 'Duplicate frame time {}!', time)
+                    raise ParseError(line_num, f'Duplicate frame time {time}!')
                 frames[time] = []
             elif line == b'end':
                 return frames
             else:  # Bone.
+                if time is None:
+                    raise ParseError(line_num, 'No time specification!')
                 try:
                     byt_ind, byt_x, byt_y, byt_z, byt_pit, byt_yaw, byt_rol = line.split()
                     pos = Vec(float(byt_x), float(byt_y), float(byt_z))
