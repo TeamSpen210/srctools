@@ -368,6 +368,23 @@ res('rpg_missile',
     mdl("models/weapons/w_missile_launch.mdl"),
     mdl("models/weapons/w_missile_closed.mdl"),
     )
+
+
+@cls_func
+def skybox_swapper(pack: PackList, ent: Entity) -> None:
+    """This needs to pack a skybox."""
+    sky_name = ent['skyboxname']
+    for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
+        pack.pack_file(
+            'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
+            FileType.MATERIAL,
+        )
+        pack.pack_file(
+            'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
+            FileType.MATERIAL,
+            optional=True,
+        )
+
 res('soundent')
 res('spraycan', sound("SprayCan.Paint"))
 res('sparktrail', sound('DoSpark'))
