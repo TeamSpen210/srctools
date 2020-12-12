@@ -6,6 +6,7 @@ from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
 from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
+import re
 
 from srctools import conv_bool
 from srctools.tokenizer import TokenSyntaxError
@@ -61,6 +62,16 @@ EXT_TYPE = {
     '.' + filetype.value: filetype
     for filetype in FileType
     if isinstance(filetype.value, str)
+}
+
+# VScript function names that imply resources. This assumes it's the first
+# argument.
+SCRIPT_FUNC_TYPES: Dict[str, Tuple[str, FileType]] = {
+    'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    'PrecacheScriptSound': ('', FileType.GAME_SOUND),
+    'PrecacheSoundScript': ('', FileType.GAME_SOUND),
+    'PrecacheModel': ('', FileType.MODEL),
 }
 
 
@@ -260,6 +271,9 @@ class PackList:
                     # Merge the two.
                     if existing_skins is not None:
                         self.skinsets[filename] = existing_skins | skinset
+
+        if filename.endswith('.nut'):
+            data_type = FileType.VSCRIPT_SQUIRREL
 
         try:
             file = self._files[filename]
@@ -849,6 +863,8 @@ class PackList:
                                 hdr_tex = file.filename[:-3] + 'hdr.vtf'
                                 if hdr_tex in self.fsys:
                                     self.pack_file(hdr_tex, optional=True)
+                        elif file.type is FileType.VSCRIPT_SQUIRREL:
+                            self._get_vscript_files(file)
                     except Exception as exc:
                         # Skip errors in the file format - means we can't find the dependencies.
                         LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
@@ -944,6 +960,28 @@ class PackList:
             # $bottommaterial for water brushes mainly.
             if param_type is VarType.MATERIAL:
                 self.pack_file(param_value, FileType.MATERIAL, optional=file.optional)
+
+    def _get_vscript_files(self, file: PackFile) -> None:
+        """Find dependencies in VScripts.
+
+        Since it's very dynamic, this only looks for obvious calls
+        to PrecacheSoundScript, IncludeScript, DoIncludeScript, etc.
+        """
+        # Be fairly sloppy, just match func("param"
+        func_pattern = re.compile(r'([a-zA-Z]+)\s*\(\s*"([^"]+)"')
+        try:
+            with self.fsys, self.fsys.open_str(file.filename) as f:
+                for match in func_pattern.findall(f.read()):
+                    func, arg = match
+                    try:
+                        prefix, param_type = SCRIPT_FUNC_TYPES[func]
+                    except KeyError:
+                        continue
+                    self.pack_file(prefix + arg, param_type, optional=file.optional)
+        except FileNotFoundError:
+            if not file.optional:
+                LOGGER.warning('File "{}" does not exist!', file.filename)
+            return
 
 
 # noinspection PyProtectedMember
