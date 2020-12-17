@@ -2,13 +2,15 @@
 
 This is used internally for parsing files.
 """
+import warnings
 from enum import Enum
 from os import fspath as _conv_path, PathLike
 from typing import (
     Union, Optional, Type, Any,
     Iterable, Iterator,
-    Tuple, List,
+    Tuple, List
 )
+import abc
 
 
 class TokenSyntaxError(Exception):
@@ -120,63 +122,40 @@ ESCAPES = {
 BARE_DISALLOWED = set('"\'{};:[]()\n\t ')
 
 
-class Tokenizer:
-    """Processes text data into groups of tokens.
+class Tokenizer(abc.ABC):
+    """Provides an interface for processing text into tokens.
 
-    This mainly groups strings and removes comments.
-
-    Due to many inconsistencies in Valve's parsing of files,
-    several options are available to control whether different
-    syntaxes are accepted:
-        * string_bracket parses [bracket] blocks as a single string-like block.
-          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
-        * allow_escapes controls whether \\n-style escapes are expanded.
-        * allow_star_comments if enabled allows /* */ comments.
+     It then provides tools for using those to parse data.
+     This is an abstract class, a subclass must be used to provide a source
+     for the tokens.
     """
+    def __new__(cls, *args, **kwargs) -> 'Tokenizer':
+        """Handle older code where Tokenizer was the FileTokenizer."""
+        if cls is Py_Tokenizer:
+            warnings.warn("Instantiate FileTokenizer, not Tokenizer!", DeprecationWarning)
+            cls = FileTokenizer
+        return super().__new__(cls)
+
     def __init__(
         self,
-        data: Union[str, Iterable[str]],
-        filename: Union[str, PathLike]=None,
-        error: Type[TokenSyntaxError]=TokenSyntaxError,
-        string_bracket: bool=False,
-        allow_escapes: bool=True,
-        allow_star_comments: bool=False,
+        filename: Union[str, PathLike, None],
+        error: Type[TokenSyntaxError],
     ) -> None:
-        # Catch passing direct bytes far in advance.
-        if isinstance(data, bytes):
-            raise TypeError(
-                'Cannot parse binary data! Decode to the desired encoding, '
-                'or wrap in io.TextIOWrapper() to decode gradually.'
-            )
-
-        if isinstance(data, str):
-            self.cur_chunk = data
-            self.chunk_iter = iter(())  # type: Iterator[str]
-        else:
-            self.cur_chunk = ''
-            self.chunk_iter = iter(data)
-        self.char_index = -1
-
         if filename is not None:
             self.filename = _conv_path(filename)
-            # If a file-like object, automatically use the configured name.
-        elif hasattr(data, 'name'):
-            self.filename = data.name  # type: ignore  # hasattr()
         else:
             self.filename = None
 
+        self.error_type: Type[TokenSyntaxError]
         if error is None:
-            self.error_type = TokenSyntaxError  # type: Type[TokenSyntaxError]
+            self.error_type = TokenSyntaxError
         else:
             if not issubclass(error, TokenSyntaxError):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
             self.error_type = error
 
-        self.string_bracket = bool(string_bracket)
-        self.allow_escapes = bool(allow_escapes)
-        self.allow_star_comments = bool(allow_star_comments)
         # If set, this token will be returned next.
-        self._pushback = None  # type: Optional[Tuple[Token, str]]
+        self._pushback: Optional[Tuple[Token, str]] = None
         self.line_num = 1
 
     def error(self, message: Union[str, Token], *args) -> TokenSyntaxError:
@@ -205,7 +184,137 @@ class Tokenizer:
         large strings.
         There is also the issue with recreating the C/Python versions.
         """
-        raise NotImplementedError('Cannot pickle Tokenizers!')
+        raise TypeError('Cannot pickle Tokenizers!')
+
+    @abc.abstractmethod
+    def _get_token(self) -> Tuple[Token, str]:
+        """Compute the next token, must be implemented by subclasses."""
+        raise NotImplementedError
+
+    def __call__(self) -> Tuple[Token, str]:
+        if self._pushback is not None:
+            next_val = self._pushback
+            self._pushback = None
+            return next_val
+        return self._get_token()
+
+    def __iter__(self) -> Iterator[Tuple[Token, str]]:
+        # Call ourselves until EOF is returned
+        return iter(self, (Token.EOF, ''))
+
+    def push_back(self, tok: Token, value: str=None) -> None:
+        """Return a token, so it will be reproduced when called again.
+
+        Only one token can be pushed back at once.
+        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
+        for other token types.
+        """
+        if self._pushback is not None:
+            raise ValueError('Token already pushed back!')
+        if not isinstance(tok, Token):
+            raise ValueError(repr(tok) + ' is not a Token!')
+
+        try:
+            value = _PUSHBACK_VALS[tok]
+        except KeyError:
+            if value is None:
+                raise ValueError('Value required for {!r}!'.format(tok.name)) from None
+
+        self._pushback = (tok, value)
+
+    def peek(self) -> Tuple[Token, str]:
+        """Peek at the next token, without removing it from the stream."""
+        tok_and_val = self()
+        # We know this is a valid pushback value, and any existing value was
+        # just removed. So unconditionally assign.
+        self._pushback = tok_and_val
+        return tok_and_val
+
+    def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
+        """Iterate over the tokens, skipping newlines."""
+        while True:
+            tok_and_val = tok, tok_value = self()
+            if tok is Token.EOF:
+                return
+            elif tok is not Token.NEWLINE:
+                yield tok_and_val
+
+    def expect(self, token: Token, skip_newline: bool=True) -> str:
+        """Consume the next token, which should be the given type.
+
+        If it is not, this raises an error.
+        If skip_newline is true, newlines will be skipped over. This
+        does not apply if the desired token is newline.
+        """
+
+        if token is Token.NEWLINE:
+            skip_newline = False
+
+        next_token, value = self()
+
+        while skip_newline and next_token is Token.NEWLINE:
+            next_token, value = self()
+
+        if next_token is not token:
+            raise self.error(
+                'Expected {}, but got {}!',
+                token,
+                next_token,
+            )
+        return value
+
+
+class FileTokenizer(Tokenizer):
+    """Processes text data into groups of tokens.
+
+    This mainly groups strings and removes comments.
+
+    Due to many inconsistencies in Valve's parsing of files,
+    several options are available to control whether different
+    syntaxes are accepted:
+        * string_bracket parses [bracket] blocks as a single string-like block.
+          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        * allow_escapes controls whether \\n-style escapes are expanded.
+        * allow_star_comments if enabled allows /* */ comments.
+    """
+    chunk_iter: Iterator[str]
+
+    def __init__(
+        self,
+        data: Union[str, Iterable[str]],
+        filename: Union[str, PathLike]=None,
+        error: Type[TokenSyntaxError]=TokenSyntaxError,
+        string_bracket: bool=False,
+        allow_escapes: bool=True,
+        allow_star_comments: bool=False,
+    ) -> None:
+        # If a file-like object, automatically use the configured name.
+        if filename is None and hasattr(data, 'name'):
+            filename = data.name  # type: ignore  # hasattr()
+
+        super().__init__(filename, error)
+
+        # Catch passing direct bytes far in advance.
+        if isinstance(data, bytes):
+            raise TypeError(
+                'Cannot parse binary data! Decode to the desired encoding, '
+                'or wrap in io.TextIOWrapper() to decode gradually.'
+            )
+
+        # If it's a literal string, there's no point iterating over that.
+        # So just keep it as a single chunk, and set the iterator to immediately
+        # quit.
+        if isinstance(data, str):
+            self.cur_chunk = data
+            self.chunk_iter = iter(())
+        else:
+            self.cur_chunk = ''
+            self.chunk_iter = iter(data)
+        self.char_index = -1
+
+        self.string_bracket = bool(string_bracket)
+        self.allow_escapes = bool(allow_escapes)
+        self.allow_star_comments = bool(allow_star_comments)
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -248,13 +357,8 @@ class Tokenizer:
                 # Out of characters after empty chunks
                 return None
 
-    def __call__(self) -> Tuple[Token, str]:
+    def _get_token(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
-        if self._pushback is not None:
-            next_val = self._pushback
-            self._pushback = None
-            return next_val
-
         while True:
             next_char = self._next_char()
             if next_char is None:  # EOF, use a dummy string.
@@ -328,7 +432,7 @@ class Tokenizer:
 
             # Strings
             elif next_char == '"':
-                value_chars = []  # type: List[str]
+                value_chars: List[str] = []
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
@@ -430,71 +534,6 @@ class Tokenizer:
 
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
-
-    def __iter__(self) -> Iterator[Tuple[Token, str]]:
-        # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, ''))
-
-    def push_back(self, tok: Token, value: str=None) -> None:
-        """Return a token, so it will be reproduced when called again.
-
-        Only one token can be pushed back at once.
-        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
-        for other token types.
-        """
-        if self._pushback is not None:
-            raise ValueError('Token already pushed back!')
-        if not isinstance(tok, Token):
-            raise ValueError(repr(tok) + ' is not a Token!')
-
-        try:
-            value = _PUSHBACK_VALS[tok]
-        except KeyError:
-            if value is None:
-                raise ValueError('Value required for {!r}!'.format(tok.name)) from None
-
-        self._pushback = (tok, value)
-
-    def peek(self) -> Tuple[Token, str]:
-        """Peek at the next token, without removing it from the stream."""
-        tok_and_val = self()
-        # We know this is a valid pushback value, and any existing value was
-        # just removed. So unconditionally assign.
-        self._pushback = tok_and_val
-        return tok_and_val
-
-    def skipping_newlines(self) -> Iterator[Tuple[Token, str]]:
-        """Iterate over the tokens, skipping newlines."""
-        while True:
-            tok_and_val = tok, tok_value = self()
-            if tok is Token.EOF:
-                return
-            elif tok is not Token.NEWLINE:
-                yield tok_and_val
-
-    def expect(self, token: Token, skip_newline: bool=True) -> str:
-        """Consume the next token, which should be the given type.
-
-        If it is not, this raises an error.
-        If skip_newline is true, newlines will be skipped over. This
-        does not apply if the desired token is newline.
-        """
-
-        if token is Token.NEWLINE:
-            skip_newline = False
-
-        next_token, value = self()
-
-        while skip_newline and next_token is Token.NEWLINE:
-            next_token, value = self()
-
-        if next_token is not token:
-            raise self.error(
-                'Expected {}, but got {}!',
-                token,
-                next_token,
-            )
-        return value
 
 
 def escape_text(text: str) -> str:
