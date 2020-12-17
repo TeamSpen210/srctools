@@ -1,0 +1,5 @@
+# Cython-generated
+srctools/*.c linguist-generated=true
+srctools/*.cpp linguist-generated=true
+
+libsquish/* linguist-vendored=true
