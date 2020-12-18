@@ -27,7 +27,12 @@ def process_includes(
     fileobj = file.open_str()
     path = PurePath(file.path).parent
     stack.push(fileobj)
-    tok = Tokenizer(fileobj, allow_escapes=False, allow_star_comments=True)
+    tok = Tokenizer(
+        fileobj,
+        allow_escapes=False,
+        allow_star_comments=True,
+        mark_bare_strings=True,
+    )
     tok_stack: List[Tuple[Tokenizer, IO[str], PurePath]] = [
         (tok, fileobj, path)
     ]
@@ -41,8 +46,8 @@ def process_includes(
             if not tok_stack:
                 return
             tok, fileobj, path = tok_stack[-1]
-        elif tok_type is Token.STRING and tok_value.casefold() == '$include':
-            rel_path = tok.expect(Token.STRING)
+        elif tok_type is Token.BARE_STRING and tok_value.casefold() == '$include':
+            rel_path = tok.expect(Token.BARE_STRING)
             path /= rel_path
             try:
                 file = fsys[str(path)]
@@ -50,7 +55,12 @@ def process_includes(
                 raise tok.error('Include file "{}" does not exist!', rel_path)
             fileobj = file.open_str()
             stack.push(fileobj)
-            tok = Tokenizer(fileobj, allow_escapes=False, allow_star_comments=True)
+            tok = Tokenizer(
+                fileobj,
+                allow_escapes=False,
+                allow_star_comments=True,
+                mark_bare_strings=True,
+            )
             tok_stack.append((tok, fileobj, path))
         else:
             yield tok_and_value
@@ -61,7 +71,10 @@ def process_macros(
     variables: Dict[str, str],
     macros: Dict[str, object],
 ) -> Iterator[Tuple[Token, str]]:
-    """Handle macro and variables."""
+    """Handle macros and variables.
+
+    The dictionaries are passed in so they can be stored in the QC object.
+    """
     tok = IterTokenizer(tok_source)
     var_matcher = re.compile(r'\$([^$]+)\$')
 
@@ -70,16 +83,18 @@ def process_macros(
         return variables.get(grp, grp)
 
     for tok_type, tok_value in tok:
-        if tok_type is Token.STRING:
+        if tok_type is Token.BARE_STRING:
             folded = tok_value.casefold()
             if folded == '$definevariable':
-                var_name = tok.expect(Token.STRING)
-                var_value = tok.expect(Token.STRING)
+                var_name = tok.expect(Token.BARE_STRING)
+                var_value = tok.expect(Token.BARE_STRING)
+
                 variables[var_name] = var_value
             else:
                 if not tok_value.startswith('$'):
                     tok_value = var_matcher.sub(var_sub, tok_value)
-                yield tok_type, tok_value
+                # Strip BARE_STRING from the tokens.
+                yield Token.STRING, tok_value
         else:
             yield tok_type, tok_value
 
