@@ -2,7 +2,6 @@
 
 This is used internally for parsing files.
 """
-import warnings
 from enum import Enum
 from os import fspath as _conv_path, PathLike
 from typing import (
@@ -528,6 +527,36 @@ class Tokenizer(BaseTokenizer):
 
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
+
+
+class IterTokenizer(BaseTokenizer):
+    """Wraps a token iterator to provide the tokenizer interface.
+
+    This is useful to pre-process a token stream before parsing it with other
+    code.
+    """
+    source: Iterator[Tuple[Token, str]]
+
+    def __init__(
+        self,
+        source: Iterable[Tuple[Token, str]],
+        filename: Union[str, PathLike]='',
+        error: Type[TokenSyntaxError]=TokenSyntaxError,
+    ) -> None:
+        super().__init__(filename, error)
+        self.source = iter(source)
+
+    def __repr__(self) -> str:
+        if self.error_type is TokenSyntaxError:
+            return f'IterTokenizer({self.source!r}, {self.filename!r})'
+        else:
+            return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
+
+    def _get_token(self) -> Tuple[Token, str]:
+        try:
+            return next(self.source)
+        except StopIteration:
+            return Token.EOF, ''
 
 
 def escape_text(text: str) -> str:

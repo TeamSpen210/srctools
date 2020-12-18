@@ -578,6 +578,30 @@ cdef class Tokenizer(BaseTokenizer):
                     raise self._error(f'Unexpected character "{next_char}"' '!')
 
 
+cdef class IterTokenizer(BaseTokenizer):
+    """Wraps a token iterator to provide the tokenizer interface.
+
+    This is useful to pre-process a token stream before parsing it with other
+    code.
+    """
+    cdef public object source
+    def __init__(self, source, filename='', error=None) -> None:
+        BaseTokenizer.__init__(self, filename, error)
+        self.source = iter(source)
+
+    def __repr__(self):
+        if self.error_type is TokenSyntaxError:
+            return f'IterTokenizer({self.source!r}, {self.filename!r})'
+        else:
+            return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
+
+    cdef next_token(self):
+        try:
+            return next(self.source)
+        except StopIteration:
+            return EOF_TUP
+
+
 # This is entirely internal, users shouldn't access this.
 @cython.final
 @cython.embedsignature(False)
@@ -601,12 +625,13 @@ cdef class _NewlinesIter:
     def __next__(self):
         while True:
             tok_and_val = self.tok.next_token()
+            token = (<tuple?>tok_and_val)[0]
 
             # Only our code is doing next_token here, so the tuples are
             # going to be this same instance.
-            if tok_and_val is EOF_TUP:
-                raise StopIteration()
-            elif tok_and_val is not NEWLINE_TUP:
+            if token is EOF:
+                raise StopIteration
+            elif token is not NEWLINE:
                 return tok_and_val
 
     def __reduce__(self):
