@@ -122,19 +122,13 @@ ESCAPES = {
 BARE_DISALLOWED = set('"\'{};:[]()\n\t ')
 
 
-class Tokenizer(abc.ABC):
+class BaseTokenizer(abc.ABC):
     """Provides an interface for processing text into tokens.
 
      It then provides tools for using those to parse data.
      This is an abstract class, a subclass must be used to provide a source
      for the tokens.
     """
-    def __new__(cls, *args, **kwargs) -> 'Tokenizer':
-        """Handle older code where Tokenizer was the FileTokenizer."""
-        if cls is Py_Tokenizer:
-            warnings.warn("Instantiate FileTokenizer, not Tokenizer!", DeprecationWarning)
-            cls = FileTokenizer
-        return super().__new__(cls)
 
     def __init__(
         self,
@@ -264,7 +258,7 @@ class Tokenizer(abc.ABC):
         return value
 
 
-class FileTokenizer(Tokenizer):
+class Tokenizer(BaseTokenizer):
     """Processes text data into groups of tokens.
 
     This mainly groups strings and removes comments.
@@ -552,17 +546,20 @@ def escape_text(text: str) -> str:
 
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
-Py_Tokenizer = Tokenizer
-
-# This is for static typing help, so it thinks they're the same.
-C_Tokenizer = Tokenizer
+# For static typing, make it think they're the same.
+Py_BaseTokenizer = C_BaseTokenizer = BaseTokenizer
+Py_Tokenizer = C_Tokenizer = Tokenizer
 
 # Maintain this for testing.
 _py_escape_text = escape_text
 
-# Make the actual assignment hidden to type checkers.
+# Do it this way, so static analysis ignores this.
+_glob = globals()
 try:
-    # noinspection all
-    from srctools._tokenizer import Tokenizer, Tokenizer as C_Tokenizer, escape_text  # type: ignore
+    from srctools import _tokenizer
 except ImportError:
     pass
+else:
+    for _name in ['Tokenizer', 'BaseTokenizer', 'escape_text']:
+        _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
+    del _glob, _name, _tokenizer
