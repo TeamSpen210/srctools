@@ -1,4 +1,4 @@
-from itertools import zip_longest
+from itertools import zip_longest, product
 import pytest
 import codecs
 
@@ -134,6 +134,14 @@ def py_c_escape_text(request):
     """Run the test twice with the two escape_text() functions."""
     if request.param is AssertionError:
         raise AssertionError('No C escape_text()!')
+    yield request.param
+
+
+@pytest.fixture(params=parms_iter, ids=ids)
+def py_c_itertok(request):
+    """Run the test twice, for the Python and C versions."""
+    if request.param is AssertionError:
+        raise AssertionError('No Cy_IterTokenizer!')
     yield request.param
 
 del parms, ids
@@ -559,3 +567,19 @@ def test_bare_string(py_c_token):
         (T.STRING, "quoteagain"),
         T.NEWLINE,
     ])
+
+
+@pytest.mark.parametrize(
+    'used, expect',
+    product(Token, Token),
+    ids=lambda t: t.name,
+)
+def test_expect(py_c_itertok, used, expect):
+    """Test the behaviour of expect()."""
+    tok = py_c_itertok([(used, 'blah')])
+    if used is expect or (used is T.STRING and expect is T.BARE_STRING):
+        tok.expect(expect)
+    else:
+        with raises(TokenSyntaxError):
+            tok.expect(expect)
+

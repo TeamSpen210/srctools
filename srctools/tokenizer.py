@@ -240,6 +240,7 @@ class BaseTokenizer(abc.ABC):
         If it is not, this raises an error.
         If skip_newline is true, newlines will be skipped over. This
         does not apply if the desired token is newline.
+        If the expected token is BARE_STRING, regular strings are also accepted.
         """
 
         if token is Token.NEWLINE:
@@ -250,7 +251,7 @@ class BaseTokenizer(abc.ABC):
         while skip_newline and next_token is Token.NEWLINE:
             next_token, value = self()
 
-        if next_token is not token:
+        if next_token is not token and not (token is Token.BARE_STRING and next_token is Token.STRING):
             raise self.error(
                 'Expected {}, but got {}!',
                 token,

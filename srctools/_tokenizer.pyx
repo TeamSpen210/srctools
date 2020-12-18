@@ -202,6 +202,7 @@ cdef class BaseTokenizer:
         If it is not, this raises an error.
         If skip_newline is true, newlines will be skipped over. This
         does not apply if the desired token is newline.
+        If the expected token is BARE_STRING, regular strings are also accepted.
         """
         if token is NEWLINE:
             skip_newline = False
@@ -211,7 +212,7 @@ cdef class BaseTokenizer:
         while skip_newline and next_token is NEWLINE:
             next_token, value = <tuple>self.next_token()
 
-        if next_token is not token:
+        if next_token is not token and not (token is BARE_STRING and next_token is STRING):
             raise self._error(f'Expected {token}, but got {next_token}' '!')
         return value
 
