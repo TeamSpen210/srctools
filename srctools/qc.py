@@ -1,8 +1,9 @@
 """Parse the 'Quake C' configuration files used for compiling models."""
 from enum import Enum, Flag
-from typing import List, Dict, Tuple, Iterator, IO
+from typing import List, Dict, Tuple, Iterator, IO, Match
 from pathlib import PurePath
 from contextlib import ExitStack
+import re
 
 from srctools.filesys import File, RawFileSystem
 from srctools.tokenizer import Tokenizer, IterTokenizer, Token
@@ -61,7 +62,26 @@ def process_macros(
     macros: Dict[str, object],
 ) -> Iterator[Tuple[Token, str]]:
     """Handle macro and variables."""
-    yield from tok_source
+    tok = IterTokenizer(tok_source)
+    var_matcher = re.compile(r'\$([^$]+)\$')
+
+    def var_sub(match: Match[str]) -> str:
+        grp = match.group(1)
+        return variables.get(grp, grp)
+
+    for tok_type, tok_value in tok:
+        if tok_type is Token.STRING:
+            folded = tok_value.casefold()
+            if folded == '$definevariable':
+                var_name = tok.expect(Token.STRING)
+                var_value = tok.expect(Token.STRING)
+                variables[var_name] = var_value
+            else:
+                if not tok_value.startswith('$'):
+                    tok_value = var_matcher.sub(var_sub, tok_value)
+                yield tok_type, tok_value
+        else:
+            yield tok_type, tok_value
 
 
 class QC:
