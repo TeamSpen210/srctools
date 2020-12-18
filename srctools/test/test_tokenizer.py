@@ -2,14 +2,15 @@ from itertools import zip_longest
 import pytest
 import codecs
 
-from pytest import raises
+from pytest import raises, mark, param
 
 from srctools.test.test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
 from srctools.tokenizer import (
     Token,
     Tokenizer,
-    C_Tokenizer, Py_Tokenizer,
+    Cy_Tokenizer, Py_Tokenizer,
+    Cy_IterTokenizer, Py_IterTokenizer,
     escape_text, _py_escape_text,
     TokenSyntaxError,
 )
@@ -109,28 +110,30 @@ noprop_parse_tokens = [
     T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.NEWLINE
 ]
 
-
-if C_Tokenizer is not Py_Tokenizer:
-    parms = [C_Tokenizer, Py_Tokenizer]
+ids = ['Cython', 'Python']
+if Cy_Tokenizer is not Py_Tokenizer:
+    parms = [Cy_Tokenizer, Py_Tokenizer]
+    parms_iter = [Cy_IterTokenizer, Py_IterTokenizer]
     parms_escape = [escape_text, _py_escape_text]
-    ids = ['Cython', 'Python']
 else:
-    import srctools.tokenizer
-    print('No _tokenizer! ' + str(vars(srctools.tokenizer)))
-    parms = [Py_Tokenizer]
-    parms_escape = [_py_escape_text]
-    ids = ['Python']
+    parms = [param(Py_Tokenizer, marks=mark.skip), Py_Tokenizer]
+    parms_iter = [param(Py_IterTokenizer, marks=mark.skip('No Cy_IterTokenizer')), Py_IterTokenizer]
+    parms_escape = [param(_py_escape_text, marks=mark.skip), _py_escape_text]
 
 
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request):
     """Run the test twice, for the Python and C versions."""
+    if request.param is AssertionError:
+        raise AssertionError('No Cy_Tokenizer!')
     yield request.param
 
 
 @pytest.fixture(params=parms_escape, ids=ids)
 def py_c_escape_text(request):
     """Run the test twice with the two escape_text() functions."""
+    if request.param is AssertionError:
+        raise AssertionError('No C escape_text()!')
     yield request.param
 
 del parms, ids
@@ -529,3 +532,30 @@ def test_early_binary_arg(py_c_token):
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
+
+
+def test_bare_string(py_c_token):
+    """Test the bare name option."""
+    Tokenizer = py_c_token
+
+    text = r"""
+    "quoted" unquoted \\\\ "\\\\" "quoteagain"
+    """
+    check_tokens(Tokenizer(text, mark_bare_strings=False), [
+        T.NEWLINE,
+        (T.STRING, "quoted"),
+        (T.STRING, "unquoted"),
+        (T.STRING, r"\\\\"),
+        (T.STRING, r"\\"),
+        (T.STRING, "quoteagain"),
+        T.NEWLINE,
+    ])
+    check_tokens(Tokenizer(text, mark_bare_strings=True), [
+        T.NEWLINE,
+        (T.STRING, "quoted"),
+        (T.BARE_STRING, "unquoted"),
+        (T.BARE_STRING, r"\\\\"),
+        (T.STRING, r"\\"),
+        (T.STRING, "quoteagain"),
+        T.NEWLINE,
+    ])

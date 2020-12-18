@@ -63,9 +63,10 @@ class Token(Enum):
     NEWLINE = 2  # \n
     PAREN_ARGS = 3  # (data)
     DIRECTIVE = 4  #  #name (automatically casefolded)
+    BARE_STRING = 5  # If requested, unquoted text only.
 
-    BRACE_OPEN = 5
-    BRACE_CLOSE = 6
+    BRACE_OPEN = 6
+    BRACE_CLOSE = 7
 
     PROP_FLAG = 10  # [!flag]
     BRACK_OPEN = 11  # only if above is not used
@@ -78,7 +79,7 @@ class Token(Enum):
     @property
     def has_value(self) -> bool:
         """If true, this type has an associated value."""
-        return self.value in (1, 3, 10)
+        return self.value in (1, 3, 4, 5, 10)
 
 _PUSHBACK_VALS = {
     Token.EOF: '',
@@ -270,6 +271,7 @@ class Tokenizer(BaseTokenizer):
           If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         * allow_escapes controls whether \\n-style escapes are expanded.
         * allow_star_comments if enabled allows /* */ comments.
+        * mark_bare_strings if set will cause bare strings to produce BARE_STRING.
     """
     chunk_iter: Iterator[str]
 
@@ -281,6 +283,7 @@ class Tokenizer(BaseTokenizer):
         string_bracket: bool=False,
         allow_escapes: bool=True,
         allow_star_comments: bool=False,
+        mark_bare_strings: bool=False,
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
@@ -309,6 +312,7 @@ class Tokenizer(BaseTokenizer):
         self.string_bracket = bool(string_bracket)
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
+        self.mark_bare_strings = bool(mark_bare_strings)
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -508,7 +512,7 @@ class Tokenizer(BaseTokenizer):
             elif next_char == ')':
                 raise self.error('No open () to close with ")"!')
 
-            elif next_char == '#': # A #name "directive", which we casefold.
+            elif next_char == '#':  # A #name "directive", which we casefold.
                 value_chars = []
                 while True:
                     next_char = self._next_char()
@@ -534,14 +538,13 @@ class Tokenizer(BaseTokenizer):
                         # char next. If it's not allowed, that'll error on
                         # next call.
                         self.char_index -= 1
-                        return Token.STRING, ''.join(value_chars)
+                        return (Token.BARE_STRING if self.mark_bare_strings else Token.STRING), ''.join(value_chars)
                     elif next_char is None:
                         # Bare names at the end are actually fine.
                         # It could be a value for the last prop.
-                        return Token.STRING, ''.join(value_chars)
+                        return (Token.BARE_STRING if self.mark_bare_strings else Token.STRING), ''.join(value_chars)
                     else:
                         value_chars.append(next_char)
-
             else:
                 raise self.error('Unexpected character "{}"!', next_char)
 
@@ -595,6 +598,7 @@ def escape_text(text: str) -> str:
 # For static typing, make it think they're the same.
 Py_BaseTokenizer = C_BaseTokenizer = BaseTokenizer
 Py_Tokenizer = C_Tokenizer = Tokenizer
+Py_IterTokenizer = C_IterTokenizer = IterTokenizer
 
 # Maintain this for testing.
 _py_escape_text = escape_text
@@ -604,8 +608,8 @@ _glob = globals()
 try:
     from srctools import _tokenizer
 except ImportError:
-    pass
+    raise
 else:
-    for _name in ['Tokenizer', 'BaseTokenizer', 'escape_text']:
+    for _name in ['Tokenizer', 'BaseTokenizer', 'IterTokenizer', 'escape_text']:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
     del _glob, _name, _tokenizer

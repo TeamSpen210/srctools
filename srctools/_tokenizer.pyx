@@ -29,6 +29,7 @@ cdef:
     object PAREN_ARGS = Token.PAREN_ARGS
     object PROP_FLAG = Token.PROP_FLAG  # [!flag]
     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
+    object BARE_STRING = Token.BARE_STRING
 
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
@@ -153,16 +154,16 @@ cdef class BaseTokenizer:
 
         if tok_val == 0: # EOF
             real_value = ''
-        elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
+        elif tok_val in (1, 3, 4, 5, 10):  # STRING, PAREN_ARGS, DIRECTIVE, BARE_STRING, PROP_FLAG
             # The value can be anything, so just accept this.
             self.pushback_tok = tok
             self.pushback_val = value
             return
         elif tok_val == 2:  # NEWLINE
             real_value = '\n'
-        elif tok_val == 5:  # BRACE_OPEN
+        elif tok_val == 6:  # BRACE_OPEN
             real_value = '{'
-        elif tok_val == 6:  # BRACE_CLOSE
+        elif tok_val == 7:  # BRACE_CLOSE
             real_value = '}'
         elif tok_val == 11:  # BRACK_OPEN
             real_value = '['
@@ -235,6 +236,7 @@ cdef class Tokenizer(BaseTokenizer):
     cdef public bint string_bracket
     cdef public bint allow_escapes
     cdef public bint allow_star_comments
+    cdef public bint mark_bare_strings
 
     # Private buffer, to hold string parts we're constructing.
     # Tokenizers are expected to be temporary, so we just never shrink.
@@ -258,6 +260,7 @@ cdef class Tokenizer(BaseTokenizer):
         bint string_bracket=False,
         bint allow_escapes=True,
         bint allow_star_comments=False,
+        bint mark_bare_strings=False,
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
@@ -296,6 +299,7 @@ cdef class Tokenizer(BaseTokenizer):
         self.string_bracket = string_bracket
         self.allow_escapes = allow_escapes
         self.allow_star_comments = allow_star_comments
+        self.mark_bare_strings = mark_bare_strings
 
 
     cdef inline void buf_reset(self):
@@ -587,7 +591,7 @@ cdef class Tokenizer(BaseTokenizer):
                         if next_char == -1:
                             # Bare names at the end are actually fine.
                             # It could be a value for the last prop.
-                            return STRING, self.buf_get_text()
+                            return (BARE_STRING if self.mark_bare_strings else STRING), self.buf_get_text()
 
                         elif next_char in BARE_DISALLOWED:
                             # We need to repeat this so we return the ending
@@ -595,7 +599,7 @@ cdef class Tokenizer(BaseTokenizer):
                             # next call.
                             # We need to repeat this so we return the newline.
                             self.char_index -= 1
-                            return STRING, self.buf_get_text()
+                            return (BARE_STRING if self.mark_bare_strings else STRING), self.buf_get_text()
                         else:
                             self.buf_add_char(next_char)
                 else:
