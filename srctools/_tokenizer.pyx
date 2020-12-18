@@ -19,7 +19,7 @@ from os import fspath as os_fspath
 cdef object Token, TokenSyntaxError
 from srctools.tokenizer import Token,  TokenSyntaxError
 
-__all__ = ['Tokenizer', 'FileTokenizer', 'escape_text']
+__all__ = ['BaseTokenizer', 'Tokenizer', 'IterTokenizer', 'escape_text']
 
 # Cdef-ed globals become static module vars, which aren't in the module
 # dict. We can ensure these are of the type we specify - and are quick to
@@ -27,7 +27,8 @@ __all__ = ['Tokenizer', 'FileTokenizer', 'escape_text']
 cdef:
     object STRING = Token.STRING
     object PAREN_ARGS = Token.PAREN_ARGS
-    object PROP_FLAG = Token.PROP_FLAG   # [!flag]
+    object PROP_FLAG = Token.PROP_FLAG  # [!flag]
+    object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
 
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
@@ -152,7 +153,7 @@ cdef class BaseTokenizer:
 
         if tok_val == 0: # EOF
             real_value = ''
-        elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+        elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
             # The value can be anything, so just accept this.
             self.pushback_tok = tok
             self.pushback_val = value
@@ -181,7 +182,6 @@ cdef class BaseTokenizer:
 
         self.pushback_tok = tok
         self.pushback_val = value
-
 
     def peek(self):
         """Peek at the next token, without removing it from the stream."""
@@ -545,6 +545,30 @@ cdef class Tokenizer(BaseTokenizer):
 
             elif next_char == ')':
                 raise self._error('No open () to close with ")"!')
+
+            # Directives
+            elif next_char == '#':
+                self.buf_reset()
+                while True:
+                    next_char = self._next_char()
+                    if next_char == -1:
+                        # A directive could be the last value in the file.
+                        return DIRECTIVE, self.buf_get_text()
+
+                    elif next_char in BARE_DISALLOWED:
+                        # We need to repeat this so we return the ending
+                        # char next. If it's not allowed, that'll error on
+                        # next call.
+                        self.char_index -= 1
+                        return DIRECTIVE, self.buf_get_text()
+                    else:
+                        # Lower() is far cheaper, but only valid for ASCII.
+                        if next_char < 128:
+                            self.buf_add_char(next_char.lower())
+                        else:
+                            # Might result in multiple output characters.
+                            for next_char in <str>next_char.casefold():
+                                self.buf_add_char(next_char)
 
             # Ignore Unicode Byte Order Mark on first lines
             elif next_char == '\uFEFF':

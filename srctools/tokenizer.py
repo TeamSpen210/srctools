@@ -62,6 +62,7 @@ class Token(Enum):
     STRING = 1  # Quoted or unquoted text
     NEWLINE = 2  # \n
     PAREN_ARGS = 3  # (data)
+    DIRECTIVE = 4  #  #name (automatically casefolded)
 
     BRACE_OPEN = 5
     BRACE_CLOSE = 6
@@ -506,6 +507,22 @@ class Tokenizer(BaseTokenizer):
 
             elif next_char == ')':
                 raise self.error('No open () to close with ")"!')
+
+            elif next_char == '#': # A #name "directive", which we casefold.
+                value_chars = []
+                while True:
+                    next_char = self._next_char()
+                    if next_char in BARE_DISALLOWED:
+                        # We need to repeat this so we return the ending
+                        # char next. If it's not allowed, that'll error on
+                        # next call.
+                        self.char_index -= 1
+                        return Token.DIRECTIVE, ''.join(value_chars)
+                    elif next_char is None:
+                        # A directive could be the last value in the file.
+                        return Token.DIRECTIVE, ''.join(value_chars)
+                    else:
+                        value_chars.append(next_char.casefold())
 
             # Bare names
             elif next_char not in BARE_DISALLOWED:

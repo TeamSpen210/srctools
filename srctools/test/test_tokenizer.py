@@ -90,7 +90,27 @@ prop_parse_tokens = [
     T.BRACE_CLOSE, T.NEWLINE,
 ]
 
-if C_Tokenizer is not None:
+# Additional text not valid as a property.
+noprop_parse_test = """
+#ﬁmport test
+#EXclßÀde value
+#caseA\u0345\u03a3test
+{ ]]{ }}}[[ {{] + = :: "test" + "ing" == vaLUE
+"""
+
+noprop_parse_tokens = [
+    T.NEWLINE,
+    (T.DIRECTIVE, "fimport"), (T.STRING, "test"), T.NEWLINE,
+    (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
+    (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
+    T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
+    T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE, T.PLUS,
+    T.EQUALS, T.COLON, T.COLON, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
+    T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.NEWLINE
+]
+
+
+if C_Tokenizer is not Py_Tokenizer:
     parms = [C_Tokenizer, Py_Tokenizer]
     parms_escape = [escape_text, _py_escape_text]
     ids = ['Cython', 'Python']
@@ -143,10 +163,10 @@ def check_tokens(tokenizer, tokens):
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert comp_type is token[0], "got {}, expected {} @ pos {}".format(token[0], comp_type, tokens[i-2: i+1])
-            assert comp_value == token[1], "got {!r}, expected {!r} @ pos {}".format(token[1], comp_value, tokens[i-2: i+1])
+            assert comp_type is token[0], "got {}, expected {} @ pos {}={}".format(token[0], comp_type, i, tokens[i-2: i+1])
+            assert comp_value == token[1], "got {!r}, expected {!r} @ pos {}={}".format(token[1], comp_value, i, tokens[i-2: i+1])
         else:
-            assert token[0] is comp_token, "got {}, expected {} @ pos {}".format(token[0], comp_token, tokens[i-2: i+1])
+            assert token[0] is comp_token, "got {}, expected {} @ pos {}={}".format(token[0], comp_token, i, tokens[i-2: i+1])
 
 
 def test_prop_tokens(py_c_token):
@@ -173,6 +193,26 @@ def test_prop_tokens(py_c_token):
     check_tokens(tok, prop_parse_tokens)
 
 
+def test_nonprop_tokens(py_c_token):
+    """Test the tokenizer returns the correct sequence of tokens for non-Property strings."""
+    Tokenizer = py_c_token
+
+    tok = Tokenizer(noprop_parse_test, '')
+    check_tokens(tok, noprop_parse_tokens)
+
+    # Test a list of lines.
+    test_list = noprop_parse_test.splitlines(keepends=True)
+
+    tok = Tokenizer(test_list, '')
+    check_tokens(tok, noprop_parse_tokens)
+
+    # Test a special case - empty chunks at the end.
+    test_list += ['', '', '']
+
+    tok = Tokenizer(test_list, '')
+    check_tokens(tok, noprop_parse_tokens)
+
+
 def test_pushback(py_c_token):
     """Test pushing back tokens."""
     Tokenizer = py_c_token
@@ -184,6 +224,15 @@ def test_pushback(py_c_token):
         else:
             tokens.append((tok_type, tok_value))
     check_tokens(tokens, prop_parse_tokens)
+
+    tok = Tokenizer(noprop_parse_test, '')
+    tokens = []
+    for i, (tok_type, tok_value) in enumerate(tok):
+        if i % 3 == 0:
+            tok.push_back(tok_type, tok_value)
+        else:
+            tokens.append((tok_type, tok_value))
+    check_tokens(tokens, noprop_parse_tokens)
 
 
 def test_call_next(py_c_token):

@@ -838,7 +838,7 @@ struct __pyx_obj_8srctools_10_tokenizer_Tokenizer;
 struct __pyx_obj_8srctools_10_tokenizer_IterTokenizer;
 struct __pyx_obj_8srctools_10_tokenizer__NewlinesIter;
 
-/* "srctools/_tokenizer.pyx":59
+/* "srctools/_tokenizer.pyx":60
  * 
  * # noinspection PyMissingTypeHints
  * cdef class BaseTokenizer:             # <<<<<<<<<<<<<<
@@ -877,7 +877,7 @@ struct __pyx_obj_8srctools_10_tokenizer_Tokenizer {
 };
 
 
-/* "srctools/_tokenizer.pyx":581
+/* "srctools/_tokenizer.pyx":605
  * 
  * 
  * cdef class IterTokenizer(BaseTokenizer):             # <<<<<<<<<<<<<<
@@ -890,7 +890,7 @@ struct __pyx_obj_8srctools_10_tokenizer_IterTokenizer {
 };
 
 
-/* "srctools/_tokenizer.pyx":609
+/* "srctools/_tokenizer.pyx":633
  * @cython.embedsignature(False)
  * @cython.internal
  * cdef class _NewlinesIter:             # <<<<<<<<<<<<<<
@@ -904,7 +904,7 @@ struct __pyx_obj_8srctools_10_tokenizer__NewlinesIter {
 
 
 
-/* "srctools/_tokenizer.pyx":59
+/* "srctools/_tokenizer.pyx":60
  * 
  * # noinspection PyMissingTypeHints
  * cdef class BaseTokenizer:             # <<<<<<<<<<<<<<
@@ -940,7 +940,7 @@ static CYTHON_INLINE void __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_reset(st
 static CYTHON_INLINE void __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_add_char(struct __pyx_obj_8srctools_10_tokenizer_Tokenizer *, Py_UCS4);
 
 
-/* "srctools/_tokenizer.pyx":581
+/* "srctools/_tokenizer.pyx":605
  * 
  * 
  * cdef class IterTokenizer(BaseTokenizer):             # <<<<<<<<<<<<<<
@@ -1233,6 +1233,17 @@ static PyObject* __Pyx_PyUnicode_BuildFromAscii(Py_ssize_t ulength, char* chars,
 /* CIntToPyUnicode.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyUnicode_From_int(int value, Py_ssize_t width, char padding_char, char format_char);
 
+/* PyObjectCallNoArg.proto */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func);
+#else
+#define __Pyx_PyObject_CallNoArg(func) __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL)
+#endif
+
+/* unicode_iter.proto */
+static CYTHON_INLINE int __Pyx_init_unicode_iteration(
+    PyObject* ustring, Py_ssize_t *length, void** data, int *kind);
+
 /* PyObjectFormat.proto */
 #if CYTHON_USE_UNICODE_WRITER
 static PyObject* __Pyx_PyObject_Format(PyObject* s, PyObject* f);
@@ -1450,11 +1461,19 @@ static CYTHON_INLINE PyObject* __Pyx_PyInt_From_long(long value);
 /* PyUCS4InUnicode.proto */
 static CYTHON_INLINE int __Pyx_UnicodeContainsUCS4(PyObject* unicode, Py_UCS4 character);
 
+/* UnicodeAsUCS4.proto */
+static CYTHON_INLINE Py_UCS4 __Pyx_PyUnicode_AsPy_UCS4(PyObject*);
+
 /* CIntFromPy.proto */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE char __Pyx_PyInt_As_char(PyObject *);
+
+/* ObjectAsUCS4.proto */
+#define __Pyx_PyObject_AsPy_UCS4(x)\
+    (likely(PyUnicode_Check(x)) ? __Pyx_PyUnicode_AsPy_UCS4(x) : __Pyx__PyObject_AsPy_UCS4(x))
+static Py_UCS4 __Pyx__PyObject_AsPy_UCS4(PyObject*);
 
 /* CIntFromPy.proto */
 static CYTHON_INLINE long __Pyx_PyInt_As_long(PyObject *);
@@ -1515,6 +1534,7 @@ static PyObject *__pyx_v_8srctools_10_tokenizer_TokenSyntaxError = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_STRING = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_PAREN_ARGS = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_PROP_FLAG = 0;
+static PyObject *__pyx_v_8srctools_10_tokenizer_DIRECTIVE = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_EOF = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_NEWLINE = 0;
 static PyObject *__pyx_v_8srctools_10_tokenizer_EMPTY_ITER = 0;
@@ -1595,9 +1615,11 @@ static const char __pyx_k_tok_val[] = "tok_val";
 static const char __pyx_k_unicode[] = "unicode";
 static const char __pyx_k_value_2[] = "_value_";
 static const char __pyx_k_Expected[] = "Expected ";
+static const char __pyx_k_casefold[] = "casefold";
 static const char __pyx_k_enc_text[] = "enc_text";
 static const char __pyx_k_filename[] = "filename";
 static const char __pyx_k_out_buff[] = "out_buff";
+static const char __pyx_k_DIRECTIVE[] = "DIRECTIVE";
 static const char __pyx_k_PROP_FLAG[] = "PROP_FLAG";
 static const char __pyx_k_Tokenizer[] = "Tokenizer";
 static const char __pyx_k_TypeError[] = "TypeError";
@@ -1616,7 +1638,6 @@ static const char __pyx_k_escape_text[] = "escape_text";
 static const char __pyx_k_tok_and_val[] = "tok_and_val";
 static const char __pyx_k_skip_newline[] = "skip_newline";
 static const char __pyx_k_BaseTokenizer[] = "BaseTokenizer";
-static const char __pyx_k_FileTokenizer[] = "FileTokenizer";
 static const char __pyx_k_IterTokenizer[] = "IterTokenizer(";
 static const char __pyx_k_StopIteration[] = "StopIteration";
 static const char __pyx_k_Unknown_token[] = "Unknown token ";
@@ -1675,6 +1696,7 @@ static PyObject *__pyx_n_s_BRACE_OPEN;
 static PyObject *__pyx_n_s_BRACK_CLOSE;
 static PyObject *__pyx_n_s_BRACK_OPEN;
 static PyObject *__pyx_n_s_BaseTokenizer;
+static PyObject *__pyx_n_u_BaseTokenizer;
 static PyObject *__pyx_n_s_BaseTokenizer___reduce;
 static PyObject *__pyx_n_s_BaseTokenizer_error;
 static PyObject *__pyx_n_s_BaseTokenizer_expect;
@@ -1690,14 +1712,15 @@ static PyObject *__pyx_kp_u_Cannot_parse_binary_data_Decode;
 static PyObject *__pyx_kp_u_Cannot_pickle_Tokenizers;
 static PyObject *__pyx_kp_u_Cannot_pickle__NewlinesIter;
 static PyObject *__pyx_kp_u_Could_not_decode_file;
+static PyObject *__pyx_n_s_DIRECTIVE;
 static PyObject *__pyx_kp_u_Data_was_not_a_string;
 static PyObject *__pyx_n_s_EOF;
 static PyObject *__pyx_n_s_EQUALS;
 static PyObject *__pyx_kp_u_Expected;
-static PyObject *__pyx_n_u_FileTokenizer;
 static PyObject *__pyx_kp_u_Invalid_error_instance;
 static PyObject *__pyx_kp_u_IterTokenizer;
 static PyObject *__pyx_n_s_IterTokenizer_2;
+static PyObject *__pyx_n_u_IterTokenizer_2;
 static PyObject *__pyx_n_s_NEWLINE;
 static PyObject *__pyx_n_s_NewlinesIter___reduce;
 static PyObject *__pyx_kp_u_No_open_to_close_with;
@@ -1746,6 +1769,7 @@ static PyObject *__pyx_n_s_allow_escapes;
 static PyObject *__pyx_n_s_allow_star_comments;
 static PyObject *__pyx_n_s_args;
 static PyObject *__pyx_kp_u_but_got;
+static PyObject *__pyx_n_s_casefold;
 static PyObject *__pyx_n_s_cline_in_traceback;
 static PyObject *__pyx_n_s_data;
 static PyObject *__pyx_n_s_enc_text;
@@ -1862,7 +1886,7 @@ static PyObject *__pyx_codeobj__37;
 static PyObject *__pyx_codeobj__39;
 /* Late includes */
 
-/* "srctools/_tokenizer.pyx":76
+/* "srctools/_tokenizer.pyx":77
  *     cdef public int line_num
  * 
  *     def __init__(self, filename, error):             # <<<<<<<<<<<<<<
@@ -1904,11 +1928,11 @@ static int __pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_1__init__(PyObject *_
         case  1:
         if (likely((values[1] = __Pyx_PyDict_GetItemStr(__pyx_kwds, __pyx_n_s_error)) != 0)) kw_args--;
         else {
-          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 76, __pyx_L3_error)
+          __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, 1); __PYX_ERR(0, 77, __pyx_L3_error)
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 76, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 77, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 2) {
       goto __pyx_L5_argtuple_error;
@@ -1921,7 +1945,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_1__init__(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 76, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 2, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 77, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._tokenizer.BaseTokenizer.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -1949,23 +1973,23 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_tokenizer.pyx":80
+  /* "srctools/_tokenizer.pyx":81
  *         # We know this isn't a method, so skip Cython's optimisation.
  *         with cython.optimize.unpack_method_calls(False):
  *             self.filename = os_fspath(filename)             # <<<<<<<<<<<<<<
  * 
  *         if error is None:
  */
-  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_v_8srctools_10_tokenizer_os_fspath, __pyx_v_filename); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 80, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_v_8srctools_10_tokenizer_os_fspath, __pyx_v_filename); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 81, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 80, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_t_1))||((__pyx_t_1) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_t_1)->tp_name), 0))) __PYX_ERR(0, 81, __pyx_L1_error)
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->filename);
   __Pyx_DECREF(__pyx_v_self->filename);
   __pyx_v_self->filename = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":82
+  /* "srctools/_tokenizer.pyx":83
  *             self.filename = os_fspath(filename)
  * 
  *         if error is None:             # <<<<<<<<<<<<<<
@@ -1976,7 +2000,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_tokenizer.pyx":83
+    /* "srctools/_tokenizer.pyx":84
  * 
  *         if error is None:
  *             self.error_type = TokenSyntaxError             # <<<<<<<<<<<<<<
@@ -1989,7 +2013,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
     __Pyx_DECREF(__pyx_v_self->error_type);
     __pyx_v_self->error_type = __pyx_v_8srctools_10_tokenizer_TokenSyntaxError;
 
-    /* "srctools/_tokenizer.pyx":82
+    /* "srctools/_tokenizer.pyx":83
  *             self.filename = os_fspath(filename)
  * 
  *         if error is None:             # <<<<<<<<<<<<<<
@@ -1999,7 +2023,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
     goto __pyx_L3;
   }
 
-  /* "srctools/_tokenizer.pyx":85
+  /* "srctools/_tokenizer.pyx":86
  *             self.error_type = TokenSyntaxError
  *         else:
  *             if not issubclass(error, TokenSyntaxError):             # <<<<<<<<<<<<<<
@@ -2009,19 +2033,19 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   /*else*/ {
     __pyx_t_1 = __pyx_v_8srctools_10_tokenizer_TokenSyntaxError;
     __Pyx_INCREF(__pyx_t_1);
-    __pyx_t_3 = PyObject_IsSubclass(__pyx_v_error, __pyx_t_1); if (unlikely(__pyx_t_3 == ((int)-1))) __PYX_ERR(0, 85, __pyx_L1_error)
+    __pyx_t_3 = PyObject_IsSubclass(__pyx_v_error, __pyx_t_1); if (unlikely(__pyx_t_3 == ((int)-1))) __PYX_ERR(0, 86, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __pyx_t_2 = ((!(__pyx_t_3 != 0)) != 0);
     if (unlikely(__pyx_t_2)) {
 
-      /* "srctools/_tokenizer.pyx":86
+      /* "srctools/_tokenizer.pyx":87
  *         else:
  *             if not issubclass(error, TokenSyntaxError):
  *                 raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')             # <<<<<<<<<<<<<<
  *             self.error_type = error
  * 
  */
-      __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __pyx_t_4 = 0;
       __pyx_t_5 = 127;
@@ -2029,9 +2053,9 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
       __pyx_t_4 += 24;
       __Pyx_GIVEREF(__pyx_kp_u_Invalid_error_instance);
       PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Invalid_error_instance);
-      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(((PyObject *)Py_TYPE(__pyx_v_error)), __pyx_n_s_name); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_6 = __Pyx_PyObject_GetAttrStr(((PyObject *)Py_TYPE(__pyx_v_error)), __pyx_n_s_name); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_6);
-      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
       __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -2043,17 +2067,17 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
       __pyx_t_4 += 2;
       __Pyx_GIVEREF(__pyx_kp_u_);
       PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u_);
-      __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_7);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 86, __pyx_L1_error)
+      __pyx_t_1 = __Pyx_PyObject_CallOneArg(__pyx_builtin_TypeError, __pyx_t_7); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 87, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_1);
       __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
       __Pyx_Raise(__pyx_t_1, 0, 0, 0);
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-      __PYX_ERR(0, 86, __pyx_L1_error)
+      __PYX_ERR(0, 87, __pyx_L1_error)
 
-      /* "srctools/_tokenizer.pyx":85
+      /* "srctools/_tokenizer.pyx":86
  *             self.error_type = TokenSyntaxError
  *         else:
  *             if not issubclass(error, TokenSyntaxError):             # <<<<<<<<<<<<<<
@@ -2062,7 +2086,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
  */
     }
 
-    /* "srctools/_tokenizer.pyx":87
+    /* "srctools/_tokenizer.pyx":88
  *             if not issubclass(error, TokenSyntaxError):
  *                 raise TypeError(f'Invalid error instance "{type(error).__name__}"' '!')
  *             self.error_type = error             # <<<<<<<<<<<<<<
@@ -2077,7 +2101,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   }
   __pyx_L3:;
 
-  /* "srctools/_tokenizer.pyx":89
+  /* "srctools/_tokenizer.pyx":90
  *             self.error_type = error
  * 
  *         self.pushback_tok = self.pushback_val = None             # <<<<<<<<<<<<<<
@@ -2095,7 +2119,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   __Pyx_DECREF(__pyx_v_self->pushback_val);
   __pyx_v_self->pushback_val = Py_None;
 
-  /* "srctools/_tokenizer.pyx":90
+  /* "srctools/_tokenizer.pyx":91
  * 
  *         self.pushback_tok = self.pushback_val = None
  *         self.line_num = 1             # <<<<<<<<<<<<<<
@@ -2104,7 +2128,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
  */
   __pyx_v_self->line_num = 1;
 
-  /* "srctools/_tokenizer.pyx":76
+  /* "srctools/_tokenizer.pyx":77
  *     cdef public int line_num
  * 
  *     def __init__(self, filename, error):             # <<<<<<<<<<<<<<
@@ -2126,7 +2150,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer___init__(struct __pyx
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":92
+/* "srctools/_tokenizer.pyx":93
  *         self.line_num = 1
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -2158,20 +2182,20 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_2__reduce__(CYT
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "srctools/_tokenizer.pyx":99
+  /* "srctools/_tokenizer.pyx":100
  *         There is also the issue with recreating the C/Python versions.
  *         """
  *         raise TypeError('Cannot pickle Tokenizers!')             # <<<<<<<<<<<<<<
  * 
  *     def error(self, message, *args):
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __PYX_ERR(0, 99, __pyx_L1_error)
+  __PYX_ERR(0, 100, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":92
+  /* "srctools/_tokenizer.pyx":93
  *         self.line_num = 1
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -2189,7 +2213,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_2__reduce__(CYT
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":101
+/* "srctools/_tokenizer.pyx":102
  *         raise TypeError('Cannot pickle Tokenizers!')
  * 
  *     def error(self, message, *args):             # <<<<<<<<<<<<<<
@@ -2240,7 +2264,7 @@ static PyObject *__pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_5error(PyObject
       }
       if (unlikely(kw_args > 0)) {
         const Py_ssize_t used_pos_args = (pos_args < 1) ? pos_args : 1;
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, used_pos_args, "error") < 0)) __PYX_ERR(0, 101, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, used_pos_args, "error") < 0)) __PYX_ERR(0, 102, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) < 1) {
       goto __pyx_L5_argtuple_error;
@@ -2251,7 +2275,7 @@ static PyObject *__pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_5error(PyObject
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("error", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 101, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("error", 0, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 102, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_DECREF(__pyx_v_args); __pyx_v_args = 0;
   __Pyx_AddTraceback("srctools._tokenizer.BaseTokenizer.error", __pyx_clineno, __pyx_lineno, __pyx_filename);
@@ -2282,7 +2306,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
   __Pyx_RefNannySetupContext("error", 0);
   __Pyx_INCREF(__pyx_v_message);
 
-  /* "srctools/_tokenizer.pyx":110
+  /* "srctools/_tokenizer.pyx":111
  *         if they are present.
  *         """
  *         if isinstance(message, Token):             # <<<<<<<<<<<<<<
@@ -2291,19 +2315,19 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
  */
   __pyx_t_1 = __pyx_v_8srctools_10_tokenizer_Token;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_2 = PyObject_IsInstance(__pyx_v_message, __pyx_t_1); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 110, __pyx_L1_error)
+  __pyx_t_2 = PyObject_IsInstance(__pyx_v_message, __pyx_t_1); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 111, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_t_3 = (__pyx_t_2 != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_tokenizer.pyx":111
+    /* "srctools/_tokenizer.pyx":112
  *         """
  *         if isinstance(message, Token):
  *             message = f'Unexpected token {message.name}' '!'             # <<<<<<<<<<<<<<
  *         elif args:
  *             message = message.format(*args)
  */
-    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 112, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
@@ -2311,9 +2335,9 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
     __pyx_t_4 += 17;
     __Pyx_GIVEREF(__pyx_kp_u_Unexpected_token);
     PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_Unexpected_token);
-    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_message, __pyx_n_s_name_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_GetAttrStr(__pyx_v_message, __pyx_n_s_name_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 112, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_FormatSimple(__pyx_t_6, __pyx_empty_unicode); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 112, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_5;
@@ -2325,13 +2349,13 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
     __pyx_t_4 += 1;
     __Pyx_GIVEREF(__pyx_kp_u__3);
     PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__3);
-    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 111, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 112, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_DECREF_SET(__pyx_v_message, __pyx_t_7);
     __pyx_t_7 = 0;
 
-    /* "srctools/_tokenizer.pyx":110
+    /* "srctools/_tokenizer.pyx":111
  *         if they are present.
  *         """
  *         if isinstance(message, Token):             # <<<<<<<<<<<<<<
@@ -2341,7 +2365,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
     goto __pyx_L3;
   }
 
-  /* "srctools/_tokenizer.pyx":112
+  /* "srctools/_tokenizer.pyx":113
  *         if isinstance(message, Token):
  *             message = f'Unexpected token {message.name}' '!'
  *         elif args:             # <<<<<<<<<<<<<<
@@ -2351,22 +2375,22 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
   __pyx_t_3 = (PyTuple_GET_SIZE(__pyx_v_args) != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_tokenizer.pyx":113
+    /* "srctools/_tokenizer.pyx":114
  *             message = f'Unexpected token {message.name}' '!'
  *         elif args:
  *             message = message.format(*args)             # <<<<<<<<<<<<<<
  *         return self._error(message)
  * 
  */
-    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_message, __pyx_n_s_format); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_7 = __Pyx_PyObject_GetAttrStr(__pyx_v_message, __pyx_n_s_format); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 114, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_7);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_v_args, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 113, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_7, __pyx_v_args, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
     __Pyx_DECREF_SET(__pyx_v_message, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "srctools/_tokenizer.pyx":112
+    /* "srctools/_tokenizer.pyx":113
  *         if isinstance(message, Token):
  *             message = f'Unexpected token {message.name}' '!'
  *         elif args:             # <<<<<<<<<<<<<<
@@ -2376,7 +2400,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
   }
   __pyx_L3:;
 
-  /* "srctools/_tokenizer.pyx":114
+  /* "srctools/_tokenizer.pyx":115
  *         elif args:
  *             message = message.format(*args)
  *         return self._error(message)             # <<<<<<<<<<<<<<
@@ -2384,14 +2408,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
  *     # Don't unpack, error_type should be a class.
  */
   __Pyx_XDECREF(__pyx_r);
-  if (!(likely(PyUnicode_CheckExact(__pyx_v_message))||((__pyx_v_message) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_message)->tp_name), 0))) __PYX_ERR(0, 114, __pyx_L1_error)
-  __pyx_t_1 = __pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error(__pyx_v_self, ((PyObject*)__pyx_v_message)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 114, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_v_message))||((__pyx_v_message) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_message)->tp_name), 0))) __PYX_ERR(0, 115, __pyx_L1_error)
+  __pyx_t_1 = __pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error(__pyx_v_self, ((PyObject*)__pyx_v_message)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 115, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":101
+  /* "srctools/_tokenizer.pyx":102
  *         raise TypeError('Cannot pickle Tokenizers!')
  * 
  *     def error(self, message, *args):             # <<<<<<<<<<<<<<
@@ -2413,7 +2437,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_4error(struct _
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":118
+/* "srctools/_tokenizer.pyx":119
  *     # Don't unpack, error_type should be a class.
  *     @cython.optimize.unpack_method_calls(False)
  *     cdef inline _error(self, str message):             # <<<<<<<<<<<<<<
@@ -2431,7 +2455,7 @@ static CYTHON_INLINE PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer__e
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("_error", 0);
 
-  /* "srctools/_tokenizer.pyx":120
+  /* "srctools/_tokenizer.pyx":121
  *     cdef inline _error(self, str message):
  *         """C-private self.error()."""
  *         return self.error_type(             # <<<<<<<<<<<<<<
@@ -2440,24 +2464,24 @@ static CYTHON_INLINE PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer__e
  */
   __Pyx_XDECREF(__pyx_r);
 
-  /* "srctools/_tokenizer.pyx":123
+  /* "srctools/_tokenizer.pyx":124
  *             message,
  *             self.filename,
  *             self.line_num,             # <<<<<<<<<<<<<<
  *         )
  * 
  */
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->line_num); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 123, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->line_num); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 124, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
 
-  /* "srctools/_tokenizer.pyx":120
+  /* "srctools/_tokenizer.pyx":121
  *     cdef inline _error(self, str message):
  *         """C-private self.error()."""
  *         return self.error_type(             # <<<<<<<<<<<<<<
  *             message,
  *             self.filename,
  */
-  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(3); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_INCREF(__pyx_v_message);
   __Pyx_GIVEREF(__pyx_v_message);
@@ -2468,14 +2492,14 @@ static CYTHON_INLINE PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer__e
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 2, __pyx_t_1);
   __pyx_t_1 = 0;
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_v_self->error_type, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 120, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_v_self->error_type, __pyx_t_2, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 121, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":118
+  /* "srctools/_tokenizer.pyx":119
  *     # Don't unpack, error_type should be a class.
  *     @cython.optimize.unpack_method_calls(False)
  *     cdef inline _error(self, str message):             # <<<<<<<<<<<<<<
@@ -2495,7 +2519,7 @@ static CYTHON_INLINE PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer__e
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":126
+/* "srctools/_tokenizer.pyx":127
  *         )
  * 
  *     def __call__(self):             # <<<<<<<<<<<<<<
@@ -2532,7 +2556,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_6__call__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__call__", 0);
 
-  /* "srctools/_tokenizer.pyx":128
+  /* "srctools/_tokenizer.pyx":129
  *     def __call__(self):
  *         """Return the next token, value pair."""
  *         return self.next_token()             # <<<<<<<<<<<<<<
@@ -2540,13 +2564,13 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_6__call__(struc
  *     cdef next_token(self):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self->__pyx_vtab)->next_token(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 128, __pyx_L1_error)
+  __pyx_t_1 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self->__pyx_vtab)->next_token(__pyx_v_self); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 129, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":126
+  /* "srctools/_tokenizer.pyx":127
  *         )
  * 
  *     def __call__(self):             # <<<<<<<<<<<<<<
@@ -2565,7 +2589,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_6__call__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":130
+/* "srctools/_tokenizer.pyx":131
  *         return self.next_token()
  * 
  *     cdef next_token(self):             # <<<<<<<<<<<<<<
@@ -2582,20 +2606,20 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer_next_token(CYTHO
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("next_token", 0);
 
-  /* "srctools/_tokenizer.pyx":131
+  /* "srctools/_tokenizer.pyx":132
  * 
  *     cdef next_token(self):
  *         raise NotImplementedError("Abstract method!")             # <<<<<<<<<<<<<<
  * 
  *     def __iter__(self):
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_NotImplementedError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_NotImplementedError, __pyx_tuple__4, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 132, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __PYX_ERR(0, 131, __pyx_L1_error)
+  __PYX_ERR(0, 132, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":130
+  /* "srctools/_tokenizer.pyx":131
  *         return self.next_token()
  * 
  *     cdef next_token(self):             # <<<<<<<<<<<<<<
@@ -2613,7 +2637,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13BaseTokenizer_next_token(CYTHO
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":133
+/* "srctools/_tokenizer.pyx":134
  *         raise NotImplementedError("Abstract method!")
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -2644,7 +2668,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8__iter__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_tokenizer.pyx":135
+  /* "srctools/_tokenizer.pyx":136
  *     def __iter__(self):
  *         # Call ourselves until EOF is returned
  *         return iter(self, EOF_TUP)             # <<<<<<<<<<<<<<
@@ -2654,14 +2678,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8__iter__(struc
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = __pyx_v_8srctools_10_tokenizer_EOF_TUP;
   __Pyx_INCREF(__pyx_t_1);
-  __pyx_t_2 = PyCallIter_New(((PyObject *)__pyx_v_self), __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 135, __pyx_L1_error)
+  __pyx_t_2 = PyCallIter_New(((PyObject *)__pyx_v_self), __pyx_t_1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 136, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_2;
   __pyx_t_2 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":133
+  /* "srctools/_tokenizer.pyx":134
  *         raise NotImplementedError("Abstract method!")
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -2681,7 +2705,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8__iter__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":137
+/* "srctools/_tokenizer.pyx":138
  *         return iter(self, EOF_TUP)
  * 
  *     def push_back(self, object tok not None, str value=None):             # <<<<<<<<<<<<<<
@@ -2730,7 +2754,7 @@ static PyObject *__pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_11push_back(PyO
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "push_back") < 0)) __PYX_ERR(0, 137, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "push_back") < 0)) __PYX_ERR(0, 138, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -2746,16 +2770,16 @@ static PyObject *__pyx_pw_8srctools_10_tokenizer_13BaseTokenizer_11push_back(PyO
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("push_back", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 137, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("push_back", 0, 1, 2, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 138, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._tokenizer.BaseTokenizer.push_back", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return NULL;
   __pyx_L4_argument_unpacking_done:;
   if (unlikely(((PyObject *)__pyx_v_tok) == Py_None)) {
-    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "tok"); __PYX_ERR(0, 137, __pyx_L1_error)
+    PyErr_Format(PyExc_TypeError, "Argument '%.200s' must not be None", "tok"); __PYX_ERR(0, 138, __pyx_L1_error)
   }
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyUnicode_Type), 1, "value", 1))) __PYX_ERR(0, 137, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_value), (&PyUnicode_Type), 1, "value", 1))) __PYX_ERR(0, 138, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self), __pyx_v_tok, __pyx_v_value);
 
   /* function exit code */
@@ -2784,7 +2808,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("push_back", 0);
 
-  /* "srctools/_tokenizer.pyx":144
+  /* "srctools/_tokenizer.pyx":145
  *         for other token types.
  *         """
  *         if self.pushback_tok is not None:             # <<<<<<<<<<<<<<
@@ -2795,20 +2819,20 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_tokenizer.pyx":145
+    /* "srctools/_tokenizer.pyx":146
  *         """
  *         if self.pushback_tok is not None:
  *             raise ValueError('Token already pushed back!')             # <<<<<<<<<<<<<<
  *         if not isinstance(tok, Token):
  *             raise ValueError(repr(tok) + ' is not a Token!')
  */
-    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 145, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_Call(__pyx_builtin_ValueError, __pyx_tuple__5, NULL); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 146, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 145, __pyx_L1_error)
+    __PYX_ERR(0, 146, __pyx_L1_error)
 
-    /* "srctools/_tokenizer.pyx":144
+    /* "srctools/_tokenizer.pyx":145
  *         for other token types.
  *         """
  *         if self.pushback_tok is not None:             # <<<<<<<<<<<<<<
@@ -2817,7 +2841,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
  */
   }
 
-  /* "srctools/_tokenizer.pyx":146
+  /* "srctools/_tokenizer.pyx":147
  *         if self.pushback_tok is not None:
  *             raise ValueError('Token already pushed back!')
  *         if not isinstance(tok, Token):             # <<<<<<<<<<<<<<
@@ -2826,31 +2850,31 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
  */
   __pyx_t_3 = __pyx_v_8srctools_10_tokenizer_Token;
   __Pyx_INCREF(__pyx_t_3);
-  __pyx_t_2 = PyObject_IsInstance(__pyx_v_tok, __pyx_t_3); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 146, __pyx_L1_error)
+  __pyx_t_2 = PyObject_IsInstance(__pyx_v_tok, __pyx_t_3); if (unlikely(__pyx_t_2 == ((int)-1))) __PYX_ERR(0, 147, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_t_1 = ((!(__pyx_t_2 != 0)) != 0);
   if (unlikely(__pyx_t_1)) {
 
-    /* "srctools/_tokenizer.pyx":147
+    /* "srctools/_tokenizer.pyx":148
  *             raise ValueError('Token already pushed back!')
  *         if not isinstance(tok, Token):
  *             raise ValueError(repr(tok) + ' is not a Token!')             # <<<<<<<<<<<<<<
  * 
  *         # Read this directly to skip the 'value' descriptor.
  */
-    __pyx_t_3 = PyObject_Repr(__pyx_v_tok); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_3 = PyObject_Repr(__pyx_v_tok); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyUnicode_ConcatSafe(__pyx_t_3, __pyx_kp_u_is_not_a_Token); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyUnicode_ConcatSafe(__pyx_t_3, __pyx_kp_u_is_not_a_Token); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 147, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 148, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 147, __pyx_L1_error)
+    __PYX_ERR(0, 148, __pyx_L1_error)
 
-    /* "srctools/_tokenizer.pyx":146
+    /* "srctools/_tokenizer.pyx":147
  *         if self.pushback_tok is not None:
  *             raise ValueError('Token already pushed back!')
  *         if not isinstance(tok, Token):             # <<<<<<<<<<<<<<
@@ -2859,61 +2883,62 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
  */
   }
 
-  /* "srctools/_tokenizer.pyx":150
+  /* "srctools/_tokenizer.pyx":151
  * 
  *         # Read this directly to skip the 'value' descriptor.
  *         cdef int tok_val = tok._value_             # <<<<<<<<<<<<<<
  *         cdef str real_value
  * 
  */
-  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tok, __pyx_n_s_value_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_3 = __Pyx_PyObject_GetAttrStr(__pyx_v_tok, __pyx_n_s_value_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_3);
-  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 150, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyInt_As_int(__pyx_t_3); if (unlikely((__pyx_t_5 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 151, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
   __pyx_v_tok_val = __pyx_t_5;
 
-  /* "srctools/_tokenizer.pyx":153
+  /* "srctools/_tokenizer.pyx":154
  *         cdef str real_value
  * 
  *         if tok_val == 0: # EOF             # <<<<<<<<<<<<<<
  *             real_value = ''
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
  */
   switch (__pyx_v_tok_val) {
     case 0:
 
-    /* "srctools/_tokenizer.pyx":154
+    /* "srctools/_tokenizer.pyx":155
  * 
  *         if tok_val == 0: # EOF
  *             real_value = ''             # <<<<<<<<<<<<<<
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
  *             # The value can be anything, so just accept this.
  */
     __Pyx_INCREF(__pyx_kp_u__6);
     __pyx_v_real_value = __pyx_kp_u__6;
 
-    /* "srctools/_tokenizer.pyx":153
+    /* "srctools/_tokenizer.pyx":154
  *         cdef str real_value
  * 
  *         if tok_val == 0: # EOF             # <<<<<<<<<<<<<<
  *             real_value = ''
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
  */
     break;
     case 1:
 
-    /* "srctools/_tokenizer.pyx":155
+    /* "srctools/_tokenizer.pyx":156
  *         if tok_val == 0: # EOF
  *             real_value = ''
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG             # <<<<<<<<<<<<<<
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG             # <<<<<<<<<<<<<<
  *             # The value can be anything, so just accept this.
  *             self.pushback_tok = tok
  */
     case 3:
+    case 4:
     case 10:
 
-    /* "srctools/_tokenizer.pyx":157
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG
+    /* "srctools/_tokenizer.pyx":158
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
  *             # The value can be anything, so just accept this.
  *             self.pushback_tok = tok             # <<<<<<<<<<<<<<
  *             self.pushback_val = value
@@ -2925,7 +2950,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_DECREF(__pyx_v_self->pushback_tok);
     __pyx_v_self->pushback_tok = __pyx_v_tok;
 
-    /* "srctools/_tokenizer.pyx":158
+    /* "srctools/_tokenizer.pyx":159
  *             # The value can be anything, so just accept this.
  *             self.pushback_tok = tok
  *             self.pushback_val = value             # <<<<<<<<<<<<<<
@@ -2938,7 +2963,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_DECREF(__pyx_v_self->pushback_val);
     __pyx_v_self->pushback_val = __pyx_v_value;
 
-    /* "srctools/_tokenizer.pyx":159
+    /* "srctools/_tokenizer.pyx":160
  *             self.pushback_tok = tok
  *             self.pushback_val = value
  *             return             # <<<<<<<<<<<<<<
@@ -2949,17 +2974,17 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __pyx_r = Py_None; __Pyx_INCREF(Py_None);
     goto __pyx_L0;
 
-    /* "srctools/_tokenizer.pyx":155
+    /* "srctools/_tokenizer.pyx":156
  *         if tok_val == 0: # EOF
  *             real_value = ''
- *         elif tok_val in (1, 3, 10):  # STRING, PAREN_ARGS, PROP_FLAG             # <<<<<<<<<<<<<<
+ *         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG             # <<<<<<<<<<<<<<
  *             # The value can be anything, so just accept this.
  *             self.pushback_tok = tok
  */
     break;
     case 2:
 
-    /* "srctools/_tokenizer.pyx":161
+    /* "srctools/_tokenizer.pyx":162
  *             return
  *         elif tok_val == 2:  # NEWLINE
  *             real_value = '\n'             # <<<<<<<<<<<<<<
@@ -2969,7 +2994,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__7);
     __pyx_v_real_value = __pyx_kp_u__7;
 
-    /* "srctools/_tokenizer.pyx":160
+    /* "srctools/_tokenizer.pyx":161
  *             self.pushback_val = value
  *             return
  *         elif tok_val == 2:  # NEWLINE             # <<<<<<<<<<<<<<
@@ -2979,7 +3004,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 5:
 
-    /* "srctools/_tokenizer.pyx":163
+    /* "srctools/_tokenizer.pyx":164
  *             real_value = '\n'
  *         elif tok_val == 5:  # BRACE_OPEN
  *             real_value = '{'             # <<<<<<<<<<<<<<
@@ -2989,7 +3014,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__8);
     __pyx_v_real_value = __pyx_kp_u__8;
 
-    /* "srctools/_tokenizer.pyx":162
+    /* "srctools/_tokenizer.pyx":163
  *         elif tok_val == 2:  # NEWLINE
  *             real_value = '\n'
  *         elif tok_val == 5:  # BRACE_OPEN             # <<<<<<<<<<<<<<
@@ -2999,7 +3024,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 6:
 
-    /* "srctools/_tokenizer.pyx":165
+    /* "srctools/_tokenizer.pyx":166
  *             real_value = '{'
  *         elif tok_val == 6:  # BRACE_CLOSE
  *             real_value = '}'             # <<<<<<<<<<<<<<
@@ -3009,7 +3034,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__9);
     __pyx_v_real_value = __pyx_kp_u__9;
 
-    /* "srctools/_tokenizer.pyx":164
+    /* "srctools/_tokenizer.pyx":165
  *         elif tok_val == 5:  # BRACE_OPEN
  *             real_value = '{'
  *         elif tok_val == 6:  # BRACE_CLOSE             # <<<<<<<<<<<<<<
@@ -3019,7 +3044,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 11:
 
-    /* "srctools/_tokenizer.pyx":167
+    /* "srctools/_tokenizer.pyx":168
  *             real_value = '}'
  *         elif tok_val == 11:  # BRACK_OPEN
  *             real_value = '['             # <<<<<<<<<<<<<<
@@ -3029,7 +3054,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__10);
     __pyx_v_real_value = __pyx_kp_u__10;
 
-    /* "srctools/_tokenizer.pyx":166
+    /* "srctools/_tokenizer.pyx":167
  *         elif tok_val == 6:  # BRACE_CLOSE
  *             real_value = '}'
  *         elif tok_val == 11:  # BRACK_OPEN             # <<<<<<<<<<<<<<
@@ -3039,7 +3064,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 12:
 
-    /* "srctools/_tokenizer.pyx":169
+    /* "srctools/_tokenizer.pyx":170
  *             real_value = '['
  *         elif tok_val == 12:  # BRACK_CLOSE
  *             real_value = ']'             # <<<<<<<<<<<<<<
@@ -3049,7 +3074,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__11);
     __pyx_v_real_value = __pyx_kp_u__11;
 
-    /* "srctools/_tokenizer.pyx":168
+    /* "srctools/_tokenizer.pyx":169
  *         elif tok_val == 11:  # BRACK_OPEN
  *             real_value = '['
  *         elif tok_val == 12:  # BRACK_CLOSE             # <<<<<<<<<<<<<<
@@ -3059,7 +3084,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 13:
 
-    /* "srctools/_tokenizer.pyx":171
+    /* "srctools/_tokenizer.pyx":172
  *             real_value = ']'
  *         elif tok_val == 13:  # COLON
  *             real_value = ':'             # <<<<<<<<<<<<<<
@@ -3069,7 +3094,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__12);
     __pyx_v_real_value = __pyx_kp_u__12;
 
-    /* "srctools/_tokenizer.pyx":170
+    /* "srctools/_tokenizer.pyx":171
  *         elif tok_val == 12:  # BRACK_CLOSE
  *             real_value = ']'
  *         elif tok_val == 13:  # COLON             # <<<<<<<<<<<<<<
@@ -3079,7 +3104,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 14:
 
-    /* "srctools/_tokenizer.pyx":173
+    /* "srctools/_tokenizer.pyx":174
  *             real_value = ':'
  *         elif tok_val == 14:  # EQUALS
  *             real_value = '='             # <<<<<<<<<<<<<<
@@ -3089,7 +3114,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__13);
     __pyx_v_real_value = __pyx_kp_u__13;
 
-    /* "srctools/_tokenizer.pyx":172
+    /* "srctools/_tokenizer.pyx":173
  *         elif tok_val == 13:  # COLON
  *             real_value = ':'
  *         elif tok_val == 14:  # EQUALS             # <<<<<<<<<<<<<<
@@ -3099,7 +3124,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     case 15:
 
-    /* "srctools/_tokenizer.pyx":175
+    /* "srctools/_tokenizer.pyx":176
  *             real_value = '='
  *         elif tok_val == 15:  # PLUS
  *             real_value = '+'             # <<<<<<<<<<<<<<
@@ -3109,7 +3134,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __Pyx_INCREF(__pyx_kp_u__14);
     __pyx_v_real_value = __pyx_kp_u__14;
 
-    /* "srctools/_tokenizer.pyx":174
+    /* "srctools/_tokenizer.pyx":175
  *         elif tok_val == 14:  # EQUALS
  *             real_value = '='
  *         elif tok_val == 15:  # PLUS             # <<<<<<<<<<<<<<
@@ -3119,28 +3144,28 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     break;
     default:
 
-    /* "srctools/_tokenizer.pyx":177
+    /* "srctools/_tokenizer.pyx":178
  *             real_value = '+'
  *         else:
  *             raise ValueError(f'Unknown token {tok!r}')             # <<<<<<<<<<<<<<
  * 
  *         if value is None:
  */
-    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_tok), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_tok), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
-    __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Unknown_token, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 177, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyUnicode_Concat(__pyx_kp_u_Unknown_token, __pyx_t_3); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 177, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 178, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_Raise(__pyx_t_3, 0, 0, 0);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 177, __pyx_L1_error)
+    __PYX_ERR(0, 178, __pyx_L1_error)
     break;
   }
 
-  /* "srctools/_tokenizer.pyx":179
+  /* "srctools/_tokenizer.pyx":180
  *             raise ValueError(f'Unknown token {tok!r}')
  * 
  *         if value is None:             # <<<<<<<<<<<<<<
@@ -3151,14 +3176,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (unlikely(__pyx_t_2)) {
 
-    /* "srctools/_tokenizer.pyx":180
+    /* "srctools/_tokenizer.pyx":181
  * 
  *         if value is None:
  *             raise ValueError(f'Value required for {tok!r}' '!') from None             # <<<<<<<<<<<<<<
  * 
  *         self.pushback_tok = tok
  */
-    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_6 = 0;
     __pyx_t_7 = 127;
@@ -3166,7 +3191,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __pyx_t_6 += 19;
     __Pyx_GIVEREF(__pyx_kp_u_Value_required_for);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_Value_required_for);
-    __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_tok), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 180, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_tok), __pyx_empty_unicode); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __pyx_t_7 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) > __pyx_t_7) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_4) : __pyx_t_7;
     __pyx_t_6 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_4);
@@ -3177,17 +3202,17 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
     __pyx_t_6 += 1;
     __Pyx_GIVEREF(__pyx_kp_u__3);
     PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__3);
-    __pyx_t_4 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 180, __pyx_L1_error)
+    __pyx_t_4 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_6, __pyx_t_7); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_4);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 180, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_CallOneArg(__pyx_builtin_ValueError, __pyx_t_4); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 181, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_Raise(__pyx_t_3, 0, 0, Py_None);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-    __PYX_ERR(0, 180, __pyx_L1_error)
+    __PYX_ERR(0, 181, __pyx_L1_error)
 
-    /* "srctools/_tokenizer.pyx":179
+    /* "srctools/_tokenizer.pyx":180
  *             raise ValueError(f'Unknown token {tok!r}')
  * 
  *         if value is None:             # <<<<<<<<<<<<<<
@@ -3196,7 +3221,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
  */
   }
 
-  /* "srctools/_tokenizer.pyx":182
+  /* "srctools/_tokenizer.pyx":183
  *             raise ValueError(f'Value required for {tok!r}' '!') from None
  * 
  *         self.pushback_tok = tok             # <<<<<<<<<<<<<<
@@ -3209,12 +3234,12 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
   __Pyx_DECREF(__pyx_v_self->pushback_tok);
   __pyx_v_self->pushback_tok = __pyx_v_tok;
 
-  /* "srctools/_tokenizer.pyx":183
+  /* "srctools/_tokenizer.pyx":184
  * 
  *         self.pushback_tok = tok
  *         self.pushback_val = value             # <<<<<<<<<<<<<<
  * 
- * 
+ *     def peek(self):
  */
   __Pyx_INCREF(__pyx_v_value);
   __Pyx_GIVEREF(__pyx_v_value);
@@ -3222,7 +3247,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
   __Pyx_DECREF(__pyx_v_self->pushback_val);
   __pyx_v_self->pushback_val = __pyx_v_value;
 
-  /* "srctools/_tokenizer.pyx":137
+  /* "srctools/_tokenizer.pyx":138
  *         return iter(self, EOF_TUP)
  * 
  *     def push_back(self, object tok not None, str value=None):             # <<<<<<<<<<<<<<
@@ -3246,7 +3271,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_10push_back(str
 }
 
 /* "srctools/_tokenizer.pyx":186
- * 
+ *         self.pushback_val = value
  * 
  *     def peek(self):             # <<<<<<<<<<<<<<
  *         """Peek at the next token, without removing it from the stream."""
@@ -3341,7 +3366,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_12peek(struct _
   goto __pyx_L0;
 
   /* "srctools/_tokenizer.pyx":186
- * 
+ *         self.pushback_val = value
  * 
  *     def peek(self):             # <<<<<<<<<<<<<<
  *         """Peek at the next token, without removing it from the stream."""
@@ -3766,7 +3791,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_16expect(struct
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":69
+/* "srctools/_tokenizer.pyx":70
  *     cdef object error_type
  * 
  *     cdef public str filename             # <<<<<<<<<<<<<<
@@ -3824,7 +3849,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8filename_2__set__(st
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  if (!(likely(PyUnicode_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 69, __pyx_L1_error)
+  if (!(likely(PyUnicode_CheckExact(__pyx_v_value))||((__pyx_v_value) == Py_None)||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "unicode", Py_TYPE(__pyx_v_value)->tp_name), 0))) __PYX_ERR(0, 70, __pyx_L1_error)
   __pyx_t_1 = __pyx_v_value;
   __Pyx_INCREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
@@ -3874,7 +3899,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8filename_4__del__(st
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":74
+/* "srctools/_tokenizer.pyx":75
  *     cdef object pushback_val
  * 
  *     cdef public int line_num             # <<<<<<<<<<<<<<
@@ -3904,7 +3929,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8line_num___get
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__get__", 0);
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->line_num); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_From_int(__pyx_v_self->line_num); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 75, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_r = __pyx_t_1;
   __pyx_t_1 = 0;
@@ -3942,7 +3967,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13BaseTokenizer_8line_num_2__set__(st
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__set__", 0);
-  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 74, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyInt_As_int(__pyx_v_value); if (unlikely((__pyx_t_1 == (int)-1) && PyErr_Occurred())) __PYX_ERR(0, 75, __pyx_L1_error)
   __pyx_v_self->line_num = __pyx_t_1;
 
   /* function exit code */
@@ -5565,6 +5590,12 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
   int __pyx_t_5;
   Py_ssize_t __pyx_t_6;
   PyObject *__pyx_t_7 = NULL;
+  PyObject *__pyx_t_8 = NULL;
+  PyObject *__pyx_t_9 = NULL;
+  Py_ssize_t __pyx_t_10;
+  void *__pyx_t_11;
+  int __pyx_t_12;
+  Py_ssize_t __pyx_t_13;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -7033,7 +7064,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  *             elif next_char == ')':
  *                 raise self._error('No open () to close with ")"!')             # <<<<<<<<<<<<<<
  * 
- *             # Ignore Unicode Byte Order Mark on first lines
+ *             # Directives
  */
       __pyx_t_3 = __pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self), __pyx_kp_u_No_open_to_close_with_2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 547, __pyx_L1_error)
       __Pyx_GOTREF(__pyx_t_3);
@@ -7049,9 +7080,236 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  * 
  */
       break;
-      case 0xFEFF:
+      case 35:
 
       /* "srctools/_tokenizer.pyx":551
+ *             # Directives
+ *             elif next_char == '#':
+ *                 self.buf_reset()             # <<<<<<<<<<<<<<
+ *                 while True:
+ *                     next_char = self._next_char()
+ */
+      __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_reset(__pyx_v_self);
+
+      /* "srctools/_tokenizer.pyx":552
+ *             elif next_char == '#':
+ *                 self.buf_reset()
+ *                 while True:             # <<<<<<<<<<<<<<
+ *                     next_char = self._next_char()
+ *                     if next_char == -1:
+ */
+      while (1) {
+
+        /* "srctools/_tokenizer.pyx":553
+ *                 self.buf_reset()
+ *                 while True:
+ *                     next_char = self._next_char()             # <<<<<<<<<<<<<<
+ *                     if next_char == -1:
+ *                         # A directive could be the last value in the file.
+ */
+        __pyx_t_4 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->_next_char(__pyx_v_self); if (unlikely(__pyx_t_4 == ((Py_UCS4)-2))) __PYX_ERR(0, 553, __pyx_L1_error)
+        __pyx_v_next_char = __pyx_t_4;
+
+        /* "srctools/_tokenizer.pyx":554
+ *                 while True:
+ *                     next_char = self._next_char()
+ *                     if next_char == -1:             # <<<<<<<<<<<<<<
+ *                         # A directive could be the last value in the file.
+ *                         return DIRECTIVE, self.buf_get_text()
+ */
+        switch (__pyx_v_next_char) {
+          case -1L:
+
+          /* "srctools/_tokenizer.pyx":556
+ *                     if next_char == -1:
+ *                         # A directive could be the last value in the file.
+ *                         return DIRECTIVE, self.buf_get_text()             # <<<<<<<<<<<<<<
+ * 
+ *                     elif next_char in BARE_DISALLOWED:
+ */
+          __Pyx_XDECREF(__pyx_r);
+          __pyx_t_3 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 556, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 556, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_7);
+          __Pyx_INCREF(__pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          __Pyx_GIVEREF(__pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          __Pyx_GIVEREF(__pyx_t_3);
+          PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_3);
+          __pyx_t_3 = 0;
+          __pyx_r = __pyx_t_7;
+          __pyx_t_7 = 0;
+          goto __pyx_L0;
+
+          /* "srctools/_tokenizer.pyx":554
+ *                 while True:
+ *                     next_char = self._next_char()
+ *                     if next_char == -1:             # <<<<<<<<<<<<<<
+ *                         # A directive could be the last value in the file.
+ *                         return DIRECTIVE, self.buf_get_text()
+ */
+          break;
+          case 34:
+
+          /* "srctools/_tokenizer.pyx":558
+ *                         return DIRECTIVE, self.buf_get_text()
+ * 
+ *                     elif next_char in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
+ *                         # We need to repeat this so we return the ending
+ *                         # char next. If it's not allowed, that'll error on
+ */
+          case 39:
+          case 0x7B:
+          case 0x7D:
+          case 59:
+          case 58:
+          case 91:
+          case 93:
+          case 40:
+          case 41:
+          case 10:
+          case 9:
+          case 32:
+
+          /* "srctools/_tokenizer.pyx":562
+ *                         # char next. If it's not allowed, that'll error on
+ *                         # next call.
+ *                         self.char_index -= 1             # <<<<<<<<<<<<<<
+ *                         return DIRECTIVE, self.buf_get_text()
+ *                     else:
+ */
+          __pyx_v_self->char_index = (__pyx_v_self->char_index - 1);
+
+          /* "srctools/_tokenizer.pyx":563
+ *                         # next call.
+ *                         self.char_index -= 1
+ *                         return DIRECTIVE, self.buf_get_text()             # <<<<<<<<<<<<<<
+ *                     else:
+ *                         # Lower() is far cheaper, but only valid for ASCII.
+ */
+          __Pyx_XDECREF(__pyx_r);
+          __pyx_t_7 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 563, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_7);
+          __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 563, __pyx_L1_error)
+          __Pyx_GOTREF(__pyx_t_3);
+          __Pyx_INCREF(__pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          __Pyx_GIVEREF(__pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+          __Pyx_GIVEREF(__pyx_t_7);
+          PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_7);
+          __pyx_t_7 = 0;
+          __pyx_r = __pyx_t_3;
+          __pyx_t_3 = 0;
+          goto __pyx_L0;
+
+          /* "srctools/_tokenizer.pyx":558
+ *                         return DIRECTIVE, self.buf_get_text()
+ * 
+ *                     elif next_char in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
+ *                         # We need to repeat this so we return the ending
+ *                         # char next. If it's not allowed, that'll error on
+ */
+          break;
+          default:
+
+          /* "srctools/_tokenizer.pyx":566
+ *                     else:
+ *                         # Lower() is far cheaper, but only valid for ASCII.
+ *                         if next_char < 128:             # <<<<<<<<<<<<<<
+ *                             self.buf_add_char(next_char.lower())
+ *                         else:
+ */
+          __pyx_t_2 = ((__pyx_v_next_char < 0x80) != 0);
+          if (__pyx_t_2) {
+
+            /* "srctools/_tokenizer.pyx":567
+ *                         # Lower() is far cheaper, but only valid for ASCII.
+ *                         if next_char < 128:
+ *                             self.buf_add_char(next_char.lower())             # <<<<<<<<<<<<<<
+ *                         else:
+ *                             # Might result in multiple output characters.
+ */
+            __pyx_t_4 = Py_UNICODE_TOLOWER(__pyx_v_next_char); 
+            __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_add_char(__pyx_v_self, __pyx_t_4);
+
+            /* "srctools/_tokenizer.pyx":566
+ *                     else:
+ *                         # Lower() is far cheaper, but only valid for ASCII.
+ *                         if next_char < 128:             # <<<<<<<<<<<<<<
+ *                             self.buf_add_char(next_char.lower())
+ *                         else:
+ */
+            goto __pyx_L25;
+          }
+
+          /* "srctools/_tokenizer.pyx":570
+ *                         else:
+ *                             # Might result in multiple output characters.
+ *                             for next_char in <str>next_char.casefold():             # <<<<<<<<<<<<<<
+ *                                 self.buf_add_char(next_char)
+ * 
+ */
+          /*else*/ {
+            __pyx_t_7 = PyUnicode_FromOrdinal(__pyx_v_next_char); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 570, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_7);
+            __pyx_t_8 = __Pyx_PyObject_GetAttrStr(__pyx_t_7, __pyx_n_s_casefold); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 570, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_8);
+            __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+            __pyx_t_7 = NULL;
+            if (CYTHON_UNPACK_METHODS && likely(PyMethod_Check(__pyx_t_8))) {
+              __pyx_t_7 = PyMethod_GET_SELF(__pyx_t_8);
+              if (likely(__pyx_t_7)) {
+                PyObject* function = PyMethod_GET_FUNCTION(__pyx_t_8);
+                __Pyx_INCREF(__pyx_t_7);
+                __Pyx_INCREF(function);
+                __Pyx_DECREF_SET(__pyx_t_8, function);
+              }
+            }
+            __pyx_t_3 = (__pyx_t_7) ? __Pyx_PyObject_CallOneArg(__pyx_t_8, __pyx_t_7) : __Pyx_PyObject_CallNoArg(__pyx_t_8);
+            __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+            if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 570, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_3);
+            __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
+            if (unlikely(__pyx_t_3 == Py_None)) {
+              PyErr_SetString(PyExc_TypeError, "'NoneType' is not iterable");
+              __PYX_ERR(0, 570, __pyx_L1_error)
+            }
+            __Pyx_INCREF(((PyObject*)__pyx_t_3));
+            __pyx_t_9 = ((PyObject*)__pyx_t_3);
+            __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
+            __pyx_t_12 = __Pyx_init_unicode_iteration(__pyx_t_9, (&__pyx_t_10), (&__pyx_t_11), (&__pyx_t_5)); if (unlikely(__pyx_t_12 == ((int)-1))) __PYX_ERR(0, 570, __pyx_L1_error)
+            for (__pyx_t_13 = 0; __pyx_t_13 < __pyx_t_10; __pyx_t_13++) {
+              __pyx_t_6 = __pyx_t_13;
+              __pyx_v_next_char = __Pyx_PyUnicode_READ(__pyx_t_5, __pyx_t_11, __pyx_t_6);
+
+              /* "srctools/_tokenizer.pyx":571
+ *                             # Might result in multiple output characters.
+ *                             for next_char in <str>next_char.casefold():
+ *                                 self.buf_add_char(next_char)             # <<<<<<<<<<<<<<
+ * 
+ *             # Ignore Unicode Byte Order Mark on first lines
+ */
+              __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_add_char(__pyx_v_self, __pyx_v_next_char);
+            }
+            __Pyx_DECREF(__pyx_t_9); __pyx_t_9 = 0;
+          }
+          __pyx_L25:;
+          break;
+        }
+      }
+
+      /* "srctools/_tokenizer.pyx":550
+ * 
+ *             # Directives
+ *             elif next_char == '#':             # <<<<<<<<<<<<<<
+ *                 self.buf_reset()
+ *                 while True:
+ */
+      break;
+      case 0xFEFF:
+
+      /* "srctools/_tokenizer.pyx":575
  *             # Ignore Unicode Byte Order Mark on first lines
  *             elif next_char == '\uFEFF':
  *                 if self.line_num == 1:             # <<<<<<<<<<<<<<
@@ -7061,7 +7319,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
       __pyx_t_2 = ((__pyx_v_self->__pyx_base.line_num == 1) != 0);
       if (__pyx_t_2) {
 
-        /* "srctools/_tokenizer.pyx":552
+        /* "srctools/_tokenizer.pyx":576
  *             elif next_char == '\uFEFF':
  *                 if self.line_num == 1:
  *                     continue             # <<<<<<<<<<<<<<
@@ -7070,7 +7328,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
         goto __pyx_L4_continue;
 
-        /* "srctools/_tokenizer.pyx":551
+        /* "srctools/_tokenizer.pyx":575
  *             # Ignore Unicode Byte Order Mark on first lines
  *             elif next_char == '\uFEFF':
  *                 if self.line_num == 1:             # <<<<<<<<<<<<<<
@@ -7079,7 +7337,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
       }
 
-      /* "srctools/_tokenizer.pyx":550
+      /* "srctools/_tokenizer.pyx":574
  * 
  *             # Ignore Unicode Byte Order Mark on first lines
  *             elif next_char == '\uFEFF':             # <<<<<<<<<<<<<<
@@ -7089,7 +7347,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
       break;
       default:
 
-      /* "srctools/_tokenizer.pyx":558
+      /* "srctools/_tokenizer.pyx":582
  *             else: # Not-in can't be in a switch, so we need to nest this.
  *                 # Bare names
  *                 if next_char not in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
@@ -7119,7 +7377,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
       __pyx_t_1 = (__pyx_t_2 != 0);
       if (likely(__pyx_t_1)) {
 
-        /* "srctools/_tokenizer.pyx":559
+        /* "srctools/_tokenizer.pyx":583
  *                 # Bare names
  *                 if next_char not in BARE_DISALLOWED:
  *                     self.buf_reset()             # <<<<<<<<<<<<<<
@@ -7128,7 +7386,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
         __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_reset(__pyx_v_self);
 
-        /* "srctools/_tokenizer.pyx":560
+        /* "srctools/_tokenizer.pyx":584
  *                 if next_char not in BARE_DISALLOWED:
  *                     self.buf_reset()
  *                     self.buf_add_char(next_char)             # <<<<<<<<<<<<<<
@@ -7137,7 +7395,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
         __pyx_f_8srctools_10_tokenizer_9Tokenizer_buf_add_char(__pyx_v_self, __pyx_v_next_char);
 
-        /* "srctools/_tokenizer.pyx":561
+        /* "srctools/_tokenizer.pyx":585
  *                     self.buf_reset()
  *                     self.buf_add_char(next_char)
  *                     while True:             # <<<<<<<<<<<<<<
@@ -7146,17 +7404,17 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
         while (1) {
 
-          /* "srctools/_tokenizer.pyx":562
+          /* "srctools/_tokenizer.pyx":586
  *                     self.buf_add_char(next_char)
  *                     while True:
  *                         next_char = self._next_char()             # <<<<<<<<<<<<<<
  *                         if next_char == -1:
  *                             # Bare names at the end are actually fine.
  */
-          __pyx_t_4 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->_next_char(__pyx_v_self); if (unlikely(__pyx_t_4 == ((Py_UCS4)-2))) __PYX_ERR(0, 562, __pyx_L1_error)
+          __pyx_t_4 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->_next_char(__pyx_v_self); if (unlikely(__pyx_t_4 == ((Py_UCS4)-2))) __PYX_ERR(0, 586, __pyx_L1_error)
           __pyx_v_next_char = __pyx_t_4;
 
-          /* "srctools/_tokenizer.pyx":563
+          /* "srctools/_tokenizer.pyx":587
  *                     while True:
  *                         next_char = self._next_char()
  *                         if next_char == -1:             # <<<<<<<<<<<<<<
@@ -7166,7 +7424,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
           switch (__pyx_v_next_char) {
             case -1L:
 
-            /* "srctools/_tokenizer.pyx":566
+            /* "srctools/_tokenizer.pyx":590
  *                             # Bare names at the end are actually fine.
  *                             # It could be a value for the last prop.
  *                             return STRING, self.buf_get_text()             # <<<<<<<<<<<<<<
@@ -7174,21 +7432,21 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  *                         elif next_char in BARE_DISALLOWED:
  */
             __Pyx_XDECREF(__pyx_r);
-            __pyx_t_3 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 566, __pyx_L1_error)
+            __pyx_t_3 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 590, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
-            __pyx_t_7 = PyTuple_New(2); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 566, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_7);
+            __pyx_t_8 = PyTuple_New(2); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 590, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_8);
             __Pyx_INCREF(__pyx_v_8srctools_10_tokenizer_STRING);
             __Pyx_GIVEREF(__pyx_v_8srctools_10_tokenizer_STRING);
-            PyTuple_SET_ITEM(__pyx_t_7, 0, __pyx_v_8srctools_10_tokenizer_STRING);
+            PyTuple_SET_ITEM(__pyx_t_8, 0, __pyx_v_8srctools_10_tokenizer_STRING);
             __Pyx_GIVEREF(__pyx_t_3);
-            PyTuple_SET_ITEM(__pyx_t_7, 1, __pyx_t_3);
+            PyTuple_SET_ITEM(__pyx_t_8, 1, __pyx_t_3);
             __pyx_t_3 = 0;
-            __pyx_r = __pyx_t_7;
-            __pyx_t_7 = 0;
+            __pyx_r = __pyx_t_8;
+            __pyx_t_8 = 0;
             goto __pyx_L0;
 
-            /* "srctools/_tokenizer.pyx":563
+            /* "srctools/_tokenizer.pyx":587
  *                     while True:
  *                         next_char = self._next_char()
  *                         if next_char == -1:             # <<<<<<<<<<<<<<
@@ -7198,7 +7456,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
             break;
             case 34:
 
-            /* "srctools/_tokenizer.pyx":568
+            /* "srctools/_tokenizer.pyx":592
  *                             return STRING, self.buf_get_text()
  * 
  *                         elif next_char in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
@@ -7218,7 +7476,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
             case 9:
             case 32:
 
-            /* "srctools/_tokenizer.pyx":573
+            /* "srctools/_tokenizer.pyx":597
  *                             # next call.
  *                             # We need to repeat this so we return the newline.
  *                             self.char_index -= 1             # <<<<<<<<<<<<<<
@@ -7227,7 +7485,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  */
             __pyx_v_self->char_index = (__pyx_v_self->char_index - 1);
 
-            /* "srctools/_tokenizer.pyx":574
+            /* "srctools/_tokenizer.pyx":598
  *                             # We need to repeat this so we return the newline.
  *                             self.char_index -= 1
  *                             return STRING, self.buf_get_text()             # <<<<<<<<<<<<<<
@@ -7235,21 +7493,21 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  *                             self.buf_add_char(next_char)
  */
             __Pyx_XDECREF(__pyx_r);
-            __pyx_t_7 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 574, __pyx_L1_error)
-            __Pyx_GOTREF(__pyx_t_7);
-            __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 574, __pyx_L1_error)
+            __pyx_t_8 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->__pyx_base.__pyx_vtab)->buf_get_text(__pyx_v_self); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 598, __pyx_L1_error)
+            __Pyx_GOTREF(__pyx_t_8);
+            __pyx_t_3 = PyTuple_New(2); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 598, __pyx_L1_error)
             __Pyx_GOTREF(__pyx_t_3);
             __Pyx_INCREF(__pyx_v_8srctools_10_tokenizer_STRING);
             __Pyx_GIVEREF(__pyx_v_8srctools_10_tokenizer_STRING);
             PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_v_8srctools_10_tokenizer_STRING);
-            __Pyx_GIVEREF(__pyx_t_7);
-            PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_7);
-            __pyx_t_7 = 0;
+            __Pyx_GIVEREF(__pyx_t_8);
+            PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_8);
+            __pyx_t_8 = 0;
             __pyx_r = __pyx_t_3;
             __pyx_t_3 = 0;
             goto __pyx_L0;
 
-            /* "srctools/_tokenizer.pyx":568
+            /* "srctools/_tokenizer.pyx":592
  *                             return STRING, self.buf_get_text()
  * 
  *                         elif next_char in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
@@ -7259,7 +7517,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
             break;
             default:
 
-            /* "srctools/_tokenizer.pyx":576
+            /* "srctools/_tokenizer.pyx":600
  *                             return STRING, self.buf_get_text()
  *                         else:
  *                             self.buf_add_char(next_char)             # <<<<<<<<<<<<<<
@@ -7271,17 +7529,17 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
           }
         }
 
-        /* "srctools/_tokenizer.pyx":558
+        /* "srctools/_tokenizer.pyx":582
  *             else: # Not-in can't be in a switch, so we need to nest this.
  *                 # Bare names
  *                 if next_char not in BARE_DISALLOWED:             # <<<<<<<<<<<<<<
  *                     self.buf_reset()
  *                     self.buf_add_char(next_char)
  */
-        goto __pyx_L24;
+        goto __pyx_L29;
       }
 
-      /* "srctools/_tokenizer.pyx":578
+      /* "srctools/_tokenizer.pyx":602
  *                             self.buf_add_char(next_char)
  *                 else:
  *                     raise self._error(f'Unexpected character "{next_char}"' '!')             # <<<<<<<<<<<<<<
@@ -7289,36 +7547,36 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
  * 
  */
       /*else*/ {
-        __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 578, __pyx_L1_error)
+        __pyx_t_3 = PyTuple_New(3); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 602, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __pyx_t_6 = 0;
+        __pyx_t_10 = 0;
         __pyx_t_4 = 127;
         __Pyx_INCREF(__pyx_kp_u_Unexpected_character);
-        __pyx_t_6 += 22;
+        __pyx_t_10 += 22;
         __Pyx_GIVEREF(__pyx_kp_u_Unexpected_character);
         PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_Unexpected_character);
-        __pyx_t_7 = PyUnicode_FromOrdinal(__pyx_v_next_char); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 578, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_7);
-        __pyx_t_4 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) > __pyx_t_4) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_7) : __pyx_t_4;
-        __pyx_t_6 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_7);
-        __Pyx_GIVEREF(__pyx_t_7);
-        PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_7);
-        __pyx_t_7 = 0;
+        __pyx_t_8 = PyUnicode_FromOrdinal(__pyx_v_next_char); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 602, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_8);
+        __pyx_t_4 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) > __pyx_t_4) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_8) : __pyx_t_4;
+        __pyx_t_10 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_8);
+        __Pyx_GIVEREF(__pyx_t_8);
+        PyTuple_SET_ITEM(__pyx_t_3, 1, __pyx_t_8);
+        __pyx_t_8 = 0;
         __Pyx_INCREF(__pyx_kp_u_);
-        __pyx_t_6 += 2;
+        __pyx_t_10 += 2;
         __Pyx_GIVEREF(__pyx_kp_u_);
         PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u_);
-        __pyx_t_7 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_6, __pyx_t_4); if (unlikely(!__pyx_t_7)) __PYX_ERR(0, 578, __pyx_L1_error)
-        __Pyx_GOTREF(__pyx_t_7);
+        __pyx_t_8 = __Pyx_PyUnicode_Join(__pyx_t_3, 3, __pyx_t_10, __pyx_t_4); if (unlikely(!__pyx_t_8)) __PYX_ERR(0, 602, __pyx_L1_error)
+        __Pyx_GOTREF(__pyx_t_8);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __pyx_t_3 = __pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self), ((PyObject*)__pyx_t_7)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 578, __pyx_L1_error)
+        __pyx_t_3 = __pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self), ((PyObject*)__pyx_t_8)); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 602, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_3);
-        __Pyx_DECREF(__pyx_t_7); __pyx_t_7 = 0;
+        __Pyx_DECREF(__pyx_t_8); __pyx_t_8 = 0;
         __Pyx_Raise(__pyx_t_3, 0, 0, 0);
         __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
-        __PYX_ERR(0, 578, __pyx_L1_error)
+        __PYX_ERR(0, 602, __pyx_L1_error)
       }
-      __pyx_L24:;
+      __pyx_L29:;
       break;
     }
     __pyx_L4_continue:;
@@ -7338,6 +7596,8 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_9Tokenizer_next_token(struct __p
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_3);
   __Pyx_XDECREF(__pyx_t_7);
+  __Pyx_XDECREF(__pyx_t_8);
+  __Pyx_XDECREF(__pyx_t_9);
   __Pyx_AddTraceback("srctools._tokenizer.Tokenizer.next_token", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = 0;
   __pyx_L0:;
@@ -7593,7 +7853,7 @@ static int __pyx_pf_8srctools_10_tokenizer_9Tokenizer_19allow_star_comments_2__s
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":588
+/* "srctools/_tokenizer.pyx":612
  *     """
  *     cdef public object source
  *     def __init__(self, source, filename='', error=None) -> None:             # <<<<<<<<<<<<<<
@@ -7650,7 +7910,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13IterTokenizer_1__init__(PyObject *_
         }
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 588, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 612, __pyx_L3_error)
       }
     } else {
       switch (PyTuple_GET_SIZE(__pyx_args)) {
@@ -7669,7 +7929,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13IterTokenizer_1__init__(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 588, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 0, 1, 3, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 612, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._tokenizer.IterTokenizer.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -7695,14 +7955,14 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_tokenizer.pyx":589
+  /* "srctools/_tokenizer.pyx":613
  *     cdef public object source
  *     def __init__(self, source, filename='', error=None) -> None:
  *         BaseTokenizer.__init__(self, filename, error)             # <<<<<<<<<<<<<<
  *         self.source = iter(source)
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer), __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 589, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer), __pyx_n_s_init); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 613, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_t_3 = NULL;
   __pyx_t_4 = 0;
@@ -7719,7 +7979,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
   #if CYTHON_FAST_PYCALL
   if (PyFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, ((PyObject *)__pyx_v_self), __pyx_v_filename, __pyx_v_error};
-    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 589, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 613, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
@@ -7727,13 +7987,13 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
   #if CYTHON_FAST_PYCCALL
   if (__Pyx_PyFastCFunction_Check(__pyx_t_2)) {
     PyObject *__pyx_temp[4] = {__pyx_t_3, ((PyObject *)__pyx_v_self), __pyx_v_filename, __pyx_v_error};
-    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 589, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyCFunction_FastCall(__pyx_t_2, __pyx_temp+1-__pyx_t_4, 3+__pyx_t_4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 613, __pyx_L1_error)
     __Pyx_XDECREF(__pyx_t_3); __pyx_t_3 = 0;
     __Pyx_GOTREF(__pyx_t_1);
   } else
   #endif
   {
-    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 589, __pyx_L1_error)
+    __pyx_t_5 = PyTuple_New(3+__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 613, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_5);
     if (__pyx_t_3) {
       __Pyx_GIVEREF(__pyx_t_3); PyTuple_SET_ITEM(__pyx_t_5, 0, __pyx_t_3); __pyx_t_3 = NULL;
@@ -7747,21 +8007,21 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
     __Pyx_INCREF(__pyx_v_error);
     __Pyx_GIVEREF(__pyx_v_error);
     PyTuple_SET_ITEM(__pyx_t_5, 2+__pyx_t_4, __pyx_v_error);
-    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 589, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_PyObject_Call(__pyx_t_2, __pyx_t_5, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 613, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":590
+  /* "srctools/_tokenizer.pyx":614
  *     def __init__(self, source, filename='', error=None) -> None:
  *         BaseTokenizer.__init__(self, filename, error)
  *         self.source = iter(source)             # <<<<<<<<<<<<<<
  * 
  *     def __repr__(self):
  */
-  __pyx_t_1 = PyObject_GetIter(__pyx_v_source); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 590, __pyx_L1_error)
+  __pyx_t_1 = PyObject_GetIter(__pyx_v_source); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 614, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __Pyx_GOTREF(__pyx_v_self->source);
@@ -7769,7 +8029,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
   __pyx_v_self->source = __pyx_t_1;
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":588
+  /* "srctools/_tokenizer.pyx":612
  *     """
  *     cdef public object source
  *     def __init__(self, source, filename='', error=None) -> None:             # <<<<<<<<<<<<<<
@@ -7792,7 +8052,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer___init__(struct __pyx
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":592
+/* "srctools/_tokenizer.pyx":616
  *         self.source = iter(source)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -7827,7 +8087,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_tokenizer.pyx":593
+  /* "srctools/_tokenizer.pyx":617
  * 
  *     def __repr__(self):
  *         if self.error_type is TokenSyntaxError:             # <<<<<<<<<<<<<<
@@ -7838,7 +8098,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
   __pyx_t_2 = (__pyx_t_1 != 0);
   if (__pyx_t_2) {
 
-    /* "srctools/_tokenizer.pyx":594
+    /* "srctools/_tokenizer.pyx":618
  *     def __repr__(self):
  *         if self.error_type is TokenSyntaxError:
  *             return f'IterTokenizer({self.source!r}, {self.filename!r})'             # <<<<<<<<<<<<<<
@@ -7846,7 +8106,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
  *             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_3 = PyTuple_New(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 594, __pyx_L1_error)
+    __pyx_t_3 = PyTuple_New(5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 618, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
@@ -7854,7 +8114,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 14;
     __Pyx_GIVEREF(__pyx_kp_u_IterTokenizer);
     PyTuple_SET_ITEM(__pyx_t_3, 0, __pyx_kp_u_IterTokenizer);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->source), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 594, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->source), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 618, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
@@ -7865,7 +8125,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 2;
     __Pyx_GIVEREF(__pyx_kp_u__19);
     PyTuple_SET_ITEM(__pyx_t_3, 2, __pyx_kp_u__19);
-    __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.filename), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 594, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.filename), __pyx_empty_unicode); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 618, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_6) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_6);
@@ -7876,14 +8136,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 1;
     __Pyx_GIVEREF(__pyx_kp_u__20);
     PyTuple_SET_ITEM(__pyx_t_3, 4, __pyx_kp_u__20);
-    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_3, 5, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 594, __pyx_L1_error)
+    __pyx_t_6 = __Pyx_PyUnicode_Join(__pyx_t_3, 5, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 618, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
     __pyx_r = __pyx_t_6;
     __pyx_t_6 = 0;
     goto __pyx_L0;
 
-    /* "srctools/_tokenizer.pyx":593
+    /* "srctools/_tokenizer.pyx":617
  * 
  *     def __repr__(self):
  *         if self.error_type is TokenSyntaxError:             # <<<<<<<<<<<<<<
@@ -7892,7 +8152,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
  */
   }
 
-  /* "srctools/_tokenizer.pyx":596
+  /* "srctools/_tokenizer.pyx":620
  *             return f'IterTokenizer({self.source!r}, {self.filename!r})'
  *         else:
  *             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'             # <<<<<<<<<<<<<<
@@ -7901,7 +8161,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
  */
   /*else*/ {
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_6 = PyTuple_New(7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_t_6 = PyTuple_New(7); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_6);
     __pyx_t_4 = 0;
     __pyx_t_5 = 127;
@@ -7909,7 +8169,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 14;
     __Pyx_GIVEREF(__pyx_kp_u_IterTokenizer);
     PyTuple_SET_ITEM(__pyx_t_6, 0, __pyx_kp_u_IterTokenizer);
-    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->source), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->source), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3);
@@ -7920,7 +8180,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 2;
     __Pyx_GIVEREF(__pyx_kp_u__19);
     PyTuple_SET_ITEM(__pyx_t_6, 2, __pyx_kp_u__19);
-    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.filename), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.filename), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3);
@@ -7931,7 +8191,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 2;
     __Pyx_GIVEREF(__pyx_kp_u__19);
     PyTuple_SET_ITEM(__pyx_t_6, 4, __pyx_kp_u__19);
-    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.error_type), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyObject_FormatSimpleAndDecref(PyObject_Repr(__pyx_v_self->__pyx_base.error_type), __pyx_empty_unicode); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __pyx_t_5 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) > __pyx_t_5) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_3) : __pyx_t_5;
     __pyx_t_4 += __Pyx_PyUnicode_GET_LENGTH(__pyx_t_3);
@@ -7942,7 +8202,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     __pyx_t_4 += 1;
     __Pyx_GIVEREF(__pyx_kp_u__20);
     PyTuple_SET_ITEM(__pyx_t_6, 6, __pyx_kp_u__20);
-    __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_6, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 596, __pyx_L1_error)
+    __pyx_t_3 = __Pyx_PyUnicode_Join(__pyx_t_6, 7, __pyx_t_4, __pyx_t_5); if (unlikely(!__pyx_t_3)) __PYX_ERR(0, 620, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_3);
     __Pyx_DECREF(__pyx_t_6); __pyx_t_6 = 0;
     __pyx_r = __pyx_t_3;
@@ -7950,7 +8210,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
     goto __pyx_L0;
   }
 
-  /* "srctools/_tokenizer.pyx":592
+  /* "srctools/_tokenizer.pyx":616
  *         self.source = iter(source)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -7970,7 +8230,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13IterTokenizer_2__repr__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":598
+/* "srctools/_tokenizer.pyx":622
  *             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
  * 
  *     cdef next_token(self):             # <<<<<<<<<<<<<<
@@ -7993,7 +8253,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("next_token", 0);
 
-  /* "srctools/_tokenizer.pyx":599
+  /* "srctools/_tokenizer.pyx":623
  * 
  *     cdef next_token(self):
  *         try:             # <<<<<<<<<<<<<<
@@ -8009,7 +8269,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
     __Pyx_XGOTREF(__pyx_t_3);
     /*try:*/ {
 
-      /* "srctools/_tokenizer.pyx":600
+      /* "srctools/_tokenizer.pyx":624
  *     cdef next_token(self):
  *         try:
  *             return next(self.source)             # <<<<<<<<<<<<<<
@@ -8019,14 +8279,14 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
       __Pyx_XDECREF(__pyx_r);
       __pyx_t_4 = __pyx_v_self->source;
       __Pyx_INCREF(__pyx_t_4);
-      __pyx_t_5 = __Pyx_PyIter_Next(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 600, __pyx_L3_error)
+      __pyx_t_5 = __Pyx_PyIter_Next(__pyx_t_4); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 624, __pyx_L3_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
       __pyx_r = __pyx_t_5;
       __pyx_t_5 = 0;
       goto __pyx_L7_try_return;
 
-      /* "srctools/_tokenizer.pyx":599
+      /* "srctools/_tokenizer.pyx":623
  * 
  *     cdef next_token(self):
  *         try:             # <<<<<<<<<<<<<<
@@ -8038,7 +8298,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
     __Pyx_XDECREF(__pyx_t_4); __pyx_t_4 = 0;
     __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
 
-    /* "srctools/_tokenizer.pyx":601
+    /* "srctools/_tokenizer.pyx":625
  *         try:
  *             return next(self.source)
  *         except StopIteration:             # <<<<<<<<<<<<<<
@@ -8048,12 +8308,12 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
     __pyx_t_6 = __Pyx_PyErr_ExceptionMatches(__pyx_builtin_StopIteration);
     if (__pyx_t_6) {
       __Pyx_AddTraceback("srctools._tokenizer.IterTokenizer.next_token", __pyx_clineno, __pyx_lineno, __pyx_filename);
-      if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_4, &__pyx_t_7) < 0) __PYX_ERR(0, 601, __pyx_L5_except_error)
+      if (__Pyx_GetException(&__pyx_t_5, &__pyx_t_4, &__pyx_t_7) < 0) __PYX_ERR(0, 625, __pyx_L5_except_error)
       __Pyx_GOTREF(__pyx_t_5);
       __Pyx_GOTREF(__pyx_t_4);
       __Pyx_GOTREF(__pyx_t_7);
 
-      /* "srctools/_tokenizer.pyx":602
+      /* "srctools/_tokenizer.pyx":626
  *             return next(self.source)
  *         except StopIteration:
  *             return EOF_TUP             # <<<<<<<<<<<<<<
@@ -8071,7 +8331,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
     goto __pyx_L5_except_error;
     __pyx_L5_except_error:;
 
-    /* "srctools/_tokenizer.pyx":599
+    /* "srctools/_tokenizer.pyx":623
  * 
  *     cdef next_token(self):
  *         try:             # <<<<<<<<<<<<<<
@@ -8097,7 +8357,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
     goto __pyx_L0;
   }
 
-  /* "srctools/_tokenizer.pyx":598
+  /* "srctools/_tokenizer.pyx":622
  *             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
  * 
  *     cdef next_token(self):             # <<<<<<<<<<<<<<
@@ -8118,7 +8378,7 @@ static PyObject *__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":587
+/* "srctools/_tokenizer.pyx":611
  *     code.
  *     """
  *     cdef public object source             # <<<<<<<<<<<<<<
@@ -8213,7 +8473,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13IterTokenizer_6source_4__del__(stru
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":613
+/* "srctools/_tokenizer.pyx":637
  *     cdef Tokenizer tok
  * 
  *     def __cinit__(self, Tokenizer tok not None):             # <<<<<<<<<<<<<<
@@ -8250,7 +8510,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13_NewlinesIter_1__cinit__(PyObject *
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 613, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__cinit__") < 0)) __PYX_ERR(0, 637, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -8261,13 +8521,13 @@ static int __pyx_pw_8srctools_10_tokenizer_13_NewlinesIter_1__cinit__(PyObject *
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 613, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__cinit__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 637, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._tokenizer._NewlinesIter.__cinit__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
   return -1;
   __pyx_L4_argument_unpacking_done:;
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tok), __pyx_ptype_8srctools_10_tokenizer_Tokenizer, 0, "tok", 0))) __PYX_ERR(0, 613, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_tok), __pyx_ptype_8srctools_10_tokenizer_Tokenizer, 0, "tok", 0))) __PYX_ERR(0, 637, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter___cinit__(((struct __pyx_obj_8srctools_10_tokenizer__NewlinesIter *)__pyx_v_self), __pyx_v_tok);
 
   /* function exit code */
@@ -8284,7 +8544,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter___cinit__(struct __py
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__cinit__", 0);
 
-  /* "srctools/_tokenizer.pyx":614
+  /* "srctools/_tokenizer.pyx":638
  * 
  *     def __cinit__(self, Tokenizer tok not None):
  *         self.tok = tok             # <<<<<<<<<<<<<<
@@ -8297,7 +8557,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter___cinit__(struct __py
   __Pyx_DECREF(((PyObject *)__pyx_v_self->tok));
   __pyx_v_self->tok = __pyx_v_tok;
 
-  /* "srctools/_tokenizer.pyx":613
+  /* "srctools/_tokenizer.pyx":637
  *     cdef Tokenizer tok
  * 
  *     def __cinit__(self, Tokenizer tok not None):             # <<<<<<<<<<<<<<
@@ -8311,7 +8571,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter___cinit__(struct __py
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":616
+/* "srctools/_tokenizer.pyx":640
  *         self.tok = tok
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -8345,7 +8605,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_2__repr__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__repr__", 0);
 
-  /* "srctools/_tokenizer.pyx":617
+  /* "srctools/_tokenizer.pyx":641
  * 
  *     def __repr__(self):
  *         return f'<srctools.tokenizer.BaseTokenizer.skipping_newlines() at {id(self):X}>'             # <<<<<<<<<<<<<<
@@ -8353,7 +8613,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_2__repr__(struc
  *     def __init__(self, tok):
  */
   __Pyx_XDECREF(__pyx_r);
-  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 617, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 641, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_t_2 = 0;
   __pyx_t_3 = 127;
@@ -8361,9 +8621,9 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_2__repr__(struc
   __pyx_t_2 += 57;
   __Pyx_GIVEREF(__pyx_kp_u_srctools_tokenizer_BaseTokenize);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_kp_u_srctools_tokenizer_BaseTokenize);
-  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_id, ((PyObject *)__pyx_v_self)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 617, __pyx_L1_error)
+  __pyx_t_4 = __Pyx_PyObject_CallOneArg(__pyx_builtin_id, ((PyObject *)__pyx_v_self)); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 641, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
-  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_X); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 617, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyObject_Format(__pyx_t_4, __pyx_n_u_X); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 641, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_4); __pyx_t_4 = 0;
   __pyx_t_3 = (__Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) > __pyx_t_3) ? __Pyx_PyUnicode_MAX_CHAR_VALUE(__pyx_t_5) : __pyx_t_3;
@@ -8375,14 +8635,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_2__repr__(struc
   __pyx_t_2 += 1;
   __Pyx_GIVEREF(__pyx_kp_u__21);
   PyTuple_SET_ITEM(__pyx_t_1, 2, __pyx_kp_u__21);
-  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 617, __pyx_L1_error)
+  __pyx_t_5 = __Pyx_PyUnicode_Join(__pyx_t_1, 3, __pyx_t_2, __pyx_t_3); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 641, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_5);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   __pyx_r = __pyx_t_5;
   __pyx_t_5 = 0;
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":616
+  /* "srctools/_tokenizer.pyx":640
  *         self.tok = tok
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
@@ -8403,7 +8663,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_2__repr__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":619
+/* "srctools/_tokenizer.pyx":643
  *         return f'<srctools.tokenizer.BaseTokenizer.skipping_newlines() at {id(self):X}>'
  * 
  *     def __init__(self, tok):             # <<<<<<<<<<<<<<
@@ -8440,7 +8700,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13_NewlinesIter_5__init__(PyObject *_
         else goto __pyx_L5_argtuple_error;
       }
       if (unlikely(kw_args > 0)) {
-        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 619, __pyx_L3_error)
+        if (unlikely(__Pyx_ParseOptionalKeywords(__pyx_kwds, __pyx_pyargnames, 0, values, pos_args, "__init__") < 0)) __PYX_ERR(0, 643, __pyx_L3_error)
       }
     } else if (PyTuple_GET_SIZE(__pyx_args) != 1) {
       goto __pyx_L5_argtuple_error;
@@ -8451,7 +8711,7 @@ static int __pyx_pw_8srctools_10_tokenizer_13_NewlinesIter_5__init__(PyObject *_
   }
   goto __pyx_L4_argument_unpacking_done;
   __pyx_L5_argtuple_error:;
-  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 619, __pyx_L3_error)
+  __Pyx_RaiseArgtupleInvalid("__init__", 1, 1, 1, PyTuple_GET_SIZE(__pyx_args)); __PYX_ERR(0, 643, __pyx_L3_error)
   __pyx_L3_error:;
   __Pyx_AddTraceback("srctools._tokenizer._NewlinesIter.__init__", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __Pyx_RefNannyFinishContext();
@@ -8473,20 +8733,20 @@ static int __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_4__init__(CYTHON_UNUS
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__init__", 0);
 
-  /* "srctools/_tokenizer.pyx":620
+  /* "srctools/_tokenizer.pyx":644
  * 
  *     def __init__(self, tok):
  *         raise TypeError("Cannot create '_NewlinesIter' instances")             # <<<<<<<<<<<<<<
  * 
  *     def __iter__(self):
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 620, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_TypeError, __pyx_tuple__22, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 644, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __PYX_ERR(0, 620, __pyx_L1_error)
+  __PYX_ERR(0, 644, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":619
+  /* "srctools/_tokenizer.pyx":643
  *         return f'<srctools.tokenizer.BaseTokenizer.skipping_newlines() at {id(self):X}>'
  * 
  *     def __init__(self, tok):             # <<<<<<<<<<<<<<
@@ -8503,7 +8763,7 @@ static int __pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_4__init__(CYTHON_UNUS
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":622
+/* "srctools/_tokenizer.pyx":646
  *         raise TypeError("Cannot create '_NewlinesIter' instances")
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -8529,7 +8789,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_6__iter__(struc
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__iter__", 0);
 
-  /* "srctools/_tokenizer.pyx":623
+  /* "srctools/_tokenizer.pyx":647
  * 
  *     def __iter__(self):
  *         return self             # <<<<<<<<<<<<<<
@@ -8541,7 +8801,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_6__iter__(struc
   __pyx_r = ((PyObject *)__pyx_v_self);
   goto __pyx_L0;
 
-  /* "srctools/_tokenizer.pyx":622
+  /* "srctools/_tokenizer.pyx":646
  *         raise TypeError("Cannot create '_NewlinesIter' instances")
  * 
  *     def __iter__(self):             # <<<<<<<<<<<<<<
@@ -8556,7 +8816,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_6__iter__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":625
+/* "srctools/_tokenizer.pyx":649
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -8590,7 +8850,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__next__", 0);
 
-  /* "srctools/_tokenizer.pyx":626
+  /* "srctools/_tokenizer.pyx":650
  * 
  *     def __next__(self):
  *         while True:             # <<<<<<<<<<<<<<
@@ -8599,36 +8859,36 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
  */
   while (1) {
 
-    /* "srctools/_tokenizer.pyx":627
+    /* "srctools/_tokenizer.pyx":651
  *     def __next__(self):
  *         while True:
  *             tok_and_val = self.tok.next_token()             # <<<<<<<<<<<<<<
  *             token = (<tuple?>tok_and_val)[0]
  * 
  */
-    __pyx_t_1 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->tok->__pyx_base.__pyx_vtab)->__pyx_base.next_token(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self->tok)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 627, __pyx_L1_error)
+    __pyx_t_1 = ((struct __pyx_vtabstruct_8srctools_10_tokenizer_Tokenizer *)__pyx_v_self->tok->__pyx_base.__pyx_vtab)->__pyx_base.next_token(((struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *)__pyx_v_self->tok)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 651, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_tok_and_val, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "srctools/_tokenizer.pyx":628
+    /* "srctools/_tokenizer.pyx":652
  *         while True:
  *             tok_and_val = self.tok.next_token()
  *             token = (<tuple?>tok_and_val)[0]             # <<<<<<<<<<<<<<
  * 
  *             # Only our code is doing next_token here, so the tuples are
  */
-    if (!(likely(PyTuple_CheckExact(__pyx_v_tok_and_val))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "tuple", Py_TYPE(__pyx_v_tok_and_val)->tp_name), 0))) __PYX_ERR(0, 628, __pyx_L1_error)
+    if (!(likely(PyTuple_CheckExact(__pyx_v_tok_and_val))||(PyErr_Format(PyExc_TypeError, "Expected %.16s, got %.200s", "tuple", Py_TYPE(__pyx_v_tok_and_val)->tp_name), 0))) __PYX_ERR(0, 652, __pyx_L1_error)
     if (unlikely(__pyx_v_tok_and_val == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' object is not subscriptable");
-      __PYX_ERR(0, 628, __pyx_L1_error)
+      __PYX_ERR(0, 652, __pyx_L1_error)
     }
-    __pyx_t_1 = __Pyx_GetItemInt_Tuple(((PyObject*)__pyx_v_tok_and_val), 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 628, __pyx_L1_error)
+    __pyx_t_1 = __Pyx_GetItemInt_Tuple(((PyObject*)__pyx_v_tok_and_val), 0, long, 1, __Pyx_PyInt_From_long, 0, 0, 1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 652, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
     __Pyx_XDECREF_SET(__pyx_v_token, __pyx_t_1);
     __pyx_t_1 = 0;
 
-    /* "srctools/_tokenizer.pyx":632
+    /* "srctools/_tokenizer.pyx":656
  *             # Only our code is doing next_token here, so the tuples are
  *             # going to be this same instance.
  *             if token is EOF:             # <<<<<<<<<<<<<<
@@ -8639,7 +8899,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
     __pyx_t_3 = (__pyx_t_2 != 0);
     if (unlikely(__pyx_t_3)) {
 
-      /* "srctools/_tokenizer.pyx":633
+      /* "srctools/_tokenizer.pyx":657
  *             # going to be this same instance.
  *             if token is EOF:
  *                 raise StopIteration             # <<<<<<<<<<<<<<
@@ -8647,9 +8907,9 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
  *                 return tok_and_val
  */
       __Pyx_Raise(__pyx_builtin_StopIteration, 0, 0, 0);
-      __PYX_ERR(0, 633, __pyx_L1_error)
+      __PYX_ERR(0, 657, __pyx_L1_error)
 
-      /* "srctools/_tokenizer.pyx":632
+      /* "srctools/_tokenizer.pyx":656
  *             # Only our code is doing next_token here, so the tuples are
  *             # going to be this same instance.
  *             if token is EOF:             # <<<<<<<<<<<<<<
@@ -8658,7 +8918,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
  */
     }
 
-    /* "srctools/_tokenizer.pyx":634
+    /* "srctools/_tokenizer.pyx":658
  *             if token is EOF:
  *                 raise StopIteration
  *             elif token is not NEWLINE:             # <<<<<<<<<<<<<<
@@ -8669,7 +8929,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
     __pyx_t_2 = (__pyx_t_3 != 0);
     if (__pyx_t_2) {
 
-      /* "srctools/_tokenizer.pyx":635
+      /* "srctools/_tokenizer.pyx":659
  *                 raise StopIteration
  *             elif token is not NEWLINE:
  *                 return tok_and_val             # <<<<<<<<<<<<<<
@@ -8681,7 +8941,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
       __pyx_r = __pyx_v_tok_and_val;
       goto __pyx_L0;
 
-      /* "srctools/_tokenizer.pyx":634
+      /* "srctools/_tokenizer.pyx":658
  *             if token is EOF:
  *                 raise StopIteration
  *             elif token is not NEWLINE:             # <<<<<<<<<<<<<<
@@ -8691,7 +8951,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
     }
   }
 
-  /* "srctools/_tokenizer.pyx":625
+  /* "srctools/_tokenizer.pyx":649
  *         return self
  * 
  *     def __next__(self):             # <<<<<<<<<<<<<<
@@ -8714,7 +8974,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_8__next__(struc
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":637
+/* "srctools/_tokenizer.pyx":661
  *                 return tok_and_val
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -8746,20 +9006,20 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_10__reduce__(CY
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("__reduce__", 0);
 
-  /* "srctools/_tokenizer.pyx":639
+  /* "srctools/_tokenizer.pyx":663
  *     def __reduce__(self):
  *         """This cannot be pickled - the Python version does not have this class."""
  *         raise NotImplementedError('Cannot pickle _NewlinesIter!')             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_NotImplementedError, __pyx_tuple__23, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 639, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_Call(__pyx_builtin_NotImplementedError, __pyx_tuple__23, NULL); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 663, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_Raise(__pyx_t_1, 0, 0, 0);
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
-  __PYX_ERR(0, 639, __pyx_L1_error)
+  __PYX_ERR(0, 663, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":637
+  /* "srctools/_tokenizer.pyx":661
  *                 return tok_and_val
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
@@ -8777,7 +9037,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_13_NewlinesIter_10__reduce__(CY
   return __pyx_r;
 }
 
-/* "srctools/_tokenizer.pyx":643
+/* "srctools/_tokenizer.pyx":667
  * 
  * @cython.nonecheck(False)
  * def escape_text(str text not None: str) -> str:             # <<<<<<<<<<<<<<
@@ -8796,7 +9056,7 @@ static PyObject *__pyx_pw_8srctools_10_tokenizer_1escape_text(PyObject *__pyx_se
   PyObject *__pyx_r = 0;
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("escape_text (wrapper)", 0);
-  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_text), (&PyUnicode_Type), 0, "text", 1))) __PYX_ERR(0, 643, __pyx_L1_error)
+  if (unlikely(!__Pyx_ArgTypeTest(((PyObject *)__pyx_v_text), (&PyUnicode_Type), 0, "text", 1))) __PYX_ERR(0, 667, __pyx_L1_error)
   __pyx_r = __pyx_pf_8srctools_10_tokenizer_escape_text(__pyx_self, ((PyObject*)__pyx_v_text));
 
   /* function exit code */
@@ -8838,19 +9098,19 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("escape_text", 0);
 
-  /* "srctools/_tokenizer.pyx":649
+  /* "srctools/_tokenizer.pyx":673
  *     """
  *     # UTF8 = ASCII for those chars, so we can replace in that form.
  *     cdef bytes enc_text = text.encode('utf8')             # <<<<<<<<<<<<<<
  *     cdef Py_ssize_t final_len = len(enc_text)
  *     cdef char letter
  */
-  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_text); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 649, __pyx_L1_error)
+  __pyx_t_1 = PyUnicode_AsUTF8String(__pyx_v_text); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 673, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __pyx_v_enc_text = ((PyObject*)__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":650
+  /* "srctools/_tokenizer.pyx":674
  *     # UTF8 = ASCII for those chars, so we can replace in that form.
  *     cdef bytes enc_text = text.encode('utf8')
  *     cdef Py_ssize_t final_len = len(enc_text)             # <<<<<<<<<<<<<<
@@ -8859,12 +9119,12 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
   if (unlikely(__pyx_v_enc_text == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "object of type 'NoneType' has no len()");
-    __PYX_ERR(0, 650, __pyx_L1_error)
+    __PYX_ERR(0, 674, __pyx_L1_error)
   }
-  __pyx_t_2 = PyBytes_GET_SIZE(__pyx_v_enc_text); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 650, __pyx_L1_error)
+  __pyx_t_2 = PyBytes_GET_SIZE(__pyx_v_enc_text); if (unlikely(__pyx_t_2 == ((Py_ssize_t)-1))) __PYX_ERR(0, 674, __pyx_L1_error)
   __pyx_v_final_len = __pyx_t_2;
 
-  /* "srctools/_tokenizer.pyx":652
+  /* "srctools/_tokenizer.pyx":676
  *     cdef Py_ssize_t final_len = len(enc_text)
  *     cdef char letter
  *     for letter in enc_text:             # <<<<<<<<<<<<<<
@@ -8873,7 +9133,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
   if (unlikely(__pyx_v_enc_text == Py_None)) {
     PyErr_SetString(PyExc_TypeError, "'NoneType' is not iterable");
-    __PYX_ERR(0, 652, __pyx_L1_error)
+    __PYX_ERR(0, 676, __pyx_L1_error)
   }
   __Pyx_INCREF(__pyx_v_enc_text);
   __pyx_t_3 = __pyx_v_enc_text;
@@ -8883,7 +9143,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
     __pyx_t_4 = __pyx_t_7;
     __pyx_v_letter = (__pyx_t_4[0]);
 
-    /* "srctools/_tokenizer.pyx":653
+    /* "srctools/_tokenizer.pyx":677
  *     cdef char letter
  *     for letter in enc_text:
  *         if letter in (b'\\', b'"', b'\t', b'\n'):             # <<<<<<<<<<<<<<
@@ -8896,7 +9156,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
       case '\t':
       case '\n':
 
-      /* "srctools/_tokenizer.pyx":654
+      /* "srctools/_tokenizer.pyx":678
  *     for letter in enc_text:
  *         if letter in (b'\\', b'"', b'\t', b'\n'):
  *             final_len += 1             # <<<<<<<<<<<<<<
@@ -8905,7 +9165,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
       __pyx_v_final_len = (__pyx_v_final_len + 1);
 
-      /* "srctools/_tokenizer.pyx":653
+      /* "srctools/_tokenizer.pyx":677
  *     cdef char letter
  *     for letter in enc_text:
  *         if letter in (b'\\', b'"', b'\t', b'\n'):             # <<<<<<<<<<<<<<
@@ -8918,7 +9178,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
   }
   __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-  /* "srctools/_tokenizer.pyx":657
+  /* "srctools/_tokenizer.pyx":681
  * 
  *     cdef char * out_buff
  *     cdef int i = 0             # <<<<<<<<<<<<<<
@@ -8927,7 +9187,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
   __pyx_v_i = 0;
 
-  /* "srctools/_tokenizer.pyx":658
+  /* "srctools/_tokenizer.pyx":682
  *     cdef char * out_buff
  *     cdef int i = 0
  *     try:             # <<<<<<<<<<<<<<
@@ -8936,7 +9196,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
   /*try:*/ {
 
-    /* "srctools/_tokenizer.pyx":659
+    /* "srctools/_tokenizer.pyx":683
  *     cdef int i = 0
  *     try:
  *         out_buff = <char *>PyMem_Malloc(final_len+1)             # <<<<<<<<<<<<<<
@@ -8945,7 +9205,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
     __pyx_v_out_buff = ((char *)PyMem_Malloc((__pyx_v_final_len + 1)));
 
-    /* "srctools/_tokenizer.pyx":660
+    /* "srctools/_tokenizer.pyx":684
  *     try:
  *         out_buff = <char *>PyMem_Malloc(final_len+1)
  *         for letter in enc_text:             # <<<<<<<<<<<<<<
@@ -8954,7 +9214,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
     if (unlikely(__pyx_v_enc_text == Py_None)) {
       PyErr_SetString(PyExc_TypeError, "'NoneType' is not iterable");
-      __PYX_ERR(0, 660, __pyx_L6_error)
+      __PYX_ERR(0, 684, __pyx_L6_error)
     }
     __Pyx_INCREF(__pyx_v_enc_text);
     __pyx_t_3 = __pyx_v_enc_text;
@@ -8964,7 +9224,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
       __pyx_t_4 = __pyx_t_7;
       __pyx_v_letter = (__pyx_t_4[0]);
 
-      /* "srctools/_tokenizer.pyx":661
+      /* "srctools/_tokenizer.pyx":685
  *         out_buff = <char *>PyMem_Malloc(final_len+1)
  *         for letter in enc_text:
  *             if letter == b'\\':             # <<<<<<<<<<<<<<
@@ -8974,7 +9234,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
       switch (__pyx_v_letter) {
         case '\\':
 
-        /* "srctools/_tokenizer.pyx":662
+        /* "srctools/_tokenizer.pyx":686
  *         for letter in enc_text:
  *             if letter == b'\\':
  *                 out_buff[i] = b'\\'             # <<<<<<<<<<<<<<
@@ -8983,7 +9243,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '\\';
 
-        /* "srctools/_tokenizer.pyx":663
+        /* "srctools/_tokenizer.pyx":687
  *             if letter == b'\\':
  *                 out_buff[i] = b'\\'
  *                 i += 1             # <<<<<<<<<<<<<<
@@ -8992,7 +9252,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         __pyx_v_i = (__pyx_v_i + 1);
 
-        /* "srctools/_tokenizer.pyx":664
+        /* "srctools/_tokenizer.pyx":688
  *                 out_buff[i] = b'\\'
  *                 i += 1
  *                 out_buff[i] = b'\\'             # <<<<<<<<<<<<<<
@@ -9001,7 +9261,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '\\';
 
-        /* "srctools/_tokenizer.pyx":661
+        /* "srctools/_tokenizer.pyx":685
  *         out_buff = <char *>PyMem_Malloc(final_len+1)
  *         for letter in enc_text:
  *             if letter == b'\\':             # <<<<<<<<<<<<<<
@@ -9011,7 +9271,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
         break;
         case '"':
 
-        /* "srctools/_tokenizer.pyx":666
+        /* "srctools/_tokenizer.pyx":690
  *                 out_buff[i] = b'\\'
  *             elif letter == b'"':
  *                 out_buff[i] = b'\\'             # <<<<<<<<<<<<<<
@@ -9020,7 +9280,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '\\';
 
-        /* "srctools/_tokenizer.pyx":667
+        /* "srctools/_tokenizer.pyx":691
  *             elif letter == b'"':
  *                 out_buff[i] = b'\\'
  *                 i += 1             # <<<<<<<<<<<<<<
@@ -9029,7 +9289,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         __pyx_v_i = (__pyx_v_i + 1);
 
-        /* "srctools/_tokenizer.pyx":668
+        /* "srctools/_tokenizer.pyx":692
  *                 out_buff[i] = b'\\'
  *                 i += 1
  *                 out_buff[i] = b'"'             # <<<<<<<<<<<<<<
@@ -9038,7 +9298,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '"';
 
-        /* "srctools/_tokenizer.pyx":665
+        /* "srctools/_tokenizer.pyx":689
  *                 i += 1
  *                 out_buff[i] = b'\\'
  *             elif letter == b'"':             # <<<<<<<<<<<<<<
@@ -9048,7 +9308,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
         break;
         case '\t':
 
-        /* "srctools/_tokenizer.pyx":670
+        /* "srctools/_tokenizer.pyx":694
  *                 out_buff[i] = b'"'
  *             elif letter == b'\t':
  *                 out_buff[i] = b'\\'             # <<<<<<<<<<<<<<
@@ -9057,7 +9317,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '\\';
 
-        /* "srctools/_tokenizer.pyx":671
+        /* "srctools/_tokenizer.pyx":695
  *             elif letter == b'\t':
  *                 out_buff[i] = b'\\'
  *                 i += 1             # <<<<<<<<<<<<<<
@@ -9066,7 +9326,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         __pyx_v_i = (__pyx_v_i + 1);
 
-        /* "srctools/_tokenizer.pyx":672
+        /* "srctools/_tokenizer.pyx":696
  *                 out_buff[i] = b'\\'
  *                 i += 1
  *                 out_buff[i] = b't'             # <<<<<<<<<<<<<<
@@ -9075,7 +9335,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = 't';
 
-        /* "srctools/_tokenizer.pyx":669
+        /* "srctools/_tokenizer.pyx":693
  *                 i += 1
  *                 out_buff[i] = b'"'
  *             elif letter == b'\t':             # <<<<<<<<<<<<<<
@@ -9085,7 +9345,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
         break;
         case '\n':
 
-        /* "srctools/_tokenizer.pyx":674
+        /* "srctools/_tokenizer.pyx":698
  *                 out_buff[i] = b't'
  *             elif letter == b'\n':
  *                 out_buff[i] = b'\\'             # <<<<<<<<<<<<<<
@@ -9094,7 +9354,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = '\\';
 
-        /* "srctools/_tokenizer.pyx":675
+        /* "srctools/_tokenizer.pyx":699
  *             elif letter == b'\n':
  *                 out_buff[i] = b'\\'
  *                 i += 1             # <<<<<<<<<<<<<<
@@ -9103,7 +9363,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         __pyx_v_i = (__pyx_v_i + 1);
 
-        /* "srctools/_tokenizer.pyx":676
+        /* "srctools/_tokenizer.pyx":700
  *                 out_buff[i] = b'\\'
  *                 i += 1
  *                 out_buff[i] = b'n'             # <<<<<<<<<<<<<<
@@ -9112,7 +9372,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
         (__pyx_v_out_buff[__pyx_v_i]) = 'n';
 
-        /* "srctools/_tokenizer.pyx":673
+        /* "srctools/_tokenizer.pyx":697
  *                 i += 1
  *                 out_buff[i] = b't'
  *             elif letter == b'\n':             # <<<<<<<<<<<<<<
@@ -9122,7 +9382,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
         break;
         default:
 
-        /* "srctools/_tokenizer.pyx":678
+        /* "srctools/_tokenizer.pyx":702
  *                 out_buff[i] = b'n'
  *             else:
  *                 out_buff[i] = letter             # <<<<<<<<<<<<<<
@@ -9133,7 +9393,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
         break;
       }
 
-      /* "srctools/_tokenizer.pyx":679
+      /* "srctools/_tokenizer.pyx":703
  *             else:
  *                 out_buff[i] = letter
  *             i += 1             # <<<<<<<<<<<<<<
@@ -9144,7 +9404,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
     }
     __Pyx_DECREF(__pyx_t_3); __pyx_t_3 = 0;
 
-    /* "srctools/_tokenizer.pyx":680
+    /* "srctools/_tokenizer.pyx":704
  *                 out_buff[i] = letter
  *             i += 1
  *         out_buff[final_len] = b'\0'             # <<<<<<<<<<<<<<
@@ -9153,7 +9413,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  */
     (__pyx_v_out_buff[__pyx_v_final_len]) = '\x00';
 
-    /* "srctools/_tokenizer.pyx":681
+    /* "srctools/_tokenizer.pyx":705
  *             i += 1
  *         out_buff[final_len] = b'\0'
  *         return PyUnicode_FromStringAndSize(out_buff, final_len)             # <<<<<<<<<<<<<<
@@ -9161,14 +9421,14 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
  *         PyMem_Free(out_buff)
  */
     __Pyx_XDECREF(__pyx_r);
-    __pyx_t_1 = PyUnicode_FromStringAndSize(__pyx_v_out_buff, __pyx_v_final_len); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 681, __pyx_L6_error)
+    __pyx_t_1 = PyUnicode_FromStringAndSize(__pyx_v_out_buff, __pyx_v_final_len); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 705, __pyx_L6_error)
     __Pyx_GOTREF(__pyx_t_1);
     __pyx_r = ((PyObject*)__pyx_t_1);
     __pyx_t_1 = 0;
     goto __pyx_L5_return;
   }
 
-  /* "srctools/_tokenizer.pyx":683
+  /* "srctools/_tokenizer.pyx":707
  *         return PyUnicode_FromStringAndSize(out_buff, final_len)
  *     finally:
  *         PyMem_Free(out_buff)             # <<<<<<<<<<<<<<
@@ -9219,7 +9479,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_escape_text(CYTHON_UNUSED PyObj
     }
   }
 
-  /* "srctools/_tokenizer.pyx":643
+  /* "srctools/_tokenizer.pyx":667
  * 
  * @cython.nonecheck(False)
  * def escape_text(str text not None: str) -> str:             # <<<<<<<<<<<<<<
@@ -9917,6 +10177,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_BRACK_CLOSE, __pyx_k_BRACK_CLOSE, sizeof(__pyx_k_BRACK_CLOSE), 0, 0, 1, 1},
   {&__pyx_n_s_BRACK_OPEN, __pyx_k_BRACK_OPEN, sizeof(__pyx_k_BRACK_OPEN), 0, 0, 1, 1},
   {&__pyx_n_s_BaseTokenizer, __pyx_k_BaseTokenizer, sizeof(__pyx_k_BaseTokenizer), 0, 0, 1, 1},
+  {&__pyx_n_u_BaseTokenizer, __pyx_k_BaseTokenizer, sizeof(__pyx_k_BaseTokenizer), 0, 1, 0, 1},
   {&__pyx_n_s_BaseTokenizer___reduce, __pyx_k_BaseTokenizer___reduce, sizeof(__pyx_k_BaseTokenizer___reduce), 0, 0, 1, 1},
   {&__pyx_n_s_BaseTokenizer_error, __pyx_k_BaseTokenizer_error, sizeof(__pyx_k_BaseTokenizer_error), 0, 0, 1, 1},
   {&__pyx_n_s_BaseTokenizer_expect, __pyx_k_BaseTokenizer_expect, sizeof(__pyx_k_BaseTokenizer_expect), 0, 0, 1, 1},
@@ -9932,14 +10193,15 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_kp_u_Cannot_pickle_Tokenizers, __pyx_k_Cannot_pickle_Tokenizers, sizeof(__pyx_k_Cannot_pickle_Tokenizers), 0, 1, 0, 0},
   {&__pyx_kp_u_Cannot_pickle__NewlinesIter, __pyx_k_Cannot_pickle__NewlinesIter, sizeof(__pyx_k_Cannot_pickle__NewlinesIter), 0, 1, 0, 0},
   {&__pyx_kp_u_Could_not_decode_file, __pyx_k_Could_not_decode_file, sizeof(__pyx_k_Could_not_decode_file), 0, 1, 0, 0},
+  {&__pyx_n_s_DIRECTIVE, __pyx_k_DIRECTIVE, sizeof(__pyx_k_DIRECTIVE), 0, 0, 1, 1},
   {&__pyx_kp_u_Data_was_not_a_string, __pyx_k_Data_was_not_a_string, sizeof(__pyx_k_Data_was_not_a_string), 0, 1, 0, 0},
   {&__pyx_n_s_EOF, __pyx_k_EOF, sizeof(__pyx_k_EOF), 0, 0, 1, 1},
   {&__pyx_n_s_EQUALS, __pyx_k_EQUALS, sizeof(__pyx_k_EQUALS), 0, 0, 1, 1},
   {&__pyx_kp_u_Expected, __pyx_k_Expected, sizeof(__pyx_k_Expected), 0, 1, 0, 0},
-  {&__pyx_n_u_FileTokenizer, __pyx_k_FileTokenizer, sizeof(__pyx_k_FileTokenizer), 0, 1, 0, 1},
   {&__pyx_kp_u_Invalid_error_instance, __pyx_k_Invalid_error_instance, sizeof(__pyx_k_Invalid_error_instance), 0, 1, 0, 0},
   {&__pyx_kp_u_IterTokenizer, __pyx_k_IterTokenizer, sizeof(__pyx_k_IterTokenizer), 0, 1, 0, 0},
   {&__pyx_n_s_IterTokenizer_2, __pyx_k_IterTokenizer_2, sizeof(__pyx_k_IterTokenizer_2), 0, 0, 1, 1},
+  {&__pyx_n_u_IterTokenizer_2, __pyx_k_IterTokenizer_2, sizeof(__pyx_k_IterTokenizer_2), 0, 1, 0, 1},
   {&__pyx_n_s_NEWLINE, __pyx_k_NEWLINE, sizeof(__pyx_k_NEWLINE), 0, 0, 1, 1},
   {&__pyx_n_s_NewlinesIter___reduce, __pyx_k_NewlinesIter___reduce, sizeof(__pyx_k_NewlinesIter___reduce), 0, 0, 1, 1},
   {&__pyx_kp_u_No_open_to_close_with, __pyx_k_No_open_to_close_with, sizeof(__pyx_k_No_open_to_close_with), 0, 1, 0, 0},
@@ -9988,6 +10250,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_allow_star_comments, __pyx_k_allow_star_comments, sizeof(__pyx_k_allow_star_comments), 0, 0, 1, 1},
   {&__pyx_n_s_args, __pyx_k_args, sizeof(__pyx_k_args), 0, 0, 1, 1},
   {&__pyx_kp_u_but_got, __pyx_k_but_got, sizeof(__pyx_k_but_got), 0, 1, 0, 0},
+  {&__pyx_n_s_casefold, __pyx_k_casefold, sizeof(__pyx_k_casefold), 0, 0, 1, 1},
   {&__pyx_n_s_cline_in_traceback, __pyx_k_cline_in_traceback, sizeof(__pyx_k_cline_in_traceback), 0, 0, 1, 1},
   {&__pyx_n_s_data, __pyx_k_data, sizeof(__pyx_k_data), 0, 0, 1, 1},
   {&__pyx_n_s_enc_text, __pyx_k_enc_text, sizeof(__pyx_k_enc_text), 0, 0, 1, 1},
@@ -10042,13 +10305,13 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {0, 0, 0, 0, 0, 0, 0}
 };
 static CYTHON_SMALL_CODE int __Pyx_InitCachedBuiltins(void) {
-  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 86, __pyx_L1_error)
-  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 131, __pyx_L1_error)
-  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_builtin_TypeError = __Pyx_GetBuiltinName(__pyx_n_s_TypeError); if (!__pyx_builtin_TypeError) __PYX_ERR(0, 87, __pyx_L1_error)
+  __pyx_builtin_NotImplementedError = __Pyx_GetBuiltinName(__pyx_n_s_NotImplementedError); if (!__pyx_builtin_NotImplementedError) __PYX_ERR(0, 132, __pyx_L1_error)
+  __pyx_builtin_ValueError = __Pyx_GetBuiltinName(__pyx_n_s_ValueError); if (!__pyx_builtin_ValueError) __PYX_ERR(0, 146, __pyx_L1_error)
   __pyx_builtin_AttributeError = __Pyx_GetBuiltinName(__pyx_n_s_AttributeError); if (!__pyx_builtin_AttributeError) __PYX_ERR(0, 289, __pyx_L1_error)
   __pyx_builtin_UnicodeDecodeError = __Pyx_GetBuiltinName(__pyx_n_s_UnicodeDecodeError); if (!__pyx_builtin_UnicodeDecodeError) __PYX_ERR(0, 340, __pyx_L1_error)
-  __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 601, __pyx_L1_error)
-  __pyx_builtin_id = __Pyx_GetBuiltinName(__pyx_n_s_id); if (!__pyx_builtin_id) __PYX_ERR(0, 617, __pyx_L1_error)
+  __pyx_builtin_StopIteration = __Pyx_GetBuiltinName(__pyx_n_s_StopIteration); if (!__pyx_builtin_StopIteration) __PYX_ERR(0, 625, __pyx_L1_error)
+  __pyx_builtin_id = __Pyx_GetBuiltinName(__pyx_n_s_id); if (!__pyx_builtin_id) __PYX_ERR(0, 641, __pyx_L1_error)
   return 0;
   __pyx_L1_error:;
   return -1;
@@ -10058,36 +10321,36 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_RefNannyDeclarations
   __Pyx_RefNannySetupContext("__Pyx_InitCachedConstants", 0);
 
-  /* "srctools/_tokenizer.pyx":99
+  /* "srctools/_tokenizer.pyx":100
  *         There is also the issue with recreating the C/Python versions.
  *         """
  *         raise TypeError('Cannot pickle Tokenizers!')             # <<<<<<<<<<<<<<
  * 
  *     def error(self, message, *args):
  */
-  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_Cannot_pickle_Tokenizers); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 99, __pyx_L1_error)
+  __pyx_tuple__2 = PyTuple_Pack(1, __pyx_kp_u_Cannot_pickle_Tokenizers); if (unlikely(!__pyx_tuple__2)) __PYX_ERR(0, 100, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__2);
   __Pyx_GIVEREF(__pyx_tuple__2);
 
-  /* "srctools/_tokenizer.pyx":131
+  /* "srctools/_tokenizer.pyx":132
  * 
  *     cdef next_token(self):
  *         raise NotImplementedError("Abstract method!")             # <<<<<<<<<<<<<<
  * 
  *     def __iter__(self):
  */
-  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Abstract_method); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 131, __pyx_L1_error)
+  __pyx_tuple__4 = PyTuple_Pack(1, __pyx_kp_u_Abstract_method); if (unlikely(!__pyx_tuple__4)) __PYX_ERR(0, 132, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__4);
   __Pyx_GIVEREF(__pyx_tuple__4);
 
-  /* "srctools/_tokenizer.pyx":145
+  /* "srctools/_tokenizer.pyx":146
  *         """
  *         if self.pushback_tok is not None:
  *             raise ValueError('Token already pushed back!')             # <<<<<<<<<<<<<<
  *         if not isinstance(tok, Token):
  *             raise ValueError(repr(tok) + ' is not a Token!')
  */
-  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_Token_already_pushed_back); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 145, __pyx_L1_error)
+  __pyx_tuple__5 = PyTuple_Pack(1, __pyx_kp_u_Token_already_pushed_back); if (unlikely(!__pyx_tuple__5)) __PYX_ERR(0, 146, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__5);
   __Pyx_GIVEREF(__pyx_tuple__5);
 
@@ -10124,66 +10387,66 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GOTREF(__pyx_tuple__17);
   __Pyx_GIVEREF(__pyx_tuple__17);
 
-  /* "srctools/_tokenizer.pyx":620
+  /* "srctools/_tokenizer.pyx":644
  * 
  *     def __init__(self, tok):
  *         raise TypeError("Cannot create '_NewlinesIter' instances")             # <<<<<<<<<<<<<<
  * 
  *     def __iter__(self):
  */
-  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_u_Cannot_create__NewlinesIter_inst); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 620, __pyx_L1_error)
+  __pyx_tuple__22 = PyTuple_Pack(1, __pyx_kp_u_Cannot_create__NewlinesIter_inst); if (unlikely(!__pyx_tuple__22)) __PYX_ERR(0, 644, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__22);
   __Pyx_GIVEREF(__pyx_tuple__22);
 
-  /* "srctools/_tokenizer.pyx":639
+  /* "srctools/_tokenizer.pyx":663
  *     def __reduce__(self):
  *         """This cannot be pickled - the Python version does not have this class."""
  *         raise NotImplementedError('Cannot pickle _NewlinesIter!')             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_kp_u_Cannot_pickle__NewlinesIter); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 639, __pyx_L1_error)
+  __pyx_tuple__23 = PyTuple_Pack(1, __pyx_kp_u_Cannot_pickle__NewlinesIter); if (unlikely(!__pyx_tuple__23)) __PYX_ERR(0, 663, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__23);
   __Pyx_GIVEREF(__pyx_tuple__23);
 
-  /* "srctools/_tokenizer.pyx":92
+  /* "srctools/_tokenizer.pyx":93
  *         self.line_num = 1
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         """Disallow pickling Tokenizers.
  * 
  */
-  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_tuple__24 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__24)) __PYX_ERR(0, 93, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__24);
   __Pyx_GIVEREF(__pyx_tuple__24);
-  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_reduce, 92, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_codeobj__25 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__24, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_reduce, 93, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__25)) __PYX_ERR(0, 93, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":101
+  /* "srctools/_tokenizer.pyx":102
  *         raise TypeError('Cannot pickle Tokenizers!')
  * 
  *     def error(self, message, *args):             # <<<<<<<<<<<<<<
  *         """Raise a syntax error exception.
  * 
  */
-  __pyx_tuple__26 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_message, __pyx_n_s_args); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_tuple__26 = PyTuple_Pack(3, __pyx_n_s_self, __pyx_n_s_message, __pyx_n_s_args); if (unlikely(!__pyx_tuple__26)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__26);
   __Pyx_GIVEREF(__pyx_tuple__26);
-  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_error, 101, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_codeobj__27 = (PyObject*)__Pyx_PyCode_New(2, 0, 3, 0, CO_OPTIMIZED|CO_NEWLOCALS|CO_VARARGS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__26, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_error, 102, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__27)) __PYX_ERR(0, 102, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":137
+  /* "srctools/_tokenizer.pyx":138
  *         return iter(self, EOF_TUP)
  * 
  *     def push_back(self, object tok not None, str value=None):             # <<<<<<<<<<<<<<
  *         """Return a token, so it will be reproduced when called again.
  * 
  */
-  __pyx_tuple__28 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_tok, __pyx_n_s_value, __pyx_n_s_tok_val, __pyx_n_s_real_value); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_tuple__28 = PyTuple_Pack(5, __pyx_n_s_self, __pyx_n_s_tok, __pyx_n_s_value, __pyx_n_s_tok_val, __pyx_n_s_real_value); if (unlikely(!__pyx_tuple__28)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__28);
   __Pyx_GIVEREF(__pyx_tuple__28);
-  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_push_back, 137, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_codeobj__29 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__28, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_push_back, 138, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__29)) __PYX_ERR(0, 138, __pyx_L1_error)
 
   /* "srctools/_tokenizer.pyx":186
- * 
+ *         self.pushback_val = value
  * 
  *     def peek(self):             # <<<<<<<<<<<<<<
  *         """Peek at the next token, without removing it from the stream."""
@@ -10218,29 +10481,29 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
   __Pyx_GIVEREF(__pyx_tuple__34);
   __pyx_codeobj__35 = (PyObject*)__Pyx_PyCode_New(3, 0, 5, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__34, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_expect, 198, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__35)) __PYX_ERR(0, 198, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":637
+  /* "srctools/_tokenizer.pyx":661
  *                 return tok_and_val
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         """This cannot be pickled - the Python version does not have this class."""
  *         raise NotImplementedError('Cannot pickle _NewlinesIter!')
  */
-  __pyx_tuple__36 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 637, __pyx_L1_error)
+  __pyx_tuple__36 = PyTuple_Pack(1, __pyx_n_s_self); if (unlikely(!__pyx_tuple__36)) __PYX_ERR(0, 661, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__36);
   __Pyx_GIVEREF(__pyx_tuple__36);
-  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_reduce, 637, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 637, __pyx_L1_error)
+  __pyx_codeobj__37 = (PyObject*)__Pyx_PyCode_New(1, 0, 1, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__36, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_reduce, 661, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__37)) __PYX_ERR(0, 661, __pyx_L1_error)
 
-  /* "srctools/_tokenizer.pyx":643
+  /* "srctools/_tokenizer.pyx":667
  * 
  * @cython.nonecheck(False)
  * def escape_text(str text not None: str) -> str:             # <<<<<<<<<<<<<<
  *     r"""Escape special characters and backslashes, so tokenising reproduces them.
  * 
  */
-  __pyx_tuple__38 = PyTuple_Pack(6, __pyx_n_s_text, __pyx_n_s_enc_text, __pyx_n_s_final_len, __pyx_n_s_letter, __pyx_n_s_out_buff, __pyx_n_s_i); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 643, __pyx_L1_error)
+  __pyx_tuple__38 = PyTuple_Pack(6, __pyx_n_s_text, __pyx_n_s_enc_text, __pyx_n_s_final_len, __pyx_n_s_letter, __pyx_n_s_out_buff, __pyx_n_s_i); if (unlikely(!__pyx_tuple__38)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__38);
   __Pyx_GIVEREF(__pyx_tuple__38);
-  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_escape_text, 643, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 643, __pyx_L1_error)
+  __pyx_codeobj__39 = (PyObject*)__Pyx_PyCode_New(1, 0, 6, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__38, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__tokenizer_pyx, __pyx_n_s_escape_text, 667, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__39)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -10273,6 +10536,7 @@ static int __Pyx_modinit_global_init_code(void) {
   __pyx_v_8srctools_10_tokenizer_STRING = Py_None; Py_INCREF(Py_None);
   __pyx_v_8srctools_10_tokenizer_PAREN_ARGS = Py_None; Py_INCREF(Py_None);
   __pyx_v_8srctools_10_tokenizer_PROP_FLAG = Py_None; Py_INCREF(Py_None);
+  __pyx_v_8srctools_10_tokenizer_DIRECTIVE = Py_None; Py_INCREF(Py_None);
   __pyx_v_8srctools_10_tokenizer_EOF = Py_None; Py_INCREF(Py_None);
   __pyx_v_8srctools_10_tokenizer_NEWLINE = Py_None; Py_INCREF(Py_None);
   __pyx_v_8srctools_10_tokenizer_EMPTY_ITER = Py_None; Py_INCREF(Py_None);
@@ -10315,7 +10579,7 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtabptr_8srctools_10_tokenizer_BaseTokenizer = &__pyx_vtable_8srctools_10_tokenizer_BaseTokenizer;
   __pyx_vtable_8srctools_10_tokenizer_BaseTokenizer._error = (PyObject *(*)(struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *, PyObject *))__pyx_f_8srctools_10_tokenizer_13BaseTokenizer__error;
   __pyx_vtable_8srctools_10_tokenizer_BaseTokenizer.next_token = (PyObject *(*)(struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *))__pyx_f_8srctools_10_tokenizer_13BaseTokenizer_next_token;
-  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 60, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_10_tokenizer_BaseTokenizer.tp_print = 0;
   #endif
@@ -10324,7 +10588,7 @@ static int __Pyx_modinit_type_init_code(void) {
   }
   #if CYTHON_COMPILING_IN_CPYTHON
   {
-    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_10_tokenizer_BaseTokenizer, "__call__"); if (unlikely(!wrapper)) __PYX_ERR(0, 59, __pyx_L1_error)
+    PyObject *wrapper = PyObject_GetAttrString((PyObject *)&__pyx_type_8srctools_10_tokenizer_BaseTokenizer, "__call__"); if (unlikely(!wrapper)) __PYX_ERR(0, 60, __pyx_L1_error)
     if (Py_TYPE(wrapper) == &PyWrapperDescr_Type) {
       __pyx_wrapperbase_8srctools_10_tokenizer_13BaseTokenizer_6__call__ = *((PyWrapperDescrObject *)wrapper)->d_base;
       __pyx_wrapperbase_8srctools_10_tokenizer_13BaseTokenizer_6__call__.doc = __pyx_doc_8srctools_10_tokenizer_13BaseTokenizer_6__call__;
@@ -10332,8 +10596,8 @@ static int __Pyx_modinit_type_init_code(void) {
     }
   }
   #endif
-  if (__Pyx_SetVtable(__pyx_type_8srctools_10_tokenizer_BaseTokenizer.tp_dict, __pyx_vtabptr_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_BaseTokenizer, (PyObject *)&__pyx_type_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 59, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_8srctools_10_tokenizer_BaseTokenizer.tp_dict, __pyx_vtabptr_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 60, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_BaseTokenizer, (PyObject *)&__pyx_type_8srctools_10_tokenizer_BaseTokenizer) < 0) __PYX_ERR(0, 60, __pyx_L1_error)
   __pyx_ptype_8srctools_10_tokenizer_BaseTokenizer = &__pyx_type_8srctools_10_tokenizer_BaseTokenizer;
   __pyx_vtabptr_8srctools_10_tokenizer_Tokenizer = &__pyx_vtable_8srctools_10_tokenizer_Tokenizer;
   __pyx_vtable_8srctools_10_tokenizer_Tokenizer.__pyx_base = *__pyx_vtabptr_8srctools_10_tokenizer_BaseTokenizer;
@@ -10357,17 +10621,17 @@ static int __Pyx_modinit_type_init_code(void) {
   __pyx_vtable_8srctools_10_tokenizer_IterTokenizer.__pyx_base = *__pyx_vtabptr_8srctools_10_tokenizer_BaseTokenizer;
   __pyx_vtable_8srctools_10_tokenizer_IterTokenizer.__pyx_base.next_token = (PyObject *(*)(struct __pyx_obj_8srctools_10_tokenizer_BaseTokenizer *))__pyx_f_8srctools_10_tokenizer_13IterTokenizer_next_token;
   __pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_base = __pyx_ptype_8srctools_10_tokenizer_BaseTokenizer;
-  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 581, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 605, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_print = 0;
   #endif
   if ((CYTHON_USE_TYPE_SLOTS && CYTHON_USE_PYTYPE_LOOKUP) && likely(!__pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_dictoffset && __pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_getattro == PyObject_GenericGetAttr)) {
     __pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_getattro = __Pyx_PyObject_GenericGetAttr;
   }
-  if (__Pyx_SetVtable(__pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_dict, __pyx_vtabptr_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 581, __pyx_L1_error)
-  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_IterTokenizer_2, (PyObject *)&__pyx_type_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 581, __pyx_L1_error)
+  if (__Pyx_SetVtable(__pyx_type_8srctools_10_tokenizer_IterTokenizer.tp_dict, __pyx_vtabptr_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 605, __pyx_L1_error)
+  if (PyObject_SetAttr(__pyx_m, __pyx_n_s_IterTokenizer_2, (PyObject *)&__pyx_type_8srctools_10_tokenizer_IterTokenizer) < 0) __PYX_ERR(0, 605, __pyx_L1_error)
   __pyx_ptype_8srctools_10_tokenizer_IterTokenizer = &__pyx_type_8srctools_10_tokenizer_IterTokenizer;
-  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer__NewlinesIter) < 0) __PYX_ERR(0, 609, __pyx_L1_error)
+  if (PyType_Ready(&__pyx_type_8srctools_10_tokenizer__NewlinesIter) < 0) __PYX_ERR(0, 633, __pyx_L1_error)
   #if PY_VERSION_HEX < 0x030800B1
   __pyx_type_8srctools_10_tokenizer__NewlinesIter.tp_print = 0;
   #endif
@@ -10658,7 +10922,7 @@ if (!__Pyx_RefNanny) {
  * cdef object Token, TokenSyntaxError
  * from srctools.tokenizer import Token,  TokenSyntaxError             # <<<<<<<<<<<<<<
  * 
- * __all__ = ['Tokenizer', 'FileTokenizer', 'escape_text']
+ * __all__ = ['BaseTokenizer', 'Tokenizer', 'IterTokenizer', 'escape_text']
  */
   __pyx_t_2 = PyList_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 20, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
@@ -10690,21 +10954,24 @@ if (!__Pyx_RefNanny) {
   /* "srctools/_tokenizer.pyx":22
  * from srctools.tokenizer import Token,  TokenSyntaxError
  * 
- * __all__ = ['Tokenizer', 'FileTokenizer', 'escape_text']             # <<<<<<<<<<<<<<
+ * __all__ = ['BaseTokenizer', 'Tokenizer', 'IterTokenizer', 'escape_text']             # <<<<<<<<<<<<<<
  * 
  * # Cdef-ed globals become static module vars, which aren't in the module
  */
-  __pyx_t_1 = PyList_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
+  __pyx_t_1 = PyList_New(4); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_INCREF(__pyx_n_u_BaseTokenizer);
+  __Pyx_GIVEREF(__pyx_n_u_BaseTokenizer);
+  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_u_BaseTokenizer);
   __Pyx_INCREF(__pyx_n_u_Tokenizer);
   __Pyx_GIVEREF(__pyx_n_u_Tokenizer);
-  PyList_SET_ITEM(__pyx_t_1, 0, __pyx_n_u_Tokenizer);
-  __Pyx_INCREF(__pyx_n_u_FileTokenizer);
-  __Pyx_GIVEREF(__pyx_n_u_FileTokenizer);
-  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_u_FileTokenizer);
+  PyList_SET_ITEM(__pyx_t_1, 1, __pyx_n_u_Tokenizer);
+  __Pyx_INCREF(__pyx_n_u_IterTokenizer_2);
+  __Pyx_GIVEREF(__pyx_n_u_IterTokenizer_2);
+  PyList_SET_ITEM(__pyx_t_1, 2, __pyx_n_u_IterTokenizer_2);
   __Pyx_INCREF(__pyx_n_u_escape_text);
   __Pyx_GIVEREF(__pyx_n_u_escape_text);
-  PyList_SET_ITEM(__pyx_t_1, 2, __pyx_n_u_escape_text);
+  PyList_SET_ITEM(__pyx_t_1, 3, __pyx_n_u_escape_text);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_all, __pyx_t_1) < 0) __PYX_ERR(0, 22, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
@@ -10713,7 +10980,7 @@ if (!__Pyx_RefNanny) {
  * cdef:
  *     object STRING = Token.STRING             # <<<<<<<<<<<<<<
  *     object PAREN_ARGS = Token.PAREN_ARGS
- *     object PROP_FLAG = Token.PROP_FLAG   # [!flag]
+ *     object PROP_FLAG = Token.PROP_FLAG  # [!flag]
  */
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_STRING); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 28, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -10726,8 +10993,8 @@ if (!__Pyx_RefNanny) {
  * cdef:
  *     object STRING = Token.STRING
  *     object PAREN_ARGS = Token.PAREN_ARGS             # <<<<<<<<<<<<<<
- *     object PROP_FLAG = Token.PROP_FLAG   # [!flag]
- * 
+ *     object PROP_FLAG = Token.PROP_FLAG  # [!flag]
+ *     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
  */
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_PAREN_ARGS); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 29, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -10739,9 +11006,9 @@ if (!__Pyx_RefNanny) {
   /* "srctools/_tokenizer.pyx":30
  *     object STRING = Token.STRING
  *     object PAREN_ARGS = Token.PAREN_ARGS
- *     object PROP_FLAG = Token.PROP_FLAG   # [!flag]             # <<<<<<<<<<<<<<
+ *     object PROP_FLAG = Token.PROP_FLAG  # [!flag]             # <<<<<<<<<<<<<<
+ *     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
  * 
- *     object EOF = Token.EOF
  */
   __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_PROP_FLAG); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 30, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
@@ -10750,58 +11017,72 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":32
- *     object PROP_FLAG = Token.PROP_FLAG   # [!flag]
+  /* "srctools/_tokenizer.pyx":31
+ *     object PAREN_ARGS = Token.PAREN_ARGS
+ *     object PROP_FLAG = Token.PROP_FLAG  # [!flag]
+ *     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)             # <<<<<<<<<<<<<<
+ * 
+ *     object EOF = Token.EOF
+ */
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_DIRECTIVE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 31, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_1);
+  __Pyx_XGOTREF(__pyx_v_8srctools_10_tokenizer_DIRECTIVE);
+  __Pyx_DECREF_SET(__pyx_v_8srctools_10_tokenizer_DIRECTIVE, __pyx_t_1);
+  __Pyx_GIVEREF(__pyx_t_1);
+  __pyx_t_1 = 0;
+
+  /* "srctools/_tokenizer.pyx":33
+ *     object DIRECTIVE = Token.DIRECTIVE  # #name (automatically casefolded)
  * 
  *     object EOF = Token.EOF             # <<<<<<<<<<<<<<
  *     object NEWLINE = Token.NEWLINE
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EOF); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 32, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EOF); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(__pyx_v_8srctools_10_tokenizer_EOF);
   __Pyx_DECREF_SET(__pyx_v_8srctools_10_tokenizer_EOF, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":33
+  /* "srctools/_tokenizer.pyx":34
  * 
  *     object EOF = Token.EOF
  *     object NEWLINE = Token.NEWLINE             # <<<<<<<<<<<<<<
  * 
  *     # Iterator that immediately raises StopIteration.
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_NEWLINE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 33, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_NEWLINE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 34, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(__pyx_v_8srctools_10_tokenizer_NEWLINE);
   __Pyx_DECREF_SET(__pyx_v_8srctools_10_tokenizer_NEWLINE, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":36
+  /* "srctools/_tokenizer.pyx":37
  * 
  *     # Iterator that immediately raises StopIteration.
  *     object EMPTY_ITER = iter('')             # <<<<<<<<<<<<<<
  * 
  *     # Reuse a single tuple for these, since the value is constant.
  */
-  __pyx_t_1 = PyObject_GetIter(__pyx_kp_u__6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 36, __pyx_L1_error)
+  __pyx_t_1 = PyObject_GetIter(__pyx_kp_u__6); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 37, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_XGOTREF(__pyx_v_8srctools_10_tokenizer_EMPTY_ITER);
   __Pyx_DECREF_SET(__pyx_v_8srctools_10_tokenizer_EMPTY_ITER, __pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":39
+  /* "srctools/_tokenizer.pyx":40
  * 
  *     # Reuse a single tuple for these, since the value is constant.
  *     tuple EOF_TUP = (Token.EOF, '')             # <<<<<<<<<<<<<<
  *     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EOF); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EOF); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 39, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 40, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -10814,16 +11095,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_tokenizer.pyx":40
+  /* "srctools/_tokenizer.pyx":41
  *     # Reuse a single tuple for these, since the value is constant.
  *     tuple EOF_TUP = (Token.EOF, '')
  *     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')             # <<<<<<<<<<<<<<
  * 
  *     tuple COLON_TUP = (Token.COLON, ':')
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_NEWLINE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_NEWLINE); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 40, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 41, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
@@ -10836,16 +11117,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":42
+  /* "srctools/_tokenizer.pyx":43
  *     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
  * 
  *     tuple COLON_TUP = (Token.COLON, ':')             # <<<<<<<<<<<<<<
  *     tuple EQUALS_TUP = (Token.EQUALS, '=')
  *     tuple PLUS_TUP = (Token.PLUS, '+')
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_COLON); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_COLON); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 42, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -10858,16 +11139,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_tokenizer.pyx":43
+  /* "srctools/_tokenizer.pyx":44
  * 
  *     tuple COLON_TUP = (Token.COLON, ':')
  *     tuple EQUALS_TUP = (Token.EQUALS, '=')             # <<<<<<<<<<<<<<
  *     tuple PLUS_TUP = (Token.PLUS, '+')
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EQUALS); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_EQUALS); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 43, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
@@ -10880,16 +11161,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":44
+  /* "srctools/_tokenizer.pyx":45
  *     tuple COLON_TUP = (Token.COLON, ':')
  *     tuple EQUALS_TUP = (Token.EQUALS, '=')
  *     tuple PLUS_TUP = (Token.PLUS, '+')             # <<<<<<<<<<<<<<
  * 
  *     tuple BRACE_OPEN_TUP = (Token.BRACE_OPEN, '{')
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_PLUS); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_PLUS); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 44, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 45, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -10902,16 +11183,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_tokenizer.pyx":46
+  /* "srctools/_tokenizer.pyx":47
  *     tuple PLUS_TUP = (Token.PLUS, '+')
  * 
  *     tuple BRACE_OPEN_TUP = (Token.BRACE_OPEN, '{')             # <<<<<<<<<<<<<<
  *     tuple BRACE_CLOSE_TUP = (Token.BRACE_CLOSE, '}')
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACE_OPEN); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACE_OPEN); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 46, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
@@ -10924,16 +11205,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":47
+  /* "srctools/_tokenizer.pyx":48
  * 
  *     tuple BRACE_OPEN_TUP = (Token.BRACE_OPEN, '{')
  *     tuple BRACE_CLOSE_TUP = (Token.BRACE_CLOSE, '}')             # <<<<<<<<<<<<<<
  * 
  *     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACE_CLOSE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACE_CLOSE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 47, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 48, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -10946,16 +11227,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_tokenizer.pyx":49
+  /* "srctools/_tokenizer.pyx":50
  *     tuple BRACE_CLOSE_TUP = (Token.BRACE_CLOSE, '}')
  * 
  *     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')             # <<<<<<<<<<<<<<
  *     tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
  * 
  */
-  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACK_OPEN); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACK_OPEN); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 49, __pyx_L1_error)
+  __pyx_t_1 = PyTuple_New(2); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_GIVEREF(__pyx_t_2);
   PyTuple_SET_ITEM(__pyx_t_1, 0, __pyx_t_2);
@@ -10968,16 +11249,16 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_1);
   __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":50
+  /* "srctools/_tokenizer.pyx":51
  * 
  *     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
  *     tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')             # <<<<<<<<<<<<<<
  * 
  * 
  */
-  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACK_CLOSE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_PyObject_GetAttrStr(__pyx_v_8srctools_10_tokenizer_Token, __pyx_n_s_BRACK_CLOSE); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 51, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
-  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 50, __pyx_L1_error)
+  __pyx_t_2 = PyTuple_New(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 51, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __Pyx_GIVEREF(__pyx_t_1);
   PyTuple_SET_ITEM(__pyx_t_2, 0, __pyx_t_1);
@@ -10990,47 +11271,47 @@ if (!__Pyx_RefNanny) {
   __Pyx_GIVEREF(__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_tokenizer.pyx":92
+  /* "srctools/_tokenizer.pyx":93
  *         self.line_num = 1
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         """Disallow pickling Tokenizers.
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_3__reduce__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer___reduce, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 92, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_3__reduce__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer___reduce, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__25)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 93, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_reduce, __pyx_t_2) < 0) __PYX_ERR(0, 92, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_reduce, __pyx_t_2) < 0) __PYX_ERR(0, 93, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer);
 
-  /* "srctools/_tokenizer.pyx":101
+  /* "srctools/_tokenizer.pyx":102
  *         raise TypeError('Cannot pickle Tokenizers!')
  * 
  *     def error(self, message, *args):             # <<<<<<<<<<<<<<
  *         """Raise a syntax error exception.
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_5error, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer_error, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 101, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_5error, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer_error, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__27)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_error, __pyx_t_2) < 0) __PYX_ERR(0, 101, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_error, __pyx_t_2) < 0) __PYX_ERR(0, 102, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer);
 
-  /* "srctools/_tokenizer.pyx":137
+  /* "srctools/_tokenizer.pyx":138
  *         return iter(self, EOF_TUP)
  * 
  *     def push_back(self, object tok not None, str value=None):             # <<<<<<<<<<<<<<
  *         """Return a token, so it will be reproduced when called again.
  * 
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_11push_back, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer_push_back, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 137, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13BaseTokenizer_11push_back, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_BaseTokenizer_push_back, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__29)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_push_back, __pyx_t_2) < 0) __PYX_ERR(0, 137, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer->tp_dict, __pyx_n_s_push_back, __pyx_t_2) < 0) __PYX_ERR(0, 138, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer);
 
   /* "srctools/_tokenizer.pyx":186
- * 
+ *         self.pushback_val = value
  * 
  *     def peek(self):             # <<<<<<<<<<<<<<
  *         """Peek at the next token, without removing it from the stream."""
@@ -11068,38 +11349,38 @@ if (!__Pyx_RefNanny) {
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer);
 
-  /* "srctools/_tokenizer.pyx":637
+  /* "srctools/_tokenizer.pyx":661
  *                 return tok_and_val
  * 
  *     def __reduce__(self):             # <<<<<<<<<<<<<<
  *         """This cannot be pickled - the Python version does not have this class."""
  *         raise NotImplementedError('Cannot pickle _NewlinesIter!')
  */
-  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13_NewlinesIter_11__reduce__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_NewlinesIter___reduce, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 637, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_13_NewlinesIter_11__reduce__, __Pyx_CYFUNCTION_CCLASS, __pyx_n_s_NewlinesIter___reduce, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__37)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 661, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer__NewlinesIter->tp_dict, __pyx_n_s_reduce, __pyx_t_2) < 0) __PYX_ERR(0, 637, __pyx_L1_error)
+  if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_10_tokenizer__NewlinesIter->tp_dict, __pyx_n_s_reduce, __pyx_t_2) < 0) __PYX_ERR(0, 661, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
   PyType_Modified(__pyx_ptype_8srctools_10_tokenizer__NewlinesIter);
 
-  /* "srctools/_tokenizer.pyx":643
+  /* "srctools/_tokenizer.pyx":667
  * 
  * @cython.nonecheck(False)
  * def escape_text(str text not None: str) -> str:             # <<<<<<<<<<<<<<
  *     r"""Escape special characters and backslashes, so tokenising reproduces them.
  * 
  */
-  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 643, __pyx_L1_error)
+  __pyx_t_2 = __Pyx_PyDict_NewPresized(2); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_text, __pyx_n_u_unicode) < 0) __PYX_ERR(0, 643, __pyx_L1_error)
-  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_u_unicode) < 0) __PYX_ERR(0, 643, __pyx_L1_error)
-  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_1escape_text, 0, __pyx_n_s_escape_text, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 643, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_text, __pyx_n_u_unicode) < 0) __PYX_ERR(0, 667, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_t_2, __pyx_n_s_return, __pyx_n_u_unicode) < 0) __PYX_ERR(0, 667, __pyx_L1_error)
+  __pyx_t_1 = __Pyx_CyFunction_New(&__pyx_mdef_8srctools_10_tokenizer_1escape_text, 0, __pyx_n_s_escape_text, NULL, __pyx_n_s_srctools__tokenizer, __pyx_d, ((PyObject *)__pyx_codeobj__39)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   __Pyx_CyFunction_SetAnnotationsDict(__pyx_t_1, __pyx_t_2);
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
-  if (PyDict_SetItem(__pyx_d, __pyx_n_s_escape_text, __pyx_t_1) < 0) __PYX_ERR(0, 643, __pyx_L1_error)
+  if (PyDict_SetItem(__pyx_d, __pyx_n_s_escape_text, __pyx_t_1) < 0) __PYX_ERR(0, 667, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_tokenizer.pyx":691
+  /* "srctools/_tokenizer.pyx":715
  * # This fixes all the methods too, though not in exceptions.
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
@@ -11109,7 +11390,7 @@ if (!__Pyx_RefNanny) {
   __pyx_t_3 = (CYTHON_USE_TYPE_SLOTS != 0);
   if (__pyx_t_3) {
 
-    /* "srctools/_tokenizer.pyx":692
+    /* "srctools/_tokenizer.pyx":716
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:
  *     (<PyTypeObject *>BaseTokenizer).tp_name = b"srctools.tokenizer.BaseTokenizer"             # <<<<<<<<<<<<<<
@@ -11118,7 +11399,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_10_tokenizer_BaseTokenizer)->tp_name = ((char const *)"srctools.tokenizer.BaseTokenizer");
 
-    /* "srctools/_tokenizer.pyx":693
+    /* "srctools/_tokenizer.pyx":717
  * if USE_TYPE_INTERNALS:
  *     (<PyTypeObject *>BaseTokenizer).tp_name = b"srctools.tokenizer.BaseTokenizer"
  *     (<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"             # <<<<<<<<<<<<<<
@@ -11127,7 +11408,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_10_tokenizer_Tokenizer)->tp_name = ((char const *)"srctools.tokenizer.Tokenizer");
 
-    /* "srctools/_tokenizer.pyx":694
+    /* "srctools/_tokenizer.pyx":718
  *     (<PyTypeObject *>BaseTokenizer).tp_name = b"srctools.tokenizer.BaseTokenizer"
  *     (<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
  *     (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.BaseTokenizer.skipping_newlines"             # <<<<<<<<<<<<<<
@@ -11135,17 +11416,17 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_10_tokenizer__NewlinesIter)->tp_name = ((char const *)"srctools.tokenizer.BaseTokenizer.skipping_newlines");
 
-    /* "srctools/_tokenizer.pyx":695
+    /* "srctools/_tokenizer.pyx":719
  *     (<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
  *     (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.BaseTokenizer.skipping_newlines"
  *     escape_text.__module__ = 'srctools.tokenizer'             # <<<<<<<<<<<<<<
  */
-    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_escape_text); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 695, __pyx_L1_error)
+    __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_escape_text); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 719, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_1);
-    if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_tokenizer) < 0) __PYX_ERR(0, 695, __pyx_L1_error)
+    if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_tokenizer) < 0) __PYX_ERR(0, 719, __pyx_L1_error)
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-    /* "srctools/_tokenizer.pyx":691
+    /* "srctools/_tokenizer.pyx":715
  * # This fixes all the methods too, though not in exceptions.
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
@@ -12395,6 +12676,44 @@ static CYTHON_INLINE PyObject* __Pyx_PyUnicode_From_int(int value, Py_ssize_t wi
         return PyUnicode_FromOrdinal(*dpos);
     }
     return __Pyx_PyUnicode_BuildFromAscii(ulength, dpos, (int) length, prepend_sign, padding_char);
+}
+
+/* PyObjectCallNoArg */
+#if CYTHON_COMPILING_IN_CPYTHON
+static CYTHON_INLINE PyObject* __Pyx_PyObject_CallNoArg(PyObject *func) {
+#if CYTHON_FAST_PYCALL
+    if (PyFunction_Check(func)) {
+        return __Pyx_PyFunction_FastCall(func, NULL, 0);
+    }
+#endif
+#ifdef __Pyx_CyFunction_USED
+    if (likely(PyCFunction_Check(func) || __Pyx_CyFunction_Check(func)))
+#else
+    if (likely(PyCFunction_Check(func)))
+#endif
+    {
+        if (likely(PyCFunction_GET_FLAGS(func) & METH_NOARGS)) {
+            return __Pyx_PyObject_CallMethO(func, NULL);
+        }
+    }
+    return __Pyx_PyObject_Call(func, __pyx_empty_tuple, NULL);
+}
+#endif
+
+/* unicode_iter */
+static CYTHON_INLINE int __Pyx_init_unicode_iteration(
+    PyObject* ustring, Py_ssize_t *length, void** data, int *kind) {
+#if CYTHON_PEP393_ENABLED
+    if (unlikely(__Pyx_PyUnicode_READY(ustring) < 0)) return -1;
+    *kind   = PyUnicode_KIND(ustring);
+    *length = PyUnicode_GET_LENGTH(ustring);
+    *data   = PyUnicode_DATA(ustring);
+#else
+    *kind   = 0;
+    *length = PyUnicode_GET_SIZE(ustring);
+    *data   = (void*)PyUnicode_AS_UNICODE(ustring);
+#endif
+    return 0;
 }
 
 /* PyObjectFormat */
@@ -13807,6 +14126,37 @@ static CYTHON_INLINE int __Pyx_UnicodeContainsUCS4(PyObject* unicode, Py_UCS4 ch
 #endif
 }
 
+/* UnicodeAsUCS4 */
+static CYTHON_INLINE Py_UCS4 __Pyx_PyUnicode_AsPy_UCS4(PyObject* x) {
+   Py_ssize_t length;
+   #if CYTHON_PEP393_ENABLED
+   length = PyUnicode_GET_LENGTH(x);
+   if (likely(length == 1)) {
+       return PyUnicode_READ_CHAR(x, 0);
+   }
+   #else
+   length = PyUnicode_GET_SIZE(x);
+   if (likely(length == 1)) {
+       return PyUnicode_AS_UNICODE(x)[0];
+   }
+   #if Py_UNICODE_SIZE == 2
+   else if (PyUnicode_GET_SIZE(x) == 2) {
+       Py_UCS4 high_val = PyUnicode_AS_UNICODE(x)[0];
+       if (high_val >= 0xD800 && high_val <= 0xDBFF) {
+           Py_UCS4 low_val = PyUnicode_AS_UNICODE(x)[1];
+           if (low_val >= 0xDC00 && low_val <= 0xDFFF) {
+               return 0x10000 + (((high_val & ((1<<10)-1)) << 10) | (low_val & ((1<<10)-1)));
+           }
+       }
+   }
+   #endif
+   #endif
+   PyErr_Format(PyExc_ValueError,
+                "only single character unicode strings can be converted to Py_UCS4, "
+                "got length %" CYTHON_FORMAT_SSIZE_T "d", length);
+   return (Py_UCS4)-1;
+}
+
 /* CIntFromPy */
 static CYTHON_INLINE int __Pyx_PyInt_As_int(PyObject *x) {
     const int neg_one = (int) ((int) 0 - (int) 1), const_zero = (int) 0;
@@ -14183,6 +14533,27 @@ raise_neg_overflow:
     PyErr_SetString(PyExc_OverflowError,
         "can't convert negative value to char");
     return (char) -1;
+}
+
+/* ObjectAsUCS4 */
+static Py_UCS4 __Pyx__PyObject_AsPy_UCS4_raise_error(long ival) {
+   if (ival < 0) {
+       if (!PyErr_Occurred())
+           PyErr_SetString(PyExc_OverflowError,
+                           "cannot convert negative value to Py_UCS4");
+   } else {
+       PyErr_SetString(PyExc_OverflowError,
+                       "value too large to convert to Py_UCS4");
+   }
+   return (Py_UCS4)-1;
+}
+static Py_UCS4 __Pyx__PyObject_AsPy_UCS4(PyObject* x) {
+   long ival;
+   ival = __Pyx_PyInt_As_long(x);
+   if (unlikely(!__Pyx_is_valid_index(ival, 1114111 + 1))) {
+       return __Pyx__PyObject_AsPy_UCS4_raise_error(ival);
+   }
+   return (Py_UCS4)ival;
 }
 
 /* CIntFromPy */
