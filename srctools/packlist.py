@@ -568,12 +568,10 @@ class PackList:
                 for line in new_cache_data.export():
                     f.write(line)
 
-    def write_manifest(self, map_name: str=None) -> None:
+    def write_manifest(self) -> None:
         """Produce and pack a manifest file for this map.
 
-        If map_name is provided, the script in the custom content position
-        to be automatically loaded for that name. Otherwise, it will be packed
-        such that it can override the master manifest with
+        It will be packed such that it can override the master manifest with
         sv_soundemitter_flush.
         """
         manifest = Property('game_sounds_manifest', [
@@ -587,8 +585,6 @@ class PackList:
             buf.extend(line.encode('utf8'))
 
         self.pack_file(
-            'map/{}_level_sounds.txt'.format(map_name)
-            if map_name else
             'scripts/game_sounds_manifest.txt',
             FileType.SOUNDSCRIPT,
             bytes(buf),
