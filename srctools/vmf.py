@@ -374,7 +374,7 @@ class VMF:
             self.by_class[item['classname', None]].add(item)
             self.by_target[item['targetname', None]].add(item)
 
-    def create_ent(self, classname: str, **kargs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs: ValidKVs) -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
@@ -1475,20 +1475,20 @@ class Side:
         """Generate the strings required to define this side in a VMF."""
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
+        buffer.write(f'{ind}\t"id" "{self.id}"\n')
         pl_str = ('(' + p.join(' ') + ')' for p in self.planes)
-        buffer.write(ind + '\t"plane" "' + ' '.join(pl_str) + '"\n')
-        buffer.write(ind + '\t"material" "' + self.mat + '"\n')
-        buffer.write(ind + '\t"uaxis" "' + str(self.uaxis) + '"\n')
-        buffer.write(ind + '\t"vaxis" "' + str(self.vaxis) + '"\n')
-        buffer.write(ind + '\t"rotation" "' + str(self.ham_rot) + '"\n')
-        buffer.write(ind + '\t"lightmapscale" "' + str(self.lightmap) + '"\n')
-        buffer.write(ind + '\t"smoothing_groups" "' + str(self.smooth) + '"\n')
+        buffer.write(f'{ind}\t"plane" "{" ".join(pl_str)}"\n')
+        buffer.write(f'{ind}\t"material" "{self.mat}"\n')
+        buffer.write(f'{ind}\t"uaxis" "{self.uaxis}"\n')
+        buffer.write(f'{ind}\t"vaxis" "{self.vaxis}"\n')
+        buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
+        buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
+        buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
         if self.is_disp:
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
-            buffer.write(ind + '\t\t"power" "' + str(self.disp_power) + '"\n')
+            buffer.write(f'{ind}\t\t"power" "{str(self.disp_power)}"\n')
             buffer.write(ind + '\t\t"startposition" "[' +
                          self.disp_pos.join(' ') +
                          ']"\n')
@@ -1501,7 +1501,7 @@ class Side:
                          '"\n')
             for v in _DISP_ROWS:
                 if len(self.disp_data[v]) > 0:
-                    buffer.write(ind + '\t\t' + v + '\n')
+                    buffer.write(f'{ind}\t\t{v}\n')
                     buffer.write(ind + '\t\t{\n')
                     for i, data in enumerate(self.disp_data[v]):
                         buffer.write(ind + '\t\t\t"row' + str(i) +
@@ -1512,7 +1512,7 @@ class Side:
                 buffer.write(ind + '\t\tallowed_verts\n')
                 buffer.write(ind + '\t\t{\n')
                 for k, v in self.disp_allowed_verts.items():
-                    buffer.write(ind + '\t\t\t"' + k + '" "' + v + '"\n')
+                    buffer.write(f'{ind}\t\t\t"{k}" "{v}"\n')
                 buffer.write(ind + '\t\t}\n')
             buffer.write(ind + '\t}\n')
         buffer.write(ind + '}\n')
@@ -2221,7 +2221,7 @@ class EntityFixup(MutableMapping[str, str]):
             for tup in
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
-        return self.__class__.__name__ + '{\n' + items + '\n}'
+        return f'{self.__class__.__name__}{{\n{items}\n}}'
 
     def __repr__(self) -> str:
         items = ', '.join(
@@ -2229,7 +2229,7 @@ class EntityFixup(MutableMapping[str, str]):
             for tup in
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
-        return self.__class__.__name__ + '([' + items + '])'
+        return f'{self.__class__.__name__}([{items}])'
 
     def substitute(self, text: str, default: str=None) -> str:
         """Substitute the fixup variables into the provided string.
@@ -2507,11 +2507,8 @@ class Output:
 
     def __repr__(self) -> str:
         vals = (
-            '{cls}({s.output!r}, {s.target!r}, {s.input!r}, {s.params!r}, '
-            'delay={s.delay!r}'.format(
-                s=self,
-                cls=self.__class__.__name__,
-            )
+            f'{self.__class__.__name__}({self.output!r}, {self.target!r}, '
+            f'{self.input!r}, {self.params!r}, delay={self.delay!r}'
         )
         if self.inst_in is not None:
             vals += ', inst_in=' + repr(self.inst_in)
