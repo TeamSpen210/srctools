@@ -370,6 +370,7 @@ def to_matrix(value) -> Matrix:
 
 
 @cython.final
+@cython.internal
 cdef class VecIter:
     """Implements iter(Vec)."""
     cdef Vec vec
@@ -398,6 +399,7 @@ cdef class VecIter:
 
 
 @cython.final
+@cython.internal
 cdef class VecIterGrid:
     """Implements Vec.iter_grid()."""
     cdef:
@@ -438,6 +440,7 @@ cdef class VecIterGrid:
 
 
 @cython.final
+@cython.internal
 cdef class VecIterLine:
     """Implements Vec.iter_line()."""
     cdef:
@@ -472,6 +475,7 @@ cdef class VecIterLine:
 
 
 @cython.final
+@cython.internal
 cdef class AngleIter:
     """Implements iter(Angle)."""
     cdef Angle ang
@@ -500,6 +504,7 @@ cdef class AngleIter:
 
 
 @cython.final
+@cython.internal
 cdef class VecTransform:
     """Implements Vec.transform()."""
     cdef Matrix mat
@@ -525,6 +530,7 @@ cdef class VecTransform:
 
 
 @cython.final
+@cython.internal
 cdef class AngleTransform:
     """Implements Angle.transform()."""
     cdef Matrix mat
