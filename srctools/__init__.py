@@ -1,18 +1,17 @@
 import itertools as _itertools
 import os as _os
-from collections import abc as _abc
 from typing import (
     Union, Type, TypeVar, Iterator, Sequence, List, Container,
     IO, Optional,
-    Mapping,
-    MutableMapping,
+    Mapping, KeysView, ValuesView, ItemsView,
+    MutableMapping, Set,
     Any,
     overload,
     Iterable,
     Tuple,
-    SupportsFloat,
 )
 from types import TracebackType
+from collections import deque
 
 
 __all__ = [
@@ -251,6 +250,18 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         """Iteration yields no values."""
         return iter(())
 
+    def keys(self) -> '_EmptyKeysItemsView':
+        """Return an empty keys() view singleton."""
+        return EmptyKeysView
+
+    def items(self) -> '_EmptyKeysItemsView':
+        """Return an empty items() view singleton."""
+        return EmptyItemsView
+
+    def values(self) -> '_EmptyValuesView':
+        """Return an empty values() view singleton."""
+        return EmptyValuesView
+
     # Mutable functions
     setdefault = get
 
@@ -278,7 +289,111 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         raise KeyError('EmptyMapping is empty')
 
 
+class _EmptyKeysItemsView(KeysView[Any], ItemsView[Any, Any]):
+    """A Mapping view implementation that always acts empty, and supports set operations."""
+    # noinspection PyMissingConstructor
+    def __init__(self, name) -> None:
+        super().__init__(EmptyMapping)
+        self._name = f'Empty{name}View'
+
+    def __repr__(self) -> str:
+        return self._name
+
+    def __len__(self) -> int:
+        """This contains no keys/items."""
+        return 0
+
+    def __contains__(self, key: Any) -> bool:
+        """All keys/items are not present."""
+        return False
+
+    def __iter__(self) -> Iterator[Any]:
+        """Iteration produces no values."""
+        return iter(())
+
+    # Set ops. A lot can share implementations.
+
+    def _only_full(self, other) -> Any:
+        """Only nonempty sets pass."""
+        if not isinstance(other, Set):
+            return NotImplemented
+        return len(other) > 0
+
+    def _only_empty(self, other) -> Any:
+        """Only empty sets pass."""
+        if not isinstance(other, Set):
+            return NotImplemented
+        return len(other) == 0
+
+    def _always_true(self, other) -> Any:
+        """Any set passes this comparison."""
+        return True if isinstance(other, Set) else NotImplemented
+
+    def _always_false(self, other) -> Any:
+        """Any set fails this comparison."""
+        return False if isinstance(other, Set) else NotImplemented
+
+    def _binop_copy(self, other: Iterable[ValT]) -> Set[ValT]:
+        """A binary operation which returns all the other values."""
+        if not isinstance(other, Iterable):
+            return NotImplemented
+        return set(other)
+
+    def _binop_drop(self, other: Iterable[ValT]) -> Set[ValT]:
+        """A binary operation producing no values."""
+        if not isinstance(other, Iterable):
+            return NotImplemented
+        deque(other, 0)  # Consume all values.
+        return set()
+
+    __eq__ = _only_empty
+    __ne__ = _only_full
+    __lt__ = _only_full
+    __le__ = _always_true
+    __gt__ = _always_false
+    __ge__ = _only_empty
+
+    __and__ = _binop_drop
+    __rand__ = _binop_drop
+    __or__ = _binop_copy
+    __ror__ = _binop_copy
+    __sub__ = _binop_drop
+    __rsub__ = _binop_copy
+    __xor__ = _binop_copy
+    __rxor__ = _binop_copy
+
+    del _only_empty, _only_full, _always_false, _binop_drop, _binop_copy
+
+    def isdisjoint(self, other) -> bool:
+        """This set is always disjoint."""
+        return True
+
+    def __hash__(self) -> int:
+        """These are immutable, so they can be hashable."""
+        return _set_hash
+
+
+class _EmptyValuesView(ValuesView[Any]):
+    """A Mapping.values() implementation that always acts empty. This is not a set."""
+    __slots__ = ()
+    def __contains__(self, key: Any) -> bool:
+        """All values are not present."""
+        return False
+
+    def __len__(self) -> int:
+        """This contains no values."""
+        return 0
+
+    def __iter__(self) -> Iterator[Any]:
+        """Iteration produces no values."""
+        return iter(())
+
+
+_set_hash = hash(frozenset())
 EmptyMapping = _EmptyMapping()
+EmptyKeysView = _EmptyKeysItemsView('Keys')
+EmptyItemsView = _EmptyKeysItemsView('Items')
+EmptyValuesView = _EmptyValuesView(EmptyMapping)
 
 
 class AtomicWriter:
