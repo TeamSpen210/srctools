@@ -4,10 +4,11 @@ import os
 
 try:
     from Cython.Build import cythonize
-    cy_ext = '.pyx'
+    c_ext = cpp_ext = '.pyx'
 except ImportError:
     print('Cython not installed, not compiling Cython modules.')
-    cy_ext = '.c'
+    c_ext = '.c'
+    cpp_ext = '.cpp'
     def cythonize(mod):
         return mod
 
@@ -48,7 +49,7 @@ setup(
     ext_modules=cythonize([
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer" + cy_ext],
+            sources=["srctools/_tokenizer" + c_ext],
             # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
         Extension(
@@ -56,7 +57,7 @@ setup(
             include_dirs=[os.path.abspath("libsquish/")],
             language='c++',
             sources=[
-                "srctools/_cy_vtf_readwrite" + cy_ext,
+                "srctools/_cy_vtf_readwrite" + cpp_ext,
             ] + SQUISH_CPP,
             extra_compile_args=[
                 '/openmp' if WIN else '-fopenmp',
@@ -66,7 +67,7 @@ setup(
         ),
         Extension(
             "srctools._vec",
-            sources=["srctools/_vec" + cy_ext],
+            sources=["srctools/_vec" + c_ext],
             # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
     ]),
