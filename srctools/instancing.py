@@ -1,7 +1,7 @@
 """Implements support for collapsing instances."""
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Tuple, Set, Iterable, Container, MutableMapping
+from typing import Dict, Tuple, Set, Iterable, Container, MutableMapping, List
 from srctools import Matrix, Vec, Angle, conv_float, EmptyMapping
 from srctools.vmf import Entity, EntityFixup, FixupTuple, VMF, Output
 from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
@@ -31,6 +31,7 @@ class Instance:
         filename: str,
         pos: Vec, orient: Matrix,
         fixup_type: FixupStyle,
+        outputs: Iterable[Output]=(),
         fixup: Iterable[FixupTuple]=(),
     ) -> None:
         self.name = name
@@ -39,6 +40,7 @@ class Instance:
         self.orient = orient
         self.fixup_type = fixup_type
         self.fixup = EntityFixup(fixup)
+        self.outputs = list(outputs)
         # After collapsing, this is the original -> new ID mapping.
         self.ent_ids: Dict[int, int] = {}
         self.face_ids: Dict[int, int] = {}
@@ -66,6 +68,7 @@ class Instance:
             Vec.from_str(ent['origin']),
             Matrix.from_angle(Angle.from_str(ent['angles'])),
             fixup_style,
+            ent.outputs,
             ent.fixup.copy_values(),
         )
         inst.recur_count = getattr(ent, RECUR_COUNT_ATTR, 0)
@@ -247,6 +250,7 @@ def collapse_one(
     """
     origin = inst.pos
     orient = inst.orient
+    id_to_ent: Dict[int, Entity] = {}
 
     if fgd is None:
         fgd = FGD.engine_dbase()
@@ -265,15 +269,46 @@ def collapse_one(
         inst.brush_ids[old_brush.id] = new_brush.id
         new_brush.localise(origin, orient)
 
+    # Before adding the ents, apply instance inputs.
+    folded_inst_name = inst.name.casefold()
+    for ent in vmf.entities:
+        for out in ent.outputs:
+            if out.target.casefold() != folded_inst_name and out.inst_in:
+                continue
+            try:
+                proxy_out = file.proxy_inputs[out.inst_in, out.input]
+            except KeyError:
+                # Not an error, could be another instance with our name.
+                continue
+            # Output.combine(), but in-place.
+            out.target = proxy_out.target
+            out.input = proxy_out.input
+            out.inst_in = None
+            if proxy_out.params:
+                out.params = proxy_out.params
+            out.times = min(out.times, proxy_out.times)
+            out.delay += proxy_out.delay
+            if not proxy_out.comma_sep:
+                out.comma_sep = False
+
+    # Only modify keyvalues after all ents have been copied over, so brush
+    # IDs are all present.
+    new_ents: List[Entity] = []
+
     for old_ent in file.vmf.entities:
         if old_ent.hidden or not old_ent.vis_shown:
             continue
         new_ent = old_ent.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=False)
         vmf.add_ent(new_ent)
+        new_ents.append(new_ent)
+        inst.ent_ids[old_ent.id] = new_ent.id
+        id_to_ent[old_ent.id] = new_ent
+
         for old_brush, new_brush in zip(old_ent.solids, new_ent.solids):
             inst.brush_ids[old_brush.id] = new_brush.id
             new_brush.localise(origin, orient)
 
+    for new_ent in new_ents:
         # Find the FGD to use.
         classname = new_ent['classname']
         try:
@@ -316,6 +351,9 @@ def collapse_one(
             try:
                 kv = ent_type.kv[folded]
             except KeyError:
+                if folded.startswith('$') and classname == 'func_instance':
+                    # Dummy fixup names Hammer provides for convenience, ignore.
+                    continue
                 if (classname, key) not in _UNKNOWN_KV:
                     LOGGER.warning('Unknown keyvalue {}.{}', classname, key)
                     _UNKNOWN_KV.add((classname, key))
@@ -344,6 +382,14 @@ def collapse_one(
         for out in new_ent.outputs:
             out.target = inst.fixup_name(inst.fixup.substitute(out.target, ''))
 
+    for out in inst.outputs:
+        try:
+            ent_id, prox_out = file.proxy_outputs[out.inst_out.casefold(), out.output.casefold()]
+        except KeyError:
+            LOGGER.info('No output {},{} in {}', out.inst_out, out.output, inst.filename)
+            continue
+        id_to_ent[ent_id].add_out(Output.combine(prox_out, out))
+
 
 def collapse_all(
     vmf: VMF,
@@ -360,6 +406,8 @@ def collapse_all(
     if fgd is None:
         fgd = FGD.engine_dbase()
 
+    auto_inst_count = 0
+
     cache: Dict[str, InstanceFile] = {}
     for _ in range(recur_limit):
         instances = list(vmf.by_class['func_instance'])
@@ -368,7 +416,10 @@ def collapse_all(
         for inst_ent in instances:
             inst = Instance.from_entity(inst_ent)
             inst_ent.remove()
-            LOGGER.info('Collapse {} @ {}', inst.filename, inst.pos)
+            LOGGER.debug('Collapse {} @ {}', inst.filename, inst.pos)
+            if not inst.name:
+                auto_inst_count += 1
+                inst.name = f'InstanceAuto{auto_inst_count}'
             try:
                 file = cache[inst.filename]
             except KeyError:

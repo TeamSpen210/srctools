@@ -1080,7 +1080,7 @@ class Solid:
     ) -> 'Solid':
         """Duplicate this brush."""
         sides = [
-            s.copy(vmf_file=vmf_file, side_mapping=side_mapping)
+            s.copy(-1, vmf_file, side_mapping)
             for s in
             self.sides
         ]
@@ -2511,6 +2511,25 @@ class Output:
             inst_out=inst_out,
             inst_in=inst_inp,
             comma_sep=sep,
+        )
+
+    @classmethod
+    def combine(cls, first: 'Output', second: 'Output') -> 'Output':
+        """Combine two outputs into a merged form.
+
+        This is suitable for combining a Trigger and OnTriggered pair into one,
+        or similar values.
+        """
+        return cls(
+            first.output,
+            second.target,
+            second.input,
+            second.params or first.params,
+            first.delay + second.delay,
+            times=min(first.times, second.times),
+            inst_out=first.inst_out,
+            inst_in=second.inst_in,
+            comma_sep=first.comma_sep and second.comma_sep,
         )
 
     @staticmethod
