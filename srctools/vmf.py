@@ -346,12 +346,13 @@ class VMF:
         self.entities.append(item)
         self.by_class[item['classname', None]].add(item)
         self.by_target[item['targetname', None]].add(item)
-        try:
-            node_id = int(item['nodeid'])
-        except (TypeError, ValueError):
-            pass
-        else:
-            item['nodeid'] = self.node_id.get_id(node_id)
+        if 'nodeid' in item:
+            try:
+                node_id = int(item['nodeid'])
+            except (TypeError, ValueError):
+                pass
+            else:
+                item['nodeid'] = str(self.node_id.get_id(node_id))
 
     def remove_ent(self, item: 'Entity'):
         """Remove an entity from the map.
@@ -366,12 +367,13 @@ class VMF:
 
         self.by_class[item['classname', None]].discard(item)
         self.by_target[item['targetname', None]].discard(item)
-        try:
-            node_id = int(item['nodeid'])
-        except (TypeError, ValueError):
-            pass
-        else:
-            self.node_id.discard(node_id)
+        if 'nodeid' in item:
+            try:
+                node_id = int(item['nodeid'])
+            except (TypeError, ValueError):
+                pass
+            else:
+                self.node_id.discard(node_id)
 
         self.ent_id.discard(item.id)
 
@@ -386,12 +388,13 @@ class VMF:
         for item in ents:
             self.by_class[item['classname', None]].add(item)
             self.by_target[item['targetname', None]].add(item)
-            try:
-                node_id = int(item['nodeid'])
-            except (TypeError, ValueError):
-                pass
-            else:
-                item['nodeid'] = self.node_id.get_id(node_id)
+            if 'nodeid' in item:
+                try:
+                    node_id = int(item['nodeid'])
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    item['nodeid'] = str(self.node_id.get_id(node_id))
 
     def create_ent(self, classname: str, **kargs: ValidKVs) -> 'Entity':
         """Convenience method to allow creating point entities.
@@ -1997,7 +2000,7 @@ class Entity:
             except (TypeError, ValueError):
                 pass
             else:
-                self.keys[key] = self.node_id.get_id(node_id)
+                self.keys[key] = str(self.map.node_id.get_id(node_id))
 
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
