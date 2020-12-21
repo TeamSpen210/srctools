@@ -1,21 +1,26 @@
 """Implements support for collapsing instances."""
 from enum import Enum
-from typing import Dict, Tuple, List, Set, Iterable, AbstractSet, Container
-
-from srctools import Matrix, Vec, Angle, conv_float, conv_int
+from pathlib import Path
+from typing import Dict, Tuple, Set, Iterable, Container, MutableMapping
+from srctools import Matrix, Vec, Angle, conv_float, EmptyMapping
 from srctools.vmf import Entity, EntityFixup, FixupTuple, VMF, Output
 from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
+from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
 import srctools.logger
 
 
 LOGGER = srctools.logger.get_logger(__name__)
+# Hidden variable to track the number of recursions.
+RECUR_COUNT_ATTR = '_inst_recur_count'
+# Prevent displaying errors for missing keyvalues multiple times.
+_UNKNOWN_KV: Set[Tuple[str, str]] = set()
 
 
 class FixupStyle(Enum):
     """The kind of fixup style to use."""
-    NONE = 'none'
-    PREFIX = 'prefix'
-    SUFFIX = 'suffix'
+    PREFIX = 0
+    SUFFIX = 1
+    NONE = 2
 
 
 class Instance:
@@ -39,6 +44,8 @@ class Instance:
         self.face_ids: Dict[int, int] = {}
         self.brush_ids: Dict[int, int] = {}
         self.node_ids: Dict[int, int] = {}
+        # Keep track of recursive instances to handle loops.
+        self.recur_count = 0
 
     @classmethod
     def from_entity(cls, ent: Entity) -> 'Instance':
@@ -49,11 +56,11 @@ class Instance:
             fixup_style = FixupStyle(int(ent['fixup_style', '0']))
         except ValueError:
             LOGGER.warning(
-                'Invalid fixup style "{}" on func_instance "{}" at {}',
-                ent['fixup_style'], name, ent['origin'],
+                'Invalid fixup style "{}" on func_instance "{}" at {} ({})',
+                ent['fixup_style'], name, ent['origin'], filename,
             )
             fixup_style = FixupStyle.PREFIX
-        return cls(
+        inst = cls(
             name,
             filename,
             Vec.from_str(ent['origin']),
@@ -61,6 +68,8 @@ class Instance:
             fixup_style,
             ent.fixup.copy_values(),
         )
+        inst.recur_count = getattr(ent, RECUR_COUNT_ATTR, 0)
+        return inst
 
     def fixup_name(self, name: str) -> str:
         """Apply the name fixup rules to this name."""
@@ -114,7 +123,7 @@ class Instance:
             return ' '.join(sides)
         elif type is ValueTypes.VEC_AXIS:
             value = str(Vec.from_str(value) @ self.orient)
-        elif type is ValueTypes.TARG_NODE_SOURCE or ValueTypes.TARG_NODE_DEST:
+        elif type is ValueTypes.TARG_NODE_SOURCE or type is ValueTypes.TARG_NODE_DEST:
             # For each old ID always create a new ID.
             try:
                 old_id = int(value)
@@ -167,7 +176,7 @@ class InstanceFile:
 
     def parse(self) -> None:
         """Parse func_instance_params and io_proxies in the map."""
-        for params_ent in self.vmf.by_class['func_instance_params']:
+        for params_ent in self.vmf.by_class['func_instance_parms']:
             params_ent.remove()
             for key, value in params_ent.keys.items():
                 if not key.startswith('param'):
@@ -209,6 +218,22 @@ class InstanceFile:
                     out.input = out.target = ''
 
 
+def get_inst_locs(map_filename: Path) -> FileSystemChain:
+    """Given a map filename, find sdk_content and produce the lookup locations.
+
+    The chained filesystem will first look relative to the map, then in
+    sdk_content/maps/ if that's a parent directory.
+    """
+    fsys_rel = RawFileSystem(map_filename.parent)
+    fsys = FileSystemChain(fsys_rel)
+    for parent in map_filename.parents:
+        # parent.parent of a root returns self.
+        if parent.stem == 'maps' and parent.parent.stem == 'sdk_content':
+            fsys.add_sys(RawFileSystem(parent))
+            break
+    return fsys
+
+
 def collapse_one(
     vmf: VMF,
     inst: Instance,
@@ -236,6 +261,7 @@ def collapse_one(
         if old_brush.hidden or not old_brush.vis_shown:
             continue
         new_brush = old_brush.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=False)
+        vmf.add_brush(new_brush)
         inst.brush_ids[old_brush.id] = new_brush.id
         new_brush.localise(origin, orient)
 
@@ -243,15 +269,21 @@ def collapse_one(
         if old_ent.hidden or not old_ent.vis_shown:
             continue
         new_ent = old_ent.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=False)
+        vmf.add_ent(new_ent)
         for old_brush, new_brush in zip(old_ent.solids, new_ent.solids):
             inst.brush_ids[old_brush.id] = new_brush.id
             new_brush.localise(origin, orient)
 
         # Find the FGD to use.
+        classname = new_ent['classname']
         try:
-            ent_type = fgd[new_ent['classname']]
+            ent_type = fgd[classname]
         except KeyError:
             ent_type = base_entity
+
+        # Set a hidden attribute to keep track of recursive instancing.
+        if classname.casefold() == 'func_instance':
+            setattr(new_ent, RECUR_COUNT_ATTR, inst.recur_count + 1)
 
         # Now keyvalues.
         # First extract a rotated angles value, handling the special "pitch" and "yaw" keys.
@@ -264,28 +296,40 @@ def collapse_one(
 
         for key, value in new_ent.keys.items():
             folded = key.casefold()
+            value = inst.fixup.substitute(value, '')
             # Hardcode these critical keyvalues to always be these types.
             if folded == 'origin':
                 new_ent['origin'] = str(Vec.from_str(value) @ orient + origin)
+                continue
             elif folded == 'angles':
                 new_ent['angles'] = str(angles)
+                continue
             elif folded == 'pitch':
                 new_ent['pitch'] = str(angles.pitch)
+                continue
             elif folded == 'yaw':
                 new_ent['yaw'] = str(angles.yaw)
+                continue
             elif folded in ('classname', 'hammerid', 'spawnflags', 'nodeid'):
                 continue
+
             try:
                 kv = ent_type.kv[folded]
             except KeyError:
-                LOGGER.warning('Unknown keyvalue {}.{}', new_ent['classname'], key)
+                if (classname, key) not in _UNKNOWN_KV:
+                    LOGGER.warning('Unknown keyvalue {}.{}', classname, key)
+                    _UNKNOWN_KV.add((classname, key))
                 continue
             # This has specific interactions with angles, it needs to be the pitch KV.
             if kv.type is ValueTypes.ANGLE_NEG_PITCH:
-                LOGGER.warning('angle_negative_pitch should only be applied to pitch, not {}.{}', new_ent['classname'], key)
+                if (classname, key) not in _UNKNOWN_KV:
+                    LOGGER.warning('angle_negative_pitch should only be applied to pitch, not {}.{}', classname, key)
+                    _UNKNOWN_KV.add((classname, key))
                 continue
             elif kv.type is ValueTypes.INST_VAR_REP:
-                LOGGER.warning('instance_variable should only be applied to replaceXX, not {}.{}', new_ent['classname'], key)
+                if (classname, key) not in _UNKNOWN_KV:
+                    LOGGER.warning('instance_variable should only be applied to replaceXX, not {}.{}', classname, key)
+                    _UNKNOWN_KV.add((classname, key))
                 continue
 
             new_ent.keys[key] = inst.fixup_key(vmf, fgd, kv.type, value)
@@ -295,3 +339,42 @@ def collapse_one(
             # Match Valve's bad logic here. TODO: Load the InstanceFile and remap accordingly.
             if value and value[0] not in '@!-.0123456789':
                 new_ent.fixup[key] = inst.fixup_name(value)
+
+        # Outputs
+        for out in new_ent.outputs:
+            out.target = inst.fixup_name(inst.fixup.substitute(out.target, ''))
+
+
+def collapse_all(
+    vmf: VMF,
+    fsys: FileSystem,
+    recur_limit=100,
+    fgd: FGD=None,
+) -> None:
+    """Searches for `func_instance`s in the map, then collapses them.
+
+    The filesystem is used to find the relevant instances.
+    The recursion limit indicates how many instances can be contained
+    in another - if it's exceeded they're left in the map.
+    """
+    if fgd is None:
+        fgd = FGD.engine_dbase()
+
+    cache: Dict[str, InstanceFile] = {}
+    for _ in range(recur_limit):
+        instances = list(vmf.by_class['func_instance'])
+        if not instances:
+            break
+        for inst_ent in instances:
+            inst = Instance.from_entity(inst_ent)
+            inst_ent.remove()
+            LOGGER.info('Collapse {} @ {}', inst.filename, inst.pos)
+            try:
+                file = cache[inst.filename]
+            except KeyError:
+                props = fsys.read_prop(inst.filename)
+                # except FileNotFoundError - fail.
+                file = cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
+            collapse_one(vmf, inst, file, fgd)
+    else:  # Exhausted the range
+        raise RecursionError('Loop in instances!')
