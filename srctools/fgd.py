@@ -119,6 +119,7 @@ class ValueTypes(Enum):
     # Format extensions.
     EXT_STR_TEXTURE = 'texture'  # A VTF, mainly for env_projectedtexture.
     EXT_VEC_DIRECTION = 'vec_dir'  # A vector which should be rotated, but not translated.
+    EXT_VEC_LOCAL = 'vec_local'  # Vector, but do not rotate in instances.
     EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
     EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
 
@@ -140,6 +141,14 @@ class ValueTypes(Enum):
     def extension(self) -> bool:
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
+
+    @property
+    def is_ent_name(self) -> bool:
+        """Several types are simply a targetname."""
+        return self.value in {
+            'target_source', 'target_destination', 'npcclass',
+            'pointentityclass', 'filterclass',
+        }
 
 
 VALUE_TYPE_LOOKUP = {
@@ -168,6 +177,7 @@ VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_DIRECTION] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_LOCAL] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.ANGLES] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 # Only one color type present.
@@ -295,6 +305,7 @@ VALUE_TYPE_ORDER = [
     ValueTypes.EXT_ANGLE_PITCH,
     ValueTypes.EXT_ANGLES_LOCAL,
     ValueTypes.EXT_VEC_DIRECTION,
+    ValueTypes.EXT_VEC_LOCAL,
 ]
 
 # Ditto for entity types.
