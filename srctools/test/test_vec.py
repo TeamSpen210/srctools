@@ -250,6 +250,35 @@ def test_scalar(py_c_vec):
                 )
 
 
+@pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
+    ('x', 0, 'y', 'z', 1, 2), ('y', 1, 'x', 'z', 0, 2), ('z', 2, 'x', 'y', 0, 1),
+], ids='xyz')
+def test_vec_props(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+    """Test the X/Y/Z attributes and item access."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec = Vec()
+
+    def check(targ: float, other: float):
+        """Check all the indexes are correct."""
+        assert getattr(vec, axis) == targ, (vec, targ, other)
+        assert getattr(vec, u) == other, (vec, targ, other)
+        assert getattr(vec, v) == other, (vec, targ, other)
+
+        assert vec[index] == targ, (vec, targ, other)
+        assert vec[axis] == targ, (vec, targ, other)
+        assert vec[u_ax] == other, (vec, targ, other)
+        assert vec[v_ax] == other, (vec, targ, other)
+        assert vec[u] == other, (vec, targ, other)
+        assert vec[v] == other, (vec, targ, other)
+
+    for oth in VALID_ZERONUMS:
+        vec.x = vec.y = vec.z = oth
+        check(oth, oth)
+        for x in VALID_ZERONUMS:
+            setattr(vec, axis, x)
+            check(x, oth)
+
+
 def test_vec_to_vec(py_c_vec):
     """Check that Vec() +/- Vec() does the correct thing.
 

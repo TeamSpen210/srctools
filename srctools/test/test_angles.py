@@ -118,3 +118,41 @@ def test_with_axes(py_c_vec):
             assert getattr(ang, a) == x
             assert getattr(ang, b) == y
             assert getattr(ang, c) == z
+
+
+@pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
+    ('pitch', 0, 'yaw', 'roll', 1, 2), ('yaw', 1, 'pitch', 'roll', 0, 2), ('roll', 2, 'pitch', 'yaw', 0, 1),
+], ids=['pitch', 'yaw', 'roll'])
+def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+    """Test the pitch/yaw/roll attributes and item access."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    ang = Angle()
+
+    def check(targ: float, other: float):
+        """Check all the indexes are correct."""
+        assert math.isclose(getattr(ang, axis), targ), f'ang.{axis} != {targ}, other: {other}'
+        assert math.isclose(getattr(ang, u), other), f'ang.{u} != {other}, targ={targ}'
+        assert math.isclose(getattr(ang, v), other), f'ang.{v} != {other}, targ={targ}'
+
+        assert math.isclose(ang[index], targ),  f'ang[{index}] != {targ}, other: {other}'
+        assert math.isclose(ang[axis], targ), f'ang[{axis!r}] != {targ}, other: {other}'
+        assert math.isclose(ang[u_ax], other),  f'ang[{u_ax!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[v_ax], other), f'ang[{v_ax!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[u], other),  f'ang[{u!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[v], other), f'[{v!r}] != {other}, targ={targ}'
+
+    nums = [
+        (0, 0.0),
+        (38.29, 38.29),
+        (-89.0, 271.0),
+        (360.0, 0.0),
+        (361.49, 1.49),
+        (-725.87, 354.13),
+    ]
+
+    for oth_set, oth_read in nums:
+        ang.pitch = ang.yaw = ang.roll = oth_set
+        check(oth_read, oth_read)
+        for x_set, x_read in nums:
+            setattr(ang, axis, x_set)
+            check(x_read, oth_read)
