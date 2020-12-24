@@ -25306,7 +25306,7 @@ static PyObject *__pyx_pf_8srctools_4_vec_5Angle_5pitch___get__(struct __pyx_obj
  * 
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = norm_ang(pitch)
+ *         self.val.x = norm_ang(pitch)
  * 
  */
 
@@ -25344,17 +25344,17 @@ static int __pyx_pf_8srctools_4_vec_5Angle_5pitch_2__set__(struct __pyx_obj_8src
   /* "srctools/_vec.pyx":2074
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:
- *         self.val.y = norm_ang(pitch)             # <<<<<<<<<<<<<<
+ *         self.val.x = norm_ang(pitch)             # <<<<<<<<<<<<<<
  * 
  *     @property
  */
-  __pyx_v_self->val.y = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_pitch);
+  __pyx_v_self->val.x = __pyx_f_8srctools_4_vec_norm_ang(__pyx_v_pitch);
 
   /* "srctools/_vec.pyx":2073
  * 
  *     @pitch.setter
  *     def pitch(self, double pitch) -> None:             # <<<<<<<<<<<<<<
- *         self.val.y = norm_ang(pitch)
+ *         self.val.x = norm_ang(pitch)
  * 
  */
 

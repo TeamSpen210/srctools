@@ -2071,7 +2071,7 @@ cdef class Angle:
 
     @pitch.setter
     def pitch(self, double pitch) -> None:
-        self.val.y = norm_ang(pitch)
+        self.val.x = norm_ang(pitch)
 
     @property
     def yaw(self) -> float:
