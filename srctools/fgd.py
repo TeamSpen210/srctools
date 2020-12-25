@@ -1518,14 +1518,14 @@ class EntityDef:
         for attr in ['keyvalues', 'inputs', 'outputs']:
             coll = {}
             setattr(copy, attr, coll)
-            for key, tags_map in getattr(copy, attr).items():
+            for key, tags_map in getattr(self, attr).items():
                 coll[key] = {
                     key: value.copy()
                     for key, value in tags_map.items()
                 }
-        copy.kv = _EntityView(self, 'keyvalues', 'kv')
-        copy.inp = _EntityView(self, 'inputs', 'inp')
-        copy.out = _EntityView(self, 'outputs', 'out')
+        copy.kv = _EntityView(copy, 'keyvalues', 'kv')
+        copy.inp = _EntityView(copy, 'inputs', 'inp')
+        copy.out = _EntityView(copy, 'outputs', 'out')
         return copy
 
     def __getstate__(self) -> tuple:
