@@ -304,6 +304,7 @@ class Model:
         self._file = file
         self._sys = filesystem
         self.version = 49
+        self.checksum = b'\0\0\0\0'
 
         self.phys_keyvalues = Property(None, [])
         with self._sys, self._file.open_bin() as f:
@@ -325,10 +326,10 @@ class Model:
             raise ValueError('Not a model!')
         (
             self.version,
+            self.checksum,
             name,
             file_len,
-            # 4 bytes are unknown...
-        ) = struct_read('i 4x 64s i', f)
+        ) = struct_read('i 4s 64s i', f)
 
         if not 44 <= self.version <= 49:
             raise ValueError('Unknown MDL version {}!'.format(self.version))
