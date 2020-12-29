@@ -169,6 +169,10 @@ class PackList:
     def __iter__(self) -> Iterator[PackFile]:
         return iter(self._files.values())
 
+    def filenames(self) -> Iterator[str]:
+        """The filenames of all packed files."""
+        return iter(self._files.keys())
+
     def __contains__(self, path: str) -> bool:
         return unify_path(path) in self._files
 
