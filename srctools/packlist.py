@@ -946,8 +946,9 @@ class PackList:
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL, optional=file.optional)
 
-        for param_name, param_type, param_value in mat:
+        for param_name, param_value in mat.items():
             param_value = param_value.casefold()
+            param_type = VarType.from_name(param_name)
             if param_type is VarType.TEXTURE:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
