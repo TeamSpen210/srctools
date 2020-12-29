@@ -82,6 +82,7 @@ setup(
         'console_scripts': [
             'srctools_dump_parms = srctools.scripts.dump_parms:main',
             'srctools_diff = srctools.scripts.diff:main',
+            'srctools_find_deps = srctools.scripts.find_deps:main',
         ],
         'pyinstaller40': [
             'hook-dirs = srctools._pyinstaller:get_hook_dirs',
