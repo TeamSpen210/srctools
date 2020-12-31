@@ -633,6 +633,51 @@ class HelperLightSpot(Helper):
     """Specialized helper for displaying spotlight previews."""
     TYPE = HelperTypes.ENT_LIGHT_CONE
 
+    def __init__(self, inner_cone: str, outer_cone: str, color_kv: str, pitch_scale: float) -> None:
+        self.inner = inner_cone
+        self.outer = outer_cone
+        self.color = color_kv
+        self.pitch_scale = pitch_scale
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse lightcone(inner, outer, color, pitch_scale)."""
+        if len(args) >= 1:
+            inner_cone = args[0]
+        else:
+            inner_cone = '_inner_cone'
+        if len(args) >= 2:
+            outer_cone = args[1]
+        else:
+            outer_cone = '_cone'
+        if len(args) >= 3:
+            color = args[2]
+        else:
+            color = '_light'
+        if len(args) >= 4:
+            pitch_scale = float(args[3])
+        else:
+            pitch_scale = 1.0
+
+        return cls(inner_cone, outer_cone, color, pitch_scale)
+
+    def export(self) -> List[str]:
+        """Produce the arguments for lightcone()."""
+        # Do it in reverse - if any parameter is changed all previous must match.
+        rev_args = []
+        if self.pitch_scale != 1.0:
+            return [
+                self.inner, self.outer, self.color,
+                format(self.pitch_scale, 'g'),
+            ]
+        if self.color != '_light':
+            return [self.inner, self.outer, self.color]
+        if self.outer != '_cone':
+            return [self.inner, self.outer]
+        if self.inner != '_inner_cone':
+            return [self.inner]
+        return []
+
 
 class HelperLightSpotBlackMesa(Helper):
     """A new helper for Black Mesa's new spot entity."""
