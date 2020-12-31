@@ -81,7 +81,7 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
+cdef unsigned char _parse_vec_str(vec_t *vec, object value, x, y, z) except False:
     cdef unicode str_x, str_y, str_z
     cdef list split_value
 
@@ -121,7 +121,7 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
     return True
 
 
-def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
+def parse_vec_str(val, x=0.0, y=0.0, z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
