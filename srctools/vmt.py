@@ -37,6 +37,7 @@ class VarType(Enum):
     # 'center .5 .5 scale 1 1 rotate 0 translate 0 0'
     # '[1 0 0 0 1 0 0 0 1]'
     MATRIX = 'SHADER_PARAM_TYPE_MATRIX'  # 9-matrix, or center scale rotate etc
+    MATRIX_4X2 = 'SHADER_PARAM_TYPE_MATRIX4X2'  # Partially implemented, only a 2x4=8 matrix?
 
     #ENVMAP = 'SHADER_PARAM_TYPE_ENVMAP' # Obsolete apparently
     # Special case - pointer to arbitrary shader-specific data.
