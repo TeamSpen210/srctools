@@ -663,8 +663,7 @@ class HelperLightSpot(Helper):
 
     def export(self) -> List[str]:
         """Produce the arguments for lightcone()."""
-        # Do it in reverse - if any parameter is changed all previous must match.
-        rev_args = []
+        # If any parameter is different, all previous must be provided.
         if self.pitch_scale != 1.0:
             return [
                 self.inner, self.outer, self.color,
