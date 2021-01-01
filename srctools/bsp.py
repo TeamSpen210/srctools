@@ -9,8 +9,7 @@ import itertools
 
 from zipfile import ZipFile
 
-from srctools import AtomicWriter, Vec, conv_int
-from srctools.fgd import FGD, EntityDef, EntityTypes
+from srctools import AtomicWriter, Vec, Angle, conv_int
 from srctools.vmf import VMF, Entity, Output
 from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
@@ -576,7 +575,7 @@ class BSP:
 
         for i in range(prop_count):
             origin = Vec(struct_read('fff', static_lump))
-            angles = Vec(struct_read('fff', static_lump))
+            angles = Angle(struct_read('fff', static_lump))
 
             [model_ind] = struct_read('<H', static_lump)
 
@@ -711,9 +710,9 @@ class BSP:
                 prop.origin.x,
                 prop.origin.y,
                 prop.origin.z,
-                prop.angles.x,
-                prop.angles.y,
-                prop.angles.z,
+                prop.angles.pitch,
+                prop.angles.yaw,
+                prop.angles.roll,
                 model_ind[prop.model],
             ))
 
@@ -907,7 +906,7 @@ class StaticProp:
         self,
         model: str,
         origin: Vec,
-        angles: Vec,
+        angles: Angle,
         scaling: float,
         visleafs: List[int],
         solidity: int,
