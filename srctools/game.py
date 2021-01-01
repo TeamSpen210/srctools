@@ -75,13 +75,13 @@ class Game:
 
     def parse_search_path(self, prop: Property) -> Path:
         """Evaluate options like |gameinfo_path|."""
-        if prop.value.startswith('|gameinfo_path|'):
+        if prop.value.casefold().startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
         # We should have to figure out which of the possible paths this is.
         # But, the game (public/filesystem_init.cpp) doesn't actually, it
         # assumes Steam has included the needed VPKs.
-        if prop.value.startswith('|all_source_engine_paths|'):
+        if prop.value.casefold().startswith('|all_source_engine_paths|'):
             return (self.root / prop.value[25:]).absolute()
 
         return (self.root / prop.value).absolute()
