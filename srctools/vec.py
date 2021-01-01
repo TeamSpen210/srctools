@@ -1116,7 +1116,8 @@ class Matrix:
     def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> 'Matrix':
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         x, y, z = Vec(axis).norm()
-        angle_rad = math.radians(angle)
+        # Invert, so it matches the orientation of Angles().
+        angle_rad = -math.radians(angle)
         cos = math.cos(angle_rad)
         icos = 1 - cos
         sin = math.sin(angle_rad)
@@ -1125,7 +1126,7 @@ class Matrix:
 
         mat._aa = x*x * icos + cos
         mat._ab = x*y * icos - z*sin
-        mat._ac = x*z * icos - y*sin
+        mat._ac = x*z * icos + y*sin
 
         mat._ba = y*x * icos + z*sin
         mat._bb = y*y * icos + cos

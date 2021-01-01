@@ -22171,7 +22171,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  *         cdef double sin, cos, icos, x, y, z
  *         _conv_vec(&vec_axis, axis, scalar=False)             # <<<<<<<<<<<<<<
  *         _vec_normalise(&vec_axis, &vec_axis)
- *         angle *= deg_2_rad
+ *         angle *= -deg_2_rad
  */
   __pyx_t_1 = __pyx_f_8srctools_4_vec__conv_vec((&__pyx_v_vec_axis), __pyx_v_axis, 0); if (unlikely(__pyx_t_1 == ((unsigned char)0))) __PYX_ERR(0, 1837, __pyx_L1_error)
 
@@ -22179,7 +22179,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  *         cdef double sin, cos, icos, x, y, z
  *         _conv_vec(&vec_axis, axis, scalar=False)
  *         _vec_normalise(&vec_axis, &vec_axis)             # <<<<<<<<<<<<<<
- *         angle *= deg_2_rad
+ *         angle *= -deg_2_rad
  * 
  */
   __pyx_f_8srctools_4_vec__vec_normalise((&__pyx_v_vec_axis), (&__pyx_v_vec_axis));
@@ -22187,14 +22187,14 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   /* "srctools/_vec.pyx":1839
  *         _conv_vec(&vec_axis, axis, scalar=False)
  *         _vec_normalise(&vec_axis, &vec_axis)
- *         angle *= deg_2_rad             # <<<<<<<<<<<<<<
+ *         angle *= -deg_2_rad             # <<<<<<<<<<<<<<
  * 
  *         cos = math.cos(angle)
  */
-  __pyx_v_angle = (__pyx_v_angle * 0.017453292519943295);
+  __pyx_v_angle = (__pyx_v_angle * -0.017453292519943295);
 
   /* "srctools/_vec.pyx":1841
- *         angle *= deg_2_rad
+ *         angle *= -deg_2_rad
  * 
  *         cos = math.cos(angle)             # <<<<<<<<<<<<<<
  *         icos = 1 - cos
@@ -22255,7 +22255,7 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
  * 
  *         cdef Matrix mat = Matrix.__new__(cls)             # <<<<<<<<<<<<<<
  * 
- *         mat.mat[0][1] = x*x * icos + cos
+ *         mat.mat[0][0] = x*x * icos + cos
  */
   __pyx_t_4 = __Pyx_PyObject_GetAttrStr(((PyObject *)__pyx_ptype_8srctools_4_vec_Matrix), __pyx_n_s_new); if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 1849, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_4);
@@ -22281,32 +22281,32 @@ static struct __pyx_obj_8srctools_4_vec_Matrix *__pyx_pf_8srctools_4_vec_6Matrix
   /* "srctools/_vec.pyx":1851
  *         cdef Matrix mat = Matrix.__new__(cls)
  * 
- *         mat.mat[0][1] = x*x * icos + cos             # <<<<<<<<<<<<<<
- *         mat.mat[0][2] = x*y * icos - z*sin
- *         mat.mat[0][3] = x*z * icos - y*sin
+ *         mat.mat[0][0] = x*x * icos + cos             # <<<<<<<<<<<<<<
+ *         mat.mat[0][1] = x*y * icos - z*sin
+ *         mat.mat[0][2] = x*z * icos + y*sin
  */
-  ((__pyx_v_mat->mat[0])[1]) = (((__pyx_v_x * __pyx_v_x) * __pyx_v_icos) + __pyx_v_cos);
+  ((__pyx_v_mat->mat[0])[0]) = (((__pyx_v_x * __pyx_v_x) * __pyx_v_icos) + __pyx_v_cos);
 
   /* "srctools/_vec.pyx":1852
  * 
- *         mat.mat[0][1] = x*x * icos + cos
- *         mat.mat[0][2] = x*y * icos - z*sin             # <<<<<<<<<<<<<<
- *         mat.mat[0][3] = x*z * icos - y*sin
+ *         mat.mat[0][0] = x*x * icos + cos
+ *         mat.mat[0][1] = x*y * icos - z*sin             # <<<<<<<<<<<<<<
+ *         mat.mat[0][2] = x*z * icos + y*sin
  * 
  */
-  ((__pyx_v_mat->mat[0])[2]) = (((__pyx_v_x * __pyx_v_y) * __pyx_v_icos) - (__pyx_v_z * __pyx_v_sin));
+  ((__pyx_v_mat->mat[0])[1]) = (((__pyx_v_x * __pyx_v_y) * __pyx_v_icos) - (__pyx_v_z * __pyx_v_sin));
 
   /* "srctools/_vec.pyx":1853
- *         mat.mat[0][1] = x*x * icos + cos
- *         mat.mat[0][2] = x*y * icos - z*sin
- *         mat.mat[0][3] = x*z * icos - y*sin             # <<<<<<<<<<<<<<
+ *         mat.mat[0][0] = x*x * icos + cos
+ *         mat.mat[0][1] = x*y * icos - z*sin
+ *         mat.mat[0][2] = x*z * icos + y*sin             # <<<<<<<<<<<<<<
  * 
  *         mat.mat[1][0] = y*x * icos + z*sin
  */
-  ((__pyx_v_mat->mat[0])[3]) = (((__pyx_v_x * __pyx_v_z) * __pyx_v_icos) - (__pyx_v_y * __pyx_v_sin));
+  ((__pyx_v_mat->mat[0])[2]) = (((__pyx_v_x * __pyx_v_z) * __pyx_v_icos) + (__pyx_v_y * __pyx_v_sin));
 
   /* "srctools/_vec.pyx":1855
- *         mat.mat[0][3] = x*z * icos - y*sin
+ *         mat.mat[0][2] = x*z * icos + y*sin
  * 
  *         mat.mat[1][0] = y*x * icos + z*sin             # <<<<<<<<<<<<<<
  *         mat.mat[1][1] = y*y * icos + cos

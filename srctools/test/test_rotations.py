@@ -154,6 +154,20 @@ def test_single_axis(py_c_vec):
                 )
 
 
+def test_axis_angle(py_c_vec) -> None:
+    """Test Matrix.axis_angle() computes the 6 basis vectors correctly."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    def test(axis, equiv_ang: Py_Angle):
+        for ang in range(0, 360, 15):
+            assert_rot(Matrix.axis_angle(axis, ang), Matrix.from_angle(ang * equiv_ang), f'{axis} * {ang} != {equiv_ang}')
+            # Inverse axis = reversed rotation.
+            assert_rot(Matrix.axis_angle(-axis, ang), Matrix.from_angle(-ang * equiv_ang), f'{-axis} * {ang} != {equiv_ang}')
+    test(Vec(1, 0, 0), Angle(0, 0, 1))
+    test(Vec(0, 1, 0), Angle(1, 0, 0))
+    test(Vec(0, 0, 1), Angle(0, 1, 0))
+
+
 def old_mat_mul(
     self,
     a: float, b: float, c: float,

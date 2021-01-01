@@ -1836,7 +1836,7 @@ cdef class Matrix:
         cdef double sin, cos, icos, x, y, z
         _conv_vec(&vec_axis, axis, scalar=False)
         _vec_normalise(&vec_axis, &vec_axis)
-        angle *= deg_2_rad
+        angle *= -deg_2_rad
 
         cos = math.cos(angle)
         icos = 1 - cos
@@ -1848,9 +1848,9 @@ cdef class Matrix:
 
         cdef Matrix mat = Matrix.__new__(cls)
 
-        mat.mat[0][1] = x*x * icos + cos
-        mat.mat[0][2] = x*y * icos - z*sin
-        mat.mat[0][3] = x*z * icos - y*sin
+        mat.mat[0][0] = x*x * icos + cos
+        mat.mat[0][1] = x*y * icos - z*sin
+        mat.mat[0][2] = x*z * icos + y*sin
 
         mat.mat[1][0] = y*x * icos + z*sin
         mat.mat[1][1] = y*y * icos + cos
