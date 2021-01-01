@@ -1642,6 +1642,7 @@ def _mk(x: float, y: float, z: float) -> Vec:
 
 Cy_Vec = Py_Vec = Vec
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
+Cy_to_matrix = Py_to_matrix = to_matrix
 Cy_Angle = Py_Angle = Angle
 Cy_Matrix = Py_Matrix = Matrix
 
@@ -1652,6 +1653,6 @@ try:
 except ImportError:
     pass
 else:
-    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str']:
+    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix']:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_vec, _name)
     del _glob, _name, _vec
