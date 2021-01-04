@@ -57,6 +57,14 @@ Tuple3 = Tuple[float, float, float]
 AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
 
 
+def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    """Linearly interpolate from in to out.
+
+    If both in values are the same, ZeroDivisionError is raised.
+    """
+    return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
+
+
 def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
@@ -1643,6 +1651,7 @@ def _mk(x: float, y: float, z: float) -> Vec:
 Cy_Vec = Py_Vec = Vec
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = Py_to_matrix = to_matrix
+Cy_lerp = Py_lerp = lerp
 Cy_Angle = Py_Angle = Angle
 Cy_Matrix = Py_Matrix = Matrix
 
@@ -1653,6 +1662,6 @@ try:
 except ImportError:
     pass
 else:
-    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix']:
+    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix', 'lerp']:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_vec, _name)
     del _glob, _name, _vec

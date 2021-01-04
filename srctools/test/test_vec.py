@@ -28,6 +28,20 @@ def test_matching_apis() -> None:
     assert get_public(vec_mod.Cy_Angle) == get_public(vec_mod.Py_Angle)
 
 
+@parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
+def test_lerp(lerp_func) -> None:
+    """Test the lerp function."""
+    assert lerp_func(-4.0, -4.0, 10, 50.0, 80.0) == pytest.approx(50.0)
+    assert lerp_func(10.0, -4.0, 10, 50.0, 80.0) == pytest.approx(80.0)
+    assert lerp_func(2.0, 0.0, 10.0, 50.0, 40.0) == pytest.approx(48.0)
+    assert lerp_func(5.0, 0.0, 10.0, 50.0, 40.0) == pytest.approx(45.0)
+    assert lerp_func(-10, 0, 10, 8, 9) == pytest.approx(7.0)
+    assert lerp_func(15, 0, 10, 8, 9) == pytest.approx(9.5)
+
+    with raises_zero_div:
+        lerp_func(30.0, 45.0, 45.0, 80, 90)  # In is equal
+
+
 def test_construction(py_c_vec):
     """Check various parts of the constructor.
     

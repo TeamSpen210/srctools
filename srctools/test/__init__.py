@@ -128,3 +128,11 @@ def py_c_vec(request):
         vec_mod.Matrix = orig_Matrix
         vec_mod.Angle = orig_Angle
         vec_mod.parse_vec_str = orig_parse
+
+
+def parameterize_cython(param: str, py_vers, cy_vers):
+    """If the Cython version is available, parameterize the test function."""
+    if py_vers is cy_vers:
+        return pytest.mark.parametrize(param, [py_vers], ids=['Python'])
+    else:
+        return pytest.mark.parametrize(param, [py_vers, cy_vers], ids=['Python', 'Cython'])

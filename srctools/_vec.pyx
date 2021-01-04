@@ -135,6 +135,15 @@ def parse_vec_str(val, x=0.0, y=0.0, z=0.0):
     return _make_tuple(vec.x, vec.y, vec.z)
 
 
+@cython.cdivision(False)  # ZeroDivisionError is needed.
+def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    """Linearly interpolate from in to out.
+
+    If both in values are the same, ZeroDivisionError is raised.
+    """
+    return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
+
+
 cdef inline unsigned char _conv_vec(
     vec_t *result,
     object vec,
