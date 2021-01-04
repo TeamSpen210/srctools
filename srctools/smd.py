@@ -18,7 +18,7 @@ __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
 ]
 
-from srctools.vec import to_matrix, Angle, Matrix
+from srctools.math import to_matrix, Angle, Matrix
 
 
 class Bone:

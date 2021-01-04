@@ -13,7 +13,7 @@ from srctools.binformat import (
     str_readvec,
 )
 from srctools.filesys import FileSystem, File
-from srctools.vec import Vec
+from srctools.math import Vec
 from struct import Struct
 
 

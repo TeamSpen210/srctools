@@ -471,7 +471,7 @@ class AtomicWriter:
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
-from srctools.vec import Vec, Vec_tuple, parse_vec_str, Angle, Matrix
+from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
 from srctools.property_parser import NoKeyError, KeyValError, Property
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis

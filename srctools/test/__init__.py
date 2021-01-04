@@ -1,13 +1,13 @@
 """Helpers for performing tests."""
 import itertools
 
-from srctools.vec import (
+from srctools.math import (
     Py_Vec, Cy_Vec,
     Py_Angle, Cy_Angle,
     Py_Matrix, Cy_Matrix,
     Py_parse_vec_str, Cy_parse_vec_str,
 )
-from srctools import vec as vec_mod
+from srctools import math as vec_mod
 import pytest
 import math
 

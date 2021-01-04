@@ -4,7 +4,7 @@ import copy
 
 import operator as op
 from srctools.test import *
-from srctools import Vec_tuple, vec as vec_mod
+from srctools import Vec_tuple, math as vec_mod
 
 try:
     from importlib.resources import path as import_file_path

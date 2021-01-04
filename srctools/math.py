@@ -47,7 +47,7 @@ from typing import (
 
 
 __all__ = [
-    'parse_vec_str', 'to_matrix',
+    'parse_vec_str', 'to_matrix', 'lerp',
     'Vec', 'Vec_tuple',
     'Angle', 'Matrix',
 ]

@@ -66,8 +66,8 @@ setup(
             extra_link_args=['/openmp' if WIN else '-fopenmp'],
         ),
         Extension(
-            "srctools._vec",
-            sources=["srctools/_vec" + c_ext],
+            "srctools._math",
+            sources=["srctools/_math" + c_ext],
             # extra_compile_args=['/FAs'],  # MS ASM dump
         ),
     ]),

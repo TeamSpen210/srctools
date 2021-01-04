@@ -20,7 +20,7 @@ from typing import (
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec, Angle, Matrix, to_matrix
+from srctools.math import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 

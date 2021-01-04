@@ -62,7 +62,7 @@ import keyword
 import builtins  # Property.bool etc shadows these.
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec as _Vec
+from srctools.math import Vec as _Vec
 from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (

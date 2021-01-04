@@ -40,7 +40,7 @@ cdef object unpickle_func
 
 # Grab the Vec_Tuple class.
 cdef object Vec_tuple
-from srctools.vec import _mk as unpickle_func, Vec_tuple
+from srctools.math import _mk as unpickle_func, Vec_tuple
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
