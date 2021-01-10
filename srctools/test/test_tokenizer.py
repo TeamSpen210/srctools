@@ -480,3 +480,79 @@ def test_early_binary_arg(py_c_token):
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
+
+def test_block_iter(py_c_token):
+    """Test the Tokenizer.block() helper."""
+    # First two correct usages:
+    tok = py_c_token('''\
+    "test"
+    {
+    "blah" "value"
+    
+    "another" "value"
+    }
+    ''')
+    assert tok() == (Token.STRING, "test")
+    bl = tok.block("tester")
+    assert next(bl) == "blah"
+    assert next(bl) == "value"
+    assert next(bl) == "another"
+    assert next(bl) == "value"
+    with raises(StopIteration):
+        next(bl)
+
+    tok = py_c_token(' "blah" "value" } ')
+    bl = tok.block("tester", False)
+    assert next(bl) == "blah"
+    assert next(bl) == "value"
+    with raises(StopIteration):
+        next(bl)
+
+    # Completes correctly with no values.
+    assert list(py_c_token('{}').block('')) == []
+
+    # We can remove tokens halfway through on the original tokenizer.
+    tok = py_c_token(' { \n\n"legal" { + } block } ')
+    bl = tok.block("test")
+    assert next(bl) == 'legal'
+    assert tok() == (Token.BRACE_OPEN, '{')
+    assert tok() == (Token.PLUS, '+')
+    assert tok() == (Token.BRACE_CLOSE, '}')
+    assert next(bl) == 'block'
+    with raises(StopIteration):
+        next(bl)
+
+    # Now errors.
+
+    # Not an open brace, also it must defer to the first next() call.
+    b = py_c_token(' hi ').block('blah', consume_brace=True)
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Also with implicit consume_brace
+    b = py_c_token(' hi ').block('blah')
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Open brace where there shouldn't.
+    b = py_c_token('{').block('blah', consume_brace=False)
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Two open braces, only consume one.
+    b = py_c_token('{ {').block('blah')
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # And one in the middle.
+    b = py_c_token('{ "test" { "never-here" } ').block('blah')
+    assert next(b) == "test"
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Running off the end uses the block in the result.
+    b = py_c_token('{ blah "blah" ').block('SpecialBlockName')
+    assert next(b) == "blah"
+    assert next(b) == "blah"
+    with raises(TokenSyntaxError, match='SpecialBlockName'):
+        next(b)

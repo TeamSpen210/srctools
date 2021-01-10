@@ -32,6 +32,9 @@ cdef:
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
 
+    object BRACE_OPEN = Token.BRACE_OPEN
+    object BRACE_CLOSE = Token.BRACE_CLOSE
+
     # Iterator that immediately raises StopIteration.
     object EMPTY_ITER = iter('')
 
@@ -43,8 +46,8 @@ cdef:
     tuple EQUALS_TUP = (Token.EQUALS, '=')
     tuple PLUS_TUP = (Token.PLUS, '+')
 
-    tuple BRACE_OPEN_TUP = (Token.BRACE_OPEN, '{')
-    tuple BRACE_CLOSE_TUP = (Token.BRACE_CLOSE, '}')
+    tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
+    tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
 
     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
     tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
@@ -543,6 +546,17 @@ cdef class Tokenizer:
         """Iterate over the tokens, skipping newlines."""
         return _NewlinesIter.__new__(_NewlinesIter, self)
 
+
+    def block(self, str name, consume_brace=True):
+        """Helper iterator for parsing keyvalue style blocks.
+
+        This will first consume a {. Then it will skip newlines, and output
+        each string section found. When } is found it terminates, anything else
+        produces an appropriate error.
+        This is safely re-entrant, and tokens can be taken or put back as required.
+        """
+        return BlockIter.__new__(BlockIter, self, name, consume_brace)
+
     def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
 
@@ -597,6 +611,55 @@ cdef class _NewlinesIter:
     def __reduce__(self):
         """This cannot be pickled - the Python version does not have this class."""
         raise NotImplementedError('Cannot pickle _NewlinesIter!')
+
+
+@cython.final
+@cython.embedsignature(False)
+@cython.internal
+cdef class BlockIter:
+    """Helper iterator for parsing keyvalue style blocks."""
+    cdef Tokenizer tok
+    cdef str name
+    cdef bint expect_brace
+
+    def __cinit__(self, Tokenizer tok not None, str name, bint expect_brace, *):
+        self.tok = tok
+        self.name = name
+        self.expect_brace = expect_brace
+
+    def __repr__(self):
+        return f'<srctools.tokenizer.Tokenizer.block() at {id(self):X}>'
+
+    def __init__(self, tok):
+        raise TypeError("Cannot create 'BlockIter' instances")
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.expect_brace:
+            self.expect_brace = False
+            next_token = <tuple> self.tok.next_token()[0]
+            while next_token is NEWLINE:
+                next_token = <tuple> self.tok.next_token()[0]
+            if next_token is not BRACE_OPEN:
+                raise self.tok._error(f'Expected BRACE_OPEN, but got {next_token}' '!')
+
+        while True:
+            token, value = <tuple>self.tok.next_token()
+
+            if token is EOF:
+                raise self.tok._error(f'Unclosed {self.name} block!')
+            elif token is STRING:
+                return value
+            elif token is BRACE_CLOSE:
+                raise StopIteration
+            elif token is not NEWLINE:
+                raise self.tok.error(token)
+
+    def __reduce__(self):
+        """This cannot be pickled - the Python version does not have this class."""
+        raise NotImplementedError('Cannot pickle BlockIter!')
 
 
 @cython.nonecheck(False)
