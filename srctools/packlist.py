@@ -66,12 +66,12 @@ EXT_TYPE = {
 
 # VScript function names that imply resources. This assumes it's the first
 # argument.
-SCRIPT_FUNC_TYPES: Dict[str, Tuple[str, FileType]] = {
-    'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
-    'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
-    'PrecacheScriptSound': ('', FileType.GAME_SOUND),
-    'PrecacheSoundScript': ('', FileType.GAME_SOUND),
-    'PrecacheModel': ('', FileType.MODEL),
+SCRIPT_FUNC_TYPES: Dict[bytes, Tuple[str, FileType]] = {
+    b'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    b'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    b'PrecacheScriptSound': ('', FileType.GAME_SOUND),
+    b'PrecacheSoundScript': ('', FileType.GAME_SOUND),
+    b'PrecacheModel': ('', FileType.MODEL),
 }
 
 
@@ -969,20 +969,33 @@ class PackList:
         to PrecacheSoundScript, IncludeScript, DoIncludeScript, etc.
         """
         # Be fairly sloppy, just match func("param"
-        func_pattern = re.compile(r'([a-zA-Z]+)\s*\(\s*"([^"]+)"')
-        try:
-            with self.fsys, self.fsys.open_str(file.filename) as f:
-                for match in func_pattern.findall(f.read()):
-                    func, arg = match
-                    try:
-                        prefix, param_type = SCRIPT_FUNC_TYPES[func]
-                    except KeyError:
-                        continue
-                    self.pack_file(prefix + arg, param_type, optional=file.optional)
-        except FileNotFoundError:
-            if not file.optional:
-                LOGGER.warning('File "{}" does not exist!', file.filename)
-            return
+        # Also do in the binary level, so we're tolerant of any ASCII-compatible
+        # encodings. Squirrel itself doesn't have complex Unicode support.
+        func_pattern = re.compile(rb'([a-zA-Z]+)\s*\(\s*"([^"]+)"')
+        if file.data:
+            data = file.data
+        else:
+            try:
+                with self.fsys, self.fsys.open_bin(file.filename) as f:
+                    data = f.read()
+            except FileNotFoundError:
+                if not file.optional:
+                    LOGGER.warning('File "{}" does not exist!', file.filename)
+                return
+
+        func: bytes
+        arg: bytes
+        for func, arg in func_pattern.findall(data):
+            try:
+                prefix, param_type = SCRIPT_FUNC_TYPES[func]
+            except KeyError:
+                continue
+            try:
+                filename = prefix + arg.decode('utf8')
+            except UnicodeDecodeError:
+                LOGGER.warning("Can't read filename in VScript:", exc_info=True)
+                continue
+            self.pack_file(filename, param_type, optional=file.optional)
 
 
 # noinspection PyProtectedMember
