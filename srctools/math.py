@@ -397,7 +397,7 @@ class Vec:
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
         """
-        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning)
+        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
         self @= Py_Angle(pitch, yaw, roll)
         if round_vals:
             self.x = round(self.x, 6)
@@ -410,7 +410,7 @@ class Vec:
 
         If the string cannot be parsed, use the passed in values instead.
         """
-        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning)
+        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
         self @= Py_Angle.from_str(ang, pitch, yaw, roll)
         if round_vals:
             self.x = round(self.x, 6)
@@ -543,15 +543,15 @@ class Vec:
         warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
         return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
-    def rotation_around(self, rot: float=90) -> 'Vec':
+    def rotation_around(self, rot: float=90) -> 'Angle':
         """For an axis-aligned normal, return the angles which rotate around it."""
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self.x and not self.y and not self.z:
-            return Py_Vec(z=math.copysign(rot, self.x))
+            return Py_Angle(roll=math.copysign(rot, self.x))
         elif self.y and not self.x and not self.z:
-            return Py_Vec(x=math.copysign(rot, self.y))
+            return Py_Angle(pitch=math.copysign(rot, self.y))
         elif self.z and not self.x and not self.y:
-            return Py_Vec(y=math.copysign(rot, self.z))
+            return Py_Angle(yaw=math.copysign(rot, self.z))
         else:
             raise ValueError('Zero vector!')
 

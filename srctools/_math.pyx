@@ -1055,22 +1055,22 @@ cdef class Vec:
         This is deprecated, use Matrix.axis_angle().to_angle() which works
         for any orientation and has a consistent direction.
         """
-        cdef Vec vec = Vec.__new__(Vec)
-        vec.val.x = vec.val.y = vec.val.z = 0.0
+        cdef Angle ang = Angle.__new__(Angle)
+        ang.val.x = ang.val.y = ang.val.z = 0.0
         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
 
         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
-            vec.val.z = math.copysign(rot, self.val.x)
+            ang.val.z = norm_ang(math.copysign(rot, self.val.x))
         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
-            vec.val.x = math.copysign(rot, self.val.y)
+            ang.val.x = norm_ang(math.copysign(rot, self.val.y))
         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
-            vec.val.y = math.copysign(rot, self.val.z)
+            ang.val.y = norm_ang(math.copysign(rot, self.val.z))
         else:
             raise ValueError(
                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '
                 'not an on-axis vector!'
             )
-        return vec
+        return ang
 
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""

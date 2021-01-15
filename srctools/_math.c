@@ -1345,6 +1345,9 @@ static PyObject* __Pyx_PyObject_Format(PyObject* s, PyObject* f);
 #define __Pyx_PyObject_Format(s, f) PyObject_Format(s, f)
 #endif
 
+/* ExtTypeTest.proto */
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
+
 /* CIntToPyUnicode.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyUnicode_From_int(int value, Py_ssize_t width, char padding_char, char format_char);
 
@@ -1356,9 +1359,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyUnicode_Unicode(PyObject *obj);
 static CYTHON_INLINE PyObject* __Pyx_tp_new_kwargs(PyObject* type_obj, PyObject* args, PyObject* kwargs) {
     return (PyObject*) (((PyTypeObject*)type_obj)->tp_new((PyTypeObject*)type_obj, args, kwargs));
 }
-
-/* ExtTypeTest.proto */
-static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type);
 
 /* PyObjectCall2Args.proto */
 static CYTHON_UNUSED PyObject* __Pyx_PyObject_Call2Args(PyObject* function, PyObject* arg1, PyObject* arg2);
@@ -12822,7 +12822,7 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pw_8srctools_5_math_3Vec_33r
 }
 
 static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32rotation_around(struct __pyx_obj_8srctools_5_math_Vec *__pyx_v_self, double __pyx_v_rot) {
-  struct __pyx_obj_8srctools_5_math_Vec *__pyx_v_vec = 0;
+  struct __pyx_obj_8srctools_5_math_Angle *__pyx_v_ang = 0;
   struct __pyx_obj_8srctools_5_math_Vec *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   PyObject *__pyx_t_1 = NULL;
@@ -12841,29 +12841,29 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
   /* "srctools/_math.pyx":1058
  *         for any orientation and has a consistent direction.
  *         """
- *         cdef Vec vec = Vec.__new__(Vec)             # <<<<<<<<<<<<<<
- *         vec.val.x = vec.val.y = vec.val.z = 0.0
+ *         cdef Angle ang = Angle.__new__(Angle)             # <<<<<<<<<<<<<<
+ *         ang.val.x = ang.val.y = ang.val.z = 0.0
  *         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
  */
-  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_5_math_Vec(((PyTypeObject *)__pyx_ptype_8srctools_5_math_Vec), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1058, __pyx_L1_error)
+  __pyx_t_1 = ((PyObject *)__pyx_tp_new_8srctools_5_math_Angle(((PyTypeObject *)__pyx_ptype_8srctools_5_math_Angle), __pyx_empty_tuple, NULL)); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1058, __pyx_L1_error)
   __Pyx_GOTREF(((PyObject *)__pyx_t_1));
-  __pyx_v_vec = ((struct __pyx_obj_8srctools_5_math_Vec *)__pyx_t_1);
+  __pyx_v_ang = ((struct __pyx_obj_8srctools_5_math_Angle *)__pyx_t_1);
   __pyx_t_1 = 0;
 
   /* "srctools/_math.pyx":1059
  *         """
- *         cdef Vec vec = Vec.__new__(Vec)
- *         vec.val.x = vec.val.y = vec.val.z = 0.0             # <<<<<<<<<<<<<<
+ *         cdef Angle ang = Angle.__new__(Angle)
+ *         ang.val.x = ang.val.y = ang.val.z = 0.0             # <<<<<<<<<<<<<<
  *         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
  * 
  */
-  __pyx_v_vec->val.x = 0.0;
-  __pyx_v_vec->val.y = 0.0;
-  __pyx_v_vec->val.z = 0.0;
+  __pyx_v_ang->val.x = 0.0;
+  __pyx_v_ang->val.y = 0.0;
+  __pyx_v_ang->val.z = 0.0;
 
   /* "srctools/_math.pyx":1060
- *         cdef Vec vec = Vec.__new__(Vec)
- *         vec.val.x = vec.val.y = vec.val.z = 0.0
+ *         cdef Angle ang = Angle.__new__(Angle)
+ *         ang.val.x = ang.val.y = ang.val.z = 0.0
  *         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)             # <<<<<<<<<<<<<<
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
@@ -12874,7 +12874,7 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
  *         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
- *             vec.val.z = math.copysign(rot, self.val.x)
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  */
   __pyx_t_4 = ((__pyx_v_self->val.x != 0.0) != 0);
@@ -12897,17 +12897,17 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
     /* "srctools/_math.pyx":1063
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
- *             vec.val.z = math.copysign(rot, self.val.x)             # <<<<<<<<<<<<<<
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))             # <<<<<<<<<<<<<<
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  */
-    __pyx_v_vec->val.z = copysign(__pyx_v_rot, __pyx_v_self->val.x);
+    __pyx_v_ang->val.z = __pyx_f_8srctools_5_math_norm_ang(copysign(__pyx_v_rot, __pyx_v_self->val.x));
 
     /* "srctools/_math.pyx":1062
  *         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
  * 
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
- *             vec.val.z = math.copysign(rot, self.val.x)
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
  */
     goto __pyx_L3;
@@ -12915,9 +12915,9 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
 
   /* "srctools/_math.pyx":1064
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
- *             vec.val.z = math.copysign(rot, self.val.x)
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
  */
   __pyx_t_4 = ((__pyx_v_self->val.x == 0.0) != 0);
@@ -12938,19 +12938,19 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
   if (__pyx_t_3) {
 
     /* "srctools/_math.pyx":1065
- *             vec.val.z = math.copysign(rot, self.val.x)
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
- *             vec.val.x = math.copysign(rot, self.val.y)             # <<<<<<<<<<<<<<
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))             # <<<<<<<<<<<<<<
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
- *             vec.val.y = math.copysign(rot, self.val.z)
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))
  */
-    __pyx_v_vec->val.x = copysign(__pyx_v_rot, __pyx_v_self->val.y);
+    __pyx_v_ang->val.x = __pyx_f_8srctools_5_math_norm_ang(copysign(__pyx_v_rot, __pyx_v_self->val.y));
 
     /* "srctools/_math.pyx":1064
  *         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
- *             vec.val.z = math.copysign(rot, self.val.x)
+ *             ang.val.z = norm_ang(math.copysign(rot, self.val.x))
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:             # <<<<<<<<<<<<<<
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
  */
     goto __pyx_L3;
@@ -12958,9 +12958,9 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
 
   /* "srctools/_math.pyx":1066
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
- *             vec.val.y = math.copysign(rot, self.val.z)
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))
  *         else:
  */
   __pyx_t_4 = ((__pyx_v_self->val.x == 0.0) != 0);
@@ -12981,26 +12981,26 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
   if (likely(__pyx_t_3)) {
 
     /* "srctools/_math.pyx":1067
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
- *             vec.val.y = math.copysign(rot, self.val.z)             # <<<<<<<<<<<<<<
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))             # <<<<<<<<<<<<<<
  *         else:
  *             raise ValueError(
  */
-    __pyx_v_vec->val.y = copysign(__pyx_v_rot, __pyx_v_self->val.z);
+    __pyx_v_ang->val.y = __pyx_f_8srctools_5_math_norm_ang(copysign(__pyx_v_rot, __pyx_v_self->val.z));
 
     /* "srctools/_math.pyx":1066
  *         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
- *             vec.val.x = math.copysign(rot, self.val.y)
+ *             ang.val.x = norm_ang(math.copysign(rot, self.val.y))
  *         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:             # <<<<<<<<<<<<<<
- *             vec.val.y = math.copysign(rot, self.val.z)
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))
  *         else:
  */
     goto __pyx_L3;
   }
 
   /* "srctools/_math.pyx":1069
- *             vec.val.y = math.copysign(rot, self.val.z)
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))
  *         else:
  *             raise ValueError(             # <<<<<<<<<<<<<<
  *                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '
@@ -13070,7 +13070,7 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
     __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
     /* "srctools/_math.pyx":1069
- *             vec.val.y = math.copysign(rot, self.val.z)
+ *             ang.val.y = norm_ang(math.copysign(rot, self.val.z))
  *         else:
  *             raise ValueError(             # <<<<<<<<<<<<<<
  *                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '
@@ -13088,13 +13088,14 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
   /* "srctools/_math.pyx":1073
  *                 'not an on-axis vector!'
  *             )
- *         return vec             # <<<<<<<<<<<<<<
+ *         return ang             # <<<<<<<<<<<<<<
  * 
  *     def __abs__(self):
  */
   __Pyx_XDECREF(((PyObject *)__pyx_r));
-  __Pyx_INCREF(((PyObject *)__pyx_v_vec));
-  __pyx_r = __pyx_v_vec;
+  if (!(likely(((((PyObject *)__pyx_v_ang)) == Py_None) || likely(__Pyx_TypeTest(((PyObject *)__pyx_v_ang), __pyx_ptype_8srctools_5_math_Vec))))) __PYX_ERR(0, 1073, __pyx_L1_error)
+  __Pyx_INCREF(((PyObject *)__pyx_v_ang));
+  __pyx_r = ((struct __pyx_obj_8srctools_5_math_Vec *)__pyx_v_ang);
   goto __pyx_L0;
 
   /* "srctools/_math.pyx":1052
@@ -13113,14 +13114,14 @@ static struct __pyx_obj_8srctools_5_math_Vec *__pyx_pf_8srctools_5_math_3Vec_32r
   __Pyx_AddTraceback("srctools._math.Vec.rotation_around", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
-  __Pyx_XDECREF((PyObject *)__pyx_v_vec);
+  __Pyx_XDECREF((PyObject *)__pyx_v_ang);
   __Pyx_XGIVEREF((PyObject *)__pyx_r);
   __Pyx_RefNannyFinishContext();
   return __pyx_r;
 }
 
 /* "srctools/_math.pyx":1075
- *         return vec
+ *         return ang
  * 
  *     def __abs__(self):             # <<<<<<<<<<<<<<
  *         """Performing abs() on a Vec takes the absolute value of all axes."""
@@ -13176,7 +13177,7 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_34__abs__(struct __pyx_obj_8srct
   goto __pyx_L0;
 
   /* "srctools/_math.pyx":1075
- *         return vec
+ *         return ang
  * 
  *     def __abs__(self):             # <<<<<<<<<<<<<<
  *         """Performing abs() on a Vec takes the absolute value of all axes."""
@@ -33043,6 +33044,19 @@ static PyObject* __Pyx_PyObject_Format(PyObject* obj, PyObject* format_spec) {
 }
 #endif
 
+/* ExtTypeTest */
+static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
+    if (unlikely(!type)) {
+        PyErr_SetString(PyExc_SystemError, "Missing type object");
+        return 0;
+    }
+    if (likely(__Pyx_TypeCheck(obj, type)))
+        return 1;
+    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
+                 Py_TYPE(obj)->tp_name, type->tp_name);
+    return 0;
+}
+
 /* CIntToPyUnicode */
 #ifdef _MSC_VER
     #ifndef _MSC_STDINT_H_
@@ -33137,19 +33151,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyUnicode_Unicode(PyObject *obj) {
     if (unlikely(obj == Py_None))
         obj = __pyx_kp_u_None;
     return __Pyx_NewRef(obj);
-}
-
-/* ExtTypeTest */
-static CYTHON_INLINE int __Pyx_TypeTest(PyObject *obj, PyTypeObject *type) {
-    if (unlikely(!type)) {
-        PyErr_SetString(PyExc_SystemError, "Missing type object");
-        return 0;
-    }
-    if (likely(__Pyx_TypeCheck(obj, type)))
-        return 1;
-    PyErr_Format(PyExc_TypeError, "Cannot convert %.200s to %.200s",
-                 Py_TYPE(obj)->tp_name, type->tp_name);
-    return 0;
 }
 
 /* PyObjectCall2Args */
