@@ -1658,10 +1658,10 @@ Cy_Matrix = Py_Matrix = Matrix
 # Do it this way, so static analysis ignores this.
 _glob = globals()
 try:
-    from srctools import _vec
+    from srctools import _math
 except ImportError:
     pass
 else:
     for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix', 'lerp']:
-        _glob[_name] = _glob['Cy_' + _name] = getattr(_vec, _name)
-    del _glob, _name, _vec
+        _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
+    del _glob, _name, _math
