@@ -315,7 +315,7 @@ class Material(MutableMapping[str, str]):
         parent = parent._apply_patch(fsys, count + 1, limit, parent_func)
 
         copy = Material(parent.shader)
-        copy._params.update(self._params)
+        copy._params.update(parent._params)
 
         # Empty strings in these delete the value.
         # Despite the name, both seem to do the same thing.
