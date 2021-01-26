@@ -200,9 +200,12 @@ cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
 
+cdef inline double _vec_mag_sq(vec_t *vec):
+    # This is faster if you just need to compare.
+    return vec.x**2 + vec.y**2 + vec.z**2
 
 cdef inline double _vec_mag(vec_t *vec):
-    return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
+    return math.sqrt(_vec_mag_sq(vec))
 
 cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
     """Normalise the vector, writing to out. inp and out may be the same."""
@@ -1545,16 +1548,13 @@ cdef class Vec:
 
         return vec
 
-    cdef inline double _mag_sq(self):
-        return self.val.x**2 + self.val.y**2 + self.val.z**2
-
     def mag_sq(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag_sq()
+        return _vec_mag_sq(&self.val)
 
     def len_sq(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag_sq()
+        return _vec_mag_sq(&self.val)
 
     def mag(self):
         """Compute the distance from the vector and the origin."""
