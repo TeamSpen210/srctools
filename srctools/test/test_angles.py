@@ -1,3 +1,6 @@
+import copy
+import pickle
+
 from srctools import Angle
 from srctools.test import *
 
@@ -196,3 +199,41 @@ def test_equality(py_c_vec) -> None:
         # Test 360 wraps work.
         test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
 
+
+def test_copy_pickle(py_c_vec) -> None:
+    """Test pickling, unpickling and copying Angles."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec_mod.Angle = Angle
+
+    test_data = 38.0, 257.125, 0.0
+
+    orig = Angle(test_data)
+
+    cpy_meth = orig.copy()
+
+    assert orig is not cpy_meth  # Must be a new object.
+    assert cpy_meth is not orig.copy()  # Cannot be cached
+    assert orig == cpy_meth  # Numbers must be exactly identical!
+
+    cpy = copy.copy(orig)
+
+    assert orig is not cpy
+    assert cpy_meth is not copy.copy(orig)
+    assert orig == cpy
+
+    dcpy = copy.deepcopy(orig)
+
+    assert orig is not dcpy
+    assert orig == dcpy
+
+    pick = pickle.dumps(orig)
+    thaw = pickle.loads(pick)
+
+    assert orig is not thaw
+    assert orig == thaw
+
+    # Ensure both produce the same pickle - so they can be interchanged.
+    cy_pick = pickle.dumps(Cy_Angle(test_data))
+    py_pick = pickle.dumps(Py_Angle(test_data))
+
+    assert cy_pick == py_pick == pick

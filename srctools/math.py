@@ -318,7 +318,7 @@ class Vec:
         This redirects to a global function, so C/Python versions
         interoperate.
         """
-        return _mk, (self.x, self.y, self.z)
+        return _mk_vec, (self.x, self.y, self.z)
 
     @classmethod
     def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
@@ -1100,7 +1100,7 @@ class Matrix:
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        rot: Matrix = cls.__new__(cls)
+        rot = Py_Matrix.__new__(Py_Matrix)
 
         rot._aa = cos_p * cos_y
         rot._ab = cos_p * sin_y
@@ -1130,7 +1130,7 @@ class Matrix:
         icos = 1 - cos
         sin = math.sin(angle_rad)
 
-        mat: Matrix = cls.__new__(cls)
+        mat = Py_Matrix.__new__(Py_Matrix)
 
         mat._aa = x*x * icos + cos
         mat._ab = x*y * icos - z*sin
@@ -1370,6 +1370,16 @@ class Angle:
     def copy(self) -> 'Angle':
         """Create a duplicate of this vector."""
         return Py_Angle(self._pitch, self._yaw, self._roll)
+
+    __copy__ = copy
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk_ang, (self._pitch, self._yaw, self._roll)
 
     @classmethod
     def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
@@ -1683,8 +1693,8 @@ class Angle:
         self._roll = new_ang._roll
 
 
-def _mk(x: float, y: float, z: float) -> Vec:
-    """Unpickle the Vec object, maintaining compatibility with C versions.
+def _mk_vec(x: float, y: float, z: float) -> Vec:
+    """Unpickle a Vec object, maintaining compatibility with C versions.
 
     Shortened name shrinks the data size.
     """
@@ -1695,6 +1705,22 @@ def _mk(x: float, y: float, z: float) -> Vec:
     v.z = z
     return v
 
+
+def _mk_ang(pitch: float, yaw: float, roll: float) -> Angle:
+    """Unpickle an Angle object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # Skip __init__'s checks and coercion/iteration.
+    ang = Angle.__new__(Angle)
+    ang.pitch = pitch
+    ang.yaw = yaw
+    ang.roll = roll
+    return ang
+
+
+# Older name.
+_mk = _mk_vec
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.

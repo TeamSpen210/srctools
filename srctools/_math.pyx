@@ -33,18 +33,22 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     return ang
 
 
-# Shared func that we use to do unpickling.
+# Shared fucntions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_func
+cdef object unpickle_vec
+cdef object unpickle_ang
 
-# Grab the Vec_Tuple class.
+# Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
-from srctools.math import _mk as unpickle_func, Vec_tuple
+from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
     raise RuntimeError('Vec_tuple is not a tuple subclass!')
+
+# If we don't directly construct this is the fallback.
+cdef object tuple_new = tuple.__new__
 
 # For convenience, an iterator which immediately fails.
 cdef object EMPTY_ITER = iter(())
@@ -69,9 +73,9 @@ cdef inline object _make_tuple(double x, double y, double z):
         Py_INCREF(Vec_tuple)
         (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
         return tup
-    else: # Not CPython, use more correct method.
+    else: # Not CPython, use more correct but slow method.
         with cython.optimize.unpack_method_calls(False):
-            return Vec_tuple._make(*tup)
+            return tuple_new(*tup)
 
 
 cdef inline double norm_ang(double val):
@@ -699,8 +703,12 @@ cdef class Vec:
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
+    def __deepcopy__(self, dict memodict=None):
+        """Create a duplicate of this vector."""
+        return _vector(self.val.x, self.val.y, self.val.z)
+
     def __reduce__(self):
-        return unpickle_func, (self.val.x, self.val.y, self.val.z)
+        return unpickle_vec, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, value, double x=0, double y=0, double z=0):
@@ -1831,7 +1839,7 @@ cdef class Matrix:
     @classmethod
     def from_angle(cls, angle):
         """Return the rotation representing an Euler angle."""
-        cdef Matrix rot = Matrix.__new__(cls)
+        cdef Matrix rot = Matrix.__new__(Matrix)
         cdef vec_t ang
         _conv_angles(&ang, angle)
         _mat_from_angle(rot.mat, &ang)
@@ -2053,8 +2061,19 @@ cdef class Angle:
                 self.val.z = norm_ang(roll)
 
     def copy(self) -> 'Angle':
-        """Create a duplicate of this vector."""
+        """Create a duplicate of this angle."""
         return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __copy__(self) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __deepcopy__(self, dict memodict=None) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __reduce__(self):
+        return unpickle_ang, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
