@@ -671,7 +671,7 @@ class Vec:
                 abs(other.y - self.y) < 1e-6 and
                 abs(other.z - self.z) < 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 abs(self.x - other[0]) < 1e-6 and
                 abs(self.y - other[1]) < 1e-6 and
@@ -693,7 +693,7 @@ class Vec:
                 abs(other.y - self.y) >= 1e-6 or
                 abs(other.z - self.z) >= 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 abs(self.x - other[0]) >= 1e-6 or
                 abs(self.y - other[1]) >= 1e-6 or
@@ -715,7 +715,7 @@ class Vec:
                 (other.y - self.y) > 1e-6 and
                 (other.z - self.z) > 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 (other[0] - self.x) > 1e-6 and
                 (other[1] - self.y) > 1e-6 and
@@ -737,7 +737,7 @@ class Vec:
                 (self.y - other.y) <= 1e-6 and
                 (self.z - other.z) <= 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 (self.x - other[0]) <= 1e-6 and
                 (self.y - other[1]) <= 1e-6 and
@@ -759,7 +759,7 @@ class Vec:
                 (self.y - other.y) > 1e-6 and
                 (self.z - other.z) > 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 (self.x > other[0]) > 1e-6 and
                 (self.y > other[1]) > 1e-6 and
@@ -781,7 +781,7 @@ class Vec:
                 (other.y - self.y) <= 1e-6 and
                 (other.z - self.z) <= 1e-6
             )
-        elif isinstance(other, tuple):
+        elif isinstance(other, tuple) and len(other) == 3:
             return (
                 (other[0] - self.x) <= 1e-6 and
                 (other[1] - self.y) <= 1e-6 and
@@ -1547,6 +1547,57 @@ class Angle:
             self._roll = float(val) % 360.0 % 360.0
         else:
             raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    def __eq__(self, other: object) -> object:
+        """== test.
+
+        Two Angles are equal if all three axes are the same.
+        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        A tolerance of 1e-6 is accounted for automatically.
+        """
+        if isinstance(other, Py_Angle):
+            return (
+                abs(other._pitch - self._pitch) <= 1e-6 and
+                abs(other._yaw - self._yaw) <= 1e-6 and
+                abs(other._roll - self._roll) <= 1e-6
+            )
+        elif isinstance(other, tuple) and len(other) == 3:
+            pit = other[0] % 360.0 % 360.0
+            yaw = other[1] % 360.0 % 360.0
+            rol = other[2] % 360.0 % 360.0
+            return (
+                abs(self._pitch - pit) <= 1e-6 and
+                abs(self._yaw - yaw) <= 1e-6 and
+                abs(self._roll - rol) <= 1e-6
+            )
+        else:
+            return NotImplemented
+
+    def __ne__(self, other: object) -> bool:
+        """!= test.
+
+        Two Angles are equal if all three axes are the same.
+        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        A tolerance of 1e-6 is accounted for automatically.
+        """
+        if isinstance(other, Py_Angle):
+            return (
+                abs(other._pitch - self._pitch) > 1e-6 or
+                abs(other._yaw - self._yaw) > 1e-6 or
+                abs(other._roll - self._roll) > 1e-6
+            )
+        elif isinstance(other, tuple) and len(other) == 3:
+            pit = other[0] % 360.0 % 360.0
+            yaw = other[1] % 360.0 % 360.0
+            rol = other[2] % 360.0 % 360.0
+            return (
+                abs(self._pitch - pit) > 1e-6 or
+                abs(self._yaw   - yaw) > 1e-6 or
+                abs(self._roll  - rol) > 1e-6
+            )
+        else:
+            return NotImplemented
+    # No ordering, there isn't any sensible relationship.
 
     @overload
     def __mul__(self, other: Union[int, float]) -> 'Angle': ...

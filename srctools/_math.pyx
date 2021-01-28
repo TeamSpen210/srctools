@@ -2242,6 +2242,38 @@ cdef class Angle:
                 self.val.z = val
         raise KeyError(f'Invalid axis: {pos!r}')
 
+    def __richcmp__(self, other_obj, int op):
+        """Rich Comparisons.
+
+        Angles only support equality, since ordering is nonsensical.
+        """
+        cdef vec_t other
+        try:
+            _conv_angles(&other, other_obj)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        # 'redundant' == True prevents the individual comparisons from
+        # trying
+        # to convert the result individually on failure.
+        # Use subtraction so that values within TOL are accepted.
+        if op == Py_EQ:
+            return (
+                abs(self.val.x - other.x) <= TOL and
+                abs(self.val.y - other.y) <= TOL and
+                abs(self.val.z - other.z) <= TOL
+            ) == True
+        elif op == Py_NE:
+            return (
+                abs(self.val.x - other.x) > TOL or
+                abs(self.val.y - other.y) > TOL or
+                abs(self.val.z - other.z) > TOL
+            ) == True
+        elif op in [Py_LT, Py_GT, Py_GE, Py_LE]:
+            return NotImplemented
+        else:
+            raise SystemError(f'Unknown operation {op!r}' '!')
+
     def __mul__(first, second):
         """Angle * float multiplies each value."""
         cdef double scalar
