@@ -1034,6 +1034,18 @@ class Matrix:
 
         return rot
 
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return (_mk_mat, (
+            self._aa, self._ab, self._ac,
+            self._ba, self._bb, self._bc,
+            self._ca, self._cb, self._cc
+        ))
+
     @classmethod
     def from_pitch(cls: Type['Matrix'], pitch: float) -> 'Matrix':
         """Return the matrix representing a pitch rotation.
@@ -1717,6 +1729,31 @@ def _mk_ang(pitch: float, yaw: float, roll: float) -> Angle:
     ang.yaw = yaw
     ang.roll = roll
     return ang
+
+
+def _mk_mat(
+    aa: float, ab: float, ac: float,
+    ba: float, bb: float, bc: float,
+    ca: float, cb: float, cc: float,
+) -> Matrix:
+    """Unpickle a Matrix object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # Skip __init__'s checks and coercion/iteration.
+    mat = Matrix.__new__(Matrix)
+    mat[0, 0] = aa
+    mat[0, 1] = ab
+    mat[0, 2] = ac
+
+    mat[1, 0] = ba
+    mat[1, 1] = bb
+    mat[1, 2] = bc
+
+    mat[2, 0] = ca
+    mat[2, 1] = cb
+    mat[2, 2] = cc
+    return mat
 
 
 # Older name.

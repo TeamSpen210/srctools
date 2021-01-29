@@ -1,4 +1,7 @@
 """Test rotations in srctools.vec."""
+import copy
+import pickle
+
 from srctools.test import *
 from srctools import Vec, Matrix, Angle
 
@@ -317,3 +320,45 @@ def test_gen_check(py_c_vec) -> None:
             assert_vec(Vec.cross(x, x), 0, 0, 0)
             assert_vec(Vec.cross(y, y), 0, 0, 0)
             assert_vec(Vec.cross(z, z), 0, 0, 0)
+
+
+def test_copy_pickle(py_c_vec) -> None:
+    """Test pickling, unpickling and copying Matrixes."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec_mod.Matrix = Matrix
+
+    # Some random rotation, so all points are different.
+    test_data = (38, 42, 63)
+
+    orig = Matrix.from_angle(Angle(*test_data))
+
+    cpy_meth = orig.copy()
+
+    assert orig is not cpy_meth  # Must be a new object.
+    assert cpy_meth is not orig.copy()  # Cannot be cached
+    assert type(orig) is type(cpy_meth)
+    assert orig == cpy_meth  # Numbers must be exactly identical!
+
+    cpy = copy.copy(orig)
+
+    assert orig is not cpy
+    assert cpy_meth is not copy.copy(orig)
+    assert orig == cpy
+
+    dcpy = copy.deepcopy(orig)
+
+    assert orig is not dcpy
+    assert orig == dcpy
+
+    pick = pickle.dumps(orig)
+    thaw = pickle.loads(pick)
+
+    assert orig is not thaw
+    assert orig == thaw
+
+    # Ensure both produce the same pickle - so they can be interchanged.
+    cy_pick = pickle.dumps(Cy_Matrix.from_angle(Cy_Angle(test_data)))
+    py_pick = pickle.dumps(Py_Matrix.from_angle(Py_Angle(test_data)))
+
+    assert cy_pick == py_pick == pick
+

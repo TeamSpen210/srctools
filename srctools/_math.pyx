@@ -1,7 +1,7 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from libc.string cimport memcpy
+from libc.string cimport memcpy, memcmp
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
@@ -38,10 +38,11 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
 # produce the same pickle value.
 cdef object unpickle_vec
 cdef object unpickle_ang
+cdef object unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
-from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang
+from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
@@ -1765,7 +1766,13 @@ cdef class Matrix:
 
     def __eq__(self, other: object) -> object:
         if isinstance(other, Matrix):
-            return self.mat == (<Matrix>other).mat
+            # We can just compare the memory buffers.
+            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) == 0
+        return NotImplemented
+
+    def __ne__(self, other: object) -> object:
+        if isinstance(other, Matrix):
+            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -1782,6 +1789,25 @@ cdef class Matrix:
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
+
+    def __copy__(self) -> 'Matrix':
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __deepcopy__(self, dict memodict=None) -> 'Matrix':
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __reduce__(self):
+        return unpickle_mat, (
+            self.mat[0][0], self.mat[0][1], self.mat[0][2],
+            self.mat[1][0], self.mat[1][1], self.mat[1][2],
+            self.mat[2][0], self.mat[2][1], self.mat[2][2],
+        )
 
     @classmethod
     def from_pitch(cls, double pitch):
