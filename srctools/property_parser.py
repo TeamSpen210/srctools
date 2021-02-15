@@ -185,7 +185,7 @@ class Property:
             self.real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
-    def edit(self, name=None, value=None):
+    def edit(self, name: Optional[str]=None, value: Optional[str]=None) -> 'Property':
         """Simultaneously modify the name and value."""
         if name is not None:
             self.real_name = name
@@ -220,12 +220,13 @@ class Property:
         # multiple root blocks in the file, while still returning a single
         # Property object which has all the methods.
         # Skip calling __init__ for speed.
-        cur_block = Property.__new__(Property)
+        cur_block = root = Property.__new__(Property)
         cur_block._folded_name = cur_block.real_name = None
         cur_block.value = []
 
         # A queue of the properties we are currently in (outside to inside).
-        open_properties = [cur_block]
+        # And the line numbers of each of these, for error reporting.
+        open_properties = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING = Token.STRING
@@ -242,27 +243,29 @@ class Property:
             allow_escapes=allow_escapes,
         )
 
-        # Do we require a block to be opened next? ("name"\n must have { next.)
-        requires_block = False
+        # If not None, we're requiring a block to open next ("name"\n must have { next.)
+        # It's the line number of the header name.
+        block_line: Optional[int] = None
         # Are we permitted to replace the last property with a flagged version of the same?
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
             if token_type is BRACE_OPEN:  # {
                 # Open a new block - make sure the last token was a name..
-                if not requires_block:
+                if block_line is None:
                     raise tokenizer.error(
                         'Property cannot have sub-section if it already '
                         'has an in-line value.\n\n'
                         'A "name" "value" line cannot then open a block.',
                     )
-                requires_block = can_flag_replace = False
+                can_flag_replace = False
                 cur_block = cur_block.value[-1]
                 cur_block.value = []
-                open_properties.append(cur_block)
+                open_properties.append((cur_block, block_line))
+                block_line = None
                 continue
             # Something else, but followed by '{'
-            elif requires_block and token_type is not NEWLINE:
+            elif block_line is not None and token_type is not NEWLINE:
                 raise tokenizer.error(
                     'Block opening ("{{") required!\n\n'
                     'A single "name" on a line should next have a open brace '
@@ -305,13 +308,13 @@ class Property:
 
                 elif prop_type is STRING:
                     # A value.. ("name" "value")
-                    if requires_block:
+                    if block_line is not None:
                         raise tokenizer.error(
                             'Keyvalue split across lines!\n\n'
                             'A value like "name" "value" must be on the same '
                             'line.'
                         )
-                    requires_block = False
+                    block_line = None
 
                     keyvalue.value = prop_value
 
@@ -359,7 +362,7 @@ class Property:
                     # then re-evaluate the token in the next loop.
                     keyvalue.value = []
 
-                    requires_block = True
+                    block_line = tokenizer.line_num
                     can_flag_replace = False
                     cur_block.value.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
@@ -369,7 +372,7 @@ class Property:
                 # Move back a block
                 open_properties.pop()
                 try:
-                    cur_block = open_properties[-1]
+                    cur_block, _ = open_properties[-1]
                 except IndexError:
                     # It's empty, we've closed one too many properties.
                     raise tokenizer.error(
@@ -386,7 +389,7 @@ class Property:
         
         # We last had a ("name"\n), so we were expecting a block
         # next.
-        if requires_block:
+        if block_line is not None:
             raise KeyValError(
                 'Block opening ("{") required, but hit EOF!\n'
                 'A "name" line was located at the end of the file, which needs'
@@ -403,12 +406,16 @@ class Property:
             raise KeyValError(
                 'End of text reached with remaining open sections.\n\n'
                 "File ended with at least one property that didn't "
-                'have an ending "}".',
+                'have an ending "}".\n'
+                'Open properties: \n- Root at line 1\n' + '\n'.join([
+                    f'- "{prop.real_name}" on line {line_num}'
+                    for prop, line_num in open_properties[1:]
+                ]),
                 tokenizer.filename,
                 line=None,
             )
         # Return that root property.
-        return open_properties[0]
+        return root
 
     def find_all(self, *keys) -> Iterator['Property']:
         """Search through the tree, yielding all properties that match a particular path.
