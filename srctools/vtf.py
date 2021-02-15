@@ -25,6 +25,7 @@ from typing import (
 if TYPE_CHECKING:
     from PIL.Image import Image as PIL_Image
     import tkinter
+    import wx
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -444,8 +445,12 @@ class Frame:
             1,
         ).copy()
 
-    def to_tkinter(self, tk: 'tkinter.Misc' = None) -> 'tkinter.PhotoImage':
-        """Convert the given frame into a Tkinter PhotoImage."""
+    def to_tkinter(self, tk: 'tkinter.Misc' = None, *, bg: Optional[Tuple[int, int, int]]=None) -> 'tkinter.PhotoImage':
+        """Convert the given frame into a Tkinter PhotoImage.
+
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
         self.load()
 
         import tkinter
@@ -458,8 +463,40 @@ class Frame:
                 self._data,
                 self.width,
                 self.height,
+                bg,
             ),
         )
+
+    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Image':
+        """Convert the given frame into a wxPython image.
+
+        This requires wxPython to be installed.
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
+        self.load()
+        import wx
+
+        img = wx.Image(self.width, self.height)
+        _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
+        return img
+
+    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Bitmap':
+        """Convert the given frame into a wxPython bitmap.
+
+        This requires wxPython to be installed.
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
+        self.load()
+        import wx
+        img = wx.Bitmap(self.width, self.height)
+        # Bitmap memory layout isn't public, so we have to write to a temporary
+        # that it copies from.
+        buf = bytearray(3 * self.width * self.height)
+        _format_funcs.alpha_flatten(self._data, buf, self.width, self.height, bg)
+        img.CopyFromBuffer(buf, wx.BitmapBufferFormat_RGB)
+        return img
 
 
 class VTF:

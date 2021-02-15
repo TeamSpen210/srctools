@@ -92,4 +92,7 @@ setup(
     install_requires=[
         'importlib_resources',
     ],
+    extras={
+        'wx': 'wxPython',  # VTF support.
+    }
 )
