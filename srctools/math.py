@@ -398,7 +398,8 @@ class Vec:
         (since these calculations always have small inprecision.)
         """
         warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
-        self @= Py_Angle(pitch, yaw, roll)
+        mat = Py_Matrix.from_angle(Py_Angle(pitch, yaw, roll))
+        mat._vec_rot(self)
         if round_vals:
             self.x = round(self.x, 6)
             self.y = round(self.y, 6)
@@ -411,7 +412,8 @@ class Vec:
         If the string cannot be parsed, use the passed in values instead.
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
-        self @= Py_Angle.from_str(ang, pitch, yaw, roll)
+        mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
+        mat._vec_rot(self)
         if round_vals:
             self.x = round(self.x, 6)
             self.y = round(self.y, 6)
@@ -642,6 +644,18 @@ class Vec:
             return NotImplemented
         else:
             return Py_Vec(x1, y1, z1), Py_Vec(x2, y2, z2)
+
+    def __matmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+        """Rotate this vector by an angle or matrix."""
+        if isinstance(other, Py_Matrix):
+            mat = other
+        elif isinstance(other, Py_Angle):
+            mat = Py_Matrix.from_angle(other)
+        else:
+            return NotImplemented
+        res = Vec(self.x, self.y, self.z)
+        mat._vec_rot(res)
+        return res
 
     def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
         """We need to define this, so it's in-place."""

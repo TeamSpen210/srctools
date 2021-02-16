@@ -1390,6 +1390,26 @@ cdef class Vec:
         else:
             return NotImplemented
 
+    def __matmul__(self, other):
+        """Rotate this vector by an angle or matrix."""
+        cdef mat_t temp
+        cdef Vec res
+        if not isinstance(self, Vec):
+            return NotImplemented
+
+        res = Vec.__new__(Vec)
+        res.val.x = (<Vec>self).val.x
+        res.val.y = (<Vec>self).val.y
+        res.val.z = (<Vec>self).val.z
+        if isinstance(other, Angle):
+            _mat_from_angle(temp, &(<Angle>other).val)
+            _vec_rot(&res.val, temp)
+        elif isinstance(other, Matrix):
+            _vec_rot(&res.val, (<Matrix>other).mat)
+        else:
+            return NotImplemented
+        return res
+
     def __imatmul__(self, other):
         """@= operation: rotate the vector by a matrix/angle."""
         cdef mat_t temp
