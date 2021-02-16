@@ -289,7 +289,7 @@ class Property:
                 if prop_type is PROP_FLAG: 
                     # That must be the end of the line..
                     tokenizer.expect(NEWLINE)
-                    requires_block = True
+                    block_line = tokenizer.line_num
                     if _read_flag(flags, prop_value):
                         keyvalue.value = []
 
