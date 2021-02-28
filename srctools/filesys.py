@@ -217,7 +217,7 @@ class FileSystem(Generic[_SysRefT, _FileDataT]):
 class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
     """Chains several filesystem into one prioritised whole."""
 
-    def __init__(self, *systems: Union[ChildSysT, Tuple[str, ChildSysT]]) -> None:
+    def __init__(self, *systems: Union[ChildSysT, Tuple[ChildSysT, str]]) -> None:
         super().__init__('')
         self.systems: List[Tuple[ChildSysT, str]] = []
         for sys in systems:
