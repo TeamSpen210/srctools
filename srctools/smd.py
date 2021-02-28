@@ -387,7 +387,7 @@ class Mesh:
                 try:
                     byt_ind, byt_x, byt_y, byt_z, byt_pit, byt_yaw, byt_rol = line.split()
                     pos = Vec(float(byt_x), float(byt_y), float(byt_z))
-                    rot = Angle(float(byt_pit), float(byt_yaw), float(byt_rol))
+                    rot = Angle(math.degrees(float(byt_pit)), math.degrees(float(byt_yaw)), math.degrees(float(byt_rol)))
                 except ValueError:
                     raise ParseError(line_num, 'Invalid line!') from None
                 try:
@@ -510,7 +510,7 @@ class Mesh:
                 file.write(b'%i %.6f %.6f %.6f  %.6f %.6f %.6f\n' % (
                     bone_indexes[bone_pose.bone],
                     x, y, z,
-                    pit, yaw, rol,
+                    math.radians(pit), math.radians(yaw), math.radians(rol),
                 ))
         file.write(b'end\n')
         if self.triangles:
