@@ -19,7 +19,7 @@ class ValueType(Enum):
     FLOAT = 'float'
     BOOL = 'bool'
     STRING = STR = 'string'
-    VOID = 'void'
+    BINARY = BIN = VOID = 'void'  # IE "void *", binary blob.
     TIME = 'time'  # Seconds
     COLOR = COLOUR = 'color'
     VEC2 = 'vector2'
@@ -60,11 +60,9 @@ class AngleTup(NamedTuple):
     yaw: float
     roll: float
 
-NoneType = Type[None]
 Time = NewType('Time', float)
 Value = Union[
-    int, float, bool, str,
-    None,  # Void
+    int, float, bool, str, bytes,
     Color,
     NewType,
     Vec2, Vec3,
@@ -77,8 +75,7 @@ Value = Union[
 
 ValueT = TypeVar(
     'ValueT',
-    int, float, bool, str,
-    NoneType,  # Void
+    int, float, bool, str, bytes,
     Color,
     Vec2, Vec3, Vec4,
     Angle,
@@ -130,7 +127,7 @@ class Element(Generic[ValueT]):
     @classmethod
     def string(cls, name: str, value: builtins.str) -> Element[builtins.str]: ...
     @classmethod
-    def void(cls, name: str) -> Element[None]: ...
+    def binary(cls, name: str, value: builtins.bytes) -> Element[builtins.bytes]: ...
 
     @classmethod
     def vec2(

@@ -66,38 +66,13 @@ def test_val_str() -> None:
     assert Element.string('', 'faLse').val_bool is False
 
 
-def test_val_void() -> None:
-    """Test void values have a default result."""
-    elem = Element.void('Name')
-    assert elem.val_int == 0
-    assert elem.val_float == 0.0
-    assert elem.val_bool is False
-
-    assert elem.val_vec2 == Vec2(0.0, 0.0)
-    assert elem.val_vec3 == Vec3(0.0, 0.0, 0.0)
-    assert elem.val_vec4 == Vec4(0.0, 0.0, 0.0, 0.0)
-
-    assert elem.val_str == ''
-    assert elem.val_string == ''
-
-    assert elem.val_color == Color(0, 0, 0)
-    assert elem.val_colour == Color(0, 0, 0)
-
-    assert elem.val_angle == AngleTup(0.0, 0.0, 0.0)
-    assert elem.val_ang == AngleTup(0.0, 0.0, 0.0)
-
-    assert elem.val_quat == Quaternion(0.0, 0.0, 0.0, 1.0)
-    assert elem.val_quaternion == Quaternion(0.0, 0.0, 0.0, 1.0)
-
-    assert elem.val_mat == Matrix()
-    assert elem.val_matrix == Matrix()
-
-
 @pytest.mark.parametrize(['attr', 'typ'], [
     pytest.param(attr, typ, id=attr)
     for attr, typ in [
         ('val_str', str),
         ('val_string', str),
+        ('val_bin', bytes),
+        ('val_binary', bytes),
         ('val_int', int),
         ('val_bool', bool),
         ('val_float', float),
@@ -113,7 +88,6 @@ def test_val_void() -> None:
         ('val_matrix', Matrix),
 ]])
 @pytest.mark.parametrize('element', [
-    Element.void(''),
     Element.int('', 45),
     Element.float('', 48.9),
     Element.vec2('', 3, 4),
@@ -125,13 +99,15 @@ def test_val_void() -> None:
 def test_conv_types(element: Element, attr: str, typ: type) -> None:
     """Check all the conversions either fail or produce the right result.
 
-    We don't test strings since valid values are different for different dests.
+    We don't test string/bytes since valid values are different for different dests.
     """
     try:
         result = getattr(element, attr)
     except ValueError:
-        # Conversion failed, that's fine.
-        pytest.xfail()
-        return
+        # Conversion failed, that's fine for all types except for string/binary.
+        if typ is str or typ is bytes:
+            return pytest.fail('This conversion is required.')
+        else:
+            return pytest.xfail('Conversion not defined.')
 
     assert type(result) is typ, result

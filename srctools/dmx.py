@@ -17,7 +17,7 @@ class ValueType(Enum):
     FLOAT = 'float'
     BOOL = 'bool'
     STRING = STR = 'string'
-    VOID = 'void'
+    BINARY = BIN = VOID = 'void'  # IE "void *", binary blob.
     TIME = 'time'  # Seconds
     COLOR = COLOUR = 'color'
     VEC2 = 'vector2'
@@ -63,11 +63,10 @@ class AngleTup(NamedTuple):
     yaw: float
     roll: float
 
-NoneType: Type[None] = type(None)
 Time = NewType('Time', float)
 Value = Union[
     int, float, bool, str,
-    None,  # Void
+    bytes,
     Color,
     NewType,
     Vec2, Vec3,
@@ -80,8 +79,7 @@ Value = Union[
 
 ValueT = TypeVar(
     'ValueT',
-    int, float, bool, str,
-    Type[None],  # Void
+    int, float, bool, str, bytes,
     Color,
     Vec2, Vec3, Vec4,
     Angle,
@@ -103,16 +101,10 @@ def _get_converters() -> dict:
         """No change means no conversion needed."""
         return x
 
-    def to_void(x):
-        """Void ignores the value set."""
-        return None
-
     for from_typ in ValueType:
         for to_typ in ValueType:
             if from_typ is to_typ:
                 conv[from_typ, to_typ] = unchanged
-            elif to_typ is ValueType.VOID:
-                conv[from_typ, to_typ] = to_void
             else:
                 func = f'_conv_{from_typ.name.casefold()}_to_{to_typ.name.casefold()}'
                 try:
@@ -164,6 +156,7 @@ class _ValProps:
 
     val_int = _make_val_prop(ValueType.INT, int)
     val_str = val_string = _make_val_prop(ValueType.STRING, str)
+    val_bin = val_binary = _make_val_prop(ValueType.BINARY, bytes)
     val_float = _make_val_prop(ValueType.FLOAT, float)
     val_bool = _make_val_prop(ValueType.BOOL, bool)
     val_colour = val_color = _make_val_prop(ValueType.COLOR, Color)
@@ -209,9 +202,9 @@ class Element(Generic[ValueT], _ValProps):
         return cls(name, ValueType.STRING, value)
 
     @classmethod
-    def void(cls, name: str):
-        """Create an element with no value."""
-        return cls(name)
+    def binary(cls, name: str, value):
+        """Create an element with binary data."""
+        return cls(name, ValueType.BINARY, value)
 
     @classmethod
     def vec2(cls, name, x=0.0, y=0.0):
@@ -301,6 +294,7 @@ class Element(Generic[ValueT], _ValProps):
 # All the type converter functions.
 # Assign to globals, then _get_converters() will find and store these funcs,
 # removing them from globals.
+# Conversion to/from strings and binary are required for all types.
 
 _conv_string_to_float = float
 _conv_string_to_integer = int
@@ -330,19 +324,6 @@ def _conv_float_to_color(val: float) -> Color:
 _conv_bool_to_integer = int
 _conv_bool_to_float = int
 _conv_bool_to_string = bool_as_int
-
-_conv_void_to_bool = lambda v: False
-_conv_void_to_integer = lambda v: 0
-_conv_void_to_float = lambda v: 0.0
-_conv_void_to_string = lambda v: ''
-_conv_void_to_time = lambda v: Time(0.0)
-_conv_void_to_color = lambda v: Color(0.0, 0.0, 0.0)
-_conv_void_to_vec2 = lambda v: Vec2(0.0, 0.0)
-_conv_void_to_vec3 = lambda v: Vec3(0.0, 0.0, 0.0)
-_conv_void_to_vec4 = lambda v: Vec4(0.0, 0.0, 0.0, 0.0)
-_conv_void_to_angle = lambda v: AngleTup(0.0, 0.0, 0.0)
-_conv_void_to_quaternion = lambda v: Quaternion(0, 0, 0, 1)
-_conv_void_to_matrix = lambda v: Matrix()
 
 _conv_time_to_integer = int
 _conv_time_to_float = float
