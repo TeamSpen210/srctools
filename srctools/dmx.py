@@ -118,8 +118,31 @@ def _get_converters() -> dict:
                 try:
                     conv[from_typ, to_typ] = ns.pop(func)
                 except KeyError:
-                    print(f'No {from_typ.name} -> {to_typ.name}')
+                    pass
     return conv
+
+
+def _make_val_prop(val_type: ValueType, typ: type) -> property:
+    """Build the properties for each type."""
+
+    def setter(self, value):
+        self._write_val(val_type, value)
+
+    def getter(self):
+        return self._read_val(val_type)
+    if val_type.name[0].casefold() in 'aeiou':
+        desc = f' the value as an {val_type.name.lower()}.'
+    else:
+        desc = f' the value as a {val_type.name.lower()}.'
+    getter.__doc__ = 'Return' + desc
+    setter.__doc__ = 'Convert' + desc
+    getter.__annotations__['return'] = typ
+    setter.__annotations__['value'] = typ
+    return property(
+        fget=getter,
+        fset=setter,
+        doc=f'Access' + desc,
+    )
 
 
 class _ValProps:
@@ -132,49 +155,26 @@ class _ValProps:
         """Set to the desired type."""
         raise NotImplementedError
 
-    @staticmethod
-    def _make_prop(val_type: ValueType, typ: type) -> property:
-        """Build the properties for each type."""
-
-        def setter(self, value):
-            self._write_val(val_type, value)
-
-        def getter(self):
-            return self._read_val(val_type)
-        if val_type.name[0].casefold() in 'aeiou':
-            desc = f' the value as an {val_type.name.lower()}.'
-        else:
-            desc = f' the value as a {val_type.name.lower()}.'
-        getter.__doc__ = 'Return' + desc
-        setter.__doc__ = 'Convert' + desc
-        getter.__annotations__['return'] = typ
-        setter.__annotations__['value'] = typ
-        return property(
-            fget=getter,
-            fset=setter,
-            doc=f'Access' + desc,
-        )
-
-    def set_val_void(self):
+    def set_val_void(self) -> None:
         """Set the value to void (no value).
 
         Unlike other types this is a method since no value needs to be read.
         """
         self._write_val(ValueType.VOID, None)
 
-    val_int = _make_prop(ValueType.INT, int)
-    val_str = val_string = _make_prop(ValueType.STRING, str)
-    val_float = _make_prop(ValueType.FLOAT, float)
-    val_bool = _make_prop(ValueType.BOOL, bool)
-    val_colour = val_color = _make_prop(ValueType.COLOR, Color)
-    val_vec2 = _make_prop(ValueType.VEC2, Vec2)
-    val_vec3 = _make_prop(ValueType.VEC3, Vec3)
-    val_vec4 = _make_prop(ValueType.VEC4, Vec4)
-    val_quat = val_quaternion = _make_prop(ValueType.QUATERNION, Quaternion)
-    val_ang = val_angle = _make_prop(ValueType.ANGLE, AngleTup)
-    val_mat = val_matrix = _make_prop(ValueType.MATRIX, Matrix)
+    val_int = _make_val_prop(ValueType.INT, int)
+    val_str = val_string = _make_val_prop(ValueType.STRING, str)
+    val_float = _make_val_prop(ValueType.FLOAT, float)
+    val_bool = _make_val_prop(ValueType.BOOL, bool)
+    val_colour = val_color = _make_val_prop(ValueType.COLOR, Color)
+    val_vec2 = _make_val_prop(ValueType.VEC2, Vec2)
+    val_vec3 = _make_val_prop(ValueType.VEC3, Vec3)
+    val_vec4 = _make_val_prop(ValueType.VEC4, Vec4)
+    val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
+    val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
+    val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
 
-    del _make_prop
+del _make_val_prop
 
 
 class Element(Generic[ValueT], _ValProps):
@@ -223,7 +223,7 @@ class Element(Generic[ValueT], _ValProps):
         return cls(name, ValueType.VEC2, Vec2(x, y))
 
     @classmethod
-    def vec3(cls, name, x=0.0, y=0.0, z=0.0) -> 'Element[Vec3]':
+    def vec3(cls, name, x=0.0, y=0.0, z=0.0):
         """Create an element with a 3D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
@@ -295,6 +295,12 @@ class Element(Generic[ValueT], _ValProps):
         self.typ = newtype
         self._value = value
 
+    def __repr__(self) -> str:
+        return f'<{self.typ.name} Element {self.name!r}: {self._value!r}>'
+
+# All the type converter functions.
+# Assign to globals, then _get_converters() will find and store these funcs,
+# removing them from globals.
 
 _conv_string_to_float = float
 _conv_string_to_integer = int
@@ -303,6 +309,7 @@ _conv_string_to_bool = lambda val: BOOL_LOOKUP[val.casefold()]
 
 _conv_integer_to_string = str
 _conv_integer_to_float = float
+_conv_integer_to_time = float
 _conv_integer_to_bool = bool
 _conv_integer_to_vec2 = lambda n: Vec2(n, n)
 _conv_integer_to_vec3 = lambda n: Vec3(n, n, n)
@@ -337,10 +344,32 @@ _conv_void_to_angle = lambda v: AngleTup(0.0, 0.0, 0.0)
 _conv_void_to_quaternion = lambda v: Quaternion(0, 0, 0, 1)
 _conv_void_to_matrix = lambda v: Matrix()
 
-_conv_vec2_to_string = lambda v: f'{v.x:g} {v.y:g}'
-_conv_vec3_to_string = lambda v: f'{v.x:g} {v.y:g} {v.z:g}'
-_conv_vec4_to_string = lambda v: f'{v.x:g} {v.y:g} {v.z:g} {v.w:g}'
+_conv_time_to_integer = int
+_conv_time_to_float = float
+_conv_time_to_bool = lambda t: t > 0
+_conv_time_to_string = str
 
-_conv_matrix_to_angle: lambda mat: AngleTup._make(mat.to_angle())
+_conv_vec2_to_string = lambda v: f'{v.x:g} {v.y:g}'
+_conv_vec2_to_bool = lambda v: bool(v.x or v.y)
+_conv_vec2_to_vec3 = lambda v: Vec3(v.x, v.y, 0.0)
+_conv_vec2_to_vec4 = lambda v: Vec4(v.x, v.y, 0.0, 0.0)
+
+_conv_vec3_to_string = lambda v: f'{v.x:g} {v.y:g} {v.z:g}'
+_conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
+_conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
+_conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
+_conv_vec3_to_angle = lambda v: AngleTup(v.x, v.y, v.z)
+
+_conv_vec4_to_string = lambda v: f'{v.x:g} {v.y:g} {v.z:g} {v.w:g}'
+_conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
+_conv_vec4_to_vec3 = lambda v: Vec3(v.x, v.y, v.z)
+_conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
+
+_conv_matrix_to_string = str
+_conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
+
+_conv_angle_to_string = lambda a: f'{a.pitch:g} {a.yaw:g} {a.roll:g}'
+_conv_angle_to_matrix = lambda ang: Matrix.from_angle(Angle(ang))
+_conv_angle_to_vec3 = lambda ang: Vec3(ang.pitch, ang.yaw, ang.roll)
 
 _CONVERSIONS = _get_converters()
