@@ -122,48 +122,99 @@ def _get_converters() -> dict:
     return conv
 
 
-class Element(Generic[ValueT]):
+class _ValProps:
+    """Properties which read/write as the various kinds of value types."""
+    def _read_val(self, newtype: ValueType) -> Value:
+        """Convert to the desired type."""
+        raise NotImplementedError
+
+    def _write_val(self, newtype: ValueType, value: Value) -> None:
+        """Set to the desired type."""
+        raise NotImplementedError
+
+    @staticmethod
+    def _make_prop(val_type: ValueType, typ: type) -> property:
+        """Build the properties for each type."""
+
+        def setter(self, value):
+            self._write_val(val_type, value)
+
+        def getter(self):
+            return self._read_val(val_type)
+        if val_type.name[0].casefold() in 'aeiou':
+            desc = f' the value as an {val_type.name.lower()}.'
+        else:
+            desc = f' the value as a {val_type.name.lower()}.'
+        getter.__doc__ = 'Return' + desc
+        setter.__doc__ = 'Convert' + desc
+        getter.__annotations__['return'] = typ
+        setter.__annotations__['value'] = typ
+        return property(
+            fget=getter,
+            fset=setter,
+            doc=f'Access' + desc,
+        )
+
+    def set_val_void(self):
+        """Set the value to void (no value).
+
+        Unlike other types this is a method since no value needs to be read.
+        """
+        self._write_val(ValueType.VOID, None)
+
+    val_int = _make_prop(ValueType.INT, int)
+    val_str = val_string = _make_prop(ValueType.STRING, str)
+    val_float = _make_prop(ValueType.FLOAT, float)
+    val_bool = _make_prop(ValueType.BOOL, bool)
+    val_colour = val_color = _make_prop(ValueType.COLOR, Color)
+    val_vec2 = _make_prop(ValueType.VEC2, Vec2)
+    val_vec3 = _make_prop(ValueType.VEC3, Vec3)
+    val_vec4 = _make_prop(ValueType.VEC4, Vec4)
+    val_quat = val_quaternion = _make_prop(ValueType.QUATERNION, Quaternion)
+    val_ang = val_angle = _make_prop(ValueType.ANGLE, AngleTup)
+    val_mat = val_matrix = _make_prop(ValueType.MATRIX, Matrix)
+
+    del _make_prop
+
+
+class Element(Generic[ValueT], _ValProps):
     """An element in a DMX tree."""
     typ: ValueType
     _value: Value
 
-    def __init__(self, name: str, typ: ValueType=ValueType.VOID, val: Value=None) -> None:
+    def __init__(self, name, typ=ValueType.VOID, val=None):
         """For internal use only."""
         self.name = name
         self.typ = typ
         self._value = val
 
     @classmethod
-    def int(cls, name: str, value: blt.int) -> 'Element[blt.int]':
+    def int(cls, name, value):
         """Create an element with an integer value."""
         return cls(name, ValueType.INT, value)
 
     @classmethod
-    def float(cls, name: str, value: blt.float) -> 'Element[blt.float]':
+    def float(cls, name: str, value):
         """Create an element with a float value."""
         return cls(name, ValueType.FLOAT, value)
 
     @classmethod
-    def bool(cls, name: str, value: blt.bool) -> 'Element[blt.bool]':
+    def bool(cls, name, value):
         """Create an element with a boolean value."""
         return cls(name, ValueType.BOOL, value)
 
     @classmethod
-    def string(cls, name: str, value: blt.str) -> 'Element[blt.str]':
+    def string(cls, name, value):
         """Create an element with a string value."""
         return cls(name, ValueType.STRING, value)
 
     @classmethod
-    def void(cls, name: str) -> 'Element[None]':
+    def void(cls, name: str):
         """Create an element with no value."""
         return cls(name)
 
     @classmethod
-    def vec2(
-        cls, name: str,
-        x: Union[blt.float, Iterable[blt.float]] = 0.0,
-        y: blt.float = 0.0,
-    ) -> 'Element[Vec2]':
+    def vec2(cls, name, x=0.0, y=0.0):
         """Create an element with a 2D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
@@ -172,13 +223,7 @@ class Element(Generic[ValueT]):
         return cls(name, ValueType.VEC2, Vec2(x, y))
 
     @classmethod
-    def vec3(
-        cls,
-        name: str,
-        x: Union[blt.float, Iterable[blt.float]] = 0.0,
-        y: blt.float = 0.0,
-        z: blt.float = 0.0,
-    ) -> 'Element[Vec3]':
+    def vec3(cls, name, x=0.0, y=0.0, z=0.0) -> 'Element[Vec3]':
         """Create an element with a 3D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
@@ -188,14 +233,7 @@ class Element(Generic[ValueT]):
         return cls(name, ValueType.VEC3, Vec3(x, y, z))
 
     @classmethod
-    def vec4(
-        cls,
-        name: str,
-        x: Union[blt.float, Iterable[blt.float]] = 0.0,
-        y: blt.float = 0.0,
-        z: blt.float = 0.0,
-        w: blt.float = 0.0,
-    ) -> 'Element[Vec4]':
+    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0):
         """Create an element with a 4D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
@@ -206,13 +244,7 @@ class Element(Generic[ValueT]):
         return cls(name, ValueType.VEC4, Vec4(x, y, z, w))
 
     @classmethod
-    def color(
-        cls,
-        name: str,
-        r: Union[blt.float, Iterable[blt.float]] = 0.0,
-        g: blt.float = 0.0,
-        b: blt.float = 0.0,
-    ) -> 'Element[Color]':
+    def color(cls, name, r=0.0, g=0.0, b=0.0):
         """Create an element with a color."""
         if not isinstance(r, (int, float)):
             it = iter(r)
@@ -222,13 +254,7 @@ class Element(Generic[ValueT]):
         return cls(name, ValueType.COLOR, Color(r, g, b))
 
     @classmethod
-    def angle(
-        cls,
-        name: str,
-        pitch: Union[blt.float, Iterable[blt.float]] = 0.0,
-        yaw: blt.float = 0.0,
-        roll: blt.float = 0.0,
-    ) -> 'Element[Vec4]':
+    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0):
         """Create an element with an Euler angle."""
         if not isinstance(pitch, (int, float)):
             it = iter(pitch)
@@ -255,7 +281,7 @@ class Element(Generic[ValueT]):
             w = float(next(it, w))
         return cls(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
 
-    def _convert(self, newtype: ValueType) -> Value:
+    def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""
         if isinstance(self._value, list):
             raise ValueError('Cannot read value of array elements!')
@@ -265,28 +291,9 @@ class Element(Generic[ValueT]):
             raise ValueError(f'Cannot convert ({self._value}) to {newtype} type!')
         return func(self._value)
 
-    @property
-    def val_int(self) -> blt.int:
-        """Return the value as an integer."""
-        return self._convert(ValueType.INT)
-
-    @property
-    def val_float(self) -> blt.float:
-        """Return the value as a float."""
-        return self._convert(ValueType.FLOAT)
-
-    @property
-    def val_bool(self) -> blt.bool:
-        """Return the value as an integer."""
-        return self._convert(ValueType.INT)
-
-    @property
-    def val_str(self) -> str:
-        """Return the value as a string.
-
-        This is valid for all types.
-        """
-        return self._convert(ValueType.STR)
+    def _write_val(self, newtype: ValueType, value: Value) -> None:
+        self.typ = newtype
+        self._value = value
 
 
 _conv_string_to_float = float
