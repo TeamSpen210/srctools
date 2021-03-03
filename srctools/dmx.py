@@ -1,17 +1,19 @@
-"""Handles DataModel eXchange trees, in both binary and text format."""
+"""Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Type, Generic, Iterable, NewType,
-    Dict, Tuple, Callable,
+    Dict, Tuple, Callable, IO,
 )
+import builtins as blt
+import struct
+import io
+import re
 
 from srctools import binformat, bool_as_int, Vec, BOOL_LOOKUP, Matrix, Angle, Vec_tuple as Vec3
-import builtins as blt
 
 
 class ValueType(Enum):
     """The type of value an element has."""
-    UNKNOWN = 'unknown'
     ELEMENT = 'element'  # Another attribute
     INTEGER = INT = 'int'
     FLOAT = 'float'
@@ -180,6 +182,56 @@ class Element(Generic[ValueT], _ValProps):
         self.name = name
         self.typ = typ
         self._value = val
+
+    @classmethod
+    def parse(cls, file: IO[bytes]) -> Tuple['Element', str, int]:
+        """Parse a DMX file encoded in binary or KV2 (text).
+
+        The return value is the tree, format name and version.
+        """
+        # The format header is:
+        # <!-- dmx encoding [encoding] [version] format [format] [version] -->
+        header = bytearray(file.read(4))
+        if header != b'<!--':
+            raise ValueError('The file is not a DMX file.')
+        # Read until the -->, or we arbitrarily hit 1kb (assume it's corrupt)
+        for i in range(1024):
+            header.extend(file.read(1))
+            if header.endswith(b'-->'):
+                break
+        else:
+            raise ValueError('Unterminated DMX heading comment!')
+        match = re.match(
+            br'<!--\s*dmx\s+encoding\s+([a-z]+)\s+([0-9]+)\s+'
+            br'format\s+([a-z]+)\s+([0-9]+)\s*-->', header,
+        )
+        if match is None:
+            raise ValueError(f'Invalid DMX header {bytes(header)!r}!')
+        enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
+
+        enc_vers = int(enc_vers_by.decode('ascii'))
+        fmt_name = fmt_name_by.decode('ascii')
+        fmt_vers = int(fmt_vers_by.decode('ascii'))
+        if enc_name == b'keyvalues2':
+            return cls.parse_kv2(io.TextIOWrapper(file), enc_vers), fmt_name, fmt_vers
+        elif enc_name == b'binary':
+            return cls.parse_bin(file, enc_vers), fmt_name, fmt_vers
+        else:
+            raise ValueError(f'Unknown DMX encoding {repr(enc_name)[2:-1]}!')
+
+    @classmethod
+    def parse_bin(cls, file: IO[bytes], version: int) -> 'Element':
+        """Parse the core binary data in a DMX file.
+
+        The <!-- --> format comment line should have already be read.
+        """
+
+    @classmethod
+    def parse_kv2(cls, file: IO[str], version: int) -> 'Element':
+        """Parse a DMX file encoded in KeyValues2.
+
+        The <!-- --> format comment line should have already be read.
+        """
 
     @classmethod
     def int(cls, name, value):
@@ -352,5 +404,12 @@ _conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
 _conv_angle_to_string = lambda a: f'{a.pitch:g} {a.yaw:g} {a.roll:g}'
 _conv_angle_to_matrix = lambda ang: Matrix.from_angle(Angle(ang))
 _conv_angle_to_vec3 = lambda ang: Vec3(ang.pitch, ang.yaw, ang.roll)
+
+# Binary conversions.
+_conv_string_to_binary = lambda text: text.encode('ascii') + '\0'
+_conv_binary_to_string = lambda binary: binary.decode('ascii')
+
+_conv_integer_to_binary = lambda num: struct.pack('<i', num)
+_conv_binary_to_integer = lambda byt: struct.unpack('<i', byt)[0]
 
 _CONVERSIONS = _get_converters()
