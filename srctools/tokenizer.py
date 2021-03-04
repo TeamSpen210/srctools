@@ -72,6 +72,7 @@ class Token(Enum):
     COLON = 13
     EQUALS = 14
     PLUS = 15
+    COMMA = 16
 
     @property
     def has_value(self) -> bool:
@@ -91,6 +92,7 @@ _PUSHBACK_VALS = {
     Token.COLON: ':',
     Token.EQUALS: '=',
     Token.PLUS: '+',
+    Token.COMMA: ',',
 }
 
 
@@ -101,6 +103,7 @@ _OPERATORS = {
     ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
+    ',': Token.COMMA,
 }
 
 
@@ -117,7 +120,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = set('"\'{};:[]()\n\t ')
+BARE_DISALLOWED = set('"\'{};:,[]()\n\t ')
 
 
 class Tokenizer:
