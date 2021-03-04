@@ -218,15 +218,17 @@ class ElemMember(_ValProps):
 
 class Element(Generic[ValueT], _ValProps):
     """An element in a DMX tree."""
+    type: str
     name: str
     uuid: UUID
     _val_typ: Union[ValueType, str]
     _value: Union[Value, list, dict]
 
-    def __init__(self, name, typ, val, uuid: UUID=None):
+    def __init__(self, el_type, val_typ, val, uuid: UUID=None, name=''):
         """For internal use only."""
+        self.type = el_type
         self.name = name
-        self._val_typ = typ
+        self._val_typ = val_typ
         self._value = val
         if uuid is None:
             self.uuid = get_uuid()
@@ -411,51 +413,51 @@ class Element(Generic[ValueT], _ValProps):
         return elem
 
     @classmethod
-    def int(cls, name, value):
+    def int(cls, el_type, value):
         """Create an element with an integer value."""
-        return cls(name, ValueType.INT, value)
+        return cls(el_type, ValueType.INT, value)
 
     @classmethod
-    def float(cls, name: str, value):
+    def float(cls, el_type: str, value):
         """Create an element with a float value."""
-        return cls(name, ValueType.FLOAT, value)
+        return cls(el_type, ValueType.FLOAT, value)
 
     @classmethod
-    def bool(cls, name, value):
+    def bool(cls, el_type, value):
         """Create an element with a boolean value."""
-        return cls(name, ValueType.BOOL, value)
+        return cls(el_type, ValueType.BOOL, value)
 
     @classmethod
-    def string(cls, name, value):
+    def string(cls, el_type, value):
         """Create an element with a string value."""
-        return cls(name, ValueType.STRING, value)
+        return cls(el_type, ValueType.STRING, value)
 
     @classmethod
-    def binary(cls, name: str, value):
+    def binary(cls, el_type: str, value, name=''):
         """Create an element with binary data."""
-        return cls(name, ValueType.BINARY, value)
+        return cls(el_type, ValueType.BINARY, value, None, name)
 
     @classmethod
-    def vec2(cls, name, x=0.0, y=0.0):
+    def vec2(cls, el_type, x=0.0, y=0.0, name=''):
         """Create an element with a 2D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
-        return cls(name, ValueType.VEC2, Vec2(x, y))
+        return cls(el_type, ValueType.VEC2, Vec2(x, y), None, name)
 
     @classmethod
-    def vec3(cls, name, x=0.0, y=0.0, z=0.0):
+    def vec3(cls, el_type, x=0.0, y=0.0, z=0.0, name=''):
         """Create an element with a 3D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
-        return cls(name, ValueType.VEC3, Vec3(x, y, z))
+        return cls(el_type, ValueType.VEC3, Vec3(x, y, z), None, name)
 
     @classmethod
-    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0):
+    def vec4(cls, el_type, x=0.0, y=0.0, z=0.0, w=0.0, name=''):
         """Create an element with a 4D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
@@ -463,36 +465,37 @@ class Element(Generic[ValueT], _ValProps):
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return cls(name, ValueType.VEC4, Vec4(x, y, z, w))
+        return cls(el_type, ValueType.VEC4, Vec4(x, y, z, w), None, name)
 
     @classmethod
-    def color(cls, name, r=0.0, g=0.0, b=0.0):
+    def color(cls, el_type, r=0.0, g=0.0, b=0.0, name=''):
         """Create an element with a color."""
         if not isinstance(r, (int, float)):
             it = iter(r)
             r = float(next(it, 0.0))
             g = float(next(it, g))
             b = float(next(it, b))
-        return cls(name, ValueType.COLOR, Color(r, g, b))
+        return cls(el_type, ValueType.COLOR, Color(r, g, b), None, name)
 
     @classmethod
-    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0):
+    def angle(cls, el_type, pitch=0.0, yaw=0.0, roll=0.0, name=''):
         """Create an element with an Euler angle."""
         if not isinstance(pitch, (int, float)):
             it = iter(pitch)
             pitch = float(next(it, 0.0))
             yaw = float(next(it, yaw))
             roll = float(next(it, roll))
-        return cls(name, ValueType.ANGLE, AngleTup(pitch, yaw, roll))
+        return cls(el_type, ValueType.ANGLE, AngleTup(pitch, yaw, roll), None, name)
 
     @classmethod
     def quaternion(
         cls,
-        name: str,
+        el_type: str,
         x: Union[blt.float, Iterable[blt.float]] = 0.0,
         y: blt.float = 0.0,
         z: blt.float = 0.0,
         w: blt.float = 0.0,
+        name='',
     ) -> 'Element[Quaternion]':
         """Create an element with a quaternion rotation."""
         if not isinstance(x, (int, float)):
@@ -501,7 +504,7 @@ class Element(Generic[ValueT], _ValProps):
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return cls(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
+        return cls(el_type, ValueType.QUATERNION, Quaternion(x, y, z, w), None, name)
 
     def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""

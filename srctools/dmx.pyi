@@ -122,7 +122,7 @@ class Element(Generic[ValueT]):
     val_mat: Matrix
     val_matrix: Matrix
 
-    def __init__(self, name: str, typ: ValueType, val, uuid: UUID=None) -> None: ...
+    def __init__(self, el_type: str, typ: ValueType, val, uuid: UUID=None, name: str='') -> None: ...
 
     @classmethod
     def parse(cls, file: IO[bytes]) -> Tuple[Element, str, int]: ...
@@ -135,68 +135,74 @@ class Element(Generic[ValueT]):
     def _parse_kv2_element(cls, tok: Tokenizer, id_to_elem: Dict[UUID, Element], name: str) -> Element: ...
 
     @classmethod
-    def int(cls, name: str, value: builtins.int) -> Element[builtins.int]: ...
+    def int(cls, el_type: str, value: builtins.int, name: str='') -> Element[builtins.int]: ...
     @classmethod
-    def float(cls, name: str, value: builtins.float) -> Element[builtins.float]: ...
+    def float(cls, el_type: str, value: builtins.float, name: str='') -> Element[builtins.float]: ...
     @classmethod
-    def bool(cls, name: str, value: builtins.bool) -> Element[builtins.bool]: ...
+    def bool(cls, el_type: str, value: builtins.bool, name: str='') -> Element[builtins.bool]: ...
     @classmethod
-    def string(cls, name: str, value: builtins.str) -> Element[builtins.str]: ...
+    def string(cls, el_type: str, value: builtins.str, name: str='') -> Element[builtins.str]: ...
     @classmethod
-    def binary(cls, name: str, value: builtins.bytes) -> Element[builtins.bytes]: ...
+    def binary(cls, el_type: str, value: builtins.bytes, name: str='') -> Element[builtins.bytes]: ...
 
     @classmethod
     def vec2(
-        cls, name: str,
+        cls, el_type: str,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
+        name: str='',
     ) -> Element[Vec2]: ...
 
     @classmethod
     def vec3(
         cls,
-        name: str,
+        el_type: str,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
+        name: str='',
     ) -> Element[Vec3]: ...
 
     @classmethod
     def vec4(
         cls,
-        name: str,
+        el_type: str,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
+        name: str='',
     ) -> Element[Vec4]: ...
 
     @classmethod
     def color(
         cls,
-        name: str,
+        el_type: str,
         r: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         g: builtins.float = 0.0,
         b: builtins.float = 0.0,
+        name: str='',
     ) -> 'Element[Color]': ...
 
     @classmethod
     def angle(
         cls,
-        name: str,
+        el_type: str,
         pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         yaw: builtins.float = 0.0,
         roll: builtins.float = 0.0,
+        name: str='',
     ) -> Element[Vec4]: ...
 
     @classmethod
     def quaternion(
         cls,
-        name: str,
+        el_type: str,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
+        name: str='',
     ) -> Element[Quaternion]: ...
 
     def _read_val(self, newtype: ValueType) -> Value: ...
