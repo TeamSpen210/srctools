@@ -345,6 +345,15 @@ class Element(Generic[ValueT], _ValProps):
                 except ValueError:
                     raise tok.error('Invalid UUID "{}"!', uuid_str)
                 continue
+            elif attr_name == 'name':  # This is also special.
+                if typ_name != 'string':
+                    raise tok.error(
+                        'Element name attribute must be '
+                        '"string" type, not "{}"!',
+                        typ_name
+                    )
+                elem.name = tok.expect(Token.STRING)
+                continue
 
             if typ_name.endswith('_array'):
                 is_array = True
