@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, IO, List,
+    Dict, Tuple, Callable, IO, List, Optional,
 )
 import builtins as blt
 from struct import Struct
@@ -30,6 +30,30 @@ class ValueType(Enum):
     ANGLE = 'qangle'
     QUATERNION = 'quaternion'
     MATRIX = 'vmatrix'
+
+# type -> enum index.
+VAL_TYPE_TO_IND = {
+    ValueType.ELEMENT: 1,
+    ValueType.INT: 2,
+    ValueType.FLOAT: 3,
+    ValueType.BOOL: 4,
+    ValueType.STRING: 5,
+    ValueType.VOID: 6,
+    ValueType.TIME: 7,
+    ValueType.COLOR: 8,
+    ValueType.VECTOR2: 9,
+    ValueType.VECTOR3: 10,
+    ValueType.VECTOR4: 11,
+    ValueType.QANGLE: 12,
+    ValueType.QUATERNION: 13,
+    ValueType.VMATRIX: 14,
+}
+# INT_ARRAY is INT + ARRAY_OFFSET = 15, and so on.
+ARRAY_OFFSET = 14
+IND_TO_VALTYPE = {
+    ind: val_type
+    for ind, val_type in VAL_TYPE_TO_IND.items()
+}
 
 
 class Vec2(NamedTuple):
@@ -286,14 +310,96 @@ class Element(Generic[ValueT], _ValProps):
         return result, fmt_name, fmt_vers
 
     @classmethod
-    def parse_bin(cls, file: IO[bytes], version: int) -> 'Element':
+    def parse_bin(cls, file, version):
         """Parse the core binary data in a DMX file.
 
         The <!-- --> format comment line should have already be read.
         """
+        # There should be a newline and null byte after the comment.
+        newline = file.read(2)
+        if newline != b'\n\0':
+            raise ValueError('No newline after comment!')
+
+        # First, we read the string "dictionary".
+        if version >= 2:
+            [string_count] = binformat.struct_read('<h', file)
+            stringdb = binformat.read_nullstr_array(file, string_count)
+        else:
+            stringdb = None
+
+        stubs: Dict[UUID, Element] = {}
+
+        [element_count] = binformat.struct_read('<i', file)
+        elements: List[Element] = [None] * element_count
+        for i in range(element_count):
+            if stringdb is not None:
+                [ind] = binformat.struct_read('<h', file)
+                el_type = stringdb[ind]
+            else:
+                el_type = binformat.read_nullstr(file)
+            name = binformat.read_nullstr(file)
+            uuid = UUID(bytes_le=file.read(16))
+            elements[i] = Element(el_type, ValueType.ELEMENT, {}, uuid, name)
+        # Now, the attributes in the elements.
+        for i in range(element_count):
+            elem = elements[i]
+            [attr_count] = binformat.struct_read('<i', file)
+            for attr_i in range(attr_count):
+                if stringdb is not None:
+                    [ind] = binformat.struct_read('<h', file)
+                    name = stringdb[ind]
+                else:
+                    name = binformat.read_nullstr(file)
+                [attr_type_data] = binformat.struct_read('<i', file)
+                array_size: Optional[int]
+                if attr_type_data >= ARRAY_OFFSET:
+                    attr_type_data -= ARRAY_OFFSET
+                    [array_size] = binformat.struct_read('<i', file)
+                else:
+                    array_size = None
+                attr_type = IND_TO_VALTYPE[attr_type_data]
+
+                if attr_type is ValueType.TIME and version < 3:
+                    # It's elementid in these versions ???
+                    raise ValueError('Time attribute added in version 3!')
+                elif attr_type is ValueType.ELEMENT:
+                    if array_size is not None:
+                        array = []
+                        attr = Element('', attr_type, array, name=name)
+                        for _ in range(array_size):
+                            [ind] = binformat.struct_read('<i', file)
+                            if ind == -2:
+                                child_elem = None
+                            elif ind == -1:
+                                # Stub element, just with a UUID.
+                                [uuid_str] = binformat.read_nullstr(file)
+                                uuid = UUID(uuid_str)
+                                try:
+                                    child_elem = stubs[uuid]
+                                except KeyError:
+                                    child_elem = stubs[uuid] = Element('<stub>', ValueType.ELEMENT, {}, uuid)
+                            else:
+                                child_elem = elements[ind]
+                            array.append(child_elem)
+                    else:
+                        [ind] = binformat.struct_read('<i', file)
+                        if ind == -2:
+                            attr = None
+                        elif ind == -1:
+                            # Stub element, just with a UUID.
+                            [uuid_str] = binformat.read_nullstr(file)
+                            uuid = UUID(uuid_str)
+                            try:
+                                attr = stubs[uuid]
+                            except KeyError:
+                                attr = stubs[uuid] = Element('<stub>', ValueType.ELEMENT, {}, uuid)
+                        else:
+                            attr = elements[ind]
+
+        return elements[0:1]
 
     @classmethod
-    def parse_kv2(cls, file: IO[str], version: int) -> List['Element']:
+    def parse_kv2(cls, file, version):
         """Parse a DMX file encoded in KeyValues2.
 
         The <!-- --> format comment line should have already be read.
@@ -346,7 +452,7 @@ class Element(Generic[ValueT], _ValProps):
             typ_name = orig_typ_name.casefold()
 
             # The UUID is a special element name/type combo.
-            if attr_name.casefold() == 'id':
+            if attr_name == 'id':
                 if typ_name != 'elementid':
                     raise tok.error(
                         'Element ID attribute must be '

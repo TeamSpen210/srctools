@@ -32,6 +32,11 @@ class ValueType(Enum):
     MATRIX = 'vmatrix'
 
 
+VAL_TYPE_TO_IND: Dict[ValueType, int]
+IND_TO_VALTYPE: Dict[int, ValueType]
+ARRAY_OFFSET: int
+
+
 class Vec2(NamedTuple):
     x: float
     y: float
