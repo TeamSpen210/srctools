@@ -4,13 +4,15 @@ so it's better done in type stub form.
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Type, Generic, Iterable, NewType,
-    Dict, Tuple, Callable,
+    Dict, Tuple, Callable, List, IO
 )
-
+from uuid import UUID
 from srctools import binformat, bool_as_int, Vec, BOOL_LOOKUP, Matrix, Angle
 import builtins
 
 from srctools import Vec_tuple as Vec3  # Re-export.
+from srctools.tokenizer import Tokenizer
+
 
 class ValueType(Enum):
     UNKNOWN = 'unknown'
@@ -85,12 +87,16 @@ ValueT = TypeVar(
 )
 
 _CONVERSIONS: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+SIZES: Dict[ValueType, int]
 
+def parse_vector(text: str, count: int) -> List[float]: ...
 
 class Element(Generic[ValueT]):
     """An element in a DMX tree."""
+    name: str
     typ: ValueType
-    _value: Value
+    _value: Union[Value, list, dict]
+    uuid: UUID
 
     # These are all properties, but no need to annotate like that.
     val_int: int
@@ -116,7 +122,17 @@ class Element(Generic[ValueT]):
     val_mat: Matrix
     val_matrix: Matrix
 
-    def __init__(self, name: str, typ: ValueType=ValueType.VOID, val: Value=None) -> None: ...
+    def __init__(self, name: str, typ: ValueType, val, uuid: UUID=None) -> None: ...
+
+    @classmethod
+    def parse(cls, file: IO[bytes]) -> Tuple[Element, str, int]: ...
+    @classmethod
+    def parse_bin(cls, file: IO[bytes], version: int) -> Element: ...
+    @classmethod
+    def parse_kv2(cls, file: IO[str], version: int) -> Element: ...
+
+    @classmethod
+    def _parse_kv2_element(cls, tok: Tokenizer, id_to_elem: Dict[UUID, Element], name: str) -> Element: ...
 
     @classmethod
     def int(cls, name: str, value: builtins.int) -> Element[builtins.int]: ...
