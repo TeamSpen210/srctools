@@ -257,19 +257,32 @@ class Element(Generic[ValueT], _ValProps):
             br'<!--\s*dmx\s+encoding\s+([a-z0-9]+)\s+([0-9]+)\s+'
             br'format\s+([a-z0-9]+)\s+([0-9]+)\s*-->', header,
         )
-        if match is None:
-            raise ValueError(f'Invalid DMX header {bytes(header)!r}!')
-        enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
+        if match is not None:
+            enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
 
-        enc_vers = int(enc_vers_by.decode('ascii'))
-        fmt_name = fmt_name_by.decode('ascii')
-        fmt_vers = int(fmt_vers_by.decode('ascii'))
+            enc_vers = int(enc_vers_by.decode('ascii'))
+            fmt_name = fmt_name_by.decode('ascii')
+            fmt_vers = int(fmt_vers_by.decode('ascii'))
+        else:
+            # Try a "legacy" header, no version.
+            match = re.match(br'<!--\s*DMXVersion\s+([a-z0-9]+)_v[a-z0-9]*\s*-->', header)
+            if match is None:
+                raise ValueError(f'Invalid DMX header {bytes(header)!r}!')
+            enc_name = match.group(0)
+            if enc_name == b'sfm':
+                enc_name = b'binary'
+            enc_vers = 0
+            fmt_name = ''
+            fmt_vers = 0
+
         if enc_name == b'keyvalues2':
-            return cls.parse_kv2(io.TextIOWrapper(file), enc_vers), fmt_name, fmt_vers
+            result = cls.parse_kv2(io.TextIOWrapper(file), enc_vers)
         elif enc_name == b'binary':
-            return cls.parse_bin(file, enc_vers), fmt_name, fmt_vers
+            result = cls.parse_bin(file, enc_vers)
         else:
             raise ValueError(f'Unknown DMX encoding {repr(enc_name)[2:-1]}!')
+
+        return result, fmt_name, fmt_vers
 
     @classmethod
     def parse_bin(cls, file: IO[bytes], version: int) -> 'Element':
