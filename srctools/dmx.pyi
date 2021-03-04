@@ -52,9 +52,10 @@ class Quaternion(NamedTuple):
 
 
 class Color(NamedTuple):
-    r: float
-    g: float
-    b: float
+    r: int
+    g: int
+    b: int
+    a: int
 
 
 class AngleTup(NamedTuple):
