@@ -202,13 +202,13 @@ class ElemMember(_ValProps):
         else:
             value = self.owner._value
         try:
-            func = _CONVERSIONS[self.owner.typ, newtype]
+            func = _CONVERSIONS[self.owner._val_typ, newtype]
         except KeyError:
             raise ValueError(f'Cannot convert ({value}) to {newtype} type!')
         return func(value)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
-        if newtype != self.owner.typ:
+        if newtype != self.owner._val_typ:
             raise ValueError('Cannot change type of array.')
         if isinstance(self.owner._value, (list, dict)):
             self.owner._value[self.index] = value
@@ -220,13 +220,13 @@ class Element(Generic[ValueT], _ValProps):
     """An element in a DMX tree."""
     name: str
     uuid: UUID
-    typ: Union[ValueType, str]
+    _val_typ: Union[ValueType, str]
     _value: Union[Value, list, dict]
 
     def __init__(self, name, typ, val, uuid: UUID=None):
         """For internal use only."""
         self.name = name
-        self.typ = typ
+        self._val_typ = typ
         self._value = val
         if uuid is None:
             self.uuid = get_uuid()
@@ -299,7 +299,7 @@ class Element(Generic[ValueT], _ValProps):
 
         # Now assign UUIDs.
         for elem in id_to_elem.values():
-            if elem.typ is not ValueType.ELEMENT:
+            if elem._val_typ is not ValueType.ELEMENT:
                 continue
             if isinstance(elem._value, list):
                 iterator = enumerate(elem._value)
@@ -510,17 +510,17 @@ class Element(Generic[ValueT], _ValProps):
         if isinstance(self._value, dict):
             raise ValueError('Cannot read value of compound elements!')
         try:
-            func = _CONVERSIONS[self.typ, newtype]
+            func = _CONVERSIONS[self._val_typ, newtype]
         except KeyError:
             raise ValueError(f'Cannot convert ({self._value}) to {newtype} type!')
         return func(self._value)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
-        self.typ = newtype
+        self._val_typ = newtype
         self._value = value
 
     def __repr__(self) -> str:
-        return f'<{self.typ.name} Element {self.name!r}: {self._value!r}>'
+        return f'<Element {self.name!r}: {self._value!r}>'
 
     def __getitem__(self, item) -> ElemMember:
         """Read values in an array element."""

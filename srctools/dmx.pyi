@@ -95,7 +95,7 @@ class Element(Generic[ValueT]):
     """An element in a DMX tree."""
     name: str
     typ: ValueType
-    _value: Union[Value, list, dict]
+    _val_typ: Union[Value, list, dict]
     uuid: UUID
 
     # These are all properties, but no need to annotate like that.
