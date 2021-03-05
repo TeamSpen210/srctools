@@ -658,14 +658,15 @@ class Element(Generic[ValueT], _ValProps):
         return cls(el_type, ValueType.VEC4, Vec4(x, y, z, w), None, name)
 
     @classmethod
-    def color(cls, el_type, r=0.0, g=0.0, b=0.0, name=''):
+    def color(cls, el_type, r=0, g=0, b=0, a=255, name=''):
         """Create an element with a color."""
         if not isinstance(r, (int, float)):
             it = iter(r)
-            r = float(next(it, 0.0))
-            g = float(next(it, g))
-            b = float(next(it, b))
-        return cls(el_type, ValueType.COLOR, Color(r, g, b), None, name)
+            r = int(next(it, 0.0))
+            g = int(next(it, g))
+            b = int(next(it, b))
+            a = int(next(it, a))
+        return cls(el_type, ValueType.COLOR, Color(r, g, b, a), None, name)
 
     @classmethod
     def angle(cls, el_type, pitch=0.0, yaw=0.0, roll=0.0, name=''):
