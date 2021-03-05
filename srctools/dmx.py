@@ -2,7 +2,7 @@
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, IO, List, Optional,
+    Dict, Tuple, Callable, IO, List, Optional, Type,
 )
 import builtins as blt
 from struct import Struct
@@ -38,7 +38,7 @@ VAL_TYPE_TO_IND = {
     ValueType.FLOAT: 3,
     ValueType.BOOL: 4,
     ValueType.STRING: 5,
-    ValueType.VOID: 6,
+    ValueType.BINARY: 6,
     ValueType.TIME: 7,
     ValueType.COLOR: 8,
     ValueType.VEC2: 9,
@@ -119,7 +119,9 @@ ValueT = TypeVar(
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
-_CONVERSIONS: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+# Take valid types, convert to the value.
+CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
 # And type -> size, excluding str/bytes.
 SIZES: Dict[ValueType, int]
 
@@ -132,8 +134,9 @@ def parse_vector(text: str, count: int) -> List[float]:
     return list(map(float, parts))
 
 
-def _get_converters() -> Tuple[dict, dict]:
-    conv = {}
+def _get_converters() -> Tuple[dict, dict, dict]:
+    type_conv = {}
+    convert = {}
     sizes = {}
     ns = globals()
 
@@ -144,19 +147,20 @@ def _get_converters() -> Tuple[dict, dict]:
     for from_typ in ValueType:
         for to_typ in ValueType:
             if from_typ is to_typ:
-                conv[from_typ, to_typ] = unchanged
+                type_conv[from_typ, to_typ] = unchanged
             else:
                 func = f'_conv_{from_typ.name.casefold()}_to_{to_typ.name.casefold()}'
                 try:
-                    conv[from_typ, to_typ] = ns.pop(func)
+                    type_conv[from_typ, to_typ] = ns.pop(func)
                 except KeyError:
                     if (from_typ is ValueType.STRING or to_typ is ValueType.STRING) and from_typ is not ValueType.ELEMENT and to_typ is not ValueType.ELEMENT:
                         raise ValueError(func + ' must exist!')
         # Special cases, variable size.
         if from_typ is not ValueType.STRING and from_typ is not ValueType.BINARY:
             sizes[from_typ] = ns['_struct_' + from_typ.name.casefold()].size
+        convert[from_typ] = ns.pop(f'_conv_{from_typ.name.casefold()}')
 
-    return conv, sizes
+    return type_conv, convert, sizes
 
 
 def _make_val_prop(val_type: ValueType, typ: type) -> property:
@@ -227,22 +231,24 @@ class ElemMember(_ValProps):
         else:
             value = self.owner._value
         try:
-            func = _CONVERSIONS[self.owner._val_typ, newtype]
+            func = TYPE_CONVERT[self.owner._val_typ, newtype]
         except KeyError:
             raise ValueError(f'Cannot convert ({value}) to {newtype} type!')
         return func(value)
 
-    def _write_val(self, newtype: ValueType, value: Value) -> None:
+    def _write_val(self, newtype: ValueType, value: object) -> None:
         if newtype != self.owner._val_typ:
             raise ValueError('Cannot change type of array.')
+        convert = CONVERSIONS[newtype](value)
         if isinstance(self.owner._value, (list, dict)):
-            self.owner._value[self.index] = value
+            self.owner._value[self.index] = convert
         else:
-            self.owner._value = value
+            self.owner._value = convert
 
 
 class Element(Generic[ValueT], _ValProps):
     """An element in a DMX tree."""
+    __slots__ = ['type', 'name', 'uuid', '_val_typ', '_value']
     type: str
     name: str
     uuid: UUID
@@ -437,7 +443,7 @@ class Element(Generic[ValueT], _ValProps):
                 else:
                     # All other types are fixed-length.
                     size = SIZES[attr_type]
-                    conv = _CONVERSIONS[ValueType.BINARY, attr_type]
+                    conv = TYPE_CONVERT[ValueType.BINARY, attr_type]
                     if array_size is not None:
                         attr = Element('', attr_type, [
                             conv(file.read(size))
@@ -565,7 +571,7 @@ class Element(Generic[ValueT], _ValProps):
                         else:
                             # Other value
                             try:
-                                array.append(_CONVERSIONS[ValueType.STRING, attr_type](tok_value))
+                                array.append(TYPE_CONVERT[ValueType.STRING, attr_type](tok_value))
                             except ValueError:
                                 raise tok.error('"{}" is not a valid {}!', tok_value, attr_type.name)
                         # Skip over the trailing comma if present.
@@ -589,7 +595,7 @@ class Element(Generic[ValueT], _ValProps):
             else:
                 # Single element.
                 unparsed = tok.expect(Token.STRING)
-                value = _CONVERSIONS[ValueType.STRING, attr_type](unparsed)
+                value = TYPE_CONVERT[ValueType.STRING, attr_type](unparsed)
                 attr = Element('', attr_type, value, name=attr_name)
             elem._value[attr_name] = attr
 
@@ -697,7 +703,7 @@ class Element(Generic[ValueT], _ValProps):
         if isinstance(self._value, dict):
             raise ValueError('Cannot read value of compound elements!')
         try:
-            func = _CONVERSIONS[self._val_typ, newtype]
+            func = TYPE_CONVERT[self._val_typ, newtype]
         except KeyError:
             raise ValueError(f'Cannot convert ({self._value}) to {newtype} type!')
         return func(self._value)
@@ -714,7 +720,7 @@ class Element(Generic[ValueT], _ValProps):
         else:
             return f'<{self._val_typ.name} Element: {self._value!r}>'
 
-    def __getitem__(self, item) -> ElemMember:
+    def __getitem__(self, item):
         """Read values in an array element."""
         if not isinstance(self._value, (list, dict)):
             raise ValueError('Cannot index singular elements.')
@@ -789,7 +795,6 @@ _conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec4_to_quaternion = lambda v: Quaternion(v.x, v.y, v.z, v.w)
 _conv_vec4_to_color = lambda v: Color(int(v.x), int(v.y), int(v.z), int(v.w))
 
-_conv_matrix_to_string = str
 _conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
 
 _conv_angle_to_string = lambda a: f'{a.pitch:g} {a.yaw:g} {a.roll:g}'
@@ -798,7 +803,7 @@ _conv_angle_to_vec3 = lambda ang: Vec3(ang.pitch, ang.yaw, ang.roll)
 
 _conv_color_to_string = lambda col: f'{col.r:g} {col.g:g} {col.b:g} {col.a:g}'
 _conv_color_to_vec3 = lambda col: Vec3(col.r, col.g, col.b)
-_conv_color_to_vec4 = lambda col: Vec3(col.r, col.g, col.b, col.a)
+_conv_color_to_vec4 = lambda col: Vec4(col.r, col.g, col.b, col.a)
 
 _conv_quaternion_to_string = lambda quat: f'{quat.x:g} {quat.y:g} {quat.z:g} {quat.w:g}'
 _conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
@@ -820,7 +825,7 @@ def _binconv_basic(name: str, fmt: str):
     ns[f'_conv_binary_to_{name}'] = unpack
 
 
-def _binconv_ntup(name: str, fmt: str, Tup):
+def _binconv_ntup(name: str, fmt: str, Tup: Type[NamedTuple]):
     """Converter functions for a type matching a namedtuple."""
     shape = Struct(fmt)
     ns = globals()
@@ -859,7 +864,8 @@ def _conv_binary_to_matrix(byt):
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
     return mat
 
-def _conv_string_to_matrix(text):
+
+def _conv_string_to_matrix(text: str) -> Matrix:
     data = parse_vector(text, 16)
     mat = Matrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = data[0:3]
@@ -867,7 +873,8 @@ def _conv_string_to_matrix(text):
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
     return mat
 
-def _conv_matrix_to_string(mat):
+
+def _conv_matrix_to_string(mat: Matrix) -> str:
     return (
         f'{mat[0, 0]:g} {mat[0, 1]:g} {mat[0, 2]:g} 0 '
         f'{mat[1, 0]:g} {mat[1, 1]:g} {mat[1, 2]:g} 0 '
@@ -878,4 +885,54 @@ def _conv_matrix_to_string(mat):
 # Element ID
 _struct_element = Struct('<i')
 
-_CONVERSIONS, SIZES = _get_converters()
+# Property setter implementations:
+_conv_integer = int
+_conv_string = str
+_conv_binary = bytes
+_conv_float = float
+_conv_time = float
+_conv_bool = bool
+
+def _converter_ntup(typ):
+    """Common logic for named-tuple members."""
+    def _convert(value) -> typ:
+        if isinstance(value, typ):
+            return value
+        else:
+            return typ._make(value)
+    return _convert
+
+_conv_color = _converter_ntup(Color)
+_conv_vec2 = _converter_ntup(Vec2)
+_conv_vec3 = _converter_ntup(Vec3)
+_conv_vec4 = _converter_ntup(Vec4)
+_conv_quaternion = _converter_ntup(Quaternion)
+del _converter_ntup
+
+
+def _conv_angle(value) -> AngleTup:
+    if isinstance(value, AngleTup):
+        return value
+    elif isinstance(value, Matrix):
+        return AngleTup._make(value.to_angle())
+    else:
+        return AngleTup._make(value)
+
+
+def _conv_matrix(value) -> Matrix:
+    if isinstance(value, AngleTup):
+        value = Matrix.from_angle(Angle(*value))
+    elif isinstance(value, Angle):
+        value = Matrix.from_angle(value)
+    elif not isinstance(value, Matrix):
+        raise ValueError('Matrix attributes must be set to a matrix.')
+    return value.copy()
+
+
+def _conv_element(value) -> Element:
+    if not isinstance(value, Element):
+        raise ValueError('Element arrays must contain elements!')
+    return value
+
+# Gather up all these functions, add to the dicts.
+TYPE_CONVERT, CONVERSIONS, SIZES = _get_converters()

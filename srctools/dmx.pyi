@@ -4,7 +4,7 @@ so it's better done in type stub form.
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Type, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, List, IO
+    Dict, Tuple, Callable, List, IO, overload,
 )
 from uuid import UUID
 from srctools import binformat, bool_as_int, Vec, BOOL_LOOKUP, Matrix, Angle
@@ -92,13 +92,79 @@ ValueT = TypeVar(
     Element,
 )
 
-_CONVERSIONS: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
 SIZES: Dict[ValueType, int]
 
 def parse_vector(text: str, count: int) -> List[float]: ...
 
-class Element(Generic[ValueT]):
-    """An element in a DMX tree."""
+
+class _ValProps:
+    """Properties which read/write as the various kinds of value types."""
+    @property
+    def val_int(self) -> int: ...
+    @val_int.setter
+    def val_int(self, value: Union[int, float]): ...
+
+    @property
+    def val_float(self) -> int: ...
+    @val_float.setter
+    def val_float(self, value: float): ...
+
+    @property
+    def val_bool(self) -> bool: ...
+    @val_bool.setter
+    def val_bool(self, value: object): ...
+
+    @property
+    def val_vec2(self) -> Vec2: ...
+    @val_vec2.setter
+    def val_vec2(self, value: Union[Vec2, Tuple[float, float], Iterable[float]]) -> None: ...
+
+    @property
+    def val_vec3(self) -> Vec3: ...
+    @val_vec3.setter
+    def val_vec3(self, value: Union[Vec3, Tuple[float, float, float], Iterable[float]]) -> None: ...
+
+    @property
+    def val_vec4(self) -> Vec4: ...
+    @val_vec4.setter
+    def val_vec4(self, value: Union[Vec4, Tuple[float, float, float, float], Iterable[float]]) -> None: ...
+
+    @property
+    def val_color(self) -> Color: ...
+    @val_color.setter
+    def val_color(self, value: Union[Color, Tuple[int, int, int, int], Iterable[int]]) -> None: ...
+
+    @property
+    def val_colour(self) -> Color: ...
+    @val_colour.setter
+    def val_colour(self, value: Union[Color, Tuple[int, int, int, int], Iterable[int]]) -> None: ...
+
+    @property
+    def val_str(self) -> str: ...
+    @val_str.setter
+    def val_colour(self, value: object) -> None: ...
+
+    @property
+    def val_string(self) -> str: ...
+    @val_string.setter
+    def val_string(self, value: object) -> None: ...
+
+    val_angle: AngleTup
+    val_ang: AngleTup
+
+    val_quat: Quaternion
+    val_quaternion: Quaternion
+
+    val_mat: Matrix
+    val_matrix: Matrix
+
+class ElemMember(_ValProps):
+    def __init__(self, owner: Element, index: Union[int, str]) -> None: ...
+
+
+class Element(Generic[ValueT], _ValProps):
     type: str
     name: str
     uuid: UUID
@@ -215,4 +281,14 @@ class Element(Generic[ValueT]):
     def _read_val(self, newtype: ValueType) -> Value: ...
     def _write_val(self, newtype: ValueType, value: Value) -> None: ...
 
-    def set_val_void(self) -> None: ...
+    def __repr__(self) -> str: ...
+
+    @overload
+    def __getitem__(self: Element[Element], item: Union[str, int]) -> Element: ...
+    @overload
+    def __getitem__(self, item: Union[str, int]) -> ElemMember: ...
+
+    @overload
+    def __setitem__(self: Element[Element], item: Union[str, int], value: Value) -> None: ...
+    @overload
+    def __setitem__(self: Element[ValueT], item: Union[str, int], value: ValueT) -> None: ...
