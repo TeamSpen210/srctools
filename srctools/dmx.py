@@ -196,13 +196,6 @@ class _ValProps:
         """Set to the desired type."""
         raise NotImplementedError
 
-    def set_val_void(self) -> None:
-        """Set the value to void (no value).
-
-        Unlike other types this is a method since no value needs to be read.
-        """
-        self._write_val(ValueType.VOID, None)
-
     val_int = _make_val_prop(ValueType.INT, int)
     val_str = val_string = _make_val_prop(ValueType.STRING, str)
     val_bin = val_binary = _make_val_prop(ValueType.BINARY, bytes)
@@ -219,9 +212,12 @@ class _ValProps:
 del _make_val_prop
 
 
+# Uses private parts of Element only.
+# noinspection PyProtectedMember
 class ElemMember(_ValProps):
     """A proxy for individual indexes/keys, allowing having .val attributes."""
     def __init__(self, owner, index):
+        """Internal use only."""
         self.owner = owner
         self.index = index
 
