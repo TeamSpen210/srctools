@@ -99,10 +99,11 @@ def parse_vector(text: str, count: int) -> List[float]: ...
 
 class Element(Generic[ValueT]):
     """An element in a DMX tree."""
+    type: str
     name: str
-    typ: ValueType
-    _val_typ: Union[Value, list, dict]
     uuid: UUID
+    _val_typ: Union[ValueType, str]
+    _value: Union[Value, list, dict]
 
     # These are all properties, but no need to annotate like that.
     val_int: int

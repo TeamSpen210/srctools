@@ -41,18 +41,18 @@ VAL_TYPE_TO_IND = {
     ValueType.VOID: 6,
     ValueType.TIME: 7,
     ValueType.COLOR: 8,
-    ValueType.VECTOR2: 9,
-    ValueType.VECTOR3: 10,
-    ValueType.VECTOR4: 11,
-    ValueType.QANGLE: 12,
+    ValueType.VEC2: 9,
+    ValueType.VEC3: 10,
+    ValueType.VEC4: 11,
+    ValueType.ANGLE: 12,
     ValueType.QUATERNION: 13,
-    ValueType.VMATRIX: 14,
+    ValueType.MATRIX: 14,
 }
 # INT_ARRAY is INT + ARRAY_OFFSET = 15, and so on.
 ARRAY_OFFSET = 14
 IND_TO_VALTYPE = {
     ind: val_type
-    for ind, val_type in VAL_TYPE_TO_IND.items()
+    for val_type, ind in VAL_TYPE_TO_IND.items()
 }
 
 
@@ -350,7 +350,7 @@ class Element(Generic[ValueT], _ValProps):
                     name = stringdb[ind]
                 else:
                     name = binformat.read_nullstr(file)
-                [attr_type_data] = binformat.struct_read('<i', file)
+                [attr_type_data] = binformat.struct_read('<B', file)
                 array_size: Optional[int]
                 if attr_type_data >= ARRAY_OFFSET:
                     attr_type_data -= ARRAY_OFFSET
@@ -395,6 +395,61 @@ class Element(Generic[ValueT], _ValProps):
                                 attr = stubs[uuid] = Element('<stub>', ValueType.ELEMENT, {}, uuid)
                         else:
                             attr = elements[ind]
+                elif attr_type is ValueType.STRING:
+                    if array_size is not None:
+                        # Arrays are always raw ASCII in the file.
+                        attr = Element(
+                            '', attr_type,
+                            binformat.read_nullstr_array(file, array_size),
+                            name=name,
+                        )
+                    else:  # Single string.
+                        if version >= 5:
+                            # It's an integer position.
+                            [ind] = binformat.struct_read('<i', file)
+                            value = stringdb[ind]
+                        elif version >= 2 and 0:
+                            # It's a short.
+                            [ind] = binformat.struct_read('<H', file)
+                            try:
+                                value = stringdb[ind]
+                            except IndexError:
+                                raise ValueError(f'Invalid index {ind}!')
+                        else:
+                            # Raw value.
+                            value = binformat.read_nullstr(file)
+                        attr = Element(
+                            '', attr_type,
+                            value,
+                            name=name,
+                        )
+                elif attr_type is ValueType.BINARY:
+                    # Binary blobs.
+                    if array_size is not None:
+                        array = []
+                        attr = Element('', attr_type, array, name=name)
+                        for _ in range(array_size):
+                            [size] = binformat.struct_read('<i', file)
+                            array.append(file.read(size))
+                    else:
+                        [size] = binformat.struct_read('<i', file)
+                        attr = Element('', attr_type, file.read(size), name=name)
+                else:
+                    # All other types are fixed-length.
+                    size = SIZES[attr_type]
+                    conv = _CONVERSIONS[ValueType.BINARY, attr_type]
+                    if array_size is not None:
+                        attr = Element('', attr_type, [
+                            conv(file.read(size))
+                            for _ in range(array_size)
+                        ], name=name)
+                    else:
+                        attr = Element(
+                            '', attr_type,
+                            conv(file.read(size)),
+                            name=name,
+                        )
+                elem._value[name] = attr
 
         return elements[0:1]
 
