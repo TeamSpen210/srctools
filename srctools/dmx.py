@@ -10,7 +10,7 @@ import io
 import re
 from uuid import UUID, uuid4 as get_uuid
 
-from srctools import binformat, bool_as_int, Vec, BOOL_LOOKUP, Matrix, Angle, Vec_tuple as Vec3
+from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, Vec_tuple as Vec3
 from srctools.tokenizer import Py_Tokenizer as Tokenizer, Token
 
 
@@ -544,7 +544,7 @@ class Element(Generic[ValueT], _ValProps):
                 continue
             if is_array:
                 array = []
-                attr = Element(attr_name, attr_type, array)
+                attr = Element('', attr_type, array, name=attr_name)
                 id_to_elem[attr.uuid] = attr
                 tok.expect(Token.BRACK_OPEN)
                 for tok_typ, tok_value in tok:
@@ -590,7 +590,7 @@ class Element(Generic[ValueT], _ValProps):
                 # Single element.
                 unparsed = tok.expect(Token.STRING)
                 value = _CONVERSIONS[ValueType.STRING, attr_type](unparsed)
-                attr = Element(attr_name, attr_type, value)
+                attr = Element('', attr_type, value, name=attr_name)
             elem._value[attr_name] = attr
 
         id_to_elem[elem.uuid] = elem
