@@ -251,9 +251,10 @@ class Element(Generic[ValueT], _ValProps):
     def color(
         cls,
         el_type: str,
-        r: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        g: builtins.float = 0.0,
-        b: builtins.float = 0.0,
+        r: Union[builtins.int, Iterable[builtins.int]] = 0,
+        g: builtins.int = 0,
+        b: builtins.int = 0,
+        a: builtins.int = 0,
         name: str='',
     ) -> 'Element[Color]': ...
 
