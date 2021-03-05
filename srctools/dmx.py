@@ -707,7 +707,12 @@ class Element(Generic[ValueT], _ValProps):
         self._value = value
 
     def __repr__(self) -> str:
-        return f'<Element {self.name!r}: {self._value!r}>'
+        if self.type and self.name:
+            return f'<{self._val_typ.name} {self.type}({self.name!r}): {self._value!r}>'
+        elif self.name:
+            return f'<{self._val_typ.name} Element {self.name!r}: {self._value!r}>'
+        else:
+            return f'<{self._val_typ.name} Element: {self._value!r}>'
 
     def __getitem__(self, item) -> ElemMember:
         """Read values in an array element."""
