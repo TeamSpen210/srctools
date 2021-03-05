@@ -451,7 +451,7 @@ class Element(Generic[ValueT], _ValProps):
                         )
                 elem._value[name] = attr
 
-        return elements[0:1]
+        return elements[0]
 
     @classmethod
     def parse_kv2(cls, file, version):
@@ -496,7 +496,7 @@ class Element(Generic[ValueT], _ValProps):
                         elem._value[key] = id_to_elem[value]
                     except KeyError:
                         raise tok.error('UUID {} not found!', value)
-        return elements
+        return elements[0]
 
     @classmethod
     def _parse_kv2_element(cls, tok, id_to_elem, name):
