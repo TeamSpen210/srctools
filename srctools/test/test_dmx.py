@@ -3,14 +3,14 @@ import pytest
 
 from srctools import Matrix
 from srctools.dmx import (
-    Element, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
+    Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion,
 )
 
 
-def test_val_int() -> None:
+def test_attr_val_int() -> None:
     """Test integer-type values."""
-    elem = Element.int('Name', 45)
+    elem = Attribute.int('Name', 45)
     assert elem.val_int == 45
     assert elem.val_str == '45'
     assert elem.val_float == 45.0
@@ -19,16 +19,16 @@ def test_val_int() -> None:
     assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
     assert elem.val_vec4 == Vec4(45.0, 45.0, 45.0, 45.0)
 
-    assert Element.int('Blah', 45).val_bool is True
-    assert Element.int('Blah', 0).val_bool is False
-    assert Element.int('Blah', -2).val_bool is True
+    assert Attribute.int('Blah', 45).val_bool is True
+    assert Attribute.int('Blah', 0).val_bool is False
+    assert Attribute.int('Blah', -2).val_bool is True
 
 
-def test_val_float() -> None:
+def test_attr_val_float() -> None:
     """Test float-type values."""
-    elem = Element.float('Name', 32.25)
+    elem = Attribute.float('Name', 32.25)
     assert elem.val_int == 32
-    assert Element.float('Name', -32.25).val_int == -32
+    assert Attribute.float('Name', -32.25).val_int == -32
     assert elem.val_str == '32.25'
     assert elem.val_float == 32.25
 
@@ -36,34 +36,34 @@ def test_val_float() -> None:
     assert elem.val_vec3 == Vec3(32.25, 32.25, 32.25)
     assert elem.val_vec4 == Vec4(32.25, 32.25, 32.25, 32.25)
 
-    assert Element.float('Blah', 32.25).val_bool is True
-    assert Element.float('Blah', 0.0).val_bool is False
-    assert Element.float('Blah', -12.8).val_bool is True
+    assert Attribute.float('Blah', 32.25).val_bool is True
+    assert Attribute.float('Blah', 0.0).val_bool is False
+    assert Attribute.float('Blah', -12.8).val_bool is True
 
 
-def test_val_str() -> None:
+def test_attr_val_str() -> None:
     """Test string-type values."""
-    assert Element.string('', '45').val_str == '45'
-    assert Element.string('', '').val_str == ''
-    assert Element.string('', 'testing str\ning').val_str == 'testing str\ning'
+    assert Attribute.string('', '45').val_str == '45'
+    assert Attribute.string('', '').val_str == ''
+    assert Attribute.string('', 'testing str\ning').val_str == 'testing str\ning'
 
-    assert Element.string('Name', '45').val_int == 45
-    assert Element.string('Name', '-45').val_int == -45
-    assert Element.string('Name', '0').val_int == 0
+    assert Attribute.string('Name', '45').val_int == 45
+    assert Attribute.string('Name', '-45').val_int == -45
+    assert Attribute.string('Name', '0').val_int == 0
 
-    assert Element.string('', '45').val_float == 45.0
-    assert Element.string('', '45.0').val_float == 45.0
-    assert Element.string('', '45.375').val_float == 45.375
-    assert Element.string('', '-45.375').val_float == -45.375
-    assert Element.string('', '.25').val_float == 0.25
-    assert Element.string('', '0').val_float == 0.0
+    assert Attribute.string('', '45').val_float == 45.0
+    assert Attribute.string('', '45.0').val_float == 45.0
+    assert Attribute.string('', '45.375').val_float == 45.375
+    assert Attribute.string('', '-45.375').val_float == -45.375
+    assert Attribute.string('', '.25').val_float == 0.25
+    assert Attribute.string('', '0').val_float == 0.0
 
-    assert Element.string('', '1').val_bool is True
-    assert Element.string('', '0').val_bool is False
-    assert Element.string('', 'yEs').val_bool is True
-    assert Element.string('', 'No').val_bool is False
-    assert Element.string('', 'tRue').val_bool is True
-    assert Element.string('', 'faLse').val_bool is False
+    assert Attribute.string('', '1').val_bool is True
+    assert Attribute.string('', '0').val_bool is False
+    assert Attribute.string('', 'yEs').val_bool is True
+    assert Attribute.string('', 'No').val_bool is False
+    assert Attribute.string('', 'tRue').val_bool is True
+    assert Attribute.string('', 'faLse').val_bool is False
 
 
 @pytest.mark.parametrize(['attr', 'typ'], [
@@ -87,22 +87,23 @@ def test_val_str() -> None:
         ('val_mat', Matrix),
         ('val_matrix', Matrix),
 ]])
-@pytest.mark.parametrize('element', [
-    Element.int('', 45),
-    Element.float('', 48.9),
-    Element.vec2('', 3, 4),
-    Element.vec3('', 4, 5, 6),
-    Element.vec4('', 5, 6, 7),
-    Element.angle('', 45.0, 90.0, 0.0),
-    Element.color('', 255, 128, 64),
-], ids=lambda el: el.typ.name.lower())
-def test_conv_types(element: Element, attr: str, typ: type) -> None:
+@pytest.mark.parametrize('attribute', [
+    Attribute.int('', 45),
+    Attribute.float('', 48.9),
+    Attribute.vec2('', 3, 4),
+    Attribute.vec3('', 4, 5, 6),
+    Attribute.vec4('', 5, 6, 7),
+    Attribute.angle('', 45.0, 90.0, 0.0),
+    Attribute.color('', 255, 128, 64),
+    Attribute.quaternion('', 0.0, 0.0, 0.0, 1.0),
+], ids=lambda attr: attr.type.name.lower())
+def test_attr_conv_types(attribute: Attribute, attr: str, typ: type) -> None:
     """Check all the conversions either fail or produce the right result.
 
     We don't test string/bytes since valid values are different for different dests.
     """
     try:
-        result = getattr(element, attr)
+        result = getattr(attribute, attr)
     except ValueError:
         # Conversion failed, that's fine for all types except for string/binary.
         if typ is str or typ is bytes:
