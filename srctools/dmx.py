@@ -1,8 +1,8 @@
 """Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, IO, List, Optional, Type,
+    Union, NamedTuple, TypeVar, Generic, NewType,
+    Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator,
 )
 import builtins as blt
 from struct import Struct
@@ -208,13 +208,14 @@ class _ValProps:
     val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
     val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
     val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
+    val_compound = val_elem = val =_make_val_prop(ValueType.ELEMENT, 'Element')
 
 del _make_val_prop
 
 
-# Uses private parts of Element only.
+# Uses private parts of Attribute only.
 # noinspection PyProtectedMember
-class ElemMember(_ValProps):
+class AttrMember(_ValProps):
     """A proxy for individual indexes/keys, allowing having .val attributes."""
     def __init__(self, owner, index):
         """Internal use only."""
@@ -227,13 +228,13 @@ class ElemMember(_ValProps):
         else:
             value = self.owner._value
         try:
-            func = TYPE_CONVERT[self.owner._val_typ, newtype]
+            func = TYPE_CONVERT[self.owner._typ, newtype]
         except KeyError:
             raise ValueError(f'Cannot convert ({value}) to {newtype} type!')
         return func(value)
 
     def _write_val(self, newtype: ValueType, value: object) -> None:
-        if newtype != self.owner._val_typ:
+        if newtype != self.owner._typ:
             raise ValueError('Cannot change type of array.')
         convert = CONVERSIONS[newtype](value)
         if isinstance(self.owner._value, (list, dict)):
@@ -242,21 +243,174 @@ class ElemMember(_ValProps):
             self.owner._value = convert
 
 
-class Element(Generic[ValueT], _ValProps):
-    """An element in a DMX tree."""
-    __slots__ = ['type', 'name', 'uuid', '_val_typ', '_value']
-    type: str
+class Attribute(Generic[ValueT], _ValProps):
+    """A single attribute of an element."""
+    __slots__ = ['name', '_typ', '_value']
     name: str
-    uuid: UUID
-    _val_typ: Union[ValueType, str]
-    _value: Union[Value, list, dict]
+    _typ: ValueType
+    _value: Union[ValueT, List[ValueT]]
 
-    def __init__(self, el_type, val_typ, val, uuid: UUID=None, name=''):
+    def __init__(self, name, type, value) -> None:
         """For internal use only."""
-        self.type = el_type
         self.name = name
-        self._val_typ = val_typ
-        self._value = val
+        self._typ = type
+        self._value = value
+
+    @property
+    def type(self) -> ValueType:
+        """Return the current type of the attribute."""
+        return self._typ
+
+    @classmethod
+    def int(cls, name, value):
+        """Create an element with an integer value."""
+        return cls(name, ValueType.INT, value)
+
+    @classmethod
+    def float(cls, name, value):
+        """Create an element with a float value."""
+        return cls(name, ValueType.FLOAT, value)
+
+    @classmethod
+    def bool(cls, name, value):
+        """Create an element with a boolean value."""
+        return cls(name, ValueType.BOOL, value)
+
+    @classmethod
+    def string(cls, name, value):
+        """Create an element with a string value."""
+        return cls(name, ValueType.STRING, value)
+
+    @classmethod
+    def binary(cls, name, value):
+        """Create an element with binary data."""
+        return cls(name, ValueType.BINARY, value)
+
+    @classmethod
+    def vec2(cls, name, x=0.0, y=0.0):
+        """Create an element with a 2D vector."""
+        if not isinstance(x, (int, float)):
+            it = iter(x)
+            x = float(next(it, 0.0))
+            y = float(next(it, y))
+        return cls(name, ValueType.VEC2, Vec2(x, y))
+
+    @classmethod
+    def vec3(cls, name, x=0.0, y=0.0, z=0.0):
+        """Create an element with a 3D vector."""
+        if not isinstance(x, (int, float)):
+            it = iter(x)
+            x = float(next(it, 0.0))
+            y = float(next(it, y))
+            z = float(next(it, z))
+        return cls(name, ValueType.VEC3, Vec3(x, y, z))
+
+    @classmethod
+    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0):
+        """Create an element with a 4D vector."""
+        if not isinstance(x, (int, float)):
+            it = iter(x)
+            x = float(next(it, 0.0))
+            y = float(next(it, y))
+            z = float(next(it, z))
+            w = float(next(it, w))
+        return cls(name, ValueType.VEC4, Vec4(x, y, z, w))
+
+    @classmethod
+    def color(cls, name, r=0, g=0, b=0, a=255):
+        """Create an element with a color."""
+        if not isinstance(r, (int, float)):
+            it = iter(r)
+            r = int(next(it, 0.0))
+            g = int(next(it, g))
+            b = int(next(it, b))
+            a = int(next(it, a))
+        return cls(name, ValueType.COLOR, Color(r, g, b, a))
+
+    @classmethod
+    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0):
+        """Create an element with an Euler angle."""
+        if not isinstance(pitch, (int, float)):
+            it = iter(pitch)
+            pitch = float(next(it, 0.0))
+            yaw = float(next(it, yaw))
+            roll = float(next(it, roll))
+        return cls(name, ValueType.ANGLE, AngleTup(pitch, yaw, roll))
+
+    @classmethod
+    def quaternion(cls, name: str, x=0.0, y=0.0, z=0.0, w=1.0) -> 'Attribute[Quaternion]':
+        """Create an element with a quaternion rotation."""
+        if not isinstance(x, (int, float)):
+            it = iter(x)
+            x = float(next(it, 0.0))
+            y = float(next(it, y))
+            z = float(next(it, z))
+            w = float(next(it, w))
+        return cls(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
+
+    def _read_val(self, newtype: ValueType) -> Value:
+        """Convert to the desired type."""
+        if isinstance(self._value, list):
+            raise ValueError('Cannot read value of array elements!')
+        if isinstance(self._value, dict):
+            raise ValueError('Cannot read value of compound elements!')
+        try:
+            func = TYPE_CONVERT[self._typ, newtype]
+        except KeyError:
+            raise ValueError(
+                f'Cannot convert ({self._value}) to {newtype} type!')
+        return func(self._value)
+
+    def _write_val(self, newtype: ValueType, value: Value) -> None:
+        self._typ = newtype
+        self._value = value
+
+    def __repr__(self) -> str:
+        return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
+
+    def __getitem__(self, item):
+        """Read values in an array element."""
+        if not isinstance(self._value, list):
+            raise ValueError('Cannot index singular elements.')
+        _ = self._value[item]  # Raise IndexError/KeyError if not present.
+        return AttrMember(self, item)
+
+    def __setitem__(self, key, value):
+        """Set a specific array element to a value."""
+        # TODO
+
+    def __delitem__(self, item):
+        """Remove the specified array index."""
+        if not isinstance(self._value, list):
+            raise ValueError('Cannot index singular elements.')
+        del self._value[item]
+
+    def __len__(self) -> int:
+        """Return the number of values in the array, if this is one."""
+        if isinstance(self._value, list):
+            return len(self._value)
+        raise ValueError('Singular elements have no length!')
+
+    def __iter__(self) -> Iterator[ValueT]:
+        """Yield each of the elements in an array."""
+        if isinstance(self._value, list):
+            return iter(self._value)
+        else:
+            return iter((self._value, ))
+
+
+class Element(Mapping[str, Attribute]):
+    """An element in a DMX tree."""
+    __slots__ = ['type', 'name', 'uuid', '_members']
+    name: str
+    type: str
+    uuid: UUID
+    _members: Dict[str, Attribute]
+
+    def __init__(self, name, type, uuid=None):
+        self.name = name
+        self.type = type
+        self._members = {}
         if uuid is None:
             self.uuid = get_uuid()
         else:
@@ -341,7 +495,7 @@ class Element(Generic[ValueT], _ValProps):
                 el_type = binformat.read_nullstr(file)
             name = binformat.read_nullstr(file)
             uuid = UUID(bytes_le=file.read(16))
-            elements[i] = Element(el_type, ValueType.ELEMENT, {}, uuid, name)
+            elements[i] = Element(name, el_type, uuid)
         # Now, the attributes in the elements.
         for i in range(element_count):
             elem = elements[i]
@@ -367,43 +521,43 @@ class Element(Generic[ValueT], _ValProps):
                 elif attr_type is ValueType.ELEMENT:
                     if array_size is not None:
                         array = []
-                        attr = Element('', attr_type, array, name=name)
+                        attr = Attribute(name, attr_type, array)
                         for _ in range(array_size):
                             [ind] = binformat.struct_read('<i', file)
-                            if ind == -2:
+                            if ind == -1:
                                 child_elem = None
-                            elif ind == -1:
+                            elif ind == -2:
                                 # Stub element, just with a UUID.
                                 [uuid_str] = binformat.read_nullstr(file)
                                 uuid = UUID(uuid_str)
                                 try:
                                     child_elem = stubs[uuid]
                                 except KeyError:
-                                    child_elem = stubs[uuid] = Element('<stub>', ValueType.ELEMENT, {}, uuid)
+                                    child_elem = stubs[uuid] = Element(name, '<Stub>')
                             else:
                                 child_elem = elements[ind]
                             array.append(child_elem)
                     else:
                         [ind] = binformat.struct_read('<i', file)
-                        if ind == -2:
-                            attr = None
-                        elif ind == -1:
+                        if ind == -1:
+                            child_elem = None
+                        elif ind == -2:
                             # Stub element, just with a UUID.
                             [uuid_str] = binformat.read_nullstr(file)
                             uuid = UUID(uuid_str)
                             try:
-                                attr = stubs[uuid]
+                                child_elem = stubs[uuid]
                             except KeyError:
-                                attr = stubs[uuid] = Element('<stub>', ValueType.ELEMENT, {}, uuid)
+                                child_elem = stubs[uuid] = Element('', 'StubElement', uuid)
                         else:
-                            attr = elements[ind]
+                            child_elem = elements[ind]
+                        attr = Attribute(name, ValueType.ELEMENT, child_elem)
                 elif attr_type is ValueType.STRING:
                     if array_size is not None:
                         # Arrays are always raw ASCII in the file.
-                        attr = Element(
-                            '', attr_type,
+                        attr = Attribute(
+                            name, attr_type,
                             binformat.read_nullstr_array(file, array_size),
-                            name=name,
                         )
                     else:  # Single string.
                         if version >= 5:
@@ -420,38 +574,30 @@ class Element(Generic[ValueT], _ValProps):
                         else:
                             # Raw value.
                             value = binformat.read_nullstr(file)
-                        attr = Element(
-                            '', attr_type,
-                            value,
-                            name=name,
-                        )
+                        attr = Attribute(name, attr_type, value)
                 elif attr_type is ValueType.BINARY:
                     # Binary blobs.
                     if array_size is not None:
                         array = []
-                        attr = Element('', attr_type, array, name=name)
+                        attr = Attribute(name, attr_type, array)
                         for _ in range(array_size):
                             [size] = binformat.struct_read('<i', file)
                             array.append(file.read(size))
                     else:
                         [size] = binformat.struct_read('<i', file)
-                        attr = Element('', attr_type, file.read(size), name=name)
+                        attr = Attribute(name, attr_type, file.read(size))
                 else:
                     # All other types are fixed-length.
                     size = SIZES[attr_type]
                     conv = TYPE_CONVERT[ValueType.BINARY, attr_type]
                     if array_size is not None:
-                        attr = Element('', attr_type, [
+                        attr = Attribute(name, attr_type, [
                             conv(file.read(size))
                             for _ in range(array_size)
-                        ], name=name)
+                        ])
                     else:
-                        attr = Element(
-                            '', attr_type,
-                            conv(file.read(size)),
-                            name=name,
-                        )
-                elem._value[name] = attr
+                        attr = Attribute(name, attr_type, conv(file.read(size)))
+                elem._members[name.casefold()] = attr
 
         return elements[0]
 
@@ -461,8 +607,12 @@ class Element(Generic[ValueT], _ValProps):
 
         The <!-- --> format comment line should have already be read.
         """
-        # For fixup after it's fully parsed.
+        # We apply UUID lookups after everything's parsed.
         id_to_elem: Dict[UUID, Element] = {}
+
+        # Locations in arrays which are UUIDs (and need setting).
+        # This is a (attr, index, uuid, line_num) tuple.
+        fixups: List[Tuple[Attribute, Optional[int], UUID, int]] = []
 
         elements = []
 
@@ -474,36 +624,25 @@ class Element(Generic[ValueT], _ValProps):
                 continue
             else:
                 raise tok.error(token)
-            elements.append(cls._parse_kv2_element(tok, id_to_elem, elem_name))
+            elements.append(cls._parse_kv2_element(tok, id_to_elem, fixups, '', elem_name))
 
-        # Now assign UUIDs.
-        for elem in id_to_elem.values():
-            if elem._val_typ is not ValueType.ELEMENT:
-                continue
-            if isinstance(elem._value, list):
-                iterator = enumerate(elem._value)
-            elif isinstance(elem._value, dict):
-                iterator = elem._value.items()
-            elif isinstance(elem._value, UUID):
-                try:
-                    elem._value = id_to_elem[elem._value]
-                except KeyError:
-                    raise tok.error('UUID {} not found!', elem._value)
-                continue
+        for attr, index, uuid, line_num in fixups:
+            try:
+                elem = id_to_elem[uuid]
+            except KeyError:
+                tok.line_num = line_num
+                raise tok.error('UUID {} not found!', uuid)
+            if index is None:
+                attr._value = elem
             else:
-                continue
-            for key, value in iterator:
-                if isinstance(value, UUID):
-                    try:
-                        elem._value[key] = id_to_elem[value]
-                    except KeyError:
-                        raise tok.error('UUID {} not found!', value)
+                attr._value[index] = elem
+
         return elements[0]
 
     @classmethod
-    def _parse_kv2_element(cls, tok, id_to_elem, name):
+    def _parse_kv2_element(cls, tok, id_to_elem, fixups, name, typ_name):
         """Parse a compound element."""
-        elem: Element = cls(name, ValueType.ELEMENT, {})
+        elem: Element = cls(name, typ_name)
         for attr_name in tok.block(name):
             orig_typ_name = tok.expect(Token.STRING)
             typ_name = orig_typ_name.casefold()
@@ -542,12 +681,14 @@ class Element(Generic[ValueT], _ValProps):
                 attr_type = ValueType(typ_name)
             except ValueError:
                 # It's an inline compound element.
-                elem._value[attr_name] = cls._parse_kv2_element(tok, id_to_elem, orig_typ_name)
+                elem._members[attr_name.casefold()] = Attribute(
+                    attr_name, ValueType.ELEMENT,
+                    cls._parse_kv2_element(tok, id_to_elem, fixups, attr_name, orig_typ_name),
+                )
                 continue
             if is_array:
                 array = []
-                attr = Element('', attr_type, array, name=attr_name)
-                id_to_elem[attr.uuid] = attr
+                attr = Attribute(attr_name, attr_type, array)
                 tok.expect(Token.BRACK_OPEN)
                 for tok_typ, tok_value in tok:
                     if tok_typ is Token.BRACK_CLOSE:
@@ -558,12 +699,14 @@ class Element(Generic[ValueT], _ValProps):
                                 # UUID reference.
                                 uuid_str = tok.expect(Token.STRING)
                                 try:
-                                    array.append(UUID(uuid_str))
+                                    uuid = UUID(uuid_str)
                                 except ValueError:
                                     raise tok.error('Invalid UUID "{}"!', uuid_str)
+                                fixups.append((attr, len(array), uuid, tok.line_num))
+                                array.append(None)  # Placeholder.
                             else:
                                 # Inline compound
-                                array.append(cls._parse_kv2_element(tok, id_to_elem, tok_value))
+                                array.append(cls._parse_kv2_element(tok, id_to_elem, fixups, attr_name, tok_value))
                         else:
                             # Other value
                             try:
@@ -582,150 +725,44 @@ class Element(Generic[ValueT], _ValProps):
                     raise tok.error('Unterminated array!')
             elif attr_type is ValueType.ELEMENT:
                 # This is a reference to another element.
-                # Put the UUID in instead, we'll fix it up later.
+                # We'll fix it up later.
                 uuid_str = tok.expect(Token.STRING)
                 try:
-                    attr = UUID(uuid_str)
+                    uuid = UUID(uuid_str)
                 except ValueError:
                     raise tok.error('Invalid UUID "{}"!', uuid_str)
+                attr = Attribute(attr_name, attr_type, None)  # Value is temporary.
+                fixups.append((attr, None, uuid, tok.line_num))
             else:
                 # Single element.
                 unparsed = tok.expect(Token.STRING)
                 value = TYPE_CONVERT[ValueType.STRING, attr_type](unparsed)
-                attr = Element('', attr_type, value, name=attr_name)
-            elem._value[attr_name] = attr
+                attr = Attribute(attr_name, attr_type, value)
+            elem._members[attr_name.casefold()] = attr
 
         id_to_elem[elem.uuid] = elem
         return elem
 
-    @classmethod
-    def int(cls, el_type, value):
-        """Create an element with an integer value."""
-        return cls(el_type, ValueType.INT, value)
-
-    @classmethod
-    def float(cls, el_type: str, value):
-        """Create an element with a float value."""
-        return cls(el_type, ValueType.FLOAT, value)
-
-    @classmethod
-    def bool(cls, el_type, value):
-        """Create an element with a boolean value."""
-        return cls(el_type, ValueType.BOOL, value)
-
-    @classmethod
-    def string(cls, el_type, value):
-        """Create an element with a string value."""
-        return cls(el_type, ValueType.STRING, value)
-
-    @classmethod
-    def binary(cls, el_type: str, value, name=''):
-        """Create an element with binary data."""
-        return cls(el_type, ValueType.BINARY, value, None, name)
-
-    @classmethod
-    def vec2(cls, el_type, x=0.0, y=0.0, name=''):
-        """Create an element with a 2D vector."""
-        if not isinstance(x, (int, float)):
-            it = iter(x)
-            x = float(next(it, 0.0))
-            y = float(next(it, y))
-        return cls(el_type, ValueType.VEC2, Vec2(x, y), None, name)
-
-    @classmethod
-    def vec3(cls, el_type, x=0.0, y=0.0, z=0.0, name=''):
-        """Create an element with a 3D vector."""
-        if not isinstance(x, (int, float)):
-            it = iter(x)
-            x = float(next(it, 0.0))
-            y = float(next(it, y))
-            z = float(next(it, z))
-        return cls(el_type, ValueType.VEC3, Vec3(x, y, z), None, name)
-
-    @classmethod
-    def vec4(cls, el_type, x=0.0, y=0.0, z=0.0, w=0.0, name=''):
-        """Create an element with a 4D vector."""
-        if not isinstance(x, (int, float)):
-            it = iter(x)
-            x = float(next(it, 0.0))
-            y = float(next(it, y))
-            z = float(next(it, z))
-            w = float(next(it, w))
-        return cls(el_type, ValueType.VEC4, Vec4(x, y, z, w), None, name)
-
-    @classmethod
-    def color(cls, el_type, r=0, g=0, b=0, a=255, name=''):
-        """Create an element with a color."""
-        if not isinstance(r, (int, float)):
-            it = iter(r)
-            r = int(next(it, 0.0))
-            g = int(next(it, g))
-            b = int(next(it, b))
-            a = int(next(it, a))
-        return cls(el_type, ValueType.COLOR, Color(r, g, b, a), None, name)
-
-    @classmethod
-    def angle(cls, el_type, pitch=0.0, yaw=0.0, roll=0.0, name=''):
-        """Create an element with an Euler angle."""
-        if not isinstance(pitch, (int, float)):
-            it = iter(pitch)
-            pitch = float(next(it, 0.0))
-            yaw = float(next(it, yaw))
-            roll = float(next(it, roll))
-        return cls(el_type, ValueType.ANGLE, AngleTup(pitch, yaw, roll), None, name)
-
-    @classmethod
-    def quaternion(
-        cls,
-        el_type: str,
-        x: Union[blt.float, Iterable[blt.float]] = 0.0,
-        y: blt.float = 0.0,
-        z: blt.float = 0.0,
-        w: blt.float = 0.0,
-        name='',
-    ) -> 'Element[Quaternion]':
-        """Create an element with a quaternion rotation."""
-        if not isinstance(x, (int, float)):
-            it = iter(x)
-            x = float(next(it, 0.0))
-            y = float(next(it, y))
-            z = float(next(it, z))
-            w = float(next(it, w))
-        return cls(el_type, ValueType.QUATERNION, Quaternion(x, y, z, w), None, name)
-
-    def _read_val(self, newtype: ValueType) -> Value:
-        """Convert to the desired type."""
-        if isinstance(self._value, list):
-            raise ValueError('Cannot read value of array elements!')
-        if isinstance(self._value, dict):
-            raise ValueError('Cannot read value of compound elements!')
-        try:
-            func = TYPE_CONVERT[self._val_typ, newtype]
-        except KeyError:
-            raise ValueError(f'Cannot convert ({self._value}) to {newtype} type!')
-        return func(self._value)
-
-    def _write_val(self, newtype: ValueType, value: Value) -> None:
-        self._val_typ = newtype
-        self._value = value
-
     def __repr__(self) -> str:
         if self.type and self.name:
-            return f'<{self._val_typ.name} {self.type}({self.name!r}): {self._value!r}>'
+            return f'<{self.type}({self.name!r}): {self._members!r}>'
         elif self.name:
-            return f'<{self._val_typ.name} Element {self.name!r}: {self._value!r}>'
+            return f'<Element {self.name!r}: {self._members!r}>'
         else:
-            return f'<{self._val_typ.name} Element: {self._value!r}>'
+            return f'<Element: {self._members!r}>'
 
-    def __getitem__(self, item):
-        """Read values in an array element."""
-        if not isinstance(self._value, (list, dict)):
-            raise ValueError('Cannot index singular elements.')
-        _ = self._value[item]  # Raise IndexError/KeyError if not present.
-        return ElemMember(self, item)
+    def __len__(self) -> int:
+        return len(self._members)
 
-    def __setitem__(self, key, value):
-        """Set a specific array element to a value."""
+    def __iter__(self) -> Iterator[str]:
+        for attr in self._members.values():
+            yield attr.name
+
+    def __getitem__(self, item: str) -> Attribute:
+        return self._members[item]
+
+    def __setitem__(self, item: str, value: ValueT) -> None:
+        """TODO"""
 
 
 # All the type converter functions.

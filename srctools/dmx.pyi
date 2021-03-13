@@ -3,11 +3,11 @@ so it's better done in type stub form.
 """
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Type, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, List, IO, overload,
+    Union, NamedTuple, TypeVar, Generic, Iterable, NewType,
+    Dict, Tuple, Callable, List, IO, Mapping, Optional,
 )
 from uuid import UUID
-from srctools import binformat, bool_as_int, Vec, BOOL_LOOKUP, Matrix, Angle
+from srctools import Matrix, Angle
 import builtins
 
 from srctools import Vec_tuple as Vec3  # Re-export.
@@ -160,16 +160,14 @@ class _ValProps:
     val_mat: Matrix
     val_matrix: Matrix
 
-class ElemMember(_ValProps):
-    def __init__(self, owner: Element, index: Union[int, str]) -> None: ...
+class AttrMember(_ValProps):
+    def __init__(self, owner: Attribute, index: Union[int, str]) -> None: ...
 
 
-class Element(Generic[ValueT], _ValProps):
-    type: str
+class Attribute(Generic[ValueT], _ValProps):
     name: str
-    uuid: UUID
-    _val_typ: Union[ValueType, str]
-    _value: Union[Value, list, dict]
+    _typ: ValueType
+    _value: Union[Value, list]
 
     # These are all properties, but no need to annotate like that.
     val_int: int
@@ -195,7 +193,93 @@ class Element(Generic[ValueT], _ValProps):
     val_mat: Matrix
     val_matrix: Matrix
 
-    def __init__(self, el_type: str, typ: ValueType, val, uuid: UUID=None, name: str='') -> None: ...
+    val_elem: Element
+    val_compound: Element
+
+    # Readonly
+    @property
+    def type(self) -> ValueType: ...
+
+    def __init__(self, name: str, type: ValueType, value: Union[Value, list]) -> None: ...
+
+    @classmethod
+    def int(cls, name: str, value: builtins.int) -> Attribute[builtins.int]: ...
+    @classmethod
+    def float(cls, name: str, value: builtins.float) -> Attribute[builtins.float]: ...
+    @classmethod
+    def bool(cls, name: str, value: builtins.bool) -> Attribute[builtins.bool]: ...
+    @classmethod
+    def string(cls, name: str, value: builtins.str) -> Attribute[builtins.str]: ...
+    @classmethod
+    def binary(cls, name: str, value: builtins.bytes) -> Attribute[builtins.bytes]: ...
+
+    @classmethod
+    def vec2(
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+    ) -> Attribute[Vec2]: ...
+
+    @classmethod
+    def vec3(
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
+    ) -> Attribute[Vec3]: ...
+
+    @classmethod
+    def vec4(
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
+        w: builtins.float = 0.0,
+    ) -> Attribute[Vec4]: ...
+
+    @classmethod
+    def color(
+        cls, name: str,
+        r: Union[builtins.int, Iterable[builtins.int]] = 0,
+        g: builtins.int = 0,
+        b: builtins.int = 0,
+        a: builtins.int = 0,
+    ) -> 'Attribute[Color]': ...
+
+    @classmethod
+    def angle(
+        cls, name: str,
+        pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        yaw: builtins.float = 0.0,
+        roll: builtins.float = 0.0,
+    ) -> Attribute[Vec4]: ...
+
+    @classmethod
+    def quaternion(
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
+        w: builtins.float = 0.0,
+    ) -> Attribute[Quaternion]: ...
+
+    def _read_val(self, newtype: ValueType) -> Value: ...
+    def _write_val(self, newtype: ValueType, value: Value) -> None: ...
+
+    def __repr__(self) -> str: ...
+
+    def __getitem__(self, item: int) -> AttrMember: ...
+    def __setitem__(self, item: Union[int, slice], value: ValueT) -> None: ...
+    def __delitem__(self, item: Union[int, slice]) -> None: ...
+
+
+class Element(Mapping[str, Attribute]):
+    name: str
+    type: str
+    uuid: UUID
+    _members: Dict[str, Attribute]
+
+    def __init__(self, name: str, type: str, uuid: UUID=None) -> None: ...
 
     @classmethod
     def parse(cls, file: IO[bytes]) -> Tuple[Element, str, int]: ...
@@ -205,91 +289,15 @@ class Element(Generic[ValueT], _ValProps):
     def parse_kv2(cls, file: IO[str], version: int) -> Element: ...
 
     @classmethod
-    def _parse_kv2_element(cls, tok: Tokenizer, id_to_elem: Dict[UUID, Element], name: str) -> Element: ...
-
-    @classmethod
-    def int(cls, el_type: str, value: builtins.int, name: str='') -> Element[builtins.int]: ...
-    @classmethod
-    def float(cls, el_type: str, value: builtins.float, name: str='') -> Element[builtins.float]: ...
-    @classmethod
-    def bool(cls, el_type: str, value: builtins.bool, name: str='') -> Element[builtins.bool]: ...
-    @classmethod
-    def string(cls, el_type: str, value: builtins.str, name: str='') -> Element[builtins.str]: ...
-    @classmethod
-    def binary(cls, el_type: str, value: builtins.bytes, name: str='') -> Element[builtins.bytes]: ...
-
-    @classmethod
-    def vec2(
-        cls, el_type: str,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        y: builtins.float = 0.0,
-        name: str='',
-    ) -> Element[Vec2]: ...
-
-    @classmethod
-    def vec3(
-        cls,
-        el_type: str,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        y: builtins.float = 0.0,
-        z: builtins.float = 0.0,
-        name: str='',
-    ) -> Element[Vec3]: ...
-
-    @classmethod
-    def vec4(
-        cls,
-        el_type: str,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        y: builtins.float = 0.0,
-        z: builtins.float = 0.0,
-        w: builtins.float = 0.0,
-        name: str='',
-    ) -> Element[Vec4]: ...
-
-    @classmethod
-    def color(
-        cls,
-        el_type: str,
-        r: Union[builtins.int, Iterable[builtins.int]] = 0,
-        g: builtins.int = 0,
-        b: builtins.int = 0,
-        a: builtins.int = 0,
-        name: str='',
-    ) -> 'Element[Color]': ...
-
-    @classmethod
-    def angle(
-        cls,
-        el_type: str,
-        pitch: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        yaw: builtins.float = 0.0,
-        roll: builtins.float = 0.0,
-        name: str='',
-    ) -> Element[Vec4]: ...
-
-    @classmethod
-    def quaternion(
-        cls,
-        el_type: str,
-        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
-        y: builtins.float = 0.0,
-        z: builtins.float = 0.0,
-        w: builtins.float = 0.0,
-        name: str='',
-    ) -> Element[Quaternion]: ...
-
-    def _read_val(self, newtype: ValueType) -> Value: ...
-    def _write_val(self, newtype: ValueType, value: Value) -> None: ...
+    def _parse_kv2_element(
+        cls, tok: Tokenizer,
+        id_to_elem: Dict[UUID, Element],
+        fixups: List[Tuple[Attribute, Optional[int], UUID, int]],
+        name: str,
+        typ_name: str,
+    ) -> Element: ...
 
     def __repr__(self) -> str: ...
 
-    @overload
-    def __getitem__(self: Element[Element], item: Union[str, int]) -> Element: ...
-    @overload
-    def __getitem__(self, item: Union[str, int]) -> ElemMember: ...
-
-    @overload
-    def __setitem__(self: Element[Element], item: Union[str, int], value: Value) -> None: ...
-    @overload
-    def __setitem__(self: Element[ValueT], item: Union[str, int], value: ValueT) -> None: ...
+    def __getitem__(self, item: str) -> Attribute: ...
+    def __setitem__(self, item: str, value: ValueT) -> None: ...
