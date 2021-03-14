@@ -4,13 +4,12 @@ from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType,
     Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator,
 )
-import builtins as blt
 from struct import Struct
 import io
 import re
 from uuid import UUID, uuid4 as get_uuid
 
-from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, Vec_tuple as Vec3
+from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle
 from srctools.tokenizer import Py_Tokenizer as Tokenizer, Token
 
 
@@ -60,6 +59,17 @@ class Vec2(NamedTuple):
     """A 2-dimensional vector."""
     x: float
     y: float
+    def __repr__(self) -> str:
+        return f'({self[0]:.6g} {self[1]:.6g})'
+
+
+class Vec3(NamedTuple):
+    """A 3-dimensional vector."""
+    x: float
+    y: float
+    z: float
+    def __repr__(self) -> str:
+        return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g})'
 
 
 class Vec4(NamedTuple):
@@ -68,6 +78,8 @@ class Vec4(NamedTuple):
     y: float
     z: float
     w: float
+    def __repr__(self) -> str:
+        return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
 class Quaternion(NamedTuple):
@@ -76,6 +88,8 @@ class Quaternion(NamedTuple):
     y: float
     z: float
     w: float
+    def __repr__(self) -> str:
+        return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
 class Color(NamedTuple):
@@ -84,6 +98,8 @@ class Color(NamedTuple):
     g: int
     b: int
     a: int
+    def __repr__(self) -> str:
+        return f'{self[0]} {self[1]} {self[2]} {self[3]}'
 
 
 class AngleTup(NamedTuple):
@@ -124,6 +140,24 @@ TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
 CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
 # And type -> size, excluding str/bytes.
 SIZES: Dict[ValueType, int]
+
+# Python types to their matching ValueType.
+TYPE_TO_VALTYPE: Dict[type, ValueType] = {
+    # : ValueType.ELEMENT,
+    int:  ValueType.INT,
+    float: ValueType.FLOAT,
+    bool: ValueType.BOOL,
+    str: ValueType.STRING,
+    bytes: ValueType.BINARY,
+    # Time: ValueType.TIME,
+    Color: ValueType.COLOR,
+    Vec2: ValueType.VEC2,
+    Vec3: ValueType.VEC3,
+    Vec4: ValueType.VEC4,
+    AngleTup: ValueType.ANGLE,
+    Quaternion: ValueType.QUATERNION,
+    Matrix: ValueType.MATRIX,
+}
 
 
 def parse_vector(text: str, count: int) -> List[float]:
@@ -763,6 +797,124 @@ class Element(Mapping[str, Attribute]):
 
     def __setitem__(self, item: str, value: ValueT) -> None:
         """TODO"""
+
+_NUMBERS = {int, float, bool}
+_ANGLES = {Angle, AngleTup}
+
+
+def deduce_type(value):
+    """Convert Python objects to an appropriate ValueType."""
+    if isinstance(value, list):  # Array.
+        return deduce_type_array(value)
+    else:  # Single value.
+        return deduce_type_single(value)
+
+
+def deduce_type_array(value: list):
+    """Convert a Python list to an appropriate ValueType."""
+    if len(value) == 0:
+        raise TypeError('Cannot deduce type for empty list!')
+    types = set(map(type, value))
+    if len(types) > 1:
+        if types <= _NUMBERS:
+            # Allow mixing numerics, casting to the largest subset.
+            if float in types:
+                return ValueType.FLOAT, list(map(float, value))
+            if int in types:
+                return ValueType.INTEGER, list(map(int, value))
+            if bool in types:
+                return ValueType.BOOL, list(map(bool, value))
+            raise AssertionError('No numbers?', value)
+        elif types == _ANGLES:
+            return ValueType.ANGLE, list(map(AngleTup._make, value))
+        # Else, fall through and try iterables.
+    else:
+        [val_actual_type] = types
+        if val_actual_type is Matrix:
+            return ValueType.MATRIX, [mat.copy() for mat in value]
+        if val_actual_type is Angle:
+            return ValueType.ANGLE, [AngleTup._make(ang) for ang in value]
+        elif val_actual_type is Color:
+            return ValueType.COLOR, [
+                Color(int(r), int(g), int(b), int(a))
+                for r, g, b, a in value
+            ]
+        try:
+            # Match to one of the types directly.
+            val_type = TYPE_TO_VALTYPE[val_actual_type]
+        except KeyError:
+            pass
+        else:
+            # NamedTuple, ensure they're a float.
+            if issubclass(val_actual_type, tuple):
+                return val_type, [
+                    tuple.__new__(val_actual_type, map(float, val))
+                    for val in value
+                ]
+            else:
+                return val_type, value.copy()
+    # Deduce each type in the array, check they're the same.
+    val_type, first = deduce_type_single(value[0])
+    result = [first]
+    for val in value[1:]:
+        sec_type, sec_val = deduce_type_single(val)
+        if sec_type is not val_type:
+            raise TypeError(
+                'Arrays must have the same types, or be all numeric. '
+                f'Got {val_type.name} and {sec_type.name}.'
+            )
+        result.append(sec_val)
+    return val_type, result
+
+
+def deduce_type_single(value):
+    if isinstance(value, Matrix):
+        return ValueType.MATRIX, value.copy()
+    if isinstance(value, Angle):  # Mutable version of values we use.
+        return ValueType.ANGLE, AngleTup._make(value)
+    elif isinstance(value, Color):
+        [r, g, b, a] = value
+        return ValueType.COLOR, Color(int(r), int(g), int(b), int(a))
+    try:
+        # Match to one of the types directly.
+        val_type = TYPE_TO_VALTYPE[type(value)]
+    except KeyError:
+        # Try iterables.
+        pass
+    else:
+        # NamedTuple, ensure they're a float.
+        if isinstance(value, tuple):
+            return val_type, tuple.__new__(type(value), map(float, value))
+        else:  # No change needed.
+            return val_type, value
+    try:
+        it = iter(value)
+    except TypeError:
+        # Nope, not an iterable. So not valid.
+        raise TypeError(f'Could not deduce value type for {type(value)}.') from None
+    # Now determine the length.
+    try:
+        x = float(next(it))
+    except StopIteration:
+        raise TypeError(f'Could not deduce vector type for zero-length iterable {type(value)}.') from None
+    try:
+        y = float(next(it))
+    except StopIteration:
+        raise TypeError(f'Could not deduce vector type for one-long iterable {type(value)}.') from None
+    try:
+        z = float(next(it))
+    except StopIteration:
+        return ValueType.VEC2, Vec2(x, y)
+    try:
+        w = float(next(it))
+    except StopIteration:
+        return ValueType.VEC3, Vec3(x, y, z)
+    try:
+        next(it)
+    except StopIteration:
+        return ValueType.VEC4, Vec4(x, y, z, w)
+    else:
+        raise TypeError(f'Could not deduce vector type for 5+ long iterable {type(value)}.') from None
 
 
 # All the type converter functions.
