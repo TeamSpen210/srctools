@@ -296,91 +296,96 @@ class Attribute(Generic[ValueT], _ValProps):
         return self._typ
 
     @classmethod
-    def int(cls, name, value):
-        """Create an element with an integer value."""
-        return cls(name, ValueType.INT, value)
+    def array(cls, name, val_type) -> 'Attribute':
+        """Create an attribute with an array of a specified type."""
+        return Attribute(name, val_type, [])
 
     @classmethod
-    def float(cls, name, value):
-        """Create an element with a float value."""
-        return cls(name, ValueType.FLOAT, value)
+    def int(cls, name, value) -> 'Attribute[int]':
+        """Create an attribute with an integer value."""
+        return Attribute(name, ValueType.INT, value)
 
     @classmethod
-    def bool(cls, name, value):
-        """Create an element with a boolean value."""
-        return cls(name, ValueType.BOOL, value)
+    def float(cls, name, value) -> 'Attribute[float]':
+        """Create an attribute with a float value."""
+        return Attribute(name, ValueType.FLOAT, value)
 
     @classmethod
-    def string(cls, name, value):
-        """Create an element with a string value."""
-        return cls(name, ValueType.STRING, value)
+    def bool(cls, name, value) -> 'Attribute[bool]':
+        """Create an attribute with a boolean value."""
+        return Attribute(name, ValueType.BOOL, value)
 
     @classmethod
-    def binary(cls, name, value):
-        """Create an element with binary data."""
-        return cls(name, ValueType.BINARY, value)
+    def string(cls, name, value) -> 'Attribute[str]':
+        """Create an attribute with a string value."""
+        return Attribute(name, ValueType.STRING, value)
 
     @classmethod
-    def vec2(cls, name, x=0.0, y=0.0):
-        """Create an element with a 2D vector."""
+    def binary(cls, name, value) -> 'Attribute[bytes]':
+        """Create an attribute with binary data."""
+        return Attribute(name, ValueType.BINARY, value)
+
+    @classmethod
+    def vec2(cls, name, x=0.0, y=0.0) -> 'Attribute[Vec2]':
+        """Create an attribute with a 2D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
-        return cls(name, ValueType.VEC2, Vec2(x, y))
+        return Attribute(name, ValueType.VEC2, Vec2(x, y))
 
     @classmethod
-    def vec3(cls, name, x=0.0, y=0.0, z=0.0):
-        """Create an element with a 3D vector."""
+    def vec3(cls, name, x=0.0, y=0.0, z=0.0) -> 'Attribute[Vec3]':
+        """Create an attribute with a 3D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
-        return cls(name, ValueType.VEC3, Vec3(x, y, z))
+        return Attribute(name, ValueType.VEC3, Vec3(x, y, z))
 
     @classmethod
-    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0):
-        """Create an element with a 4D vector."""
+    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0) -> 'Attribute[Vec4]':
+        """Create an attribute with a 4D vector."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return cls(name, ValueType.VEC4, Vec4(x, y, z, w))
+        return Attribute(name, ValueType.VEC4, Vec4(x, y, z, w))
 
     @classmethod
-    def color(cls, name, r=0, g=0, b=0, a=255):
-        """Create an element with a color."""
+    def color(cls, name, r=0, g=0, b=0, a=255) -> 'Attribute[Color]':
+        """Create an attribute with a color."""
         if not isinstance(r, (int, float)):
             it = iter(r)
             r = int(next(it, 0.0))
             g = int(next(it, g))
             b = int(next(it, b))
             a = int(next(it, a))
-        return cls(name, ValueType.COLOR, Color(r, g, b, a))
+        return Attribute(name, ValueType.COLOR, Color(r, g, b, a))
 
     @classmethod
-    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0):
-        """Create an element with an Euler angle."""
+    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0) -> 'Attribute[Angle]':
+        """Create an attribute with an Euler angle."""
         if not isinstance(pitch, (int, float)):
             it = iter(pitch)
             pitch = float(next(it, 0.0))
             yaw = float(next(it, yaw))
             roll = float(next(it, roll))
-        return cls(name, ValueType.ANGLE, AngleTup(pitch, yaw, roll))
+        return Attribute(name, ValueType.ANGLE, AngleTup(pitch, yaw, roll))
 
     @classmethod
     def quaternion(cls, name: str, x=0.0, y=0.0, z=0.0, w=1.0) -> 'Attribute[Quaternion]':
-        """Create an element with a quaternion rotation."""
+        """Create an attribute with a quaternion rotation."""
         if not isinstance(x, (int, float)):
             it = iter(x)
             x = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return cls(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
+        return Attribute(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
 
     def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""
@@ -396,8 +401,9 @@ class Attribute(Generic[ValueT], _ValProps):
         return func(self._value)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
+        """Change the type of the atribute."""
         self._typ = newtype
-        self._value = value
+        self._value = value  # type: ignore # This changes the generic...
 
     def __repr__(self) -> str:
         return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
