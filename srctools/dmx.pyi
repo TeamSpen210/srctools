@@ -15,7 +15,6 @@ from srctools.tokenizer import Tokenizer
 
 
 class ValueType(Enum):
-    UNKNOWN = 'unknown'
     ELEMENT = 'element'  # Another attribute
     INTEGER = INT = 'int'
     FLOAT = 'float'
@@ -71,8 +70,7 @@ class AngleTup(NamedTuple):
 Time = NewType('Time', float)
 Value = Union[
     int, float, bool, str, bytes,
-    Color,
-    NewType,
+    Color, Time,
     Vec2, Vec3,
     Vec4,
     AngleTup,
@@ -84,7 +82,7 @@ Value = Union[
 ValueT = TypeVar(
     'ValueT',
     int, float, bool, str, bytes,
-    Color,
+    Color, Time,
     Vec2, Vec3, Vec4,
     Angle,
     Quaternion,

@@ -113,7 +113,7 @@ Value = Union[
     int, float, bool, str,
     bytes,
     Color,
-    NewType,
+    Time,
     Vec2, Vec3,
     Vec4,
     AngleTup,
@@ -125,7 +125,7 @@ Value = Union[
 ValueT = TypeVar(
     'ValueT',
     int, float, bool, str, bytes,
-    Color,
+    Color, Time,
     Vec2, Vec3, Vec4,
     Angle,
     Quaternion,
@@ -242,7 +242,7 @@ class _ValProps:
     val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
     val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
     val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
-    val_compound = val_elem = val =_make_val_prop(ValueType.ELEMENT, 'Element')
+    val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, 'Element')
 
 del _make_val_prop
 
