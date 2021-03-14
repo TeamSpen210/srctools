@@ -947,6 +947,10 @@ _conv_integer_to_vec2 = lambda n: Vec2(n, n)
 _conv_integer_to_vec3 = lambda n: Vec3(n, n, n)
 _conv_integer_to_vec4 = lambda n: Vec4(n, n, n, n)
 
+def _conv_integer_to_color(val: int) -> Color:
+    val = max(0, min(val, 255))
+    return Color(val, val, val, 255)
+
 _conv_float_to_string = '{:g}'.format
 _conv_float_to_integer = int
 _conv_float_to_bool = bool
@@ -954,10 +958,6 @@ _conv_float_to_time = float
 _conv_float_to_vec2 = lambda n: Vec2(n, n)
 _conv_float_to_vec3 = lambda n: Vec3(n, n, n)
 _conv_float_to_vec4 = lambda n: Vec4(n, n, n, n)
-
-def _conv_float_to_color(val: float) -> Color:
-    val = max(0, min(val, 255))
-    return Color(val, val, val, 255)
 
 _conv_bool_to_integer = int
 _conv_bool_to_float = int
