@@ -65,6 +65,10 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', 'tRue').val_bool is True
     assert Attribute.string('', 'faLse').val_bool is False
 
+    assert Attribute.string('', '4.8 290').val_vec2 == Vec2(4.8, 290.0)
+    assert Attribute.string('', '4.8 -12.385 384').val_vec3 == Vec3(4.8, -12.385, 384)
+    assert Attribute.string('', '4.8 -12.385 284').val_ang == AngleTup(4.8, -12.385, 284)
+
 
 @pytest.mark.parametrize(['attr', 'typ'], [
     pytest.param(attr, typ, id=attr)

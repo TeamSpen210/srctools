@@ -295,6 +295,11 @@ class Attribute(Generic[ValueT], _ValProps):
         """Return the current type of the attribute."""
         return self._typ
 
+    @property
+    def is_array(self) -> bool:
+        """Check if this is an array, or a singular value."""
+        return isinstance(self._value, list)
+
     @classmethod
     def array(cls, name, val_type) -> 'Attribute':
         """Create an attribute with an array of a specified type."""
@@ -397,7 +402,7 @@ class Attribute(Generic[ValueT], _ValProps):
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
             raise ValueError(
-                f'Cannot convert ({self._value}) to {newtype} type!')
+                f'Cannot convert ({self._value!r}) to {newtype} type!')
         return func(self._value)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
@@ -415,9 +420,19 @@ class Attribute(Generic[ValueT], _ValProps):
         _ = self._value[item]  # Raise IndexError/KeyError if not present.
         return AttrMember(self, item)
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, ind, value):
         """Set a specific array element to a value."""
-        # TODO
+        [val_type, result] = deduce_type_single(value)
+        if val_type is not self._typ:
+            # Try converting.
+            try:
+                func = TYPE_CONVERT[self._typ, val_type]
+            except KeyError:
+                raise ValueError(
+                    f'Cannot convert ({val_type}) to {self._typ} type!')
+            self._value[ind] = func(result)
+        else:
+            self._value[ind] = result
 
     def __delitem__(self, item):
         """Remove the specified array index."""
@@ -425,13 +440,13 @@ class Attribute(Generic[ValueT], _ValProps):
             raise ValueError('Cannot index singular elements.')
         del self._value[item]
 
-    def __len__(self) -> int:
+    def __len__(self):
         """Return the number of values in the array, if this is one."""
         if isinstance(self._value, list):
             return len(self._value)
         raise ValueError('Singular elements have no length!')
 
-    def __iter__(self) -> Iterator[ValueT]:
+    def __iter__(self):
         """Yield each of the elements in an array."""
         if isinstance(self._value, list):
             return iter(self._value)
@@ -799,10 +814,21 @@ class Element(Mapping[str, Attribute]):
             yield attr.name
 
     def __getitem__(self, item: str) -> Attribute:
-        return self._members[item]
+        return self._members[item.casefold()]
 
-    def __setitem__(self, item: str, value: ValueT) -> None:
-        """TODO"""
+    def __setitem__(self, name: str, value: Union[Attribute, ValueT]) -> None:
+        """Set a specific value, by deducing the type.
+
+        This means this cannot produce certain types like Time. Use an
+        Attribute constructor for that, or set the val_* property of an
+        existing attribute.
+        """
+        if isinstance(value, Attribute):
+            value.name = name
+            self._members[name.casefold()] = value
+            return
+        val_type, result = deduce_type_single(value)
+        self._members[name.casefold()] = Attribute(name, val_type, result)
 
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
@@ -1017,7 +1043,7 @@ def _binconv_basic(name: str, fmt: str):
     ns[f'_conv_binary_to_{name}'] = unpack
 
 
-def _binconv_ntup(name: str, fmt: str, Tup: Type[NamedTuple]):
+def _binconv_ntup(name: str, fmt: str, Tup: Type[tuple]):
     """Converter functions for a type matching a namedtuple."""
     shape = Struct(fmt)
     ns = globals()

@@ -3,8 +3,8 @@ so it's better done in type stub form.
 """
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Generic, Iterable, NewType,
-    Dict, Tuple, Callable, List, IO, Mapping, Optional, overload,
+    Union, NamedTuple, TypeVar, Generic, Iterable, NewType, Literal,
+    Dict, Tuple, Callable, List, IO, Mapping, Optional, overload, Iterator,
 )
 from uuid import UUID
 from srctools import Matrix, Angle
@@ -391,6 +391,8 @@ class Attribute(Generic[ValueT], _ValProps):
     def __getitem__(self, item: int) -> AttrMember: ...
     def __setitem__(self, item: Union[int, slice], value: ValueT) -> None: ...
     def __delitem__(self, item: Union[int, slice]) -> None: ...
+    def __len__(self) -> builtins.int: ...
+    def __iter__(self) -> Iterator[ValueT]: ...
 
 
 class Element(Mapping[str, Attribute]):
