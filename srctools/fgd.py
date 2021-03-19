@@ -1667,6 +1667,9 @@ class EntityDef:
         if not _done:
             _done = {self}
         for ent in self.bases:
+            if ent in _done:
+                continue
+
             _done.add(ent)
             yield ent
             yield from ent.iter_bases(_done)
