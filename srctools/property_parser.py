@@ -150,6 +150,9 @@ class Property:
     """
     # Helps decrease memory footprint with lots of Property values.
     __slots__ = ('_folded_name', 'real_name', 'value')
+    _folded_name: Optional[str]
+    real_name: Optional[str]
+    value: _Prop_Value
 
     def __init__(
         self: 'Property',
@@ -160,12 +163,12 @@ class Property:
 
         """
         if name is None:
-            self._folded_name = self.real_name = None  # type: Optional[str]
+            self._folded_name = self.real_name = None
         else:
-            self.real_name = sys.intern(name)  # type: Optional[str]
-            self._folded_name = sys.intern(name.casefold())  # type: Optional[str]
+            self.real_name = sys.intern(name)
+            self._folded_name = sys.intern(name.casefold())
 
-        self.value = value  # type: _Prop_Value
+        self.value = value
 
     @property
     def name(self) -> Optional[str]:
