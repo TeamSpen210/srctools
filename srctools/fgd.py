@@ -410,7 +410,7 @@ def read_tags(tok: Tokenizer) -> FrozenSet[str]:
     while True:
         token, value = tok()
         if token is Token.STRING:
-            tags.append(prefix + value.casefold().rstrip(','))
+            tags.append(prefix + value.casefold())
             prefix = ''
         elif token is Token.PLUS:
             if prefix:
@@ -420,6 +420,8 @@ def read_tags(tok: Tokenizer) -> FrozenSet[str]:
             break
         elif token is Token.EOF:
             raise tok.error('Unclosed tags!')
+        elif token is Token.COMMA:
+            continue
         else:
             raise tok.error(token)
 
