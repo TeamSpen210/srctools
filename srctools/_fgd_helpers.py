@@ -1,7 +1,7 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
     List, Optional, Iterator, Union, Tuple, TYPE_CHECKING,
-    Collection,
+    Collection, Iterable,
 )
 
 from srctools import Vec, parse_vec_str
@@ -493,14 +493,15 @@ class HelperSprite(Helper):
                 'Expected up to 1 argument, got ({})!'.format(', '.join(args))
             )
         elif len(args) == 1:
-            return cls(args[0])
+            return cls(args[0].strip('"'))
         else:
             return cls(None)
 
     def export(self) -> List[str]:
         """Produce the arguments for iconsprite()."""
         if self.mat is not None:
-            return [self.mat]
+            # / characters etc require quotes.
+            return [f'"{self.mat}"']
         else:
             return []
 
@@ -570,6 +571,7 @@ class HelperModel(Helper):
 
     def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
         """studio() uses a single material."""
+        models: Iterable[str]
         if self.model is None:
             try:
                 models = entity.kv['model'].known_options()
