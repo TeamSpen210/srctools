@@ -42,7 +42,7 @@ import warnings
 from typing import (
     Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    Iterator, Iterable, ContextManager,
+    Iterator, Iterable,
 )
 
 
@@ -436,6 +436,8 @@ class Vec:
         """
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by min()/max().
+        first: Vec
+        point_coll: Iterable[Vec]
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
                 [[first, *point_coll]] = points
@@ -534,7 +536,7 @@ class Vec:
             roll,
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
+    def to_angle_roll(self, z_norm: 'Vec', stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -988,7 +990,7 @@ class Vec:
     mag_sq = len_sq
 
     @contextlib.contextmanager
-    def transform(self) -> ContextManager['Matrix']:
+    def transform(self) -> Iterator['Matrix']:
         """Perform rotations on this Vector efficiently.
 
         Used as a context manager, which returns a matrix.
@@ -1020,7 +1022,7 @@ class Matrix:
         self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
         self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
 
-    def __eq__(self, other: object) -> object:
+    def __eq__(self, other: object) -> bool:
         if isinstance(other, Py_Matrix):
             return (
                 self._aa == other._aa and self._ab == other._ab and self._ac == other._ac and
@@ -1260,7 +1262,7 @@ class Matrix:
             y = Vec.cross(z, x)
         elif z is None and x is not None and y is not None:
             z = Vec.cross(x, y)
-        elif x is None and y is None and z is None:
+        if x is None or y is None or z is None:
             raise TypeError('At least two vectors must be provided!')
         mat: Matrix = cls.__new__(cls)
         mat._aa, mat._ab, mat._ac = x.norm()
@@ -1272,8 +1274,6 @@ class Matrix:
     def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __matmul__(self, other: 'Angle') -> 'Matrix': ...
-    @overload
-    def __matmul__(self, other: object) -> NotImplemented: ...
 
     def __matmul__(self, other: object) -> 'Matrix':
         if isinstance(other, Py_Matrix):
@@ -1293,8 +1293,6 @@ class Matrix:
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
-    @overload
-    def __rmatmul__(self, other: object) -> NotImplemented: ...
     
     def __rmatmul__(self, other):
         if isinstance(other, Py_Vec):
@@ -1315,8 +1313,6 @@ class Matrix:
     def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
-    @overload
-    def __imatmul__(self, other: object) -> NotImplemented: ...
 
     def __imatmul__(self, other):
         if isinstance(other, Py_Matrix):
@@ -1549,7 +1545,7 @@ class Angle:
 
         At least two must be specified, with the third computed if necessary.
         """
-        return Matrix.from_basis(x=x, y=y, z=z).to_angle()
+        return Py_Matrix.from_basis(x=x, y=y, z=z).to_angle()
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
@@ -1584,7 +1580,7 @@ class Angle:
         else:
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
-    def __eq__(self, other: object) -> object:
+    def __eq__(self, other: object) -> bool:
         """== test.
 
         Two Angles are equal if all three axes are the same.
@@ -1635,12 +1631,7 @@ class Angle:
             return NotImplemented
     # No ordering, there isn't any sensible relationship.
 
-    @overload
-    def __mul__(self, other: Union[int, float]) -> 'Angle': ...
-    @overload
-    def __mul__(self, other: object) -> NotImplemented: ...
-
-    def __mul__(self, other):
+    def __mul__(self, other: Union[int, float]) -> 'Angle':
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return Py_Angle(
@@ -1650,12 +1641,7 @@ class Angle:
             )
         return NotImplemented
 
-    @overload
-    def __rmul__(self, other: Union[int, float]) -> 'Angle': ...
-    @overload
-    def __rmul__(self, other: object) -> NotImplemented: ...
-
-    def __rmul__(self, other):
+    def __rmul__(self, other: Union[int, float]) -> 'Angle':
         """Angle * float multiplies each value."""
         if isinstance(other, (int, float)):
             return Py_Angle(
@@ -1665,12 +1651,7 @@ class Angle:
             )
         return NotImplemented
 
-    @overload
-    def __matmul__(self, other: 'Angle') -> 'Angle': ...
-    @overload
-    def __matmul__(self, other: object) -> NotImplemented: ...
-
-    def __matmul__(self, other):
+    def __matmul__(self, other: 'Angle') -> 'Angle':
         """Angle @ Angle rotates the first by the second.
         """
         if isinstance(other, Py_Angle):
@@ -1682,8 +1663,6 @@ class Angle:
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
     @overload
     def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
-    @overload
-    def __rmatmul__(self, other: object) -> NotImplemented: ...
 
     def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
@@ -1704,7 +1683,7 @@ class Angle:
         return mat.to_angle()
 
     @contextlib.contextmanager
-    def transform(self) -> ContextManager[Matrix]:
+    def transform(self) -> Iterator[Matrix]:
         """Perform transformations on this angle.
 
         Used as a context manager, which returns a matrix.

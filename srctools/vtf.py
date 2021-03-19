@@ -16,7 +16,7 @@ from srctools import Vec, binformat, EmptyMapping
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type, Collection, overload, NamedTuple, TypeVar, Generic,
+    TYPE_CHECKING, Type, Collection, overload, Sequence,
     Mapping,
 )
 
@@ -67,9 +67,9 @@ class CubeSide(Enum):
     SPHERE = 6
 
 
-CUBES_WITH_SPHERE: Collection[CubeSide] = list(CubeSide)
+CUBES_WITH_SPHERE: Sequence[CubeSide] = list(CubeSide)
 # Remove the Sphere type, for 7.5+
-CUBES: Collection[CubeSide] = CUBES_WITH_SPHERE[:-1]
+CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 
 # One black, opaque pixel for creating blank images.
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
@@ -357,6 +357,7 @@ class Frame:
             if self.width != source.width or self.height != source.height:
                 raise ValueError("Tried copying from a frame of a different size!")
             source.load()
+            assert source._data is not None
             if self._data is None:  # Duplicate the other array
                 self._data = source._data[:]
             else: # Copy the other array onto us
@@ -643,9 +644,7 @@ class VTF:
             for i in range(num_resources):
                 [res_id, res_flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
                 if res_id in vtf.resources:
-                    raise ValueError(
-                        'Duplicate resource ID "{}"!'.format(res_id)
-                    )
+                    raise ValueError(f'Duplicate resource ID {repr(res_id)[1:]}!')
 
                 # These do not go in the resources, it's only parsed as images.
                 if res_id == ResourceID.LOW_RES:
@@ -888,13 +887,13 @@ class VTF:
                 depth_iter = CUBES_WITH_SPHERE
         else:
             depth_iter = range(self.depth)
-        for frame in range(self.frame_count):
+        for frame_num in range(self.frame_count):
             for depth_side in depth_iter:
                 # Force to blank if cleared.
-                self._frames[frame, depth_side, 0].load()
+                self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
-                    self._frames[frame, depth_side, mipmap].rescale_from(
-                        self._frames[frame, depth_side, mipmap - 1],
+                    self._frames[frame_num, depth_side, mipmap].rescale_from(
+                        self._frames[frame_num, depth_side, mipmap - 1],
                         filter,
                     )
 
