@@ -90,8 +90,8 @@ class Quaternion(NamedTuple):
     y: float
     z: float
     w: float
-    def __repr__(self) -> str:
-        return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
+    # def __repr__(self) -> str:
+    #     return f'({self[0]} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
 class Color(NamedTuple):
@@ -534,8 +534,18 @@ class Element(Mapping[str, Attribute]):
             raise ValueError('No newline after comment!')
 
         # First, we read the string "dictionary".
-        if version >= 2:
-            [string_count] = binformat.struct_read('<h', file)
+        if version >= 5:
+            stringdb_size = stringdb_ind = '<i'
+        elif version >= 4:
+            stringdb_size = '<i'
+            stringdb_ind = '<h'
+        elif version >= 2:
+            stringdb_size = stringdb_ind = '<h'
+        else:
+            stringdb_size = stringdb_ind = None
+
+        if stringdb_size is not None:
+            [string_count] = binformat.struct_read(stringdb_size, file)
             stringdb = binformat.read_nullstr_array(file, string_count)
         else:
             stringdb = None
@@ -546,11 +556,15 @@ class Element(Mapping[str, Attribute]):
         elements: List[Element] = [None] * element_count
         for i in range(element_count):
             if stringdb is not None:
-                [ind] = binformat.struct_read('<h', file)
+                [ind] = binformat.struct_read(stringdb_ind, file)
                 el_type = stringdb[ind]
             else:
                 el_type = binformat.read_nullstr(file)
-            name = binformat.read_nullstr(file)
+            if version >= 4:
+                [ind] = binformat.struct_read(stringdb_ind, file)
+                name = stringdb[ind]
+            else:
+                name = binformat.read_nullstr(file)
             uuid = UUID(bytes_le=file.read(16))
             elements[i] = Element(name, el_type, uuid)
         # Now, the attributes in the elements.
@@ -559,7 +573,7 @@ class Element(Mapping[str, Attribute]):
             [attr_count] = binformat.struct_read('<i', file)
             for attr_i in range(attr_count):
                 if stringdb is not None:
-                    [ind] = binformat.struct_read('<h', file)
+                    [ind] = binformat.struct_read(stringdb_ind, file)
                     name = stringdb[ind]
                 else:
                     name = binformat.read_nullstr(file)
@@ -617,17 +631,9 @@ class Element(Mapping[str, Attribute]):
                             binformat.read_nullstr_array(file, array_size),
                         )
                     else:  # Single string.
-                        if version >= 5:
-                            # It's an integer position.
-                            [ind] = binformat.struct_read('<i', file)
+                        if stringdb is not None:
+                            [ind] = binformat.struct_read(stringdb_ind, file)
                             value = stringdb[ind]
-                        elif version >= 2 and 0:
-                            # It's a short.
-                            [ind] = binformat.struct_read('<H', file)
-                            try:
-                                value = stringdb[ind]
-                            except IndexError:
-                                raise ValueError(f'Invalid index {ind}!')
                         else:
                             # Raw value.
                             value = binformat.read_nullstr(file)

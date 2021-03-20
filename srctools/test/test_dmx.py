@@ -1,4 +1,5 @@
 """Test the datamodel exchange implementation."""
+from typing import Callable, cast
 from uuid import UUID
 
 import pytest
@@ -8,7 +9,6 @@ from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type,
 )
-
 
 def test_attr_val_int() -> None:
     """Test integer-type values."""
@@ -207,10 +207,13 @@ def test_deduce_type_adv() -> None:
 
 
 @pytest.mark.parametrize('filename', [
-    'keyvalues2',
+    'keyvalues2', 'binary_v2', 'binary_v5',
 ])
 def test_parse(filename: str) -> None:
     """Test parsing all the format types."""
+    # string <-> double <-> float conversions are not quite accurate.
+    a = cast(Callable[[float], float], pytest.approx)
+
     with open(f'dmx_samples/{filename}.dmx', 'rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     assert fmt_name == 'dmx'
@@ -255,8 +258,8 @@ def test_parse(filename: str) -> None:
     assert scalars['neg_integer'].val_int == -1230552801
     assert scalars['pos_integer'].val_int == 296703200
 
-    assert scalars['neg_float'].val_float == -16211.593677226905
-    assert scalars['pos_float'].val_float == 22097.838726432383
+    assert scalars['neg_float'].val_float == a(-16211.59325)
+    assert scalars['pos_float'].val_float == a(22097.83875)
 
     assert scalars['truth'].val_bool is True
     assert scalars['falsity'].val_bool is False
@@ -267,14 +270,14 @@ def test_parse(filename: str) -> None:
     assert scalars['white'].val_color == Color(255, 255, 255, 255)
     assert scalars['half'].val_color == Color(0, 0, 0, 128)
 
-    assert scalars['vec2'].val_vec2 == Vec2(348.275, -389.935)
-    assert scalars['vec3'].val_vec3 == Vec3(128.25, -1048.5, 16382.1902)
-    assert scalars['vec4'].val_vec4 == Vec4(128.25, -1048.5, 16382.1902, -389.935)
+    assert scalars['vec2'].val_vec2 == Vec2(a(348.275), a(-389.935))
+    assert scalars['vec3'].val_vec3 == Vec3(a(128.25), a(-1048.5), a(16382.1902))
+    assert scalars['vec4'].val_vec4 == Vec4(a(128.25), a(-1048.5), a(16382.1902), a(-389.935))
 
     assert scalars['up'].val_ang == AngleTup(-90, 0, 0)
     assert scalars['dn'].val_ang == AngleTup(90, 0, 0)
-    assert scalars['somedir'].val_ang == AngleTup(291, -48.9, 45.0)
-    assert scalars['quat'].val_quat == Quaternion(3.9, -2.3, 3.4, 0.0)
+    assert scalars['somedir'].val_ang == AngleTup(a(291), a(-48.9), a(45.0))
+    assert scalars['quat'].val_quat == Quaternion(a(0.267261), a(0.534522), a(0.801784), 0.0)
 
     assert scalars['hex'].val_bin == (
         b'\x92&\xd0\xc7\x12\xec9\xe9\xd1cE\x19\xd1\xbd\x0f'
@@ -299,16 +302,16 @@ def test_parse(filename: str) -> None:
 
     arr_float = arrays['floating']
     assert len(arr_float) == 10
-    assert arr_float[0].val_float == -10291.153564142704
-    assert arr_float[1].val_float == -55646.21366998823
-    assert arr_float[2].val_float == 78545.15227150527
-    assert arr_float[3].val_float == -95302.87890687701
-    assert arr_float[4].val_float == -45690.04457919854
-    assert arr_float[5].val_float == -55299.052361444636
-    assert arr_float[6].val_float == 96178.44015134772
-    assert arr_float[7].val_float == 58708.297849454975
-    assert arr_float[8].val_float == -49957.20355861797
-    assert arr_float[9].val_float == 23980.82395184
+    assert arr_float[0].val_float == a(-10291.15325)
+    assert arr_float[1].val_float == a(-55646.21366)
+    assert arr_float[2].val_float == a(78545.15227)
+    assert arr_float[3].val_float == a(-95302.8789)
+    assert arr_float[4].val_float == a(-45690.04457)
+    assert arr_float[5].val_float == a(-55299.05236)
+    assert arr_float[6].val_float == a(96178.44015)
+    assert arr_float[7].val_float == a(58708.2978495)
+    assert arr_float[8].val_float == a(-49957.20355)
+    assert arr_float[9].val_float == a(23980.82395)
 
     arr_bool = arrays['logical']
     assert len(arr_bool) == 8
@@ -327,9 +330,9 @@ def test_parse(filename: str) -> None:
         for y in [-1, 0, 1]
     ]
     assert list(arrays['3ds']) == [
-        Vec3(34.0, -348.25, 128.125),
+        Vec3(a(34.0), a(-348.25), a(128.125)),
         Vec3(0.0, 0.0, 0.0),
-        Vec3(0.9, 0.8, 0.5),
+        Vec3(a(0.9), a(0.8), a(0.5)),
     ]
     assert list(arrays['4dimensional']) == [
         Vec4(0.0, 0.0, 0.0, 0.0),
@@ -343,8 +346,8 @@ def test_parse(filename: str) -> None:
         AngleTup(94, 165, 23),
     ]
     assert len(arrays['quaternions']) == 2
-    assert arrays['quaternions'][0].val_quat == Quaternion(0.1, -0.9, 2.3, 0.0)
-    assert arrays['quaternions'][1].val_quat == Quaternion(5.0, 1.5, -4.0, 1.0)
+    assert arrays['quaternions'][0].val_quat == Quaternion(a(0.267261), a(-0.801784), a(0.534522), 0.0)
+    assert arrays['quaternions'][1].val_quat == Quaternion(a(-0.534522), a(0.267261), 0.0, a(-0.801784))
 
     assert len(arrays['hexes']) == 3
     assert list(arrays['hexes']) == [
