@@ -53,6 +53,8 @@ IND_TO_VALTYPE = {
     ind: val_type
     for val_type, ind in VAL_TYPE_TO_IND.items()
 }
+# For parsing, set this initially to check one is set.
+_UNSET_UUID = get_uuid()
 
 
 class Vec2(NamedTuple):
@@ -697,7 +699,7 @@ class Element(Mapping[str, Attribute]):
     @classmethod
     def _parse_kv2_element(cls, tok, id_to_elem, fixups, name, typ_name):
         """Parse a compound element."""
-        elem: Element = cls(name, typ_name)
+        elem: Element = cls(name, typ_name, _UNSET_UUID)
         for attr_name in tok.block(name):
             orig_typ_name = tok.expect(Token.STRING)
             typ_name = orig_typ_name.casefold()
@@ -711,10 +713,13 @@ class Element(Mapping[str, Attribute]):
                         typ_name
                     )
                 uuid_str = tok.expect(Token.STRING)
+                if elem.uuid is not _UNSET_UUID:
+                    raise tok.error('Duplicate UUID definition!')
                 try:
                     elem.uuid = UUID(uuid_str)
                 except ValueError:
                     raise tok.error('Invalid UUID "{}"!', uuid_str)
+                id_to_elem[elem.uuid] = elem
                 continue
             elif attr_name == 'name':  # This is also special.
                 if typ_name != 'string':
@@ -795,7 +800,10 @@ class Element(Mapping[str, Attribute]):
                 attr = Attribute(attr_name, attr_type, value)
             elem._members[attr_name.casefold()] = attr
 
-        id_to_elem[elem.uuid] = elem
+        if elem.uuid is _UNSET_UUID:
+            # No UUID set, just generate one. Valve probably doesn't do this,
+            # it'll just mean it can't recurse.
+            elem.uuid = get_uuid()
         return elem
 
     def __repr__(self) -> str:
