@@ -203,6 +203,10 @@ class _ValProps:
     val_mat: Matrix
     val_matrix: Matrix
 
+    val_compound: Element
+    val_elem: Element
+    val: Element
+
 class AttrMember(_ValProps):
     def __init__(self, owner: Attribute, index: Union[int, str]) -> None: ...
 
