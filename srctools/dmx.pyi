@@ -203,6 +203,10 @@ class _ValProps:
     val_mat: Matrix
     val_matrix: Matrix
 
+    val_bytes: bytes
+    val_bin: bytes
+    val_binary: bytes
+
     val_compound: Element
     val_elem: Element
     val: Element

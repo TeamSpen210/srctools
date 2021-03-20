@@ -213,8 +213,8 @@ def test_parse(filename: str) -> None:
     """Test parsing all the format types."""
     with open(f'dmx_samples/{filename}.dmx', 'rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
-    assert fmt_name == 'generic'
-    assert fmt_version == 25
+    assert fmt_name == 'dmx'
+    assert fmt_version == 4
 
     assert root.name == 'Root_Name'
     assert root.type == 'DmeRootElement'
@@ -251,7 +251,7 @@ def test_parse(filename: str) -> None:
     assert scalars.uuid == UUID('e1db21c6-d046-46ca-9452-25c667b70ede')
     assert scalars.name == 'ScalarValues'
 
-    assert len(scalars) == 18
+    assert len(scalars) == 19
     assert scalars['neg_integer'].val_int == -1230552801
     assert scalars['pos_integer'].val_int == 296703200
 
@@ -276,12 +276,18 @@ def test_parse(filename: str) -> None:
     assert scalars['somedir'].val_ang == AngleTup(291, -48.9, 45.0)
     assert scalars['quat'].val_quat == Quaternion(3.9, -2.3, 3.4, 0.0)
 
+    assert scalars['hex'].val_bin == (
+        b'\x92&\xd0\xc7\x12\xec9\xe9\xd1cE\x19\xd1\xbd\x0f'
+        b'Jv\x1co\x81\xaf\xb5x[K\x9c\x85)\x12t\xff&\xcd7'
+        b'\x0e\xb1s\x18\xfa2m"\xef\xf4\xd8\xb8\xf9\xd4\x1ek'
+    )
+
     # And finally arrays.
     arrays = root['arrays'].val_elem
     assert arrays.type == 'TypeHolder'
     assert arrays.uuid == UUID('2b95889f-5041-436e-9350-813abcf504b0')
     assert arrays.name == 'ArrayValues'
-    assert len(arrays) == 10
+    assert len(arrays) == 11
 
     arr_int = arrays['integers']
     assert len(arr_int) == 5
@@ -339,6 +345,13 @@ def test_parse(filename: str) -> None:
     assert len(arrays['quaternions']) == 2
     assert arrays['quaternions'][0].val_quat == Quaternion(0.1, -0.9, 2.3, 0.0)
     assert arrays['quaternions'][1].val_quat == Quaternion(5.0, 1.5, -4.0, 1.0)
+
+    assert len(arrays['hexes']) == 3
+    assert list(arrays['hexes']) == [
+        bytes([0, 1, 2, 3, 4, 5]),
+        bytes([0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F]),
+        b'\xFF\xEE\xDD\xCC\xBB\xAA',
+    ]
 
     arr_elem = arrays['elements']
     assert len(arr_elem) == 4

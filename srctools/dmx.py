@@ -20,7 +20,7 @@ class ValueType(Enum):
     FLOAT = 'float'
     BOOL = 'bool'
     STRING = STR = 'string'
-    BINARY = BIN = VOID = 'void'  # IE "void *", binary blob.
+    BINARY = BIN = VOID = 'binary'  # IE "void *", binary blob.
     TIME = 'time'  # Seconds
     COLOR = COLOUR = 'color'
     VEC2 = 'vector2'
@@ -1038,8 +1038,8 @@ _conv_quaternion_to_string = lambda quat: f'{quat.x:g} {quat.y:g} {quat.z:g} {qu
 _conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
 
 # Binary conversions.
-_conv_string_to_binary = lambda text: text.encode('ascii') + '\0'
-_conv_binary_to_string = lambda binary: binary.decode('ascii')
+_conv_string_to_binary = bytes.fromhex
+_conv_binary_to_string = lambda byt: byt.hex(' ', 2)
 
 
 def _binconv_basic(name: str, fmt: str):

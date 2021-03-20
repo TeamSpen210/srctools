@@ -117,6 +117,12 @@
 			"0.1 -0.9 2.3 0",
 			"5 1.5 -4.0 1"
 		]
+		"hexes" "binary_array"
+			[
+			"00 0102  03 04 05",
+			"1A 1B1C1D 1E 1F",
+			"FFEEDDCCBBAA"
+			]
 		"elements" "element_array"
 			[
 			"FirstElem"
@@ -125,15 +131,15 @@
 				"name" "string" "A"
 				"a" "int" "1"
 				"b" "int" "2"
-				}
+				},
 			"SecondElem"
 				{
 				"id" "elementid" "ef7272f0-7c48-4d2f-aefd-036e30a2da15"
 				"name" "string" "B"
 				"a" "int" "3"
 				"b" "int" "4"
-				}
-			"element" "ef7272f0-7c48-4d2f-aefd-036e30a2da15"
+				},
+			"element" "ef7272f0-7c48-4d2f-aefd-036e30a2da15",
 			"element" "96d00e24-4c16-41ec-ab2f-e2a24f3a6ad2"
 			]
 		}
