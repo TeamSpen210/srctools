@@ -1,7 +1,7 @@
 """Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Generic, NewType,
+    Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
     Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator,
 )
 from struct import Struct
@@ -818,8 +818,11 @@ class Element(Mapping[str, Attribute]):
         return len(self._members)
 
     def __iter__(self) -> Iterator[str]:
-        for attr in self._members.values():
-            yield attr.name
+        return iter(self._members.keys())
+
+    def keys(self) -> KeysView[str]:
+        """Return a view of the valid (casefolded) keys for this element."""
+        return self._members.keys()
 
     def __getitem__(self, item: str) -> Attribute:
         return self._members[item.casefold()]
