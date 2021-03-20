@@ -207,7 +207,10 @@ def test_deduce_type_adv() -> None:
 
 
 @pytest.mark.parametrize('filename', [
-    'keyvalues2', 'binary_v2', 'binary_v5',
+    'keyvalues2',
+    'binary_v2',  # HL2's dmxconvert
+    'binary_v4',  # L4D2's dmxconvert
+    'binary_v5',  # P2+'s dmxconvert
 ])
 def test_parse(filename: str) -> None:
     """Test parsing all the format types."""
