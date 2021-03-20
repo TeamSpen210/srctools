@@ -1,4 +1,4 @@
-<!-- dmx encoding keyvalues2 1 format generic 25 -->
+<!-- dmx encoding keyvalues2 1 format dmx 4 -->
 "DmeRootElement"
 	{
 	"id" "elementid" "b66a2ce3-d686-4dbf-85df-07c6b275bebb"
@@ -48,6 +48,8 @@
 		"dn" "qangle" "90 0 0"
 		"somedir" "qangle" "291 -48.9 45.0"
 		"quat" "quaternion" "3.9 -2.3 3.4 0.0"
+
+		"hex" "binary" "92 26 d0 c7 12 ec 39 e9 d1 63 45 19 d1 bd 0f 4a 76 1c 6f 81 af b5 78 5b 4b 9c 85 29 12 74 ff 26 cd 37 0e b1 73 18 fa 32 6d 22 ef f4 d8 b8 f9 d4 1e 6b"
 		}
 
 	"arrays" "TypeHolder"
@@ -55,56 +57,63 @@
 		"id" "elementid" "2b95889f-5041-436e-9350-813abcf504b0"
 		"name" "string" "ArrayValues"
 
-		"integers" "int_array" [
-			1,
-			2,
-			35,
-			-39,
-			0
+		"integers" "int_array" 
+		[
+			"1",
+			"2",
+			"35",
+			"-39",
+			"0"
 		]
-		"floating" "float_array" [
-			-10291.153564142704,
-			-55646.21366998823,
-			78545.15227150527,
-			-95302.87890687701,
-			-45690.04457919854,
-			-55299.052361444636,
-			96178.44015134772,
-			58708.297849454975,
-			-49957.20355861797,
-			23980.82395184
+		"floating" "float_array" 
+		[
+			"-10291.153564142704",
+			"-55646.21366998823",
+			"78545.15227150527",
+			"-95302.87890687701",
+			"-45690.04457919854",
+			"-55299.052361444636",
+			"96178.44015134772",
+			"58708.297849454975",
+			"-49957.20355861797",
+			"23980.82395184"
 		]
 		"logical" "bool_array" 
 			[
-			0, 0, 1, 0, 
-			0, 1, 1, 1
+			"0", "0", "1", "0", 
+			"0", "1", "1", "1"
 			]
 		"colors" "color_array"
 			[
-			"255 0 0 255"
-			"0 0 255 128"
+			"255 0 0 255",
+			"0 0 255 128",
 			"0 240 0 0"
 			]
-		"2ds" "vector2_array" [ "-1 -1", "-1 0", "-1 1", "0 -1", "0 0", "0 1", "1 -1", "1 0", "1 1"]
-		"3ds" "vector3_array" [
+		"2ds" "vector2_array" 
+		[ "-1 -1", "-1 0", "-1 1", "0 -1", "0 0", "0 1", "1 -1", "1 0", "1 1"]
+		"3ds" "vector3_array" 
+		[
 			"34 -348.25 128.125",
 			"0 0 0",
 			".9 .8 .5"
 		]
-		"4dimensional" "vector4_array" [
+		"4dimensional" "vector4_array"
+		 [
 			"0 0 0 0",
 			"0 0 0 1",
 			"0 2 0 48",
 			"-28 380 -39 39"
 		]
-		"directions" "qangle_array" [
+		"directions" "qangle_array" 
+		[
 			"0 0 0",
 			"45 0 90",
 			"0 135 180",
 			"45 31 -39",
 			"94 165 23"
 		]
-		"quaternions" "quaternion_array" [
+		"quaternions" "quaternion_array"
+		 [
 			"0.1 -0.9 2.3 0",
 			"5 1.5 -4.0 1"
 		]
