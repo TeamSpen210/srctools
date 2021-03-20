@@ -1,0 +1,131 @@
+<!-- dmx encoding keyvalues2 1 format generic 25 -->
+"DmeRootElement"
+	{
+	"id" "elementid" "b66a2ce3-d686-4dbf-85df-07c6b275bebb"
+	"name" "string" "Root_Name"
+
+	"recurSive" "RecurseElement"
+		{
+		"id" "elementid" "0b16c426-40a2-465d-b516-c2e101b35615"
+		"name" "string" "Recurse1"
+		"Leaf1" "RecurseElement"
+			{
+			"id" "elementid" "1bed12dc-53a7-4a15-864b-51572c2ab0b1"
+			"name" "string" "FirstLeaf"
+			}
+		"Leaf2" "RecurseElement"
+			{
+			"id" "elementid" "437fa198-1782-4737-ae86-175e8f76dc4f"
+			"name" "string" "SecondLeaf"
+			"recurse" "element" "0b16c426-40a2-465d-b516-c2e101b35615"
+			}
+		}
+
+	"scalars" "TypeHolder"
+		{
+		"id" "elementid" "e1db21c6-d046-46ca-9452-25c667b70ede"
+		"name" "string" "ScalarValues"
+
+		"neg_integer" "int" "-1230552801"
+		"pos_integer" "int" "296703200"
+
+		"neg_float" "float" "-16211.593677226905"
+		"pos_float" "float" "22097.838726432383"
+
+		"truth" "bool" "1"
+		"falsity" "bool" "0"
+
+		"red"   "color" "240 32 32 255"
+		"blue"  "color" "32 240 32 255"
+		"green" "color" "32 32 240 255"
+		"white" "color" "255 255 255 255"
+		"half"  "color" "0 0 0 128"
+
+		"vec2" "vector2" "348.275 -389.935"
+		"vec3" "vector3" "128.25 -1048.5 16382.1902"
+		"vec4" "vector4" "128.25 -1048.5 16382.1902 -389.935"
+		"up" "qangle" "-90 0 0"
+		"dn" "qangle" "90 0 0"
+		"somedir" "qangle" "291 -48.9 45.0"
+		"quat" "quaternion" "3.9 -2.3 3.4 0.0"
+		}
+
+	"arrays" "TypeHolder"
+		{
+		"id" "elementid" "2b95889f-5041-436e-9350-813abcf504b0"
+		"name" "string" "ArrayValues"
+
+		"integers" "int_array" [
+			1,
+			2,
+			35,
+			-39,
+			0
+		]
+		"floating" "float_array" [
+			-10291.153564142704,
+			-55646.21366998823,
+			78545.15227150527,
+			-95302.87890687701,
+			-45690.04457919854,
+			-55299.052361444636,
+			96178.44015134772,
+			58708.297849454975,
+			-49957.20355861797,
+			23980.82395184
+		]
+		"logical" "bool_array" 
+			[
+			0, 0, 1, 0, 
+			0, 1, 1, 1
+			]
+		"colors" "color_array"
+			[
+			"255 0 0 255"
+			"0 0 255 128"
+			"0 240 0 0"
+			]
+		"2ds" "vector2_array" [ "-1 -1", "-1 0", "-1 1", "0 -1", "0 0", "0 1", "1 -1", "1 0", "1 1"]
+		"3ds" "vector3_array" [
+			"34 -348.25 128.125",
+			"0 0 0",
+			".9 .8 .5"
+		]
+		"4dimensional" "vector4_array" [
+			"0 0 0 0",
+			"0 0 0 1",
+			"0 2 0 48",
+			"-28 380 -39 39"
+		]
+		"directions" "qangle_array" [
+			"0 0 0",
+			"45 0 90",
+			"0 135 180",
+			"45 31 -39",
+			"94 165 23"
+		]
+		"quaternions" "quaternion_array" [
+			"0.1 -0.9 2.3 0",
+			"5 1.5 -4.0 1"
+		]
+		"elements" "element_array"
+			[
+			"FirstElem"
+				{
+				"id" "elementid" "96d00e24-4c16-41ec-ab2f-e2a24f3a6ad2"
+				"name" "string" "A"
+				"a" "int" "1"
+				"b" "int" "2"
+				}
+			"SecondElem"
+				{
+				"id" "elementid" "ef7272f0-7c48-4d2f-aefd-036e30a2da15"
+				"name" "string" "B"
+				"a" "int" "3"
+				"b" "int" "4"
+				}
+			"element" "ef7272f0-7c48-4d2f-aefd-036e30a2da15"
+			"element" "96d00e24-4c16-41ec-ab2f-e2a24f3a6ad2"
+			]
+		}
+	}
