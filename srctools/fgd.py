@@ -20,7 +20,7 @@ from typing import (
 
 import srctools
 from srctools.filesys import FileSystem, File
-from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
+from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError, escape_text
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -373,7 +373,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     """
     LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
     sections = []
-    remaining = text
+    remaining = escape_text(text)
     while len(remaining) > LIMIT:
         # First, look for any \ns and split on those. This is a nice stopping
         # point, and also prevents separating the "\" from "n". Then add 2
@@ -818,18 +818,17 @@ class KeyValues:
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
+            _write_longstring(file, self.desc, indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
                 for index, name, default, tags in self.val_list or ():
-                    file.write('\t\t{0}: "[{0}] {1}" : {2}'.format(
-                        index,
-                        name,
-                        '1' if default else '0',
-                    ))
+                    file.write(f'\t\t{index}: ')
+                    # Newlines aren't functional here, just replace.
+                    _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
+                    file.write(' : 1' if default else ' : 0')
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
                     else:
@@ -842,7 +841,9 @@ class KeyValues:
                     except ValueError:
                         value = '"' + value + '"'
 
-                    file.write('\t\t{}: "{}"'.format(value, name))
+                    file.write(f'\t\t{value}: ')
+                    # Newlines aren't functional here, just replace.
+                    _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
                     else:
@@ -1001,7 +1002,7 @@ class IODef:
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
+            _write_longstring(file, self.desc, indent='\t')
         file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
@@ -1626,7 +1627,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t\t')
+            _write_longstring(file, self.desc, indent='\t\t')
 
         file.write('\n\t[\n')
 
