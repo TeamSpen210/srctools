@@ -1788,6 +1788,8 @@ class FGD:
 
         # Directories we have excluded.
         self.mat_exclusions: Set[PurePosixPath] = set()
+        # Additional dirs restricted to specific engines with tags.
+        self.tagged_mat_exclusions: Dict[FrozenSet[str], Set[PurePosixPath]] = defaultdict(set)
 
         # Automatic visgroups.
         # The way Valve implemented this is rather strange, so we need
@@ -1961,13 +1963,19 @@ class FGD:
             ret_string = False
 
         if self.map_size_min != self.map_size_max:
-            file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
+            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
             
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
             for folder in sorted(self.mat_exclusions):
                 file.write('\t"{!s}"\n'.format(folder))
-            file.write('\t]\n')
+            file.write('\t]\n\n')
+        for tag in sorted(self.tagged_mat_exclusions):
+            file.write(f'@MaterialExclusion({", ".join(sorted(tag))})\n\t[\n')
+            for folder in sorted(self.tagged_mat_exclusions[tag]):
+                file.write('\t"{!s}"\n'.format(folder))
+            file.write('\t]\n\n')
+
 
         vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
@@ -2089,13 +2097,26 @@ class FGD:
                             mapsize_args,
                         )
                 elif token_value == '@materialexclusion':
-                    # Material exclusion directories
-                    tokeniser.expect(Token.BRACK_OPEN)
+                    # Material exclusion directories.
+
+                    # Custom syntax: (tag1, tag2) after the header, then [.
+                    tags: Optional[FrozenSet[str]] = None
+                    for tok, tok_value in tokeniser.skipping_newlines():
+                        if tok is Token.BRACK_OPEN:
+                            break
+                        elif tok is Token.PAREN_ARGS and tags is None:
+                            tags = validate_tags(tok_value.split(','), tokeniser.error)
+                        else:
+                            raise tok.error(tok)
+
                     for tok, tok_value in tokeniser:
                         if tok is Token.BRACK_CLOSE:
                             break
                         elif tok is Token.STRING:
-                            self.mat_exclusions.add(PurePosixPath(tok_value))
+                            if tags is not None:
+                                self.tagged_mat_exclusions[tags].add(PurePosixPath(tok_value))
+                            else:
+                                self.mat_exclusions.add(PurePosixPath(tok_value))
                         elif tok is not Token.NEWLINE:
                             raise tokeniser.error(tok)
                     else:
