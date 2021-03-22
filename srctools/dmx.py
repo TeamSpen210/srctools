@@ -234,8 +234,9 @@ class _ValProps:
 
     val_int = _make_val_prop(ValueType.INT, int)
     val_str = val_string = _make_val_prop(ValueType.STRING, str)
-    val_bin = val_binary = _make_val_prop(ValueType.BINARY, bytes)
+    val_bin = val_binary = val_bytes = _make_val_prop(ValueType.BINARY, bytes)
     val_float = _make_val_prop(ValueType.FLOAT, float)
+    val_time = _make_val_prop(ValueType.TIME, Time)
     val_bool = _make_val_prop(ValueType.BOOL, bool)
     val_colour = val_color = _make_val_prop(ValueType.COLOR, Color)
     val_vec2 = _make_val_prop(ValueType.VEC2, Vec2)
@@ -316,6 +317,13 @@ class Attribute(Generic[ValueT], _ValProps):
     def float(cls, name, value) -> 'Attribute[float]':
         """Create an attribute with a float value."""
         return Attribute(name, ValueType.FLOAT, value)
+
+    @classmethod
+    def time(cls, name, value) -> 'Attribute[Time]':
+        """Create an attribute with a 'time' value.
+
+        This is effectively a float, and only available in binary v3+."""
+        return Attribute(name, ValueType.TIME, Time(value))
 
     @classmethod
     def bool(cls, name, value) -> 'Attribute[bool]':
