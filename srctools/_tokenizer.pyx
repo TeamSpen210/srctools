@@ -668,37 +668,45 @@ def escape_text(str text not None: str) -> str:
 
     Specifically, \, ", tab, and newline.
     """
-    # UTF8 = ASCII for those chars, so we can replace in that form.
-    cdef bytes enc_text = text.encode('utf8')
-    cdef Py_ssize_t final_len = len(enc_text)
-    cdef char letter
-    for letter in enc_text:
-        if letter in (b'\\', b'"', b'\t', b'\n'):
+    # First loop to compute the full string length, and check if we need to 
+    # escape at all.
+    cdef Py_ssize_t final_len = 0
+    cdef Py_UCS4 str_letter
+    for str_letter in text:
+        if str_letter in ('\\', '"', '\t', '\n'):
             final_len += 1
 
+    if final_len == 0:  # Unchanged, return original
+        return text
+
+    # UTF8 = ASCII for the chars we care about, so we can replace in that form.
+    cdef bytes enc_text = text.encode('utf8')
+    final_len += len(enc_text)
+
     cdef char * out_buff
+    cdef char byt_letter
     cdef int i = 0
     try:
         out_buff = <char *>PyMem_Malloc(final_len+1)
-        for letter in enc_text:
-            if letter == b'\\':
+        for byt_letter in enc_text:
+            if byt_letter == b'\\':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'\\'
-            elif letter == b'"':
+            elif byt_letter == b'"':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'"'
-            elif letter == b'\t':
+            elif byt_letter == b'\t':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b't'
-            elif letter == b'\n':
+            elif byt_letter == b'\n':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'n'
             else:
-                out_buff[i] = letter
+                out_buff[i] = byt_letter
             i += 1
         out_buff[final_len] = b'\0'
         return PyUnicode_FromStringAndSize(out_buff, final_len)
