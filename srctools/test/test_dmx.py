@@ -7,8 +7,9 @@ import pytest
 from srctools import Matrix, Angle
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
-    Quaternion, deduce_type,
+    Quaternion, deduce_type, TYPE_CONVERT, Time,
 )
+
 
 def test_attr_val_int() -> None:
     """Test integer-type values."""
@@ -16,10 +17,12 @@ def test_attr_val_int() -> None:
     assert elem.val_int == 45
     assert elem.val_str == '45'
     assert elem.val_float == 45.0
+    assert elem.val_time == 45.0
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
     assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
     assert elem.val_vec4 == Vec4(45.0, 45.0, 45.0, 45.0)
+    assert elem.val_color == Color(45, 45, 45, 255)
 
     assert Attribute.int('Blah', 45).val_bool is True
     assert Attribute.int('Blah', 0).val_bool is False
@@ -33,6 +36,7 @@ def test_attr_val_float() -> None:
     assert Attribute.float('Name', -32.25).val_int == -32
     assert elem.val_str == '32.25'
     assert elem.val_float == 32.25
+    assert elem.val_time == 32.25
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
     assert elem.val_vec3 == Vec3(32.25, 32.25, 32.25)
@@ -72,6 +76,83 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', '4.8 -12.385 284').val_ang == AngleTup(4.8, -12.385, 284)
 
 
+def test_attr_val_bool() -> None:
+    """Test bool value conversions."""
+    truth = Attribute.bool('truth', True)
+    false = Attribute.bool('false', False)
+
+    assert truth.val_bool is True
+    assert truth.val_int == 1
+    assert truth.val_float == 1.0
+    assert truth.val_str == '1'
+    assert truth.val_bytes == b'\x01'
+
+    assert false.val_bool is False
+    assert false.val_int == 0
+    assert false.val_float == 0.0
+    assert false.val_str == '0'
+    assert false.val_bytes == b'\x00'
+
+
+def test_attr_val_time() -> None:
+    """Test time value conversions."""
+    elem = Attribute.float('Time', 32.25)
+    assert elem.val_int == 32
+    assert Attribute.float('Time', -32.25).val_int == -32
+    assert elem.val_str == '32.25'
+    assert elem.val_float == 32.25
+    assert elem.val_time == 32.25
+
+    assert Attribute.time('Blah', 32.25).val_bool is True
+    assert Attribute.time('Blah', 0.0).val_bool is False
+    # Negative is false.
+    assert Attribute.time('Blah', -12.8).val_bool is False
+
+
+def test_attr_val_color() -> None:
+    """Test color value conversions."""
+    elem = Attribute.color('RGB', 240, 128, 64)
+    assert elem.val_color == Color(240, 128, 64, 255)
+    assert Attribute.color('RGB').val_color == Color(0, 0, 0, 255)
+
+    assert elem.val_str == '240 128 64 255'
+    assert elem.val_vec3 == Vec3(240.0, 128.0, 64.0)
+    assert elem.val_vec4 == Vec4(240.0, 128.0, 64.0, 255.0)
+
+
+def test_attr_val_vector_2() -> None:
+    """Test 2d vector conversions."""
+    elem = Attribute.vec2('2D', 4.5, 38.2)
+    assert elem.val_vec2 == Vec2(4.5, 38.2)
+    assert elem.val_str == '4.5 38.2'
+    assert Attribute.vec2('No zeros', 5.0, -2.0).val_str == '5 -2'
+    assert elem.val_vec3 == Vec3(4.5, 38.2, 0.0)
+    assert elem.val_vec4 == Vec4(4.5, 38.2, 0.0, 0.0)
+
+    assert elem.val_bool is True
+    assert Attribute.vec2('True', 3.4, 0.0).val_bool is True
+    assert Attribute.vec2('True', 0.0, 3.4).val_bool is True
+    assert Attribute.vec2('True', 0.0, 0.0).val_bool is False
+
+
+def test_attr_val_vector_3() -> None:
+    """Test 3d vector conversions."""
+    elem = Attribute.vec3('3D', 4.5, -12.6, 38.2)
+    assert elem.val_vec3 == Vec3(4.5, -12.6, 38.2)
+    assert elem.val_str == '4.5 -12.6 38.2'
+    assert Attribute.vec3('No zeros', 5.0, 15.0, -2.0).val_str == '5 15 -2'
+    assert elem.val_vec2 == Vec2(4.5, -12.6)
+    assert elem.val_vec4 == Vec4(4.5, -12.6, 38.2, 0.0)
+    assert Attribute.vec3('RGB', 82, 96.4, 112).val_color == Color(82, 96, 112, 255)
+    assert elem.val_ang == AngleTup(4.5, -12.6, 38.2)
+
+    assert elem.val_bool is True
+    assert Attribute.vec3('True', 3.4, 0.0, 0.0).val_bool is True
+    assert Attribute.vec3('True', 0.0, 3.4, 0.0).val_bool is True
+    assert Attribute.vec3('True', 0.0, 0.0, 3.4).val_bool is True
+    assert Attribute.vec3('Fals', 0.0, 0.0, 0.0).val_bool is False
+
+
 @pytest.mark.parametrize(['attr', 'typ'], [
     pytest.param(attr, typ, id=attr)
     for attr, typ in [
@@ -79,6 +160,8 @@ def test_attr_val_str() -> None:
         ('val_string', str),
         ('val_bin', bytes),
         ('val_binary', bytes),
+        ('val_bytes', bytes),
+        ('val_time', float),  # Time isn't actually a type.
         ('val_int', int),
         ('val_bool', bool),
         ('val_float', float),
@@ -96,6 +179,7 @@ def test_attr_val_str() -> None:
 @pytest.mark.parametrize('attribute', [
     Attribute.int('', 45),
     Attribute.float('', 48.9),
+    Attribute.time('', Time(60.5)),
     Attribute.vec2('', 3, 4),
     Attribute.vec3('', 4, 5, 6),
     Attribute.vec4('', 5, 6, 7),
@@ -104,7 +188,7 @@ def test_attr_val_str() -> None:
     Attribute.quaternion('', 0.0, 0.0, 0.0, 1.0),
 ], ids=lambda attr: attr.type.name.lower())
 def test_attr_conv_types(attribute: Attribute, attr: str, typ: type) -> None:
-    """Check all the conversions either fail or produce the right result.
+    """Check all the conversions either fail or produce the right type.
 
     We don't test string/bytes since valid values are different for different dests.
     """
@@ -118,6 +202,38 @@ def test_attr_conv_types(attribute: Attribute, attr: str, typ: type) -> None:
             return pytest.xfail('Conversion not defined.')
 
     assert type(result) is typ, result
+
+
+@pytest.mark.parametrize('typ, attr, value, binary, text', [
+    (ValueType.INT, 'val_int',  0, b'\0\0\0\0', '0'),
+    (ValueType.INT, 'val_int',  308823027, bytes.fromhex('f3 43 68 12'), '308823027'),
+    (ValueType.INT, 'val_int',  -282637363, bytes.fromhex('cd 4b 27 ef'), '-282637363'),
+    (ValueType.BOOL, 'val_bool', False, b'\x00', '0'),
+    (ValueType.BOOL, 'val_bool', True, b'\x01', '1'),
+    (ValueType.FLOAT, 'val_float', 345.125, b'\x00\x90\xacC', '345.125'),
+    (ValueType.FLOAT, 'val_float', -2048.453125, b'@\x07\x00\xc5', '-2048.453125'),
+    (ValueType.FLOAT, 'val_float', -2048.0, b'\0\0\0\xc5', '-2048'),
+    (ValueType.COLOUR, 'val_color', Color(0, 0, 0, 255), bytes([0, 0, 0, 255]), '0 0 0 255'),
+    (ValueType.COLOUR, 'val_color', Color(192, 64, 192, 32), bytes([192, 64, 192, 32]), '192 64 192 32'),
+    (ValueType.BINARY, 'val_bin', b'\x34\xFF\x20\x3D', b'\x34\xFF\x20\x3D', '34 FF 20 3D'),
+    (ValueType.TIME, 'val_time', 60.5, b'\0\0rB', '60.5'),
+    (ValueType.VEC2, 'val_vec2', Vec2(36.5, -12.75), bytes.fromhex('00 00 12 42  00 00 4c c1'), '36.5 -12.75'),
+    (ValueType.VEC3, 'val_vec3', Vec3(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
+    (ValueType.VEC4, 'val_vec4', Vec4(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
+    (ValueType.QUATERNION, 'val_quat', Quaternion(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
+])
+def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes, text: str) -> None:
+    """Test the required binary and text conversions."""
+    assert TYPE_CONVERT[typ, ValueType.BINARY](value) == binary
+    assert TYPE_CONVERT[ValueType.BINARY, typ](binary) == value
+    assert Attribute('', typ, value).val_bytes == binary
+    assert getattr(Attribute.binary('', binary), attr) == value
+
+    assert TYPE_CONVERT[typ, ValueType.STRING](value) == text
+    assert TYPE_CONVERT[ValueType.STRING, typ](text) == value
+    assert Attribute('', typ, value).val_str == text
+    assert getattr(Attribute.string('', text), attr) == value
+
 
 deduce_type_tests = [
     (5, ValueType.INT, 5),
