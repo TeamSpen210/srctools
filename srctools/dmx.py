@@ -1119,10 +1119,10 @@ def _conv_string_to_matrix(text: str) -> Matrix:
 
 def _conv_matrix_to_string(mat: Matrix) -> str:
     return (
-        f'{mat[0, 0]:g} {mat[0, 1]:g} {mat[0, 2]:g} 0 '
-        f'{mat[1, 0]:g} {mat[1, 1]:g} {mat[1, 2]:g} 0 '
-        f'{mat[2, 0]:g} {mat[2, 1]:g} {mat[2, 2]:g} 0 '
-        '0 0 0 1'
+        f'{mat[0, 0]} {mat[0, 1]} {mat[0, 2]} 0.0\n'
+        f'{mat[1, 0]} {mat[1, 1]} {mat[1, 2]} 0.0\n'
+        f'{mat[2, 0]} {mat[2, 1]} {mat[2, 2]} 0.0\n'
+        '0.0 0.0 0.0 1.0'
     )
 
 # Element ID
