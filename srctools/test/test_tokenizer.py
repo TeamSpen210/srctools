@@ -1,4 +1,6 @@
 from itertools import zip_longest
+from typing import Type, Tuple
+
 import pytest
 import codecs
 
@@ -9,9 +11,12 @@ from srctools.property_parser import KeyValError
 from srctools.tokenizer import (
     Token,
     Tokenizer,
+    BaseTokenizer,
     Cy_Tokenizer, Py_Tokenizer,
+    Cy_BaseTokenizer, Py_BaseTokenizer,
+    Cy_IterTokenizer, Py_IterTokenizer,
     escape_text, _py_escape_text,
-    TokenSyntaxError,
+    TokenSyntaxError, _PUSHBACK_VALS as TOK_VALS,
 )
 
 T = Token
@@ -650,3 +655,46 @@ def test_block_iter(py_c_token):
     assert next(b) == "blah"
     with raises(TokenSyntaxError, match='SpecialBlockName'):
         next(b)
+
+
+@pytest.mark.parametrize(
+    'Tok',
+    [Cy_BaseTokenizer, Py_BaseTokenizer],
+    ids=['Cython', 'Python'],
+)
+def test_subclass_base(Tok: Type[BaseTokenizer]) -> None:
+    """Test subclassing of the base tokenizer."""
+    class Sub(Tok):
+        def __init__(self, tok):
+            super().__init__('filename', TokenSyntaxError)
+            self.__tokens = iter(tok)
+
+        def _get_token(self) -> Tuple[Token, str]:
+            try:
+                tok = next(self.__tokens)
+            except StopIteration:
+                return Token.EOF, ''
+            if isinstance(tok, tuple):
+                return tok
+            else:
+                return tok, TOK_VALS[tok]
+
+    check_tokens(Sub(noprop_parse_tokens), noprop_parse_tokens)
+
+    # Do some peeks, pushbacks, etc to check they work.
+    tok = Sub(prop_parse_tokens)
+    it = iter(tok)
+    assert next(it) == (Token.NEWLINE, '\n')
+    assert next(tok.skipping_newlines()) == (Token.STRING, 'Root1')
+    tok.push_back(Token.DIRECTIVE, '#test')
+    assert tok() == (Token.DIRECTIVE, '#test')
+    assert tok() == (Token.NEWLINE, '\n')
+    assert tok.peek() == (Token.BRACE_OPEN, '{')
+    assert tok.peek() == (Token.BRACE_OPEN, '{')
+    assert next(iter(tok)) == (Token.BRACE_OPEN, '{')
+    skip = tok.skipping_newlines()
+    assert next(skip) == (Token.STRING, 'Key')
+    assert next(it) == (Token.STRING, 'Value')
+    assert next(skip) == (Token.STRING, 'Extra')
+    assert next(skip) == (Token.STRING, 'Spaces')
+    assert next(tok.skipping_newlines()) == (Token.STRING, 'Block')

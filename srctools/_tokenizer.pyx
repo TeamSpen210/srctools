@@ -141,7 +141,20 @@ cdef class BaseTokenizer:
         return self.next_token()
 
     cdef next_token(self):
-        raise NotImplementedError("Abstract method!")
+        """Call the Python-overridable method.
+        
+        This also implements pushback.
+        """
+        if self.pushback_tok is not None:
+            output = self.pushback_tok, self.pushback_val
+            self.pushback_tok = self.pushback_val = None
+            return output
+
+        return self._get_token()
+
+    def _get_token(self):
+        """Compute the next token, must be implemented by subclasses."""
+        raise NotImplementedError
 
     def __iter__(self):
         # Call ourselves until EOF is returned
@@ -642,6 +655,11 @@ cdef class IterTokenizer(BaseTokenizer):
             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
 
     cdef next_token(self):
+        if self.pushback_tok is not None:
+            output = self.pushback_tok, self.pushback_val
+            self.pushback_tok = self.pushback_val = None
+            return output
+
         try:
             return next(self.source)
         except StopIteration:
@@ -654,9 +672,9 @@ cdef class IterTokenizer(BaseTokenizer):
 @cython.internal
 cdef class _NewlinesIter:
     """Iterate over the tokens, skipping newlines."""
-    cdef Tokenizer tok
+    cdef BaseTokenizer tok
 
-    def __cinit__(self, Tokenizer tok not None):
+    def __cinit__(self, BaseTokenizer tok not None):
         self.tok = tok
 
     def __repr__(self):
@@ -690,17 +708,17 @@ cdef class _NewlinesIter:
 @cython.internal
 cdef class BlockIter:
     """Helper iterator for parsing keyvalue style blocks."""
-    cdef Tokenizer tok
+    cdef BaseTokenizer tok
     cdef str name
     cdef bint expect_brace
 
-    def __cinit__(self, Tokenizer tok not None, str name, bint expect_brace, *):
+    def __cinit__(self, BaseTokenizer tok, str name, bint expect_brace, *):
         self.tok = tok
         self.name = name
         self.expect_brace = expect_brace
 
     def __repr__(self):
-        return f'<srctools.tokenizer.Tokenizer.block() at {id(self):X}>'
+        return f'<srctools.tokenizer.BaseTokenizer.block() at {id(self):X}>'
 
     def __init__(self, tok):
         raise TypeError("Cannot create 'BlockIter' instances")
