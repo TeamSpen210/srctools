@@ -112,25 +112,17 @@ noprop_parse_tokens = [
 
 if C_Tokenizer is not Py_Tokenizer:
     parms = [C_Tokenizer, Py_Tokenizer]
-    parms_escape = [escape_text, _py_escape_text]
     ids = ['Cython', 'Python']
 else:
     import srctools.tokenizer
     print('No _tokenizer! ' + str(vars(srctools.tokenizer)))
     parms = [Py_Tokenizer]
-    parms_escape = [_py_escape_text]
     ids = ['Python']
 
 
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request):
     """Run the test twice, for the Python and C versions."""
-    yield request.param
-
-
-@pytest.fixture(params=parms_escape, ids=ids)
-def py_c_escape_text(request):
-    """Run the test twice with the two escape_text() functions."""
     yield request.param
 
 del parms, ids
@@ -386,15 +378,24 @@ def test_obj_config(py_c_token):
     assert tok.allow_escapes is True
 
 
-def test_escape_text(py_c_escape_text):
-    """Test the Python and C escape_text() functions."""
-    assert py_c_escape_text("hello world") == "hello world"
-    assert py_c_escape_text("\thello_world") == r"\thello_world"
-    assert py_c_escape_text("\\thello_world") == r"\\thello_world"
-    assert py_c_escape_text("\\ttest\nvalue\t\\r\t\n") == r"\\ttest\nvalue\t\\r\t\n"
+@pytest.mark.parametrize('inp, out', [
+    ('', ''),
+    ("hello world", "hello world"),
+    ("\thello_world", r"\thello_world"),
+    ("\\thello_world", r"\\thello_world"),
+    ("\\ttest\nvalue\t\\r\t\n", r"\\ttest\nvalue\t\\r\t\n"),
     # BMP characters, and some multiplane chars.
-    assert py_c_escape_text("\t╒═\\═╕\n") == r"\t╒═\\═╕\n"
-    assert py_c_escape_text("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜") == r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"
+    ('test: ╒══╕', r'test: ╒══╕'),
+    ("♜♞🤐♝♛🥌 chess: ♚♝♞♜", "♜♞🤐♝♛🥌 chess: ♚♝♞♜"),
+    ('\t"╒═\\═╕"\n', r'\t\"╒═\\═╕\"\n'),
+    ("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜", r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"),
+])
+@pytest.mark.parametrize('func', [_py_escape_text, escape_text], ids=['Py', 'Cy'])
+def test_escape_text(inp: str, out: str, func) -> None:
+    """Test the Python and C escape_text() functions."""
+    assert func(inp) == out
+    if inp == out:  # If the same, reuses the string.
+        assert func(inp) is inp
 
 
 def test_brackets(py_c_token):
@@ -529,3 +530,79 @@ def test_early_binary_arg(py_c_token):
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
+
+def test_block_iter(py_c_token):
+    """Test the Tokenizer.block() helper."""
+    # First two correct usages:
+    tok = py_c_token('''\
+    "test"
+    {
+    "blah" "value"
+    
+    "another" "value"
+    }
+    ''')
+    assert tok() == (Token.STRING, "test")
+    bl = tok.block("tester")
+    assert next(bl) == "blah"
+    assert next(bl) == "value"
+    assert next(bl) == "another"
+    assert next(bl) == "value"
+    with raises(StopIteration):
+        next(bl)
+
+    tok = py_c_token(' "blah" "value" } ')
+    bl = tok.block("tester", False)
+    assert next(bl) == "blah"
+    assert next(bl) == "value"
+    with raises(StopIteration):
+        next(bl)
+
+    # Completes correctly with no values.
+    assert list(py_c_token('{}').block('')) == []
+
+    # We can remove tokens halfway through on the original tokenizer.
+    tok = py_c_token(' { \n\n"legal" { + } block } ')
+    bl = tok.block("test")
+    assert next(bl) == 'legal'
+    assert tok() == (Token.BRACE_OPEN, '{')
+    assert tok() == (Token.PLUS, '+')
+    assert tok() == (Token.BRACE_CLOSE, '}')
+    assert next(bl) == 'block'
+    with raises(StopIteration):
+        next(bl)
+
+    # Now errors.
+
+    # Not an open brace, also it must defer to the first next() call.
+    b = py_c_token(' hi ').block('blah', consume_brace=True)
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Also with implicit consume_brace
+    b = py_c_token(' hi ').block('blah')
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Open brace where there shouldn't.
+    b = py_c_token('{').block('blah', consume_brace=False)
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Two open braces, only consume one.
+    b = py_c_token('{ {').block('blah')
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # And one in the middle.
+    b = py_c_token('{ "test" { "never-here" } ').block('blah')
+    assert next(b) == "test"
+    with raises(TokenSyntaxError):
+        next(b)
+
+    # Running off the end uses the block in the result.
+    b = py_c_token('{ blah "blah" ').block('SpecialBlockName')
+    assert next(b) == "blah"
+    assert next(b) == "blah"
+    with raises(TokenSyntaxError, match='SpecialBlockName'):
+        next(b)

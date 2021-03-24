@@ -1,15 +1,16 @@
 """Parses material files."""
 from typing import (
-    Iterable, List, Dict, Union, Callable, Optional, Iterator,
-    Tuple,
+    Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
+    NamedTuple, MutableMapping, Mapping,
 )
 
 import sys
 from enum import Enum
 
-from srctools import FileSystem, Property
+from srctools import FileSystem, Property, EmptyMapping
 from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer
 
+ArgT = TypeVar('ArgT')
 
 class VarType(Enum):
     """The different types shader variables can be.
@@ -36,17 +37,32 @@ class VarType(Enum):
     # 'center .5 .5 scale 1 1 rotate 0 translate 0 0'
     # '[1 0 0 0 1 0 0 0 1]'
     MATRIX = 'SHADER_PARAM_TYPE_MATRIX'  # 9-matrix, or center scale rotate etc
+    MATRIX_4X2 = 'SHADER_PARAM_TYPE_MATRIX4X2'  # Partially implemented, only a 2x4=8 matrix?
 
     #ENVMAP = 'SHADER_PARAM_TYPE_ENVMAP' # Obsolete apparently
     # Special case - pointer to arbitrary shader-specific data.
     FOUR_CC = 'SHADER_PARAM_TYPE_FOURCC'
 
+    @classmethod
+    def from_name(cls, name: str) -> 'VarType':
+        """Given a shader parameter name, return the type this value is.
 
-_SHADER_PARAM_TYPES = {}  # type: Dict[str, VarType]
+        If not known, return STR.
+        """
+        return get_parm_type(name, cls.STR)
 
 
-def get_parm_type(name: str) -> VarType:
-    """Retrieve the type a parameter has, or raise KeyError."""
+class Variable(NamedTuple):
+    """Allow storing the original case of the name."""
+    name: str  # With correct case
+    value: str
+
+
+_SHADER_PARAM_TYPES: Dict[str, VarType] = {}
+
+
+def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
+    """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
     from srctools._shaderdb import _shader_db
 
@@ -58,15 +74,15 @@ def get_parm_type(name: str) -> VarType:
 
     # Redirect this to always call the normal function.
     get_parm_type.__code__ = _get_parm_type_real.__code__
-    return _get_parm_type_real(name)
+    return _get_parm_type_real(name, default)
 
 
-def _get_parm_type_real(name: str) -> VarType:
-    """Retrieve the type a parameter has, or raise KeyError."""
-    return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
+def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
+    """Retrieve the type a parameter has, or return the default."""
+    return _SHADER_PARAM_TYPES.get(name.lstrip('$').casefold(), default)
 
 
-class Material:
+class Material(MutableMapping[str, str]):
     """Represents a material.
     
     Attributes:
@@ -74,17 +90,26 @@ class Material:
         proxies: List of Material Proxies defined for the material. 
             Each is a tuple of the string name and a dict of keys-> values.
             "Empty" proxies are removed.
+        blocks: Other sub-blocks inside the material definition. These are
+            usually fallbacks or other similar definitions.
+        This behaves as a mapping, storing the shader parameters.
     """
+
     def __init__(
         self, 
-        shader: str, 
-        params: Dict[str, Union[str, Property]],
-        proxies: List[Property],
-    ):
+        shader: str,
+        params: Mapping[str, str]=EmptyMapping,
+        blocks: Iterable[Property]=(),
+        proxies: Iterable[Property]=(),
+    ) -> None:
         """Create a material."""
         self.shader = shader
-        self._params = params
-        self.proxies = proxies
+        self._params: Dict[str, Variable] = {}
+        self.blocks = list(blocks)
+        self.proxies = list(proxies)
+
+        for key, value in params.items():
+            self[key] = value
     
     @classmethod
     def parse(cls, data: Iterable[str], filename: str=''):
@@ -111,10 +136,9 @@ class Material:
 
         # Open the parameters body.
         tok.expect(Tok.BRACE_OPEN)
-        
-        params = {}  # type: Dict[str, Union[str, Property]]
-        proxies = []  # type: List[Property]
-        
+
+        mat = cls(shader_name)
+
         # Look for parameter names
         for token, param_name in tok:
             if token is Tok.NEWLINE:
@@ -143,28 +167,26 @@ class Material:
 
                 if token is Tok.BRACE_OPEN:
                     if param_name.casefold() == "proxies":
-                        proxies.extend(cls._parse_block(tok, 'Proxy'))
+                        mat.proxies.extend(cls._parse_block(tok, 'Proxy'))
                     else:
-                        params[
-                            param_name.casefold()
-                        ] = cls._parse_block(tok, param_name)
+                        mat.blocks.append(cls._parse_block(tok, param_name))
 
                     continue  # Don't replace with None.
                 elif token is Tok.BRACE_CLOSE:
                     # End of us after single name.
-                    params[param_name.casefold()] = param_value
+                    mat[param_name] = param_value
                     break
                 else:
                     raise tok.error(token)
             else:
                 raise tok.error(token)
                 
-            params[param_name.casefold()] = param_value
+            mat[param_name] = param_value
              
         # We expect nothing else now.
         tok.expect(Tok.EOF)
         
-        return cls(shader_name, params, proxies)
+        return mat
 
     @staticmethod
     def _parse_proxies(tok: Tokenizer):
@@ -273,7 +295,7 @@ class Material:
             return self
 
         try:
-            filename = self._params['include']
+            filename = self._params['include'].value
         except KeyError:
             raise ValueError('No "include" key for Patch shader!') from None
         try:
@@ -285,48 +307,57 @@ class Material:
             ) from None
 
         if parent_func is not None:
-            parent_func(parent_file)
+            parent_func(parent_file.path)
 
         with fsys, parent_file.open_str() as f:
             parent = Material.parse(f, filename)
 
         parent = parent._apply_patch(fsys, count + 1, limit, parent_func)
 
-        new_params = {
-            name: (prop.copy() if isinstance(prop, Property) else prop)
-            for name, prop in parent._params.items()
-        }
+        copy = Material(parent.shader)
+        copy._params.update(parent._params)
 
         # Empty strings in these delete the value.
         # Despite the name, both seem to do the same thing.
-        for name in ['insert', 'replace']:
-            for prop in self._params.get(name, ()):
+        for block in self.blocks:
+            if block.name not in ['insert', 'replace']:
+                raise ValueError(f'Unknown patch command "{block.real_name}"!')
+            if not block.has_children():
+                raise ValueError(f'"{block.real_name}" must be a block, not a single value.')
+            for prop in block:
                 if prop.has_children():
-                    raise ValueError(name.title() + ' contains blocks?')
+                    raise ValueError(f'"{prop.real_name}" contains additional blocks?')
                 if prop.value == '':
                     try:
-                        del new_params[prop.name]
+                        del copy._params[prop.name]
                     except KeyError:
                         pass
                 else:
-                    new_params[prop.name] = prop.value
+                    copy[prop.real_name] = prop.value
 
-        return Material(
-            parent.shader,
-            new_params,
-            [
-                prox.copy()
-                for prox in
-                parent.proxies
-            ]
-        )
+        return copy
 
-    def __iter__(self) -> Iterator[Tuple[str, VarType, str]]:
-        for name, value in self._params.items():
-            if isinstance(value, Property):
-                continue
-            try:
-                par_type = get_parm_type(name)
-            except KeyError:
-                par_type = VarType.STR
-            yield name, par_type, value
+    def __iter__(self) -> Iterator[str]:
+        for var in self._params.values():
+            yield var.name
+
+    def __len__(self) -> int:
+        return len(self._params)
+
+    def __getitem__(self, key: str) -> str:
+        """Get the value of the specified property."""
+        return self._params[key.casefold()].value
+
+    def __setitem__(self, key: str, value: str) -> None:
+        """Set the specified property."""
+        folded = key.casefold()
+        try:
+            var = self._params[folded]
+            # Preserve the old casing.
+            self._params[folded] = Variable(var.name, value)
+        except KeyError:
+            self._params[folded] = Variable(key, value)
+
+    def __delitem__(self, key: str) -> None:
+        """Remove the specified property."""
+        del self._params[key.casefold()]

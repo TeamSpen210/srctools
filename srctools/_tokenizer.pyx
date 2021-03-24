@@ -33,6 +33,9 @@ cdef:
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
 
+    object BRACE_OPEN = Token.BRACE_OPEN
+    object BRACE_CLOSE = Token.BRACE_CLOSE
+
     # Iterator that immediately raises StopIteration.
     object EMPTY_ITER = iter('')
 
@@ -44,8 +47,8 @@ cdef:
     tuple EQUALS_TUP = (Token.EQUALS, '=')
     tuple PLUS_TUP = (Token.PLUS, '+')
 
-    tuple BRACE_OPEN_TUP = (Token.BRACE_OPEN, '{')
-    tuple BRACE_CLOSE_TUP = (Token.BRACE_CLOSE, '}')
+    tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
+    tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
 
     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
     tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
@@ -194,6 +197,16 @@ cdef class BaseTokenizer:
     def skipping_newlines(self):
         """Iterate over the tokens, skipping newlines."""
         return _NewlinesIter.__new__(_NewlinesIter, self)
+
+    def block(self, str name, consume_brace=True):
+        """Helper iterator for parsing keyvalue style blocks.
+
+        This will first consume a {. Then it will skip newlines, and output
+        each string section found. When } is found it terminates, anything else
+        produces an appropriate error.
+        This is safely re-entrant, and tokens can be taken or put back as required.
+        """
+        return BlockIter.__new__(BlockIter, self, name, consume_brace)
 
     def expect(self, object token, bint skip_newline=True):
         """Consume the next token, which should be the given type.
@@ -663,43 +676,100 @@ cdef class _NewlinesIter:
         raise NotImplementedError('Cannot pickle _NewlinesIter!')
 
 
+@cython.final
+@cython.embedsignature(False)
+@cython.internal
+cdef class BlockIter:
+    """Helper iterator for parsing keyvalue style blocks."""
+    cdef Tokenizer tok
+    cdef str name
+    cdef bint expect_brace
+
+    def __cinit__(self, Tokenizer tok not None, str name, bint expect_brace, *):
+        self.tok = tok
+        self.name = name
+        self.expect_brace = expect_brace
+
+    def __repr__(self):
+        return f'<srctools.tokenizer.Tokenizer.block() at {id(self):X}>'
+
+    def __init__(self, tok):
+        raise TypeError("Cannot create 'BlockIter' instances")
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        if self.expect_brace:
+            self.expect_brace = False
+            next_token = <tuple> self.tok.next_token()[0]
+            while next_token is NEWLINE:
+                next_token = <tuple> self.tok.next_token()[0]
+            if next_token is not BRACE_OPEN:
+                raise self.tok._error(f'Expected BRACE_OPEN, but got {next_token}' '!')
+
+        while True:
+            token, value = <tuple>self.tok.next_token()
+
+            if token is EOF:
+                raise self.tok._error(f'Unclosed {self.name} block!')
+            elif token is STRING:
+                return value
+            elif token is BRACE_CLOSE:
+                raise StopIteration
+            elif token is not NEWLINE:
+                raise self.tok.error(token)
+
+    def __reduce__(self):
+        """This cannot be pickled - the Python version does not have this class."""
+        raise NotImplementedError('Cannot pickle BlockIter!')
+
+
 @cython.nonecheck(False)
 def escape_text(str text not None: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
     Specifically, \, ", tab, and newline.
     """
-    # UTF8 = ASCII for those chars, so we can replace in that form.
-    cdef bytes enc_text = text.encode('utf8')
-    cdef Py_ssize_t final_len = len(enc_text)
-    cdef char letter
-    for letter in enc_text:
-        if letter in (b'\\', b'"', b'\t', b'\n'):
+    # First loop to compute the full string length, and check if we need to 
+    # escape at all.
+    cdef Py_ssize_t final_len = 0
+    cdef Py_UCS4 str_letter
+    for str_letter in text:
+        if str_letter in ('\\', '"', '\t', '\n'):
             final_len += 1
 
+    if final_len == 0:  # Unchanged, return original
+        return text
+
+    # UTF8 = ASCII for the chars we care about, so we can replace in that form.
+    cdef bytes enc_text = text.encode('utf8')
+    final_len += len(enc_text)
+
     cdef char * out_buff
+    cdef char byt_letter
     cdef int i = 0
     try:
         out_buff = <char *>PyMem_Malloc(final_len+1)
-        for letter in enc_text:
-            if letter == b'\\':
+        for byt_letter in enc_text:
+            if byt_letter == b'\\':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'\\'
-            elif letter == b'"':
+            elif byt_letter == b'"':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'"'
-            elif letter == b'\t':
+            elif byt_letter == b'\t':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b't'
-            elif letter == b'\n':
+            elif byt_letter == b'\n':
                 out_buff[i] = b'\\'
                 i += 1
                 out_buff[i] = b'n'
             else:
-                out_buff[i] = letter
+                out_buff[i] = byt_letter
             i += 1
         out_buff[final_len] = b'\0'
         return PyUnicode_FromStringAndSize(out_buff, final_len)

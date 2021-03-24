@@ -233,6 +233,27 @@ class BaseTokenizer(abc.ABC):
             elif tok is not Token.NEWLINE:
                 yield tok_and_val
 
+    def block(self, name: str, consume_brace: bool = True) -> Iterator[str]:
+        """Helper iterator for parsing keyvalue style blocks.
+
+        This will first consume a {. Then it will skip newlines, and output
+        each string section found. When } is found it terminates, anything else
+        produces an appropriate error.
+        This is safely re-entrant, and tokens can be taken or put back as required.
+        """
+        if consume_brace:
+            self.expect(Token.BRACE_OPEN)
+        while True:
+            tok, tok_value = self()
+            if tok is Token.EOF:
+                raise self.error(f'Unclosed {name} block!')
+            elif tok is Token.BRACE_CLOSE:
+                return
+            elif tok is Token.STRING:
+                yield tok_value
+            elif tok is not Token.NEWLINE:
+                raise self.error(tok)
+
     def expect(self, token: Token, skip_newline: bool=True) -> str:
         """Consume the next token, which should be the given type.
 

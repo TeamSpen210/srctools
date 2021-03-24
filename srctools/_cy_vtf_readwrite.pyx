@@ -44,9 +44,12 @@ DEF A = 3
 # these functions directly.
 
 
-def ppm_convert(const byte[::1] pixels, uint width, uint height):
+def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or None):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
-    cdef uint img_off, off
+    cdef float r, g, b
+    cdef float a, inv_a
+    cdef uint img_off
+    cdef Py_ssize_t off
     cdef Py_ssize_t size = 3 * width * height
 
     # b'P6 65536 65536 255\n' is 19 characters long.
@@ -58,14 +61,53 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height):
         if img_off < 0: # If it does fail just produce a blank file.
             return b''
 
-        for off in range(width * height):
-            buffer[img_off + 3*off + R] = pixels[4*off]
-            buffer[img_off + 3*off + G] = pixels[4*off+1]
-            buffer[img_off + 3*off + B] = pixels[4*off+2]
+        if bg is not None:
+            r = float(<int> bg[0])
+            g = float(<int> bg[1])
+            b = float(<int> bg[2])
+            for off in prange(width * height, nogil=True, schedule='static'):
+                a = pixels[4 * off + 3] / 255.0
+                inv_a = 1.0 - a
+                buffer[img_off + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
+                buffer[img_off + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
+                buffer[img_off + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
+        else:
+            for off in prange(width * height, nogil=True, schedule='static'):
+                buffer[img_off + 3*off + R] = pixels[4*off]
+                buffer[img_off + 3*off + G] = pixels[4*off + 1]
+                buffer[img_off + 3*off + B] = pixels[4*off + 2]
 
         return buffer[:size+img_off]
     finally:
         free(buffer)
+
+
+def alpha_flatten(const byte[::1] pixels, byte[::1] buffer, uint width, uint height, tuple bg or None):
+    """Flatten the image down to RGB, by removing the alpha channel.
+
+    If bg is set, this is the background we composite into. Otherwise we
+    just strip the alpha.
+    """
+    cdef float r, g, b
+    cdef float a, inv_a
+    cdef Py_ssize_t off
+    cdef Py_ssize_t size = 3 * width * height
+
+    if bg is not None:
+        r = <int>bg[0]
+        g = <int>bg[1]
+        b = <int>bg[2]
+        for off in prange(width * height, nogil=True, schedule='static'):
+            a = pixels[4*off + 3] / 255.0
+            inv_a = 1.0 - a
+            buffer[3*off + R] = <byte>(pixels[4*off] * a + inv_a * r)
+            buffer[3*off + G] = <byte>(pixels[4*off + 1] * a + inv_a * g)
+            buffer[3*off + B] = <byte>(pixels[4*off + 2] * a + inv_a * b)
+    else:
+        for off in prange(width * height, nogil=True, schedule='static'):
+            buffer[3*off + R] = pixels[4*off]
+            buffer[3*off + G] = pixels[4*off + 1]
+            buffer[3*off + B] = pixels[4*off + 2]
 
 
 def scale_down(

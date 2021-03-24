@@ -7,6 +7,7 @@ import re
 import itertools
 import operator
 import builtins
+import sys
 import warnings
 from collections import defaultdict, namedtuple
 from contextlib import suppress
@@ -20,7 +21,7 @@ from typing import (
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec, Angle, Matrix, to_matrix
+from srctools.math import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 
@@ -374,7 +375,7 @@ class VMF:
             self.by_class[item['classname', None]].add(item)
             self.by_target[item['targetname', None]].add(item)
 
-    def create_ent(self, classname: str, **kargs) -> 'Entity':
+    def create_ent(self, classname: str, **kargs: ValidKVs) -> 'Entity':
         """Convenience method to allow creating point entities.
 
         This constructs an entity, adds it to the map, and then returns
@@ -1252,6 +1253,30 @@ class UVAxis:
             scale=self.scale,
         )
 
+    def __copy__(self):
+        return UVAxis(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            offset=self.offset,
+            scale=self.scale,
+        )
+
+    def __deepcopy__(self, memodict=None):
+        return UVAxis(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            offset=self.offset,
+            scale=self.scale,
+        )
+
+    def __getstate__(self):
+        return (self.x, self.y, self.z, self.offset, self.scale)
+
+    def __setstate__(self, state):
+        (self.x, self.y, self.z, self.offset, self.scale) = state
+
     def vec(self) -> Vec:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
@@ -1475,20 +1500,20 @@ class Side:
         """Generate the strings required to define this side in a VMF."""
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
+        buffer.write(f'{ind}\t"id" "{self.id}"\n')
         pl_str = ('(' + p.join(' ') + ')' for p in self.planes)
-        buffer.write(ind + '\t"plane" "' + ' '.join(pl_str) + '"\n')
-        buffer.write(ind + '\t"material" "' + self.mat + '"\n')
-        buffer.write(ind + '\t"uaxis" "' + str(self.uaxis) + '"\n')
-        buffer.write(ind + '\t"vaxis" "' + str(self.vaxis) + '"\n')
-        buffer.write(ind + '\t"rotation" "' + str(self.ham_rot) + '"\n')
-        buffer.write(ind + '\t"lightmapscale" "' + str(self.lightmap) + '"\n')
-        buffer.write(ind + '\t"smoothing_groups" "' + str(self.smooth) + '"\n')
+        buffer.write(f'{ind}\t"plane" "{" ".join(pl_str)}"\n')
+        buffer.write(f'{ind}\t"material" "{self.mat}"\n')
+        buffer.write(f'{ind}\t"uaxis" "{self.uaxis}"\n')
+        buffer.write(f'{ind}\t"vaxis" "{self.vaxis}"\n')
+        buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
+        buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
+        buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
         if self.is_disp:
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
-            buffer.write(ind + '\t\t"power" "' + str(self.disp_power) + '"\n')
+            buffer.write(f'{ind}\t\t"power" "{str(self.disp_power)}"\n')
             buffer.write(ind + '\t\t"startposition" "[' +
                          self.disp_pos.join(' ') +
                          ']"\n')
@@ -1501,7 +1526,7 @@ class Side:
                          '"\n')
             for v in _DISP_ROWS:
                 if len(self.disp_data[v]) > 0:
-                    buffer.write(ind + '\t\t' + v + '\n')
+                    buffer.write(f'{ind}\t\t{v}\n')
                     buffer.write(ind + '\t\t{\n')
                     for i, data in enumerate(self.disp_data[v]):
                         buffer.write(ind + '\t\t\t"row' + str(i) +
@@ -1512,7 +1537,7 @@ class Side:
                 buffer.write(ind + '\t\tallowed_verts\n')
                 buffer.write(ind + '\t\t{\n')
                 for k, v in self.disp_allowed_verts.items():
-                    buffer.write(ind + '\t\t\t"' + k + '" "' + v + '"\n')
+                    buffer.write(f'{ind}\t\t\t"{k}" "{v}"\n')
                 buffer.write(ind + '\t\t}\n')
             buffer.write(ind + '\t}\n')
         buffer.write(ind + '}\n')
@@ -2085,7 +2110,7 @@ class EntityFixup(MutableMapping[str, str]):
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
-                self._fixup[fix.var.casefold()] = fix
+                self._fixup[sys.intern(fix.var.casefold())] = fix
             else:
                 extra_vals.append(fix)
         for fix in extra_vals:
@@ -2108,6 +2133,26 @@ class EntityFixup(MutableMapping[str, str]):
     def copy_values(self) -> List[FixupTuple]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
+
+    def __copy__(self):
+        fix = EntityFixup.__new__(EntityFixup)
+        fix._matcher = self._matcher
+        fix._fixup = self._fixup.copy()
+
+    def __deepcopy__(self, memodict=None):
+        fix = EntityFixup.__new__(EntityFixup)
+        fix._matcher = self._matcher
+        fix._fixup = self._fixup.copy()
+
+    def __getstate__(self) -> List[FixupTuple]:
+        return list(self._fixup.values())
+
+    def __setstate__(self, state: List[FixupTuple]) -> None:
+        self._matcher = None
+        self._fixup = {
+            sys.intern(tup.var.casefold()): tup
+            for tup in state
+        }
 
     def clear(self) -> None:
         """Wipe all the $fixup values."""
@@ -2156,7 +2201,7 @@ class EntityFixup(MutableMapping[str, str]):
 
         sval = conv_kv(val)
 
-        folded_var = var.casefold()
+        folded_var = sys.intern(var.casefold())
         if folded_var not in self._fixup:
             # Insert a new value. Use the lowest unused index.
             indexes = {
@@ -2166,13 +2211,13 @@ class EntityFixup(MutableMapping[str, str]):
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(var, sval, ind)
+                    self._fixup[folded_var] = FixupTuple(sys.intern(var), sval, ind)
                     break
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
         else:
             self._fixup[folded_var] = FixupTuple(
-                var,
+                sys.intern(var),
                 sval,
                 self._fixup[folded_var].id,
             )
@@ -2182,7 +2227,7 @@ class EntityFixup(MutableMapping[str, str]):
         """Delete a instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
-        var = var.casefold()
+        var = sys.intern(var.casefold())
         if var in self._fixup:
             del self._fixup[var]
             # We've changed the keys so this needs to be regenerated.
@@ -2221,7 +2266,7 @@ class EntityFixup(MutableMapping[str, str]):
             for tup in
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
-        return self.__class__.__name__ + '{\n' + items + '\n}'
+        return f'{self.__class__.__name__}{{\n{items}\n}}'
 
     def __repr__(self) -> str:
         items = ', '.join(
@@ -2229,7 +2274,7 @@ class EntityFixup(MutableMapping[str, str]):
             for tup in
             sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
-        return self.__class__.__name__ + '([' + items + '])'
+        return f'{self.__class__.__name__}([{items}])'
 
     def substitute(self, text: str, default: str=None) -> str:
         """Substitute the fixup variables into the provided string.
@@ -2507,11 +2552,8 @@ class Output:
 
     def __repr__(self) -> str:
         vals = (
-            '{cls}({s.output!r}, {s.target!r}, {s.input!r}, {s.params!r}, '
-            'delay={s.delay!r}'.format(
-                s=self,
-                cls=self.__class__.__name__,
-            )
+            f'{self.__class__.__name__}({self.output!r}, {self.target!r}, '
+            f'{self.input!r}, {self.params!r}, delay={self.delay!r}'
         )
         if self.inst_in is not None:
             vals += ', inst_in=' + repr(self.inst_in)
@@ -2550,6 +2592,54 @@ class Output:
             )
             st += " only)"
         return st
+
+    def __getstate__(self) -> tuple:
+        """Produce the state for pickling.
+
+        We know output/input names tend to be the same often,
+        so interning here will simplify the pickle.
+        """
+        basic = (
+            sys.intern(self.output),
+            sys.intern(self.target),
+            sys.intern(self.input),
+            self.comma_sep,
+        )
+        # Instance, delays and times are more rare - if unset don't include.
+        if self.inst_in or self.inst_out or self.params or self.delay or self.times != -1:
+            return basic + (
+                sys.intern(self.inst_out) if self.inst_out is not None else None,
+                sys.intern(self.inst_in) if self.inst_in is not None else None,
+                sys.intern(self.params),
+                self.delay,
+                self.times,
+            )
+        else:
+            return basic
+
+    def __setstate__(self, state: tuple) -> None:
+        """Restore the pickled state."""
+        (
+            self.output,
+            self.target,
+            self.input,
+            self.comma_sep,
+            *advanced,
+        ) = state
+        if advanced:
+            (
+                self.inst_out,
+                self.inst_in,
+                self.params,
+                self.delay,
+                self.times,
+            ) = advanced
+        else:
+            self.inst_out = None
+            self.inst_in = None
+            self.params = ''
+            self.delay = 0.0
+            self.times = -1
 
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""

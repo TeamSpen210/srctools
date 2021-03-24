@@ -5,14 +5,14 @@ This produces _shaderdb.py
 """
 import glob
 import ast
+import re
 import sys
 import collections
 from collections import defaultdict
+from typing import Dict, List, Set
 
 from srctools.vmt import VarType
 
-CONFLICTS = collections.defaultdict(list)
-types = set()
 
 Var = collections.namedtuple('Var', [
     'name',
@@ -23,13 +23,51 @@ Var = collections.namedtuple('Var', [
     'filename',
 ])
 
-VARS = {}
+VARS: Dict[str, Var] = {}
+CONFLICTS: Dict[str, Set[Var]] = collections.defaultdict(set)
+
+# Overrides for some vars that have mismatches.
+OVERRIDES: Dict[str, VarType] = {
+    'bluramount': VarType.FLOAT,  # Conflict, also int.
+    'bloomamount': VarType.VEC4,  # Conflicted, also float.
+    # On unlitgeneric is a >dx9 bool, on lightmappedgeneric it's 80, 81, 90, etc.
+    'envmapoptional': VarType.INT,
+    'color': VarType.COLOR,  # Randomly made vec3 in some shaders.
+    'clearcolor': VarType.VEC3,  # Int and vec
+    'noisescale': VarType.VEC4,  # Float and Vec4
+    'phongexponent': VarType.FLOAT, # Float and int.
+    # Defined as float in engine_post, but immediately casted to int.
+    'num_lookups': VarType.INT,
+    'selfillumfresnelminmaxexp': VarType.VEC4,  # 3 or 4 values depending on shader.
+    # 4 floats in Character shader, float in lightmappedgeneric
+    'detailscale': VarType.VEC4,
+    # Generic parameter, int in weapondecal but that's unused.
+    'alpha': VarType.FLOAT,
+
+    # Flags in some, int in others
+    'vertexcolor': VarType.INT,
+    'notint': VarType.INT,
+
+    # Vec3 in some shaders, but should be logically color.
+    'selfillumtint': VarType.COLOR,
+    'phongtint': VarType.COLOR,
+    'envmaptint': VarType.COLOR,
+    'colortint': VarType.COLOR,
+    'flow_color': VarType.COLOR,
+    'flow_vortex_color': VarType.COLOR,
+
+    # Marked as int in some shaders but really a bool.
+    'separatedetailuvs': VarType.BOOL,
+    'forcecheap': VarType.BOOL,
+    'nodiffusebumplighting': VarType.BOOL,
+    'depthblend': VarType.BOOL,
+    'phong': VarType.BOOL,
+    'showalpha': VarType.BOOL,
+}
 
 
-def process(filename, args):
+def process(filename: str, args: str) -> None:
     """Handle the parameters passed to a shader macro."""
-    flags = 0
-    
     # Make python do the work, by parsing the data.
     ast_tuple = ast.parse(args.lstrip(), filename, 'eval').body
     elements = ast_tuple.elts
@@ -50,12 +88,19 @@ def process(filename, args):
         flags = 0
     else: 
         raise ValueError(ast.dump(ast_tuple))
+
+    if isinstance(ast_default, ast.Name):
+        default = ast_default.id
+    else:
+        default = ast.literal_eval(ast_default)
     
-    name = '$' + ast_name.id.casefold().title()
+    name = '$' + ast_name.id.casefold()
+    if ast_name.id.casefold() in OVERRIDES:
+        return
     var = Var(
         name=ast_name.id,
         type=VarType(ast_type.id),
-        default=ast.literal_eval(ast_default),
+        default=default,
         help=ast.literal_eval(ast_help) if ast_help else '',
         flags=flags,
         filename=filename,
@@ -80,7 +125,7 @@ def process(filename, args):
                     var = var._replace(filename=frozenset({var.filename, other.filename}))
         else:
             # Different types, major issue.
-            CONFLICTS[name].append(var)
+            CONFLICTS[name].add(var)
     VARS[name] = var
 
 
@@ -99,7 +144,9 @@ def dump(folder):
                 line = line.strip()
                 if line.startswith('SHADER_PARAM'):
                     macro_name, args = line.split('(', 1)
-                    args = args.rstrip(');')
+                    if '//' in args:
+                        args = args.split('//', 1)[0]
+                    args = args.strip().rstrip(');')
                     try:
                         process(file, args)
                     except Exception as e:
@@ -121,7 +168,9 @@ def dump(folder):
         for line in f:
             if '}' in line:
                 return
-            var_name = line.strip(' \t\n",').casefold().title()
+            if '//' in line:
+                line = line.split('//')[0]
+            var_name = line.strip(' \t\n",').casefold()
 
             if '$' not in var_name:
                 continue  # Other junk (blank lines, {)
@@ -135,11 +184,13 @@ def dump(folder):
                 filename='shadersystem.cpp',
             )
 
-            if var_name in VARS:
-                if VARS[var_name] is not VarType.FLAG:
-                    CONFLICTS[var_name].append(var)
-            else:
+            try:
+                other_var = VARS[var_name]
+            except KeyError:
                 VARS[var_name] = var
+            else:
+                if other_var.type is not VarType.FLAG:
+                    CONFLICTS[var_name] |= {var, other_var}
 
 
 def main():
@@ -148,10 +199,17 @@ def main():
         print("Reading from", folder)
         dump(folder)
 
-    for confs in CONFLICTS.values():
-        for conf in confs:
+    for key, confs in CONFLICTS.items():
+        for conf in sorted(confs, key=lambda v: v.filename):
             print(conf)
         print()
+
+    for var_name, var_type in OVERRIDES.items():
+        VARS['$' + var_name.casefold()] = Var(
+            var_name, var_type,
+            '', '', '',
+            'shaderdb.py',
+        )
 
     print('Default conflicts:')
     for var in VARS.values():

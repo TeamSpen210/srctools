@@ -157,9 +157,6 @@ def test_EmptyMapping():
 
     # Check it's all empty
     check_empty_iterable(EmptyMapping, 'EmptyMapping')
-    check_empty_iterable(EmptyMapping.keys(), 'keys()')
-    check_empty_iterable(EmptyMapping.values(), 'values()')
-    check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
 
     # Dict methods 
     assert EmptyMapping.get('x') is None
@@ -193,6 +190,100 @@ def test_EmptyMapping():
     assert isinstance(EmptyMapping, abc.Sized)
     assert isinstance(EmptyMapping, abc.Mapping)
     assert isinstance(EmptyMapping, abc.MutableMapping)
+
+
+def test_EmptyMapping_keys() -> None:
+    """Test EmptyMapping.keys() works."""
+    k = EmptyMapping.keys()
+    assert len(EmptyMapping.keys()) == 0
+    assert object() not in EmptyMapping.keys()
+    check_empty_iterable(EmptyMapping.keys(), 'keys()')
+
+    # Check it's registered in ABCs.
+    from collections import abc
+    assert isinstance(EmptyMapping.keys(), abc.MappingView)
+    assert isinstance(EmptyMapping.items(), abc.Set)
+    assert isinstance(EmptyMapping.keys(), abc.KeysView)
+
+
+def test_EmptyMapping_values() -> None:
+    """Test EmptyMapping.values() works. This isn't a Set."""
+    check_empty_iterable(EmptyMapping.values(), 'values()')
+
+    # Check it's registered in ABCs.
+    from collections import abc
+    assert isinstance(EmptyMapping.values(), abc.MappingView)
+    assert isinstance(EmptyMapping.values(), abc.ValuesView)
+
+
+def test_EmptyMapping_items() -> None:
+    """Test EmptyMapping.items() works."""
+    check_empty_iterable(EmptyMapping.items(), 'items()', item=('x', 'y'))
+
+    # Check it's registered in ABCs.
+    from collections import abc
+    assert isinstance(EmptyMapping.items(), abc.MappingView)
+    assert isinstance(EmptyMapping.items(), abc.Set)
+    assert isinstance(EmptyMapping.items(), abc.ItemsView)
+
+
+@pytest.mark.parametrize(
+    'view',
+    [EmptyMapping.keys(), EmptyMapping.items()],
+    ids=['keys', 'items'],
+)
+def test_EmptyMapping_set_ops(view) -> None:
+    """Test EmptyMapping.keys() and items() support set ops."""
+    empty = set()
+    # Ensure it's valid as an items() tuple.
+    full = {('key', 1), ('key2', 4)}
+
+    assert empty == view
+    assert not (full == view)
+    assert view == empty
+    assert not (view == full)
+    
+    assert full != view
+    assert not (empty != view)
+    assert view != full
+    assert not (view != empty)
+
+    assert empty >= view
+    assert full >= view
+    assert view >= empty
+    assert not (view >= full)
+
+    assert not (empty > view)
+    assert full > view
+    assert not (view > empty)
+    assert not (view > full)
+    
+    assert not (view < empty)
+    assert view < full
+    assert not (empty < view)
+    assert not (full < view)
+    
+    assert view <= empty
+    assert view <= full
+    assert empty <= view
+    assert not (full <= view)
+    
+    assert view.isdisjoint(full)
+    assert view.isdisjoint(empty)
+
+    assert (view | empty) == (empty | view) == empty
+    assert (view | full) == (full | view) == full
+
+    assert (view & empty) == (empty & view) == empty
+    assert (view & full) == (full & view) == empty
+
+    assert view - empty == empty
+    assert view - full == empty
+    assert empty - view == empty
+    assert full - view == full
+
+    assert (view ^ empty) == (empty ^ view) == empty
+    assert (view ^ full) == (full ^ view) == full
 
 
 def test_quote_escape():

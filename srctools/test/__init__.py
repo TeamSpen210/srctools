@@ -1,13 +1,13 @@
 """Helpers for performing tests."""
 import itertools
 
-from srctools.vec import (
+from srctools.math import (
     Py_Vec, Cy_Vec,
     Py_Angle, Cy_Angle,
     Py_Matrix, Cy_Matrix,
     Py_parse_vec_str, Cy_parse_vec_str,
 )
-from srctools import vec as vec_mod
+from srctools import math as vec_mod
 import pytest
 import math
 
@@ -30,7 +30,7 @@ def iter_vec(nums):
                 yield x, y, z
 
 
-def assert_ang(ang, pitch=0, yaw=0, roll=0, msg=''):
+def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON):
     """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
@@ -39,18 +39,27 @@ def assert_ang(ang, pitch=0, yaw=0, roll=0, msg=''):
     yaw %= 360
     roll %= 360
 
-    # Ignore slight variations
-    if not math.isclose(ang.pitch, pitch, abs_tol=EPSILON):
+    # Ignore slight variations, and handle one being ~359.99
+    if not (
+        math.isclose(ang.pitch, pitch, abs_tol=tol) or
+        math.isclose(ang.pitch - pitch, 360.0, abs_tol=tol)
+    ):
         failed = 'pitch'
-    elif not math.isclose(ang.yaw, yaw, abs_tol=EPSILON):
+    elif not (
+        math.isclose(ang.yaw, yaw, abs_tol=tol) or
+        math.isclose(ang.yaw - yaw, 360.0, abs_tol=tol)
+    ):
         failed = 'yaw'
-    elif not math.isclose(ang.roll, roll, abs_tol=EPSILON):
+    elif not (
+        math.isclose(ang.roll, roll, abs_tol=tol) or
+        math.isclose(ang.roll - roll, 360.0, abs_tol=tol)
+    ):
         failed = 'roll'
     else:
         # Success!
         return
 
-    new_msg = "{!r}.{} != ({:g}, {:g}, {:g})".format(ang, failed, pitch, yaw, roll)
+    new_msg = "Angle({:.10g}, {:.10g}, {:.10g}).{} != ({:.10g}, {:.10g}, {:.10g})".format(ang.pitch, ang.yaw, ang.roll, failed, pitch, yaw, roll)
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
@@ -128,3 +137,11 @@ def py_c_vec(request):
         vec_mod.Matrix = orig_Matrix
         vec_mod.Angle = orig_Angle
         vec_mod.parse_vec_str = orig_parse
+
+
+def parameterize_cython(param: str, py_vers, cy_vers):
+    """If the Cython version is available, parameterize the test function."""
+    if py_vers is cy_vers:
+        return pytest.mark.parametrize(param, [py_vers], ids=['Python'])
+    else:
+        return pytest.mark.parametrize(param, [py_vers, cy_vers], ids=['Python', 'Cython'])

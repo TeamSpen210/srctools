@@ -20,7 +20,7 @@ from typing import (
 
 import srctools
 from srctools.filesys import FileSystem, File
-from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError
+from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError, escape_text
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -119,6 +119,7 @@ class ValueTypes(Enum):
     # Format extensions.
     EXT_STR_TEXTURE = 'texture'  # A VTF, mainly for env_projectedtexture.
     EXT_VEC_DIRECTION = 'vec_dir'  # A vector which should be rotated, but not translated.
+    EXT_VEC_LOCAL = 'vec_local'  # Vector, but do not rotate in instances.
     EXT_ANGLE_PITCH = 'angle_pitch'  # Overrides angles[2], but isn't inverted
     EXT_ANGLES_LOCAL = 'angle_local'  # Angles value, but do not rotate in instances.
 
@@ -140,6 +141,14 @@ class ValueTypes(Enum):
     def extension(self) -> bool:
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
+
+    @property
+    def is_ent_name(self) -> bool:
+        """Several types are simply a targetname."""
+        return self.value in {
+            'target_source', 'target_destination', 'npcclass',
+            'pointentityclass', 'filterclass',
+        }
 
 
 VALUE_TYPE_LOOKUP = {
@@ -168,6 +177,7 @@ VALUE_TO_IO_DECAY[ValueTypes.VEC_LINE] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_ORIGIN] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.VEC_AXIS] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_DIRECTION] = ValueTypes.VEC
+VALUE_TO_IO_DECAY[ValueTypes.EXT_VEC_LOCAL] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.ANGLES] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 # Only one color type present.
@@ -295,6 +305,7 @@ VALUE_TYPE_ORDER = [
     ValueTypes.EXT_ANGLE_PITCH,
     ValueTypes.EXT_ANGLES_LOCAL,
     ValueTypes.EXT_VEC_DIRECTION,
+    ValueTypes.EXT_VEC_LOCAL,
 ]
 
 # Ditto for entity types.
@@ -362,7 +373,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     """
     LIMIT = 1000  # Give a bit of extra room for the quotes, etc.
     sections = []
-    remaining = text
+    remaining = escape_text(text)
     while len(remaining) > LIMIT:
         # First, look for any \ns and split on those. This is a nice stopping
         # point, and also prevents separating the "\" from "n". Then add 2
@@ -807,18 +818,17 @@ class KeyValues:
                 file.write(' : : ')
 
         if self.desc:
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
+            _write_longstring(file, self.desc, indent='\t')
 
         if self.type.has_list:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
                 for index, name, default, tags in self.val_list or ():
-                    file.write('\t\t{0}: "[{0}] {1}" : {2}'.format(
-                        index,
-                        name,
-                        '1' if default else '0',
-                    ))
+                    file.write(f'\t\t{index}: ')
+                    # Newlines aren't functional here, just replace.
+                    _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
+                    file.write(' : 1' if default else ' : 0')
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
                     else:
@@ -831,7 +841,9 @@ class KeyValues:
                     except ValueError:
                         value = '"' + value + '"'
 
-                    file.write('\t\t{}: "{}"'.format(value, name))
+                    file.write(f'\t\t{value}: ')
+                    # Newlines aren't functional here, just replace.
+                    _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
                     else:
@@ -990,7 +1002,7 @@ class IODef:
 
         if self.desc:
             file.write(' : ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t')
+            _write_longstring(file, self.desc, indent='\t')
         file.write('\n')
         
     def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
@@ -1507,14 +1519,14 @@ class EntityDef:
         for attr in ['keyvalues', 'inputs', 'outputs']:
             coll = {}
             setattr(copy, attr, coll)
-            for key, tags_map in getattr(copy, attr).items():
+            for key, tags_map in getattr(self, attr).items():
                 coll[key] = {
                     key: value.copy()
                     for key, value in tags_map.items()
                 }
-        copy.kv = _EntityView(self, 'keyvalues', 'kv')
-        copy.inp = _EntityView(self, 'inputs', 'inp')
-        copy.out = _EntityView(self, 'outputs', 'out')
+        copy.kv = _EntityView(copy, 'keyvalues', 'kv')
+        copy.inp = _EntityView(copy, 'inputs', 'inp')
+        copy.out = _EntityView(copy, 'outputs', 'out')
         return copy
 
     def __getstate__(self) -> tuple:
@@ -1615,7 +1627,7 @@ class EntityDef:
 
         if self.desc:
             file.write(': ')
-            _write_longstring(file, self.desc.replace('\n', '\\n'), indent='\t\t')
+            _write_longstring(file, self.desc, indent='\t\t')
 
         file.write('\n\t[\n')
 
@@ -1656,6 +1668,9 @@ class EntityDef:
         if not _done:
             _done = {self}
         for ent in self.bases:
+            if ent in _done:
+                continue
+
             _done.add(ent)
             yield ent
             yield from ent.iter_bases(_done)
@@ -1773,6 +1788,8 @@ class FGD:
 
         # Directories we have excluded.
         self.mat_exclusions: Set[PurePosixPath] = set()
+        # Additional dirs restricted to specific engines with tags.
+        self.tagged_mat_exclusions: Dict[FrozenSet[str], Set[PurePosixPath]] = defaultdict(set)
 
         # Automatic visgroups.
         # The way Valve implemented this is rather strange, so we need
@@ -1946,13 +1963,19 @@ class FGD:
             ret_string = False
 
         if self.map_size_min != self.map_size_max:
-            file.write('@mapsize({}, {})\n'.format(self.map_size_min, self.map_size_max))
+            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
             
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
             for folder in sorted(self.mat_exclusions):
                 file.write('\t"{!s}"\n'.format(folder))
-            file.write('\t]\n')
+            file.write('\t]\n\n')
+        for tag in sorted(self.tagged_mat_exclusions):
+            file.write(f'@MaterialExclusion({", ".join(sorted(tag))})\n\t[\n')
+            for folder in sorted(self.tagged_mat_exclusions[tag]):
+                file.write('\t"{!s}"\n'.format(folder))
+            file.write('\t]\n\n')
+
 
         vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
@@ -2074,13 +2097,26 @@ class FGD:
                             mapsize_args,
                         )
                 elif token_value == '@materialexclusion':
-                    # Material exclusion directories
-                    tokeniser.expect(Token.BRACK_OPEN)
+                    # Material exclusion directories.
+
+                    # Custom syntax: (tag1, tag2) after the header, then [.
+                    tags: Optional[FrozenSet[str]] = None
+                    for tok, tok_value in tokeniser.skipping_newlines():
+                        if tok is Token.BRACK_OPEN:
+                            break
+                        elif tok is Token.PAREN_ARGS and tags is None:
+                            tags = validate_tags(tok_value.split(','), tokeniser.error)
+                        else:
+                            raise tok.error(tok)
+
                     for tok, tok_value in tokeniser:
                         if tok is Token.BRACK_CLOSE:
                             break
                         elif tok is Token.STRING:
-                            self.mat_exclusions.add(PurePosixPath(tok_value))
+                            if tags is not None:
+                                self.tagged_mat_exclusions[tags].add(PurePosixPath(tok_value))
+                            else:
+                                self.mat_exclusions.add(PurePosixPath(tok_value))
                         elif tok is not Token.NEWLINE:
                             raise tokeniser.error(tok)
                     else:

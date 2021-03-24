@@ -13,4 +13,5 @@ datas = [
 excludedimports = [
     'PIL',  # Pillow is optional for VTF, the user will import if required.
     'tkinter',  # Same for Tkinter.
+    'wx',  # And wxWidgets.
 ]
