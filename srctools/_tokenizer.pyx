@@ -107,15 +107,24 @@ cdef class BaseTokenizer:
 
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
-        The message can be a Token to indicate a wrong token,
+        Either pass a token and optionally the value to give a generic message,
         or a string which will be {}-formatted with the positional args
         if they are present.
         """
-        if isinstance(message, Token):
-            message = f'Unexpected token {message.name}' '!'
+        cdef str tok_val, str_msg
+        if type(message) is Token:  # We know no subclasses exist..
+            if len(args) > 1:
+                raise TypeError(f'Token {message.name} passed with multiple values: {args}')
+            if len(args) == 1 and (message is STRING or message is PAREN_ARGS or message is PROP_FLAG or message is DIRECTIVE):
+                tok_val = <str?>args[0]
+                str_msg = f'Unexpected token {message.name}({tok_val})!'
+            else:
+                str_msg = f'Unexpected token {message.name}' '!'
         elif args:
-            message = message.format(*args)
-        return self._error(message)
+            str_msg = message.format(*args)
+        else:
+            str_msg = message
+        return self._error(str_msg)
 
     # Don't unpack, error_type should be a class.
     @cython.optimize.unpack_method_calls(False)
@@ -718,7 +727,7 @@ cdef class BlockIter:
             elif token is BRACE_CLOSE:
                 raise StopIteration
             elif token is not NEWLINE:
-                raise self.tok.error(token)
+                raise self.tok.error(token, value)
 
     def __reduce__(self):
         """This cannot be pickled - the Python version does not have this class."""

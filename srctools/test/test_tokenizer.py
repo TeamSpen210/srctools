@@ -511,6 +511,50 @@ Error occurred on line 45, with file "a file".'''
 Error occurred on line 250.'''
 
 
+def test_tok_error(py_c_token):
+    """Test the tok.error() helper."""
+    tok: Tokenizer = py_c_token(['test'], 'filename.py')
+    tok.line_num = 45
+    assert tok.error('basic') == TokenSyntaxError('basic', 'filename.py', 45)
+    assert tok.error('Error with } and { brackets') == TokenSyntaxError('Error with } and { brackets', 'filename.py', 45)
+    tok.line_num = 9999
+    assert tok.error('Arg {0}, {2} and {1} formatted', 'a', 'b', 'c') == TokenSyntaxError('Arg a, c and b formatted', 'filename.py', 9999)
+    tok.filename = None
+    assert tok.error('Param: {:.6f}, {!r}, {}', 1/3, "test", test_tok_error) == TokenSyntaxError(f"Param: {1/3:.6f}, 'test', {test_tok_error}", None, 9999)
+
+
+@pytest.mark.parametrize('token', [
+    Token.STRING,
+    Token.PROP_FLAG,
+    Token.PAREN_ARGS,
+    Token.DIRECTIVE,
+])
+def test_tok_error_hasval(py_c_token, token):
+    """Test the tok.error() handler with token types that accept values."""
+    tok: Tokenizer = py_c_token(['test'], 'fname')
+    tok.line_num = 23
+    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
+    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}(value)!', 'fname', 23)
+    with pytest.raises(TypeError):
+        tok.error(token, 'val1', 'val2')
+
+
+@pytest.mark.parametrize('token', [
+    Token.EOF, Token.NEWLINE,
+    Token.BRACE_OPEN, Token.BRACE_CLOSE,
+    Token.BRACK_OPEN, Token.BRACK_CLOSE,
+    Token.COLON, Token.EQUALS, Token.PLUS,
+])
+def test_tok_error_noval(py_c_token, token):
+    """Test the tok.error() handler with token types that have the same value always."""
+    tok: Tokenizer = py_c_token(['test'], 'fname')
+    tok.line_num = 23
+    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
+    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
+    with pytest.raises(TypeError):
+        tok.error(token, 'val1', 'val2')
+
+
 def test_unicode_error_wrapping(py_c_token):
     """Test that Unicode errors are wrapped into TokenSyntaxError."""
     def raises_unicode():

@@ -5,9 +5,9 @@ This is used internally for parsing files.
 from enum import Enum
 from os import fspath as _conv_path, PathLike
 from typing import (
-    Union, Optional, Type, Any,
+    Union, Optional, Type, Any, overload,
     Iterable, Iterator,
-    Tuple, List
+    Tuple, List,
 )
 import abc
 
@@ -36,6 +36,15 @@ class TokenSyntaxError(Exception):
             self.file,
             self.line_num,
             )
+
+    def __eq__(self, other: 'TokenSyntaxError') -> bool:
+        if type(self) is type(other):
+            return (
+                self.mess == other.mess and
+                self.file == other.file and
+                self.line_num == other.line_num
+            )
+        return NotImplemented
 
     def __str__(self) -> str:
         """Generate the complete error message.
@@ -78,7 +87,7 @@ class Token(Enum):
     @property
     def has_value(self) -> bool:
         """If true, this type has an associated value."""
-        return self.value in (1, 3, 10)
+        return self.value in (1, 3, 4, 10)
 
 _PUSHBACK_VALS = {
     Token.EOF: '',
@@ -152,6 +161,10 @@ class BaseTokenizer(abc.ABC):
         self._pushback: Optional[Tuple[Token, str]] = None
         self.line_num = 1
 
+    @overload
+    def error(self, message: Token, __value: str='') -> TokenSyntaxError: ...
+    @overload
+    def error(self, message: str, *args: object) -> TokenSyntaxError: ...
     def error(self, message: Union[str, Token], *args) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
@@ -162,7 +175,12 @@ class BaseTokenizer(abc.ABC):
         if they are present.
         """
         if isinstance(message, Token):
-            message = 'Unexpected token {}!'.format(message.name)
+            if len(args) > 1:
+                raise TypeError(f'Token {message.name} passed with multiple values: {args}')
+            if message.has_value and len(args) == 1:
+                message = f'Unexpected token {message.name}({args[0]})!'
+            else:
+                message = f'Unexpected token {message.name}!'
         elif args:
             message = message.format(*args)
         return self.error_type(
