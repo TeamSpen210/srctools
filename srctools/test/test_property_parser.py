@@ -1,11 +1,11 @@
 import pytest
 
 from srctools.property_parser import Property, KeyValError, NoKeyError
-from srctools.tokenizer import C_Tokenizer, Py_Tokenizer
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
 from srctools import property_parser as pp_mod
 
-if C_Tokenizer is not None:
-    parms = [C_Tokenizer, Py_Tokenizer]
+if Cy_Tokenizer is not None:
+    parms = [Cy_Tokenizer, Py_Tokenizer]
     ids = ['Cython tokenizer', 'Python tokenizer']
 else:
     pytest.fail('No _tokenizer')

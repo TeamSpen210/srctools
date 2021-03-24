@@ -9,7 +9,7 @@ from srctools.property_parser import KeyValError
 from srctools.tokenizer import (
     Token,
     Tokenizer,
-    C_Tokenizer, Py_Tokenizer,
+    Cy_Tokenizer, Py_Tokenizer,
     escape_text, _py_escape_text,
     TokenSyntaxError,
 )
@@ -110,8 +110,8 @@ noprop_parse_tokens = [
 ]
 
 
-if C_Tokenizer is not Py_Tokenizer:
-    parms = [C_Tokenizer, Py_Tokenizer]
+if Cy_Tokenizer is not Py_Tokenizer:
+    parms = [Cy_Tokenizer, Py_Tokenizer]
     ids = ['Cython', 'Python']
 else:
     import srctools.tokenizer

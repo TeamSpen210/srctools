@@ -614,11 +614,12 @@ def escape_text(text: str) -> str:
 # This is available as both C and Python versions, plus the unprefixed
 # best version.
 # For static typing, make it think they're the same.
-Py_BaseTokenizer = C_BaseTokenizer = BaseTokenizer
-Py_Tokenizer = C_Tokenizer = Tokenizer
+Py_BaseTokenizer = Cy_BaseTokenizer = BaseTokenizer
+Py_Tokenizer = Cy_Tokenizer = Tokenizer
+Py_IterTokenizer = Cy_IterTokenizer = IterTokenizer
 
 # Maintain this for testing.
-_py_escape_text = escape_text
+_py_escape_text = cy_escape_text = escape_text
 
 # Do it this way, so static analysis ignores this.
 _glob = globals()
@@ -627,6 +628,7 @@ try:
 except ImportError:
     pass
 else:
-    for _name in ['Tokenizer', 'BaseTokenizer', 'escape_text']:
+    for _name in ['Tokenizer', 'BaseTokenizer', 'IterTokenizer']:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
+    _glob['escape_text'] = _glob['cy_escape_text'] = _tokenizer.escape_text
     del _glob, _name, _tokenizer
