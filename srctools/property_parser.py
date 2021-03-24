@@ -63,7 +63,7 @@ import builtins  # Property.bool etc shadows these.
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec as _Vec
-from srctools.tokenizer import Token, Tokenizer, TokenSyntaxError, escape_text
+from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
     Optional, Union, Any,
@@ -199,8 +199,8 @@ class Property:
 
     @staticmethod
     def parse(
-        file_contents: Union[str, Iterator[str]],
-        filename='',
+        file_contents: Union[str, BaseTokenizer, Iterator[str]],
+        filename='', *,
         flags: Mapping[str, bool]=EmptyMapping,
         allow_escapes: bool=True,
         single_line: bool=False,
@@ -215,6 +215,9 @@ class Property:
         If single_line is set, allow multiple properties to be on the same line.
         This means unterminated strings will be caught late (if at all), but
         it allows parsing some 'internal' data blocks.
+
+        Alternatively, file_contents may be an already created tokenizer.
+        In this case allow_escapes is ignored.
         """
         # The block we are currently adding to.
 
@@ -238,13 +241,18 @@ class Property:
         BRACE_OPEN = Token.BRACE_OPEN
         BRACE_CLOSE = Token.BRACE_CLOSE
 
-        tokenizer = Tokenizer(
-            file_contents,
-            filename,
-            KeyValError,
-            string_bracket=True,
-            allow_escapes=allow_escapes,
-        )
+        if isinstance(file_contents, BaseTokenizer):
+            tokenizer = file_contents
+            tokenizer.filename = filename
+            tokenizer.error_type = KeyValError
+        else:
+            tokenizer = Tokenizer(
+                file_contents,
+                filename,
+                KeyValError,
+                string_bracket=True,
+                allow_escapes=allow_escapes,
+            )
 
         # If not None, we're requiring a block to open next ("name"\n must have { next.)
         # It's the line number of the header name.
@@ -386,7 +394,7 @@ class Property:
                 # For replacing the block.
                 can_flag_replace = True
             else:
-                raise tokenizer.error(token_type)
+                raise tokenizer.error(token_type, token_value)
 
         # We're out of data, do some final sanity checks.
         
