@@ -1003,9 +1003,18 @@ _conv_integer_to_vec2 = lambda n: Vec2(n, n)
 _conv_integer_to_vec3 = lambda n: Vec3(n, n, n)
 _conv_integer_to_vec4 = lambda n: Vec4(n, n, n, n)
 
+
 def _conv_integer_to_color(val: int) -> Color:
     val = max(0, min(val, 255))
     return Color(val, val, val, 255)
+
+
+def _fmt_float(x: float) -> str:
+    """Format floats appropriately, with 6 decimal points but no trailing zeros."""
+    res = format(x, '.6f').rstrip('0')
+    if res.endswith('.'):
+        return res[:-1]
+    return res
 
 _conv_float_to_string = lambda n: str(n).replace('.0', '')
 _conv_float_to_integer = int
@@ -1024,19 +1033,19 @@ _conv_time_to_float = float
 _conv_time_to_bool = lambda t: t > 0
 _conv_time_to_string = str
 
-_conv_vec2_to_string = lambda v: f'{v.x} {v.y}'.replace('.0', '')
+_conv_vec2_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)}'
 _conv_vec2_to_bool = lambda v: bool(v.x or v.y)
 _conv_vec2_to_vec3 = lambda v: Vec3(v.x, v.y, 0.0)
 _conv_vec2_to_vec4 = lambda v: Vec4(v.x, v.y, 0.0, 0.0)
 
-_conv_vec3_to_string = lambda v: f'{v.x} {v.y} {v.z}'.replace('.0', '')
+_conv_vec3_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)}'
 _conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
 _conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
 _conv_vec3_to_angle = lambda v: AngleTup(v.x, v.y, v.z)
 _conv_vec3_to_color = lambda v: Color(int(v.x), int(v.y), int(v.z), 255)
 
-_conv_vec4_to_string = lambda v: f'{v.x} {v.y} {v.z} {v.w}'.replace('.0', '')
+_conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
 _conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
 _conv_vec4_to_vec3 = lambda v: Vec3(v.x, v.y, v.z)
 _conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
@@ -1045,7 +1054,7 @@ _conv_vec4_to_color = lambda v: Color(int(v.x), int(v.y), int(v.z), int(v.w))
 
 _conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
 
-_conv_angle_to_string = lambda a: f'{a.pitch} {a.yaw} {a.roll}'.replace('.0', '')
+_conv_angle_to_string = lambda a: f'{_fmt_float(a.pitch)} {_fmt_float(a.yaw)} {_fmt_float(a.roll)}'
 _conv_angle_to_matrix = lambda ang: Matrix.from_angle(Angle(ang))
 _conv_angle_to_vec3 = lambda ang: Vec3(ang.pitch, ang.yaw, ang.roll)
 
@@ -1053,7 +1062,7 @@ _conv_color_to_string = lambda col: f'{col.r} {col.g} {col.b} {col.a}'
 _conv_color_to_vec3 = lambda col: Vec3(col.r, col.g, col.b)
 _conv_color_to_vec4 = lambda col: Vec4(col.r, col.g, col.b, col.a)
 
-_conv_quaternion_to_string = lambda quat: f'{quat.x} {quat.y} {quat.z} {quat.w}'.replace('.0', '')
+_conv_quaternion_to_string = lambda quat: f'{_fmt_float(quat.x)} {_fmt_float(quat.y)} {_fmt_float(quat.z)} {_fmt_float(quat.w)}'
 _conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
 
 # Binary conversions.
