@@ -76,7 +76,7 @@ Value = Union[
     AngleTup,
     Quaternion,
     Matrix,
-    Element,
+    Optional[Element],
 ]
 
 ValueT = TypeVar(
@@ -87,7 +87,7 @@ ValueT = TypeVar(
     Angle,
     Quaternion,
     Matrix,
-    Element,
+    Optional[Element],
 )
 
 TYPE_CONVERT: dict[tuple[ValueType, ValueType], Callable[[Value], Value]]
@@ -209,9 +209,9 @@ class _ValProps:
     val_bin: bytes
     val_binary: bytes
 
-    val_compound: Element
-    val_elem: Element
-    val: Element
+    val_compound: Optional[Element]
+    val_elem: Optional[Element]
+    val: Optional[Element]
 
 class AttrMember(_ValProps):
     def __init__(self, owner: Attribute, index: Union[int, str]) -> None: ...
@@ -254,7 +254,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def type(self) -> ValueType: ...
 
     @overload
-    def __init__(self: Attribute[Element], name: str, val_type: Literal[ValueType.ELEMENT], value: Union[Element, list[Element]]) -> None: ...
+    def __init__(self: Attribute[Element], name: str, val_type: Literal[ValueType.ELEMENT], value: Union[Optional[Element], list[Optional[Element]]]) -> None: ...
     @overload
     def __init__(self: Attribute[int], name: str, val_type: Literal[ValueType.INTEGER], value: Union[int, list[int]]) -> None: ...
     @overload

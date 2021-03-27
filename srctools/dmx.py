@@ -121,7 +121,7 @@ Value = Union[
     AngleTup,
     Quaternion,
     Matrix,
-    'Element',
+    Optional['Element'],
 ]
 
 ValueT = TypeVar(
@@ -132,7 +132,7 @@ ValueT = TypeVar(
     Angle,
     Quaternion,
     Matrix,
-    'Element',
+    Optional['Element'],
 )
 
 # [from, to] -> conversion.
@@ -245,7 +245,7 @@ class _ValProps:
     val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
     val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
     val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
-    val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, 'Element')
+    val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, Optional['Element'])
 
 del _make_val_prop
 
