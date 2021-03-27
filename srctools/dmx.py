@@ -772,12 +772,15 @@ class Element(Mapping[str, Attribute]):
                             if tok_value == 'element':
                                 # UUID reference.
                                 uuid_str = tok.expect(Token.STRING)
-                                try:
-                                    uuid = UUID(uuid_str)
-                                except ValueError:
-                                    raise tok.error('Invalid UUID "{}"!', uuid_str)
-                                fixups.append((attr, len(array), uuid, tok.line_num))
-                                array.append(None)  # Placeholder.
+                                if uuid_str:
+                                    try:
+                                        uuid = UUID(uuid_str)
+                                    except ValueError:
+                                        raise tok.error('Invalid UUID "{}"!', uuid_str)
+                                    fixups.append((attr, len(array), uuid, tok.line_num))
+                                # If UUID is present, this None will be
+                                # overwritten after. Otherwise, this stays None.
+                                array.append(None)
                             else:
                                 # Inline compound
                                 array.append(cls._parse_kv2_element(tok, id_to_elem, fixups, attr_name, tok_value))
@@ -799,14 +802,16 @@ class Element(Mapping[str, Attribute]):
                     raise tok.error('Unterminated array!')
             elif attr_type is ValueType.ELEMENT:
                 # This is a reference to another element.
-                # We'll fix it up later.
                 uuid_str = tok.expect(Token.STRING)
-                try:
-                    uuid = UUID(uuid_str)
-                except ValueError:
-                    raise tok.error('Invalid UUID "{}"!', uuid_str)
-                attr = Attribute(attr_name, attr_type, None)  # Value is temporary.
-                fixups.append((attr, None, uuid, tok.line_num))
+                attr = Attribute(attr_name, attr_type, None)
+                if uuid_str:
+                    try:
+                        uuid = UUID(uuid_str)
+                    except ValueError:
+                        raise tok.error('Invalid UUID "{}"!', uuid_str)
+                    fixups.append((attr, None, uuid, tok.line_num))
+                # If UUID is present, the None value  will be overwritten after.
+                # Otherwise, this stays None.
             else:
                 # Single element.
                 unparsed = tok.expect(Token.STRING)
