@@ -253,6 +253,9 @@ class Attribute(Generic[ValueT], _ValProps):
     @property
     def type(self) -> ValueType: ...
 
+    @property
+    def is_array(self) -> bool: ...
+
     @overload
     def __init__(self: Attribute[Element], name: str, val_type: Literal[ValueType.ELEMENT], value: Union[Optional[Element], list[Optional[Element]]]) -> None: ...
     @overload
