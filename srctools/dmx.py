@@ -612,7 +612,7 @@ class Element(Mapping[str, Attribute]):
                                 try:
                                     child_elem = stubs[uuid]
                                 except KeyError:
-                                    child_elem = stubs[uuid] = Element(name, '<Stub>')
+                                    child_elem = stubs[uuid] = Element('', 'StubElement', uuid)
                             else:
                                 child_elem = elements[ind]
                             array.append(child_elem)
@@ -639,7 +639,7 @@ class Element(Mapping[str, Attribute]):
                             binformat.read_nullstr_array(file, array_size),
                         )
                     else:  # Single string.
-                        if stringdb is not None:
+                        if stringdb is not None and version >= 4:
                             [ind] = binformat.struct_read(stringdb_ind, file)
                             value = stringdb[ind]
                         else:

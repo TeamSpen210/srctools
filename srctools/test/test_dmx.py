@@ -1,5 +1,5 @@
 """Test the datamodel exchange implementation."""
-from typing import Callable, cast
+from typing import Callable, cast, Set
 from uuid import UUID
 
 import pytest
@@ -9,6 +9,71 @@ from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
 )
+
+
+def assert_tree(tree1: Element, tree2: Element) -> None:
+    """Checks both trees are identical, recursively."""
+    return _assert_tree_elem(tree1.name, tree1, tree2, set())
+
+
+def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
+    """Checks two elements are the same."""
+    if tree1 is None:
+        if tree2 is None:
+            return  # Matches.
+        pytest.fail(f'{path}: NULL != {tree2}')
+    elif tree2 is None:
+        pytest.fail(f'{path}: {tree1} != NULL')
+
+    # Don't re-check (infinite loop).
+    if tree1.uuid in checked:
+        return
+    checked.add(tree1.uuid)
+    if tree1.uuid != tree2.uuid:
+        pytest.fail(f'{path}: UUID {tree1.uuid.hex} != {tree2.uuid.hex}')
+    if tree1.name != tree2.name:
+        pytest.fail(f'{path}: name {tree1.name} != {tree2.name}')
+    if tree1.type != tree2.type:
+        pytest.fail(f'{path}: type {tree1.type} != {tree2.type}')
+
+    for key in tree1.keys() | tree2.keys():
+        attr_path = f'{path}.{key}'
+
+        # Allow one to be NULL, but the other to be a missing element.
+        try:
+            attr1 = tree1[key]
+        except KeyError:
+            attr1 = None
+        try:
+            attr2 = tree2[key]
+        except KeyError:
+            attr2 = None
+        if attr1 is None:
+            if attr2 is None:
+                raise AssertionError(f'{key} not in {tree1.keys()} and {tree2.keys()}, but in union?')
+            elif attr2.type is ValueType.ELEMENT or attr2.val_elem is None:
+                continue
+            raise AssertionError(f'{attr_path}: NULL != {attr2.type}')
+        elif attr2 is None:
+            if attr1.type is ValueType.ELEMENT and attr1.val_elem is None:
+                continue
+            raise AssertionError(f'{attr_path}: {attr1.type} != NULL')
+
+        assert attr1.type is attr2.type, attr_path
+        assert attr1.name == attr2.name, attr_path
+        if attr1.type is ValueType.ELEMENT:
+            if attr1.is_array:
+                assert len(attr1) == len(attr2), f'Mismatched len for {attr_path}'
+                for i, elem1 in enumerate(attr1):
+                    _assert_tree_elem(f'{attr_path}[{i}]', elem1, attr2[i].val_elem, checked)
+            else:
+                _assert_tree_elem(attr_path, attr1.val_elem, attr2.val_elem, checked)
+        elif attr1.is_array:
+            assert len(attr1) == len(attr2), f'Mismatched len for {attr_path}'
+            for i in range(len(attr1)):
+                assert attr1[i].val_str == attr2[i].val_str, f'{attr_path}[{i}]: {attr1._value[i]} != {attr2._value[i]}'
+        else:
+            assert attr1.val_str == attr2.val_str, f'{attr_path}: {attr1._value} != {attr2._value}'
 
 
 def test_attr_val_int() -> None:
@@ -501,3 +566,16 @@ def test_parse(filename: str) -> None:
 
     assert arr_elem[2].val is arr_elem_2
     assert arr_elem[3].val is arr_elem_1
+
+
+def test_parse_binaryv3() -> None:
+    """Test parsing of binary version 3.
+
+    We don't have a DMXconvert that produces this, so instead compare an existing
+    file to the text version.
+    """
+    with open(f'dmx_samples/tf_movies.dmx', 'rb') as f:
+        root_bin, fmt_name, fmt_version = Element.parse(f)
+    with open(f'dmx_samples/tf_movies_text.dmx', 'rb') as f:
+        root_txt, fmt_name, fmt_version = Element.parse(f)
+    assert_tree(root_bin, root_txt)
