@@ -1,4 +1,5 @@
 """Test the datamodel exchange implementation."""
+from io import BytesIO
 from typing import Callable, cast, Set
 from uuid import UUID
 
@@ -401,15 +402,16 @@ def test_deduce_type_adv() -> None:
     'binary_v4',  # L4D2's dmxconvert
     'binary_v5',  # P2+'s dmxconvert
 ])
-def test_parse(filename: str) -> None:
+def test_parse(filename: str, root: Element=None) -> None:
     """Test parsing all the format types."""
     # string <-> double <-> float conversions are not quite accurate.
     a = cast(Callable[[float], float], pytest.approx)
 
-    with open(f'dmx_samples/{filename}.dmx', 'rb') as f:
-        root, fmt_name, fmt_version = Element.parse(f)
-    assert fmt_name == 'dmx'
-    assert fmt_version == 4
+    if root is None:
+        with open(f'dmx_samples/{filename}.dmx', 'rb') as f:
+            root, fmt_name, fmt_version = Element.parse(f)
+        assert fmt_name == 'dmx'
+        assert fmt_version == 4
 
     assert root.name == 'Root_Name'
     assert root.type == 'DmeRootElement'
@@ -579,3 +581,20 @@ def test_parse_binaryv3() -> None:
     with open(f'dmx_samples/tf_movies_text.dmx', 'rb') as f:
         root_txt, fmt_name, fmt_version = Element.parse(f)
     assert_tree(root_bin, root_txt)
+
+
+@pytest.mark.parametrize('version', [2, 4, 5])
+def test_export_bin_roundtrip(version: int) -> None:
+    """Test exporting binary types roundtrip."""
+    with open(f'dmx_samples/binary_v5.dmx', 'rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+
+    buf = BytesIO()
+    root.export_binary(buf, version, fmt_name, fmt_version)
+    buf.seek(0)
+    rnd_root, rnd_name, rnd_ver = Element.parse(buf)
+
+    assert rnd_name == fmt_name
+    assert rnd_ver == fmt_version
+    # Check when parsed it matches the assertions above.
+    test_parse('', root=rnd_root)

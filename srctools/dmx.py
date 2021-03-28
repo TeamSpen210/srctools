@@ -2,9 +2,9 @@
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
-    Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator,
+    Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator, Set,
 )
-from struct import Struct
+from struct import Struct, pack
 import io
 import re
 from uuid import UUID, uuid4 as get_uuid
@@ -55,7 +55,8 @@ IND_TO_VALTYPE = {
 }
 # For parsing, set this initially to check one is set.
 _UNSET_UUID = get_uuid()
-
+# Element type used to indicate binary "stub" elements...
+STUB = '<StubElement>'
 
 class Vec2(NamedTuple):
     """A 2-dimensional vector."""
@@ -824,6 +825,139 @@ class Element(Mapping[str, Attribute]):
             # it'll just mean it can't recurse.
             elem.uuid = get_uuid()
         return elem
+
+    def export_binary(
+        self, file: IO[bytes],
+        version: int = 5,
+        fmt_name: str = 'dmx', fmt_ver: int = 1,
+    ) -> None:
+        """Write out a DMX tree, using the binary format.
+
+        The version must be a number from 0-5.
+        The format name and version can be anything, to indicate which
+        application should read the file.
+        """
+        # Write the header, and determine which string DB variant to use.
+        file.write(
+            b'<!-- dmx encoding binary %i format %b %i -->\n\0'
+            % (version, fmt_name.encode('ascii'), fmt_ver)
+        )
+        if version >= 5:
+            stringdb_size = stringdb_ind = '<i'
+        elif version >= 4:
+            stringdb_size = '<i'
+            stringdb_ind = '<h'
+        elif version >= 2:
+            stringdb_size = stringdb_ind = '<h'
+        else:
+            stringdb_size = stringdb_ind = None
+
+        # First, iterate the tree to collect the elements, and strings (v2+).
+        elements: List[Element] = [self]
+        elem_to_ind: Dict[UUID, int] = {self.uuid: 0}
+        # Valve "bug" - the name attribute is in the database, despite having a
+        # special location in the file format.
+        used_strings: Set[str] = {"name"}
+
+        # Use the fact that list iteration will continue through appended
+        # items.
+        for elem in elements:
+            if stringdb_ind is not None:
+                used_strings.add(elem.type)
+            if version >= 4:
+                used_strings.add(elem.name)
+            for attr in elem.values():
+                if stringdb_ind is not None:
+                    used_strings.add(attr.name)
+                if attr.type is ValueType.TIME and version < 3:
+                    raise ValueError('TIME attributes are not permitted before binary v3!')
+                elif attr.type is ValueType.ELEMENT:
+                    for subelem in attr:
+                        if subelem is not None and subelem.type != STUB and subelem.uuid not in elem_to_ind:
+                            elem_to_ind[subelem.uuid] = len(elements)
+                            elements.append(subelem)
+                # Only non-array strings get added to the DB.
+                elif version >= 4 and attr.type is ValueType.STRING and not attr.is_array:
+                    used_strings.add(attr.val_str)
+
+        string_list = sorted(used_strings)
+        string_to_ind = {
+            text: ind
+            for ind, text in enumerate(string_list)
+        }
+        if stringdb_size is not None:
+            file.write(pack(stringdb_size, len(string_list)))
+            for text in string_list:
+                file.write(text.encode('ascii') + b'\0')
+        file.write(pack('<i', len(elements)))
+
+        for elem in elements:
+            if stringdb_ind is not None:
+                file.write(pack(stringdb_ind, string_to_ind[elem.type]))
+            else:
+                file.write(elem.type.encode('ascii') + b'\0')
+            if version >= 4:
+                file.write(pack(stringdb_ind, string_to_ind[elem.name]))
+            else:
+                file.write(elem.name.encode('ascii') + b'\0')
+            file.write(elem.uuid.bytes_le)
+
+        # Now, write out all attributes.
+        for elem in elements:
+            file.write(pack('<i', len(elem)))
+            for attr in elem.values():
+                if stringdb_ind is not None:
+                    file.write(pack(stringdb_ind, string_to_ind[attr.name]))
+                else:
+                    file.write(attr.name.encode('ascii') + b'\0')
+                typ_ind = VAL_TYPE_TO_IND[attr.type]
+                if attr.is_array:
+                    typ_ind += ARRAY_OFFSET
+                file.write(pack('B', typ_ind))
+                if attr.is_array:
+                    file.write(pack('<i', len(attr)))
+
+                if attr.type is ValueType.STRING:
+                    # Scalar strings after v4 use the DB.
+                    if version >= 4 and not attr.is_array:
+                        file.write(pack(stringdb_ind, string_to_ind[attr.val_str]))
+                    else:
+                        for text in attr:
+                            file.write(text.encode('ascii') + b'\0')
+                elif attr.type is ValueType.BINARY:
+                    for data in attr:
+                        file.write(pack('<i', len(data)))
+                        file.write(data)
+                elif attr.type is ValueType.ELEMENT:
+                    for subelem in attr:
+                        if subelem is None:
+                            elm_ind = -1
+                            file.write(pack('<i', -1))
+                        elif subelem.type == STUB:
+                            elm_ind = -2
+                            file.write(pack('<i', -2))
+                        else:
+                            file.write(pack('<i', elem_to_ind[subelem.uuid]))
+                else:
+                    conv_func = TYPE_CONVERT[attr.type, ValueType.BINARY]
+                    for any_data in attr:
+                        file.write(conv_func(any_data))
+
+    def export_kv2(
+        self, file: IO[bytes],
+        fmt_name: str = 'dmx', fmt_ver: int = 1,
+        *,
+        flat: bool = False,
+    ) -> None:
+        """Write out a DMX tree, using the text-based KeyValues2 format.
+
+        The format name and version can be anything, to indicate which
+        application should read the file.
+        """
+        file.write(
+            b'<!-- dmx encoding keyvalues2 1 format %s %s -->\n\0'
+            % (fmt_name.encode('ascii'), fmt_ver)
+        )
 
     def __repr__(self) -> str:
         if self.type and self.name:

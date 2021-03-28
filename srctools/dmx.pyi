@@ -434,6 +434,18 @@ class Element(Mapping[str, Attribute]):
         typ_name: str,
     ) -> Element: ...
 
+    def export_binary(
+        self, file: IO[bytes],
+        version: int = 5,
+        fmt_name: str = 'dmx', fmt_ver: int = 1,
+    ) -> None: ...
+    def export_kv2(
+        self, file: IO[bytes],
+        fmt_name: str = 'dmx', fmt_ver: int = 1,
+        *,
+        flat: bool = False,
+    ) -> None: ...
+
     def __repr__(self) -> str: ...
 
     def __getitem__(self, item: str) -> Attribute: ...
