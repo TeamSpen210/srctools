@@ -2,11 +2,13 @@
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
-    Dict, Tuple, Callable, IO, List, Optional, Type, Mapping, Iterator, Set,
+    Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterator,
+    Set, Mapping, Any,
 )
 from struct import Struct, pack
 import io
 import re
+import _collections_abc
 from uuid import UUID, uuid4 as get_uuid
 
 from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle
@@ -55,6 +57,7 @@ IND_TO_VALTYPE = {
 }
 # For parsing, set this initially to check one is set.
 _UNSET_UUID = get_uuid()
+_UNSET = object()  # Argument sentinel
 # Element type used to indicate binary "stub" elements...
 STUB = '<StubElement>'
 
@@ -465,7 +468,7 @@ class Attribute(Generic[ValueT], _ValProps):
             return iter((self._value, ))
 
 
-class Element(Mapping[str, Attribute]):
+class Element(MutableMapping[str, Attribute]):
     """An element in a DMX tree."""
     __slots__ = ['type', 'name', 'uuid', '_members']
     name: str
@@ -977,8 +980,12 @@ class Element(Mapping[str, Attribute]):
         """Return a view of the valid (casefolded) keys for this element."""
         return self._members.keys()
 
-    def __getitem__(self, item: str) -> Attribute:
-        return self._members[item.casefold()]
+    def __getitem__(self, name: str) -> Attribute:
+        return self._members[name.casefold()]
+
+    def __delitem__(self, name: str) -> None:
+        """Remove the specified attribute."""
+        del self._members[name.casefold()]
 
     def __setitem__(self, name: str, value: Union[Attribute, ValueT]) -> None:
         """Set a specific value, by deducing the type.
@@ -993,6 +1000,76 @@ class Element(Mapping[str, Attribute]):
             return
         val_type, result = deduce_type_single(value)
         self._members[name.casefold()] = Attribute(name, val_type, result)
+
+    def clear(self) -> None:
+        """Remove all attributes from the element."""
+        self._members.clear()
+
+    def pop(self, name: str, default: Union[Attribute, Value, object] = _UNSET) -> Attribute:
+        """Remove the specified attribute and return it.
+
+        If not found, an attribute is created from the default if specified,
+        or KeyError is raised otherwise.
+        """
+        key = name.casefold()
+        try:
+            attr = self._members.pop(key)
+        except KeyError:
+            if default is _UNSET:
+                raise
+            if isinstance(default, Attribute):
+                return default
+            else:
+                typ, val = deduce_type(default)
+                return Attribute(name, typ, val)
+        else:
+            return attr
+
+    def popitem(self) -> Tuple[str, Attribute]:
+        """Remove and return a (name, attr) pair as a 2-tuple, or raise KeyError."""
+        key, attr = self._members.popitem()
+        return (attr.name, attr)
+
+    def update(*args: Any, **kwds: Union[Attribute, Value]) -> None:
+        """Update from a mapping/iterable, and keyword args.
+            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
+            If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
+            In either case, this is followed by: for k, v in F.items(): D[k] = v
+        """
+        if len(args) not in (1, 2):
+            raise TypeError(f'Expected 1-2 positional args, not {len(args)}!')
+        self: Element = args[0]
+        if len(args) == 2:
+            other = args[1]
+            if isinstance(other, Mapping):
+                for key in other:
+                    self[key] = other[key]
+            elif hasattr(other, "keys"):
+                for key in other.keys():
+                    self[key] = other[key]
+            else:
+                for attr in other:
+                    if isinstance(attr, Attribute):
+                        self._members[attr.name.casefold()] = attr
+                    key, value = attr
+                    self[key] = value
+        for key, value in kwds.items():
+            self[key] = value
+
+    def setdefault(self, name: str, default: Union[Attribute, Value] = None) -> Attribute:
+        """Return the specified attribute name.
+
+        If it does not exist, set it using the default and return that.
+        """
+        key = name.casefold()
+        try:
+            return self._members[key]
+        except KeyError:
+            if not isinstance(default, Attribute):
+                typ, val = deduce_type(default)
+                default = Attribute(name, typ, val)
+            self._members[key] = default
+            return default
 
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
@@ -1226,7 +1303,6 @@ def _binconv_ntup(name: str, fmt: str, Tup: Type[tuple]):
 
 _binconv_basic('integer', '<i')
 _binconv_basic('float', '<f')
-_binconv_basic('time', '<f')
 _binconv_basic('bool', '<?')
 
 _binconv_ntup('color', '<4B', Color)
@@ -1236,6 +1312,15 @@ _binconv_ntup('quaternion', '<4f', Quaternion)
 _binconv_ntup('vec2', '<2f', Vec2)
 _binconv_ntup('vec3', '<3f', Vec3)
 _binconv_ntup('vec4', '<4f', Vec4)
+
+_struct_time = Struct('<i')
+def _conv_time_to_binary(tim: Time) -> bytes:
+    """Time is written as a fixed point integer."""
+    return _struct_time.pack(int(round(tim * 10000.0)))
+
+def _conv_binary_to_time(byt: bytes) -> Time:
+    [num] = _struct_time.unpack(byt)
+    return Time(num / 10000.0)
 
 _struct_matrix = Struct('<16f')
 def _conv_matrix_to_binary(mat):
