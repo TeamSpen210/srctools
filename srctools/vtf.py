@@ -230,6 +230,16 @@ class VTFFlags(Flag):
     SS_BUMP = 0x08000000
     BORDER = 0x20000000
 
+    # Generic names for the remaining unused bits.
+    UNUSED_20 = 1 << 20
+    UNUSED_21 = 1 << 21
+    UNUSED_22 = 1 << 22
+    UNUSED_24 = 1 << 24
+    UNUSED_28 = 1 << 28
+    UNUSED_30 = 1 << 30
+    UNUSED_31 = 1 << 31
+    UNUSED_32 = 1 << 32
+
 
 class ResourceID(bytes, Enum):
     """For VTF format 7.3+, there is an extensible resource system."""
