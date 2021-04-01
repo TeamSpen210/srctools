@@ -8,7 +8,6 @@ cdef extern from *:
     unicode PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
     unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
-# On Python 3.6+, convert stuff to PathLike.
 cdef object os_fspath
 from os import fspath as os_fspath
 
@@ -80,8 +79,17 @@ cdef class BaseTokenizer:
     def __init__(self, filename, error):
         # Use os method to convert to string.
         # We know this isn't a method, so skip Cython's optimisation.
-        with cython.optimize.unpack_method_calls(False):
-            self.filename = os_fspath(filename)
+        if filename is not None:
+            with cython.optimize.unpack_method_calls(False):
+                fname = os_fspath(filename)
+            if isinstance(fname, bytes):
+                # We only use this for display, so if bytes convert.
+                # Call repr() then strip the b'', so we get the
+                # automatic escaping of unprintable characters.
+                fname = (<str>repr(fname))[2:-1]
+            self.filename = str(fname)
+        else:
+            self.filename = None
 
         if error is None:
             self.error_type = TokenSyntaxError
@@ -324,7 +332,7 @@ cdef class Tokenizer(BaseTokenizer):
             except AttributeError:
                 # If not, a Falsey filename means nothing is added to any
                 # KV exception message.
-                filename = ''
+                filename = None
 
         BaseTokenizer.__init__(self, filename, error)
 

@@ -354,6 +354,26 @@ def test_constructor(py_c_token):
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
 
+def test_tok_filename(py_c_token):
+    """Test that objects other than a direct string can be passed as filename."""
+    Tokenizer = py_c_token
+
+    class AFilePath:
+        """Test path object support."""
+        def __fspath__(self) -> str:
+            return "path/to/file.vdf"
+
+    class SubStr(str):
+        """Subclasses should be accepted."""
+
+    assert Tokenizer('blah', AFilePath()).filename == 'path/to/file.vdf'
+    tok = Tokenizer('blah', SubStr('test/path.txt'))
+    assert tok.filename == 'test/path.txt'
+    assert isinstance(tok.filename, str)
+
+    assert Tokenizer('file', b'binary/filename\xE3\x00.txt').filename == 'binary/filename\\xe3\\x00.txt'
+
+
 def test_obj_config(py_c_token):
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token

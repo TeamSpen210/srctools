@@ -146,6 +146,11 @@ class BaseTokenizer(abc.ABC):
     ) -> None:
         if filename is not None:
             self.filename = _conv_path(filename)
+            if isinstance(self.filename, bytes):
+                # We only use this for display, so if bytes convert.
+                # Call repr() then strip the b'', so we get the
+                # automatic escaping of unprintable characters.
+                self.filename = repr(self.filename)[2:-1]
         else:
             self.filename = None
 
