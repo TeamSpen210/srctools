@@ -69,7 +69,7 @@ cdef class BaseTokenizer:
     # Class to call when errors occur..
     cdef object error_type
 
-    cdef public str filename
+    cdef str filename
 
     cdef object pushback_tok
     cdef object pushback_val
@@ -109,6 +109,38 @@ cdef class BaseTokenizer:
         There is also the issue with recreating the C/Python versions.
         """
         raise TypeError('Cannot pickle Tokenizers!')
+
+    @property
+    def filename(self):
+        """Retrieve the filename used in error messages."""
+        return self.filename
+
+    @filename.setter
+    def filename(self, fname):
+        """Change the filename used in error messages."""
+        if fname is None:
+            self.filename = None
+        else:
+            with cython.optimize.unpack_method_calls(False):
+                fname = os_fspath(fname)
+            if isinstance(fname, bytes):
+                # We only use this for display, so if bytes convert.
+                # Call repr() then strip the b'', so we get the
+                # automatic escaping of unprintable characters.
+                fname = (<str> repr(fname))[2:-1]
+            self.filename = str(fname)
+
+    @property
+    def error_type(self):
+        """Return the TokenSyntaxError subclass raised when errors occur."""
+        return self.error_type
+    
+    @error_type.setter
+    def error_type(self, value):
+        """Alter the TokenSyntaxError subclass raised when errors occur."""
+        if not issubclass(value, TokenSyntaxError):
+            raise TypeError(f'The error type must be a TokenSyntaxError subclass, not {type(value).__name__}!.')
+        self.error_type = value
 
     def error(self, message, *args):
         """Raise a syntax error exception.
