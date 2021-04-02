@@ -1035,6 +1035,26 @@ class VisGroup:
             if self.id in solid.visgroup_ids:
                 yield solid
 
+    def copy(
+        self,
+        map: VMF=None,
+        group_mapping: Dict[int, int]=EmptyMapping,
+        des_id: int=-1,
+    ) -> 'VisGroup':
+        """Duplicate this visgroup and all children."""
+        newgroup = VisGroup(
+            map or self.vmf,
+            des_id,
+            self.name,
+            self.color.copy(),
+            [
+                child.copy(map, group_mapping)
+                for child in self.child_groups
+            ],
+        )
+        group_mapping[self.id] = newgroup.id
+        return newgroup
+
 
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
