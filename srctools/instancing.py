@@ -151,6 +151,35 @@ class Instance:
         return value
 
 
+class Manifest(Instance):
+    """Additional options set in VMM manifests."""
+    def __init__(
+        self,
+        name: str,
+        filename: str,
+        id: int,
+        is_toplevel: bool=False,
+    ) -> None:
+        super().__init__(
+            name, filename,
+            Vec(), Matrix(),  # Collapsed directly at the existing position.
+            FixupStyle.NONE,  # Names are unaltered.
+        )
+        self.id = id
+        self.is_toplevel = is_toplevel
+
+    @classmethod
+    def parse(cls, tree: Property) -> 'list[Manifest]':
+        """Parse a VMM file."""
+        return [
+            cls(
+                prop['Name'], prop['File'],
+                prop.int('InternalID'), prop.bool('TopLevel')
+            )
+            for prop in tree.find_all('Maps', 'VMF')
+        ]
+
+
 class Param:
     """Configuration for a specific fixup variable."""
     def __init__(
