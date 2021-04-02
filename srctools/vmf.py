@@ -710,10 +710,10 @@ class VMF:
 
         f_bottom = Side(
             self,
-            planes=[  # -z side
-                (b_min.x, b_min.y, b_min.z),
-                (b_max.x, b_min.y, b_min.z),
-                (b_max.x, b_max.y, b_min.z),
+            [  # -z side
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -722,10 +722,10 @@ class VMF:
 
         f_top = Side(
             self,
-            planes=[  # +z side
-                (b_min.x, b_max.y, b_max.z),
-                (b_max.x, b_max.y, b_max.z),
-                (b_max.x, b_min.y, b_max.z),
+            [  # +z side
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -734,10 +734,10 @@ class VMF:
 
         f_west = Side(
             self,
-            planes=[  # -x side
-                (b_min.x, b_max.y, b_max.z),
-                (b_min.x, b_min.y, b_max.z),
-                (b_min.x, b_min.y, b_min.z),
+            [  # -x side
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_min.z),
             ],
             mat=mat,
             uaxis=UVAxis(0, 1, 0),
@@ -747,9 +747,9 @@ class VMF:
         f_east = Side(
             self,
             planes=[  # +x side
-                (b_max.x, b_max.y, b_min.z),
-                (b_max.x, b_min.y, b_min.z),
-                (b_max.x, b_min.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(0, 1, 0),
@@ -758,10 +758,10 @@ class VMF:
 
         f_south = Side(
             self,
-            planes=[  # -y side
-                (b_max.x, b_min.y, b_min.z),
-                (b_min.x, b_min.y, b_min.z),
-                (b_min.x, b_min.y, b_max.z),
+            [  # -y side
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -770,10 +770,10 @@ class VMF:
 
         f_north = Side(
             self,
-            planes=[  # +y side
-                (b_min.x, b_max.y, b_min.z),
-                (b_max.x, b_max.y, b_min.z),
-                (b_max.x, b_max.y, b_max.z),
+            [  # +y side
+                Vec(b_min.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -1387,7 +1387,7 @@ class Side:
     def __init__(
         self,
         vmf_file: VMF,
-        planes: List[Union[Tuple[float, float, float], Vec]],
+        planes: List[Vec],
         des_id: int=-1,
         lightmap: int=16,
         smoothing: int=0,
@@ -1401,7 +1401,7 @@ class Side:
         self.map = vmf_file
         if len(planes) != 3:
             raise ValueError('Must have only 3 planes!')
-        self.planes = list(map(Vec, planes))
+        self.planes = planes
         self.id = vmf_file.face_id.get_id(des_id)
         self.lightmap = lightmap
         self.smooth = smoothing
@@ -1439,9 +1439,9 @@ class Side:
                              tree['plane', ''] +
                              '"')
         planes = [
-            srctools.parse_vec_str(verts[0]),
-            srctools.parse_vec_str(verts[1]),
-            srctools.parse_vec_str(verts[2]),
+            Vec.from_str(verts[0]),
+            Vec.from_str(verts[1]),
+            Vec.from_str(verts[2]),
         ]
 
         disp_tree = tree.find_key('dispinfo', [])
@@ -1505,7 +1505,7 @@ class Side:
 
         copy = Side(
             vmf_file or self.map,
-            planes=planes,
+            [p.copy() for p in self.planes],
             des_id=des_id,
             mat=self.mat,
             rotation=self.ham_rot,
