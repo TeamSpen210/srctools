@@ -3,41 +3,46 @@
 This merges static props together, so they can be drawn with a single
 draw call.
 """
-import math
+import operator
 import os
 import random
 import colorsys
-import functools
+import shutil
+import subprocess
+import itertools
 from collections import defaultdict
 from enum import Enum
 from pathlib import Path
+from tempfile import TemporaryDirectory
 from typing import (
     Optional, Tuple, Callable, NamedTuple,
     FrozenSet, Dict, List, Set,
     Iterator, Union,
 )
 
-from srctools import Vec, VMF, Entity, conv_int, Angle, Matrix
+from srctools import (
+    Vec, VMF, Entity, conv_int, Angle, Matrix, FileSystemChain,
+    Property, KeyValError,
+)
 from srctools.tokenizer import Tokenizer, Token
 from srctools.game import Game
 
 from srctools.logger import get_logger
 from srctools.packlist import PackList
 from srctools.bsp import BSP, StaticProp, StaticPropFlags
-from srctools.mdl import Model
+from srctools.mdl import Model, MDL_EXTS
 from srctools.smd import Mesh
 from srctools.compiler.mdl_compiler import ModelCompiler
 
 
 LOGGER = get_logger(__name__)
 
-QC = NamedTuple('QC', [
-    ('path', str),  # QC path.
-    ('ref_smd', str),  # Location of main visible geometry.
-    ('phy_smd', Optional[str]),  # Relative location of collision model, or None
-    ('ref_scale', float),  # Scale of main model.
-    ('phy_scale', float),  # Scale of collision model.
-])
+class QC(NamedTuple):
+    path: str  # QC path.
+    ref_smd: str  # Location of main visible geometry.
+    phy_smd: Optional[str]  # Relative location of collision model, or None
+    ref_scale: float  # Scale of main model.
+    phy_scale: float  # Scale of collision model.
 
 QC_TEMPLATE = '''\
 $staticprop
@@ -66,9 +71,6 @@ MAX_GROUP = 24  # Studiomdl does't allow more than this...
 _mesh_cache = {}  # type: Dict[Tuple[QC, int], Mesh]
 _coll_cache = {}  # type: Dict[str, Mesh]
 
-class DynamicModel(Exception):
-    """Used as flow control."""
-
 
 def unify_mdl(path: str):
     """Compute a 'canonical' path for a given model."""
@@ -80,15 +82,33 @@ def unify_mdl(path: str):
     return path
 
 
-def bsp_collision(point: Vec, planes: List[Tuple[Vec, Vec]]) -> bool:
-    """Check if the given position is inside a BSP node."""
-    for pos, norm in planes:
-        off = pos - point
-        # This is the actual distance, so we'll use a rather large
-        # "epsilon" to catch objects close to the edges.
-        if Vec.dot(off, norm) < -0.1:
-            return False
-    return True
+class CombineVolume:
+    """Parsed comp_propcombine_sets."""
+    def __init__(self, group_name: str, skinset: FrozenSet, origin: Vec) -> None:
+        self.group = group_name
+        self.skinset = skinset
+        self.volume = 0.0  # For sorting
+        self.used = False
+        # To do collision checks, for each volume construct a list of planes.
+        # Then we can check if a prop is inside any of those.
+        self.collision: List[List[Tuple[Vec, Vec]]] = []
+        if group_name:
+            self.desc = f'group "{group_name}"'
+        else:
+            self.desc = f'at {origin}'
+
+    def contains(self, point: Vec) -> bool:
+        """Check if the given position is inside the volume."""
+        for convex in self.collision:
+            for pos, norm in convex:
+                off = pos - point
+                # This is the actual distance, so we'll use a rather large
+                # "epsilon" to catch objects close to the edges.
+                if Vec.dot(off, norm) < -0.1:
+                    break  # Outside a plane, it doesn't match this convex.
+            else:  # Inside all these planes, it's inside.
+                return True
+        return False  # All failed, not present.
 
 
 class CollType(Enum):
@@ -139,15 +159,20 @@ def combine_group(
 
     for prop in props:
         avg_pos += prop.origin
-        avg_yaw += prop.angles.y
+        avg_yaw += prop.angles.yaw
         visleafs.update(prop.visleafs)
 
+    # Snap to nearest 15 degrees to keep the models themselves not
+    # strangely rotated.
+    avg_yaw = round(avg_yaw / (15 * len(props))) * 15.0
     avg_pos /= len(props)
+    yaw_rot = Matrix.from_yaw(-avg_yaw)
 
     prop_pos = set()
     for prop in props:
-        origin = round((prop.origin - avg_pos), 7)
+        origin = round((prop.origin - avg_pos) @ yaw_rot, 7)
         angles = round(Vec(prop.angles), 7)
+        angles.y -= avg_yaw
         try:
             coll = CollType(prop.solidity)
         except ValueError:
@@ -179,7 +204,7 @@ def combine_group(
     return StaticProp(
         model=mdl_name,
         origin=avg_pos,
-        angles=Vec(0, 270, 0),
+        angles=Angle(0, avg_yaw - 90, 0),
         scaling=1.0,
         visleafs=sorted(visleafs),
         solidity=(CollType.VPHYS if has_coll else CollType.NONE).value,
@@ -462,6 +487,106 @@ def parse_qc(qc_loc: Path, qc_path: Path) -> Optional[Tuple[
     )
 
 
+def decompile_model(
+    fsys: FileSystemChain,
+    cache_loc: Path,
+    crowbar: Path,
+    filename: str,
+    checksum: bytes,
+) -> Optional[QC]:
+    """Use Crowbar to decompile models directly for propcombining."""
+    cache_folder = cache_loc / Path(filename).with_suffix('')
+    info_path = cache_folder / 'info.kv'
+    if cache_folder.exists():
+        try:
+            with info_path.open() as f:
+                cache_props = Property.parse(f).find_key('qc', [])
+        except (FileNotFoundError, KeyValError):
+            pass
+        else:
+            # Previous compilation.
+            if checksum == bytes.fromhex(cache_props['checksum', '']):
+                ref_smd = cache_props['ref', '']
+                if not ref_smd:
+                    return None
+                phy_smd = cache_props['phy', None]
+                if phy_smd is not None:
+                    phy_smd = str(cache_folder / phy_smd)
+                return QC(
+                    str(info_path),
+                    str(cache_folder / ref_smd),
+                    phy_smd,
+                    cache_props.float('ref_scale', 1.0),
+                    cache_props.float('phy_scale', 1.0),
+                )
+            # Otherwise, re-decompile.
+    LOGGER.info('Decompiling {}...', filename)
+    qc: Optional[QC] = None
+
+    # Extract out the model to a temp dir.
+    with TemporaryDirectory() as tempdir, fsys:
+        stem = Path(filename).stem
+        filename_no_ext = filename[:-4]
+        for mdl_ext in MDL_EXTS:
+            try:
+                file = fsys[filename_no_ext + mdl_ext]
+            except FileNotFoundError:
+                pass
+            else:
+                with file.open_bin() as src, Path(tempdir, stem + mdl_ext).open('wb') as dest:
+                    shutil.copyfileobj(src, dest)
+        LOGGER.debug('Extracted "{}" to "{}"', filename, tempdir)
+        args = [
+            str(crowbar), 'decompile',
+            '-i', str(Path(tempdir, stem + '.mdl')),
+            '-o', str(cache_folder),
+        ]
+        LOGGER.debug('Executing {}', ' '.join(args))
+        result = subprocess.run(args)
+        if result.returncode != 0:
+            LOGGER.warning('Could not decompile "{}"!', filename)
+            return None
+    # There should now be a QC file here.
+    for qc_path in cache_folder.glob('*.qc'):
+        qc_result = parse_qc(cache_folder, qc_path)
+        break
+    else:  # not found.
+        LOGGER.warning('No QC outputted into {}', cache_folder)
+        qc_result = None
+        qc_path = Path()
+
+    cache_props = Property('qc', [])
+    cache_props['checksum'] = checksum.hex()
+
+    if qc_result is not None:
+        (
+            model_name,
+            ref_scale, ref_smd,
+            phy_scale, phy_smd,
+        ) = qc_result
+        qc = QC(
+            str(qc_path).replace('\\', '/'),
+            str(ref_smd).replace('\\', '/'),
+            str(phy_smd).replace('\\', '/') if phy_smd else None,
+            ref_scale,
+            phy_scale,
+        )
+
+        cache_props['ref'] = Path(ref_smd).name
+        cache_props['ref_scale'] = format(ref_scale, '.6g')
+
+        if phy_smd is not None:
+            cache_props['phy'] = Path(phy_smd).name
+            cache_props['phy_scale'] = format(phy_scale, '.6g')
+    else:
+        cache_props['ref'] = ''  # Mark as not present.
+
+    with info_path.open('w') as f:
+        for line in cache_props.export():
+            f.write(line)
+    return qc
+
+
 def group_props_ent(
     prop_groups: Dict[Optional[tuple], List[StaticProp]],
     rejected: List[StaticProp],
@@ -470,28 +595,17 @@ def group_props_ent(
     min_cluster: int,
 ) -> Iterator[List[StaticProp]]:
     """Given the groups of props, merge props according to the provided ents."""
-    # (ID, skinset) -> list of boxes, constructed as 6 (pos, norm) tuples.
-    combine_sets = defaultdict(list)  # type: Dict[Tuple[Union[str, int], FrozenSet[str]], List[List[Tuple[Vec, Vec]]]]
-    # Keep track of the used IDs, so we can print out unused ones.
-    used_sets = set()
-    # And then the location of those.
-    id_to_desc: List[Tuple[Union[str, object], str]] = []
+    # Ents with group names. We have to split those by filter too.
+    grouped_sets: Dict[Tuple[str, FrozenSet[str]], CombineVolume] = {}
+    # Skinset filter -> volumes that match.
+    sets_by_skin: Dict[FrozenSet[str], List[CombineVolume]] = defaultdict(list)
 
     empty_fs = frozenset('')
 
     for ent in bbox_ents:
         origin = Vec.from_str(ent['origin'])
 
-        # Group name
-        bbox_id = ent['name']
-        if bbox_id:
-            id_to_desc.append((bbox_id, f'group "{bbox_id}"'))
-        else:
-            bbox_id = ent.id  # Use a unique ID.
-            id_to_desc.append((bbox_id, f'at {origin}'))
-
         skinset = empty_fs
-
         mdl_name = ent['prop']
         if mdl_name:
             qc, mdl = get_model(mdl_name)
@@ -508,14 +622,29 @@ def group_props_ent(
             Vec.from_str(ent['mins']),
             Vec.from_str(ent['maxs']),
         )
+        size = maxes - mins
         # Enlarge slightly to ensure it never has a zero area.
         # Otherwise the normal could potentially be invalid.
         mins -= 0.05
         maxes += 0.05
 
+        # Group name
+        group_name = ent['name']
+
+        if group_name:
+            try:
+                combine_set = grouped_sets[group_name, skinset]
+            except KeyError:
+                combine_set = grouped_sets[group_name, skinset] = CombineVolume(group_name, skinset, origin)
+                sets_by_skin[skinset].append(combine_set)
+        else:
+            combine_set = CombineVolume(group_name, skinset, origin)
+            sets_by_skin[skinset].append(combine_set)
+
+        combine_set.volume += size.x * size.y * size.z
         # For each direction, compute a position on the plane and
         # the normal vector.
-        combine_sets[bbox_id, skinset].append([
+        combine_set.collision.append([
             (
                 origin + Vec.with_axes(axis, offset) @ mat,
                 Vec.with_axes(axis, norm) @ mat,
@@ -523,6 +652,13 @@ def group_props_ent(
             for offset, norm in zip([mins, maxes], (-1, 1))
             for axis in ('x', 'y', 'z')
         ])
+
+    # We want to apply a ordering to groups, so smaller ones apply first, and
+    # filtered ones override all others.
+    for group_list in sets_by_skin.values():
+        group_list.sort(key=operator.attrgetter('volume'))
+    # Groups with no filter have no skins in the group.
+    unfiltered_group = sets_by_skin.get(frozenset(), [])
 
     # Each of these groups cannot be merged with other ones.
     for group_key, group in prop_groups.items():
@@ -536,31 +672,27 @@ def group_props_ent(
             group.clear()
             continue
 
-        for (bbox_id, skinset), boxes in combine_sets.items():
-            if skinset and skinset != group_skinset:
-                continue  # No match
-            found = defaultdict(list)  # type: Dict[Union[str, int], List[StaticProp]]
+        for combine_set in itertools.chain(sets_by_skin.get(group_skinset, ()), unfiltered_group):
+            found = []
             for prop in list(group):
-                for box in boxes:
-                    if bsp_collision(prop.origin, box):
-                        found[bbox_id].append(prop)
-                        used_sets.add(bbox_id)
-                        break
+                if combine_set.contains(prop.origin):
+                    found.append(prop)
+                    combine_set.used = True
 
-            for subgroup in found.values():
-                actual = set(subgroup).intersection(group)
-                if len(actual) >= min_cluster:
-                    yield list(actual)
-                    for prop in actual:
-                        group.remove(prop)
+            actual = set(found).intersection(group)
+            if len(actual) >= min_cluster:
+                yield list(actual)
+                for prop in actual:
+                    group.remove(prop)
 
     # Finally, reject all the ones not in a bbox.
     for group in prop_groups.values():
         rejected.extend(group)
     # And log unused groups
-    for bbox_id, desc in id_to_desc:
-        if bbox_id not in used_sets:
-            LOGGER.warning('Unused comp_propcombine_set {}', desc)
+    for combine_set_list in sets_by_skin.values():
+        for combine_set in combine_set_list:
+            if not combine_set.used:
+                LOGGER.warning('Unused comp_propcombine_set {}', combine_set.desc)
 
 
 def group_props_auto(
@@ -607,7 +739,7 @@ def group_props_auto(
                 if prop_off <= dist_sq:
                     cluster_list.append((prop, prop_off))
 
-            cluster_list.sort(key=lambda t: t[1])
+            cluster_list.sort(key=operator.itemgetter(1))
             selected_props = [
                 prop for prop, off in
                 cluster_list[:MAX_GROUP]
@@ -625,11 +757,15 @@ def combine(
     bsp_ents: VMF,
     pack: PackList,
     game: Game,
-    studiomdl_loc: Path=None,
+    studiomdl_loc: Path,
+    *,
     qc_folders: List[Path]=None,
+    crowbar_loc: Optional[Path]=None,
+    decomp_cache_loc: Path=None,
     auto_range: float=0,
     min_cluster: int=2,
     debug_tint: bool=False,
+    debug_dump: bool=False,
 ) -> None:
     """Combine props in this map."""
 
@@ -642,15 +778,16 @@ def combine(
         LOGGER.warning('No studioMDL! Cannot propcombine!')
         return
 
-    if not qc_folders:
+    if not qc_folders and decomp_cache_loc is None:
         # If gameinfo is blah/game/hl2/gameinfo.txt,
         # QCs should be in blah/content/ according to Valve's scheme.
         # But allow users to override this.
+        # If Crowbar's path is provided, that means they may want to just supply nothing.
         qc_folders = [game.path.parent.parent / 'content']
 
     # Parse through all the QC files.
     LOGGER.info('Parsing QC files. Paths: \n{}', '\n'.join(map(str, qc_folders)))
-    qc_map = {}  # type: Dict[str, QC]
+    qc_map: Dict[str, Optional[QC]] = {}
     for qc_folder in qc_folders:
         load_qcs(qc_map, qc_folder)
     LOGGER.info('Done! {} props.', len(qc_map))
@@ -658,20 +795,18 @@ def combine(
     map_name = Path(bsp.filename).stem
 
     # Don't re-parse models continually.
-    mdl_map = {}  # type: Dict[str, Model]
+    mdl_map: Dict[str, Optional[Model]] = {}
     # Wipe these, if they're being used again.
     _mesh_cache.clear()
     _coll_cache.clear()
     missing_qcs: Set[str] = set()
 
-    def get_model(filename: str) -> Tuple[Optional[QC], Optional[Model]]:
-        """Given a filename, load/parse the QC and MDL data."""
+    def get_model(filename: str) -> Union[Tuple[QC, Model], Tuple[None, None]]:
+        """Given a filename, load/parse the QC and MDL data.
+
+        Either both are returned, or neither are.
+        """
         key = unify_mdl(filename)
-        try:
-            qc = qc_map[key]
-        except KeyError:
-            missing_qcs.add(key)
-            return None, None
         try:
             model = mdl_map[key]
         except KeyError:
@@ -681,7 +816,25 @@ def combine(
                 # We don't have this model, we can't combine...
                 return None, None
             model = mdl_map[key] = Model(pack.fsys, mdl_file)
-        return qc, model
+            if 'no_propcombine' in model.keyvalues.casefold():
+                mdl_map[key] = qc_map[key] = None
+                return None, None
+        if model is None or key in missing_qcs:
+            return None, None
+
+        try:
+            qc = qc_map[key]
+        except KeyError:
+            if crowbar_loc is None:
+                missing_qcs.add(key)
+                return None, None
+            qc = decompile_model(pack.fsys, decomp_cache_loc, crowbar_loc, filename, model.checksum)
+            qc_map[key] = qc
+
+        if qc is None:
+            return None, None
+        else:
+            return qc, model
 
     # Ignore these two, they don't affect our new prop.
     relevant_flags = ~(StaticPropFlags.HAS_LIGHTING_ORIGIN | StaticPropFlags.DOES_FADE)
@@ -755,7 +908,7 @@ def combine(
     LOGGER.debug('Prop groups: \n{}', '\n'.join([
         f'{group}: {len(props)}'
         for group, props in
-        sorted(prop_groups.items(), key=lambda t: t[0])
+        sorted(prop_groups.items(), key=operator.itemgetter(0))
     ]))
     
     group_count = 0
@@ -776,6 +929,22 @@ def combine(
             group_count += 1
 
     final_props.extend(rejected)
+
+    if debug_dump:
+        dump_vmf = VMF()
+        for prop in rejected:
+            dump_vmf.create_ent(
+                'prop_static',
+                model=prop.model,
+                origin=prop.origin,
+                angles=prop.angles,
+                solid=prop.solidity,
+                rendercolor=prop.tint,
+            )
+        dump_fname = Path(bsp.filename).with_name(map_name + '_propcombine_reject.vmf')
+        LOGGER.info('Dumping uncombined props to {}...', dump_fname)
+        with dump_fname.open('w') as f:
+            dump_vmf.export(f)
 
     LOGGER.info(
         'Combined {} props into {}:\n - {} grouped models\n - {} ineligable\n - {} had no group',

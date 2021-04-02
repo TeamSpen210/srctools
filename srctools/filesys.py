@@ -217,7 +217,7 @@ class FileSystem(Generic[_SysRefT, _FileDataT]):
 class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
     """Chains several filesystem into one prioritised whole."""
 
-    def __init__(self, *systems: Union[ChildSysT, Tuple[str, ChildSysT]]) -> None:
+    def __init__(self, *systems: Union[ChildSysT, Tuple[ChildSysT, str]]) -> None:
         super().__init__('')
         self.systems: List[Tuple[ChildSysT, str]] = []
         for sys in systems:
@@ -450,18 +450,22 @@ class VirtualFileSystem(FileSystem[Any, str]):
 class RawFileSystem(FileSystem):
     """Accesses files in a real folder.
 
-    This prohibits access to folders above the root.
+    This can prohibit access to folders above the root.
     """
-    def __init__(self, path: Union[str, os.PathLike]):
+    def __init__(self, path: Union[str, os.PathLike], constrain_path: bool=True) -> None:
         super().__init__(os.path.abspath(path))
+        self.constrain_path = constrain_path
 
-    def __repr__(self):
-        return 'RawFileSystem({!r})'.format(self.path)
+    def __repr__(self) -> str:
+        return (
+            f'RawFileSystem({self.path!r}, ' 
+            f'constrain_path={self.constrain_path})'
+        )
 
     def _resolve_path(self, path: str) -> str:
         """Get the absolute path."""
         abs_path = os.path.abspath(os.path.join(self.path, path))
-        if not abs_path.startswith(self.path):
+        if self.constrain_path and not abs_path.startswith(self.path):
             raise ValueError('Path "{}" escaped "{}"!'.format(path, self.path))
         return abs_path
 

@@ -83,6 +83,8 @@ class Command:
         no_wait: int=0,
     ) -> 'Command':
         """Parse the command from the structure in the file."""
+        exe: Union[str, SpecialCommand]
+        ensure: Optional[str]
         if is_special:
             exe = SpecialCommand(is_special)
         else:
@@ -130,13 +132,12 @@ def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     for _ in range(seq_count):
         seq_name = strip_cstring(file.read(128))
         [cmd_count] = unpack('I', file.read(4))
-        cmd_list = ...  # type: List[Command]
-        sequences[seq_name] = cmd_list = [None] * cmd_count  # type: ignore
-        
-        for i in range(cmd_count):  
-            cmd_list[i] = Command.parse(
+        sequences[seq_name] = [
+            Command.parse(
                 *cmd_struct.unpack(file.read(cmd_struct.size)),
             )
+            for i in range(cmd_count)
+        ]
     return sequences
 
 

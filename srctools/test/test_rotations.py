@@ -1,4 +1,7 @@
 """Test rotations in srctools.vec."""
+import copy
+import pickle
+
 from srctools.test import *
 from srctools import Vec, Matrix, Angle
 
@@ -154,6 +157,20 @@ def test_single_axis(py_c_vec):
                 )
 
 
+def test_axis_angle(py_c_vec) -> None:
+    """Test Matrix.axis_angle() computes the 6 basis vectors correctly."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    def test(axis, equiv_ang: Py_Angle):
+        for ang in range(0, 360, 15):
+            assert_rot(Matrix.axis_angle(axis, ang), Matrix.from_angle(ang * equiv_ang), f'{axis} * {ang} != {equiv_ang}')
+            # Inverse axis = reversed rotation.
+            assert_rot(Matrix.axis_angle(-axis, ang), Matrix.from_angle(-ang * equiv_ang), f'{-axis} * {ang} != {equiv_ang}')
+    test(Vec(1, 0, 0), Angle(0, 0, 1))
+    test(Vec(0, 1, 0), Angle(1, 0, 0))
+    test(Vec(0, 0, 1), Angle(0, 1, 0))
+
+
 def old_mat_mul(
     self,
     a: float, b: float, c: float,
@@ -242,6 +259,20 @@ def test_old_rotation(py_c_vec) -> None:
                 assert_vec(by_mat, old.x, old.y, old.z, ang, tol=1e-1)
 
 
+def test_bad_from_basis(py_c_vec) -> None:
+    """Test invalid arguments to Matrix.from_basis()"""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Vec(0, 1, 0)
+    with pytest.raises(TypeError):
+        Matrix.from_basis()
+    with pytest.raises(TypeError):
+        Matrix.from_basis(x=v)
+    with pytest.raises(TypeError):
+        Matrix.from_basis(y=v)
+    with pytest.raises(TypeError):
+        Matrix.from_basis(z=v)
+
+
 def test_gen_check(py_c_vec) -> None:
     """Do an exhaustive check on all rotation math using data from the engine."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -258,25 +289,31 @@ def test_gen_check(py_c_vec) -> None:
             (
                 pit, yaw, roll,
                 for_x, for_y, for_z,
-                left_x, left_y, left_z,
+                right_x, right_y, right_z,
                 up_x, up_y, up_z
             ) = map(float, line[1:].split())
+            # The engine actually gave us a right vector, so we need to flip that.
+            left_x, left_y, left_z = -right_x, -right_y, -right_z
 
             mat = Matrix.from_angle(Angle(pit, yaw, roll))
 
             # Then check rotating vectors works correctly.
-            # The engine actually gave us a right vector, so we need to flip that.
             assert_vec(X @ mat, for_x, for_y, for_z)
-            assert_vec(Y @ mat, -left_x, -left_y, -left_z)
+            assert_vec(Y @ mat, left_x, left_y, left_z)
             assert_vec(Z @ mat, up_x, up_y, up_z)
+
+            # Check the direct matrix values.
+            assert_vec(mat.forward(), for_x, for_y, for_z)
+            assert_vec(mat.left(), left_x, left_y, left_z)
+            assert_vec(mat.up(), up_x, up_y, up_z)
 
             assert math.isclose(for_x, mat[0, 0], abs_tol=EPSILON)
             assert math.isclose(for_y, mat[0, 1], abs_tol=EPSILON)
             assert math.isclose(for_z, mat[0, 2], abs_tol=EPSILON)
 
-            assert math.isclose(-left_x, mat[1, 0], abs_tol=EPSILON)
-            assert math.isclose(-left_y, mat[1, 1], abs_tol=EPSILON)
-            assert math.isclose(-left_z, mat[1, 2], abs_tol=EPSILON)
+            assert math.isclose(left_x, mat[1, 0], abs_tol=EPSILON)
+            assert math.isclose(left_y, mat[1, 1], abs_tol=EPSILON)
+            assert math.isclose(left_z, mat[1, 2], abs_tol=EPSILON)
 
             assert math.isclose(up_x, mat[2, 0], abs_tol=EPSILON)
             assert math.isclose(up_y, mat[2, 1], abs_tol=EPSILON)
@@ -284,22 +321,70 @@ def test_gen_check(py_c_vec) -> None:
 
             # Also test Matrix.from_basis().
             x = Vec(for_x, for_y, for_z)
-            y = -Vec(left_x, left_y, left_z)
+            y = Vec(left_x, left_y, left_z)
             z = Vec(up_x, up_y, up_z)
             assert_rot(Matrix.from_basis(x=x, y=y, z=z), mat)
             assert_rot(Matrix.from_basis(x=x, y=y), mat)
             assert_rot(Matrix.from_basis(y=y, z=z), mat)
             assert_rot(Matrix.from_basis(x=x, z=z), mat)
 
+            # Angle.from_basis() == Matrix.from_basis().to_angle().
+            assert_ang(Angle.from_basis(x=x, y=y, z=z), *Matrix.from_basis(x=x, y=y, z=z).to_angle())
+            assert_ang(Angle.from_basis(x=x, y=y), *Matrix.from_basis(x=x, y=y).to_angle())
+            assert_ang(Angle.from_basis(y=y, z=z), *Matrix.from_basis(y=y, z=z).to_angle())
+            assert_ang(Angle.from_basis(x=x, z=z), *Matrix.from_basis(x=x, z=z).to_angle())
+
             # And Vec.cross().
             assert_vec(Vec.cross(x, y), up_x, up_y, up_z, tol=1e-5)
             assert_vec(Vec.cross(y, z), for_x, for_y, for_z, tol=1e-5)
-            assert_vec(Vec.cross(x, z), left_x, left_y, left_z, tol=1e-5)
+            assert_vec(Vec.cross(x, z), -left_x, -left_y, -left_z, tol=1e-5)
 
             assert_vec(Vec.cross(y, x), -up_x, -up_y, -up_z, tol=1e-5)
             assert_vec(Vec.cross(z, y), -for_x, -for_y, -for_z, tol=1e-5)
-            assert_vec(Vec.cross(z, x), -left_x, -left_y, -left_z, tol=1e-5)
+            assert_vec(Vec.cross(z, x), left_x, left_y, left_z, tol=1e-5)
 
             assert_vec(Vec.cross(x, x), 0, 0, 0)
             assert_vec(Vec.cross(y, y), 0, 0, 0)
             assert_vec(Vec.cross(z, z), 0, 0, 0)
+
+
+def test_copy_pickle(py_c_vec) -> None:
+    """Test pickling, unpickling and copying Matrixes."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec_mod.Matrix = Matrix
+
+    # Some random rotation, so all points are different.
+    test_data = (38, 42, 63)
+
+    orig = Matrix.from_angle(Angle(*test_data))
+
+    cpy_meth = orig.copy()
+
+    assert orig is not cpy_meth  # Must be a new object.
+    assert cpy_meth is not orig.copy()  # Cannot be cached
+    assert type(orig) is type(cpy_meth)
+    assert orig == cpy_meth  # Numbers must be exactly identical!
+
+    cpy = copy.copy(orig)
+
+    assert orig is not cpy
+    assert cpy_meth is not copy.copy(orig)
+    assert orig == cpy
+
+    dcpy = copy.deepcopy(orig)
+
+    assert orig is not dcpy
+    assert orig == dcpy
+
+    pick = pickle.dumps(orig)
+    thaw = pickle.loads(pick)
+
+    assert orig is not thaw
+    assert orig == thaw
+
+    # Ensure both produce the same pickle - so they can be interchanged.
+    cy_pick = pickle.dumps(Cy_Matrix.from_angle(Cy_Angle(test_data)))
+    py_pick = pickle.dumps(Py_Matrix.from_angle(Py_Angle(test_data)))
+
+    assert cy_pick == py_pick == pick
+

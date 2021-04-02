@@ -413,9 +413,9 @@ class AtomicWriter:
         self.filename = filename
         self.dir = _os.path.dirname(filename)
         self.encoding = encoding
-        self._temp_name = None
+        self._temp_name: Optional[str] = None
         self.is_bytes = is_bytes
-        self.temp = None  # type: Optional[IO]
+        self.temp: Optional[IO] = None
 
     def make_tempfile(self) -> None:
         """Create the temporary file object."""
@@ -454,6 +454,9 @@ class AtomicWriter:
         if self.temp is not None:
             self.temp.__exit__(exc_type, exc_value, tback)
             self.temp = None
+        if self._temp_name is None:
+            # Exit without enter?
+            return None
         if exc_type is not None:
             # An exception occurred, clean up.
             try:
@@ -471,7 +474,7 @@ class AtomicWriter:
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
-from srctools.vec import Vec, Vec_tuple, parse_vec_str, Angle, Matrix
+from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
 from srctools.property_parser import NoKeyError, KeyValError, Property
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis

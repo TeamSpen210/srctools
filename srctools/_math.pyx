@@ -1,7 +1,7 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from libc.string cimport memcpy
+from libc.string cimport memcpy, memcmp
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
@@ -33,18 +33,23 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     return ang
 
 
-# Shared func that we use to do unpickling.
+# Shared fucntions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_func
+cdef object unpickle_vec
+cdef object unpickle_ang
+cdef object unpickle_mat
 
-# Grab the Vec_Tuple class.
+# Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
-from srctools.vec import _mk as unpickle_func, Vec_tuple
+from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
     raise RuntimeError('Vec_tuple is not a tuple subclass!')
+
+# If we don't directly construct this is the fallback.
+cdef object tuple_new = tuple.__new__
 
 # For convenience, an iterator which immediately fails.
 cdef object EMPTY_ITER = iter(())
@@ -69,9 +74,9 @@ cdef inline object _make_tuple(double x, double y, double z):
         Py_INCREF(Vec_tuple)
         (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
         return tup
-    else: # Not CPython, use more correct method.
+    else: # Not CPython, use more correct but slow method.
         with cython.optimize.unpack_method_calls(False):
-            return Vec_tuple._make(*tup)
+            return tuple_new(*tup)
 
 
 cdef inline double norm_ang(double val):
@@ -81,7 +86,7 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except False:
+cdef unsigned char _parse_vec_str(vec_t *vec, object value, x, y, z) except False:
     cdef unicode str_x, str_y, str_z
     cdef list split_value
 
@@ -121,7 +126,7 @@ cdef unsigned char _parse_vec_str(vec_t *vec, object value, double x, double y, 
     return True
 
 
-def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
+def parse_vec_str(val, x=0.0, y=0.0, z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
      If the string is unparsable, this uses the defaults (x,y,z).
@@ -133,6 +138,15 @@ def parse_vec_str(val, double x=0.0, double y=0.0, double z=0.0):
     cdef vec_t vec
     _parse_vec_str(&vec, val, x, y, z)
     return _make_tuple(vec.x, vec.y, vec.z)
+
+
+@cython.cdivision(False)  # ZeroDivisionError is needed.
+def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
+    """Linearly interpolate from in to out.
+
+    If both in values are the same, ZeroDivisionError is raised.
+    """
+    return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
 
 cdef inline unsigned char _conv_vec(
@@ -191,9 +205,12 @@ cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:
             raise TypeError(f'{type(ang)} is not an Angle-like object!')
     return True
 
+cdef inline double _vec_mag_sq(vec_t *vec):
+    # This is faster if you just need to compare.
+    return vec.x**2 + vec.y**2 + vec.z**2
 
 cdef inline double _vec_mag(vec_t *vec):
-    return math.sqrt(vec.x**2 + vec.y**2 + vec.z**2)
+    return math.sqrt(_vec_mag_sq(vec))
 
 cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
     """Normalise the vector, writing to out. inp and out may be the same."""
@@ -212,24 +229,17 @@ cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
 
 cdef inline void _mat_mul(mat_t targ, mat_t rot):
     """Rotate target by the rotator matrix."""
-    # We don't use each row after assigning to the set, so we can re-assign.
-    targ[0][0], targ[0][1], targ[0][2] = (
-        (targ[0][0]) * (rot[0][0]) + (targ[0][1]) * (rot[1][0]) + (targ[0][2]) * (rot[2][0]),
-        targ[0][0] * rot[0][1] + targ[0][1] * rot[1][1] + targ[0][2] * rot[2][1],
-        targ[0][0] * rot[0][2] + targ[0][1] * rot[1][2] + targ[0][2] * rot[2][2],
-    )
-
-    targ[1][0], targ[1][1], targ[1][2] = (
-        targ[1][0] * rot[0][0] + targ[1][1] * rot[1][0] + targ[1][2] * rot[2][0],
-        targ[1][0] * rot[0][1] + targ[1][1] * rot[1][1] + targ[1][2] * rot[2][1],
-        targ[1][0] * rot[0][2] + targ[1][1] * rot[1][2] + targ[1][2] * rot[2][2],
-    )
-
-    targ[2][0], targ[2][1], targ[2][2] = (
-        targ[2][0] * rot[0][0] + targ[2][1] * rot[1][0] + targ[2][2] * rot[2][0],
-        targ[2][0] * rot[0][1] + targ[2][1] * rot[1][1] + targ[2][2] * rot[2][1],
-        targ[2][0] * rot[0][2] + targ[2][1] * rot[1][2] + targ[2][2] * rot[2][2],
-    )
+    cdef double a, b, c
+    cdef int i
+    for i in range(3):
+        a = targ[i][0]
+        b = targ[i][1]
+        c = targ[i][2]
+        # The source rows only affect that row, so we only need to
+        # store a copy of 3 at a time.
+        targ[i][0] = a * rot[0][0] + b * rot[1][0] + c * rot[2][0]
+        targ[i][1] = a * rot[0][1] + b * rot[1][1] + c * rot[2][1]
+        targ[i][2] = a * rot[0][2] + b * rot[1][2] + c * rot[2][2]
 
 
 cdef inline void _vec_rot(vec_t *vec, mat_t mat):
@@ -687,8 +697,12 @@ cdef class Vec:
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
+    def __deepcopy__(self, dict memodict=None):
+        """Create a duplicate of this vector."""
+        return _vector(self.val.x, self.val.y, self.val.z)
+
     def __reduce__(self):
-        return unpickle_func, (self.val.x, self.val.y, self.val.z)
+        return unpickle_vec, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, value, double x=0, double y=0, double z=0):
@@ -1046,22 +1060,22 @@ cdef class Vec:
         This is deprecated, use Matrix.axis_angle().to_angle() which works
         for any orientation and has a consistent direction.
         """
-        cdef Vec vec = Vec.__new__(Vec)
-        vec.val.x = vec.val.y = vec.val.z = 0.0
+        cdef Angle ang = Angle.__new__(Angle)
+        ang.val.x = ang.val.y = ang.val.z = 0.0
         PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
 
         if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
-            vec.val.z = math.copysign(rot, self.val.x)
+            ang.val.z = norm_ang(math.copysign(rot, self.val.x))
         elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
-            vec.val.x = math.copysign(rot, self.val.y)
+            ang.val.x = norm_ang(math.copysign(rot, self.val.y))
         elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
-            vec.val.y = math.copysign(rot, self.val.z)
+            ang.val.y = norm_ang(math.copysign(rot, self.val.z))
         else:
             raise ValueError(
                 f'({self.val.x}, {self.val.y}, {self.val.z}) is '
                 'not an on-axis vector!'
             )
-        return vec
+        return ang
 
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""
@@ -1369,6 +1383,26 @@ cdef class Vec:
         else:
             return NotImplemented
 
+    def __matmul__(self, other):
+        """Rotate this vector by an angle or matrix."""
+        cdef mat_t temp
+        cdef Vec res
+        if not isinstance(self, Vec):
+            return NotImplemented
+
+        res = Vec.__new__(Vec)
+        res.val.x = (<Vec>self).val.x
+        res.val.y = (<Vec>self).val.y
+        res.val.z = (<Vec>self).val.z
+        if isinstance(other, Angle):
+            _mat_from_angle(temp, &(<Angle>other).val)
+            _vec_rot(&res.val, temp)
+        elif isinstance(other, Matrix):
+            _vec_rot(&res.val, (<Matrix>other).mat)
+        else:
+            return NotImplemented
+        return res
+
     def __imatmul__(self, other):
         """@= operation: rotate the vector by a matrix/angle."""
         cdef mat_t temp
@@ -1536,16 +1570,13 @@ cdef class Vec:
 
         return vec
 
-    cdef inline double _mag_sq(self):
-        return self.val.x**2 + self.val.y**2 + self.val.z**2
-
     def mag_sq(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag_sq()
+        return _vec_mag_sq(&self.val)
 
     def len_sq(self):
         """Compute the distance from the vector and the origin."""
-        return self._mag_sq()
+        return _vec_mag_sq(&self.val)
 
     def mag(self):
         """Compute the distance from the vector and the origin."""
@@ -1748,7 +1779,13 @@ cdef class Matrix:
 
     def __eq__(self, other: object) -> object:
         if isinstance(other, Matrix):
-            return self.mat == (<Matrix>other).mat
+            # We can just compare the memory buffers.
+            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) == 0
+        return NotImplemented
+
+    def __ne__(self, other: object) -> object:
+        if isinstance(other, Matrix):
+            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -1765,6 +1802,25 @@ cdef class Matrix:
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
+
+    def __copy__(self) -> 'Matrix':
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __deepcopy__(self, dict memodict=None) -> 'Matrix':
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __reduce__(self):
+        return unpickle_mat, (
+            self.mat[0][0], self.mat[0][1], self.mat[0][2],
+            self.mat[1][0], self.mat[1][1], self.mat[1][2],
+            self.mat[2][0], self.mat[2][1], self.mat[2][2],
+        )
 
     @classmethod
     def from_pitch(cls, double pitch):
@@ -1822,7 +1878,7 @@ cdef class Matrix:
     @classmethod
     def from_angle(cls, angle):
         """Return the rotation representing an Euler angle."""
-        cdef Matrix rot = Matrix.__new__(cls)
+        cdef Matrix rot = Matrix.__new__(Matrix)
         cdef vec_t ang
         _conv_angles(&ang, angle)
         _mat_from_angle(rot.mat, &ang)
@@ -1836,7 +1892,7 @@ cdef class Matrix:
         cdef double sin, cos, icos, x, y, z
         _conv_vec(&vec_axis, axis, scalar=False)
         _vec_normalise(&vec_axis, &vec_axis)
-        angle *= deg_2_rad
+        angle *= -deg_2_rad
 
         cos = math.cos(angle)
         icos = 1 - cos
@@ -1848,9 +1904,9 @@ cdef class Matrix:
 
         cdef Matrix mat = Matrix.__new__(cls)
 
-        mat.mat[0][1] = x*x * icos + cos
-        mat.mat[0][2] = x*y * icos - z*sin
-        mat.mat[0][3] = x*z * icos - y*sin
+        mat.mat[0][0] = x*x * icos + cos
+        mat.mat[0][1] = x*y * icos - z*sin
+        mat.mat[0][2] = x*z * icos + y*sin
 
         mat.mat[1][0] = y*x * icos + z*sin
         mat.mat[1][1] = y*y * icos + cos
@@ -2044,8 +2100,19 @@ cdef class Angle:
                 self.val.z = norm_ang(roll)
 
     def copy(self) -> 'Angle':
-        """Create a duplicate of this vector."""
+        """Create a duplicate of this angle."""
         return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __copy__(self) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __deepcopy__(self, dict memodict=None) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle(self.val.x, self.val.y, self.val.z)
+
+    def __reduce__(self):
+        return unpickle_ang, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
@@ -2071,7 +2138,7 @@ cdef class Angle:
 
     @pitch.setter
     def pitch(self, double pitch) -> None:
-        self.val.y = norm_ang(pitch)
+        self.val.x = norm_ang(pitch)
 
     @property
     def yaw(self) -> float:
@@ -2232,6 +2299,38 @@ cdef class Angle:
             elif key in ('r', 'rol', 'roll'):
                 self.val.z = val
         raise KeyError(f'Invalid axis: {pos!r}')
+
+    def __richcmp__(self, other_obj, int op):
+        """Rich Comparisons.
+
+        Angles only support equality, since ordering is nonsensical.
+        """
+        cdef vec_t other
+        try:
+            _conv_angles(&other, other_obj)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        # 'redundant' == True prevents the individual comparisons from
+        # trying
+        # to convert the result individually on failure.
+        # Use subtraction so that values within TOL are accepted.
+        if op == Py_EQ:
+            return (
+                abs(self.val.x - other.x) <= TOL and
+                abs(self.val.y - other.y) <= TOL and
+                abs(self.val.z - other.z) <= TOL
+            ) == True
+        elif op == Py_NE:
+            return (
+                abs(self.val.x - other.x) > TOL or
+                abs(self.val.y - other.y) > TOL or
+                abs(self.val.z - other.z) > TOL
+            ) == True
+        elif op in [Py_LT, Py_GT, Py_GE, Py_LE]:
+            return NotImplemented
+        else:
+            raise SystemError(f'Unknown operation {op!r}' '!')
 
     def __mul__(first, second):
         """Angle * float multiplies each value."""

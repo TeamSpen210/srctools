@@ -1,17 +1,40 @@
 """Build the postcompiler script."""
+import os
+from pathlib import Path
 
+
+# Find the BSP transforms from HammerAddons.
+try:
+    hammer_addons = Path(os.environ['HAMMER_ADDONS']).resolve()
+except KeyError:
+    hammer_addons = Path('../HammerAddons/').resolve()
+if not (hammer_addons / 'transforms').exists():
+    raise ValueError(
+        f'Invalid BSP transforms location "{hammer_addons}/transforms/"!\n'
+        'Clone TeamSpen210/HammerAddons, or set the '
+        'environment variable HAMMER_ADDONS to the location.'
+    )
+
+DATAS = [
+    (str(file), str(file.relative_to(hammer_addons).parent))
+    for file in (hammer_addons / 'transforms').rglob('*.py')
+] + [
+    (str(hammer_addons / 'crowbar_command/Crowbar.exe'), '.'),
+    (str(hammer_addons / 'crowbar_command/FluentCommandLineParser.dll'), '.'),
+]
+print(DATAS)
 
 a = Analysis(
     ['srctools/scripts/postcompiler.py'],
     binaries=[],
-    datas=[],
+    datas=DATAS,
     hiddenimports=[
         # Ensure these modules are available for plugins.
         'abc', 'array', 'base64', 'binascii', 'binhex',
         'bisect', 'colorsys', 'collections', 'csv', 'datetime',
         'decimal', 'difflib', 'enum', 'fractions', 'functools',
         'io', 'itertools', 'json', 'math', 'random', 're',
-        'statistics', 'string', 'struct',
+        'statistics', 'string', 'struct', 'srctools',
     ],
     excludes=[],
     win_no_prefer_redirects=False,

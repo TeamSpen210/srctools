@@ -1,6 +1,6 @@
 """Functions for reading/writing VTF data."""
 import array
-from typing import Tuple, List, Dict, Callable, Iterable, TYPE_CHECKING
+from typing import Tuple, List, Dict, Callable, Iterable, Optional, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
@@ -13,8 +13,12 @@ _SAVE: Dict[ImageFormats, Callable[[array.array, bytearray, int, int], None]] = 
 _LOAD: Dict[ImageFormats, Callable[[array.array, bytes, int, int], None]] = {}
 
 
-def ppm_convert(pixels, width, height) -> bytes:
-    """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
+def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+    """Convert a frame into a PPM-format bytestring, for passing to tkinter.
+
+    If bg is set, this is the background we composite into. Otherwise we
+    just strip the alpha.
+    """
     header = b'P6 %i %i 255\n' % (width, height)
     img_off = len(header)
     pix_count = width * height
@@ -25,11 +29,45 @@ def ppm_convert(pixels, width, height) -> bytes:
 
     view_dest[0:img_off] = header
 
-    # Our image data is in RGBARGBARGBA format, but PPM wants just
-    # RGBRGBRGB. Copying in 3 slices means we can skip a Python loop.
-    view_dest[img_off:img_off + 4*pix_count:3] = view_src[::4]
-    view_dest[img_off+1:img_off + 4*pix_count+1:3] = view_src[1::4]
-    view_dest[img_off+2:img_off + 4*pix_count+2:3] = view_src[2::4]
+    if bg is not None:
+        r, g, b = bg
+        for offset in range(width * height):
+            a = pixels[4 * offset + 3] / 255.0
+            inv_a = 1.0 - a
+            buffer[img_off + 3*offset] = int(pixels[4*offset + 0] * a + inv_a * r)
+            buffer[img_off + 3*offset + 1] = int(pixels[4*offset + 1] * a + inv_a * g)
+            buffer[img_off + 3*offset + 2] = int(pixels[4*offset + 2] * a + inv_a * b)
+    else:
+        # Copying in 3 slices means we can skip the loop over every pixel.
+        view_dest[img_off:img_off + 4*pix_count:3] = view_src[::4]
+        view_dest[img_off+1:img_off + 4*pix_count+1:3] = view_src[1::4]
+        view_dest[img_off+2:img_off + 4*pix_count+2:3] = view_src[2::4]
+
+    return bytes(buffer)
+
+
+def alpha_flatten(pixels: array.array, buffer: bytearray, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+    """Flatten the image down to RGB, by removing the alpha channel.
+
+    If bg is set, this is the background we composite into. Otherwise we
+    just strip the alpha.
+    """
+    pix_count = width * height
+
+    if bg is not None:
+        r, g, b = bg
+        for offset in range(width * height):
+            a = pixels[4 * offset + 3] / 255.0
+            inv_a = 1.0 - a
+            buffer[3 * offset] = int(pixels[4 * offset + 0] * a + inv_a * r)
+            buffer[3 * offset + 1] = int(pixels[4 * offset + 1] * a + inv_a * g)
+            buffer[3 * offset + 2] = int(pixels[4 * offset + 2] * a + inv_a * b)
+    else:
+        view_src = memoryview(pixels)
+        view_dest = memoryview(buffer)
+        view_dest[0:4*pix_count:3] = view_src[::4]
+        view_dest[1:4*pix_count+1:3] = view_src[1::4]
+        view_dest[2:4*pix_count+2:3] = view_src[2::4]
 
     return bytes(buffer)
 

@@ -4,7 +4,7 @@ import copy
 
 import operator as op
 from srctools.test import *
-from srctools import Vec_tuple, vec as vec_mod
+from srctools import Vec_tuple, math as vec_mod
 
 try:
     from importlib.resources import path as import_file_path
@@ -26,6 +26,20 @@ def test_matching_apis() -> None:
     assert get_public(vec_mod.Cy_Vec) == get_public(vec_mod.Py_Vec)
     assert get_public(vec_mod.Cy_Matrix) == get_public(vec_mod.Py_Matrix)
     assert get_public(vec_mod.Cy_Angle) == get_public(vec_mod.Py_Angle)
+
+
+@parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
+def test_lerp(lerp_func) -> None:
+    """Test the lerp function."""
+    assert lerp_func(-4.0, -4.0, 10, 50.0, 80.0) == pytest.approx(50.0)
+    assert lerp_func(10.0, -4.0, 10, 50.0, 80.0) == pytest.approx(80.0)
+    assert lerp_func(2.0, 0.0, 10.0, 50.0, 40.0) == pytest.approx(48.0)
+    assert lerp_func(5.0, 0.0, 10.0, 50.0, 40.0) == pytest.approx(45.0)
+    assert lerp_func(-10, 0, 10, 8, 9) == pytest.approx(7.0)
+    assert lerp_func(15, 0, 10, 8, 9) == pytest.approx(9.5)
+
+    with raises_zero_div:
+        lerp_func(30.0, 45.0, 45.0, 80, 90)  # In is equal
 
 
 def test_construction(py_c_vec):
@@ -248,6 +262,35 @@ def test_scalar(py_c_vec):
                         x, y, z, op_name, num,
                     ),
                 )
+
+
+@pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
+    ('x', 0, 'y', 'z', 1, 2), ('y', 1, 'x', 'z', 0, 2), ('z', 2, 'x', 'y', 0, 1),
+], ids='xyz')
+def test_vec_props(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+    """Test the X/Y/Z attributes and item access."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec = Vec()
+
+    def check(targ: float, other: float):
+        """Check all the indexes are correct."""
+        assert getattr(vec, axis) == targ, (vec, targ, other)
+        assert getattr(vec, u) == other, (vec, targ, other)
+        assert getattr(vec, v) == other, (vec, targ, other)
+
+        assert vec[index] == targ, (vec, targ, other)
+        assert vec[axis] == targ, (vec, targ, other)
+        assert vec[u_ax] == other, (vec, targ, other)
+        assert vec[v_ax] == other, (vec, targ, other)
+        assert vec[u] == other, (vec, targ, other)
+        assert vec[v] == other, (vec, targ, other)
+
+    for oth in VALID_ZERONUMS:
+        vec.x = vec.y = vec.z = oth
+        check(oth, oth)
+        for x in VALID_ZERONUMS:
+            setattr(vec, axis, x)
+            check(x, oth)
 
 
 def test_vec_to_vec(py_c_vec):

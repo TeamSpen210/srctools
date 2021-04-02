@@ -502,13 +502,42 @@ class VPK:
             for folder, files in folders.items():
                 for file, info in files.items():
                     yield info
-                    
-    def filenames(self) -> Iterator[str]:
-        """Yield all filenames in this VPK."""
-        for ext, folders in self._fileinfo.items():
-            for folder, files in folders.items():
-                for file, info in files.items():
+
+    def filenames(self, ext: str='', folder: str='') -> Iterator[str]:
+        """Yield filenames from this VPK.
+
+        If an extension or folder is specified, only files with this extension
+        or in this folder are returned.
+        """
+        if ext:
+            all_folders = [self._fileinfo.get(ext)]
+        else:
+            all_folders = self._fileinfo.values()
+
+        for folders in all_folders:
+            for subfolder, files in folders.items():
+                if not subfolder.startswith(folder):
+                    continue
+                for info in files.values():
                     yield info.filename
+
+    def fileinfos(self, ext: str='', folder: str='') -> Iterator[FileInfo]:
+        """Yield file info objects from this VPK.
+
+        If an extension or folder is specified, only files with this extension
+        or in this folder are returned.
+        """
+        if ext:
+            all_folders = [self._fileinfo.get(ext)]
+        else:
+            all_folders = self._fileinfo.values()
+
+        for folders in all_folders:
+            for subfolder, files in folders.items():
+                if not subfolder.startswith(folder):
+                    continue
+                for info in files.values():
+                    yield info
 
     def __len__(self) -> int:
         """Returns the number of files we have."""

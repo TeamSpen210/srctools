@@ -2,15 +2,23 @@ from setuptools import setup, Extension, find_packages
 import sys
 import os
 
-try:
-    from Cython.Build import cythonize
-    c_ext = cpp_ext = '.pyx'
-except ImportError:
-    print('Cython not installed, not compiling Cython modules.')
-    c_ext = '.c'
-    cpp_ext = '.cpp'
+# If the extension modules should be built.
+BUILD_EXT = True
+
+if BUILD_EXT:
+    try:
+        from Cython.Build import cythonize
+        c_ext = cpp_ext = '.pyx'
+    except ImportError:
+        print('Cython not installed, not compiling Cython modules.')
+        c_ext = '.c'
+        cpp_ext = '.cpp'
+        def cythonize(mod):
+            return mod
+else:
     def cythonize(mod):
-        return mod
+        return []
+    c_ext = cpp_ext = ''
 
 WIN = sys.platform.startswith('win')
 
@@ -50,7 +58,9 @@ setup(
         Extension(
             "srctools._tokenizer",
             sources=["srctools/_tokenizer" + c_ext],
-            # extra_compile_args=['/FAs'],  # MS ASM dump
+            extra_compile_args=[
+                # '/FAs',  # MS ASM dump
+            ],
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
@@ -60,15 +70,21 @@ setup(
                 "srctools/_cy_vtf_readwrite" + cpp_ext,
             ] + SQUISH_CPP,
             extra_compile_args=[
-                '/openmp' if WIN else '-fopenmp',
+                '/openmp',
                  # '/FAs',  # MS ASM dump
+            ] if WIN else [
+                '-fopenmp',
             ],
             extra_link_args=['/openmp' if WIN else '-fopenmp'],
         ),
         Extension(
-            "srctools._vec",
-            sources=["srctools/_vec" + c_ext],
-            # extra_compile_args=['/FAs'],  # MS ASM dump
+            "srctools._math",
+            sources=["srctools/_math" + c_ext],
+            extra_compile_args=[
+                '/FAs',  # MS ASM dump
+            ] if WIN else [
+
+            ],
         ),
     ]),
 
@@ -82,6 +98,7 @@ setup(
         'console_scripts': [
             'srctools_dump_parms = srctools.scripts.dump_parms:main',
             'srctools_diff = srctools.scripts.diff:main',
+            'srctools_find_deps = srctools.scripts.find_deps:main',
         ],
         'pyinstaller40': [
             'hook-dirs = srctools._pyinstaller:get_hook_dirs',
@@ -91,4 +108,7 @@ setup(
     install_requires=[
         'importlib_resources',
     ],
+    extras={
+        'wx': 'wxPython',  # VTF support.
+    }
 )

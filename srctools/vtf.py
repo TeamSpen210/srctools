@@ -16,7 +16,7 @@ from srctools import Vec, binformat, EmptyMapping
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type, Collection, overload, NamedTuple, TypeVar, Generic,
+    TYPE_CHECKING, Type, Collection, overload, Sequence,
     Mapping,
 )
 
@@ -25,6 +25,7 @@ from typing import (
 if TYPE_CHECKING:
     from PIL.Image import Image as PIL_Image
     import tkinter
+    import wx
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -66,9 +67,9 @@ class CubeSide(Enum):
     SPHERE = 6
 
 
-CUBES_WITH_SPHERE: Collection[CubeSide] = list(CubeSide)
+CUBES_WITH_SPHERE: Sequence[CubeSide] = list(CubeSide)
 # Remove the Sphere type, for 7.5+
-CUBES: Collection[CubeSide] = CUBES_WITH_SPHERE[:-1]
+CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 
 # One black, opaque pixel for creating blank images.
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
@@ -229,6 +230,16 @@ class VTFFlags(Flag):
     SS_BUMP = 0x08000000
     BORDER = 0x20000000
 
+    # Generic names for the remaining unused bits.
+    UNUSED_20 = 1 << 20
+    UNUSED_21 = 1 << 21
+    UNUSED_22 = 1 << 22
+    UNUSED_24 = 1 << 24
+    UNUSED_28 = 1 << 28
+    UNUSED_30 = 1 << 30
+    UNUSED_31 = 1 << 31
+    UNUSED_32 = 1 << 32
+
 
 class ResourceID(bytes, Enum):
     """For VTF format 7.3+, there is an extensible resource system."""
@@ -356,6 +367,7 @@ class Frame:
             if self.width != source.width or self.height != source.height:
                 raise ValueError("Tried copying from a frame of a different size!")
             source.load()
+            assert source._data is not None
             if self._data is None:  # Duplicate the other array
                 self._data = source._data[:]
             else: # Copy the other array onto us
@@ -444,8 +456,12 @@ class Frame:
             1,
         ).copy()
 
-    def to_tkinter(self, tk: 'tkinter.Misc' = None) -> 'tkinter.PhotoImage':
-        """Convert the given frame into a Tkinter PhotoImage."""
+    def to_tkinter(self, tk: 'tkinter.Misc' = None, *, bg: Optional[Tuple[int, int, int]]=None) -> 'tkinter.PhotoImage':
+        """Convert the given frame into a Tkinter PhotoImage.
+
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
         self.load()
 
         import tkinter
@@ -458,8 +474,40 @@ class Frame:
                 self._data,
                 self.width,
                 self.height,
+                bg,
             ),
         )
+
+    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Image':
+        """Convert the given frame into a wxPython image.
+
+        This requires wxPython to be installed.
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
+        self.load()
+        import wx
+
+        img = wx.Image(self.width, self.height)
+        _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
+        return img
+
+    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Bitmap':
+        """Convert the given frame into a wxPython bitmap.
+
+        This requires wxPython to be installed.
+        If bg is set, the image will be composited onto this background.
+        Otherwise, alpha is ignored.
+        """
+        self.load()
+        import wx
+        img = wx.Bitmap(self.width, self.height)
+        # Bitmap memory layout isn't public, so we have to write to a temporary
+        # that it copies from.
+        buf = bytearray(3 * self.width * self.height)
+        _format_funcs.alpha_flatten(self._data, buf, self.width, self.height, bg)
+        img.CopyFromBuffer(buf, wx.BitmapBufferFormat_RGB)
+        return img
 
 
 class VTF:
@@ -606,9 +654,7 @@ class VTF:
             for i in range(num_resources):
                 [res_id, res_flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
                 if res_id in vtf.resources:
-                    raise ValueError(
-                        'Duplicate resource ID "{}"!'.format(res_id)
-                    )
+                    raise ValueError(f'Duplicate resource ID {repr(res_id)[1:]}!')
 
                 # These do not go in the resources, it's only parsed as images.
                 if res_id == ResourceID.LOW_RES:
@@ -851,13 +897,13 @@ class VTF:
                 depth_iter = CUBES_WITH_SPHERE
         else:
             depth_iter = range(self.depth)
-        for frame in range(self.frame_count):
+        for frame_num in range(self.frame_count):
             for depth_side in depth_iter:
                 # Force to blank if cleared.
-                self._frames[frame, depth_side, 0].load()
+                self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
-                    self._frames[frame, depth_side, mipmap].rescale_from(
-                        self._frames[frame, depth_side, mipmap - 1],
+                    self._frames[frame_num, depth_side, mipmap].rescale_from(
+                        self._frames[frame_num, depth_side, mipmap - 1],
                         filter,
                     )
 

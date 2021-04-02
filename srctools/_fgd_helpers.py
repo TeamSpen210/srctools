@@ -1,7 +1,7 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
     List, Optional, Iterator, Union, Tuple, TYPE_CHECKING,
-    Collection,
+    Collection, Iterable,
 )
 
 from srctools import Vec, parse_vec_str
@@ -493,14 +493,15 @@ class HelperSprite(Helper):
                 'Expected up to 1 argument, got ({})!'.format(', '.join(args))
             )
         elif len(args) == 1:
-            return cls(args[0])
+            return cls(args[0].strip('"'))
         else:
             return cls(None)
 
     def export(self) -> List[str]:
         """Produce the arguments for iconsprite()."""
         if self.mat is not None:
-            return [self.mat]
+            # / characters etc require quotes.
+            return [f'"{self.mat}"']
         else:
             return []
 
@@ -570,6 +571,7 @@ class HelperModel(Helper):
 
     def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
         """studio() uses a single material."""
+        models: Iterable[str]
         if self.model is None:
             try:
                 models = entity.kv['model'].known_options()
@@ -632,6 +634,50 @@ class HelperLight(Helper):
 class HelperLightSpot(Helper):
     """Specialized helper for displaying spotlight previews."""
     TYPE = HelperTypes.ENT_LIGHT_CONE
+
+    def __init__(self, inner_cone: str, outer_cone: str, color_kv: str, pitch_scale: float) -> None:
+        self.inner = inner_cone
+        self.outer = outer_cone
+        self.color = color_kv
+        self.pitch_scale = pitch_scale
+
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse lightcone(inner, outer, color, pitch_scale)."""
+        if len(args) >= 1:
+            inner_cone = args[0]
+        else:
+            inner_cone = '_inner_cone'
+        if len(args) >= 2:
+            outer_cone = args[1]
+        else:
+            outer_cone = '_cone'
+        if len(args) >= 3:
+            color = args[2]
+        else:
+            color = '_light'
+        if len(args) >= 4:
+            pitch_scale = float(args[3])
+        else:
+            pitch_scale = 1.0
+
+        return cls(inner_cone, outer_cone, color, pitch_scale)
+
+    def export(self) -> List[str]:
+        """Produce the arguments for lightcone()."""
+        # If any parameter is different, all previous must be provided.
+        if self.pitch_scale != 1.0:
+            return [
+                self.inner, self.outer, self.color,
+                format(self.pitch_scale, 'g'),
+            ]
+        if self.color != '_light':
+            return [self.inner, self.outer, self.color]
+        if self.outer != '_cone':
+            return [self.inner, self.outer]
+        if self.inner != '_inner_cone':
+            return [self.inner]
+        return []
 
 
 class HelperLightSpotBlackMesa(Helper):

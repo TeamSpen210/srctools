@@ -7,6 +7,7 @@ import re
 import itertools
 import operator
 import builtins
+import sys
 import warnings
 from collections import defaultdict, namedtuple
 from contextlib import suppress
@@ -20,7 +21,7 @@ from typing import (
 )
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.vec import Vec, Angle, Matrix, to_matrix
+from srctools.math import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 
@@ -1274,6 +1275,30 @@ class UVAxis:
             scale=self.scale,
         )
 
+    def __copy__(self):
+        return UVAxis(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            offset=self.offset,
+            scale=self.scale,
+        )
+
+    def __deepcopy__(self, memodict=None):
+        return UVAxis(
+            x=self.x,
+            y=self.y,
+            z=self.z,
+            offset=self.offset,
+            scale=self.scale,
+        )
+
+    def __getstate__(self):
+        return (self.x, self.y, self.z, self.offset, self.scale)
+
+    def __setstate__(self, state):
+        (self.x, self.y, self.z, self.offset, self.scale) = state
+
     def vec(self) -> Vec:
         """Return the axis as a vector."""
         return Vec(self.x, self.y, self.z)
@@ -2128,7 +2153,7 @@ class EntityFixup(MutableMapping[str, str]):
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
-                self._fixup[fix.var.casefold()] = fix
+                self._fixup[sys.intern(fix.var.casefold())] = fix
             else:
                 extra_vals.append(fix)
         for fix in extra_vals:
@@ -2151,6 +2176,26 @@ class EntityFixup(MutableMapping[str, str]):
     def copy_values(self) -> List[FixupTuple]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
+
+    def __copy__(self):
+        fix = EntityFixup.__new__(EntityFixup)
+        fix._matcher = self._matcher
+        fix._fixup = self._fixup.copy()
+
+    def __deepcopy__(self, memodict=None):
+        fix = EntityFixup.__new__(EntityFixup)
+        fix._matcher = self._matcher
+        fix._fixup = self._fixup.copy()
+
+    def __getstate__(self) -> List[FixupTuple]:
+        return list(self._fixup.values())
+
+    def __setstate__(self, state: List[FixupTuple]) -> None:
+        self._matcher = None
+        self._fixup = {
+            sys.intern(tup.var.casefold()): tup
+            for tup in state
+        }
 
     def clear(self) -> None:
         """Wipe all the $fixup values."""
@@ -2199,7 +2244,7 @@ class EntityFixup(MutableMapping[str, str]):
 
         sval = conv_kv(val)
 
-        folded_var = var.casefold()
+        folded_var = sys.intern(var.casefold())
         if folded_var not in self._fixup:
             # Insert a new value. Use the lowest unused index.
             indexes = {
@@ -2209,13 +2254,13 @@ class EntityFixup(MutableMapping[str, str]):
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(var, sval, ind)
+                    self._fixup[folded_var] = FixupTuple(sys.intern(var), sval, ind)
                     break
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
         else:
             self._fixup[folded_var] = FixupTuple(
-                var,
+                sys.intern(var),
                 sval,
                 self._fixup[folded_var].id,
             )
@@ -2225,7 +2270,7 @@ class EntityFixup(MutableMapping[str, str]):
         """Delete a instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
-        var = var.casefold()
+        var = sys.intern(var.casefold())
         if var in self._fixup:
             del self._fixup[var]
             # We've changed the keys so this needs to be regenerated.
@@ -2609,6 +2654,54 @@ class Output:
             )
             st += " only)"
         return st
+
+    def __getstate__(self) -> tuple:
+        """Produce the state for pickling.
+
+        We know output/input names tend to be the same often,
+        so interning here will simplify the pickle.
+        """
+        basic = (
+            sys.intern(self.output),
+            sys.intern(self.target),
+            sys.intern(self.input),
+            self.comma_sep,
+        )
+        # Instance, delays and times are more rare - if unset don't include.
+        if self.inst_in or self.inst_out or self.params or self.delay or self.times != -1:
+            return basic + (
+                sys.intern(self.inst_out) if self.inst_out is not None else None,
+                sys.intern(self.inst_in) if self.inst_in is not None else None,
+                sys.intern(self.params),
+                self.delay,
+                self.times,
+            )
+        else:
+            return basic
+
+    def __setstate__(self, state: tuple) -> None:
+        """Restore the pickled state."""
+        (
+            self.output,
+            self.target,
+            self.input,
+            self.comma_sep,
+            *advanced,
+        ) = state
+        if advanced:
+            (
+                self.inst_out,
+                self.inst_in,
+                self.params,
+                self.delay,
+                self.times,
+            ) = advanced
+        else:
+            self.inst_out = None
+            self.inst_in = None
+            self.params = ''
+            self.delay = 0.0
+            self.times = -1
 
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""

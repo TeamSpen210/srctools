@@ -9,9 +9,9 @@ import itertools
 
 from zipfile import ZipFile
 
-from srctools import AtomicWriter, Vec, conv_int
-from srctools.fgd import FGD, EntityDef, EntityTypes
+from srctools import AtomicWriter, Vec, Angle, conv_int
 from srctools.vmf import VMF, Entity, Output
+from srctools.tokenizer import escape_text
 from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
@@ -484,10 +484,12 @@ class BSP:
             if cur_ent is None:
                 raise ValueError("Keyvalue outside brackets!")
 
-            # Line is of the form <"key" "val">
-            key, value = line.split(b'" "')
+            # Line is of the form <"key" "val">, but handle escaped quotes
+            # in the value. Valve's parser doesn't allow that, but we might
+            # as well be better...
+            key, value = line.split(b'" "', 2)
             decoded_key = key[1:].decode('ascii')
-            decoded_value = value[:-1].decode('ascii')
+            decoded_value = value[:-1].replace(br'\"', b'"').decode('ascii')
 
             # Now, we need to figure out if this is a keyvalue,
             # or connection.
@@ -526,7 +528,7 @@ class BSP:
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
             for key, value in ent.keys.items():
-                out.write('"{}" "{}"\n'.format(key, value).encode('ascii'))
+                out.write('"{}" "{}"\n'.format(key, escape_text(value)).encode('ascii'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
@@ -576,7 +578,7 @@ class BSP:
 
         for i in range(prop_count):
             origin = Vec(struct_read('fff', static_lump))
-            angles = Vec(struct_read('fff', static_lump))
+            angles = Angle(struct_read('fff', static_lump))
 
             [model_ind] = struct_read('<H', static_lump)
 
@@ -711,9 +713,9 @@ class BSP:
                 prop.origin.x,
                 prop.origin.y,
                 prop.origin.z,
-                prop.angles.x,
-                prop.angles.y,
-                prop.angles.z,
+                prop.angles.pitch,
+                prop.angles.yaw,
+                prop.angles.roll,
                 model_ind[prop.model],
             ))
 
@@ -907,7 +909,7 @@ class StaticProp:
         self,
         model: str,
         origin: Vec,
-        angles: Vec,
+        angles: Angle,
         scaling: float,
         visleafs: List[int],
         solidity: int,

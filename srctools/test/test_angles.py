@@ -1,3 +1,6 @@
+import copy
+import pickle
+
 from srctools import Angle
 from srctools.test import *
 
@@ -118,3 +121,119 @@ def test_with_axes(py_c_vec):
             assert getattr(ang, a) == x
             assert getattr(ang, b) == y
             assert getattr(ang, c) == z
+
+
+@pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
+    ('pitch', 0, 'yaw', 'roll', 1, 2), ('yaw', 1, 'pitch', 'roll', 0, 2), ('roll', 2, 'pitch', 'yaw', 0, 1),
+], ids=['pitch', 'yaw', 'roll'])
+def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+    """Test the pitch/yaw/roll attributes and item access."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    ang = Angle()
+
+    def check(targ: float, other: float):
+        """Check all the indexes are correct."""
+        assert math.isclose(getattr(ang, axis), targ), f'ang.{axis} != {targ}, other: {other}'
+        assert math.isclose(getattr(ang, u), other), f'ang.{u} != {other}, targ={targ}'
+        assert math.isclose(getattr(ang, v), other), f'ang.{v} != {other}, targ={targ}'
+
+        assert math.isclose(ang[index], targ),  f'ang[{index}] != {targ}, other: {other}'
+        assert math.isclose(ang[axis], targ), f'ang[{axis!r}] != {targ}, other: {other}'
+        assert math.isclose(ang[u_ax], other),  f'ang[{u_ax!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[v_ax], other), f'ang[{v_ax!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[u], other),  f'ang[{u!r}] != {other}, targ={targ}'
+        assert math.isclose(ang[v], other), f'[{v!r}] != {other}, targ={targ}'
+
+    nums = [
+        (0, 0.0),
+        (38.29, 38.29),
+        (-89.0, 271.0),
+        (360.0, 0.0),
+        (361.49, 1.49),
+        (-725.87, 354.13),
+    ]
+
+    for oth_set, oth_read in nums:
+        ang.pitch = ang.yaw = ang.roll = oth_set
+        check(oth_read, oth_read)
+        for x_set, x_read in nums:
+            setattr(ang, axis, x_set)
+            check(x_read, oth_read)
+
+
+def test_equality(py_c_vec) -> None:
+    """Test equality checks on Angles."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    def test(p1, y1, r1, p2, y2, r2):
+        """Check an Angle pair for incorrect comparisons."""
+        ang1 = Angle(p1, y1, r1)
+        ang2 = Angle(p2, y2, r2)
+
+        equal = (abs(p1 - p2) % 360.0) < 1e-6 and (abs(y1 - y2) % 360.0) < 1e-6 and (abs(r1 - r2) % 360.0) < 1e-6
+
+        comp = f'({p1} {y1} {r1}) ? ({p2} {y2} {r2})'
+
+        assert (ang1 == ang2)         == equal, comp + f' ang == ang'
+        assert (ang1 == (p2, y2, r2)) == equal, comp + ' ang == tup'
+        assert ((p1, y1, r1) == ang2) == equal, comp + ' tup == ang'
+
+        assert (ang1 != ang2)         != equal, comp + ' ang != ang'
+        assert (ang1 != (p2, y2, r2)) != equal, comp + ' ang != tup'
+        assert ((p1, y1, r1) != ang2) != equal, comp + ' tup != ang'
+
+    # Test the absolute accuracy.
+    values = VALID_ZERONUMS + [38.0, (38.0 + 1.1e6), (38.0 + 1e7)]
+
+    for num in values:
+        for num2 in values:
+            # Test the whole comparison, then each axis pair seperately
+            test(num, num, num, num2, num2, num2)
+            test(0, num, num, num2, num2, num2)
+            test(num, 0, num, num, num2, num2)
+            test(num, num, 0, num2, num2, num2)
+            test(num, num, num, 0, num2, num2)
+            test(num, num, num, num, 0, num2)
+            test(num, num, num, num, num, 0)
+
+        # Test 360 wraps work.
+        test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
+
+
+def test_copy_pickle(py_c_vec) -> None:
+    """Test pickling, unpickling and copying Angles."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    vec_mod.Angle = Angle
+
+    test_data = 38.0, 257.125, 0.0
+
+    orig = Angle(test_data)
+
+    cpy_meth = orig.copy()
+
+    assert orig is not cpy_meth  # Must be a new object.
+    assert cpy_meth is not orig.copy()  # Cannot be cached
+    assert orig == cpy_meth  # Numbers must be exactly identical!
+
+    cpy = copy.copy(orig)
+
+    assert orig is not cpy
+    assert cpy_meth is not copy.copy(orig)
+    assert orig == cpy
+
+    dcpy = copy.deepcopy(orig)
+
+    assert orig is not dcpy
+    assert orig == dcpy
+
+    pick = pickle.dumps(orig)
+    thaw = pickle.loads(pick)
+
+    assert orig is not thaw
+    assert orig == thaw
+
+    # Ensure both produce the same pickle - so they can be interchanged.
+    cy_pick = pickle.dumps(Cy_Angle(test_data))
+    py_pick = pickle.dumps(Py_Angle(test_data))
+
+    assert cy_pick == py_pick == pick

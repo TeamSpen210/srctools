@@ -66,12 +66,12 @@ EXT_TYPE = {
 
 # VScript function names that imply resources. This assumes it's the first
 # argument.
-SCRIPT_FUNC_TYPES: Dict[str, Tuple[str, FileType]] = {
-    'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
-    'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
-    'PrecacheScriptSound': ('', FileType.GAME_SOUND),
-    'PrecacheSoundScript': ('', FileType.GAME_SOUND),
-    'PrecacheModel': ('', FileType.MODEL),
+SCRIPT_FUNC_TYPES: Dict[bytes, Tuple[str, FileType]] = {
+    b'IncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    b'DoIncludeScript': ('scripts/vscripts/', FileType.VSCRIPT_SQUIRREL),
+    b'PrecacheScriptSound': ('', FileType.GAME_SOUND),
+    b'PrecacheSoundScript': ('', FileType.GAME_SOUND),
+    b'PrecacheModel': ('', FileType.MODEL),
 }
 
 
@@ -168,6 +168,10 @@ class PackList:
 
     def __iter__(self) -> Iterator[PackFile]:
         return iter(self._files.values())
+
+    def filenames(self) -> Iterator[str]:
+        """The filenames of all packed files."""
+        return iter(self._files.keys())
 
     def __contains__(self, path: str) -> bool:
         return unify_path(path) in self._files
@@ -946,8 +950,9 @@ class PackList:
         for vmt in parents:
             self.pack_file(vmt, FileType.MATERIAL, optional=file.optional)
 
-        for param_name, param_type, param_value in mat:
+        for param_name, param_value in mat.items():
             param_value = param_value.casefold()
+            param_type = VarType.from_name(param_name)
             if param_type is VarType.TEXTURE:
                 # Skip over reference to cubemaps, or realtime buffers.
                 if param_value == 'env_cubemap' or param_value.startswith('_rt_'):
@@ -964,20 +969,33 @@ class PackList:
         to PrecacheSoundScript, IncludeScript, DoIncludeScript, etc.
         """
         # Be fairly sloppy, just match func("param"
-        func_pattern = re.compile(r'([a-zA-Z]+)\s*\(\s*"([^"]+)"')
-        try:
-            with self.fsys, self.fsys.open_str(file.filename) as f:
-                for match in func_pattern.findall(f.read()):
-                    func, arg = match
-                    try:
-                        prefix, param_type = SCRIPT_FUNC_TYPES[func]
-                    except KeyError:
-                        continue
-                    self.pack_file(prefix + arg, param_type, optional=file.optional)
-        except FileNotFoundError:
-            if not file.optional:
-                LOGGER.warning('File "{}" does not exist!', file.filename)
-            return
+        # Also do in the binary level, so we're tolerant of any ASCII-compatible
+        # encodings. Squirrel itself doesn't have complex Unicode support.
+        func_pattern = re.compile(rb'([a-zA-Z]+)\s*\(\s*"([^"]+)"')
+        if file.data:
+            data = file.data
+        else:
+            try:
+                with self.fsys, self.fsys.open_bin(file.filename) as f:
+                    data = f.read()
+            except FileNotFoundError:
+                if not file.optional:
+                    LOGGER.warning('File "{}" does not exist!', file.filename)
+                return
+
+        func: bytes
+        arg: bytes
+        for func, arg in func_pattern.findall(data):
+            try:
+                prefix, param_type = SCRIPT_FUNC_TYPES[func]
+            except KeyError:
+                continue
+            try:
+                filename = prefix + arg.decode('utf8')
+            except UnicodeDecodeError:
+                LOGGER.warning("Can't read filename in VScript:", exc_info=True)
+                continue
+            self.pack_file(filename, param_type, optional=file.optional)
 
 
 # noinspection PyProtectedMember
