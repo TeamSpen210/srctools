@@ -1,9 +1,12 @@
 """Implements support for collapsing instances."""
 from enum import Enum
 from pathlib import Path
-from typing import Dict, Tuple, Set, Iterable, Container, MutableMapping, List
-from srctools import Matrix, Vec, Angle, conv_float, EmptyMapping
-from srctools.vmf import Entity, EntityFixup, FixupTuple, VMF, Output
+from typing import (
+    Dict, Tuple, Set, Iterable, Container, MutableMapping, List,
+    Union,
+)
+from srctools import Matrix, Vec, Angle, conv_float, EmptyMapping, Property
+from srctools.vmf import Entity, EntityFixup, FixupTuple, VMF, Output, VisGroup
 from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
 from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
 import srctools.logger
@@ -42,10 +45,11 @@ class Instance:
         self.fixup = EntityFixup(fixup)
         self.outputs = list(outputs)
         # After collapsing, this is the original -> new ID mapping.
-        self.ent_ids: Dict[int, int] = {}
-        self.face_ids: Dict[int, int] = {}
-        self.brush_ids: Dict[int, int] = {}
-        self.node_ids: Dict[int, int] = {}
+        self.ent_ids: dict[int, int] = {}
+        self.face_ids: dict[int, int] = {}
+        self.brush_ids: dict[int, int] = {}
+        self.node_ids: dict[int, int] = {}
+        self.visgroup_ids: dict[int, int] = {}
         # Keep track of recursive instances to handle loops.
         self.recur_count = 0
 
@@ -242,11 +246,17 @@ def collapse_one(
     inst: Instance,
     file: InstanceFile,
     fgd: FGD=None,
+    visgroup: Union[bool, VisGroup]=False,
 ) -> None:
     """Collapse a single instance into the map.
 
     The FGD is the data used to localise keyvalues. If none an internal database
     will be used.
+    The visgroup paramter controls how visgroups are handled:
+    * If false, visgroups are stripped.
+    * If true, the original visgroups will be kept
+    * If set to a specific visgroup, all ents and brushes will be added to it,
+        with any existing visgroups in the instance added as a child.
     """
     origin = inst.pos
     orient = inst.orient
@@ -261,13 +271,31 @@ def collapse_one(
         LOGGER.warning('No CBaseEntity definition!')
         base_entity = EntityDef(EntityTypes.BASE)
 
+    if visgroup is not False:
+        for old_group in file.vmf.vis_tree:
+            new_group = old_group.copy(vmf, inst.visgroup_ids)
+            if visgroup is True:
+                vmf.vis_tree.append(new_group)
+            else:
+                visgroup.child_groups.append(new_group)
+    if isinstance(visgroup, VisGroup):
+        ungrouped_group = [visgroup]
+    else:
+        ungrouped_group = []
+
     for old_brush in file.vmf.brushes:
         if old_brush.hidden or not old_brush.vis_shown:
             continue
-        new_brush = old_brush.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=False)
+        new_brush = old_brush.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=visgroup is not False)
         vmf.add_brush(new_brush)
         inst.brush_ids[old_brush.id] = new_brush.id
         new_brush.localise(origin, orient)
+        # Convert across the IDs.
+        if visgroup is not False:
+            new_brush.visgroup_ids = [
+                inst.visgroup_ids[old]
+                for old in new_brush.visgroup_ids
+            ] or ungrouped_group.copy()
 
     # Before adding the ents, apply instance inputs.
     folded_inst_name = inst.name.casefold()
@@ -296,17 +324,34 @@ def collapse_one(
     new_ents: List[Entity] = []
 
     for old_ent in file.vmf.entities:
-        if old_ent.hidden or not old_ent.vis_shown:
+        if visgroup is False and (old_ent.hidden or not old_ent.vis_shown):
             continue
-        new_ent = old_ent.copy(vmf_file=vmf, side_mapping=inst.face_ids, keep_vis=False)
+        new_ent = old_ent.copy(
+            vmf_file=vmf,
+            side_mapping=inst.face_ids,
+            keep_vis=visgroup is not False
+        )
         vmf.add_ent(new_ent)
         new_ents.append(new_ent)
         inst.ent_ids[old_ent.id] = new_ent.id
         id_to_ent[old_ent.id] = new_ent
 
+        if visgroup is not False:
+            new_ent.visgroup_ids = [
+                inst.visgroup_ids[old] for old in
+                old_ent.visgroup_ids
+            ] or ungrouped_group.copy()
+
         for old_brush, new_brush in zip(old_ent.solids, new_ent.solids):
             inst.brush_ids[old_brush.id] = new_brush.id
             new_brush.localise(origin, orient)
+
+            # Convert across the IDs.
+            if visgroup is not False:
+                new_brush.visgroup_ids = [
+                    inst.visgroup_ids[old] for old in
+                    old_brush.visgroup_ids
+                ] or ungrouped_group.copy()
 
     for new_ent in new_ents:
         # Find the FGD to use.
@@ -315,7 +360,7 @@ def collapse_one(
             ent_type = fgd[classname]
         except KeyError:
             ent_type = base_entity
-
+        break
         # Set a hidden attribute to keep track of recursive instancing.
         if classname.casefold() == 'func_instance':
             setattr(new_ent, RECUR_COUNT_ATTR, inst.recur_count + 1)
