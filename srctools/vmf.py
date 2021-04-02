@@ -9,11 +9,13 @@ import operator
 import builtins
 import sys
 import warnings
+import copy
+from array import ArrayType as Array
 from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union, Any, overload, TypeVar,
+    Optional, Union, overload, TypeVar,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
     NamedTuple, MutableMapping,
@@ -29,18 +31,6 @@ import srctools
 CURRENT_HAMMER_VERSION = 400
 CURRENT_HAMMER_BUILD = 5304
 
-# all the rows that displacements have, in the form
-# "row0" "???"
-# "row1" "???"
-# etc
-_DISP_ROWS = (
-    'normals',
-    'distances',
-    'offsets',
-    'offset_normals',
-    'alphas',
-    'triangle_tags',
-)
 
 # Return value for VMF.make_prism()
 PrismFace = namedtuple(
@@ -1228,6 +1218,99 @@ class Solid:
             s.localise(origin, angles)
 
 
+class Displacement:
+    """The extra data required to define a displacement."""
+    def __init__(
+        self,
+        power: int,
+        pos: Vec,
+        flags: int,
+        elev: float,
+        is_subdiv: bool,
+        allowed_vert: Array,
+        normals: List[Array],
+        distances: List[Array],
+        offsets: List[Array],
+        offset_normals: List[Array],
+        alphas: List[Array],
+        triangle_tags: List[Array],
+    ) -> None:
+        self.power = power
+        self.pos = pos
+        self.flags = flags
+        self.elev = elev
+        self.is_subdiv = is_subdiv
+        self.allowed_vert = allowed_vert
+
+        self.normal_list = normals
+        self.distance_list = distances
+        self.offsets_list = offsets
+        self.off_norm_list = offset_normals
+        self.alpha_list = alphas
+        self.tri_tag_list = triangle_tags
+
+    @classmethod
+    def parse(cls, tree: Property) -> 'Displacement':
+        """Parse this displacement configuration."""
+        # Allowed verts should always have 10 entries, and have a '10' key.
+        vert_key = tree.find_key('allowed_verts')
+        allowed_vert = Array('i', map(int, vert_key['10'].split()))
+        assert len(allowed_vert) == 10, vert_key
+        return cls(
+            tree.int('power'),
+            tree.vec('startposition'),
+            tree.int('flags'),
+            tree.float('elevation'),
+            tree.bool('subdiv'),
+            allowed_vert,
+            cls._parse_rowset('f', tree, 'normals'),
+            cls._parse_rowset('f', tree, 'distances'),
+            cls._parse_rowset('f', tree, 'offsets'),
+            cls._parse_rowset('f', tree, 'offset_normals'),
+            cls._parse_rowset('f', tree, 'alphas'),
+            cls._parse_rowset('B', tree, 'triangle_tags'),
+        )
+
+    def copy(self) -> 'Displacement':
+        """Duplicate this displacement data."""
+        return Displacement(
+            self.power,
+            self.pos.copy(),
+            self.flags,
+            self.elev,
+            self.is_subdiv,
+            copy.deepcopy(self.allowed_vert),
+            copy.deepcopy(self.normal_list),
+            copy.deepcopy(self.distance_list),
+            copy.deepcopy(self.offsets_list),
+            copy.deepcopy(self.off_norm_list),
+            copy.deepcopy(self.alpha_list),
+            copy.deepcopy(self.tri_tag_list),
+        )
+
+    @staticmethod
+    def _parse_rowset(dtype: str, tree: Property, name: str) -> List[Array]:
+        """Parse one of the very similar per-vert sections."""
+        tree = tree.find_key(name)
+        func = float if dtype == 'f' else int
+        rows = []
+        for i in itertools.count():
+            try:
+                rowstr = tree[f'row{i}']
+            except LookupError:
+                break
+            rows.append(Array(dtype, map(func, rowstr.split())))
+        return rows
+
+    @staticmethod
+    def _export_rowset(row: List[Array], name: str, f: IO[str], ind: str) -> None:
+        """Write out of the very similar per-vert sections."""
+        f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
+        for i, nums in enumerate(row):
+            f.write(f'{ind}\t\t"row{i}" "{" ".join(map(str, nums))}"\n')
+        f.write(ind + '\t\t}\n')
+
+
 class UVAxis:
     """Values saved into Side.uaxis and Side.vaxis.
 
@@ -1374,14 +1457,7 @@ class Side:
         'ham_rot',
         'uaxis',
         'vaxis',
-        'disp_power',
-        'disp_pos',
-        'disp_flags',
-        'disp_elev',
-        'disp_is_subdiv',
-        'disp_allowed_verts',
-        'disp_data',
-        'is_disp',
+        'disp',
     ]
 
     def __init__(
@@ -1395,7 +1471,7 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis]=None,
         vaxis: Optional[UVAxis]=None,
-        disp_data: Optional[Dict[str, Any]]=None,
+        disp_data: Optional[Displacement]=None,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1409,31 +1485,13 @@ class Side:
         self.ham_rot = rotation
         self.uaxis = uaxis or UVAxis(0, 1, 0)
         self.vaxis = vaxis or UVAxis(0, 0, -1)
-        if disp_data is not None:
-            self.disp_power = srctools.conv_int(
-                disp_data.get('power', '_'), 4)
-            self.disp_pos = Vec.from_str(
-                disp_data.get('pos', '_'))
-            self.disp_flags = srctools.conv_int(
-                disp_data.get('flags', '_'))
-            self.disp_elev = srctools.conv_float(
-                disp_data.get('elevation', '_'))
-            self.disp_is_subdiv = srctools.conv_bool(
-                disp_data.get('subdiv', '_'), False)
-            self.disp_allowed_verts = disp_data.get('allowed_verts', {})
-            self.disp_data = {}  # type: Dict[str, List[str]]
-            for v in _DISP_ROWS:
-                self.disp_data[v] = disp_data.get(v, [])
-            self.is_disp = True
-        else:
-            self.is_disp = False
+        self.disp = disp_data
 
     @classmethod
     def parse(cls, vmf_file: VMF, tree: Property) -> 'Side':
         """Parse the property tree into a Side object."""
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
-        side_id = tree.int('id', -1)
         if len(verts) != 3:
             raise ValueError('Wrong number of solid planes in "' +
                              tree['plane', ''] +
@@ -1444,37 +1502,24 @@ class Side:
             Vec.from_str(verts[2]),
         ]
 
-        disp_tree = tree.find_key('dispinfo', [])
-        if len(disp_tree) > 0:
-            disp_data = {
-                'power': disp_tree['power', '4'],
-                'pos': disp_tree['startposition', '4'],
-                'flags': disp_tree['flags', '0'],
-                'elevation': disp_tree['elevation', '0'],
-                'subdiv': disp_tree['subdiv', '0'],
-                'allowed_verts': {},
-            }
-            for prop in disp_tree.find_key('allowed_verts', []):
-                disp_data['allowed_verts'][prop.name] = prop.value
-            for v in _DISP_ROWS:
-                rows = disp_tree[v, []]
-                if len(rows) > 0:
-                    rows.sort(key=lambda x: srctools.conv_int(x.name[3:]))
-                    disp_data[v] = [v.value for v in rows]
+        try:
+            disp_tree = tree.find_key('dispinfo')
+        except LookupError:
+            disp_data = None
         else:
-            disp_data = None  # type: Optional[Dict[str, Any]]
+            disp_data = Displacement.parse(disp_tree)
 
         return cls(
             vmf_file,
-            planes=planes,
-            des_id=side_id,
-            disp_data=disp_data,
-            mat=tree['material', ''],
-            uaxis=UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
-            vaxis=UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
-            rotation=tree.float('rotation', 0),
-            lightmap=tree.int('lightmapscale', 16),
-            smoothing=tree.int('smoothing_groups', 0),
+            planes,
+            tree.int('id', -1),
+            tree.int('lightmapscale', 16),
+            tree.int('smoothing_groups'),
+            tree['material', ''],
+            tree.float('rotation'),
+            UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
+            UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
+            disp_data,
         )
 
     def copy(
@@ -1489,35 +1534,25 @@ class Side:
         map is the VMF to add the new side to (defaults to the same map).
         If passed, side_mapping will be updated with a old -> new ID pair.
         """
-        planes = [p.as_tuple() for p in self.planes]
-        if self.is_disp:
-            disp_data = self.disp_data.copy()
-            disp_data['power'] = self.disp_power
-            disp_data['flags'] = self.disp_flags
-            disp_data['elevation'] = self.disp_elev
-            disp_data['subdiv'] = self.disp_is_subdiv
-            disp_data['allowed_verts'] = self.disp_allowed_verts
-        else:
-            disp_data = None  # type: Optional[Dict[str, Any]]
-
         if vmf_file is not None and des_id == -1:
             des_id = self.id
 
         copy = Side(
             vmf_file or self.map,
             [p.copy() for p in self.planes],
-            des_id=des_id,
-            mat=self.mat,
-            rotation=self.ham_rot,
-            uaxis=self.uaxis.copy(),
-            vaxis=self.vaxis.copy(),
-            smoothing=self.smooth,
-            lightmap=self.lightmap,
-            disp_data=disp_data,
+            des_id,
+            self.lightmap,
+            self.smooth,
+            self.mat,
+            self.ham_rot,
+            self.uaxis.copy(),
+            self.vaxis.copy(),
+            self.disp.copy() if self.disp is not None else None,
         )
         side_mapping[self.id] = copy.id
         return copy
 
+    # noinspection PyProtectedMember
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the strings required to define this side in a VMF."""
         buffer.write(ind + 'side\n')
@@ -1531,37 +1566,29 @@ class Side:
         buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
         buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
         buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
-        if self.is_disp:
+        if self.disp is not None:
+            disp = self.disp
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
-            buffer.write(f'{ind}\t\t"power" "{str(self.disp_power)}"\n')
-            buffer.write(ind + '\t\t"startposition" "[' +
-                         self.disp_pos.join(' ') +
-                         ']"\n')
-            buffer.write(ind + '\t\t"flags" "' + str(self.disp_flags) +
-                         '"\n')
-            buffer.write(ind + '\t\t"elevation" "' + str(self.disp_elev) +
-                         '"\n')
-            buffer.write(ind + '\t\t"subdiv" "' +
-                         srctools.bool_as_int(self.disp_is_subdiv) +
-                         '"\n')
-            for v in _DISP_ROWS:
-                if len(self.disp_data[v]) > 0:
-                    buffer.write(f'{ind}\t\t{v}\n')
-                    buffer.write(ind + '\t\t{\n')
-                    for i, data in enumerate(self.disp_data[v]):
-                        buffer.write(ind + '\t\t\t"row' + str(i) +
-                                     '" "' + data +
-                                     '"\n')
-                    buffer.write(ind + '\t\t}\n')
-            if len(self.disp_allowed_verts) > 0:
-                buffer.write(ind + '\t\tallowed_verts\n')
-                buffer.write(ind + '\t\t{\n')
-                for k, v in self.disp_allowed_verts.items():
-                    buffer.write(f'{ind}\t\t\t"{k}" "{v}"\n')
-                buffer.write(ind + '\t\t}\n')
-            buffer.write(ind + '\t}\n')
+            buffer.write(f'{ind}\t\t"power" "{disp.power}"\n')
+            buffer.write(f'{ind}\t\t"startposition" "[{disp.pos}]"\n')
+            buffer.write(f'{ind}\t\t"flags" "{disp.flags}"\n')
+            buffer.write(f'{ind}\t\t"elevation" "{disp.elev}"\n')
+            buffer.write(f'{ind}\t\t"subdiv" "{disp.elev}"\n')
+            buffer.write(f'{ind}\t\t"subdiv" "{"1" if disp.is_subdiv else "0"}"\n')
+            disp._export_rowset(disp.normal_list, 'normals', buffer, ind),
+            disp._export_rowset(disp.distance_list, 'distances', buffer, ind),
+            disp._export_rowset(disp.offsets_list, 'offsets', buffer, ind),
+            disp._export_rowset(disp.off_norm_list, 'offset_normals', buffer, ind),
+            disp._export_rowset(disp.alpha_list, 'alphas', buffer, ind),
+            disp._export_rowset(disp.tri_tag_list, 'triangle_tags', buffer, ind),
+
+            buffer.write(ind + '\t\tallowed_verts\n')
+            buffer.write(ind + '\t\t{\n')
+            assert len(self.disp.allowed_vert) == 10, self.disp.allowed_vert
+            buffer.write(f'{ind}"10" "{" ".join(map(str, self.disp.allowed_vert))}"\n')
+            buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
         buffer.write(ind + '}\n')
 
     def __str__(self) -> str:
