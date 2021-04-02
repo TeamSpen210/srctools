@@ -58,7 +58,9 @@ setup(
         Extension(
             "srctools._tokenizer",
             sources=["srctools/_tokenizer" + c_ext],
-            # extra_compile_args=['/FAs'],  # MS ASM dump
+            extra_compile_args=[
+                # '/FAs',  # MS ASM dump
+            ],
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
@@ -68,15 +70,21 @@ setup(
                 "srctools/_cy_vtf_readwrite" + cpp_ext,
             ] + SQUISH_CPP,
             extra_compile_args=[
-                '/openmp' if WIN else '-fopenmp',
+                '/openmp',
                  # '/FAs',  # MS ASM dump
+            ] if WIN else [
+                '-fopenmp',
             ],
             extra_link_args=['/openmp' if WIN else '-fopenmp'],
         ),
         Extension(
             "srctools._math",
             sources=["srctools/_math" + c_ext],
-            # extra_compile_args=['/FAs'],  # MS ASM dump
+            extra_compile_args=[
+                '/FAs',  # MS ASM dump
+            ] if WIN else [
+
+            ],
         ),
     ]),
 

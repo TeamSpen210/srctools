@@ -1,6 +1,7 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
 from libc.stdio cimport snprintf
+from libc.stdint cimport uint8_t as byte
 from libc.stdlib cimport malloc, free
 from libc.string cimport memcpy, memset, strncmp
 from cython.parallel cimport prange, parallel
@@ -26,7 +27,6 @@ cdef extern from "squish.h" namespace "squish":
     # void DecompressImage(u8 *rgba, int width, int height, int pitch, void *blocks, int flags );
     void DecompressImage(u8 *rgba, int width, int height, void *blocks, int flags ) nogil;
 
-ctypedef unsigned char byte
 ctypedef unsigned int uint
 
 cdef struct RGB:
@@ -42,7 +42,6 @@ DEF A = 3
 
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
-
 
 def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or None):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""

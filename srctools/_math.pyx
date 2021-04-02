@@ -229,24 +229,17 @@ cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
 
 cdef inline void _mat_mul(mat_t targ, mat_t rot):
     """Rotate target by the rotator matrix."""
-    # We don't use each row after assigning to the set, so we can re-assign.
-    targ[0][0], targ[0][1], targ[0][2] = (
-        (targ[0][0]) * (rot[0][0]) + (targ[0][1]) * (rot[1][0]) + (targ[0][2]) * (rot[2][0]),
-        targ[0][0] * rot[0][1] + targ[0][1] * rot[1][1] + targ[0][2] * rot[2][1],
-        targ[0][0] * rot[0][2] + targ[0][1] * rot[1][2] + targ[0][2] * rot[2][2],
-    )
-
-    targ[1][0], targ[1][1], targ[1][2] = (
-        targ[1][0] * rot[0][0] + targ[1][1] * rot[1][0] + targ[1][2] * rot[2][0],
-        targ[1][0] * rot[0][1] + targ[1][1] * rot[1][1] + targ[1][2] * rot[2][1],
-        targ[1][0] * rot[0][2] + targ[1][1] * rot[1][2] + targ[1][2] * rot[2][2],
-    )
-
-    targ[2][0], targ[2][1], targ[2][2] = (
-        targ[2][0] * rot[0][0] + targ[2][1] * rot[1][0] + targ[2][2] * rot[2][0],
-        targ[2][0] * rot[0][1] + targ[2][1] * rot[1][1] + targ[2][2] * rot[2][1],
-        targ[2][0] * rot[0][2] + targ[2][1] * rot[1][2] + targ[2][2] * rot[2][2],
-    )
+    cdef double a, b, c
+    cdef int i
+    for i in range(3):
+        a = targ[i][0]
+        b = targ[i][1]
+        c = targ[i][2]
+        # The source rows only affect that row, so we only need to
+        # store a copy of 3 at a time.
+        targ[i][0] = a * rot[0][0] + b * rot[1][0] + c * rot[2][0]
+        targ[i][1] = a * rot[0][1] + b * rot[1][1] + c * rot[2][1]
+        targ[i][2] = a * rot[0][2] + b * rot[1][2] + c * rot[2][2]
 
 
 cdef inline void _vec_rot(vec_t *vec, mat_t mat):
