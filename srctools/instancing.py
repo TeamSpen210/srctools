@@ -308,7 +308,7 @@ def collapse_one(
             else:
                 visgroup.child_groups.append(new_group)
     if isinstance(visgroup, VisGroup):
-        ungrouped_group = [visgroup]
+        ungrouped_group = [visgroup.id]
     else:
         ungrouped_group = []
 
