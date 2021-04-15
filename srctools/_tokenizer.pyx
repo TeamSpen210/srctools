@@ -35,9 +35,6 @@ cdef:
     object BRACE_OPEN = Token.BRACE_OPEN
     object BRACE_CLOSE = Token.BRACE_CLOSE
 
-    # Iterator that immediately raises StopIteration.
-    object EMPTY_ITER = iter('')
-
     # Reuse a single tuple for these, since the value is constant.
     tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
@@ -57,10 +54,14 @@ cdef:
 # Convert to tuple to only check the chars.
 DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
+# Controls what syntax is allowed
 DEF FL_STRING_BRACKETS     = 0b0001
 DEF FL_ALLOW_ESCAPES       = 0b0010
 DEF FL_ALLOW_STAR_COMMENTS = 0b0100
+# If set, the file_iter is a bound read() method.
+DEF FL_FILE_INPUT          = 0b1000
 
+DEF FILE_BUFFER = 1024
 
 # noinspection PyMissingTypeHints
 cdef class BaseTokenizer:
@@ -342,17 +343,31 @@ cdef class Tokenizer(BaseTokenizer):
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )
+            
+        self.flags = (
+            FL_STRING_BRACKETS * string_bracket |
+            FL_ALLOW_ESCAPES * allow_escapes |
+            FL_ALLOW_STAR_COMMENTS * allow_star_comments |
+            0
+        )
 
         # For direct strings, we can immediately assign that as our chunk,
-        # and then set the iterable to an empty iterator.
+        # and then set the iterable to indicate EOF after that.
         if isinstance(data, str):
             self.cur_chunk = data
-            self.chunk_iter = EMPTY_ITER
+            self.chunk_iter = None
         else:
             # The first next_char() call will pull out a chunk.
             self.cur_chunk = ''
-            # This checks that it is indeed iterable.
-            self.chunk_iter = iter(data)
+            
+            # If a file, use the read method to pull bulk data.
+            try:
+                self.chunk_iter = data.read
+            except AttributeError:
+                # This checks that it is indeed iterable.
+                self.chunk_iter = iter(data)
+            else:
+                self.flags |= FL_FILE_INPUT
 
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
@@ -369,13 +384,6 @@ cdef class Tokenizer(BaseTokenizer):
                 filename = None
 
         BaseTokenizer.__init__(self, filename, error)
-        
-        self.flags = (
-            FL_STRING_BRACKETS * string_bracket |
-            FL_ALLOW_ESCAPES * allow_escapes |
-            FL_ALLOW_STAR_COMMENTS * allow_star_comments |
-            0
-        )
         
     @property
     def string_bracket(self) -> bool:
@@ -460,6 +468,19 @@ cdef class Tokenizer(BaseTokenizer):
         self.char_index += 1
         if self.char_index < len(self.cur_chunk):
             return self.cur_chunk[self.char_index]
+            
+        if self.chunk_iter is None:
+            return -1  # EOF
+            
+        if self.flags & FL_FILE_INPUT:
+            self.cur_chunk = <str?>self.chunk_iter(FILE_BUFFER)
+            self.char_index = 0
+
+            if len(self.cur_chunk) > 0:
+                return (self.cur_chunk)[0]
+            else:
+                self.chunk_iter = None
+                return -1
 
         # Retrieve a chunk from the iterable.
         try:
@@ -490,6 +511,7 @@ cdef class Tokenizer(BaseTokenizer):
                 raise self._error("Could not decode file!") from exc
             if chunk_obj is None:
                 # Out of characters after empty chunks
+                self.chunk_iter = None
                 return -1
 
             if isinstance(chunk_obj, bytes):
