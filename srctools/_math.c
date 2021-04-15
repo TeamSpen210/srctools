@@ -4,11 +4,6 @@
 {
     "distutils": {
         "depends": [],
-        "extra_compile_args": [
-            "/FAs",
-            "/Qpar-report:1",
-            "/Qvec-report:1"
-        ],
         "name": "srctools._math",
         "sources": [
             "srctools/_math.pyx"

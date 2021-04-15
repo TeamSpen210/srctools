@@ -1,9 +1,9 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
-from libc.stdio cimport snprintf
+from libc.stdio cimport sprintf
 from libc.stdint cimport uint8_t as byte
-from libc.stdlib cimport malloc, free
-from libc.string cimport memcpy, memset, strncmp
+from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from libc.string cimport memcpy, memset, strcmp
 from cython.parallel cimport prange, parallel
 
 cdef extern from "squish.h" namespace "squish":
@@ -47,18 +47,16 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef float r, g, b
     cdef float a, inv_a
-    cdef uint img_off
     cdef Py_ssize_t off
     cdef Py_ssize_t size = 3 * width * height
 
-    # b'P6 65536 65536 255\n' is 19 characters long.
-    # We shouldn't get a larger frame than that, it's already absurd.
-    cdef byte *buffer = <byte *> malloc(size + 19)
+    DEF PPM_HEADER = b'P6 %u %u 255\n'
+    cdef uint header_size = sprintf(NULL, PPM_HEADER, width, height)
+    cdef byte *buffer = <byte *> PyMem_Malloc(size + header_size)
+    if buffer == NULL:
+        raise MemoryError('Not enough memory for PPM file!')
     try:
-        img_off = snprintf(<char *>buffer, 19, b'P6 %u %u 255\n', width, height)
-
-        if img_off < 0: # If it does fail just produce a blank file.
-            return b''
+        sprintf(<char *>buffer, PPM_HEADER, width, height)
 
         if bg is not None:
             r = float(<int> bg[0])
@@ -67,18 +65,18 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
             for off in prange(width * height, nogil=True, schedule='static'):
                 a = pixels[4 * off + 3] / 255.0
                 inv_a = 1.0 - a
-                buffer[img_off + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
-                buffer[img_off + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
-                buffer[img_off + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
+                buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
+                buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
+                buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
         else:
             for off in prange(width * height, nogil=True, schedule='static'):
-                buffer[img_off + 3*off + R] = pixels[4*off]
-                buffer[img_off + 3*off + G] = pixels[4*off + 1]
-                buffer[img_off + 3*off + B] = pixels[4*off + 2]
+                buffer[header_size + 3*off + R] = pixels[4*off]
+                buffer[header_size + 3*off + G] = pixels[4*off + 1]
+                buffer[header_size + 3*off + B] = pixels[4*off + 2]
 
-        return buffer[:size+img_off]
+        return buffer[:size+header_size]
     finally:
-        free(buffer)
+        PyMem_Free(buffer)
 
 
 def alpha_flatten(const byte[::1] pixels, byte[::1] buffer, uint width, uint height, tuple bg or None):
@@ -770,10 +768,11 @@ FORMATS[29] = Format("ATI2N", &load_ati2n, &save_ati2n)
 def init(formats: 'srctools.vtf.ImageFormats') -> None:
     """Verify that the Python enum matches our array of functions."""
     cdef int index
+    cdef bytes name
     for fmt in formats:
         index = fmt.ind
         assert 0 <= index < (sizeof(FORMATS) // sizeof(Format))
-        assert (<str ?>fmt.name).encode('ascii') == FORMATS[index].name, fmt.name
+        assert strcmp((<str ?>fmt.name).encode('ascii'), FORMATS[index].name) == 0, f'{fmt} != {FORMATS[index].name.decode("ascii")}'
 
 
 def load(object fmt: 'srctools.vtf.ImageFormats', byte[::1] pixels, const byte[::1] data, uint width, uint height) -> None:

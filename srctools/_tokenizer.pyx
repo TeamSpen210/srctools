@@ -321,9 +321,11 @@ cdef class Tokenizer(BaseTokenizer):
     cdef Py_UCS4* val_buffer
 
     def __cinit__(self):
-        self.val_buffer = <Py_UCS4 *>PyMem_Malloc(32 * sizeof(Py_UCS4))
-        self.buf_size = 32
+        self.buf_size = 128
+        self.val_buffer = <Py_UCS4 *>PyMem_Malloc(self.buf_size * sizeof(Py_UCS4))
         self.buf_pos = 0
+        if self.val_buffer is NULL:
+            raise MemoryError
 
     def __dealloc__(self):
         PyMem_Free(self.val_buffer)
@@ -438,14 +440,23 @@ cdef class Tokenizer(BaseTokenizer):
         # Don't bother resizing or clearing, the next append will overwrite.
         self.buf_pos = 0
 
-    cdef inline void buf_add_char(self, Py_UCS4 uchar):
+    cdef inline int buf_add_char(self, Py_UCS4 uchar) except -1:
         """Add a character to the temporary buffer, reallocating if needed."""
+        # Temp, so if memory alloc failure occurs we're still in a valid state.
+        cdef Py_UCS4 *newbuf
+        cdef Py_ssize_t new_size
         if self.buf_pos >= self.buf_size:
-            self.buf_size *= 2
-            self.val_buffer = <Py_UCS4 *>PyMem_Realloc(
+            new_size = self.buf_size * 2
+            new_buf = <Py_UCS4 *>PyMem_Realloc(
                 self.val_buffer,
-                self.buf_size * sizeof(Py_UCS4),
+                new_size * sizeof(Py_UCS4),
             )
+            if new_buf:
+                self.buf_size = new_size
+                self.val_buffer = new_buf
+            else:
+                raise MemoryError
+
         self.val_buffer[self.buf_pos] = uchar
         self.buf_pos += 1
 
@@ -892,6 +903,8 @@ def escape_text(str text not None: str) -> str:
     cdef int i = 0
     try:
         out_buff = <char *>PyMem_Malloc(final_len+1)
+        if out_buff is NULL:
+            raise MemoryError
         for byt_letter in enc_text:
             if byt_letter == b'\\':
                 out_buff[i] = b'\\'
