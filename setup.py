@@ -13,10 +13,10 @@ if BUILD_EXT:
         print('Cython not installed, not compiling Cython modules.')
         c_ext = '.c'
         cpp_ext = '.cpp'
-        def cythonize(mod):
+        def cythonize(mod, **kwargs):
             return mod
 else:
-    def cythonize(mod):
+    def cythonize(mod, **kwargs):
         return []
     c_ext = cpp_ext = ''
 
@@ -50,6 +50,8 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
     ],
     packages=find_packages(include=['srctools', 'srctools.*']),
@@ -81,7 +83,7 @@ setup(
             "srctools._math",
             sources=["srctools/_math" + c_ext],
             extra_compile_args=[
-                '/FAs',  # MS ASM dump
+                # '/FAs',  # MS ASM dump
             ] if WIN else [
 
             ],
