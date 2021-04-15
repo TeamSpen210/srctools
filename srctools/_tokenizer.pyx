@@ -57,6 +57,10 @@ cdef:
 # Convert to tuple to only check the chars.
 DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
+DEF FL_STRING_BRACKETS     = 0b0001
+DEF FL_ALLOW_ESCAPES       = 0b0010
+DEF FL_ALLOW_STAR_COMMENTS = 0b0100
+
 
 # noinspection PyMissingTypeHints
 cdef class BaseTokenizer:
@@ -307,9 +311,7 @@ cdef class Tokenizer(BaseTokenizer):
     cdef object chunk_iter
     cdef int char_index # Position inside cur_chunk
 
-    cdef public bint string_bracket
-    cdef public bint allow_escapes
-    cdef public bint allow_star_comments
+    cdef int flags
 
     # Private buffer, to hold string parts we're constructing.
     # Tokenizers are expected to be temporary, so we just never shrink.
@@ -367,11 +369,61 @@ cdef class Tokenizer(BaseTokenizer):
                 filename = None
 
         BaseTokenizer.__init__(self, filename, error)
-
-        self.string_bracket = string_bracket
-        self.allow_escapes = allow_escapes
-        self.allow_star_comments = allow_star_comments
-
+        
+        self.flags = (
+            FL_STRING_BRACKETS * string_bracket |
+            FL_ALLOW_ESCAPES * allow_escapes |
+            FL_ALLOW_STAR_COMMENTS * allow_star_comments |
+            0
+        )
+        
+    @property
+    def string_bracket(self) -> bool:
+        """Check if [bracket] blocks are parsed as a single string-like block.
+        
+        If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        """
+        return self.flags & FL_STRING_BRACKETS != 0
+        
+        
+    @string_bracket.setter
+    def string_bracket(self, bint value) -> None:
+        """Set if [bracket] blocks are parsed as a single string-like block.
+        
+        If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
+        """
+        if value:
+            self.flags |= FL_STRING_BRACKETS
+        else:
+            self.flags &= ~FL_STRING_BRACKETS
+            
+    @property
+    def allow_escapes(self) -> bool:
+        """Check if backslash escapes will be parsed."""
+        return self.flags & FL_ALLOW_ESCAPES != 0
+        
+        
+    @allow_escapes.setter
+    def allow_escapes(self, bint value) -> None:
+        """Set if backslash escapes will be parsed."""
+        if value:
+            self.flags |= FL_ALLOW_ESCAPES
+        else:
+            self.flags &= ~FL_ALLOW_ESCAPES
+            
+    @property
+    def allow_star_comments(self) -> bool:
+        """Check if /**/ style comments will be enabled."""
+        return self.flags & FL_ALLOW_STAR_COMMENTS != 0
+        
+        
+    @allow_star_comments.setter
+    def allow_star_comments(self, bint value) -> None:
+        """Set if /**/ style comments are enabled."""
+        if value:
+            self.flags |= FL_ALLOW_STAR_COMMENTS
+        else:
+            self.flags &= ~FL_ALLOW_STAR_COMMENTS
 
     cdef inline void buf_reset(self):
         """Reset the temporary buffer."""
@@ -492,7 +544,7 @@ cdef class Tokenizer(BaseTokenizer):
                 # The next must be another slash! (//)
                 next_char = self._next_char()
                 if next_char == '*': # /* comment.
-                    if self.allow_star_comments:
+                    if self.flags & FL_ALLOW_STAR_COMMENTS:
                         start_line = self.line_num
                         while True:
                             next_char = self._next_char()
@@ -535,7 +587,7 @@ cdef class Tokenizer(BaseTokenizer):
                     raise self._error(
                         'Single slash found, '
                         'instead of two for a comment (// or /* */)!'
-                        if self.allow_star_comments else
+                        if self.flags & FL_ALLOW_STAR_COMMENTS else
                         'Single slash found, '
                         'instead of two for a comment (//)!'
                     )
@@ -551,7 +603,7 @@ cdef class Tokenizer(BaseTokenizer):
                         return STRING, self.buf_get_text()
                     elif next_char == '\n':
                         self.line_num += 1
-                    elif next_char == '\\' and self.allow_escapes:
+                    elif next_char == '\\' and self.flags & FL_ALLOW_ESCAPES:
                         # Escape text
                         escape_char = self._next_char()
                         if escape_char == -1:
@@ -577,7 +629,7 @@ cdef class Tokenizer(BaseTokenizer):
 
             elif next_char == '[':
                 # FGDs use [] for grouping, Properties use it for flags.
-                if not self.string_bracket:
+                if not self.flags & FL_STRING_BRACKETS:
                     return BRACK_OPEN_TUP
 
                 self.buf_reset()
@@ -597,7 +649,7 @@ cdef class Tokenizer(BaseTokenizer):
                     self.buf_add_char(next_char)
 
             elif next_char == ']':
-                if self.string_bracket:
+                if self.flags & FL_STRING_BRACKETS:
                     # If string_bracket is set (using PROP_FLAG), this is a
                     # syntax error - we don't have an open one to close!
                     raise self._error('No open [] to close with "]"!')
