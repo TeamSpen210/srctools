@@ -37,8 +37,8 @@ class TokenSyntaxError(Exception):
             self.line_num,
             )
 
-    def __eq__(self, other: 'TokenSyntaxError') -> bool:
-        if type(self) is type(other):
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, TokenSyntaxError):
             return (
                 self.mess == other.mess and
                 self.file == other.file and
@@ -361,39 +361,21 @@ class Tokenizer(BaseTokenizer):
             return self.cur_chunk[self.char_index]
         except IndexError:
             # Retrieve a chunk from the iterable.
+            # Skip empty chunks (shouldn't be there.)
             try:
-                chunk = self.cur_chunk = next(self.chunk_iter)
-            except StopIteration:
-                # Out of characters
-                return None
+                for chunk in self.chunk_iter:
+                    if isinstance(chunk, bytes):
+                        raise ValueError('Cannot parse binary data!')
+                    if not isinstance(chunk, str):
+                        raise ValueError("Data was not a string!")
+                    if chunk:
+                        self.cur_chunk = chunk
+                        self.char_index = 0
+                        return chunk[0]
             except UnicodeDecodeError as exc:
                 raise self.error("Could not decode file!") from exc
-
-            # Specifically catch passing binary data.
-            if isinstance(chunk, bytes):
-                raise ValueError('Cannot parse binary data!')
-            if not isinstance(chunk, str):
-                raise ValueError("Data was not a string!")
-
-            self.char_index = 0
-
-            try:
-                return chunk[0]
-            except IndexError:
-                # Skip empty chunks (shouldn't be there.)
-                try:
-                    for chunk in self.chunk_iter:
-                        if isinstance(chunk, bytes):
-                            raise ValueError('Cannot parse binary data!')
-                        if not isinstance(chunk, str):
-                            raise ValueError("Data was not a string!")
-                        if chunk:
-                            self.cur_chunk = chunk
-                            return chunk[0]
-                except UnicodeDecodeError as exc:
-                    raise self.error("Could not decode file!") from exc
-                # Out of characters after empty chunks
-                return None
+            # Out of characters after empty chunks
+            return None
 
     def _get_token(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""

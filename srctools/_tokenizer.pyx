@@ -488,30 +488,12 @@ cdef class Tokenizer(BaseTokenizer):
             self.char_index = 0
 
             if len(self.cur_chunk) > 0:
-                return (self.cur_chunk)[0]
+                return self.cur_chunk[0]
             else:
                 self.chunk_iter = None
                 return -1
 
         # Retrieve a chunk from the iterable.
-        try:
-            chunk_obj = next(self.chunk_iter, None)
-        except UnicodeDecodeError as exc:
-            raise self._error("Could not decode file!") from exc
-        if chunk_obj is None:
-            return -1
-
-        if isinstance(chunk_obj, bytes):
-            raise ValueError('Cannot parse binary data!')
-        if not isinstance(chunk_obj, str):
-            raise ValueError("Data was not a string!")
-
-        self.cur_chunk = chunk = <str>chunk_obj
-        self.char_index = 0
-
-        if len(chunk) > 0:
-            return (<str>chunk)[0]
-
         # Skip empty chunks (shouldn't be there.)
         # Use manual next to avoid re-calling iter() here,
         # or using list/tuple optimisations.
@@ -532,6 +514,7 @@ cdef class Tokenizer(BaseTokenizer):
 
             if len(<str ?>chunk_obj) > 0:
                 self.cur_chunk = <str>chunk_obj
+                self.char_index = 0
                 return (<str>chunk_obj)[0]
 
     cdef next_token(self):
