@@ -1,7 +1,8 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from libc.string cimport memcpy, memcmp
+from libc.math cimport sin, cos, tan
+from libc.string cimport memcpy, memcmp, memset
 from libc.stdint cimport uint_fast8_t
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
@@ -252,33 +253,21 @@ cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle):
-    cdef double cos_r_cos_y, cos_r_sin_y, sin_r_cos_y, sin_r_sin_y
-    cdef double rad_pitch = deg_2_rad * angle.x
-    cdef double cos_p = math.cos(rad_pitch)
-    cdef double sin_p = math.sin(rad_pitch)
-    cdef double rad_yaw = deg_2_rad * angle.y
-    cdef double sin_y = math.sin(rad_yaw)
-    cdef double cos_y = math.cos(rad_yaw)
-    cdef double rad_roll = deg_2_rad * angle.z
-    cdef double cos_r = math.cos(rad_roll)
-    cdef double sin_r = math.sin(rad_roll)
+    cdef double p = deg_2_rad * angle.x
+    cdef double y = deg_2_rad * angle.y
+    cdef double r = deg_2_rad * angle.z
 
-    res[0][0] = cos_p * cos_y
-    res[0][1] = cos_p * sin_y
-    res[0][2] = -sin_p
+    res[0][0] = cos(p) * cos(y)
+    res[0][1] = cos(p) * sin(y)
+    res[0][2] = -sin(p)
 
-    cos_r_cos_y = cos_r * cos_y
-    cos_r_sin_y = cos_r * sin_y
-    sin_r_cos_y = sin_r * cos_y
-    sin_r_sin_y = sin_r * sin_y
+    res[1][0] = sin(p) * sin(r) * cos(y) - cos(r) * sin(y)
+    res[1][1] = sin(p) * sin(r) * sin(y) + cos(r) * cos(y)
+    res[1][2] = sin(r) * cos(p)
 
-    res[1][0] = sin_p * sin_r_cos_y - cos_r_sin_y
-    res[1][1] = sin_p * sin_r_sin_y + cos_r_cos_y
-    res[1][2] = sin_r * cos_p
-
-    res[2][0] = sin_p * cos_r_cos_y + sin_r_sin_y
-    res[2][1] = sin_p * cos_r_sin_y - sin_r_cos_y
-    res[2][2] = cos_r * cos_p
+    res[2][0] = sin(p) * cos(r) * cos(y) + sin(r) * sin(y)
+    res[2][1] = sin(p) * cos(r) * sin(y) - sin(r) * cos(y)
+    res[2][2] = cos(r) * cos(p)
 
 
 cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
@@ -336,9 +325,10 @@ cdef bint _mat_from_basis(mat_t mat, Vec x, Vec y, Vec z) except True:
 
 cdef inline void _mat_identity(mat_t matrix):
     """Set the matrix to the identity transform."""
-    matrix[0] = [1.0, 0.0, 0.0]
-    matrix[1] = [0.0, 1.0, 0.0]
-    matrix[2] = [0.0, 0.0, 1.0]
+    memset(matrix, 0, sizeof(mat_t))
+    matrix[0][0] = 1.0
+    matrix[1][1] = 1.0
+    matrix[2][2] = 1.0
 
 
 cdef bint _conv_matrix(mat_t result, object value) except True:
@@ -615,12 +605,12 @@ cdef class Vec:
     def z(self, value):
         self.val.z = value
 
-    def __init__ (
+    def __init__(
         self,
         x=0.0,
         y=0.0,
         z=0.0,
-    ):
+    ) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -684,7 +674,7 @@ cdef class Vec:
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, dict memodict=None):
+    def __deepcopy__(self, memodict=None):
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
@@ -1862,11 +1852,21 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_angle(cls, angle):
-        """Return the rotation representing an Euler angle."""
+    def from_angle(cls, pitch, yaw=None, roll=None):
+        """Return the rotation representing an Euler angle.
+
+        Either an Angle can be passed, or the raw pitch/yaw/roll angles.
+        """
         cdef Matrix rot = Matrix.__new__(Matrix)
         cdef vec_t ang
-        conv_angles(&ang, angle)
+        if isinstance(pitch, Angle):
+            ang = (<Angle>pitch).val
+        elif yaw is None or roll is None:
+            raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
+        else:
+            ang.x = float(pitch)
+            ang.y = float(yaw)
+            ang.z = float(roll)
         _mat_from_angle(rot.mat, &ang)
         return rot
 

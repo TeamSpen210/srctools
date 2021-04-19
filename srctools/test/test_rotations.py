@@ -295,7 +295,8 @@ def test_gen_check(py_c_vec) -> None:
             # The engine actually gave us a right vector, so we need to flip that.
             left_x, left_y, left_z = -right_x, -right_y, -right_z
 
-            mat = Matrix.from_angle(Angle(pit, yaw, roll))
+            mat = Matrix.from_angle(pit, yaw, roll)
+            assert_rot(mat, Matrix.from_angle(Angle(pit, yaw, roll)))
 
             # Then check rotating vectors works correctly.
             assert_vec(X @ mat, for_x, for_y, for_z)

@@ -42,7 +42,7 @@ import warnings
 from typing import (
     Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    Iterator, Iterable,
+    Iterator, Iterable, SupportsRound, Optional,
 )
 
 
@@ -250,7 +250,7 @@ def __i{func}__(self, other: float):
 '''
 
 
-class Vec:
+class Vec(SupportsRound['Vec']):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
@@ -824,12 +824,12 @@ class Vec:
         if self.z > other[2]:
             self.z = other[2]
 
-    def __round__(self, n: int=0) -> 'Vec':
+    def __round__(self, ndigits: int=0) -> 'Vec':
         """Performing round() on a Py_Vec rounds each axis."""
         return Py_Vec(
-            round(self.x, n),
-            round(self.y, n),
-            round(self.z, n),
+            round(self.x, ndigits),
+            round(self.y, ndigits),
+            round(self.z, ndigits),
         )
 
     def mag(self) -> float:
@@ -1114,17 +1114,39 @@ class Matrix:
         rot._ca, rot._cb, rot._cc = 0.0, -sin_r, cos_r
 
         return rot
-        
+
     @classmethod
-    def from_angle(cls, angle: 'Angle') -> 'Matrix':
-        """Return the rotation representing an Euler angle."""
-        rad_pitch = math.radians(angle.pitch)
+    @overload
+    def from_angle(cls, __angle: 'Angle') -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_angle(cls, pitch: float, yaw: float, roll: float) -> 'Matrix': ...
+    @classmethod
+    def from_angle(
+        cls,
+        pitch: Union['Angle', float],
+        yaw: Optional[float]=0.0,
+        roll: Optional[float]=None,
+    ) -> 'Matrix':
+        """Return the rotation representing an Euler angle.
+
+        Either an Angle can be passed, or the raw pitch/yaw/roll angles.
+        """
+        if isinstance(pitch, Py_Angle):
+            rad_pitch = math.radians(pitch.pitch)
+            rad_yaw = math.radians(pitch.yaw)
+            rad_roll = math.radians(pitch.roll)
+        elif yaw is None or roll is None:
+            raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
+        else:
+            rad_pitch = math.radians(pitch)
+            rad_yaw = math.radians(yaw)
+            rad_roll = math.radians(roll)
+
         cos_p = math.cos(rad_pitch)
         sin_p = math.sin(rad_pitch)
-        rad_yaw = math.radians(angle.yaw)
         sin_y = math.sin(rad_yaw)
         cos_y = math.cos(rad_yaw)
-        rad_roll = math.radians(angle.roll)
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
