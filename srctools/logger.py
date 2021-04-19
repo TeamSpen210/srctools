@@ -209,11 +209,10 @@ def init_logging(
     (taking type, value, traceback).
     If the exception is a BaseException, the app will quit silently.
     """
-
-    class NewLogRecord(cast(logging.LogRecord, logging.getLogRecordFactory())):
+    oldLogRecord = cast(Type[logging.LogRecord], logging.getLogRecordFactory())
+    class NewLogRecord(oldLogRecord):
         """Allow passing an alias for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
-
         alias = None  # type: str
 
         def getMessage(self):
@@ -250,15 +249,6 @@ def init_logging(
         log_handler.setLevel(logging.DEBUG)
         log_handler.setFormatter(long_log_format)
         logger.addHandler(log_handler)
-
-        name, ext = os.path.splitext(filename)
-
-        # The .error log has copies of WARNING and above.
-        err_log_handler = get_handler(name + '.error' + ext)
-        err_log_handler.setLevel(logging.WARNING)
-        err_log_handler.setFormatter(long_log_format)
-
-        logger.addHandler(err_log_handler)
 
     if sys.stdout:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
