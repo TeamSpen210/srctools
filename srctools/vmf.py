@@ -1003,13 +1003,17 @@ class VisGroup:
 
     def set_visible(self, target: bool) -> None:
         """Find all objects with this ID, and set them to the given visibility."""
+        hidden = not target
         for ent in self.child_ents():
-            ent.vis_shown = ent.hidden = target
+            ent.vis_shown = target
+            ent.hidden = hidden
             for solid in ent.solids:
-                solid.vis_shown = solid.hidden = target
+                solid.vis_shown = target
+                solid.hidden = hidden
 
         for solid in self.child_solids():
             solid.vis_shown = solid.hidden = target
+            solid.hidden = hidden
 
     def child_ents(self) -> Iterator['Entity']:
         """Yields Entities in this visgroup."""
