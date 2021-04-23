@@ -204,8 +204,15 @@ cdef class BaseTokenizer:
         raise NotImplementedError
 
     def __iter__(self):
-        # Call ourselves until EOF is returned
-        return iter(self, EOF_TUP)
+        """Tokenizers are their own iterator."""
+        return self
+
+    def __next__(self):
+        """Iterate to produce a token, stopping at EOF."""
+        tok_and_val = self.next_token()
+        if (<tuple?> tok_and_val)[0] is EOF:
+            raise StopIteration
+        return tok_and_val
 
     def push_back(self, object tok not None, str value=None):
         """Return a token, so it will be reproduced when called again.

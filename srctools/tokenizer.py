@@ -215,9 +215,16 @@ class BaseTokenizer(abc.ABC):
             return next_val
         return self._get_token()
 
-    def __iter__(self) -> Iterator[Tuple[Token, str]]:
-        # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, ''))
+    def __iter__(self) -> 'BaseTokenizer':
+        """Tokenizers are their own iterator."""
+        return self
+
+    def __next__(self) -> Tuple[Token, str]:
+        """Iterate to produce a token, stopping at EOF."""
+        tok_and_val = self()
+        if tok_and_val[0] is Token.EOF:
+            raise StopIteration
+        return tok_and_val
 
     def push_back(self, tok: Token, value: str=None) -> None:
         """Return a token, so it will be reproduced when called again.
