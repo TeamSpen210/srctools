@@ -55,11 +55,11 @@ cdef:
 DEF BARE_DISALLOWED = tuple('"\'{};:[]()\n\t ')
 
 # Controls what syntax is allowed
-DEF FL_STRING_BRACKETS     = 0b0001
-DEF FL_ALLOW_ESCAPES       = 0b0010
-DEF FL_ALLOW_STAR_COMMENTS = 0b0100
+DEF FL_STRING_BRACKETS     = 1<<0
+DEF FL_ALLOW_ESCAPES       = 1<<1
+DEF FL_ALLOW_STAR_COMMENTS = 1<<2
 # If set, the file_iter is a bound read() method.
-DEF FL_FILE_INPUT          = 0b1000
+DEF FL_FILE_INPUT          = 1<<3
 
 DEF FILE_BUFFER = 1024
 
@@ -80,6 +80,7 @@ cdef class BaseTokenizer:
     cdef object pushback_val
 
     cdef public int line_num
+    cdef int flags
 
     def __init__(self, filename, error):
         # Use os method to convert to string.
@@ -105,6 +106,7 @@ cdef class BaseTokenizer:
 
         self.pushback_tok = self.pushback_val = None
         self.line_num = 1
+        self.flags = 0
 
     def __reduce__(self):
         """Disallow pickling Tokenizers.
@@ -173,7 +175,7 @@ cdef class BaseTokenizer:
 
     # Don't unpack, error_type should be a class.
     @cython.optimize.unpack_method_calls(False)
-    cdef inline _error(self, str message):
+    cdef inline _error(self, message: str):
         """C-private self.error()."""
         return self.error_type(
             message,
@@ -312,8 +314,6 @@ cdef class Tokenizer(BaseTokenizer):
     cdef object chunk_iter
     cdef int char_index # Position inside cur_chunk
 
-    cdef int flags
-
     # Private buffer, to hold string parts we're constructing.
     # Tokenizers are expected to be temporary, so we just never shrink.
     cdef Py_ssize_t buf_size  # 2 << x
@@ -345,13 +345,14 @@ cdef class Tokenizer(BaseTokenizer):
                 'Cannot parse binary data! Decode to the desired encoding, '
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )
-            
-        self.flags = (
-            FL_STRING_BRACKETS * string_bracket |
-            FL_ALLOW_ESCAPES * allow_escapes |
-            FL_ALLOW_STAR_COMMENTS * allow_star_comments |
-            0
-        )
+
+        cdef int flags = 0
+        if string_bracket:
+            flags |= FL_STRING_BRACKETS
+        if allow_escapes:
+            flags |= FL_ALLOW_ESCAPES
+        if allow_star_comments:
+            flags |= FL_ALLOW_STAR_COMMENTS
 
         # For direct strings, we can immediately assign that as our chunk,
         # and then set the iterable to indicate EOF after that.
@@ -369,7 +370,7 @@ cdef class Tokenizer(BaseTokenizer):
                 # This checks that it is indeed iterable.
                 self.chunk_iter = iter(data)
             else:
-                self.flags |= FL_FILE_INPUT
+                flags |= FL_FILE_INPUT
 
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
@@ -386,7 +387,8 @@ cdef class Tokenizer(BaseTokenizer):
                 filename = None
 
         BaseTokenizer.__init__(self, filename, error)
-        
+        self.flags |= flags
+
     @property
     def string_bracket(self) -> bool:
         """Check if [bracket] blocks are parsed as a single string-like block.
@@ -394,8 +396,7 @@ cdef class Tokenizer(BaseTokenizer):
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
         return self.flags & FL_STRING_BRACKETS != 0
-        
-        
+
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
         """Set if [bracket] blocks are parsed as a single string-like block.
@@ -411,8 +412,7 @@ cdef class Tokenizer(BaseTokenizer):
     def allow_escapes(self) -> bool:
         """Check if backslash escapes will be parsed."""
         return self.flags & FL_ALLOW_ESCAPES != 0
-        
-        
+
     @allow_escapes.setter
     def allow_escapes(self, bint value) -> None:
         """Set if backslash escapes will be parsed."""
@@ -425,8 +425,7 @@ cdef class Tokenizer(BaseTokenizer):
     def allow_star_comments(self) -> bool:
         """Check if /**/ style comments will be enabled."""
         return self.flags & FL_ALLOW_STAR_COMMENTS != 0
-        
-        
+
     @allow_star_comments.setter
     def allow_star_comments(self, bint value) -> None:
         """Set if /**/ style comments are enabled."""
