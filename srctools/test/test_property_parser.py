@@ -1,3 +1,5 @@
+import itertools
+
 import pytest
 
 from srctools.property_parser import Property, KeyValError, NoKeyError
@@ -24,16 +26,18 @@ def py_c_token(request):
         pp_mod.Tokenizer = orig_tok
 
 
-def assert_tree(first, second):
+def assert_tree(first, second, path=''):
     """Check that two property trees match exactly (including case)."""
-    assert first.name == second.name
-    assert first.real_name == second.real_name
-    assert first.has_children() == second.has_children()
+    assert first.name == second.name, (first, second)
+    assert first.real_name == second.real_name, (first, second)
+    assert first.has_children() == second.has_children(), (first, second)
     if first.has_children():
-        for child1, child2 in zip(first, second):
-            assert_tree(child1, child2)
+        for child1, child2 in itertools.zip_longest(first, second):
+            assert child1 is not None, f'None != {path}.{first.real_name}.{child2.name}'
+            assert child2 is not None, f'{path}.{first.real_name}.{child1.name} != None'
+            assert_tree(child1, child2, f'{path}.{first.real_name}')
     else:
-        assert first.value == second.value
+        assert first.value == second.value, (first, second)
 
 
 def test_constructor():
@@ -154,6 +158,16 @@ text"
             "lambda2" "should2"
             "replace2" "above2"
             }
+        "otherval" "blah"
+        "shouldnotreplace" [test_enabled]
+            {
+            "key" "value1"
+            "key" "value2"
+            }
+        "skipped" [test_disabled]
+            {
+            "ignore" "value"
+            }
         }
 '''
 
@@ -195,8 +209,13 @@ parse_result = P(None, [
         P('Replaced', [
             P('lambda2', 'should2'),
             P('replace2', 'above2'),
-        ])
-    ])
+        ]),
+        P('otherval', 'blah'),
+        P('shouldnotreplace', [
+            P('key', 'value1'),
+            P('key', 'value2'),
+        ]),
+    ]),
 ])
 del P
 
@@ -205,7 +224,7 @@ def test_parse(py_c_token):
     """Test parsing strings."""
     result = Property.parse(
         # iter() ensures sequence methods aren't used anywhere.
-        iter(parse_test.splitlines()),
+        iter(parse_test.splitlines(keepends=True)),
         # Check active and inactive flags are correctly treated.
         flags={
             'test_enabled': True,
@@ -266,6 +285,10 @@ def test_build():
             with b.Replaced:
                 b['lambda2']('should2')
                 b.replace2('above2')
+            b.otherval('blah')
+            with b.shouldnotreplace:
+                b.key('value1')
+                b.key('value2')
 
     assert_tree(parse_result, prop)
 

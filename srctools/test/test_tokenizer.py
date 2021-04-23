@@ -92,6 +92,16 @@ prop_parse_tokens = [
     (T.STRING, "lambda2"), (T.STRING, "should2"), T.NEWLINE,
     (T.STRING, "replace2"), (T.STRING, "above2"), T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "otherval"), (T.STRING, "blah"), T.NEWLINE,
+    (T.STRING, "shouldnotreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "key"), (T.STRING, "value1"), T.NEWLINE,
+    (T.STRING, "key"), (T.STRING, "value2"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "skipped"), (T.PROP_FLAG, "test_disabled"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "ignore"), (T.STRING, "value"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
 ]
 
@@ -179,6 +189,10 @@ def test_prop_tokens(py_c_token):
     test_list[27:28] = [''] + list(test_list[27].partition('"')) + ['', '', '']
     # They should be the same text though!
     assert ''.join(test_list) == prop_parse_test, "Bad test code!"
+
+    # Test an iterator.
+    tok = Tokenizer(iter(prop_parse_test.splitlines(keepends=True)), '', string_bracket=True)
+    check_tokens(tok, prop_parse_tokens)
 
     tok = Tokenizer(test_list, '', string_bracket=True)
     check_tokens(tok, prop_parse_tokens)
