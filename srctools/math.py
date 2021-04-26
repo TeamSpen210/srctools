@@ -1787,7 +1787,7 @@ Cy_Matrix = Py_Matrix = Matrix
 # Do it this way, so static analysis ignores this.
 _glob = globals()
 try:
-    from srctools import _math
+    from srctools import _math  # type: ignore
 except ImportError:
     pass
 else:

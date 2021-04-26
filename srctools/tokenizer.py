@@ -636,7 +636,7 @@ _py_escape_text = cy_escape_text = escape_text
 # Do it this way, so static analysis ignores this.
 _glob = globals()
 try:
-    from srctools import _tokenizer
+    from srctools import _tokenizer  # type: ignore
 except ImportError:
     pass
 else:
