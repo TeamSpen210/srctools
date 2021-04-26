@@ -521,6 +521,11 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
+    @overload
+    def float(self, key: str) -> builtins.float: ...
+    @overload
+    def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
+
     def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
@@ -535,6 +540,11 @@ class Property:
             return float(self._get_value(key))
         except (NoKeyError, ValueError, TypeError):
             return def_
+
+    @overload
+    def bool(self, key: str) -> builtins.bool: ...
+    @overload
+    def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
 
     def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
@@ -551,7 +561,12 @@ class Property:
         except LookupError:  # base for NoKeyError and KeyError
             return def_
 
-    def vec(self, key: str, x=0.0, y=0.0, z=0.0) -> _Vec:
+    def vec(
+        self, key: str,
+        x: builtins.float=0.0,
+        y: builtins.float=0.0,
+        z: builtins.float=0.0,
+    ) -> _Vec:
         """Return the given property, converted to a vector.
 
         If multiple keys with the same name are present, this will use the
