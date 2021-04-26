@@ -1557,17 +1557,12 @@ class Angle:
     def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
 
     @classmethod
-    def from_basis(
-        cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
-    ) -> 'Angle':
+    def from_basis(cls, **kwargs) -> 'Angle':
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
         """
-        return Py_Matrix.from_basis(x=x, y=y, z=z).to_angle()
+        return Py_Matrix.from_basis(**kwargs).to_angle()
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
