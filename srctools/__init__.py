@@ -206,7 +206,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     This is used for default arguments, since it then ensures any changes
     won't be kept, as well as allowing default.items() calls and similar.
     """
-    __slots__ = []
+    __slots__ = ()
 
     def __call__(self) -> '_EmptyMapping':
         # Just in case someone tries to instantiate this
@@ -232,7 +232,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return False
 
     def get(self, key: Any, default: ValT=None) -> ValT:
-        """get() or setdefault() always returns the default item."""
+        """get() always returns the default item."""
         return default
 
     def __bool__(self) -> bool:
@@ -247,20 +247,22 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         """Iteration yields no values."""
         return iter(())
 
-    def keys(self) -> '_EmptyKeysItemsView':
+    def keys(self) -> KeysView[Any]:
         """Return an empty keys() view singleton."""
         return EmptyKeysView
 
-    def items(self) -> '_EmptyKeysItemsView':
+    def items(self) -> ItemsView[Any, Any]:
         """Return an empty items() view singleton."""
         return EmptyItemsView
 
-    def values(self) -> '_EmptyValuesView':
+    def values(self) -> ValuesView[Any]:
         """Return an empty values() view singleton."""
         return EmptyValuesView
 
     # Mutable functions
-    setdefault = get
+    def setdefault(self, key: Any, default: ValT=None) -> ValT:
+        """setdefault() always returns the default item, but does not store it."""
+        return default
 
     @overload
     def update(self, __m: Mapping[Any, Any], **kwargs: Any) -> None: ...
@@ -285,17 +287,8 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
 
-
-class _EmptyKeysItemsView(KeysView[Any], ItemsView[Any, Any]):
-    """A Mapping view implementation that always acts empty, and supports set operations."""
-    # noinspection PyMissingConstructor
-    def __init__(self, name) -> None:
-        super().__init__(EmptyMapping)
-        self._name = f'Empty{name}View'
-
-    def __repr__(self) -> str:
-        return self._name
-
+class _EmptySetView:
+    """Common code between EmptyKeysView and EmptyItemsView."""
     def __len__(self) -> int:
         """This contains no keys/items."""
         return 0
@@ -370,9 +363,28 @@ class _EmptyKeysItemsView(KeysView[Any], ItemsView[Any, Any]):
         return _set_hash
 
 
+class _EmptyKeysView(_EmptySetView, KeysView[Any]):
+    """A Mapping view implementation that always acts empty, and supports set operations."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return 'srctools.EmptyKeysView'
+
+
+class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
+    """A Mapping view implementation that always acts empty, and supports set operations."""
+    __slots__ = ()
+
+    def __repr__(self) -> str:
+        return 'srctools.EmptyItemsView'
+
+
 class _EmptyValuesView(ValuesView[Any]):
     """A Mapping.values() implementation that always acts empty. This is not a set."""
     __slots__ = ()
+    def __repr__(self) -> str:
+        return 'srctools.EmptyValuesView'
+
     def __contains__(self, key: Any) -> bool:
         """All values are not present."""
         return False
@@ -388,8 +400,8 @@ class _EmptyValuesView(ValuesView[Any]):
 
 _set_hash = hash(frozenset())
 EmptyMapping = _EmptyMapping()
-EmptyKeysView = _EmptyKeysItemsView('Keys')
-EmptyItemsView = _EmptyKeysItemsView('Items')
+EmptyKeysView = _EmptyKeysView(EmptyMapping)
+EmptyItemsView = _EmptyItemsView(EmptyMapping)
 EmptyValuesView = _EmptyValuesView(EmptyMapping)
 
 
