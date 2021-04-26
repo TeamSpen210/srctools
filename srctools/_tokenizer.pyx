@@ -5,8 +5,9 @@ cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
 
 cdef extern from *:
-    unicode PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
-    unicode PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
+    const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
+    str PyUnicode_FromStringAndSize(const char *u, Py_ssize_t size)
+    str PyUnicode_FromKindAndData(int kind, const void *buffer, Py_ssize_t size)
 
 cdef object os_fspath
 from os import fspath as os_fspath
@@ -48,7 +49,6 @@ cdef:
 
     tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
     tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
-
 
 # Characters not allowed for bare names on a line.
 # Convert to tuple to only check the chars.
@@ -872,50 +872,53 @@ def escape_text(str text not None: str) -> str:
 
     Specifically, \, ", tab, and newline.
     """
+    # UTF8 = ASCII for the chars we care about, so we can just loop over the
+    # UTF8 data.
+    cdef Py_ssize_t size = 0
+    cdef Py_ssize_t final_size = 0
+    cdef int i, j
+    cdef char letter
+    cdef char *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
+    final_size = size
+    
     # First loop to compute the full string length, and check if we need to 
     # escape at all.
-    cdef Py_ssize_t final_len = 0
-    cdef Py_UCS4 str_letter
-    for str_letter in text:
-        if str_letter in ('\\', '"', '\t', '\n'):
-            final_len += 1
+    for i in range(size):
+        if in_buf[i] in b'\\"\t\n':
+            final_size += 1
 
-    if final_len == 0:  # Unchanged, return original
+    if size == final_size:  # Unchanged, return original
         return text
 
-    # UTF8 = ASCII for the chars we care about, so we can replace in that form.
-    cdef bytes enc_text = text.encode('utf8')
-    final_len += len(enc_text)
-
-    cdef char * out_buff
-    cdef char byt_letter
-    cdef int i = 0
+    cdef char *out_buff
+    j = 0
     try:
-        out_buff = <char *>PyMem_Malloc(final_len+1)
+        out_buff = <char *>PyMem_Malloc(final_size+1)
         if out_buff is NULL:
             raise MemoryError
-        for byt_letter in enc_text:
-            if byt_letter == b'\\':
-                out_buff[i] = b'\\'
-                i += 1
-                out_buff[i] = b'\\'
-            elif byt_letter == b'"':
-                out_buff[i] = b'\\'
-                i += 1
-                out_buff[i] = b'"'
-            elif byt_letter == b'\t':
-                out_buff[i] = b'\\'
-                i += 1
-                out_buff[i] = b't'
-            elif byt_letter == b'\n':
-                out_buff[i] = b'\\'
-                i += 1
-                out_buff[i] = b'n'
+        for i in range(size):
+            letter = in_buf[i]
+            if letter == b'\\':
+                out_buff[j] = b'\\'
+                j += 1
+                out_buff[j] = b'\\'
+            elif letter == b'"':
+                out_buff[j] = b'\\'
+                j += 1
+                out_buff[j] = b'"'
+            elif letter == b'\t':
+                out_buff[j] = b'\\'
+                j += 1
+                out_buff[j] = b't'
+            elif letter == b'\n':
+                out_buff[j] = b'\\'
+                j += 1
+                out_buff[j] = b'n'
             else:
-                out_buff[i] = byt_letter
-            i += 1
-        out_buff[final_len] = b'\0'
-        return PyUnicode_FromStringAndSize(out_buff, final_len)
+                out_buff[j] = letter
+            j += 1
+        out_buff[final_size] = b'\0'
+        return PyUnicode_FromStringAndSize(out_buff, final_size)
     finally:
         PyMem_Free(out_buff)
 
