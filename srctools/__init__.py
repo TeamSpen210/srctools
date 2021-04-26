@@ -146,17 +146,12 @@ def bool_as_int(val: object) -> str:
         return '0'
 
 
-BOOL_LOOKUP: Mapping[Union[str, bool, int, None], bool] = {
-    False: False,
-    0: False,
+BOOL_LOOKUP: Mapping[str, bool] = {
     '0': False,
     'no': False,
     'false': False,
     'n': False,
     'f': False,
-
-    1: True,
-    True: True,
     '1': True,
     'yes': True,
     'true': True,
@@ -174,6 +169,8 @@ def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT,
     """
     if val is None:
         return default
+    if isinstance(val, int):
+        return val != 0
     try:
         # Lookup bools, ints, and normal strings
         return BOOL_LOOKUP[val]
