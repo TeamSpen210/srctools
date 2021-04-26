@@ -1327,7 +1327,8 @@ class Matrix:
             return mat.to_angle()
         elif isinstance(other, Py_Matrix):
             mat = other.copy()
-            return mat._mat_mul(self)
+            mat._mat_mul(self)
+            return mat
         else:
             return NotImplemented
 
