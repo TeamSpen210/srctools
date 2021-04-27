@@ -107,6 +107,7 @@ prop_parse_tokens = [
 
 # Additional text not valid as a property.
 noprop_parse_test = """
+#letter_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ
 #ﬁmport test
 #EXclßÀde value
 #caseA\u0345\u03a3test
@@ -115,6 +116,7 @@ noprop_parse_test = """
 
 noprop_parse_tokens = [
     T.NEWLINE,
+    (T.DIRECTIVE, "letter_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz"), T.NEWLINE,
     (T.DIRECTIVE, "fimport"), (T.STRING, "test"), T.NEWLINE,
     (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
@@ -354,6 +356,17 @@ def test_bom(py_c_token):
     # And with chunks.
     tok = Tokenizer(list(text), '')
     check_tokens(tok, tokens)
+
+    # Test edge cases - characters with the first 1 or 2 bytes of the 3-byte
+    # BOM should be kept intact.\xef\xbb\xbf
+    matches_1 = b'\xef\xbe\xae'.decode('utf8') + '_test'
+    matches_2 = b'\xef\xbb\xae'.decode('utf8') + '_test'
+    assert matches_1.encode('utf8')[:1] == codecs.BOM_UTF8[:1]
+    assert matches_2.encode('utf8')[:2] == codecs.BOM_UTF8[:2]
+
+    assert next(Tokenizer(bom + 'test')) == (Token.STRING, 'test')
+    assert next(Tokenizer(matches_1)) == (Token.STRING, matches_1)
+    assert next(Tokenizer(matches_2)) == (Token.STRING, matches_2)
 
 
 def test_constructor(py_c_token):
