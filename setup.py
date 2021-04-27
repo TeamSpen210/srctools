@@ -98,5 +98,6 @@ setup(
     ],
     extras_require={
         'wx': ['wxPython'],  # VTF support.
+        'cy': ['cython'],  # Force Cython so extensions are rebuildable.
     }
 )
