@@ -2,24 +2,6 @@ from setuptools import setup, Extension, find_packages
 import sys
 import os
 
-# If the extension modules should be built.
-BUILD_EXT = True
-
-if BUILD_EXT:
-    try:
-        from Cython.Build import cythonize
-        c_ext = cpp_ext = '.pyx'
-    except ImportError:
-        print('Cython not installed, not compiling Cython modules.')
-        c_ext = '.c'
-        cpp_ext = '.cpp'
-        def cythonize(mod, **kwargs):
-            return mod
-else:
-    def cythonize(mod, **kwargs):
-        return []
-    c_ext = cpp_ext = ''
-
 WIN = sys.platform.startswith('win')
 
 SQUISH_CPP = [
@@ -56,10 +38,11 @@ setup(
     ],
     packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
-    ext_modules=cythonize([
+    ext_modules=[
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer" + c_ext],
+            sources=["srctools/_tokenizer.pyx"],
+            optional=True,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ],
@@ -68,8 +51,9 @@ setup(
             "srctools._cy_vtf_readwrite",
             include_dirs=[os.path.abspath("libsquish/")],
             language='c++',
+            optional=True,
             sources=[
-                "srctools/_cy_vtf_readwrite" + cpp_ext,
+                "srctools/_cy_vtf_readwrite.pyx",
             ] + SQUISH_CPP,
             extra_compile_args=[
                 '/openmp',
@@ -77,11 +61,12 @@ setup(
             ] if WIN else [
                 '-fopenmp',
             ],
-            extra_link_args=['/openmp' if WIN else '-fopenmp'],
+            extra_link_args=[] if WIN else ['-fopenmp'],
         ),
         Extension(
             "srctools._math",
-            sources=["srctools/_math" + c_ext],
+            sources=["srctools/_math.pyx"],
+            optional=True,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ] if WIN else [
@@ -108,9 +93,10 @@ setup(
     },
     python_requires='>=3.6, <4',
     install_requires=[
-        'importlib_resources',
+        # In stdlib after this.
+        "importlib_resources;python_version<'3.7'",
     ],
-    extras={
-        'wx': 'wxPython',  # VTF support.
+    extras_require={
+        'wx': ['wxPython'],  # VTF support.
     }
 )
