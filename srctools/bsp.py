@@ -16,7 +16,7 @@ from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
 
-from typing import List, Dict, Iterator, Union, Optional, BinaryIO, Tuple
+from typing import TypeVar, Any, List, Dict, Iterator, Union, Optional, BinaryIO, Tuple
 
 
 __all__ = [
@@ -30,7 +30,7 @@ BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
-
+T = TypeVar('T')
 
 class VERSIONS(Enum):
     """The BSP version numbers for various games."""
@@ -200,6 +200,54 @@ class StaticPropFlags(Flag):
     def value_sec(self) -> int:
         """Return the data for the secondary flag byte."""
         return self.value >> 8
+        
+class ParsedLump(Generic[T]):
+    """Allows access to parsed versions of lumps.
+    
+    When accessed, the corresponding lump is parsed into an object tree.
+    The lump is then cleared of data.
+    When the BSP is saved, the lump data is then constructed.
+    """ 
+    def __init__(self, lump: BSP_LUMPS, *extra: BSP_LUMPS) -> 'ParsedLump':
+        self.lump = lump
+        self.to_clear = (lump, ) + extra
+        self.__name__ = ''
+        self._read = None  # type: Optional[Callable[[BSP, bytes], T]]
+        self._write = None  # type: Optional[Callable[[BSP, T], bytes]]
+        
+    def __set_name__(self, owner, name) -> None:
+        self.__name__ = name
+        self.__objclass__ = owner
+        self._read = getattr(self.owner, '_lmp_read_' + name)
+        self._write = getattr(self.owner, '_lmp_write_' + name)
+        
+    @overload
+    def __get__(self, instance: None, owner=None) -> 'ParsedLump': ...
+    @overload
+    def __get__(self, instance: 'BSP', owner=None) -> T: ...
+        
+    def __get__(self, instance: Optional['BSP'], owner=None) -> Union['ParsedLump', T]:
+        """Read the lump, then discard."""
+        if instance is None:  # Accessed on the class.
+            return self
+        try:
+            return instance._parsed_lumps[self.__name__]
+        except KeyError:
+            pass
+        if self._read is None:
+            raise TypeError('ParsedLump.__set_name__ was never called!')
+        
+        data = instance.lumps[self.lump].data
+        result = instance._parsed_lumps[self.__name__] = self._read(instance, data)
+        for lump in self.to_clear:
+            instance.lumps[lump].data = b''
+        return result  
+        
+   def __set__(self, instance: Optional['BSP'], value: T) -> None:
+       """Discard lump data, then store."""
+      for lump in self.to_clear:
+          instance.lumps[lump].data = b''
+      instance._parsed_lumps[self.__name__] = value
 
 
 class BSP:
@@ -207,8 +255,9 @@ class BSP:
     def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
-        self.game_lumps = {}  # type: Dict[bytes, GameLump]
+        self.lumps = {}  # type: dict[BSP_LUMPS, Lump]
+        self._parsed_lumps = {}  # type: dict[BSP_LUMPS, Any]
+        self.game_lumps = {}  # type: dict[bytes, GameLump]
         self.header_off = 0
         self.version = version  # type: Optional[Union[VERSIONS, int]]
 
