@@ -25,7 +25,7 @@ setup(
 
     author='TeamSpen210',
     author_email='spencerb21@live.com',
-    license='unlicense',
+    license='mit',
 
     keywords='',
     classifiers=[
