@@ -1,3 +1,4 @@
+"""Build the Srctools package."""
 from setuptools import setup, Extension, find_packages
 import sys
 import os
@@ -57,7 +58,7 @@ setup(
             ] + SQUISH_CPP,
             extra_compile_args=[
                 '/openmp',
-                 # '/FAs',  # MS ASM dump
+                # '/FAs',  # MS ASM dump
             ] if WIN else [
                 '-fopenmp',
             ],
@@ -73,12 +74,13 @@ setup(
 
             ],
         ),
-    ]),
+    ],
 
     package_data={'srctools': [
         'fgd.lzma',
         'srctools.fgd',
         'py.typed',
+        '*.pxd',  # Cython headers
     ]},
 
     entry_points={
@@ -98,6 +100,6 @@ setup(
     ],
     extras_require={
         'wx': ['wxPython'],  # VTF support.
-        'cy': ['cython'],  # Force Cython so extensions are rebuildable.
+        'cy': ['cython'],  # Force Cython so extensions can be buildable.
     }
 )

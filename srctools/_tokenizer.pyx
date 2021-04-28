@@ -485,7 +485,7 @@ cdef class Tokenizer(BaseTokenizer):
         self.val_buffer[self.buf_pos] = new_char
         self.buf_pos += 1
 
-    cdef object buf_get_text(self):
+    cdef str buf_get_text(self):
         """Decode the buffer, and return the text."""
         out = PyUnicode_FromStringAndSize(self.val_buffer, self.buf_pos)
         # Don't bother resizing or clearing, the next append will overwrite.
