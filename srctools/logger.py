@@ -292,16 +292,12 @@ def init_logging(
         if not issubclass(exc_type, Exception):
             # It's subclassing BaseException (KeyboardInterrupt, SystemExit),
             # so we should quit without messages.
-            logging.shutdown()
             return
 
-        logger._log(
-            level=logging.ERROR,
-            msg='Uncaught Exception:',
-            args=(),
+        logger.error(
+            'Uncaught Exception:',
             exc_info=(exc_type, exc_value, exc_tb),
         )
-        logging.shutdown()
         if on_error is not None:
             on_error(exc_type, exc_value, exc_tb)
         # Call the original handler - that prints to the normal console.
