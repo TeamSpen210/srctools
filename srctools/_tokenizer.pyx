@@ -961,14 +961,16 @@ def escape_text(str text not None: str) -> str:
     finally:
         PyMem_Free(out_buff)
 
-cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
-    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
-
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
 from cpython.object cimport PyTypeObject
+cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
+    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>BaseTokenizer).tp_name = b"srctools.tokenizer.BaseTokenizer"
     (<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
-    (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.BaseTokenizer.skipping_newlines"
+    (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer._skip_newlines_iterator"
+try:
     escape_text.__module__ = 'srctools.tokenizer'
+except Exception:
+    pass  # Perfectly fine.

@@ -1424,6 +1424,15 @@ static CYTHON_INLINE PyObject *__Pyx__GetModuleGlobalName(PyObject *name);
 #define __Pyx_GetNameInClass(var, nmspace, name)  (var) = __Pyx__GetNameInClass(nmspace, name)
 static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name);
 
+/* PyObjectSetAttrStr.proto */
+#if CYTHON_USE_TYPE_SLOTS
+#define __Pyx_PyObject_DelAttrStr(o,n) __Pyx_PyObject_SetAttrStr(o, n, NULL)
+static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr_name, PyObject* value);
+#else
+#define __Pyx_PyObject_DelAttrStr(o,n)   PyObject_DelAttr(o,n)
+#define __Pyx_PyObject_SetAttrStr(o,n,v) PyObject_SetAttr(o,n,v)
+#endif
+
 /* CLineInTraceback.proto */
 #ifdef CYTHON_CLINE_IN_TRACEBACK
 #define __Pyx_CLineForTraceback(tstate, c_line)  (((CYTHON_CLINE_IN_TRACEBACK)) ? c_line : 0)
@@ -1634,6 +1643,7 @@ static const char __pyx_k_in_min[] = "in_min";
 static const char __pyx_k_mk_ang[] = "_mk_ang";
 static const char __pyx_k_mk_mat[] = "_mk_mat";
 static const char __pyx_k_mk_vec[] = "_mk_vec";
+static const char __pyx_k_module[] = "__module__";
 static const char __pyx_k_origin[] = "origin";
 static const char __pyx_k_result[] = "result";
 static const char __pyx_k_stride[] = "stride";
@@ -1785,6 +1795,7 @@ static PyObject *__pyx_n_s_min_pos;
 static PyObject *__pyx_n_s_mk_ang;
 static PyObject *__pyx_n_s_mk_mat;
 static PyObject *__pyx_n_s_mk_vec;
+static PyObject *__pyx_n_s_module;
 static PyObject *__pyx_n_s_n;
 static PyObject *__pyx_n_s_name;
 static PyObject *__pyx_n_s_new;
@@ -1810,6 +1821,7 @@ static PyObject *__pyx_n_s_south;
 static PyObject *__pyx_n_s_srctools__math;
 static PyObject *__pyx_kp_s_srctools__math_pyx;
 static PyObject *__pyx_n_s_srctools_math;
+static PyObject *__pyx_kp_u_srctools_math;
 static PyObject *__pyx_n_s_stride;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_to_matrix;
@@ -29865,6 +29877,8 @@ static PyObject *__pyx_pf_8srctools_5_math_5Angle_34transform(struct __pyx_obj_8
  *         the angle.
  *         """
  *         return AngleTransform.__new__(AngleTransform, self)             # <<<<<<<<<<<<<<
+ * 
+ * # Override the class' names to match the public one.
  */
   __Pyx_XDECREF(__pyx_r);
   __pyx_t_1 = PyTuple_New(1); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2376, __pyx_L1_error)
@@ -31435,6 +31449,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_mk_ang, __pyx_k_mk_ang, sizeof(__pyx_k_mk_ang), 0, 0, 1, 1},
   {&__pyx_n_s_mk_mat, __pyx_k_mk_mat, sizeof(__pyx_k_mk_mat), 0, 0, 1, 1},
   {&__pyx_n_s_mk_vec, __pyx_k_mk_vec, sizeof(__pyx_k_mk_vec), 0, 0, 1, 1},
+  {&__pyx_n_s_module, __pyx_k_module, sizeof(__pyx_k_module), 0, 0, 1, 1},
   {&__pyx_n_s_n, __pyx_k_n, sizeof(__pyx_k_n), 0, 0, 1, 1},
   {&__pyx_n_s_name, __pyx_k_name, sizeof(__pyx_k_name), 0, 0, 1, 1},
   {&__pyx_n_s_new, __pyx_k_new, sizeof(__pyx_k_new), 0, 0, 1, 1},
@@ -31460,6 +31475,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_srctools__math, __pyx_k_srctools__math, sizeof(__pyx_k_srctools__math), 0, 0, 1, 1},
   {&__pyx_kp_s_srctools__math_pyx, __pyx_k_srctools__math_pyx, sizeof(__pyx_k_srctools__math_pyx), 0, 0, 1, 0},
   {&__pyx_n_s_srctools_math, __pyx_k_srctools_math, sizeof(__pyx_k_srctools_math), 0, 0, 1, 1},
+  {&__pyx_kp_u_srctools_math, __pyx_k_srctools_math, sizeof(__pyx_k_srctools_math), 0, 1, 0, 0},
   {&__pyx_n_s_stride, __pyx_k_stride, sizeof(__pyx_k_stride), 0, 0, 1, 1},
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_to_matrix, __pyx_k_to_matrix, sizeof(__pyx_k_to_matrix), 0, 0, 1, 1},
@@ -32406,6 +32422,10 @@ static CYTHON_SMALL_CODE int __pyx_pymod_exec__math(PyObject *__pyx_pyinit_modul
   PyObject *__pyx_t_2 = NULL;
   int __pyx_t_3;
   int __pyx_t_4;
+  PyObject *__pyx_t_5 = NULL;
+  PyObject *__pyx_t_6 = NULL;
+  PyObject *__pyx_t_7 = NULL;
+  int __pyx_t_8;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -33166,6 +33186,208 @@ if (!__Pyx_RefNanny) {
   if (PyDict_SetItem((PyObject *)__pyx_ptype_8srctools_5_math_Angle->tp_dict, __pyx_n_s_from_basis, __pyx_t_1) < 0) __PYX_ERR(0, 2212, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
   PyType_Modified(__pyx_ptype_8srctools_5_math_Angle);
+
+  /* "srctools/_math.pyx":2384
+ * cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
+ *     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
+ * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+ */
+  __pyx_t_4 = (CYTHON_USE_TYPE_SLOTS != 0);
+  if (__pyx_t_4) {
+
+    /* "srctools/_math.pyx":2385
+ *     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
+ * if USE_TYPE_INTERNALS:
+ *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+ *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Vec)->tp_name = ((char const *)"srctools.math.Vec");
+
+    /* "srctools/_math.pyx":2386
+ * if USE_TYPE_INTERNALS:
+ *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+ *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Angle)->tp_name = ((char const *)"srctools.math.Angle");
+
+    /* "srctools/_math.pyx":2387
+ *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+ *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+ *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Matrix)->tp_name = ((char const *)"srctools.math.Matrix");
+
+    /* "srctools/_math.pyx":2388
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+ *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+ *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+ *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIter)->tp_name = ((char const *)"srctools.math._Vec_iterator");
+
+    /* "srctools/_math.pyx":2389
+ *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+ *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+ *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+ *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_AngleIter)->tp_name = ((char const *)"srctools.math._Angle_iterator");
+
+    /* "srctools/_math.pyx":2390
+ *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+ *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+ *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIterGrid)->tp_name = ((char const *)"srctools.math._Vec_grid_iterator");
+
+    /* "srctools/_math.pyx":2391
+ *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+ *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+ *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIterLine)->tp_name = ((char const *)"srctools.math.Vec_line_iterator");
+
+    /* "srctools/_math.pyx":2392
+ *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+ *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ * try:
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecTransform)->tp_name = ((char const *)"srctools.math._Vec_transform_cm");
+
+    /* "srctools/_math.pyx":2393
+ *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"             # <<<<<<<<<<<<<<
+ * try:
+ *     parse_vec_str.__module__ = 'srctools.math'
+ */
+    ((PyTypeObject *)__pyx_ptype_8srctools_5_math_AngleTransform)->tp_name = ((char const *)"srctools.math._Angle_transform_cm");
+
+    /* "srctools/_math.pyx":2384
+ * cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
+ *     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
+ * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
+ *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+ *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+ */
+  }
+
+  /* "srctools/_math.pyx":2394
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ * try:             # <<<<<<<<<<<<<<
+ *     parse_vec_str.__module__ = 'srctools.math'
+ *     to_matrix.__module__ = 'srctools.math'
+ */
+  {
+    __Pyx_PyThreadState_declare
+    __Pyx_PyThreadState_assign
+    __Pyx_ExceptionSave(&__pyx_t_5, &__pyx_t_6, &__pyx_t_7);
+    __Pyx_XGOTREF(__pyx_t_5);
+    __Pyx_XGOTREF(__pyx_t_6);
+    __Pyx_XGOTREF(__pyx_t_7);
+    /*try:*/ {
+
+      /* "srctools/_math.pyx":2395
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ * try:
+ *     parse_vec_str.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
+ *     to_matrix.__module__ = 'srctools.math'
+ *     lerp.__module__ = 'srctools.math'
+ */
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_parse_vec_str); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2395, __pyx_L4_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2395, __pyx_L4_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+      /* "srctools/_math.pyx":2396
+ * try:
+ *     parse_vec_str.__module__ = 'srctools.math'
+ *     to_matrix.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
+ *     lerp.__module__ = 'srctools.math'
+ * except Exception:
+ */
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_to_matrix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2396, __pyx_L4_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2396, __pyx_L4_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+      /* "srctools/_math.pyx":2397
+ *     parse_vec_str.__module__ = 'srctools.math'
+ *     to_matrix.__module__ = 'srctools.math'
+ *     lerp.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
+ * except Exception:
+ *     pass  # Perfectly fine.
+ */
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_lerp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2397, __pyx_L4_error)
+      __Pyx_GOTREF(__pyx_t_1);
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2397, __pyx_L4_error)
+      __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
+
+      /* "srctools/_math.pyx":2394
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ * try:             # <<<<<<<<<<<<<<
+ *     parse_vec_str.__module__ = 'srctools.math'
+ *     to_matrix.__module__ = 'srctools.math'
+ */
+    }
+    __Pyx_XDECREF(__pyx_t_5); __pyx_t_5 = 0;
+    __Pyx_XDECREF(__pyx_t_6); __pyx_t_6 = 0;
+    __Pyx_XDECREF(__pyx_t_7); __pyx_t_7 = 0;
+    goto __pyx_L9_try_end;
+    __pyx_L4_error:;
+    __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
+    __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
+
+    /* "srctools/_math.pyx":2398
+ *     to_matrix.__module__ = 'srctools.math'
+ *     lerp.__module__ = 'srctools.math'
+ * except Exception:             # <<<<<<<<<<<<<<
+ *     pass  # Perfectly fine.
+ */
+    __pyx_t_8 = __Pyx_PyErr_ExceptionMatches(((PyObject *)(&((PyTypeObject*)PyExc_Exception)[0])));
+    if (__pyx_t_8) {
+      __Pyx_ErrRestore(0,0,0);
+      goto __pyx_L5_exception_handled;
+    }
+    goto __pyx_L6_except_error;
+    __pyx_L6_except_error:;
+
+    /* "srctools/_math.pyx":2394
+ *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+ *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+ * try:             # <<<<<<<<<<<<<<
+ *     parse_vec_str.__module__ = 'srctools.math'
+ *     to_matrix.__module__ = 'srctools.math'
+ */
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_XGIVEREF(__pyx_t_6);
+    __Pyx_XGIVEREF(__pyx_t_7);
+    __Pyx_ExceptionReset(__pyx_t_5, __pyx_t_6, __pyx_t_7);
+    goto __pyx_L1_error;
+    __pyx_L5_exception_handled:;
+    __Pyx_XGIVEREF(__pyx_t_5);
+    __Pyx_XGIVEREF(__pyx_t_6);
+    __Pyx_XGIVEREF(__pyx_t_7);
+    __Pyx_ExceptionReset(__pyx_t_5, __pyx_t_6, __pyx_t_7);
+    __pyx_L9_try_end:;
+  }
 
   /* "srctools/_math.pyx":1
  * # cython: language_level=3, embedsignature=True, auto_pickle=False             # <<<<<<<<<<<<<<
@@ -35199,6 +35421,20 @@ static PyObject *__Pyx__GetNameInClass(PyObject *nmspace, PyObject *name) {
     }
     return result;
 }
+
+/* PyObjectSetAttrStr */
+#if CYTHON_USE_TYPE_SLOTS
+static CYTHON_INLINE int __Pyx_PyObject_SetAttrStr(PyObject* obj, PyObject* attr_name, PyObject* value) {
+    PyTypeObject* tp = Py_TYPE(obj);
+    if (likely(tp->tp_setattro))
+        return tp->tp_setattro(obj, attr_name, value);
+#if PY_MAJOR_VERSION < 3
+    if (likely(tp->tp_setattr))
+        return tp->tp_setattr(obj, PyString_AS_STRING(attr_name), value);
+#endif
+    return PyObject_SetAttr(obj, attr_name, value);
+}
+#endif
 
 /* CLineInTraceback */
 #ifndef CYTHON_CLINE_IN_TRACEBACK
