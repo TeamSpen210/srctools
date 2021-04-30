@@ -4,7 +4,7 @@ from typing import (
     Union, Type, TypeVar, Iterator, Sequence, List, Container,
     IO, Optional,
     Mapping, KeysView, ValuesView, ItemsView,
-    MutableMapping, Set,
+    MutableMapping, AbstractSet, Set,
     Any,
     overload,
     Iterable,
@@ -215,6 +215,9 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def __repr__(self) -> str:
         return "srctools.EmptyMapping"
 
+    def __reduce__(self) -> str:
+        return 'EmptyMapping'
+
     def __getitem__(self, key: Any) -> Any:
         """All key acesses fail."""
         raise KeyError(key)
@@ -289,6 +292,8 @@ class _EmptyMapping(MutableMapping[Any, Any]):
 
 class _EmptySetView:
     """Common code between EmptyKeysView and EmptyItemsView."""
+    __slots__ = ()
+
     def __len__(self) -> int:
         """This contains no keys/items."""
         return 0
@@ -305,23 +310,23 @@ class _EmptySetView:
 
     def _only_full(self, other) -> Any:
         """Only nonempty sets pass."""
-        if not isinstance(other, Set):
+        if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) > 0
 
     def _only_empty(self, other) -> Any:
         """Only empty sets pass."""
-        if not isinstance(other, Set):
+        if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) == 0
 
     def _always_true(self, other) -> Any:
         """Any set passes this comparison."""
-        return True if isinstance(other, Set) else NotImplemented
+        return True if isinstance(other, AbstractSet) else NotImplemented
 
     def _always_false(self, other) -> Any:
         """Any set fails this comparison."""
-        return False if isinstance(other, Set) else NotImplemented
+        return False if isinstance(other, AbstractSet) else NotImplemented
 
     def _binop_copy(self, other: Iterable[ValT]) -> Set[ValT]:
         """A binary operation which returns all the other values."""
@@ -356,6 +361,7 @@ class _EmptySetView:
 
     def isdisjoint(self, other) -> bool:
         """This set is always disjoint."""
+        iter(other)  # Check it's iterable.
         return True
 
     def __hash__(self) -> int:
@@ -370,6 +376,9 @@ class _EmptyKeysView(_EmptySetView, KeysView[Any]):
     def __repr__(self) -> str:
         return 'srctools.EmptyKeysView'
 
+    def __reduce__(self) -> str:
+        return 'EmptyKeysView'
+
 
 class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
     """A Mapping view implementation that always acts empty, and supports set operations."""
@@ -378,12 +387,18 @@ class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
     def __repr__(self) -> str:
         return 'srctools.EmptyItemsView'
 
+    def __reduce__(self) -> str:
+        return 'EmptyItemsView'
+
 
 class _EmptyValuesView(ValuesView[Any]):
     """A Mapping.values() implementation that always acts empty. This is not a set."""
     __slots__ = ()
     def __repr__(self) -> str:
         return 'srctools.EmptyValuesView'
+
+    def __reduce__(self) -> str:
+        return 'EmptyValuesView'
 
     def __contains__(self, key: Any) -> bool:
         """All values are not present."""
