@@ -870,8 +870,8 @@ class Camera:
     @classmethod
     def parse(cls, vmf_file: VMF, tree: Property) -> 'Camera':
         """Read a camera from a property_parser tree."""
-        pos = Vec.from_str(tree.find_key('position', '_').value)
-        targ = Vec.from_str(tree.find_key('look', '_').value, y=64)
+        pos = tree.vec('position')
+        targ = tree.vec('look', 0.0, 64.0, 0.0)
         return cls(vmf_file, pos, targ)
 
     def copy(self) -> 'Camera':
