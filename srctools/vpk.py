@@ -5,8 +5,8 @@ import operator
 from enum import Enum
 from types import TracebackType
 from typing import (
-    Union, Dict, Optional, List, Tuple, Iterator, BinaryIO, IO,
-    Type,
+    Union, Optional, Tuple, Type,
+    Dict, List, Iterator, Iterable, IO,
 )
 
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
@@ -30,7 +30,7 @@ class OpenModes(Enum):
         return self.value in 'wa'
 
 
-def iter_nullstr(file: BinaryIO) -> Iterator[str]:
+def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
     """Read a null-terminated ASCII string from the file.
     
     This continuously yields strings, with empty strings 
@@ -509,6 +509,7 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
+        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
         if ext:
             all_folders = [self._fileinfo.get(ext)]
         else:
