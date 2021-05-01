@@ -159,8 +159,11 @@ BOOL_LOOKUP: Mapping[str, bool] = {
     't': True,
 }
 
-
-def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT, float]:
+@overload
+def conv_bool(val: Union[str, bool, None]) -> bool: ...
+@overload
+def conv_bool(val: Union[str, bool, None], default: ValT) -> Union[ValT, bool]: ...
+def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT, bool]:
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
@@ -179,6 +182,10 @@ def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT,
         return BOOL_LOOKUP.get(val.casefold(), default)
 
 
+@overload
+def conv_float(val: str) -> float: ...
+@overload
+def conv_float(val: str, default: ValT) -> Union[ValT, float]: ...
 def conv_float(val: str, default: ValT = 0.0) -> Union[ValT, float]:
     """Converts a string to an float, using a default if it fails.
 
@@ -189,6 +196,10 @@ def conv_float(val: str, default: ValT = 0.0) -> Union[ValT, float]:
         return default
 
 
+@overload
+def conv_int(val: str) -> int: ...
+@overload
+def conv_int(val: str, default: ValT) -> Union[ValT, int]: ...
 def conv_int(val: str, default: ValT = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
@@ -234,7 +245,11 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         """EmptyMapping does not have any keys."""
         return False
 
-    def get(self, key: Any, default: ValT=None) -> ValT:
+    @overload
+    def get(self, key: Any) -> None: ...
+    @overload
+    def get(self, key: Any, default: ValT) -> ValT: ...
+    def get(self, key: Any, default: ValT=None) -> Optional[ValT]:
         """get() always returns the default item."""
         return default
 
