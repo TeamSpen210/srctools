@@ -379,7 +379,7 @@ class Frame:
             # For efficiency, our functions assume the view is contiguous.
             # If it isn't, make a copy to force that.
             if not view.c_contiguous:
-                view = view.tobytes()
+                view = memoryview(view.tobytes())
 
             # We also have to verify format size.
             required_size = format.frame_size(self.width, self.height)
