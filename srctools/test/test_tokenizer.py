@@ -248,10 +248,37 @@ def test_pushback(py_c_token):
     check_tokens(tokens, noprop_parse_tokens)
 
 
-def test_call_next(py_c_token):
+@pytest.mark.parametrize('token, val', [
+    (Token.EOF, ''),
+    (Token.NEWLINE, '\n'),
+    (Token.BRACE_OPEN, '{'),
+    (Token.BRACE_CLOSE, '}'),
+    (Token.BRACK_OPEN, '['),
+    (Token.BRACK_CLOSE, ']'),
+    (Token.COLON, ':'),
+    (Token.EQUALS, '='),
+    (Token.PLUS, '+'),
+    (Token.COMMA, ','),
+])
+def test_pushback_opvalues(py_c_token, token: Token, val: str) -> None:
+    """Test the operator tokens pushback the correct fixed value."""
+    tok: Tokenizer = py_c_token(['test data'], string_bracket=False)
+    tok.push_back(token, val)
+    assert tok() == (token, val)
+
+    tok.push_back(Token.STRING, 'push')
+    with pytest.raises(ValueError):  # Can only push back one at a time.
+        tok.push_back(Token.STRING, 'two_at_once')
+    assert tok() == (Token.STRING, 'push')
+
+    # Value is ignored for these token types.
+    tok.push_back(token, 'another_val')
+    assert tok() == (token, val)
+
+
+def test_call_next(py_c_token) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
-    Tokenizer = py_c_token
-    tok = Tokenizer('''{ "test" } "test" { + } ''', 'file')
+    tok: Tokenizer = py_c_token('''{ "test" } "test" { + } ''', 'file')
 
     tok_type, tok_value = tok()
     assert tok_type is Token.BRACE_OPEN and tok_value == '{'

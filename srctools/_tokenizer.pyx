@@ -229,42 +229,37 @@ cdef class BaseTokenizer:
         if self.pushback_tok is not None:
             raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
-            raise ValueError(repr(tok) + ' is not a Token!')
+            raise ValueError(f'{tok!r} is not a Token!')
 
         # Read this directly to skip the 'value' descriptor.
         cdef int tok_val = tok._value_
-        cdef str real_value
 
         if tok_val == 0: # EOF
-            real_value = ''
+            value = ''
         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
-            # The value can be anything, so just accept this.
-            self.pushback_tok = tok
-            self.pushback_val = value
-            return
+            # Value parameter is required.
+            if value is None:
+                raise ValueError(f'Value required for {tok!r}' '!')
         elif tok_val == 2:  # NEWLINE
-            real_value = '\n'
+            value = '\n'
         elif tok_val == 5:  # BRACE_OPEN
-            real_value = '{'
+            value = '{'
         elif tok_val == 6:  # BRACE_CLOSE
-            real_value = '}'
+            value = '}'
         elif tok_val == 11:  # BRACK_OPEN
-            real_value = '['
+            value = '['
         elif tok_val == 12:  # BRACK_CLOSE
-            real_value = ']'
+            value = ']'
         elif tok_val == 13:  # COLON
-            real_value = ':'
+            value = ':'
         elif tok_val == 14:  # EQUALS
-            real_value = '='
+            value = '='
         elif tok_val == 15:  # PLUS
-            real_value = '+'
+            value = '+'
         elif tok_val == 16: # COMMA
-            real_value = ','
+            value = ','
         else:
             raise ValueError(f'Unknown token {tok!r}')
-
-        if value is None:
-            raise ValueError(f'Value required for {tok!r}' '!') from None
 
         self.pushback_tok = tok
         self.pushback_val = value
