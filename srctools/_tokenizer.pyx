@@ -44,6 +44,7 @@ cdef:
     tuple COLON_TUP = (Token.COLON, ':')
     tuple EQUALS_TUP = (Token.EQUALS, '=')
     tuple PLUS_TUP = (Token.PLUS, '+')
+    tuple COMMA_TUP = (Token.COMMA, ',')
 
     tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
     tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
@@ -55,7 +56,7 @@ cdef:
 
 # Characters not allowed for bare names on a line.
 # Convert to tuple to only check the chars.
-DEF BARE_DISALLOWED = b'"\'{};:[]()\n\t '
+DEF BARE_DISALLOWED = b'"\'{};:,[]()\n\t '
 
 # Controls what syntax is allowed
 DEF FL_STRING_BRACKETS     = 1<<0
@@ -257,6 +258,8 @@ cdef class BaseTokenizer:
             real_value = '='
         elif tok_val == 15:  # PLUS
             real_value = '+'
+        elif tok_val == 16: # COMMA
+            real_value = ','
         else:
             raise ValueError(f'Unknown token {tok!r}')
 
@@ -577,6 +580,8 @@ cdef class Tokenizer(BaseTokenizer):
                 return PLUS_TUP
             elif next_char == b'=':
                 return EQUALS_TUP
+            elif next_char == b',':
+                return COMMA_TUP
             # First try simple operators & EOF.
 
             elif next_char == b'\n':
