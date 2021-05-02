@@ -257,7 +257,7 @@ class Vec(SupportsRound['Vec']):
     """
     __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
-    INV_AXIS = {
+    INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -269,7 +269,7 @@ class Vec(SupportsRound['Vec']):
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    }
 
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
@@ -1337,7 +1337,7 @@ class Matrix:
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __imatmul__(self, other):
+    def __imatmul__(self, other) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
