@@ -282,7 +282,7 @@ def test_attr_conv_types(attribute: Attribute, attr: str, typ: type) -> None:
     (ValueType.COLOUR, 'val_color', Color(0, 0, 0, 255), bytes([0, 0, 0, 255]), '0 0 0 255'),
     (ValueType.COLOUR, 'val_color', Color(192, 64, 192, 32), bytes([192, 64, 192, 32]), '192 64 192 32'),
     (ValueType.BINARY, 'val_bin', b'\x34\xFF\x20\x3D', b'\x34\xFF\x20\x3D', '34 FF 20 3D'),
-    (ValueType.TIME, 'val_time', 60.5, b'\0\0rB', '60.5'),
+    (ValueType.TIME, 'val_time', 60.5, bytes.fromhex('48 3b 09 00'), '60.5'),
     (ValueType.VEC2, 'val_vec2', Vec2(36.5, -12.75), bytes.fromhex('00 00 12 42  00 00 4c c1'), '36.5 -12.75'),
     (ValueType.VEC3, 'val_vec3', Vec3(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
     (ValueType.VEC4, 'val_vec4', Vec4(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
