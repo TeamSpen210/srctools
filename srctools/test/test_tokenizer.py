@@ -1,4 +1,4 @@
-from itertools import zip_longest
+from itertools import zip_longest, tee
 from typing import Type, Tuple
 
 import pytest
@@ -154,14 +154,15 @@ def check_tokens(tokenizer, tokens):
     __tracebackhide__ = True
 
     sentinel = object()
-    tokenizer_iter = iter(tokenizer)
+    tokenizer_iter, tokenizer_backup = tee(tokenizer, 2)
     tok_test_iter = iter(tokens)
     for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=sentinel), start=1):
         # Check if either is too short - we need zip_longest() for that.
         if token is sentinel:
-            pytest.fail('{}: Tokenizer ended early - needed {}!'.format(
+            pytest.fail('{}: Tokenizer ended early - needed {}, got {}!'.format(
                 i,
                 [comp_token] + list(tok_test_iter),
+                list(tokenizer_backup),
             ))
         if comp_token is sentinel:
             pytest.fail('{}: Tokenizer had too many values - extra = {}!'.format(
@@ -394,6 +395,11 @@ def test_bom(py_c_token):
     assert next(Tokenizer(bom + 'test')) == (Token.STRING, 'test')
     assert next(Tokenizer(matches_1)) == (Token.STRING, matches_1)
     assert next(Tokenizer(matches_2)) == (Token.STRING, matches_2)
+
+    # Test strings that are less than 3 bytes long.
+    check_tokens(Tokenizer(['e']), [(Token.STRING, 'e')])
+    check_tokens(Tokenizer(['e', 'x']), [(Token.STRING, 'ex')])
+    check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
 
 
 def test_constructor(py_c_token):
