@@ -69,7 +69,7 @@ cdef inline object _make_tuple(double x, double y, double z):
         return tup
     else: # Not CPython, use more correct but slow method.
         with cython.optimize.unpack_method_calls(False):
-            return tuple_new(*tup)
+            return tuple_new(Vec_tuple, tup)
 
 
 cdef inline double norm_ang(double val):
@@ -2379,8 +2379,6 @@ cdef class Angle:
 # This fixes all the methods too, though not in exceptions.
 
 from cpython.object cimport PyTypeObject
-cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
-    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
