@@ -396,6 +396,7 @@ def test_deduce_type_adv() -> None:
         print(deduce_type(range(5)))
 
 
+# TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation
 @pytest.mark.parametrize('filename', [
     'keyvalues2',
     'binary_v2',  # HL2's dmxconvert
@@ -594,6 +595,23 @@ def test_export_bin_roundtrip(version: int) -> None:
     buf.seek(0)
     rnd_root, rnd_name, rnd_ver = Element.parse(buf)
 
+    assert rnd_name == fmt_name
+    assert rnd_ver == fmt_version
+    # Check when parsed it matches the assertions above.
+    test_parse('', root=rnd_root)
+
+
+@pytest.mark.parametrize('flat', [False, True], ids=['indented', 'flat'])
+def test_export_kv2_roundtrip(flat: bool) -> None:
+    """Test exporting keyvalues2 roundtrip."""
+    with open(f'dmx_samples/keyvalues2.dmx', 'rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+
+    buf = BytesIO()
+    root.export_kv2(buf, fmt_name, fmt_version, flat=flat)
+    buf.seek(0)
+
+    rnd_root, rnd_name, rnd_ver = Element.parse(buf)
     assert rnd_name == fmt_name
     assert rnd_ver == fmt_version
     # Check when parsed it matches the assertions above.

@@ -1,14 +1,15 @@
 """Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
+import struct
 from enum import Enum
+from collections import Counter
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
     Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterator,
-    Set, Mapping, Any,
+    Set, Mapping, Any, ValuesView,
 )
 from struct import Struct, pack
 import io
 import re
-import _collections_abc
 from uuid import UUID, uuid4 as get_uuid
 
 from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle
@@ -146,24 +147,6 @@ TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
 CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
 # And type -> size, excluding str/bytes.
 SIZES: Dict[ValueType, int]
-
-# Python types to their matching ValueType.
-TYPE_TO_VALTYPE: Dict[type, ValueType] = {
-    # : ValueType.ELEMENT,
-    int:  ValueType.INT,
-    float: ValueType.FLOAT,
-    bool: ValueType.BOOL,
-    str: ValueType.STRING,
-    bytes: ValueType.BINARY,
-    # Time: ValueType.TIME,
-    Color: ValueType.COLOR,
-    Vec2: ValueType.VEC2,
-    Vec3: ValueType.VEC3,
-    Vec4: ValueType.VEC4,
-    AngleTup: ValueType.ANGLE,
-    Quaternion: ValueType.QUATERNION,
-    Matrix: ValueType.MATRIX,
-}
 
 
 def parse_vector(text: str, count: int) -> List[float]:
@@ -436,6 +419,8 @@ class Attribute(Generic[ValueT], _ValProps):
 
     def __setitem__(self, ind, value):
         """Set a specific array element to a value."""
+        if not isinstance(self._value, list):
+            raise ValueError('Cannot index singular elements.')
         [val_type, result] = deduce_type_single(value)
         if val_type is not self._typ:
             # Try converting.
@@ -466,6 +451,26 @@ class Attribute(Generic[ValueT], _ValProps):
             return iter(self._value)
         else:
             return iter((self._value, ))
+
+    def append(self, value) -> None:
+        """Append an item to the array.
+
+        If not already an array, it is converted to one
+        holding the existing value.
+        """
+        if not isinstance(self._value, list):
+            self._value = [self._value]
+        [val_type, result] = deduce_type_single(value)
+        if val_type is not self._typ:
+            # Try converting.
+            try:
+                func = TYPE_CONVERT[self._typ, val_type]
+            except KeyError:
+                raise ValueError(
+                    f'Cannot convert ({val_type}) to {self._typ} type!')
+            self._value.append(func(result))
+        else:
+            self._value.append(result)
 
 
 class Element(MutableMapping[str, Attribute]):
@@ -526,7 +531,7 @@ class Element(MutableMapping[str, Attribute]):
             fmt_vers = 0
 
         if enc_name == b'keyvalues2':
-            result = cls.parse_kv2(io.TextIOWrapper(file), enc_vers)
+            result = cls.parse_kv2(io.TextIOWrapper(file, encoding='ascii'), enc_vers)
         elif enc_name == b'binary':
             result = cls.parse_bin(file, enc_vers)
         else:
@@ -840,11 +845,20 @@ class Element(MutableMapping[str, Attribute]):
         The format name and version can be anything, to indicate which
         application should read the file.
         """
+        if not (0 <= version <= 5):
+            raise ValueError(f'Invalid version: {version} is not within range 0-5!')
         # Write the header, and determine which string DB variant to use.
-        file.write(
-            b'<!-- dmx encoding binary %i format %b %i -->\n\0'
-            % (version, fmt_name.encode('ascii'), fmt_ver)
-        )
+        if version == 0:
+            # "legacy" header.
+            file.write(
+                b'<!-- DMXVersion %b_v2 -->\n\0'
+                % (fmt_name.encode('ascii'), )
+            )
+        else:
+            file.write(
+                b'<!-- dmx encoding binary %i format %b %i -->\n\0'
+                % (version, fmt_name.encode('ascii'), fmt_ver)
+            )
         if version >= 5:
             stringdb_size = stringdb_ind = '<i'
         elif version >= 4:
@@ -944,7 +958,10 @@ class Element(MutableMapping[str, Attribute]):
                 else:
                     conv_func = TYPE_CONVERT[attr.type, ValueType.BINARY]
                     for any_data in attr:
-                        file.write(conv_func(any_data))
+                        try:
+                            file.write(conv_func(any_data))
+                        except struct.error:
+                            raise ValueError(f'Cannot convert {attr.type}({any_data}) to binary!')
 
     def export_kv2(
         self, file: IO[bytes],
@@ -958,9 +975,95 @@ class Element(MutableMapping[str, Attribute]):
         application should read the file.
         """
         file.write(
-            b'<!-- dmx encoding keyvalues2 1 format %s %s -->\n\0'
+            b'<!-- dmx encoding keyvalues2 1 format %b %i -->\r\n'
             % (fmt_name.encode('ascii'), fmt_ver)
         )
+        # First, iterate through to find all "root" elements.
+        # Those are added with UUIDS, and are put at the end of the file.
+        # If `flat` is enabled, all elements are like that. Otherwise,
+        # it's only self and any used multiple times.
+
+        elements: List[Element] = [self]
+        use_count: Dict[UUID, int] = {self.uuid: 2}
+
+        # Use the fact that list iteration will continue through appended items.
+        for elem in elements:
+            for attr in elem.values():
+                if attr.type is not ValueType.ELEMENT:
+                    continue
+                for subelem in attr:
+                    if subelem is None or subelem.type == STUB:
+                        continue
+                    if subelem.uuid not in use_count:
+                        use_count[subelem.uuid] = 1
+                        elements.append(subelem)
+                    else:
+                        use_count[subelem.uuid] += 1
+
+        if flat:
+            roots = set(use_count)
+        else:
+            roots = {uuid for uuid, count in use_count.items() if count > 1}
+
+        last = elements[-1]
+        for elem in elements:
+            if flat or elem.uuid in roots:
+                if elem is not self:
+                    file.write(b'\r\n')
+                elem._export_kv2(file, b'', roots)
+                file.write(b'\r\n')
+
+    def _export_kv2(
+        self,
+        file: IO[bytes],
+        indent: bytes,
+        roots: Set[UUID],
+    ) -> None:
+        """Export a single element to the file.
+
+        @param indent: The tabs to prepend each line with.
+        @param roots: The set of all elements exported at toplevel, and so
+            needs to be referenced by UUID instead of inline.
+        """
+        indent_child = indent + b'\t'
+        file.write(b'"%b"\r\n%b{\r\n' % (self.type.encode('ascii'), indent))
+        file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
+        file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode('ascii')))
+        for attr in self.values():
+            file.write(b'%b"%b" ' % (
+                indent_child,
+                attr.name.encode('ascii'),
+            ))
+            if attr.is_array:
+                file.write(b'"%b_array"\r\n%b[\r\n' % (attr.type.value.encode('ascii'), indent_child))
+                indent_arr = indent + b'\t\t'
+                for i, child in enumerate(attr):
+                    file.write(indent_arr)
+                    if isinstance(child, Element):
+                        if child.uuid in roots:
+                            file.write(b'"element" "%b"' % str(child.uuid).encode('ascii'))
+                        else:
+                            child._export_kv2(file, indent_arr, roots)
+                    else:
+                        str_value = TYPE_CONVERT[attr.type, ValueType.STRING](child).encode('ascii')
+                        file.write(b'"%b"' % (str_value, ))
+                    if i == len(attr) - 1:
+                        file.write(b'\r\n')
+                    else:
+                        file.write(b',\r\n')
+                file.write(b'%b]\r\n' % (indent_child, ))
+            elif isinstance(attr._value, Element):
+                if attr.val_elem.uuid in roots:
+                    file.write(b'"element" "%b"\r\n' % str(attr.val_elem.uuid).encode('ascii'))
+                else:
+                    attr.val_elem._export_kv2(file, indent_child, roots)
+                    file.write(b'\r\n')
+            else:
+                file.write(b'"%b" "%b"\r\n' % (
+                    attr.type.value.encode('ascii'),
+                    attr.val_str.encode('ascii'),
+                ))
+        file.write(indent + b'}')
 
     def __repr__(self) -> str:
         if self.type and self.name:
@@ -980,6 +1083,10 @@ class Element(MutableMapping[str, Attribute]):
         """Return a view of the valid (casefolded) keys for this element."""
         return self._members.keys()
 
+    def values(self) -> ValuesView[Attribute]:
+        """Return a view of the attributes for this element."""
+        return self._members.values()
+
     def __getitem__(self, name: str) -> Attribute:
         return self._members[name.casefold()]
 
@@ -998,7 +1105,7 @@ class Element(MutableMapping[str, Attribute]):
             value.name = name
             self._members[name.casefold()] = value
             return
-        val_type, result = deduce_type_single(value)
+        val_type, result = deduce_type(value)
         self._members[name.casefold()] = Attribute(name, val_type, result)
 
     def clear(self) -> None:
@@ -1073,6 +1180,24 @@ class Element(MutableMapping[str, Attribute]):
 
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
+
+# Python types to their matching ValueType.
+TYPE_TO_VALTYPE: Dict[type, ValueType] = {
+    Element: ValueType.ELEMENT,
+    int: ValueType.INT,
+    float: ValueType.FLOAT,
+    bool: ValueType.BOOL,
+    str: ValueType.STRING,
+    bytes: ValueType.BINARY,
+    # Time: ValueType.TIME,
+    Color: ValueType.COLOR,
+    Vec2: ValueType.VEC2,
+    Vec3: ValueType.VEC3,
+    Vec4: ValueType.VEC4,
+    AngleTup: ValueType.ANGLE,
+    Quaternion: ValueType.QUATERNION,
+    Matrix: ValueType.MATRIX,
+}
 
 
 def deduce_type(value):
@@ -1227,7 +1352,7 @@ def _fmt_float(x: float) -> str:
         return res[:-1]
     return res
 
-_conv_float_to_string = lambda n: str(n).replace('.0', '')
+_conv_float_to_string = _fmt_float
 _conv_float_to_integer = int
 _conv_float_to_bool = bool
 _conv_float_to_time = float
