@@ -1,5 +1,6 @@
 """Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
 import struct
+import sys
 from enum import Enum
 from collections import Counter
 from typing import (
@@ -1403,7 +1404,14 @@ _conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
 
 # Binary conversions.
 _conv_string_to_binary = bytes.fromhex
-_conv_binary_to_string = lambda byt: byt.hex(' ', 1).upper()
+if sys.version_info >= (3, 8, 0):
+    def _conv_binary_to_string(byt: bytes) -> str:
+        """Format each byte, seperated by spaces."""
+        return byt.hex(' ', 1).upper()
+else:
+    def _conv_binary_to_string(byt: bytes) -> str:
+        """The parameters for bytes.hex aren't available, do it ourselves."""
+        return ' '.join([format(x, '02X') for x in byt])
 
 
 def _binconv_basic(name: str, fmt: str):
