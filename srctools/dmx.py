@@ -510,8 +510,8 @@ class Element(MutableMapping[str, Attribute]):
         else:
             raise ValueError('Unterminated DMX heading comment!')
         match = re.match(
-            br'<!--\s*dmx\s+encoding\s+([a-z0-9]+)\s+([0-9]+)\s+'
-            br'format\s+([a-z0-9]+)\s+([0-9]+)\s*-->', header,
+            br'<!--\s*dmx\s+encoding\s+(\S+)\s+([0-9]+)\s+'
+            br'format\s+(\S+)\s+([0-9]+)\s*-->', header,
         )
         if match is not None:
             enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
