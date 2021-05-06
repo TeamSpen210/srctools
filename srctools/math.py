@@ -901,7 +901,7 @@ class Vec(SupportsRound['Vec']):
             return self.x, self.y
         raise KeyError('Bad axis "{}"'.format(axis))
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> Vec_tuple:
         """Return the Vector as a tuple."""
         return Vec_tuple(round(self.x, 6), round(self.y, 6), round(self.z, 6))
 
