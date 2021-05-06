@@ -961,6 +961,69 @@ def escape_text(str text not None: str) -> str:
     finally:
         PyMem_Free(out_buff)
 
+
+# This is a replacement for a method in VPK, which is very slow normally
+# since it has to accumulate character by character.
+cdef class _VPK_IterNullstr:
+    """Read a null-terminated ASCII string from the file.
+
+    This continuously yields strings, with empty strings
+    indicting the end of a section.
+    """
+    cdef object file
+    cdef uchar *chars
+    cdef Py_ssize_t size
+    cdef Py_ssize_t used
+
+    def __cinit__(self):
+        self.used = 0
+        self.size = 64
+        self.chars = <uchar *>PyMem_Malloc(self.size)
+        if self.chars is NULL:
+            raise MemoryError
+
+    def __dealloc__(self):
+        PyMem_Free(self.chars)
+
+    def __init__(self, file):
+        self.file = file
+        
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef bytes data
+        cdef uchar *temp
+        while True:
+            data = self.file.read(1)
+            if len(data) == 0:
+                res = self.chars[:self.used]
+                self.used = 0
+                raise Exception(f'Reached EOF without null-terminator in {res!r}' '!')
+            elif len(data) > 1:
+                raise ValueError('Asked to read 1 byte, got multiple?')
+            elif (<const char *>data)[0] == 0x00:
+                # Blank strings are saved as ' '
+                if self.used == 1 and self.chars[0] == b' ':
+                    self.used = 0
+                    return ''
+                if self.used == 0:  # Blank string, this ends the array.
+                    self.used = 0
+                    raise StopIteration
+                else:
+                    res = self.chars[:self.used].decode('ascii')
+                    self.used = 0
+                    return res
+            else:
+                if self.used == self.size:
+                    self.size *= 2
+                    temp = <uchar *>PyMem_Realloc(self.chars, self.size)
+                    if temp == NULL:
+                        raise MemoryError
+                    self.chars = temp
+                self.chars[self.used] = (<const char *>data)[0]
+                self.used += 1
+
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
 from cpython.object cimport PyTypeObject

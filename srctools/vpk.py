@@ -688,7 +688,12 @@ def script_write(args: List[str]) -> None:
                 if os.path.exists(arch_filename) and os.stat(arch_filename).st_size > arch_len:
                     current_arch += 1
                     arch_filename = get_arch_filename(vpk_name_base, current_arch)
-                
+
+
+try:
+    from srctools._tokenizer import _VPK_IterNullstr as iter_nullstr  # type: ignore
+except ImportError:
+    pass
                 
 if __name__ == '__main__':
     import sys
