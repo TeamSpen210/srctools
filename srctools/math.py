@@ -440,12 +440,12 @@ class Vec(SupportsRound['Vec']):
         point_coll: Iterable[Vec]
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
-                [[first, *point_coll]] = points
+                [[first, *point_coll]] = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             try:
-                first, *point_coll = points
+                first, *point_coll = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise TypeError(
                     'Vec.bbox() expected at '
@@ -1337,7 +1337,7 @@ class Matrix:
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __imatmul__(self, other) -> 'Matrix':
+    def __imatmul__(self, other: object) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self

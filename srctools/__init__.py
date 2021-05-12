@@ -8,7 +8,7 @@ from typing import (
     Any,
     overload,
     Iterable,
-    Tuple,
+    Tuple, NoReturn,
 )
 from types import TracebackType
 from collections import deque
@@ -163,7 +163,7 @@ BOOL_LOOKUP: Mapping[str, bool] = {
 def conv_bool(val: Union[str, bool, None]) -> bool: ...
 @overload
 def conv_bool(val: Union[str, bool, None], default: ValT) -> Union[ValT, bool]: ...
-def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT, bool]:
+def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -> Union[ValT, bool]:
     """Converts a string to a boolean, using a default if it fails.
 
     Accepts any of '0', '1', 'false', 'true', 'yes', 'no'.
@@ -186,7 +186,7 @@ def conv_bool(val: Union[str, bool, None], default: ValT = False) -> Union[ValT,
 def conv_float(val: str) -> float: ...
 @overload
 def conv_float(val: str, default: ValT) -> Union[ValT, float]: ...
-def conv_float(val: str, default: ValT = 0.0) -> Union[ValT, float]:
+def conv_float(val: str, default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
     """Converts a string to an float, using a default if it fails.
 
     """
@@ -200,7 +200,7 @@ def conv_float(val: str, default: ValT = 0.0) -> Union[ValT, float]:
 def conv_int(val: str) -> int: ...
 @overload
 def conv_int(val: str, default: ValT) -> Union[ValT, int]: ...
-def conv_int(val: str, default: ValT = 0) -> Union[ValT, int]:
+def conv_int(val: str, default: Union[ValT, int] = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
     """
@@ -278,7 +278,11 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return EmptyValuesView
 
     # Mutable functions
-    def setdefault(self, key: Any, default: ValT=None) -> ValT:
+    @overload
+    def setdefault(self, key: Any) -> None: ...
+    @overload
+    def setdefault(self, key: Any, default: ValT=...) -> ValT: ...
+    def setdefault(self, key: Any, default: ValT=None) -> Optional[ValT]:
         """setdefault() always returns the default item, but does not store it."""
         return default
 
@@ -286,14 +290,19 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def update(self, __m: Mapping[Any, Any], **kwargs: Any) -> None: ...
     @overload
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
-
+    @overload
+    def update(self, **kwargs: Any) -> None: ...
     def update(self, *args, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
         {}.update(*args, **kargs)
 
-    __marker = object()
+    __marker: Any = object()
+    @overload
+    def pop(self, key: Any) -> NoReturn: ...
+    @overload
+    def pop(self, key: Any, default: ValT = __marker) -> ValT: ...
 
     def pop(self, key: Any, default: ValT = __marker) -> ValT:
         """Returns the default value, or raises KeyError if not present."""
@@ -323,56 +332,38 @@ class _EmptySetView:
 
     # Set ops. A lot can share implementations.
 
-    def _only_full(self, other) -> Any:
-        """Only nonempty sets pass."""
+    def __ne__(self, other) -> bool:
+        """All nonempty sets are non-equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) > 0
 
-    def _only_empty(self, other) -> Any:
-        """Only empty sets pass."""
+    def __eq__(self, other) -> bool:
+        """Only empty sets are equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) == 0
 
-    def _always_true(self, other) -> Any:
-        """Any set passes this comparison."""
+    def __le__(self, other) -> bool:
+        """We are <= to all sets."""
         return True if isinstance(other, AbstractSet) else NotImplemented
 
-    def _always_false(self, other) -> Any:
-        """Any set fails this comparison."""
+    def __gt__(self, other) -> bool:
+        """We are never > any set."""
         return False if isinstance(other, AbstractSet) else NotImplemented
 
-    def _binop_copy(self, other: Iterable[ValT]) -> Set[ValT]:
+    def __or__(self, other: Iterable[ValT]) -> Set[ValT]:
         """A binary operation which returns all the other values."""
         if not isinstance(other, Iterable):
             return NotImplemented
         return set(other)
 
-    def _binop_drop(self, other: Iterable[ValT]) -> Set[ValT]:
+    def __and__(self, other: Iterable[ValT]) -> Set[ValT]:
         """A binary operation producing no values."""
         if not isinstance(other, Iterable):
             return NotImplemented
         deque(other, 0)  # Consume all values.
         return set()
-
-    __eq__ = _only_empty
-    __ne__ = _only_full
-    __lt__ = _only_full
-    __le__ = _always_true
-    __gt__ = _always_false
-    __ge__ = _only_empty
-
-    __and__ = _binop_drop
-    __rand__ = _binop_drop
-    __or__ = _binop_copy
-    __ror__ = _binop_copy
-    __sub__ = _binop_drop
-    __rsub__ = _binop_copy
-    __xor__ = _binop_copy
-    __rxor__ = _binop_copy
-
-    del _only_empty, _only_full, _always_false, _binop_drop, _binop_copy
 
     def isdisjoint(self, other) -> bool:
         """This set is always disjoint."""
@@ -394,6 +385,16 @@ class _EmptyKeysView(_EmptySetView, KeysView[Any]):
     def __reduce__(self) -> str:
         return 'EmptyKeysView'
 
+    # TODO: MyPy drops the generic vars if these are inherited.
+    __lt__ = _EmptySetView.__ne__
+    __ge__ = _EmptySetView.__eq__
+    __rand__ = _EmptySetView.__and__
+    __ror__ = _EmptySetView.__or__
+    __sub__ = _EmptySetView.__and__
+    __rsub__ = _EmptySetView.__or__
+    __xor__ = _EmptySetView.__or__
+    __rxor__ = _EmptySetView.__or__
+
 
 class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
     """A Mapping view implementation that always acts empty, and supports set operations."""
@@ -404,6 +405,15 @@ class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
 
     def __reduce__(self) -> str:
         return 'EmptyItemsView'
+
+    __lt__ = _EmptySetView.__ne__
+    __ge__ = _EmptySetView.__eq__
+    __rand__ = _EmptySetView.__and__
+    __ror__ = _EmptySetView.__or__
+    __sub__ = _EmptySetView.__and__
+    __rsub__ = _EmptySetView.__or__
+    __xor__ = _EmptySetView.__or__
+    __rxor__ = _EmptySetView.__or__
 
 
 class _EmptyValuesView(ValuesView[Any]):
@@ -427,12 +437,11 @@ class _EmptyValuesView(ValuesView[Any]):
         """Iteration produces no values."""
         return iter(())
 
-
 _set_hash = hash(frozenset())
-EmptyMapping = _EmptyMapping()
-EmptyKeysView = _EmptyKeysView(EmptyMapping)
-EmptyItemsView = _EmptyItemsView(EmptyMapping)
-EmptyValuesView = _EmptyValuesView(EmptyMapping)
+EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()
+EmptyKeysView: KeysView[Any] = _EmptyKeysView(EmptyMapping)
+EmptyItemsView: ItemsView[Any, Any] = _EmptyItemsView(EmptyMapping)
+EmptyValuesView: ValuesView[Any] = _EmptyValuesView(EmptyMapping)
 
 
 class AtomicWriter:

@@ -536,6 +536,7 @@ def test_invalid_bracket(py_c_token):
         for tok, tok_value in py_c_token('[ no [ nesting ] ]', string_bracket=True):
             pass
 
+
 def test_invalid_paren(py_c_token):
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
@@ -554,7 +555,7 @@ def test_invalid_paren(py_c_token):
             pass
 
 
-def test_token_syntax_error():
+def test_token_syntax_error() -> None:
     """Test the TokenSyntaxError class."""
     # There's no C version - if we're erroring, we don't care about
     # performance much.

@@ -623,7 +623,7 @@ class Property:
                 [
                     child.copy()
                     for child in
-                    self.value
+                    self
                 ]
             )
         else:
@@ -937,6 +937,7 @@ class Property:
                 for prop in self.value:
                     yield from prop.export()
             else:
+                assert self.real_name is not None, repr(self)
                 yield '"' + self.real_name + '"\n'
                 yield '\t{\n'
                 yield from (
@@ -947,6 +948,7 @@ class Property:
                 yield '\t}\n'
         else:
             # We need to escape quotes and backslashes so they don't get detected.
+            assert self.real_name is not None, repr(self)
             yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self.value))
 
     def build(self) -> '_Builder':

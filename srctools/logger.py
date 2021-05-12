@@ -10,7 +10,7 @@ import sys
 import io
 import traceback
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any, cast
+from typing import Dict, Tuple, Union, Type, Callable, Any, cast, Optional
 
 
 class LogMessage:
@@ -108,12 +108,12 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
 class Formatter(logging.Formatter):
     """Override exception handling."""
     SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
-    def formatException(self, ei: Tuple[Type[BaseException], BaseException, TracebackType]) -> str:
+    def formatException(self, ei: Union[Tuple[Type[BaseException], BaseException, Optional[TracebackType]], Tuple[None, None, None]]) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
         buffer = io.StringIO()
 
-        trace = exc_tb
+        trace: Optional[TracebackType] = exc_tb
 
         try:
             while trace is not None:
@@ -213,7 +213,7 @@ def init_logging(
     class NewLogRecord(oldLogRecord):
         """Allow passing an alias for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
-        alias = None  # type: str
+        alias: Optional[str] = None
 
         def getMessage(self):
             """We have to hook here to change the value of .module.

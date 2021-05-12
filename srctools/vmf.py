@@ -13,7 +13,7 @@ from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union, Any, overload, TypeVar,
+    Optional, Union, Any, overload, TypeVar, Generic,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
     NamedTuple, MutableMapping,
@@ -113,7 +113,7 @@ class IDMan(AbstractSet[int]):
     def __iter__(self) -> Iterator[int]:
         return iter(self._used)
 
-    def __contains__(self, item: int) -> bool:
+    def __contains__(self, item: object) -> bool:
         """Check if the given ID is registered."""
         return item in self._used
 
@@ -230,18 +230,18 @@ def localise_overlay(over: 'Entity', origin: Vec, angles: Union[Angle, Matrix]=N
         over[key] = ang.join(' ')
 
 
-class CopySet(set):
+class CopySet(Generic[T], Set[T]):
     """Modified version of a Set which allows modification during iteration.
 
     """
-    __slots__ = []  # No extra vars
+    __slots__ = ()  # No extra vars
 
-    def __iter__(self):
-        cur_items = set(self)
+    def __iter__(self) -> Iterator[T]:
+        cur_items: frozenset[T] = frozenset(self)
 
         yield from cur_items
         # after iterating through ourselves, iterate through any new ents.
-        yield from (self - cur_items)
+        yield from self - cur_items
 
 
 class VMF:
@@ -279,8 +279,8 @@ class VMF:
 
         # Allow quick searching for particular groups, without checking
         # the whole map
-        self.by_target = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
-        self.by_class = defaultdict(CopySet)  # type: Dict[Optional[str], Set[Entity]]
+        self.by_target: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
+        self.by_class: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
 
         self.entities = []  # type: List[Entity]
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
@@ -1299,7 +1299,7 @@ class UVAxis:
             self.scale,
         )
 
-    def localise(self, origin: Vec, angles: Angle) -> 'UVAxis':
+    def localise(self, origin: Vec, angles: Union[Angle, Matrix]) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
         vec = self.vec() @ angles
 
@@ -1651,7 +1651,7 @@ class Entity:
     def __init__(
         self,
         vmf_file: VMF,
-        keys: Dict[str, ValidKVs]=EmptyMapping,
+        keys: Mapping[str, ValidKVs]=EmptyMapping,
         fixup: Iterable['FixupTuple']=(),
         ent_id: int=-1,
         outputs: List['Output']=None,
@@ -1662,7 +1662,7 @@ class Entity:
         vis_shown: bool=True,
         vis_auto_shown: bool=True,
         logical_pos: str=None,
-        editor_color: Vec=(255, 255, 255),
+        editor_color: Union[Vec, Tuple[int, int, int]]=(255, 255, 255),
         comments: str='',
     ):
         self.map = vmf_file
@@ -1672,8 +1672,8 @@ class Entity:
             keys.items()
         }
         self.fixup = EntityFixup(fixup)
-        self.outputs = outputs or []  # type: List[Output]
-        self.solids = solids or []  # type: List[Solid]
+        self.outputs: list[Output] = outputs or []
+        self.solids: list[Solid] = solids or []
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
         self.groups = list(groups)
@@ -1693,7 +1693,7 @@ class Entity:
         keep_vis=True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
-        new_keys = {}
+        new_keys: dict[str, str] = {}
         new_fixup = self.fixup.copy_values()
         for key, value in self.keys.items():
             new_keys[key] = value

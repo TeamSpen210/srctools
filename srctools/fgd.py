@@ -1366,7 +1366,7 @@ class EntityDef:
                 next_token, key_flag = tok()
 
                 is_readonly = show_in_report = had_colon = False
-                has_equal = None
+                has_equal: Optional[Token] = None
                 attrs = None  # type: Optional[List[str]]
 
                 if next_token is Token.STRING:
