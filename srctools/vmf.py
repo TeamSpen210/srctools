@@ -1306,12 +1306,6 @@ class UVAxis:
         # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
         offset = self.offset - origin.dot(vec) / self.scale
 
-        # Keep the values low. The highest texture size in P2 is 1024, so
-        # do the next power just to be safe.
-        # Add and subtract 1024 so the value is between -1024, 1024 not 0, 2048
-        # (This just looks nicer)
-        offset = (offset + 1024) % 2048 - 1024
-
         return UVAxis(
             vec.x,
             vec.y,
