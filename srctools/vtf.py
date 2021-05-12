@@ -17,7 +17,7 @@ from srctools import Vec, binformat, EmptyMapping
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
     TYPE_CHECKING, Type, Collection, overload, Sequence,
-    Mapping,
+    Mapping, BinaryIO,
 )
 
 # Only import while type checking, so these expensive libraries are only loaded
@@ -419,6 +419,8 @@ class Frame:
     def __getitem__(self, item: Tuple[int, int]) -> Pixel:
         """Retrieve an individual pixel."""
         self.load()
+        assert self._data is not None
+
         x, y = item
         if x > self.width or y > self.height:
             raise IndexError(item)
@@ -432,6 +434,7 @@ class Frame:
     ) -> None:
         """Set an individual pixel."""
         self.load()
+        assert self._data is not None
 
         x, y = item
         if x > self.width or y > self.height:
@@ -450,6 +453,7 @@ class Frame:
         Requires Pillow to be installed.
         """
         self.load()
+        assert self._data is not None
 
         from PIL.Image import frombuffer
         return frombuffer(
@@ -469,6 +473,7 @@ class Frame:
         Otherwise, alpha is ignored.
         """
         self.load()
+        assert self._data is not None
 
         import tkinter
         return tkinter.PhotoImage(
@@ -492,6 +497,7 @@ class Frame:
         Otherwise, alpha is ignored.
         """
         self.load()
+        assert self._data is not None
         import wx
 
         img = wx.Image(self.width, self.height)
@@ -506,7 +512,9 @@ class Frame:
         Otherwise, alpha is ignored.
         """
         self.load()
+        assert self._data is not None
         import wx
+
         img = wx.Bitmap(self.width, self.height)
         # Bitmap memory layout isn't public, so we have to write to a temporary
         # that it copies from.
@@ -682,11 +690,6 @@ class VTF:
                     res_data = file.read(size)
                     vtf.resources[res_id] = Resource(res_flags, res_data)
 
-            if low_res_offset is None and low_fmt is not ImageFormats.NONE:
-                raise ValueError('Missing low-res thumbnail resource!')
-            if high_res_offset is None:
-                raise ValueError('Missing main image resource!')
-
             if ResourceID.PARTICLE_SHEET in vtf.resources:
                 vtf.sheet_info = SheetSequence.from_resource(
                     vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
@@ -696,12 +699,17 @@ class VTF:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
 
+        if high_res_offset is None:
+            raise ValueError('Missing main image resource!')
+
         # We don't implement these high-res formats.
         if fmt is ImageFormats.RGBA16161616 or fmt is ImageFormats.RGBA16161616F:
             return vtf
 
         vtf._low_res = Frame(low_width, low_height)
         if low_fmt is not ImageFormats.NONE:
+            if low_res_offset is None:
+                raise ValueError('Missing low-res thumbnail resource!')
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 
         # If cubemaps are present, we iterate that for depth.
@@ -827,9 +835,11 @@ class VTF:
 
         if version_minor >= 3:
             deferred.set_data('low_res', file.tell())
-        data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
-        _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
-        file.write(data)
+        if self.low_format is not ImageFormats.NONE:
+            data = bytearray(self.low_format.frame_size(self._low_res.width, self._low_res.height))
+            if self._low_res._data is not None:
+                _format_funcs.save(self.low_format, self._low_res._data, data, self._low_res.width, self._low_res.height)
+            file.write(data)
 
         # If cubemaps are present, we iterate that for depth.
         # Otherwise it's the depth value.
@@ -853,8 +863,10 @@ class VTF:
                         depth_or_cube,
                         data_mipmap,
                     ]
+                    frame.load()
                     data = bytearray(self.format.frame_size(frame.width, frame.height))
-                    _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
+                    if frame._data is not None:
+                        _format_funcs.save(self.format, frame._data, data, frame.width, frame.height)
                     file.write(data)
         deferred.write()
 
@@ -937,6 +949,7 @@ class VTF:
         """
         if side is not None and depth != 0:
             raise TypeError('Side and depth are mutually exclusive!')
+        depth_side: Union[int, CubeSide]
         if VTFFlags.ENVMAP in self.flags:
             if side is None:
                 raise ValueError('Side must be provided for cubemaps!')
@@ -1021,15 +1034,15 @@ class SheetSequence:
         return sequences
 
     @classmethod
-    def make_data(cls, seq: Mapping[int, 'SheetSequence'], version: int=0) -> bytes:
+    def make_data(cls, sequences: Mapping[int, 'SheetSequence'], version: int=0) -> bytes:
         """Write out the binary form of this."""
         file = BytesIO()
 
         if version > 1:
             raise ValueError('Unknown version {}!'.format(version))
 
-        file.write(struct.pack('<II', version, len(seq)))
-        for seq_num, seq in seq.items():
+        file.write(struct.pack('<II', version, len(sequences)))
+        for seq_num, seq in sequences.items():
             file.write(struct.pack(
                 '<Ixxx?If',
                 seq_num,
@@ -1049,7 +1062,7 @@ class SheetSequence:
 # Add support for the imghdr module.
 
 
-def test_vtf(h: bytes, f: IO[bytes]) -> Optional[str]:
+def test_vtf(h: bytes, f: Optional[BinaryIO]) -> Optional[str]:
     """Source Engine Valve Texture Format."""
     if h[:4] == b'VTF\0':
         try:
