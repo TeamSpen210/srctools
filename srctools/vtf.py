@@ -74,36 +74,34 @@ CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 # One black, opaque pixel for creating blank images.
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
-class ImageAlignment(namedtuple("ImageAlignment", 'r g b a size ind')):
-    """Raw image mode, pixel counts or object(), bytes per pixel."""
-    # Force object-style comparisons, so formats with the same counts
-    # compare different.
-    __gt__ = object.__gt__
-    __lt__ = object.__lt__
-    __ge__ = object.__ge__
-    __le__ = object.__le__
-    __eq__ = object.__eq__
-    __ne__ = object.__ne__
-    __hash__ = object.__hash__
 
-_ind = -1
-
-
-def f(r=0, g=0, b=0, a=0, *, l=0, size=0):
+def f(
+    r: int = 0, g: int = 0, b: int = 0,
+    a: int = 0, *,
+    l: int = 0, size: int = 0,
+) -> tuple[int, int, int, int, int, int]:
     """Helper function to construct ImageFormats."""
-    global _ind
     if l:
         r = g = b = l
         size = l + a
     if not size:
         size = r + g + b + a
-    _ind += 1
+    f.ind += 1
 
-    return r, g, b, a, size, _ind
+    return r, g, b, a, size, f.ind
+f.ind = -1  # Incremented first time to 0
 
 
-class ImageFormats(ImageAlignment, Enum):
+class ImageFormats(Enum):
     """All VTF image formats, with their data sizes in the value."""
+    def __init__(self, r, g, b, a, size, ind) -> None:
+        self.r = r
+        self.g = g
+        self.b = b
+        self.a = a
+        self.size = size
+        self.ind = ind
+
     RGBA8888 = f(8, 8, 8, 8)
     ABGR8888 = f(8, 8, 8, 8)
     RGB888 = f(8, 8, 8, 0)
@@ -139,6 +137,16 @@ class ImageFormats(ImageAlignment, Enum):
     ATI1N = f(size=64)
     ATI2N = f(size=128)
 
+    def __repr__(self) -> str:
+        """Exclude RGB or A sizes if zero."""
+        res = [f'<ImageFormats[{self.ind:02}] {self._name_}:']
+        if self.r or self.g or self.b:
+            res.append(f'r={self.r}, g={self.g}, b={self.b},')
+        if self.a:
+            res.append(f'a={self.a},')
+        res.append(f'size={self.size}>')
+        return ' '.join(res)
+
     @property
     def is_compressed(self) -> bool:
         """Checks if the format is compressed in 4x4 blocks."""
@@ -146,8 +154,6 @@ class ImageFormats(ImageAlignment, Enum):
 
     def frame_size(self, width: int, height: int) -> int:
         """Compute the number of bytes needed for this image size."""
-        if self.name == 'NONE':
-            return 0
         if self.is_compressed:
             block_wid, mod = divmod(width, 4)
             if mod:
@@ -174,7 +180,7 @@ class ImageFormats(ImageAlignment, Enum):
         else:
             return self.ind
 
-del f, _ind
+del f
 # Initialise the internal mapping in the format modules.
 _format_funcs.init(ImageFormats)
 if _cy_format_funcs is not _py_format_funcs:
