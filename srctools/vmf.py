@@ -23,6 +23,8 @@ from typing import (
     Pattern, Match,
 )
 
+import attr
+
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
@@ -1010,21 +1012,17 @@ class Cordon:
         self.map.cordons.remove(self)
 
 
+@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class VisGroup:
     """Defines one visgroup."""
-    def __init__(
-        self,
-        vmf: VMF,
-        vis_id: int,
-        name: str,
-        color: Vec=(255, 255, 255),
-        children: Iterable['VisGroup']=(),
-    ):
-        self.vmf = vmf
-        self.name = name
-        self.color = Vec(color)
-        self.child_groups = list(children)
-        self.id = vmf.vis_id.get_id(vis_id)
+    vmf: VMF
+    name: str
+    id: int = attr.ib(default=-1)
+    color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    child_groups: List['VisGroup'] = attr.ib(converter=list, factory=list)
+
+    def __attrs_post_init__(self) -> None:
+        self.id = self.vmf.vis_id.get_id(self.id)
 
     @classmethod
     def parse(cls, vmf: VMF, props: Property) -> 'VisGroup':
@@ -1041,8 +1039,8 @@ class VisGroup:
 
         return cls(
             vmf,
-            vis_id,
             name,
+            vis_id,
             color,
             children,
         )
@@ -1092,8 +1090,8 @@ class VisGroup:
         """Duplicate this visgroup and all children."""
         newgroup = VisGroup(
             map or self.vmf,
-            des_id,
             self.name,
+            des_id,
             self.color.copy(),
             [
                 child.copy(map, group_mapping)
@@ -1104,31 +1102,22 @@ class VisGroup:
         return newgroup
 
 
+@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
-    def __init__(
-        self,
-        vmf_file: VMF,
-        des_id: int=-1,
-        sides: List['Side']=None,
-        visgroup_ids: Iterable[int]=(),
-        hidden: bool=False,
-        group_id: Optional[int]=None,
-        vis_shown: bool=True,
-        vis_auto_shown: bool=True,
-        cordon_solid: int=None,
-        editor_color: Vec=(255, 255, 255),
-    ):
-        self.map = vmf_file
-        self.sides = sides or []  # type: List[Side]
-        self.id = vmf_file.solid_id.get_id(des_id)
-        self.hidden = hidden
-        self.cordon_solid = cordon_solid
-        self.vis_shown = vis_shown
-        self.vis_auto_shown = vis_auto_shown
-        self.editor_color = Vec(editor_color)
-        self.group_id = group_id
-        self.visgroup_ids = set(visgroup_ids)
+    map: VMF
+    id: int = attr.ib(default=-1)
+    sides: List['Side'] = attr.ib(factory=list)
+    visgroup_ids: Set[int] = attr.ib(default=(), converter=set)
+    hidden: bool = False
+    group_id: Optional[int] = None
+    vis_shown: bool = True
+    vis_auto_shown: bool = True
+    cordon_solid: int = None
+    editor_color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+
+    def __attrs_post_init__(self) -> None:
+        self.id = self.map.solid_id.get_id(self.id)
 
     def copy(
         self,
@@ -1165,13 +1154,13 @@ class Solid:
         for side in tree.find_all("side"):
             sides.append(Side.parse(vmf_file, side))
 
-        visgroups = []
+        visgroups = set()
         group_id = None
         vis_shown = vis_auto_shown = True
         cordon_solid = None
         editor_color = (255, 255, 255)
 
-        for v in tree.find_key("editor", []):
+        for v in tree.find_children("editor"):
             if v.name == "visgroupshown":
                 vis_shown = srctools.conv_bool(v.value, default=True)
             elif v.name == "visgroupautoshown":
@@ -1183,9 +1172,10 @@ class Solid:
             elif v.name == 'group':
                 group_id = int(v.value)
             elif v.name == 'visgroupid':
-                val = srctools.conv_int(v.value, default=-1)
-                if val:
-                    visgroups.append(val)
+                try:
+                    visgroups.add(int(v.value))
+                except (ValueError, TypeError):
+                    pass
 
         return cls(
             vmf_file,
