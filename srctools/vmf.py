@@ -11,6 +11,7 @@ import sys
 import warnings
 import copy
 from array import ArrayType as Array
+from enum import Flag
 from collections import defaultdict, namedtuple
 from contextlib import suppress
 
@@ -47,6 +48,49 @@ T = TypeVar('T')
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
 ValidKVs = Union[str, int, bool, float, Vec, Angle]
+
+
+class DispFlag(Flag):
+    """Per-displacement flags, configuring collisions.
+
+    Does NOT match the file values, since those are inverted.
+    """
+    NONE = 0
+    COLL_PHYSICS = 1  # Can physics objects collide?
+    COLL_PLAYER_NPC = 2  # QPhysics hull collisions
+    COLL_BULLET = 4  # Raytraces IE bullets.
+    COLL_ALL = COLL_PHYSICS | COLL_PLAYER_NPC | COLL_BULLET
+
+    SUBDIV = 8  # Is it subdivided?
+    SUBDIV_COLL_ALL = SUBDIV | COLL_ALL  # Makes the repr nicer.
+
+# The VMF stores 2/4/8 if the displacement *doesn't* collide.
+# Bit 1 stores if the face has a bumpmap, set by VBSP.
+_DISP_FLAG_TO_COLL: List[DispFlag] = [
+    (
+        (DispFlag.COLL_PHYSICS if i & 2 == 0 else DispFlag.NONE) |
+        (DispFlag.COLL_PLAYER_NPC if i & 4 == 0 else DispFlag.NONE) |
+        (DispFlag.COLL_BULLET if i & 8 == 0 else DispFlag.NONE)
+    ) for i in range(8)
+]
+# Invert, prefer smaller = less bits set.
+_DISP_COLL_TO_FLAG: Dict[DispFlag, int] = {
+    v: k for (k, v) in
+    list(enumerate(_DISP_FLAG_TO_COLL))[::-1]
+}
+
+
+class TriangleTag(Flag):
+    """Two flags set on all displacement triangles.
+
+    If walkable, it is shallow enough to stand on.
+    If buildable, TF2 Engineers can place buildings.
+    """
+    STEEP = 0  # Not buildable/walkable
+    WALKABLE = 1  # Just walkable
+    # 8 by itself is buildable only, that's impossible.
+    BUILDABLE = 1 | 8  # Walkable and buildable
+    FLAT = BUILDABLE
 
 
 def conv_kv(val: ValidKVs) -> str:
