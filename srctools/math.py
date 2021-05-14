@@ -42,7 +42,7 @@ import warnings
 from typing import (
     Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    Iterator, Iterable,
+    Iterator, Iterable, SupportsRound, Optional,
 )
 
 
@@ -250,14 +250,14 @@ def __i{func}__(self, other: float):
 '''
 
 
-class Vec:
+class Vec(SupportsRound['Vec']):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
-    INV_AXIS = {
+    INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -269,7 +269,7 @@ class Vec:
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    }
 
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
@@ -440,12 +440,12 @@ class Vec:
         point_coll: Iterable[Vec]
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
-                [[first, *point_coll]] = points
+                [[first, *point_coll]] = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             try:
-                first, *point_coll = points
+                first, *point_coll = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise TypeError(
                     'Vec.bbox() expected at '
@@ -571,29 +571,29 @@ class Vec:
     # to annotate them in a way a type-checker can understand.
     # These are immediately overwritten.
 
-    def __add__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
-    def __radd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
-    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __add__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __radd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
 
-    def __sub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
-    def __rsub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
-    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': pass
+    def __sub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __rsub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
 
-    def __mul__(self, other: float) -> 'Vec': pass
-    def __rmul__(self, other: float) -> 'Vec': pass
-    def __imul__(self, other: float) -> 'Vec': pass
+    def __mul__(self, other: float) -> 'Vec': ...
+    def __rmul__(self, other: float) -> 'Vec': ...
+    def __imul__(self, other: float) -> 'Vec': ...
 
-    def __truediv__(self, other: float) -> 'Vec': pass
-    def __rtruediv__(self, other: float) -> 'Vec': pass
-    def __itruediv__(self, other: float) -> 'Vec': pass
+    def __truediv__(self, other: float) -> 'Vec': ...
+    def __rtruediv__(self, other: float) -> 'Vec': ...
+    def __itruediv__(self, other: float) -> 'Vec': ...
 
-    def __floordiv__(self, other: float) -> 'Vec': pass
-    def __rfloordiv__(self, other: float) -> 'Vec': pass
-    def __ifloordiv__(self, other: float) -> 'Vec': pass
+    def __floordiv__(self, other: float) -> 'Vec': ...
+    def __rfloordiv__(self, other: float) -> 'Vec': ...
+    def __ifloordiv__(self, other: float) -> 'Vec': ...
 
-    def __mod__(self, other: float) -> 'Vec': pass
-    def __rmod__(self, other: float) -> 'Vec': pass
-    def __imod__(self, other: float) -> 'Vec': pass
+    def __mod__(self, other: float) -> 'Vec': ...
+    def __rmod__(self, other: float) -> 'Vec': ...
+    def __imod__(self, other: float) -> 'Vec': ...
 
     funcname = op = pretty = None
 
@@ -824,12 +824,12 @@ class Vec:
         if self.z > other[2]:
             self.z = other[2]
 
-    def __round__(self, n: int=0) -> 'Vec':
+    def __round__(self, ndigits: int=0) -> 'Vec':
         """Performing round() on a Py_Vec rounds each axis."""
         return Py_Vec(
-            round(self.x, n),
-            round(self.y, n),
-            round(self.z, n),
+            round(self.x, ndigits),
+            round(self.y, ndigits),
+            round(self.z, ndigits),
         )
 
     def mag(self) -> float:
@@ -901,7 +901,7 @@ class Vec:
             return self.x, self.y
         raise KeyError('Bad axis "{}"'.format(axis))
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> Vec_tuple:
         """Return the Vector as a tuple."""
         return Vec_tuple(round(self.x, 6), round(self.y, 6), round(self.z, 6))
 
@@ -1114,17 +1114,39 @@ class Matrix:
         rot._ca, rot._cb, rot._cc = 0.0, -sin_r, cos_r
 
         return rot
-        
+
     @classmethod
-    def from_angle(cls, angle: 'Angle') -> 'Matrix':
-        """Return the rotation representing an Euler angle."""
-        rad_pitch = math.radians(angle.pitch)
+    @overload
+    def from_angle(cls, __angle: 'Angle') -> 'Matrix': ...
+    @classmethod
+    @overload
+    def from_angle(cls, pitch: float, yaw: float, roll: float) -> 'Matrix': ...
+    @classmethod
+    def from_angle(
+        cls,
+        pitch: Union['Angle', float],
+        yaw: Optional[float]=0.0,
+        roll: Optional[float]=None,
+    ) -> 'Matrix':
+        """Return the rotation representing an Euler angle.
+
+        Either an Angle can be passed, or the raw pitch/yaw/roll angles.
+        """
+        if isinstance(pitch, Py_Angle):
+            rad_pitch = math.radians(pitch.pitch)
+            rad_yaw = math.radians(pitch.yaw)
+            rad_roll = math.radians(pitch.roll)
+        elif yaw is None or roll is None:
+            raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
+        else:
+            rad_pitch = math.radians(pitch)
+            rad_yaw = math.radians(yaw)
+            rad_roll = math.radians(roll)
+
         cos_p = math.cos(rad_pitch)
         sin_p = math.sin(rad_pitch)
-        rad_yaw = math.radians(angle.yaw)
         sin_y = math.sin(rad_yaw)
         cos_y = math.cos(rad_yaw)
-        rad_roll = math.radians(angle.roll)
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
@@ -1305,7 +1327,8 @@ class Matrix:
             return mat.to_angle()
         elif isinstance(other, Py_Matrix):
             mat = other.copy()
-            return mat._mat_mul(self)
+            mat._mat_mul(self)
+            return mat
         else:
             return NotImplemented
 
@@ -1314,7 +1337,7 @@ class Matrix:
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __imatmul__(self, other):
+    def __imatmul__(self, other: object) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
@@ -1535,17 +1558,12 @@ class Angle:
     def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
 
     @classmethod
-    def from_basis(
-        cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
-    ) -> 'Angle':
+    def from_basis(cls, **kwargs) -> 'Angle':
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
         """
-        return Py_Matrix.from_basis(x=x, y=y, z=z).to_angle()
+        return Py_Matrix.from_basis(**kwargs).to_angle()
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
@@ -1765,7 +1783,7 @@ Cy_Matrix = Py_Matrix = Matrix
 # Do it this way, so static analysis ignores this.
 _glob = globals()
 try:
-    from srctools import _math
+    from srctools import _math  # type: ignore
 except ImportError:
     pass
 else:

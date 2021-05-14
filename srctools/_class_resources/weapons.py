@@ -125,7 +125,7 @@ res('weapon_rpg',
 res('weapon_shotgun')
 # res('weapon_shotgun_chrome_spawn')
 # res('weapon_shotgun_spas_spawn')
-res('weapon_smg1', includes="grenade_ar2"),
+res('weapon_smg1', includes="grenade_ar2")
 # res('weapon_smg_silenced_spawn')
 # res('weapon_smg_spawn')
 # res('weapon_smokegrenade')

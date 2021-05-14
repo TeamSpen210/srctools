@@ -295,7 +295,8 @@ def test_gen_check(py_c_vec) -> None:
             # The engine actually gave us a right vector, so we need to flip that.
             left_x, left_y, left_z = -right_x, -right_y, -right_z
 
-            mat = Matrix.from_angle(Angle(pit, yaw, roll))
+            mat = Matrix.from_angle(pit, yaw, roll)
+            assert_rot(mat, Matrix.from_angle(Angle(pit, yaw, roll)))
 
             # Then check rotating vectors works correctly.
             assert_vec(X @ mat, for_x, for_y, for_z)
@@ -383,8 +384,13 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig == thaw
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    cy_pick = pickle.dumps(Cy_Matrix.from_angle(Cy_Angle(test_data)))
-    py_pick = pickle.dumps(Py_Matrix.from_angle(Py_Angle(test_data)))
+    # Copy over the floats, since calulations are going to be slightly different
+    # due to optimisation etc. That's tested elsewhere to ensure accuracy, but
+    # we need exact binary identity.
+    cy_mat = Cy_Matrix()
+    py_mat = Py_Matrix()
+    for x in (0, 1, 2):
+        for y in (0, 1, 2):
+            cy_mat[x, y] = py_mat[x, y] = orig[x, y]
 
-    assert cy_pick == py_pick == pick
-
+    assert pickle.dumps(cy_mat) == pickle.dumps(py_mat) == pick

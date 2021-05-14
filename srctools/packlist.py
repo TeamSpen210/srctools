@@ -1,7 +1,9 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 import io
 import itertools
+import shutil
 from collections import OrderedDict
+from pathlib import Path
 from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
 from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
@@ -759,6 +761,8 @@ class PackList:
         *,
         whitelist: Iterable[FileSystem]=(),
         blacklist: Iterable[FileSystem]=(),
+        dump_loc: Optional[Path]=None,
+        only_dump: bool=False,
         ignore_vpk: bool=True,
     ) -> None:
         """Pack all our files into the packfile in the BSP.
@@ -767,6 +771,8 @@ class PackList:
         Filesystems must be in the whitelist and not in the blacklist, if provided.
         If ignore_vpk is True, files in VPK won't be packed unless that system
         is in allow_filesys.
+        If dump_loc is set, files will be copied there as well. If only_dump is
+        set, they won't be packed at all.
         """
         # We need to rebuild the zipfile from scratch, so we can overwrite
         # old data if required.
@@ -801,29 +807,48 @@ class PackList:
             self.fsys.systems
         ]))
 
+        if dump_loc is not None:
+            # Always write to a subfolder named after the map.
+            # This ensures we're unlikely to overwrite important folders.
+            dump_loc /= Path(bsp.filename).stem
+            LOGGER.info('Dumping pakfile to "{}"..', dump_loc)
+            shutil.rmtree(dump_loc, ignore_errors=True)
+        else:
+            only_dump = False  # Pointless to not dump to pakfile or folder.
+
         with self.fsys:
             for file in self._files.values():
                 # Need to ensure / separators.
                 fname = file.filename.replace('\\', '/')
 
-                already_packed = fname.casefold() in packed_files
-
                 if file.data is not None:
                     # Always pack, we've got custom data.
-                    packed_files[fname.casefold()] = (fname, file.data)
+                    LOGGER.debug('CUSTOM DATA: {}', fname)
+                    if not only_dump:
+                        packed_files[fname.casefold()] = (fname, file.data)
+                    if dump_loc is not None:
+                        path = dump_loc / fname
+                        path.parent.mkdir(exist_ok=True, parents=True)
+                        path.write_bytes(file.data)
                     continue
 
                 try:
                     sys_file = self.fsys[file.filename]
                 except FileNotFoundError:
-                    if not file.optional and not already_packed:
+                    if not file.optional and fname.casefold() not in packed_files:
                         LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                     continue
 
                 if self.fsys.get_system(sys_file) in allowed:
                     LOGGER.debug('ADD:  {}', fname)
                     with sys_file.open_bin() as f:
-                        packed_files[fname.casefold()] = (fname, f.read())
+                        data = f.read()
+                    if not only_dump:
+                        packed_files[fname.casefold()] = (fname, data)
+                    if dump_loc is not None:
+                        path = dump_loc / fname
+                        path.parent.mkdir(exist_ok=True, parents=True)
+                        path.write_bytes(data)
                 else:
                     LOGGER.debug('SKIP: {}', fname)
 

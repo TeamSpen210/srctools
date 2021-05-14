@@ -1,20 +1,13 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from libc.string cimport memcpy, memcmp
+from libc.math cimport sin, cos, tan
+from libc.string cimport memcpy, memcmp, memset
+from libc.stdint cimport uint_fast8_t
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
 cimport cython
-
-# Lightweight struct just holding the three values.
-# We can use this for temporaries. It's also used for angles.
-cdef struct vec_t:
-    double x
-    double y
-    double z
-
-ctypedef double[3][3] mat_t
 
 cdef inline Vec _vector(double x, double y, double z):
     """Make a Vector directly."""
@@ -33,7 +26,7 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     return ang
 
 
-# Shared fucntions that we use to do unpickling.
+# Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
 cdef object unpickle_vec
@@ -76,7 +69,7 @@ cdef inline object _make_tuple(double x, double y, double z):
         return tup
     else: # Not CPython, use more correct but slow method.
         with cython.optimize.unpack_method_calls(False):
-            return tuple_new(*tup)
+            return tuple_new(Vec_tuple, tup)
 
 
 cdef inline double norm_ang(double val):
@@ -149,7 +142,7 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
     return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
 
-cdef inline unsigned char _conv_vec(
+cdef inline unsigned char conv_vec(
     vec_t *result,
     object vec,
     bint scalar,
@@ -179,7 +172,7 @@ cdef inline unsigned char _conv_vec(
             raise TypeError(f'{type(vec)} is not a Vec-like object!')
     return True
 
-cdef inline unsigned char _conv_angles(vec_t *result, object ang) except False:
+cdef inline unsigned char conv_angles(vec_t *result, object ang) except False:
     """Convert some object to a unified Angle struct. 
     
     If scalar is True, allow int/float to set all axes.
@@ -227,7 +220,7 @@ cdef inline void _vec_normalise(vec_t *out, vec_t *inp):
             out.z = inp.z / mag
 
 
-cdef inline void _mat_mul(mat_t targ, mat_t rot):
+cdef inline void mat_mul(mat_t targ, mat_t rot):
     """Rotate target by the rotator matrix."""
     cdef double a, b, c
     cdef int i
@@ -242,7 +235,7 @@ cdef inline void _mat_mul(mat_t targ, mat_t rot):
         targ[i][2] = a * rot[0][2] + b * rot[1][2] + c * rot[2][2]
 
 
-cdef inline void _vec_rot(vec_t *vec, mat_t mat):
+cdef inline void vec_rot(vec_t *vec, mat_t mat):
     """Rotate a vector by our value."""
     cdef double x = vec.x
     cdef double y = vec.y
@@ -260,33 +253,21 @@ cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle):
-    cdef double cos_r_cos_y, cos_r_sin_y, sin_r_cos_y, sin_r_sin_y
-    cdef double rad_pitch = deg_2_rad * angle.x
-    cdef double cos_p = math.cos(rad_pitch)
-    cdef double sin_p = math.sin(rad_pitch)
-    cdef double rad_yaw = deg_2_rad * angle.y
-    cdef double sin_y = math.sin(rad_yaw)
-    cdef double cos_y = math.cos(rad_yaw)
-    cdef double rad_roll = deg_2_rad * angle.z
-    cdef double cos_r = math.cos(rad_roll)
-    cdef double sin_r = math.sin(rad_roll)
+    cdef double p = deg_2_rad * angle.x
+    cdef double y = deg_2_rad * angle.y
+    cdef double r = deg_2_rad * angle.z
 
-    res[0][0] = cos_p * cos_y
-    res[0][1] = cos_p * sin_y
-    res[0][2] = -sin_p
+    res[0][0] = cos(p) * cos(y)
+    res[0][1] = cos(p) * sin(y)
+    res[0][2] = -sin(p)
 
-    cos_r_cos_y = cos_r * cos_y
-    cos_r_sin_y = cos_r * sin_y
-    sin_r_cos_y = sin_r * cos_y
-    sin_r_sin_y = sin_r * sin_y
+    res[1][0] = sin(p) * sin(r) * cos(y) - cos(r) * sin(y)
+    res[1][1] = sin(p) * sin(r) * sin(y) + cos(r) * cos(y)
+    res[1][2] = sin(r) * cos(p)
 
-    res[1][0] = sin_p * sin_r_cos_y - cos_r_sin_y
-    res[1][1] = sin_p * sin_r_sin_y + cos_r_cos_y
-    res[1][2] = sin_r * cos_p
-
-    res[2][0] = sin_p * cos_r_cos_y + sin_r_sin_y
-    res[2][1] = sin_p * cos_r_sin_y - sin_r_cos_y
-    res[2][2] = cos_r * cos_p
+    res[2][0] = sin(p) * cos(r) * cos(y) + sin(r) * sin(y)
+    res[2][1] = sin(p) * cos(r) * sin(y) - sin(r) * cos(y)
+    res[2][2] = cos(r) * cos(p)
 
 
 cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
@@ -344,9 +325,10 @@ cdef bint _mat_from_basis(mat_t mat, Vec x, Vec y, Vec z) except True:
 
 cdef inline void _mat_identity(mat_t matrix):
     """Set the matrix to the identity transform."""
-    matrix[0] = [1.0, 0.0, 0.0]
-    matrix[1] = [0.0, 1.0, 0.0]
-    matrix[2] = [0.0, 0.0, 1.0]
+    memset(matrix, 0, sizeof(mat_t))
+    matrix[0][0] = 1.0
+    matrix[1][1] = 1.0
+    matrix[2][2] = 1.0
 
 
 cdef bint _conv_matrix(mat_t result, object value) except True:
@@ -384,16 +366,16 @@ def to_matrix(value) -> Matrix:
 cdef class VecIter:
     """Implements iter(Vec)."""
     cdef Vec vec
-    cdef unsigned char index
+    cdef uint_fast8_t index
 
     def __cinit__(self, Vec vec not None):
         self.vec = vec
         self.index = 0
 
-    def __iter__(self):
+    def __iter__(self) -> 'VecIter':
         return self
 
-    def __next__(self):
+    def __next__(self) -> float:
         if self.index == 3:
             raise StopIteration
         self.index += 1
@@ -489,7 +471,7 @@ cdef class VecIterLine:
 cdef class AngleIter:
     """Implements iter(Angle)."""
     cdef Angle ang
-    cdef unsigned char index
+    cdef uint_fast8_t index
 
     def __cinit__(self, Angle ang not None):
         self.ang = ang
@@ -535,7 +517,7 @@ cdef class VecTransform:
             exc_val is None and 
             exc_tb is None
         ):
-            _vec_rot(&self.vec.val, self.mat.mat)
+            vec_rot(&self.vec.val, self.mat.mat)
         return False
 
 
@@ -596,11 +578,6 @@ cdef class Vec:
     T = top = z_pos = _make_tuple(0, 0, 1)
     B = bottom = z_neg = _make_tuple(0, 0, -1)
 
-
-    # This is a sub-struct, so we can pass pointers to it to other
-    # functions.
-    cdef vec_t val
-
     @property
     def x(self):
         """The X axis of the vector."""
@@ -621,19 +598,19 @@ cdef class Vec:
 
     @property
     def z(self):
+        """The Z axis of the vector."""
         return self.val.z
 
     @z.setter
     def z(self, value):
-        """The Z axis of the vector."""
         self.val.z = value
 
-    def __init__ (
+    def __init__(
         self,
         x=0.0,
         y=0.0,
         z=0.0,
-    ):
+    ) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -697,7 +674,7 @@ cdef class Vec:
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, dict memodict=None):
+    def __deepcopy__(self, memodict=None):
         """Create a duplicate of this vector."""
         return _vector(self.val.x, self.val.y, self.val.z)
 
@@ -794,7 +771,7 @@ cdef class Vec:
         angle.z = roll
 
         _mat_from_angle(matrix, &angle)
-        _vec_rot(&self.val, matrix)
+        vec_rot(&self.val, matrix)
 
         if round_vals:
             self.val.x = round(self.val.x, ROUND_TO)
@@ -822,7 +799,7 @@ cdef class Vec:
 
         _parse_vec_str(&angle, ang, pitch, yaw, roll)
         _mat_from_angle(matrix, &angle)
-        _vec_rot(&self.val, matrix)
+        vec_rot(&self.val, matrix)
 
         if round_vals:
             self.val.x = round(self.val.x, ROUND_TO)
@@ -859,13 +836,13 @@ cdef class Vec:
             except StopIteration:
                 raise ValueError('Empty iterator!') from None
 
-            _conv_vec(&bbox_min.val, first, scalar=False)
+            conv_vec(&bbox_min.val, first, scalar=False)
             bbox_max.val = bbox_min.val
 
             try:
                 while True:
                     point = next(points_iter)
-                    _conv_vec(&vec, point, scalar=False)
+                    conv_vec(&vec, point, scalar=False)
 
                     if bbox_max.val.x < vec.x:
                         bbox_max.val.x = vec.x
@@ -893,12 +870,12 @@ cdef class Vec:
             )
         else:
             # Tuple-specific.
-            _conv_vec(&bbox_min.val, points[0], scalar=False)
+            conv_vec(&bbox_min.val, points[0], scalar=False)
             bbox_max.val = bbox_min.val
 
             for i in range(1, len(points)):
                 point = points[i]
-                _conv_vec(&vec, point, scalar=False)
+                conv_vec(&vec, point, scalar=False)
 
                 if bbox_max.val.x < vec.x:
                     bbox_max.val.x = vec.x
@@ -935,8 +912,8 @@ cdef class Vec:
         cdef VecIterGrid it = VecIterGrid.__new__(VecIterGrid)
         cdef vec_t mins
         cdef vec_t maxs
-        _conv_vec(&mins, min_pos, scalar=True)
-        _conv_vec(&maxs, max_pos, scalar=True)
+        conv_vec(&mins, min_pos, scalar=True)
+        conv_vec(&maxs, max_pos, scalar=True)
 
         if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
             return EMPTY_ITER
@@ -1126,8 +1103,8 @@ cdef class Vec:
         cdef vec_t vec_a, vec_b
 
         try:
-            _conv_vec(&vec_a, obj_a, scalar=True)
-            _conv_vec(&vec_b, obj_b, scalar=True)
+            conv_vec(&vec_a, obj_a, scalar=True)
+            conv_vec(&vec_b, obj_b, scalar=True)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -1145,8 +1122,8 @@ cdef class Vec:
         cdef vec_t vec_a, vec_b
 
         try:
-            _conv_vec(&vec_a, obj_a, scalar=True)
-            _conv_vec(&vec_b, obj_b, scalar=True)
+            conv_vec(&vec_a, obj_a, scalar=True)
+            conv_vec(&vec_b, obj_b, scalar=True)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -1164,13 +1141,13 @@ cdef class Vec:
         if isinstance(obj_a, (int, float)):
             # scalar * vector
             scalar = obj_a
-            _conv_vec(&vec.val, obj_b, scalar=False)
+            conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar * vec.val.x
             vec.val.y = scalar * vec.val.y
             vec.val.z = scalar * vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector * scalar.
-            _conv_vec(&vec.val, obj_a, scalar=False)
+            conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x * scalar
             vec.val.y = vec.val.y * scalar
@@ -1191,13 +1168,13 @@ cdef class Vec:
         if isinstance(obj_a, (int, float)):
             # scalar / vector
             scalar = obj_a
-            _conv_vec(&vec.val, obj_b, scalar=False)
+            conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar / vec.val.x
             vec.val.y = scalar / vec.val.y
             vec.val.z = scalar / vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector / scalar.
-            _conv_vec(&vec.val, obj_a, scalar=False)
+            conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x / scalar
             vec.val.y = vec.val.y / scalar
@@ -1218,13 +1195,13 @@ cdef class Vec:
         if isinstance(obj_a, (int, float)):
             # scalar // vector
             scalar = obj_a
-            _conv_vec(&vec.val, obj_b, scalar=False)
+            conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar // vec.val.x
             vec.val.y = scalar // vec.val.y
             vec.val.z = scalar // vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector // scalar.
-            _conv_vec(&vec.val, obj_a, scalar=False)
+            conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x // scalar
             vec.val.y = vec.val.y // scalar
@@ -1245,13 +1222,13 @@ cdef class Vec:
         if isinstance(obj_a, (int, float)):
             # scalar % vector
             scalar = obj_a
-            _conv_vec(&vec.val, obj_b, scalar=False)
+            conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar % vec.val.x
             vec.val.y = scalar % vec.val.y
             vec.val.z = scalar % vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector % scalar.
-            _conv_vec(&vec.val, obj_a, scalar=False)
+            conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x % scalar
             vec.val.y = vec.val.y % scalar
@@ -1272,10 +1249,10 @@ cdef class Vec:
             res.val = (<Vec>first).val
             if isinstance(second, Angle):
                 _mat_from_angle(temp, &(<Angle>second).val)
-                _vec_rot(&res.val, temp)
+                vec_rot(&res.val, temp)
                 return res
             elif isinstance(second, Matrix):
-                _vec_rot(&res.val, (<Matrix>second).mat)
+                vec_rot(&res.val, (<Matrix>second).mat)
                 return res
         return NotImplemented
 
@@ -1288,7 +1265,7 @@ cdef class Vec:
         """
         cdef vec_t vec_other
         try:
-            _conv_vec(&vec_other, other, scalar=True)
+            conv_vec(&vec_other, other, scalar=True)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -1305,7 +1282,7 @@ cdef class Vec:
         """
         cdef vec_t vec_other
         try:
-            _conv_vec(&vec_other, other, scalar=True)
+            conv_vec(&vec_other, other, scalar=True)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -1396,9 +1373,9 @@ cdef class Vec:
         res.val.z = (<Vec>self).val.z
         if isinstance(other, Angle):
             _mat_from_angle(temp, &(<Angle>other).val)
-            _vec_rot(&res.val, temp)
+            vec_rot(&res.val, temp)
         elif isinstance(other, Matrix):
-            _vec_rot(&res.val, (<Matrix>other).mat)
+            vec_rot(&res.val, (<Matrix>other).mat)
         else:
             return NotImplemented
         return res
@@ -1408,9 +1385,9 @@ cdef class Vec:
         cdef mat_t temp
         if isinstance(other, Angle):
             _mat_from_angle(temp, &(<Angle>other).val)
-            _vec_rot(&self.val, temp)
+            vec_rot(&self.val, temp)
         elif isinstance(other, Matrix):
-            _vec_rot(&self.val, (<Matrix>other).mat)
+            vec_rot(&self.val, (<Matrix>other).mat)
         else:
             return NotImplemented
         return self
@@ -1488,7 +1465,7 @@ cdef class Vec:
         """
         cdef vec_t other
         try:
-            _conv_vec(&other, other_obj, False)
+            conv_vec(&other, other_obj, False)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -1537,7 +1514,7 @@ cdef class Vec:
     def max(self, other):
         """Set this vector's values to the maximum of the two vectors."""
         cdef vec_t vec
-        _conv_vec(&vec, other, scalar=False)
+        conv_vec(&vec, other, scalar=False)
         if self.val.x < vec.x:
             self.val.x = vec.x
 
@@ -1550,7 +1527,7 @@ cdef class Vec:
     def min(self, other):
         """Set this vector's values to be the minimum of the two vectors."""
         cdef vec_t vec
-        _conv_vec(&vec, other, scalar=False)
+        conv_vec(&vec, other, scalar=False)
         if self.val.x > vec.x:
             self.val.x = vec.x
 
@@ -1605,7 +1582,7 @@ cdef class Vec:
         """
         cdef vec_t norm
 
-        _conv_vec(&norm, normal, False)
+        conv_vec(&norm, normal, False)
 
         _vec_normalise(&norm, &norm)
 
@@ -1625,7 +1602,7 @@ cdef class Vec:
         """Return the dot product of both Vectors."""
         cdef vec_t oth
 
-        _conv_vec(&oth, other, False)
+        conv_vec(&oth, other, False)
 
         return (
             self.val.x * oth.x +
@@ -1638,7 +1615,7 @@ cdef class Vec:
         cdef vec_t oth
         cdef Vec res
 
-        _conv_vec(&oth, other, False)
+        conv_vec(&oth, other, False)
         res = Vec.__new__(Vec)
         _vec_cross(&res.val, &self.val, &oth)
         return res
@@ -1652,8 +1629,8 @@ cdef class Vec:
         cdef mat_t matrix
         cdef vec_t offset
         _conv_matrix(matrix, angles)
-        _conv_vec(&offset, origin, scalar=False)
-        _vec_rot(&self.val, matrix)
+        conv_vec(&offset, origin, scalar=False)
+        vec_rot(&self.val, matrix)
         self.val.x += offset.x
         self.val.y += offset.y
         self.val.z += offset.z
@@ -1771,7 +1748,6 @@ cdef class Vec:
 @cython.final
 cdef class Matrix:
     """Represents a matrix via a transformation matrix."""
-    cdef mat_t mat
 
     def __init__(self) -> None:
         """Create a matrix set to the identity transform."""
@@ -1876,11 +1852,21 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_angle(cls, angle):
-        """Return the rotation representing an Euler angle."""
+    def from_angle(cls, pitch, yaw=None, roll=None):
+        """Return the rotation representing an Euler angle.
+
+        Either an Angle can be passed, or the raw pitch/yaw/roll angles.
+        """
         cdef Matrix rot = Matrix.__new__(Matrix)
         cdef vec_t ang
-        _conv_angles(&ang, angle)
+        if isinstance(pitch, Angle):
+            ang = (<Angle>pitch).val
+        elif yaw is None or roll is None:
+            raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
+        else:
+            ang.x = float(pitch)
+            ang.y = float(yaw)
+            ang.z = float(roll)
         _mat_from_angle(rot.mat, &ang)
         return rot
 
@@ -1890,7 +1876,7 @@ cdef class Matrix:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         cdef vec_t vec_axis
         cdef double sin, cos, icos, x, y, z
-        _conv_vec(&vec_axis, axis, scalar=False)
+        conv_vec(&vec_axis, axis, scalar=False)
         _vec_normalise(&vec_axis, &vec_axis)
         angle *= -deg_2_rad
 
@@ -1995,22 +1981,22 @@ cdef class Matrix:
             mat = Matrix.__new__(Matrix)
             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
             if isinstance(second, Matrix):
-                _mat_mul(mat.mat, (<Matrix>second).mat)
+                mat_mul(mat.mat, (<Matrix>second).mat)
             elif isinstance(second, Angle):
                 _mat_from_angle(temp, &(<Angle>second).val)
-                _mat_mul(mat.mat, temp)
+                mat_mul(mat.mat, temp)
             else:
                 return NotImplemented
             return mat
         elif isinstance(second, Matrix):
             if isinstance(first, Vec):
                 vec = Vec.__new__(Vec)
-                _vec_rot(&vec.val, (<Matrix>second).mat)
+                vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, Angle):
                 ang = Angle.__new__(Angle)
                 _mat_from_angle(temp, &(<Angle>first).val)
-                _mat_mul(temp, (<Matrix>second).mat)
+                mat_mul(temp, (<Matrix>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
             else:
@@ -2021,11 +2007,11 @@ cdef class Matrix:
     def __imatmul__(self, other):
         cdef mat_t temp
         if isinstance(other, Matrix):
-            _mat_mul(self.mat, (<Matrix>other).mat)
+            mat_mul(self.mat, (<Matrix>other).mat)
             return self
         elif isinstance(other, Angle):
             _mat_from_angle(temp, &(<Angle>other).val)
-            _mat_mul(self.mat, temp)
+            mat_mul(self.mat, temp)
             return self
         else:
             return NotImplemented
@@ -2041,7 +2027,6 @@ cdef class Angle:
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
-    cdef vec_t val
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
         """Create an Angle.
@@ -2185,12 +2170,12 @@ cdef class Angle:
         """Create an Angle, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
-            vec = Angle()
-            vec[axis1] = val1
-            vec[axis2] = val2
-            vec[axis3] = val3
-        The magnitudes can also be Vectors, in which case the matching
-        axis will be used from the vector.
+            ang = Angle()
+            ang[axis1] = val1
+            ang[axis2] = val2
+            ang[axis3] = val3
+        The magnitudes can also be Angles, in which case the matching
+        axis will be used from the angle.
         """
         cdef Py_ssize_t arg_count = len(args)
         if arg_count not in (2, 4, 6):
@@ -2307,7 +2292,7 @@ cdef class Angle:
         """
         cdef vec_t other
         try:
-            _conv_angles(&other, other_obj)
+            conv_angles(&other, other_obj)
         except (TypeError, ValueError):
             return NotImplemented
 
@@ -2356,9 +2341,9 @@ cdef class Angle:
             _mat_from_angle(temp1, &(<Angle>first).val)
             if isinstance(second, Angle):
                 _mat_from_angle(temp2, &(<Angle>second).val)
-                _mat_mul(temp1, temp2)
+                mat_mul(temp1, temp2)
             elif isinstance(second, Matrix):
-                _mat_mul(temp1, (<Matrix>second).mat)
+                mat_mul(temp1, (<Matrix>second).mat)
             else:
                 return NotImplemented
             res = Angle.__new__(Angle)
@@ -2371,12 +2356,12 @@ cdef class Angle:
             if isinstance(first, Matrix):
                 res = Matrix.__new__(Matrix)
                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
-                _mat_mul((<Matrix>res).mat, temp2)
+                mat_mul((<Matrix>res).mat, temp2)
                 return res
             elif isinstance(first, Vec):
                 res = Vec.__new__(Vec)
                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
-                _vec_rot(&(<Vec>res).val, temp2)
+                vec_rot(&(<Vec>res).val, temp2)
                 return res
 
         return NotImplemented
@@ -2389,3 +2374,24 @@ cdef class Angle:
         the angle.
         """
         return AngleTransform.__new__(AngleTransform, self)
+
+# Override the class' names to match the public one.
+# This fixes all the methods too, though not in exceptions.
+
+from cpython.object cimport PyTypeObject
+if USE_TYPE_INTERNALS:
+    (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+    (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+    (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+    (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+    (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+    (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+    (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+try:
+    parse_vec_str.__module__ = 'srctools.math'
+    to_matrix.__module__ = 'srctools.math'
+    lerp.__module__ = 'srctools.math'
+except Exception:
+    pass  # Perfectly fine.

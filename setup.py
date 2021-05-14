@@ -1,24 +1,7 @@
+"""Build the Srctools package."""
 from setuptools import setup, Extension, find_packages
 import sys
 import os
-
-# If the extension modules should be built.
-BUILD_EXT = True
-
-if BUILD_EXT:
-    try:
-        from Cython.Build import cythonize
-        c_ext = cpp_ext = '.pyx'
-    except ImportError:
-        print('Cython not installed, not compiling Cython modules.')
-        c_ext = '.c'
-        cpp_ext = '.cpp'
-        def cythonize(mod):
-            return mod
-else:
-    def cythonize(mod):
-        return []
-    c_ext = cpp_ext = ''
 
 WIN = sys.platform.startswith('win')
 
@@ -42,7 +25,7 @@ setup(
 
     author='TeamSpen210',
     author_email='spencerb21@live.com',
-    license='unlicense',
+    license='mit',
 
     keywords='',
     classifiers=[
@@ -50,14 +33,17 @@ setup(
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
+        'Programming Language :: Python :: 3.9',
+        'Programming Language :: Python :: 3.10',
         'Programming Language :: Python :: 3 :: Only',
     ],
     packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
-    ext_modules=cythonize([
+    ext_modules=[
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer" + c_ext],
+            sources=["srctools/_tokenizer.pyx"],
+            optional=True,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ],
@@ -66,32 +52,35 @@ setup(
             "srctools._cy_vtf_readwrite",
             include_dirs=[os.path.abspath("libsquish/")],
             language='c++',
+            optional=True,
             sources=[
-                "srctools/_cy_vtf_readwrite" + cpp_ext,
+                "srctools/_cy_vtf_readwrite.pyx",
             ] + SQUISH_CPP,
             extra_compile_args=[
                 '/openmp',
-                 # '/FAs',  # MS ASM dump
+                # '/FAs',  # MS ASM dump
             ] if WIN else [
                 '-fopenmp',
             ],
-            extra_link_args=['/openmp' if WIN else '-fopenmp'],
+            extra_link_args=[] if WIN else ['-fopenmp'],
         ),
         Extension(
             "srctools._math",
-            sources=["srctools/_math" + c_ext],
+            sources=["srctools/_math.pyx"],
+            optional=True,
             extra_compile_args=[
-                '/FAs',  # MS ASM dump
+                # '/FAs',  # MS ASM dump
             ] if WIN else [
 
             ],
         ),
-    ]),
+    ],
 
     package_data={'srctools': [
         'fgd.lzma',
         'srctools.fgd',
         'py.typed',
+        '*.pxd',  # Cython headers
     ]},
 
     entry_points={
@@ -106,9 +95,11 @@ setup(
     },
     python_requires='>=3.6, <4',
     install_requires=[
-        'importlib_resources',
+        # In stdlib after this.
+        "importlib_resources;python_version<'3.7'",
     ],
-    extras={
-        'wx': 'wxPython',  # VTF support.
+    extras_require={
+        'wx': ['wxPython'],  # VTF support.
+        'cy': ['cython'],  # Force Cython so extensions can be buildable.
     }
 )

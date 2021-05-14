@@ -1,4 +1,4 @@
-from itertools import zip_longest
+from itertools import zip_longest, tee
 from typing import Type, Tuple
 
 import pytest
@@ -92,11 +92,22 @@ prop_parse_tokens = [
     (T.STRING, "lambda2"), (T.STRING, "should2"), T.NEWLINE,
     (T.STRING, "replace2"), (T.STRING, "above2"), T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "otherval"), (T.STRING, "blah"), T.NEWLINE,
+    (T.STRING, "shouldnotreplace"), (T.PROP_FLAG, "test_enabled"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "key"), (T.STRING, "value1"), T.NEWLINE,
+    (T.STRING, "key"), (T.STRING, "value2"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
+    (T.STRING, "skipped"), (T.PROP_FLAG, "test_disabled"), T.NEWLINE,
+    T.BRACE_OPEN, T.NEWLINE,
+    (T.STRING, "ignore"), (T.STRING, "value"), T.NEWLINE,
+    T.BRACE_CLOSE, T.NEWLINE,
     T.BRACE_CLOSE, T.NEWLINE,
 ]
 
 # Additional text not valid as a property.
 noprop_parse_test = """
+#letter_abcdefghijklmnopqrstuvwxyz_ABCDEFGHIJKLMNOPQRSTUVWXYZ
 #ﬁmport test
 #EXclßÀde value
 #caseA\u0345\u03a3test
@@ -105,6 +116,7 @@ noprop_parse_test = """
 
 noprop_parse_tokens = [
     T.NEWLINE,
+    (T.DIRECTIVE, "letter_abcdefghijklmnopqrstuvwxyz_abcdefghijklmnopqrstuvwxyz"), T.NEWLINE,
     (T.DIRECTIVE, "fimport"), (T.STRING, "test"), T.NEWLINE,
     (T.DIRECTIVE, "exclssàde"), (T.STRING, "value"), T.NEWLINE,
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
@@ -142,14 +154,15 @@ def check_tokens(tokenizer, tokens):
     __tracebackhide__ = True
 
     sentinel = object()
-    tokenizer_iter = iter(tokenizer)
+    tokenizer_iter, tokenizer_backup = tee(tokenizer, 2)
     tok_test_iter = iter(tokens)
     for i, (token, comp_token) in enumerate(zip_longest(tokenizer_iter, tok_test_iter, fillvalue=sentinel), start=1):
         # Check if either is too short - we need zip_longest() for that.
         if token is sentinel:
-            pytest.fail('{}: Tokenizer ended early - needed {}!'.format(
+            pytest.fail('{}: Tokenizer ended early - needed {}, got {}!'.format(
                 i,
                 [comp_token] + list(tok_test_iter),
+                list(tokenizer_backup),
             ))
         if comp_token is sentinel:
             pytest.fail('{}: Tokenizer had too many values - extra = {}!'.format(
@@ -179,6 +192,10 @@ def test_prop_tokens(py_c_token):
     test_list[27:28] = [''] + list(test_list[27].partition('"')) + ['', '', '']
     # They should be the same text though!
     assert ''.join(test_list) == prop_parse_test, "Bad test code!"
+
+    # Test an iterator.
+    tok = Tokenizer(iter(prop_parse_test.splitlines(keepends=True)), '', string_bracket=True)
+    check_tokens(tok, prop_parse_tokens)
 
     tok = Tokenizer(test_list, '', string_bracket=True)
     check_tokens(tok, prop_parse_tokens)
@@ -232,10 +249,37 @@ def test_pushback(py_c_token):
     check_tokens(tokens, noprop_parse_tokens)
 
 
-def test_call_next(py_c_token):
+@pytest.mark.parametrize('token, val', [
+    (Token.EOF, ''),
+    (Token.NEWLINE, '\n'),
+    (Token.BRACE_OPEN, '{'),
+    (Token.BRACE_CLOSE, '}'),
+    (Token.BRACK_OPEN, '['),
+    (Token.BRACK_CLOSE, ']'),
+    (Token.COLON, ':'),
+    (Token.EQUALS, '='),
+    (Token.PLUS, '+'),
+    (Token.COMMA, ','),
+])
+def test_pushback_opvalues(py_c_token, token: Token, val: str) -> None:
+    """Test the operator tokens pushback the correct fixed value."""
+    tok: Tokenizer = py_c_token(['test data'], string_bracket=False)
+    tok.push_back(token, val)
+    assert tok() == (token, val)
+
+    tok.push_back(Token.STRING, 'push')
+    with pytest.raises(ValueError):  # Can only push back one at a time.
+        tok.push_back(Token.STRING, 'two_at_once')
+    assert tok() == (Token.STRING, 'push')
+
+    # Value is ignored for these token types.
+    tok.push_back(token, 'another_val')
+    assert tok() == (token, val)
+
+
+def test_call_next(py_c_token) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
-    Tokenizer = py_c_token
-    tok = Tokenizer('''{ "test" } "test" { + } ''', 'file')
+    tok: Tokenizer = py_c_token('''{ "test" } "test" { + } ''', 'file')
 
     tok_type, tok_value = tok()
     assert tok_type is Token.BRACE_OPEN and tok_value == '{'
@@ -340,6 +384,22 @@ def test_bom(py_c_token):
     # And with chunks.
     tok = Tokenizer(list(text), '')
     check_tokens(tok, tokens)
+
+    # Test edge cases - characters with the first 1 or 2 bytes of the 3-byte
+    # BOM should be kept intact.\xef\xbb\xbf
+    matches_1 = b'\xef\xbe\xae'.decode('utf8') + '_test'
+    matches_2 = b'\xef\xbb\xae'.decode('utf8') + '_test'
+    assert matches_1.encode('utf8')[:1] == codecs.BOM_UTF8[:1]
+    assert matches_2.encode('utf8')[:2] == codecs.BOM_UTF8[:2]
+
+    assert next(Tokenizer(bom + 'test')) == (Token.STRING, 'test')
+    assert next(Tokenizer(matches_1)) == (Token.STRING, matches_1)
+    assert next(Tokenizer(matches_2)) == (Token.STRING, matches_2)
+
+    # Test strings that are less than 3 bytes long.
+    check_tokens(Tokenizer(['e']), [(Token.STRING, 'e')])
+    check_tokens(Tokenizer(['e', 'x']), [(Token.STRING, 'ex')])
+    check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
 
 
 def test_constructor(py_c_token):
@@ -476,6 +536,7 @@ def test_invalid_bracket(py_c_token):
         for tok, tok_value in py_c_token('[ no [ nesting ] ]', string_bracket=True):
             pass
 
+
 def test_invalid_paren(py_c_token):
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
@@ -494,7 +555,7 @@ def test_invalid_paren(py_c_token):
             pass
 
 
-def test_token_syntax_error():
+def test_token_syntax_error() -> None:
     """Test the TokenSyntaxError class."""
     # There's no C version - if we're erroring, we don't care about
     # performance much.

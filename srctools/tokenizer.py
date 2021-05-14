@@ -37,8 +37,8 @@ class TokenSyntaxError(Exception):
             self.line_num,
             )
 
-    def __eq__(self, other: 'TokenSyntaxError') -> bool:
-        if type(self) is type(other):
+    def __eq__(self, other: object) -> bool:
+        if isinstance(other, TokenSyntaxError):
             return (
                 self.mess == other.mess and
                 self.file == other.file and
@@ -83,6 +83,7 @@ class Token(Enum):
     COLON = 13
     EQUALS = 14
     PLUS = 15
+    COMMA = 16
 
     @property
     def has_value(self) -> bool:
@@ -102,6 +103,7 @@ _PUSHBACK_VALS = {
     Token.COLON: ':',
     Token.EQUALS: '=',
     Token.PLUS: '+',
+    Token.COMMA: ',',
 }
 
 
@@ -112,6 +114,7 @@ _OPERATORS = {
     ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
+    ',': Token.COMMA,
 }
 
 
@@ -128,7 +131,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = set('"\'{};:[]()\n\t ')
+BARE_DISALLOWED = set('"\'{};:,[]()\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
@@ -215,9 +218,16 @@ class BaseTokenizer(abc.ABC):
             return next_val
         return self._get_token()
 
-    def __iter__(self) -> Iterator[Tuple[Token, str]]:
-        # Call ourselves until EOF is returned
-        return iter(self, (Token.EOF, ''))
+    def __iter__(self) -> 'BaseTokenizer':
+        """Tokenizers are their own iterator."""
+        return self
+
+    def __next__(self) -> Tuple[Token, str]:
+        """Iterate to produce a token, stopping at EOF."""
+        tok_and_val = self()
+        if tok_and_val[0] is Token.EOF:
+            raise StopIteration
+        return tok_and_val
 
     def push_back(self, tok: Token, value: str=None) -> None:
         """Return a token, so it will be reproduced when called again.
@@ -361,39 +371,21 @@ class Tokenizer(BaseTokenizer):
             return self.cur_chunk[self.char_index]
         except IndexError:
             # Retrieve a chunk from the iterable.
+            # Skip empty chunks (shouldn't be there.)
             try:
-                chunk = self.cur_chunk = next(self.chunk_iter)
-            except StopIteration:
-                # Out of characters
-                return None
+                for chunk in self.chunk_iter:
+                    if isinstance(chunk, bytes):
+                        raise ValueError('Cannot parse binary data!')
+                    if not isinstance(chunk, str):
+                        raise ValueError("Data was not a string!")
+                    if chunk:
+                        self.cur_chunk = chunk
+                        self.char_index = 0
+                        return chunk[0]
             except UnicodeDecodeError as exc:
                 raise self.error("Could not decode file!") from exc
-
-            # Specifically catch passing binary data.
-            if isinstance(chunk, bytes):
-                raise ValueError('Cannot parse binary data!')
-            if not isinstance(chunk, str):
-                raise ValueError("Data was not a string!")
-
-            self.char_index = 0
-
-            try:
-                return chunk[0]
-            except IndexError:
-                # Skip empty chunks (shouldn't be there.)
-                try:
-                    for chunk in self.chunk_iter:
-                        if isinstance(chunk, bytes):
-                            raise ValueError('Cannot parse binary data!')
-                        if not isinstance(chunk, str):
-                            raise ValueError("Data was not a string!")
-                        if chunk:
-                            self.cur_chunk = chunk
-                            return chunk[0]
-                except UnicodeDecodeError as exc:
-                    raise self.error("Could not decode file!") from exc
-                # Out of characters after empty chunks
-                return None
+            # Out of characters after empty chunks
+            return None
 
     def _get_token(self) -> Tuple[Token, str]:
         """Return the next token, value pair."""
@@ -647,7 +639,7 @@ _py_escape_text = cy_escape_text = escape_text
 # Do it this way, so static analysis ignores this.
 _glob = globals()
 try:
-    from srctools import _tokenizer
+    from srctools import _tokenizer  # type: ignore
 except ImportError:
     pass
 else:

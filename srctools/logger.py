@@ -10,7 +10,7 @@ import sys
 import io
 import traceback
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any, cast
+from typing import Dict, Tuple, Union, Type, Callable, Any, cast, Optional
 
 
 class LogMessage:
@@ -108,12 +108,12 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
 class Formatter(logging.Formatter):
     """Override exception handling."""
     SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
-    def formatException(self, ei: Tuple[Type[BaseException], BaseException, TracebackType]) -> str:
+    def formatException(self, ei: Union[Tuple[Type[BaseException], BaseException, Optional[TracebackType]], Tuple[None, None, None]]) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
         buffer = io.StringIO()
 
-        trace = exc_tb
+        trace: Optional[TracebackType] = exc_tb
 
         try:
             while trace is not None:
@@ -209,12 +209,11 @@ def init_logging(
     (taking type, value, traceback).
     If the exception is a BaseException, the app will quit silently.
     """
-
-    class NewLogRecord(cast(logging.LogRecord, logging.getLogRecordFactory())):
+    oldLogRecord = cast(Type[logging.LogRecord], logging.getLogRecordFactory())
+    class NewLogRecord(oldLogRecord):
         """Allow passing an alias for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
-
-        alias = None  # type: str
+        alias: Optional[str] = None
 
         def getMessage(self):
             """We have to hook here to change the value of .module.
@@ -250,15 +249,6 @@ def init_logging(
         log_handler.setLevel(logging.DEBUG)
         log_handler.setFormatter(long_log_format)
         logger.addHandler(log_handler)
-
-        name, ext = os.path.splitext(filename)
-
-        # The .error log has copies of WARNING and above.
-        err_log_handler = get_handler(name + '.error' + ext)
-        err_log_handler.setLevel(logging.WARNING)
-        err_log_handler.setFormatter(long_log_format)
-
-        logger.addHandler(err_log_handler)
 
     if sys.stdout:
         stdout_loghandler = logging.StreamHandler(sys.stdout)
@@ -302,16 +292,12 @@ def init_logging(
         if not issubclass(exc_type, Exception):
             # It's subclassing BaseException (KeyboardInterrupt, SystemExit),
             # so we should quit without messages.
-            logging.shutdown()
             return
 
-        logger._log(
-            level=logging.ERROR,
-            msg='Uncaught Exception:',
-            args=(),
+        logger.error(
+            'Uncaught Exception:',
             exc_info=(exc_type, exc_value, exc_tb),
         )
-        logging.shutdown()
         if on_error is not None:
             on_error(exc_type, exc_value, exc_tb)
         # Call the original handler - that prints to the normal console.

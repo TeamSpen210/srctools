@@ -125,24 +125,32 @@ def main(argv: List[str]) -> None:
 
     use_comma_sep = conf.get(bool, 'use_comma_sep')
     if use_comma_sep is None:
-        # Guess the format, by picking whatever the first output uses.
-        for ent in vmf.entities:
-            for out in ent.outputs:
-                use_comma_sep = out.comma_sep
-                break
-        if use_comma_sep is None:
-            LOGGER.warning('No outputs in map, could not determine BSP I/O format!')
+        # Guess the format, by checking existing outputs.
+        used_comma_sep = {
+            out.comma_sep
+            for ent in vmf.entities
+            for out in ent.outputs
+        }
+        try:
+            [use_comma_sep] = used_comma_sep
+        except ValueError:
+            if used_comma_sep:
+                LOGGER.warning("Both BSP I/O formats in map? This shouldn't be possible.")
+            else:
+                LOGGER.warning('No outputs in map, could not determine BSP I/O format!')
             LOGGER.warning('Set "use_comma_sep" in srctools.vdf.')
-        use_comma_sep = False
+            use_comma_sep = False  # Kinda arbitary.
 
     LOGGER.info('Running transforms...')
     run_transformations(vmf, fsys, packlist, bsp_file, game_info, studiomdl_loc)
 
     if studiomdl_loc is not None and args.propcombine:
-        decomp_cache_loc = conf.get(str, 'propcombine_cache')
-        if decomp_cache_loc is not None:
-            decomp_cache_loc = (game_info.root / decomp_cache_loc).resolve()
+        decomp_cache_path = conf.get(str, 'propcombine_cache')
+        if decomp_cache_path is not None:
+            decomp_cache_loc = (game_info.root / decomp_cache_path).resolve()
             decomp_cache_loc.mkdir(parents=True, exist_ok=True)
+        else:
+            decomp_cache_loc = None
         if conf.get(bool, 'propcombine_crowbar'):
             # argv[0] is the location of our script/exe, which lets us locate
             # Crowbar from there.
@@ -186,7 +194,21 @@ def main(argv: List[str]) -> None:
         if conf.get(bool, 'soundscript_manifest'):
             packlist.write_manifest()
 
-    packlist.pack_into_zip(bsp_file, blacklist=pack_blacklist, ignore_vpk=False)
+    dump_path = conf.get(str, 'pack_dump')
+    if dump_path:
+        packlist.pack_into_zip(
+            bsp_file,
+            blacklist=pack_blacklist,
+            ignore_vpk=False,
+            dump_loc=Path(game_info.root, dump_path.lstrip('#')).absolute().resolve(),
+            only_dump=dump_path.startswith('#'),
+        )
+    else:
+        packlist.pack_into_zip(
+            bsp_file,
+            blacklist=pack_blacklist,
+            ignore_vpk=False,
+        )
 
     with bsp_file.packfile() as pak_zip:
         # List out all the files, but group together files with the same extension.
