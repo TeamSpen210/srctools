@@ -57,7 +57,7 @@ class DispFlag(Flag):
 
     Does NOT match the file values, since those are inverted.
     """
-    NONE = 0
+    COLL_NONE = 0
     COLL_PHYSICS = 1  # Can physics objects collide?
     COLL_PLAYER_NPC = 2  # QPhysics hull collisions
     COLL_BULLET = 4  # Raytraces IE bullets.
@@ -70,10 +70,10 @@ class DispFlag(Flag):
 # Bit 1 stores if the face has a bumpmap, set by VBSP.
 _DISP_FLAG_TO_COLL: List[DispFlag] = [
     (
-        (DispFlag.COLL_PHYSICS if i & 2 == 0 else DispFlag.NONE) |
-        (DispFlag.COLL_PLAYER_NPC if i & 4 == 0 else DispFlag.NONE) |
-        (DispFlag.COLL_BULLET if i & 8 == 0 else DispFlag.NONE)
-    ) for i in range(8)
+        (DispFlag.COLL_PHYSICS if i & 2 == 0 else DispFlag.COLL_NONE) |
+        (DispFlag.COLL_PLAYER_NPC if i & 4 == 0 else DispFlag.COLL_NONE) |
+        (DispFlag.COLL_BULLET if i & 8 == 0 else DispFlag.COLL_NONE)
+    ) for i in range(16)
 ]
 # Invert, prefer smaller = less bits set.
 _DISP_COLL_TO_FLAG: Dict[DispFlag, int] = {
@@ -1276,97 +1276,35 @@ class Solid:
             s.localise(origin, angles)
 
 
-class Displacement:
-    """The extra data required to define a displacement."""
-    def __init__(
-        self,
-        power: int,
-        pos: Vec,
-        flags: int,
-        elev: float,
-        is_subdiv: bool,
-        allowed_vert: Array,
-        normals: List[Array],
-        distances: List[Array],
-        offsets: List[Array],
-        offset_normals: List[Array],
-        alphas: List[Array],
-        triangle_tags: List[Array],
-    ) -> None:
-        self.power = power
-        self.pos = pos
-        self.flags = flags
-        self.elev = elev
-        self.is_subdiv = is_subdiv
-        self.allowed_vert = allowed_vert
+@attr.define(frozen=False)
+class DispVertex:
+    """A vertex in dislacements."""
+    normal: Vec = attr.ib(factory=Vec)
+    distance: float = 0
+    offset: Vec = attr.ib(factory=Vec)
+    offset_norm: Vec = attr.ib(factory=Vec)
+    alpha: float = 0.0  # 0-255
+    # The pair of triangle tags for the quad in the +ve direction
+    # from us. This means the last row/column's triangles are ignored.
+    triangle_a: TriangleTag = TriangleTag.FLAT
+    triangle_b: TriangleTag = TriangleTag.FLAT
 
-        self.normal_list = normals
-        self.distance_list = distances
-        self.offsets_list = offsets
-        self.off_norm_list = offset_normals
-        self.alpha_list = alphas
-        self.tri_tag_list = triangle_tags
+    @property
+    def _tri_tag_export(self) -> str:
+        """For exporting, the string form of the two triangle tags."""
+        return f'{self.triangle_a.value} {self.triangle_b.value}'
 
-    @classmethod
-    def parse(cls, tree: Property) -> 'Displacement':
-        """Parse this displacement configuration."""
-        # Allowed verts should always have 10 entries, and have a '10' key.
-        vert_key = tree.find_key('allowed_verts')
-        allowed_vert = Array('i', map(int, vert_key['10'].split()))
-        assert len(allowed_vert) == 10, vert_key
-        return cls(
-            tree.int('power'),
-            tree.vec('startposition'),
-            tree.int('flags'),
-            tree.float('elevation'),
-            tree.bool('subdiv'),
-            allowed_vert,
-            cls._parse_rowset('f', tree, 'normals'),
-            cls._parse_rowset('f', tree, 'distances'),
-            cls._parse_rowset('f', tree, 'offsets'),
-            cls._parse_rowset('f', tree, 'offset_normals'),
-            cls._parse_rowset('f', tree, 'alphas'),
-            cls._parse_rowset('B', tree, 'triangle_tags'),
+    def copy(self) -> 'DispVertex':
+        """Duplicate this displacement vertex."""
+        return DispVertex(
+            self.normal.copy(),
+            self.distance,
+            self.offset.copy(),
+            self.offset_norm.copy(),
+            self.alpha,
+            self.triangle_a,
+            self.triangle_b,
         )
-
-    def copy(self) -> 'Displacement':
-        """Duplicate this displacement data."""
-        return Displacement(
-            self.power,
-            self.pos.copy(),
-            self.flags,
-            self.elev,
-            self.is_subdiv,
-            copy.deepcopy(self.allowed_vert),
-            copy.deepcopy(self.normal_list),
-            copy.deepcopy(self.distance_list),
-            copy.deepcopy(self.offsets_list),
-            copy.deepcopy(self.off_norm_list),
-            copy.deepcopy(self.alpha_list),
-            copy.deepcopy(self.tri_tag_list),
-        )
-
-    @staticmethod
-    def _parse_rowset(dtype: str, tree: Property, name: str) -> List[Array]:
-        """Parse one of the very similar per-vert sections."""
-        tree = tree.find_key(name)
-        func = float if dtype == 'f' else int
-        rows = []
-        for i in itertools.count():
-            try:
-                rowstr = tree[f'row{i}']
-            except LookupError:
-                break
-            rows.append(Array(dtype, map(func, rowstr.split())))
-        return rows
-
-    @staticmethod
-    def _export_rowset(row: List[Array], name: str, f: IO[str], ind: str) -> None:
-        """Write out of the very similar per-vert sections."""
-        f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
-        for i, nums in enumerate(row):
-            f.write(f'{ind}\t\t"row{i}" "{" ".join(map(str, nums))}"\n')
-        f.write(ind + '\t\t}\n')
 
 
 class UVAxis:
@@ -1509,8 +1447,29 @@ class Side:
         'ham_rot',
         'uaxis',
         'vaxis',
-        'disp',
+        'disp_power',
+        'disp_pos',
+        'disp_elevation',
+        'disp_flags',
+        'disp_allowed_vert',
+        '_disp_verts',
     ]
+    map: VMF
+    planes: List[Vec]
+    id: int
+    lightmap: int
+    smooth: int
+    mat: str
+    ham_rot: float
+    uaxis: UVAxis
+    vaxis: UVAxis
+
+    disp_power: int
+    disp_pos: Optional[Vec]
+    disp_elevation: float
+    disp_flags: DispFlag
+    disp_allowed_vert: Optional[Array]
+    _disp_verts: Optional[List[DispVertex]]
 
     def __init__(
         self,
@@ -1523,7 +1482,7 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis]=None,
         vaxis: Optional[UVAxis]=None,
-        disp_data: Optional[Displacement]=None,
+        disp_power: int=0,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1537,7 +1496,28 @@ class Side:
         self.ham_rot = rotation
         self.uaxis = uaxis or UVAxis(0, 1, 0)
         self.vaxis = vaxis or UVAxis(0, 0, -1)
-        self.disp = disp_data
+
+        self.disp_power = 0
+        self.disp_flags = DispFlag.COLL_ALL
+        self.disp_elevation = 0.0
+        if disp_power > 0:
+            self._disp_verts = [DispVertex() for _ in range(self.disp_size ** 2)]
+            self.disp_pos = Vec()
+            self.disp_allowed_vert = Array('i', (-1, ) * 10)
+        else:
+            self._disp_verts = self.disp_pos = self.disp_allowed_vert = None
+
+    @property
+    def is_disp(self) -> bool:
+        """Returns whether this is a displacement or not."""
+        return self.disp_power > 0
+
+    @property
+    def disp_size(self) -> int:
+        """Return the number of vertexes in each direction of a displacement."""
+        if self.disp_power == 0:
+            return 0
+        return 2 ** self.disp_power + 1
 
     @classmethod
     def parse(cls, vmf_file: VMF, tree: Property) -> 'Side':
@@ -1553,15 +1533,8 @@ class Side:
             Vec.from_str(verts[1]),
             Vec.from_str(verts[2]),
         ]
-
-        try:
-            disp_tree = tree.find_key('dispinfo')
-        except LookupError:
-            disp_data = None
-        else:
-            disp_data = Displacement.parse(disp_tree)
-
-        return cls(
+        
+        side: Side = cls(
             vmf_file,
             planes,
             tree.int('id', -1),
@@ -1571,8 +1544,116 @@ class Side:
             tree.float('rotation'),
             UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
             UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
-            disp_data,
         )
+
+        try:
+            disp_tree = tree.find_key('dispinfo')
+        except LookupError:  # Not a displacement.
+            return side
+        
+        # Deal with displacements.
+        disp_power = disp_tree.int('power', 4)
+        side.disp_power = disp_power
+        side.disp_pos = disp_tree.vec('startposition')
+        side.disp_elevation = disp_tree.float('elevation')
+        disp_flag_ind = disp_tree.int('flags')
+        if 0 <= disp_flag_ind <= 16:
+            side.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
+        else:
+            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {side.id}!')
+        if disp_tree.bool('subdiv'):
+            side.disp_flags |= DispFlag.SUBDIV
+
+        # This always has a key of '10', with 10 '-1's...
+        vert_key = disp_tree.find_key('allowed_verts')
+        allowed_vert = Array('i', map(int, vert_key['10'].split()))
+        if len(allowed_vert) != 10:
+            raise ValueError(
+                f'Displacement allowed_verts in side {side.id} '
+                f'must be 10 long!'
+            )
+        side.disp_allowed_vert = allowed_vert
+
+        size = side.disp_size
+        side._disp_verts = [
+            DispVertex() for _ in
+            range(size ** 2)
+        ]
+        # Parse all the rows..
+        side._parse_disp_vecrow(disp_tree, 'normals', 'normal')
+        side._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
+        side._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
+
+        for y, row in side._iter_disp_row(disp_tree, 'alphas', size):
+            try:
+                for x, alpha in enumerate(row):
+                    side._disp_verts[y * size + x].alpha = float(alpha)
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for alpha in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        for y, row in side._iter_disp_row(disp_tree, 'distances', size):
+            try:
+                for x, alpha in enumerate(row):
+                    side._disp_verts[y * size + x].distance = float(alpha)
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for distances in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        # Not the same, 1 less row and column since it's per-quad.
+        tri_tags_count = 2 ** disp_power
+        for y, row in side._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
+            try:
+                for x in range(tri_tags_count):
+                    vert = side._disp_verts[y * size + x]
+                    vert.triangle_a = TriangleTag(int(row[2 * x]))
+                    vert.triangle_b = TriangleTag(int(row[2 * x + 1]))
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for triangle tags in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+        return side
+
+    def _iter_disp_row(self, tree: Property, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
+        """Return y, row pairs of values from a displacement array row.
+
+        It verifies the row is `size` long.
+        """
+        for row_prop in tree.find_children(name):
+            if row_prop.name.startswith('row'):
+                y = int(row_prop.name[3:])
+            else:
+                continue  # Ignore unknown keys.
+            split = row_prop.value.split()
+            if len(split) != size:
+                raise ValueError(
+                    f'Displacement array for {name} in side {self.id}, '
+                    f'row {y} must have a length of '
+                    f'{size}, not {len(split)}!'
+                )
+            yield y, split
+
+    def _parse_disp_vecrow(self, tree: Property, name: str, member: str) -> None:
+        """Parse one of the very similar per-vert sections."""
+        size = self.disp_size
+        for y, split in self._iter_disp_row(tree, name, 3 * size):
+            try:
+                for x in range(size):
+                    setattr(self._disp_verts[y * size + x], member, Vec(
+                        float(split[3 * x]),
+                        float(split[3 * x + 1]),
+                        float(split[3 * x + 2]),
+                    ))
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for {name} in side {self.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
 
     def copy(
         self,
@@ -1589,7 +1670,7 @@ class Side:
         if vmf_file is not None and des_id == -1:
             des_id = self.id
 
-        copy = Side(
+        new_side = Side(
             vmf_file or self.map,
             [p.copy() for p in self.planes],
             des_id,
@@ -1599,10 +1680,15 @@ class Side:
             self.ham_rot,
             self.uaxis.copy(),
             self.vaxis.copy(),
-            self.disp.copy() if self.disp is not None else None,
+            self.disp_power,
         )
-        side_mapping[self.id] = copy.id
-        return copy
+        side_mapping[self.id] = new_side.id
+        if self.is_disp:
+            new_side.disp_flags = self.disp_flags
+            new_side.disp_elevation = self.disp_elevation
+            new_side.disp_pos = self.disp_pos.copy()
+            new_side._disp_verts = [vert.copy() for vert in self._disp_verts]
+        return new_side
 
     # noinspection PyProtectedMember
     def export(self, buffer: IO[str], ind: str='') -> None:
@@ -1618,30 +1704,41 @@ class Side:
         buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
         buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
         buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
-        if self.disp is not None:
-            disp = self.disp
+        if self.disp_power > 0:
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
-            buffer.write(f'{ind}\t\t"power" "{disp.power}"\n')
-            buffer.write(f'{ind}\t\t"startposition" "[{disp.pos}]"\n')
-            buffer.write(f'{ind}\t\t"flags" "{disp.flags}"\n')
-            buffer.write(f'{ind}\t\t"elevation" "{disp.elev}"\n')
-            buffer.write(f'{ind}\t\t"subdiv" "{disp.elev}"\n')
-            buffer.write(f'{ind}\t\t"subdiv" "{"1" if disp.is_subdiv else "0"}"\n')
-            disp._export_rowset(disp.normal_list, 'normals', buffer, ind),
-            disp._export_rowset(disp.distance_list, 'distances', buffer, ind),
-            disp._export_rowset(disp.offsets_list, 'offsets', buffer, ind),
-            disp._export_rowset(disp.off_norm_list, 'offset_normals', buffer, ind),
-            disp._export_rowset(disp.alpha_list, 'alphas', buffer, ind),
-            disp._export_rowset(disp.tri_tag_list, 'triangle_tags', buffer, ind),
+            buffer.write(f'{ind}\t\t"power" "{self.disp_power}"\n')
+            buffer.write(f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n')
+            buffer.write(f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n')
+            buffer.write(f'{ind}\t\t"elevation" "{self.disp_elevation}"\n')
+            buffer.write(f'{ind}\t\t"subdiv" "{"1" if self.disp_flags & DispFlag.SUBDIV else "0"}"\n')
+
+            size = self.disp_size
+            self._export_disp_rowset('normals', 'normal', buffer, ind, size),
+            self._export_disp_rowset('distances', 'distance', buffer, ind, size),
+            self._export_disp_rowset('offsets', 'offset', buffer, ind, size),
+            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size),
+            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size),
+            self._export_disp_rowset('triangle_tags', '_tri_tag_export', buffer, ind, size),
 
             buffer.write(ind + '\t\tallowed_verts\n')
             buffer.write(ind + '\t\t{\n')
-            assert len(self.disp.allowed_vert) == 10, self.disp.allowed_vert
-            buffer.write(f'{ind}"10" "{" ".join(map(str, self.disp.allowed_vert))}"\n')
+            assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
+            buffer.write(f'{ind}"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
             buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
         buffer.write(ind + '}\n')
+
+    def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
+        """Write out one of the displacement vertex arrays."""
+        f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
+        for y in range(size):
+            row = [
+                str(getattr(self[x, y], membr))
+                for x in range(size)
+            ]
+            f.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+        f.write(ind + '\t\t}\n')
 
     def __str__(self) -> str:
         """Dump a user-friendly representation of the side."""
@@ -1654,6 +1751,40 @@ class Side:
     def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
         self.map.face_id.discard(self.id)
+
+    def __getitem__(self, pos: Tuple[int, int]) -> DispVertex:
+        """Return the displacement vertex at this position."""
+        if self.disp_pos == 0 or self._disp_verts is None:
+            raise ValueError('This face is not a displacement!')
+        size = self.disp_size
+        x, y = pos
+        if 0 <= x < size and 0 <= y < size:
+            return self._disp_verts[size * y + x]
+        else:
+            raise IndexError(
+                f'Index {x}, {y} is not valid for a power '
+                f'{self.disp_power} displacement, '
+                f'both must be within 0-{size}!'
+            )
+
+    def __setitem__(self, pos: Tuple[int, int], vert: DispVertex) -> None:
+        """Set the displacement vertex at this position."""
+        if self.disp_pos == 0 or self._disp_verts is None:
+            raise ValueError('This face is not a displacement!')
+        size = self.disp_size
+        x, y = pos
+        if 0 <= x < size and 0 <= y < size:
+            self._disp_verts[size * y + x] = vert
+        else:
+            raise IndexError(
+                f'Index {x}, {y} is not valid for a power '
+                f'{self.disp_power} displacement, '
+                f'both must be within 0-{size}!'
+            )
+
+    def __len__(self) -> int:
+        """If a displacement, the face has disp_size*disp_size vertexes."""
+        return self.disp_size ** 2
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Generate the highest and lowest points these planes form."""
