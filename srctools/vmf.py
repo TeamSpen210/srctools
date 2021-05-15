@@ -16,7 +16,7 @@ from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union, Any, overload, TypeVar, Generic,
+    Optional, Union, overload, TypeVar, Generic,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
     NamedTuple, MutableMapping,
@@ -533,10 +533,10 @@ class VMF:
         return map_obj
 
     @overload
-    def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
+    def export(self, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> str: ...
     @overload
-    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False):
+    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> None: ...
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False, disp_multiblend: bool = True):
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -544,6 +544,8 @@ class VMF:
           inc_version to False to suppress this.
         - If minimal is True, several blocks will be skipped
           (Viewsettings, cameras, cordons and visgroups)
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is stripped.
         """
         if dest_file is None:
             dest_file = io.StringIO()
@@ -588,11 +590,11 @@ class VMF:
         # Also force the classname, since this will crash if it's different.
         self.spawn['mapversion'] = str(self.map_ver)
         self.spawn['classname'] = 'worldspawn'
-        self.spawn.export(dest_file, ent_name='world')
+        self.spawn.export(dest_file, ent_name='world', disp_multiblend=disp_multiblend)
         del self.spawn['mapversion']
 
         for ent in self.entities:
-            ent.export(dest_file)
+            ent.export(dest_file, disp_multiblend=disp_multiblend)
 
         if not minimal:
             dest_file.write('cameras\n{\n')
@@ -1190,8 +1192,17 @@ class Solid:
             editor_color,
         )
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
-        """Generate the strings needed to define this brush."""
+    def export(
+        self,
+        buffer: IO[str],
+        ind: str='',
+        disp_multiblend: bool = True,
+    ) -> None:
+        """Generate the strings needed to define this brush.
+
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is stripped.
+        """
         if self.hidden:
             buffer.write(ind + 'hidden\n' + ind + '{\n')
             ind += '\t'
@@ -1199,7 +1210,7 @@ class Solid:
         buffer.write(ind + '{\n')
         buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
         for s in self.sides:
-            s.export(buffer, ind + '\t')
+            s.export(buffer, ind + '\t', disp_multiblend)
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
@@ -1276,23 +1287,47 @@ class Solid:
             s.localise(origin, angles)
 
 
+@attr.define(frozen=True, hash=True, order=True)
+class Vec4:
+    """Defines a 4-dimensional vector."""
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    w: float = 0.0
+    def __str__(self) -> str:
+        return f'{self.x:g} {self.y:g} {self.z:g} {self.w:g}'
+
+    def __bool__(self) -> bool:
+        return bool(self.x or self.y or self.z or self.w)
+
+
+def _list4_validator(inst: object, attr: attr.Attribute, value: object) -> None:
+    """Validate the value is a list of 4 elements."""
+    if not isinstance(value, list):
+        raise TypeError(attr.name + ' should be a list!')
+    if len(value) != 4:
+        raise ValueError(attr.name + ' must have 4 values!')
+
+
 @attr.define(frozen=False)
 class DispVertex:
     """A vertex in dislacements."""
-    normal: Vec = attr.ib(factory=Vec)
+    normal: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
     distance: float = 0
-    offset: Vec = attr.ib(factory=Vec)
-    offset_norm: Vec = attr.ib(factory=Vec)
+    offset: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    offset_norm: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
     alpha: float = 0.0  # 0-255
     # The pair of triangle tags for the quad in the +ve direction
     # from us. This means the last row/column's triangles are ignored.
     triangle_a: TriangleTag = TriangleTag.FLAT
     triangle_b: TriangleTag = TriangleTag.FLAT
 
-    @property
-    def _tri_tag_export(self) -> str:
-        """For exporting, the string form of the two triangle tags."""
-        return f'{self.triangle_a.value} {self.triangle_b.value}'
+    # These are for multiblend displacements, added in ASW+.
+    multi_blend: Vec4 = Vec4()
+    multi_alpha: Vec4 = Vec4()
+    multi_colors: Optional[List[Vec]] = attr.ib(default=None, validator=attr.validators.optional(
+        attr.validators.deep_iterable(attr.validators.instance_of(Vec), _list4_validator)
+    ))
 
     def copy(self) -> 'DispVertex':
         """Duplicate this displacement vertex."""
@@ -1354,7 +1389,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __copy__(self):
+    def __copy__(self) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1363,7 +1398,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict: object=None) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1372,10 +1407,10 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __getstate__(self):
+    def __getstate__(self) -> tuple:
         return (self.x, self.y, self.z, self.offset, self.scale)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: tuple) -> None:
         (self.x, self.y, self.z, self.offset, self.scale) = state
 
     def vec(self) -> Vec:
@@ -1617,6 +1652,45 @@ class Side:
                     f'Displacement array for triangle tags in side {side.id}, '
                     f'row {y} had invalid number: {exc.args[0]}'
                 ) from None
+
+        if 'multiblend' not in disp_tree:
+            return side
+        # Else: Parse multiblend too.
+        # First initialise this list.
+        for vert in side._disp_verts:
+            vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
+        for i in range(4):
+            side._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
+
+        for y, split in side._iter_disp_row(disp_tree, 'multiblend', 4 * size):
+            try:
+                for x in range(size):
+                    side._disp_verts[y * size + x].multi_blend = Vec4(
+                        float(split[4*x]),
+                        float(split[4*x + 1]),
+                        float(split[4*x + 2]),
+                        float(split[4*x + 3]),
+                    )
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for multiblend in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        for y, split in side._iter_disp_row(disp_tree, 'alphablend', 4 * size):
+            try:
+                for x in range(size):
+                    side._disp_verts[y * size + x].multi_alpha = Vec4(
+                        float(split[4*x]),
+                        float(split[4*x + 1]),
+                        float(split[4*x + 2]),
+                        float(split[4*x + 3]),
+                    )
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for multiblend in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
         return side
 
     def _iter_disp_row(self, tree: Property, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
@@ -1638,17 +1712,17 @@ class Side:
                 )
             yield y, split
 
-    def _parse_disp_vecrow(self, tree: Property, name: str, member: str) -> None:
+    def _parse_disp_vecrow(self, tree: Property, name: str, member: Union[str, int]) -> None:
         """Parse one of the very similar per-vert sections."""
         size = self.disp_size
         for y, split in self._iter_disp_row(tree, name, 3 * size):
             try:
                 for x in range(size):
-                    setattr(self._disp_verts[y * size + x], member, Vec(
-                        float(split[3 * x]),
-                        float(split[3 * x + 1]),
-                        float(split[3 * x + 2]),
-                    ))
+                    res = Vec(float(split[3 * x]), float(split[3 * x + 1]), float(split[3 * x + 2]))
+                    if isinstance(member, str):
+                        setattr(self._disp_verts[y * size + x], member, res)
+                    else:
+                        self._disp_verts[y * size + x].multi_colors[member] = res
             except ValueError as exc:
                 raise ValueError(
                     f'Displacement array for {name} in side {self.id}, '
@@ -1691,8 +1765,12 @@ class Side:
         return new_side
 
     # noinspection PyProtectedMember
-    def export(self, buffer: IO[str], ind: str='') -> None:
-        """Generate the strings required to define this side in a VMF."""
+    def export(self, buffer: IO[str], ind: str='', disp_multiblend: bool = True) -> None:
+        """Generate the strings required to define this side in a VMF.
+
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in CSGO), or if it is skipped.
+        """
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{self.id}"\n')
@@ -1712,7 +1790,7 @@ class Side:
             buffer.write(f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n')
             buffer.write(f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n')
             buffer.write(f'{ind}\t\t"elevation" "{self.disp_elevation}"\n')
-            buffer.write(f'{ind}\t\t"subdiv" "{"1" if self.disp_flags & DispFlag.SUBDIV else "0"}"\n')
+            buffer.write(f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n')
 
             size = self.disp_size
             self._export_disp_rowset('normals', 'normal', buffer, ind, size),
@@ -1720,13 +1798,35 @@ class Side:
             self._export_disp_rowset('offsets', 'offset', buffer, ind, size),
             self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size),
             self._export_disp_rowset('alphas', 'alpha', buffer, ind, size),
-            self._export_disp_rowset('triangle_tags', '_tri_tag_export', buffer, ind, size),
+
+            buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
+            for y in range(size):
+                row = [
+                    f'{vert.triangle_a.value} {vert.triangle_b.value}'
+                    for vert in self._disp_verts[size * y:size * (y+1)]
+                ]
+                buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+            buffer.write(ind + '\t\t}\n')
 
             buffer.write(ind + '\t\tallowed_verts\n')
             buffer.write(ind + '\t\t{\n')
             assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
-            buffer.write(f'{ind}"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
+            buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
             buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
+
+            if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
+                self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
+                self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
+                for i in range(4):
+                    buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
+                    for y in range(size):
+                        row = [
+                            str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
+                            for vert in self._disp_verts[size * y:size * (y+1)]
+                        ]
+                        buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+                    buffer.write(ind + '\t\t}\n')
+
         buffer.write(ind + '}\n')
 
     def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
@@ -1734,8 +1834,8 @@ class Side:
         f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
         for y in range(size):
             row = [
-                str(getattr(self[x, y], membr))
-                for x in range(size)
+                str(getattr(vert, membr))
+                for vert in self._disp_verts[size * y:size * (y+1)]
             ]
             f.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
         f.write(ind + '\t\t}\n')
@@ -2046,11 +2146,19 @@ class Entity:
         """Is this Entity a brush entity?"""
         return len(self.solids) > 0
 
-    def export(self, buffer: IO[str], ent_name: str='entity', ind: str='') -> None:
+    def export(
+        self,
+        buffer: IO[str],
+        ent_name: str='entity',
+        ind: str='',
+        disp_multiblend: bool = True,
+    ) -> None:
         """Generate the strings needed to create this entity.
 
-        ent_name is the key used for the item's block, which is used to allow
-        generating the MapSpawn data block from the entity object.
+        - ent_name is the key used for the item's block, which is used to allow
+          generating the MapSpawn data block from the entity object.
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is skipped
         """
 
         if self.hidden:
@@ -2067,7 +2175,7 @@ class Entity:
 
         if self.is_brush():
             for s in self.solids:
-                s.export(buffer, ind=ind+'\t')
+                s.export(buffer, ind=ind+'\t', disp_multiblend=disp_multiblend)
         if len(self.outputs) > 0:
             buffer.write(ind + '\tconnections\n')
             buffer.write(ind + '\t{\n')
