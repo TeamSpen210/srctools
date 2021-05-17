@@ -1914,12 +1914,18 @@ class Side:
 
         This preserves texture offsets.
         """
-        angles = to_matrix(angles)  # Only do this once.
+        orient = to_matrix(angles)  # Only do this once.
         for p in self.planes:
-            p.localise(origin, angles)
+            p.localise(origin, orient)
 
-        self.uaxis = self.uaxis.localise(origin, angles)
-        self.vaxis = self.vaxis.localise(origin, angles)
+        self.uaxis = self.uaxis.localise(origin, orient)
+        self.vaxis = self.vaxis.localise(origin, orient)
+        if self.is_disp:
+            for vert in self._disp_verts:
+                vert.offset @= orient
+                vert.normal @= orient
+                vert.offset_norm @= orient
+
     def disp_get_tri_verts(self, x: int, y: int) -> tuple[
         DispVertex, DispVertex, DispVertex,
         DispVertex, DispVertex, DispVertex,
