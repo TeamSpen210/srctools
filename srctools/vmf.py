@@ -1312,6 +1312,9 @@ def _list4_validator(inst: object, attr: attr.Attribute, value: object) -> None:
 @attr.define(frozen=False)
 class DispVertex:
     """A vertex in dislacements."""
+    x: int  # Position of the vertex in the displacement.
+    y: int
+
     normal: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
     distance: float = 0
     offset: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
@@ -1328,18 +1331,6 @@ class DispVertex:
     multi_colors: Optional[List[Vec]] = attr.ib(default=None, validator=attr.validators.optional(
         attr.validators.deep_iterable(attr.validators.instance_of(Vec), _list4_validator)
     ))
-
-    def copy(self) -> 'DispVertex':
-        """Duplicate this displacement vertex."""
-        return DispVertex(
-            self.normal.copy(),
-            self.distance,
-            self.offset.copy(),
-            self.offset_norm.copy(),
-            self.alpha,
-            self.triangle_a,
-            self.triangle_b,
-        )
 
 
 class UVAxis:
@@ -1536,7 +1527,11 @@ class Side:
         self.disp_flags = DispFlag.COLL_ALL
         self.disp_elevation = 0.0
         if disp_power > 0:
-            self._disp_verts = [DispVertex() for _ in range(self.disp_size ** 2)]
+            self._disp_verts = [
+                DispVertex(x, y)
+                for y in range(self.disp_size)
+                for x in range(self.disp_size)
+            ]
             self.disp_pos = Vec()
             self.disp_allowed_vert = Array('i', (-1, ) * 10)
         else:
@@ -1611,8 +1606,9 @@ class Side:
 
         size = side.disp_size
         side._disp_verts = [
-            DispVertex() for _ in
-            range(size ** 2)
+            DispVertex(x, y)
+            for y in range(size)
+            for x in range(size)
         ]
         # Parse all the rows..
         side._parse_disp_vecrow(disp_tree, 'normals', 'normal')
@@ -1761,7 +1757,19 @@ class Side:
             new_side.disp_flags = self.disp_flags
             new_side.disp_elevation = self.disp_elevation
             new_side.disp_pos = self.disp_pos.copy()
-            new_side._disp_verts = [vert.copy() for vert in self._disp_verts]
+            new_side._disp_verts = [
+                DispVertex(
+                    vert.x,
+                    vert.y,
+                    vert.normal.copy(),
+                    vert.distance,
+                    vert.offset.copy(),
+                    vert.offset_norm.copy(),
+                    vert.alpha,
+                    vert.triangle_a,
+                    vert.triangle_b,
+                ) for vert in self._disp_verts
+            ]
         return new_side
 
     # noinspection PyProtectedMember
@@ -1867,21 +1875,6 @@ class Side:
                 f'both must be within 0-{size}!'
             )
 
-    def __setitem__(self, pos: Tuple[int, int], vert: DispVertex) -> None:
-        """Set the displacement vertex at this position."""
-        if self.disp_pos == 0 or self._disp_verts is None:
-            raise ValueError('This face is not a displacement!')
-        size = self.disp_size
-        x, y = pos
-        if 0 <= x < size and 0 <= y < size:
-            self._disp_verts[size * y + x] = vert
-        else:
-            raise IndexError(
-                f'Index {x}, {y} is not valid for a power '
-                f'{self.disp_power} displacement, '
-                f'both must be within 0-{size}!'
-            )
-
     def __len__(self) -> int:
         """If a displacement, the face has disp_size*disp_size vertexes."""
         return self.disp_size ** 2
@@ -1912,7 +1905,7 @@ class Side:
         u_axis = Vec(self.uaxis.x, self.uaxis.y, self.uaxis.z)
         v_axis = Vec(self.vaxis.x, self.vaxis.y, self.vaxis.z)
 
-        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
+        # Fix offset - see 2013 SDK utils/vbsp/map.cpp:2237
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
@@ -1927,6 +1920,35 @@ class Side:
 
         self.uaxis = self.uaxis.localise(origin, angles)
         self.vaxis = self.vaxis.localise(origin, angles)
+    def disp_get_tri_verts(self, x: int, y: int) -> tuple[
+        DispVertex, DispVertex, DispVertex,
+        DispVertex, DispVertex, DispVertex,
+    ]:
+        """Return the locations of the triangle vertexes.
+
+        This is a set of 6 verts, representing the two triangles in order.
+        See 2013 SDK src/public/builddisp.cpp:896-965.
+        """
+        size = self.disp_size
+        if x >= size or y >= size:
+            raise IndexError(f'Indexes must be from 0-{size-1}, not ({x}, {y})')
+        ind = y * size + x
+        vert_tl = self._disp_verts[ind]
+        vert_tr = self._disp_verts[ind + 1]
+        vert_bl = self._disp_verts[ind + size]
+        vert_br = self._disp_verts[ind + size + 1]
+        if (y * size + x) % 2 == 1:
+            # top left to bottom right
+            return (
+                vert_tl, vert_bl, vert_tr,
+                vert_tr, vert_bl, vert_br,
+            )
+        else:
+            # bottom left to top right
+            return (
+                vert_tl, vert_bl, vert_br,
+                vert_tl, vert_br, vert_tr,
+            )
 
     def plane_desc(self) -> str:
         """Return a string which describes this face.
