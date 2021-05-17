@@ -1091,7 +1091,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         
     def __iter__(self) -> Iterator[T]:
         """Yields all keys this object has."""
-        seen = set()
+        seen: set[str] = set()
         for ent_map in self._maps():
             for name in ent_map:
                 if name in seen:
@@ -1099,14 +1099,14 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 seen.add(name)
                 yield name
 
-    def __contains__(self, item: str) -> bool:
+    def __contains__(self, item: object) -> bool:
         for ent_map in self._maps():
             if item in ent_map:
                 return True
         return False
             
     def __len__(self) -> int:
-        seen = set()  # type: Set[str]
+        seen: set[str] = set()
         for ent_map in self._maps():
             seen.update(ent_map)
         return len(seen)

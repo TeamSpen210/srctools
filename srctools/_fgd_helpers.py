@@ -169,7 +169,7 @@ class HelperSphere(Helper):
             raise ValueError(
                 'Expected 1 or 2 arguments, got ({})!'.format(', '.join(args))
             )
-        r = g = b = 255
+        r = g = b = 255.0
 
         if arg_count > 0:
             size_key = args[0]
@@ -203,6 +203,8 @@ class HelperLine(Helper):
     """
     TYPE = HelperTypes.LINE
 
+    end_key: Optional[str]
+    end_value: Optional[str]
     def __init__(
         self,
         r: float, g: float, b: float,
@@ -507,6 +509,7 @@ class HelperSprite(Helper):
 
     def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
         """iconsprite() uses a single material."""
+        materials: Iterable[str]
         if self.mat is None:
             try:
                 materials = entity.kv['model'].known_options()
@@ -569,17 +572,18 @@ class HelperModel(Helper):
         else:
             return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
+    def get_resources(self, entity: 'EntityDef') -> List[str]:
         """studio() uses a single material."""
         models: Iterable[str]
         if self.model is None:
             try:
                 models = entity.kv['model'].known_options()
             except KeyError:
-                return
+                return []
         else:
             models = [self.model]
 
+        result = []
         for mdl in models:
             mdl = mdl.replace('\\', '/')
 
@@ -588,7 +592,8 @@ class HelperModel(Helper):
             if not mdl.casefold().startswith('models/'):
                 mdl = 'models/' + mdl
 
-            yield mdl
+            result.append(mdl)
+        return result
 
 
 class HelperModelProp(HelperModel):
