@@ -447,7 +447,7 @@ class VMF:
 
     def create_visgroup(self, name: str, color: Vec=(255, 255, 255)) -> 'VisGroup':
         """Convenience method for creating visgroups."""
-        vis = VisGroup(self, -1, name, color)
+        vis = VisGroup(self, name, -1, color)
         self.vis_tree.append(vis)
         return vis
 
