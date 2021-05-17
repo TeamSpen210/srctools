@@ -6,7 +6,7 @@ from typing import (
     Union,
 )
 from srctools import Matrix, Vec, Angle, conv_float, EmptyMapping, Property
-from srctools.vmf import Entity, EntityFixup, FixupTuple, VMF, Output, VisGroup
+from srctools.vmf import Entity, EntityFixup, FixupValue, VMF, Output, VisGroup
 from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
 from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
 import srctools.logger
@@ -35,7 +35,7 @@ class Instance:
         pos: Vec, orient: Matrix,
         fixup_type: FixupStyle,
         outputs: Iterable[Output]=(),
-        fixup: Iterable[FixupTuple]=(),
+        fixup: Iterable[FixupValue]=(),
     ) -> None:
         self.name = name
         self.filename = filename

@@ -9,7 +9,6 @@ import operator
 import builtins
 import sys
 import warnings
-import copy
 from array import ArrayType as Array
 from enum import Flag
 from collections import defaultdict, namedtuple
@@ -19,7 +18,7 @@ from typing import (
     Optional, Union, overload, TypeVar, Generic,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
-    NamedTuple, MutableMapping,
+    MutableMapping,
     Pattern, Match,
 )
 
@@ -49,7 +48,7 @@ T = TypeVar('T')
 # Types we allow for setting keyvalues. These we can stringify into something
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
-ValidKVs = Union[str, int, bool, float, Vec, Angle]
+ValidKVs = Union[str, int, bool, float, Vec, Angle, Matrix]
 
 
 class DispFlag(Flag):
@@ -101,6 +100,8 @@ def conv_kv(val: ValidKVs) -> str:
         return '1'
     elif val is False:
         return '0'
+    elif isinstance(val, Matrix):
+        return str(val.to_angle())
     else:
         return str(val)
 
@@ -546,6 +547,8 @@ class VMF:
           (Viewsettings, cameras, cordons and visgroups)
         - disp_multiblend controls whether displacements produce their multiblend
           data (added in ASW), or if it is stripped.
+        - named_cordons controls if multiple cordons may be used (post L4D), or
+          if only a single cordon is allowed.
         """
         if dest_file is None:
             dest_file = io.StringIO()
@@ -2008,7 +2011,7 @@ class Entity:
         self,
         vmf_file: VMF,
         keys: Mapping[str, ValidKVs]=EmptyMapping,
-        fixup: Iterable['FixupTuple']=(),
+        fixup: Iterable['FixupValue']=(),
         ent_id: int=-1,
         outputs: List['Output']=None,
         solids: List[Solid]=None,
@@ -2115,7 +2118,7 @@ class Entity:
                         except IndexError:
                             # Might happen if entirely blank.
                             value = ''
-                        fixup.append(FixupTuple(var, value, int(index)))
+                        fixup.append(FixupValue(var, value, int(index)))
                     except ValueError:
                         # Failed!
                         keys[name] = item.value
@@ -2464,12 +2467,13 @@ class Entity:
         else:
             return Vec.from_str(self['origin'])
 
-# One $fixup variable with replacement.
-FixupTuple = NamedTuple('FixupTuple', [
-    ('var', str),
-    ('value', str),
-    ('id', int),
-])
+
+@attr.define(frozen=True, weakref_slot=False)
+class FixupValue:
+    """One $fixup variable with its replacement."""
+    var: str  # The original casing of the variable name.
+    value: str
+    id: int  # replaceXX number used.
 
 
 class EntityFixup(MutableMapping[str, str]):
@@ -2486,16 +2490,16 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Iterable[FixupTuple]=()):
-        self._fixup = {}  # type: Dict[str, FixupTuple]
-        self._matcher = None  # type: Optional[Pattern[str]]
+    def __init__(self, fixup: Iterable[FixupValue]=()):
+        self._fixup: dict[str, FixupValue] = {}
+        self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes = set()  # type: Set[int]
-        extra_vals = []  # type: List[FixupTuple]
+        used_indexes: set[int] = set()
+        extra_vals: list[FixupValue] = []
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -2519,24 +2523,26 @@ class EntityFixup(MutableMapping[str, str]):
         else:
             return default
 
-    def copy_values(self) -> List[FixupTuple]:
+    def copy_values(self) -> List[FixupValue]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
 
-    def __copy__(self):
+    def __copy__(self) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
+        return fix
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict=None) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
+        return fix
 
-    def __getstate__(self) -> List[FixupTuple]:
+    def __getstate__(self) -> List[FixupValue]:
         return list(self._fixup.values())
 
-    def __setstate__(self, state: List[FixupTuple]) -> None:
+    def __setstate__(self, state: List[FixupValue]) -> None:
         self._matcher = None
         self._fixup = {
             sys.intern(tup.var.casefold()): tup
@@ -2600,12 +2606,12 @@ class EntityFixup(MutableMapping[str, str]):
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(sys.intern(var), sval, ind)
+                    self._fixup[folded_var] = FixupValue(sys.intern(var), sval, ind)
                     break
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
         else:
-            self._fixup[folded_var] = FixupTuple(
+            self._fixup[folded_var] = FixupValue(
                 sys.intern(var),
                 sval,
                 self._fixup[folded_var].id,
@@ -2643,17 +2649,16 @@ class EntityFixup(MutableMapping[str, str]):
 
     def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the replace values into the VMF."""
-        for (key, value, index) in sorted(self._fixup.values(), key=operator.attrgetter('id')):
+        for fixup in sorted(self._fixup.values(), key=operator.attrgetter('id')):
             # When exporting, pad the index with zeros if needed
-            buffer.write('{}\t"replace{:02}" "${} {}"\n'.format(
-                ind, index, key, value,
-            ))
+            buffer.write(
+                f'{ind}\t"replace{fixup.id:02}" "${fixup.var} {fixup.value}"\n'
+            )
 
     def __str__(self) -> str:
         items = '\n'.join(
-            '\t${0.var} = {0.value!r}'.format(tup)
-            for tup in
-            sorted(self._fixup.values(), key=operator.attrgetter('id'))
+            f'\t${fix.var} = {fix.value!r}'
+            for fix in sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
         return f'{self.__class__.__name__}{{\n{items}\n}}'
 
