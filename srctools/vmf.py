@@ -1526,7 +1526,7 @@ class Side:
         self.uaxis = uaxis or UVAxis(0, 1, 0)
         self.vaxis = vaxis or UVAxis(0, 0, -1)
 
-        self.disp_power = 0
+        self.disp_power = disp_power
         self.disp_flags = DispFlag.COLL_ALL
         self.disp_elevation = 0.0
         if disp_power > 0:
