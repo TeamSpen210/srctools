@@ -6,7 +6,7 @@ variety of tools using these.
 
 # Installation
 First clone the git repo to your computer. You'll likely want the `dev` branch, 
-a specific tag. You'll need Python 3.6+.
+a specific tag. You'll need Python 3.9+.
 
 Run the following to install dependencies:
 ```shell script
