@@ -9,8 +9,12 @@ import os
 import sys
 import io
 import traceback
+import threading
+import contextlib
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any, cast, Optional
+from typing import Dict, Tuple, Union, Type, Callable, Any, cast, Optional, Generator
+
+CTX_STACK = threading.local()
 
 
 class LogMessage:
@@ -64,7 +68,7 @@ class LogMessage:
         return '\n | '.join(lines[:]) + '\n |___\n'
 
 
-class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
+class LoggerAdapter(logging.LoggerAdapter):
     """Fix loggers to use str.format().
 
     """
@@ -89,6 +93,11 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
         args and kwargs.
         """
         if self.isEnabledFor(level):
+            try:
+                ctx = f' ({CTX_STACK.stack[-1]})'
+            except (AttributeError, IndexError):
+                ctx = ''
+
             self.logger._log(
                 level,
                 LogMessage(msg, args, kwargs),
@@ -97,7 +106,7 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
                 # Pull these two arguments out of kwargs, so they can be set..
                 exc_info=exc_info,
                 stack_info=stack_info,
-                extra={'alias': self.alias},
+                extra={'alias': self.alias, 'context': ctx},
             )
 
     def __getattr__(self, attr: str) -> Any:
@@ -108,7 +117,10 @@ class LoggerAdapter(logging.LoggerAdapter, logging.Logger):
 class Formatter(logging.Formatter):
     """Override exception handling."""
     SKIP_LIBS = ['importlib', 'cx_freeze', 'PyInstaller']
-    def formatException(self, ei: Union[Tuple[Type[BaseException], BaseException, Optional[TracebackType]], Tuple[None, None, None]]) -> str:
+    def formatException(self, ei: Union[
+        Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+        Tuple[None, None, None],
+    ]) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
         buffer = io.StringIO()
@@ -133,6 +145,10 @@ class Formatter(logging.Formatter):
             buffer.write(line)
 
         return buffer.getvalue().rstrip('\n')
+
+    def format(self, record: logging.LogRecord) -> str:
+        record.__dict__.setdefault('context', '')
+        return super().format(record)
 
 
 def get_handler(filename: str) -> logging.FileHandler:
@@ -182,14 +198,16 @@ class NullStream(io.IOBase):
     That'll fail if it is None.
     """
     def __init__(self) -> None:
-        super(NullStream, self).__init__()
+        super().__init__()
 
     @staticmethod
-    def write(self, args: Any, kwargs: Any) -> None:
+    def write(args: Any, kwargs: Any) -> None:
+        """Write nothing to the file."""
         pass
 
     @staticmethod
     def read(*args: Any, **kwargs: Any) -> str:
+        """We never have data."""
         return ''
 
 
@@ -209,9 +227,8 @@ def init_logging(
     (taking type, value, traceback).
     If the exception is a BaseException, the app will quit silently.
     """
-    oldLogRecord = cast(Type[logging.LogRecord], logging.getLogRecordFactory())
-    class NewLogRecord(oldLogRecord):
-        """Allow passing an alias for log modules."""
+    class NewLogRecord(logging.LogRecord):
+        """Allow passing an alias and context for log modules."""
         # This breaks %-formatting, so only set when init_logging() is called.
         alias: Optional[str] = None
 
@@ -223,6 +240,7 @@ def init_logging(
             if self.alias is not None:
                 self.module = self.alias
             return str(self.msg)
+    NewLogRecord.__bases__ = (logging.getLogRecordFactory(), )
     logging.setLogRecordFactory(NewLogRecord)
 
     logger = logging.getLogger()
@@ -230,13 +248,13 @@ def init_logging(
 
     # Put more info in the log file, since it's not onscreen.
     long_log_format = Formatter(
-        '[{levelname}] {module}.{funcName}(): {message}',
+        '[{levelname}]{context} {module}.{funcName}(): {message}',
         style='{',
     )
     # Console messages, etc.
     short_log_format = Formatter(
         # One letter for level name
-        '[{levelname[0]}] {module}.{funcName}(): {message}',
+        '[{levelname[0]}]{context} {module}.{funcName}(): {message}',
         style='{',
     )
 
@@ -320,6 +338,25 @@ def get_logger(name: str='', alias: str=None) -> logging.Logger:
     If set, alias is the name to show for the module.
     """
     if name:
-        return LoggerAdapter(logging.getLogger('srctools.' + name), alias)
+        log = logging.getLogger('srctools.' + name)
     else:  # Allow retrieving the main logger.
-        return LoggerAdapter(logging.getLogger('srctools'), alias)
+        log = logging.getLogger('srctools')
+    return cast(logging.Logger, LoggerAdapter(log, alias))
+
+
+@contextlib.contextmanager
+def context(name: str) -> Generator[str, None, None]:
+    """Allows specifying additional information for any logs contained in this block.
+
+    The specified string gets included in the log messages.
+    """
+    try:
+        stack = CTX_STACK.stack
+    except AttributeError:
+        stack = CTX_STACK.stack = []
+    stack.append(name)
+    try:
+        yield name
+    finally:
+        popped = stack.pop()
+        assert popped is name, f'Popped incorrect value: pop({popped!r}) != ctx({name!r})!'
