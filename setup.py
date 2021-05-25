@@ -66,8 +66,9 @@ setup(
         ),
         Extension(
             "srctools._math",
-            sources=["srctools/_math.pyx"],
-            optional=True,
+            include_dirs=[os.path.abspath("quickhull/")],
+            language='c++',
+            sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ] if WIN else [
