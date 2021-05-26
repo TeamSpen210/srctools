@@ -2,9 +2,10 @@
 """Functions for reading/writing VTF data."""
 from libc.stdio cimport sprintf
 from libc.stdint cimport uint8_t as byte
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
+from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.string cimport memcpy, memset, strcmp
 from cython.parallel cimport prange, parallel
+
 
 cdef extern from "squish.h" namespace "squish":
     ctypedef unsigned char u8;
@@ -43,6 +44,7 @@ DEF A = 3
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
 
+
 def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or None):
     """Convert a frame into a PPM-format bytestring, for passing to tkinter."""
     cdef float r, g, b
@@ -52,31 +54,29 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
 
     DEF PPM_HEADER = b'P6 %u %u 255\n'
     cdef uint header_size = sprintf(NULL, PPM_HEADER, width, height)
-    cdef byte *buffer = <byte *> PyMem_Malloc(size + header_size)
-    if buffer == NULL:
-        raise MemoryError('Not enough memory for PPM file!')
-    try:
-        sprintf(<char *>buffer, PPM_HEADER, width, height)
+    # Allocate an uninitalised bytes object, that we can write to it.
+    # That's allowed as long as we don't give anyone else access.
+    cdef bytes result = PyBytes_FromStringAndSize(NULL, size + header_size)
+    cdef byte *buffer = result
 
-        if bg is not None:
-            r = float(<int> bg[0])
-            g = float(<int> bg[1])
-            b = float(<int> bg[2])
-            for off in prange(width * height, nogil=True, schedule='static'):
-                a = pixels[4 * off + 3] / 255.0
-                inv_a = 1.0 - a
-                buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
-                buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
-                buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
-        else:
-            for off in prange(width * height, nogil=True, schedule='static'):
-                buffer[header_size + 3*off + R] = pixels[4*off]
-                buffer[header_size + 3*off + G] = pixels[4*off + 1]
-                buffer[header_size + 3*off + B] = pixels[4*off + 2]
+    sprintf(<char *>buffer, PPM_HEADER, width, height)
+    if bg is not None:
+        r = float(<int> bg[0])
+        g = float(<int> bg[1])
+        b = float(<int> bg[2])
+        for off in prange(width * height, nogil=True, schedule='static'):
+            a = pixels[4 * off + 3] / 255.0
+            inv_a = 1.0 - a
+            buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
+            buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
+            buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
+    else:
+        for off in prange(width * height, nogil=True, schedule='static'):
+            buffer[header_size + 3*off + R] = pixels[4*off]
+            buffer[header_size + 3*off + G] = pixels[4*off + 1]
+            buffer[header_size + 3*off + B] = pixels[4*off + 2]
 
-        return buffer[:size+header_size]
-    finally:
-        PyMem_Free(buffer)
+    return result
 
 
 def alpha_flatten(const byte[::1] pixels, byte[::1] buffer, uint width, uint height, tuple bg or None):
