@@ -2,6 +2,7 @@
 import os
 import re
 import warnings
+from collections import defaultdict
 from copy import deepcopy
 from operator import itemgetter
 
@@ -666,3 +667,66 @@ class Mesh:
             ])
             mesh.triangles.append(tri)
         return mesh
+
+    def weld_vertexes(self, normal_tol: float = 0.999) -> None:
+        """Run through all vertexes in the triangles, 'welding' close ones together.
+
+        This will result in adjacent faces sharing vertex objects.
+        The shared vertexes should have approximately the same position as well
+        as normal. This can be accomplished using a mesh with smoothed normals
+        as with most studioMDL collision models, or by giving each section the
+        same unique normal.
+        """
+        # pos -> list of vertexes here.
+        weld_table: dict[tuple[float, float, float], list[Vertex]] = {}
+        for tri in self.triangles:
+            vert: Vertex
+            for i, vert in enumerate(tri):
+                try:
+                    existing = weld_table[vert.pos.as_tuple()]
+                except KeyError:
+                    weld_table[vert.pos.as_tuple()] = [vert]
+                    continue
+                for other_vert in existing:
+                    if Vec.dot(vert.norm, other_vert.norm) > normal_tol:
+                        tri[i] = other_vert
+                        break
+                else:
+                    existing.append(vert)
+
+    def split_collision(self) -> 'list[Mesh]':
+        """Partition a concave collision mesh into each convex volume.
+
+        This will first 'weld' the vertexes, so each convex volume will share
+        vertex objects.
+        """
+        self.weld_vertexes()
+        vert_to_tris: dict[Vertex, list[Triangle]] = defaultdict(list)
+        for tri in self.triangles:
+            for vert in tri:
+                vert_to_tris[vert].append(tri)
+
+        groups: list[set[Triangle]] = []
+        todo: set[Triangle] = set(self.triangles)
+        # To group, we have to recursively go through the verts.
+        # We use the id() of vertexes to match, since they're the same now.
+        while todo:
+            start = todo.pop()
+            unchecked: set[Triangle] = {start}
+            group: set[Triangle] = {start}
+            verts: set[Vertex] = set()
+            groups.append(group)
+            while unchecked:
+                tri = unchecked.pop()
+                for vert in tri:
+                    if vert in verts:
+                        continue
+                    verts.add(vert)
+                    group.update(vert_to_tris[vert])
+                    unchecked.update(vert_to_tris[vert])
+                unchecked.discard(tri)  # The above update() will add it back.
+            todo -= group
+        return [
+            Mesh(self.bones, self.animation, list(group))
+            for group in groups
+        ]
