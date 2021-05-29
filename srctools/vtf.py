@@ -905,7 +905,6 @@ class VTF:
 
     def compute_mipmaps(self, filter: FilterMode=FilterMode.BILINEAR) -> None:
         """Regenerate all mipmaps that have previously been cleared."""
-        self.load()
         depth_iter: Collection[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in self.flags:
             # For version 7.5, the spheremap is skipped.
@@ -917,13 +916,15 @@ class VTF:
             depth_iter = range(self.depth)
         for frame_num in range(self.frame_count):
             for depth_side in depth_iter:
-                # Force to blank if cleared.
+                # Force to blank if cleared, we can't load it from aynthing.
                 self._frames[frame_num, depth_side, 0].load()
                 for mipmap in range(1, self.mipmap_count):
-                    self._frames[frame_num, depth_side, mipmap].rescale_from(
-                        self._frames[frame_num, depth_side, mipmap - 1],
-                        filter,
-                    )
+                    frm = self._frames[frame_num, depth_side, mipmap]
+                    if frm._data is None:
+                        frm.rescale_from(
+                            self._frames[frame_num, depth_side, mipmap - 1],
+                            filter,
+                        )
 
         # Also regenerate the low-res format.
         if self.low_format is not ImageFormats.NONE:
