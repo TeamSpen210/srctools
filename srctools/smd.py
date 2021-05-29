@@ -11,14 +11,12 @@ from typing import (
     BinaryIO,
     Any,
 )
-
-from srctools import Vec
+from srctools.math import Vec, Angle, Matrix, to_matrix
 
 __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
 ]
 
-from srctools.math import to_matrix, Angle, Matrix
 
 
 class Bone:
@@ -465,6 +463,9 @@ class Mesh:
                         except KeyError:
                             raise ParseError(line_num, 'Unknown bone {}!', links_raw[off])
                         links.append((bone, float(links_raw[off+1])))
+                    if not links:
+                        # Okay, there's no links set here, use the first index.
+                        links = [(parent, 1.0)]
                 else:
                     links = [(parent, 1.0)]
 
