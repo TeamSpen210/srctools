@@ -199,6 +199,25 @@ class Triangle:
             self.point3.copy(),
         )
 
+    def _norm_and_sa(self) -> Vec:
+        """Return the normal of this triangle,
+
+        with the magnitude equal to double the surface area.
+        See www.ma.ic.ac.uk/~rn/centroid.pdf.
+        """
+        return Vec.cross(
+            self.point2.pos - self.point1.pos,
+            self.point3.pos - self.point1.pos,
+        )
+
+    def surface_area(self) -> float:
+        """Compute the surface area of this triangle."""
+        return self._norm_and_sa().mag() / 2.0
+
+    def normal(self) -> Vec:
+        """Compute the normal of this triangle, ignoring vertex normals."""
+        self._norm_and_sa().norm()
+
 
 class ParseError(Exception):
     """Invalid model format."""
@@ -643,7 +662,6 @@ class Mesh:
         ],
     ]
 
-
     @classmethod
     def build_bbox(cls, root_bone: str, mat: str, bbox_min: Vec, bbox_max: Vec) -> 'Mesh':
         """Construct a mesh for a bounding box."""
@@ -730,3 +748,14 @@ class Mesh:
             Mesh(self.bones, self.animation, list(group))
             for group in groups
         ]
+
+    def compute_volume(self) -> float:
+        """Compute the volume of this mesh. It does not need to be convex.
+
+        See www.ma.ic.ac.uk/~rn/centroid.pdf.
+        """
+        # noinspection PyProtectedMember
+        return sum(
+            Vec.dot(tri.point1.pos, tri._norm_and_sa())
+            for tri in self.triangles
+        ) / 6.0
