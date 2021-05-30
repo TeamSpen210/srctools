@@ -838,7 +838,7 @@ class BSP:
         return nodes[0][0]
 
 
-@attr.define
+@attr.define(eq=False)
 class Lump:
     """Represents a lump header in a BSP file.
 
@@ -857,7 +857,7 @@ class Lump:
         )
 
 
-@attr.define
+@attr.define(eq=False)
 class GameLump:
     """Represents a game lump.
 
@@ -879,7 +879,7 @@ class GameLump:
         )
 
 
-@attr.define
+@attr.define(eq=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
