@@ -1370,6 +1370,23 @@ static CYTHON_INLINE int __Pyx_PyBytes_Equals(PyObject* s1, PyObject* s2, int eq
 /* UnicodeEquals.proto */
 static CYTHON_INLINE int __Pyx_PyUnicode_Equals(PyObject* s1, PyObject* s2, int equals);
 
+/* ListCompAppend.proto */
+#if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
+static CYTHON_INLINE int __Pyx_ListComp_Append(PyObject* list, PyObject* x) {
+    PyListObject* L = (PyListObject*) list;
+    Py_ssize_t len = Py_SIZE(list);
+    if (likely(L->allocated > len)) {
+        Py_INCREF(x);
+        PyList_SET_ITEM(list, len, x);
+        __Pyx_SET_SIZE(list, len + 1);
+        return 0;
+    }
+    return PyList_Append(list, x);
+}
+#else
+#define __Pyx_ListComp_Append(L,x) PyList_Append(L,x)
+#endif
+
 /* ListAppend.proto */
 #if CYTHON_USE_PYLIST_INTERNALS && CYTHON_ASSUME_SAFE_MACROS
 static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
@@ -1680,6 +1697,7 @@ static const char __pyx_k_g[] = "g";
 static const char __pyx_k_n[] = "n";
 static const char __pyx_k_p[] = "p";
 static const char __pyx_k_r[] = "r";
+static const char __pyx_k_v[] = "v";
 static const char __pyx_k_x[] = "x";
 static const char __pyx_k_y[] = "y";
 static const char __pyx_k_z[] = "z";
@@ -1756,6 +1774,7 @@ static const char __pyx_k_max_pos[] = "max_pos";
 static const char __pyx_k_min_pos[] = "min_pos";
 static const char __pyx_k_out_max[] = "out_max";
 static const char __pyx_k_out_min[] = "out_min";
+static const char __pyx_k_vectors[] = "vectors";
 static const char __pyx_k_INV_AXIS[] = "INV_AXIS";
 static const char __pyx_k_KeyError[] = "KeyError";
 static const char __pyx_k_Matrix_2[] = "Matrix";
@@ -1783,7 +1802,6 @@ static const char __pyx_k_SystemError[] = "SystemError";
 static const char __pyx_k_result_hull[] = "result_hull";
 static const char __pyx_k_Invalid_axis[] = "Invalid axis ";
 static const char __pyx_k_RuntimeError[] = "RuntimeError";
-static const char __pyx_k_result_verts[] = "result_verts";
 static const char __pyx_k_OverflowError[] = "OverflowError";
 static const char __pyx_k_StopIteration[] = "StopIteration";
 static const char __pyx_k_parse_vec_str[] = "parse_vec_str";
@@ -1924,7 +1942,6 @@ static PyObject *__pyx_n_s_range;
 static PyObject *__pyx_n_s_res;
 static PyObject *__pyx_n_s_result;
 static PyObject *__pyx_n_s_result_hull;
-static PyObject *__pyx_n_s_result_verts;
 static PyObject *__pyx_n_u_rol;
 static PyObject *__pyx_n_s_roll;
 static PyObject *__pyx_n_u_roll;
@@ -1940,6 +1957,7 @@ static PyObject *__pyx_n_s_stride;
 static PyObject *__pyx_n_s_test;
 static PyObject *__pyx_n_s_to_matrix;
 static PyObject *__pyx_n_s_top;
+static PyObject *__pyx_n_s_v;
 static PyObject *__pyx_n_s_v1;
 static PyObject *__pyx_n_s_v2;
 static PyObject *__pyx_n_s_v3;
@@ -1948,6 +1966,7 @@ static PyObject *__pyx_n_s_value;
 static PyObject *__pyx_n_s_values;
 static PyObject *__pyx_n_s_vec;
 static PyObject *__pyx_n_s_vecobj;
+static PyObject *__pyx_n_s_vectors;
 static PyObject *__pyx_n_s_vert_list;
 static PyObject *__pyx_n_s_vertexes;
 static PyObject *__pyx_kp_u_were_given;
@@ -30051,7 +30070,7 @@ static PyObject *__pyx_pf_8srctools_5_math_5Angle_34transform(struct __pyx_obj_8
  * 
  * def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':             # <<<<<<<<<<<<<<
  *     """Use the quickhull algorithm to construct a convex hull around the provided points."""
- *     cdef quickhull.Vector3[double] v1, v2, v3
+ *     cdef size_t v1, v2, v3, ind
  */
 
 /* Python wrapper */
@@ -30070,17 +30089,18 @@ static PyObject *__pyx_pw_8srctools_5_math_7quickhull(PyObject *__pyx_self, PyOb
 }
 
 static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__pyx_self, PyObject *__pyx_v_vertexes) {
-  quickhull::Vector3<double>  __pyx_v_v1;
-  quickhull::Vector3<double>  __pyx_v_v2;
-  quickhull::Vector3<double>  __pyx_v_v3;
+  size_t __pyx_v_v1;
+  size_t __pyx_v_v2;
+  size_t __pyx_v_v3;
   size_t __pyx_v_ind;
   std::vector<quickhull::Vector3<double> >  __pyx_v_values;
   struct __pyx_obj_8srctools_5_math_Vec *__pyx_v_vecobj = 0;
   quickhull::QuickHull<double>  __pyx_v_qhull;
   quickhull::ConvexHull<double>  __pyx_v_result_hull;
-  quickhull::VertexDataSource<double>  __pyx_v_result_verts;
+  PyObject *__pyx_v_vectors = 0;
   std::vector<size_t>  __pyx_v_indices;
   PyObject *__pyx_v_res = NULL;
+  quickhull::Vector3<double>  __pyx_7genexpr__pyx_v_v;
   PyObject *__pyx_r = NULL;
   __Pyx_RefNannyDeclarations
   std::vector<quickhull::Vector3<double> >  __pyx_t_1;
@@ -30088,20 +30108,23 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
   Py_ssize_t __pyx_t_3;
   PyObject *(*__pyx_t_4)(PyObject *);
   PyObject *__pyx_t_5 = NULL;
-  std::vector<size_t> ::size_type __pyx_t_6;
-  std::vector<size_t> ::size_type __pyx_t_7;
-  size_t __pyx_t_8;
-  PyObject *__pyx_t_9 = NULL;
-  PyObject *__pyx_t_10 = NULL;
-  int __pyx_t_11;
+  quickhull::Vector3<double>  const *__pyx_t_6;
+  quickhull::VertexDataSource<double>  *__pyx_t_7;
+  quickhull::Vector3<double>  __pyx_t_8;
+  std::vector<size_t> ::size_type __pyx_t_9;
+  std::vector<size_t> ::size_type __pyx_t_10;
+  size_t __pyx_t_11;
+  PyObject *__pyx_t_12 = NULL;
+  PyObject *__pyx_t_13 = NULL;
+  int __pyx_t_14;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
   __Pyx_RefNannySetupContext("quickhull", 0);
 
-  /* "srctools/_math.pyx":2385
- *     cdef quickhull.Vector3[double] v1, v2, v3
- *     cdef size_t ind
+  /* "srctools/_math.pyx":2384
+ *     """Use the quickhull algorithm to construct a convex hull around the provided points."""
+ *     cdef size_t v1, v2, v3, ind
  *     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()             # <<<<<<<<<<<<<<
  *     cdef list vert_list, result
  *     cdef Vec vecobj
@@ -30110,11 +30133,11 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
     __pyx_t_1 = std::vector<quickhull::Vector3<double> > ();
   } catch(...) {
     __Pyx_CppExn2PyErr();
-    __PYX_ERR(0, 2385, __pyx_L1_error)
+    __PYX_ERR(0, 2384, __pyx_L1_error)
   }
   __pyx_v_values = __pyx_t_1;
 
-  /* "srctools/_math.pyx":2388
+  /* "srctools/_math.pyx":2387
  *     cdef list vert_list, result
  *     cdef Vec vecobj
  *     cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()             # <<<<<<<<<<<<<<
@@ -30123,7 +30146,7 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
  */
   __pyx_v_qhull = quickhull::QuickHull<double> ();
 
-  /* "srctools/_math.pyx":2390
+  /* "srctools/_math.pyx":2389
  *     cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()
  * 
  *     for vecobj in vertexes:             # <<<<<<<<<<<<<<
@@ -30134,26 +30157,26 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
     __pyx_t_2 = __pyx_v_vertexes; __Pyx_INCREF(__pyx_t_2); __pyx_t_3 = 0;
     __pyx_t_4 = NULL;
   } else {
-    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_vertexes); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2390, __pyx_L1_error)
+    __pyx_t_3 = -1; __pyx_t_2 = PyObject_GetIter(__pyx_v_vertexes); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2389, __pyx_L1_error)
     __Pyx_GOTREF(__pyx_t_2);
-    __pyx_t_4 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2390, __pyx_L1_error)
+    __pyx_t_4 = Py_TYPE(__pyx_t_2)->tp_iternext; if (unlikely(!__pyx_t_4)) __PYX_ERR(0, 2389, __pyx_L1_error)
   }
   for (;;) {
     if (likely(!__pyx_t_4)) {
       if (likely(PyList_CheckExact(__pyx_t_2))) {
         if (__pyx_t_3 >= PyList_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2390, __pyx_L1_error)
+        __pyx_t_5 = PyList_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2389, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2390, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2389, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       } else {
         if (__pyx_t_3 >= PyTuple_GET_SIZE(__pyx_t_2)) break;
         #if CYTHON_ASSUME_SAFE_MACROS && !CYTHON_AVOID_BORROWED_REFS
-        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2390, __pyx_L1_error)
+        __pyx_t_5 = PyTuple_GET_ITEM(__pyx_t_2, __pyx_t_3); __Pyx_INCREF(__pyx_t_5); __pyx_t_3++; if (unlikely(0 < 0)) __PYX_ERR(0, 2389, __pyx_L1_error)
         #else
-        __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2390, __pyx_L1_error)
+        __pyx_t_5 = PySequence_ITEM(__pyx_t_2, __pyx_t_3); __pyx_t_3++; if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2389, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_5);
         #endif
       }
@@ -30163,17 +30186,17 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
         PyObject* exc_type = PyErr_Occurred();
         if (exc_type) {
           if (likely(__Pyx_PyErr_GivenExceptionMatches(exc_type, PyExc_StopIteration))) PyErr_Clear();
-          else __PYX_ERR(0, 2390, __pyx_L1_error)
+          else __PYX_ERR(0, 2389, __pyx_L1_error)
         }
         break;
       }
       __Pyx_GOTREF(__pyx_t_5);
     }
-    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_8srctools_5_math_Vec))))) __PYX_ERR(0, 2390, __pyx_L1_error)
+    if (!(likely(((__pyx_t_5) == Py_None) || likely(__Pyx_TypeTest(__pyx_t_5, __pyx_ptype_8srctools_5_math_Vec))))) __PYX_ERR(0, 2389, __pyx_L1_error)
     __Pyx_XDECREF_SET(__pyx_v_vecobj, ((struct __pyx_obj_8srctools_5_math_Vec *)__pyx_t_5));
     __pyx_t_5 = 0;
 
-    /* "srctools/_math.pyx":2391
+    /* "srctools/_math.pyx":2390
  * 
  *     for vecobj in vertexes:
  *         values.push_back(quickhull.Vector3[double](vecobj.val.x, vecobj.val.y, vecobj.val.z))             # <<<<<<<<<<<<<<
@@ -30184,10 +30207,10 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
       __pyx_v_values.push_back(quickhull::Vector3<double> (__pyx_v_vecobj->val.x, __pyx_v_vecobj->val.y, __pyx_v_vecobj->val.z));
     } catch(...) {
       __Pyx_CppExn2PyErr();
-      __PYX_ERR(0, 2391, __pyx_L1_error)
+      __PYX_ERR(0, 2390, __pyx_L1_error)
     }
 
-    /* "srctools/_math.pyx":2390
+    /* "srctools/_math.pyx":2389
  *     cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()
  * 
  *     for vecobj in vertexes:             # <<<<<<<<<<<<<<
@@ -30197,147 +30220,156 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
   }
   __Pyx_DECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-  /* "srctools/_math.pyx":2393
+  /* "srctools/_math.pyx":2392
  *         values.push_back(quickhull.Vector3[double](vecobj.val.x, vecobj.val.y, vecobj.val.z))
  * 
  *     cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)             # <<<<<<<<<<<<<<
  * 
- *     cdef quickhull.VertexDataSource[double] result_verts = result_hull.getVertexBuffer()
+ *     cdef list vectors = [
  */
   __pyx_v_result_hull = __pyx_v_qhull.getConvexHull(__pyx_v_values, 0, 0);
 
-  /* "srctools/_math.pyx":2395
+  /* "srctools/_math.pyx":2394
  *     cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
  * 
- *     cdef quickhull.VertexDataSource[double] result_verts = result_hull.getVertexBuffer()             # <<<<<<<<<<<<<<
- *     cdef vector[size_t] indices = result_hull.getIndexBuffer()
- *     res = []
+ *     cdef list vectors = [             # <<<<<<<<<<<<<<
+ *         _vector(v.x, v.y, v.z)
+ *         for v in result_hull.getVertexBuffer()
  */
-  __pyx_v_result_verts = __pyx_v_result_hull.getVertexBuffer();
+  { /* enter inner scope */
+    __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2394, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
 
-  /* "srctools/_math.pyx":2396
+    /* "srctools/_math.pyx":2396
+ *     cdef list vectors = [
+ *         _vector(v.x, v.y, v.z)
+ *         for v in result_hull.getVertexBuffer()             # <<<<<<<<<<<<<<
+ *     ]
+ *     cdef vector[size_t] indices = result_hull.getIndexBuffer()
+ */
+    __pyx_t_7 = &__pyx_v_result_hull.getVertexBuffer();
+    __pyx_t_6 = __pyx_t_7->begin();
+    for (;;) {
+      if (!(__pyx_t_6 != __pyx_t_7->end())) break;
+      __pyx_t_8 = *__pyx_t_6;
+      ++__pyx_t_6;
+      __pyx_7genexpr__pyx_v_v = __pyx_t_8;
+
+      /* "srctools/_math.pyx":2395
  * 
- *     cdef quickhull.VertexDataSource[double] result_verts = result_hull.getVertexBuffer()
+ *     cdef list vectors = [
+ *         _vector(v.x, v.y, v.z)             # <<<<<<<<<<<<<<
+ *         for v in result_hull.getVertexBuffer()
+ *     ]
+ */
+      __pyx_t_5 = ((PyObject *)__pyx_f_8srctools_5_math__vector(__pyx_7genexpr__pyx_v_v.x, __pyx_7genexpr__pyx_v_v.y, __pyx_7genexpr__pyx_v_v.z)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2395, __pyx_L1_error)
+      __Pyx_GOTREF(__pyx_t_5);
+      if (unlikely(__Pyx_ListComp_Append(__pyx_t_2, (PyObject*)__pyx_t_5))) __PYX_ERR(0, 2394, __pyx_L1_error)
+      __Pyx_DECREF(__pyx_t_5); __pyx_t_5 = 0;
+
+      /* "srctools/_math.pyx":2396
+ *     cdef list vectors = [
+ *         _vector(v.x, v.y, v.z)
+ *         for v in result_hull.getVertexBuffer()             # <<<<<<<<<<<<<<
+ *     ]
+ *     cdef vector[size_t] indices = result_hull.getIndexBuffer()
+ */
+    }
+  } /* exit inner scope */
+  __pyx_v_vectors = ((PyObject*)__pyx_t_2);
+  __pyx_t_2 = 0;
+
+  /* "srctools/_math.pyx":2398
+ *         for v in result_hull.getVertexBuffer()
+ *     ]
  *     cdef vector[size_t] indices = result_hull.getIndexBuffer()             # <<<<<<<<<<<<<<
  *     res = []
  *     for ind in range(0, indices.size(), 3):
  */
   __pyx_v_indices = __pyx_v_result_hull.getIndexBuffer();
 
-  /* "srctools/_math.pyx":2397
- *     cdef quickhull.VertexDataSource[double] result_verts = result_hull.getVertexBuffer()
+  /* "srctools/_math.pyx":2399
+ *     ]
  *     cdef vector[size_t] indices = result_hull.getIndexBuffer()
  *     res = []             # <<<<<<<<<<<<<<
  *     for ind in range(0, indices.size(), 3):
- *         v1 = result_verts[indices[ind + 0]]
+ *         v1 = indices[ind + 0]
  */
-  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2397, __pyx_L1_error)
+  __pyx_t_2 = PyList_New(0); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2399, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_2);
   __pyx_v_res = ((PyObject*)__pyx_t_2);
   __pyx_t_2 = 0;
 
-  /* "srctools/_math.pyx":2398
+  /* "srctools/_math.pyx":2400
  *     cdef vector[size_t] indices = result_hull.getIndexBuffer()
  *     res = []
  *     for ind in range(0, indices.size(), 3):             # <<<<<<<<<<<<<<
- *         v1 = result_verts[indices[ind + 0]]
- *         v2 = result_verts[indices[ind + 1]]
+ *         v1 = indices[ind + 0]
+ *         v2 = indices[ind + 1]
  */
-  __pyx_t_6 = __pyx_v_indices.size();
-  __pyx_t_7 = __pyx_t_6;
-  for (__pyx_t_8 = 0; __pyx_t_8 < __pyx_t_7; __pyx_t_8+=3) {
-    __pyx_v_ind = __pyx_t_8;
-
-    /* "srctools/_math.pyx":2399
- *     res = []
- *     for ind in range(0, indices.size(), 3):
- *         v1 = result_verts[indices[ind + 0]]             # <<<<<<<<<<<<<<
- *         v2 = result_verts[indices[ind + 1]]
- *         v3 = result_verts[indices[ind + 2]]
- */
-    __pyx_v_v1 = (__pyx_v_result_verts[(__pyx_v_indices[(__pyx_v_ind + 0)])]);
-
-    /* "srctools/_math.pyx":2400
- *     for ind in range(0, indices.size(), 3):
- *         v1 = result_verts[indices[ind + 0]]
- *         v2 = result_verts[indices[ind + 1]]             # <<<<<<<<<<<<<<
- *         v3 = result_verts[indices[ind + 2]]
- *         res.append((
- */
-    __pyx_v_v2 = (__pyx_v_result_verts[(__pyx_v_indices[(__pyx_v_ind + 1)])]);
+  __pyx_t_9 = __pyx_v_indices.size();
+  __pyx_t_10 = __pyx_t_9;
+  for (__pyx_t_11 = 0; __pyx_t_11 < __pyx_t_10; __pyx_t_11+=3) {
+    __pyx_v_ind = __pyx_t_11;
 
     /* "srctools/_math.pyx":2401
- *         v1 = result_verts[indices[ind + 0]]
- *         v2 = result_verts[indices[ind + 1]]
- *         v3 = result_verts[indices[ind + 2]]             # <<<<<<<<<<<<<<
- *         res.append((
- *             _vector(v1.x, v1.y, v1.z),
+ *     res = []
+ *     for ind in range(0, indices.size(), 3):
+ *         v1 = indices[ind + 0]             # <<<<<<<<<<<<<<
+ *         v2 = indices[ind + 1]
+ *         v3 = indices[ind + 2]
  */
-    __pyx_v_v3 = (__pyx_v_result_verts[(__pyx_v_indices[(__pyx_v_ind + 2)])]);
-
-    /* "srctools/_math.pyx":2403
- *         v3 = result_verts[indices[ind + 2]]
- *         res.append((
- *             _vector(v1.x, v1.y, v1.z),             # <<<<<<<<<<<<<<
- *             _vector(v2.x, v2.y, v2.z),
- *             _vector(v3.x, v3.y, v3.z),
- */
-    __pyx_t_2 = ((PyObject *)__pyx_f_8srctools_5_math__vector(__pyx_v_v1.x, __pyx_v_v1.y, __pyx_v_v1.z)); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2403, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_2);
-
-    /* "srctools/_math.pyx":2404
- *         res.append((
- *             _vector(v1.x, v1.y, v1.z),
- *             _vector(v2.x, v2.y, v2.z),             # <<<<<<<<<<<<<<
- *             _vector(v3.x, v3.y, v3.z),
- *         ))
- */
-    __pyx_t_5 = ((PyObject *)__pyx_f_8srctools_5_math__vector(__pyx_v_v2.x, __pyx_v_v2.y, __pyx_v_v2.z)); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2404, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_5);
-
-    /* "srctools/_math.pyx":2405
- *             _vector(v1.x, v1.y, v1.z),
- *             _vector(v2.x, v2.y, v2.z),
- *             _vector(v3.x, v3.y, v3.z),             # <<<<<<<<<<<<<<
- *         ))
- *     return res
- */
-    __pyx_t_9 = ((PyObject *)__pyx_f_8srctools_5_math__vector(__pyx_v_v3.x, __pyx_v_v3.y, __pyx_v_v3.z)); if (unlikely(!__pyx_t_9)) __PYX_ERR(0, 2405, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_9);
-
-    /* "srctools/_math.pyx":2403
- *         v3 = result_verts[indices[ind + 2]]
- *         res.append((
- *             _vector(v1.x, v1.y, v1.z),             # <<<<<<<<<<<<<<
- *             _vector(v2.x, v2.y, v2.z),
- *             _vector(v3.x, v3.y, v3.z),
- */
-    __pyx_t_10 = PyTuple_New(3); if (unlikely(!__pyx_t_10)) __PYX_ERR(0, 2403, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_10);
-    __Pyx_GIVEREF(__pyx_t_2);
-    PyTuple_SET_ITEM(__pyx_t_10, 0, __pyx_t_2);
-    __Pyx_GIVEREF(__pyx_t_5);
-    PyTuple_SET_ITEM(__pyx_t_10, 1, __pyx_t_5);
-    __Pyx_GIVEREF(__pyx_t_9);
-    PyTuple_SET_ITEM(__pyx_t_10, 2, __pyx_t_9);
-    __pyx_t_2 = 0;
-    __pyx_t_5 = 0;
-    __pyx_t_9 = 0;
+    __pyx_v_v1 = (__pyx_v_indices[(__pyx_v_ind + 0)]);
 
     /* "srctools/_math.pyx":2402
- *         v2 = result_verts[indices[ind + 1]]
- *         v3 = result_verts[indices[ind + 2]]
- *         res.append((             # <<<<<<<<<<<<<<
- *             _vector(v1.x, v1.y, v1.z),
- *             _vector(v2.x, v2.y, v2.z),
+ *     for ind in range(0, indices.size(), 3):
+ *         v1 = indices[ind + 0]
+ *         v2 = indices[ind + 1]             # <<<<<<<<<<<<<<
+ *         v3 = indices[ind + 2]
+ *         res.append((vectors[v1], vectors[v2], vectors[v3]))
  */
-    __pyx_t_11 = __Pyx_PyList_Append(__pyx_v_res, __pyx_t_10); if (unlikely(__pyx_t_11 == ((int)-1))) __PYX_ERR(0, 2402, __pyx_L1_error)
-    __Pyx_DECREF(__pyx_t_10); __pyx_t_10 = 0;
+    __pyx_v_v2 = (__pyx_v_indices[(__pyx_v_ind + 1)]);
+
+    /* "srctools/_math.pyx":2403
+ *         v1 = indices[ind + 0]
+ *         v2 = indices[ind + 1]
+ *         v3 = indices[ind + 2]             # <<<<<<<<<<<<<<
+ *         res.append((vectors[v1], vectors[v2], vectors[v3]))
+ *     return res
+ */
+    __pyx_v_v3 = (__pyx_v_indices[(__pyx_v_ind + 2)]);
+
+    /* "srctools/_math.pyx":2404
+ *         v2 = indices[ind + 1]
+ *         v3 = indices[ind + 2]
+ *         res.append((vectors[v1], vectors[v2], vectors[v3]))             # <<<<<<<<<<<<<<
+ *     return res
+ * 
+ */
+    __pyx_t_2 = __Pyx_GetItemInt_List(__pyx_v_vectors, __pyx_v_v1, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(!__pyx_t_2)) __PYX_ERR(0, 2404, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_2);
+    __pyx_t_5 = __Pyx_GetItemInt_List(__pyx_v_vectors, __pyx_v_v2, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(!__pyx_t_5)) __PYX_ERR(0, 2404, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_5);
+    __pyx_t_12 = __Pyx_GetItemInt_List(__pyx_v_vectors, __pyx_v_v3, size_t, 0, __Pyx_PyInt_FromSize_t, 1, 0, 1); if (unlikely(!__pyx_t_12)) __PYX_ERR(0, 2404, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_12);
+    __pyx_t_13 = PyTuple_New(3); if (unlikely(!__pyx_t_13)) __PYX_ERR(0, 2404, __pyx_L1_error)
+    __Pyx_GOTREF(__pyx_t_13);
+    __Pyx_GIVEREF(__pyx_t_2);
+    PyTuple_SET_ITEM(__pyx_t_13, 0, __pyx_t_2);
+    __Pyx_GIVEREF(__pyx_t_5);
+    PyTuple_SET_ITEM(__pyx_t_13, 1, __pyx_t_5);
+    __Pyx_GIVEREF(__pyx_t_12);
+    PyTuple_SET_ITEM(__pyx_t_13, 2, __pyx_t_12);
+    __pyx_t_2 = 0;
+    __pyx_t_5 = 0;
+    __pyx_t_12 = 0;
+    __pyx_t_14 = __Pyx_PyList_Append(__pyx_v_res, __pyx_t_13); if (unlikely(__pyx_t_14 == ((int)-1))) __PYX_ERR(0, 2404, __pyx_L1_error)
+    __Pyx_DECREF(__pyx_t_13); __pyx_t_13 = 0;
   }
 
-  /* "srctools/_math.pyx":2407
- *             _vector(v3.x, v3.y, v3.z),
- *         ))
+  /* "srctools/_math.pyx":2405
+ *         v3 = indices[ind + 2]
+ *         res.append((vectors[v1], vectors[v2], vectors[v3]))
  *     return res             # <<<<<<<<<<<<<<
  * 
  * 
@@ -30352,19 +30384,20 @@ static PyObject *__pyx_pf_8srctools_5_math_6quickhull(CYTHON_UNUSED PyObject *__
  * 
  * def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':             # <<<<<<<<<<<<<<
  *     """Use the quickhull algorithm to construct a convex hull around the provided points."""
- *     cdef quickhull.Vector3[double] v1, v2, v3
+ *     cdef size_t v1, v2, v3, ind
  */
 
   /* function exit code */
   __pyx_L1_error:;
   __Pyx_XDECREF(__pyx_t_2);
   __Pyx_XDECREF(__pyx_t_5);
-  __Pyx_XDECREF(__pyx_t_9);
-  __Pyx_XDECREF(__pyx_t_10);
+  __Pyx_XDECREF(__pyx_t_12);
+  __Pyx_XDECREF(__pyx_t_13);
   __Pyx_AddTraceback("srctools._math.quickhull", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
   __pyx_L0:;
   __Pyx_XDECREF((PyObject *)__pyx_v_vecobj);
+  __Pyx_XDECREF(__pyx_v_vectors);
   __Pyx_XDECREF(__pyx_v_res);
   __Pyx_XGIVEREF(__pyx_r);
   __Pyx_RefNannyFinishContext();
@@ -31929,7 +31962,6 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_res, __pyx_k_res, sizeof(__pyx_k_res), 0, 0, 1, 1},
   {&__pyx_n_s_result, __pyx_k_result, sizeof(__pyx_k_result), 0, 0, 1, 1},
   {&__pyx_n_s_result_hull, __pyx_k_result_hull, sizeof(__pyx_k_result_hull), 0, 0, 1, 1},
-  {&__pyx_n_s_result_verts, __pyx_k_result_verts, sizeof(__pyx_k_result_verts), 0, 0, 1, 1},
   {&__pyx_n_u_rol, __pyx_k_rol, sizeof(__pyx_k_rol), 0, 1, 0, 1},
   {&__pyx_n_s_roll, __pyx_k_roll, sizeof(__pyx_k_roll), 0, 0, 1, 1},
   {&__pyx_n_u_roll, __pyx_k_roll, sizeof(__pyx_k_roll), 0, 1, 0, 1},
@@ -31945,6 +31977,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_test, __pyx_k_test, sizeof(__pyx_k_test), 0, 0, 1, 1},
   {&__pyx_n_s_to_matrix, __pyx_k_to_matrix, sizeof(__pyx_k_to_matrix), 0, 0, 1, 1},
   {&__pyx_n_s_top, __pyx_k_top, sizeof(__pyx_k_top), 0, 0, 1, 1},
+  {&__pyx_n_s_v, __pyx_k_v, sizeof(__pyx_k_v), 0, 0, 1, 1},
   {&__pyx_n_s_v1, __pyx_k_v1, sizeof(__pyx_k_v1), 0, 0, 1, 1},
   {&__pyx_n_s_v2, __pyx_k_v2, sizeof(__pyx_k_v2), 0, 0, 1, 1},
   {&__pyx_n_s_v3, __pyx_k_v3, sizeof(__pyx_k_v3), 0, 0, 1, 1},
@@ -31953,6 +31986,7 @@ static __Pyx_StringTabEntry __pyx_string_tab[] = {
   {&__pyx_n_s_values, __pyx_k_values, sizeof(__pyx_k_values), 0, 0, 1, 1},
   {&__pyx_n_s_vec, __pyx_k_vec, sizeof(__pyx_k_vec), 0, 0, 1, 1},
   {&__pyx_n_s_vecobj, __pyx_k_vecobj, sizeof(__pyx_k_vecobj), 0, 0, 1, 1},
+  {&__pyx_n_s_vectors, __pyx_k_vectors, sizeof(__pyx_k_vectors), 0, 0, 1, 1},
   {&__pyx_n_s_vert_list, __pyx_k_vert_list, sizeof(__pyx_k_vert_list), 0, 0, 1, 1},
   {&__pyx_n_s_vertexes, __pyx_k_vertexes, sizeof(__pyx_k_vertexes), 0, 0, 1, 1},
   {&__pyx_kp_u_were_given, __pyx_k_were_given, sizeof(__pyx_k_were_given), 0, 1, 0, 0},
@@ -32247,12 +32281,12 @@ static CYTHON_SMALL_CODE int __Pyx_InitCachedConstants(void) {
  * 
  * def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':             # <<<<<<<<<<<<<<
  *     """Use the quickhull algorithm to construct a convex hull around the provided points."""
- *     cdef quickhull.Vector3[double] v1, v2, v3
+ *     cdef size_t v1, v2, v3, ind
  */
-  __pyx_tuple__32 = PyTuple_Pack(14, __pyx_n_s_vertexes, __pyx_n_s_v1, __pyx_n_s_v2, __pyx_n_s_v3, __pyx_n_s_ind, __pyx_n_s_values, __pyx_n_s_vert_list, __pyx_n_s_result, __pyx_n_s_vecobj, __pyx_n_s_qhull, __pyx_n_s_result_hull, __pyx_n_s_result_verts, __pyx_n_s_indices, __pyx_n_s_res); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 2381, __pyx_L1_error)
+  __pyx_tuple__32 = PyTuple_Pack(15, __pyx_n_s_vertexes, __pyx_n_s_v1, __pyx_n_s_v2, __pyx_n_s_v3, __pyx_n_s_ind, __pyx_n_s_values, __pyx_n_s_vert_list, __pyx_n_s_result, __pyx_n_s_vecobj, __pyx_n_s_qhull, __pyx_n_s_result_hull, __pyx_n_s_vectors, __pyx_n_s_indices, __pyx_n_s_res, __pyx_n_s_v); if (unlikely(!__pyx_tuple__32)) __PYX_ERR(0, 2381, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_tuple__32);
   __Pyx_GIVEREF(__pyx_tuple__32);
-  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 14, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__math_pyx, __pyx_n_s_quickhull, 2381, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 2381, __pyx_L1_error)
+  __pyx_codeobj__33 = (PyObject*)__Pyx_PyCode_New(1, 0, 15, 0, CO_OPTIMIZED|CO_NEWLOCALS, __pyx_empty_bytes, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_tuple__32, __pyx_empty_tuple, __pyx_empty_tuple, __pyx_kp_s_srctools__math_pyx, __pyx_n_s_quickhull, 2381, __pyx_empty_bytes); if (unlikely(!__pyx_codeobj__33)) __PYX_ERR(0, 2381, __pyx_L1_error)
   __Pyx_RefNannyFinishContext();
   return 0;
   __pyx_L1_error:;
@@ -33676,14 +33710,14 @@ if (!__Pyx_RefNanny) {
  * 
  * def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':             # <<<<<<<<<<<<<<
  *     """Use the quickhull algorithm to construct a convex hull around the provided points."""
- *     cdef quickhull.Vector3[double] v1, v2, v3
+ *     cdef size_t v1, v2, v3, ind
  */
   __pyx_t_1 = PyCFunction_NewEx(&__pyx_mdef_8srctools_5_math_7quickhull, NULL, __pyx_n_s_srctools__math); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2381, __pyx_L1_error)
   __Pyx_GOTREF(__pyx_t_1);
   if (PyDict_SetItem(__pyx_d, __pyx_n_s_quickhull, __pyx_t_1) < 0) __PYX_ERR(0, 2381, __pyx_L1_error)
   __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-  /* "srctools/_math.pyx":2414
+  /* "srctools/_math.pyx":2412
  * 
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
@@ -33693,7 +33727,7 @@ if (!__Pyx_RefNanny) {
   __pyx_t_4 = (CYTHON_USE_TYPE_SLOTS != 0);
   if (__pyx_t_4) {
 
-    /* "srctools/_math.pyx":2415
+    /* "srctools/_math.pyx":2413
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:
  *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"             # <<<<<<<<<<<<<<
@@ -33702,7 +33736,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Vec)->tp_name = ((char const *)"srctools.math.Vec");
 
-    /* "srctools/_math.pyx":2416
+    /* "srctools/_math.pyx":2414
  * if USE_TYPE_INTERNALS:
  *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
  *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"             # <<<<<<<<<<<<<<
@@ -33711,7 +33745,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Angle)->tp_name = ((char const *)"srctools.math.Angle");
 
-    /* "srctools/_math.pyx":2417
+    /* "srctools/_math.pyx":2415
  *     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
  *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
  *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"             # <<<<<<<<<<<<<<
@@ -33720,7 +33754,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_Matrix)->tp_name = ((char const *)"srctools.math.Matrix");
 
-    /* "srctools/_math.pyx":2418
+    /* "srctools/_math.pyx":2416
  *     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
  *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
  *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"             # <<<<<<<<<<<<<<
@@ -33729,7 +33763,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIter)->tp_name = ((char const *)"srctools.math._Vec_iterator");
 
-    /* "srctools/_math.pyx":2419
+    /* "srctools/_math.pyx":2417
  *     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
  *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
  *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"             # <<<<<<<<<<<<<<
@@ -33738,7 +33772,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_AngleIter)->tp_name = ((char const *)"srctools.math._Angle_iterator");
 
-    /* "srctools/_math.pyx":2420
+    /* "srctools/_math.pyx":2418
  *     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
  *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
  *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"             # <<<<<<<<<<<<<<
@@ -33747,7 +33781,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIterGrid)->tp_name = ((char const *)"srctools.math._Vec_grid_iterator");
 
-    /* "srctools/_math.pyx":2421
+    /* "srctools/_math.pyx":2419
  *     (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
  *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
  *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"             # <<<<<<<<<<<<<<
@@ -33756,7 +33790,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecIterLine)->tp_name = ((char const *)"srctools.math.Vec_line_iterator");
 
-    /* "srctools/_math.pyx":2422
+    /* "srctools/_math.pyx":2420
  *     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
  *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
  *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"             # <<<<<<<<<<<<<<
@@ -33765,7 +33799,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_VecTransform)->tp_name = ((char const *)"srctools.math._Vec_transform_cm");
 
-    /* "srctools/_math.pyx":2423
+    /* "srctools/_math.pyx":2421
  *     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
  *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
  *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"             # <<<<<<<<<<<<<<
@@ -33774,7 +33808,7 @@ if (!__Pyx_RefNanny) {
  */
     ((PyTypeObject *)__pyx_ptype_8srctools_5_math_AngleTransform)->tp_name = ((char const *)"srctools.math._Angle_transform_cm");
 
-    /* "srctools/_math.pyx":2414
+    /* "srctools/_math.pyx":2412
  * 
  * from cpython.object cimport PyTypeObject
  * if USE_TYPE_INTERNALS:             # <<<<<<<<<<<<<<
@@ -33783,7 +33817,7 @@ if (!__Pyx_RefNanny) {
  */
   }
 
-  /* "srctools/_math.pyx":2424
+  /* "srctools/_math.pyx":2422
  *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
  *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
  * try:             # <<<<<<<<<<<<<<
@@ -33799,43 +33833,43 @@ if (!__Pyx_RefNanny) {
     __Pyx_XGOTREF(__pyx_t_7);
     /*try:*/ {
 
-      /* "srctools/_math.pyx":2425
+      /* "srctools/_math.pyx":2423
  *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
  * try:
  *     parse_vec_str.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
  *     to_matrix.__module__ = 'srctools.math'
  *     lerp.__module__ = 'srctools.math'
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_parse_vec_str); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2425, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_parse_vec_str); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2423, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2425, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2423, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "srctools/_math.pyx":2426
+      /* "srctools/_math.pyx":2424
  * try:
  *     parse_vec_str.__module__ = 'srctools.math'
  *     to_matrix.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
  *     lerp.__module__ = 'srctools.math'
  * except Exception:
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_to_matrix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2426, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_to_matrix); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2424, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2426, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2424, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "srctools/_math.pyx":2427
+      /* "srctools/_math.pyx":2425
  *     parse_vec_str.__module__ = 'srctools.math'
  *     to_matrix.__module__ = 'srctools.math'
  *     lerp.__module__ = 'srctools.math'             # <<<<<<<<<<<<<<
  * except Exception:
  *     pass  # Perfectly fine.
  */
-      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_lerp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2427, __pyx_L4_error)
+      __Pyx_GetModuleGlobalName(__pyx_t_1, __pyx_n_s_lerp); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 2425, __pyx_L4_error)
       __Pyx_GOTREF(__pyx_t_1);
-      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2427, __pyx_L4_error)
+      if (__Pyx_PyObject_SetAttrStr(__pyx_t_1, __pyx_n_s_module, __pyx_kp_u_srctools_math) < 0) __PYX_ERR(0, 2425, __pyx_L4_error)
       __Pyx_DECREF(__pyx_t_1); __pyx_t_1 = 0;
 
-      /* "srctools/_math.pyx":2424
+      /* "srctools/_math.pyx":2422
  *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
  *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
  * try:             # <<<<<<<<<<<<<<
@@ -33851,7 +33885,7 @@ if (!__Pyx_RefNanny) {
     __Pyx_XDECREF(__pyx_t_1); __pyx_t_1 = 0;
     __Pyx_XDECREF(__pyx_t_2); __pyx_t_2 = 0;
 
-    /* "srctools/_math.pyx":2428
+    /* "srctools/_math.pyx":2426
  *     to_matrix.__module__ = 'srctools.math'
  *     lerp.__module__ = 'srctools.math'
  * except Exception:             # <<<<<<<<<<<<<<
@@ -33865,7 +33899,7 @@ if (!__Pyx_RefNanny) {
     goto __pyx_L6_except_error;
     __pyx_L6_except_error:;
 
-    /* "srctools/_math.pyx":2424
+    /* "srctools/_math.pyx":2422
  *     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
  *     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
  * try:             # <<<<<<<<<<<<<<

@@ -2380,8 +2380,7 @@ cdef class Angle:
 
 def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
-    cdef quickhull.Vector3[double] v1, v2, v3
-    cdef size_t ind
+    cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
     cdef list vert_list, result
     cdef Vec vecobj
@@ -2392,18 +2391,17 @@ def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
 
     cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
 
-    cdef quickhull.VertexDataSource[double] result_verts = result_hull.getVertexBuffer()
+    cdef list vectors = [
+        _vector(v.x, v.y, v.z)
+        for v in result_hull.getVertexBuffer()
+    ]
     cdef vector[size_t] indices = result_hull.getIndexBuffer()
     res = []
     for ind in range(0, indices.size(), 3):
-        v1 = result_verts[indices[ind + 0]]
-        v2 = result_verts[indices[ind + 1]]
-        v3 = result_verts[indices[ind + 2]]
-        res.append((
-            _vector(v1.x, v1.y, v1.z),
-            _vector(v2.x, v2.y, v2.z),
-            _vector(v3.x, v3.y, v3.z),
-        ))
+        v1 = indices[ind + 0]
+        v2 = indices[ind + 1]
+        v3 = indices[ind + 2]
+        res.append((vectors[v1], vectors[v2], vectors[v3]))
     return res
 
 
