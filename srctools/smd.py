@@ -216,7 +216,7 @@ class Triangle:
 
     def normal(self) -> Vec:
         """Compute the normal of this triangle, ignoring vertex normals."""
-        self._norm_and_sa().norm()
+        return self._norm_and_sa().norm()
 
 
 class ParseError(Exception):
@@ -760,3 +760,29 @@ class Mesh:
             Vec.dot(tri.point1.pos, tri._norm_and_sa())
             for tri in self.triangles
         ) / 6.0
+
+    def smooth_normals(self) -> None:
+        """Replace all normals with ones smoothing adjacient faces."""
+        vert_to_tris: dict[
+            tuple[float, float, float],
+            tuple[list[Triangle], list[Vertex]]
+        ] = defaultdict(lambda: ([], []))
+        tri_to_normal: dict[Triangle, Vec] = {}
+        for tri in self.triangles:
+            for vert in tri:
+                tris, verts = vert_to_tris[vert.pos.as_tuple()]
+                tris.append(tri)
+                verts.append(vert)
+            tri_to_normal[tri] = tri.normal()
+        for tris, verts in vert_to_tris.values():
+            normal = sum(map(tri_to_normal.__getitem__, tris), Vec()).norm()
+            for vert in verts:
+                vert.norm = normal
+
+    def flatten_normals(self) -> None:
+        """Replace all vertex normals with the triangle normal."""
+        for tri in self.triangles:
+            norm = tri.normal()
+            for vert in tri:
+                vert.norm = norm
+
