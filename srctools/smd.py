@@ -686,7 +686,7 @@ class Mesh:
             mesh.triangles.append(tri)
         return mesh
 
-    def weld_vertexes(self, normal_tol: float = 0.999) -> None:
+    def weld_vertexes(self, dist_tol: float = 1e-5, normal_tol: float = 0.999) -> None:
         """Run through all vertexes in the triangles, 'welding' close ones together.
 
         This will result in adjacent faces sharing vertex objects.
@@ -695,18 +695,19 @@ class Mesh:
         as with most studioMDL collision models, or by giving each section the
         same unique normal.
         """
-        # pos -> list of vertexes here.
+        # pos -> list of vertexes close to here.
         weld_table: dict[tuple[float, float, float], list[Vertex]] = {}
         for tri in self.triangles:
             vert: Vertex
             for i, vert in enumerate(tri):
+                key = vert.pos.x // 2.0, vert.pos.y // 2.0, vert.pos.z // 2.0
                 try:
-                    existing = weld_table[vert.pos.as_tuple()]
+                    existing = weld_table[key]
                 except KeyError:
-                    weld_table[vert.pos.as_tuple()] = [vert]
+                    weld_table[key] = [vert]
                     continue
                 for other_vert in existing:
-                    if Vec.dot(vert.norm, other_vert.norm) > normal_tol:
+                    if (vert.pos - other_vert.pos).mag() < dist_tol and Vec.dot(vert.norm, other_vert.norm) > normal_tol:
                         tri[i] = other_vert
                         break
                 else:
