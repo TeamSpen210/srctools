@@ -1,7 +1,6 @@
 # Explicitly include the C/C++ sources, for cythonless installs.
-recursive-include libsquish *.c *.cpp *.h
-recursive-include srctools\ *.cpp *.c *.h
+global-include *.c *.cpp *.h
 # Include test samples
-recursive-include srctools\test *
+graft srctools\test
 # Then remove pycache folder that included.
 prune **\__pycache__\**
