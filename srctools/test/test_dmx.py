@@ -3,9 +3,8 @@ from io import BytesIO
 from typing import Callable, cast, Set
 from uuid import UUID
 
-import pytest
-
 from srctools import Matrix, Angle
+from srctools.test import *
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
@@ -409,7 +408,7 @@ def test_parse(filename: str, root: Element=None) -> None:
     a = cast(Callable[[float], float], pytest.approx)
 
     if root is None:
-        with open(f'dmx_samples/{filename}.dmx', 'rb') as f:
+        with open(os.path.join(RESLOC, f'dmx_samples/{filename}.dmx'), 'rb') as f:
             root, fmt_name, fmt_version = Element.parse(f)
         assert fmt_name == 'dmx'
         assert fmt_version == 4
@@ -577,9 +576,9 @@ def test_parse_binaryv3() -> None:
     We don't have a DMXconvert that produces this, so instead compare an existing
     file to the text version.
     """
-    with open(f'dmx_samples/tf_movies.dmx', 'rb') as f:
+    with open(os.path.join(RESLOC, f'dmx_samples/tf_movies.dmx'), 'rb') as f:
         root_bin, fmt_name, fmt_version = Element.parse(f)
-    with open(f'dmx_samples/tf_movies_text.dmx', 'rb') as f:
+    with open(os.path.join(RESLOC, f'dmx_samples/tf_movies_text.dmx'), 'rb') as f:
         root_txt, fmt_name, fmt_version = Element.parse(f)
     assert_tree(root_bin, root_txt)
 
@@ -587,7 +586,7 @@ def test_parse_binaryv3() -> None:
 @pytest.mark.parametrize('version', [2, 4, 5])
 def test_export_bin_roundtrip(version: int) -> None:
     """Test exporting binary types roundtrip."""
-    with open(f'dmx_samples/binary_v5.dmx', 'rb') as f:
+    with open(os.path.join(RESLOC, f'dmx_samples/binary_v5.dmx'), 'rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()
@@ -604,7 +603,7 @@ def test_export_bin_roundtrip(version: int) -> None:
 @pytest.mark.parametrize('flat', [False, True], ids=['indented', 'flat'])
 def test_export_kv2_roundtrip(flat: bool) -> None:
     """Test exporting keyvalues2 roundtrip."""
-    with open(f'dmx_samples/keyvalues2.dmx', 'rb') as f:
+    with open(os.path.join(RESLOC, f'dmx_samples/keyvalues2.dmx'), 'rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()

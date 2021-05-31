@@ -10,6 +10,7 @@ from srctools.math import (
 from srctools import math as vec_mod
 import pytest
 import math
+import os.path
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.
@@ -21,6 +22,8 @@ VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6
+# Incorrect if not in source form, but that's not an issue.
+RESLOC = os.path.dirname(__file__)
 
 
 def iter_vec(nums):

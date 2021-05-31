@@ -1,5 +1,6 @@
 """Test rotations in srctools.vec."""
 import copy
+import os.path
 import pickle
 
 from srctools.test import *
@@ -280,7 +281,7 @@ def test_gen_check(py_c_vec) -> None:
     X = Vec(x=1)
     Y = Vec(y=1)
     Z = Vec(z=1)
-    with open('rotation.txt') as f:
+    with open(os.path.join(RESLOC, 'rotation.txt')) as f:
         for line_num, line in enumerate(f, start=1):
             if not line.startswith('|'):
                 # Skip other junk in the log.
