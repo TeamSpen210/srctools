@@ -79,7 +79,7 @@ def f(
     r: int = 0, g: int = 0, b: int = 0,
     a: int = 0, *,
     l: int = 0, size: int = 0,
-) -> tuple[int, int, int, int, int, int]:
+) -> Tuple[int, int, int, int, int, int]:
     """Helper function to construct ImageFormats."""
     if l:
         r = g = b = l

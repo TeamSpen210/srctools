@@ -896,7 +896,7 @@ class StaticProp:
     origin: Vec
     angles: Angle = attr.ib(factory=Angle)
     scaling: float = 1.0
-    visleafs: list[int] = attr.ib(factory=list)
+    visleafs: List[int] = attr.ib(factory=list)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
