@@ -3,6 +3,7 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 import contextlib
+import io
 import warnings
 
 from io import BytesIO
@@ -283,6 +284,8 @@ class BSP:
         self.read()
 
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
+    textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
+
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
@@ -452,36 +455,58 @@ class BSP:
         try:
             lump = self.game_lumps[lump_id]
         except KeyError:
-            raise ValueError('{} not in {}'.format(lump_id, list(self.game_lumps)))
+            raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps)))
         return lump.data
 
     # Lump-specific commands:
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
-        tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
+        warnings.warn('Access bsp.textures', DeprecationWarning, stacklevel=2)
+        return iter(self.textures)
+
+    def _lmp_read_textures(self, tex_data: bytes) -> List[str]:
         tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
         # tex_table is an array of int offsets into tex_data. tex_data is a
         # null-terminated block of strings.
 
         table_offsets = struct.unpack(
             # The number of ints + i, for the repetitions in the struct.
-            str(len(tex_table) // struct.calcsize('i')) + 'i',
+            '<' + str(len(tex_table) // struct.calcsize('i')) + 'i',
             tex_table,
         )
+
+        mat_list = []
 
         for off in table_offsets:
             # Look for the NULL at the end - strings are limited to 128 chars.
             str_off = 0
             for str_off in range(off, off + 128):
                 if tex_data[str_off] == 0:
-                    yield tex_data[off: str_off].decode('ascii')
+                    mat_list.append(tex_data[off: str_off].decode('ascii'))
                     break
             else:
                 # Reached the 128 char limit without finding a null.
                 raise ValueError('Bad string at', off, 'in BSP! ({!r})'.format(
                     tex_data[off:str_off]
                 ))
+        return mat_list
+
+    def _lmp_write_textures(self, textures: List[str]) -> bytes:
+        table = io.BytesIO()
+        data = bytearray()
+        for tex in textures:
+            if len(tex) >= 128:
+                raise OverflowError(f'Texture "{tex}" exceeds 128 character limit')
+            string = tex.encode('ascii') + b'\0'
+            ind = data.find(string)
+            if ind == -1:
+                ind = len(data)
+                data.extend(string)
+            table.write(struct.pack('<i', ind))
+        self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
+        return bytes(data)
+
 
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
@@ -510,6 +535,7 @@ class BSP:
 
         When successfully exited, the zip will be rewritten to the BSP file.
         """
+        warnings.warn('Use BSP.pakfile to access the cached archive.', DeprecationWarning, stacklevel=2)
         pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
         data_file = BytesIO(pak_lump.data)
 
@@ -940,7 +966,7 @@ class Lump:
         self.data = b''
 
     def __repr__(self) -> str:
-        return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
+        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
             self.type.name,
             self.version,
             bytes(self.ident),
