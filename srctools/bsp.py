@@ -16,7 +16,10 @@ from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 import struct
 
-from typing import TypeVar, Any, List, Dict, Iterator, Union, Optional, BinaryIO, Tuple
+from typing import (
+    overload, TypeVar, Any, Generic, Union, Optional,
+    List, Iterator, BinaryIO, Tuple, Callable,
+)
 
 
 __all__ = [
@@ -31,6 +34,7 @@ HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 T = TypeVar('T')
+
 
 class VERSIONS(Enum):
     """The BSP version numbers for various games."""
@@ -208,7 +212,7 @@ class ParsedLump(Generic[T]):
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
     """ 
-    def __init__(self, lump: BSP_LUMPS, *extra: BSP_LUMPS) -> 'ParsedLump':
+    def __init__(self, lump: BSP_LUMPS, *extra: BSP_LUMPS) -> None:
         self.lump = lump
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
@@ -218,11 +222,14 @@ class ParsedLump(Generic[T]):
     def __set_name__(self, owner, name) -> None:
         self.__name__ = name
         self.__objclass__ = owner
-        self._read = getattr(self.owner, '_lmp_read_' + name)
-        self._write = getattr(self.owner, '_lmp_write_' + name)
+        self._read = getattr(owner, '_lmp_read_' + name)
+        self._write = getattr(owner, '_lmp_write_' + name)
+
+    def __repr__(self) -> str:
+        return f'<srctools.BSP.{self.__name__} member>'
         
     @overload
-    def __get__(self, instance: None, owner=None) -> 'ParsedLump': ...
+    def __get__(self, instance: None, owner=None) -> 'ParsedLump[T]': ...
     @overload
     def __get__(self, instance: 'BSP', owner=None) -> T: ...
         
@@ -231,23 +238,26 @@ class ParsedLump(Generic[T]):
         if instance is None:  # Accessed on the class.
             return self
         try:
-            return instance._parsed_lumps[self.__name__]
+            return instance._parsed_lumps[self.lump]  # noqa
         except KeyError:
             pass
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
         
         data = instance.lumps[self.lump].data
-        result = instance._parsed_lumps[self.__name__] = self._read(instance, data)
+        result = self._read(instance, data)
+        instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
             instance.lumps[lump].data = b''
-        return result  
-        
-   def __set__(self, instance: Optional['BSP'], value: T) -> None:
-       """Discard lump data, then store."""
-      for lump in self.to_clear:
-          instance.lumps[lump].data = b''
-      instance._parsed_lumps[self.__name__] = value
+        return result
+
+    def __set__(self, instance: Optional['BSP'], value: T) -> None:
+        """Discard lump data, then store."""
+        if instance is None:
+            raise TypeError('Cannot assign directly to lump descriptor!')
+        for lump in self.to_clear:
+            instance.lumps[lump].data = b''
+        instance._parsed_lumps[self.lump] = value  # noqa
 
 
 class BSP:
