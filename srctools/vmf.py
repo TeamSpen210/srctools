@@ -2452,7 +2452,7 @@ class Output:
         out: str,
         targ: Union[Entity, str],
         inp: str,
-        param='',
+        param: ValidKVs='',
         delay: float=0.0,
         *,
         times: int=-1,
@@ -2469,7 +2469,7 @@ class Output:
             self.target = targ
         self.input = inp
         self.inst_in = inst_in
-        self.params = str(param)
+        self.params = conv_kv(param)
         self.delay = delay
         self.times = 1 if only_once else times
         self.comma_sep = comma_sep
