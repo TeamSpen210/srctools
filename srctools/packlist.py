@@ -600,7 +600,7 @@ class PackList:
             # Static props obviously only use one skin.
             self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
 
-        for mat in bsp.read_texture_names():
+        for mat in bsp.textures:
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
     def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
@@ -772,11 +772,10 @@ class PackList:
         # old data if required.
 
         # First retrieve the data.
-        with bsp.packfile() as start_zip:
-            packed_files = {
-                info.filename.casefold(): (info.filename, start_zip.read(info))
-                for info in start_zip.infolist()
-            }  # type: Dict[str, Tuple[str, bytes]]
+        packed_files = {
+            info.filename.casefold(): (info.filename, bsp.pakfile.read(info))
+            for info in bsp.pakfile.infolist()
+        }  # type: Dict[str, Tuple[str, bytes]]
 
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         all_systems = {
@@ -828,11 +827,11 @@ class PackList:
                     LOGGER.debug('SKIP: {}', fname)
 
         LOGGER.info('Compressing packfile...')
-        with io.BytesIO() as new_data:
-            with ZipFile(new_data, 'w') as new_zip:
-                for fname, data in packed_files.values():
-                    new_zip.writestr(fname, data)
-            bsp.lumps[BSP_LUMPS.PAKFILE].data = new_data.getvalue()
+        # Note no with statement, the BSP takes ownership and needs it open.
+        new_zip = ZipFile(io.BytesIO(), 'w')
+        for fname, data in packed_files.values():
+            new_zip.writestr(fname, data)
+        bsp.pakfile = new_zip
 
     def eval_dependencies(self) -> None:
         """Add files to the list which need to also be packed.
