@@ -3,7 +3,6 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 import contextlib
-import io
 import warnings
 
 from io import BytesIO
@@ -20,8 +19,8 @@ from srctools.property_parser import Property
 import struct
 
 from typing import (
-    overload, TypeVar, Any, Generic, Union, Optional,
-    List, Iterator, BinaryIO, Tuple, Callable,
+    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict
 )
 
 
@@ -215,21 +214,22 @@ class ParsedLump(Generic[T]):
     When accessed, the corresponding lump is parsed into an object tree.
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
-    """ 
+    """
+
     def __init__(self, lump: BSP_LUMPS, *extra: BSP_LUMPS) -> None:
         self.lump = lump
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
-        self._read = None  # type: Optional[Callable[[BSP, bytes], T]]
-        self._write = None  # type: Optional[Callable[[BSP, T], bytes]]
-        self._check = None  # type: Optional[Callable[[BSP, T], None]]
-        
-    def __set_name__(self, owner, name) -> None:
+        self._read: Optional[Callable[[BSP, bytes], T]] = None
+        self._check: Optional[Callable[[BSP, T], None]] = None
+
+    def __set_name__(self, owner: Type['BSP'], name: str) -> None:
         self.__name__ = name
         self.__objclass__ = owner
         self._read = getattr(owner, '_lmp_read_' + name)
-        self._write = getattr(owner, '_lmp_write_' + name)
         self._check = getattr(owner, '_lmp_check_' + name, None)
+        # noinspection PyProtectedMember
+        owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + name)
 
     def __repr__(self) -> str:
         return f'<srctools.BSP.{self.__name__} member>'
@@ -272,6 +272,9 @@ class ParsedLump(Generic[T]):
 
 class BSP:
     """A BSP file."""
+    # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
+    # that can't bind here.
+    _save_funcs: ClassVar[Dict[BSP_LUMPS, Callable[['BSP', Any], bytes]]] = {}
     def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
@@ -363,7 +366,9 @@ class BSP:
 
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
-
+        while self._parsed_lumps:
+            lump, data = self._parsed_lumps.popitem()
+            self.lumps[lump].data = self._save_funcs[lump](self, data)
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
@@ -498,7 +503,7 @@ class BSP:
         return mat_list
 
     def _lmp_write_textures(self, textures: List[str]) -> bytes:
-        table = io.BytesIO()
+        table = BytesIO()
         data = bytearray()
         for tex in textures:
             if len(tex) >= 128:
@@ -511,7 +516,6 @@ class BSP:
             table.write(struct.pack('<i', ind))
         self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
         return bytes(data)
-
 
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
