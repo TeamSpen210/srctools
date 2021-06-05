@@ -1,7 +1,9 @@
-"""Read and write lumps in Source BSP files.
+"""Read and write parts of Source BSP files.
 
+Data from a read BSP is lazily parsed when each section is accessed.
 """
 import contextlib
+import warnings
 
 from io import BytesIO
 from enum import Enum, Flag
@@ -204,7 +206,8 @@ class StaticPropFlags(Flag):
     def value_sec(self) -> int:
         """Return the data for the secondary flag byte."""
         return self.value >> 8
-        
+
+
 class ParsedLump(Generic[T]):
     """Allows access to parsed versions of lumps.
     
@@ -218,12 +221,14 @@ class ParsedLump(Generic[T]):
         self.__name__ = ''
         self._read = None  # type: Optional[Callable[[BSP, bytes], T]]
         self._write = None  # type: Optional[Callable[[BSP, T], bytes]]
+        self._check = None  # type: Optional[Callable[[BSP, T], None]]
         
     def __set_name__(self, owner, name) -> None:
         self.__name__ = name
         self.__objclass__ = owner
         self._read = getattr(owner, '_lmp_read_' + name)
         self._write = getattr(owner, '_lmp_write_' + name)
+        self._check = getattr(owner, '_lmp_check_' + name, None)
 
     def __repr__(self) -> str:
         return f'<srctools.BSP.{self.__name__} member>'
@@ -253,8 +258,12 @@ class ParsedLump(Generic[T]):
 
     def __set__(self, instance: Optional['BSP'], value: T) -> None:
         """Discard lump data, then store."""
+
         if instance is None:
             raise TypeError('Cannot assign directly to lump descriptor!')
+        if self._check is not None:
+            # Allow raising if an invalid value.
+            self._check(instance, value)
         for lump in self.to_clear:
             instance.lumps[lump].data = b''
         instance._parsed_lumps[self.lump] = value  # noqa
@@ -273,6 +282,7 @@ class BSP:
 
         self.read()
 
+    pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
@@ -469,9 +479,30 @@ class BSP:
                     break
             else:
                 # Reached the 128 char limit without finding a null.
-                raise ValueError('Bad string at', off, 'in BSP! ("{}")'.format(
+                raise ValueError('Bad string at', off, 'in BSP! ({!r})'.format(
                     tex_data[off:str_off]
                 ))
+
+    def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
+        """Read the raw binary as writable zip archive."""
+        zipfile = ZipFile(BytesIO(data), mode='a')
+        zipfile.filename = self.filename
+        return zipfile
+
+    def _lmp_write_pakfile(self, file: ZipFile) -> bytes:
+        """Extract the final zip data from the zipfile."""
+        # Explicitly close the zip file, so the footer is done.
+        buf = file.fp
+        file.close()
+        if isinstance(buf, BytesIO):
+            return buf.getvalue()
+        else:
+            buf.seek(0)
+            return buf.read()
+
+    def _lmp_check_pakfile(self, file: ZipFile) -> None:
+        if not isinstance(file.fp, BytesIO):
+            raise ValueError('Zipfiles must be constructed with a BytesIO buffer.')
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
