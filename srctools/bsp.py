@@ -280,10 +280,15 @@ class BSP:
         self.game_lumps = {}  # type: dict[bytes, GameLump]
         self.header_off = 0
         self.version = version  # type: Optional[Union[VERSIONS, int]]
+        # Tracks if the ent lump is using the new x1D output separators,
+        # or the old comma separators. If no ouputs are present there's no
+        # way to determine this.
+        self.out_comma_sep: Optional[bool] = None
 
         self.read()
 
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
+    ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
 
     def read(self) -> None:
@@ -551,12 +556,15 @@ class BSP:
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
+        warnings.warn('Use BSP.ents directly.', DeprecationWarning, stacklevel=2)
+        return self._lmp_read_ents(self.get_lump(BSP_LUMPS.ENTITIES))
+
+    def _lmp_read_ents(self, ent_data: bytes) -> VMF:
         """Parse in entity data.
-        
-        This returns a VMF object, with entities mirroring that in the BSP. 
+
+        This returns a VMF object, with entities mirroring that in the BSP.
         No brushes are read.
         """
-        ent_data = self.get_lump(BSP_LUMPS.ENTITIES)
         vmf = VMF()
         cur_ent = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
@@ -617,11 +625,15 @@ class BSP:
             if 27 in value:
                 # All outputs use the comma_sep, so we can ID them.
                 cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                if self.out_comma_sep is None:
+                    self.out_comma_sep = False
             elif value.count(b',') == 4:
                 try:
                     cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
                 except ValueError:
                     cur_ent[decoded_key] = decoded_value
+                if self.out_comma_sep is None:
+                    self.out_comma_sep = True
             else:
                 # Normal keyvalue.
                 cur_ent[decoded_key] = decoded_value
@@ -632,8 +644,11 @@ class BSP:
 
         return vmf
 
+    def _lmp_write_ents(self, vmf: VMF) -> bytes:
+        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
+
     @staticmethod
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep=True) -> bytes:
         """Generate the entity data lump.
         
         This accepts a VMF file like that returned from read_ent_data(). 
@@ -641,6 +656,8 @@ class BSP:
 
         use_comma_sep can be used to force using either commas, or 0x1D in I/O.
         """
+        if _show_dep:
+            warnings.warn('Modify BSP.ents instead', DeprecationWarning, stacklevel=2)
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
