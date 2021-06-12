@@ -2274,7 +2274,7 @@ class EntityFixup(MutableMapping[str, str]):
         )
         return f'{self.__class__.__name__}([{items}])'
 
-    def substitute(self, text: str, default: str=None) -> str:
+    def substitute(self, text: str, default: str=None, *, allow_invert: bool=False) -> str:
         """Substitute the fixup variables into the provided string.
 
         Variables are found based on the defined values, so constructions such as
@@ -2284,6 +2284,9 @@ class EntityFixup(MutableMapping[str, str]):
 
         Any key is valid if defined in the instance, but only a-z, 0-9 and _ is
         detected for the default functionality.
+
+        If allow_invert is enabled, a variable can additionally be specified
+        like !$var to cause it to be inverted when substituted.
         """
         if '$' not in text:
             return text
@@ -2294,19 +2297,32 @@ class EntityFixup(MutableMapping[str, str]):
             # Sort longer values first, so they are checked before smaller
             # counterparts.
             sections = list(map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True)))
-            sections.append('[a-z_][a-z0-9_]*')  # Then add on the default any-identifier check.
-            # $, plus any of the above parts.
-            self._matcher = re.compile('\\$({})'.format('|'.join(sections)), re.IGNORECASE)
+            # ! maybe, $, any known fixups, then a default any-identifier check.
+            self._matcher = re.compile(
+                rf'(!)?\$({"|".join(sections)}|[a-z_][a-z0-9_]*)',
+                re.IGNORECASE,
+            )
 
         def replacer(match: 'Match[str]') -> str:
             """Handles the replacement semantics."""
-            varname = match.group(1)
+            has_inv, varname = match.groups()
             try:
-                return self._fixup[varname.casefold()].value
+                res = self._fixup[varname.casefold()].value
             except KeyError:
                 if default is None:
                     raise KeyError('$' + varname) from None
-                return default
+                res = default
+            if has_inv is not None:
+                if allow_invert:
+                    try:
+                        res = '0' if srctools.BOOL_LOOKUP[res.casefold()] else '1'
+                    except KeyError:
+                        # If not bool, keep existing value.
+                        pass
+                else:
+                    # Re-add the !, as if we didn't match it.
+                    res = '!' + res
+            return res
 
         return self._matcher.sub(replacer, text)
 

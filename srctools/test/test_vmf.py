@@ -85,3 +85,31 @@ def test_fixup_substitution() -> None:
     ent.fixup['$a_var_with*_[]_regex'] = 'ignored'
     assert ent.fixup.substitute('V = $a_var_with*_[]_regex') == 'V = ignored'
 
+
+def test_fixup_substitution_invert() -> None:
+    """Test the additional inverting behaviour."""
+    ent = VMF().create_ent('any')
+    ent.fixup['$true'] = '1'
+    ent.fixup['$false'] = '0'
+    ent.fixup['$nonbool'] = 'not_a_bool'
+
+    # Without $, nothing happens.
+    assert ent.fixup.substitute('!0') == '!0'
+    assert ent.fixup.substitute('!0', allow_invert=True) == '!0'
+
+    assert ent.fixup.substitute('$true $false') == '1 0'
+    assert ent.fixup.substitute('$true $false', allow_invert=True) == '1 0'
+
+    # If unspecified, the ! is left intact.
+    assert ent.fixup.substitute('A!$trueB_C!$falseD') == 'A!1B_C!0D'
+    # When specified, it doesn't affect other values.
+    assert ent.fixup.substitute('A!$trueB_C!$falseD', allow_invert=True) == 'A0B_C1D'
+
+    # For non-boolean values, it is consumed but does nothing.
+    assert ent.fixup.substitute('a_$nonbool_value') == 'a_not_a_bool_value'
+    assert ent.fixup.substitute('a_!$nonbool_value', allow_invert=True) == 'a_not_a_bool_value'
+
+    # If defaults are provided, those can be flipped too.
+    assert ent.fixup.substitute('$missing !$flipped', '0', allow_invert=True) == '0 1'
+    assert ent.fixup.substitute('$missing !$flipped', '1', allow_invert=True) == '1 0'
+
