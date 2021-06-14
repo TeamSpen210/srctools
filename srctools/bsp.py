@@ -306,14 +306,17 @@ class BSP:
         # or the old comma separators. If no ouputs are present there's no
         # way to determine this.
         self.out_comma_sep: Optional[bool] = None
+        # This internally stores the texdata values texinfo refers to. Users
+        # don't interact directly, instead they use the create_texinfo / texinfo.set()
+        # methods that create the data as required.
+        self._texdata: Dict[str, TexData] = {}
 
         self.read()
 
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
-    texdata: ParsedLump[List['TexData']] = ParsedLump(BSP_LUMPS.TEXDATA)
-    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO)
+    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
 
     def read(self) -> None:
@@ -539,16 +542,22 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
         return bytes(data)
 
-    def _lmp_read_texdata(self, data: bytes) -> List['TexData']:
-        """Read the texture data lump, providing additional info about each material."""
-        return [
-            TexData(self.textures[ind], Vec(ref_x, ref_y, ref_z), w, h, vw, vh)
-            for (ref_x, ref_y, ref_z, ind, w, h, vw, vh) in
-            struct.iter_unpack('<3f5i', data)
-        ]
-
     def _lmp_read_texinfo(self, data: bytes) -> List['TexInfo']:
-        texdata = self.texdata
+        """Read the texture info lump, providing positioning information."""
+        texdata_list = []
+        for (
+            ref_x, ref_y, ref_z, ind,
+            w, h, vw, vh,
+        ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
+            mat = self.textures[ind]
+            # The view width/height is unused stuff, identical to regular
+            # width/height.
+            assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
+            texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+            texdata_list.append(texdata)
+            self._texdata[mat.casefold()] = texdata
+        self.lumps[BSP_LUMPS.TEXDATA].data = b''
+
         return [
             TexInfo(
                 Vec(sx, sy, sz), so,
@@ -556,7 +565,7 @@ class BSP:
                 Vec(l_sx, l_sy, l_sz), l_so,
                 Vec(l_tx, l_ty, l_tz), l_to,
                 SurfFlags(flags),
-                texdata[texdata_ind],
+                texdata_list[texdata_ind],
             )
             for (
                 sx, sy, sz, so, tx, ty, tz, to,
@@ -565,6 +574,54 @@ class BSP:
                 texdata_ind
             ) in struct.iter_unpack('<16fii', data)
         ]
+
+    def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
+        """Rebuild the texinfo and texdata lump."""
+        # Map texture name or the texdata block to the index in the resultant list.
+        texture_ind = {
+            mat.casefold(): i
+            for i, mat in enumerate(self.textures)
+        }
+        texdata_ind = {}
+
+        texdata_list = []
+        texinfo_result = []
+
+        for info in texinfos:
+            # noinspection PyProtectedMember
+            tdat = info._info
+            # Try and find an existing reference to this texdata.
+            # If not, the index is at the end of the list, where we write and
+            # insert it.
+            # That's then done again for the texture name itself.
+            try:
+                ind = texdata_ind[tdat]
+            except KeyError:
+                ind = texdata_ind[tdat] = len(texdata_list)
+                try:
+                    tex_ind = texture_ind[tdat.mat.casefold()]
+                except KeyError:
+                    tex_ind = len(self.textures)
+                    self.textures.append(tdat.mat)
+
+                texdata_list.append(struct.pack(
+                    '<3f5i',
+                    tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
+                    tex_ind,
+                    tdat.width, tdat.height, tdat.width, tdat.height,
+                ))
+            texinfo_result.append(struct.pack(
+                '<16fii',
+                *info.s_off, info.s_shift,
+                *info.t_off, info.t_shift,
+                *info.lightmap_s_off, info.lightmap_s_shift,
+                *info.lightmap_t_off, info.lightmap_t_shift,
+                info.flags.value,
+                ind,
+            ))
+        self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
+        return b''.join(texinfo_result)
+
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
@@ -1088,8 +1145,8 @@ class TexData:
     reflectivity: Vec
     width: int
     height: int
-    view_width: int
-    view_height: int
+    # TexData has a 'view' width/height too, but it isn't used at all and is
+    # always the same as regular width/height.
 
 
 @attr.define(eq=True)
@@ -1104,7 +1161,22 @@ class TexInfo:
     lightmap_t_off: Vec
     lightmap_t_shift: float
     flags: SurfFlags
-    data: TexData
+    _info: TexData
+
+    @property
+    def mat(self) -> str:
+        """The material used for this texinfo."""
+        return self._info.mat
+
+    @property
+    def reflectivity(self) -> Vec:
+        """The reflectivity of the texture."""
+        return self._info.reflectivity.copy()
+
+    @property
+    def tex_size(self) -> Tuple[int, int]:
+        """The size of the texture."""
+        return self._info.width, self._info.height
 
 
 @attr.define(eq=False)
