@@ -25,7 +25,7 @@ __all__ = [
     'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump',
     'StaticProp', 'StaticPropFlags',
-    'Cubemap',
+    'Cubemap', 'Overlay',
     'VisTree', 'VisLeaf',
 ]
 
@@ -335,6 +335,7 @@ class BSP:
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
     texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
+    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
 
     def read(self) -> None:
         """Load all data."""
@@ -682,6 +683,46 @@ class BSP:
             )
             for cube in cubemaps
         ])
+
+    def _lmp_read_overlays(self, data: bytes) -> List['Overlay']:
+        """Read the overlays lump."""
+        overlays = []
+        #
+        for block in struct.iter_unpack(
+            '<ihH'  # id, texinfo, face-and-render-order
+            '64i'  # face array.
+            '4f'  # UV min/max
+            '18f',  # 4 handle points, origin, normal
+            data,
+        ):
+            over_id, texinfo, face_ro = block[:3]
+            face_count = face_ro & ((1 << 14) - 1)
+            render_order = face_ro >> 14
+            if face_count > 64:
+                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            faces = list(block[3: 3 + face_count])
+            u_min, u_max, v_min, v_max = block[67:71]
+            uv1 = Vec(block[71:74])
+            uv2 = Vec(block[74:77])
+            uv3 = Vec(block[77:80])
+            uv4 = Vec(block[80:83])
+            origin = Vec(block[83:86])
+            normal = Vec(block[86:89])
+            assert len(block) == 89
+            overlays.append(Overlay(
+                over_id, origin, normal,
+                self.texinfo[texinfo], face_count,
+                faces, render_order,
+                u_min,
+                u_max,
+                v_min,
+                v_max,
+                uv1, uv2, uv3, uv4,
+            ))
+        return overlays
+
+    def _lmp_write_overlays(self, over: List['Overlay']) -> bytes:
+        raise NotImplementedError
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
@@ -1260,6 +1301,30 @@ class Cubemap:
         if self.size == 0:
             return 32
         return 2**(self.size-1)
+
+
+@attr.define(eq=False)
+class Overlay:
+    """An overlay embedded in the map."""
+    id: int = attr.ib(eq=True)
+    origin: Vec
+    normal: Vec
+    texture: TexInfo
+    face_count: int
+    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
+        attr.validators.instance_of(int),
+        attr.validators.instance_of(list),
+    ))
+    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(3)))
+    u_min: float = 0.0
+    u_max: float = 1.0
+    v_min: float = 0.0
+    v_max: float = 1.0
+    # Four corner handles of the overlay.
+    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
+    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
+    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
+    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
 
 
 @attr.define
