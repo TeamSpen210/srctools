@@ -179,6 +179,26 @@ LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
 LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 
 
+class SurfFlags(Flag):
+    """The various SURF_ flags, indicating different attributes for faces."""
+    LIGHT = 0x1  # The face has lighting info.
+    SKYBOX_2D = 0x2  # Nodraw, but when visible 2D skybox should be rendered.
+    SKYBOX_3D = 0x4  # Nodraw, but when visible 2D and 3D skybox should be rendered.
+    WATER_WARP = 0x8  # 'turbulent water warp'
+    TRANSLUCENT = 0x10  # Translucent material.
+    NOPORTAL = 0x20  # Portalgun blocking material.
+    TRIGGER = 0x40  # XBox only - is a trigger surface.
+    NODRAW = 0x80  # Texture isn't used, it's invisible.
+    HINT = 0x100 # A hint brush.
+    SKIP = 0x200  # Skip brush, removed from map.
+    NOLIGHT = 0x400  # No light needs to be calulated.
+    BUMPLIGHT = 0x800  # Needs three lightmaps for bumpmapping.
+    NO_SHADOWS = 0x1000  # Doesn't recive shadows.
+    NO_DECALS = 0x2000  # Rejects decals.
+    NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
+    HITBOX = 0x8000  # 'Part of a hitbox'
+
+
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
@@ -292,6 +312,8 @@ class BSP:
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
+    texdata: ParsedLump[List['TexData']] = ParsedLump(BSP_LUMPS.TEXDATA)
+    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
 
     def read(self) -> None:
@@ -517,6 +539,32 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
         return bytes(data)
 
+    def _lmp_read_texdata(self, data: bytes) -> List['TexData']:
+        """Read the texture data lump, providing additional info about each material."""
+        return [
+            TexData(self.textures[ind], Vec(ref_x, ref_y, ref_z), w, h, vw, vh)
+            for (ref_x, ref_y, ref_z, ind, w, h, vw, vh) in
+            struct.iter_unpack('<3f5i', data)
+        ]
+
+    def _lmp_read_texinfo(self, data: bytes) -> List['TexInfo']:
+        texdata = self.texdata
+        return [
+            TexInfo(
+                Vec(sx, sy, sz), so,
+                Vec(tx, ty, tz), to,
+                Vec(l_sx, l_sy, l_sz), l_so,
+                Vec(l_tx, l_ty, l_tz), l_to,
+                SurfFlags(flags),
+                texdata[texdata_ind],
+            )
+            for (
+                sx, sy, sz, so, tx, ty, tz, to,
+                l_sx, l_sy, l_sz, l_so, l_tx, l_ty, l_tz, l_to,
+                flags,
+                texdata_ind
+            ) in struct.iter_unpack('<16fii', data)
+        ]
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
@@ -1031,6 +1079,32 @@ class GameLump:
             self.version,
             len(self.data),
         )
+
+
+@attr.define(eq=True)
+class TexData:
+    """Represents some additional infomation for textures."""
+    mat: str
+    reflectivity: Vec
+    width: int
+    height: int
+    view_width: int
+    view_height: int
+
+
+@attr.define(eq=True)
+class TexInfo:
+    """Represents texture positioning / scaling info."""
+    s_off: Vec
+    s_shift: float
+    t_off: Vec
+    t_shift: float
+    lightmap_s_off: Vec
+    lightmap_s_shift: float
+    lightmap_t_off: Vec
+    lightmap_t_shift: float
+    flags: SurfFlags
+    data: TexData
 
 
 @attr.define(eq=False)
