@@ -178,9 +178,25 @@ LUMP_WRITE_ORDER = list(BSP_LUMPS)
 LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
 LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 
+# When remaking the lumps from trees of objects,
+# they need to be done in the correct order so stuff referring
+# to other trees can ad their data.
+LUMP_REBUILD_ORDER = [
+    # No dependencies.
+    BSP_LUMPS.PAKFILE,
+    BSP_LUMPS.ENTITIES,
+    BSP_LUMPS.CUBEMAPS,
+
+    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
+
+    BSP_LUMPS.TEXINFO,  # Adds texdata -> texdata_string_data entries.
+    BSP_LUMPS.TEXDATA_STRING_DATA,
+]
+
 
 class SurfFlags(Flag):
     """The various SURF_ flags, indicating different attributes for faces."""
+    NONE = 0
     LIGHT = 0x1  # The face has lighting info.
     SKYBOX_2D = 0x2  # Nodraw, but when visible 2D skybox should be rendered.
     SKYBOX_3D = 0x4  # Nodraw, but when visible 2D and 3D skybox should be rendered.
@@ -241,6 +257,7 @@ class ParsedLump(Generic[T]):
         self.__name__ = ''
         self._read: Optional[Callable[[BSP, bytes], T]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
+        assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
     def __set_name__(self, owner: Type['BSP'], name: str) -> None:
         self.__name__ = name
@@ -391,9 +408,14 @@ class BSP:
 
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
-        while self._parsed_lumps:
-            lump, data = self._parsed_lumps.popitem()
-            self.lumps[lump].data = self._save_funcs[lump](self, data)
+        # First, go through lumps the user has accessed, and rebuild their data.
+        for lump in LUMP_REBUILD_ORDER:
+            try:
+                data = self._parsed_lumps.pop(lump)
+            except KeyError:
+                pass
+            else:
+                self.lumps[lump].data = self._save_funcs[lump](self, data)
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
@@ -522,9 +544,7 @@ class BSP:
                     break
             else:
                 # Reached the 128 char limit without finding a null.
-                raise ValueError('Bad string at', off, 'in BSP! ({!r})'.format(
-                    tex_data[off:str_off]
-                ))
+                raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:str_off]!r})')
         return mat_list
 
     def _lmp_write_textures(self, textures: List[str]) -> bytes:
