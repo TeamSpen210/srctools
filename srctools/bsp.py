@@ -25,6 +25,7 @@ __all__ = [
     'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump',
     'StaticProp', 'StaticPropFlags',
+    'Cubemap',
     'VisTree', 'VisLeaf',
 ]
 
@@ -291,6 +292,7 @@ class BSP:
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
+    cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
 
     def read(self) -> None:
         """Load all data."""
@@ -535,6 +537,26 @@ class BSP:
     def _lmp_check_pakfile(self, file: ZipFile) -> None:
         if not isinstance(file.fp, BytesIO):
             raise ValueError('Zipfiles must be constructed with a BytesIO buffer.')
+
+    def _lmp_read_cubemaps(self, data: bytes) -> List['Cubemap']:
+        """Read the cubemaps lump."""
+        return [
+            Cubemap(Vec(x, y, z), size)
+            for (x, y, z, size) in struct.iter_unpack('<iiii', data)
+        ]
+
+    def _lmp_write_cubemaps(self, cubemaps: List['Cubemap']) -> bytes:
+        """Write out the cubemaps lump."""
+        return b''.join([
+            struct.pack(
+                '<iiii',
+                int(round(cube.origin.x)),
+                int(round(cube.origin.y)),
+                int(round(cube.origin.z)),
+                cube.size,
+            )
+            for cube in cubemaps
+        ])
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
@@ -1054,6 +1076,24 @@ class StaticProp:
             self.origin,
             self.angles,
         )
+
+
+@attr.define(eq=False)
+class Cubemap:
+    """A env_cubemap positioned in the map.
+
+    The position is integral, and the size can be zero for the default
+    or a positive number for different powers of 2.
+    """
+    origin: Vec  # Always integer coordinates
+    size: int = 0
+
+    @property
+    def resolution(self) -> int:
+        """Return the actual image size."""
+        if self.size == 0:
+            return 32
+        return 2**(self.size-1)
 
 
 @attr.define
