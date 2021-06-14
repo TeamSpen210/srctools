@@ -44,6 +44,7 @@ cdef:
     tuple COLON_TUP = (Token.COLON, ':')
     tuple EQUALS_TUP = (Token.EQUALS, '=')
     tuple PLUS_TUP = (Token.PLUS, '+')
+    tuple COMMA_TUP = (Token.COMMA, ',')
 
     tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
     tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
@@ -55,7 +56,7 @@ cdef:
 
 # Characters not allowed for bare names on a line.
 # Convert to tuple to only check the chars.
-DEF BARE_DISALLOWED = b'"\'{};:[]()\n\t '
+DEF BARE_DISALLOWED = b'"\'{};:,[]()\n\t '
 
 # Controls what syntax is allowed
 DEF FL_STRING_BRACKETS     = 1<<0
@@ -228,40 +229,37 @@ cdef class BaseTokenizer:
         if self.pushback_tok is not None:
             raise ValueError('Token already pushed back!')
         if not isinstance(tok, Token):
-            raise ValueError(repr(tok) + ' is not a Token!')
+            raise ValueError(f'{tok!r} is not a Token!')
 
         # Read this directly to skip the 'value' descriptor.
         cdef int tok_val = tok._value_
-        cdef str real_value
 
         if tok_val == 0: # EOF
-            real_value = ''
+            value = ''
         elif tok_val in (1, 3, 4, 10):  # STRING, PAREN_ARGS, DIRECTIVE, PROP_FLAG
-            # The value can be anything, so just accept this.
-            self.pushback_tok = tok
-            self.pushback_val = value
-            return
+            # Value parameter is required.
+            if value is None:
+                raise ValueError(f'Value required for {tok!r}' '!')
         elif tok_val == 2:  # NEWLINE
-            real_value = '\n'
+            value = '\n'
         elif tok_val == 5:  # BRACE_OPEN
-            real_value = '{'
+            value = '{'
         elif tok_val == 6:  # BRACE_CLOSE
-            real_value = '}'
+            value = '}'
         elif tok_val == 11:  # BRACK_OPEN
-            real_value = '['
+            value = '['
         elif tok_val == 12:  # BRACK_CLOSE
-            real_value = ']'
+            value = ']'
         elif tok_val == 13:  # COLON
-            real_value = ':'
+            value = ':'
         elif tok_val == 14:  # EQUALS
-            real_value = '='
+            value = '='
         elif tok_val == 15:  # PLUS
-            real_value = '+'
+            value = '+'
+        elif tok_val == 16: # COMMA
+            value = ','
         else:
             raise ValueError(f'Unknown token {tok!r}')
-
-        if value is None:
-            raise ValueError(f'Value required for {tok!r}' '!') from None
 
         self.pushback_tok = tok
         self.pushback_val = value
@@ -577,6 +575,8 @@ cdef class Tokenizer(BaseTokenizer):
                 return PLUS_TUP
             elif next_char == b'=':
                 return EQUALS_TUP
+            elif next_char == b',':
+                return COMMA_TUP
             # First try simple operators & EOF.
 
             elif next_char == b'\n':
@@ -961,14 +961,79 @@ def escape_text(str text not None: str) -> str:
     finally:
         PyMem_Free(out_buff)
 
-cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
-    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
+
+# This is a replacement for a method in VPK, which is very slow normally
+# since it has to accumulate character by character.
+cdef class _VPK_IterNullstr:
+    """Read a null-terminated ASCII string from the file.
+
+    This continuously yields strings, with empty strings
+    indicting the end of a section.
+    """
+    cdef object file
+    cdef uchar *chars
+    cdef Py_ssize_t size
+    cdef Py_ssize_t used
+
+    def __cinit__(self):
+        self.used = 0
+        self.size = 64
+        self.chars = <uchar *>PyMem_Malloc(self.size)
+        if self.chars is NULL:
+            raise MemoryError
+
+    def __dealloc__(self):
+        PyMem_Free(self.chars)
+
+    def __init__(self, file):
+        self.file = file
+        
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        cdef bytes data
+        cdef uchar *temp
+        while True:
+            data = self.file.read(1)
+            if len(data) == 0:
+                res = self.chars[:self.used]
+                self.used = 0
+                raise Exception(f'Reached EOF without null-terminator in {res!r}' '!')
+            elif len(data) > 1:
+                raise ValueError('Asked to read 1 byte, got multiple?')
+            elif (<const char *>data)[0] == 0x00:
+                # Blank strings are saved as ' '
+                if self.used == 1 and self.chars[0] == b' ':
+                    self.used = 0
+                    return ''
+                if self.used == 0:  # Blank string, this ends the array.
+                    self.used = 0
+                    raise StopIteration
+                else:
+                    res = self.chars[:self.used].decode('ascii')
+                    self.used = 0
+                    return res
+            else:
+                if self.used == self.size:
+                    self.size *= 2
+                    temp = <uchar *>PyMem_Realloc(self.chars, self.size)
+                    if temp == NULL:
+                        raise MemoryError
+                    self.chars = temp
+                self.chars[self.used] = (<const char *>data)[0]
+                self.used += 1
 
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
 from cpython.object cimport PyTypeObject
+cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
+    cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>BaseTokenizer).tp_name = b"srctools.tokenizer.BaseTokenizer"
     (<PyTypeObject *>Tokenizer).tp_name = b"srctools.tokenizer.Tokenizer"
-    (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer.BaseTokenizer.skipping_newlines"
+    (<PyTypeObject *>_NewlinesIter).tp_name = b"srctools.tokenizer._skip_newlines_iterator"
+try:
     escape_text.__module__ = 'srctools.tokenizer'
+except Exception:
+    pass  # Perfectly fine.

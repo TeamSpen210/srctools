@@ -11,7 +11,7 @@ from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
 from typing import (
-    TypeVar, Generic, Any,
+    TypeVar, Type, Generic, Any, cast,
     Union, Optional, Tuple,
     Iterator, List, Dict, Set,
     TextIO, BinaryIO,
@@ -51,17 +51,23 @@ def get_filesystem(path: str) -> 'FileSystem':
 
 class File(Generic[FileSysT]):
     """Represents a file in a system. Should not be created directly."""
+    sys: FileSysT
+    path: str
+    # This is _FileDataT of the filesys, but leave as Any here so the File
+    # doesn't need to expose that TypeVar. FileSystem._get_data does the type
+    # check.
+    _data: Any
     def __init__(
-        self: 'File[FileSystem[_SysRefT, _FileDataT]]',
-        system: 'FileSystem[_SysRefT, _FileDataT]',
+        self,
+        system: FileSysT,
         path: str,
-        data: _FileDataT,
+        data: Any,
     ) -> None:
         """Create a File.
 
         system should be the filesystem which matches.
         path is the relative path for the file.
-        data is a filesystem-specific data, used to pass to open_bin() and open_str().
+        data is filesystem-specific data, allowing directly opening the file.
         """
         self.sys = system
         self.path = path
@@ -71,25 +77,27 @@ class File(Generic[FileSysT]):
         """This can be interpreted as a path."""
         return self.path
 
-    def open_bin(self: 'File[FileSystem[_SysRefT, _FileDataT]]') -> BinaryIO:
+    def open_bin(self) -> BinaryIO:
         """Return a file-like object in bytes mode.
 
         This should be closed when done.
         """
         return self.sys.open_bin(self)
 
-    def open_str(self: 'File[FileSystem[_SysRefT, _FileDataT]]', encoding='utf8') -> TextIO:
+    def open_str(self, encoding='utf8') -> TextIO:
         """Return a file-like object in unicode mode.
 
         This should be closed when done.
         """
         return self.sys.open_str(self, encoding)
 
-    def cache_key(self: 'File[FileSystem[_SysRefT, _FileDataT]]') -> int:
+    def cache_key(self) -> int:
         """Return a checksum or last-modified date suitable for caching.
 
         This allows preventing re-parsing the file. If not possible, return -1.
         """
+        # File/Filesystem may use each other's internals.
+        # noinspection PyProtectedMember
         return self.sys._get_cache_key(self)
 
 
@@ -160,12 +168,14 @@ class FileSystem(Generic[_SysRefT, _FileDataT]):
         return self._file_exists(name)
 
     @classmethod
-    def _get_data(cls: FileSysT, file: 'File[FileSysT]') -> _FileDataT:
+    def _get_data(cls: Type[FileSysT], file: File[FileSysT]) -> _FileDataT:
         """Accessor for file._data, to show the relationship to the type
         checker.
 
         It should only be available to that filesystem, and produces the type.
         """
+        # File/Filesystem may use each other's internals.
+        # noinspection PyProtectedMember
         return file._data  # type: ignore
 
     # The following should be overridden:
@@ -214,7 +224,7 @@ class FileSystem(Generic[_SysRefT, _FileDataT]):
         return -1
 
 
-class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
+class FileSystemChain(Generic[ChildSysT], FileSystem[Any, File[ChildSysT]]):
     """Chains several filesystem into one prioritised whole."""
 
     def __init__(self, *systems: Union[ChildSysT, Tuple[ChildSysT, str]]) -> None:
@@ -238,7 +248,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
         return hash(tuple(self.systems))
 
     @classmethod
-    def get_system(cls, file: 'File[FileSystemChain[ChildSysT]]') -> ChildSysT:
+    def get_system(cls, file: File['FileSystemChain[ChildSysT]']) -> ChildSysT:
         """Retrieve the system for a File, if it was produced from a FileSystemChain."""
         if not isinstance(file.sys, FileSystemChain):
             raise ValueError('File is not from a FileSystemChain..')
@@ -263,7 +273,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
         if self._ref_count > 0:
             sys.open_ref()
 
-    def _get_file(self: 'FileSystemChain[ChildSysT]', name: str) -> File[ChildSysT]:
+    def _get_file(self, name: str) -> File['FileSystemChain[ChildSysT]']:
         """Search for a file on each filesystem in turn."""
         self._check_open()
         for sys, prefix in self.systems:
@@ -277,7 +287,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
             return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self, name: Union[str, File[ChildSysT]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File['FileSystemChain[ChildSysT]']], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -286,7 +296,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
             return self._get_data(name).open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self, name: Union[str, File[ChildSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File['FileSystemChain[ChildSysT]']]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -295,7 +305,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
             return self._get_data(name).open_bin()
         return self._get_file(name).open_bin()
 
-    def walk_folder(self, folder: str) -> Iterator[File]:
+    def walk_folder(self, folder: str) -> Iterator[File['FileSystemChain[ChildSysT]']]:
         """Walk folders, not repeating files."""
         done: Set[str] = set()
         for file in self.walk_folder_repeat(folder):
@@ -305,7 +315,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
             done.add(folded)
             yield file
 
-    def walk_folder_repeat(self, folder: str='') -> Iterator[File[ChildSysT]]:
+    def walk_folder_repeat(self, folder: str='') -> Iterator[File['FileSystemChain[ChildSysT]']]:
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded
@@ -332,7 +342,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[None, File]):
             sys.open_ref()
         self._ref = True
 
-    def _get_cache_key(self, file: File[ChildSysT]) -> int:
+    def _get_cache_key(self, file: File['FileSystemChain[ChildSysT]']) -> int:
         """Return the last modified time of this file.
 
         If individual timestamps are not stored, the modification time of the
@@ -368,19 +378,20 @@ class VirtualFileSystem(FileSystem[Any, str]):
             self._mapping == other._mapping
         )
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.bytes_encoding) ^ hash(tuple(self._mapping.values()))
 
     @staticmethod
-    def _clean_path(path: str) -> str:
+    def _clean_path(path: Union[str, File['VirtualFileSystem']]) -> str:
         """Convert paths to one representation."""
+        if isinstance(path, File):
+            path = path.path
         return os.path.normpath(path).replace('\\', '/').casefold()
 
     def open_bin(self, name: Union[str, File['VirtualFileSystem']]) -> BinaryIO:
         """Return a bytes buffer for a 'file'."""
         # We don't need this, but it should match other filesystems.
         self._check_open()
-
         try:
             filename, data = self._mapping[self._clean_path(name)]
         except KeyError:
@@ -418,17 +429,21 @@ class VirtualFileSystem(FileSystem[Any, str]):
             # No encoding is needed obviously.
             return io.StringIO(data, newline=None)
 
-    def walk_folder(self, folder: str) -> Iterator[File]:
+    def walk_folder(self, folder: str) -> Iterator[File['VirtualFileSystem']]:
+        """Return all files that are 'subfolders' of the provided folder."""
         # We don't need this, but it should match other filesystems.
         self._check_open()
+        folder = self._clean_path(folder)
 
         for filename, data in self._mapping.values():
-            yield File(self, filename, filename)
+            if filename.startswith(folder):
+                yield File(self, filename, filename)
 
     def _file_exists(self, name: str) -> bool:
         return self._clean_path(name) in self._mapping
 
     def _get_file(self, name: str) -> File['VirtualFileSystem']:
+        """Access the specified file."""
         # We don't need this, but it should match other filesystems.
         self._check_open()
 
@@ -447,7 +462,7 @@ class VirtualFileSystem(FileSystem[Any, str]):
         self._ref = True
 
 
-class RawFileSystem(FileSystem):
+class RawFileSystem(FileSystem[Any, str]):
     """Accesses files in a real folder.
 
     This can prohibit access to folders above the root.
@@ -469,7 +484,7 @@ class RawFileSystem(FileSystem):
             raise ValueError('Path "{}" escaped "{}"!'.format(path, self.path))
         return abs_path
 
-    def walk_folder(self, folder: str) -> Iterator[File]:
+    def walk_folder(self, folder: str) -> Iterator[File['RawFileSystem']]:
         """Yield files in a folder."""
         path = self._resolve_path(folder)
         for dirpath, dirnames, filenames in os.walk(path):
@@ -508,7 +523,7 @@ class RawFileSystem(FileSystem):
 
         return os.path.isfile(self._resolve_path(name))
 
-    def _get_file(self, name: str):
+    def _get_file(self, name: str) -> File['RawFileSystem']:
         # We don't need this, but it should match other filesystems.
         self._check_open()
 
@@ -548,7 +563,7 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
     def __repr__(self) -> str:
         return 'ZipFileSystem({!r})'.format(self.path)
 
-    def walk_folder(self, folder: str) -> Iterator[File]:
+    def walk_folder(self, folder: str) -> Iterator[File['ZipFileSystem']]:
         """Yield files in a folder."""
         self._check_open()
         # \\ is not allowed in zips.
@@ -557,14 +572,16 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
             if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
-    def open_bin(self, name: str):
+    def open_bin(self, name: Union[str, File['ZipFileSystem']]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
         """
-        self._check_open()
+        if self._ref is None:
+            raise ValueError('The filesystem must have a valid reference!')
 
-        # We need the zipinfo object.
+        # We need the ZipInfo object, either direct from a File or via a lookup
+        # on the spot.
         if isinstance(name, File):
             info = self._get_data(name)
         else:
@@ -574,9 +591,10 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
             except KeyError:
                 raise FileNotFoundError('{}:{}'.format(self.path, name)) from None
 
-        return self._ref.open(info)
+        # Type of open() is IO[bytes], basically the same.
+        return cast(BinaryIO, self._ref.open(info))
 
-    def open_str(self, name: str, encoding='utf8'):
+    def open_str(self, name: Union[str, File['ZipFileSystem']], encoding='utf8') -> io.TextIOWrapper:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
@@ -584,7 +602,7 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
         # Zips only open in binary, so just open that, then wrap to decode.
         return io.TextIOWrapper(self.open_bin(name), encoding)
 
-    def _get_file(self, name: str) -> File:
+    def _get_file(self, name: str) -> File['ZipFileSystem']:
         name = name.replace('\\', '/')
         self._check_open()
         try:
@@ -598,18 +616,21 @@ class ZipFileSystem(FileSystem[ZipFile, ZipInfo]):
         return name.replace('\\', '/').casefold() in self._name_to_info
 
     def _delete_ref(self) -> None:
-        self._ref.close()
-        self._name_to_info.clear()
-        self._ref = None
+        if self._ref is not None:
+            self._ref.close()
+            self._name_to_info.clear()
+            self._ref = None
 
     def _create_ref(self) -> None:
         self._ref = ZipFile(self.path)
         self._load_paths()
 
     def _load_paths(self) -> None:
+        if self._ref is None:
+            raise ValueError('The filesystem must have a valid reference!')
         self._name_to_info.clear()
         for info in self._ref.infolist():
-            # Some zipfiles include entries for the directories too. They have
+            # Some zip files include entries for the directories too. They have
             # a trailing slash.
             if not info.filename.endswith('/'):
                 self._name_to_info[info.filename.casefold()] = info
@@ -698,4 +719,3 @@ class VPKFileSystem(FileSystem[VPK, VPKFile]):
     def _get_cache_key(self, file: File['VPKFileSystem']) -> int:
         """Return the CRC of the VPK file."""
         return self._get_data(file).crc
-

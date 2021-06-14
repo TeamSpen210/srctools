@@ -265,7 +265,7 @@ def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
-def save_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def save_rgb565(pixels: array.array, data: bytearray, width: int, height: int) -> None:
     """RGB format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         data[2*offset], data[2 * offset + 1] = compress565(
@@ -286,7 +286,7 @@ def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
-def save_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def save_bgr565(pixels: array.array, data: bytearray, width: int, height: int) -> None:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         data[2*offset], data[2 * offset + 1] = compress565(

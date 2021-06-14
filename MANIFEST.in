@@ -1,0 +1,6 @@
+# Explicitly include the C/C++ sources, for cythonless installs.
+global-include *.c *.cpp *.h
+# Include test samples
+graft srctools\test
+# Then remove pycache folder that included.
+prune **\__pycache__\**

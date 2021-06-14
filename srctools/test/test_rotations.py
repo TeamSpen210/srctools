@@ -1,5 +1,6 @@
 """Test rotations in srctools.vec."""
 import copy
+import os.path
 import pickle
 
 from srctools.test import *
@@ -280,7 +281,7 @@ def test_gen_check(py_c_vec) -> None:
     X = Vec(x=1)
     Y = Vec(y=1)
     Z = Vec(z=1)
-    with open('rotation.txt') as f:
+    with open(os.path.join(RESLOC, 'rotation.txt')) as f:
         for line_num, line in enumerate(f, start=1):
             if not line.startswith('|'):
                 # Skip other junk in the log.
@@ -384,8 +385,13 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig == thaw
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    cy_pick = pickle.dumps(Cy_Matrix.from_angle(Cy_Angle(test_data)))
-    py_pick = pickle.dumps(Py_Matrix.from_angle(Py_Angle(test_data)))
+    # Copy over the floats, since calulations are going to be slightly different
+    # due to optimisation etc. That's tested elsewhere to ensure accuracy, but
+    # we need exact binary identity.
+    cy_mat = Cy_Matrix()
+    py_mat = Py_Matrix()
+    for x in (0, 1, 2):
+        for y in (0, 1, 2):
+            cy_mat[x, y] = py_mat[x, y] = orig[x, y]
 
-    assert cy_pick == py_pick == pick
-
+    assert pickle.dumps(cy_mat) == pickle.dumps(py_mat) == pick

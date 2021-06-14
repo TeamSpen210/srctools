@@ -5,8 +5,8 @@ import operator
 from enum import Enum
 from types import TracebackType
 from typing import (
-    Union, Dict, Optional, List, Tuple, Iterator, BinaryIO, IO,
-    Type,
+    Union, Optional, Tuple, Type,
+    Dict, List, Iterator, Iterable, IO,
 )
 
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
@@ -30,7 +30,7 @@ class OpenModes(Enum):
         return self.value in 'wa'
 
 
-def iter_nullstr(file: BinaryIO) -> Iterator[str]:
+def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
     """Read a null-terminated ASCII string from the file.
     
     This continuously yields strings, with empty strings 
@@ -84,14 +84,17 @@ def _get_file_parts(value: FileName, relative_to='') -> Tuple[str, str, str]:
         ('fold/ers', 'name.ext')
         ('fold/ers', 'name', 'ext')
     """
+    path: str
+    filename: str
+    ext: str
     if isinstance(value, str):
         path, filename = os.path.split(value)
         ext = ''
     elif len(value) == 2:
-        path, filename = value
+        path, filename = value  # type: ignore  # len() can't narrow.
         ext = ''
     else:
-        path, filename, ext = value
+        path, filename, ext = value  # type: ignore  # len() can't narrow.
 
     if not ext and '.' in filename:
         filename, ext = filename.rsplit('.', 1)
@@ -129,6 +132,15 @@ class FileInfo:
         'offset',
         'arch_len',
     )
+    vpk: 'VPK'
+    dir: str
+    _filename: str
+    ext: str
+    crc: int
+    arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
+    offset: int  # Offset into the archive file, including directory data if in _dir
+    arch_len: int  # Number of bytes in archive files
+    start_data: bytes  # The bytes saved into the directory header
 
     def __init__(
         self,
@@ -159,10 +171,10 @@ class FileInfo:
         self._filename = file
         self.ext = ext
         self.crc = crc
-        self.arch_index = arch_index  # pack_01_000.vpk file to use, or None for _dir.
-        self.offset = offset  # Offset into the archive file, including directory data if in _dir
-        self.arch_len = arch_len  # Number of bytes in archive files
-        self.start_data = start_data  # The bytes saved into the directory header
+        self.arch_index = arch_index
+        self.offset = offset
+        self.arch_len = arch_len
+        self.start_data = start_data
 
     @property
     def filename(self) -> str:
@@ -248,6 +260,18 @@ class FileInfo:
 
 class VPK:
     """Represents a VPK file set in a directory."""
+    folder: str
+    file_prefix: str
+
+    # fileinfo[extension][directory][filename]
+    _fileinfo: Dict[str, Dict[str, Dict[str, FileInfo]]]
+
+    mode: OpenModes
+    dir_limit: Optional[int]
+    footer_data: bytes
+    version: int
+    header_len: int
+
     def __init__(
         self,
         dir_file,
@@ -275,7 +299,7 @@ class VPK:
         self.path = dir_file  # Sets the above correctly + checks.
 
         # fileinfo[extension][directory][filename]
-        self._fileinfo = {}  # type: Dict[str, Dict[str, Dict[str, FileInfo]]]
+        self._fileinfo = {}
         
         self.mode = OpenModes(mode)
         self.dir_limit = dir_data_limit
@@ -298,7 +322,7 @@ class VPK:
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
     @path.setter
-    def path(self, path: str):
+    def path(self, path: str) -> None:
         """Set the location and folder from the directory VPK file."""
         folder, filename = os.path.split(path)
 
@@ -509,8 +533,9 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
+        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
         if ext:
-            all_folders = [self._fileinfo.get(ext)]
+            all_folders = [self._fileinfo.get(ext, {})]
         else:
             all_folders = self._fileinfo.values()
 
@@ -527,8 +552,9 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
+        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
         if ext:
-            all_folders = [self._fileinfo.get(ext)]
+            all_folders = [self._fileinfo.get(ext, {})]
         else:
             all_folders = self._fileinfo.values()
 
@@ -687,7 +713,12 @@ def script_write(args: List[str]) -> None:
                 if os.path.exists(arch_filename) and os.stat(arch_filename).st_size > arch_len:
                     current_arch += 1
                     arch_filename = get_arch_filename(vpk_name_base, current_arch)
-                
+
+
+try:
+    from srctools._tokenizer import _VPK_IterNullstr as iter_nullstr  # type: ignore
+except ImportError:
+    pass
                 
 if __name__ == '__main__':
     import sys

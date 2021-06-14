@@ -2,32 +2,30 @@
 
 Data from a read BSP is lazily parsed when each section is accessed.
 """
-import contextlib
-import warnings
-
+from typing import (
+    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict
+)
 from io import BytesIO
 from enum import Enum, Flag
-import itertools
-
 from zipfile import ZipFile
+import itertools
+import struct
+import contextlib
+import warnings
+import attr
 
 from srctools import AtomicWriter, Vec, Angle, conv_int
 from srctools.vmf import VMF, Entity, Output
 from srctools.tokenizer import escape_text
 from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
-import struct
-
-from typing import (
-    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict
-)
-
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump',
     'StaticProp', 'StaticPropFlags',
+    'VisTree', 'VisLeaf',
 ]
 
 
@@ -392,7 +390,7 @@ class BSP:
                     0,  # offset
                     0,  # length
                     lump.version,
-                    bytes(lump.ident),
+                    lump.ident,
                 ))
 
             # After lump headers, the map revision...
@@ -948,8 +946,10 @@ class BSP:
             first_brush, num_brushes,
             water_ind
         ) in enumerate(struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
+            area = area_and_flags >> 7
+            flags = area_and_flags & 0b1111111
             leafs.append(VisLeaf(
-                i, area_and_flags,
+                i, area, flags,
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
                 first_face, num_faces,
@@ -970,57 +970,37 @@ class BSP:
         return nodes[0][0]
 
 
+@attr.define(eq=False)
 class Lump:
     """Represents a lump header in a BSP file.
 
     """
-    def __init__(
-        self,
-        typ: BSP_LUMPS,
-        version: int,
-        ident: bytes,
-    ) -> None:
-        """This should not be constructed outside a BSP."""
-        self.type = typ
-        self.version = version
-        self.ident = [int(x) for x in ident]
-        self.data = b''
+    type: BSP_LUMPS
+    version: int
+    ident: bytes
+    data: bytes = b''
 
     def __repr__(self) -> str:
         return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
             self.type.name,
             self.version,
-            bytes(self.ident),
-            len(self.data)
+            self.ident,
+            len(self.data),
         )
 
 
+@attr.define(eq=False)
 class GameLump:
     """Represents a game lump.
 
     These are designed to be game-specific.
     """
-    __slots__ = [
-        'id',
-        'flags',
-        'version',
-        'data',
-    ]
+    id: bytes
+    flags: int
+    version: int
+    data: bytes = b''
 
-    ST = struct.Struct('<4s HH ii')
-
-    def __init__(
-        self,
-        lump_id: bytes,
-        flags: int,
-        version: int,
-        data: bytes,
-    ) -> None:
-        """This should not be constructed outside a BSP."""
-        self.id = lump_id
-        self.flags = flags
-        self.version = version
-        self.data = data
+    ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
 
     def __repr__(self) -> str:
         return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
@@ -1031,6 +1011,7 @@ class GameLump:
         )
 
 
+@attr.define(eq=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
@@ -1043,56 +1024,28 @@ class StaticProp:
     v10+ adds 4 unknown bytes (float?), and an expanded flags section.
     v11+ adds uniform scaling and removes XBox disabling.
     """
-    def __init__(
-        self,
-        model: str,
-        origin: Vec,
-        angles: Angle,
-        scaling: float,
-        visleafs: List[int],
-        solidity: int,
-        flags: StaticPropFlags=StaticPropFlags.NONE,
-        skin: int=0,
-        min_fade: float=0,
-        max_fade: float=0,
-        lighting_origin: Vec=None,
-        fade_scale: float=-1,
-        min_dx_level: int=0,
-        max_dx_level: int=0,
-        min_cpu_level: int=0,
-        max_cpu_level: int=0,
-        min_gpu_level: int=0,
-        max_gpu_level: int=0,
-        tint: Vec=Vec(255, 255, 255),  # Rendercolor
-        renderfx: int=255,
-        disable_on_xbox: bool=False,
-    ) -> None:
-        self.model = model
-        self.origin = origin
-        self.angles = angles
-        self.scaling = scaling
-        self.visleafs = visleafs
-        self.solidity = solidity
-        self.flags = flags
-        self.skin = skin
-        self.min_fade = min_fade
-        self.max_fade = max_fade
-
-        if lighting_origin is None:
-            self.lighting = Vec(origin)
-        else:
-            self.lighting = lighting_origin
-
-        self.fade_scale = fade_scale
-        self.min_dx_level = min_dx_level
-        self.max_dx_level = max_dx_level
-        self.min_cpu_level = min_cpu_level
-        self.max_cpu_level = max_cpu_level
-        self.min_gpu_level = min_gpu_level
-        self.max_gpu_level = max_gpu_level
-        self.tint = Vec(tint)
-        self.renderfx = renderfx
-        self.disable_on_xbox = disable_on_xbox
+    model: str
+    origin: Vec
+    angles: Angle = attr.ib(factory=Angle)
+    scaling: float = 1.0
+    visleafs: List[int] = attr.ib(factory=list)
+    solidity: int = 6
+    flags: StaticPropFlags = StaticPropFlags.NONE
+    skin: int = 0
+    min_fade: float = 0.0
+    max_fade: float = 0.0
+    # If not provided, uses origin.
+    lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
+    fade_scale: float = -1.0
+    min_dx_level: int = 0
+    max_dx_level: int = 0
+    min_cpu_level: int = 0
+    max_cpu_level: int = 0
+    min_gpu_level: int = 0
+    max_gpu_level: int = 0
+    tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    renderfx: int = 255
+    disable_on_xbox: bool = False
 
     def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
@@ -1102,34 +1055,26 @@ class StaticProp:
             self.angles,
         )
 
+
+@attr.define
 class VisLeaf:
     """A leaf in the visleaf data.
 
     The bounds is defined implicitly by the parent node planes.
     """
-    def __init__(
-        self,
-        leaf_id: int,
-        area_and_flags: int,
-        mins: Vec, maxes: Vec,
-        first_face: int,
-        face_count: int,
-        first_brush: int,
-        brush_count: int,
-        water_id: int,
-    ) -> None:
-        self.id = leaf_id
-        self.area =  area_and_flags & 0b1111111110000000
-        self.flags = area_and_flags & 0b0000000001111111
-        self.mins = mins
-        self.maxes = maxes
-        self.first_face = first_face
-        self.face_count = face_count
-        self.first_brush = first_brush
-        self.brush_count = brush_count
-        self.water_id = water_id
+    id: int
+    area: int
+    flags: int
+    mins: Vec
+    maxes: Vec
+    first_face: int
+    face_count: int
+    first_brush: int
+    brush_count: int
+    water_id: int
 
 
+@attr.define
 class VisTree:
     """A tree node in the visleaf data.
 
@@ -1138,18 +1083,8 @@ class VisTree:
     """
     plane_norm: Vec
     plane_dist: float
-    child_neg: Union['VisTree', VisLeaf]
-    child_pos: Union['VisTree', VisLeaf]
-
-    def __init__(
-        self,
-        norm: Vec, dist: float,
-        mins: Vec, maxes: Vec,
-    ) -> None:
-        self.plane_norm = norm
-        self.plane_dist = dist
-        self.mins = mins
-        self.maxes = maxes
-        # Replaced after.
-        self.child_neg = None  # type: ignore
-        self.child_pos = None  # type: ignore
+    mins: Vec
+    maxes: Vec
+    # Initialised empty, set after.
+    child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
+    child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)

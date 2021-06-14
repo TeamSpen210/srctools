@@ -60,6 +60,7 @@ They end with a quote."
 import sys
 import keyword
 import builtins  # Property.bool etc shadows these.
+import warnings
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec as _Vec
@@ -149,10 +150,10 @@ class Property:
         This is produced from Property.parse() calls.
     """
     # Helps decrease memory footprint with lots of Property values.
-    __slots__ = ('_folded_name', 'real_name', 'value')
+    __slots__ = ('_folded_name', 'real_name', '_value')
     _folded_name: Optional[str]
     real_name: Optional[str]
-    value: _Prop_Value
+    _value: _Prop_Value
 
     def __init__(
         self: 'Property',
@@ -168,7 +169,21 @@ class Property:
             self.real_name = sys.intern(name)
             self._folded_name = sys.intern(name.casefold())
 
-        self.value = value
+        self._value = value
+
+    @property
+    def value(self) -> _Prop_Value:
+        """Return the value of a leaf property."""
+        if self.has_children():
+            warnings.warn("Accessing internal property block list is deprecated", DeprecationWarning, 2)
+        return self._value
+
+    @value.setter
+    def value(self, value: str) -> None:
+        """Set the value of a leaf property, or pass a list to make a block."""
+        if not isinstance(value, str):
+            warnings.warn("Setting properties to non-string values will be fixed soon.", DeprecationWarning, 2)
+        self._value = value
 
     @property
     def name(self) -> Optional[str]:
@@ -228,7 +243,7 @@ class Property:
         # Skip calling __init__ for speed.
         cur_block = root = Property.__new__(Property)
         cur_block._folded_name = cur_block.real_name = None
-        cur_block.value = []
+        cur_block._value = []
 
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
@@ -278,8 +293,8 @@ class Property:
                     cur_block = Property.__new__(Property)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
                 else:
-                    cur_block = cur_block.value[-1]
-                cur_block.value = []
+                    cur_block = cur_block._value[-1]
+                cur_block._value = []
                 open_properties.append((cur_block, block_line))
                 block_line = -1
                 continue
@@ -310,18 +325,18 @@ class Property:
                     tokenizer.expect(NEWLINE)
                     if _read_flag(flags, prop_value):
                         block_line = tokenizer.line_num
-                        keyvalue.value = []
+                        keyvalue._value = []
 
                         # Special function - if the last prop was a
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
-                            cur_block.value[-1].real_name == token_value and
-                            type(cur_block.value[-1].value) == list
+                            cur_block._value[-1].real_name == token_value and
+                            cur_block._value[-1].has_children()
                         ):
-                            cur_block.value[-1] = keyvalue
+                            cur_block._value[-1] = keyvalue
                         else:
-                            cur_block.value.append(keyvalue)
+                            cur_block._value.append(keyvalue)
                         # Can't do twice in a row
                         can_flag_replace = False
                     else:
@@ -337,7 +352,7 @@ class Property:
                             'line.'
                         )
 
-                    keyvalue.value = prop_value
+                    keyvalue._value = prop_value
 
                     # Check for flags.
                     flag_token, flag_val = tokenizer()
@@ -349,12 +364,12 @@ class Property:
                             # keyvalue with this name, replace it instead.
                             if (
                                 can_flag_replace and
-                                cur_block.value[-1].real_name == token_value and
-                                type(cur_block.value[-1].value) == str
+                                cur_block._value[-1].real_name == token_value and
+                                type(cur_block._value[-1].value) == str
                             ):
-                                cur_block.value[-1] = keyvalue
+                                cur_block._value[-1] = keyvalue
                             else:
-                                cur_block.value.append(keyvalue)
+                                cur_block._value.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
@@ -362,7 +377,7 @@ class Property:
                         # normally.
                         # ("name" "value" "name2" "value2")
                         if single_line:
-                            cur_block.value.append(keyvalue)
+                            cur_block._value.append(keyvalue)
                             tokenizer.push_back(flag_token, flag_val)
                             continue
                         else:
@@ -374,18 +389,18 @@ class Property:
                         # So insert the keyvalue, and check the token
                         # in the next loop. This allows braces to be
                         # on the same line.
-                        cur_block.value.append(keyvalue)
+                        cur_block._value.append(keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
                 else:
                     # Something else - treat this as a block, and
                     # then re-evaluate the token in the next loop.
-                    keyvalue.value = []
+                    keyvalue._value = []
 
                     block_line = tokenizer.line_num
                     can_flag_replace = False
-                    cur_block.value.append(keyvalue)
+                    cur_block._value.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
@@ -477,7 +492,7 @@ class Property:
         if not self.has_children():
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self._value):  # type: Property
             if prop._folded_name == key:
                 return prop
         if def_ is _NO_KEY_FOUND:
@@ -498,7 +513,7 @@ class Property:
         if not self.has_children():
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        for prop in reversed(self.value):  # type: Property
+        for prop in reversed(self._value):  # type: Property
             if prop._folded_name == key:
                 return prop.value
         if def_ is _NO_KEY_FOUND:
@@ -597,7 +612,7 @@ class Property:
                 # We can't use find_key() here because we also
                 # need to check that the property has children to search
                 # through
-                for prop in reversed(self.value):
+                for prop in reversed(self._value):
                     if (prop.name is not None and
                             prop.name == folded_key and
                             prop.has_children()):
@@ -612,7 +627,7 @@ class Property:
         try:
             current_prop.find_key(path).value = value
         except NoKeyError:
-            current_prop.value.append(Property(path, value))
+            current_prop._value.append(Property(path, value))
 
     def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
@@ -623,11 +638,11 @@ class Property:
                 [
                     child.copy()
                     for child in
-                    self.value
+                    self
                 ]
             )
         else:
-            return Property(self.real_name, self.value)
+            return Property(self.real_name, self._value)
 
     def as_dict(self) -> _As_Dict_Ret:
         """Convert this property tree into a tree of dictionaries.
@@ -637,7 +652,7 @@ class Property:
         if self.has_children():
             return {item._folded_name: item.as_dict() for item in self}
         else:
-            return self.value
+            return self._value
 
     @overload
     def as_array(self) -> List[str]: ...
@@ -654,16 +669,16 @@ class Property:
         """
         if self.has_children():
             arr = []
-            for child in self.value:
+            for child in self._value:
                 if child.has_children():
                     raise ValueError(
                         'Cannot have sub-children in a '
                         '"{}" array of values!'.format(self.real_name)
                     )
-                arr.append(conv(child.value))
+                arr.append(conv(child._value))
             return arr
         else:
-            return [conv(self.value)]
+            return [conv(self._value)]
 
     def __eq__(self, other: Any) -> builtins.bool:
         """Compare two items and determine if they are equal.
@@ -671,37 +686,37 @@ class Property:
         This ignores names.
         """
         if isinstance(other, Property):
-            return self.value == other.value
+            return self._value == other._value
         else:
-            return self.value == other  # Just compare values
+            return self._value == other  # Just compare values
 
     def __ne__(self, other: Any) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Property):
-            return self.value != other.value
+            return self._value != other._value
         else:
-            return self.value != other  # Just compare values
+            return self._value != other  # Just compare values
 
     def __len__(self) -> builtins.int:
         """Determine the number of child properties."""
         if self.has_children():
-            return len(self.value)
+            return len(self._value)
         raise ValueError("{!r} has no children!".format(self))
 
     def __bool__(self) -> builtins.bool:
         """Properties are true if we have children, or have a value."""
         if self.has_children():
-            return len(self.value) > 0
+            return len(self._value) > 0
         else:
-            return bool(self.value)
+            return bool(self._value)
 
     def __iter__(self) -> Iterator['Property']:
         """Iterate through the value list.
 
         """
         if self.has_children():
-            return iter(self.value)
+            return iter(self._value)
         else:
             raise ValueError(
                 "Can't iterate through {!r} without children!".format(self)
@@ -724,7 +739,7 @@ class Property:
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Property']:
         """Implementation of iter_tree(). This assumes self has children."""
-        for prop in self.value:  # type: Property
+        for prop in self._value:  # type: Property
             if prop.has_children():
                 if blocks:
                     yield prop
@@ -736,7 +751,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if self.has_children():
-            for prop in self.value:
+            for prop in self._value:
                 if prop._folded_name == key:
                     return True
             return False
@@ -761,7 +776,7 @@ class Property:
         """
         if self.has_children():
             if isinstance(index, int):
-                return self.value[index]
+                return self._value[index]
             else:
                 if isinstance(index, tuple):
                     # With default value
@@ -791,7 +806,7 @@ class Property:
         """
         if self.has_children():
             if isinstance(index, int):
-                self.value[index] = value
+                self._value[index] = value
             else:
                 if isinstance(value, Property):
                     # We don't want to assign properties, we want to add them under
@@ -799,16 +814,16 @@ class Property:
                     value.name = index
                     try:
                         # Replace at the same location..
-                        index = self.value.index(self.find_key(index))
+                        index = self._value.index(self.find_key(index))
                     except NoKeyError:
-                        self.value.append(value)
+                        self._value.append(value)
                     else:
-                        self.value[index] = value
+                        self._value[index] = value
                 else:
                     try:
-                        self.find_key(index).value = value
+                        self.find_key(index)._value = value
                     except NoKeyError:
-                        self.value.append(Property(index, value))
+                        self._value.append(Property(index, value))
         else:
             raise ValueError("Can't index a Property without children!")
 
@@ -820,10 +835,10 @@ class Property:
         """
         if self.has_children():
             if isinstance(index, int):
-                del self.value[index]
+                del self._value[index]
             else:
                 try:
-                    self.value.remove(self.find_key(index))
+                    self._value.remove(self.find_key(index))
                 except NoKeyError as no_key:
                     raise IndexError(no_key) from no_key
         else:
@@ -832,7 +847,7 @@ class Property:
     def clear(self) -> None:
         """Delete the contents of a block."""
         if self.has_children():
-            self.value.clear()
+            self._value.clear()
         else:
             raise ValueError("Can't clear a Property without children!")
 
@@ -846,13 +861,13 @@ class Property:
             copy = self.copy()
             if isinstance(other, Property):
                 if other._folded_name is None:
-                    copy.value.extend(other.value)
+                    copy._value.extend(other._value)
                 else:
                     # We want to add the other property tree to our
                     # own, not its values.
-                    copy.value.append(other)
+                    copy._value.append(other)
             else:  # Assume a sequence.
-                copy.value += other  # Add the values to ours.
+                copy._value += other  # Add the values to ours.
             return copy
         else:
             return NotImplemented
@@ -865,11 +880,11 @@ class Property:
         if self.has_children():
             if isinstance(other, Property):
                 if other._folded_name is None:
-                    self.value.extend(other.value)
+                    self._value.extend(other._value)
                 else:
-                    self.value.append(other)
+                    self._value.append(other)
             else:
-                self.value += other
+                self._value += other
             return self
         else:
             return NotImplemented
@@ -886,24 +901,24 @@ class Property:
             raise ValueError("{!r} has no children!".format(self))
         folded_names = [name.casefold() for name in names]
         new_list = []
-        merge = {
+        merge: dict[str, Property] = {
             name.casefold(): Property(name, [])
             for name in
             names
         }
 
-        for item in self.value[:]:  # type: Property
+        for item in self._value[:]:  # type: Property
             if item._folded_name in folded_names:
-                merge[item._folded_name].value.extend(item.value)
+                merge[item._folded_name]._value.extend(item._value)
             else:
                 new_list.append(item)
 
         for prop_name in names:
             prop = merge[prop_name.casefold()]
-            if len(prop.value) > 0:
+            if len(prop._value) > 0:
                 new_list.append(prop)
 
-        self.value = new_list
+        self._value = new_list
 
     def ensure_exists(self, key: str) -> 'Property':
         """Ensure a Property group exists with this name, and return it."""
@@ -911,15 +926,15 @@ class Property:
             return self.find_key(key)
         except NoKeyError:
             prop = Property(key, [])
-            self.value.append(prop)
+            self._value.append(prop)
             return prop
 
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
-        return type(self.value) is list
+        return type(self._value) is list
 
     def __repr__(self) -> str:
-        return 'Property({0!r}, {1!r})'.format(self.real_name, self.value)
+        return 'Property({0!r}, {1!r})'.format(self.real_name, self._value)
 
     def __str__(self) -> str:
         return ''.join(self.export())
@@ -929,25 +944,27 @@ class Property:
 
         Recursively calls itself for all child properties.
         """
-        if isinstance(self.value, list):
+        if isinstance(self._value, list):
             if self.name is None:
                 # If the name is None, we just output the children
                 # without a "Name" { } surround. These Property
                 # objects represent the root.
-                for prop in self.value:
+                for prop in self._value:
                     yield from prop.export()
             else:
+                assert self.real_name is not None, repr(self)
                 yield '"' + self.real_name + '"\n'
                 yield '\t{\n'
                 yield from (
                     '\t' + line
-                    for prop in self.value
+                    for prop in self._value
                     for line in prop.export()
                 )
                 yield '\t}\n'
         else:
             # We need to escape quotes and backslashes so they don't get detected.
-            yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self.value))
+            assert self.real_name is not None, repr(self)
+            yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self._value))
 
     def build(self) -> '_Builder':
         """Allows appending a tree to this property in a convenient way.

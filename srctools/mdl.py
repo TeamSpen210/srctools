@@ -356,7 +356,7 @@ class Model:
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('11I', f)
+        ) = struct_read('<11I', f)
 
         self.flags = Flags(flags)
 
@@ -373,7 +373,7 @@ class Model:
             # The number of $body in the model (mstudiobodyparts_t).
             bodypart_count, bodypart_offset,
             attachment_count, attachment_offset,
-        ) = struct_read('13i', f)
+        ) = struct_read('<13i', f)
 
         (
             localnode_count,
@@ -406,7 +406,7 @@ class Model:
             # mstudioposeparamdesc_t
             localposeparam_count,
             localposeparam_index,
-        ) = struct_read('15I', f)
+        ) = struct_read('<15I', f)
 
         # VDC:
         # For anyone trying to follow along, as of this writing,
@@ -428,7 +428,7 @@ class Model:
             # mstudioiklock_t
             iklock_count,
             iklock_index,
-        ) = struct_read('5I', f)
+        ) = struct_read('<5I', f)
 
         (
             self.mass,  # Mass of object (float)
@@ -457,7 +457,7 @@ class Model:
 
             vertex_base,  # Placeholder for void*
             offset_base,  # Placeholder for void*
-        ) = struct_read('f 11I', f)
+        ) = struct_read('<f 11I', f)
 
         (
             # Used with $constantdirectionallight from the QC

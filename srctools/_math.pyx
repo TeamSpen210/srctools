@@ -69,7 +69,7 @@ cdef inline object _make_tuple(double x, double y, double z):
         return tup
     else: # Not CPython, use more correct but slow method.
         with cython.optimize.unpack_method_calls(False):
-            return tuple_new(*tup)
+            return tuple_new(Vec_tuple, tup)
 
 
 cdef inline double norm_ang(double val):
@@ -2374,3 +2374,24 @@ cdef class Angle:
         the angle.
         """
         return AngleTransform.__new__(AngleTransform, self)
+
+# Override the class' names to match the public one.
+# This fixes all the methods too, though not in exceptions.
+
+from cpython.object cimport PyTypeObject
+if USE_TYPE_INTERNALS:
+    (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+    (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+    (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
+    (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+    (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
+    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+    (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
+    (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
+try:
+    parse_vec_str.__module__ = 'srctools.math'
+    to_matrix.__module__ = 'srctools.math'
+    lerp.__module__ = 'srctools.math'
+except Exception:
+    pass  # Perfectly fine.

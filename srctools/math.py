@@ -257,7 +257,7 @@ class Vec(SupportsRound['Vec']):
     """
     __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
-    INV_AXIS = {
+    INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -269,7 +269,7 @@ class Vec(SupportsRound['Vec']):
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }  # type: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]]
+    }
 
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
@@ -440,12 +440,12 @@ class Vec(SupportsRound['Vec']):
         point_coll: Iterable[Vec]
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
-                [[first, *point_coll]] = points
+                [[first, *point_coll]] = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise ValueError('Vec.bbox() arg is an empty sequence') from None
         else:
             try:
-                first, *point_coll = points
+                first, *point_coll = points  # type: ignore # len() can't narrow
             except ValueError:
                 raise TypeError(
                     'Vec.bbox() expected at '
@@ -901,7 +901,7 @@ class Vec(SupportsRound['Vec']):
             return self.x, self.y
         raise KeyError('Bad axis "{}"'.format(axis))
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> Vec_tuple:
         """Return the Vector as a tuple."""
         return Vec_tuple(round(self.x, 6), round(self.y, 6), round(self.z, 6))
 
@@ -1337,7 +1337,7 @@ class Matrix:
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __imatmul__(self, other):
+    def __imatmul__(self, other: object) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self

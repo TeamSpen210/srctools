@@ -309,7 +309,7 @@ class SurfaceProp:
             with file.open_str() as f:
                 manifest = Property.parse(f, file.path)
                 
-            surf = {}
+            surf: dict[str, SurfaceProp] = {}
             
             for prop in manifest.find_all('surfaceproperties_manifest', 'file'):
                 surf = SurfaceProp.parse_file(fsys.read_prop(prop.value), surf)
