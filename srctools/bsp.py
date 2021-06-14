@@ -11,6 +11,7 @@ from enum import Enum, Flag
 from zipfile import ZipFile
 import itertools
 import struct
+import inspect
 import contextlib
 import warnings
 import attr
@@ -255,6 +256,7 @@ class ParsedLump(Generic[T]):
         self.lump = lump
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
+        # May also be a Generator[X] if T = List[X]
         self._read: Optional[Callable[[BSP, bytes], T]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
@@ -288,6 +290,8 @@ class ParsedLump(Generic[T]):
         
         data = instance.lumps[self.lump].data
         result = self._read(instance, data)
+        if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
+            result = list(result)
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
             instance.lumps[lump].data = b''
@@ -523,7 +527,7 @@ class BSP:
         warnings.warn('Access bsp.textures', DeprecationWarning, stacklevel=2)
         return iter(self.textures)
 
-    def _lmp_read_textures(self, tex_data: bytes) -> List[str]:
+    def _lmp_read_textures(self, tex_data: bytes) -> Iterator[str]:
         tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
         # tex_table is an array of int offsets into tex_data. tex_data is a
         # null-terminated block of strings.
@@ -534,19 +538,16 @@ class BSP:
             tex_table,
         )
 
-        mat_list = []
-
         for off in table_offsets:
             # Look for the NULL at the end - strings are limited to 128 chars.
             str_off = 0
             for str_off in range(off, off + 128):
                 if tex_data[str_off] == 0:
-                    mat_list.append(tex_data[off: str_off].decode('ascii'))
+                    yield tex_data[off: str_off].decode('ascii')
                     break
             else:
                 # Reached the 128 char limit without finding a null.
                 raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:str_off]!r})')
-        return mat_list
 
     def _lmp_write_textures(self, textures: List[str]) -> bytes:
         table = BytesIO()
@@ -563,7 +564,7 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
         return bytes(data)
 
-    def _lmp_read_texinfo(self, data: bytes) -> List['TexInfo']:
+    def _lmp_read_texinfo(self, data: bytes) -> Iterator['TexInfo']:
         """Read the texture info lump, providing positioning information."""
         texdata_list = []
         for (
@@ -579,8 +580,12 @@ class BSP:
             self._texdata[mat.casefold()] = texdata
         self.lumps[BSP_LUMPS.TEXDATA].data = b''
 
-        return [
-            TexInfo(
+        for (
+            sx, sy, sz, so, tx, ty, tz, to,
+            l_sx, l_sy, l_sz, l_so, l_tx, l_ty, l_tz, l_to,
+            flags, texdata_ind,
+        ) in struct.iter_unpack('<16fii', data):
+            yield TexInfo(
                 Vec(sx, sy, sz), so,
                 Vec(tx, ty, tz), to,
                 Vec(l_sx, l_sy, l_sz), l_so,
@@ -588,13 +593,6 @@ class BSP:
                 SurfFlags(flags),
                 texdata_list[texdata_ind],
             )
-            for (
-                sx, sy, sz, so, tx, ty, tz, to,
-                l_sx, l_sy, l_sz, l_so, l_tx, l_ty, l_tz, l_to,
-                flags,
-                texdata_ind
-            ) in struct.iter_unpack('<16fii', data)
-        ]
 
     def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
         """Rebuild the texinfo and texdata lump."""
@@ -684,10 +682,8 @@ class BSP:
             for cube in cubemaps
         ])
 
-    def _lmp_read_overlays(self, data: bytes) -> List['Overlay']:
+    def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
         """Read the overlays lump."""
-        overlays = []
-        #
         for block in struct.iter_unpack(
             '<ihH'  # id, texinfo, face-and-render-order
             '64i'  # face array.
@@ -709,17 +705,15 @@ class BSP:
             origin = Vec(block[83:86])
             normal = Vec(block[86:89])
             assert len(block) == 89
-            overlays.append(Overlay(
+
+            yield Overlay(
                 over_id, origin, normal,
                 self.texinfo[texinfo], face_count,
                 faces, render_order,
-                u_min,
-                u_max,
-                v_min,
-                v_max,
+                u_min, u_max,
+                v_min, v_max,
                 uv1, uv2, uv3, uv4,
-            ))
-        return overlays
+            )
 
     def _lmp_write_overlays(self, over: List['Overlay']) -> bytes:
         raise NotImplementedError
