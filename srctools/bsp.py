@@ -296,7 +296,7 @@ class ParsedLump(Generic[T]):
         data = instance.lumps[self.lump].data
         result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
-            result = list(result)
+            result = list(result)  # type: ignore
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
             instance.lumps[lump].data = b''
@@ -419,13 +419,13 @@ class BSP:
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
-        for lump in LUMP_REBUILD_ORDER:
+        for lump_name in LUMP_REBUILD_ORDER:
             try:
-                data = self._parsed_lumps.pop(lump)
+                data = self._parsed_lumps.pop(lump_name)
             except KeyError:
                 pass
             else:
-                self.lumps[lump].data = self._save_funcs[lump](self, data)
+                self.lumps[lump_name].data = self._save_funcs[lump_name](self, data)
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
@@ -547,7 +547,7 @@ class BSP:
         s_shift: float=-99999.0,
         t_off: Vec=Vec(),
         t_shift: float=-99999.0,
-        lightmap_s_off: Vec=(0, 0, 0),
+        lightmap_s_off: Vec=Vec(),
         lightmap_s_shift: float=-99999.0,
         lightmap_t_off: Vec=Vec(),
         lightmap_t_shift: float=-99999.0,
@@ -720,10 +720,10 @@ class BSP:
             mat.casefold(): i
             for i, mat in enumerate(self.textures)
         }
-        texdata_ind = {}
+        texdata_ind: dict[TexData, int] = {}
 
-        texdata_list = []
-        texinfo_result = []
+        texdata_list: list[bytes] = []
+        texinfo_result: list[bytes] = []
 
         for info in texinfos:
             # noinspection PyProtectedMember
