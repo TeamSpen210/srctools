@@ -1,13 +1,17 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # """Optimised Vector object."""
 from libc cimport math
-from libc.math cimport sin, cos, tan
+from libc.math cimport sin, cos, tan, NAN
 from libc.string cimport memcpy, memcmp, memset
 from libc.stdint cimport uint_fast8_t
+from libc.stdio cimport sscanf
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
 cimport cython
+
+cdef extern from *:
+    const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
 
 cdef inline Vec _vector(double x, double y, double z):
     """Make a Vector directly."""
@@ -79,59 +83,92 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef unsigned char _parse_vec_str(vec_t *vec, object value, x, y, z) except False:
-    cdef unicode str_x, str_y, str_z
-    cdef list split_value
+cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1:
+    cdef const char *buf
+    cdef Py_ssize_t size, i
+    cdef int read_amt
+    cdef char c, end_delim = 0
 
     if isinstance(value, Vec):
         vec.x = (<Vec>value).val.x
         vec.y = (<Vec>value).val.y
         vec.z = (<Vec>value).val.z
-        return True
     elif isinstance(value, Angle):
         vec.x = (<Angle>value).val.x
         vec.y = (<Angle>value).val.y
         vec.z = (<Angle>value).val.z
-        return True
+    else:
+        buf = PyUnicode_AsUTF8AndSize(value, &size)
+        # First, skip through whitespace, and stop after the first
+        # <{[( delim, or when any other char is found.
+        i = 0
+        while i < size:
+            c = buf[i]
+            if c in b' \t\v\f':
+                i += 1
+                continue
+            elif c == b'<':
+                i += 1
+                end_delim = b'>'
+                break
+            elif c == b'{':
+                i += 1
+                end_delim = b'}'
+                break
+            elif c == b'[':
+                i += 1
+                end_delim = b']'
+                break
+            elif c == b'(':
+                i += 1
+                end_delim = b')'
+                break
+            else:
+                break
 
-    split_value = (<unicode?>value).split()
-    if len(split_value) != 3:
-        vec.x = x
-        vec.y = y
-        vec.z = z
-        return True
-    str_x = split_value[0]
-    str_y = split_value[1]
-    str_z = split_value[2]
-
-    if str_x[0] in '({[<':
-        str_x = str_x[1:]
-    if str_z[-1] in ')}]>':
-        str_z = str_z[:-1]
-    try:
-        vec.x = float(str_x)
-        vec.y = float(str_y)
-        vec.z = float(str_z)
-    except ValueError:
-        vec.x = x
-        vec.y = y
-        vec.z = z
-    return True
+        # Parse all three floats with scanf. < 3, because %n might not be counted?
+        if sscanf(buf+i, b"%lf %lf %lf%n", &vec.x, &vec.y, &vec.z, &read_amt) < 3:
+            vec.x = x
+            vec.y = y
+            vec.z = z
+            return 0
+        # Then check the remaining characters for the end delim.
+        for i in range(i+read_amt, size):
+            if buf[i] == end_delim and end_delim != 0:
+                end_delim = 0  # Only allow it once.
+            elif buf[i] not in b' \t\v\f':
+                # Illegal char, pretend the scan failed.
+                vec.x = x
+                vec.y = y
+                vec.z = z
+                return 0
+    return 1
 
 
-def parse_vec_str(val, x=0.0, y=0.0, z=0.0):
+def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
-     If the string is unparsable, this uses the defaults (x,y,z).
-     The string can start with any of the (), {}, [], <> bracket
-     types.
+    If the string is unparsable, this uses the defaults (x,y,z).
+    The string can be surrounded with any of the (), {}, [], <> bracket
+    types.
 
-     If the 'string' is actually a Vec, the values will be returned.
-     """
+    If the 'string' is actually a Vec, the values will be returned.
+    """
     cdef vec_t vec
-    _parse_vec_str(&vec, val, x, y, z)
-    return _make_tuple(vec.x, vec.y, vec.z)
-
+    cdef tuple tup
+    # Don't pass x/y/z to _parse_vec_str, so that we can pass through the objects
+    # if it fails.
+    if _parse_vec_str(&vec, val, NAN, NAN, NAN) == 1:
+        return _make_tuple(vec.x, vec.y, vec.z)
+    else:
+        tup = (x, y, z)
+        if USE_TYPE_INTERNALS:
+            Py_INCREF(Vec_tuple)
+            (<PyObject *> tup).ob_type = <PyTypeObject *> Vec_tuple
+            return tup
+        else:  # Not CPython, use more correct but slow method.
+            with cython.optimize.unpack_method_calls(False):
+                return tuple_new(Vec_tuple, tup)
 
 @cython.cdivision(False)  # ZeroDivisionError is needed.
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:

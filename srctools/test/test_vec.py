@@ -3,6 +3,9 @@ import pickle
 import copy
 
 import operator as op
+
+import pytest
+
 from srctools.test import *
 from srctools import Vec_tuple, math as vec_mod
 
@@ -127,6 +130,28 @@ def test_construction(py_c_vec):
         assert val == Vec.from_str('2 6 gh', z=val).z
         assert val == Vec.from_str('1.2 3.4', x=val).x
         assert val == Vec.from_str('34.5 38.4 -23 -38', z=val).z
+
+
+@pytest.mark.parametrize('value', [
+    '0.4 2.5 3.9',
+    '[0.4 2.5 3.9]',
+    '[   0.4 2.5 3.9 ]',
+])
+def test_spaced_parsing(py_c_vec, value):
+    """Test various edge cases regarding parsing."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    x, y, z = parse_vec_str(value, 1, 2, 3)
+    assert x == 0.4
+    assert y == 2.5
+    assert z == 3.9
+
+
+def test_parse_vec_passthrough(py_c_vec):
+    """Test that non-floats can be given to parse_vec_str()."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    obj1, obj2, obj3 = object(), object(), object()
+    assert parse_vec_str('1 2 3', obj1, obj2, obj3) == (1, 2, 3)
+    assert parse_vec_str('fail', obj1, obj2, obj3) == (obj1, obj2, obj3)
 
 
 def test_with_axes(py_c_vec):

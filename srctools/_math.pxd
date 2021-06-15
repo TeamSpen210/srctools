@@ -10,7 +10,10 @@ cdef struct vec_t:
 
 ctypedef double[3][3] mat_t
 
-cdef unsigned char _parse_vec_str(vec_t *vec, object value, x, y, z) except False
+#  0: failed to string parse and using x/y/z defaults.
+#  1: successfully parsed or is a Vec/Angle
+# -1: Exception.
+cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1
 
 cdef unsigned char conv_vec(vec_t *result, object vec, bint scalar) except False
 cdef unsigned char conv_angles(vec_t *result, object ang) except False
