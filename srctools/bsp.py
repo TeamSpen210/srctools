@@ -16,7 +16,11 @@ import contextlib
 import warnings
 import attr
 
-from srctools import AtomicWriter, Vec, Angle, conv_int
+from srctools import AtomicWriter, conv_int
+from srctools.math import Vec, Angle
+from srctools.filesys import FileSystem
+from srctools.vtf import VTF
+from srctools.vmt import Material
 from srctools.vmf import VMF, Entity, Output
 from srctools.tokenizer import escape_text
 from srctools.binformat import struct_read, DeferredWrites
@@ -26,6 +30,7 @@ __all__ = [
     'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump',
     'StaticProp', 'StaticPropFlags',
+    'TexData', 'TexInfo',
     'Cubemap', 'Overlay',
     'VisTree', 'VisLeaf',
 ]
@@ -501,6 +506,11 @@ class BSP:
 
         This is deprecated, simply assign to the .data attribute of the lump.
         """
+        warnings.warn(
+            'This is deprecated, use the appropriate property, '
+            'or the .data attribute of the lump.',
+            DeprecationWarning, stacklevel=2,
+        )
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
 
@@ -519,6 +529,115 @@ class BSP:
         except KeyError:
             raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps)))
         return lump.data
+
+    @overload
+    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem) -> 'TexInfo':
+        """Copy from texinfo using filesystem."""
+    @overload
+    def create_texinfo(
+        self, mat: str, *, copy_from: 'TexInfo',
+        reflectivity: Vec, width: int, height: int,
+    ) -> 'TexInfo':
+        """Copy from texinfo and explicit texdata."""
+
+    @overload
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=(0, 0, 0),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *, fsys: FileSystem,
+    ) -> 'TexInfo':
+        """Construct from filesystem."""
+    @overload
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=Vec(),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *,
+        reflectivity: Vec, width: int, height: int,
+    ) -> 'TexInfo':
+        """Construct with explicit texdata."""
+
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=Vec(),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *,
+        copy_from: 'TexInfo' = None,
+        reflectivity: Vec=None, width: int=0, height: int=0,
+        fsys: FileSystem=None,
+    ) -> 'TexInfo':
+        """Create or find a texinfo entry with the specified values.
+
+        The s/t offset and shift values control the texture positioning. The
+        defaults are those used for overlays, but for brushes all must be
+        specified. Alternatively copy_from can be provided an existing texinfo
+        to copy from, if a texture is being swapped out.
+
+        In the BSP each material also stores its texture size and reflectivity.
+        If the material has not been used yet, these must either be specified
+        manually or a filesystem provided for the VMT and VTFs to be read from.
+        """
+        if copy_from is not None:
+            s_off = copy_from.s_off
+            s_shift = copy_from.s_shift
+            t_off = copy_from.t_off
+            t_shift = copy_from.t_shift
+            lightmap_s_off = copy_from.lightmap_s_off
+            lightmap_s_shift = copy_from.lightmap_s_shift
+            lightmap_t_off = copy_from.lightmap_t_off
+            lightmap_t_shift = copy_from.lightmap_t_shift
+
+        try:
+            data = self._texdata[mat.casefold()]
+            search = True
+        except KeyError:
+            search = False
+            if fsys is None:
+                if reflectivity is None or not width or not height:
+                    raise TypeError(
+                        'Either valid data must be provided or a filesystem '
+                        'to read them from!')
+                data = TexData(mat, reflectivity.copy(), width, height)
+            else:
+                data = TexData.from_material(fsys, mat)
+            self._texdata[mat.casefold()] = data
+
+        new_texinfo = TexInfo(
+            Vec(s_off), s_shift,
+            Vec(t_off), t_shift,
+            Vec(lightmap_s_off), lightmap_s_shift,
+            Vec(lightmap_t_off), lightmap_t_shift,
+            flags, data,
+        )
+        # Texdata is present, look for matching texinfos?
+        if search:
+            for orig_texinfo in self.texinfo:
+                if orig_texinfo == new_texinfo:
+                    return orig_texinfo
+        self.texinfo.append(new_texinfo)
+        return new_texinfo
 
     # Lump-specific commands:
 
@@ -1195,13 +1314,56 @@ class GameLump:
 
 @attr.define(eq=True)
 class TexData:
-    """Represents some additional infomation for textures."""
+    """Represents some additional infomation for textures.
+
+    Do not construct directly, use BSP.create_texinfo() or TexInfo.set().
+    """
     mat: str
     reflectivity: Vec
     width: int
     height: int
     # TexData has a 'view' width/height too, but it isn't used at all and is
     # always the same as regular width/height.
+
+    @classmethod
+    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
+        """Given a filesystem, parse the specified material and compute the texture values."""
+        orig_mat = mat_name
+        mat_folded = mat_name.casefold()
+        if not mat_folded.replace('\\', '/').startswith('materials/'):
+            mat_name = 'materials/' + mat_name
+
+        mat_fname = mat_name
+        if mat_folded[-4] != '.':
+            mat_fname += '.vmt'
+
+        with fsys, fsys[mat_fname].open_str() as tfile:
+            mat = Material.parse(tfile, mat_name)
+            mat.apply_patches(fsys)
+
+        # Figure out the matching texture. If no texture, we look for one
+        # with the same name as the material.
+        tex_name = mat.get('$basetexture', mat_name)
+        if not tex_name.casefold().replace('\\', '/').startswith('materials/'):
+            tex_name = 'materials/' + tex_name
+        if tex_name[-4] != '.':
+            tex_name += '.vtf'
+
+        try:
+            with fsys, fsys[tex_name].open_bin() as bfile:
+                vtf = VTF.read(bfile)
+                reflect = vtf.reflectivity.copy()
+                width, height = vtf.width, vtf.height
+        except FileNotFoundError:
+            width = height = 0
+            reflect = Vec(0.2, 0.2, 0.2)  # CMaterial:CMaterial()
+
+        try:
+            reflect = Vec.from_str(mat['$reflectivity'])
+            print(reflect, repr(mat['$reflectivity']))
+        except KeyError:
+            pass
+        return TexData(orig_mat, reflect, width, height)
 
 
 @attr.define(eq=True)
@@ -1232,6 +1394,36 @@ class TexInfo:
     def tex_size(self) -> Tuple[int, int]:
         """The size of the texture."""
         return self._info.width, self._info.height
+
+    @overload
+    def set(self, bsp: BSP, mat: str, *, fsys: FileSystem) -> None: ...
+    @overload
+    def set(self, bsp: BSP, mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
+
+    def set(
+        self,
+        bsp: BSP, mat: str,
+        reflectivity: Vec=None, width: int=0, height: int=0,
+        fsys: FileSystem=None,
+    ) -> None:
+        """Set the material used for this texinfo.
+
+        If it is not already used in the BSP, some additional info is required.
+        This can either be parsed from the VMT and VTF, or provided directly.
+        """
+        # noinspection PyProtectedMember
+        try:
+            data = bsp._texdata[mat.casefold()]
+        except KeyError:
+            # Need to create.
+            if fsys is None:
+                if reflectivity is None or not width or not height:
+                    raise TypeError('Either valid data must be provided or a filesystem to read them from!')
+                data = TexData(mat, reflectivity.copy(), width, height)
+            else:
+                data = TexData.from_material(fsys, mat)
+            bsp._texdata[mat.casefold()] = data
+        self._info = data
 
 
 @attr.define(eq=False)
