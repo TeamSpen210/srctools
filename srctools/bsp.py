@@ -1312,7 +1312,7 @@ class GameLump:
         )
 
 
-@attr.define(eq=True)
+@attr.define(eq=False)
 class TexData:
     """Represents some additional infomation for textures.
 
@@ -1501,7 +1501,7 @@ class Overlay:
         attr.validators.instance_of(int),
         attr.validators.instance_of(list),
     ))
-    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(3)))
+    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
