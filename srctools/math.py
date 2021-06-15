@@ -84,15 +84,17 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
         # Not a string.
         return x, y, z
 
+    val = val.strip()
+    if val and val[0] in '({[<':
+        val = val[1:]
+    if val and val[-1] in ')}]>':
+        val = val[:-1]
+
     try:
         str_x, str_y, str_z = val.split()
     except ValueError:
         return x, y, z
 
-    if str_x[0] in '({[<':
-        str_x = str_x[1:]
-    if str_z[-1] in ')}]>':
-        str_z = str_z[:-1]
     try:
         return (
             float(str_x),
