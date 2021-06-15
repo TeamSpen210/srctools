@@ -834,8 +834,38 @@ class BSP:
                 uv1, uv2, uv3, uv4,
             )
 
-    def _lmp_write_overlays(self, over: List['Overlay']) -> bytes:
-        raise NotImplementedError
+    def _lmp_write_overlays(self, overlays: List['Overlay']) -> bytes:
+        """Write out all overlays."""
+        texinfos = {
+            id(info): i
+            for i, info in enumerate(self.texinfo)
+        }
+        buf = BytesIO()
+        for over in overlays:
+            try:
+                info_ind = texinfos[id(over.texture)]
+            except KeyError:
+                info_ind = texinfos[id(over.texture)] = len(self.texinfo)
+                self.texinfo.append(over.texture)
+            face_cnt = len(over.faces)
+            if face_cnt > 64:
+                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            buf.write(struct.pack(
+                '<ihH',
+                over.id,
+                info_ind,
+                (over.render_order << 14 | face_cnt),
+            ))
+            # Build the array, then zero fill the remaining space.
+            buf.write(struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces))
+            buf.write(struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max))
+            buf.write(struct.pack(
+                '<18f',
+                *over.uv1, *over.uv2, *over.uv3, *over.uv4,
+                *over.origin, *over.normal,
+            ))
+
+        return buf.getvalue()
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
