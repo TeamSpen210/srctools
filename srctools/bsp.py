@@ -196,6 +196,7 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.ENTITIES,
     BSP_LUMPS.CUBEMAPS,
 
+    BSP_LUMPS.MODELS,
     BSP_LUMPS.FACES,
     BSP_LUMPS.FACES_HDR,
     BSP_LUMPS.ORIGINALFACES,
@@ -292,6 +293,25 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callab
             item_list.append(item)
             return ind
     return finder
+
+
+def _find_or_extend(item_list: List[T], items: List[T]) -> int:
+    """Find a small list inside the larger list, adding it if required.
+    """
+    # TODO: Upgrade to Boyer-Moore?
+    if items:
+        for i, first in enumerate(item_list):
+            if items[0] == first:
+                if item_list[i:i+len(items)] == items:
+                    return i
+        else:
+            # Not found, append to the end.
+            i = len(item_list)
+            item_list.extend(items)
+            return i
+    else:
+        # Zero, just index anywhere.
+        return 0
 
 
 class ParsedLump(Generic[T]):
@@ -391,6 +411,7 @@ class BSP:
     texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
+    bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -834,18 +855,7 @@ class BSP:
                 texinfo = -1
 
             # See if we can find the edge list in surfedges already.
-            if face.edges:
-                for edge_ind, edge in enumerate(self.surfedges):
-                    if face.edges[0] == edge:
-                        if self.surfedges[edge_ind:edge_ind+len(face.edges)] == face.edges:
-                            break
-                else:
-                    # Not found, append to the end.
-                    edge_ind = len(self.surfedges)
-                    self.surfedges.extend(face.edges)
-            else:
-                # Zero, just index anywhere.
-                edge_ind = 0
+            edge_ind = _find_or_extend(face.edges, self.surfedges)
 
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
@@ -985,6 +995,38 @@ class BSP:
             ))
         self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
         return b''.join(texinfo_result)
+
+    def _lmp_read_bmodels(self, data: bytes) -> Iterator['BModel']:
+        """Parse the brush model definitions."""
+        for (
+            min_x, min_y, min_z, max_x, max_y, max_z,
+            pos_x, pos_y, pos_z,
+            headnode,
+            first_face, num_face,
+        ) in struct.iter_unpack('<9fiii', data):
+            yield BModel(
+                Vec(min_x, min_y, min_z), Vec(max_x, max_y, max_z),
+                Vec(pos_x, pos_y, pos_z),
+                headnode,
+                self.faces[first_face:first_face+num_face],
+            )
+
+    def _lmp_write_bmodels(self, bmodels: List['BModel']) -> bytes:
+        """Write the brush model definitions."""
+        buf = BytesIO()
+        for model in bmodels:
+            # See if we can find the edge list in surfedges already.
+            face_ind = _find_or_extend(model.faces, self.faces)
+            # noinspection PyProtectedMember
+            buf.write(struct.pack(
+                '<9fiii',
+                model.mins.x, model.mins.y, model.mins.z,
+                model.maxes.x, model.maxes.y, model.maxes.z,
+                model.origin.x, model.origin.y, model.origin.z,
+                model._headnode,
+                face_ind, len(model.faces),
+            ))
+        return buf.getvalue()
 
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
@@ -1809,6 +1851,16 @@ class Overlay:
     uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
     uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
     uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+
+
+@attr.define(eq=False)
+class BModel:
+    """A brush model definition, used for the world entity along with all other brush ents."""
+    mins: Vec
+    maxes: Vec
+    origin: Vec
+    _headnode: int  # TODO: implement nodes.
+    faces: List[Face]
 
 
 @attr.define
