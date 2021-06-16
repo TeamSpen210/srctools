@@ -197,6 +197,7 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.CUBEMAPS,
 
     BSP_LUMPS.MODELS,
+    BSP_LUMPS.NODES,
     BSP_LUMPS.FACES,
     BSP_LUMPS.FACES_HDR,
     BSP_LUMPS.ORIGINALFACES,
@@ -411,7 +412,9 @@ class BSP:
     texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
+
     bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
+    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES, BSP_LUMPS.LEAFS)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -887,6 +890,63 @@ class BSP:
     _lmp_read_hdr_faces = _lmp_read_faces
     _lmp_write_hdr_faces = _lmp_write_faces
 
+    def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
+        # First parse everything, then link up the objects.
+        nodes: List[Tuple[VisTree, int, int]] = []
+        leafs: List[VisLeaf] = []
+
+        for (
+            plane_ind, neg_ind, pos_ind,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, face_count, area_ind,
+        ) in struct.iter_unpack('<iii6hHHh2x', data):
+            nodes.append((VisTree(
+                self.planes[plane_ind],
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+            ), neg_ind, pos_ind))
+
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data.
+        if self.version.value <= 19:
+            leaf_fmt += '26x'
+
+        for i, (
+            contents,
+            cluster_ind, area_and_flags,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, num_faces,
+            first_brush, num_brushes,
+            water_ind
+        ) in enumerate(
+            struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
+            area = area_and_flags >> 7
+            flags = area_and_flags & 0b1111111
+            leafs.append(VisLeaf(
+                i, area, flags,
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+                self.faces[first_face:first_face+num_faces],
+                first_brush, num_brushes,
+                water_ind,
+            ))
+
+        for node, neg_ind, pos_ind in nodes:
+            if neg_ind < 0:
+                node.child_neg = leafs[-1 - neg_ind]
+            else:
+                node.child_neg = nodes[neg_ind][0]
+            if pos_ind < 0:
+                node.child_pos = leafs[-1 - pos_ind]
+            else:
+                node.child_pos = nodes[pos_ind][0]
+        return [node for node, i, j in nodes]
+
+    def _lmp_write_nodes(self, faces: List['VisTree']) -> bytes:
+        raise NotImplementedError
+
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
         warnings.warn('Access bsp.textures', DeprecationWarning, stacklevel=2)
@@ -1007,12 +1067,13 @@ class BSP:
             yield BModel(
                 Vec(min_x, min_y, min_z), Vec(max_x, max_y, max_z),
                 Vec(pos_x, pos_y, pos_z),
-                headnode,
+                self.nodes[headnode],
                 self.faces[first_face:first_face+num_face],
             )
 
     def _lmp_write_bmodels(self, bmodels: List['BModel']) -> bytes:
         """Write the brush model definitions."""
+        add_node = _find_or_insert(self.nodes)
         buf = BytesIO()
         for model in bmodels:
             # See if we can find the edge list in surfedges already.
@@ -1023,7 +1084,7 @@ class BSP:
                 model.mins.x, model.mins.y, model.mins.z,
                 model.maxes.x, model.maxes.y, model.maxes.z,
                 model.origin.x, model.origin.y, model.origin.z,
-                model._headnode,
+                add_node(model.node),
                 face_ind, len(model.faces),
             ))
         return buf.getvalue()
@@ -1509,59 +1570,9 @@ class BSP:
         game_lump.data = prop_lump.getvalue()
 
     def vis_tree(self) -> 'VisTree':
-        """Parse the visleaf data to get the full node."""
-        # First parse everything, then link up the objects.
-        nodes: List[Tuple[VisTree, int, int]] = []
-        leafs: List[VisLeaf] = []
-
-        for (
-            plane_ind, neg_ind, pos_ind,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, face_count, area_ind,
-        ) in struct.iter_unpack('<iii6hHHh2x', self.lumps[BSP_LUMPS.NODES].data):
-            nodes.append((VisTree(
-                self.planes[plane_ind],
-                Vec(min_x, min_y, min_z),
-                Vec(max_x, max_y, max_z),
-            ), neg_ind, pos_ind))
-
-        leaf_fmt = '<ihh6h4Hh2x'
-        # Some extra ambient light data.
-        if self.version.value <= 19:
-            leaf_fmt += '26x'
-
-        for i, (
-            contents,
-            cluster_ind, area_and_flags,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, num_faces,
-            first_brush, num_brushes,
-            water_ind
-        ) in enumerate(struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
-            area = area_and_flags >> 7
-            flags = area_and_flags & 0b1111111
-            leafs.append(VisLeaf(
-                i, area, flags,
-                Vec(min_x, min_y, min_z),
-                Vec(max_x, max_y, max_z),
-                first_face, num_faces,
-                first_brush, num_brushes,
-                water_ind,
-            ))
-
-        for node, neg_ind, pos_ind in nodes:
-            if neg_ind < 0:
-                node.child_neg = leafs[-1 - neg_ind]
-            else:
-                node.child_neg = nodes[neg_ind][0]
-            if pos_ind < 0:
-                node.child_pos = leafs[-1 - pos_ind]
-            else:
-                node.child_pos = nodes[pos_ind][0]
+        """Parse the visleaf data, and return the root node."""
         # First node is the top of the tree.
-        return nodes[0][0]
+        return self.nodes[0]
 
 
 @attr.define(eq=False)
@@ -1859,13 +1870,13 @@ class BModel:
     mins: Vec
     maxes: Vec
     origin: Vec
-    _headnode: int  # TODO: implement nodes.
+    node: 'VisTree'
     faces: List[Face]
 
 
 @attr.define
 class VisLeaf:
-    """A leaf in the visleaf data.
+    """A leaf in the visleaf/BSP data.
 
     The bounds is defined implicitly by the parent node planes.
     """
@@ -1874,24 +1885,64 @@ class VisLeaf:
     flags: int
     mins: Vec
     maxes: Vec
-    first_face: int
-    face_count: int
+    faces: List[Face]
     first_brush: int
     brush_count: int
     water_id: int
 
+    def test_point(self, point: Vec) -> Optional['VisLeaf']:
+        """Test the given point against us, returning ourself or None."""
+        if (
+            point.x < self.mins.x or point.x > self.maxes.x or
+            point.y < self.mins.y or point.y > self.maxes.y or
+            point.z < self.mins.z or point.z > self.maxes.z
+        ):
+            return None
+        return self
+
 
 @attr.define
 class VisTree:
-    """A tree node in the visleaf data.
+    """A tree node in the visleaf/BSP data.
 
     Each of these is a plane splitting the map in two, which then has a child
     tree or visleaf on either side.
     """
-    plane_norm: Vec
-    plane_dist: float
+    plane: Plane
     mins: Vec
     maxes: Vec
-    # Initialised empty, set after.
+    # Initialised empty, set during loading.
     child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
     child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
+
+    @property
+    def plane_norm(self) -> Vec:
+        """Deprecated alias for tree.plane.normal."""
+        warnings.warn('Use tree.plane.normal', DeprecationWarning, stacklevel=2)
+        return self.plane.normal
+
+    @property
+    def plane_dist(self) -> float:
+        """Deprecated alias for tree.plane.dist."""
+        warnings.warn('Use tree.plane.dist', DeprecationWarning, stacklevel=2)
+        return self.plane.dist
+
+    def test_point(self, point: Vec) -> Optional[VisLeaf]:
+        """Test the given point against us, returning the hit leaf or None."""
+        # Quick early out.
+        if (
+            point.x < self.mins.x or point.x > self.maxes.x or
+            point.y < self.mins.y or point.y > self.maxes.y or
+            point.z < self.mins.z or point.z > self.maxes.z
+        ):
+            return None
+        dist = self.plane.dist - point.dot(self.plane.normal)
+        if dist > -1e-6:
+            res = self.child_pos.test_point(point)
+            if res is not None:
+                return res
+        elif dist < 1e-6:
+            res = self.child_neg.test_point(point)
+            if res is not None:
+                return res
+        return None
