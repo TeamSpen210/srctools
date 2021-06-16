@@ -40,7 +40,10 @@ BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
+
 T = TypeVar('T')
+S = TypeVar('S')
+Edge = Tuple[Vec, Vec]
 
 
 class VERSIONS(Enum):
@@ -193,11 +196,25 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.ENTITIES,
     BSP_LUMPS.CUBEMAPS,
 
+    BSP_LUMPS.SURFEDGES,
+    BSP_LUMPS.PLANES,
+    BSP_LUMPS.VERTEXES,
+
     BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
 
     BSP_LUMPS.TEXINFO,  # Adds texdata -> texdata_string_data entries.
     BSP_LUMPS.TEXDATA_STRING_DATA,
 ]
+
+
+class PlaneType(Enum):
+    """The orientation of a plane."""
+    X = 0  # Exactly in the X axis.
+    Y = 1  # Exactly in the Y axis.
+    Z = 2  # Exactly in the Z axis.
+    ANY_X = 3  # Pointing mostly in the X axis
+    ANY_Y = 4  # Pointing mostly in the Y axis.
+    ANY_Z = 5  # Pointing mostly in the Z axis.
 
 
 class SurfFlags(Flag):
@@ -247,6 +264,30 @@ class StaticPropFlags(Flag):
     def value_sec(self) -> int:
         """Return the data for the secondary flag byte."""
         return self.value >> 8
+
+
+def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[T], int]:
+    """Create a function for inserting items in a list if not found.
+
+    This is used to build up the structure arrays which other lumps refer
+    to by index.
+    If the provided argument to the callable is already in the list,
+    the index is returned. Otherwise it is appended and the new index returned.
+    The key function is used to match existing items.
+
+    """
+    by_index: dict[S, int] = {key_func(item): i for i, item in enumerate(item_list)}
+
+    def finder(item: T) -> int:
+        """Find or append the item."""
+        key = key_func(item)
+        try:
+            return by_index[key]
+        except KeyError:
+            ind = by_index[key] = len(item_list)
+            item_list.append(item)
+            return ind
+    return finder
 
 
 class ParsedLump(Generic[T]):
@@ -315,6 +356,7 @@ class ParsedLump(Generic[T]):
         instance._parsed_lumps[self.lump] = value  # noqa
 
 
+# noinspection PyMethodMayBeStatic
 class BSP:
     """A BSP file."""
     # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
@@ -346,10 +388,15 @@ class BSP:
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
 
+    vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
+    surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
+    planes: ParsedLump[List['Plane']] = ParsedLump(BSP_LUMPS.PLANES)
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
         self.game_lumps.clear()
+        self._parsed_lumps.clear()
+        self._texdata.clear()
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
@@ -640,6 +687,74 @@ class BSP:
         return new_texinfo
 
     # Lump-specific commands:
+    def _lmp_read_planes(self, data: bytes) -> List['Plane']:
+        for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
+            yield Plane(Vec(x, y, z), dist, PlaneType(typ))
+
+    def _lmp_write_planes(self, planes: List['Plane']) -> bytes:
+        return b''.join([
+            struct.pack('<ffffi', plane.pos.x, plane.pos.y, plane.pos.z, plane.dist, plane.type)
+            for plane in planes
+        ])
+
+    def _lmp_read_vertexes(self, vertexes: bytes) -> List[Vec]:
+        return list(map(Vec, struct.iter_unpack('<fff', vertexes)))
+
+    def _lmp_write_vertexes(self, vertexes: List[Vec]) -> bytes:
+        return b''.join([struct.pack('<fff', pos.x, pos.y, pos.z) for pos in vertexes])
+
+    def _lmp_read_surfedges(self, vertexes: bytes) -> Iterator[Edge]:
+        verts: list[Vec] = self.vertexes
+        edges = [
+            (verts[a], verts[b])
+            for a, b in struct.iter_unpack('<HH', self.lumps[BSP_LUMPS.EDGES].data)
+        ]
+        for [ind] in struct.iter_unpack('i', vertexes):
+            if ind < 0:  # If negative, the vertexes are reversed order.
+                yield edges[-ind][::-1]
+            else:
+                yield edges[ind]
+
+    def _lmp_write_surfedges(self, surf_edges: List[Edge]) -> bytes:
+        """Reconstruct the surfedges and edges lumps."""
+        edge_buf = BytesIO()
+        surf_buf = BytesIO()
+
+        # (a, b) -> edge
+        edge_to_ind: dict[tuple[float, float, float, float, float, float], int] = {}
+        add_vert = _find_or_insert(self.vertexes, Vec.as_tuple)
+
+        for a, b in surf_edges:
+            # Check to see if this edge is already defined.
+            # positive indexes are in forward order, negative
+            # allows us to refer to a reversed definition.
+            try:
+                ind = edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z]
+            except KeyError:
+                pass
+            else:
+                surf_buf.write(struct.pack('i', ind))
+                continue
+
+            try:
+                ind = -edge_to_ind[b.x, b.y, b.z, a.x, a.y, a.z]
+                if ind == 0:  # Edge case, -0 = +0
+                    raise KeyError
+            except KeyError:
+                pass
+            else:
+                surf_buf.write(struct.pack('i', ind))
+                continue
+
+            # No luck, we need to add an edge definition.
+            ind = len(edge_to_ind)
+            edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z] = ind
+
+            edge_buf.write(struct.pack('<HH',  add_vert(a), add_vert(b)))
+            surf_buf.write(struct.pack('i', ind))
+
+        self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
+        return surf_buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
@@ -647,7 +762,7 @@ class BSP:
         return iter(self.textures)
 
     def _lmp_read_textures(self, tex_data: bytes) -> Iterator[str]:
-        tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
+        tex_table = self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data
         # tex_table is an array of int offsets into tex_data. tex_data is a
         # null-terminated block of strings.
 
@@ -715,11 +830,7 @@ class BSP:
 
     def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
         """Rebuild the texinfo and texdata lump."""
-        # Map texture name or the texdata block to the index in the resultant list.
-        texture_ind = {
-            mat.casefold(): i
-            for i, mat in enumerate(self.textures)
-        }
+        find_or_add_texture = _find_or_insert(self.textures, str.casefold)
         texdata_ind: dict[TexData, int] = {}
 
         texdata_list: list[bytes] = []
@@ -736,16 +847,10 @@ class BSP:
                 ind = texdata_ind[tdat]
             except KeyError:
                 ind = texdata_ind[tdat] = len(texdata_list)
-                try:
-                    tex_ind = texture_ind[tdat.mat.casefold()]
-                except KeyError:
-                    tex_ind = len(self.textures)
-                    self.textures.append(tdat.mat)
-
                 texdata_list.append(struct.pack(
                     '<3f5i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
-                    tex_ind,
+                    find_or_add_texture(tdat.mat),
                     tdat.width, tdat.height, tdat.width, tdat.height,
                 ))
             texinfo_result.append(struct.pack(
@@ -1243,12 +1348,8 @@ class BSP:
     def vis_tree(self) -> 'VisTree':
         """Parse the visleaf data to get the full node."""
         # First parse everything, then link up the objects.
-        planes: List[Tuple[Vec, float]] = []
         nodes: List[Tuple[VisTree, int, int]] = []
         leafs: List[VisLeaf] = []
-
-        for x, y, z, dist, flags in struct.iter_unpack('<ffffi', self.lumps[BSP_LUMPS.PLANES].data):
-            planes.append((Vec(x, y, z), dist))
 
         for (
             plane_ind, neg_ind, pos_ind,
@@ -1256,9 +1357,8 @@ class BSP:
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
         ) in struct.iter_unpack('<iii6hHHh2x', self.lumps[BSP_LUMPS.NODES].data):
-            plane_norm, plane_dist = planes[plane_ind]
             nodes.append((VisTree(
-                plane_norm, plane_dist,
+                self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
             ), neg_ind, pos_ind))
@@ -1454,6 +1554,32 @@ class TexInfo:
                 data = TexData.from_material(fsys, mat)
             bsp._texdata[mat.casefold()] = data
         self._info = data
+
+
+@attr.define(eq=False)
+class Plane:
+    """A plane."""
+    normal: Vec
+    dist: float
+    type: PlaneType = attr.ib()
+
+    @type.default
+    def compute_type(self) -> 'PlaneType':
+        """Compute the plane type parameter."""
+        x = abs(self.normal.x)
+        y = abs(self.normal.y)
+        z = abs(self.normal.z)
+        if x > 0.99:
+            return PlaneType.X
+        if y > 0.99:
+            return PlaneType.Y
+        if z > 0.99:
+            return PlaneType.Z
+        if x > y and x > z:
+            return PlaneType.ANY_X
+        if y > x and y > z:
+            return PlaneType.ANY_Y
+        return PlaneType.ANY_Z
 
 
 @attr.define(eq=False)
