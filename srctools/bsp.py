@@ -196,6 +196,10 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.ENTITIES,
     BSP_LUMPS.CUBEMAPS,
 
+    BSP_LUMPS.FACES,
+    BSP_LUMPS.FACES_HDR,
+    BSP_LUMPS.ORIGINALFACES,
+
     BSP_LUMPS.SURFEDGES,
     BSP_LUMPS.PLANES,
     BSP_LUMPS.VERTEXES,
@@ -371,7 +375,7 @@ class BSP:
         self.header_off = 0
         self.version = version  # type: Optional[Union[VERSIONS, int]]
         # Tracks if the ent lump is using the new x1D output separators,
-        # or the old comma separators. If no ouputs are present there's no
+        # or the old comma separators. If no outputs are present there's no
         # way to determine this.
         self.out_comma_sep: Optional[bool] = None
         # This internally stores the texdata values texinfo refers to. Users
@@ -391,6 +395,10 @@ class BSP:
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
     planes: ParsedLump[List['Plane']] = ParsedLump(BSP_LUMPS.PLANES)
+    faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
+    orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
+    hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
+
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
@@ -755,6 +763,119 @@ class BSP:
 
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()
+
+    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
+        """Read one of the faces arrays.
+
+        For ORIG_FACES, _orig_faces is None and that entry is ignored.
+        For the others, that is the parsed orig faces lump, which each face
+        may reference.
+        """
+        for (
+            plane_num,
+            side,
+            on_node,
+            first_edge, num_edges,
+            texinfo_ind,
+            dispinfo,
+            surf_fog_vol_id,
+            lightstyles,
+            light_offset,
+            area,
+            lightmap_mins_x, lightmap_mins_y,
+            lightmap_size_x, lightmap_size_y,
+            orig_face_ind,
+            prim_num,
+            prim_first,
+            smoothing_group,
+        ) in struct.iter_unpack('<H??i4h4sif5iHHI', data):
+            # If orig faces is provided, that is the original face
+            # we were created from. Additionally, it seems the original
+            # face data has invalid texinfo, so copy ours on top of it.
+            if _orig_faces is not None:
+                orig_face = _orig_faces[orig_face_ind]
+                orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
+            else:
+                orig_face = texinfo = None
+            yield Face(
+                self.planes[plane_num],
+                side, on_node,
+                self.surfedges[first_edge:first_edge+num_edges],
+                texinfo,
+                dispinfo,
+                surf_fog_vol_id,
+                lightstyles,
+                light_offset,
+                area,
+                (lightmap_mins_x, lightmap_mins_y),
+                (lightmap_size_x, lightmap_size_y),
+                orig_face,
+                prim_num, prim_first,
+                smoothing_group,
+            )
+
+    def _lmp_write_orig_faces(self, faces: List['Face'], get_orig_face: Callable[['Face'], int]=None) -> bytes:
+        """Reconstruct one of the faces arrays.
+
+        If this isn't the orig faces array, get_orig_face should be
+        _find_or_insert(self.orig_faces).
+        """
+        face_buf = BytesIO()
+        add_texinfo = _find_or_insert(self.texinfo)
+        add_plane = _find_or_insert(self.planes)
+        for face in faces:
+            if face.orig_face is not None and get_orig_face is not None:
+                orig_ind = get_orig_face(face.orig_face)
+            else:
+                orig_ind = -1
+            if face.texinfo is not None:
+                texinfo = add_texinfo(face.texinfo)
+            else:
+                texinfo = -1
+
+            # See if we can find the edge list in surfedges already.
+            if face.edges:
+                for edge_ind, edge in enumerate(self.surfedges):
+                    if face.edges[0] == edge:
+                        if self.surfedges[edge_ind:edge_ind+len(face.edges)] == face.edges:
+                            break
+                else:
+                    # Not found, append to the end.
+                    edge_ind = len(self.surfedges)
+                    self.surfedges.extend(face.edges)
+            else:
+                # Zero, just index anywhere.
+                edge_ind = 0
+
+            # noinspection PyProtectedMember
+            face_buf.write(struct.pack(
+                '<H??i4h4sif5iHHI',
+                add_plane(face.plane),
+                face.same_dir_as_plane,
+                face.on_node,
+                edge_ind, len(face.edges),
+                texinfo,
+                face._dispinfo_ind,
+                face.surf_fog_volume_id,
+                face.light_styles,
+                face._lightmap_off,
+                face.area,
+                *face.lightmap_mins, *face.lightmap_size,
+                orig_ind,
+                face._prim_count, face._first_prim_id,
+                face.smoothing_groups,
+            ))
+        return face_buf.getvalue()
+
+    def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the main split faces lump."""
+        return self._lmp_read_orig_faces(data, self.orig_faces)
+
+    def _lmp_write_faces(self, faces: List['Face']) -> bytes:
+        return self._lmp_write_orig_faces(faces, _find_or_insert(self.orig_faces))
+
+    _lmp_read_hdr_faces = _lmp_read_faces
+    _lmp_write_hdr_faces = _lmp_write_faces
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
@@ -1580,6 +1701,27 @@ class Plane:
         if y > x and y > z:
             return PlaneType.ANY_Y
         return PlaneType.ANY_Z
+
+
+@attr.define(eq=False)
+class Face:
+    """A brush face definition."""
+    plane: Plane
+    same_dir_as_plane: bool
+    on_node: bool
+    edges: List[Edge]
+    texinfo: TexInfo
+    _dispinfo_ind: int  # TODO
+    surf_fog_volume_id: int
+    light_styles: bytes
+    _lightmap_off: int  # TODO
+    area: float
+    lightmap_mins: Tuple[int, int]
+    lightmap_size: Tuple[int, int]
+    orig_face: Optional['Face']
+    _prim_count: int  # TODO, parse
+    _first_prim_id: int
+    smoothing_groups: int
 
 
 @attr.define(eq=False)
