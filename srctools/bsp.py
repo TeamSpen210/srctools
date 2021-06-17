@@ -315,6 +315,22 @@ class StaticPropFlags(Flag):
         return self.value >> 8
 
 
+class VisLeafFlags(Flag):
+    """Visleaf flags."""
+    NONE = 0x0
+    SKY_3D = 0x01  # The 3D skybox is visible from here.
+    SKY_2D = 0x04  # The 2D skybox is visible from here.
+    RADIAL = 0x02  # Has culled portals, due to farz fog limits.
+    HAS_DETAIL_OBJECTS = 0x08  # Contains detail props.
+
+    # Undocumented flags, still in maps though?
+    # Looks like uninitialised members.
+    _BIT_4 = 1 << 3
+    _BIT_5 = 1 << 4
+    _BIT_6 = 1 << 5
+    _BIT_7 = 1 << 6
+
+
 def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
@@ -1012,7 +1028,7 @@ class BSP:
             area = area_and_flags >> 7
             flags = area_and_flags & 0b1111111
             leafs.append(VisLeaf(
-                i, area, flags,
+                i, area, VisLeafFlags(flags),
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
                 leaf_faces[first_face:first_face+num_faces],
@@ -1981,7 +1997,7 @@ class VisLeaf:
     """
     id: int
     area: int
-    flags: int  # TODO: Enum?
+    flags: VisLeafFlags
     mins: Vec
     maxes: Vec
     faces: List[Face]
