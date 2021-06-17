@@ -1058,7 +1058,33 @@ class BSP:
 
     def _lmp_write_nodes(self, nodes: List['VisTree']) -> bytes:
         """Reconstruct the visleaf/bsp tree data."""
-        raise NotImplementedError
+        add_node = _find_or_insert(nodes)
+        add_plane = _find_or_insert(self.planes)
+        add_leaf = _find_or_insert(self.visleafs)
+
+        buf = BytesIO()
+
+        node: VisTree
+        for node in nodes:
+            if isinstance(node.child_pos, VisLeaf):
+                pos_ind = -(add_leaf(node.child_pos) + 1)
+            else:
+                pos_ind = add_node(node.child_pos)
+            if isinstance(node.child_neg, VisLeaf):
+                neg_ind = -(add_leaf(node.child_neg) + 1)
+            else:
+                neg_ind = add_node(node.child_neg)
+
+            face_ind = _find_or_extend(self.faces, node.faces)
+            buf.write(struct.pack(
+                '<iii6hHHh2x',
+                add_plane(node.plane), neg_ind, pos_ind,
+                int(node.mins.x), int(node.mins.y), int(node.mins.z),
+                int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
+                face_ind, len(node.faces), node.area_ind,
+            ))
+
+        return buf.getvalue()
 
     def _lmp_write_visleafs(self, visleafs: List['VisLeaf']) -> bytes:
         """Reconstruct the leafs of the visleaf/bsp tree."""
