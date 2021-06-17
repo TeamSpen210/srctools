@@ -1252,7 +1252,7 @@ class BSP:
         buf = BytesIO()
         for model in bmodels:
             # See if we can find the edge list in surfedges already.
-            face_ind = _find_or_extend(model.faces, self.faces)
+            face_ind = _find_or_extend(self.faces, model.faces)
             # noinspection PyProtectedMember
             buf.write(struct.pack(
                 '<9fiii',
