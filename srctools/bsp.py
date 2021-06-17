@@ -2140,3 +2140,18 @@ class VisTree:
             if res is not None:
                 return res
         return None
+
+    def iter_leafs(self) -> Iterator[VisLeaf]:
+        """Iterate over all child leafs, recursively."""
+        checked: set[int] = set()  # Guard against recursion.
+        nodes = [self]
+        while nodes:
+            node = nodes.pop()
+            if id(node) in checked:
+                continue
+            checked.add(id(node))
+            for child in [node.child_neg, node.child_pos]:
+                if isinstance(child, VisLeaf):
+                    yield child
+                else:
+                    nodes.append(child)
