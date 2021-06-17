@@ -239,11 +239,11 @@ class SurfFlags(Flag):
     NOPORTAL = 0x20  # Portalgun blocking material.
     TRIGGER = 0x40  # XBox only - is a trigger surface.
     NODRAW = 0x80  # Texture isn't used, it's invisible.
-    HINT = 0x100 # A hint brush.
+    HINT = 0x100  # A hint brush.
     SKIP = 0x200  # Skip brush, removed from map.
-    NOLIGHT = 0x400  # No light needs to be calulated.
+    NOLIGHT = 0x400  # No light needs to be calculated.
     BUMPLIGHT = 0x800  # Needs three lightmaps for bumpmapping.
-    NO_SHADOWS = 0x1000  # Doesn't recive shadows.
+    NO_SHADOWS = 0x1000  # Doesn't receive shadows.
     NO_DECALS = 0x2000  # Rejects decals.
     NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
     HITBOX = 0x8000  # 'Part of a hitbox'
@@ -321,7 +321,7 @@ class VisLeafFlags(Flag):
     NONE = 0x0
     SKY_3D = 0x01  # The 3D skybox is visible from here.
     SKY_2D = 0x04  # The 2D skybox is visible from here.
-    RADIAL = 0x02  # Has culled portals, due to farz fog limits.
+    RADIAL = 0x02  # Has culled portals, due to far-z fog limits.
     HAS_DETAIL_OBJECTS = 0x08  # Contains detail props.
 
     # Undocumented flags, still in maps though?
@@ -362,7 +362,7 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], S]=id) -> Callab
     This is used to build up structure arrays where othe lumps access subsections of it.
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
-    # occurances of the first index to speed up the search.
+    # occurrences of the first index to speed up the search.
     by_index: dict[S, List[int]] = {}
     for k, item in enumerate(item_list):
         by_index.setdefault(key_func(item), []).append(k)
@@ -645,9 +645,11 @@ class BSP:
 
     def read_header(self) -> None:
         """No longer used."""
+        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
     def read_game_lumps(self) -> None:
         """No longer used."""
+        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
     def replace_lump(
         self,
@@ -1401,6 +1403,10 @@ class BSP:
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
+        """Deprecated function to parse the entdata lump.
+
+        Use BSP.ents directly.
+        """
         warnings.warn('Use BSP.ents directly.', DeprecationWarning, stacklevel=2)
         return self._lmp_read_ents(self.get_lump(BSP_LUMPS.ENTITIES))
 
