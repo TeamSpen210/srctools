@@ -356,23 +356,35 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callab
     return finder
 
 
-def _find_or_extend(item_list: List[T], items: List[T]) -> int:
-    """Find a small list inside the larger list, adding it if required.
+def _find_or_extend(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[List[T]], int]:
+    """Create a function for positioning a sublist inside the larger list, adding it if required.
+
+    This is used to build up structure arrays where othe lumps access subsections of it.
     """
-    # TODO: Upgrade to Boyer-Moore?
-    if items:
-        for i, first in enumerate(item_list):
-            if items[0] == first:
-                if item_list[i:i+len(items)] == items:
-                    return i
-        else:
-            # Not found, append to the end.
-            i = len(item_list)
-            item_list.extend(items)
-            return i
-    else:
-        # Zero, just index anywhere.
-        return 0
+    # We expect repeated items to be fairly uncommon, so we can skip to all
+    # occurances of the first index to speed up the search.
+    by_index: dict[S, List[int]] = {}
+    for k, item in enumerate(item_list):
+        by_index.setdefault(key_func(item), []).append(k)
+
+    def finder(items: List[T]) -> int:
+        """Find or append the items."""
+        if not items:
+            # Array is empty, so the index doesn't matter, it'll never be
+            # dereferenced.
+            return 0
+        for i in by_index.get(key_func(items[0]), ()):
+            if item_list[i:i + len(items)] == items:
+                return i
+        # Not found, append to the end.
+        i = len(item_list)
+        item_list.extend(items)
+        # Update the index.
+        for j, item2 in enumerate(items):
+            by_index.setdefault(key_func(item2), []).append(i + j)
+        return i
+
+    return finder
 
 
 class ParsedLump(Generic[T]):
@@ -914,6 +926,10 @@ class BSP:
         face_buf = BytesIO()
         add_texinfo = _find_or_insert(self.texinfo)
         add_plane = _find_or_insert(self.planes)
+        add_edges = _find_or_extend(
+            self.surfedges,
+            lambda edges: edges[0].as_tuple() + edges[1].as_tuple(),
+        )
         for face in faces:
             if face.orig_face is not None and get_orig_face is not None:
                 orig_ind = get_orig_face(face.orig_face)
@@ -924,16 +940,13 @@ class BSP:
             else:
                 texinfo = -1
 
-            # See if we can find the edge list in surfedges already.
-            edge_ind = _find_or_extend(self.surfedges, face.edges)
-
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
                 '<H??i4h4sif5iHHI',
                 add_plane(face.plane),
                 face.same_dir_as_plane,
                 face.on_node,
-                edge_ind, len(face.edges),
+                add_edges(face.edges), len(face.edges),
                 texinfo,
                 face._dispinfo_ind,
                 face.surf_fog_volume_id,
@@ -971,12 +984,16 @@ class BSP:
         sides: list[BrushSide] = []
         add_plane = _find_or_insert(self.planes)
         add_texinfo = _find_or_insert(self.texinfo)
+        add_sides = _find_or_extend(sides)
 
         brush_buf = BytesIO()
         sides_buf = BytesIO()
         for brush in brushes:
-            off = _find_or_extend(sides, brush.sides)
-            brush_buf.write(struct.pack('<iii', off, len(brush.sides), brush.contents.value))
+            brush_buf.write(struct.pack(
+                '<iii',
+                add_sides(brush.sides), len(brush.sides),
+                brush.contents.value,
+            ))
         for side in sides:
             sides_buf.write(struct.pack(
                 '<Hhhh',
@@ -1061,6 +1078,7 @@ class BSP:
         add_node = _find_or_insert(nodes)
         add_plane = _find_or_insert(self.planes)
         add_leaf = _find_or_insert(self.visleafs)
+        add_faces = _find_or_extend(self.faces)
 
         buf = BytesIO()
 
@@ -1075,13 +1093,12 @@ class BSP:
             else:
                 neg_ind = add_node(node.child_neg)
 
-            face_ind = _find_or_extend(self.faces, node.faces)
             buf.write(struct.pack(
                 '<iii6hHHh2x',
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
-                face_ind, len(node.faces), node.area_ind,
+                add_faces(node.faces), len(node.faces), node.area_ind,
             ))
 
         return buf.getvalue()
@@ -1093,6 +1110,8 @@ class BSP:
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
+        add_faces = _find_or_extend(leaf_faces)
+        add_brushes = _find_or_extend(leaf_brushes)
 
         buf = BytesIO()
 
@@ -1102,11 +1121,9 @@ class BSP:
             leaf_fmt += '26x'
 
         for leaf in visleafs:
-            face_ind = _find_or_extend(leaf_faces,
-                                       [add_face(face) for face in leaf.faces])
-            brush_ind = _find_or_extend(leaf_brushes,
-                                        [add_brush(brush) for brush in
-                                         leaf.brushes])
+            face_ind = add_faces([add_face(face) for face in leaf.faces])
+            brush_ind = add_brushes([add_brush(brush) for brush in leaf.brushes])
+
             buf.write(struct.pack(
                 leaf_fmt,
                 leaf.contents.value, leaf.cluster_id,
@@ -1249,10 +1266,9 @@ class BSP:
     def _lmp_write_bmodels(self, bmodels: List['BModel']) -> bytes:
         """Write the brush model definitions."""
         add_node = _find_or_insert(self.nodes)
+        add_faces = _find_or_extend(self.faces)
         buf = BytesIO()
         for model in bmodels:
-            # See if we can find the edge list in surfedges already.
-            face_ind = _find_or_extend(self.faces, model.faces)
             # noinspection PyProtectedMember
             buf.write(struct.pack(
                 '<9fiii',
@@ -1260,7 +1276,7 @@ class BSP:
                 model.maxes.x, model.maxes.y, model.maxes.z,
                 model.origin.x, model.origin.y, model.origin.z,
                 add_node(model.node),
-                face_ind, len(model.faces),
+                add_faces(model.faces), len(model.faces),
             ))
         return buf.getvalue()
 
