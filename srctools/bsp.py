@@ -1062,7 +1062,39 @@ class BSP:
 
     def _lmp_write_visleafs(self, visleafs: List['VisLeaf']) -> bytes:
         """Reconstruct the leafs of the visleaf/bsp tree."""
-        raise NotImplementedError
+        leaf_faces: list[int] = []
+        leaf_brushes: list[int] = []
+
+        add_face = _find_or_insert(self.faces)
+        add_brush = _find_or_insert(self.brushes)
+
+        buf = BytesIO()
+
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data. TODO: handle this?
+        if self.version.value <= 19:
+            leaf_fmt += '26x'
+
+        for leaf in visleafs:
+            face_ind = _find_or_extend(leaf_faces,
+                                       [add_face(face) for face in leaf.faces])
+            brush_ind = _find_or_extend(leaf_brushes,
+                                        [add_brush(brush) for brush in
+                                         leaf.brushes])
+            buf.write(struct.pack(
+                leaf_fmt,
+                leaf.contents.value, leaf.cluster_id,
+                (leaf.area << 7 | leaf.flags.value),
+                int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                face_ind, len(leaf.faces),
+                brush_ind, len(leaf.brushes),
+                leaf.water_id,
+            ))
+
+        self.lumps[BSP_LUMPS.LEAFFACES].data = struct.pack(f'<{len(leaf_faces)}H', *leaf_faces)
+        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = struct.pack(f'<{len(leaf_brushes)}H', *leaf_brushes)
+        return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
