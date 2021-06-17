@@ -1028,6 +1028,24 @@ cdef class Vec:
         else:
             raise KeyError(f'Invalid axis {axis!r}' '!')
 
+    def in_bbox(self, a, b):
+        """Check if this point is inside the specified bounding box."""
+        cdef vec_t avec, bvec
+        conv_vec(&avec, a, scalar=False)
+        conv_vec(&bvec, b, scalar=False)
+        if avec.x > bvec.x:
+            avec.x, bvec.x = bvec.x, avec.x
+        if avec.y > bvec.y:
+            avec.y, bvec.y = bvec.y, avec.y
+        if avec.z > bvec.z:
+            avec.z, bvec.z = bvec.z, avec.z
+
+        return (
+            avec.x <= self.val.x <= bvec.x and
+            avec.y <= self.val.y <= bvec.y and
+            avec.z <= self.val.z <= bvec.z
+        )
+
     def as_tuple(self) -> 'Tuple[float, float, float]':
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the
