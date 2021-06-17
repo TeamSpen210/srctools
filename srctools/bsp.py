@@ -198,7 +198,8 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.CUBEMAPS,
 
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, and faces
-    BSP_LUMPS.NODES,  # also visleafs, references brushes, faces, planes
+    BSP_LUMPS.NODES,  # References planes, faces, visleafs.
+    BSP_LUMPS.LEAFS,  # References brushes, faces
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
 
@@ -474,7 +475,8 @@ class BSP:
 
     bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
     brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES, BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
+    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
+    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -785,7 +787,12 @@ class BSP:
 
     def _lmp_write_planes(self, planes: List['Plane']) -> bytes:
         return b''.join([
-            struct.pack('<ffffi', plane.pos.x, plane.pos.y, plane.pos.z, plane.dist, plane.type)
+            struct.pack(
+                '<ffffi',
+                plane.normal.x, plane.normal.y, plane.normal.z,
+                plane.dist,
+                plane.type.value,
+            )
             for plane in planes
         ])
 
@@ -918,7 +925,7 @@ class BSP:
                 texinfo = -1
 
             # See if we can find the edge list in surfedges already.
-            edge_ind = _find_or_extend(face.edges, self.surfedges)
+            edge_ind = _find_or_extend(self.surfedges, face.edges)
 
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
@@ -981,12 +988,8 @@ class BSP:
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
-    def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
-        """Parse the main visleaf/bsp trees."""
-        # First parse everything, then link up the objects.
-        nodes: List[Tuple[VisTree, int, int]] = []
-        leafs: List[VisLeaf] = []
-
+    def _lmp_read_visleafs(self, data: bytes) -> List['VisLeaf']:
+        """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
         # starmap() to unpack the 1-tuple struct result, then index with that.
         leaf_brushes = list(itertools.starmap(
@@ -998,6 +1001,36 @@ class BSP:
             struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
 
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data.
+        if self.version.value <= 19:
+            leaf_fmt += '26x'
+
+        for (
+            contents,
+            cluster_ind, area_and_flags,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, num_faces,
+            first_brush, num_brushes,
+            water_ind
+        ) in struct.iter_unpack(leaf_fmt, data):
+            area = area_and_flags >> 7
+            flags = area_and_flags & 0b1111111
+            yield VisLeaf(
+                BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+                leaf_faces[first_face:first_face+num_faces],
+                leaf_brushes[first_brush:first_brush+num_brushes],
+                water_ind,
+            )
+
+    def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
+        """Parse the main visleaf/bsp trees."""
+        # First parse all the nodes, then link them up.
+        nodes: List[Tuple[VisTree, int, int]] = []
+
         for (
             plane_ind, neg_ind, pos_ind,
             min_x, min_y, min_z,
@@ -1008,48 +1041,28 @@ class BSP:
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
+                self.faces[first_face:first_face+face_count],
+                area_ind,
             ), neg_ind, pos_ind))
-
-        leaf_fmt = '<ihh6h4Hh2x'
-        # Some extra ambient light data.
-        if self.version.value <= 19:
-            leaf_fmt += '26x'
-
-        for i, (
-            contents,
-            cluster_ind, area_and_flags,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, num_faces,
-            first_brush, num_brushes,
-            water_ind
-        ) in enumerate(
-            struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
-            area = area_and_flags >> 7
-            flags = area_and_flags & 0b1111111
-            leafs.append(VisLeaf(
-                i, area, VisLeafFlags(flags),
-                Vec(min_x, min_y, min_z),
-                Vec(max_x, max_y, max_z),
-                leaf_faces[first_face:first_face+num_faces],
-                leaf_brushes[first_brush:first_brush+num_brushes],
-                water_ind,
-            ))
 
         for node, neg_ind, pos_ind in nodes:
             if neg_ind < 0:
-                node.child_neg = leafs[-1 - neg_ind]
+                node.child_neg = self.visleafs[-1 - neg_ind]
             else:
                 node.child_neg = nodes[neg_ind][0]
             if pos_ind < 0:
-                node.child_pos = leafs[-1 - pos_ind]
+                node.child_pos = self.visleafs[-1 - pos_ind]
             else:
                 node.child_pos = nodes[pos_ind][0]
         return [node for node, i, j in nodes]
 
-    def _lmp_write_nodes(self, faces: List['VisTree']) -> bytes:
+    def _lmp_write_nodes(self, nodes: List['VisTree']) -> bytes:
         """Reconstruct the visleaf/bsp tree data."""
-        raise NotImplementedError   # TODO!!
+        raise NotImplementedError
+
+    def _lmp_write_visleafs(self, visleafs: List['VisLeaf']) -> bytes:
+        """Reconstruct the leafs of the visleaf/bsp tree."""
+        raise NotImplementedError
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
@@ -1995,7 +2008,8 @@ class VisLeaf:
 
     The bounds is defined implicitly by the parent node planes.
     """
-    id: int
+    contents: BrushContents
+    cluster_id: int
     area: int
     flags: VisLeafFlags
     mins: Vec
@@ -2019,6 +2033,8 @@ class VisTree:
     plane: Plane
     mins: Vec
     maxes: Vec
+    faces: List[Face]
+    area_ind: int
     # Initialised empty, set during loading.
     child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
     child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
