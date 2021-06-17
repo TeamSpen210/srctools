@@ -33,6 +33,8 @@ __all__ = [
     'TexData', 'TexInfo',
     'Cubemap', 'Overlay',
     'VisTree', 'VisLeaf',
+    'BModel', 'Plane', 'PlaneType',
+    'Brush', 'BrushSide', 'BrushContents',
 ]
 
 
@@ -189,20 +191,22 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 
 # When remaking the lumps from trees of objects,
 # they need to be done in the correct order so stuff referring
-# to other trees can ad their data.
+# to other trees can add their data.
 LUMP_REBUILD_ORDER = [
-    # No dependencies.
     BSP_LUMPS.PAKFILE,
-    BSP_LUMPS.ENTITIES,
+    BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.CUBEMAPS,
 
-    BSP_LUMPS.MODELS,
-    BSP_LUMPS.NODES,
-    BSP_LUMPS.FACES,
-    BSP_LUMPS.FACES_HDR,
-    BSP_LUMPS.ORIGINALFACES,
+    BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, and faces
+    BSP_LUMPS.NODES,  # also visleafs, references brushes, faces, planes
 
-    BSP_LUMPS.SURFEDGES,
+    BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
+
+    BSP_LUMPS.FACES,  # References their original face, surfedges, texinfo.
+    BSP_LUMPS.FACES_HDR,  # References their original face, surfedges, texinfo.
+    BSP_LUMPS.ORIGINALFACES,  # references surfedges & texinfo.
+
+    BSP_LUMPS.SURFEDGES,  # surfedges references vertexes.
     BSP_LUMPS.PLANES,
     BSP_LUMPS.VERTEXES,
 
@@ -242,6 +246,45 @@ class SurfFlags(Flag):
     NO_DECALS = 0x2000  # Rejects decals.
     NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
     HITBOX = 0x8000  # 'Part of a hitbox'
+
+
+class BrushContents(Flag):
+    """The various CONTENTS_ flags, indicating different attributes for an entire brush."""
+    EMPTY = 0
+    SOLID = 0x1  # Player camera is not valid inside here.
+    WINDOW = 0x2  # Translucent glass.
+    AUX = 0x4
+    GRATE = 0x8  # Grating, bullets/LOS pass, objects do not.
+    SLIME = 0x10  # Slime-style liquid.
+    WATER = 0x20  # Is a water brush
+    MIST = 0x40
+    OPAQUE = 0x80  # Blocks LOS
+    TEST_FOG_VOLUME = 0x100  # May be non-solid, but cannot be seen through.
+    TEAM1 = 0x800  # Special team-only clips.
+    TEAM2 = 0x1000  # Special team-only clips.
+    IGNORE_NODRAW_OPAQUE = 0x2000  # ignore CONTENTS_OPAQUE on surfaces that have SURF_NODRAW
+    MOVABLE = 0x4000
+
+    AREAPORTAL = 0x8000  # Is an areaportal brush.
+    PLAYER_CLIP = 0x10000  # Is tools/toolsplayerclip.
+    NPC_CLIP = 0x20000  # Is tools/toolsclip.
+    # Specifies water currents, can be mixed.
+    CURRENT_0 = 0x40000
+    CURRENT_90 = 0x80000
+    CURRENT_180 = 0x100000
+    CURRENT_270 = 0x200000
+    CURRENT_UP = 0x400000
+    CURRENT_DOWN = 0x800000
+    ORIGIN = 0x1000000  # tools/toolsorigin brush, used to set origin.
+    NPC = 0x2000000  # Shouldn't be on brushes, for NPCs.
+    DEBRIS = 0x4000000
+    DETAIL = 0x8000000  # Is func_detail.
+    TRANSLUCENT = 0x10000000  # Brush is $translucent/$alphatest/$alpha/etc
+    LADDER = 0x20000000
+    HITBOX = 0x40000000
+
+    UNUSED_1 = 0x200
+    UNUSED_2 = 0x400
 
 
 class StaticPropFlags(Flag):
@@ -414,7 +457,8 @@ class BSP:
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
 
     bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
-    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES, BSP_LUMPS.LEAFS)
+    brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
+    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES, BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
@@ -890,10 +934,53 @@ class BSP:
     _lmp_read_hdr_faces = _lmp_read_faces
     _lmp_write_hdr_faces = _lmp_write_faces
 
+    def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
+        """Parse brush definitions, along with the sides."""
+        sides = [
+            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bevel)
+            for (plane_num, texinfo, dispinfo, bevel)
+            in struct.iter_unpack('<Hhhh', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+        ]
+        for first_side, side_count, contents in struct.iter_unpack('<iii', data):
+            yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
+
+    def _lmp_write_brushes(self, brushes: List['Brush']) -> bytes:
+        sides: list[BrushSide] = []
+        add_plane = _find_or_insert(self.planes)
+        add_texinfo = _find_or_insert(self.texinfo)
+
+        brush_buf = BytesIO()
+        sides_buf = BytesIO()
+        for brush in brushes:
+            off = _find_or_extend(sides, brush.sides)
+            brush_buf.write(struct.pack('<iii', off, len(brush.sides), brush.contents.value))
+        for side in sides:
+            sides_buf.write(struct.pack(
+                '<Hhhh',
+                add_plane(side.plane),
+                add_texinfo(side.texinfo),
+                side._dispinfo,
+                1 if side.is_bevel_plane else 0,
+            ))
+        self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
+        return brush_buf.getvalue()
+
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
+        """Parse the main visleaf/bsp trees."""
         # First parse everything, then link up the objects.
         nodes: List[Tuple[VisTree, int, int]] = []
         leafs: List[VisLeaf] = []
+
+        # There's an indirection through these index arrays.
+        # starmap() to unpack the 1-tuple struct result, then index with that.
+        leaf_brushes = list(itertools.starmap(
+            self.brushes.__getitem__,
+            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
+        ))
+        leaf_faces = list(itertools.starmap(
+            self.faces.__getitem__,
+            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
+        ))
 
         for (
             plane_ind, neg_ind, pos_ind,
@@ -928,8 +1015,8 @@ class BSP:
                 i, area, flags,
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
-                self.faces[first_face:first_face+num_faces],
-                first_brush, num_brushes,
+                leaf_faces[first_face:first_face+num_faces],
+                leaf_brushes[first_brush:first_brush+num_brushes],
                 water_ind,
             ))
 
@@ -945,7 +1032,8 @@ class BSP:
         return [node for node, i, j in nodes]
 
     def _lmp_write_nodes(self, faces: List['VisTree']) -> bytes:
-        raise NotImplementedError
+        """Reconstruct the visleaf/bsp tree data."""
+        raise NotImplementedError   # TODO!!
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
@@ -1165,24 +1253,16 @@ class BSP:
 
     def _lmp_write_overlays(self, overlays: List['Overlay']) -> bytes:
         """Write out all overlays."""
-        texinfos = {
-            id(info): i
-            for i, info in enumerate(self.texinfo)
-        }
+        add_texinfo = _find_or_insert(self.texinfo)
         buf = BytesIO()
         for over in overlays:
-            try:
-                info_ind = texinfos[id(over.texture)]
-            except KeyError:
-                info_ind = texinfos[id(over.texture)] = len(self.texinfo)
-                self.texinfo.append(over.texture)
             face_cnt = len(over.faces)
             if face_cnt > 64:
                 raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
             buf.write(struct.pack(
                 '<ihH',
                 over.id,
-                info_ind,
+                add_texinfo(over.texture),
                 (over.render_order << 14 | face_cnt),
             ))
             # Build the array, then zero fill the remaining space.
@@ -1874,6 +1954,25 @@ class BModel:
     faces: List[Face]
 
 
+@attr.define(eq=False)
+class BrushSide:
+    """A side of the original brush geometry which the map is constructed from.
+
+    This matches the original VMF.
+    """
+    plane: Plane
+    texinfo: TexInfo
+    _dispinfo: int  # TODO
+    is_bevel_plane: bool
+
+
+@attr.define(eq=False)
+class Brush:
+    """A brush definition."""
+    contents: BrushContents
+    sides: List[BrushSide]
+
+
 @attr.define
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
@@ -1882,23 +1981,16 @@ class VisLeaf:
     """
     id: int
     area: int
-    flags: int
+    flags: int  # TODO: Enum?
     mins: Vec
     maxes: Vec
     faces: List[Face]
-    first_brush: int
-    brush_count: int
+    brushes: List[Brush]
     water_id: int
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
         """Test the given point against us, returning ourself or None."""
-        if (
-            point.x < self.mins.x or point.x > self.maxes.x or
-            point.y < self.mins.y or point.y > self.maxes.y or
-            point.z < self.mins.z or point.z > self.maxes.z
-        ):
-            return None
-        return self
+        return self if point.in_bbox(self.mins, self.maxes) else None
 
 
 @attr.define
@@ -1930,11 +2022,7 @@ class VisTree:
     def test_point(self, point: Vec) -> Optional[VisLeaf]:
         """Test the given point against us, returning the hit leaf or None."""
         # Quick early out.
-        if (
-            point.x < self.mins.x or point.x > self.maxes.x or
-            point.y < self.mins.y or point.y > self.maxes.y or
-            point.z < self.mins.z or point.z > self.maxes.z
-        ):
+        if not point.in_bbox(self.mins, self.maxes):
             return None
         dist = self.plane.dist - point.dot(self.plane.normal)
         if dist > -1e-6:
