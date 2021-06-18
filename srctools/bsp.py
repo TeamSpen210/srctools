@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable,
 )
 from io import BytesIO
 from enum import Enum, Flag
@@ -44,7 +44,6 @@ HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
-S = TypeVar('S')
 Edge = Tuple[Vec, Vec]
 
 
@@ -337,7 +336,7 @@ def identity(x: T) -> T:
     return x
 
 
-def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[T], int]:
+def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
     This is used to build up the structure arrays which other lumps refer
@@ -347,7 +346,7 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callab
     The key function is used to match existing items.
 
     """
-    by_index: dict[S, int] = {key_func(item): i for i, item in enumerate(item_list)}
+    by_index: dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
 
     def finder(item: T) -> int:
         """Find or append the item."""
@@ -361,14 +360,14 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callab
     return finder
 
 
-def _find_or_extend(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[List[T]], int]:
+def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[List[T]], int]:
     """Create a function for positioning a sublist inside the larger list, adding it if required.
 
     This is used to build up structure arrays where othe lumps access subsections of it.
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
     # occurrences of the first index to speed up the search.
-    by_index: dict[S, List[int]] = {}
+    by_index: dict[Hashable, List[int]] = {}
     for k, item in enumerate(item_list):
         by_index.setdefault(key_func(item), []).append(k)
 
