@@ -85,9 +85,29 @@ class VERSIONS(Enum):
 
     DESOLATION = 42
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
         return self.value == other
+
+    def __ne__(self, other: object) -> bool:
+        """Versions are equal to their integer value."""
+        return self.value != other
+
+    def __lt__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value < other
+
+    def __gt__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value > other
+
+    def __le__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value <= other
+
+    def __ge__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value >= other
 
 
 class BSP_LUMPS(Enum):
@@ -463,14 +483,16 @@ class BSP:
     # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
     # that can't bind here.
     _save_funcs: ClassVar[Dict[BSP_LUMPS, Callable[['BSP', Any], bytes]]] = {}
+    version: Union[VERSIONS, int]
+
     def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps = {}  # type: dict[BSP_LUMPS, Lump]
-        self._parsed_lumps = {}  # type: dict[BSP_LUMPS, Any]
-        self.game_lumps = {}  # type: dict[bytes, GameLump]
+        self.lumps: dict[BSP_LUMPS, Lump] = {}
+        self._parsed_lumps: dict[BSP_LUMPS, Any] = {}
+        self.game_lumps: dict[bytes, GameLump] = {}
         self.header_off = 0
-        self.version = version  # type: Optional[Union[VERSIONS, int]]
+        self.version = version  # type: ignore  # read() will make it non-none.
         # Tracks if the ent lump is using the new x1D output separators,
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
@@ -590,7 +612,9 @@ class BSP:
             # data will be.
             defer = DeferredWrites(file)
 
-            if isinstance(self.version, VERSIONS):
+            if self.version is None:
+                raise ValueError('No version specified for BSP!')
+            elif isinstance(self.version, VERSIONS):
                 version = self.version.value
             else:
                 version = self.version
@@ -799,7 +823,7 @@ class BSP:
         return new_texinfo
 
     # Lump-specific commands:
-    def _lmp_read_planes(self, data: bytes) -> List['Plane']:
+    def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
         for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
             yield Plane(Vec(x, y, z), dist, PlaneType(typ))
 
@@ -1012,7 +1036,7 @@ class BSP:
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
-    def _lmp_read_visleafs(self, data: bytes) -> List['VisLeaf']:
+    def _lmp_read_visleafs(self, data: bytes) -> Iterator['VisLeaf']:
         """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
         # starmap() to unpack the 1-tuple struct result, then index with that.
@@ -1027,7 +1051,7 @@ class BSP:
 
         leaf_fmt = '<ihh6h4Hh2x'
         # Some extra ambient light data.
-        if self.version.value <= 19:
+        if self.version <= 19:
             leaf_fmt += '26x'
 
         for (
@@ -1124,7 +1148,7 @@ class BSP:
 
         leaf_fmt = '<ihh6h4Hh2x'
         # Some extra ambient light data. TODO: handle this?
-        if self.version.value <= 19:
+        if self.version <= 19:
             leaf_fmt += '26x'
 
         for leaf in visleafs:
@@ -1300,6 +1324,8 @@ class BSP:
         file.close()
         if isinstance(buf, BytesIO):
             return buf.getvalue()
+        elif buf is None:
+            raise ValueError('Zipfile has no buffer?')
         else:
             buf.seek(0)
             return buf.read()
