@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict
+    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set,
 )
 from io import BytesIO
 from enum import Enum, Flag
@@ -1563,7 +1563,10 @@ class BSP:
         model_dict = list(self._read_static_props_models(static_lump))
 
         [visleaf_count] = struct_read('<i', static_lump)
-        visleaf_list = list(struct_read('H' * visleaf_count, static_lump))
+        visleaf_list = list(map(
+            self.visleafs.__getitem__,
+            struct_read('H' * visleaf_count, static_lump),
+        ))
 
         [prop_count] = struct_read('<i', static_lump)
 
@@ -1585,7 +1588,7 @@ class BSP:
 
             model_name = model_dict[model_ind]
 
-            visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
+            visleafs = set(visleaf_list[first_leaf:first_leaf + leaf_count])
             lighting_origin = Vec(struct_read('<fff', static_lump))
 
             if version >= 5:
@@ -1669,22 +1672,15 @@ class BSP:
 
         # First generate the visleaf and model-names block.
         # Unfortunately it seems reusing visleaf parts isn't possible.
-        leaf_array = []  # type: List[int]
-        leaf_offsets = []  # type: List[int]
+        leaf_array: list[int] = []
+        model_list: list[str] = []
+        add_model = _find_or_insert(model_list, identity)
+        add_leaf = _find_or_insert(self.visleafs)
 
-        models = set()
-
+        indexes: list[tuple[int, int]] = []
         for prop in props:
-            leaf_offsets.append(len(leaf_array))
-            leaf_array.extend(prop.visleafs)
-            models.add(prop.model)
-
-        # Lock down the order of the names.
-        model_list = list(models)
-        model_ind = {
-            mdl: i
-            for i, mdl in enumerate(model_list)
-        }
+            indexes.append((len(leaf_array), add_model(prop.model)))
+            leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
         game_lump = self.game_lumps[b'sprp']
 
@@ -1698,7 +1694,7 @@ class BSP:
         prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
-        for leaf_off, prop in zip(leaf_offsets, props):
+        for (leaf_off, model_ind), prop in zip(indexes, props):
             prop_lump.write(struct.pack(
                 '<6fH',
                 prop.origin.x,
@@ -1707,7 +1703,7 @@ class BSP:
                 prop.angles.pitch,
                 prop.angles.yaw,
                 prop.angles.roll,
-                model_ind[prop.model],
+                model_ind,
             ))
 
             prop_lump.write(struct.pack(
@@ -1989,7 +1985,7 @@ class StaticProp:
     origin: Vec
     angles: Angle = attr.ib(factory=Angle)
     scaling: float = 1.0
-    visleafs: List[int] = attr.ib(factory=list)
+    visleafs: Set['VisLeaf'] = attr.ib(factory=set)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
@@ -2090,7 +2086,7 @@ class Brush:
     sides: List[BrushSide]
 
 
-@attr.define
+@attr.define(eq=False)
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
@@ -2111,7 +2107,7 @@ class VisLeaf:
         return self if point.in_bbox(self.mins, self.maxes) else None
 
 
-@attr.define
+@attr.define(eq=False)
 class VisTree:
     """A tree node in the visleaf/BSP data.
 
