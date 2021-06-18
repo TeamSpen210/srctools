@@ -332,6 +332,11 @@ class VisLeafFlags(Flag):
     _BIT_7 = 1 << 6
 
 
+def identity(x: T) -> T:
+    """Identity function."""
+    return x
+
+
 def _find_or_insert(item_list: List[T], key_func: Callable[[T], S]=id) -> Callable[[T], int]:
     """Create a function for inserting items in a list if not found.
 
@@ -1113,8 +1118,8 @@ class BSP:
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
-        add_faces = _find_or_extend(leaf_faces)
-        add_brushes = _find_or_extend(leaf_brushes)
+        add_faces = _find_or_extend(leaf_faces, identity)
+        add_brushes = _find_or_extend(leaf_brushes, identity)
 
         buf = BytesIO()
 
