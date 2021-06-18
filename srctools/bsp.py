@@ -974,8 +974,9 @@ class BSP:
 
     def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
         """Parse brush definitions, along with the sides."""
+        # The bevel param should be a bool, but randomly has other bits set?
         sides = [
-            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bevel)
+            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
             for (plane_num, texinfo, dispinfo, bevel)
             in struct.iter_unpack('<Hhhh', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
         ]
@@ -1002,7 +1003,7 @@ class BSP:
                 add_plane(side.plane),
                 add_texinfo(side.texinfo),
                 side._dispinfo,
-                1 if side.is_bevel_plane else 0,
+                side.is_bevel_plane | side._unknown_bevel_bits,
             ))
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
@@ -2073,6 +2074,8 @@ class BrushSide:
     texinfo: TexInfo
     _dispinfo: int  # TODO
     is_bevel_plane: bool
+    # The bevel member should be bool, but it has other bits set randomly.
+    _unknown_bevel_bits: int = 0
 
 
 @attr.define(eq=False)
