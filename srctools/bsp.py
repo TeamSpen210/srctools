@@ -46,6 +46,9 @@ HEADER_2 = '<i'  # Header section after the lumps.
 T = TypeVar('T')
 Edge = Tuple[Vec, Vec]
 
+# Game lump IDs
+LMP_ID_STATIC_PROPS = b'sprp'
+
 
 class VERSIONS(Enum):
     """The BSP version numbers for various games."""
@@ -215,6 +218,7 @@ LUMP_REBUILD_ORDER = [
     BSP_LUMPS.PAKFILE,
     BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.CUBEMAPS,
+    LMP_ID_STATIC_PROPS,  # References visleafs.
 
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, and faces
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
@@ -417,9 +421,11 @@ class ParsedLump(Generic[T]):
     When accessed, the corresponding lump is parsed into an object tree.
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
+
+    If the lump name is bytes, it's a game lump identifier.
     """
 
-    def __init__(self, lump: BSP_LUMPS, *extra: BSP_LUMPS) -> None:
+    def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
         self.lump = lump
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
@@ -454,26 +460,35 @@ class ParsedLump(Generic[T]):
             pass
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
-        
-        data = instance.lumps[self.lump].data
-        result = self._read(instance, data)
+        if isinstance(self.lump, bytes):  # Game lump
+            gm_lump = instance.game_lumps[self.lump]
+            result = self._read(instance, gm_lump.version, gm_lump.data)
+        else:
+            data = instance.lumps[self.lump].data
+            result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
             result = list(result)  # type: ignore
+
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
-            instance.lumps[lump].data = b''
+            if isinstance(lump, bytes):
+                instance.game_lumps[lump].data = b''
+            else:
+                instance.lumps[lump].data = b''
         return result
 
     def __set__(self, instance: Optional['BSP'], value: T) -> None:
         """Discard lump data, then store."""
-
         if instance is None:
             raise TypeError('Cannot assign directly to lump descriptor!')
         if self._check is not None:
             # Allow raising if an invalid value.
             self._check(instance, value)
         for lump in self.to_clear:
-            instance.lumps[lump].data = b''
+            if isinstance(lump, bytes):
+                instance.game_lumps[lump].data = b''
+            else:
+                instance.lumps[lump].data = b''
         instance._parsed_lumps[self.lump] = value  # noqa
 
 
@@ -483,7 +498,7 @@ class BSP:
     # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
     # that can't bind here.
     _save_funcs: ClassVar[Dict[
-        BSP_LUMPS,
+        Union[bytes, BSP_LUMPS],
         Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
     ]] = {}
     version: Union[VERSIONS, int]
@@ -492,7 +507,7 @@ class BSP:
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: dict[BSP_LUMPS, Lump] = {}
-        self._parsed_lumps: dict[BSP_LUMPS, Any] = {}
+        self._parsed_lumps: dict[Union[bytes, BSP_LUMPS], Any] = {}
         self.game_lumps: dict[bytes, GameLump] = {}
         self.header_off = 0
         self.version = version  # type: ignore  # read() will make it non-none.
@@ -525,6 +540,9 @@ class BSP:
     faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
     orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
     hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
+
+    # Game lumps
+    props: ParsedLump[List['StaticProp']] = ParsedLump(b'sprp')
 
     def read(self) -> None:
         """Load all data."""
@@ -613,10 +631,14 @@ class BSP:
                     for chunk in lump_result:
                         buf.write(chunk)
                     lump_result = buf.getvalue()
-                self.lumps[lump_name].data = lump_result
+                if isinstance(lump_name, bytes):
+                    self.game_lumps[lump_name].data = lump_result
+                else:
+                    self.lumps[lump_name].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
+        file: BinaryIO
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
             defer = DeferredWrites(file)
@@ -1577,20 +1599,30 @@ class BSP:
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
     def static_props(self) -> Iterator['StaticProp']:
-        """Read in the Static Props lump."""
-        # The version of the static prop format - different features.
-        try:
-            version = self.game_lumps[b'sprp'].version
-        except KeyError:
-            raise ValueError('No static prop lump!') from None
+        """Read in the Static Props lump.
 
+        Deprecated, use bsp.props.
+        """
+        warnings.warn('Access BSP.props instead', DeprecationWarning, stacklevel=2)
+        lump = self.game_lumps[LMP_ID_STATIC_PROPS]
+        return self._lmp_read_st_props(lump.version, lump.data)
+
+    def write_static_props(self, props: List['StaticProp']) -> None:
+        """Remake the static prop lump.
+
+        Deprecated, bsp.props is stored and resaved.
+        """
+        warnings.warn('BSP.props is automatically saved.', DeprecationWarning, stacklevel=2)
+
+    def _lmp_read_props(self, version: int, data: bytes) -> Iterator['StaticProp']:
+        # The version of the static prop format - different features.
         if version > 11:
             raise ValueError('Unknown version ({})!'.format(version))
         if version < 4:
             # Predates HL2...
             raise ValueError('Static prop version {} is too old!')
 
-        static_lump = BytesIO(self.game_lumps[b'sprp'].data)
+        static_lump = BytesIO(data)
 
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
@@ -1602,6 +1634,8 @@ class BSP:
         ))
 
         [prop_count] = struct_read('<i', static_lump)
+
+        prop_length = (len(data) - static_lump.tell()) / prop_count
 
         for i in range(prop_count):
             origin = Vec(struct_read('fff', static_lump))
@@ -1700,9 +1734,7 @@ class BSP:
                 disable_on_xbox,
             )
 
-    def write_static_props(self, props: List['StaticProp']) -> None:
-        """Remake the static prop lump."""
-
+    def _lmp_write_props(self, props: List['StaticProp']) -> bytes:
         # First generate the visleaf and model-names block.
         # Unfortunately it seems reusing visleaf parts isn't possible.
         leaf_array: list[int] = []
@@ -1715,7 +1747,7 @@ class BSP:
             indexes.append((len(leaf_array), add_model(prop.model)))
             leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
-        game_lump = self.game_lumps[b'sprp']
+        version = self.game_lumps[LMP_ID_STATIC_PROPS].version
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -1752,17 +1784,17 @@ class BSP:
                 prop.lighting.y,
                 prop.lighting.z,
             ))
-            if game_lump.version >= 5:
+            if version >= 5:
                 prop_lump.write(struct.pack('<f', prop.fade_scale))
 
-            if game_lump.version in (6, 7):
+            if version in (6, 7):
                 prop_lump.write(struct.pack(
                     '<HH',
                     prop.min_dx_level,
                     prop.max_dx_level,
                 ))
 
-            if game_lump.version >= 8:
+            if version >= 8:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     prop.min_cpu_level,
@@ -1771,7 +1803,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if game_lump.version >= 7:
+            if version >= 7:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -1780,18 +1812,18 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if game_lump.version >= 10:
+            if version >= 10:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if game_lump.version >= 11:
+            if version >= 11:
                 # Unknown padding/data, though it's always zero.
 
                 prop_lump.write(struct.pack('<xxxxf', prop.scaling))
-            elif game_lump.version >= 9:
+            elif version >= 9:
                 # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
-        game_lump.data = prop_lump.getvalue()
+        return prop_lump.getvalue()
 
     def vis_tree(self) -> 'VisTree':
         """Parse the visleaf data, and return the root node."""
