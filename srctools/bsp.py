@@ -953,13 +953,16 @@ class BSP:
         If this isn't the orig faces array, get_orig_face should be
         _find_or_insert(self.orig_faces).
         """
+        def edge_key(edges) -> tuple:
+            """Key function to allow hashing the edges tuples."""
+            a, b = edges
+            return (a.x, a.y, a.z, b.x, b.y, b.z)
+
         face_buf = BytesIO()
         add_texinfo = _find_or_insert(self.texinfo)
         add_plane = _find_or_insert(self.planes)
-        add_edges = _find_or_extend(
-            self.surfedges,
-            lambda edges: edges[0].as_tuple() + edges[1].as_tuple(),
-        )
+        add_edges = _find_or_extend(self.surfedges, edge_key)
+
         for face in faces:
             if face.orig_face is not None and get_orig_face is not None:
                 orig_ind = get_orig_face(face.orig_face)
