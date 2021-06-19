@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator,
 )
 from io import BytesIO
 from enum import Enum, Flag
@@ -424,7 +424,7 @@ class ParsedLump(Generic[T]):
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
         # May also be a Generator[X] if T = List[X]
-        self._read: Optional[Callable[[BSP, bytes], T]] = None
+        self._read: Optional[Union[Callable[[BSP, bytes], T], Callable[[BSP, int, bytes], T]]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
@@ -482,7 +482,10 @@ class BSP:
     """A BSP file."""
     # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
     # that can't bind here.
-    _save_funcs: ClassVar[Dict[BSP_LUMPS, Callable[['BSP', Any], bytes]]] = {}
+    _save_funcs: ClassVar[Dict[
+        BSP_LUMPS,
+        Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
+    ]] = {}
     version: Union[VERSIONS, int]
 
     def __init__(self, filename: str, version: VERSIONS=None):
@@ -604,7 +607,13 @@ class BSP:
             except KeyError:
                 pass
             else:
-                self.lumps[lump_name].data = self._save_funcs[lump_name](self, data)
+                lump_result = self._save_funcs[lump_name](self, data)
+                if inspect.isgenerator(lump_result):  # Convenience, yield to accumulate into bytes.
+                    buf = BytesIO()
+                    for chunk in lump_result:
+                        buf.write(chunk)
+                    lump_result = buf.getvalue()
+                self.lumps[lump_name].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
@@ -879,7 +888,9 @@ class BSP:
 
             try:
                 ind = -edge_to_ind[b.x, b.y, b.z, a.x, a.y, a.z]
-                if ind == 0:  # Edge case, -0 = +0
+                if ind == 0:
+                    # Edge case, zero is for the forward order.
+                    # We need to add the edge definition elsewhere.
                     raise KeyError
             except KeyError:
                 pass
@@ -1297,22 +1308,21 @@ class BSP:
                 self.faces[first_face:first_face+num_face],
             )
 
-    def _lmp_write_bmodels(self, bmodels: List['BModel']) -> bytes:
+    def _lmp_write_bmodels(self, bmodels: List['BModel']) -> Iterator[bytes]:
         """Write the brush model definitions."""
         add_node = _find_or_insert(self.nodes)
         add_faces = _find_or_extend(self.faces)
-        buf = BytesIO()
+
         for model in bmodels:
             # noinspection PyProtectedMember
-            buf.write(struct.pack(
+            yield struct.pack(
                 '<9fiii',
                 model.mins.x, model.mins.y, model.mins.z,
                 model.maxes.x, model.maxes.y, model.maxes.z,
                 model.origin.x, model.origin.y, model.origin.z,
                 add_node(model.node),
                 add_faces(model.faces), len(model.faces),
-            ))
-        return buf.getvalue()
+            )
 
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
@@ -1344,18 +1354,16 @@ class BSP:
             for (x, y, z, size) in struct.iter_unpack('<iiii', data)
         ]
 
-    def _lmp_write_cubemaps(self, cubemaps: List['Cubemap']) -> bytes:
+    def _lmp_write_cubemaps(self, cubemaps: List['Cubemap']) -> Iterator[bytes]:
         """Write out the cubemaps lump."""
-        return b''.join([
-            struct.pack(
+        for cube in cubemaps:
+            yield struct.pack(
                 '<iiii',
                 int(round(cube.origin.x)),
                 int(round(cube.origin.y)),
                 int(round(cube.origin.z)),
                 cube.size,
             )
-            for cube in cubemaps
-        ])
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
         """Read the overlays lump."""
@@ -1390,30 +1398,27 @@ class BSP:
                 uv1, uv2, uv3, uv4,
             )
 
-    def _lmp_write_overlays(self, overlays: List['Overlay']) -> bytes:
+    def _lmp_write_overlays(self, overlays: List['Overlay']) -> Iterator[bytes]:
         """Write out all overlays."""
         add_texinfo = _find_or_insert(self.texinfo)
-        buf = BytesIO()
         for over in overlays:
             face_cnt = len(over.faces)
             if face_cnt > 64:
                 raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
-            buf.write(struct.pack(
+            yield struct.pack(
                 '<ihH',
                 over.id,
                 add_texinfo(over.texture),
                 (over.render_order << 14 | face_cnt),
-            ))
+            )
             # Build the array, then zero fill the remaining space.
-            buf.write(struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces))
-            buf.write(struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max))
-            buf.write(struct.pack(
+            yield struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces)
+            yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
+            yield struct.pack(
                 '<18f',
                 *over.uv1, *over.uv2, *over.uv3, *over.uv4,
                 *over.origin, *over.normal,
-            ))
-
-        return buf.getvalue()
+            )
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
