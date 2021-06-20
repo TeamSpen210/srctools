@@ -345,7 +345,7 @@ class VisLeafFlags(Flag):
     SKY_3D = 0x01  # The 3D skybox is visible from here.
     SKY_2D = 0x04  # The 2D skybox is visible from here.
     RADIAL = 0x02  # Has culled portals, due to far-z fog limits.
-    HAS_DETAIL_OBJECTS = 0x08  # Contains detail props.
+    HAS_DETAIL_OBJECTS = 0x08  # Contains detail props - ingame only, not set in BSP.
 
     # Undocumented flags, still in maps though?
     # Looks like uninitialised members.
@@ -527,7 +527,7 @@ class BSP:
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
     texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
-    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS)
+    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
 
     bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
     brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
@@ -1389,13 +1389,22 @@ class BSP:
 
     def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
         """Read the overlays lump."""
-        for block in struct.iter_unpack(
-            '<ihH'  # id, texinfo, face-and-render-order
-            '64i'  # face array.
-            '4f'  # UV min/max
-            '18f',  # 4 handle points, origin, normal
-            data,
+        # Use zip longest, so we handle cases where these newer auxiliary lumps
+        # are empty.
+        for block, fades, sys_levels in itertools.zip_longest(
+            struct.iter_unpack(
+                '<ihH'  # id, texinfo, face-and-render-order
+                '64i'  # face array.
+                '4f'  # UV min/max
+                '18f',  # 4 handle points, origin, normal
+                data,
+            ),
+            struct.iter_unpack('<ff', self.lumps[BSP_LUMPS.OVERLAY_FADES].data),
+            struct.iter_unpack('<4B', self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data),
         ):
+            if block is None:
+                # Too many of either aux lump, ignore.
+                break
             over_id, texinfo, face_ro = block[:3]
             face_count = face_ro & ((1 << 14) - 1)
             render_order = face_ro >> 14
@@ -1411,6 +1420,17 @@ class BSP:
             normal = Vec(block[86:89])
             assert len(block) == 89
 
+            if fades is not None:
+                fade_min, fade_max = fades
+            else:
+                fade_min = -1.0
+                fade_max = 0.0
+            if sys_levels is not None:
+                min_cpu, max_cpu, min_gpu, max_gpu = sys_levels
+            else:
+                min_cpu = min_gpu = 0
+                max_cpu = max_gpu = 0
+
             yield Overlay(
                 over_id, origin, normal,
                 self.texinfo[texinfo], face_count,
@@ -1418,15 +1438,22 @@ class BSP:
                 u_min, u_max,
                 v_min, v_max,
                 uv1, uv2, uv3, uv4,
+                fade_min, fade_max,
+                min_cpu, max_cpu,
+                min_gpu, max_gpu
             )
 
     def _lmp_write_overlays(self, overlays: List['Overlay']) -> Iterator[bytes]:
         """Write out all overlays."""
         add_texinfo = _find_or_insert(self.texinfo)
+        fade_buf = BytesIO()
+        levels_buf = BytesIO()
         for over in overlays:
             face_cnt = len(over.faces)
             if face_cnt > 64:
                 raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
+            levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
                 '<ihH',
                 over.id,
@@ -1441,6 +1468,8 @@ class BSP:
                 *over.uv1, *over.uv2, *over.uv3, *over.uv4,
                 *over.origin, *over.normal,
             )
+        self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
+        self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
@@ -2118,6 +2147,15 @@ class Overlay:
     uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
     uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
     uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+
+    fade_min_sq: float = -1.0
+    fade_max_sq: float = 0.0
+
+    # If system exceeds these limits, the overlay is skipped.
+    min_cpu: int = -1
+    max_cpu: int = -1
+    min_gpu: int = -1
+    max_gpu: int = -1
 
 
 @attr.define(eq=False)
