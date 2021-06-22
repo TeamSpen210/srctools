@@ -226,10 +226,11 @@ LUMP_REBUILD_ORDER = [
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
 
-    BSP_LUMPS.FACES,  # References their original face, surfedges, texinfo.
-    BSP_LUMPS.FACES_HDR,  # References their original face, surfedges, texinfo.
-    BSP_LUMPS.ORIGINALFACES,  # references surfedges & texinfo.
+    BSP_LUMPS.FACES,  # References their original face, surfedges, texinfo, primitives.
+    BSP_LUMPS.FACES_HDR,  # References their original face, surfedges, texinfo, primitives.
+    BSP_LUMPS.ORIGINALFACES,  # references surfedges & texinfo, primitives.
 
+    BSP_LUMPS.PRIMITIVES,
     BSP_LUMPS.SURFEDGES,  # surfedges references vertexes.
     BSP_LUMPS.PLANES,
     BSP_LUMPS.VERTEXES,
@@ -540,6 +541,7 @@ class BSP:
     faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
     orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
     hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
+    primitives: ParsedLump[List['Primitive']] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
 
     # Game lumps
     props: ParsedLump[List['StaticProp']] = ParsedLump(b'sprp')
@@ -930,6 +932,41 @@ class BSP:
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()
 
+    def _lmp_read_primitives(self, data: bytes) -> Iterator['Primitive']:
+        """Parse the primitives lumps."""
+        verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
+        indices = list(struct.unpack(
+            '<' + 'H' * (len(self.lumps[BSP_LUMPS.PRIMINDICES].data) // 2),
+            self.lumps[BSP_LUMPS.PRIMINDICES].data,
+        ))
+        for (
+            prim_type,
+            first_ind, ind_count,
+            first_vert, vert_count,
+        ) in struct.iter_unpack('<HHHHH', data):
+            yield Primitive(
+                prim_type,
+                indices[first_ind: first_ind + ind_count],
+                verts[first_vert: first_vert + vert_count],
+            )
+
+    def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
+        verts: list[Vec] = []
+        indices: list[int] = []
+        add_vert = _find_or_extend(verts, Vec.as_tuple)
+        add_ind = _find_or_extend(indices, identity)
+        for prim in prims:
+            yield struct.pack(
+                '<HHHHH',
+                prim.is_tristrip,
+                add_ind(prim.indexed_verts), len(prim.indexed_verts),
+                add_vert(prim.verts), len(prim.verts),
+            )
+        self.lumps[BSP_LUMPS.PRIMINDICES].data = struct.pack('<' + 'H' * len(indices), *indices)
+        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join([
+            struct.pack('<fff', pos.x, pos.y, pos.z) for pos in verts
+        ])
+
     def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
         """Read one of the faces arrays.
 
@@ -976,7 +1013,7 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                prim_num, prim_first,
+                self.primitives[prim_first:prim_first + prim_num],
                 smoothing_group,
             )
 
@@ -995,6 +1032,7 @@ class BSP:
         add_texinfo = _find_or_insert(self.texinfo)
         add_plane = _find_or_insert(self.planes)
         add_edges = _find_or_extend(self.surfedges, edge_key)
+        add_prims = _find_or_extend(self.primitives)
 
         for face in faces:
             if face.orig_face is not None and get_orig_face is not None:
@@ -1021,7 +1059,7 @@ class BSP:
                 face.area,
                 *face.lightmap_mins, *face.lightmap_size,
                 orig_ind,
-                face._prim_count, face._first_prim_id,
+                len(face.primitives), add_prims(face.primitives),
                 face.smoothing_groups,
             ))
         return face_buf.getvalue()
@@ -2089,6 +2127,17 @@ class Plane:
 
 
 @attr.define(eq=False)
+class Primitive:
+    """A 'primitive' surface (AKA t-junction, waterverts).
+
+    These are generated to stitch together T-junction faces.
+    """
+    is_tristrip: bool
+    indexed_verts: List[int]
+    verts: List[Vec]
+
+
+@attr.define(eq=False)
 class Face:
     """A brush face definition."""
     plane: Plane
@@ -2104,8 +2153,7 @@ class Face:
     lightmap_mins: Tuple[int, int]
     lightmap_size: Tuple[int, int]
     orig_face: Optional['Face']
-    _prim_count: int  # TODO, parse
-    _first_prim_id: int
+    primitives: List[Primitive]
     smoothing_groups: int
 
 
