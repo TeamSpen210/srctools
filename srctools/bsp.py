@@ -529,7 +529,7 @@ class BSP:
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
 
-    bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS)
+    bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
     brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
     visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
     nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
@@ -1315,27 +1315,53 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
         return b''.join(texinfo_result)
 
-    def _lmp_read_bmodels(self, data: bytes) -> Iterator['BModel']:
+    def _lmp_read_bmodels(self, data: bytes) -> List['BModel']:
         """Parse the brush model definitions."""
+        bmodels = []
         for (
             min_x, min_y, min_z, max_x, max_y, max_z,
             pos_x, pos_y, pos_z,
             headnode,
             first_face, num_face,
         ) in struct.iter_unpack('<9fiii', data):
-            yield BModel(
+            bmodels.append(BModel(
                 Vec(min_x, min_y, min_z), Vec(max_x, max_y, max_z),
                 Vec(pos_x, pos_y, pos_z),
                 self.nodes[headnode],
                 self.faces[first_face:first_face+num_face],
+            ))
+
+        # Parse the physics lump.
+        phys_buf = BytesIO(self.lumps[BSP_LUMPS.PHYSCOLLIDE].data)
+        while True:
+            (mdl_ind, data_size, kv_size, solid_count) = struct_read('<iiii', phys_buf)
+            if mdl_ind == -1:
+                break  # end of segment.
+            mdl = bmodels[mdl_ind]
+            # Possible in the format, but is broken - you can't merge the
+            # definitions really, and our object layout doesn't allow it.
+            if mdl._phys_solids or mdl.phys_keyvalues is not None:
+                raise ValueError(f'Two physics definitions for bmodel #{mdl_ind}!')
+            mdl._phys_solids = [
+                phys_buf.read(struct_read('<i', phys_buf)[0])
+                for _ in range(solid_count)
+            ]
+            kvs = phys_buf.read(kv_size).rstrip(b'\x00').decode('ascii')
+            mdl.phys_keyvalues = Property.parse(
+                kvs,
+                f'bmodel[{mdl_ind}].keyvalues',
             )
+
+        return bmodels
 
     def _lmp_write_bmodels(self, bmodels: List['BModel']) -> Iterator[bytes]:
         """Write the brush model definitions."""
         add_node = _find_or_insert(self.nodes)
         add_faces = _find_or_extend(self.faces)
 
-        for model in bmodels:
+        phys_buf = BytesIO()
+
+        for i, model in enumerate(bmodels):
             # noinspection PyProtectedMember
             yield struct.pack(
                 '<9fiii',
@@ -1345,6 +1371,27 @@ class BSP:
                 add_node(model.node),
                 add_faces(model.faces), len(model.faces),
             )
+            if model.phys_keyvalues is not None:
+                kvs = '\n'.join(model.phys_keyvalues.export()).encode('ascii') + b'\x00'
+            else:
+                kvs = b'\x00'
+                if not model._phys_solids:
+                    continue  # No physics info.
+            phys_size = sum(map(len, model._phys_solids)) + 4 * len(model._phys_solids)
+            phys_buf.write(struct.pack(
+                '<iiii',
+                i, phys_size,
+                len(kvs),
+                len(model._phys_solids),
+            ))
+            for solid in model._phys_solids:
+                phys_buf.write(struct.pack('<i', len(solid)))
+                phys_buf.write(solid)
+            phys_buf.write(kvs)
+
+        # Sentinel physics definition.
+        phys_buf.write(struct.pack('<iiii', -1, 0, 0, 0))
+        self.lumps[BSP_LUMPS.PHYSCOLLIDE].data = phys_buf.getvalue()
 
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
@@ -2166,6 +2213,11 @@ class BModel:
     origin: Vec
     node: 'VisTree'
     faces: List[Face]
+
+    # If solid, the .phy file-like physics data.
+    # This is a text section, and a list of blocks.
+    phys_keyvalues: Optional[Property] = None
+    _phys_solids: List[bytes] = []
 
 
 @attr.define(eq=False)
