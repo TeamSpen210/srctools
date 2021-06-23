@@ -200,7 +200,15 @@ class Sound:
         self.stack_start = Property('', []) if stack_start is None else stack_start  # type: Property
         self.stack_update = Property('', []) if stack_update is None else stack_update  # type: Property
         self.stack_stop = Property('', []) if stack_stop is None else stack_stop  # type: Property
-       
+
+    def __repr__(self) -> str:
+        res = f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, channel={self.channel}, level={self.level}, pitch={self.pitch}'
+        if self.force_v2 or self.stack_start or self.stack_update or self.stack_stop:
+            res += f', stack_start={self.stack_start!r}, stack_update={self.stack_update!r}, stack_stop={self.stack_stop!r})'
+        else:
+            res += ')'
+        return res
+
     @classmethod 
     def parse(cls, file: Property) -> Dict[str, 'Sound']:
         """Parses a soundscript file.
