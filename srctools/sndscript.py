@@ -37,6 +37,16 @@ class VOLUME(Enum):
 
 VOL_NORM = VOLUME.VOL_NORM
 
+# Old compatibility values, replaced by soundlevel.
+ATTENUATION = {
+    'ATTN_NONE': 0,
+    'ATTN_NORM': 0.8,
+    'ATTN_IDLE': 2.0,
+    'ATTN_STATIC': 1.25,
+    'ATTN_RICOCHET': 1.5,
+    'ATTN_GUNFIRE': 0.27,
+}
+
 
 class Channel(Enum):
     """Different categories of sounds."""
@@ -97,7 +107,7 @@ EnumType = TypeVar('EnumType', bound=Enum)
 
 def split_float(
     val: str, 
-    enum: Callable[[str], EnumType], 
+    enum: Callable[[str], Union[float, EnumType]],
     default: Union[float, EnumType],
     name: str,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
@@ -229,14 +239,30 @@ class Sound:
                 100.0,
                 snd_prop.real_name,
             )
-            
-            level = split_float(
-                snd_prop['soundlevel', 'SNDLVL_NORM'],
-                Level.__getitem__,
-                Level.SNDLVL_NORM,
-                snd_prop.real_name,
-            )
-            
+
+            if 'soundlevel' in snd_prop:
+                level = split_float(
+                    snd_prop['soundlevel'],
+                    Level.__getitem__,
+                    Level.SNDLVL_NORM,
+                    snd_prop.real_name,
+                )
+            elif 'attenuation' in snd_prop:
+                atten_min, atten_max = split_float(
+                    snd_prop['attenuation'],
+                    ATTENUATION.__getitem__,
+                    ATTENUATION['ATTN_IDLE'],
+                    snd_prop.real_name,
+                )
+                # Convert to a soundlevel.
+                # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
+                level = (
+                    (50.0 + 20.0 / atten_min) if atten_min else 0.0,
+                    (50.0 + 20.0 / atten_max) if atten_max else 0.0,
+                )
+            else:
+                level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+
             # Either 1 "wave", or multiple in "rndwave".
             wavs: list[str] = []
             for prop in snd_prop:
