@@ -2221,6 +2221,21 @@ class TexInfo:
     flags: SurfFlags
     _info: TexData
 
+    def __repr__(self) -> str:
+        """For overlays, all the shift data is not important."""
+        #  s_off=Vec(0, 0, 0), s_shift=-99999.0, t_off=Vec(0, 0, 0), t_shift=-99999.0, lightmap_s_off=Vec(0, 0, 0), lightmap_s_shift=-99999.0, lightmap_t_off=Vec(0, 0, 0), lightmap_t_shift=-99999.0
+        res = []
+        if self.s_off or self.s_shift != -99999.0:
+            res.append(f's_off={self.s_off}, s_shift={self.s_shift}')
+        if self.t_off or self.t_shift != -99999.0:
+            res.append(f't_off={self.t_off}, t_shift={self.t_shift}')
+        if self.lightmap_s_off or self.lightmap_s_shift != -99999.0:
+            res.append(f'lightmap_s_off={self.lightmap_s_off}, lightmap_s_shift={self.lightmap_s_shift}')
+        if self.lightmap_t_off or self.lightmap_t_shift != -99999.0:
+            res.append(f'lightmap_t_off={self.lightmap_t_off}, lightmap_t_shift={self.lightmap_t_shift}')
+        res.append(f'flags={self.flags}, _info={self._info}')
+        return f'TexInfo({", ".join(res)})'
+
     @property
     def mat(self) -> str:
         """The material used for this texinfo."""
@@ -2252,7 +2267,6 @@ class TexInfo:
         If it is not already used in the BSP, some additional info is required.
         This can either be parsed from the VMT and VTF, or provided directly.
         """
-        # noinspection PyProtectedMember
         try:
             data = bsp._texdata[mat.casefold()]
         except KeyError:
