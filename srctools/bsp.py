@@ -48,6 +48,7 @@ Edge = Tuple[Vec, Vec]
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
+LMP_ID_DETAIL_PROPS = b'dprp'
 
 
 class VERSIONS(Enum):
@@ -216,11 +217,12 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 # to other trees can add their data.
 LUMP_REBUILD_ORDER = [
     BSP_LUMPS.PAKFILE,
-    BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.CUBEMAPS,
     LMP_ID_STATIC_PROPS,  # References visleafs.
+    LMP_ID_DETAIL_PROPS,
 
-    BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, and faces
+    BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
+    BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
     BSP_LUMPS.LEAFS,  # References brushes, faces
 
@@ -354,6 +356,13 @@ class VisLeafFlags(Flag):
     _BIT_5 = 1 << 4
     _BIT_6 = 1 << 5
     _BIT_7 = 1 << 6
+
+
+class DetailPropOrientation(Enum):
+    """The kind of orientation for detail props."""
+    NORMAL = 0
+    SCREEN_ALIGNED = 1
+    SCREEN_ALIGNED_VERTICAL = 2
 
 
 def identity(x: T) -> T:
@@ -544,7 +553,8 @@ class BSP:
     primitives: ParsedLump[List['Primitive']] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
 
     # Game lumps
-    props: ParsedLump[List['StaticProp']] = ParsedLump(b'sprp')
+    props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
+    detail_props: ParsedLump[List['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
     def read(self) -> None:
         """Load all data."""
@@ -1939,6 +1949,163 @@ class BSP:
 
         return prop_lump.getvalue()
 
+    def _lmp_read_detail_props(self, version: int, data: bytes) -> Iterator['DetailProp']:
+        """Parse detail props."""
+        buf = BytesIO(data)
+        # First read the model dictionary.
+        models = list(self._read_static_props_models(buf))
+
+        [sprite_count] = struct_read('<i', buf)
+        detail_sprites = []
+        for _ in range(sprite_count):
+            (
+                dim_ul_x, dim_ul_y,
+                dim_lr_x, dim_lr_y,
+                tex_ul_x, tex_ul_y,
+                tex_lr_x, tex_lr_y,
+            ) = struct_read('<8f', buf)
+            detail_sprites.append((
+                (dim_ul_x, dim_ul_y),
+                (dim_lr_x, dim_lr_y),
+                (tex_ul_x, tex_ul_y),
+                (tex_lr_x, tex_lr_y),
+            ))
+
+        [detail_count] = struct_read('<i', buf)
+        for _ in range(detail_count):
+            (
+                x, y, z,
+                pit, yaw, rol,
+                mdl,
+                leaf,
+                r, g, b, a,
+                styles,
+                style_count,
+                sway_amt,
+                shape_ang,
+                shape_size,
+                orient,
+                detail_type,
+                spr_scale,
+            ) = struct_read('<3f3fHH4BI5B3xB3xf', buf)
+            if detail_type == 0:  # Model
+                yield DetailPropModel(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    models[mdl],
+                )
+            elif detail_type == 1:  # Sprite
+                (
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                ) = detail_sprites[mdl]
+                yield DetailPropSprite(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    spr_scale,
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                )
+            elif detail_type in (2, 3):  # Shapes.
+                (
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                ) = detail_sprites[mdl]
+                yield DetailPropShape(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    spr_scale,
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                    detail_type == 3,
+                    shape_ang,
+                    shape_size,
+                )
+            else:
+                raise ValueError(f'Unknown detail prop type {detail_type}!')
+
+    def _lmp_write_detail_props(self, props: List['DetailProp']) -> Iterator[bytes]:
+        """Reconstruct the detail props lump."""
+        sprites: list[tuple[
+            float, float, float, float,
+            float, float, float, float,
+        ]] = []
+        models: list[str] = []
+
+        add_sprite = _find_or_insert(sprites, identity)
+        add_model = _find_or_insert(models, identity)
+        buf = BytesIO()
+
+        for prop in props:
+            if isinstance(prop, DetailPropModel):
+                mdl_ind = add_model(prop.model)
+                detail_type = 0
+                spr_scale = 1.0
+                shape_ang = 0
+                shape_size = 1
+            elif isinstance(prop, DetailPropSprite):
+                mdl_ind = add_sprite(
+                    prop.dims_upper_left + prop.dims_lower_right +
+                    prop.texcoord_upper_left + prop.texcoord_lower_right
+                )
+                detail_type = 1
+                spr_scale = prop.sprite_scale
+                shape_ang = 0
+                shape_size = 1
+            elif isinstance(prop, DetailPropShape):
+                mdl_ind = add_sprite(
+                    prop.dims_upper_left + prop.dims_lower_right +
+                    prop.texcoord_upper_left + prop.texcoord_lower_right
+                )
+                detail_type = 3 if prop.is_cross else 2
+                spr_scale = prop.sprite_scale
+                shape_ang = prop.shape_angle
+                shape_size = prop.shape_size
+            else:
+                raise TypeError(f'Unknown detail prop type {prop}!')
+
+            buf.write(struct.pack(
+                '<3f3fHH4BI5B3xB3xf',
+                prop.origin.x, prop.origin.y, prop.origin.z,
+                prop.angles.pitch, prop.angles.yaw, prop.angles.roll,
+                mdl_ind,
+                prop.leaf,
+                *prop.lighting,
+                *prop.light_styles,
+                prop.sway_amount,
+                shape_ang,
+                shape_size,
+                prop.orientation.value,
+                detail_type,
+                spr_scale,
+            ))
+
+        # Now build the complete lump.
+        yield struct.pack('<i', len(models))
+        for name in models:
+            yield struct.pack('<128s', name.encode('ascii'))
+        yield struct.pack('<i', len(sprites))
+        spr_format = struct.Struct('<8f')
+        for spr in sprites:
+            yield spr_format.pack(*spr)
+        yield struct.pack('<i', len(props))
+        yield buf.getvalue()
+
     def vis_tree(self) -> 'VisTree':
         """Parse the visleaf data, and return the root node."""
         # First node is the top of the tree.
@@ -2200,6 +2367,50 @@ class StaticProp:
             self.origin,
             self.angles,
         )
+
+
+@attr.define(eq=False)
+class DetailProp:
+    """A detail prop, automatically placed on surfaces.
+
+    This is a base class, use one of the subclasses only.
+    """
+    origin: Vec
+    angles: Angle
+    orientation: DetailPropOrientation
+    leaf: int
+    lighting: Tuple[int, int, int, int]
+    light_styles: List[int]
+    sway_amount: int
+
+    def __attrs_pre_init__(self) -> None:
+        """Only allow instantiation of subclasses."""
+        if type(self) is DetailProp:
+            raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
+
+
+@attr.define(eq=False)
+class DetailPropModel(DetailProp):
+    """A MDL detail prop."""
+    model: str
+
+
+@attr.define(eq=False)
+class DetailPropSprite(DetailProp):
+    """A sprite-type detail prop."""
+    sprite_scale: float
+    dims_upper_left: Tuple[float, float]
+    dims_lower_right: Tuple[float, float]
+    texcoord_upper_left: Tuple[float, float]
+    texcoord_lower_right: Tuple[float, float]
+
+
+@attr.define(eq=False)
+class DetailPropShape(DetailPropSprite):
+    """A shape-type detail prop, rendered as a triangle or cross shape."""
+    is_cross: bool
+    shape_angle: int
+    shape_size: int
 
 
 @attr.define(eq=False)
