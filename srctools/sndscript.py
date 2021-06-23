@@ -98,14 +98,18 @@ EnumType = TypeVar('EnumType', bound=Enum)
 def split_float(
     val: str, 
     enum: Callable[[str], EnumType], 
-    default,
+    default: Union[float, EnumType],
+    name: str,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
     """Handle values which can be either single or a low, high pair of numbers.
     
     If single, low and high are the same.
     enum is a Enum with values to match text constants, or a converter function
     returning enums or raising ValueError, KeyError or IndexError.
+    The name is used for error handling.
     """
+    if isinstance(val, list):
+        raise ValueError(f'Property block used for option in {name} sound!')
     if ',' in val:
         s_low, s_high = val.split(',')
         try: 
@@ -209,21 +213,24 @@ class Sound:
                 snd_prop['volume', '1'],
                 VOLUME,
                 1.0,
+                snd_prop.real_name,
             )
             pitch = split_float(
                 snd_prop['pitch', '100'],
                 Pitch.__getitem__,
                 100.0,
+                snd_prop.real_name,
             )
             
             level = split_float(
                 snd_prop['soundlevel', 'SNDLVL_NORM'],
                 Level.__getitem__,
                 Level.SNDLVL_NORM,
+                snd_prop.real_name,
             )
             
             # Either 1 "wave", or multiple in "rndwave".
-            wavs = []  # type: List[str]
+            wavs: list[str] = []
             for prop in snd_prop:
                 if prop.name == 'wave':
                     wavs.append(prop.value)
@@ -330,5 +337,3 @@ class Sound:
                 file.write('\t\t\t}\n')
             file.write('\t\t}\n')
         file.write('\t}\n')
-
-
