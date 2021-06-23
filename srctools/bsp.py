@@ -8,6 +8,7 @@ from typing import (
 )
 from io import BytesIO
 from enum import Enum, Flag
+from weakref import WeakKeyDictionary
 from zipfile import ZipFile
 import itertools
 import struct
@@ -539,7 +540,7 @@ class BSP:
     cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
     overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
 
-    bmodels: ParsedLump[List['BModel']] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
+    bmodels: ParsedLump[WeakKeyDictionary[Entity, 'BModel']] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
     brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
     visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
     nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
@@ -1363,16 +1364,16 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
         return b''.join(texinfo_result)
 
-    def _lmp_read_bmodels(self, data: bytes) -> List['BModel']:
+    def _lmp_read_bmodels(self, data: bytes) -> WeakKeyDictionary[Entity, 'BModel']:
         """Parse the brush model definitions."""
-        bmodels = []
+        bmodel_list = []
         for (
             min_x, min_y, min_z, max_x, max_y, max_z,
             pos_x, pos_y, pos_z,
             headnode,
             first_face, num_face,
         ) in struct.iter_unpack('<9fiii', data):
-            bmodels.append(BModel(
+            bmodel_list.append(BModel(
                 Vec(min_x, min_y, min_z), Vec(max_x, max_y, max_z),
                 Vec(pos_x, pos_y, pos_z),
                 self.nodes[headnode],
@@ -1385,7 +1386,7 @@ class BSP:
             (mdl_ind, data_size, kv_size, solid_count) = struct_read('<iiii', phys_buf)
             if mdl_ind == -1:
                 break  # end of segment.
-            mdl = bmodels[mdl_ind]
+            mdl = bmodel_list[mdl_ind]
             # Possible in the format, but is broken - you can't merge the
             # definitions really, and our object layout doesn't allow it.
             if mdl._phys_solids or mdl.phys_keyvalues is not None:
@@ -1400,16 +1401,29 @@ class BSP:
                 f'bmodel[{mdl_ind}].keyvalues',
             )
 
-        return bmodels
+        # Loop over entities, map to their brush model.
+        brush_ents = WeakKeyDictionary()
+        vmf: VMF = self.ents
+        brush_ents[vmf.spawn] = bmodel_list[0]
+        for ent in vmf.entities:
+            if ent['model'].startswith('*'):
+                mdl_ind = int(ent.keys.pop('model')[1:])
+                brush_ents[ent] = bmodel_list[mdl_ind]
 
-    def _lmp_write_bmodels(self, bmodels: List['BModel']) -> Iterator[bytes]:
+        return brush_ents
+
+    def _lmp_write_bmodels(self, bmodels: WeakKeyDictionary[Entity, 'BModel']) -> Iterator[bytes]:
         """Write the brush model definitions."""
         add_node = _find_or_insert(self.nodes)
         add_faces = _find_or_extend(self.faces)
 
         phys_buf = BytesIO()
 
-        for i, model in enumerate(bmodels):
+        for i, (ent, model) in enumerate(bmodels.items()):
+            # Apply the brush model to the entity. Worldspawn doesn't actually
+            # need the key though.
+            if i != 0:
+                ent['model'] = f'*{i}'
             # noinspection PyProtectedMember
             yield struct.pack(
                 '<9fiii',
@@ -1728,15 +1742,15 @@ class BSP:
         Deprecated, use bsp.props.
         """
         warnings.warn('Access BSP.props instead', DeprecationWarning, stacklevel=2)
-        lump = self.game_lumps[LMP_ID_STATIC_PROPS]
-        return self._lmp_read_st_props(lump.version, lump.data)
+        return iter(self.props)
 
     def write_static_props(self, props: List['StaticProp']) -> None:
         """Remake the static prop lump.
 
         Deprecated, bsp.props is stored and resaved.
         """
-        warnings.warn('BSP.props is automatically saved.', DeprecationWarning, stacklevel=2)
+        warnings.warn('Assign to BSP.props', DeprecationWarning, stacklevel=2)
+        self.props = props
 
     def _lmp_read_props(self, version: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
