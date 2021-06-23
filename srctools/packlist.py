@@ -441,7 +441,7 @@ class PackList:
             # It doesn't exist, complain and pretend it's empty.
             LOGGER.warning('Soundscript "{}" does not exist!', file.path)
             return ()
-        except KeyValError:
+        except (KeyValError, ValueError):
             LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
             return ()
 
