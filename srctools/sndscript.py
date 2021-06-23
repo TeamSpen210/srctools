@@ -171,14 +171,18 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 
 class Sound:
     """Represents a single soundscript."""
+    stack_start: Property
+    stack_update: Property
+    stack_stop: Property
+
     def __init__(
         self,
         name: str,
         sounds: List[str],
-        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=VOL_NORM,
+        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=(VOL_NORM, VOL_NORM),
         channel: Channel=Channel.DEFAULT,
-        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=Level.SNDLVL_NORM,
-        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=Pitch.PITCH_NORM,
+        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=(Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
         
         # Operator stacks
         stack_start: Optional[Property]=None,
@@ -207,9 +211,9 @@ class Sound:
         else:
             self.pitch = pitch, pitch
         
-        self.stack_start = Property('', []) if stack_start is None else stack_start  # type: Property
-        self.stack_update = Property('', []) if stack_update is None else stack_update  # type: Property
-        self.stack_stop = Property('', []) if stack_stop is None else stack_stop  # type: Property
+        self.stack_start = Property('', []) if stack_start is None else stack_start
+        self.stack_update = Property('', []) if stack_update is None else stack_update
+        self.stack_stop = Property('', []) if stack_stop is None else stack_stop
 
     def __repr__(self) -> str:
         res = f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, channel={self.channel}, level={self.level}, pitch={self.pitch}'
