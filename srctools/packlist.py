@@ -346,14 +346,14 @@ class PackList:
             return self._inject_files[folder, ext, data]
         except KeyError:
             pass
-        name_hash = data
+        # Repeatedly hashing permutes the data, until we stop colliding.
+        # Also abs() to remove ugly minus signs.
+        name_hash = format(abs(hash(data)), 'x')
         while True:
-            # Repeatedly hashing permutes the data, until we stop colliding.
-            # Also abs() to remove ugly minus signs.
-            name_hash = format(abs(hash(name_hash)), 'x')
             full_name = "{}/INJECT_{}.{}".format(folder, name_hash, ext)
             if full_name not in self._files:
                 break
+            name_hash = format(abs(hash(name_hash)), 'x')
         self.pack_file(full_name, data=data)
         self._inject_files[folder, ext, data] = full_name
         return full_name
