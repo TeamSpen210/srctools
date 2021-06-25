@@ -234,7 +234,7 @@ def test_EmptyMapping_items() -> None:
 )
 def test_EmptyMapping_set_ops(view) -> None:
     """Test EmptyMapping.keys() and items() support set ops."""
-    empty = set()
+    empty: set[object] = set()
     # Ensure it's valid as an items() tuple.
     full = {('key', 1), ('key2', 4)}
 

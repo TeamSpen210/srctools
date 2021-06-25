@@ -12,7 +12,11 @@ import traceback
 import threading
 import contextlib
 from types import TracebackType
-from typing import Dict, Tuple, Union, Type, Callable, Any, cast, Optional, Generator
+from typing import (
+    Dict, Tuple, Union, Type, Callable, Any, cast, Optional,
+    Generator, TextIO,
+)
+
 
 CTX_STACK = threading.local()
 
@@ -25,7 +29,7 @@ class LogMessage:
     def __init__(
         self,
         fmt: str,
-        args: Tuple[object],
+        args: Tuple[object, ...],
         kwargs: Dict[str, object],
     ) -> None:
         self.fmt = fmt
@@ -141,8 +145,9 @@ class Formatter(logging.Formatter):
         except Exception:  # Something failed, keep the original.
             trace = exc_tb
 
-        for line in traceback.TracebackException(exc_type, exc_value, trace).format():
-            buffer.write(line)
+        if exc_type is not None and exc_value is not None and exc_tb is not None:
+            for line in traceback.TracebackException(exc_type, exc_value, trace).format():
+                buffer.write(line)
 
         return buffer.getvalue().rstrip('\n')
 
@@ -189,9 +194,11 @@ def get_handler(filename: str) -> logging.FileHandler:
             )
         except (FileExistsError, PermissionError):
             pass
+    else:
+        raise AssertionError  # Never terminates
 
 
-class NullStream(io.IOBase):
+class NullStream(io.IOBase, TextIO):
     """A stream object that discards all data.
 
     This is needed for multiprocessing, since it tries to flush stdout.
@@ -201,7 +208,7 @@ class NullStream(io.IOBase):
         super().__init__()
 
     @staticmethod
-    def write(args: Any, kwargs: Any) -> None:
+    def write(*args: Any, **kwargs: Any) -> None:
         """Write nothing to the file."""
         pass
 
@@ -210,6 +217,20 @@ class NullStream(io.IOBase):
         """We never have data."""
         return ''
 
+
+class NewLogRecord(logging.LogRecord):
+    """Allow passing an alias and context for log modules."""
+    # This breaks %-formatting, so only set when init_logging() is called.
+    alias: Optional[str] = None
+
+    def getMessage(self):
+        """We have to hook here to change the value of .module.
+
+        It's called just before the formatting call is made.
+        """
+        if self.alias is not None:
+            self.module = self.alias
+        return str(self.msg)
 
 def init_logging(
     filename: str=None,
@@ -227,20 +248,8 @@ def init_logging(
     (taking type, value, traceback).
     If the exception is a BaseException, the app will quit silently.
     """
-    class NewLogRecord(logging.LogRecord):
-        """Allow passing an alias and context for log modules."""
-        # This breaks %-formatting, so only set when init_logging() is called.
-        alias: Optional[str] = None
-
-        def getMessage(self):
-            """We have to hook here to change the value of .module.
-
-            It's called just before the formatting call is made.
-            """
-            if self.alias is not None:
-                self.module = self.alias
-            return str(self.msg)
-    NewLogRecord.__bases__ = (logging.getLogRecordFactory(), )
+    if logging.getLogRecordFactory() is not logging.LogRecord:
+        raise ValueError('Unknown record factory: ', logging.getLogRecordFactory())
     logging.setLogRecordFactory(NewLogRecord)
 
     logger = logging.getLogger()
@@ -327,7 +336,7 @@ def init_logging(
     if main_logger:
         return get_logger(main_logger)
     else:
-        return LoggerAdapter(logger)
+        return cast(logging.Logger, LoggerAdapter(logger))
 
 
 def get_logger(name: str='', alias: str=None) -> logging.Logger:
