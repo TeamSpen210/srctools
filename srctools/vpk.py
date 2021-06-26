@@ -4,11 +4,9 @@ import struct
 import operator
 from enum import Enum
 from types import TracebackType
-from typing import (
-    Union, Optional, Tuple, Type,
-    Dict, List, Iterator, Iterable, IO,
-)
+from typing import Tuple, List, Dict, Type, Union, Optional, Iterator, Iterable, IO
 
+import attr
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
 
@@ -120,61 +118,28 @@ def _join_file_parts(path: str, filename: str, ext: str) -> str:
     return (path + '/' if path else '') + filename + ('.' + ext if ext else '')
 
 
-class FileInfo:
-    """Represents a file stored inside a VPK."""
+def _is_ascii(self: 'FileInfo', at: attr.Attribute, value: str) -> None:
+    """VPK filenames must be ascii, it doesn't store or care about encoding."""
+    # Assert the path is ASCII.
+    if not value.isascii():
+        raise ValueError('VPK filenames must be ASCII format!')
 
-    __slots__ = (
-        'vpk',
-        'dir', '_filename', 'ext',
-        'crc',
-        'arch_index',
-        'start_data',
-        'offset',
-        'arch_len',
-    )
+
+@attr.define(eq=False)
+class FileInfo:
+    """Represents a file stored inside a VPK.
+
+    Do not call the constructor, it is only meant for VPK's use.
+    """
     vpk: 'VPK'
-    dir: str
-    _filename: str
-    ext: str
+    dir: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
+    _filename: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
+    ext: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
     crc: int
     arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir
     arch_len: int  # Number of bytes in archive files
     start_data: bytes  # The bytes saved into the directory header
-
-    def __init__(
-        self,
-        vpk: 'VPK',
-        directory: str,
-        file: str,
-        ext: str,
-        crc: int,
-        start_data: bytes=b'',
-        offset: int=0,
-        arch_len: int=0,
-        arch_index: int=None,
-    ) -> None:
-        """This should only be called by VPK() internally."""
-
-        # Assert the path is ASCII.
-        try:
-            directory.encode('ascii')
-            file.encode('ascii')
-            ext.encode('ascii')
-        except UnicodeError:
-            raise ValueError(
-                'VPK filenames are required to be in ASCII format!'
-            )
-
-        self.vpk = vpk
-        self.dir = directory
-        self._filename = file
-        self.ext = ext
-        self.crc = crc
-        self.arch_index = arch_index
-        self.offset = offset
-        self.arch_len = arch_len
-        self.start_data = start_data
 
     @property
     def filename(self) -> str:
@@ -314,7 +279,7 @@ class VPK:
     def _check_writable(self) -> None:
         """Verify that this is writable."""
         if not self.mode.writable:
-            raise ValueError("Can't write with this mode!")
+            raise ValueError(f"VPK mode {self.mode.name} does not allow writing!")
 
     @property
     def path(self) -> str:
@@ -401,11 +366,11 @@ class VPK:
                             directory,
                             file,
                             ext,
-                            crc=crc,
-                            offset=offset,
-                            start_data=dirfile.read(index_len),
-                            arch_len=arch_len,
-                            arch_index=arch_ind,
+                            crc,
+                            arch_ind,
+                            offset,
+                            arch_len,
+                            dirfile.read(index_len),
                         )
                 
                 # 1 for the ending b'' section
@@ -522,9 +487,9 @@ class VPK:
                 
     def __iter__(self) -> Iterator[FileInfo]:
         """Yield all FileInfo objects."""
-        for ext, folders in self._fileinfo.items():
-            for folder, files in folders.items():
-                for file, info in files.items():
+        for folders in self._fileinfo.values():
+            for files in folders.values():
+                for info in files.values():
                     yield info
 
     def filenames(self, ext: str='', folder: str='') -> Iterator[str]:
@@ -623,6 +588,7 @@ class VPK:
             name,
             ext,
             EMPTY_CHECKSUM,
+            None, 0, 0, b'',
         )
         
         return info
@@ -715,6 +681,8 @@ def script_write(args: List[str]) -> None:
                     arch_filename = get_arch_filename(vpk_name_base, current_arch)
 
 
+# This function requires accumulating a character at a time, parsing the VPK
+# is very slow without a speedup.
 try:
     from srctools._tokenizer import _VPK_IterNullstr as iter_nullstr  # type: ignore
 except ImportError:
