@@ -37,6 +37,16 @@ class VOLUME(Enum):
 
 VOL_NORM = VOLUME.VOL_NORM
 
+# Old compatibility values, replaced by soundlevel.
+ATTENUATION = {
+    'ATTN_NONE': 0,
+    'ATTN_NORM': 0.8,
+    'ATTN_IDLE': 2.0,
+    'ATTN_STATIC': 1.25,
+    'ATTN_RICOCHET': 1.5,
+    'ATTN_GUNFIRE': 0.27,
+}
+
 
 class Channel(Enum):
     """Different categories of sounds."""
@@ -97,15 +107,19 @@ EnumType = TypeVar('EnumType', bound=Enum)
 
 def split_float(
     val: str, 
-    enum: Callable[[str], EnumType], 
-    default,
+    enum: Callable[[str], Union[float, EnumType]],
+    default: Union[float, EnumType],
+    name: str,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
     """Handle values which can be either single or a low, high pair of numbers.
     
     If single, low and high are the same.
     enum is a Enum with values to match text constants, or a converter function
     returning enums or raising ValueError, KeyError or IndexError.
+    The name is used for error handling.
     """
+    if isinstance(val, list):
+        raise ValueError(f'Property block used for option in {name} sound!')
     if ',' in val:
         s_low, s_high = val.split(',')
         try: 
@@ -157,14 +171,18 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 
 class Sound:
     """Represents a single soundscript."""
+    stack_start: Property
+    stack_update: Property
+    stack_stop: Property
+
     def __init__(
         self,
         name: str,
         sounds: List[str],
-        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=VOL_NORM,
+        volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=(VOL_NORM, VOL_NORM),
         channel: Channel=Channel.DEFAULT,
-        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=Level.SNDLVL_NORM,
-        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=Pitch.PITCH_NORM,
+        level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=(Level.SNDLVL_NORM, Level.SNDLVL_NORM),
+        pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
         
         # Operator stacks
         stack_start: Optional[Property]=None,
@@ -193,10 +211,18 @@ class Sound:
         else:
             self.pitch = pitch, pitch
         
-        self.stack_start = Property('', []) if stack_start is None else stack_start  # type: Property
-        self.stack_update = Property('', []) if stack_update is None else stack_update  # type: Property
-        self.stack_stop = Property('', []) if stack_stop is None else stack_stop  # type: Property
-       
+        self.stack_start = Property('', []) if stack_start is None else stack_start
+        self.stack_update = Property('', []) if stack_update is None else stack_update
+        self.stack_stop = Property('', []) if stack_stop is None else stack_stop
+
+    def __repr__(self) -> str:
+        res = f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, channel={self.channel}, level={self.level}, pitch={self.pitch}'
+        if self.force_v2 or self.stack_start or self.stack_update or self.stack_stop:
+            res += f', stack_start={self.stack_start!r}, stack_update={self.stack_update!r}, stack_stop={self.stack_stop!r})'
+        else:
+            res += ')'
+        return res
+
     @classmethod 
     def parse(cls, file: Property) -> Dict[str, 'Sound']:
         """Parses a soundscript file.
@@ -209,21 +235,40 @@ class Sound:
                 snd_prop['volume', '1'],
                 VOLUME,
                 1.0,
+                snd_prop.real_name,
             )
             pitch = split_float(
                 snd_prop['pitch', '100'],
                 Pitch.__getitem__,
                 100.0,
+                snd_prop.real_name,
             )
-            
-            level = split_float(
-                snd_prop['soundlevel', 'SNDLVL_NORM'],
-                Level.__getitem__,
-                Level.SNDLVL_NORM,
-            )
-            
+
+            if 'soundlevel' in snd_prop:
+                level = split_float(
+                    snd_prop['soundlevel'],
+                    Level.__getitem__,
+                    Level.SNDLVL_NORM,
+                    snd_prop.real_name,
+                )
+            elif 'attenuation' in snd_prop:
+                atten_min, atten_max = split_float(
+                    snd_prop['attenuation'],
+                    ATTENUATION.__getitem__,
+                    ATTENUATION['ATTN_IDLE'],
+                    snd_prop.real_name,
+                )
+                # Convert to a soundlevel.
+                # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
+                level = (
+                    (50.0 + 20.0 / atten_min) if atten_min else 0.0,
+                    (50.0 + 20.0 / atten_max) if atten_max else 0.0,
+                )
+            else:
+                level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+
             # Either 1 "wave", or multiple in "rndwave".
-            wavs = []  # type: List[str]
+            wavs: list[str] = []
             for prop in snd_prop:
                 if prop.name == 'wave':
                     wavs.append(prop.value)
@@ -330,5 +375,3 @@ class Sound:
                 file.write('\t\t\t}\n')
             file.write('\t\t}\n')
         file.write('\t}\n')
-
-
