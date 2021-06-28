@@ -1610,13 +1610,12 @@ class Side:
         """Compute the unit vector which extends perpendicular to the face.
 
         """
-        # The three points are in clockwise order, so we need the first and last
-        # starting from the center point. Then calculate in reverse to get the
-        # normal in the correct direction.
-        point_1 = self.planes[0] - self.planes[1]
+        # The three points are in clockwise order, so compute differences
+        # in the clockwise direction, then cross to get the normal.
+        point_1 = self.planes[1] - self.planes[0]
         point_2 = self.planes[2] - self.planes[1]
 
-        return point_2.cross(point_1).norm()
+        return Vec.cross(point_1, point_2).norm()
 
     def scale_set(self, value: float) -> None:
         self.uaxis.scale = value
