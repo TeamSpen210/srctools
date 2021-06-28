@@ -1,14 +1,14 @@
 """Parses material files."""
 from typing import (
     Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    NamedTuple, MutableMapping, Mapping,
+    NamedTuple, MutableMapping, Mapping, TextIO,
 )
 
 import sys
 from enum import Enum
 
 from srctools import FileSystem, Property, EmptyMapping
-from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer
+from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
 
 ArgT = TypeVar('ArgT')
 
@@ -263,6 +263,28 @@ class Material(MutableMapping[str, str]):
             prop.append(Property(param_name, param_value))
 
         raise tok.error('EOF without closed block!')
+
+    def export(self, f: TextIO) -> None:
+        """Write the material back to a file."""
+        f.write(self.shader + '\n\t{\n')
+        for param in self._params.values():
+            name = param.name
+            value = param.value
+            if any(c in BARE_DISALLOWED for c in name):
+                name = f'"{name}"'
+            if not value or any(c in BARE_DISALLOWED for c in value):
+                value = f'"{value}"'
+            f.write(f'\t{name} {value}\n')
+        for block in self.blocks:
+            for line in block.export():
+                f.write(f'\t{line}\n')
+        if self.proxies:
+            f.write('\n\tProxies\n\t\t{\n')
+            for block in self.proxies:
+                for line in block.export():
+                    f.write(f'\t\t{line}\n')
+            f.write('\t\t}\n')
+        f.write('\t}\n')
 
     def apply_patches(
         self,
