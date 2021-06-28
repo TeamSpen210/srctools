@@ -174,6 +174,20 @@ def test_with_axes(py_c_vec: PyCVec):
             assert vec[c] == z, msg
 
 
+def test_vec_stringification(py_c_vec: PyCVec):
+    """Test the various string methods."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    # Add on the edge case where '.0' needs to be kept.
+    for x, y, z in iter_vec(VALID_NUMS + [-210.048]):
+        v: Py_Vec = Vec(x, y, z)
+        assert str(v) == f'{x:g} {y:g} {z:g}'
+        assert repr(v) == f'Vec({x:g}, {y:g}, {z:g})'
+        assert v.join() == f'{x:g}, {y:g}, {z:g}'
+        assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
+        assert format(v) == f'{x:g} {y:g} {z:g}'
+        assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
+
+
 def test_unary_ops(py_c_vec: PyCVec):
     """Test -vec and +vec."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec

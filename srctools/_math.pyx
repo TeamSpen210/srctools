@@ -409,7 +409,7 @@ cdef class VecIter:
         self.vec = vec
         self.index = 0
 
-    def __iter__(self) -> 'VecIter':
+    def __iter__(self) -> VecIter:
         return self
 
     def __next__(self) -> float:
@@ -446,10 +446,10 @@ cdef class VecIterGrid:
 
         long stride
 
-    def __iter__(self):
+    def __iter__(self) -> VecIterGrid:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Vec:
         cdef Vec vec
         if self.cur_x > self.stop_x:
             raise StopIteration
@@ -480,10 +480,10 @@ cdef class VecIterLine:
         long max
         vec_t end
 
-    def __iter__(self):
+    def __iter__(self) -> VecIterLine:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Vec:
         cdef Vec vec
         if self.cur_off < 0:
             raise StopIteration
@@ -514,10 +514,10 @@ cdef class AngleIter:
         self.ang = ang
         self.index = 0
 
-    def __iter__(self):
+    def __iter__(self) -> AngleIter:
         return self
 
-    def __next__(self):
+    def __next__(self) -> Angle:
         if self.index == 3:
             raise StopIteration
         self.index += 1
@@ -1711,7 +1711,13 @@ cdef class Vec:
         """Code required to reproduce this vector."""
         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
 
-    def __iter__(self):
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
+
+    def __iter__(self) -> VecIter:
         return VecIter.__new__(VecIter, self)
 
     def __getitem__(self, ind_obj) -> float:
@@ -2198,6 +2204,13 @@ cdef class Angle:
     def roll(self, double roll) -> None:
         self.val.z = norm_ang(roll)
 
+    def join(self, delim: str=', ') -> str:
+        """Return a string with all numbers joined by the passed delimiter.
+
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
+
     def __str__(self) -> str:
         """Return the values, separated by spaces.
 
@@ -2210,11 +2223,17 @@ cdef class Angle:
     def __repr__(self) -> str:
         return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
 
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self.val.x:{format_spec}} {self.val.y:{format_spec}} {self.val.z:{format_spec}}"
+
     def as_tuple(self):
         """Return the Angle as a tuple."""
         return Vec_tuple(self.val.x, self.val.y, self.val.z)
 
-    def __iter__(self):
+    def __iter__(self) -> AngleIter:
         """Iterating over the angles returns each value in turn."""
         return AngleIter.__new__(AngleIter, self)
 
