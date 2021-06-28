@@ -83,6 +83,19 @@ def test_construction(py_c_vec):
         assert test_val == Angle.from_str('34.5 38.4 -23 -38', roll=val).roll
 
 
+def test_angle_stringification(py_c_vec):
+    """Test the various string methods."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    for x, y, z in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
+        v: Angle = Angle(x, y, z)
+        assert str(v) == f'{x:g} {y:g} {z:g}'
+        assert repr(v) == f'Angle({x:g}, {y:g}, {z:g})'
+        assert v.join() == f'{x:g}, {y:g}, {z:g}'
+        assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
+        assert format(v) == f'{x:g} {y:g} {z:g}'
+        assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
+
+
 def test_with_axes(py_c_vec):
     """Test the with_axes() constructor."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec

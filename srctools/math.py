@@ -854,6 +854,12 @@ class Vec(SupportsRound['Vec']):
         """
         return f"{self.x:g} {self.y:g} {self.z:g}"
 
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
+
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
         return f"Vec({self.x:g}, {self.y:g}, {self.z:g})"
@@ -1469,6 +1475,14 @@ class Angle:
     def roll(self, roll: float) -> None:
         self._roll = float(roll) % 360 % 360
 
+    def join(self, delim: str=', ') -> str:
+        """Return a string with all numbers joined by the passed delimiter.
+
+        This strips off the .0 if no decimal portion exists.
+        """
+        # :g strips the .0 off of floats if it's an integer.
+        return f'{self._pitch:g}{delim}{self._yaw:g}{delim}{self._roll:g}'
+
     def __str__(self) -> str:
         """Return the values, separated by spaces.
 
@@ -1480,6 +1494,12 @@ class Angle:
 
     def __repr__(self) -> str:
         return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self._pitch:{format_spec}} {self._yaw:{format_spec}} {self._roll:{format_spec}}"
 
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Angle as a tuple."""
