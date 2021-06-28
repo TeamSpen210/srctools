@@ -42,7 +42,7 @@ import warnings
 from typing import (
     Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    Iterator, Iterable, SupportsRound, Optional,
+    Iterator, Iterable, SupportsRound, Optional, TYPE_CHECKING,
 )
 
 
@@ -251,8 +251,15 @@ def __i{func}__(self, other: float):
         return self
 '''
 
+# Subclassing this causes isinstance() to become very slow, trying to check
+# for __round__ on everything.
+if TYPE_CHECKING:
+    _RoundsToVec = SupportsRound['Vec']
+else:
+    _RoundsToVec = object
 
-class Vec(SupportsRound['Vec']):
+
+class Vec(_RoundsToVec):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
