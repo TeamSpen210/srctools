@@ -1,16 +1,18 @@
 """Parses material files."""
 from typing import (
     Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    NamedTuple, MutableMapping, Mapping, TextIO,
+    MutableMapping, Mapping, TextIO,
 )
-
 import sys
 from enum import Enum
+
+import attr
 
 from srctools import FileSystem, Property, EmptyMapping
 from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
 
 ArgT = TypeVar('ArgT')
+
 
 class VarType(Enum):
     """The different types shader variables can be.
@@ -52,7 +54,8 @@ class VarType(Enum):
         return get_parm_type(name, cls.STR)
 
 
-class Variable(NamedTuple):
+@attr.define
+class Variable:
     """Allow storing the original case of the name."""
     name: str  # With correct case
     value: str
@@ -104,7 +107,7 @@ class Material(MutableMapping[str, str]):
     ) -> None:
         """Create a material."""
         self.shader = shader
-        self._params: Dict[str, Variable] = {}
+        self._params: dict[str, Variable] = {}
         self.blocks = list(blocks)
         self.proxies = list(proxies)
 
@@ -374,9 +377,7 @@ class Material(MutableMapping[str, str]):
         """Set the specified property."""
         folded = key.casefold()
         try:
-            var = self._params[folded]
-            # Preserve the old casing.
-            self._params[folded] = Variable(var.name, value)
+            self._params[folded].value = value
         except KeyError:
             self._params[folded] = Variable(key, value)
 
