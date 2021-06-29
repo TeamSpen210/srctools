@@ -6,4 +6,4 @@ warnings.warn(
     stacklevel=2,
 )
 del warnings
-from srctools.math import *
+from srctools.math import *  # noqa

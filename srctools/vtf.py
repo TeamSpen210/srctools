@@ -75,7 +75,7 @@ CUBES: Sequence[CubeSide] = CUBES_WITH_SPHERE[:-1]
 _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 
 
-def f(
+def _mk_fmt(
     r: int = 0, g: int = 0, b: int = 0,
     a: int = 0, *,
     l: int = 0, size: int = 0,
@@ -86,10 +86,10 @@ def f(
         size = l + a
     if not size:
         size = r + g + b + a
-    f.ind += 1
+    _mk_fmt.ind += 1  # noqa: F821  # .ind
 
-    return r, g, b, a, size, f.ind
-f.ind = -1  # Incremented first time to 0
+    return r, g, b, a, size, _mk_fmt.ind  # noqa: F821  # .ind
+_mk_fmt.ind = -1  # Incremented first time to 0
 
 
 class ImageFormats(Enum):
@@ -102,40 +102,40 @@ class ImageFormats(Enum):
         self.size = size
         self.ind = ind
 
-    RGBA8888 = f(8, 8, 8, 8)
-    ABGR8888 = f(8, 8, 8, 8)
-    RGB888 = f(8, 8, 8, 0)
-    BGR888 = f(8, 8, 8)
-    RGB565 = f(5, 6, 5, 0)
-    I8 = f(a=0, l=8)
-    IA88 = f(a=8, l=8)
-    P8 = f()  # Using a palette somehow - was never implemented by Valve.
-    A8 = f(a=8)
+    RGBA8888 = _mk_fmt(8, 8, 8, 8)
+    ABGR8888 = _mk_fmt(8, 8, 8, 8)
+    RGB888 = _mk_fmt(8, 8, 8, 0)
+    BGR888 = _mk_fmt(8, 8, 8)
+    RGB565 = _mk_fmt(5, 6, 5, 0)
+    I8 = _mk_fmt(a=0, l=8)
+    IA88 = _mk_fmt(a=8, l=8)
+    P8 = _mk_fmt()  # Using a palette somehow - was never implemented by Valve.
+    A8 = _mk_fmt(a=8)
     # Blue = alpha channel too
-    RGB888_BLUESCREEN = f(8, 8, 8)
-    BGR888_BLUESCREEN = f(8, 8, 8)
-    ARGB8888 = f(8, 8, 8, 8)
-    BGRA8888 = f(8, 8, 8, 8)
-    DXT1 = f(size=64)
-    DXT3 = f(size=128)
-    DXT5 = f(size=128)
-    BGRX8888 = f(8, 8, 8, 8)
-    BGR565 = f(5, 6, 5)
-    BGRX5551 = f(5, 5, 5, 1)
-    BGRA4444 = f(4, 4, 4, 4)
-    DXT1_ONEBITALPHA = f(size=64)
-    BGRA5551 = f(5, 5, 5, 1)
-    UV88 = f(size=16)
-    UVWQ8888 = f(size=32)
-    RGBA16161616F = f(16, 16, 16, 16)
-    RGBA16161616 = f(16, 16, 16, 16)
-    UVLX8888 = f(size=32)
+    RGB888_BLUESCREEN = _mk_fmt(8, 8, 8)
+    BGR888_BLUESCREEN = _mk_fmt(8, 8, 8)
+    ARGB8888 = _mk_fmt(8, 8, 8, 8)
+    BGRA8888 = _mk_fmt(8, 8, 8, 8)
+    DXT1 = _mk_fmt(size=64)
+    DXT3 = _mk_fmt(size=128)
+    DXT5 = _mk_fmt(size=128)
+    BGRX8888 = _mk_fmt(8, 8, 8, 8)
+    BGR565 = _mk_fmt(5, 6, 5)
+    BGRX5551 = _mk_fmt(5, 5, 5, 1)
+    BGRA4444 = _mk_fmt(4, 4, 4, 4)
+    DXT1_ONEBITALPHA = _mk_fmt(size=64)
+    BGRA5551 = _mk_fmt(5, 5, 5, 1)
+    UV88 = _mk_fmt(size=16)
+    UVWQ8888 = _mk_fmt(size=32)
+    RGBA16161616F = _mk_fmt(16, 16, 16, 16)
+    RGBA16161616 = _mk_fmt(16, 16, 16, 16)
+    UVLX8888 = _mk_fmt(size=32)
 
-    NONE = f()
+    NONE = _mk_fmt()
     # These two aren't supported by VTEX & VTFEdit, but are by the engine.
     # They're useful for normal maps.
-    ATI1N = f(size=64)
-    ATI2N = f(size=128)
+    ATI1N = _mk_fmt(size=64)
+    ATI2N = _mk_fmt(size=128)
 
     def __repr__(self) -> str:
         """Exclude RGB or A sizes if zero."""
@@ -180,7 +180,7 @@ class ImageFormats(Enum):
         else:
             return self.ind
 
-del f
+del _mk_fmt
 # Initialise the internal mapping in the format modules.
 _format_funcs.init(ImageFormats)
 if _cy_format_funcs is not _py_format_funcs:

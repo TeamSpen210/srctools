@@ -2,7 +2,6 @@
 import struct
 import sys
 from enum import Enum
-from collections import Counter
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
     Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterator,
@@ -34,6 +33,7 @@ class ValueType(Enum):
     QUATERNION = 'quaternion'
     MATRIX = 'vmatrix'
 
+
 # type -> enum index.
 VAL_TYPE_TO_IND = {
     ValueType.ELEMENT: 1,
@@ -63,10 +63,12 @@ _UNSET = object()  # Argument sentinel
 # Element type used to indicate binary "stub" elements...
 STUB = '<StubElement>'
 
+
 class Vec2(NamedTuple):
     """A 2-dimensional vector."""
     x: float
     y: float
+
     def __repr__(self) -> str:
         return f'({self[0]:.6g} {self[1]:.6g})'
 
@@ -76,6 +78,7 @@ class Vec3(NamedTuple):
     x: float
     y: float
     z: float
+
     def __repr__(self) -> str:
         return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g})'
 
@@ -86,6 +89,7 @@ class Vec4(NamedTuple):
     y: float
     z: float
     w: float
+
     def __repr__(self) -> str:
         return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
@@ -106,6 +110,7 @@ class Color(NamedTuple):
     g: int
     b: int
     a: int
+
     def __repr__(self) -> str:
         return f'{self[0]} {self[1]} {self[2]} {self[3]}'
 
@@ -115,6 +120,7 @@ class AngleTup(NamedTuple):
     pitch: float
     yaw: float
     roll: float
+
 
 Time = NewType('Time', float)
 Value = Union[
@@ -177,7 +183,11 @@ def _get_converters() -> Tuple[dict, dict, dict]:
                 try:
                     type_conv[from_typ, to_typ] = ns.pop(func)
                 except KeyError:
-                    if (from_typ is ValueType.STRING or to_typ is ValueType.STRING) and from_typ is not ValueType.ELEMENT and to_typ is not ValueType.ELEMENT:
+                    if (
+                        (from_typ is ValueType.STRING or to_typ is ValueType.STRING)
+                        and from_typ is not ValueType.ELEMENT
+                        and to_typ is not ValueType.ELEMENT
+                    ):
                         raise ValueError(func + ' must exist!')
         # Special cases, variable size.
         if from_typ is not ValueType.STRING and from_typ is not ValueType.BINARY:
@@ -195,6 +205,7 @@ def _make_val_prop(val_type: ValueType, typ: type) -> property:
 
     def getter(self):
         return self._read_val(val_type)
+
     if val_type.name[0].casefold() in 'aeiou':
         desc = f' the value as an {val_type.name.lower()}.'
     else:
@@ -206,12 +217,13 @@ def _make_val_prop(val_type: ValueType, typ: type) -> property:
     return property(
         fget=getter,
         fset=setter,
-        doc=f'Access' + desc,
+        doc='Access' + desc,
     )
 
 
 class _ValProps:
     """Properties which read/write as the various kinds of value types."""
+
     def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""
         raise NotImplementedError
@@ -242,7 +254,8 @@ del _make_val_prop
 # noinspection PyProtectedMember
 class AttrMember(_ValProps):
     """A proxy for individual indexes/keys, allowing having .val attributes."""
-    def __init__(self, owner, index):
+
+    def __init__(self, owner, index) -> None:
         """Internal use only."""
         self.owner = owner
         self.index = index
@@ -1178,6 +1191,7 @@ class Element(MutableMapping[str, Attribute]):
                 default = Attribute(name, typ, val)
             self._members[key] = default
             return default
+
 
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
