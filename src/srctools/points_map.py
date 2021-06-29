@@ -8,9 +8,8 @@ from copy import deepcopy
 from typing import (
     Union, Tuple, overload, TypeVar, Generic,
     Iterator, Iterable, Mapping,
-    MutableMapping, List,
+    MutableMapping, List, ValuesView, ItemsView
 )
-from collections.abc import KeysView, ValuesView, ItemsView
 from srctools.math import Vec, Vec_tuple
 
 
@@ -127,7 +126,7 @@ class PointsMap(MutableMapping[Vec, ValueT], Generic[ValueT]):
                 continue
             for i, (map_pos, old_value) in enumerate(lst):
                 if (pos - map_pos).mag_sq() < self._dist_sq:
-                    del pos[i]
+                    del lst[i]
                     return
         raise KeyError(pos)
 
@@ -166,6 +165,7 @@ class PointsMap(MutableMapping[Vec, ValueT], Generic[ValueT]):
     ) -> None:
         """Apply the pickled state."""
         self._dist_sq, points = state
+        self._map = {}  # Pickle skips __init__!
         if not isinstance(self._dist_sq, float):
             raise ValueError('Invalid epsilon distance.')
         for x, y, z, value in points:
@@ -190,7 +190,7 @@ class PointsMap(MutableMapping[Vec, ValueT], Generic[ValueT]):
         copy._dist_sq = self._dist_sq
         copy._map = {
             key: [
-                (pos.copy(), deepcopy(copy, memodict))  # type: ignore  # Incorrect stub.
+                (pos.copy(), deepcopy(value, memodict))  # type: ignore  # Incorrect stub.
                 for pos, value in points
             ]
             for key, points in self._map.items()

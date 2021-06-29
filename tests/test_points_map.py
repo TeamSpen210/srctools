@@ -1,4 +1,7 @@
 """Test the PointsMap mapping."""
+import copy
+import pickle
+
 import pytest
 from srctools.math import Vec, Vec_tuple
 from srctools.points_map import PointsMap
@@ -138,3 +141,46 @@ def test_items() -> None:
         (Vec(4, 5, 6), 'b'),
     ]
     assert 'not_a_tuple' not in points.items()
+
+
+def test_deletion() -> None:
+    points = PointsMap(
+        (Vec(), 'a'),
+        (Vec(1, 1, 1), 'b')
+    )
+    del points[1, 1, 1]
+
+    with pytest.raises(KeyError):
+        print(points[1, 1, 1])
+
+    with pytest.raises(KeyError):
+        del points[-4.0, 2.5, 4.9]
+
+
+def test_copying() -> None:
+    """Test copying pointsmaps."""
+    list1 = [1, 2, 3]
+    list2 = [4, 5, 6]
+    orig = PointsMap(
+        (Vec(1, 0, 0), list1),
+        (Vec(2, 0, 0), list2),
+    )
+    cp = copy.copy(orig)
+    assert len(cp) == 2
+    assert cp[1, 0, 0] is list1
+    assert cp[2, 0, 0] is list2
+
+    dc = copy.deepcopy(orig)
+    assert len(dc) == 2
+    assert dc[1, 0, 0] == list1
+    assert dc[2, 0, 0] == list2
+    assert dc[1, 0, 0] is not list1
+    assert dc[2, 0, 0] is not list2
+
+    pick = pickle.dumps(orig)
+    cp_pick = pickle.loads(pick)
+    assert len(cp_pick) == 2
+    assert cp_pick[1, 0, 0] == list1
+    assert cp_pick[2, 0, 0] == list2
+    assert cp_pick[1, 0, 0] is not list1
+    assert cp_pick[2, 0, 0] is not list2
