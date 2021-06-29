@@ -29,7 +29,6 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest
         python -m pip install attrs
-      # Only on Py3.6
         if python -c "import sys; sys.exit(sys.hexversion>=0x03070000)"; then pip install importlib_resources; fi
     - name: Lint with flake8
       run: |
