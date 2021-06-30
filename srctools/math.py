@@ -906,6 +906,14 @@ class Vec(_RoundsToVec):
         else:
             raise KeyError(f'Invalid axis: {ind!r}')
 
+    def in_bbox(self, a: AnyVec, b: 'Vec') -> bool:
+        """Check if this point is inside the specified bounding box."""
+        return (
+            min(a[0], b[0]) <= self.x <= max(a[0], b[0]) and
+            min(a[1], b[1]) <= self.y <= max(a[1], b[1]) and
+            min(a[2], b[2]) <= self.z <= max(a[2], b[2])
+        )
+
     def other_axes(self, axis: str) -> Tuple[float, float]:
         """Get the values for the other two axes."""
         if axis == 'x':

@@ -4,8 +4,6 @@ import copy
 
 import operator as op
 
-import pytest
-
 from srctools.test import *
 from srctools import Vec_tuple, math as vec_mod
 
@@ -154,7 +152,7 @@ def test_parse_vec_passthrough(py_c_vec):
     assert parse_vec_str('fail', obj1, obj2, obj3) == (obj1, obj2, obj3)
 
 
-def test_with_axes(py_c_vec):
+def test_with_axes(py_c_vec: PyCVec):
     """Test the with_axes() constructor."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for axis, u, v in ['xyz', 'yxz', 'zxy']:
@@ -176,7 +174,7 @@ def test_with_axes(py_c_vec):
             assert vec[c] == z, msg
 
 
-def test_vec_stringification(py_c_vec):
+def test_vec_stringification(py_c_vec: PyCVec):
     """Test the various string methods."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     # Add on the edge case where '.0' needs to be kept.
@@ -190,7 +188,7 @@ def test_vec_stringification(py_c_vec):
         assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
 
 
-def test_unary_ops(py_c_vec):
+def test_unary_ops(py_c_vec: PyCVec):
     """Test -vec and +vec."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_NUMS):
@@ -198,7 +196,7 @@ def test_unary_ops(py_c_vec):
         assert_vec(+Vec(x, y, z), +x, +y, +z)
 
 
-def test_mag(py_c_vec):
+def test_mag(py_c_vec: PyCVec):
     """Test magnitude methods."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
@@ -221,7 +219,7 @@ def test_mag(py_c_vec):
             assert_vec(vec.norm(), x/length, y/length, z/length, vec)
 
 
-def test_contains(py_c_vec):
+def test_contains(py_c_vec: PyCVec):
     # Match to list.__contains__
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for num in VALID_NUMS:
@@ -229,7 +227,7 @@ def test_contains(py_c_vec):
             assert (num in Vec(x, y, z)) == (num in [x, y, z])
 
 
-def test_scalar(py_c_vec):
+def test_scalar(py_c_vec: PyCVec):
     """Check that Vec() + 5, -5, etc does the correct thing.
 
     For +, -, *, /, // and % calling with a scalar should perform the
@@ -306,7 +304,7 @@ def test_scalar(py_c_vec):
 @pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
     ('x', 0, 'y', 'z', 1, 2), ('y', 1, 'x', 'z', 0, 2), ('z', 2, 'x', 'y', 0, 1),
 ], ids='xyz')
-def test_vec_props(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
+def test_vec_props(py_c_vec: PyCVec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
     """Test the X/Y/Z attributes and item access."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     vec = Vec()
@@ -332,7 +330,7 @@ def test_vec_props(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v
             check(x, oth)
 
 
-def test_vec_to_vec(py_c_vec):
+def test_vec_to_vec(py_c_vec: PyCVec):
     """Check that Vec() +/- Vec() does the correct thing.
 
     For +, -, two Vectors apply the operations to all values.
@@ -447,7 +445,7 @@ def test_vec_to_vec(py_c_vec):
             test(num, num, num, num, num, 0)
 
 
-def test_scalar_zero(py_c_vec):
+def test_scalar_zero(py_c_vec: PyCVec):
     """Check zero behaviour with division ops."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     for x, y, z in iter_vec(VALID_NUMS):
@@ -1019,7 +1017,7 @@ def test_copy_pickle(py_c_vec):
     assert cy_pick == py_pick == pick
 
 
-def test_bbox(py_c_vec):
+def test_bbox(py_c_vec: PyCVec):
     """Test the functionality of Vec.bbox()."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -1078,7 +1076,7 @@ def test_bbox(py_c_vec):
     test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
 
 
-def test_vmf_rotation(py_c_vec):
+def test_vmf_rotation(py_c_vec: PyCVec):
     """Complex test.
 
     Use a compiled map to check the functionality of Vec.rotate().
@@ -1121,3 +1119,41 @@ def test_cross_product_axes(py_c_vec):
     assert_vec(Vec.cross(Vec(y=1), Vec(x=1)), 0, 0, -1)
     assert_vec(Vec.cross(Vec(z=1), Vec(x=1)), 0, 1, 0)
     assert_vec(Vec.cross(Vec(z=1), Vec(y=1)), -1, 0, 0)
+
+
+@pytest.mark.parametrize('x, xvalid', [
+    (-64, False),
+    (-32, True),
+    (-10, True),
+    (240, True),
+    (300, False),
+])
+@pytest.mark.parametrize('y, yvalid', [
+    (-64, False),
+    (-48, True),
+    (100, True),
+    (310, True),
+    (400, False),
+])
+@pytest.mark.parametrize('z, zvalid', [
+    (-256, False),
+    (-128, True),
+    (-64, True),
+    (23, True),
+    (49, False),
+])
+def test_vec_in_bbox(
+    py_c_vec: PyCVec,
+    x: float, y: float, z: float,
+    xvalid: bool, yvalid: bool, zvalid: bool,
+) -> None:
+    """"Test Vec.in_bbox(a, b)"""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    a = Vec(-32, -48, -128)
+    b = Vec(240, 310, 23)
+    valid = xvalid and yvalid and zvalid
+    assert Vec(x, y, z).in_bbox(a, b) is valid
+    assert Vec(x, y, z).in_bbox(Vec(b.x, a.y, a.z), Vec(a.x, b.y, b.z)) is valid
+    assert Vec(x, y, z).in_bbox(Vec(a.x, b.y, a.z), Vec(b.x, a.y, b.z)) is valid
+    assert Vec(x, y, z).in_bbox(Vec(a.x, a.y, b.z), Vec(b.x, b.y, a.z)) is valid
+    assert Vec(x, y, z).in_bbox(b, a) is valid

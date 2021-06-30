@@ -1,31 +1,41 @@
-"""Read and write lumps in Source BSP files.
+"""Read and write parts of Source BSP files.
 
+Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    List, Dict, Iterator, Union, Optional, BinaryIO, Tuple,
-    ClassVar,
+    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator,
 )
 from io import BytesIO
 from enum import Enum, Flag
+from weakref import WeakKeyDictionary
 from zipfile import ZipFile
 import itertools
 import struct
+import inspect
 import contextlib
-
+import warnings
 import attr
 
-from srctools import AtomicWriter, Vec, Angle, conv_int
+from srctools import AtomicWriter, conv_int
+from srctools.math import Vec, Angle
+from srctools.filesys import FileSystem
+from srctools.vtf import VTF
+from srctools.vmt import Material
 from srctools.vmf import VMF, Entity, Output
 from srctools.tokenizer import escape_text
 from srctools.binformat import struct_read, DeferredWrites
 from srctools.property_parser import Property
 
-
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
     'BSP', 'Lump',
     'StaticProp', 'StaticPropFlags',
+    'TexData', 'TexInfo',
+    'Cubemap', 'Overlay',
     'VisTree', 'VisLeaf',
+    'BModel', 'Plane', 'PlaneType',
+    'Brush', 'BrushSide', 'BrushContents',
 ]
 
 
@@ -33,6 +43,13 @@ BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
+
+T = TypeVar('T')
+Edge = Tuple[Vec, Vec]
+
+# Game lump IDs
+LMP_ID_STATIC_PROPS = b'sprp'
+LMP_ID_DETAIL_PROPS = b'dprp'
 
 
 class VERSIONS(Enum):
@@ -73,9 +90,29 @@ class VERSIONS(Enum):
 
     DESOLATION = 42
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
         return self.value == other
+
+    def __ne__(self, other: object) -> bool:
+        """Versions are equal to their integer value."""
+        return self.value != other
+
+    def __lt__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value < other
+
+    def __gt__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value > other
+
+    def __le__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value <= other
+
+    def __ge__(self, other: int) -> bool:
+        """Versions are comparable to their integer value."""
+        return self.value >= other
 
 
 class BSP_LUMPS(Enum):
@@ -176,6 +213,107 @@ LUMP_WRITE_ORDER = list(BSP_LUMPS)
 LUMP_WRITE_ORDER.remove(BSP_LUMPS.PAKFILE)
 LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 
+# When remaking the lumps from trees of objects,
+# they need to be done in the correct order so stuff referring
+# to other trees can add their data.
+LUMP_REBUILD_ORDER = [
+    BSP_LUMPS.PAKFILE,
+    BSP_LUMPS.CUBEMAPS,
+    LMP_ID_STATIC_PROPS,  # References visleafs.
+    LMP_ID_DETAIL_PROPS,
+
+    BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
+    BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
+    BSP_LUMPS.NODES,  # References planes, faces, visleafs.
+    BSP_LUMPS.LEAFS,  # References brushes, faces
+
+    BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
+
+    BSP_LUMPS.FACES,  # References their original face, surfedges, texinfo, primitives.
+    BSP_LUMPS.FACES_HDR,  # References their original face, surfedges, texinfo, primitives.
+    BSP_LUMPS.ORIGINALFACES,  # references surfedges & texinfo, primitives.
+
+    BSP_LUMPS.PRIMITIVES,
+    BSP_LUMPS.SURFEDGES,  # surfedges references vertexes.
+    BSP_LUMPS.PLANES,
+    BSP_LUMPS.VERTEXES,
+
+    BSP_LUMPS.OVERLAYS,  # Adds texinfo entries.
+
+    BSP_LUMPS.TEXINFO,  # Adds texdata -> texdata_string_data entries.
+    BSP_LUMPS.TEXDATA_STRING_DATA,
+]
+
+
+class PlaneType(Enum):
+    """The orientation of a plane."""
+    X = 0  # Exactly in the X axis.
+    Y = 1  # Exactly in the Y axis.
+    Z = 2  # Exactly in the Z axis.
+    ANY_X = 3  # Pointing mostly in the X axis
+    ANY_Y = 4  # Pointing mostly in the Y axis.
+    ANY_Z = 5  # Pointing mostly in the Z axis.
+
+
+class SurfFlags(Flag):
+    """The various SURF_ flags, indicating different attributes for faces."""
+    NONE = 0
+    LIGHT = 0x1  # The face has lighting info.
+    SKYBOX_2D = 0x2  # Nodraw, but when visible 2D skybox should be rendered.
+    SKYBOX_3D = 0x4  # Nodraw, but when visible 2D and 3D skybox should be rendered.
+    WATER_WARP = 0x8  # 'turbulent water warp'
+    TRANSLUCENT = 0x10  # Translucent material.
+    NOPORTAL = 0x20  # Portalgun blocking material.
+    TRIGGER = 0x40  # XBox only - is a trigger surface.
+    NODRAW = 0x80  # Texture isn't used, it's invisible.
+    HINT = 0x100  # A hint brush.
+    SKIP = 0x200  # Skip brush, removed from map.
+    NOLIGHT = 0x400  # No light needs to be calculated.
+    BUMPLIGHT = 0x800  # Needs three lightmaps for bumpmapping.
+    NO_SHADOWS = 0x1000  # Doesn't receive shadows.
+    NO_DECALS = 0x2000  # Rejects decals.
+    NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
+    HITBOX = 0x8000  # 'Part of a hitbox'
+
+
+class BrushContents(Flag):
+    """The various CONTENTS_ flags, indicating different attributes for an entire brush."""
+    EMPTY = 0
+    SOLID = 0x1  # Player camera is not valid inside here.
+    WINDOW = 0x2  # Translucent glass.
+    AUX = 0x4
+    GRATE = 0x8  # Grating, bullets/LOS pass, objects do not.
+    SLIME = 0x10  # Slime-style liquid.
+    WATER = 0x20  # Is a water brush
+    MIST = 0x40
+    OPAQUE = 0x80  # Blocks LOS
+    TEST_FOG_VOLUME = 0x100  # May be non-solid, but cannot be seen through.
+    TEAM1 = 0x800  # Special team-only clips.
+    TEAM2 = 0x1000  # Special team-only clips.
+    IGNORE_NODRAW_OPAQUE = 0x2000  # ignore CONTENTS_OPAQUE on surfaces that have SURF_NODRAW
+    MOVABLE = 0x4000
+
+    AREAPORTAL = 0x8000  # Is an areaportal brush.
+    PLAYER_CLIP = 0x10000  # Is tools/toolsplayerclip.
+    NPC_CLIP = 0x20000  # Is tools/toolsclip.
+    # Specifies water currents, can be mixed.
+    CURRENT_0 = 0x40000
+    CURRENT_90 = 0x80000
+    CURRENT_180 = 0x100000
+    CURRENT_270 = 0x200000
+    CURRENT_UP = 0x400000
+    CURRENT_DOWN = 0x800000
+    ORIGIN = 0x1000000  # tools/toolsorigin brush, used to set origin.
+    NPC = 0x2000000  # Shouldn't be on brushes, for NPCs.
+    DEBRIS = 0x4000000
+    DETAIL = 0x8000000  # Is func_detail.
+    TRANSLUCENT = 0x10000000  # Brush is $translucent/$alphatest/$alpha/etc
+    LADDER = 0x20000000
+    HITBOX = 0x40000000
+
+    UNUSED_1 = 0x200
+    UNUSED_2 = 0x400
+
 
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
@@ -205,22 +343,226 @@ class StaticPropFlags(Flag):
         return self.value >> 8
 
 
+class VisLeafFlags(Flag):
+    """Visleaf flags."""
+    NONE = 0x0
+    SKY_3D = 0x01  # The 3D skybox is visible from here.
+    SKY_2D = 0x04  # The 2D skybox is visible from here.
+    RADIAL = 0x02  # Has culled portals, due to far-z fog limits.
+    HAS_DETAIL_OBJECTS = 0x08  # Contains detail props - ingame only, not set in BSP.
+
+    # Undocumented flags, still in maps though?
+    # Looks like uninitialised members.
+    _BIT_4 = 1 << 3
+    _BIT_5 = 1 << 4
+    _BIT_6 = 1 << 5
+    _BIT_7 = 1 << 6
+
+
+class DetailPropOrientation(Enum):
+    """The kind of orientation for detail props."""
+    NORMAL = 0
+    SCREEN_ALIGNED = 1
+    SCREEN_ALIGNED_VERTICAL = 2
+
+
+def identity(x: T) -> T:
+    """Identity function."""
+    return x
+
+
+def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[T], int]:
+    """Create a function for inserting items in a list if not found.
+
+    This is used to build up the structure arrays which other lumps refer
+    to by index.
+    If the provided argument to the callable is already in the list,
+    the index is returned. Otherwise it is appended and the new index returned.
+    The key function is used to match existing items.
+
+    """
+    by_index: dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
+
+    def finder(item: T) -> int:
+        """Find or append the item."""
+        key = key_func(item)
+        try:
+            return by_index[key]
+        except KeyError:
+            ind = by_index[key] = len(item_list)
+            item_list.append(item)
+            return ind
+    return finder
+
+
+def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[List[T]], int]:
+    """Create a function for positioning a sublist inside the larger list, adding it if required.
+
+    This is used to build up structure arrays where othe lumps access subsections of it.
+    """
+    # We expect repeated items to be fairly uncommon, so we can skip to all
+    # occurrences of the first index to speed up the search.
+    by_index: dict[Hashable, List[int]] = {}
+    for k, item in enumerate(item_list):
+        by_index.setdefault(key_func(item), []).append(k)
+
+    def finder(items: List[T]) -> int:
+        """Find or append the items."""
+        if not items:
+            # Array is empty, so the index doesn't matter, it'll never be
+            # dereferenced.
+            return 0
+        for i in by_index.get(key_func(items[0]), ()):
+            if item_list[i:i + len(items)] == items:
+                return i
+        # Not found, append to the end.
+        i = len(item_list)
+        item_list.extend(items)
+        # Update the index.
+        for j, item2 in enumerate(items):
+            by_index.setdefault(key_func(item2), []).append(i + j)
+        return i
+
+    return finder
+
+
+class ParsedLump(Generic[T]):
+    """Allows access to parsed versions of lumps.
+    
+    When accessed, the corresponding lump is parsed into an object tree.
+    The lump is then cleared of data.
+    When the BSP is saved, the lump data is then constructed.
+
+    If the lump name is bytes, it's a game lump identifier.
+    """
+
+    def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
+        self.lump = lump
+        self.to_clear = (lump, ) + extra
+        self.__name__ = ''
+        # May also be a Generator[X] if T = List[X]
+        self._read: Optional[Union[Callable[[BSP, bytes], T], Callable[[BSP, int, bytes], T]]] = None
+        self._check: Optional[Callable[[BSP, T], None]] = None
+        assert self.lump in LUMP_REBUILD_ORDER, self.lump
+
+    def __set_name__(self, owner: Type['BSP'], name: str) -> None:
+        self.__name__ = name
+        self.__objclass__ = owner
+        self._read = getattr(owner, '_lmp_read_' + name)
+        self._check = getattr(owner, '_lmp_check_' + name, None)
+        # noinspection PyProtectedMember
+        owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + name)
+
+    def __repr__(self) -> str:
+        return f'<srctools.BSP.{self.__name__} member>'
+        
+    @overload
+    def __get__(self, instance: None, owner=None) -> 'ParsedLump[T]': ...
+    @overload
+    def __get__(self, instance: 'BSP', owner=None) -> T: ...
+        
+    def __get__(self, instance: Optional['BSP'], owner=None) -> Union['ParsedLump', T]:
+        """Read the lump, then discard."""
+        if instance is None:  # Accessed on the class.
+            return self
+        try:
+            return instance._parsed_lumps[self.lump]  # noqa
+        except KeyError:
+            pass
+        if self._read is None:
+            raise TypeError('ParsedLump.__set_name__ was never called!')
+        if isinstance(self.lump, bytes):  # Game lump
+            gm_lump = instance.game_lumps[self.lump]
+            result = self._read(instance, gm_lump.version, gm_lump.data)
+        else:
+            data = instance.lumps[self.lump].data
+            result = self._read(instance, data)
+        if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
+            result = list(result)  # type: ignore
+
+        instance._parsed_lumps[self.lump] = result # noqa
+        for lump in self.to_clear:
+            if isinstance(lump, bytes):
+                instance.game_lumps[lump].data = b''
+            else:
+                instance.lumps[lump].data = b''
+        return result
+
+    def __set__(self, instance: Optional['BSP'], value: T) -> None:
+        """Discard lump data, then store."""
+        if instance is None:
+            raise TypeError('Cannot assign directly to lump descriptor!')
+        if self._check is not None:
+            # Allow raising if an invalid value.
+            self._check(instance, value)
+        for lump in self.to_clear:
+            if isinstance(lump, bytes):
+                instance.game_lumps[lump].data = b''
+            else:
+                instance.lumps[lump].data = b''
+        instance._parsed_lumps[self.lump] = value  # noqa
+
+
+# noinspection PyMethodMayBeStatic
 class BSP:
     """A BSP file."""
+    # Parsed lump -> func which remakes the raw data. Any = ParsedLump's T, but
+    # that can't bind here.
+    _save_funcs: ClassVar[Dict[
+        Union[bytes, BSP_LUMPS],
+        Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
+    ]] = {}
+    version: Union[VERSIONS, int]
+
     def __init__(self, filename: str, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps = {}  # type: Dict[BSP_LUMPS, Lump]
-        self.game_lumps = {}  # type: Dict[bytes, GameLump]
+        self.lumps: dict[BSP_LUMPS, Lump] = {}
+        self._parsed_lumps: dict[Union[bytes, BSP_LUMPS], Any] = {}
+        self.game_lumps: dict[bytes, GameLump] = {}
         self.header_off = 0
-        self.version = version  # type: Optional[Union[VERSIONS, int]]
+        self.version = version  # type: ignore  # read() will make it non-none.
+        # Tracks if the ent lump is using the new x1D output separators,
+        # or the old comma separators. If no outputs are present there's no
+        # way to determine this.
+        self.out_comma_sep: Optional[bool] = None
+        # This internally stores the texdata values texinfo refers to. Users
+        # don't interact directly, instead they use the create_texinfo / texinfo.set()
+        # methods that create the data as required.
+        self._texdata: Dict[str, TexData] = {}
 
         self.read()
+
+    pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
+    ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
+    textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
+    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
+    cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
+    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
+
+    bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
+    brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
+    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
+    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
+
+    vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
+    surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
+    planes: ParsedLump[List['Plane']] = ParsedLump(BSP_LUMPS.PLANES)
+    faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
+    orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
+    hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
+    primitives: ParsedLump[List['Primitive']] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
+
+    # Game lumps
+    props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
+    detail_props: ParsedLump[List['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
         self.game_lumps.clear()
+        self._parsed_lumps.clear()
+        self._texdata.clear()
 
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
@@ -289,15 +631,34 @@ class BSP:
 
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
-
+        # First, go through lumps the user has accessed, and rebuild their data.
+        for lump_name in LUMP_REBUILD_ORDER:
+            try:
+                data = self._parsed_lumps.pop(lump_name)
+            except KeyError:
+                pass
+            else:
+                lump_result = self._save_funcs[lump_name](self, data)
+                if inspect.isgenerator(lump_result):  # Convenience, yield to accumulate into bytes.
+                    buf = BytesIO()
+                    for chunk in lump_result:
+                        buf.write(chunk)
+                    lump_result = buf.getvalue()
+                if isinstance(lump_name, bytes):
+                    self.game_lumps[lump_name].data = lump_result
+                else:
+                    self.lumps[lump_name].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:  # type: BinaryIO
+        file: BinaryIO
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
             defer = DeferredWrites(file)
 
-            if isinstance(self.version, VERSIONS):
+            if self.version is None:
+                raise ValueError('No version specified for BSP!')
+            elif isinstance(self.version, VERSIONS):
                 version = self.version.value
             else:
                 version = self.version
@@ -356,9 +717,11 @@ class BSP:
 
     def read_header(self) -> None:
         """No longer used."""
+        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
     def read_game_lumps(self) -> None:
         """No longer used."""
+        warnings.warn('Does nothing.', DeprecationWarning, stacklevel=2)
 
     def replace_lump(
         self,
@@ -370,6 +733,11 @@ class BSP:
 
         This is deprecated, simply assign to the .data attribute of the lump.
         """
+        warnings.warn(
+            'This is deprecated, use the appropriate property, '
+            'or the .data attribute of the lump.',
+            DeprecationWarning, stacklevel=2,
+        )
         if isinstance(lump, BSP_LUMPS):
             lump = self.lumps[lump]
 
@@ -386,21 +754,520 @@ class BSP:
         try:
             lump = self.game_lumps[lump_id]
         except KeyError:
-            raise ValueError('{} not in {}'.format(lump_id, list(self.game_lumps)))
+            raise ValueError('{!r} not in {}'.format(lump_id, list(self.game_lumps)))
         return lump.data
 
+    @overload
+    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem) -> 'TexInfo':
+        """Copy from texinfo using filesystem."""
+    @overload
+    def create_texinfo(
+        self, mat: str, *, copy_from: 'TexInfo',
+        reflectivity: Vec, width: int, height: int,
+    ) -> 'TexInfo':
+        """Copy from texinfo and explicit texdata."""
+
+    @overload
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=Vec(),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *, fsys: FileSystem,
+    ) -> 'TexInfo':
+        """Construct from filesystem."""
+    @overload
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=Vec(),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *,
+        reflectivity: Vec, width: int, height: int,
+    ) -> 'TexInfo':
+        """Construct with explicit texdata."""
+
+    def create_texinfo(
+        self, mat: str,
+        s_off: Vec=Vec(),
+        s_shift: float=-99999.0,
+        t_off: Vec=Vec(),
+        t_shift: float=-99999.0,
+        lightmap_s_off: Vec=Vec(),
+        lightmap_s_shift: float=-99999.0,
+        lightmap_t_off: Vec=Vec(),
+        lightmap_t_shift: float=-99999.0,
+        flags: SurfFlags = SurfFlags.NONE,
+        *,
+        copy_from: 'TexInfo' = None,
+        reflectivity: Vec=None, width: int=0, height: int=0,
+        fsys: FileSystem=None,
+    ) -> 'TexInfo':
+        """Create or find a texinfo entry with the specified values.
+
+        The s/t offset and shift values control the texture positioning. The
+        defaults are those used for overlays, but for brushes all must be
+        specified. Alternatively copy_from can be provided an existing texinfo
+        to copy from, if a texture is being swapped out.
+
+        In the BSP each material also stores its texture size and reflectivity.
+        If the material has not been used yet, these must either be specified
+        manually or a filesystem provided for the VMT and VTFs to be read from.
+        """
+        if copy_from is not None:
+            s_off = copy_from.s_off
+            s_shift = copy_from.s_shift
+            t_off = copy_from.t_off
+            t_shift = copy_from.t_shift
+            lightmap_s_off = copy_from.lightmap_s_off
+            lightmap_s_shift = copy_from.lightmap_s_shift
+            lightmap_t_off = copy_from.lightmap_t_off
+            lightmap_t_shift = copy_from.lightmap_t_shift
+
+        try:
+            data = self._texdata[mat.casefold()]
+            search = True
+        except KeyError:
+            search = False
+            if fsys is None:
+                if reflectivity is None or not width or not height:
+                    raise TypeError(
+                        'Either valid data must be provided or a filesystem '
+                        'to read them from!')
+                data = TexData(mat, reflectivity.copy(), width, height)
+            else:
+                data = TexData.from_material(fsys, mat)
+            self._texdata[mat.casefold()] = data
+
+        new_texinfo = TexInfo(
+            Vec(s_off), s_shift,
+            Vec(t_off), t_shift,
+            Vec(lightmap_s_off), lightmap_s_shift,
+            Vec(lightmap_t_off), lightmap_t_shift,
+            flags, data,
+        )
+        # Texdata is present, look for matching texinfos?
+        if search:
+            for orig_texinfo in self.texinfo:
+                if orig_texinfo == new_texinfo:
+                    return orig_texinfo
+        self.texinfo.append(new_texinfo)
+        return new_texinfo
+
     # Lump-specific commands:
+    def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
+        for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
+            yield Plane(Vec(x, y, z), dist, PlaneType(typ))
+
+    def _lmp_write_planes(self, planes: List['Plane']) -> bytes:
+        return b''.join([
+            struct.pack(
+                '<ffffi',
+                plane.normal.x, plane.normal.y, plane.normal.z,
+                plane.dist,
+                plane.type.value,
+            )
+            for plane in planes
+        ])
+
+    def _lmp_read_vertexes(self, vertexes: bytes) -> List[Vec]:
+        return list(map(Vec, struct.iter_unpack('<fff', vertexes)))
+
+    def _lmp_write_vertexes(self, vertexes: List[Vec]) -> bytes:
+        return b''.join([struct.pack('<fff', pos.x, pos.y, pos.z) for pos in vertexes])
+
+    def _lmp_read_surfedges(self, vertexes: bytes) -> Iterator[Edge]:
+        verts: list[Vec] = self.vertexes
+        edges = [
+            (verts[a], verts[b])
+            for a, b in struct.iter_unpack('<HH', self.lumps[BSP_LUMPS.EDGES].data)
+        ]
+        for [ind] in struct.iter_unpack('i', vertexes):
+            if ind < 0:  # If negative, the vertexes are reversed order.
+                yield edges[-ind][::-1]
+            else:
+                yield edges[ind]
+
+    def _lmp_write_surfedges(self, surf_edges: List[Edge]) -> bytes:
+        """Reconstruct the surfedges and edges lumps."""
+        edge_buf = BytesIO()
+        surf_buf = BytesIO()
+
+        # (a, b) -> edge
+        edge_to_ind: dict[tuple[float, float, float, float, float, float], int] = {}
+        add_vert = _find_or_insert(self.vertexes, Vec.as_tuple)
+
+        for a, b in surf_edges:
+            # Check to see if this edge is already defined.
+            # positive indexes are in forward order, negative
+            # allows us to refer to a reversed definition.
+            try:
+                ind = edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z]
+            except KeyError:
+                pass
+            else:
+                surf_buf.write(struct.pack('i', ind))
+                continue
+
+            try:
+                ind = -edge_to_ind[b.x, b.y, b.z, a.x, a.y, a.z]
+                if ind == 0:
+                    # Edge case, zero is for the forward order.
+                    # We need to add the edge definition elsewhere.
+                    raise KeyError
+            except KeyError:
+                pass
+            else:
+                surf_buf.write(struct.pack('i', ind))
+                continue
+
+            # No luck, we need to add an edge definition.
+            ind = len(edge_to_ind)
+            edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z] = ind
+
+            edge_buf.write(struct.pack('<HH',  add_vert(a), add_vert(b)))
+            surf_buf.write(struct.pack('i', ind))
+
+        self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
+        return surf_buf.getvalue()
+
+    def _lmp_read_primitives(self, data: bytes) -> Iterator['Primitive']:
+        """Parse the primitives lumps."""
+        verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
+        indices = list(struct.unpack(
+            '<' + 'H' * (len(self.lumps[BSP_LUMPS.PRIMINDICES].data) // 2),
+            self.lumps[BSP_LUMPS.PRIMINDICES].data,
+        ))
+        for (
+            prim_type,
+            first_ind, ind_count,
+            first_vert, vert_count,
+        ) in struct.iter_unpack('<HHHHH', data):
+            yield Primitive(
+                prim_type,
+                indices[first_ind: first_ind + ind_count],
+                verts[first_vert: first_vert + vert_count],
+            )
+
+    def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
+        verts: list[Vec] = []
+        indices: list[int] = []
+        add_vert = _find_or_extend(verts, Vec.as_tuple)
+        add_ind = _find_or_extend(indices, identity)
+        for prim in prims:
+            yield struct.pack(
+                '<HHHHH',
+                prim.is_tristrip,
+                add_ind(prim.indexed_verts), len(prim.indexed_verts),
+                add_vert(prim.verts), len(prim.verts),
+            )
+        self.lumps[BSP_LUMPS.PRIMINDICES].data = struct.pack('<' + 'H' * len(indices), *indices)
+        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join([
+            struct.pack('<fff', pos.x, pos.y, pos.z) for pos in verts
+        ])
+
+    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
+        """Read one of the faces arrays.
+
+        For ORIG_FACES, _orig_faces is None and that entry is ignored.
+        For the others, that is the parsed orig faces lump, which each face
+        may reference.
+        """
+        for (
+            plane_num,
+            side,
+            on_node,
+            first_edge, num_edges,
+            texinfo_ind,
+            dispinfo,
+            surf_fog_vol_id,
+            lightstyles,
+            light_offset,
+            area,
+            lightmap_mins_x, lightmap_mins_y,
+            lightmap_size_x, lightmap_size_y,
+            orig_face_ind,
+            prim_num,
+            prim_first,
+            smoothing_group,
+        ) in struct.iter_unpack('<H??i4h4sif5iHHI', data):
+            # If orig faces is provided, that is the original face
+            # we were created from. Additionally, it seems the original
+            # face data has invalid texinfo, so copy ours on top of it.
+            if _orig_faces is not None:
+                orig_face = _orig_faces[orig_face_ind]
+                orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
+            else:
+                orig_face = texinfo = None
+            yield Face(
+                self.planes[plane_num],
+                side, on_node,
+                self.surfedges[first_edge:first_edge+num_edges],
+                texinfo,
+                dispinfo,
+                surf_fog_vol_id,
+                lightstyles,
+                light_offset,
+                area,
+                (lightmap_mins_x, lightmap_mins_y),
+                (lightmap_size_x, lightmap_size_y),
+                orig_face,
+                self.primitives[prim_first:prim_first + prim_num],
+                smoothing_group,
+            )
+
+    def _lmp_write_orig_faces(self, faces: List['Face'], get_orig_face: Callable[['Face'], int]=None) -> bytes:
+        """Reconstruct one of the faces arrays.
+
+        If this isn't the orig faces array, get_orig_face should be
+        _find_or_insert(self.orig_faces).
+        """
+        def edge_key(edges) -> tuple:
+            """Key function to allow hashing the edges tuples."""
+            a, b = edges
+            return (a.x, a.y, a.z, b.x, b.y, b.z)
+
+        face_buf = BytesIO()
+        add_texinfo = _find_or_insert(self.texinfo)
+        add_plane = _find_or_insert(self.planes)
+        add_edges = _find_or_extend(self.surfedges, edge_key)
+        add_prims = _find_or_extend(self.primitives)
+
+        for face in faces:
+            if face.orig_face is not None and get_orig_face is not None:
+                orig_ind = get_orig_face(face.orig_face)
+            else:
+                orig_ind = -1
+            if face.texinfo is not None:
+                texinfo = add_texinfo(face.texinfo)
+            else:
+                texinfo = -1
+
+            # noinspection PyProtectedMember
+            face_buf.write(struct.pack(
+                '<H??i4h4sif5iHHI',
+                add_plane(face.plane),
+                face.same_dir_as_plane,
+                face.on_node,
+                add_edges(face.edges), len(face.edges),
+                texinfo,
+                face._dispinfo_ind,
+                face.surf_fog_volume_id,
+                face.light_styles,
+                face._lightmap_off,
+                face.area,
+                *face.lightmap_mins, *face.lightmap_size,
+                orig_ind,
+                len(face.primitives), add_prims(face.primitives),
+                face.smoothing_groups,
+            ))
+        return face_buf.getvalue()
+
+    def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the main split faces lump."""
+        return self._lmp_read_orig_faces(data, self.orig_faces)
+
+    def _lmp_write_faces(self, faces: List['Face']) -> bytes:
+        return self._lmp_write_orig_faces(faces, _find_or_insert(self.orig_faces))
+
+    _lmp_read_hdr_faces = _lmp_read_faces
+    _lmp_write_hdr_faces = _lmp_write_faces
+
+    def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
+        """Parse brush definitions, along with the sides."""
+        # The bevel param should be a bool, but randomly has other bits set?
+        sides = [
+            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
+            for (plane_num, texinfo, dispinfo, bevel)
+            in struct.iter_unpack('<Hhhh', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+        ]
+        for first_side, side_count, contents in struct.iter_unpack('<iii', data):
+            yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
+
+    def _lmp_write_brushes(self, brushes: List['Brush']) -> bytes:
+        sides: list[BrushSide] = []
+        add_plane = _find_or_insert(self.planes)
+        add_texinfo = _find_or_insert(self.texinfo)
+        add_sides = _find_or_extend(sides)
+
+        brush_buf = BytesIO()
+        sides_buf = BytesIO()
+        for brush in brushes:
+            brush_buf.write(struct.pack(
+                '<iii',
+                add_sides(brush.sides), len(brush.sides),
+                brush.contents.value,
+            ))
+        for side in sides:
+            sides_buf.write(struct.pack(
+                '<Hhhh',
+                add_plane(side.plane),
+                add_texinfo(side.texinfo),
+                side._dispinfo,
+                side.is_bevel_plane | side._unknown_bevel_bits,
+            ))
+        self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
+        return brush_buf.getvalue()
+
+    def _lmp_read_visleafs(self, data: bytes) -> Iterator['VisLeaf']:
+        """Parse the leafs of the visleaf/bsp tree."""
+        # There's an indirection through these index arrays.
+        # starmap() to unpack the 1-tuple struct result, then index with that.
+        leaf_brushes = list(itertools.starmap(
+            self.brushes.__getitem__,
+            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
+        ))
+        leaf_faces = list(itertools.starmap(
+            self.faces.__getitem__,
+            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
+        ))
+
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data.
+        if self.version <= 19:
+            leaf_fmt += '26x'
+
+        for (
+            contents,
+            cluster_ind, area_and_flags,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, num_faces,
+            first_brush, num_brushes,
+            water_ind
+        ) in struct.iter_unpack(leaf_fmt, data):
+            area = area_and_flags >> 7
+            flags = area_and_flags & 0b1111111
+            yield VisLeaf(
+                BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+                leaf_faces[first_face:first_face+num_faces],
+                leaf_brushes[first_brush:first_brush+num_brushes],
+                water_ind,
+            )
+
+    def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
+        """Parse the main visleaf/bsp trees."""
+        # First parse all the nodes, then link them up.
+        nodes: List[Tuple[VisTree, int, int]] = []
+
+        for (
+            plane_ind, neg_ind, pos_ind,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            first_face, face_count, area_ind,
+        ) in struct.iter_unpack('<iii6hHHh2x', data):
+            nodes.append((VisTree(
+                self.planes[plane_ind],
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+                self.faces[first_face:first_face+face_count],
+                area_ind,
+            ), neg_ind, pos_ind))
+
+        for node, neg_ind, pos_ind in nodes:
+            if neg_ind < 0:
+                node.child_neg = self.visleafs[-1 - neg_ind]
+            else:
+                node.child_neg = nodes[neg_ind][0]
+            if pos_ind < 0:
+                node.child_pos = self.visleafs[-1 - pos_ind]
+            else:
+                node.child_pos = nodes[pos_ind][0]
+        return [node for node, i, j in nodes]
+
+    def _lmp_write_nodes(self, nodes: List['VisTree']) -> bytes:
+        """Reconstruct the visleaf/bsp tree data."""
+        add_node = _find_or_insert(nodes)
+        add_plane = _find_or_insert(self.planes)
+        add_leaf = _find_or_insert(self.visleafs)
+        add_faces = _find_or_extend(self.faces)
+
+        buf = BytesIO()
+
+        node: VisTree
+        for node in nodes:
+            if isinstance(node.child_pos, VisLeaf):
+                pos_ind = -(add_leaf(node.child_pos) + 1)
+            else:
+                pos_ind = add_node(node.child_pos)
+            if isinstance(node.child_neg, VisLeaf):
+                neg_ind = -(add_leaf(node.child_neg) + 1)
+            else:
+                neg_ind = add_node(node.child_neg)
+
+            buf.write(struct.pack(
+                '<iii6hHHh2x',
+                add_plane(node.plane), neg_ind, pos_ind,
+                int(node.mins.x), int(node.mins.y), int(node.mins.z),
+                int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
+                add_faces(node.faces), len(node.faces), node.area_ind,
+            ))
+
+        return buf.getvalue()
+
+    def _lmp_write_visleafs(self, visleafs: List['VisLeaf']) -> bytes:
+        """Reconstruct the leafs of the visleaf/bsp tree."""
+        leaf_faces: list[int] = []
+        leaf_brushes: list[int] = []
+
+        add_face = _find_or_insert(self.faces)
+        add_brush = _find_or_insert(self.brushes)
+        add_faces = _find_or_extend(leaf_faces, identity)
+        add_brushes = _find_or_extend(leaf_brushes, identity)
+
+        buf = BytesIO()
+
+        leaf_fmt = '<ihh6h4Hh2x'
+        # Some extra ambient light data. TODO: handle this?
+        if self.version <= 19:
+            leaf_fmt += '26x'
+
+        for leaf in visleafs:
+            face_ind = add_faces([add_face(face) for face in leaf.faces])
+            brush_ind = add_brushes([add_brush(brush) for brush in leaf.brushes])
+
+            buf.write(struct.pack(
+                leaf_fmt,
+                leaf.contents.value, leaf.cluster_id,
+                (leaf.area << 7 | leaf.flags.value),
+                int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                face_ind, len(leaf.faces),
+                brush_ind, len(leaf.brushes),
+                leaf.water_id,
+            ))
+
+        self.lumps[BSP_LUMPS.LEAFFACES].data = struct.pack(f'<{len(leaf_faces)}H', *leaf_faces)
+        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = struct.pack(f'<{len(leaf_brushes)}H', *leaf_brushes)
+        return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
         """Iterate through all brush textures in the map."""
-        tex_data = self.get_lump(BSP_LUMPS.TEXDATA_STRING_DATA)
-        tex_table = self.get_lump(BSP_LUMPS.TEXDATA_STRING_TABLE)
+        warnings.warn('Access bsp.textures', DeprecationWarning, stacklevel=2)
+        return iter(self.textures)
+
+    def _lmp_read_textures(self, tex_data: bytes) -> Iterator[str]:
+        tex_table = self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data
         # tex_table is an array of int offsets into tex_data. tex_data is a
         # null-terminated block of strings.
 
         table_offsets = struct.unpack(
             # The number of ints + i, for the repetitions in the struct.
-            str(len(tex_table) // struct.calcsize('i')) + 'i',
+            '<' + str(len(tex_table) // struct.calcsize('i')) + 'i',
             tex_table,
         )
 
@@ -413,9 +1280,305 @@ class BSP:
                     break
             else:
                 # Reached the 128 char limit without finding a null.
-                raise ValueError('Bad string at', off, 'in BSP! ("{}")'.format(
-                    tex_data[off:str_off]
+                raise ValueError(f'Bad string at {off} in BSP! ({tex_data[off:str_off]!r})')
+
+    def _lmp_write_textures(self, textures: List[str]) -> bytes:
+        table = BytesIO()
+        data = bytearray()
+        for tex in textures:
+            if len(tex) >= 128:
+                raise OverflowError(f'Texture "{tex}" exceeds 128 character limit')
+            string = tex.encode('ascii') + b'\0'
+            ind = data.find(string)
+            if ind == -1:
+                ind = len(data)
+                data.extend(string)
+            table.write(struct.pack('<i', ind))
+        self.lumps[BSP_LUMPS.TEXDATA_STRING_TABLE].data = table.getvalue()
+        return bytes(data)
+
+    def _lmp_read_texinfo(self, data: bytes) -> Iterator['TexInfo']:
+        """Read the texture info lump, providing positioning information."""
+        texdata_list = []
+        for (
+            ref_x, ref_y, ref_z, ind,
+            w, h, vw, vh,
+        ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
+            mat = self.textures[ind]
+            # The view width/height is unused stuff, identical to regular
+            # width/height.
+            assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
+            texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+            texdata_list.append(texdata)
+            self._texdata[mat.casefold()] = texdata
+        self.lumps[BSP_LUMPS.TEXDATA].data = b''
+
+        for (
+            sx, sy, sz, so, tx, ty, tz, to,
+            l_sx, l_sy, l_sz, l_so, l_tx, l_ty, l_tz, l_to,
+            flags, texdata_ind,
+        ) in struct.iter_unpack('<16fii', data):
+            yield TexInfo(
+                Vec(sx, sy, sz), so,
+                Vec(tx, ty, tz), to,
+                Vec(l_sx, l_sy, l_sz), l_so,
+                Vec(l_tx, l_ty, l_tz), l_to,
+                SurfFlags(flags),
+                texdata_list[texdata_ind],
+            )
+
+    def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
+        """Rebuild the texinfo and texdata lump."""
+        find_or_add_texture = _find_or_insert(self.textures, str.casefold)
+        texdata_ind: dict[TexData, int] = {}
+
+        texdata_list: list[bytes] = []
+        texinfo_result: list[bytes] = []
+
+        for info in texinfos:
+            # noinspection PyProtectedMember
+            tdat = info._info
+            # Try and find an existing reference to this texdata.
+            # If not, the index is at the end of the list, where we write and
+            # insert it.
+            # That's then done again for the texture name itself.
+            try:
+                ind = texdata_ind[tdat]
+            except KeyError:
+                ind = texdata_ind[tdat] = len(texdata_list)
+                texdata_list.append(struct.pack(
+                    '<3f5i',
+                    tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
+                    find_or_add_texture(tdat.mat),
+                    tdat.width, tdat.height, tdat.width, tdat.height,
                 ))
+            texinfo_result.append(struct.pack(
+                '<16fii',
+                *info.s_off, info.s_shift,
+                *info.t_off, info.t_shift,
+                *info.lightmap_s_off, info.lightmap_s_shift,
+                *info.lightmap_t_off, info.lightmap_t_shift,
+                info.flags.value,
+                ind,
+            ))
+        self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
+        return b''.join(texinfo_result)
+
+    def _lmp_read_bmodels(self, data: bytes) -> WeakKeyDictionary[Entity, 'BModel']:
+        """Parse the brush model definitions."""
+        bmodel_list = []
+        for (
+            min_x, min_y, min_z, max_x, max_y, max_z,
+            pos_x, pos_y, pos_z,
+            headnode,
+            first_face, num_face,
+        ) in struct.iter_unpack('<9fiii', data):
+            bmodel_list.append(BModel(
+                Vec(min_x, min_y, min_z), Vec(max_x, max_y, max_z),
+                Vec(pos_x, pos_y, pos_z),
+                self.nodes[headnode],
+                self.faces[first_face:first_face+num_face],
+            ))
+
+        # Parse the physics lump.
+        phys_buf = BytesIO(self.lumps[BSP_LUMPS.PHYSCOLLIDE].data)
+        while True:
+            (mdl_ind, data_size, kv_size, solid_count) = struct_read('<iiii', phys_buf)
+            if mdl_ind == -1:
+                break  # end of segment.
+            mdl = bmodel_list[mdl_ind]
+            # Possible in the format, but is broken - you can't merge the
+            # definitions really, and our object layout doesn't allow it.
+            if mdl._phys_solids or mdl.phys_keyvalues is not None:
+                raise ValueError(f'Two physics definitions for bmodel #{mdl_ind}!')
+            mdl._phys_solids = [
+                phys_buf.read(struct_read('<i', phys_buf)[0])
+                for _ in range(solid_count)
+            ]
+            kvs = phys_buf.read(kv_size).rstrip(b'\x00').decode('ascii')
+            mdl.phys_keyvalues = Property.parse(
+                kvs,
+                f'bmodel[{mdl_ind}].keyvalues',
+            )
+
+        # Loop over entities, map to their brush model.
+        brush_ents = WeakKeyDictionary()
+        vmf: VMF = self.ents
+        brush_ents[vmf.spawn] = bmodel_list[0]
+        for ent in vmf.entities:
+            if ent['model'].startswith('*'):
+                mdl_ind = int(ent.keys.pop('model')[1:])
+                brush_ents[ent] = bmodel_list[mdl_ind]
+
+        return brush_ents
+
+    def _lmp_write_bmodels(self, bmodels: WeakKeyDictionary[Entity, 'BModel']) -> Iterator[bytes]:
+        """Write the brush model definitions."""
+        add_node = _find_or_insert(self.nodes)
+        add_faces = _find_or_extend(self.faces)
+
+        phys_buf = BytesIO()
+
+        for i, (ent, model) in enumerate(bmodels.items()):
+            # Apply the brush model to the entity. Worldspawn doesn't actually
+            # need the key though.
+            if i != 0:
+                ent['model'] = f'*{i}'
+            # noinspection PyProtectedMember
+            yield struct.pack(
+                '<9fiii',
+                model.mins.x, model.mins.y, model.mins.z,
+                model.maxes.x, model.maxes.y, model.maxes.z,
+                model.origin.x, model.origin.y, model.origin.z,
+                add_node(model.node),
+                add_faces(model.faces), len(model.faces),
+            )
+            if model.phys_keyvalues is not None:
+                kvs = '\n'.join(model.phys_keyvalues.export()).encode('ascii') + b'\x00'
+            else:
+                kvs = b'\x00'
+                if not model._phys_solids:
+                    continue  # No physics info.
+            phys_size = sum(map(len, model._phys_solids)) + 4 * len(model._phys_solids)
+            phys_buf.write(struct.pack(
+                '<iiii',
+                i, phys_size,
+                len(kvs),
+                len(model._phys_solids),
+            ))
+            for solid in model._phys_solids:
+                phys_buf.write(struct.pack('<i', len(solid)))
+                phys_buf.write(solid)
+            phys_buf.write(kvs)
+
+        # Sentinel physics definition.
+        phys_buf.write(struct.pack('<iiii', -1, 0, 0, 0))
+        self.lumps[BSP_LUMPS.PHYSCOLLIDE].data = phys_buf.getvalue()
+
+    def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
+        """Read the raw binary as writable zip archive."""
+        zipfile = ZipFile(BytesIO(data), mode='a')
+        zipfile.filename = self.filename
+        return zipfile
+
+    def _lmp_write_pakfile(self, file: ZipFile) -> bytes:
+        """Extract the final zip data from the zipfile."""
+        # Explicitly close the zip file, so the footer is done.
+        buf = file.fp
+        file.close()
+        if isinstance(buf, BytesIO):
+            return buf.getvalue()
+        elif buf is None:
+            raise ValueError('Zipfile has no buffer?')
+        else:
+            buf.seek(0)
+            return buf.read()
+
+    def _lmp_check_pakfile(self, file: ZipFile) -> None:
+        if not isinstance(file.fp, BytesIO):
+            raise ValueError('Zipfiles must be constructed with a BytesIO buffer.')
+
+    def _lmp_read_cubemaps(self, data: bytes) -> List['Cubemap']:
+        """Read the cubemaps lump."""
+        return [
+            Cubemap(Vec(x, y, z), size)
+            for (x, y, z, size) in struct.iter_unpack('<iiii', data)
+        ]
+
+    def _lmp_write_cubemaps(self, cubemaps: List['Cubemap']) -> Iterator[bytes]:
+        """Write out the cubemaps lump."""
+        for cube in cubemaps:
+            yield struct.pack(
+                '<iiii',
+                int(round(cube.origin.x)),
+                int(round(cube.origin.y)),
+                int(round(cube.origin.z)),
+                cube.size,
+            )
+
+    def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
+        """Read the overlays lump."""
+        # Use zip longest, so we handle cases where these newer auxiliary lumps
+        # are empty.
+        for block, fades, sys_levels in itertools.zip_longest(
+            struct.iter_unpack(
+                '<ihH'  # id, texinfo, face-and-render-order
+                '64i'  # face array.
+                '4f'  # UV min/max
+                '18f',  # 4 handle points, origin, normal
+                data,
+            ),
+            struct.iter_unpack('<ff', self.lumps[BSP_LUMPS.OVERLAY_FADES].data),
+            struct.iter_unpack('<4B', self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data),
+        ):
+            if block is None:
+                # Too many of either aux lump, ignore.
+                break
+            over_id, texinfo, face_ro = block[:3]
+            face_count = face_ro & ((1 << 14) - 1)
+            render_order = face_ro >> 14
+            if face_count > 64:
+                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            faces = list(block[3: 3 + face_count])
+            u_min, u_max, v_min, v_max = block[67:71]
+            uv1 = Vec(block[71:74])
+            uv2 = Vec(block[74:77])
+            uv3 = Vec(block[77:80])
+            uv4 = Vec(block[80:83])
+            origin = Vec(block[83:86])
+            normal = Vec(block[86:89])
+            assert len(block) == 89
+
+            if fades is not None:
+                fade_min, fade_max = fades
+            else:
+                fade_min = -1.0
+                fade_max = 0.0
+            if sys_levels is not None:
+                min_cpu, max_cpu, min_gpu, max_gpu = sys_levels
+            else:
+                min_cpu = min_gpu = 0
+                max_cpu = max_gpu = 0
+
+            yield Overlay(
+                over_id, origin, normal,
+                self.texinfo[texinfo], face_count,
+                faces, render_order,
+                u_min, u_max,
+                v_min, v_max,
+                uv1, uv2, uv3, uv4,
+                fade_min, fade_max,
+                min_cpu, max_cpu,
+                min_gpu, max_gpu
+            )
+
+    def _lmp_write_overlays(self, overlays: List['Overlay']) -> Iterator[bytes]:
+        """Write out all overlays."""
+        add_texinfo = _find_or_insert(self.texinfo)
+        fade_buf = BytesIO()
+        levels_buf = BytesIO()
+        for over in overlays:
+            face_cnt = len(over.faces)
+            if face_cnt > 64:
+                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
+            levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            yield struct.pack(
+                '<ihH',
+                over.id,
+                add_texinfo(over.texture),
+                (over.render_order << 14 | face_cnt),
+            )
+            # Build the array, then zero fill the remaining space.
+            yield struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces)
+            yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
+            yield struct.pack(
+                '<18f',
+                *over.uv1, *over.uv2, *over.uv3, *over.uv4,
+                *over.origin, *over.normal,
+            )
+        self.lumps[BSP_LUMPS.OVERLAY_FADES].data = fade_buf.getvalue()
+        self.lumps[BSP_LUMPS.OVERLAY_SYSTEM_LEVELS].data = levels_buf.getvalue()
 
     @contextlib.contextmanager
     def packfile(self) -> Iterator[ZipFile]:
@@ -423,6 +1586,7 @@ class BSP:
 
         When successfully exited, the zip will be rewritten to the BSP file.
         """
+        warnings.warn('Use BSP.pakfile to access the cached archive.', DeprecationWarning, stacklevel=2)
         pak_lump = self.lumps[BSP_LUMPS.PAKFILE]
         data_file = BytesIO(pak_lump.data)
 
@@ -438,12 +1602,19 @@ class BSP:
         pak_lump.data = data_file.getvalue()
 
     def read_ent_data(self) -> VMF:
+        """Deprecated function to parse the entdata lump.
+
+        Use BSP.ents directly.
+        """
+        warnings.warn('Use BSP.ents directly.', DeprecationWarning, stacklevel=2)
+        return self._lmp_read_ents(self.get_lump(BSP_LUMPS.ENTITIES))
+
+    def _lmp_read_ents(self, ent_data: bytes) -> VMF:
         """Parse in entity data.
-        
-        This returns a VMF object, with entities mirroring that in the BSP. 
+
+        This returns a VMF object, with entities mirroring that in the BSP.
         No brushes are read.
         """
-        ent_data = self.get_lump(BSP_LUMPS.ENTITIES)
         vmf = VMF()
         cur_ent = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
@@ -504,11 +1675,15 @@ class BSP:
             if 27 in value:
                 # All outputs use the comma_sep, so we can ID them.
                 cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                if self.out_comma_sep is None:
+                    self.out_comma_sep = False
             elif value.count(b',') == 4:
                 try:
                     cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
                 except ValueError:
                     cur_ent[decoded_key] = decoded_value
+                if self.out_comma_sep is None:
+                    self.out_comma_sep = True
             else:
                 # Normal keyvalue.
                 cur_ent[decoded_key] = decoded_value
@@ -519,8 +1694,11 @@ class BSP:
 
         return vmf
 
+    def _lmp_write_ents(self, vmf: VMF) -> bytes:
+        return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
+
     @staticmethod
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep=True) -> bytes:
         """Generate the entity data lump.
         
         This accepts a VMF file like that returned from read_ent_data(). 
@@ -528,6 +1706,8 @@ class BSP:
 
         use_comma_sep can be used to force using either commas, or 0x1D in I/O.
         """
+        if _show_dep:
+            warnings.warn('Modify BSP.ents instead', DeprecationWarning, stacklevel=2)
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
@@ -557,28 +1737,43 @@ class BSP:
             yield padded_name.rstrip(b'\x00').decode('ascii')
 
     def static_props(self) -> Iterator['StaticProp']:
-        """Read in the Static Props lump."""
-        # The version of the static prop format - different features.
-        try:
-            version = self.game_lumps[b'sprp'].version
-        except KeyError:
-            raise ValueError('No static prop lump!') from None
+        """Read in the Static Props lump.
 
+        Deprecated, use bsp.props.
+        """
+        warnings.warn('Access BSP.props instead', DeprecationWarning, stacklevel=2)
+        return iter(self.props)
+
+    def write_static_props(self, props: List['StaticProp']) -> None:
+        """Remake the static prop lump.
+
+        Deprecated, bsp.props is stored and resaved.
+        """
+        warnings.warn('Assign to BSP.props', DeprecationWarning, stacklevel=2)
+        self.props = props
+
+    def _lmp_read_props(self, version: int, data: bytes) -> Iterator['StaticProp']:
+        # The version of the static prop format - different features.
         if version > 11:
             raise ValueError('Unknown version ({})!'.format(version))
         if version < 4:
             # Predates HL2...
             raise ValueError('Static prop version {} is too old!')
 
-        static_lump = BytesIO(self.game_lumps[b'sprp'].data)
+        static_lump = BytesIO(data)
 
         # Array of model filenames.
         model_dict = list(self._read_static_props_models(static_lump))
 
         [visleaf_count] = struct_read('<i', static_lump)
-        visleaf_list = list(struct_read('H' * visleaf_count, static_lump))
+        visleaf_list = list(map(
+            self.visleafs.__getitem__,
+            struct_read('H' * visleaf_count, static_lump),
+        ))
 
         [prop_count] = struct_read('<i', static_lump)
+
+        prop_length = (len(data) - static_lump.tell()) / prop_count
 
         for i in range(prop_count):
             origin = Vec(struct_read('fff', static_lump))
@@ -598,7 +1793,7 @@ class BSP:
 
             model_name = model_dict[model_ind]
 
-            visleafs = visleaf_list[first_leaf:first_leaf + leaf_count]
+            visleafs = set(visleaf_list[first_leaf:first_leaf + leaf_count])
             lighting_origin = Vec(struct_read('<fff', static_lump))
 
             if version >= 5:
@@ -677,29 +1872,20 @@ class BSP:
                 disable_on_xbox,
             )
 
-    def write_static_props(self, props: List['StaticProp']) -> None:
-        """Remake the static prop lump."""
-
+    def _lmp_write_props(self, props: List['StaticProp']) -> bytes:
         # First generate the visleaf and model-names block.
         # Unfortunately it seems reusing visleaf parts isn't possible.
-        leaf_array = []  # type: List[int]
-        leaf_offsets = []  # type: List[int]
+        leaf_array: list[int] = []
+        model_list: list[str] = []
+        add_model = _find_or_insert(model_list, identity)
+        add_leaf = _find_or_insert(self.visleafs)
 
-        models = set()
-
+        indexes: list[tuple[int, int]] = []
         for prop in props:
-            leaf_offsets.append(len(leaf_array))
-            leaf_array.extend(prop.visleafs)
-            models.add(prop.model)
+            indexes.append((len(leaf_array), add_model(prop.model)))
+            leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
-        # Lock down the order of the names.
-        model_list = list(models)
-        model_ind = {
-            mdl: i
-            for i, mdl in enumerate(model_list)
-        }
-
-        game_lump = self.game_lumps[b'sprp']
+        version = self.game_lumps[LMP_ID_STATIC_PROPS].version
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -711,7 +1897,7 @@ class BSP:
         prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
-        for leaf_off, prop in zip(leaf_offsets, props):
+        for (leaf_off, model_ind), prop in zip(indexes, props):
             prop_lump.write(struct.pack(
                 '<6fH',
                 prop.origin.x,
@@ -720,7 +1906,7 @@ class BSP:
                 prop.angles.pitch,
                 prop.angles.yaw,
                 prop.angles.roll,
-                model_ind[prop.model],
+                model_ind,
             ))
 
             prop_lump.write(struct.pack(
@@ -736,17 +1922,17 @@ class BSP:
                 prop.lighting.y,
                 prop.lighting.z,
             ))
-            if game_lump.version >= 5:
+            if version >= 5:
                 prop_lump.write(struct.pack('<f', prop.fade_scale))
 
-            if game_lump.version in (6, 7):
+            if version in (6, 7):
                 prop_lump.write(struct.pack(
                     '<HH',
                     prop.min_dx_level,
                     prop.max_dx_level,
                 ))
 
-            if game_lump.version >= 8:
+            if version >= 8:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     prop.min_cpu_level,
@@ -755,7 +1941,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if game_lump.version >= 7:
+            if version >= 7:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -764,78 +1950,180 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if game_lump.version >= 10:
+            if version >= 10:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if game_lump.version >= 11:
+            if version >= 11:
                 # Unknown padding/data, though it's always zero.
 
                 prop_lump.write(struct.pack('<xxxxf', prop.scaling))
-            elif game_lump.version >= 9:
+            elif version >= 9:
                 # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
-        game_lump.data = prop_lump.getvalue()
+        return prop_lump.getvalue()
 
-    def vis_tree(self) -> 'VisTree':
-        """Parse the visleaf data to get the full node."""
-        # First parse everything, then link up the objects.
-        planes: List[Tuple[Vec, float]] = []
-        nodes: List[Tuple[VisTree, int, int]] = []
-        leafs: List[VisLeaf] = []
+    def _lmp_read_detail_props(self, version: int, data: bytes) -> Iterator['DetailProp']:
+        """Parse detail props."""
+        buf = BytesIO(data)
+        # First read the model dictionary.
+        models = list(self._read_static_props_models(buf))
 
-        for x, y, z, dist, flags in struct.iter_unpack('<ffffi', self.lumps[BSP_LUMPS.PLANES].data):
-            planes.append((Vec(x, y, z), dist))
-
-        for (
-            plane_ind, neg_ind, pos_ind,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, face_count, area_ind,
-        ) in struct.iter_unpack('<iii6hHHh2x', self.lumps[BSP_LUMPS.NODES].data):
-            plane_norm, plane_dist = planes[plane_ind]
-            nodes.append((VisTree(
-                plane_norm, plane_dist,
-                Vec(min_x, min_y, min_z),
-                Vec(max_x, max_y, max_z),
-            ), neg_ind, pos_ind))
-
-        leaf_fmt = '<ihh6h4Hh2x'
-        # Some extra ambient light data.
-        if self.version.value <= 19:
-            leaf_fmt += '26x'
-
-        for i, (
-            contents,
-            cluster_ind, area_and_flags,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, num_faces,
-            first_brush, num_brushes,
-            water_ind
-        ) in enumerate(struct.iter_unpack(leaf_fmt, self.lumps[BSP_LUMPS.LEAFS].data)):
-            area = area_and_flags >> 7
-            flags = area_and_flags & 0b1111111
-            leafs.append(VisLeaf(
-                i, area, flags,
-                Vec(min_x, min_y, min_z),
-                Vec(max_x, max_y, max_z),
-                first_face, num_faces,
-                first_brush, num_brushes,
-                water_ind,
+        [sprite_count] = struct_read('<i', buf)
+        detail_sprites = []
+        for _ in range(sprite_count):
+            (
+                dim_ul_x, dim_ul_y,
+                dim_lr_x, dim_lr_y,
+                tex_ul_x, tex_ul_y,
+                tex_lr_x, tex_lr_y,
+            ) = struct_read('<8f', buf)
+            detail_sprites.append((
+                (dim_ul_x, dim_ul_y),
+                (dim_lr_x, dim_lr_y),
+                (tex_ul_x, tex_ul_y),
+                (tex_lr_x, tex_lr_y),
             ))
 
-        for node, neg_ind, pos_ind in nodes:
-            if neg_ind < 0:
-                node.child_neg = leafs[-1 - neg_ind]
+        [detail_count] = struct_read('<i', buf)
+        for _ in range(detail_count):
+            (
+                x, y, z,
+                pit, yaw, rol,
+                mdl,
+                leaf,
+                r, g, b, a,
+                styles,
+                style_count,
+                sway_amt,
+                shape_ang,
+                shape_size,
+                orient,
+                detail_type,
+                spr_scale,
+            ) = struct_read('<3f3fHH4BI5B3xB3xf', buf)
+            if detail_type == 0:  # Model
+                yield DetailPropModel(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    models[mdl],
+                )
+            elif detail_type == 1:  # Sprite
+                (
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                ) = detail_sprites[mdl]
+                yield DetailPropSprite(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    spr_scale,
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                )
+            elif detail_type in (2, 3):  # Shapes.
+                (
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                ) = detail_sprites[mdl]
+                yield DetailPropShape(
+                    Vec(x, y, z),
+                    Angle(pit, yaw, rol),
+                    DetailPropOrientation(orient),
+                    leaf,
+                    (r, g, b, a),
+                    (styles, style_count),
+                    sway_amt,
+                    spr_scale,
+                    dim_ul, dim_lr,
+                    tex_ul, tex_lr,
+                    detail_type == 3,
+                    shape_ang,
+                    shape_size,
+                )
             else:
-                node.child_neg = nodes[neg_ind][0]
-            if pos_ind < 0:
-                node.child_pos = leafs[-1 - pos_ind]
+                raise ValueError(f'Unknown detail prop type {detail_type}!')
+
+    def _lmp_write_detail_props(self, props: List['DetailProp']) -> Iterator[bytes]:
+        """Reconstruct the detail props lump."""
+        sprites: list[tuple[
+            float, float, float, float,
+            float, float, float, float,
+        ]] = []
+        models: list[str] = []
+
+        add_sprite = _find_or_insert(sprites, identity)
+        add_model = _find_or_insert(models, identity)
+        buf = BytesIO()
+
+        for prop in props:
+            if isinstance(prop, DetailPropModel):
+                mdl_ind = add_model(prop.model)
+                detail_type = 0
+                spr_scale = 1.0
+                shape_ang = 0
+                shape_size = 1
+            elif isinstance(prop, DetailPropSprite):
+                mdl_ind = add_sprite(
+                    prop.dims_upper_left + prop.dims_lower_right +
+                    prop.texcoord_upper_left + prop.texcoord_lower_right
+                )
+                detail_type = 1
+                spr_scale = prop.sprite_scale
+                shape_ang = 0
+                shape_size = 1
+            elif isinstance(prop, DetailPropShape):
+                mdl_ind = add_sprite(
+                    prop.dims_upper_left + prop.dims_lower_right +
+                    prop.texcoord_upper_left + prop.texcoord_lower_right
+                )
+                detail_type = 3 if prop.is_cross else 2
+                spr_scale = prop.sprite_scale
+                shape_ang = prop.shape_angle
+                shape_size = prop.shape_size
             else:
-                node.child_pos = nodes[pos_ind][0]
+                raise TypeError(f'Unknown detail prop type {prop}!')
+
+            buf.write(struct.pack(
+                '<3f3fHH4BI5B3xB3xf',
+                prop.origin.x, prop.origin.y, prop.origin.z,
+                prop.angles.pitch, prop.angles.yaw, prop.angles.roll,
+                mdl_ind,
+                prop.leaf,
+                *prop.lighting,
+                *prop.light_styles,
+                prop.sway_amount,
+                shape_ang,
+                shape_size,
+                prop.orientation.value,
+                detail_type,
+                spr_scale,
+            ))
+
+        # Now build the complete lump.
+        yield struct.pack('<i', len(models))
+        for name in models:
+            yield struct.pack('<128s', name.encode('ascii'))
+        yield struct.pack('<i', len(sprites))
+        spr_format = struct.Struct('<8f')
+        for spr in sprites:
+            yield spr_format.pack(*spr)
+        yield struct.pack('<i', len(props))
+        yield buf.getvalue()
+
+    def vis_tree(self) -> 'VisTree':
+        """Parse the visleaf data, and return the root node."""
         # First node is the top of the tree.
-        return nodes[0][0]
+        return self.nodes[0]
 
 
 @attr.define(eq=False)
@@ -849,7 +2137,7 @@ class Lump:
     data: bytes = b''
 
     def __repr__(self) -> str:
-        return '<BSP Lump "{}", v{}, ident={}, {} bytes>'.format(
+        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
             self.type.name,
             self.version,
             self.ident,
@@ -880,6 +2168,191 @@ class GameLump:
 
 
 @attr.define(eq=False)
+class TexData:
+    """Represents some additional infomation for textures.
+
+    Do not construct directly, use BSP.create_texinfo() or TexInfo.set().
+    """
+    mat: str
+    reflectivity: Vec
+    width: int
+    height: int
+    # TexData has a 'view' width/height too, but it isn't used at all and is
+    # always the same as regular width/height.
+
+    @classmethod
+    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
+        """Given a filesystem, parse the specified material and compute the texture values."""
+        orig_mat = mat_name
+        mat_folded = mat_name.casefold()
+        if not mat_folded.replace('\\', '/').startswith('materials/'):
+            mat_name = 'materials/' + mat_name
+
+        mat_fname = mat_name
+        if mat_folded[-4] != '.':
+            mat_fname += '.vmt'
+
+        with fsys, fsys[mat_fname].open_str() as tfile:
+            mat = Material.parse(tfile, mat_name)
+            mat.apply_patches(fsys)
+
+        # Figure out the matching texture. If no texture, we look for one
+        # with the same name as the material.
+        tex_name = mat.get('$basetexture', mat_name)
+        if not tex_name.casefold().replace('\\', '/').startswith('materials/'):
+            tex_name = 'materials/' + tex_name
+        if tex_name[-4] != '.':
+            tex_name += '.vtf'
+
+        try:
+            with fsys, fsys[tex_name].open_bin() as bfile:
+                vtf = VTF.read(bfile)
+                reflect = vtf.reflectivity.copy()
+                width, height = vtf.width, vtf.height
+        except FileNotFoundError:
+            width = height = 0
+            reflect = Vec(0.2, 0.2, 0.2)  # CMaterial:CMaterial()
+
+        try:
+            reflect = Vec.from_str(mat['$reflectivity'])
+            print(reflect, repr(mat['$reflectivity']))
+        except KeyError:
+            pass
+        return TexData(orig_mat, reflect, width, height)
+
+
+@attr.define(eq=True)
+class TexInfo:
+    """Represents texture positioning / scaling info."""
+    s_off: Vec
+    s_shift: float
+    t_off: Vec
+    t_shift: float
+    lightmap_s_off: Vec
+    lightmap_s_shift: float
+    lightmap_t_off: Vec
+    lightmap_t_shift: float
+    flags: SurfFlags
+    _info: TexData
+
+    def __repr__(self) -> str:
+        """For overlays, all the shift data is not important."""
+        #  s_off=Vec(0, 0, 0), s_shift=-99999.0, t_off=Vec(0, 0, 0), t_shift=-99999.0, lightmap_s_off=Vec(0, 0, 0), lightmap_s_shift=-99999.0, lightmap_t_off=Vec(0, 0, 0), lightmap_t_shift=-99999.0
+        res = []
+        if self.s_off or self.s_shift != -99999.0:
+            res.append(f's_off={self.s_off}, s_shift={self.s_shift}')
+        if self.t_off or self.t_shift != -99999.0:
+            res.append(f't_off={self.t_off}, t_shift={self.t_shift}')
+        if self.lightmap_s_off or self.lightmap_s_shift != -99999.0:
+            res.append(f'lightmap_s_off={self.lightmap_s_off}, lightmap_s_shift={self.lightmap_s_shift}')
+        if self.lightmap_t_off or self.lightmap_t_shift != -99999.0:
+            res.append(f'lightmap_t_off={self.lightmap_t_off}, lightmap_t_shift={self.lightmap_t_shift}')
+        res.append(f'flags={self.flags}, _info={self._info}')
+        return f'TexInfo({", ".join(res)})'
+
+    @property
+    def mat(self) -> str:
+        """The material used for this texinfo."""
+        return self._info.mat
+
+    @property
+    def reflectivity(self) -> Vec:
+        """The reflectivity of the texture."""
+        return self._info.reflectivity.copy()
+
+    @property
+    def tex_size(self) -> Tuple[int, int]:
+        """The size of the texture."""
+        return self._info.width, self._info.height
+
+    @overload
+    def set(self, bsp: BSP, mat: str, *, fsys: FileSystem) -> None: ...
+    @overload
+    def set(self, bsp: BSP, mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
+
+    def set(
+        self,
+        bsp: BSP, mat: str,
+        reflectivity: Vec=None, width: int=0, height: int=0,
+        fsys: FileSystem=None,
+    ) -> None:
+        """Set the material used for this texinfo.
+
+        If it is not already used in the BSP, some additional info is required.
+        This can either be parsed from the VMT and VTF, or provided directly.
+        """
+        try:
+            data = bsp._texdata[mat.casefold()]
+        except KeyError:
+            # Need to create.
+            if fsys is None:
+                if reflectivity is None or not width or not height:
+                    raise TypeError('Either valid data must be provided or a filesystem to read them from!')
+                data = TexData(mat, reflectivity.copy(), width, height)
+            else:
+                data = TexData.from_material(fsys, mat)
+            bsp._texdata[mat.casefold()] = data
+        self._info = data
+
+
+@attr.define(eq=False)
+class Plane:
+    """A plane."""
+    normal: Vec
+    dist: float
+    type: PlaneType = attr.ib()
+
+    @type.default
+    def compute_type(self) -> 'PlaneType':
+        """Compute the plane type parameter."""
+        x = abs(self.normal.x)
+        y = abs(self.normal.y)
+        z = abs(self.normal.z)
+        if x > 0.99:
+            return PlaneType.X
+        if y > 0.99:
+            return PlaneType.Y
+        if z > 0.99:
+            return PlaneType.Z
+        if x > y and x > z:
+            return PlaneType.ANY_X
+        if y > x and y > z:
+            return PlaneType.ANY_Y
+        return PlaneType.ANY_Z
+
+
+@attr.define(eq=False)
+class Primitive:
+    """A 'primitive' surface (AKA t-junction, waterverts).
+
+    These are generated to stitch together T-junction faces.
+    """
+    is_tristrip: bool
+    indexed_verts: List[int]
+    verts: List[Vec]
+
+
+@attr.define(eq=False)
+class Face:
+    """A brush face definition."""
+    plane: Plane
+    same_dir_as_plane: bool
+    on_node: bool
+    edges: List[Edge]
+    texinfo: TexInfo
+    _dispinfo_ind: int  # TODO
+    surf_fog_volume_id: int
+    light_styles: bytes
+    _lightmap_off: int  # TODO
+    area: float
+    lightmap_mins: Tuple[int, int]
+    lightmap_size: Tuple[int, int]
+    orig_face: Optional['Face']
+    primitives: List[Primitive]
+    smoothing_groups: int
+
+
+@attr.define(eq=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
@@ -896,7 +2369,7 @@ class StaticProp:
     origin: Vec
     angles: Angle = attr.ib(factory=Angle)
     scaling: float = 1.0
-    visleafs: List[int] = attr.ib(factory=list)
+    visleafs: Set['VisLeaf'] = attr.ib(factory=set)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
@@ -924,35 +2397,213 @@ class StaticProp:
         )
 
 
-@attr.define
+@attr.define(eq=False)
+class DetailProp:
+    """A detail prop, automatically placed on surfaces.
+
+    This is a base class, use one of the subclasses only.
+    """
+    origin: Vec
+    angles: Angle
+    orientation: DetailPropOrientation
+    leaf: int
+    lighting: Tuple[int, int, int, int]
+    light_styles: List[int]
+    sway_amount: int
+
+    def __attrs_pre_init__(self) -> None:
+        """Only allow instantiation of subclasses."""
+        if type(self) is DetailProp:
+            raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
+
+
+@attr.define(eq=False)
+class DetailPropModel(DetailProp):
+    """A MDL detail prop."""
+    model: str
+
+
+@attr.define(eq=False)
+class DetailPropSprite(DetailProp):
+    """A sprite-type detail prop."""
+    sprite_scale: float
+    dims_upper_left: Tuple[float, float]
+    dims_lower_right: Tuple[float, float]
+    texcoord_upper_left: Tuple[float, float]
+    texcoord_lower_right: Tuple[float, float]
+
+
+@attr.define(eq=False)
+class DetailPropShape(DetailPropSprite):
+    """A shape-type detail prop, rendered as a triangle or cross shape."""
+    is_cross: bool
+    shape_angle: int
+    shape_size: int
+
+
+@attr.define(eq=False)
+class Cubemap:
+    """A env_cubemap positioned in the map.
+
+    The position is integral, and the size can be zero for the default
+    or a positive number for different powers of 2.
+    """
+    origin: Vec  # Always integer coordinates
+    size: int = 0
+
+    @property
+    def resolution(self) -> int:
+        """Return the actual image size."""
+        if self.size == 0:
+            return 32
+        return 2**(self.size-1)
+
+
+@attr.define(eq=False)
+class Overlay:
+    """An overlay embedded in the map."""
+    id: int = attr.ib(eq=True)
+    origin: Vec
+    normal: Vec
+    texture: TexInfo
+    face_count: int
+    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
+        attr.validators.instance_of(int),
+        attr.validators.instance_of(list),
+    ))
+    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
+    u_min: float = 0.0
+    u_max: float = 1.0
+    v_min: float = 0.0
+    v_max: float = 1.0
+    # Four corner handles of the overlay.
+    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
+    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
+    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
+    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+
+    fade_min_sq: float = -1.0
+    fade_max_sq: float = 0.0
+
+    # If system exceeds these limits, the overlay is skipped.
+    min_cpu: int = -1
+    max_cpu: int = -1
+    min_gpu: int = -1
+    max_gpu: int = -1
+
+
+@attr.define(eq=False)
+class BModel:
+    """A brush model definition, used for the world entity along with all other brush ents."""
+    mins: Vec
+    maxes: Vec
+    origin: Vec
+    node: 'VisTree'
+    faces: List[Face]
+
+    # If solid, the .phy file-like physics data.
+    # This is a text section, and a list of blocks.
+    phys_keyvalues: Optional[Property] = None
+    _phys_solids: List[bytes] = []
+
+
+@attr.define(eq=False)
+class BrushSide:
+    """A side of the original brush geometry which the map is constructed from.
+
+    This matches the original VMF.
+    """
+    plane: Plane
+    texinfo: TexInfo
+    _dispinfo: int  # TODO
+    is_bevel_plane: bool
+    # The bevel member should be bool, but it has other bits set randomly.
+    _unknown_bevel_bits: int = 0
+
+
+@attr.define(eq=False)
+class Brush:
+    """A brush definition."""
+    contents: BrushContents
+    sides: List[BrushSide]
+
+
+@attr.define(eq=False)
 class VisLeaf:
-    """A leaf in the visleaf data.
+    """A leaf in the visleaf/BSP data.
 
     The bounds is defined implicitly by the parent node planes.
     """
-    id: int
+    contents: BrushContents
+    cluster_id: int
     area: int
-    flags: int
+    flags: VisLeafFlags
     mins: Vec
     maxes: Vec
-    first_face: int
-    face_count: int
-    first_brush: int
-    brush_count: int
+    faces: List[Face]
+    brushes: List[Brush]
     water_id: int
 
+    def test_point(self, point: Vec) -> Optional['VisLeaf']:
+        """Test the given point against us, returning ourself or None."""
+        return self if point.in_bbox(self.mins, self.maxes) else None
 
-@attr.define
+
+@attr.define(eq=False)
 class VisTree:
-    """A tree node in the visleaf data.
+    """A tree node in the visleaf/BSP data.
 
     Each of these is a plane splitting the map in two, which then has a child
     tree or visleaf on either side.
     """
-    plane_norm: Vec
-    plane_dist: float
+    plane: Plane
     mins: Vec
     maxes: Vec
-    # Initialised empty, set after.
+    faces: List[Face]
+    area_ind: int
+    # Initialised empty, set during loading.
     child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
     child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
+
+    @property
+    def plane_norm(self) -> Vec:
+        """Deprecated alias for tree.plane.normal."""
+        warnings.warn('Use tree.plane.normal', DeprecationWarning, stacklevel=2)
+        return self.plane.normal
+
+    @property
+    def plane_dist(self) -> float:
+        """Deprecated alias for tree.plane.dist."""
+        warnings.warn('Use tree.plane.dist', DeprecationWarning, stacklevel=2)
+        return self.plane.dist
+
+    def test_point(self, point: Vec) -> Optional[VisLeaf]:
+        """Test the given point against us, returning the hit leaf or None."""
+        # Quick early out.
+        if not point.in_bbox(self.mins, self.maxes):
+            return None
+        dist = self.plane.dist - point.dot(self.plane.normal)
+        if dist > -1e-6:
+            res = self.child_pos.test_point(point)
+            if res is not None:
+                return res
+        elif dist < 1e-6:
+            res = self.child_neg.test_point(point)
+            if res is not None:
+                return res
+        return None
+
+    def iter_leafs(self) -> Iterator[VisLeaf]:
+        """Iterate over all child leafs, recursively."""
+        checked: set[int] = set()  # Guard against recursion.
+        nodes = [self]
+        while nodes:
+            node = nodes.pop()
+            if id(node) in checked:
+                continue
+            checked.add(id(node))
+            for child in [node.child_neg, node.child_pos]:
+                if isinstance(child, VisLeaf):
+                    yield child
+                else:
+                    nodes.append(child)
