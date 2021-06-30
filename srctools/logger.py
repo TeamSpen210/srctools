@@ -232,8 +232,9 @@ class NewLogRecord(logging.LogRecord):
             self.module = self.alias
         return str(self.msg)
 
+
 def init_logging(
-    filename: str=None,
+    filename: Union[str, os.PathLike]=None,
     main_logger: str='',
     on_error: Callable[
         [Type[BaseException], BaseException, TracebackType],
