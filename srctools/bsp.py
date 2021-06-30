@@ -1365,7 +1365,7 @@ class BSP:
         self.lumps[BSP_LUMPS.TEXDATA].data = b''.join(texdata_list)
         return b''.join(texinfo_result)
 
-    def _lmp_read_bmodels(self, data: bytes) -> WeakKeyDictionary[Entity, 'BModel']:
+    def _lmp_read_bmodels(self, data: bytes) -> 'WeakKeyDictionary[Entity, BModel]':
         """Parse the brush model definitions."""
         bmodel_list = []
         for (
@@ -1413,7 +1413,7 @@ class BSP:
 
         return brush_ents
 
-    def _lmp_write_bmodels(self, bmodels: WeakKeyDictionary[Entity, 'BModel']) -> Iterator[bytes]:
+    def _lmp_write_bmodels(self, bmodels: 'WeakKeyDictionary[Entity, BModel]') -> Iterator[bytes]:
         """Write the brush model definitions."""
         add_node = _find_or_insert(self.nodes)
         add_faces = _find_or_extend(self.faces)
