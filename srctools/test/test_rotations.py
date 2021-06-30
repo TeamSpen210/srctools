@@ -7,7 +7,7 @@ from srctools.test import *
 from srctools import Vec, Matrix, Angle
 
 
-def test_vec_identities(py_c_vec) -> None:
+def test_vec_identities(py_c_vec: PyCVec) -> None:
     """Check that vectors in the same axis as the rotation don't get spun."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -24,7 +24,7 @@ def test_vec_identities(py_c_vec) -> None:
             assert_vec(Vec(x=mag) @ Matrix.from_roll(ang), mag, 0, 0)
 
 
-def test_vec_basic_yaw(py_c_vec) -> None:
+def test_vec_basic_yaw(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in yaw."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -41,7 +41,7 @@ def test_vec_basic_yaw(py_c_vec) -> None:
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(270), 150, 0, 0)
 
 
-def test_vec_basic_pitch(py_c_vec) -> None:
+def test_vec_basic_pitch(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in pitch."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -58,7 +58,7 @@ def test_vec_basic_pitch(py_c_vec) -> None:
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(270), -150, 0, 0)
 
 
-def test_vec_basic_roll(py_c_vec):
+def test_vec_basic_roll(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in roll."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -75,7 +75,7 @@ def test_vec_basic_roll(py_c_vec):
     assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(270), 0, 150, 0)
 
 
-def test_ang_matrix_roundtrip(py_c_vec):
+def test_ang_matrix_roundtrip(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -88,7 +88,7 @@ def test_ang_matrix_roundtrip(py_c_vec):
         assert_ang(mat.to_angle(), p, y, r)
 
 
-def test_to_angle_roundtrip(py_c_vec):
+def test_to_angle_roundtrip(py_c_vec: PyCVec) -> None:
     """Check Vec.to_angle() roundtrips."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -100,7 +100,7 @@ def test_to_angle_roundtrip(py_c_vec):
         assert_vec(Vec(x=1).rotate(*ang), norm.x, norm.y, norm.z, ang)
 
 
-def test_matrix_roundtrip_pitch(py_c_vec):
+def test_matrix_roundtrip_pitch(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -117,7 +117,7 @@ def test_matrix_roundtrip_pitch(py_c_vec):
         )
 
 
-def test_matrix_roundtrip_yaw(py_c_vec):
+def test_matrix_roundtrip_yaw(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -126,7 +126,7 @@ def test_matrix_roundtrip_yaw(py_c_vec):
         assert_ang(mat.to_angle(), 0, yaw, 0)
 
 
-def test_matrix_roundtrip_roll(py_c_vec):
+def test_matrix_roundtrip_roll(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -138,7 +138,7 @@ def test_matrix_roundtrip_roll(py_c_vec):
         assert_ang(mat.to_angle(), 0, 0, roll)
 
 
-def test_single_axis(py_c_vec):
+def test_single_axis(py_c_vec: PyCVec) -> None:
     """In each axis, two rotations should be the same as adding."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -158,7 +158,7 @@ def test_single_axis(py_c_vec):
                 )
 
 
-def test_axis_angle(py_c_vec) -> None:
+def test_axis_angle(py_c_vec: PyCVec) -> None:
     """Test Matrix.axis_angle() computes the 6 basis vectors correctly."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -235,7 +235,7 @@ def old_rotate(
     return self
 
 
-def test_old_rotation(py_c_vec) -> None:
+def test_old_rotation(py_c_vec: PyCVec) -> None:
     """Verify that the code matches the results from the earlier Vec.rotate code."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -260,7 +260,8 @@ def test_old_rotation(py_c_vec) -> None:
                 assert_vec(by_mat, old.x, old.y, old.z, ang, tol=1e-1)
 
 
-def test_bad_from_basis(py_c_vec) -> None:
+# noinspection PyArgumentList
+def test_bad_from_basis(py_c_vec: PyCVec) -> None:
     """Test invalid arguments to Matrix.from_basis()"""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     v = Vec(0, 1, 0)
@@ -274,7 +275,7 @@ def test_bad_from_basis(py_c_vec) -> None:
         Matrix.from_basis(z=v)
 
 
-def test_gen_check(py_c_vec) -> None:
+def test_gen_check(py_c_vec: PyCVec) -> None:
     """Do an exhaustive check on all rotation math using data from the engine."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -350,7 +351,7 @@ def test_gen_check(py_c_vec) -> None:
             assert_vec(Vec.cross(z, z), 0, 0, 0)
 
 
-def test_copy_pickle(py_c_vec) -> None:
+def test_copy_pickle(py_c_vec: PyCVec) -> None:
     """Test pickling, unpickling and copying Matrixes."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     vec_mod.Matrix = Matrix
@@ -385,7 +386,7 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig == thaw
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    # Copy over the floats, since calulations are going to be slightly different
+    # Copy over the floats, since calculations are going to be slightly different
     # due to optimisation etc. That's tested elsewhere to ensure accuracy, but
     # we need exact binary identity.
     cy_mat = Cy_Matrix()
