@@ -180,7 +180,7 @@ class Property:
 
     @value.setter
     def value(self, value: str) -> None:
-        """Set the value of a leaf property, or pass a list to make a block."""
+        """Set the value of a leaf property."""
         if not isinstance(value, str):
             warnings.warn("Setting properties to non-string values will be fixed soon.", DeprecationWarning, 2)
         self._value = value
