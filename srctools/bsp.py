@@ -1135,10 +1135,13 @@ class BSP:
             struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
 
-        leaf_fmt = '<ihh6h4Hh2x'
+        leaf_fmt = '<ihh6h4Hh'
+        has_ambient = False
         # Some extra ambient light data.
         if self.version <= 19:
-            leaf_fmt += '26x'
+            has_ambient = True
+            leaf_fmt += '24s'
+        leaf_fmt += '2x'
 
         for (
             contents,
@@ -1147,17 +1150,23 @@ class BSP:
             max_x, max_y, max_z,
             first_face, num_faces,
             first_brush, num_brushes,
-            water_ind
+            *water_ind_and_ambient
         ) in struct.iter_unpack(leaf_fmt, data):
             area = area_and_flags >> 7
             flags = area_and_flags & 0b1111111
+            if has_ambient:
+                [water_ind, ambient] = water_ind_and_ambient
+            else:
+                [water_ind] = water_ind_and_ambient
+                # bytes(24), but can constant fold.
+                ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
             yield VisLeaf(
                 BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
                 Vec(min_x, min_y, min_z),
                 Vec(max_x, max_y, max_z),
                 leaf_faces[first_face:first_face+num_faces],
                 leaf_brushes[first_brush:first_brush+num_brushes],
-                water_ind,
+                water_ind, ambient,
             )
 
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
@@ -1232,17 +1241,12 @@ class BSP:
 
         buf = BytesIO()
 
-        leaf_fmt = '<ihh6h4Hh2x'
-        # Some extra ambient light data. TODO: handle this?
-        if self.version <= 19:
-            leaf_fmt += '26x'
-
         for leaf in visleafs:
             face_ind = add_faces([add_face(face) for face in leaf.faces])
             brush_ind = add_brushes([add_brush(brush) for brush in leaf.brushes])
 
             buf.write(struct.pack(
-                leaf_fmt,
+                '<ihh6h4Hh',
                 leaf.contents.value, leaf.cluster_id,
                 (leaf.area << 7 | leaf.flags.value),
                 int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
@@ -1251,6 +1255,9 @@ class BSP:
                 brush_ind, len(leaf.brushes),
                 leaf.water_id,
             ))
+            if self.version <= 19:
+                buf.write(leaf._ambient)
+            buf.write(b'\x00\x00')  # Padding.
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = struct.pack(f'<{len(leaf_faces)}H', *leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = struct.pack(f'<{len(leaf_brushes)}H', *leaf_brushes)
@@ -2544,6 +2551,7 @@ class VisLeaf:
     faces: List[Face]
     brushes: List[Brush]
     water_id: int
+    _ambient: bytes = bytes(24)
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
         """Test the given point against us, returning ourself or None."""
