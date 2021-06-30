@@ -1,11 +1,12 @@
 """Parses Source models, to extract metadata."""
 from typing import (
     Union, Iterator, Iterable,
-    List, Dict, Tuple, NamedTuple,
-    BinaryIO, Sequence,
+    List, Dict, Tuple, cast,
+    BinaryIO, Sequence as SequenceType,
 )
 from enum import IntFlag, Enum
 from pathlib import PurePosixPath
+import attr
 
 from srctools import Property
 from srctools.binformat import (
@@ -17,32 +18,8 @@ from srctools.math import Vec
 from struct import Struct
 
 
-IncludedMDL = NamedTuple('IncludedMDL', [
-    ('label', str),
-    ('filename', str),
-])
-
-SeqEvent = NamedTuple('SeqEvent', [
-    # AnimEvents for known common ones, str for dynamic NPC-specific events.
-    ('type', Union['AnimEvents', str]),
-    ('cycle', float),
-    ('options', str),
-])
-
-MDLSequence = NamedTuple('Sequence', [
-    ('label', str),
-    ('act_name', str),
-    ('flags', int),
-    ('act_weight', int),
-    ('events', List[SeqEvent]),
-    ('bbox_min', Vec),
-    ('bbox_max', Vec),
-    # More after here.
-    ('keyvalues', str),
-])
-
 # All the file extensions used for models.
-MDL_EXTS: Sequence[str] = [
+MDL_EXTS: SequenceType[str] = [
     '.mdl',
     '.phy',
     '.dx90.vtx',
@@ -292,6 +269,36 @@ ANIM_EVENT_BY_NAME = {
 }  # type: Dict[str, AnimEvents]
 
 ST_PHY_HEADER = Struct('<iiil')
+
+
+@attr.define
+class IncludedMDL:
+    """Additional model files to load animations from."""
+    label: str
+    filename: str
+
+
+@attr.define
+class SeqEvent:
+    """An event that occurs at some point in an animation sequence."""
+    # AnimEvents for known common ones, str for dynamic NPC-specific events.
+    type: Union[AnimEvents, str]
+    cycle: float  # Point within the animation that it's triggered.
+    options: str  # Additional event-specific data.
+
+
+@attr.define
+class Sequence:
+    """An animation sequence."""
+    label: str
+    act_name: str
+    flags: int
+    act_weight: int
+    events: List[SeqEvent]
+    bbox_min: Vec
+    bbox_max: Vec
+    # More after here.
+    keyvalues: str
 
 
 class Model:
@@ -566,9 +573,9 @@ class Model:
         self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
-    def _read_sequences(f: BinaryIO, count: int) -> List[MDLSequence]:
+    def _read_sequences(f: BinaryIO, count: int) -> List[Sequence]:
         """Split this off to decrease stack in main parse method."""
-        sequences = [None] * count  # type: List[MDLSequence]
+        sequences: List[Sequence] = [cast(Sequence, None)] * count
         for i in range(count):
             start_pos = f.tell()
             (
@@ -593,7 +600,7 @@ class Model:
             end_pos = f.tell()
 
             f.seek(start_pos + event_pos)
-            events = [None] * event_count  # type: List[SeqEvent]
+            events: List[SeqEvent] = [cast(SeqEvent, None)] * event_count
             for j in range(event_count):
                 event_start = f.tell()
                 (
@@ -641,7 +648,7 @@ class Model:
             else:
                 keyvalues = ''
 
-            sequences[i] = MDLSequence(
+            sequences[i] = Sequence(
                 label=read_nullstr(f, start_pos + label_pos),
                 act_name=read_nullstr(f, start_pos + act_name_pos),
                 flags=flags,
