@@ -16,6 +16,7 @@ import inspect
 import contextlib
 import warnings
 import attr
+import os
 
 from srctools import AtomicWriter, conv_int
 from srctools.math import Vec, Angle
@@ -514,7 +515,7 @@ class BSP:
     ]] = {}
     version: Union[VERSIONS, int]
 
-    def __init__(self, filename: str, version: VERSIONS=None):
+    def __init__(self, filename: Union[str, os.PathLike], version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: dict[BSP_LUMPS, Lump] = {}
