@@ -255,6 +255,24 @@ class PlaneType(Enum):
     ANY_Y = 4  # Pointing mostly in the Y axis.
     ANY_Z = 5  # Pointing mostly in the Z axis.
 
+    @classmethod
+    def from_normal(cls, normal: Vec) -> 'PlaneType':
+        """Compute the correct orientation for a normal."""
+        x = abs(normal.x)
+        y = abs(normal.y)
+        z = abs(normal.z)
+        if x > 0.99:
+            return cls.X
+        if y > 0.99:
+            return cls.Y
+        if z > 0.99:
+            return cls.Z
+        if x > y and x > z:
+            return cls.ANY_X
+        if y > x and y > z:
+            return cls.ANY_Y
+        return cls.ANY_Z
+
 
 class SurfFlags(Flag):
     """The various SURF_ flags, indicating different attributes for faces."""
@@ -2306,27 +2324,21 @@ class TexInfo:
 @attr.define(eq=False)
 class Plane:
     """A plane."""
-    normal: Vec
-    dist: float
-    type: PlaneType = attr.ib()
+    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> None:
+        """Recompute the plane type whenever the normal is changed."""
+        value = Vec(value)
+        self.type = PlaneType.from_normal(value)
+        return value
 
-    @type.default
-    def compute_type(self) -> 'PlaneType':
-        """Compute the plane type parameter."""
-        x = abs(self.normal.x)
-        y = abs(self.normal.y)
-        z = abs(self.normal.z)
-        if x > 0.99:
-            return PlaneType.X
-        if y > 0.99:
-            return PlaneType.Y
-        if z > 0.99:
-            return PlaneType.Z
-        if x > y and x > z:
-            return PlaneType.ANY_X
-        if y > x and y > z:
-            return PlaneType.ANY_Y
-        return PlaneType.ANY_Z
+    def _type_default(self) -> 'PlaneType':
+        """Compute the plane type parameter if not provided."""
+        return PlaneType.from_normal(self.normal)
+
+    normal: Vec = attr.ib(on_setattr=_normal_setattr)
+    dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
+    type: PlaneType = attr.Factory(_type_default, takes_self=True)
+
+    del _normal_setattr,_type_default
 
 
 @attr.define(eq=False)
