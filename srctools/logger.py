@@ -98,7 +98,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         """
         if self.isEnabledFor(level):
             try:
-                ctx = f' ({CTX_STACK.stack[-1]})'
+                ctx = CTX_STACK.stack[-1]
             except (AttributeError, IndexError):
                 ctx = ''
 
@@ -110,7 +110,10 @@ class LoggerAdapter(logging.LoggerAdapter):
                 # Pull these two arguments out of kwargs, so they can be set..
                 exc_info=exc_info,
                 stack_info=stack_info,
-                extra={'alias': self.alias, 'context': ctx},
+                extra={
+                    'alias': self.alias,
+                    'context': f' ({ctx})' if ctx else '',
+                },
             )
 
     def __getattr__(self, attr: str) -> Any:

@@ -1,7 +1,7 @@
 """Common code for handling binary formats."""
 from binascii import crc32
-from struct import unpack, calcsize, Struct
-from typing import IO, List, Hashable, Dict, Tuple, Union
+from struct import Struct
+from typing import IO, List, Hashable, Union
 from srctools import Vec
 
 ST_VEC = Struct('fff')
@@ -9,7 +9,8 @@ ST_VEC = Struct('fff')
 
 def struct_read(fmt: str, file: IO[bytes]) -> tuple:
     """Read a structure from the file."""
-    return unpack(fmt, file.read(calcsize(fmt)))
+    struct = Struct(fmt)
+    return struct.unpack(file.read(struct.size))
 
 
 def read_nullstr(file: IO[bytes], pos: int=None) -> str:
@@ -19,7 +20,7 @@ def read_nullstr(file: IO[bytes], pos: int=None) -> str:
             return ''
         file.seek(pos)
 
-    text = []  # type: List[bytes]
+    text: list[bytes] = []
     while True:
         char = file.read(1)
         if char == b'\0':
@@ -42,10 +43,10 @@ def read_nullstr_array(file: IO[bytes], count: int) -> List[str]:
 
 def read_offset_array(file: IO[bytes], count: int) -> List[str]:
     """Read an array of offsets to null-terminated strings from the file."""
-    cdmat_offsets = struct_read(str(count) + 'i', file)
+    offsets = struct_read(str(count) + 'i', file)
     arr = [''] * count
 
-    for ind, off in enumerate(cdmat_offsets):
+    for ind, off in enumerate(offsets):
         file.seek(off)
         arr[ind] = read_nullstr(file)
     return arr
@@ -77,9 +78,9 @@ class DeferredWrites:
     def __init__(self, file: IO[bytes]) -> None:
         self.file = file
         # Position to write to, and the struct format to use.
-        self.loc: Dict[Hashable, Tuple[int, Struct]] = {}
+        self.loc: dict[Hashable, tuple[int, Struct]] = {}
         # Then the bytes to write there.
-        self.data: Dict[Hashable, bytes] = {}
+        self.data: dict[Hashable, bytes] = {}
 
     def defer(self, key: Hashable, fmt: Union[str, Struct], write=False) -> None:
         """Mark that the given format data is going to be written here.
