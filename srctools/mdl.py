@@ -1,8 +1,9 @@
 """Parses Source models, to extract metadata."""
+from io import RawIOBase, SEEK_CUR, SEEK_END, SEEK_SET
 from typing import (
-    Union, Iterator, Iterable,
-    List, Dict, Tuple, cast,
-    BinaryIO, Sequence as SequenceType,
+    Optional, Union, cast, Any,
+    List, Dict, Tuple, Iterator, Iterable, BinaryIO,
+    Sequence as SequenceType,
 )
 from enum import IntFlag, Enum
 from pathlib import PurePosixPath
@@ -299,6 +300,115 @@ class Sequence:
     bbox_max: Vec
     # More after here.
     keyvalues: str
+    
+    
+class TrackedFile(RawIOBase):
+    """A file-like object which tracks which bytes have been read.
+
+    This allows us to gradually implement parsing of the model, and when saving
+    re-insert unparsed data where it was originally.
+    """
+
+    def __init__(self, file: BinaryIO) -> None:
+        self.start_offset = file.tell()
+        self.data = file.read()
+        self._cur_pos = 0
+        self._read = bytearray(len(self.data))
+        # Filled after the file is closed.
+        self.segments: list[tuple[int, bytes]] = []
+
+    def read(self, size: int = -1) -> bytes:
+        """Read data from the file."""
+        cur_pos = self._cur_pos
+        if size < 0:
+            self._cur_pos = end_pos = len(self.data)
+        else:
+            self._cur_pos = end_pos = min(cur_pos + size, len(self.data))
+        for i in range(cur_pos, end_pos):
+            self._read[i] = 0xFF
+        return self.data[cur_pos:end_pos]
+
+    def readinto(self, buffer: Any) -> int:
+        """Read into the provided buffer.
+
+        This calls read(), so it is not efficent.
+        """
+        view = memoryview(buffer)
+        size = len(view)
+        view[:] = self.read(size)
+        return size
+
+    def readall(self) -> bytes:
+        """Read all the remaining data."""
+        return self.read()
+
+    def seek(self, offset: int, whence: int = SEEK_SET) -> int:
+        """Seek to the provided position."""
+        size = len(self.data)
+        if whence == SEEK_SET:
+            pass
+        elif whence == SEEK_CUR:
+            offset += self._cur_pos
+        elif whence == SEEK_END:
+            offset += size
+        else:
+            raise ValueError(f'Unknown whence value {whence}!')
+        offset -= self.start_offset
+        if offset >= size:
+            offset = size - 1
+        self._cur_pos = offset
+        return offset + self.start_offset
+
+    def tell(self) -> int:
+        """Return the current file offset."""
+        return self._cur_pos + self.start_offset
+
+    def close(self) -> None:
+        """Closing collects the unparsed data."""
+        if self.segments:
+            # Closed already.
+            return
+        start_off = self.start_offset
+        unread_start: Optional[int] = None
+        for pos, is_read in enumerate(self._read):
+            if unread_start is None and not is_read:
+                unread_start = pos
+            elif unread_start is not None and is_read:
+                self.segments.append((start_off + unread_start, self.data[unread_start:pos]))
+                unread_start = None
+        if unread_start is not None:
+            self.segments.append((start_off + unread_start, self.data[unread_start:]))
+        # Clear our data, not needed anymore.
+        self.data = b''
+        self._read.clear()
+        self._cur_pos = 0
+
+    def readable(self) -> bool:
+        """We are readable."""
+        return True
+
+    def seekable(self) -> bool:
+        """We are seekable."""
+        return True
+
+    def writable(self) -> bool:
+        """We are not writable."""
+        return False
+
+    def fileno(self) -> int:
+        raise IOError('In-memory file!')
+
+    def truncate(self, size: int = None) -> int:
+        """This cannot be truncated."""
+        raise IOError('File cannot be modified!')
+
+    def write(self, buf: Any) -> Optional[int]:
+        """This cannot be written to."""
+        raise IOError('File cannot be modified!')
+
+    def writelines(self, lines: Any) -> None:
+        """This cannot be written to."""
+        raise IOError('File cannot be modified!')
 
 
 class Model:
@@ -485,9 +595,12 @@ class Model:
             flexcontrollerui_index,
         ) = struct_read('3b 5x 2I', f)
 
+        # Helper class which tracks which bits of the file we use.
+        track = TrackedFile(f)
+
         # Build CDMaterials data
-        f.seek(cdmat_offset)
-        self.cdmaterials = read_offset_array(f, cdmat_count)
+        track.seek(cdmat_offset)
+        self.cdmaterials = read_offset_array(track, cdmat_count)
         
         for ind, cdmat in enumerate(self.cdmaterials):
             cdmat = cdmat.replace('\\', '/').lstrip('/')
@@ -496,12 +609,12 @@ class Model:
             self.cdmaterials[ind] = cdmat
         
         # Build texture data
-        f.seek(texture_offset)
+        track.seek(texture_offset)
         textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
         tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
-                f.tell(),
+                track.tell(),
                 # Texture data:
                 # int: offset to the string, from start of struct.
                 # int: flags - appears to solely indicate 'teeth' materials...
@@ -510,19 +623,19 @@ class Model:
                 # 2 4-byte pointers in studiomdl to the material class, for
                 #      server and client - shouldn't be in the file...
                 # 40 bytes of unused space (for expansion...)
-                struct_read('iii 4x 8x 40x', f)
+                struct_read('iii 4x 8x 40x', track)
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
             textures[tex_ind] = (
-                read_nullstr(f, offset + name_offset),
+                read_nullstr(track, offset + name_offset),
                 flags,
                 used,
             )
 
         # Now parse through the family table, to match skins to textures.
-        f.seek(skinref_ind)
-        ref_data = f.read(2 * skinref_count * skin_count)
+        track.seek(skinref_ind)
+        ref_data = track.read(2 * skinref_count * skin_count)
         self.skins = [None] * skin_count  # type: List[List[str]]
         skin_group = Struct('<{}H'.format(skinref_count))
         offset = 0
@@ -545,32 +658,34 @@ class Model:
         if '' not in self.cdmaterials:
             self.cdmaterials.append('')
 
-        f.seek(surfaceprop_index)
-        self.surfaceprop = read_nullstr(f)
+        track.seek(surfaceprop_index)
+        self.surfaceprop = read_nullstr(track)
 
         if keyvalue_count:
-            self.keyvalues = read_nullstr(f, keyvalue_index)
+            self.keyvalues = read_nullstr(track, keyvalue_index)
         else:
             self.keyvalues = ''
 
-        f.seek(includemodel_index)
+        track.seek(includemodel_index)
         self.included_models = [None] * includemodel_count  # type: List[IncludedMDL]
         for i in range(includemodel_count):
-            pos = f.tell()
+            pos = track.tell()
             # This is two offsets from the start of the structures.
-            lbl_pos, filename_pos = struct_read('II', f)
+            lbl_pos, filename_pos = struct_read('II', track)
             self.included_models[i] = IncludedMDL(
-                read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
-                read_nullstr(f, pos + filename_pos) if filename_pos else '',
+                read_nullstr(track, pos + lbl_pos) if lbl_pos else '',
+                read_nullstr(track, pos + filename_pos) if filename_pos else '',
             )
             # Then return to after that struct - 4 bytes * 2.
-            f.seek(pos + 4 * 2)
+            track.seek(pos + 4 * 2)
 
-        f.seek(sequence_off)
-        self.sequences = self._read_sequences(f, sequence_count)
+        track.seek(sequence_off)
+        self.sequences = self._read_sequences(track, sequence_count)
 
-        f.seek(bodypart_offset)
-        self._cull_skins_table(f, bodypart_count)
+        track.seek(bodypart_offset)
+        self._cull_skins_table(track, bodypart_count)
+        track.close()
+        self._unused_segments = track.segments
 
     @staticmethod
     def _read_sequences(f: BinaryIO, count: int) -> List[Sequence]:
