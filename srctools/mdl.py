@@ -423,6 +423,8 @@ class Model:
         self.version = 49
         self.checksum = b'\0\0\0\0'
 
+        self.included_models: list[IncludedMDL] = []
+
         self.phys_keyvalues = Property(None, [])
         with self._sys, self._file.open_bin() as f:
             self._load(f)
@@ -667,15 +669,15 @@ class Model:
             self.keyvalues = ''
 
         track.seek(includemodel_index)
-        self.included_models = [None] * includemodel_count  # type: List[IncludedMDL]
+        self.included_models.clear()
         for i in range(includemodel_count):
             pos = track.tell()
             # This is two offsets from the start of the structures.
             lbl_pos, filename_pos = struct_read('II', track)
-            self.included_models[i] = IncludedMDL(
+            self.included_models.append(IncludedMDL(
                 read_nullstr(track, pos + lbl_pos) if lbl_pos else '',
                 read_nullstr(track, pos + filename_pos) if filename_pos else '',
-            )
+            ))
             # Then return to after that struct - 4 bytes * 2.
             track.seek(pos + 4 * 2)
 
