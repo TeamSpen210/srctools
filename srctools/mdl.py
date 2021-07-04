@@ -489,6 +489,50 @@ class Mouth(DataSegment):
 
 
 @attr.define
+class Hitbox(DataSegment, padding=8*4):
+    """Impolements a single hitbox (mstudiobbox_t)."""
+    bone: Bone = attr.ib(metadata={'struct': 'i'})
+    group: int = attr.ib(metadata={'struct': 'i'})
+    mins: Vec = attr.ib(metadata={'struct': '3f'})
+    maxes: Vec = attr.ib(metadata={'struct': '3f'})
+    name: str = attr.ib(metadata={'struct': 'i'})
+
+    @classmethod
+    def parse(cls, f: 'TrackedFile') -> Dict[str, List['Hitbox']]:
+        """Parse all the hitbox groups (mstudiohitboxset_t).
+
+        These only have a name and list of hitboxes, so a specific class can
+        be skipped, and just a dict used.
+        """
+        count, off = cls.struct_header.unpack(f.read(cls.struct_header.size))
+        groups: dict[str, list[Hitbox]] = {}
+        with f.pos_restore():
+            f.seek(off)
+            for _ in range(count):
+                group_pos = f.tell()
+                name_ind, hitbox_count, hitbox_off = struct_read('<3i', f)
+                with f.pos_restore():
+                    name = read_nullstr(f, group_pos + name_ind)
+                    f.seek(group_pos + hitbox_off)
+                    groups[name] = hitboxes = []
+                    for _ in range(hitbox_count):
+                        data = Hitbox.struct_item.unpack(f.read(Hitbox.struct_item.size))
+                        with f.pos_restore() as box_start:
+                            if data[8] != 0:
+                                hitbox_name = read_nullstr(f, box_start + data[8])
+                            else:
+                                hitbox_name = ''
+                            hitboxes.append(Hitbox(
+                                data[0],
+                                data[1],
+                                Vec(data[2:5]),
+                                Vec(data[5:8]),
+                                hitbox_name,
+                            ))
+        return groups
+
+
+@attr.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -690,12 +734,14 @@ class Model:
         # Break up the reading a bit to limit the stack size.
         (
             bone_controller_count, bone_controller_off,
+        ) = struct_read('<2I', f)
 
-            hitbox_count, hitbox_off,
+        self.hitboxes = Hitbox.parse(f)
+
+        (
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<8I', f)
-
+        ) = struct_read('<4I', f)
 
         (
             activitylistversion, eventsindexed,
