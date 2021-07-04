@@ -2,7 +2,7 @@
 import contextlib
 from io import RawIOBase, SEEK_CUR, SEEK_END, SEEK_SET
 from typing import (
-    Optional, Union, cast, Any,
+    Optional, Union, cast, Any, TypeVar, ClassVar, Type,
     List, Dict, Tuple, Iterator, Iterable, BinaryIO,
     Sequence as SequenceType, Generator,
 )
@@ -271,6 +271,53 @@ ANIM_EVENT_BY_NAME = {
 }  # type: Dict[str, AnimEvents]
 
 ST_PHY_HEADER = Struct('<iiil')
+SegmentT = TypeVar('SegmentT', bound='DataSegment')
+
+
+class DataSegment:
+    """Base class for all the data segments in model files.
+
+    This
+    """
+    struct_header: ClassVar[Struct] = Struct('<ii')
+    struct_item: ClassVar[Struct]
+
+    def __init_subclass__(cls, st_header: str='', st_item: str='', **kwargs) -> None:
+        """Initialise struct_header and struct_item for you."""
+        super().__init_subclass__(**kwargs)
+        if st_header:
+            if not st_header.startswith(('<', '>', '=')):
+                header = '<' + st_header
+            cls.struct_header = Struct(st_header)
+            # Set annotations so attrs knows this is a class var and not to
+            # transform this.
+            cls.__annotations__['struct_header'] = 'ClassVar[Struct]'
+        if st_item:
+            if not st_item.startswith(('<', '>', '=')):
+                st_item = '<' + st_item
+            cls.struct_item = Struct(st_item)
+            cls.__annotations__['struct_item'] = 'ClassVar[Struct]'
+
+    @classmethod
+    def parse(cls: Type[SegmentT], f: 'TrackedFile') -> List[SegmentT]:
+        """Parse the header segement, potentially seeking to other blocks."""
+        count, off = cls.struct_header.unpack(f.read(cls.struct_header.size))
+        pos = f.tell()
+        f.seek(off)
+        data = [
+            cls.parse_item(
+                f, f.tell(),
+                cls.struct_item.unpack(f.read(cls.struct_item.size)),
+            )
+            for _ in range(count)
+        ]
+        f.seek(pos)
+        return data
+
+    @classmethod
+    def parse_item(cls: Type[SegmentT], f: 'TrackedFile', pos: int, data: tuple) -> SegmentT:
+        """Parse a single item."""
+        return cls(*data)
 
 
 @attr.define
