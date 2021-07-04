@@ -282,18 +282,35 @@ class DataSegment:
     struct_header: ClassVar[Struct] = Struct('<ii')
     struct_item: ClassVar[Struct]
 
-    def __init_subclass__(cls, st_header: str='', st_item: str='', **kwargs) -> None:
+    def __init_subclass__(
+        cls,
+        st_header: str = '',
+        st_item: str = '',
+        flip_count: bool = False,
+        **kwargs,
+    ) -> None:
         """Initialise struct_header and struct_item for you."""
         super().__init_subclass__(**kwargs)
+        cls._flipped_count = flip_count
+        cls.__annotations__['_flipped_count'] = 'ClassVar[bool]'
+
         if st_header:
             if not st_header.startswith(('<', '>', '=')):
-                header = '<' + st_header
+                st_header = '<' + st_header
             cls.struct_header = Struct(st_header)
             # Set annotations so attrs knows this is a class var and not to
             # transform this.
             cls.__annotations__['struct_header'] = 'ClassVar[Struct]'
         if st_item:
-            if not st_item.startswith(('<', '>', '=')):
+            if st_item == 'attrs':  # Collect from attributes.
+                # We haven't run the attrs decorator, so the regular
+                # introspection isn't available yet. So just rely on the
+                # return value of attr.ib() having a metadata attribute.
+                st_item = '<' + ''.join([
+                    member.metadata['struct'] for member in vars(cls).values()
+                    if hasattr(member, 'metadata')
+                ])
+            elif not st_item.startswith(('<', '>', '=')):
                 st_item = '<' + st_item
             cls.struct_item = Struct(st_item)
             cls.__annotations__['struct_item'] = 'ClassVar[Struct]'
@@ -302,6 +319,8 @@ class DataSegment:
     def parse(cls: Type[SegmentT], f: 'TrackedFile') -> List[SegmentT]:
         """Parse the header segement, potentially seeking to other blocks."""
         count, off = cls.struct_header.unpack(f.read(cls.struct_header.size))
+        if cls._flipped_count:
+            off, count = count, off
         pos = f.tell()
         f.seek(off)
         data = [
