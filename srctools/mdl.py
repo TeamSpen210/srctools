@@ -1,9 +1,10 @@
 """Parses Source models, to extract metadata."""
+import contextlib
 from io import RawIOBase, SEEK_CUR, SEEK_END, SEEK_SET
 from typing import (
     Optional, Union, cast, Any,
     List, Dict, Tuple, Iterator, Iterable, BinaryIO,
-    Sequence as SequenceType,
+    Sequence as SequenceType, Generator,
 )
 from enum import IntFlag, Enum
 from pathlib import PurePosixPath
@@ -315,6 +316,13 @@ class TrackedFile(RawIOBase, BinaryIO):
         self._read = bytearray(len(self.data))
         # Filled after the file is closed.
         self.segments: list[tuple[int, bytes]] = []
+
+    @contextlib.contextmanager
+    def pos_restore(self) -> Generator[int, None, None]:
+        """After exiting the context manager, restore the offset."""
+        pos = self._cur_pos
+        yield pos
+        self._cur_pos = pos
 
     def read(self, size: int = -1) -> bytes:
         """Read data from the file."""
