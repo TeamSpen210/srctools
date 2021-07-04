@@ -330,13 +330,12 @@ class DataSegment:
         print(f'Load {cls}, off={off}, count={count}')
         pos = f.tell()
         f.seek(off)
-        data = [
-            cls.parse_item(
-                f, f.tell(),
-                cls.struct_item.unpack(f.read(cls.struct_item.size)),
-            )
-            for _ in range(count)
-        ]
+        data = []
+        for _ in range(count):
+            item_pos = f.tell()
+            item_data = cls.struct_item.unpack(f.read(cls.struct_item.size))
+            with f.pos_restore():
+                data.append(cls.parse_item(f, item_pos, item_data))
         f.seek(pos)
         return data
 
@@ -348,7 +347,7 @@ class DataSegment:
 
 @attr.define
 class IncludedMDL(DataSegment, st_item='II'):
-    """Additional model files to load animations from."""
+    """Additional model files to load animations from (mstudiomodelgroup_t)."""
     label: str
     filename: str
 
@@ -404,30 +403,29 @@ class Bone(DataSegment, padding=4*8):
         assert len(data) == 46, f'{len(data)} != 46'
         pose_to_bone, pose_to_bone_off = parse_3x4_matrix(data[24:36])
 
-        with f.pos_restore():
-            return Bone(
-                name=read_nullstr(f, pos + data[0]),
-                parent=data[1],  # Incorrect, will fix after.
-                bone_controller=data[2:8],
-                pos=Vec(data[8:11]),
-                quat=data[11:15],
-                rot=Angle(
-                    math.degrees(data[15]),
-                    math.degrees(data[16]),
-                    math.degrees(data[17]),
-                ),
-                pos_scale=Vec(data[18:21]),
-                rot_scale=Vec(data[21:24]),
-                pose_to_bone=pose_to_bone,
-                pose_to_bone_off=pose_to_bone_off,
-                q_alignment=data[36:40],
-                flags=data[40],
-                proc_type=data[41],
-                proc_index=data[42],
-                phys_bone=data[43],
-                surfaceprop=read_nullstr(f, pos + data[44]),
-                contents=BSPContents(data[45]),
-            )
+        return Bone(
+            name=read_nullstr(f, pos + data[0]),
+            parent=data[1],  # Incorrect, will fix after.
+            bone_controller=data[2:8],
+            pos=Vec(data[8:11]),
+            quat=data[11:15],
+            rot=Angle(
+                math.degrees(data[15]),
+                math.degrees(data[16]),
+                math.degrees(data[17]),
+            ),
+            pos_scale=Vec(data[18:21]),
+            rot_scale=Vec(data[21:24]),
+            pose_to_bone=pose_to_bone,
+            pose_to_bone_off=pose_to_bone_off,
+            q_alignment=data[36:40],
+            flags=data[40],
+            proc_type=data[41],
+            proc_index=data[42],
+            phys_bone=data[43],
+            surfaceprop=read_nullstr(f, pos + data[44]),
+            contents=BSPContents(data[45]),
+        )
 
 
 @attr.define
@@ -467,12 +465,10 @@ class PoseParameter(DataSegment):
     @classmethod
     def parse_item(cls, f: 'TrackedFile', pos: int, data: tuple) -> 'PoseParameter':
         """Parse a pose parameter."""
-        assert len(data) == 5, f'{len(data)} != 5'
-        with f.pos_restore():
-            return PoseParameter(
-                read_nullstr(f, pos + data[0]),
-                *data[1:],
-            )
+        return PoseParameter(
+            read_nullstr(f, pos + data[0]),
+            *data[1:],
+        )
 
 
 @attr.define
