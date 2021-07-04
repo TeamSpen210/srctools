@@ -321,10 +321,23 @@ class DataSegment:
 
 
 @attr.define
-class IncludedMDL:
+class IncludedMDL(DataSegment, st_item='II'):
     """Additional model files to load animations from."""
     label: str
     filename: str
+
+    @classmethod
+    def parse_item(
+        cls: Type['IncludedMDL'],
+        f: BinaryIO, pos: int,
+        data: Tuple[int, int],
+    ) -> 'IncludedMDL':
+        """Parse the two model strings."""
+        lbl_pos, filename_pos = data
+        return IncludedMDL(
+            read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
+            read_nullstr(f, pos + filename_pos) if filename_pos else '',
+        )
 
 
 @attr.define
@@ -491,7 +504,7 @@ class Model:
             with filesystem, phy_file.open_bin() as f:
                 self._parse_phy(f, phy_file.path)
 
-    def _load(self, f: BinaryIO) -> None:
+    def _load(self, f: TrackedFile) -> None:
         """Read data from the MDL file."""
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
@@ -605,18 +618,14 @@ class Model:
         (
             self.mass,  # Mass of object (float)
             self.contents,  # ??
+        ) = struct_read('<fI', f)
 
-            # Other models can be referenced for re-used sequences and
-            # animations
-            # (See also: The $includemodel QC option.)
-            # mstudiomodelgroup_t
-            includemodel_count,
-            includemodel_index,
+        self.included_models = IncludedMDL.parse(f)
 
-            # In-engine, this is a pointer to the combined version of this +
-            # included models. In the file it's useless.
-            virtualModel,
-
+        # In-engine, this is a pointer to the combined version of this +
+        # included models. In the file it's useless.
+        f.read(4)
+        (
             # mstudioanimblock_t
             animblocks_name_index,
             animblocks_count,
@@ -629,7 +638,7 @@ class Model:
 
             vertex_base,  # Placeholder for void*
             offset_base,  # Placeholder for void*
-        ) = struct_read('<f 11I', f)
+        ) = struct_read('<7I', f)
 
         (
             # Used with $constantdirectionallight from the QC
@@ -717,19 +726,6 @@ class Model:
             self.keyvalues = read_nullstr(f, keyvalue_index)
         else:
             self.keyvalues = ''
-
-        f.seek(includemodel_index)
-        self.included_models.clear()
-        for i in range(includemodel_count):
-            pos = f.tell()
-            # This is two offsets from the start of the structures.
-            lbl_pos, filename_pos = struct_read('II', f)
-            self.included_models.append(IncludedMDL(
-                read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
-                read_nullstr(f, pos + filename_pos) if filename_pos else '',
-            ))
-            # Then return to after that struct - 4 bytes * 2.
-            f.seek(pos + 4 * 2)
 
         f.seek(sequence_off)
         self.sequences = self._read_sequences(f, sequence_count)
