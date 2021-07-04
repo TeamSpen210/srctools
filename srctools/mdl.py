@@ -430,6 +430,28 @@ class Bone(DataSegment, padding=4*8):
 
 
 @attr.define
+class Attachment(DataSegment, padding=8*4):
+    """An attachment for the model (mstudioattachment_t)."""
+    name: str = attr.ib(metadata={'struct': 'i'})
+    flags: int = attr.ib(metadata={'struct': 'I'})
+    local_bone: int = attr.ib(metadata={'struct': 'i'})
+    orient: Matrix = attr.ib(metadata={'struct': '9f'})
+    offset: Vec = attr.ib(metadata={'struct': '3f'})
+
+    @classmethod
+    def parse_item(cls, f: 'TrackedFile', pos: int, data: tuple) -> 'Attachment':
+        """Parse an attachment."""
+        assert len(data) == 15, f'{len(data)} != 15'
+        with f.pos_restore():
+            return Attachment(
+                read_nullstr(f, pos + data[0]),
+                data[1],
+                data[2],  # Incorrect, fixed in init.
+                *parse_3x4_matrix(data[3:]),
+            )
+
+
+@attr.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -649,8 +671,9 @@ class Model:
 
             # The number of $body in the model (mstudiobodyparts_t).
             bodypart_count, bodypart_offset,
-            attachment_count, attachment_offset,
-        ) = struct_read('<13i', f)
+        ) = struct_read('<11i', f)
+
+        self.attachments = Attachment.parse(f)
 
         (
             localnode_count,
