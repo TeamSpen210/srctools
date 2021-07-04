@@ -327,6 +327,7 @@ class DataSegment:
         count, off = cls.struct_header.unpack(f.read(cls.struct_header.size))
         if cls._flipped_count:
             off, count = count, off
+        print(f'Load {cls}, off={off}, count={count}')
         pos = f.tell()
         f.seek(off)
         data = [
@@ -452,6 +453,29 @@ class Attachment(DataSegment, padding=8*4):
 
 
 @attr.define
+class PoseParameter(DataSegment):
+    """Pose parameters allow manipulating the pose in an animation.
+
+    See mstudioposeparamdesc_t.
+    """
+    name: str = attr.ib(metadata={'struct': 'i'})
+    flags: int = attr.ib(metadata={'struct': 'i'})
+    start: float = attr.ib(metadata={'struct': 'f'})
+    end: float = attr.ib(metadata={'struct': 'f'})
+    loop: float = attr.ib(metadata={'struct': 'f'})
+
+    @classmethod
+    def parse_item(cls, f: 'TrackedFile', pos: int, data: tuple) -> 'PoseParameter':
+        """Parse a pose parameter."""
+        assert len(data) == 5, f'{len(data)} != 5'
+        with f.pos_restore():
+            return PoseParameter(
+                read_nullstr(f, pos + data[0]),
+                *data[1:],
+            )
+
+
+@attr.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -493,8 +517,11 @@ class TrackedFile(RawIOBase, BinaryIO):
             self._cur_pos = end_pos = len(self.data)
         else:
             self._cur_pos = end_pos = min(cur_pos + size, len(self.data))
-        for i in range(cur_pos, end_pos):
-            self._read[i] = 0xFF
+        try:
+            for i in range(cur_pos, end_pos):
+                self._read[i] = 0xFF
+        except IndexError:
+            raise IOError(f'Read {cur_pos}-{end_pos} failed, len={len(self.data)}')
         return self.data[cur_pos:end_pos]
 
     def readinto(self, buffer: Any) -> int:
@@ -647,7 +674,6 @@ class Model:
             else:
                 bone.parent = bone_list[bone.parent]  # type: ignore
 
-
         # Break up the reading a bit to limit the stack size.
         (
             bone_controller_count, bone_controller_off,
@@ -656,7 +682,6 @@ class Model:
             anim_count, anim_off,
             sequence_count, sequence_off,
         ) = struct_read('<8I', f)
-
 
 
         (
@@ -679,34 +704,32 @@ class Model:
             localnode_count,
             localnode_index,
             localnode_name_index,
-         
+
             # mstudioflexdesc_t
             flexdesc_count,
             flexdesc_index,
-         
+
             # mstudioflexcontroller_t
             flexcontroller_count,
             flexcontroller_index,
-         
+
             # mstudioflexrule_t
             flexrules_count,
             flexrules_index,
-         
+
             # IK probably refers to inverse kinematics
             # mstudioikchain_t
             ikchain_count,
             ikchain_index,
-         
+
             # Information about any "mouth" on the model for speech animation
             # More than one sounds pretty creepy.
             # mstudiomouth_t
             mouths_count, 
             mouths_index,
-         
-            # mstudioposeparamdesc_t
-            localposeparam_count,
-            localposeparam_index,
-        ) = struct_read('<15I', f)
+        ) = struct_read('<13I', f)
+
+        self.pose_params = PoseParameter.parse(f)
 
         # VDC:
         # For anyone trying to follow along, as of this writing,
