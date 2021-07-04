@@ -302,7 +302,7 @@ class Sequence:
     keyvalues: str
     
     
-class TrackedFile(RawIOBase):
+class TrackedFile(RawIOBase, BinaryIO):
     """A file-like object which tracks which bytes have been read.
 
     This allows us to gradually implement parsing of the model, and when saving
@@ -310,7 +310,6 @@ class TrackedFile(RawIOBase):
     """
 
     def __init__(self, file: BinaryIO) -> None:
-        self.start_offset = file.tell()
         self.data = file.read()
         self._cur_pos = 0
         self._read = bytearray(len(self.data))
@@ -353,31 +352,29 @@ class TrackedFile(RawIOBase):
             offset += size
         else:
             raise ValueError(f'Unknown whence value {whence}!')
-        offset -= self.start_offset
         if offset >= size:
             offset = size - 1
         self._cur_pos = offset
-        return offset + self.start_offset
+        return offset
 
     def tell(self) -> int:
         """Return the current file offset."""
-        return self._cur_pos + self.start_offset
+        return self._cur_pos
 
     def close(self) -> None:
         """Closing collects the unparsed data."""
         if self.segments:
             # Closed already.
             return
-        start_off = self.start_offset
         unread_start: Optional[int] = None
         for pos, is_read in enumerate(self._read):
             if unread_start is None and not is_read:
                 unread_start = pos
             elif unread_start is not None and is_read:
-                self.segments.append((start_off + unread_start, self.data[unread_start:pos]))
+                self.segments.append((unread_start, self.data[unread_start:pos]))
                 unread_start = None
         if unread_start is not None:
-            self.segments.append((start_off + unread_start, self.data[unread_start:]))
+            self.segments.append((unread_start, self.data[unread_start:]))
         # Clear our data, not needed anymore.
         self.data = b''
         self._read.clear()
@@ -426,8 +423,9 @@ class Model:
         self.included_models: list[IncludedMDL] = []
 
         self.phys_keyvalues = Property(None, [])
-        with self._sys, self._file.open_bin() as f:
-            self._load(f)
+        with self._sys, self._file.open_bin() as f, TrackedFile(f) as track:
+            self._load(track)
+        self._unused_segments = track.segments
 
         path = PurePosixPath(file.path)
         try:
@@ -597,12 +595,9 @@ class Model:
             flexcontrollerui_index,
         ) = struct_read('3b 5x 2I', f)
 
-        # Helper class which tracks which bits of the file we use.
-        track = TrackedFile(f)
-
         # Build CDMaterials data
-        track.seek(cdmat_offset)
-        self.cdmaterials = read_offset_array(track, cdmat_count)
+        f.seek(cdmat_offset)
+        self.cdmaterials = read_offset_array(f, cdmat_count)
         
         for ind, cdmat in enumerate(self.cdmaterials):
             cdmat = cdmat.replace('\\', '/').lstrip('/')
@@ -611,12 +606,12 @@ class Model:
             self.cdmaterials[ind] = cdmat
         
         # Build texture data
-        track.seek(texture_offset)
+        f.seek(texture_offset)
         textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
         tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
-                track.tell(),
+                f.tell(),
                 # Texture data:
                 # int: offset to the string, from start of struct.
                 # int: flags - appears to solely indicate 'teeth' materials...
@@ -625,19 +620,19 @@ class Model:
                 # 2 4-byte pointers in studiomdl to the material class, for
                 #      server and client - shouldn't be in the file...
                 # 40 bytes of unused space (for expansion...)
-                struct_read('iii 4x 8x 40x', track)
+                struct_read('iii 4x 8x 40x', f)
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
             textures[tex_ind] = (
-                read_nullstr(track, offset + name_offset),
+                read_nullstr(f, offset + name_offset),
                 flags,
                 used,
             )
 
         # Now parse through the family table, to match skins to textures.
-        track.seek(skinref_ind)
-        ref_data = track.read(2 * skinref_count * skin_count)
+        f.seek(skinref_ind)
+        ref_data = f.read(2 * skinref_count * skin_count)
         self.skins = [None] * skin_count  # type: List[List[str]]
         skin_group = Struct('<{}H'.format(skinref_count))
         offset = 0
@@ -660,34 +655,32 @@ class Model:
         if '' not in self.cdmaterials:
             self.cdmaterials.append('')
 
-        track.seek(surfaceprop_index)
-        self.surfaceprop = read_nullstr(track)
+        f.seek(surfaceprop_index)
+        self.surfaceprop = read_nullstr(f)
 
         if keyvalue_count:
-            self.keyvalues = read_nullstr(track, keyvalue_index)
+            self.keyvalues = read_nullstr(f, keyvalue_index)
         else:
             self.keyvalues = ''
 
-        track.seek(includemodel_index)
+        f.seek(includemodel_index)
         self.included_models.clear()
         for i in range(includemodel_count):
-            pos = track.tell()
+            pos = f.tell()
             # This is two offsets from the start of the structures.
-            lbl_pos, filename_pos = struct_read('II', track)
+            lbl_pos, filename_pos = struct_read('II', f)
             self.included_models.append(IncludedMDL(
-                read_nullstr(track, pos + lbl_pos) if lbl_pos else '',
-                read_nullstr(track, pos + filename_pos) if filename_pos else '',
+                read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
+                read_nullstr(f, pos + filename_pos) if filename_pos else '',
             ))
             # Then return to after that struct - 4 bytes * 2.
-            track.seek(pos + 4 * 2)
+            f.seek(pos + 4 * 2)
 
-        track.seek(sequence_off)
-        self.sequences = self._read_sequences(track, sequence_count)
+        f.seek(sequence_off)
+        self.sequences = self._read_sequences(f, sequence_count)
 
-        track.seek(bodypart_offset)
-        self._cull_skins_table(track, bodypart_count)
-        track.close()
-        self._unused_segments = track.segments
+        f.seek(bodypart_offset)
+        self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
     def _read_sequences(f: BinaryIO, count: int) -> List[Sequence]:
