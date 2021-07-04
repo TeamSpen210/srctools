@@ -395,17 +395,7 @@ class Bone(DataSegment, padding=4*8):
     surfaceprop: str = attr.ib(metadata={'struct': 'i'})
     contents: BSPContents = attr.ib(metadata={'struct': 'i'})
 
-    @classmethod
-    def parse(cls, f: 'TrackedFile') -> List['Bone']:
-        """Parse all the bones."""
-        bones: list[Bone]
-        bones = super().parse(f)  # type: ignore
-        for bone in bones:
-            if bone.parent == -1:
-                bone.parent = None
-            else:
-                bone.parent = bones[bone.parent]  # type: ignore
-        return bones
+    index: int = -1  # Original index of the bone, or -1 if new.
 
     @classmethod
     def parse_item(cls: Type['Bone'], f: 'TrackedFile', pos: int, data: tuple) -> 'Bone':
@@ -572,8 +562,8 @@ class Model:
     This does not parse the animation or geometry data, only other metadata.
     """
     included_models: List[IncludedMDL] = []
-    bones: List[Bone] = []
-    
+    bones: Dict[str, Bone] = []
+
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
         self._file = file
@@ -622,7 +612,19 @@ class Model:
 
         self.flags = Flags(struct_read('<I', f)[0])
 
-        self.bones = Bone.parse(f)
+        self.bones = {}
+        bone_list = Bone.parse(f)
+        # We parsed the parents as integers, correct that now we've done
+        # parsing them all.
+        for i, bone in enumerate(bone_list):
+            bone.index = i
+            self.bones[bone.name.casefold()] = bone
+            
+            if bone.parent == -1:
+                bone.parent = None
+            else:
+                bone.parent = bone_list[bone.parent]  # type: ignore
+
 
         # Break up the reading a bit to limit the stack size.
         (
