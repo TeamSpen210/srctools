@@ -2,7 +2,8 @@
 from binascii import crc32
 from struct import unpack, calcsize, Struct
 from typing import IO, List, Hashable, Dict, Tuple, Union
-from srctools import Vec
+from srctools import Vec, Matrix
+
 
 ST_VEC = Struct('fff')
 
@@ -23,7 +24,10 @@ def read_nullstr(file: IO[bytes], pos: int=None) -> str:
     while True:
         char = file.read(1)
         if char == b'\0':
-            return b''.join(text).decode('ascii')
+            try:
+                return b''.join(text).decode('ascii')
+            except UnicodeDecodeError:
+                raise UnicodeError(f'{b"".join(text)!r} is not ASCII!')
         if not char:
             raise ValueError('Fell off end of file!')
         text.append(char)
@@ -49,6 +53,46 @@ def read_offset_array(file: IO[bytes], count: int) -> List[str]:
         file.seek(off)
         arr[ind] = read_nullstr(file)
     return arr
+
+
+def parse_3x4_matrix(floats: Tuple[
+    float, float, float, float,
+    float, float, float, float,
+    float, float, float, float,
+]) -> Tuple[Matrix, Vec]:
+    """Return a matrix from a 3x4 sequence of floats."""
+    mat = Matrix()
+    mat[0, 0] = floats[0]
+    mat[0, 1] = floats[1]
+    mat[0, 2] = floats[2]
+
+    mat[0, 0] = floats[4]
+    mat[0, 1] = floats[5]
+    mat[0, 2] = floats[6]
+
+    mat[0, 0] = floats[8]
+    mat[0, 1] = floats[9]
+    mat[0, 2] = floats[10]
+
+    pos = Vec(
+        floats[3],
+        floats[7],
+        floats[11],
+    )
+    return mat, pos
+
+
+def build_3x4_matrix(mat: Matrix, pos: Vec) -> tuple[
+    float, float, float, float,
+    float, float, float, float,
+    float, float, float, float,
+]:
+    """Convert a matrix into a 3x4 tuple of floats."""
+    return (
+        mat[0, 0], mat[0, 1], mat[0, 2], pos.x,
+        mat[1, 0], mat[1, 1], mat[1, 2], pos.y,
+        mat[2, 0], mat[2, 1], mat[2, 2], pos.z,
+    )
 
 
 def str_readvec(file: IO[bytes]) -> Vec:

@@ -1,5 +1,6 @@
 """Parses Source models, to extract metadata."""
 import contextlib
+import math
 from io import RawIOBase, SEEK_CUR, SEEK_END, SEEK_SET
 from typing import (
     Optional, Union, cast, Any, TypeVar, ClassVar, Type,
@@ -13,10 +14,11 @@ import attr
 from srctools import Property
 from srctools.binformat import (
     struct_read, read_nullstr, read_offset_array,
-    str_readvec,
+    str_readvec, parse_3x4_matrix,
 )
 from srctools.filesys import FileSystem, File
-from srctools.math import Vec
+from srctools.math import Vec, Angle, Matrix
+from srctools.const import BSPContents
 from struct import Struct
 
 
@@ -369,6 +371,71 @@ class SeqEvent:
 
 
 @attr.define
+class Bone(DataSegment, st_item='attrs'):
+    """A bone in the model (mstudiobone_t)."""
+    name: str = attr.ib(metadata={'struct': 'i'})
+    parent: Optional['Bone'] = attr.ib(metadata={'struct': 'i'})
+    bone_controller: List[int] = attr.ib(metadata={'struct': '6i'})
+    pos: Vec = attr.ib(metadata={'struct': '3f'})
+    quat: Tuple[float, float, float, float] = attr.ib(metadata={'struct': '4f'})
+    rot: Angle = attr.ib(metadata={'struct': '3f'})
+    pos_scale: Vec = attr.ib(metadata={'struct': '3f'})
+    rot_scale: Vec = attr.ib(metadata={'struct': '3f'})
+    pose_to_bone: Matrix = attr.ib(metadata={'struct': '9f'})  # 3x4 matrix,
+    pose_to_bone_off: Vec = attr.ib(metadata={'struct': '3f'})  # combined with this.
+    q_alignment: Tuple[float, float, float, float] = attr.ib(metadata={'struct': '4f'})
+    flags: int = attr.ib(metadata={'struct': 'i'})
+    proc_type: int = attr.ib(metadata={'struct': 'i'})
+    proc_index: int = attr.ib(metadata={'struct': 'i'})
+    phys_bone: int = attr.ib(metadata={'struct': 'i'})
+    surfaceprop: str = attr.ib(metadata={'struct': 'i'})
+    contents: BSPContents = attr.ib(metadata={'struct': 'i32x'})  # Padding at the end.
+
+    @classmethod
+    def parse(cls, f: 'TrackedFile') -> List['Bone']:
+        """Parse all the bones."""
+        bones: list[Bone]
+        bones = super().parse(f)  # type: ignore
+        for bone in bones:
+            if bone.parent == -1:
+                bone.parent = None
+            else:
+                bone.parent = bones[bone.parent]  # type: ignore
+        return bones
+
+    @classmethod
+    def parse_item(cls: Type['Bone'], f: 'TrackedFile', pos: int, data: tuple) -> 'Bone':
+        """Parse a bone."""
+        assert len(data) == 46, f'{len(data)} != 46'
+        pose_to_bone, pose_to_bone_off = parse_3x4_matrix(data[24:36])
+
+        with f.pos_restore():
+            return Bone(
+                name=read_nullstr(f, pos + data[0]),
+                parent=data[1],  # Incorrect, will fix after.
+                bone_controller=data[2:8],
+                pos=Vec(data[8:11]),
+                quat=data[11:15],
+                rot=Angle(
+                    math.degrees(data[15]),
+                    math.degrees(data[16]),
+                    math.degrees(data[17]),
+                ),
+                pos_scale=Vec(data[18:21]),
+                rot_scale=Vec(data[21:24]),
+                pose_to_bone=pose_to_bone,
+                pose_to_bone_off=pose_to_bone_off,
+                q_alignment=data[36:40],
+                flags=data[40],
+                proc_type=data[41],
+                proc_index=data[42],
+                phys_bone=data[43],
+                surfaceprop=read_nullstr(f, pos + data[44]),
+                contents=BSPContents(data[45]),
+            )
+
+
+@attr.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -500,14 +567,15 @@ class Model:
 
     This does not parse the animation or geometry data, only other metadata.
     """
+    included_models: List[IncludedMDL] = []
+    bones: List[Bone] = []
+    
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
         self._file = file
         self._sys = filesystem
         self.version = 49
         self.checksum = b'\0\0\0\0'
-
-        self.included_models: list[IncludedMDL] = []
 
         self.phys_keyvalues = Property(None, [])
         with self._sys, self._file.open_bin() as f, TrackedFile(f) as track:
@@ -548,21 +616,20 @@ class Model:
         self.view_min = str_readvec(f)
         self.view_max = str_readvec(f)
 
+        self.flags = Flags(struct_read('<I', f)[0])
+
+        self.bones = Bone.parse(f)
+
         # Break up the reading a bit to limit the stack size.
         (
-            flags,
-
-            bone_count,
-            bone_off,
-
             bone_controller_count, bone_controller_off,
 
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<11I', f)
+        ) = struct_read('<8I', f)
 
-        self.flags = Flags(flags)
+
 
         (
             activitylistversion, eventsindexed,
