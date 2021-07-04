@@ -472,6 +472,23 @@ class PoseParameter(DataSegment):
 
 
 @attr.define
+class Mouth(DataSegment):
+    """Defines a 'mouth' on a character."""
+    name: str = attr.ib(metadata={'struct': 'i'})
+    forward: Vec = attr.ib(metadata={'struct': '3f'})
+    flex_desc: int = attr.ib(metadata={'struct': 'i'})
+
+    @classmethod
+    def parse_item(cls, f: 'TrackedFile', pos: int, data: tuple) -> 'Mouth':
+        """Parse a pose parameter."""
+        return Mouth(
+            read_nullstr(f, pos + data[0]),
+            Vec(data[1:4]),
+            data[4],
+        )
+
+
+@attr.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -717,14 +734,9 @@ class Model:
             # mstudioikchain_t
             ikchain_count,
             ikchain_index,
+        ) = struct_read('<11I', f)
 
-            # Information about any "mouth" on the model for speech animation
-            # More than one sounds pretty creepy.
-            # mstudiomouth_t
-            mouths_count, 
-            mouths_index,
-        ) = struct_read('<13I', f)
-
+        self.mouths = Mouth.parse(f)
         self.pose_params = PoseParameter.parse(f)
 
         # VDC:
@@ -764,15 +776,16 @@ class Model:
             animblocks_name_index,
             animblocks_count,
             animblocks_index,
+        ) = struct_read('<3I', f)
 
-            animblockModel,  # Placeholder for mutable-void*
+        # Another void * placeholder.
+        f.read(4)
 
-            # Points to a series of bytes?
-            bonetablename_index,
+        # Points to a series of bytes?
+        [bonetablename_index] = struct_read('<I', f)
 
-            vertex_base,  # Placeholder for void*
-            offset_base,  # Placeholder for void*
-        ) = struct_read('<7I', f)
+        # Two more void * placeholders.
+        f.read(8)
 
         (
             # Used with $constantdirectionallight from the QC
