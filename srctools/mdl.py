@@ -288,6 +288,7 @@ class DataSegment:
         cls,
         st_header: str = '',
         st_item: str = '',
+        padding: int=0,
         flip_count: bool = False,
         **kwargs,
     ) -> None:
@@ -303,17 +304,20 @@ class DataSegment:
             # Set annotations so attrs knows this is a class var and not to
             # transform this.
             cls.__annotations__['struct_header'] = 'ClassVar[Struct]'
+
+        if not st_item:  # Try to collect from attributes.
+            # We haven't run the attrs decorator, so the regular
+            # introspection isn't available yet. So just rely on the
+            # return value of attr.ib() having a metadata attribute.
+            st_item = ''.join([
+                member.metadata['struct'] for member in vars(cls).values()
+                if hasattr(member, 'metadata')
+            ])
         if st_item:
-            if st_item == 'attrs':  # Collect from attributes.
-                # We haven't run the attrs decorator, so the regular
-                # introspection isn't available yet. So just rely on the
-                # return value of attr.ib() having a metadata attribute.
-                st_item = '<' + ''.join([
-                    member.metadata['struct'] for member in vars(cls).values()
-                    if hasattr(member, 'metadata')
-                ])
-            elif not st_item.startswith(('<', '>', '=')):
+            if not st_item.startswith(('<', '>', '=')):
                 st_item = '<' + st_item
+            if padding:
+                st_item += f'{padding}x'
             cls.struct_item = Struct(st_item)
             cls.__annotations__['struct_item'] = 'ClassVar[Struct]'
 
@@ -371,7 +375,7 @@ class SeqEvent:
 
 
 @attr.define
-class Bone(DataSegment, st_item='attrs'):
+class Bone(DataSegment, padding=4*8):
     """A bone in the model (mstudiobone_t)."""
     name: str = attr.ib(metadata={'struct': 'i'})
     parent: Optional['Bone'] = attr.ib(metadata={'struct': 'i'})
@@ -389,7 +393,7 @@ class Bone(DataSegment, st_item='attrs'):
     proc_index: int = attr.ib(metadata={'struct': 'i'})
     phys_bone: int = attr.ib(metadata={'struct': 'i'})
     surfaceprop: str = attr.ib(metadata={'struct': 'i'})
-    contents: BSPContents = attr.ib(metadata={'struct': 'i32x'})  # Padding at the end.
+    contents: BSPContents = attr.ib(metadata={'struct': 'i'})
 
     @classmethod
     def parse(cls, f: 'TrackedFile') -> List['Bone']:
