@@ -13,7 +13,7 @@ def struct_read(fmt: str, file: IO[bytes]) -> tuple:
     return struct.unpack(file.read(struct.size))
 
 
-def read_nullstr(file: IO[bytes], pos: int=None) -> str:
+def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str:
     """Read a null-terminated string from the file."""
     if pos is not None:
         if pos == 0:
@@ -24,32 +24,30 @@ def read_nullstr(file: IO[bytes], pos: int=None) -> str:
     while True:
         char = file.read(1)
         if char == b'\0':
-            return b''.join(text).decode('ascii')
+            return b''.join(text).decode(encoding)
         if not char:
             raise ValueError('Fell off end of file!')
         text.append(char)
 
 
-def read_nullstr_array(file: IO[bytes], count: int) -> List[str]:
+def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
     """Read consecutive null-terminated strings from the file."""
     arr = [''] * count
     if not count:
         return arr
 
     for i in range(count):
-        arr[i] = read_nullstr(file)
+        arr[i] = read_nullstr(file, None, encoding)
     return arr
 
 
-def read_offset_array(file: IO[bytes], count: int) -> List[str]:
+def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
     """Read an array of offsets to null-terminated strings from the file."""
     offsets = struct_read(str(count) + 'i', file)
-    arr = [''] * count
-
-    for ind, off in enumerate(offsets):
-        file.seek(off)
-        arr[ind] = read_nullstr(file)
-    return arr
+    return [
+        read_nullstr(file, off, encoding)
+        for off in offsets
+    ]
 
 
 def str_readvec(file: IO[bytes]) -> Vec:
