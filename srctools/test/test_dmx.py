@@ -218,57 +218,6 @@ def test_attr_val_vector_3() -> None:
     assert Attribute.vec3('Fals', 0.0, 0.0, 0.0).val_bool is False
 
 
-@pytest.mark.parametrize(['attr', 'typ'], [
-    pytest.param(attr, typ, id=attr)
-    for attr, typ in [
-        ('val_str', str),
-        ('val_string', str),
-        ('val_bin', bytes),
-        ('val_binary', bytes),
-        ('val_bytes', bytes),
-        ('val_time', float),  # Time isn't actually a type.
-        ('val_int', int),
-        ('val_bool', bool),
-        ('val_float', float),
-        ('val_ang', AngleTup),
-        ('val_angle', AngleTup),
-        ('val_color', Color),
-        ('val_vec2', Vec2),
-        ('val_vec3', Vec3),
-        ('val_vec4', Vec4),
-        ('val_quat', Quaternion),
-        ('val_quaternion', Quaternion),
-        ('val_mat', Matrix),
-        ('val_matrix', Matrix),
-]])
-@pytest.mark.parametrize('attribute', [
-    Attribute.int('', 45),
-    Attribute.float('', 48.9),
-    Attribute.time('', Time(60.5)),
-    Attribute.vec2('', 3, 4),
-    Attribute.vec3('', 4, 5, 6),
-    Attribute.vec4('', 5, 6, 7),
-    Attribute.angle('', 45.0, 90.0, 0.0),
-    Attribute.color('', 255, 128, 64),
-    Attribute.quaternion('', 0.0, 0.0, 0.0, 1.0),
-], ids=lambda attr: attr.type.name.lower())
-def test_attr_conv_types(attribute: Attribute, attr: str, typ: type) -> None:
-    """Check all the conversions either fail or produce the right type.
-
-    We don't test string/bytes since valid values are different for different dests.
-    """
-    try:
-        result = getattr(attribute, attr)
-    except ValueError:
-        # Conversion failed, that's fine for all types except for string/binary.
-        if typ is str or typ is bytes:
-            return pytest.fail('This conversion is required.')
-        else:
-            return pytest.xfail('Conversion not defined.')
-
-    assert type(result) is typ, result
-
-
 @pytest.mark.parametrize('typ, attr, value, binary, text', [
     (ValueType.INT, 'val_int',  0, b'\0\0\0\0', '0'),
     (ValueType.INT, 'val_int',  308823027, bytes.fromhex('f3 43 68 12'), '308823027'),
