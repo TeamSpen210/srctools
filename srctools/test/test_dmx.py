@@ -3,12 +3,15 @@ from io import BytesIO
 from typing import Callable, cast, Set
 from uuid import UUID
 
+import pytest
+
 from srctools import Matrix, Angle
 from srctools.test import *
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
 )
+from srctools.tokenizer import TokenSyntaxError
 
 
 def assert_tree(tree1: Element, tree2: Element) -> None:
@@ -564,3 +567,64 @@ def test_export_kv2_roundtrip(flat: bool) -> None:
     assert rnd_ver == fmt_version
     # Check when parsed it matches the assertions above.
     test_parse('', root=rnd_root)
+
+
+@pytest.mark.parametrize('version', [
+    1, 2, 3, 4, 5,
+    False, True,
+], ids=[
+    'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
+    'text_indent', 'text_flat',
+])
+def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
+    """Test the 'silent' extension doesn't affect ASCII only files,
+
+    but allows roundtrip of unicode.
+    """
+    ascii_text = ''.join(map(chr, range(128)))
+    root = Element('name', 'DMERoot')
+    root['key'] = attr = Attribute.string('key', ascii_text)
+
+    if isinstance(version, bool):
+        def export(elem: Element, unicode: str) -> bytes:
+            """Export in text mode."""
+            buf = BytesIO()
+            elem.export_kv2(buf, flat=version, unicode=unicode)
+            return buf.getvalue()
+    else:
+        def export(elem: Element, unicode: str) -> bytes:
+            """Export in binary mode."""
+            buf = BytesIO()
+            elem.export_binary(buf, version, unicode=unicode)
+            return buf.getvalue()
+
+    orig = export(root, 'ascii')
+    silent = export(root, 'silent')
+
+    assert orig == silent
+
+    attr.val_str = unicode_text = 'Ascii ╒══╕ text and some 🤐♝♛🥌♚♝'
+    silent = export(root, 'silent')
+    explicit = export(root, 'format')
+
+    # No flags, fails. UnicodeError from binary, TokenSyntaxError from text.
+    with pytest.raises((UnicodeError, TokenSyntaxError)):
+        Element.parse(BytesIO(silent))
+
+    # Format flag detected.
+    no_flag = Element.parse(BytesIO(explicit))
+
+    # When informed, it can detect it.
+    flagged_silent = Element.parse(BytesIO(silent), unicode=True)
+
+    # Doesn't matter either way.
+    flagged_explicit = Element.parse(BytesIO(explicit), unicode=True)
+
+    for name, (elem, fmt_name, fmt_ver) in [
+        ('unicode=False, unicode_', no_flag),
+        ('unicode=True, binary', flagged_silent),
+        ('unicode=True, unicode_binary', flagged_explicit),
+    ]:
+        new_attr = elem['key']
+        assert new_attr.val_str == unicode_text, f'{name}: {new_attr.val_str!r} != {unicode_text!r}'
+

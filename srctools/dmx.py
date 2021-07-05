@@ -1,4 +1,8 @@
-"""Handles DataModel eXchange trees, in both binary and text (keyvalues2) format."""
+"""Handles DataModel eXchange trees, in both binary and text (keyvalues2) format.
+
+As an extension, optionally all strings may become full UTF-8, marked by a new
+set of 'unicode_XXX' encoding formats.
+"""
 import struct
 import sys
 from enum import Enum
@@ -495,7 +499,7 @@ class Element(MutableMapping[str, Attribute]):
     uuid: UUID
     _members: Dict[str, Attribute]
 
-    def __init__(self, name, type, uuid=None):
+    def __init__(self, name: str, type: str, uuid: UUID=None) -> None:
         self.name = name
         self.type = type
         self._members = {}
@@ -505,10 +509,12 @@ class Element(MutableMapping[str, Attribute]):
             self.uuid = uuid
 
     @classmethod
-    def parse(cls, file: IO[bytes]) -> Tuple['Element', str, int]:
+    def parse(cls, file: IO[bytes], unicode=False) -> Tuple['Element', str, int]:
         """Parse a DMX file encoded in binary or KV2 (text).
 
         The return value is the tree, format name and version.
+        If unicode is set to True, strings will be treated as UTF8 instead
+        of safe ASCII.
         """
         # The format header is:
         # <!-- dmx encoding [encoding] [version] format [format] [version] -->
@@ -523,12 +529,14 @@ class Element(MutableMapping[str, Attribute]):
         else:
             raise ValueError('Unterminated DMX heading comment!')
         match = re.match(
-            br'<!--\s*dmx\s+encoding\s+(\S+)\s+([0-9]+)\s+'
+            br'<!--\s*dmx\s+encoding\s+(unicode_)?(\S+)\s+([0-9]+)\s+'
             br'format\s+(\S+)\s+([0-9]+)\s*-->', header,
         )
         if match is not None:
-            enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
+            unicode_flag, enc_name, enc_vers_by, fmt_name_by, fmt_vers_by = match.groups()
 
+            if unicode_flag:
+                unicode = True
             enc_vers = int(enc_vers_by.decode('ascii'))
             fmt_name = fmt_name_by.decode('ascii')
             fmt_vers = int(fmt_vers_by.decode('ascii'))
@@ -540,29 +548,37 @@ class Element(MutableMapping[str, Attribute]):
             enc_name = match.group(0)
             if enc_name == b'sfm':
                 enc_name = b'binary'
+            unicode = False
             enc_vers = 0
             fmt_name = ''
             fmt_vers = 0
 
         if enc_name == b'keyvalues2':
-            result = cls.parse_kv2(io.TextIOWrapper(file, encoding='ascii'), enc_vers)
+            result = cls.parse_kv2(
+                io.TextIOWrapper(file, encoding='utf8' if unicode else 'ascii'),
+                enc_vers,
+            )
         elif enc_name == b'binary':
-            result = cls.parse_bin(file, enc_vers)
+            result = cls.parse_bin(file, enc_vers, unicode)
         else:
             raise ValueError(f'Unknown DMX encoding {repr(enc_name)[2:-1]}!')
 
         return result, fmt_name, fmt_vers
 
     @classmethod
-    def parse_bin(cls, file, version):
+    def parse_bin(cls, file, version, unicode=False):
         """Parse the core binary data in a DMX file.
 
         The <!-- --> format comment line should have already be read.
+        If unicode is set to True, strings will be treated as UTF8 instead
+        of safe ASCII.
         """
         # There should be a newline and null byte after the comment.
         newline = file.read(2)
         if newline != b'\n\0':
             raise ValueError('No newline after comment!')
+
+        encoding = 'utf8' if unicode else 'ascii'
 
         # First, we read the string "dictionary".
         if version >= 5:
@@ -577,7 +593,7 @@ class Element(MutableMapping[str, Attribute]):
 
         if stringdb_size is not None:
             [string_count] = binformat.struct_read(stringdb_size, file)
-            stringdb = binformat.read_nullstr_array(file, string_count)
+            stringdb = binformat.read_nullstr_array(file, string_count, encoding)
         else:
             stringdb = None
 
@@ -595,7 +611,7 @@ class Element(MutableMapping[str, Attribute]):
                 [ind] = binformat.struct_read(stringdb_ind, file)
                 name = stringdb[ind]
             else:
-                name = binformat.read_nullstr(file)
+                name = binformat.read_nullstr(file, encoding=encoding)
             uuid = UUID(bytes_le=file.read(16))
             elements[i] = Element(name, el_type, uuid)
         # Now, the attributes in the elements.
@@ -607,7 +623,7 @@ class Element(MutableMapping[str, Attribute]):
                     [ind] = binformat.struct_read(stringdb_ind, file)
                     name = stringdb[ind]
                 else:
-                    name = binformat.read_nullstr(file)
+                    name = binformat.read_nullstr(file, encoding=encoding)
                 [attr_type_data] = binformat.struct_read('<B', file)
                 array_size: Optional[int]
                 if attr_type_data >= ARRAY_OFFSET:
@@ -667,7 +683,7 @@ class Element(MutableMapping[str, Attribute]):
                             value = stringdb[ind]
                         else:
                             # Raw value.
-                            value = binformat.read_nullstr(file)
+                            value = binformat.read_nullstr(file, encoding=encoding)
                         attr = Attribute(name, attr_type, value)
                 elif attr_type is ValueType.BINARY:
                     # Binary blobs.
@@ -852,12 +868,22 @@ class Element(MutableMapping[str, Attribute]):
         self, file: IO[bytes],
         version: int = 5,
         fmt_name: str = 'dmx', fmt_ver: int = 1,
+        unicode: str='ascii',
     ) -> None:
         """Write out a DMX tree, using the binary format.
 
         The version must be a number from 0-5.
         The format name and version can be anything, to indicate which
         application should read the file.
+        Unicode controls whether Unicode characters are permitted:
+        - 'ascii' (the default) raises an error if any value is non-ASCII. This
+          ensures no encoding issues occur when read by the game.
+        - 'format' changes the encoding format to 'unicode_binary', allowing
+          the file to be rejected if the game tries to read it and this module's
+          parser to automatically switch to Unicode.
+        - 'silent' outputs UTF8 without any marker, meaning it could be parsed
+          incorrectly by the game or other utilties. This must be parsed with
+          unicode=True to succeed.
         """
         if not (0 <= version <= 5):
             raise ValueError(f'Invalid version: {version} is not within range 0-5!')
@@ -869,10 +895,12 @@ class Element(MutableMapping[str, Attribute]):
                 % (fmt_name.encode('ascii'), )
             )
         else:
-            file.write(
-                b'<!-- dmx encoding binary %i format %b %i -->\n\0'
-                % (version, fmt_name.encode('ascii'), fmt_ver)
-            )
+            file.write(b'<!-- dmx encoding %sbinary %i format %b %i -->\n\0' % (
+                b'unicode_' if unicode == 'format' else b'',
+                version,
+                fmt_name.encode('ascii'),
+                fmt_ver,
+            ))
         if version >= 5:
             stringdb_size = stringdb_ind = '<i'
         elif version >= 4:
@@ -882,6 +910,8 @@ class Element(MutableMapping[str, Attribute]):
             stringdb_size = stringdb_ind = '<h'
         else:
             stringdb_size = stringdb_ind = None
+
+        encoding = 'utf8' if unicode != 'ascii' else 'ascii'
 
         # First, iterate the tree to collect the elements, and strings (v2+).
         elements: List[Element] = [self]
@@ -919,18 +949,18 @@ class Element(MutableMapping[str, Attribute]):
         if stringdb_size is not None:
             file.write(pack(stringdb_size, len(string_list)))
             for text in string_list:
-                file.write(text.encode('ascii') + b'\0')
+                file.write(text.encode(encoding) + b'\0')
         file.write(pack('<i', len(elements)))
 
         for elem in elements:
             if stringdb_ind is not None:
                 file.write(pack(stringdb_ind, string_to_ind[elem.type]))
             else:
-                file.write(elem.type.encode('ascii') + b'\0')
+                file.write(elem.type.encode(encoding) + b'\0')
             if version >= 4:
                 file.write(pack(stringdb_ind, string_to_ind[elem.name]))
             else:
-                file.write(elem.name.encode('ascii') + b'\0')
+                file.write(elem.name.encode(encoding) + b'\0')
             file.write(elem.uuid.bytes_le)
 
         # Now, write out all attributes.
@@ -940,7 +970,7 @@ class Element(MutableMapping[str, Attribute]):
                 if stringdb_ind is not None:
                     file.write(pack(stringdb_ind, string_to_ind[attr.name]))
                 else:
-                    file.write(attr.name.encode('ascii') + b'\0')
+                    file.write(attr.name.encode(encoding) + b'\0')
                 typ_ind = VAL_TYPE_TO_IND[attr.type]
                 if attr.is_array:
                     typ_ind += ARRAY_OFFSET
@@ -954,7 +984,7 @@ class Element(MutableMapping[str, Attribute]):
                         file.write(pack(stringdb_ind, string_to_ind[attr.val_str]))
                     else:
                         for text in attr:
-                            file.write(text.encode('ascii') + b'\0')
+                            file.write(text.encode(encoding) + b'\0')
                 elif attr.type is ValueType.BINARY:
                     for data in attr:
                         file.write(pack('<i', len(data)))
@@ -982,21 +1012,33 @@ class Element(MutableMapping[str, Attribute]):
         fmt_name: str = 'dmx', fmt_ver: int = 1,
         *,
         flat: bool = False,
+        unicode: str='ascii',
     ) -> None:
         """Write out a DMX tree, using the text-based KeyValues2 format.
 
         The format name and version can be anything, to indicate which
-        application should read the file.
+        application should read the file. If flat is enabled, elements will
+        all be placed at the toplevel, so they don't nest inside each other.
+
+        Unicode controls whether Unicode characters are permitted:
+        - 'ascii' (the default) raises an error if any value is non-ASCII. This
+          ensures no encoding issues occur when read by the game.
+        - 'format' changes the encoding format to 'unicode_keyvalues2', allowing
+          the file to be rejected if the game tries to read it and this module's
+          parser to automatically switch to Unicode.
+        - 'silent' outputs UTF8 without any marker, meaning it could be parsed
+          incorrectly by the game or other utilties. This must be parsed with
+          unicode=True to succeed.
         """
-        file.write(
-            b'<!-- dmx encoding keyvalues2 1 format %b %i -->\r\n'
-            % (fmt_name.encode('ascii'), fmt_ver)
-        )
+        file.write(b'<!-- dmx encoding %skeyvalues2 1 format %b %i -->\r\n' % (
+            b'unicode_' if unicode == 'format' else b'',
+            fmt_name.encode('ascii'),
+            fmt_ver,
+        ))
         # First, iterate through to find all "root" elements.
         # Those are added with UUIDS, and are put at the end of the file.
         # If `flat` is enabled, all elements are like that. Otherwise,
         # it's only self and any used multiple times.
-
         elements: List[Element] = [self]
         use_count: Dict[UUID, int] = {self.uuid: 2}
 
@@ -1019,12 +1061,13 @@ class Element(MutableMapping[str, Attribute]):
         else:
             roots = {uuid for uuid, count in use_count.items() if count > 1}
 
-        last = elements[-1]
+        encoding = 'utf8' if unicode != 'ascii' else 'ascii'
+
         for elem in elements:
             if flat or elem.uuid in roots:
                 if elem is not self:
                     file.write(b'\r\n')
-                elem._export_kv2(file, b'', roots)
+                elem._export_kv2(file, b'', roots, encoding)
                 file.write(b'\r\n')
 
     def _export_kv2(
@@ -1032,6 +1075,7 @@ class Element(MutableMapping[str, Attribute]):
         file: IO[bytes],
         indent: bytes,
         roots: Set[UUID],
+        encoding: str,
     ) -> None:
         """Export a single element to the file.
 
@@ -1042,14 +1086,14 @@ class Element(MutableMapping[str, Attribute]):
         indent_child = indent + b'\t'
         file.write(b'"%b"\r\n%b{\r\n' % (self.type.encode('ascii'), indent))
         file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
-        file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode('ascii')))
+        file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode(encoding)))
         for attr in self.values():
             file.write(b'%b"%b" ' % (
                 indent_child,
-                attr.name.encode('ascii'),
+                attr.name.encode(encoding),
             ))
             if attr.is_array:
-                file.write(b'"%b_array"\r\n%b[\r\n' % (attr.type.value.encode('ascii'), indent_child))
+                file.write(b'"%b_array"\r\n%b[\r\n' % (attr.type.value.encode(encoding), indent_child))
                 indent_arr = indent + b'\t\t'
                 for i, child in enumerate(attr):
                     file.write(indent_arr)
@@ -1057,9 +1101,9 @@ class Element(MutableMapping[str, Attribute]):
                         if child.uuid in roots:
                             file.write(b'"element" "%b"' % str(child.uuid).encode('ascii'))
                         else:
-                            child._export_kv2(file, indent_arr, roots)
+                            child._export_kv2(file, indent_arr, roots, encoding)
                     else:
-                        str_value = TYPE_CONVERT[attr.type, ValueType.STRING](child).encode('ascii')
+                        str_value = TYPE_CONVERT[attr.type, ValueType.STRING](child).encode(encoding)
                         file.write(b'"%b"' % (str_value, ))
                     if i == len(attr) - 1:
                         file.write(b'\r\n')
@@ -1070,12 +1114,12 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.val_elem.uuid in roots:
                     file.write(b'"element" "%b"\r\n' % str(attr.val_elem.uuid).encode('ascii'))
                 else:
-                    attr.val_elem._export_kv2(file, indent_child, roots)
+                    attr.val_elem._export_kv2(file, indent_child, roots, encoding)
                     file.write(b'\r\n')
             else:
                 file.write(b'"%b" "%b"\r\n' % (
-                    attr.type.value.encode('ascii'),
-                    attr.val_str.encode('ascii'),
+                    attr.type.value.encode(encoding),
+                    attr.val_str.encode(encoding),
                 ))
         file.write(indent + b'}')
 

@@ -420,11 +420,11 @@ class Element(Mapping[str, Attribute]):
     def __init__(self, name: str, type: str, uuid: UUID=None) -> None: ...
 
     @classmethod
-    def parse(cls, file: IO[bytes]) -> tuple[Element, str, int]: ...
+    def parse(cls, file: IO[bytes], unicode: bool = False) -> tuple[Element, str, int]: ...
     @classmethod
-    def parse_bin(cls, file: IO[bytes], version: int) -> Element: ...
+    def parse_bin(cls, file: IO[bytes], version: int, unicode: bool = False) -> Element: ...
     @classmethod
-    def parse_kv2(cls, file: IO[str], version: int) -> Element: ...
+    def parse_kv2(cls, file: IO[str], version: int, unicode: bool = False) -> Element: ...
 
     @classmethod
     def _parse_kv2_element(
@@ -439,12 +439,14 @@ class Element(Mapping[str, Attribute]):
         self, file: IO[bytes],
         version: int = 5,
         fmt_name: str = 'dmx', fmt_ver: int = 1,
+        unicode: Literal['ascii', 'format', 'silent'] = ...,
     ) -> None: ...
     def export_kv2(
         self, file: IO[bytes],
         fmt_name: str = 'dmx', fmt_ver: int = 1,
         *,
         flat: bool = False,
+        unicode: Literal['ascii', 'format', 'silent'] = ...,
     ) -> None: ...
 
     def _export_kv2(
@@ -452,6 +454,7 @@ class Element(Mapping[str, Attribute]):
         file: IO[bytes],
         indent: bytes,
         roots: set[UUID],
+        encoding: str,
     ) -> None: ...
 
     def __repr__(self) -> str: ...
