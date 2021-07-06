@@ -1445,12 +1445,21 @@ class BSP:
 
         phys_buf = BytesIO()
 
-        for i, (ent, model) in enumerate(bmodels.items()):
+        # The models in order, worldspawn must be zero.
+        worldspawn = self.ents.spawn
+        try:
+            model_list = [bmodels[worldspawn]]
+        except KeyError:
+            raise ValueError('Worldspawn has no brush model!')
+        add_model = _find_or_insert(model_list)
+
+        for ent, model in bmodels.items():
             # Apply the brush model to the entity. Worldspawn doesn't actually
             # need the key though.
-            if i != 0:
-                ent['model'] = f'*{i}'
-            # noinspection PyProtectedMember
+            if ent is not worldspawn:
+                ent['model'] = f'*{add_model(model)}'
+
+        for i, model in enumerate(model_list):
             yield struct.pack(
                 '<9fiii',
                 model.mins.x, model.mins.y, model.mins.z,
