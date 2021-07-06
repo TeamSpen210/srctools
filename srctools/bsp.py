@@ -25,7 +25,11 @@ from srctools.vtf import VTF
 from srctools.vmt import Material
 from srctools.vmf import VMF, Entity, Output
 from srctools.tokenizer import escape_text
-from srctools.binformat import struct_read, DeferredWrites
+from srctools.binformat import (
+    DeferredWrites,
+    struct_read,
+    read_array, write_array,
+)
 from srctools.property_parser import Property
 
 __all__ = [
@@ -1004,7 +1008,13 @@ class BSP:
         For the others, that is the parsed orig faces lump, which each face
         may reference.
         """
-        for (
+        # The non-original faces have the Hammer ID value, which is an array
+        # in the same order. But some versions don't define it as anything...
+        if _orig_faces is not None:
+            hammer_ids = read_array('H', self.lumps[BSP_LUMPS.FACEIDS].data)
+        else:
+            hammer_ids = []
+        for i, (
             plane_num,
             side,
             on_node,
@@ -1021,15 +1031,20 @@ class BSP:
             prim_num,
             prim_first,
             smoothing_group,
-        ) in struct.iter_unpack('<H??i4h4sif5iHHI', data):
+        ) in enumerate(struct.iter_unpack('<H??i4h4sif5iHHI', data)):
             # If orig faces is provided, that is the original face
             # we were created from. Additionally, it seems the original
             # face data has invalid texinfo, so copy ours on top of it.
             if _orig_faces is not None:
                 orig_face = _orig_faces[orig_face_ind]
                 orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
+                try:
+                    orig_face.hammer_id = hammer_id = hammer_ids[i]
+                except IndexError:
+                    hammer_id = None
             else:
                 orig_face = texinfo = None
+                hammer_id = None
             yield Face(
                 self.planes[plane_num],
                 side, on_node,
@@ -1045,6 +1060,7 @@ class BSP:
                 orig_face,
                 self.primitives[prim_first:prim_first + prim_num],
                 smoothing_group,
+                hammer_id,
             )
 
     def _lmp_write_orig_faces(self, faces: List['Face'], get_orig_face: Callable[['Face'], int]=None) -> bytes:
@@ -1063,10 +1079,12 @@ class BSP:
         add_plane = _find_or_insert(self.planes)
         add_edges = _find_or_extend(self.surfedges, edge_key)
         add_prims = _find_or_extend(self.primitives)
+        hammer_ids = []
 
         for face in faces:
             if face.orig_face is not None and get_orig_face is not None:
                 orig_ind = get_orig_face(face.orig_face)
+                hammer_ids.append(face.hammer_id or 0)  # Dummy value if not set.
             else:
                 orig_ind = -1
             if face.texinfo is not None:
@@ -1092,6 +1110,8 @@ class BSP:
                 len(face.primitives), add_prims(face.primitives),
                 face.smoothing_groups,
             ))
+        if hammer_ids:
+            self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
         return face_buf.getvalue()
 
     def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
@@ -2379,6 +2399,7 @@ class Face:
     orig_face: Optional['Face']
     primitives: List[Primitive]
     smoothing_groups: int
+    hammer_id: int  # The original ID of the Hammer face.
 
 
 @attr.define(eq=False)

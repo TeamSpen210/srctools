@@ -5,6 +5,23 @@ from typing import IO, List, Hashable, Union
 from srctools import Vec
 
 ST_VEC = Struct('fff')
+SIZES = {
+    fmt: Struct('<' + fmt).size
+    for fmt in 'cbB?hHiIlLqQfd'
+}
+SIZE_CHAR = SIZES['b']
+SIZE_SHORT = SIZES['h']
+SIZE_INT = SIZES['i']
+SIZE_LONG = SIZES['q']
+SIZE_FLOAT = SIZES['f']
+SIZE_DOUBLE = SIZES['d']
+
+assert SIZE_CHAR == 1
+assert SIZE_SHORT == 2
+assert SIZE_INT == 4
+assert SIZE_LONG == 8
+assert SIZE_FLOAT == 4
+assert SIZE_DOUBLE == 8
 
 
 def struct_read(fmt: str, file: IO[bytes]) -> tuple:
@@ -48,6 +65,34 @@ def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> L
         read_nullstr(file, off, encoding)
         for off in offsets
     ]
+
+
+def read_array(fmt: str, data: bytes) -> List[int]:
+    """Read a buffer containing a stream of integers."""
+    if len(fmt) == 2:
+        endianness, fmt = fmt
+    else:
+        endianness = ''
+    try:
+        item_size = SIZES[fmt]
+    except KeyError:
+        raise ValueError(f'Unknown format character {fmt!r}!')
+    count = len(data) // item_size
+    return list(Struct(endianness + fmt * count).unpack_from(data))
+
+
+def write_array(fmt: str, data: List[int]) -> bytes:
+    """Build a packed array of integers."""
+    if len(fmt) == 2:
+        endianness, fmt = fmt
+    else:
+        endianness = ''
+    try:
+        item_size = SIZES[fmt]
+    except KeyError:
+        raise ValueError(f'Unknown format character {fmt!r}!')
+
+    return Struct(endianness + fmt * len(data)).pack(*data)
 
 
 def str_readvec(file: IO[bytes]) -> Vec:
