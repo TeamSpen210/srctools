@@ -9,7 +9,7 @@ import builtins
 import warnings
 from array import ArrayType as Array
 from enum import Flag
-from collections import defaultdict, namedtuple
+from collections import defaultdict
 from contextlib import suppress
 from sys import intern
 
@@ -32,12 +32,6 @@ import srctools
 CURRENT_HAMMER_VERSION = 400
 CURRENT_HAMMER_BUILD = 5304
 
-
-# Return value for VMF.make_prism()
-PrismFace = namedtuple(
-    "PrismFace",
-    "solid, top, bottom, north, south, east, west"
-)
 
 # The character used to separate output values.
 OUTPUT_SEP = chr(27)
@@ -279,6 +273,18 @@ class CopySet(Generic[T], Set[T]):
         yield from cur_items
         # after iterating through ourselves, iterate through any new ents.
         yield from self - cur_items
+
+
+@attr.frozen
+class PrismFace:
+    """Return value for VMF.make_prism()."""
+    solid: 'Solid'
+    top: 'Side'
+    bottom: 'Side'
+    north: 'Side'
+    south: 'Side'
+    east: 'Side'
+    west: 'Side'
 
 
 class VMF:
