@@ -221,7 +221,7 @@ LUMP_WRITE_ORDER.append(BSP_LUMPS.PAKFILE)
 # When remaking the lumps from trees of objects,
 # they need to be done in the correct order so stuff referring
 # to other trees can add their data.
-LUMP_REBUILD_ORDER = [
+LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.PAKFILE,
     BSP_LUMPS.CUBEMAPS,
     LMP_ID_STATIC_PROPS,  # References visleafs.
@@ -451,7 +451,7 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
 
 class ParsedLump(Generic[T]):
     """Allows access to parsed versions of lumps.
-    
+
     When accessed, the corresponding lump is parsed into an object tree.
     The lump is then cleared of data.
     When the BSP is saved, the lump data is then constructed.
@@ -464,7 +464,8 @@ class ParsedLump(Generic[T]):
         self.to_clear = (lump, ) + extra
         self.__name__ = ''
         # May also be a Generator[X] if T = List[X]
-        self._read: Optional[Union[Callable[[BSP, bytes], T], Callable[[BSP, int, bytes], T]]] = None
+        # Args are (BSP, version, data) if game lump, else (BSP, data).
+        self._read: Optional[Callable[..., T]] = None
         self._check: Optional[Callable[[BSP, T], None]] = None
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
@@ -478,12 +479,12 @@ class ParsedLump(Generic[T]):
 
     def __repr__(self) -> str:
         return f'<srctools.BSP.{self.__name__} member>'
-        
+
     @overload
     def __get__(self, instance: None, owner=None) -> 'ParsedLump[T]': ...
     @overload
     def __get__(self, instance: 'BSP', owner=None) -> T: ...
-        
+
     def __get__(self, instance: Optional['BSP'], owner=None) -> Union['ParsedLump', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
@@ -655,22 +656,23 @@ class BSP:
     def save(self, filename=None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
-        for lump_name in LUMP_REBUILD_ORDER:
+        for lump_or_game in LUMP_REBUILD_ORDER:
             try:
-                data = self._parsed_lumps.pop(lump_name)
+                data = self._parsed_lumps.pop(lump_or_game)
             except KeyError:
                 pass
             else:
-                lump_result = self._save_funcs[lump_name](self, data)
-                if inspect.isgenerator(lump_result):  # Convenience, yield to accumulate into bytes.
+                lump_result = self._save_funcs[lump_or_game](self, data)
+                # Convenience, yield to accumulate into bytes.
+                if inspect.isgenerator(lump_result):
                     buf = BytesIO()
                     for chunk in lump_result:
-                        buf.write(chunk)
+                        buf.write(chunk)  # type: ignore
                     lump_result = buf.getvalue()
-                if isinstance(lump_name, bytes):
-                    self.game_lumps[lump_name].data = lump_result
+                if isinstance(lump_or_game, bytes):
+                    self.game_lumps[lump_or_game].data = lump_result
                 else:
-                    self.lumps[lump_name].data = lump_result
+                    self.lumps[lump_or_game].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         file: BinaryIO
@@ -1673,7 +1675,7 @@ class BSP:
         vmf = VMF()
         cur_ent = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
-        
+
         # This code performs the same thing as property_parser, but simpler
         # since there's no nesting, comments, or whitespace, except between
         # key and value. We also operate directly on the (ASCII) binary.
@@ -1755,8 +1757,8 @@ class BSP:
     @staticmethod
     def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep=True) -> bytes:
         """Generate the entity data lump.
-        
-        This accepts a VMF file like that returned from read_ent_data(). 
+
+        This accepts a VMF file like that returned from read_ent_data().
         Brushes are ignored, so the VMF must use *xx model references.
 
         use_comma_sep can be used to force using either commas, or 0x1D in I/O.
@@ -2155,7 +2157,7 @@ class BSP:
                 mdl_ind,
                 prop.leaf,
                 *prop.lighting,
-                *prop.light_styles,
+                *prop._light_styles,
                 prop.sway_amount,
                 shape_ang,
                 shape_size,
@@ -2458,7 +2460,7 @@ class DetailProp:
     orientation: DetailPropOrientation
     leaf: int
     lighting: Tuple[int, int, int, int]
-    light_styles: List[int]
+    _light_styles: Tuple[int, int]  # TODO: generate List[int]
     sway_amount: int
 
     def __attrs_pre_init__(self) -> None:

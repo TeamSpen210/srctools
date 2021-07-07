@@ -183,10 +183,10 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
 
 
 @overload
-def conv_float(val: str) -> float: ...
+def conv_float(val: Union[int, float, str]) -> float: ...
 @overload
-def conv_float(val: str, default: ValT) -> Union[ValT, float]: ...
-def conv_float(val: str, default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
+def conv_float(val: Union[int, float, str], default: ValT) -> Union[ValT, float]: ...
+def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
     """Converts a string to an float, using a default if it fails.
 
     """
@@ -197,10 +197,10 @@ def conv_float(val: str, default: Union[ValT, float] = 0.0) -> Union[ValT, float
 
 
 @overload
-def conv_int(val: str) -> int: ...
+def conv_int(val: Union[int, float, str]) -> int: ...
 @overload
-def conv_int(val: str, default: ValT) -> Union[ValT, int]: ...
-def conv_int(val: str, default: Union[ValT, int] = 0) -> Union[ValT, int]:
+def conv_int(val: Union[int, float, str], default: ValT) -> Union[ValT, int]: ...
+def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
     """

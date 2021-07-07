@@ -14,7 +14,7 @@ from typing import (
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO,
+    TextIO, Container, IO, Any,
 )
 
 import srctools
@@ -1032,7 +1032,7 @@ class IODef:
 T = TypeVar('T')
 
 
-class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
+class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
     __slots__ = ['_ent', '_attr', '_disp_attr',]
 
@@ -1063,7 +1063,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         for base in ent.bases:
             yield from self._maps(base)
 
-    def __getitem__(self, name: Union[str, Tuple[str, Iterable[str]]]) -> T:
+    def __getitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> T:
         """Lookup the value in the entity.
 
         Either obj['name'], or obj['name', {tags}] is accepted.
@@ -1473,9 +1473,9 @@ class EntityDef:
                                 ) from None
                             # Spawnflags can have a default, others may not.
                             if len(vals) == 2:
-                                val_list.append((choices_value, vals[0], vals[1].strip() == '1', val_tags))
+                                val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
                             elif len(vals) == 1:
-                                val_list.append((choices_value, vals[0], True, val_tags))
+                                val_list.append((spawnflag, vals[0], True, val_tags))
                             elif len(vals) == 0:
                                 raise tok.error('Expected value for spawnflags, got none!')
                             else:
@@ -1532,7 +1532,7 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for attr in ['keyvalues', 'inputs', 'outputs']:
-            coll = {}
+            coll: dict[str, dict[frozenset[str], Any]] = {}
             setattr(copy, attr, coll)
             for key, tags_map in getattr(self, attr).items():
                 coll[key] = {
@@ -2236,6 +2236,8 @@ class FGD:
         This is run recursively on every entity to check their bases.
         """
         for base in ent.bases:
+            if isinstance(base, str):
+                continue
             # If it's in there, it'll be found again.
             # We've also (or are going to) pass over this one.
             # So don't redo it.
@@ -2245,7 +2247,7 @@ class FGD:
             base_name = base.classname.rstrip('_0123456789').casefold() + '_'
             for num in itertools.count(1):
                 poss_name = base_name + str(num)
-                if poss_name not in self:
+                if poss_name not in self.entities:
                     base.classname = poss_name
                     self.entities[poss_name] = base
                     break
