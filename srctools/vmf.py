@@ -1934,7 +1934,7 @@ class Side:
                 vert.normal @= orient
                 vert.offset_norm @= orient
 
-    def disp_get_tri_verts(self, x: int, y: int) -> tuple[
+    def disp_get_tri_verts(self, x: int, y: int) -> Tuple[
         DispVertex, DispVertex, DispVertex,
         DispVertex, DispVertex, DispVertex,
     ]:
