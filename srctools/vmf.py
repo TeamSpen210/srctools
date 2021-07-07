@@ -2486,7 +2486,8 @@ class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
-    writing variables with $ signs in front.
+    writing variables with $ signs in front. The first assigned name for each
+    key is preserved however.
 
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.

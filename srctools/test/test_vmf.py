@@ -40,12 +40,12 @@ def test_fixup_basic() -> None:
 
     # Order not guaranteed.
     assert len(ent.fixup) == 4
-    assert set(ent.fixup) == {'test', 'value', 'true', 'false'}
-    assert set(ent.fixup.keys()) == {'test', 'value', 'true', 'false'}
+    assert set(ent.fixup) == {'test', 'VALUE', 'true', 'false'}
+    assert set(ent.fixup.keys()) == {'test', 'VALUE', 'true', 'false'}
     assert set(ent.fixup.values()) == {'hello', '1', '0', '45.75'}
     assert set(ent.fixup.items()) == {
         ('test', 'hello'),
-        ('value', '45.75'),
+        ('VALUE', '45.75'),
         ('true', '1'),
         ('false', '0')
     }
@@ -112,4 +112,3 @@ def test_fixup_substitution_invert() -> None:
     # If defaults are provided, those can be flipped too.
     assert ent.fixup.substitute('$missing !$flipped', '0', allow_invert=True) == '0 1'
     assert ent.fixup.substitute('$missing !$flipped', '1', allow_invert=True) == '1 0'
-
