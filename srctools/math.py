@@ -428,7 +428,7 @@ class Vec(SupportsRound['Vec']):
 
     @staticmethod
     @overload
-    def bbox(_point: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
+    def bbox(__point: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
     @staticmethod
     @overload
     def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
@@ -1317,7 +1317,7 @@ class Matrix:
     @overload
     def __matmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __matmul__(self, other: object) -> 'Matrix':
+    def __matmul__(self, other: 'Matrix | Angle') -> 'Matrix':
         if isinstance(other, Py_Matrix):
             mat = self.copy()
             mat._mat_mul(other)
@@ -1357,7 +1357,7 @@ class Matrix:
     @overload
     def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
 
-    def __imatmul__(self, other: object) -> 'Matrix':
+    def __imatmul__(self, other: 'Matrix | Angle') -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self

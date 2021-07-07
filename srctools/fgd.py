@@ -10,7 +10,7 @@ import io
 import math
 
 from typing import (
-    Optional, Union, overload,
+    Optional, Union, overload, cast,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
@@ -782,13 +782,16 @@ class KeyValues:
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
-        if self.type is ValueTypes.CHOICES:
-            options = {value for value, name, tags in self.val_list}
-            options.add(self.default)
-            yield from options
-        elif self.type is ValueTypes.SPAWNFLAGS:
-            for bitflag, name, default, tags in self.val_list:
-                yield bitflag
+        if self.val_list is not None:
+            if self.type is ValueTypes.CHOICES:
+                options = {val_list[0] for val_list in self.val_list}
+                options.add(self.default)
+                yield from options
+            elif self.type is ValueTypes.SPAWNFLAGS:
+                for bitflag, name, default, tags in self.val_list:
+                    yield bitflag
+            else:
+                yield self.default
         else:
             yield self.default
 
@@ -929,7 +932,7 @@ class KeyValues:
 
             if value_type is ValueTypes.CHOICES:
                 [val_count] = struct_read(_fmt_16bit, file)
-                val_list: List[tuple] = [()] * val_count
+                val_list = [()] * val_count
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
                     val_list[ind] = (from_dict(), from_dict(), tags)
@@ -1424,7 +1427,11 @@ class EntityDef:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
                     # Read the choices in the []
-                    val_list = []
+                    val_list: Union[
+                        None,
+                        list[tuple[int, str, bool, frozenset[str]]],
+                        list[tuple[str, str, frozenset[str]]],
+                    ] = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1443,7 +1450,7 @@ class EntityDef:
                         if val_typ is ValueTypes.SPAWNFLAGS:
                             # The first value is an integer.
                             try:
-                                choices_value = int(choices_value)
+                                spawnflag = int(choices_value)
                             except ValueError:
                                 raise tok.error(
                                     'SpawnFlags must be integer values, '
@@ -1453,36 +1460,39 @@ class EntityDef:
                                     )
                                 ) from None
                             try:
-                                power = math.log2(choices_value)
+                                power = math.log2(spawnflag)
                             except ValueError:
                                 power = 0.5  # Force the following code to raise
                             if power != round(power):
                                 raise tok.error(
                                     'SpawnFlags must be powers of two, '
                                     'not {} (in {})!'.format(
-                                        choices_value,
+                                        spawnflag,
                                         entity.classname,
                                     )
                                 ) from None
-
-                        # Spawnflags can have a default, others don't
-                        if len(vals) == 2 and val_typ is ValueTypes.SPAWNFLAGS:
-                            val_list.append((choices_value, vals[0], vals[1].strip() == '1', val_tags))
-                        elif len(vals) == 1:
-                            if val_typ is ValueTypes.SPAWNFLAGS:
+                            # Spawnflags can have a default, others may not.
+                            if len(vals) == 2:
+                                val_list.append((choices_value, vals[0], vals[1].strip() == '1', val_tags))
+                            elif len(vals) == 1:
                                 val_list.append((choices_value, vals[0], True, val_tags))
+                            elif len(vals) == 0:
+                                raise tok.error('Expected value for spawnflags, got none!')
                             else:
+                                raise tok.error('Too many values!\n{}', vals)
+                        else:  # Choices.
+                            if len(vals) == 1:
                                 val_list.append((choices_value, vals[0], val_tags))
-                        elif len(vals) == 0:
-                            raise tok.error(Token.STRING)
-                        else:
-                            raise tok.error('Too many values!\n{}', vals)
+                            elif len(vals) == 0:
+                                raise tok.error('Expected value for choices, got none!')
+                            else:
+                                raise tok.error('Too many values!\n{}', vals)
 
                         # Handle ] at the end of a : : line.
                         if end_token is Token.BRACK_CLOSE:
                             break
                     else:
-                        raise tok.error(token.EOF)
+                        raise tok.error(Token.EOF)
                 else:
                     val_list = None
                     if has_equal is Token.EQUALS:
@@ -1569,13 +1579,14 @@ class EntityDef:
         """Find all helpers with this specific type."""
         for helper in self.helpers:
             if helper.TYPE == typ.TYPE:
-                yield helper
+                yield cast(HelperT, helper)
 
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
 
         Only values matching the given tags will be kept.
         """
+        category: dict[str, dict[frozenset[str], Union[KeyValues, IODef]]]
         for category in [self.keyvalues, self.inputs, self.outputs]:
             for key, tag_map in list(category.items()):
                 # Force longer more-specific tags to match first.
@@ -1614,7 +1625,7 @@ class EntityDef:
             ]))
             file.write(') ')
 
-        kv_order_list = []
+        kv_order_list: list[str] = []
 
         for helper in self.helpers:
             args = helper.export()
@@ -1673,7 +1684,7 @@ class EntityDef:
         if not _done:
             _done = {self}
         for ent in self.bases:
-            if ent in _done:
+            if ent in _done or isinstance(ent, str):
                 continue
 
             _done.add(ent)
@@ -1695,7 +1706,10 @@ class EntityDef:
         file.write(self.classname.encode())
 
         for base_ent in self.bases:
-            file.write(str_dict(base_ent.classname))
+            if isinstance(base_ent, str):
+                file.write(str_dict(base_ent))
+            else:
+                file.write(str_dict(base_ent.classname))
 
         obj_type: dict[str, dict[frozenset[str], Union[IODef, KeyValues]]]
         for obj_type in (self.keyvalues, self.inputs, self.outputs):
@@ -1783,7 +1797,7 @@ class FGD:
         """Create a FGD."""
         # List of names we have already parsed.
         # We don't parse them again, to prevent infinite loops.
-        self._parse_list = set()
+        self._parse_list: set[File] = set()
 
         # Entity definitions
         self.entities: Dict[str, EntityDef] = {}
@@ -1834,6 +1848,7 @@ class FGD:
             raise TypeError(
                 'String file path passed ({!r}), but no filesystem!'.format(file)
             )
+        assert filesystem is not None, (filesystem, file)
         fgd = cls()
         fgd.parse_file(filesystem, file)
         return fgd
@@ -1922,6 +1937,16 @@ class FGD:
             keyvalue_names = set(ent.kv_order)
 
             for base in ent.bases:
+                if isinstance(base, str):
+                    try:
+                        base = self[base]
+                    except KeyError:
+                        raise ValueError(
+                            'Unknown base ({}) for {}'.format(
+                                base,
+                                ent.classname,
+                            )
+                        ) from None
                 for name, base_kv_map in base.keyvalues.items():
                     ent_kv_map = ent.keyvalues.setdefault(name, {})
                     for tag, kv in base_kv_map.items():

@@ -346,11 +346,15 @@ class _EmptySetView:
 
     def __le__(self, other) -> bool:
         """We are <= to all sets."""
-        return True if isinstance(other, AbstractSet) else NotImplemented
+        if isinstance(other, AbstractSet):
+            return True
+        return NotImplemented  # type: ignore
 
     def __gt__(self, other) -> bool:
         """We are never > any set."""
-        return False if isinstance(other, AbstractSet) else NotImplemented
+        if isinstance(other, AbstractSet):
+            return False
+        return NotImplemented  # type: ignore
 
     def __or__(self, other: Iterable[ValT]) -> Set[ValT]:
         """A binary operation which returns all the other values."""
@@ -490,6 +494,7 @@ class AtomicWriter:
     def __enter__(self):
         """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
+        assert self.temp is not None
         return self.temp.__enter__()
 
     def __exit__(

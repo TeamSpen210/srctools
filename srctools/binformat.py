@@ -71,7 +71,7 @@ def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> L
 def read_array(fmt: str, data: bytes) -> List[int]:
     """Read a buffer containing a stream of integers."""
     if len(fmt) == 2:
-        endianness, fmt = fmt
+        endianness, fmt = list(fmt)
     else:
         endianness = ''
     try:
