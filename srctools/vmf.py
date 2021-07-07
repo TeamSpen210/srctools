@@ -4,15 +4,14 @@ specifics of VMF files.
 """
 import io
 import re
-import itertools
 import operator
 import builtins
-import sys
 import warnings
 from array import ArrayType as Array
 from enum import Flag
 from collections import defaultdict, namedtuple
 from contextlib import suppress
+from sys import intern
 
 from typing import (
     Optional, Union, overload, TypeVar, Generic,
@@ -137,12 +136,13 @@ class IDMan(AbstractSet[int]):
             return desired
 
         # Check every ID in order to find a valid one.
-        for poss_id in itertools.count(start=self.search_pos):
+        poss_id = self.search_pos
+        while True:
             if poss_id not in self:
                 self._used.add(poss_id)
                 self.search_pos = poss_id + 1
                 return poss_id
-        raise AssertionError("get_id() should never end...")
+            poss_id += 1
 
     def __len__(self) -> int:
         return len(self._used)
@@ -320,16 +320,15 @@ class VMF:
         self.by_target: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
         self.by_class: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
 
-        self.entities = []  # type: List[Entity]
+        self.entities: list[Entity] = []
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
-        self.brushes = brushes or []  # type: List[Solid]
-        self.cameras = cameras or []  # type: List[Camera]
-        self.cordons = cordons or []  # type: List[Cordon]
-        self.vis_tree = vis_tree or []  # type: List[VisGroup]
+        self.brushes: list[Solid] = brushes or []
+        self.cameras: list[Camera] = cameras or []
+        self.cordons: list[Cordon] = cordons or []
+        self.vis_tree: list[VisGroup] = vis_tree or []
 
-        # mapspawn entity, which is the entity world brushes are saved
-        # to.
-        self.spawn = spawn or Entity(self)  # type: Entity
+        # mapspawn entity, which is the entity world brushes are saved to.
+        self.spawn: Entity = spawn or Entity(self)
         self.spawn.solids = self.brushes
         self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
@@ -1002,7 +1001,7 @@ class Cordon:
         buffer.write(ind + '\t}\n')
         buffer.write(ind + '}\n')
 
-    def copy(self):
+    def copy(self) -> 'Cordon':
         """Duplicate this cordon."""
         return Cordon(
             self.map,
@@ -1566,7 +1565,7 @@ class Side:
             Vec.from_str(verts[1]),
             Vec.from_str(verts[2]),
         ]
-        
+
         side: Side = cls(
             vmf_file,
             planes,
@@ -1583,7 +1582,7 @@ class Side:
             disp_tree = tree.find_key('dispinfo')
         except LookupError:  # Not a displacement.
             return side
-        
+
         # Deal with displacements.
         disp_power = disp_tree.int('power', 4)
         side.disp_power = disp_power
@@ -2127,11 +2126,11 @@ class Entity:
                 for out in item:
                     outputs.append(Output.parse(out))
             elif name == "hidden" and item.has_children():
-                    solids.extend(
-                        Solid.parse(vmf_file, br, hidden=True)
-                        for br in
-                        item
-                    )
+                solids.extend(
+                    Solid.parse(vmf_file, br, hidden=True)
+                    for br in
+                    item
+                )
             elif name == "group" and item.has_children():
                 groups.append(EntityGroup.parse(vmf_file, item))
             elif name == "editor" and item.has_children():
@@ -2272,16 +2271,18 @@ class Entity:
             self['targetname'] = ''  # Remove ourselves from the .by_target[] set.
         else:
             orig_name = unnamed_prefix
-        
+
         base_name = orig_name.rstrip('0123456789')
 
         if self.map.by_target[base_name]:
             # Check every index in order.
-            for i in itertools.count(start=1):
+            i = 1
+            while True:
                 name = base_name + str(i)
                 if not self.map.by_target[name]:
                     self['targetname'] = name
                     break
+                i += 1
         else:
             # The base name is free!
             self['targetname'] = base_name
@@ -2467,7 +2468,7 @@ class Entity:
             return Vec.from_str(self['origin'])
 
 
-@attr.define(frozen=True, weakref_slot=False)
+@attr.define(weakref_slot=False)
 class FixupValue:
     """One $fixup variable with its replacement."""
     var: str  # The original casing of the variable name.
@@ -2502,7 +2503,7 @@ class EntityFixup(MutableMapping[str, str]):
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
-                self._fixup[sys.intern(fix.var.casefold())] = fix
+                self._fixup[intern(fix.var.casefold())] = fix
             else:
                 extra_vals.append(fix)
         for fix in extra_vals:
@@ -2544,7 +2545,7 @@ class EntityFixup(MutableMapping[str, str]):
     def __setstate__(self, state: List[FixupValue]) -> None:
         self._matcher = None
         self._fixup = {
-            sys.intern(tup.var.casefold()): tup
+            intern(tup.var.casefold()): tup
             for tup in state
         }
 
@@ -2595,33 +2596,29 @@ class EntityFixup(MutableMapping[str, str]):
 
         sval = conv_kv(val)
 
-        folded_var = sys.intern(var.casefold())
-        if folded_var not in self._fixup:
+        folded_var = intern(var.casefold())
+        try:
+            self._fixup[folded_var].value = sval
+            # self._matcher is still correct.
+        except KeyError:
             # Insert a new value. Use the lowest unused index.
             indexes = {
                 fixup.id
                 for fixup in
                 self._fixup.values()
             }
-            for ind in itertools.count(start=1):
-                if ind not in indexes:
-                    self._fixup[folded_var] = FixupValue(sys.intern(var), sval, ind)
-                    break
+            ind = 1
+            while ind in indexes:
+                ind += 1
+            self._fixup[folded_var] = FixupValue(intern(var), sval, ind)
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
-        else:
-            self._fixup[folded_var] = FixupValue(
-                sys.intern(var),
-                sval,
-                self._fixup[folded_var].id,
-            )
-            # self._matcher is still correct.
 
     def __delitem__(self, var: str) -> None:
         """Delete a instance $replace variable."""
         if var[0] == '$':
             var = var[1:]
-        var = sys.intern(var.casefold())
+        var = intern(var.casefold())
         if var in self._fixup:
             del self._fixup[var]
             # We've changed the keys so this needs to be regenerated.
@@ -2987,15 +2984,15 @@ class Output:
             vals += ', inst_in=' + repr(self.inst_in)
         if self.inst_out is not None:
             vals += ', inst_out=' + repr(self.inst_out)
-            
+
         if self.times == 1:
             # Use only_once  to be more clear
             vals += ', only_once=True'
         elif self.times != -1:
-            # Use 'raw' value if a specific count 
+            # Use 'raw' value if a specific count
             vals += ', times=' + repr(self.times)
         # Omit if infinite, most common
-        
+
         if self.comma_sep:
             vals += ', comma_sep=True'
         return vals + ')'
@@ -3028,17 +3025,17 @@ class Output:
         so interning here will simplify the pickle.
         """
         basic = (
-            sys.intern(self.output),
-            sys.intern(self.target),
-            sys.intern(self.input),
+            intern(self.output),
+            intern(self.target),
+            intern(self.input),
             self.comma_sep,
         )
         # Instance, delays and times are more rare - if unset don't include.
         if self.inst_in or self.inst_out or self.params or self.delay or self.times != -1:
             return basic + (
-                sys.intern(self.inst_out) if self.inst_out is not None else None,
-                sys.intern(self.inst_in) if self.inst_in is not None else None,
-                sys.intern(self.params),
+                intern(self.inst_out) if self.inst_out is not None else None,
+                intern(self.inst_in) if self.inst_in is not None else None,
+                intern(self.params),
                 self.delay,
                 self.times,
             )
@@ -3072,7 +3069,7 @@ class Output:
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""
         buffer.write(ind + self._get_text())
-        
+
     def _get_text(self) -> str:
         """Generate the text form of the output."""
         return (
@@ -3124,4 +3121,3 @@ class Output:
             time=self.delay,
             rep=self.times,
         )
-
