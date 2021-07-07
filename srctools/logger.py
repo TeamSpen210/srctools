@@ -85,11 +85,20 @@ class LoggerAdapter(logging.LoggerAdapter):
     def log(
         self,
         level: int,
-        msg: str,
-        *args: object,
-        exc_info: Union[BaseException, Tuple[Type[BaseException], BaseException, TracebackType]]=None,
+        msg: Any,
+        *args: Any,
+        exc_info: Union[
+            None, bool,
+            Union[
+                Tuple[type, BaseException, Optional[TracebackType]],
+                Tuple[None, None, None]
+            ],
+            BaseException
+        ]=None,
         stack_info: bool=False,
-        **kwargs: object,
+        stacklevel: int = 0,
+        extra: Optional[Dict[str, Any]] = None,
+        **kwargs: Any,
     ):
         """This version of .log() is for str.format() compatibility.
 
@@ -102,18 +111,21 @@ class LoggerAdapter(logging.LoggerAdapter):
             except (AttributeError, IndexError):
                 ctx = ''
 
+            if extra is None:
+                extra = {}
+            extra['alias'] = self.alias
+            extra['context'] = f' ({ctx})' if ctx else ''
+
             self.logger._log(
                 level,
                 LogMessage(msg, args, kwargs),
                 (),  # No positional arguments, we do the formatting through
                 # LogMessage..
-                # Pull these two arguments out of kwargs, so they can be set..
+                extra=extra,
+                # Pull these arguments out of kwargs, so they can be set..
                 exc_info=exc_info,
                 stack_info=stack_info,
-                extra={
-                    'alias': self.alias,
-                    'context': f' ({ctx})' if ctx else '',
-                },
+                stacklevel=stacklevel,
             )
 
     def __getattr__(self, attr: str) -> Any:
@@ -148,9 +160,9 @@ class Formatter(logging.Formatter):
         except Exception:  # Something failed, keep the original.
             trace = exc_tb
 
-        if exc_type is not None and exc_value is not None and exc_tb is not None:
-            for line in traceback.TracebackException(exc_type, exc_value, trace).format():
-                buffer.write(line)
+        # TODO: Stubs are wrong, this accepts None for the args and does nothing.
+        for line in traceback.TracebackException(exc_type, exc_value, trace).format():  # type: ignore
+            buffer.write(line)
 
         return buffer.getvalue().rstrip('\n')
 
@@ -159,7 +171,7 @@ class Formatter(logging.Formatter):
         return super().format(record)
 
 
-def get_handler(filename: str) -> logging.FileHandler:
+def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
     """Cycle log files, then give the required file handler."""
     name, ext = os.path.splitext(filename)
 
@@ -201,7 +213,7 @@ def get_handler(filename: str) -> logging.FileHandler:
         raise AssertionError  # Never terminates
 
 
-class NullStream(io.IOBase, TextIO):
+class NullStream(io.TextIOBase, TextIO):
     """A stream object that discards all data.
 
     This is needed for multiprocessing, since it tries to flush stdout.
@@ -210,13 +222,11 @@ class NullStream(io.IOBase, TextIO):
     def __init__(self) -> None:
         super().__init__()
 
-    @staticmethod
-    def write(*args: Any, **kwargs: Any) -> None:
+    def write(self, text: str) -> int:
         """Write nothing to the file."""
-        pass
+        return 0
 
-    @staticmethod
-    def read(*args: Any, **kwargs: Any) -> str:
+    def read(self, size: int = None) -> str:
         """We never have data."""
         return ''
 

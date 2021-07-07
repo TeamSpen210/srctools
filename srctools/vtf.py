@@ -12,7 +12,8 @@ import struct
 import warnings
 from io import BytesIO
 
-from srctools import Vec, binformat, EmptyMapping
+from srctools import binformat, EmptyMapping
+from srctools.math import Vec
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
@@ -81,15 +82,18 @@ def _mk_fmt(
     l: int = 0, size: int = 0,
 ) -> Tuple[int, int, int, int, int, int]:
     """Helper function to construct ImageFormats."""
+    global _mk_fmt_ind
     if l:
         r = g = b = l
         size = l + a
     if not size:
         size = r + g + b + a
-    _mk_fmt.ind += 1  # noqa: F821  # .ind
+    _mk_fmt_ind += 1
 
-    return r, g, b, a, size, _mk_fmt.ind  # noqa: F821  # .ind
-_mk_fmt.ind = -1  # Incremented first time to 0
+    return r, g, b, a, size, _mk_fmt_ind
+
+
+_mk_fmt_ind = -1  # Incremented first time to 0
 
 
 class ImageFormats(Enum):
@@ -180,7 +184,8 @@ class ImageFormats(Enum):
         else:
             return self.ind
 
-del _mk_fmt
+
+del _mk_fmt, _mk_fmt_ind
 # Initialise the internal mapping in the format modules.
 _format_funcs.init(ImageFormats)
 if _cy_format_funcs is not _py_format_funcs:
@@ -276,8 +281,8 @@ class FilterMode(Enum):
     LOWER_RIGHT = 3  # Just use the lower-right pixel.
     BILINEAR = AVERAGE = 4  # Average the four pixels
 
-Resource = namedtuple('Resource', 'flags data')
 
+Resource = namedtuple('Resource', 'flags data')
 Pixel = namedtuple('Pixel', 'r g b a')
 
 _HEADER = struct.Struct(
@@ -303,6 +308,7 @@ class Frame:
 
     This is lazy, so it will only read from the file when actually used.
     """
+
     __slots__ = [
         'width',
         'height',
@@ -930,7 +936,10 @@ class VTF:
         if self.low_format is not ImageFormats.NONE:
             for mipmap in range(self.mipmap_count):
                 frame = self.get(mipmap=mipmap)
-                if frame.width//2 == self._low_res.width and frame.height//2 == self._low_res.height:
+                if (
+                    frame.width // 2 == self._low_res.width and
+                    frame.height // 2 == self._low_res.height
+                ):
                     self._low_res.rescale_from(frame, filter)
 
     def __len__(self) -> int:

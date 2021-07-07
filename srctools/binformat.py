@@ -24,10 +24,11 @@ assert SIZE_FLOAT == 4
 assert SIZE_DOUBLE == 8
 
 
-def struct_read(fmt: str, file: IO[bytes]) -> tuple:
+def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
     """Read a structure from the file."""
-    struct = Struct(fmt)
-    return struct.unpack(file.read(struct.size))
+    if not isinstance(fmt, Struct):
+        fmt = Struct(fmt)
+    return fmt.unpack(file.read(fmt.size))
 
 
 def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str:

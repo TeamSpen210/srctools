@@ -145,7 +145,7 @@ ValueT = TypeVar(
     int, float, bool, str, bytes,
     Color, Time,
     Vec2, Vec3, Vec4,
-    Angle,
+    AngleTup,
     Quaternion,
     Matrix,
     Optional['Element'],

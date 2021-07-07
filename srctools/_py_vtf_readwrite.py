@@ -27,7 +27,7 @@ def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple
     view_src = memoryview(pixels)
     view_dest = memoryview(buffer)
 
-    view_dest[0:img_off] = header
+    view_dest[0:img_off] = header  # type: ignore  # Thinks it needs sequence[bytes]...
 
     if bg is not None:
         r, g, b = bg
@@ -80,7 +80,7 @@ def upsample(bits: int, data: int) -> int:
     return data | (data >> bits)
 
 
-def decomp565(a: int, b: int):
+def decomp565(a: int, b: int) -> Tuple[int, int, int]:
     """Decompress 565-packed data into RGB triplets."""
     return (
         upsample(5, (a & 0b00011111) << 3),
@@ -89,7 +89,7 @@ def decomp565(a: int, b: int):
     )
 
 
-def compress565(r: int, g: int, b: int):
+def compress565(r: int, g: int, b: int) -> Tuple[int, int]:
     """Compress an RGB triplet into 565-packed data."""
     # RRRRRGGG GGGBBBBB
     return (
@@ -478,12 +478,12 @@ def save_bgr888_bluescreen(pixels: array.array, data: bytearray, width: int, hei
 
 def load_dxt1(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data."""
-    load_dxt1_impl(pixels, data, width, height, b'\0\0\0\xFF')
+    load_dxt1_impl(pixels, data, width, height, (0, 0, 0, 0xFF))
 
 
 def load_dxt1_onebitalpha(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
-    load_dxt1_impl(pixels, data, width, height, b'\0\0\0\0')
+    load_dxt1_impl(pixels, data, width, height, (0, 0, 0, 0))
 
 
 def load_dxt1_impl(
@@ -491,7 +491,7 @@ def load_dxt1_impl(
     data: bytes,
     width: int,
     height: int,
-    black_color: bytes,
+    black_color: Tuple[int, int, int, int],
 ):
     """Does the actual decompression."""
     if width < 4 or height < 4:
@@ -544,7 +544,7 @@ def load_dxt1_impl(
                     (c0b + c1b) // 2,
                     255
                 )
-                c3 = tuple(black_color)
+                c3 = black_color
 
             table = [
                 (c0b, c0g, c0r, 255),

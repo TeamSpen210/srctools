@@ -155,7 +155,7 @@ class HelperRenderColor(Helper):
 class HelperSphere(Helper):
     """Helper implementation for sphere()."""
     TYPE = HelperTypes.SPHERE
-    def __init__(self,  r: float, g: float, b: float,  size_key: str) -> None:
+    def __init__(self, r: float, g: float, b: float, size_key: str) -> None:
         self.r = r
         self.g = g
         self.b = b

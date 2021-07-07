@@ -5,6 +5,7 @@ from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
+
 import io
 import math
 
@@ -13,14 +14,19 @@ from typing import (
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    BinaryIO, TextIO,
-    Container,
-    IO,
+    TextIO, Container, IO,
 )
 
 import srctools
 from srctools.filesys import FileSystem, File
 from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError, escape_text
+from srctools.binformat import struct_read
+
+try:
+    from importlib.resources import open_binary
+except ImportError:
+    # Backport module for before Python 3.7
+    from importlib_resources import open_binary
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -49,9 +55,6 @@ _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
 _fmt_ent_header = Struct('<BBBBBB')
 
-
-def _read_struct(fmt: Struct, file: BinaryIO) -> tuple:
-    return fmt.unpack(file.read(fmt.size))
 
 # Version number for the format.
 BIN_FORMAT_VERSION = 5
@@ -253,7 +256,7 @@ class HelperTypes(Enum):
         """Is this an extension to the format?"""
         return self.name.startswith('EXT_')
 
-    
+
 # Ordered list of value types, for encoding in the binary
 # format. All must be here, new ones should be added at the end.
 VALUE_TYPE_ORDER = [
@@ -323,18 +326,18 @@ assert set(VALUE_TYPE_ORDER) == set(ValueTypes), \
     "Missing values: " + repr(set(ValueTypes) - set(VALUE_TYPE_ORDER))
 assert set(ENTITY_TYPE_ORDER) == set(EntityTypes), \
     "Missing values: " + repr(set(EntityTypes) - set(ENTITY_TYPE_ORDER))
-    
+
 # Can only store this many in the bytes.
 assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
 assert len(ENTITY_TYPE_ORDER) < 255, "Too many entity types."
-    
+
 VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
 def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
-    
+
     The token found at the end is returned.
     """
     strings = []
@@ -435,7 +438,7 @@ def validate_tags(
     error: Callable[[str], BaseException]=ValueError,
 ) -> FrozenSet[str]:
     """Check these tags have valid values.
-    
+
     The error exception is raised if invalid.
     """
     temp_set = {
@@ -450,19 +453,19 @@ def validate_tags(
         t.upper()
         for t in tags
     })
-    
-    
+
+
 def match_tags(search: Container[str], tags: Iterable[str]):
     """Check if the search constraints satisfy tags.
-    
+
     The search tags should be uppercased.
 
     All !tags or -tags cannot be present, all +tags must be present, and
     at lest one normal tag must be present (if they are) to pass.
     """
-    if not tags: 
+    if not tags:
         return True
-        
+
     has_all = '<ALL>' in search
     # None = no normal tags, True = matched one, False = not matched one.
     matched = None
@@ -486,17 +489,17 @@ def match_tags(search: Container[str], tags: Iterable[str]):
 
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
-    
+
     Each unique string is assigned a 2-byte index into the list.
     """
-    
+
     def __init__(self) -> None:
         self._dict: Dict[str, int] = {}
         self.cur_index = 0
-        
+
     def __call__(self, string: str) -> bytes:
-        """Get the index for a string. 
-        
+        """Get the index for a string.
+
         If not already present it is assigned one.
         The result is the two bytes that represent the string.
         """
@@ -508,10 +511,10 @@ class BinStrDict:
             # Check it can actually fit.
             if index > (1 << 16):
                 raise ValueError("Too many items in dictionary!")
-                
+
         return _fmt_16bit.pack(index)
-        
-    def serialise(self, file: BinaryIO) -> None:
+
+    def serialise(self, file: IO[bytes]) -> None:
         """Convert this to a stream of bytes."""
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
@@ -523,14 +526,14 @@ class BinStrDict:
             file.write(_fmt_16bit.pack(len(encoded)))
             file.write(encoded)
 
-    @staticmethod       
-    def unserialise(file: BinaryIO) -> Callable[[], str]:
+    @staticmethod
+    def unserialise(file: IO[bytes]) -> Callable[[], str]:
         """Read the dictionary from a file.
-        
+
         This returns a function which reads
-        a string from a file at the current point. 
+        a string from a file at the current point.
         """
-        [length] = _read_struct(_fmt_32bit, file)
+        [length] = struct_read(_fmt_32bit, file)
         inv_list = [''] * length
         for ind in range(length):
             [str_len] = _fmt_16bit.unpack(file.read(2))
@@ -540,11 +543,11 @@ class BinStrDict:
             """Read the index from the file, and return the string it matches."""
             [index] = _fmt_16bit.unpack(file.read(2))
             return inv_list[index]
-        
+
         return lookup
 
     @staticmethod
-    def read_tags(file: BinaryIO, from_dict: Callable[[], str]) -> FrozenSet[str]:
+    def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> FrozenSet[str]:
         """Pull tags from a BinStrDict."""
         [size] = _fmt_8bit.unpack(file.read(1))
         return frozenset({
@@ -554,7 +557,7 @@ class BinStrDict:
 
     @staticmethod
     def write_tags(
-        file: BinaryIO,
+        file: IO[bytes],
         dic: 'BinStrDict',
         tags: Collection[str],
     ) -> None:
@@ -865,7 +868,7 @@ class KeyValues:
         if self.readonly:
             value_type |= 128
         file.write(_fmt_8bit.pack(value_type))
-        
+
         # Spawnflags have integer names and defaults,
         # choices has string values and no default.
         if self.type is ValueTypes.SPAWNFLAGS:
@@ -882,9 +885,9 @@ class KeyValues:
                 file.write(_fmt_8bit.pack(power))
                 file.write(str_dict(name))
             return  # Spawnflags doesn't need to write a default.
-        
+
         file.write(str_dict(self.default or ''))
-        
+
         if self.type is ValueTypes.CHOICES:
             # Use two bytes, these can be large (soundscapes).
             file.write(_fmt_16bit.pack(len(self.val_list)))
@@ -892,28 +895,28 @@ class KeyValues:
                 BinStrDict.write_tags(file, str_dict, tags)
                 file.write(str_dict(val))
                 file.write(str_dict(name))
-        
+
     @staticmethod
     def unserialise(
-        file: BinaryIO,
+        file: IO[bytes],
         from_dict: Callable[[], str],
     ) -> 'KeyValues':
         """Recover a KeyValue from a binary file."""
         name = from_dict()
         disp_name = from_dict()
-        [value_ind] = _read_struct(_fmt_8bit, file)
+        [value_ind] = struct_read(_fmt_8bit, file)
         readonly = value_ind & 128
         value_type = VALUE_TYPE_ORDER[value_ind & 127]
-        
-        val_list = None
-        
+
+        val_list: Optional[list[tuple]] = None
+
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
-            [val_count] = _read_struct(_fmt_8bit, file)
+            [val_count] = struct_read(_fmt_8bit, file)
             val_list = [0] * val_count
             for ind in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
-                [power] = _read_struct(_fmt_8bit, file)
+                [power] = struct_read(_fmt_8bit, file)
                 val_name = from_dict()
                 val_list[ind] = (
                     1 << (power & 127),
@@ -923,14 +926,14 @@ class KeyValues:
                 )
         else:
             default = from_dict()
-            
+
             if value_type is ValueTypes.CHOICES:
-                [val_count] = _read_struct(_fmt_16bit, file)
+                [val_count] = struct_read(_fmt_16bit, file)
                 val_list: List[tuple] = [()] * val_count
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
                     val_list[ind] = (from_dict(), from_dict(), tags)
-        
+
         return KeyValues(
             name,
             value_type,
@@ -949,7 +952,7 @@ class IODef:
         self.name = name
         self.type = val_type
         self.desc = description
-        
+
     def __repr__(self) -> str:
         txt = '{}({!r}, {!r}'.format(
             self.__class__.__name__,
@@ -1006,20 +1009,20 @@ class IODef:
             file.write(' : ')
             _write_longstring(file, self.desc, indent='\t')
         file.write('\n')
-        
-    def serialise(self, file: BinaryIO, dic: BinStrDict) -> None:
+
+    def serialise(self, file: IO[bytes], dic: BinStrDict) -> None:
         """Write to the binary file."""
         file.write(dic(self.name))
         file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[self.type]))
 
     @staticmethod
     def unserialise(
-        file: BinaryIO,
+        file: IO[bytes],
         from_dict: Callable[[], str],
     ) -> 'IODef':
         """Recover an IODef from a binary file."""
         name = from_dict()
-        value_type = VALUE_TYPE_ORDER[_read_struct(_fmt_8bit, file)[0]]
+        value_type = VALUE_TYPE_ORDER[struct_read(_fmt_8bit, file)[0]]
         return IODef(name, value_type)
 
 
@@ -1036,19 +1039,19 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
         self._ent = ent
         self._attr = attr_name
         self._disp_attr = disp_name
-        
+
     @property
     def __name__(self) -> str:
         return self._disp_attr
-        
+
     def __repr__(self) -> str:
         return '{!r}.{}'.format(self._ent, self._disp_attr)
 
     def __eq__(self, other) -> bool:
         """We're private, so we should be the only instance for a given Entity."""
         return other is self
-        
-    def _maps(self, ent=None) -> Iterator[Mapping[str, T]]:
+
+    def _maps(self, ent=None) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
@@ -1078,7 +1081,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 tag_map = ent_map[name]
             except KeyError:
                 continue
-            
+
             # Force longer more-specific tags to match first.
             for tags, value in sorted(
                 tag_map.items(),
@@ -1088,7 +1091,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
                 if search_tags is None or match_tags(search_tags, tags):
                     return value
         raise KeyError((name, search_tags))
-        
+
     def __iter__(self) -> Iterator[T]:
         """Yields all keys this object has."""
         seen: set[str] = set()
@@ -1104,7 +1107,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Iterable[str]]], T]):
             if item in ent_map:
                 return True
         return False
-            
+
     def __len__(self) -> int:
         seen: set[str] = set()
         for ent_map in self._maps():
@@ -1134,7 +1137,7 @@ class EntityDef:
         self.bases = []  # type: List[Union[EntityDef, str]]
         self.helpers = []  # type: List[Helper]
         self.desc = ''
-        
+
         # Views for accessing data among all the entities.
         self.kv: _EntityView[KeyValues] = _EntityView(self, 'keyvalues', 'kv')
         self.inp: _EntityView[IODef] = _EntityView(self, 'inputs', 'inp')
@@ -1296,7 +1299,7 @@ class EntityDef:
             io_type = token_value.casefold()
             if io_type in ('input', 'output'):
                 name = tok.expect(Token.STRING)
-                
+
                 # Next is either the value type parens, or a tags brackets.
                 val_token, raw_value_type = tok()
                 if val_token is Token.BRACK_OPEN:
@@ -1344,18 +1347,18 @@ class EntityDef:
             else:
                 # Keyvalue
                 name = io_type
-                
+
                 # Next is either the value type parens, or a tags brackets.
-                
+
                 val_token, raw_value_type = tok()
                 if val_token is Token.BRACK_OPEN:
                     tags = read_tags(tok)
                     val_token, raw_value_type = tok()
                 else:
                     tags = frozenset()
-                
+
                 if val_token is not Token.PAREN_ARGS:
-                    raise tok.error(val_token)  
+                    raise tok.error(val_token)
 
                 raw_value_type = raw_value_type.strip()
                 try:
@@ -1436,7 +1439,7 @@ class EntityDef:
                             val_tags = read_tags(tok)
                         else:
                             val_tags = frozenset()
-                        
+
                         if val_typ is ValueTypes.SPAWNFLAGS:
                             # The first value is an integer.
                             try:
@@ -1445,8 +1448,8 @@ class EntityDef:
                                 raise tok.error(
                                     'SpawnFlags must be integer values, '
                                     'not "{}" (in {})!'.format(
-                                        choices_value, 
-                                        entity.classname, 
+                                        choices_value,
+                                        entity.classname,
                                     )
                                 ) from None
                             try:
@@ -1676,7 +1679,7 @@ class EntityDef:
             _done.add(ent)
             yield ent
             yield from ent.iter_bases(_done)
-            
+
     def serialise(self, file, str_dict: BinStrDict):
         """Write to the binary file."""
         file.write(_fmt_ent_header.pack(
@@ -1690,12 +1693,13 @@ class EntityDef:
             len(self.classname),
         ))
         file.write(self.classname.encode())
-        
+
         for base_ent in self.bases:
             file.write(str_dict(base_ent.classname))
-        
+
+        obj_type: dict[str, dict[frozenset[str], Union[IODef, KeyValues]]]
         for obj_type in (self.keyvalues, self.inputs, self.outputs):
-            for name, tag_map in obj_type.items():
+            for tag_map in obj_type.values():
                 # We don't need to write the name, since that's stored
                 # also in the kv/io object itself.
 
@@ -1719,10 +1723,10 @@ class EntityDef:
                     value.serialise(file, str_dict)
 
         # Helpers are not added.
-        
+
     @staticmethod
     def unserialise(
-        file: BinaryIO,
+        file: IO[bytes],
         from_dict: Callable[[], str],
     ) -> 'EntityDef':
         """Read from the binary file."""
@@ -1733,12 +1737,12 @@ class EntityDef:
             inp_count,
             out_count,
             clsname_length,
-        ] = _read_struct(_fmt_ent_header, file)  # type: int, int, int, int, int, int
-        
+        ] = struct_read(_fmt_ent_header, file)  # type: int, int, int, int, int, int
+
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
         ent.classname = file.read(clsname_length).decode('utf8')
         ent.desc = ''
-        
+
         for _ in range(base_count):
             # We temporarily store strings, then evaluate later on.
             ent.bases.append(from_dict())  # type: ignore
@@ -1752,7 +1756,7 @@ class EntityDef:
             (out_count, ent.outputs, IODef),
         ]:
             for _ in range(count):
-                [tag_count] = _read_struct(_fmt_8bit, file)
+                [tag_count] = struct_read(_fmt_8bit, file)
                 if tag_count == 0:
                     # Special case, a single untagged item.
                     obj = cls.unserialise(file, from_dict)
@@ -1812,7 +1816,7 @@ class FGD:
 
         Parameters:
         * file: A filesys.File representing the file to read, or a file path.
-        * filesystem: The system to lookup files in. This is needed to 
+        * filesystem: The system to lookup files in. This is needed to
           resolve file inclusions. If not passed, file must be a filesystem
           File to obtain a matching filesystem.
         """
@@ -1836,7 +1840,7 @@ class FGD:
 
     def apply_bases(self) -> None:
         """Fix base values in entities after parsing.
-        
+
         While parsing the classnames may be set as strings,
         so order in the file doesn't matter. This fixes
         them to the real entity objects.
@@ -1849,7 +1853,7 @@ class FGD:
                     # This entity was already done.
                     new_bases.append(base)
                     continue
-                
+
                 try:
                     new_bases.append(self[base])  # type: ignore
                 except KeyError:
@@ -1966,7 +1970,7 @@ class FGD:
 
         if self.map_size_min != self.map_size_max:
             file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
-            
+
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
             for folder in sorted(self.mat_exclusions):
@@ -2028,9 +2032,9 @@ class FGD:
                 )
             todo = deferred
 
-        for ent in self.sorted_ents():
+        for ent_def in self.sorted_ents():
             file.write('\n')
-            ent.export(file)
+            ent_def.export(file)
 
         if ret_string:
             return file.getvalue()
@@ -2109,7 +2113,7 @@ class FGD:
                         elif tok is Token.PAREN_ARGS and tags is None:
                             tags = validate_tags(tok_value.split(','), tokeniser.error)
                         else:
-                            raise tok.error(tok)
+                            raise tokeniser.error(tok)
 
                     for tok, tok_value in tokeniser:
                         if tok is Token.BRACK_CLOSE:
@@ -2177,11 +2181,6 @@ class FGD:
         # returning a deep-copy.
         global _ENGINE_FGD
         if _ENGINE_FGD is None:
-            try:
-                from importlib.resources import open_binary
-            except ImportError:
-                # Backport module for before Python 3.7
-                from importlib_resources import open_binary
             from lzma import LZMAFile
             with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
                 return cls.unserialise(f)
@@ -2227,18 +2226,18 @@ class FGD:
                     break
             self._fix_missing_bases(base)
 
-    def serialise(self, file: BinaryIO) -> None:
+    def serialise(self, file: IO[bytes]) -> None:
         """Write the FGD into a compacted binary format.
-        
+
         This is only readable by this module, and does not contain
         entity, keyvalue and IO help descriptions to keep the data small.
         """
         for ent in list(self):
             self._fix_missing_bases(ent)
 
-        # The start of a file is a list of all used strings. 
+        # The start of a file is a list of all used strings.
         dictionary = BinStrDict()
-        
+
         # Start of file - format version, FGD min/max, number of entities.
         file.write(b'FGD' + _fmt_header.pack(
             BIN_FORMAT_VERSION,
@@ -2246,39 +2245,39 @@ class FGD:
             self.map_size_max,
             len(self.entities),
         ))
-        
+
         ent_data = io.BytesIO()
         for ent in self.entities.values():
             ent.serialise(ent_data, dictionary)
-            
-        # The final file is the header, dictionary data, and all the entities 
+
+        # The final file is the header, dictionary data, and all the entities
         # one after each other.
         dictionary.serialise(file)
         file.write(ent_data.getvalue())
         # print('Dict size: ', format(dictionary.cur_index / (1 << 16), '%'))
 
-    @classmethod  
-    def unserialise(cls, file: BinaryIO) -> 'FGD':
+    @classmethod
+    def unserialise(cls, file: IO[bytes]) -> 'FGD':
         """Unpack data from FGD.serialise() to return the original data.
-        
+
         Help descriptions are not preserved, and are set to <BINARY>.
         """
-        
+
         if file.read(3) != b'FGD':
             raise ValueError('Not an FGD file!')
-        
+
         fgd = FGD()
-        
+
         [
             format_version,
             fgd.map_size_min,
             fgd.map_size_max,
             ent_count,
-        ] = _read_struct(_fmt_header, file)
-        
+        ] = struct_read(_fmt_header, file)
+
         if format_version != BIN_FORMAT_VERSION:
             raise TypeError('Unknown format version "{}"!'.format(format_version))
-            
+
         from_dict = BinStrDict.unserialise(file)
 
         # Now there's ent_count entities after each other.

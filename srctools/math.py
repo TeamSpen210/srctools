@@ -252,14 +252,11 @@ def __i{func}__(self, other: float):
 '''
 
 # Subclassing this causes isinstance() to become very slow, trying to check
-# for __round__ on everything.
-if TYPE_CHECKING:
-    _RoundsToVec = SupportsRound['Vec']
-else:
-    _RoundsToVec = object
+# for __round__ on everything. So at runtime swap it out so it doesn't inherit.
+globals()['SupportsRound'] = {'Vec': object}
 
 
-class Vec(_RoundsToVec):
+class Vec(SupportsRound['Vec']):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
@@ -1053,7 +1050,7 @@ class Matrix:
                 self._ca == other._ca and self._cb == other._cb and self._cc == other._cc
             )
         return NotImplemented
-        
+
     def __repr__(self) -> str:
         return (
             '<Matrix '
@@ -1119,7 +1116,7 @@ class Matrix:
         rot._ca, rot._cb, rot._cc = 0.0, 0.0, 1.0
 
         return rot
-        
+
     @classmethod
     def from_roll(cls: Type['Matrix'], roll: float) -> 'Matrix':
         """Return the matrix representing a roll rotation.
@@ -1252,7 +1249,7 @@ class Matrix:
         # up_x = self.ca
         # up_y = self.cb
         up_z = self._cc
-        
+
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
             return Py_Angle(
@@ -1338,7 +1335,7 @@ class Matrix:
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
-    
+
     def __rmatmul__(self, other):
         if isinstance(other, Py_Vec):
             result = other.copy()
@@ -1369,7 +1366,7 @@ class Matrix:
             return self
         else:
             return NotImplemented
-            
+
     def _mat_mul(self, other: 'Matrix') -> None:
         """Rotate myself by the other matrix."""
         # We don't use each row after assigning to the set, so we can re-assign.
@@ -1391,7 +1388,7 @@ class Matrix:
             self._ca * other._ab + self._cb * other._bb + self._cc * other._cb,
             self._ca * other._ac + self._cb * other._bc + self._cc * other._cc,
         )
-    
+
     def _vec_rot(self, vec: Vec) -> None:
         """Rotate a vector by our value."""
         x = vec.x
@@ -1401,17 +1398,17 @@ class Matrix:
         vec.y = (x * self._ab) + (y * self._bb) + (z * self._cb)
         vec.z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
-    
+
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 
     All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, matrix-multiplication with 
+    Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     __slots__ = ['_pitch', '_yaw', '_roll']
-    
+
     def __init__(
         self,
         pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
@@ -1730,7 +1727,7 @@ class Angle:
 
     def _rotate_angle(self, target: 'Angle') -> 'Angle':
         """Rotate the target by this angle.
-        
+
         Inefficient if we have more than one rotation to do.
         """
         mat = Py_Matrix.from_angle(target)
@@ -1819,6 +1816,7 @@ Cy_Matrix = Py_Matrix = Matrix
 
 # Do it this way, so static analysis ignores this.
 _glob = globals()
+del _glob['SupportsRound']
 try:
     from srctools import _math  # type: ignore
 except ImportError:
