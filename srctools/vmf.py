@@ -9,16 +9,20 @@ import operator
 import builtins
 import sys
 import warnings
+from array import ArrayType as Array
+from enum import Flag
 from collections import defaultdict, namedtuple
 from contextlib import suppress
 
 from typing import (
-    Optional, Union, Any, overload, TypeVar, Generic,
+    Optional, Union, overload, TypeVar, Generic,
     Dict, List, Tuple, Set, Mapping, IO,
     Iterable, Iterator, AbstractSet,
-    NamedTuple, MutableMapping,
+    MutableMapping,
     Pattern, Match,
 )
+
+import attr
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec, Angle, Matrix, to_matrix
@@ -29,18 +33,6 @@ import srctools
 CURRENT_HAMMER_VERSION = 400
 CURRENT_HAMMER_BUILD = 5304
 
-# all the rows that displacements have, in the form
-# "row0" "???"
-# "row1" "???"
-# etc
-_DISP_ROWS = (
-    'normals',
-    'distances',
-    'offsets',
-    'offset_normals',
-    'alphas',
-    'triangle_tags',
-)
 
 # Return value for VMF.make_prism()
 PrismFace = namedtuple(
@@ -56,7 +48,50 @@ T = TypeVar('T')
 # Types we allow for setting keyvalues. These we can stringify into something
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
-ValidKVs = Union[str, int, bool, float, Vec, Angle]
+ValidKVs = Union[str, int, bool, float, Vec, Angle, Matrix]
+
+
+class DispFlag(Flag):
+    """Per-displacement flags, configuring collisions.
+
+    Does NOT match the file values, since those are inverted.
+    """
+    COLL_NONE = 0
+    COLL_PHYSICS = 1  # Can physics objects collide?
+    COLL_PLAYER_NPC = 2  # QPhysics hull collisions
+    COLL_BULLET = 4  # Raytraces IE bullets.
+    COLL_ALL = COLL_PHYSICS | COLL_PLAYER_NPC | COLL_BULLET
+
+    SUBDIV = 8  # Is it subdivided?
+    SUBDIV_COLL_ALL = SUBDIV | COLL_ALL  # Makes the repr nicer.
+
+# The VMF stores 2/4/8 if the displacement *doesn't* collide.
+# Bit 1 stores if the face has a bumpmap, set by VBSP.
+_DISP_FLAG_TO_COLL: List[DispFlag] = [
+    (
+        (DispFlag.COLL_PHYSICS if i & 2 == 0 else DispFlag.COLL_NONE) |
+        (DispFlag.COLL_PLAYER_NPC if i & 4 == 0 else DispFlag.COLL_NONE) |
+        (DispFlag.COLL_BULLET if i & 8 == 0 else DispFlag.COLL_NONE)
+    ) for i in range(16)
+]
+# Invert, prefer smaller = less bits set.
+_DISP_COLL_TO_FLAG: Dict[DispFlag, int] = {
+    v: k for (k, v) in
+    list(enumerate(_DISP_FLAG_TO_COLL))[::-1]
+}
+
+
+class TriangleTag(Flag):
+    """Two flags set on all displacement triangles.
+
+    If walkable, it is shallow enough to stand on.
+    If buildable, TF2 Engineers can place buildings.
+    """
+    STEEP = 0  # Not buildable/walkable
+    WALKABLE = 1  # Just walkable
+    # 8 by itself is buildable only, that's impossible.
+    BUILDABLE = 1 | 8  # Walkable and buildable
+    FLAT = BUILDABLE
 
 
 def conv_kv(val: ValidKVs) -> str:
@@ -65,6 +100,8 @@ def conv_kv(val: ValidKVs) -> str:
         return '1'
     elif val is False:
         return '0'
+    elif isinstance(val, Matrix):
+        return str(val.to_angle())
     else:
         return str(val)
 
@@ -276,6 +313,7 @@ class VMF:
         self.ent_id = id_man()  # Same for entities
         self.group_id = id_man()  # Group IDs (not visgroups)
         self.vis_id = id_man()  # VisGroup IDs
+        self.node_id = id_man()  # Nav node ent IDs.
 
         # Allow quick searching for particular groups, without checking
         # the whole map
@@ -346,6 +384,13 @@ class VMF:
         self.entities.append(item)
         self.by_class[item['classname', None]].add(item)
         self.by_target[item['targetname', None]].add(item)
+        if 'nodeid' in item:
+            try:
+                node_id = int(item['nodeid'])
+            except (TypeError, ValueError):
+                pass
+            else:
+                item['nodeid'] = str(self.node_id.get_id(node_id))
 
     def remove_ent(self, item: 'Entity'):
         """Remove an entity from the map.
@@ -360,6 +405,13 @@ class VMF:
 
         self.by_class[item['classname', None]].discard(item)
         self.by_target[item['targetname', None]].discard(item)
+        if 'nodeid' in item:
+            try:
+                node_id = int(item['nodeid'])
+            except (TypeError, ValueError):
+                pass
+            else:
+                self.node_id.discard(node_id)
 
         self.ent_id.discard(item.id)
 
@@ -374,6 +426,13 @@ class VMF:
         for item in ents:
             self.by_class[item['classname', None]].add(item)
             self.by_target[item['targetname', None]].add(item)
+            if 'nodeid' in item:
+                try:
+                    node_id = int(item['nodeid'])
+                except (TypeError, ValueError):
+                    pass
+                else:
+                    item['nodeid'] = str(self.node_id.get_id(node_id))
 
     def create_ent(self, classname: str, **kargs: ValidKVs) -> 'Entity':
         """Convenience method to allow creating point entities.
@@ -389,7 +448,7 @@ class VMF:
 
     def create_visgroup(self, name: str, color: Vec=(255, 255, 255)) -> 'VisGroup':
         """Convenience method for creating visgroups."""
-        vis = VisGroup(self, -1, name, color)
+        vis = VisGroup(self, name, -1, color)
         self.vis_tree.append(vis)
         return vis
 
@@ -475,10 +534,10 @@ class VMF:
         return map_obj
 
     @overload
-    def export(self, *, inc_version: bool=True, minimal: bool=False) -> str: ...
+    def export(self, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> str: ...
     @overload
-    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False):
+    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> None: ...
+    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False, disp_multiblend: bool = True):
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -486,6 +545,10 @@ class VMF:
           inc_version to False to suppress this.
         - If minimal is True, several blocks will be skipped
           (Viewsettings, cameras, cordons and visgroups)
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is stripped.
+        - named_cordons controls if multiple cordons may be used (post L4D), or
+          if only a single cordon is allowed.
         """
         if dest_file is None:
             dest_file = io.StringIO()
@@ -530,11 +593,11 @@ class VMF:
         # Also force the classname, since this will crash if it's different.
         self.spawn['mapversion'] = str(self.map_ver)
         self.spawn['classname'] = 'worldspawn'
-        self.spawn.export(dest_file, ent_name='world')
+        self.spawn.export(dest_file, ent_name='world', disp_multiblend=disp_multiblend)
         del self.spawn['mapversion']
 
         for ent in self.entities:
-            ent.export(dest_file)
+            ent.export(dest_file, disp_multiblend=disp_multiblend)
 
         if not minimal:
             dest_file.write('cameras\n{\n')
@@ -688,10 +751,10 @@ class VMF:
 
         f_bottom = Side(
             self,
-            planes=[  # -z side
-                (b_min.x, b_min.y, b_min.z),
-                (b_max.x, b_min.y, b_min.z),
-                (b_max.x, b_max.y, b_min.z),
+            [  # -z side
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -700,10 +763,10 @@ class VMF:
 
         f_top = Side(
             self,
-            planes=[  # +z side
-                (b_min.x, b_max.y, b_max.z),
-                (b_max.x, b_max.y, b_max.z),
-                (b_max.x, b_min.y, b_max.z),
+            [  # +z side
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_max.z),
+                Vec(b_max.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -712,10 +775,10 @@ class VMF:
 
         f_west = Side(
             self,
-            planes=[  # -x side
-                (b_min.x, b_max.y, b_max.z),
-                (b_min.x, b_min.y, b_max.z),
-                (b_min.x, b_min.y, b_min.z),
+            [  # -x side
+                Vec(b_min.x, b_max.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_max.z),
+                Vec(b_min.x, b_min.y, b_min.z),
             ],
             mat=mat,
             uaxis=UVAxis(0, 1, 0),
@@ -725,9 +788,9 @@ class VMF:
         f_east = Side(
             self,
             planes=[  # +x side
-                (b_max.x, b_max.y, b_min.z),
-                (b_max.x, b_min.y, b_min.z),
-                (b_max.x, b_min.y, b_max.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_max.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(0, 1, 0),
@@ -736,10 +799,10 @@ class VMF:
 
         f_south = Side(
             self,
-            planes=[  # -y side
-                (b_max.x, b_min.y, b_min.z),
-                (b_min.x, b_min.y, b_min.z),
-                (b_min.x, b_min.y, b_max.z),
+            [  # -y side
+                Vec(b_max.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_min.z),
+                Vec(b_min.x, b_min.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -748,10 +811,10 @@ class VMF:
 
         f_north = Side(
             self,
-            planes=[  # +y side
-                (b_min.x, b_max.y, b_min.z),
-                (b_max.x, b_max.y, b_min.z),
-                (b_max.x, b_max.y, b_max.z),
+            [  # +y side
+                Vec(b_min.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_min.z),
+                Vec(b_max.x, b_max.y, b_max.z),
             ],
             mat=mat,
             uaxis=UVAxis(1, 0, 0),
@@ -954,21 +1017,17 @@ class Cordon:
         self.map.cordons.remove(self)
 
 
+@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class VisGroup:
     """Defines one visgroup."""
-    def __init__(
-        self,
-        vmf: VMF,
-        vis_id: int,
-        name: str,
-        color: Vec=(255, 255, 255),
-        children: Iterable['VisGroup']=(),
-    ):
-        self.vmf = vmf
-        self.name = name
-        self.color = Vec(color)
-        self.child_groups = list(children)
-        self.id = vmf.vis_id.get_id(vis_id)
+    vmf: VMF
+    name: str
+    id: int = attr.ib(default=-1)
+    color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    child_groups: List['VisGroup'] = attr.ib(converter=list, factory=list)
+
+    def __attrs_post_init__(self) -> None:
+        self.id = self.vmf.vis_id.get_id(self.id)
 
     @classmethod
     def parse(cls, vmf: VMF, props: Property) -> 'VisGroup':
@@ -985,8 +1044,8 @@ class VisGroup:
 
         return cls(
             vmf,
-            vis_id,
             name,
+            vis_id,
             color,
             children,
         )
@@ -1027,32 +1086,43 @@ class VisGroup:
             if self.id in solid.visgroup_ids:
                 yield solid
 
+    def copy(
+        self,
+        map: VMF=None,
+        group_mapping: Dict[int, int]=EmptyMapping,
+        des_id: int=-1,
+    ) -> 'VisGroup':
+        """Duplicate this visgroup and all children."""
+        newgroup = VisGroup(
+            map or self.vmf,
+            self.name,
+            des_id,
+            self.color.copy(),
+            [
+                child.copy(map, group_mapping)
+                for child in self.child_groups
+            ],
+        )
+        group_mapping[self.id] = newgroup.id
+        return newgroup
 
+
+@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
-    def __init__(
-        self,
-        vmf_file: VMF,
-        des_id: int=-1,
-        sides: List['Side']=None,
-        visgroup_ids: Iterable[int]=(),
-        hidden: bool=False,
-        group_id: Optional[int]=None,
-        vis_shown: bool=True,
-        vis_auto_shown: bool=True,
-        cordon_solid: int=None,
-        editor_color: Vec=(255, 255, 255),
-    ):
-        self.map = vmf_file
-        self.sides = sides or []  # type: List[Side]
-        self.id = vmf_file.solid_id.get_id(des_id)
-        self.hidden = hidden
-        self.cordon_solid = cordon_solid
-        self.vis_shown = vis_shown
-        self.vis_auto_shown = vis_auto_shown
-        self.editor_color = Vec(editor_color)
-        self.group_id = group_id
-        self.visgroup_ids = set(visgroup_ids)
+    map: VMF
+    id: int = attr.ib(default=-1)
+    sides: List['Side'] = attr.ib(factory=list)
+    visgroup_ids: Set[int] = attr.ib(default=(), converter=set)
+    hidden: bool = False
+    group_id: Optional[int] = None
+    vis_shown: bool = True
+    vis_auto_shown: bool = True
+    cordon_solid: int = None
+    editor_color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+
+    def __attrs_post_init__(self) -> None:
+        self.id = self.map.solid_id.get_id(self.id)
 
     def copy(
         self,
@@ -1063,7 +1133,7 @@ class Solid:
     ) -> 'Solid':
         """Duplicate this brush."""
         sides = [
-            s.copy(vmf_file=vmf_file, side_mapping=side_mapping)
+            s.copy(-1, vmf_file, side_mapping)
             for s in
             self.sides
         ]
@@ -1089,13 +1159,13 @@ class Solid:
         for side in tree.find_all("side"):
             sides.append(Side.parse(vmf_file, side))
 
-        visgroups = []
+        visgroups = set()
         group_id = None
         vis_shown = vis_auto_shown = True
         cordon_solid = None
         editor_color = (255, 255, 255)
 
-        for v in tree.find_key("editor", []):
+        for v in tree.find_children("editor"):
             if v.name == "visgroupshown":
                 vis_shown = srctools.conv_bool(v.value, default=True)
             elif v.name == "visgroupautoshown":
@@ -1107,9 +1177,10 @@ class Solid:
             elif v.name == 'group':
                 group_id = int(v.value)
             elif v.name == 'visgroupid':
-                val = srctools.conv_int(v.value, default=-1)
-                if val:
-                    visgroups.append(val)
+                try:
+                    visgroups.add(int(v.value))
+                except (ValueError, TypeError):
+                    pass
 
         return cls(
             vmf_file,
@@ -1124,8 +1195,17 @@ class Solid:
             editor_color,
         )
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
-        """Generate the strings needed to define this brush."""
+    def export(
+        self,
+        buffer: IO[str],
+        ind: str='',
+        disp_multiblend: bool = True,
+    ) -> None:
+        """Generate the strings needed to define this brush.
+
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is stripped.
+        """
         if self.hidden:
             buffer.write(ind + 'hidden\n' + ind + '{\n')
             ind += '\t'
@@ -1133,7 +1213,7 @@ class Solid:
         buffer.write(ind + '{\n')
         buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
         for s in self.sides:
-            s.export(buffer, ind + '\t')
+            s.export(buffer, ind + '\t', disp_multiblend)
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
@@ -1210,6 +1290,52 @@ class Solid:
             s.localise(origin, angles)
 
 
+@attr.define(frozen=True, hash=True, order=True)
+class Vec4:
+    """Defines a 4-dimensional vector."""
+    x: float = 0.0
+    y: float = 0.0
+    z: float = 0.0
+    w: float = 0.0
+    def __str__(self) -> str:
+        return f'{self.x:g} {self.y:g} {self.z:g} {self.w:g}'
+
+    def __bool__(self) -> bool:
+        return bool(self.x or self.y or self.z or self.w)
+
+
+def _list4_validator(inst: object, attr: attr.Attribute, value: object) -> None:
+    """Validate the value is a list of 4 elements."""
+    if not isinstance(value, list):
+        raise TypeError(attr.name + ' should be a list!')
+    if len(value) != 4:
+        raise ValueError(attr.name + ' must have 4 values!')
+
+
+@attr.define(frozen=False)
+class DispVertex:
+    """A vertex in dislacements."""
+    x: int  # Position of the vertex in the displacement.
+    y: int
+
+    normal: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    distance: float = 0
+    offset: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    offset_norm: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    alpha: float = 0.0  # 0-255
+    # The pair of triangle tags for the quad in the +ve direction
+    # from us. This means the last row/column's triangles are ignored.
+    triangle_a: TriangleTag = TriangleTag.FLAT
+    triangle_b: TriangleTag = TriangleTag.FLAT
+
+    # These are for multiblend displacements, added in ASW+.
+    multi_blend: Vec4 = Vec4()
+    multi_alpha: Vec4 = Vec4()
+    multi_colors: Optional[List[Vec]] = attr.ib(default=None, validator=attr.validators.optional(
+        attr.validators.deep_iterable(attr.validators.instance_of(Vec), _list4_validator)
+    ))
+
+
 class UVAxis:
     """Values saved into Side.uaxis and Side.vaxis.
 
@@ -1257,7 +1383,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __copy__(self):
+    def __copy__(self) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1266,7 +1392,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict: object=None) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1275,10 +1401,10 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __getstate__(self):
+    def __getstate__(self) -> tuple:
         return (self.x, self.y, self.z, self.offset, self.scale)
 
-    def __setstate__(self, state):
+    def __setstate__(self, state: tuple) -> None:
         (self.x, self.y, self.z, self.offset, self.scale) = state
 
     def vec(self) -> Vec:
@@ -1352,18 +1478,32 @@ class Side:
         'vaxis',
         'disp_power',
         'disp_pos',
+        'disp_elevation',
         'disp_flags',
-        'disp_elev',
-        'disp_is_subdiv',
-        'disp_allowed_verts',
-        'disp_data',
-        'is_disp',
+        'disp_allowed_vert',
+        '_disp_verts',
     ]
+    map: VMF
+    planes: List[Vec]
+    id: int
+    lightmap: int
+    smooth: int
+    mat: str
+    ham_rot: float
+    uaxis: UVAxis
+    vaxis: UVAxis
+
+    disp_power: int
+    disp_pos: Optional[Vec]
+    disp_elevation: float
+    disp_flags: DispFlag
+    disp_allowed_vert: Optional[Array]
+    _disp_verts: Optional[List[DispVertex]]
 
     def __init__(
         self,
         vmf_file: VMF,
-        planes: List[Union[Tuple[float, float, float], Vec]],
+        planes: List[Vec],
         des_id: int=-1,
         lightmap: int=16,
         smoothing: int=0,
@@ -1371,13 +1511,13 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis]=None,
         vaxis: Optional[UVAxis]=None,
-        disp_data: Optional[Dict[str, Any]]=None,
+        disp_power: int=0,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
         if len(planes) != 3:
             raise ValueError('Must have only 3 planes!')
-        self.planes = list(map(Vec, planes))
+        self.planes = planes
         self.id = vmf_file.face_id.get_id(des_id)
         self.lightmap = lightmap
         self.smooth = smoothing
@@ -1385,73 +1525,208 @@ class Side:
         self.ham_rot = rotation
         self.uaxis = uaxis or UVAxis(0, 1, 0)
         self.vaxis = vaxis or UVAxis(0, 0, -1)
-        if disp_data is not None:
-            self.disp_power = srctools.conv_int(
-                disp_data.get('power', '_'), 4)
-            self.disp_pos = Vec.from_str(
-                disp_data.get('pos', '_'))
-            self.disp_flags = srctools.conv_int(
-                disp_data.get('flags', '_'))
-            self.disp_elev = srctools.conv_float(
-                disp_data.get('elevation', '_'))
-            self.disp_is_subdiv = srctools.conv_bool(
-                disp_data.get('subdiv', '_'), False)
-            self.disp_allowed_verts = disp_data.get('allowed_verts', {})
-            self.disp_data = {}  # type: Dict[str, List[str]]
-            for v in _DISP_ROWS:
-                self.disp_data[v] = disp_data.get(v, [])
-            self.is_disp = True
+
+        self.disp_power = disp_power
+        self.disp_flags = DispFlag.COLL_ALL
+        self.disp_elevation = 0.0
+        if disp_power > 0:
+            self._disp_verts = [
+                DispVertex(x, y)
+                for y in range(self.disp_size)
+                for x in range(self.disp_size)
+            ]
+            self.disp_pos = Vec()
+            self.disp_allowed_vert = Array('i', (-1, ) * 10)
         else:
-            self.is_disp = False
+            self._disp_verts = self.disp_pos = self.disp_allowed_vert = None
+
+    @property
+    def is_disp(self) -> bool:
+        """Returns whether this is a displacement or not."""
+        return self.disp_power > 0
+
+    @property
+    def disp_size(self) -> int:
+        """Return the number of vertexes in each direction of a displacement."""
+        if self.disp_power == 0:
+            return 0
+        return 2 ** self.disp_power + 1
 
     @classmethod
     def parse(cls, vmf_file: VMF, tree: Property) -> 'Side':
         """Parse the property tree into a Side object."""
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
-        side_id = tree.int('id', -1)
         if len(verts) != 3:
             raise ValueError('Wrong number of solid planes in "' +
                              tree['plane', ''] +
                              '"')
         planes = [
-            srctools.parse_vec_str(verts[0]),
-            srctools.parse_vec_str(verts[1]),
-            srctools.parse_vec_str(verts[2]),
+            Vec.from_str(verts[0]),
+            Vec.from_str(verts[1]),
+            Vec.from_str(verts[2]),
         ]
-
-        disp_tree = tree.find_key('dispinfo', [])
-        if len(disp_tree) > 0:
-            disp_data = {
-                'power': disp_tree['power', '4'],
-                'pos': disp_tree['startposition', '4'],
-                'flags': disp_tree['flags', '0'],
-                'elevation': disp_tree['elevation', '0'],
-                'subdiv': disp_tree['subdiv', '0'],
-                'allowed_verts': {},
-            }
-            for prop in disp_tree.find_key('allowed_verts', []):
-                disp_data['allowed_verts'][prop.name] = prop.value
-            for v in _DISP_ROWS:
-                rows = disp_tree[v, []]
-                if len(rows) > 0:
-                    rows.sort(key=lambda x: srctools.conv_int(x.name[3:]))
-                    disp_data[v] = [v.value for v in rows]
-        else:
-            disp_data = None  # type: Optional[Dict[str, Any]]
-
-        return cls(
+        
+        side: Side = cls(
             vmf_file,
-            planes=planes,
-            des_id=side_id,
-            disp_data=disp_data,
-            mat=tree['material', ''],
-            uaxis=UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
-            vaxis=UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
-            rotation=tree.float('rotation', 0),
-            lightmap=tree.int('lightmapscale', 16),
-            smoothing=tree.int('smoothing_groups', 0),
+            planes,
+            tree.int('id', -1),
+            tree.int('lightmapscale', 16),
+            tree.int('smoothing_groups'),
+            tree['material', ''],
+            tree.float('rotation'),
+            UVAxis.parse(tree['uaxis', '[0 1 0 0] 0.25']),
+            UVAxis.parse(tree['vaxis', '[0 0 -1 0] 0.25']),
         )
+
+        try:
+            disp_tree = tree.find_key('dispinfo')
+        except LookupError:  # Not a displacement.
+            return side
+        
+        # Deal with displacements.
+        disp_power = disp_tree.int('power', 4)
+        side.disp_power = disp_power
+        side.disp_pos = disp_tree.vec('startposition')
+        side.disp_elevation = disp_tree.float('elevation')
+        disp_flag_ind = disp_tree.int('flags')
+        if 0 <= disp_flag_ind <= 16:
+            side.disp_flags = _DISP_FLAG_TO_COLL[disp_flag_ind]
+        else:
+            raise ValueError(f'Invalid displacement flags {disp_flag_ind} in side {side.id}!')
+        if disp_tree.bool('subdiv'):
+            side.disp_flags |= DispFlag.SUBDIV
+
+        # This always has a key of '10', with 10 '-1's...
+        vert_key = disp_tree.find_key('allowed_verts')
+        allowed_vert = Array('i', map(int, vert_key['10'].split()))
+        if len(allowed_vert) != 10:
+            raise ValueError(
+                f'Displacement allowed_verts in side {side.id} '
+                f'must be 10 long!'
+            )
+        side.disp_allowed_vert = allowed_vert
+
+        size = side.disp_size
+        side._disp_verts = [
+            DispVertex(x, y)
+            for y in range(size)
+            for x in range(size)
+        ]
+        # Parse all the rows..
+        side._parse_disp_vecrow(disp_tree, 'normals', 'normal')
+        side._parse_disp_vecrow(disp_tree, 'offsets', 'offset')
+        side._parse_disp_vecrow(disp_tree, 'offset_normals', 'offset_norm')
+
+        for y, row in side._iter_disp_row(disp_tree, 'alphas', size):
+            try:
+                for x, alpha in enumerate(row):
+                    side._disp_verts[y * size + x].alpha = float(alpha)
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for alpha in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        for y, row in side._iter_disp_row(disp_tree, 'distances', size):
+            try:
+                for x, alpha in enumerate(row):
+                    side._disp_verts[y * size + x].distance = float(alpha)
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for distances in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        # Not the same, 1 less row and column since it's per-quad.
+        tri_tags_count = 2 ** disp_power
+        for y, row in side._iter_disp_row(disp_tree, 'triangle_tags', 2 * tri_tags_count):
+            try:
+                for x in range(tri_tags_count):
+                    vert = side._disp_verts[y * size + x]
+                    vert.triangle_a = TriangleTag(int(row[2 * x]))
+                    vert.triangle_b = TriangleTag(int(row[2 * x + 1]))
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for triangle tags in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        if 'multiblend' not in disp_tree:
+            return side
+        # Else: Parse multiblend too.
+        # First initialise this list.
+        for vert in side._disp_verts:
+            vert.multi_colors = [Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1), Vec(1, 1, 1)]
+        for i in range(4):
+            side._parse_disp_vecrow(disp_tree, 'multiblend_color_' + str(i), i)
+
+        for y, split in side._iter_disp_row(disp_tree, 'multiblend', 4 * size):
+            try:
+                for x in range(size):
+                    side._disp_verts[y * size + x].multi_blend = Vec4(
+                        float(split[4*x]),
+                        float(split[4*x + 1]),
+                        float(split[4*x + 2]),
+                        float(split[4*x + 3]),
+                    )
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for multiblend in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+
+        for y, split in side._iter_disp_row(disp_tree, 'alphablend', 4 * size):
+            try:
+                for x in range(size):
+                    side._disp_verts[y * size + x].multi_alpha = Vec4(
+                        float(split[4*x]),
+                        float(split[4*x + 1]),
+                        float(split[4*x + 2]),
+                        float(split[4*x + 3]),
+                    )
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for multiblend in side {side.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
+        return side
+
+    def _iter_disp_row(self, tree: Property, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
+        """Return y, row pairs of values from a displacement array row.
+
+        It verifies the row is `size` long.
+        """
+        for row_prop in tree.find_children(name):
+            if row_prop.name.startswith('row'):
+                y = int(row_prop.name[3:])
+            else:
+                continue  # Ignore unknown keys.
+            split = row_prop.value.split()
+            if len(split) != size:
+                raise ValueError(
+                    f'Displacement array for {name} in side {self.id}, '
+                    f'row {y} must have a length of '
+                    f'{size}, not {len(split)}!'
+                )
+            yield y, split
+
+    def _parse_disp_vecrow(self, tree: Property, name: str, member: Union[str, int]) -> None:
+        """Parse one of the very similar per-vert sections."""
+        size = self.disp_size
+        for y, split in self._iter_disp_row(tree, name, 3 * size):
+            try:
+                for x in range(size):
+                    res = Vec(float(split[3 * x]), float(split[3 * x + 1]), float(split[3 * x + 2]))
+                    if isinstance(member, str):
+                        setattr(self._disp_verts[y * size + x], member, res)
+                    else:
+                        self._disp_verts[y * size + x].multi_colors[member] = res
+            except ValueError as exc:
+                raise ValueError(
+                    f'Displacement array for {name} in side {self.id}, '
+                    f'row {y} had invalid number: {exc.args[0]}'
+                ) from None
 
     def copy(
         self,
@@ -1465,37 +1740,48 @@ class Side:
         map is the VMF to add the new side to (defaults to the same map).
         If passed, side_mapping will be updated with a old -> new ID pair.
         """
-        planes = [p.as_tuple() for p in self.planes]
-        if self.is_disp:
-            disp_data = self.disp_data.copy()
-            disp_data['power'] = self.disp_power
-            disp_data['flags'] = self.disp_flags
-            disp_data['elevation'] = self.disp_elev
-            disp_data['subdiv'] = self.disp_is_subdiv
-            disp_data['allowed_verts'] = self.disp_allowed_verts
-        else:
-            disp_data = None  # type: Optional[Dict[str, Any]]
-
         if vmf_file is not None and des_id == -1:
             des_id = self.id
 
-        copy = Side(
+        new_side = Side(
             vmf_file or self.map,
-            planes=planes,
-            des_id=des_id,
-            mat=self.mat,
-            rotation=self.ham_rot,
-            uaxis=self.uaxis.copy(),
-            vaxis=self.vaxis.copy(),
-            smoothing=self.smooth,
-            lightmap=self.lightmap,
-            disp_data=disp_data,
+            [p.copy() for p in self.planes],
+            des_id,
+            self.lightmap,
+            self.smooth,
+            self.mat,
+            self.ham_rot,
+            self.uaxis.copy(),
+            self.vaxis.copy(),
+            self.disp_power,
         )
-        side_mapping[self.id] = copy.id
-        return copy
+        side_mapping[self.id] = new_side.id
+        if self.is_disp:
+            new_side.disp_flags = self.disp_flags
+            new_side.disp_elevation = self.disp_elevation
+            new_side.disp_pos = self.disp_pos.copy()
+            new_side._disp_verts = [
+                DispVertex(
+                    vert.x,
+                    vert.y,
+                    vert.normal.copy(),
+                    vert.distance,
+                    vert.offset.copy(),
+                    vert.offset_norm.copy(),
+                    vert.alpha,
+                    vert.triangle_a,
+                    vert.triangle_b,
+                ) for vert in self._disp_verts
+            ]
+        return new_side
 
-    def export(self, buffer: IO[str], ind: str='') -> None:
-        """Generate the strings required to define this side in a VMF."""
+    # noinspection PyProtectedMember
+    def export(self, buffer: IO[str], ind: str='', disp_multiblend: bool = True) -> None:
+        """Generate the strings required to define this side in a VMF.
+
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in CSGO), or if it is skipped.
+        """
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{self.id}"\n')
@@ -1507,38 +1793,63 @@ class Side:
         buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
         buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
         buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
-        if self.is_disp:
+        if self.disp_power > 0:
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
-            buffer.write(f'{ind}\t\t"power" "{str(self.disp_power)}"\n')
-            buffer.write(ind + '\t\t"startposition" "[' +
-                         self.disp_pos.join(' ') +
-                         ']"\n')
-            buffer.write(ind + '\t\t"flags" "' + str(self.disp_flags) +
-                         '"\n')
-            buffer.write(ind + '\t\t"elevation" "' + str(self.disp_elev) +
-                         '"\n')
-            buffer.write(ind + '\t\t"subdiv" "' +
-                         srctools.bool_as_int(self.disp_is_subdiv) +
-                         '"\n')
-            for v in _DISP_ROWS:
-                if len(self.disp_data[v]) > 0:
-                    buffer.write(f'{ind}\t\t{v}\n')
-                    buffer.write(ind + '\t\t{\n')
-                    for i, data in enumerate(self.disp_data[v]):
-                        buffer.write(ind + '\t\t\t"row' + str(i) +
-                                     '" "' + data +
-                                     '"\n')
+            buffer.write(f'{ind}\t\t"power" "{self.disp_power}"\n')
+            buffer.write(f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n')
+            buffer.write(f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n')
+            buffer.write(f'{ind}\t\t"elevation" "{self.disp_elevation}"\n')
+            buffer.write(f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n')
+
+            size = self.disp_size
+            self._export_disp_rowset('normals', 'normal', buffer, ind, size),
+            self._export_disp_rowset('distances', 'distance', buffer, ind, size),
+            self._export_disp_rowset('offsets', 'offset', buffer, ind, size),
+            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size),
+            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size),
+
+            buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
+            for y in range(size):
+                row = [
+                    f'{vert.triangle_a.value} {vert.triangle_b.value}'
+                    for vert in self._disp_verts[size * y:size * (y+1)]
+                ]
+                buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+            buffer.write(ind + '\t\t}\n')
+
+            buffer.write(ind + '\t\tallowed_verts\n')
+            buffer.write(ind + '\t\t{\n')
+            assert len(self.disp_allowed_vert) == 10, self.disp_allowed_vert
+            buffer.write(f'{ind}\t\t"10" "{" ".join(map(str, self.disp_allowed_vert))}"\n')
+            buffer.write(f'{ind}\t\t}}\n{ind}\t}}\n')
+
+            if disp_multiblend and any(vert.multi_blend for vert in self._disp_verts):
+                self._export_disp_rowset('multiblend', 'multi_blend', buffer, ind, size)
+                self._export_disp_rowset('alphablend', 'multi_alpha', buffer, ind, size)
+                for i in range(4):
+                    buffer.write(f'{ind}\t\tmultiblend_color_{i}\n{ind}\t\t{{\n')
+                    for y in range(size):
+                        row = [
+                            str(vert.multi_colors[i]) if vert.multi_colors is not None else '1'
+                            for vert in self._disp_verts[size * y:size * (y+1)]
+                        ]
+                        buffer.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
                     buffer.write(ind + '\t\t}\n')
-            if len(self.disp_allowed_verts) > 0:
-                buffer.write(ind + '\t\tallowed_verts\n')
-                buffer.write(ind + '\t\t{\n')
-                for k, v in self.disp_allowed_verts.items():
-                    buffer.write(f'{ind}\t\t\t"{k}" "{v}"\n')
-                buffer.write(ind + '\t\t}\n')
-            buffer.write(ind + '\t}\n')
+
         buffer.write(ind + '}\n')
+
+    def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
+        """Write out one of the displacement vertex arrays."""
+        f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
+        for y in range(size):
+            row = [
+                str(getattr(vert, membr))
+                for vert in self._disp_verts[size * y:size * (y+1)]
+            ]
+            f.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
+        f.write(ind + '\t\t}\n')
 
     def __str__(self) -> str:
         """Dump a user-friendly representation of the side."""
@@ -1551,6 +1862,25 @@ class Side:
     def __del__(self) -> None:
         """Forget this side's ID when the object is destroyed."""
         self.map.face_id.discard(self.id)
+
+    def __getitem__(self, pos: Tuple[int, int]) -> DispVertex:
+        """Return the displacement vertex at this position."""
+        if self.disp_pos == 0 or self._disp_verts is None:
+            raise ValueError('This face is not a displacement!')
+        size = self.disp_size
+        x, y = pos
+        if 0 <= x < size and 0 <= y < size:
+            return self._disp_verts[size * y + x]
+        else:
+            raise IndexError(
+                f'Index {x}, {y} is not valid for a power '
+                f'{self.disp_power} displacement, '
+                f'both must be within 0-{size}!'
+            )
+
+    def __len__(self) -> int:
+        """If a displacement, the face has disp_size*disp_size vertexes."""
+        return self.disp_size ** 2
 
     def get_bbox(self) -> Tuple[Vec, Vec]:
         """Generate the highest and lowest points these planes form."""
@@ -1578,7 +1908,7 @@ class Side:
         u_axis = Vec(self.uaxis.x, self.uaxis.y, self.uaxis.z)
         v_axis = Vec(self.vaxis.x, self.vaxis.y, self.vaxis.z)
 
-        # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
+        # Fix offset - see 2013 SDK utils/vbsp/map.cpp:2237
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
@@ -1587,12 +1917,47 @@ class Side:
 
         This preserves texture offsets.
         """
-        angles = to_matrix(angles)  # Only do this once.
+        orient = to_matrix(angles)  # Only do this once.
         for p in self.planes:
-            p.localise(origin, angles)
+            p.localise(origin, orient)
 
-        self.uaxis = self.uaxis.localise(origin, angles)
-        self.vaxis = self.vaxis.localise(origin, angles)
+        self.uaxis = self.uaxis.localise(origin, orient)
+        self.vaxis = self.vaxis.localise(origin, orient)
+        if self.is_disp:
+            for vert in self._disp_verts:
+                vert.offset @= orient
+                vert.normal @= orient
+                vert.offset_norm @= orient
+
+    def disp_get_tri_verts(self, x: int, y: int) -> tuple[
+        DispVertex, DispVertex, DispVertex,
+        DispVertex, DispVertex, DispVertex,
+    ]:
+        """Return the locations of the triangle vertexes.
+
+        This is a set of 6 verts, representing the two triangles in order.
+        See 2013 SDK src/public/builddisp.cpp:896-965.
+        """
+        size = self.disp_size
+        if x >= size or y >= size:
+            raise IndexError(f'Indexes must be from 0-{size-1}, not ({x}, {y})')
+        ind = y * size + x
+        vert_tl = self._disp_verts[ind]
+        vert_tr = self._disp_verts[ind + 1]
+        vert_bl = self._disp_verts[ind + size]
+        vert_br = self._disp_verts[ind + size + 1]
+        if (y * size + x) % 2 == 1:
+            # top left to bottom right
+            return (
+                vert_tl, vert_bl, vert_tr,
+                vert_tr, vert_bl, vert_br,
+            )
+        else:
+            # bottom left to top right
+            return (
+                vert_tl, vert_bl, vert_br,
+                vert_tl, vert_br, vert_tr,
+            )
 
     def plane_desc(self) -> str:
         """Return a string which describes this face.
@@ -1645,7 +2010,7 @@ class Entity:
         self,
         vmf_file: VMF,
         keys: Mapping[str, ValidKVs]=EmptyMapping,
-        fixup: Iterable['FixupTuple']=(),
+        fixup: Iterable['FixupValue']=(),
         ent_id: int=-1,
         outputs: List['Output']=None,
         solids: List[Solid]=None,
@@ -1752,7 +2117,7 @@ class Entity:
                         except IndexError:
                             # Might happen if entirely blank.
                             value = ''
-                        fixup.append(FixupTuple(var, value, int(index)))
+                        fixup.append(FixupValue(var, value, int(index)))
                     except ValueError:
                         # Failed!
                         keys[name] = item.value
@@ -1811,11 +2176,19 @@ class Entity:
         """Is this Entity a brush entity?"""
         return len(self.solids) > 0
 
-    def export(self, buffer: IO[str], ent_name: str='entity', ind: str='') -> None:
+    def export(
+        self,
+        buffer: IO[str],
+        ent_name: str='entity',
+        ind: str='',
+        disp_multiblend: bool = True,
+    ) -> None:
         """Generate the strings needed to create this entity.
 
-        ent_name is the key used for the item's block, which is used to allow
-        generating the MapSpawn data block from the entity object.
+        - ent_name is the key used for the item's block, which is used to allow
+          generating the MapSpawn data block from the entity object.
+        - disp_multiblend controls whether displacements produce their multiblend
+          data (added in ASW), or if it is skipped
         """
 
         if self.hidden:
@@ -1832,7 +2205,7 @@ class Entity:
 
         if self.is_brush():
             for s in self.solids:
-                s.export(buffer, ind=ind+'\t')
+                s.export(buffer, ind=ind+'\t', disp_multiblend=disp_multiblend)
         if len(self.outputs) > 0:
             buffer.write(ind + '\tconnections\n')
             buffer.write(ind + '\t{\n')
@@ -1973,6 +2346,7 @@ class Entity:
                 # Check case-insensitively for this key first
                 orig_val = self.keys.get(k)
                 self.keys[k] = str_val
+                key = k
                 break
         else:
             orig_val = self.keys.get(key)
@@ -1987,6 +2361,19 @@ class Entity:
             with suppress(KeyError):
                 self.map.by_target[orig_val].remove(self)
             self.map.by_target[str_val].add(self)
+        elif key_fold == 'nodeid':
+            try:
+                node_id = int(orig_val)
+            except (TypeError, ValueError):
+                pass
+            else:
+                self.map.node_id.discard(node_id)
+            try:
+                node_id = int(val)
+            except (TypeError, ValueError):
+                pass
+            else:
+                self.keys[key] = str(self.map.node_id.get_id(node_id))
 
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
@@ -2006,7 +2393,14 @@ class Entity:
 
         for k in self.keys:
             if k.casefold() == key:
-                del self.keys[k]
+                val = self.keys.pop(k)
+                if key == 'nodeid':
+                    try:
+                        node_id = int(val)
+                    except (TypeError, ValueError):
+                        pass
+                    else:
+                        self.map.node_id.discard(node_id)
                 break
 
     def get(self, key: str, default: Union[str, T]='') -> Union[str, T]:
@@ -2072,12 +2466,13 @@ class Entity:
         else:
             return Vec.from_str(self['origin'])
 
-# One $fixup variable with replacement.
-FixupTuple = NamedTuple('FixupTuple', [
-    ('var', str),
-    ('value', str),
-    ('id', int),
-])
+
+@attr.define(frozen=True, weakref_slot=False)
+class FixupValue:
+    """One $fixup variable with its replacement."""
+    var: str  # The original casing of the variable name.
+    value: str
+    id: int  # replaceXX number used.
 
 
 class EntityFixup(MutableMapping[str, str]):
@@ -2094,16 +2489,16 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Iterable[FixupTuple]=()):
-        self._fixup = {}  # type: Dict[str, FixupTuple]
-        self._matcher = None  # type: Optional[Pattern[str]]
+    def __init__(self, fixup: Iterable[FixupValue]=()):
+        self._fixup: dict[str, FixupValue] = {}
+        self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes = set()  # type: Set[int]
-        extra_vals = []  # type: List[FixupTuple]
+        used_indexes: set[int] = set()
+        extra_vals: list[FixupValue] = []
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)
@@ -2127,24 +2522,26 @@ class EntityFixup(MutableMapping[str, str]):
         else:
             return default
 
-    def copy_values(self) -> List[FixupTuple]:
+    def copy_values(self) -> List[FixupValue]:
         """Generate a list that can be passed to the constructor."""
         return list(self._fixup.values())
 
-    def __copy__(self):
+    def __copy__(self) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
+        return fix
 
-    def __deepcopy__(self, memodict=None):
+    def __deepcopy__(self, memodict=None) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
+        return fix
 
-    def __getstate__(self) -> List[FixupTuple]:
+    def __getstate__(self) -> List[FixupValue]:
         return list(self._fixup.values())
 
-    def __setstate__(self, state: List[FixupTuple]) -> None:
+    def __setstate__(self, state: List[FixupValue]) -> None:
         self._matcher = None
         self._fixup = {
             sys.intern(tup.var.casefold()): tup
@@ -2208,12 +2605,12 @@ class EntityFixup(MutableMapping[str, str]):
             }
             for ind in itertools.count(start=1):
                 if ind not in indexes:
-                    self._fixup[folded_var] = FixupTuple(sys.intern(var), sval, ind)
+                    self._fixup[folded_var] = FixupValue(sys.intern(var), sval, ind)
                     break
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
         else:
-            self._fixup[folded_var] = FixupTuple(
+            self._fixup[folded_var] = FixupValue(
                 sys.intern(var),
                 sval,
                 self._fixup[folded_var].id,
@@ -2251,17 +2648,16 @@ class EntityFixup(MutableMapping[str, str]):
 
     def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the replace values into the VMF."""
-        for (key, value, index) in sorted(self._fixup.values(), key=operator.attrgetter('id')):
+        for fixup in sorted(self._fixup.values(), key=operator.attrgetter('id')):
             # When exporting, pad the index with zeros if needed
-            buffer.write('{}\t"replace{:02}" "${} {}"\n'.format(
-                ind, index, key, value,
-            ))
+            buffer.write(
+                f'{ind}\t"replace{fixup.id:02}" "${fixup.var} {fixup.value}"\n'
+            )
 
     def __str__(self) -> str:
         items = '\n'.join(
-            '\t${0.var} = {0.value!r}'.format(tup)
-            for tup in
-            sorted(self._fixup.values(), key=operator.attrgetter('id'))
+            f'\t${fix.var} = {fix.value!r}'
+            for fix in sorted(self._fixup.values(), key=operator.attrgetter('id'))
         )
         return f'{self.__class__.__name__}{{\n{items}\n}}'
 
@@ -2526,6 +2922,25 @@ class Output:
             inst_out=inst_out,
             inst_in=inst_inp,
             comma_sep=sep,
+        )
+
+    @classmethod
+    def combine(cls, first: 'Output', second: 'Output') -> 'Output':
+        """Combine two outputs into a merged form.
+
+        This is suitable for combining a Trigger and OnTriggered pair into one,
+        or similar values.
+        """
+        return cls(
+            first.output,
+            second.target,
+            second.input,
+            second.params or first.params,
+            first.delay + second.delay,
+            times=min(first.times, second.times),
+            inst_out=first.inst_out,
+            inst_in=second.inst_in,
+            comma_sep=first.comma_sep and second.comma_sep,
         )
 
     @staticmethod

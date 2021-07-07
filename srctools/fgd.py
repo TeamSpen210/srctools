@@ -134,11 +134,11 @@ class ValueTypes(Enum):
     @property
     def valid_for_io(self) -> bool:
         """Is this type valid for I/O definitions?"""
-        return self.value in (
+        return self.value in {
             'void',
             'integer', 'boolean', 'string', 'float', 'script',
             'vector', 'target_destination', 'color255'
-        )
+        }
 
     @property
     def extension(self) -> bool:
@@ -2217,6 +2217,12 @@ class FGD:
             return self.entities[classname.casefold()]
         except KeyError:
             raise KeyError('No class "{}"!'.format(classname)) from None
+
+    def __contains__(self, classname: object) -> bool:
+        """Lookup entities by classname."""
+        if isinstance(classname, str):
+            return classname.casefold() in self.entities
+        return False
 
     def __iter__(self) -> Iterator[EntityDef]:
         """Iterating over FGDs iterates over the entities."""
