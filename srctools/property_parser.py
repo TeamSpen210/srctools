@@ -83,7 +83,11 @@ __all__ = ['KeyValError', 'NoKeyError', 'Property']
 _NO_KEY_FOUND = cast(str, object())
 
 _Prop_Value = Union[List['Property'], str, Any]
-_As_Dict_Ret = Dict[str, Union[str, '_As_Dict_Ret']]
+# We don't have recursive definitions, just go deep enough it should be fine.
+_As_Dict_Ret = Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
+               Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
+               Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
+               dict]]]]]]]]]]]]]]]]]]
 
 T = TypeVar('T')
 
