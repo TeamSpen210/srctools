@@ -422,7 +422,7 @@ class Property:
                 raise tokenizer.error(token_type, token_value)
 
         # We're out of data, do some final sanity checks.
-        
+
         # We last had a ("name"\n), so we were expecting a block
         # next.
         if block_line != -1:
@@ -433,11 +433,11 @@ class Property:
                 tokenizer.filename,
                 line=None,
             )
-        
+
         # All the properties in the file should be closed,
-        # so the only thing in open_properties should be the 
+        # so the only thing in open_properties should be the
         # root one we added.
-        
+
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.\n\n'
@@ -498,10 +498,30 @@ class Property:
         if def_ is _NO_KEY_FOUND:
             raise NoKeyError(key)
         else:
-            return Property(key, def_)
             # We were given a default, return it wrapped in a Property.
+            return Property(key, def_)
 
-    def _get_value(self, key: str, def_: T=_NO_KEY_FOUND) -> Union[_Prop_Value, T]:
+    def find_block(self, key: str, def_blank: bool = False) -> 'Property':
+        """Obtain the child Property block with a given name.
+
+        - If no child is found with the given name and def_blank is true, a
+          blank Property block will be returned. Otherwise NoKeyError will
+          be raised.
+        - This prefers keys located closer to the end of the value list.
+        """
+        if not self.has_children():
+            raise ValueError("{!r} has no children!".format(self))
+        key = key.casefold()
+        prop: Property
+        for prop in reversed(self._value):
+            if prop._folded_name == key and prop.has_children():
+                return prop
+        if def_blank:
+            return Property(key, [])
+        else:
+            raise NoKeyError(key)
+
+    def _get_value(self, key: str, def_: T=_NO_KEY_FOUND) -> Union[str, T]:
         """Obtain the value of the child Property with a given name.
 
         Effectively find_key() but doesn't make a new property.
@@ -513,9 +533,16 @@ class Property:
         if not self.has_children():
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        for prop in reversed(self._value):  # type: Property
+        prop: Property
+        block_prop = False
+        for prop in reversed(self._value):
             if prop._folded_name == key:
-                return prop.value
+                if prop.has_children():
+                    block_prop = True
+                else:
+                    return prop.value
+        if block_prop:
+            warnings.warn('This will ignore block properties!', DeprecationWarning, stacklevel=3)
         if def_ is _NO_KEY_FOUND:
             raise NoKeyError(key)
         else:
@@ -594,7 +621,7 @@ class Property:
         except LookupError:  # key not present, defaults.
             return _Vec(x, y, z)
 
-    def set_key(self, path: Union[Tuple[str, ...], str], value: _Prop_Value) -> None:
+    def set_key(self, path: Union[Tuple[str, ...], str], value: str) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
         -If any of the hierarchy do not exist (or do not have children),
@@ -739,7 +766,7 @@ class Property:
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Property']:
         """Implementation of iter_tree(). This assumes self has children."""
-        for prop in self._value:  # type: Property
+        for prop in self._value:
             if prop.has_children():
                 if blocks:
                     yield prop
@@ -759,14 +786,14 @@ class Property:
         raise ValueError("Can't search through properties without children!")
 
     def __getitem__(
-            self,
-            index: Union[
-                str,
-                builtins.int,
-                slice,
-                Tuple[Union[str, builtins.int, slice], Union[str, Any]]
-            ],
-            ) -> str:
+        self,
+        index: Union[
+            str,
+            builtins.int,
+            slice,
+            Tuple[Union[str, builtins.int, slice], Union[str, Any]]
+        ],
+    ) -> str:
         """Allow indexing the children directly.
 
         - If given an index, it will search by position.
