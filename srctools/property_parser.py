@@ -505,10 +505,10 @@ class Property:
             # We were given a default, return it wrapped in a Property.
             return Property(key, def_)
 
-    def find_block(self, key: str, def_blank: bool = False) -> 'Property':
+    def find_block(self, key: str, or_blank: bool = False) -> 'Property':
         """Obtain the child Property block with a given name.
 
-        - If no child is found with the given name and def_blank is true, a
+        - If no child is found with the given name and `or_blank` is true, a
           blank Property block will be returned. Otherwise NoKeyError will
           be raised.
         - This prefers keys located closer to the end of the value list.
@@ -520,7 +520,7 @@ class Property:
         for prop in reversed(self._value):
             if prop._folded_name == key and prop.has_children():
                 return prop
-        if def_blank:
+        if or_blank:
             return Property(key, [])
         else:
             raise NoKeyError(key)
