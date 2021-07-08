@@ -71,7 +71,7 @@ from typing import (
     List, Tuple, Dict, Iterator,
     TypeVar,
     Iterable,
-    overload,
+    overload, cast,
     Callable,
     Mapping,
 )
@@ -80,7 +80,7 @@ from typing import (
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
 # Sentinel value to indicate that no default was given to find_key()
-_NO_KEY_FOUND = object()
+_NO_KEY_FOUND = cast(str, object())
 
 _Prop_Value = Union[List['Property'], str, Any]
 _As_Dict_Ret = Dict[str, Union[str, '_As_Dict_Ret']]
@@ -481,7 +481,7 @@ class Property:
         for block in self.find_all(*keys):
             yield from block
 
-    def find_key(self, key, def_: _Prop_Value=_NO_KEY_FOUND) -> 'Property':
+    def find_key(self, key: str, def_: str=_NO_KEY_FOUND) -> 'Property':
         """Obtain the child Property with a given name.
 
         - If no child is found with the given name, this will return the
