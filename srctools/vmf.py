@@ -42,6 +42,7 @@ T = TypeVar('T')
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
 ValidKVs = Union[str, int, bool, float, Vec, Angle, Matrix]
+ValidKV_T = TypeVar('ValidKV_T', str, int, bool, float, Vec, Angle, Matrix)
 
 
 class DispFlag(Flag):
@@ -451,9 +452,9 @@ class VMF:
         self.add_ent(ent)
         return ent
 
-    def create_visgroup(self, name: str, color: Vec=(255, 255, 255)) -> 'VisGroup':
+    def create_visgroup(self, name: str, color: Union[Vec, Tuple[int, int, int]]=(255, 255, 255)) -> 'VisGroup':
         """Convenience method for creating visgroups."""
-        vis = VisGroup(self, name, -1, color)
+        vis = VisGroup(self, name, -1, Vec(color))
         self.vis_tree.append(vis)
         return vis
 
@@ -497,7 +498,7 @@ class VMF:
         map_info['cordons_on'] = cordons['active', '0']
 
         cam_props = tree.find_key('cameras', [])
-        map_info['active_cam'] = cam_props.int('activecamera', -1)
+        map_info['active_cam'] = cam_props['activecamera', '-1']
         map_info['quickhide'] = tree.find_key('quickhide', [])['count', '']
 
         # We have to create an incomplete map before parsing any data.
@@ -1093,18 +1094,18 @@ class VisGroup:
 
     def copy(
         self,
-        map: VMF=None,
-        group_mapping: Dict[int, int]=EmptyMapping,
+        vmf: VMF=None,
+        group_mapping: MutableMapping[int, int]=EmptyMapping,
         des_id: int=-1,
     ) -> 'VisGroup':
         """Duplicate this visgroup and all children."""
         newgroup = VisGroup(
-            map or self.vmf,
+            vmf or self.vmf,
             self.name,
             des_id,
             self.color.copy(),
             [
-                child.copy(map, group_mapping)
+                child.copy(vmf, group_mapping)
                 for child in self.child_groups
             ],
         )
@@ -1123,7 +1124,7 @@ class Solid:
     group_id: Optional[int] = None
     vis_shown: bool = True
     vis_auto_shown: bool = True
-    cordon_solid: int = None
+    cordon_solid: Optional[int] = None
     editor_color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
 
     def __attrs_post_init__(self) -> None:
@@ -1133,7 +1134,7 @@ class Solid:
         self,
         des_id: int=-1,
         vmf_file: VMF=None,
-        side_mapping: Dict[int, int]=EmptyMapping,
+        side_mapping: MutableMapping[int, int]=EmptyMapping,
         keep_vis: bool=True,
     ) -> 'Solid':
         """Duplicate this brush."""
@@ -1168,7 +1169,7 @@ class Solid:
         group_id = None
         vis_shown = vis_auto_shown = True
         cordon_solid = None
-        editor_color = (255, 255, 255)
+        editor_color = Vec(255, 255, 255)
 
         for v in tree.find_children("editor"):
             if v.name == "visgroupshown":
@@ -1717,7 +1718,13 @@ class Side:
             yield y, split
 
     def _parse_disp_vecrow(self, tree: Property, name: str, member: Union[str, int]) -> None:
-        """Parse one of the very similar per-vert sections."""
+        """Parse one of the very similar per-vert sections.
+
+        If member is a string, it is an attribute to set on the DispVertex.
+        Otherwise if it's an int, it's the channel for multi_colors (which must
+        have been initialised beforehand).
+        """
+        assert self._disp_verts is not None
         size = self.disp_size
         for y, split in self._iter_disp_row(tree, name, 3 * size):
             try:
@@ -1726,7 +1733,9 @@ class Side:
                     if isinstance(member, str):
                         setattr(self._disp_verts[y * size + x], member, res)
                     else:
-                        self._disp_verts[y * size + x].multi_colors[member] = res
+                        # multi_colors could be None, but we make sure to fix
+                        # that before calling this.
+                        self._disp_verts[y * size + x].multi_colors[member] = res  # type: ignore
             except ValueError as exc:
                 raise ValueError(
                     f'Displacement array for {name} in side {self.id}, '
@@ -1737,7 +1746,7 @@ class Side:
         self,
         des_id: int=-1,
         vmf_file: VMF=None,
-        side_mapping: Dict[int, int]=EmptyMapping,
+        side_mapping: MutableMapping[int, int]=EmptyMapping,
     ) -> 'Side':
         """Duplicate this brush side.
 
@@ -1762,6 +1771,8 @@ class Side:
         )
         side_mapping[self.id] = new_side.id
         if self.is_disp:
+            assert self.disp_pos is not None
+            assert self._disp_verts is not None
             new_side.disp_flags = self.disp_flags
             new_side.disp_elevation = self.disp_elevation
             new_side.disp_pos = self.disp_pos.copy()
@@ -1799,6 +1810,8 @@ class Side:
         buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
         buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
         if self.disp_power > 0:
+            assert self._disp_verts is not None
+            assert self.disp_allowed_vert is not None
             buffer.write(ind + '\tdispinfo\n')
             buffer.write(ind + '\t{\n')
 
@@ -1809,11 +1822,11 @@ class Side:
             buffer.write(f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n')
 
             size = self.disp_size
-            self._export_disp_rowset('normals', 'normal', buffer, ind, size),
-            self._export_disp_rowset('distances', 'distance', buffer, ind, size),
-            self._export_disp_rowset('offsets', 'offset', buffer, ind, size),
-            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size),
-            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size),
+            self._export_disp_rowset('normals', 'normal', buffer, ind, size)
+            self._export_disp_rowset('distances', 'distance', buffer, ind, size)
+            self._export_disp_rowset('offsets', 'offset', buffer, ind, size)
+            self._export_disp_rowset('offset_normals', 'offset_norm', buffer, ind, size)
+            self._export_disp_rowset('alphas', 'alpha', buffer, ind, size)
 
             buffer.write(f'{ind}\t\ttriangle_tags\n{ind}\t\t{{\n')
             for y in range(size):
@@ -1847,6 +1860,7 @@ class Side:
 
     def _export_disp_rowset(self, name: str, membr: str, f: IO[str], ind: str, size: int) -> None:
         """Write out one of the displacement vertex arrays."""
+        assert self._disp_verts is not None
         f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
         for y in range(size):
             row = [
@@ -1929,6 +1943,7 @@ class Side:
         self.uaxis = self.uaxis.localise(origin, orient)
         self.vaxis = self.vaxis.localise(origin, orient)
         if self.is_disp:
+            assert self._disp_verts is not None
             for vert in self._disp_verts:
                 vert.offset @= orient
                 vert.normal @= orient
@@ -1943,6 +1958,12 @@ class Side:
         This is a set of 6 verts, representing the two triangles in order.
         See 2013 SDK src/public/builddisp.cpp:896-965.
         """
+        if not self.is_disp:
+            raise ValueError(
+                f'This side (id={self.id}, mat={self.mat}) '
+                'is not a displacement'
+            )
+        assert self._disp_verts is not None
         size = self.disp_size
         if x >= size or y >= size:
             raise IndexError(f'Indexes must be from 0-{size-1}, not ({x}, {y})')
@@ -2052,7 +2073,7 @@ class Entity:
         self,
         des_id: int=-1,
         vmf_file: VMF=None,
-        side_mapping: Dict[int, int]=EmptyMapping,
+        side_mapping: MutableMapping[int, int]=EmptyMapping,
         keep_vis=True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
@@ -2107,9 +2128,9 @@ class Entity:
             if name == "id" and item.value.isnumeric():
                 ent_id = int(item.value)
             elif name.startswith('replace'):
-                index = item.name[-2:]  # Index is the last 2 digits
+                ind_str = name[-2:]  # Index is the last 2 digits
                 try:
-                    index = int(index)
+                    index = int(ind_str)
                 except ValueError:  # Not a replace value!
                     keys[name] = item.value
                 else:
@@ -2323,6 +2344,7 @@ class Entity:
         - A tuple can be passed for the default to be set, inside the
           [] syntax.
         """
+        default: str | T
         if isinstance(key, tuple):
             key, default = key
         else:
@@ -2370,13 +2392,13 @@ class Entity:
             self.map.by_target[str_val].add(self)
         elif key_fold == 'nodeid':
             try:
-                node_id = int(orig_val)
+                node_id = int(orig_val)  # type: ignore  # Using as a cast
             except (TypeError, ValueError):
                 pass
             else:
                 self.map.node_id.discard(node_id)
             try:
-                node_id = int(val)
+                node_id = int(val)  # type: ignore  # Using as a cast
             except (TypeError, ValueError):
                 pass
             else:
@@ -2517,7 +2539,12 @@ class EntityFixup(MutableMapping[str, str]):
             # Add these values wherever they'll fit.
             self[fix.var] = fix.value
 
-    def get(self, var: str, default: T='') -> Union[str, T]:
+    @overload
+    def get(self, var: str) -> str: ...
+    @overload
+    def get(self, var: str, default: Union[str, T]) -> Union[str, T]: ...
+
+    def get(self, var: str, default: Union[str, T]='') -> Union[str, T]:
         """Get the value of an instance $replace variable.
 
         If not found, the default will be returned (an empty string).
@@ -2561,7 +2588,7 @@ class EntityFixup(MutableMapping[str, str]):
         self._fixup.clear()
         self._matcher = None
 
-    def setdefault(self, var: str, default: T=None) -> Union[str, T]:
+    def setdefault(self, var: str, default: Union[ValidKV_T, str]='') -> Union[str, ValidKV_T]:
         """Return $key, but if not present set it to the default and return that."""
         if var[0] == '$':
             var = var[1:]
@@ -2590,11 +2617,13 @@ class EntityFixup(MutableMapping[str, str]):
         else:
             return self.get(key)
 
-    def __contains__(self, var: str) -> builtins.bool:
+    def __contains__(self, var: object) -> builtins.bool:
         """Check if a variable is present in the fixup list."""
-        if var[0] == '$':
-            var = var[1:]
-        return var.casefold() in self._fixup
+        if isinstance(var, str):
+            if var and var[0] == '$':
+                var = var[1:]
+            return var.casefold() in self._fixup
+        return False
 
     def __setitem__(self, var: str, val: ValidKVs) -> None:
         """Set the value of an instance $replace variable."""
@@ -2695,7 +2724,11 @@ class EntityFixup(MutableMapping[str, str]):
         if self._matcher is None:
             # Sort longer values first, so they are checked before smaller
             # counterparts.
-            sections = list(map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True)))
+            sections = [
+                re.escape(key)
+                for key in
+                sorted(self._fixup.keys(), key=len, reverse=True)
+            ]
             # ! maybe, $, any known fixups, then a default any-identifier check.
             self._matcher = re.compile(
                 rf'(!)?\$({"|".join(sections)}|[a-z_][a-z0-9_]*)',
