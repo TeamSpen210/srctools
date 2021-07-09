@@ -338,6 +338,40 @@ class BrushContents(Flag):
     UNUSED_2 = 0x400
 
 
+class StaticPropVersion(Enum):
+    """The detected version for static props.
+
+    Despite the format having version numbers, several engine branches
+    use the same number but have various changes.
+    Thanks to BSPSource for this information.
+    We record the version in the file, and the size of the structure.
+    """
+    def __init__(self, ver: int, size: int) -> None:
+        self.version = ver
+        self.size = size
+
+    # V4 and V5 are used in original HL2 maps.
+    V4 = (4, 56)
+    V5 = (5, 60)  # adds forcedFadeScale
+    V6 = (6, 64)  # Some TF2 maps, adds min/max DX level
+    V7 = (7, 68)  # Old L4D maps, adds rendercolor
+    V8 = (8, 68)  # Main L4D, removes min/max DX, adds min/max GPU and CPU
+    V9 = (9, 72)  # L4D2, adds disableX360.
+    V10 = (10, 76)  # Old CSGO, adds new flags integer
+    V11 = (11, 80)  # New CSGO, with uniform prop scaling.
+
+    # Source 2013, also appears with version 7 but is identical.
+    # Based on v6, adds lightmapped props.
+    V_LIGHTMAP_v7 = (10, 72)
+    V_LIGHTMAP_v10 = (10, 72)
+    V11_MESA  = (11, 76)  # Adds just rendercolor.
+
+    # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
+    UNKNOWN = (0, 0)  # Before prop is read.
+    # All games should recognise this, so switch to this if set to unknown.
+    DEFAULT = V5
+
+
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
@@ -353,7 +387,9 @@ class StaticPropFlags(Flag):
 
     # These are set in the secondary flags section.
     NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
+    NO_LIGHTMAP = 0x100   # In V_LIGHTMAP only, disable per-luxel lighting.
     BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
+    UNKNOWN_FLAG = 0x10000
 
     @property
     def value_prim(self) -> int:
@@ -550,6 +586,7 @@ class BSP:
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
         self.out_comma_sep: Optional[bool] = None
+        self.static_prop_version: StaticPropVersion = StaticPropVersion.UNKNOWN
         # This internally stores the texdata values texinfo refers to. Users
         # don't interact directly, instead they use the create_texinfo / texinfo.set()
         # methods that create the data as required.
