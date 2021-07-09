@@ -29,6 +29,7 @@ from srctools.binformat import (
     DeferredWrites,
     struct_read,
     read_array, write_array,
+    decompress_lzma,
 )
 from srctools.property_parser import Property
 
@@ -657,7 +658,13 @@ class BSP:
                 # Now read in each lump.
                 offset, length = lump_offsets[lump.type]
                 file.seek(offset)
-                lump.data = file.read(length)
+                lump_data = file.read(length)
+                try:
+                    lump_data = decompress_lzma(lump_data)
+                    lump.is_compressed = True
+                except (ValueError, struct.error):
+                    pass
+                lump.data = lump_data
 
             game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
 
@@ -681,11 +688,19 @@ class BSP:
                 # The lump ID is backward..
                 game_lump_id = game_lump_id[::-1]
 
+                lump_data = file.read(file_len)
+                try:
+                    lump_data = decompress_lzma(lump_data)
+                    is_compressed = True
+                except (ValueError, struct.error):
+                    is_compressed = False
+
                 self.game_lumps[game_lump_id] = GameLump(
                     game_lump_id,
                     flags,
                     glump_version,
-                    file.read(file_len),
+                    lump_data,
+                    is_compressed,
                 )
             # This is not valid any longer.
             game_lump.data = b''
@@ -2229,6 +2244,8 @@ class Lump:
     version: int
     ident: bytes
     data: bytes = b''
+    # If true, this is LZMA compressed.
+    is_compressed: bool = False
 
     def __repr__(self) -> str:
         return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
@@ -2249,6 +2266,8 @@ class GameLump:
     flags: int
     version: int
     data: bytes = b''
+    # If true, this is LZMA compressed.
+    is_compressed: bool = False
 
     ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
 

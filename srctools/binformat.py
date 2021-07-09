@@ -1,7 +1,9 @@
 """Common code for handling binary formats."""
 from binascii import crc32
-from struct import Struct
+from struct import Struct, unpack_from
 from typing import IO, List, Hashable, Union
+import lzma
+
 from srctools import Vec
 
 ST_VEC = Struct('fff')
@@ -22,6 +24,10 @@ assert SIZE_INT == 4
 assert SIZE_LONG == 8
 assert SIZE_FLOAT == 4
 assert SIZE_DOUBLE == 8
+
+LZMA_DIC_MIN = (1 << 12)
+ST_LZMA_SOURCE = Struct('<4sII5s')
+ST_LZMA_STANDARD = Struct('<5sq')
 
 
 def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
@@ -162,3 +168,31 @@ class DeferredWrites:
         if self.data:
             raise ValueError(f'Data not specified for keys {list(self.loc)}!')
         self.file.seek(prev_pos)
+
+
+def decompress_lzma(data: bytes, inc_header: bool=False) -> bytes:
+    """Decompress LZMA, with Source's LZMA format.
+
+    This means we have to decode Source's header, then build LZMA's header to
+    allow it to be compressed.
+    If inc_header is true, the header (17 bytes) is included in the compressed
+    size.
+    """
+    if data[:4] != b'LZMA':
+        return data  # Not compressed.
+    real_comp_size = len(data)
+    (sig, uncomp_size, comp_size, properties) = ST_LZMA_SOURCE.unpack_from(data)
+    assert sig == b'LZMA'
+    if not inc_header:
+        real_comp_size -= ST_LZMA_SOURCE.size
+    if real_comp_size != comp_size:
+        raise ValueError(
+            f"File size doesn't match. Got {real_comp_size:,} "
+            f"bytes, expected {comp_size:,} bytes"
+        )
+    # Avoid copying the whole big data buffer multiple times with a bytearray.
+    standard_data = bytearray(ST_LZMA_STANDARD.size + len(data) - ST_LZMA_SOURCE.size)
+    ST_LZMA_STANDARD.pack_into(standard_data, 0, properties, uncomp_size)
+    standard_data[ST_LZMA_STANDARD.size:] = memoryview(data)[17:]
+
+    return lzma.decompress(standard_data, lzma.FORMAT_ALONE)
