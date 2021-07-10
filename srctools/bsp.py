@@ -31,7 +31,8 @@ from srctools.binformat import (
     read_array, write_array,
 )
 from srctools.property_parser import Property
-from srctools.const import SurfFlags, BSPContents as BrushContents
+from srctools.const import SurfFlags, BSPContents as BrushContents, add_unknown
+
 
 __all__ = [
     'BSP_LUMPS', 'VERSIONS',
@@ -295,6 +296,9 @@ class StaticPropFlags(Flag):
     # These are set in the secondary flags section.
     NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
     BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
+
+    # Add _BIT_XX members, so any bit combo can be preserved.
+    add_unknown(locals(), long=True)
 
     @property
     def value_prim(self) -> int:

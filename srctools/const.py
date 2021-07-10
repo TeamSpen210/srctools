@@ -1,5 +1,28 @@
 """Various useful constants and enums."""
 from enum import Enum, Flag
+import operator
+import functools
+import sys
+
+
+def add_unknown(ns: dict, long: bool = False) -> None:
+    """Add dummy members for enums to allow all bits to be set.
+
+    This is useful to allow for some compatibility with unhandled games,
+    so the extra bits are preserved.
+    """
+    # Don't alias bits we already have.
+    used_bits = functools.reduce(
+        operator.or_,
+        # Skip dunder names etc added to the namespace.
+        filter(lambda n: isinstance(n, int), ns.values()),
+    )
+    for i in range(64 if long else 32):
+        bit = 1 << i
+        if not bit & used_bits:
+            # We don't have to stick to var naming rules, so just name it
+            # after the number. Intern so repeated calls share strings.
+            ns[sys.intern(str(i))] = bit
 
 
 class GameID(Enum):
@@ -21,13 +44,13 @@ class GameID(Enum):
     TEAM_FORTRESS_2 = TF2 = '440'
     LEFT_4_DEAD = L4D= '500'
     DOTA_2 = DOTA2 = '570'
-    
+
     PORTAL_2 = P2 = '620'
     APERTURE_TAG = TAG = '280740'
     THINKING_WITH_TIME_MACHINE = TWTM = '286080'
     PORTAL_STORIES_MEL = MEL = '317400'
     REXAURA = '317790'
-    
+
     ALIEN_SWARM = ASW = '630'
     COUNTER_STRIKE_GLOBAL_OFFENSIVE = CSGO = '730'
     SIN_EPISODES_EMERGENCE = '1300'
@@ -72,6 +95,7 @@ class SurfFlags(Flag):
     NO_DECALS = 0x2000  # Rejects decals.
     NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
     HITBOX = 0x8000  # 'Part of a hitbox'
+    add_unknown(locals())
 
 
 class BSPContents(Flag):
@@ -112,5 +136,4 @@ class BSPContents(Flag):
     LADDER = 0x20000000
     HITBOX = 0x40000000
 
-    UNUSED_1 = 0x200
-    UNUSED_2 = 0x400
+    add_unknown(locals())
