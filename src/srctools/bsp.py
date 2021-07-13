@@ -29,7 +29,7 @@ from srctools.binformat import (
     DeferredWrites,
     struct_read,
     read_array, write_array,
-    decompress_lzma,
+    compress_lzma, decompress_lzma,
 )
 from srctools.property_parser import Property
 from srctools.const import SurfFlags, BSPContents as BrushContents, add_unknown
@@ -49,7 +49,7 @@ __all__ = [
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
-HEADER_LUMP = '<3i4s'  # Header section for each lump.
+HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
@@ -380,13 +380,12 @@ class Lump:
     """
     type: BSP_LUMPS
     version: int
-    ident: bytes
     data: bytes = b''
     # If true, this is LZMA compressed.
     is_compressed: bool = False
 
     def __repr__(self) -> str:
-        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
+        return '<BSP Lump {!r}, v{}, {} bytes>'.format(
             self.type.name,
             self.version,
             self.ident,
@@ -1146,27 +1145,28 @@ class BSP:
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                offset, length, version, ident = struct_read(HEADER_LUMP, file)
+                # The 4th value here is originally the fourCC identity, but is
+                # instead used to indicate the unpacked size if compressed.
+                offset, length, version, uncomp_size = struct_read(HEADER_LUMP, file)
                 lump_id = BSP_LUMPS(index)
                 self.lumps[lump_id] = Lump(
                     lump_id,
                     version,
-                    ident,
                 )
-                lump_offsets[lump_id] = offset, length
+                lump_offsets[lump_id] = offset, length, uncomp_size
 
             [self.map_revision] = struct_read(HEADER_2, file)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
-                offset, length = lump_offsets[lump.type]
+                offset, length, uncomp_size = lump_offsets[lump.type]
                 file.seek(offset)
                 lump_data = file.read(length)
-                try:
+                if uncomp_size > 0:
+                    lump.is_compressed = lump_data
                     lump_data = decompress_lzma(lump_data)
-                    lump.is_compressed = True
-                except (ValueError, struct.error):
-                    pass
+                else:
+                    lump.is_compressed = False
                 lump.data = lump_data
 
             game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
@@ -1250,17 +1250,9 @@ class BSP:
 
             file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
 
-            # Write headers.
+            # Write dummy values for the headers.
             for lump_name in BSP_LUMPS:
-                lump = self.lumps[lump_name]
-                defer.defer(lump_name, '<ii')
-                file.write(struct.pack(
-                    HEADER_LUMP,
-                    0,  # offset
-                    0,  # length
-                    lump.version,
-                    lump.ident,
-                ))
+                defer.defer(lump_name, HEADER_LUMP, write=True)
 
             # After lump headers, the map revision...
             file.write(struct.pack(HEADER_2, self.map_revision))
@@ -1294,9 +1286,17 @@ class BSP:
                         file.tell() - lump_start,
                     )
                 else:
-                    # Normal lump.
-                    defer.set_data(lump_name, file.tell(), len(lump.data))
-                    file.write(lump.data)
+                    # Normal lump, pakfiles can't be compressed.
+                    if lump.is_compressed and lump_name is not BSP_LUMPS.PAKFILE:
+                        lump_fourcc = len(lump.data)
+                        lump_data = compress_lzma(lump.data)
+                    else:
+                        lump_data = lump.data
+                        lump_fourcc = 0
+                    defer.set_data(lump_name, file.tell(), len(lump_data), lump.version, lump_fourcc)
+                    file.write(lump_data)
+                    del lump_data  # Discard ASAP if compressed.
+
             # Apply all the deferred writes.
             defer.write()
 
