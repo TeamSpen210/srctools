@@ -661,7 +661,7 @@ class BSP:
                 file.seek(offset)
                 lump_data = file.read(length)
                 if uncomp_size > 0:
-                    lump.is_compressed = lump_data
+                    lump.is_compressed = True
                     lump_data = decompress_lzma(lump_data)
                 else:
                     lump.is_compressed = False
@@ -673,36 +673,59 @@ class BSP:
 
             [lump_count] = struct.unpack_from('<i', game_lump.data)
             lump_offset = 4
-
+            gm_lump_offsets = {}
+            gm_lump_sizes = {}
+            prev_game_lump = b''
+            prev_lump_offset = 0
             for _ in range(lump_count):
                 (
                     game_lump_id,
                     flags,
                     glump_version,
                     file_off,
-                    file_len,
+                    uncomp_size,
                 ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)  # type: bytes, int, int, int, int
                 lump_offset += GameLump.ST.size
-
-                file.seek(file_off)
-
                 # The lump ID is backward..
                 game_lump_id = game_lump_id[::-1]
 
-                lump_data = file.read(file_len)
-                try:
-                    lump_data = decompress_lzma(lump_data)
-                    is_compressed = True
-                except (ValueError, struct.error):
-                    is_compressed = False
+                gm_lump_offsets[game_lump_id] = file_off, uncomp_size
+
+                # Determine the size of the lump by comparing offsets.
+                # This is necessary for compressed lumps, but still works
+                # normally. To allow this BSPs have an extra dummy entry with
+                # this ID which should have an offset value, but it's also
+                # just zero so it's useless. Skip that and use the size of the
+                # lump itself.
+                if game_lump_id == b'\x00\x00\x00\x00':
+                    continue
+
+                if prev_game_lump:
+                    gm_lump_sizes[prev_game_lump] = file_off - prev_lump_offset - 1
+                prev_game_lump = game_lump_id
+                prev_lump_offset = file_off
 
                 self.game_lumps[game_lump_id] = GameLump(
                     game_lump_id,
                     flags,
                     glump_version,
-                    lump_data,
-                    is_compressed,
                 )
+            # Handle the last game lump offset, by comparing to the end of the
+            # whole lump.
+            if prev_game_lump:
+                gm_lump_start, gm_lump_length, _ = lump_offsets[BSP_LUMPS.GAME_LUMP]
+                gm_lump_sizes[prev_game_lump] = gm_lump_start + gm_lump_length - prev_lump_offset
+
+            for gm_lump in self.game_lumps.values():
+                file_off, uncomp_size = gm_lump_offsets[gm_lump.id]
+                file.seek(file_off)
+                if gm_lump.is_compressed:
+                    lump_data = file.read(gm_lump_sizes[gm_lump.id])
+                    print('Decompress: ', gm_lump.id)
+                    gm_lump.data = decompress_lzma(lump_data)
+                else:
+                    gm_lump.data = file.read(uncomp_size)
+
             # This is not valid any longer.
             game_lump.data = b''
 
@@ -757,7 +780,14 @@ class BSP:
                 if lump_name is BSP_LUMPS.GAME_LUMP:
                     # Construct this right here.
                     lump_start = file.tell()
-                    file.write(struct.pack('<i', len(game_lumps)))
+
+                    # The size of each compressed segment is determined
+                    # by checking the offset of the next part. So if
+                    # the last is compressed, we need to add a dummy
+                    # segment to supply the offset.
+                    dummy_segment = game_lumps and game_lumps[-1].is_compressed
+
+                    file.write(struct.pack('<i', len(game_lumps) + dummy_segment))
                     for game_lump in game_lumps:
                         file.write(struct.pack(
                             '<4s HH',
@@ -765,30 +795,51 @@ class BSP:
                             game_lump.flags,
                             game_lump.version,
                         ))
-                        defer.defer(game_lump.id, '<i', write=True)
-                        file.write(struct.pack('<i', len(game_lump.data)))
+                        # Offset, then data length. But we have to compress if
+                        # required.
+                        defer.defer(game_lump.id, '<ii', write=True)
+                    if dummy_segment:
+                        defer.defer(GameLump, '<8xi4x', write=True)
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        defer.set_data(game_lump.id, file.tell())
-                        file.write(game_lump.data)
+                        if game_lump.is_compressed:
+                            print('Compress: ', game_lump.id)
+                            lump_data = compress_lzma(game_lump.data)
+                        else:
+                            lump_data = game_lump.data
+                        defer.set_data(game_lump.id, file.tell(), len(game_lump.data))
+                        file.write(lump_data)
+                        # If compressed, this is a big buffer, so discard asap.
+                        del lump_data
+                        # Put a null byte between each, for reasons.
+                        if game_lump is not game_lumps[-1]:
+                            file.write(b'\0')
+                    if dummy_segment:
+                        # As described above, dummy segment with zero length
+                        # but valid ID.
+                        defer.set_data(GameLump, file.tell())
                     # Length of the game lump is current - start.
+                    # It is never compressed, and is always version 0.
                     defer.set_data(
                         lump_name,
                         lump_start,
                         file.tell() - lump_start,
+                        0, 0,
                     )
                 else:
                     # Normal lump, pakfiles can't be compressed.
                     if lump.is_compressed and lump_name is not BSP_LUMPS.PAKFILE:
                         lump_fourcc = len(lump.data)
+                        print('Compress: ', lump.type)
                         lump_data = compress_lzma(lump.data)
                     else:
                         lump_data = lump.data
                         lump_fourcc = 0
                     defer.set_data(lump_name, file.tell(), len(lump_data), lump.version, lump_fourcc)
                     file.write(lump_data)
-                    del lump_data  # Discard ASAP if compressed.
+                    # If compressed, this is a big buffer, so discard asap.
+                    del lump_data
 
             # Apply all the deferred writes.
             defer.write()
@@ -2266,10 +2317,21 @@ class GameLump:
     flags: int
     version: int
     data: bytes = b''
-    # If true, this is LZMA compressed.
-    is_compressed: bool = False
 
     ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
+
+    @property
+    def is_compressed(self) -> bool:
+        """This flag indicates if the lump was compressed."""
+        return self.flags & 0x1 != 0
+
+    @is_compressed.setter
+    def is_compressed(self, compressed: bool) -> None:
+        """Change if the lump will be compressed when saved."""
+        if compressed:
+            self.flags |= 0x1
+        else:
+            self.flags &= ~0x1
 
     def __repr__(self) -> str:
         return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
