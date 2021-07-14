@@ -8,7 +8,9 @@ from libc.stdio cimport sscanf
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
-cimport cython
+from libcpp.vector cimport vector
+from srctools cimport quickhull
+cimport cython.operator
 
 cdef extern from *:
     const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
@@ -550,8 +552,8 @@ cdef class VecTransform:
         if (
             self.mat is not None and
             self.vec is not None and
-            exc_type is None and 
-            exc_val is None and 
+            exc_type is None and
+            exc_val is None and
             exc_tb is None
         ):
             vec_rot(&self.vec.val, self.mat.mat)
@@ -795,7 +797,7 @@ cdef class Vec:
 
         If round is True, all values will be rounded to 3 decimals
         (since these calculations always have small inprecision.)
-        
+
         This is deprecated - use an Angle and the @ operator.
         """
         cdef vec_t angle
@@ -954,7 +956,7 @@ cdef class Vec:
 
         if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
             return EMPTY_ITER
-        
+
         it.cur_x = it.start_x = int(mins.x)
         it.cur_y = it.start_y = int(mins.y)
         it.cur_z = it.start_z = int(mins.z)
@@ -2448,6 +2450,34 @@ cdef class Angle:
         the angle.
         """
         return AngleTransform.__new__(AngleTransform, self)
+
+
+def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
+    """Use the quickhull algorithm to construct a convex hull around the provided points."""
+    cdef size_t v1, v2, v3, ind
+    cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
+    cdef list vert_list, result
+    cdef Vec vecobj
+    cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()
+
+    for vecobj in vertexes:
+        values.push_back(quickhull.Vector3[double](vecobj.val.x, vecobj.val.y, vecobj.val.z))
+
+    cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
+
+    cdef list vectors = [
+        _vector(v.x, v.y, v.z)
+        for v in result_hull.getVertexBuffer()
+    ]
+    cdef vector[size_t] indices = result_hull.getIndexBuffer()
+    res = []
+    for ind in range(0, indices.size(), 3):
+        v1 = indices[ind + 0]
+        v2 = indices[ind + 1]
+        v3 = indices[ind + 2]
+        res.append((vectors[v1], vectors[v2], vectors[v3]))
+    return res
+
 
 # Override the class' names to match the public one.
 # This fixes all the methods too, though not in exceptions.
