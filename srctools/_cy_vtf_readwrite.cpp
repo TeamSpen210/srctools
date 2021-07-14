@@ -6675,8 +6675,8 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444(__Pyx_memviewslic
  *     cdef Py_ssize_t offset
  *     cdef byte a, b
  *     for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
- *         data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
- *         data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+ *         data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)
+ *         data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)
  */
   {
       #ifdef WITH_THREAD
@@ -6711,24 +6711,24 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444(__Pyx_memviewslic
                             /* "srctools/_cy_vtf_readwrite.pyx":391
  *     cdef byte a, b
  *     for offset in prange(width * height, nogil=True, schedule='static'):
- *         data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)             # <<<<<<<<<<<<<<
- *         data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+ *         data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)             # <<<<<<<<<<<<<<
+ *         data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)
  * 
  */
-                            __pyx_t_4 = ((4 * __pyx_v_offset) + 2);
-                            __pyx_t_5 = ((4 * __pyx_v_offset) + 1);
+                            __pyx_t_4 = ((4 * __pyx_v_offset) + 1);
+                            __pyx_t_5 = ((4 * __pyx_v_offset) + 2);
                             __pyx_t_6 = ((2 * __pyx_v_offset) + 0);
                             *((uint8_t *) ( /* dim=0 */ ((char *) (((uint8_t *) __pyx_v_data.data) + __pyx_t_6)) )) = (((*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_4)) ))) & 240) | ((*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_5)) ))) >> 4));
 
                             /* "srctools/_cy_vtf_readwrite.pyx":392
  *     for offset in prange(width * height, nogil=True, schedule='static'):
- *         data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
- *         data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)             # <<<<<<<<<<<<<<
+ *         data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)
+ *         data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)             # <<<<<<<<<<<<<<
  * 
  * 
  */
-                            __pyx_t_5 = ((4 * __pyx_v_offset) + 0);
-                            __pyx_t_4 = ((4 * __pyx_v_offset) + 3);
+                            __pyx_t_5 = ((4 * __pyx_v_offset) + 3);
+                            __pyx_t_4 = ((4 * __pyx_v_offset) + 0);
                             __pyx_t_6 = ((2 * __pyx_v_offset) + 1);
                             *((uint8_t *) ( /* dim=0 */ ((char *) (((uint8_t *) __pyx_v_data.data) + __pyx_t_6)) )) = (((*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_5)) ))) & 240) | ((*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_4)) ))) >> 4));
                         }
@@ -6748,8 +6748,8 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_bgra4444(__Pyx_memviewslic
  *     cdef Py_ssize_t offset
  *     cdef byte a, b
  *     for offset in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
- *         data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
- *         data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+ *         data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)
+ *         data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)
  */
       /*finally:*/ {
         /*normal exit:*/{
@@ -11294,7 +11294,6 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_10save(CYTHON_UNUSED PyO
  *         FORMATS[index].save(pixels, data, width, height)
  *     else:
  *         raise NotImplementedError(f"Saving {fmt.name} not implemented!")             # <<<<<<<<<<<<<<
- * 
  */
   /*else*/ {
     __pyx_t_1 = PyTuple_New(3); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 793, __pyx_L1_error)

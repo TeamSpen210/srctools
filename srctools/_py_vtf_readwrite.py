@@ -314,8 +314,8 @@ def save_bgra4444(pixels: array.array, data: bytearray, width: int, height: int)
         b = pixels[4 * offset + 2]
         a = pixels[4 * offset + 3]
 
-        data[2 * offset] = (b & 0b11110000) | (g >> 4)
-        data[2 * offset + 1] = (r & 0b11110000) | (a >> 4)
+        data[2 * offset] = (g & 0b11110000) | (b >> 4)
+        data[2 * offset + 1] = (a & 0b11110000) | (r >> 4)
 
 
 def load_bgra5551(pixels: array.array, data: bytes, width: int, height: int) -> None:

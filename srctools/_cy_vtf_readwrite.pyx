@@ -388,8 +388,8 @@ cdef bint save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint
     cdef Py_ssize_t offset
     cdef byte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
-        data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
-        data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+        data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)
+        data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)
 
 
 cdef bint load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
@@ -791,4 +791,3 @@ def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[:
         FORMATS[index].save(pixels, data, width, height)
     else:
         raise NotImplementedError(f"Saving {fmt.name} not implemented!")
-
