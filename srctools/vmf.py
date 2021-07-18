@@ -468,7 +468,7 @@ class VMF:
                 tree = Property.parse(file)
 
         map_info = {}
-        ver_info = tree.find_key('versioninfo', [])
+        ver_info = tree.find_block('versioninfo', or_blank=True)
         for key in ('editorversion',
                     'mapversion',
                     'editorbuild',
@@ -481,9 +481,9 @@ class VMF:
             raise Exception(
                 'Unknown VMF format version " ' +
                 map_info['formatversion'] + '"!'
-                )
+            )
 
-        view_opt = tree.find_key('viewsettings', [])
+        view_opt = tree.find_block('viewsettings', or_blank=True)
         view_dict = {
             'bSnapToGrid': 'snaptogrid',
             'bShowGrid': 'showgrid',
@@ -494,12 +494,12 @@ class VMF:
         for key in view_dict:
             map_info[view_dict[key]] = view_opt[key, '']
 
-        cordons = tree.find_key('cordons', [])
+        cordons = tree.find_block('cordons', or_blank=True)
         map_info['cordons_on'] = cordons['active', '0']
 
-        cam_props = tree.find_key('cameras', [])
+        cam_props = tree.find_block('cameras', or_blank=True)
         map_info['active_cam'] = cam_props['activecamera', '-1']
-        map_info['quickhide'] = tree.find_key('quickhide', [])['count', '']
+        map_info['quickhide'] = tree.find_block('quickhide', or_blank=True)['count', '']
 
         # We have to create an incomplete map before parsing any data.
         # This ensures the IDman objects have been created, so we can
@@ -528,7 +528,7 @@ class VMF:
                     Entity.parse(map_obj, ent, hidden=True)
                 )
 
-        map_spawn = tree.find_key('world', [])
+        map_spawn = tree.find_block('world', or_blank=True)
         if map_spawn is None:
             # Generate a fake default to parse through
             map_spawn = Property("world", [])
@@ -984,7 +984,7 @@ class Cordon:
         """Parse a cordon from the VMF file."""
         name = tree['name', 'cordon']
         is_active = tree.bool('active', False)
-        bounds = tree.find_key('box', [])
+        bounds = tree.find_block('box', or_blank=True)
         min_ = bounds.vec('mins', 0, 0, 0)
         max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
@@ -2822,7 +2822,7 @@ class EntityGroup:
     @classmethod
     def parse(cls, vmf_file: VMF, props: Property) -> 'EntityGroup':
         """Parse an entity group from the VMF file."""
-        editor_block = props.find_key('editor', [])
+        editor_block = props.find_block('editor', or_blank=True)
         return cls(
             vmf_file,
             props.int('id', -1),
