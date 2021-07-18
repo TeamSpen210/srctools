@@ -1,5 +1,5 @@
 # Explicitly include the C/C++ sources, for cythonless installs.
-global-include *.c *.cpp *.h
+global-include *.c *.cpp *.h *.hpp
 # Include test samples
 graft srctools\test
 # Then remove pycache folder that included.
