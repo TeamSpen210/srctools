@@ -1,11 +1,11 @@
 """Parse FGD files, used to describe Hammer entities."""
-import itertools
 from copy import deepcopy
 from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
-
+from functools import partial
+import itertools
 import io
 import math
 
@@ -14,8 +14,10 @@ from typing import (
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO, Any,
+    TextIO, Container, IO, Any, ClassVar,
 )
+
+import attr
 
 import srctools
 from srctools.filesys import FileSystem, File
@@ -60,6 +62,8 @@ _fmt_ent_header = Struct('<BBBBBB')
 BIN_FORMAT_VERSION = 5
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
+T = TypeVar('T')
+
 
 class FGDParseError(TokenSyntaxError):
     """Raised if the FGD contains invalid syntax."""
@@ -576,11 +580,11 @@ class Helper:
     This should not be instantiated, only subclasses in _fgd_helpers.
     """
     # The HelperType which this implements.
-    TYPE = None  # type: HelperTypes
-    IS_EXTENSION = False  # true for our extensions to the format.
+    TYPE: ClassVar[Optional[HelperTypes]] = None
+    IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'Helper':
+    def parse(cls: Type['HelperT'], args: List[str]) -> 'HelperT':
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
@@ -624,7 +628,7 @@ class Helper:
 HelperT = TypeVar('HelperT', bound=Helper)
 # Each helper type -> the class implementing them.
 # We fill this at the end of the module.
-HELPER_IMPL = {}  # type: Dict[HelperTypes, Type[Helper]]
+HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 
 
 def _init_helper_impl() -> None:
@@ -646,6 +650,7 @@ del _init_helper_impl
 from srctools._fgd_helpers import *
 
 
+@attr.define(order=True, hash=True, eq=True)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -653,48 +658,15 @@ class AutoVisgroup:
     We put all the groups into a single dictionary, and on each specify the name
     of the parent. Note they're case-sensitive, and can include punctuation.
     """
-    def __init__(self, name: str, parent: str) -> None:
-        self.name = name
-        self.parent = parent
-        self.ents = set()  # type: Set[str]
+    name: str
+    parent: str = attr.ib(hash=False, eq=False, order=False)
+    ents: Set[str] = attr.ib(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
         return '<AutoVisgroup "{}">'.format(self.name)
 
-    def __hash__(self) -> int:
-        return hash(self.name)
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name == other.name
-        return NotImplemented
-
-    def __ne__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name != other.name
-        return NotImplemented
-
-    def __lt__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name < other.name
-        return NotImplemented
-
-    def __gt__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name > other.name
-        return NotImplemented
-
-    def __le__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name <= other.name
-        return NotImplemented
-
-    def __ge__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name >= other.name
-        return NotImplemented
-
-
+@attr.define
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -702,56 +674,18 @@ class KeyValues:
     * For choices it's a list of (value, name, tags) tuples.
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
-    __slots__ = [
-        'name', 'type', 'default',
-        'disp_name', 'desc', 'val_list',
-        'readonly', 'reportable',
-    ]
-    def __init__(
-        self,
-        name: str,
-        val_type: ValueTypes,
-        disp_name: str,
-        default: str,
-        doc: str,
-        val_list: Union[
-            None,
-            List[Tuple[int, str, bool, FrozenSet[str]]],
-            List[Tuple[str, str, FrozenSet[str]]],
-        ],
-        is_readonly: bool=False,
-        show_in_report: bool=False,
-    ):
-        self.name = name
-        self.type = val_type
-        self.default = default
-        self.disp_name = disp_name
-        self.desc = doc
-        self.val_list = val_list
-        self.readonly = is_readonly
-        self.reportable = show_in_report
-
-    def __repr__(self) -> str:
-        return (
-            'KeyValues({s.name!r}, {s.type!r}, '
-            '{s.disp_name!r}, {s.default!r}, '
-            '{s.desc!r}, {s.val_list!r}, '
-            '{s.readonly}, {s.reportable})'.format(s=self)
-        )
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, KeyValues):
-            return (
-                self.name == other.name
-                and self.type is other.type
-                and self.disp_name == other.disp_name
-                and self.default == other.default
-                and self.desc == other.desc
-                and self.val_list == other.val_list
-                and self.readonly is other.readonly
-                and self.reportable is other.reportable
-            )
-        return NotImplemented
+    name: str
+    type: ValueTypes
+    disp_name: str
+    default: str = ''
+    desc: str = ''
+    val_list: Union[
+        None,
+        List[Tuple[int, str, bool, FrozenSet[str]]],
+        List[Tuple[str, str, FrozenSet[str]]],
+    ] = None
+    readonly: bool = False
+    reportable: bool = False
 
     def copy(self) -> 'KeyValues':
         """Create a duplicate of this keyvalue."""
@@ -948,15 +882,14 @@ class KeyValues:
         )
 
 
+@attr.define
 class IODef:
     """Represents an input or output for an entity."""
-    __slots__ = ['name', 'type', 'desc']
-    def __init__(self, name, val_type: ValueTypes, description: str=''):
-        self.name = name
-        self.type = val_type
-        self.desc = description
+    name: str
+    type: ValueTypes
+    desc: str = ''
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         txt = '{}({!r}, {!r}'.format(
             self.__class__.__name__,
             self.name,
@@ -974,15 +907,6 @@ class IODef:
 
     def __deepcopy__(self, memodict: dict) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, IODef):
-            return (
-                self.name == other.name
-                and self.type == other.type
-                and self.desc == other.desc
-            )
-        return NotImplemented
 
     def export(
         self,
@@ -1029,16 +953,13 @@ class IODef:
         return IODef(name, value_type)
 
 
-T = TypeVar('T')
-
 
 class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
     __slots__ = ['_ent', '_attr', '_disp_attr',]
 
     # Note, we expect the maps to have casefolded their keys.
-
-    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str):
+    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str) -> None:
         self._ent = ent
         self._attr = attr_name
         self._disp_attr = disp_name
@@ -1072,7 +993,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
             search_tags = None
         elif isinstance(name, tuple):
             name, search_tags = name
-            search_tags = frozenset({t.casefold() for t in search_tags})
+            search_tags = frozenset({t.upper() for t in search_tags})
         else:
             raise TypeError(
                 'Expected str or (str, Iterable[str]), '
@@ -1122,29 +1043,39 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
 del _EntityView.__slots__
 
 
+@attr.define(slots=False, eq=False)
 class EntityDef:
     """A definition for an entity."""
-    def __init__(self, typ: EntityTypes) -> None:
-        self.type = typ
-        self.classname = ''
-        # These are (name) -> {tags} -> value dicts.
-        self.keyvalues = {}  # type: Dict[str, Dict[FrozenSet[str], KeyValues]]
-        self.inputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
-        self.outputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
+    type: EntityTypes
+    classname: str = ''
 
-        # Keyvalues have an order. If not present in here,
-        # they appear at the end.
-        self.kv_order = []  # type: List[str]
+    # These are (name) -> {tags} -> value dicts.
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attr.Factory(dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
 
-        # Base type names - base()
-        self.bases = []  # type: List[Union[EntityDef, str]]
-        self.helpers = []  # type: List[Helper]
-        self.desc = ''
+    # Keyvalues have an order. If not present in here,
+    # they appear at the end.
+    kv_order: List[str] = attr.Factory(list)
 
-        # Views for accessing data among all the entities.
-        self.kv: _EntityView[KeyValues] = _EntityView(self, 'keyvalues', 'kv')
-        self.inp: _EntityView[IODef] = _EntityView(self, 'inputs', 'inp')
-        self.out: _EntityView[IODef] = _EntityView(self, 'outputs', 'out')
+    # Base type names - base()
+    bases: List[Union['EntityDef', str]] = attr.Factory(list)
+    helpers: List[Helper] = attr.Factory(list)
+    desc: str = ''
+
+    # Views for accessing data among all the entities.
+    kv: _EntityView[KeyValues] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
+        takes_self=True,
+    ))
+    inp: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='inputs', disp_name='inp'),
+        takes_self=True,
+    ))
+    out: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='outputs', disp_name='out'),
+        takes_self=True,
+    ))
 
     @classmethod
     def parse(
