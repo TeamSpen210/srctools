@@ -4062,12 +4062,12 @@ static CYTHON_INLINE __pyx_ctuple_uint8_t__and_uint8_t __pyx_f_8srctools_17_cy_v
   /* "srctools/_cy_vtf_readwrite.pyx":193
  *     """Compress RGB triplets into 565-packed data."""
  *     return (
- *         (r & 0b11111000) | (g >> 5),             # <<<<<<<<<<<<<<
- *         (g << 5) & 0b11100000 | (b >> 3)
+ *         (g << 3) & 0b11100000 | (b >> 3),             # <<<<<<<<<<<<<<
+ *         (r & 0b11111000) | (g >> 5),
  *     )
  */
-  __pyx_t_1.f0 = ((__pyx_v_r & 248) | (__pyx_v_g >> 5));
-  __pyx_t_1.f1 = (((__pyx_v_g << 5) & 224) | (__pyx_v_b >> 3));
+  __pyx_t_1.f0 = (((__pyx_v_g << 3) & 224) | (__pyx_v_b >> 3));
+  __pyx_t_1.f1 = ((__pyx_v_r & 248) | (__pyx_v_g >> 5));
   __pyx_r = __pyx_t_1;
   goto __pyx_L0;
 

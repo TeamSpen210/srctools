@@ -190,8 +190,8 @@ cdef inline RGB decomp565(byte a, byte b) nogil:
 cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
     """Compress RGB triplets into 565-packed data."""
     return (
+        (g << 3) & 0b11100000 | (b >> 3),
         (r & 0b11111000) | (g >> 5),
-        (g << 5) & 0b11100000 | (b >> 3)
     )
 
 

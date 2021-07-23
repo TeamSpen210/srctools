@@ -93,8 +93,8 @@ def compress565(r: int, g: int, b: int) -> Tuple[int, int]:
     """Compress an RGB triplet into 565-packed data."""
     # RRRRRGGG GGGBBBBB
     return (
+        (g << 3) & 0b11100000 | (b >> 3),
         (r & 0b11111000) | (g >> 5),
-        (g << 5) & 0b11100000 | (b >> 3)
     )
 
 
