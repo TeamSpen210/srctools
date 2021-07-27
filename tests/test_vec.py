@@ -1,9 +1,9 @@
 """Test the Vector object."""
 import pickle
 import copy
-
 import operator as op
 from pathlib import Path
+from random import Random
 
 import pytest
 from helpers import *
@@ -1190,3 +1190,30 @@ def test_vec_in_bbox(
     assert Vec(x, y, z).in_bbox(Vec(a.x, b.y, a.z), Vec(b.x, a.y, b.z)) is valid
     assert Vec(x, y, z).in_bbox(Vec(a.x, a.y, b.z), Vec(b.x, b.y, a.z)) is valid
     assert Vec(x, y, z).in_bbox(b, a) is valid
+
+
+@pytest.mark.parametrize('zoff', [-2.0, -1.1, -0.9, +0.9, +1.1, +2.0])
+@pytest.mark.parametrize('yoff', [-2.0, -1.1, -0.9, +0.9, +1.1, +2.0])
+@pytest.mark.parametrize('xoff', [-2.0, -1.1, -0.9, +0.9, +1.1, +2.0])
+def test_bbox_intersect(py_c_vec: PyCVec, xoff: float, yoff: float, zoff: float) -> None:
+    """Test Vec.bbox_intersect()."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    rand = Random(2368)  # Ensure reproducibility.
+    pos_a = Vec(rand.randint(-100, 100), rand.randint(-100, 100), rand.randint(-100, 100))
+    dims_a = Vec(rand.randint(10, 20), rand.randint(10, 20), rand.randint(10, 20))
+    dims_b = Vec(rand.randint(10, 20), rand.randint(10, 20), rand.randint(10, 20))
+
+    # Compute offset, so -1 = touching, 0 = centered, etc.
+    pos_b = pos_a + Vec(
+        xoff * (dims_a.x + dims_b.x),
+        yoff * (dims_a.y + dims_b.y),
+        zoff * (dims_a.z + dims_b.z),
+    )
+    intersect = (-1 <= xoff <= +1) and (-1 <= yoff <= +1) and (-1 <= zoff <= +1)
+    a1 = pos_a - dims_a
+    a2 = pos_a + dims_a
+    b1 = pos_b - dims_b
+    b2 = pos_b + dims_b
+    # Commutative.
+    assert Vec.bbox_intersect(a1, a2, b1, b2) is intersect
+    assert Vec.bbox_intersect(b1, b2, a1, a2) is intersect

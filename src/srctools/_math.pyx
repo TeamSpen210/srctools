@@ -1034,6 +1034,15 @@ cdef class Vec:
             avec.z <= self.val.z <= bvec.z
         )
 
+    @staticmethod
+    def bbox_intersect(min1: Vec, max1: Vec, min2: Vec, max2: Vec) -> bool:
+        """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
+        return not (
+            max1.val.x < min2.val.x or max2.val.x < min1.val.x or
+            max1.val.y < min2.val.y or max2.val.y < min1.val.y or
+            max1.val.z < min2.val.z or max2.val.z < min1.val.z
+        )
+
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the

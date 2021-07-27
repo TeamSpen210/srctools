@@ -976,6 +976,17 @@ class Vec(SupportsRound['Vec']):
             min(a[2], b[2]) <= self.z <= max(a[2], b[2])
         )
 
+    @staticmethod
+    def bbox_intersect(min1: 'Vec', max1: 'Vec', min2: 'Vec', max2: 'Vec') -> bool:
+        """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
+        if max1.x < min2.x or max2.x < min1.x:
+            return False
+        if max1.y < min2.y or max2.y < min1.y:
+            return False
+        if max1.z < min2.z or max2.z < min1.z:
+            return False
+        return True
+
     def other_axes(self, axis: str) -> Tuple[float, float]:
         """Get the values for the other two axes."""
         if axis == 'x':
