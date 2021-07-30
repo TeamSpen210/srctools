@@ -403,13 +403,12 @@ def to_matrix(value) -> Matrix:
 @cython.final
 @cython.internal
 cdef class VecIter:
-    """Implements iter(Vec)."""
-    cdef Vec vec
+    """Implements Vec/Angle iteration."""
     cdef uint_fast8_t index
+    cdef double a, b, c
 
-    def __cinit__(self, Vec vec not None):
-        self.vec = vec
-        self.index = 0
+    def __cinit__(self):
+        self.index = self.a = self.b = self.c = 0
 
     def __iter__(self) -> VecIter:
         return self
@@ -419,14 +418,11 @@ cdef class VecIter:
             raise StopIteration
         self.index += 1
         if self.index == 1:
-            return self.vec.val.x
+            return self.a
         elif self.index == 2:
-            return self.vec.val.y
+            return self.b
         elif self.index == 3:
-            # Drop our reference.
-            ret = self.vec.val.z
-            self.vec = None
-            return ret
+            return self.c
 
 
 @cython.final
@@ -503,35 +499,6 @@ cdef class VecIterLine:
             self.cur_off += self.stride
 
         return vec
-
-
-@cython.final
-@cython.internal
-cdef class AngleIter:
-    """Implements iter(Angle)."""
-    cdef Angle ang
-    cdef uint_fast8_t index
-
-    def __cinit__(self, Angle ang not None):
-        self.ang = ang
-        self.index = 0
-
-    def __iter__(self) -> AngleIter:
-        return self
-
-    def __next__(self) -> Angle:
-        if self.index == 3:
-            raise StopIteration
-        self.index += 1
-        if self.index == 1:
-            return self.ang.val.x
-        elif self.index == 2:
-            return self.ang.val.y
-        elif self.index == 3:
-            # Drop our reference.
-            ret = self.ang.val.z
-            self.ang = None
-            return ret
 
 
 @cython.final
@@ -1504,12 +1471,8 @@ cdef class Vec:
         return False
 
     def __len__(self):
-        """The len() of a vector is the number of non-zero axes."""
-        return (
-            (abs(self.val.x) > TOL) +
-            (abs(self.val.y) > TOL) +
-            (abs(self.val.z) > TOL)
-        )
+        """The len() of a vector is always 3."""
+        return 3
 
     # All the comparisons are similar, so we can use richcmp to
     # nicely combine the parsing code.
@@ -1720,7 +1683,18 @@ cdef class Vec:
         return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
 
     def __iter__(self) -> VecIter:
-        return VecIter.__new__(VecIter, self)
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.x
+        viter.b = self.val.y
+        viter.c = self.val.z
+        return viter
+
+    def __reversed__(self):
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.z
+        viter.b = self.val.y
+        viter.c = self.val.x
+        return viter
 
     def __getitem__(self, ind_obj) -> float:
         """Allow reading values by index instead of name if desired.
@@ -2235,9 +2209,25 @@ cdef class Angle:
         """Return the Angle as a tuple."""
         return Vec_tuple(self.val.x, self.val.y, self.val.z)
 
-    def __iter__(self) -> AngleIter:
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
+    def __iter__(self) -> VecIter:
         """Iterating over the angles returns each value in turn."""
-        return AngleIter.__new__(AngleIter, self)
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.x
+        viter.b = self.val.y
+        viter.c = self.val.z
+        return viter
+
+    def __reversed__(self) -> VecIter:
+        """Iterating over the angles returns each value in turn."""
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.z
+        viter.b = self.val.y
+        viter.c = self.val.x
+        return viter
 
 
     @classmethod
@@ -2487,10 +2477,9 @@ if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
-    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
-    (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
-    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math._Vec_line_iterator"
     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
 try:

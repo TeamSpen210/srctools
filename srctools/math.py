@@ -874,6 +874,12 @@ class Vec(SupportsRound['Vec']):
         yield self.y
         yield self.z
 
+    def __reversed__(self) -> Iterator[float]:
+        """Allow iterating through the dimensions, in reverse."""
+        yield self.z
+        yield self.y
+        yield self.x
+
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
 
@@ -930,12 +936,8 @@ class Vec(SupportsRound['Vec']):
         return self.x**2 + self.y**2 + self.z**2
 
     def __len__(self) -> int:
-        """The len() of a vector is the number of non-zero axes."""
-        return (
-            (abs(self.x) > 1e-6) +
-            (abs(self.y) > 1e-6) +
-            (abs(self.z) > 1e-6)
-        )
+        """The len() of a vector is always 3."""
+        return 3
 
     def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value.
@@ -1517,11 +1519,21 @@ class Angle:
         """Return the Angle as a tuple."""
         return Vec_tuple(self._pitch, self._yaw, self._roll)
 
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
     def __iter__(self) -> Iterator[float]:
         """Iterating over the angles returns each value in turn."""
         yield self._pitch
         yield self._yaw
         yield self._roll
+
+    def __reversed__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._roll
+        yield self._yaw
+        yield self._pitch
 
     @classmethod
     @overload

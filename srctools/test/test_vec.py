@@ -230,6 +230,38 @@ def test_contains(py_c_vec: PyCVec):
             assert (num in Vec(x, y, z)) == (num in [x, y, z])
 
 
+def test_iteration(py_c_vec: PyCVec):
+    """Test vector iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Vec(45.0, 50, 65)
+    it = iter(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 45.0
+    assert next(it) == 50.0
+    assert next(it) == 65.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_rev_iteration(py_c_vec: PyCVec):
+    """Test reversed iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Vec(45.0, 50, 65)
+    it = reversed(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 65.0
+    assert next(it) == 50.0
+    assert next(it) == 45.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
 def test_scalar(py_c_vec: PyCVec):
     """Check that Vec() + 5, -5, etc does the correct thing.
 
@@ -311,6 +343,8 @@ def test_vec_props(py_c_vec: PyCVec, axis: str, index: int, u: str, v: str, u_ax
     """Test the X/Y/Z attributes and item access."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     vec = Vec()
+    # Should be constant.
+    assert len(vec) == 3
 
     def check(targ: float, other: float):
         """Check all the indexes are correct."""
@@ -525,7 +559,7 @@ def test_vector_mult_fail(py_c_vec):
                 with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
-                
+
                 with raises_typeerror:
                     divmod(Vec(0, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
@@ -689,25 +723,6 @@ def test_bool(py_c_vec):
         assert Vec(val, -0, val)
         assert Vec(val, val, 0)
         assert Vec(val, val, val)
-
-
-def test_len(py_c_vec):
-    """Test len(Vec)."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-
-    # len(Vec) is the number of non-zero axes.
-
-    assert len(Vec(0, 0, 0)) == 0
-    assert len(Vec(-0, -0, -0)) == 0
-
-    for val in VALID_NUMS:
-        assert len(Vec(val, 0, -0)) == 1
-        assert len(Vec(0, val, 0)) == 1
-        assert len(Vec(0, -0, val)) == 1
-        assert len(Vec(0, val, val)) == 2
-        assert len(Vec(val, 0, val)) == 2
-        assert len(Vec(val, val, -0)) == 2
-        assert len(Vec(val, val, val)) == 3
 
 
 def test_iter_line(py_c_vec):
