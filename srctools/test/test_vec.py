@@ -19,14 +19,17 @@ raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
 
-def test_matching_apis() -> None:
+@pytest.mark.parametrize('cls', ['Vec', 'Matrix', 'Angle'])
+def test_matching_apis(cls: str) -> None:
     """Check each class pair has the same methods."""
-    def get_public(typ: type) -> set:
-        """Skip __dunder__ and _private attrs."""
-        return {name for name in vars(typ) if not name.startswith('_')}
-    assert get_public(vec_mod.Cy_Vec) == get_public(vec_mod.Py_Vec)
-    assert get_public(vec_mod.Cy_Matrix) == get_public(vec_mod.Py_Matrix)
-    assert get_public(vec_mod.Cy_Angle) == get_public(vec_mod.Py_Angle)
+    py_type = getattr(vec_mod, 'Py_' + cls)
+    cy_type = getattr(vec_mod, 'Cy_' + cls)
+    if py_type is cy_type:
+        pytest.fail(f'No Cython version of {cls}!')
+    # Skip dunder and private attributes, not part of the api.
+    py_attrs = {name for name in vars(py_type) if not name.startswith('_')}
+    cy_attrs = {name for name in vars(cy_type) if not name.startswith('_')}
+    assert cy_attrs == py_attrs
 
 
 @parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
@@ -45,7 +48,7 @@ def test_lerp(lerp_func) -> None:
 
 def test_construction(py_c_vec):
     """Check various parts of the constructor.
-    
+
     This tests Vec(), Vec.from_str() and parse_vec_str().
     """
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -168,7 +171,7 @@ def test_with_axes(py_c_vec: PyCVec):
             continue
         for x, y, z in iter_vec(VALID_ZERONUMS):
             vec = Vec.with_axes(a, x, b, y, c, z)
-            msg = '{} = {}={}, {}={}, {}={}'.format(vec, a, x, b, y, c, z)
+            msg = f'{vec} = {a}={x}, {b}={y}, {c}={z}'
             assert vec[a] == x, msg
             assert vec[b] == y, msg
             assert vec[c] == z, msg
