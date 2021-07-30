@@ -670,9 +670,9 @@ class HelperLightSpotBlackMesa(Helper):
     """A new helper for Black Mesa's new spot entity."""
     TYPE: ClassVar = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
 
-    theta_kv: str
-    phi_kv: str
-    color_kv: str
+    theta: str
+    phi: str
+    color: str
 
     @classmethod
     def parse(cls, args: List[str]) -> 'Helper':
