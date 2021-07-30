@@ -678,9 +678,9 @@ class HelperLightSpotBlackMesa(Helper):
     """A new helper for Black Mesa's new spot entity."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
 
-    theta: str
-    phi: str
-    color: str
+    theta_kv: str
+    phi_kv: str
+    color_kv: str
 
     @classmethod
     def parse(cls: Type['HelperLightSpotBlackMesa'], args: List[str]) -> 'HelperLightSpotBlackMesa':
@@ -695,11 +695,30 @@ class HelperLightSpotBlackMesa(Helper):
         """Produce the arguments for iconsprite()."""
         return [self.theta, self.phi, self.color]
 
-
+@attr.define
 class HelperRope(Helper):
     """Specialized helper for displaying move_rope and keyframe_rope."""
+
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_ROPE
 
+    name_kv: str
+    
+    @classmethod
+    def parse(cls, args: List[str]) -> 'Helper':
+        """Parse keyframe(name)."""
+        if len(args) > 1:
+            raise ValueError(
+                'Expected 1 arguments, got ({})!'.format(args)
+            )
+        if len(args) == 0:
+            return cls(None)
+        return cls(args[0])
+
+    def export(self) -> List[str]:
+        """Produce the arguments for iconsprite()."""
+        if not self.name_kv:
+            return []
+        return [self.name_kv]
 
 class HelperTrack(Helper):
     """Specialized helper for path_track-style entities.
