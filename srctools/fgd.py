@@ -10,11 +10,11 @@ import io
 import math
 
 from typing import (
-    Optional, Union, overload, cast,
+    Optional, Union, overload, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO, Any, ClassVar,
+    TextIO, Container, IO
 )
 
 import attr
@@ -32,7 +32,7 @@ except ImportError:
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'AutoVisgroup',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
     'match_tags', 'validate_tags',
 
     # From srctools._fgd_helpers
@@ -625,6 +625,19 @@ class Helper:
         return self.TYPE is not other.TYPE or vars(self) != vars(other)
 
 
+class UnknownHelper(Helper):
+    """Represents an unknown helper."""
+    TYPE = None
+    def __init__(self, name: str, args: List[str]) -> None:
+        """Unknown helpers have a name attribute."""
+        self.name = name
+        self.args = args
+
+    def export(self) -> List[str]:
+        """Produce the argument text to recreate this helper type."""
+        return self.args[:]
+
+
 HelperT = TypeVar('HelperT', bound=Helper)
 # Each helper type -> the class implementing them.
 # We fill this at the end of the module.
@@ -1090,7 +1103,8 @@ class EntityDef:
 
         # First parse the bases part - lots of name(args) sections until an '='.
         ext_autovisgroups = []  # type: List[List[str]]
-        help_type = None
+        help_type: Optional[HelperTypes] = None
+        help_type_cust: Optional[str] = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
                 continue
@@ -1099,10 +1113,7 @@ class EntityDef:
                     try:
                         help_type = HelperTypes(token_value)
                     except ValueError:
-                        raise tok.error(
-                            'Unknown HelperType "{}"!',
-                            token_value,
-                        )
+                        help_type_cust = token_value
                 else:
                     # No arguments for the previous helper, add it in.
                     try:
@@ -1118,7 +1129,7 @@ class EntityDef:
                 continue
 
             elif token is Token.PAREN_ARGS:
-                if help_type is None:
+                if help_type is None and help_type_cust is None:
                     raise tok.error('Args without helper type! ({!r})', token_value)
 
                 args = [
@@ -1130,33 +1141,31 @@ class EntityDef:
                 if len(args) == 1 and args[0] == '':
                     args.clear()
 
-                if help_type is HelperTypes.INHERIT:
+                if help_type_cust is not None:
+                    entity.helpers.append(UnknownHelper(help_type_cust, args))
+                elif help_type is HelperTypes.INHERIT:
                     for base in args:
                         if eval_bases:
                             base = fgd[base]
                         if base not in entity.bases:
                             entity.bases.append(base)
-                    help_type = None
-                    continue
                 elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
                     if len(args) > 0 and args[0].casefold() != 'auto':
                         args.insert(0, 'Auto')
                     if len(args) < 2:
                         raise tok.error('autovis() requires 2 or more arguments!')
                     ext_autovisgroups.append(args)
-                    help_type = None
-                    continue
+                else:
+                    try:
+                        entity.helpers.append(HELPER_IMPL[help_type].parse(args))
+                    except (TypeError, ValueError) as exc:
+                        raise tok.error(
+                            'Invalid helper arguments for {}():\n',
+                            help_type.value,
+                            '\n'.join(map(str, exc.args)),
+                        ) from exc
 
-                try:
-                    entity.helpers.append(HELPER_IMPL[help_type].parse(args))
-                except (TypeError, ValueError) as exc:
-                    raise tok.error(
-                        'Invalid helper arguments for {}():\n',
-                        help_type.value,
-                        '\n'.join(map(str, exc.args)),
-                    ) from exc
-
-                help_type = None
+                help_type = help_type_cust = None
 
             elif token is Token.EQUALS:
                 break
@@ -1167,7 +1176,9 @@ class EntityDef:
 
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
-        if help_type:
+        if help_type_cust is not None:
+            entity.helpers.append(UnknownHelper(help_type_cust, []))
+        elif help_type:
             if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
                 raise tok.error('{}() requires at least one argument!', help_type.value)
             try:
@@ -1506,11 +1517,21 @@ class EntityDef:
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
 
-    def get_helpers(self, typ: HelperT) -> Iterator[HelperT]:
+    @overload
+    def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
+    @overload
+    def get_helpers(self, typ: str) -> Iterator[UnknownHelper]: ...
+
+    def get_helpers(self, typ: Union[HelperT, str]) -> Iterator[Helper]:
         """Find all helpers with this specific type."""
-        for helper in self.helpers:
-            if helper.TYPE == typ.TYPE:
-                yield cast(HelperT, helper)
+        if isinstance(typ, str):
+            for helper in self.helpers:
+                if isinstance(helper, UnknownHelper) and helper.name == typ:
+                    yield helper
+        else:
+            for helper in self.helpers:
+                if helper.TYPE == typ.TYPE:
+                    yield helper
 
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
@@ -1563,6 +1584,8 @@ class EntityDef:
             if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
+            elif isinstance(helper, UnknownHelper):
+                file.write('\n\t{}({})'.format(helper.name, ', '.join(args)))
             else:
                 file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
             if isinstance(helper, HelperExtOrderBy):
