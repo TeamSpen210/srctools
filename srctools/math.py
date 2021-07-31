@@ -1314,12 +1314,7 @@ class Matrix:
         mat._ca, mat._cb, mat._cc = z.norm()
         return mat
 
-    @overload
-    def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
-    @overload
-    def __matmul__(self, other: 'Angle') -> 'Matrix': ...
-
-    def __matmul__(self, other: 'Matrix | Angle') -> 'Matrix':
+    def __matmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             mat = self.copy()
             mat._mat_mul(other)
@@ -1332,13 +1327,13 @@ class Matrix:
             return NotImplemented
 
     @overload
-    def __rmatmul__(self, other: Vec) -> Vec: ...
+    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
 
-    def __rmatmul__(self, other):
+    def __rmatmul__(self, other: object) -> object:
         if isinstance(other, Py_Vec):
             result = other.copy()
             self._vec_rot(result)
@@ -1354,12 +1349,7 @@ class Matrix:
         else:
             return NotImplemented
 
-    @overload
-    def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
-    @overload
-    def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
-
-    def __imatmul__(self, other: 'Matrix | Angle') -> 'Matrix':
+    def __imatmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
