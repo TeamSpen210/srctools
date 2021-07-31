@@ -8,6 +8,7 @@ from functools import partial
 import itertools
 import io
 import math
+import operator
 
 from typing import (
     Optional, Union, overload, ClassVar, Any,
@@ -158,10 +159,10 @@ class ValueTypes(Enum):
         }
 
 
-VALUE_TYPE_LOOKUP = {
+VALUE_TYPE_LOOKUP: Dict[str, ValueTypes] = {
     typ.value: typ
     for typ in ValueTypes
-} # type: Dict[str, ValueTypes]
+}
 # These have two names pointing to the same type...
 VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
 VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
@@ -169,10 +170,10 @@ VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
 # In I/O definitions, types are constrained.
 # So this is the most appropriate type to use instead for all types.
 # First, string can reproduce everything if not allowed.
-VALUE_TO_IO_DECAY = {
+VALUE_TO_IO_DECAY: Dict[ValueTypes, ValueTypes] = {
     typ: typ if typ.valid_for_io else ValueTypes.STRING
     for typ in ValueTypes
-}  # type: Dict[ValueTypes, ValueTypes]
+}
 
 # Then manually set others.
 VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
@@ -192,6 +193,7 @@ VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 
 class EntityTypes(Enum):
+    """The kind of entity each definition is."""
     BASE = 'baseclass'  # Not an entity, others inherit from this.
     POINT = 'pointclass'  # Point entity
     BRUSH = 'solidclass'  # Brush entity. Can't have 'model'
@@ -966,10 +968,9 @@ class IODef:
         return IODef(name, value_type)
 
 
-
 class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
-    __slots__ = ['_ent', '_attr', '_disp_attr',]
+    __slots__ = ['_ent', '_attr', '_disp_attr']
 
     # Note, we expect the maps to have casefolded their keys.
     def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str) -> None:
@@ -1102,7 +1103,7 @@ class EntityDef:
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
-        ext_autovisgroups = []  # type: List[List[str]]
+        ext_autovisgroups: list[list[str]] = []
         help_type: Optional[HelperTypes] = None
         help_type_cust: Optional[str] = None
         for token, token_value in tok:
@@ -1193,7 +1194,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc = None  # type: Optional[List[str]]
+        desc: Optional[list[str]] = None
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1315,7 +1316,7 @@ class EntityDef:
 
                 is_readonly = show_in_report = had_colon = False
                 has_equal: Optional[Token] = None
-                attrs = None  # type: Optional[List[str]]
+                attrs: Optional[list[str]] = None
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
@@ -1359,7 +1360,7 @@ class EntityDef:
                     raise tok.error('Too many attributes for keyvalue!\n{!r}', attrs)
 
                 if val_typ is ValueTypes.BOOL:
-                    # These are old aliases, change them to proper bools.
+                    # These are old aliases, change them to proper booleans.
                     if default.casefold() == 'yes':
                         default = '1'
                     elif default.casefold() == 'no':
@@ -1473,10 +1474,10 @@ class EntityDef:
         copy.desc = self.desc
 
         # Avoid copy for these, we know the tags-map is immutable.
-        for attr in ['keyvalues', 'inputs', 'outputs']:
+        for val_key in ['keyvalues', 'inputs', 'outputs']:
             coll: dict[str, dict[frozenset[str], Any]] = {}
-            setattr(copy, attr, coll)
-            for key, tags_map in getattr(self, attr).items():
+            setattr(copy, val_key, coll)
+            for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
                     for key, value in tags_map.items()
@@ -1768,7 +1769,7 @@ class FGD:
         # Automatic visgroups.
         # The way Valve implemented this is rather strange, so we need
         # to match their data structure really to get good results.
-        # Despite it appearing hierachical in editor, we and Hammer store
+        # Despite it appearing hierarchical in editor, we and Hammer store
         # it flattened. Each visgroup has a parent (or None for auto), and then
         # a list of the ents it contains.
 
@@ -1840,10 +1841,11 @@ class FGD:
         Otherwise entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
-        todo = set(self)  # type: Set[EntityDef]
-        done = set()  # type: Set[EntityDef]
+        todo: set[EntityDef] = set(self)
+        done: set[EntityDef] = set()
+        cls_getter = operator.attrgetter('classname')
         while todo:
-            deferred = set()  # type: Set[EntityDef]
+            deferred: set[EntityDef] = set()
             batch = []
             for ent in todo:
                 ready = True
@@ -1851,7 +1853,7 @@ class FGD:
                     if isinstance(base, str):
                         raise ValueError(
                             'Unevaluated base: {} in {}!'.format(
-                                base, ent.classname
+                                base, ent.classname,
                             ))
                     if base not in done:
                         deferred.add(ent)
@@ -1863,7 +1865,7 @@ class FGD:
 
                 batch.append(ent)
 
-            batch.sort(key=lambda ent: ent.classname)
+            batch.sort(key=cls_getter)
             yield from batch
 
             done.update(batch)
@@ -1961,8 +1963,7 @@ class FGD:
                 file.write('\t"{!s}"\n'.format(folder))
             file.write('\t]\n\n')
 
-
-        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
+        vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
