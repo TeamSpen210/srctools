@@ -42,7 +42,7 @@ import warnings
 from typing import (
     Union, Tuple, overload, Type,
     Dict, NamedTuple,
-    Iterator, Iterable, SupportsRound, Optional, TYPE_CHECKING,
+    Iterator, Iterable, SupportsRound, Optional,
 )
 
 
@@ -261,7 +261,7 @@ class Vec(SupportsRound['Vec']):
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
-    __slots__ = ('x', 'y', 'z')
+    __match_args__ = __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
     INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
         'x': ('y', 'z'),
@@ -1409,7 +1409,8 @@ class Angle:
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
-    __slots__ = ['_pitch', '_yaw', '_roll']
+    # Use the private attrs for matching also, we only hook assignment.
+    __match_args__ = __slots__ = ['_pitch', '_yaw', '_roll']
 
     def __init__(
         self,

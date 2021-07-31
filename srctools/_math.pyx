@@ -561,6 +561,8 @@ cdef class Vec:
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
+    __match_args__ = ('x', 'y', 'z')
+
     # Various constants.
     INV_AXIS = {
         'x': ('y', 'z'),
@@ -2064,6 +2066,7 @@ cdef class Angle:
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
+    __match_args__ = ('pitch', 'yaw', 'roll')
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
         """Create an Angle.
