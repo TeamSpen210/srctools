@@ -1,14 +1,10 @@
 import itertools as _itertools
 import os as _os
 from typing import (
-    Union, Type, TypeVar, Iterator, Sequence, List, Container,
-    IO, Optional,
-    Mapping, KeysView, ValuesView, ItemsView,
-    MutableMapping, AbstractSet, Set,
-    Any,
-    overload,
-    Iterable,
-    Tuple, NoReturn,
+    Type, TypeVar, Union, Any, NoReturn, Optional, overload,
+    Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
+    Sequence, List, Container, AbstractSet, Set,
+    Iterable, Iterator, Tuple, IO,
 )
 from types import TracebackType
 from collections import deque
@@ -121,11 +117,13 @@ def escape_quote_split(line: str) -> List[str]:
     out_strings.append(''.join(cur_part))
     return out_strings
 
-SequenceT = TypeVar('SequenceT', bound=Sequence)
 
+def partition(coll: Sequence[ValT], size: int) -> Iterator[Sequence[ValT]]:
+    """Break up the collection into groups of at most size.
 
-def partition(coll: SequenceT, size: int) -> Iterator[SequenceT]:
-    """Break up the collection into groups of at most size"""
+    Practically speaking slicing should give the same type, but that isn't
+    guaranteed.
+    """
     if len(coll) <= size:
         yield coll
         return
@@ -159,10 +157,7 @@ BOOL_LOOKUP: Mapping[str, bool] = {
     't': True,
 }
 
-@overload
-def conv_bool(val: Union[str, bool, None]) -> bool: ...
-@overload
-def conv_bool(val: Union[str, bool, None], default: ValT) -> Union[ValT, bool]: ...
+
 def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -> Union[ValT, bool]:
     """Converts a string to a boolean, using a default if it fails.
 
@@ -182,24 +177,14 @@ def conv_bool(val: Union[str, bool, None], default: Union[ValT, bool] = False) -
         return BOOL_LOOKUP.get(val.casefold(), default)
 
 
-@overload
-def conv_float(val: Union[int, float, str]) -> float: ...
-@overload
-def conv_float(val: Union[int, float, str], default: ValT) -> Union[ValT, float]: ...
 def conv_float(val: Union[int, float, str], default: Union[ValT, float] = 0.0) -> Union[ValT, float]:
-    """Converts a string to an float, using a default if it fails.
-
-    """
+    """Converts a string to an float, using a default if it fails."""
     try:
         return float(val)
     except (ValueError, TypeError):
         return default
 
 
-@overload
-def conv_int(val: Union[int, float, str]) -> int: ...
-@overload
-def conv_int(val: Union[int, float, str], default: ValT) -> Union[ValT, int]: ...
 def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Union[ValT, int]:
     """Converts a string to an integer, using a default if it fails.
 
@@ -249,7 +234,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def get(self, key: Any) -> None: ...
     @overload
     def get(self, key: Any, default: ValT) -> ValT: ...
-    def get(self, key: Any, default: ValT=None) -> Optional[ValT]:
+    def get(self, key: Any, default: Optional[ValT]=None) -> Optional[ValT]:
         """get() always returns the default item."""
         return default
 
