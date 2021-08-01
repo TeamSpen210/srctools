@@ -80,7 +80,7 @@ class AnimEvents(Enum):
     AE_EMPTY = 0
     AE_NPC_LEFTFOOT = 1
     AE_NPC_RIGHTFOOT = 2
-    AE_NPC_BODYDROP_LIGHT = 3 
+    AE_NPC_BODYDROP_LIGHT = 3
     AE_NPC_BODYDROP_HEAVY = 4
     AE_NPC_SWISHSOUND = 5
     AE_NPC_180TURN = 6
@@ -314,7 +314,7 @@ class Model:
         self.checksum = b'\0\0\0\0'
 
         self.phys_keyvalues = Property(None, [])
-        with self._sys, self._file.open_bin() as f:
+        with self._file.open_bin() as f:
             self._load(f)
 
         path = PurePosixPath(file.path)
@@ -323,7 +323,7 @@ class Model:
         except FileNotFoundError:
             pass
         else:
-            with filesystem, phy_file.open_bin() as f:
+            with phy_file.open_bin() as f:
                 self._parse_phy(f, phy_file.path)
 
     def _load(self, f: BinaryIO) -> None:
@@ -347,7 +347,7 @@ class Model:
         # Approx dimensions
         self.hull_min = str_readvec(f)
         self.hull_max = str_readvec(f)
-        
+
         self.view_min = str_readvec(f)
         self.view_max = str_readvec(f)
 
@@ -372,7 +372,7 @@ class Model:
 
             texture_count, texture_offset,
             cdmat_count, cdmat_offset,
-            
+
             skinref_count,  # Number of skin "groups"
             skin_count,   # Number of model skins.
             skinref_ind,  # Location of skins reference table.
@@ -386,30 +386,30 @@ class Model:
             localnode_count,
             localnode_index,
             localnode_name_index,
-         
+
             # mstudioflexdesc_t
             flexdesc_count,
             flexdesc_index,
-         
+
             # mstudioflexcontroller_t
             flexcontroller_count,
             flexcontroller_index,
-         
+
             # mstudioflexrule_t
             flexrules_count,
             flexrules_index,
-         
+
             # IK probably refers to inverse kinematics
             # mstudioikchain_t
             ikchain_count,
             ikchain_index,
-         
+
             # Information about any "mouth" on the model for speech animation
             # More than one sounds pretty creepy.
             # mstudiomouth_t
-            mouths_count, 
+            mouths_count,
             mouths_index,
-         
+
             # mstudioposeparamdesc_t
             localposeparam_count,
             localposeparam_index,
@@ -424,13 +424,13 @@ class Model:
         (
             # Surface property value (single null-terminated string)
             surfaceprop_index,
-         
+
             # Unusual: In this one index comes first, then count.
             # Key-value data is a series of strings. If you can't find
             # what you're interested in, check the associated PHY file as well.
             keyvalue_index,
-            keyvalue_count,	
-         
+            keyvalue_count,
+
             # More inverse-kinematics
             # mstudioiklock_t
             iklock_count,
@@ -488,13 +488,13 @@ class Model:
         # Build CDMaterials data
         f.seek(cdmat_offset)
         self.cdmaterials = read_offset_array(f, cdmat_count)
-        
+
         for ind, cdmat in enumerate(self.cdmaterials):
             cdmat = cdmat.replace('\\', '/').lstrip('/')
             if cdmat and cdmat[-1:] != '/':
                 cdmat += '/'
             self.cdmaterials[ind] = cdmat
-        
+
         # Build texture data
         f.seek(texture_offset)
         textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
@@ -774,13 +774,12 @@ class Model:
                 for tex in texgroup
             }
 
-        with self._sys:
-            for tex in paths:
-                for folder in self.cdmaterials:
-                    full = str(PurePosixPath('materials', folder, tex).with_suffix('.vmt'))
-                    if full in self._sys:
-                        yield full
-                        break
+        for tex in paths:
+            for folder in self.cdmaterials:
+                full = str(PurePosixPath('materials', folder, tex).with_suffix('.vmt'))
+                if full in self._sys:
+                    yield full
+                    break
 
     def find_sounds(self) -> Iterator[str]:
         """Yield all sounds used by animations.

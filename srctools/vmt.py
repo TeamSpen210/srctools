@@ -334,7 +334,7 @@ class Material(MutableMapping[str, str]):
         if parent_func is not None:
             parent_func(parent_file.path)
 
-        with fsys, parent_file.open_str() as f:
+        with parent_file.open_str() as f:
             parent = Material.parse(f, filename)
 
         parent = parent._apply_patch(fsys, count + 1, limit, parent_func)

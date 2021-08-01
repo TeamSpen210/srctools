@@ -12,7 +12,7 @@ __all__ = ['SurfChar', 'SurfaceProp']
 
 class SurfChar(Enum):
     """Code classification for this material.
-    
+
     This is a single ASCII character.
     """
     ANTLION = 'A'
@@ -136,21 +136,21 @@ class SurfaceProp:
         snd_break: str=None,
         snd_roll: str=None,
         snd_shake: str=None,
-        
+
         audio_reflectivity: float=None,
         audio_hardness_factor: float=None,
         audio_roughness_factor: float=None,
         scrape_rough_thres: float=None,
         impact_hard_thres: float=None,
         hard_velocity_thres: float=None,
-        
+
         gamemat: SurfChar=None,
         jump_factor: float=None,
         max_speed_factor: float=None,
         climbable: bool=False,
-    ) -> None: 
+    ) -> None:
         """Create a surfaceprop definition.
-        
+
         If parent is passed, it will be used for any unset values.
         """
         self.name = name
@@ -188,7 +188,7 @@ class SurfaceProp:
 
     def __repr__(self) -> str:
         return '<SurfaceProp "{}", char={}>'.format(self.name, self.gamematerial.value)
-        
+
     def copy(self) -> 'SurfaceProp':
         """Duplicate this surfaceprop."""
         return SurfaceProp(
@@ -211,7 +211,7 @@ class SurfaceProp:
             snd_strain=self.snd_strain,
             snd_roll=self.snd_roll,
             snd_shake=self.snd_shake,
-            
+
             audio_reflectivity=self.audio_reflectivity,
             audio_hardness_factor=self.audio_hardness_factor,
             audio_roughness_factor=self.audio_roughness_factor,
@@ -233,20 +233,20 @@ class SurfaceProp:
         prev: Dict[str, 'SurfaceProp']=None,
     ) -> Dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
-        
+
         prev if passed is used to read parent properties from.
-        
+
         DEFAULT will be inserted as the "default" surfaceprop if not provided
         in prev.
         """
         if prev is None:
             prev = {}
-            
+
         try:
             default = prev['default']
         except KeyError:
             default = prev['default'] = SurfaceProp('default')
-            
+
         for prop in props:
             try:
                 base = prev[prop['base'].casefold()]
@@ -263,7 +263,7 @@ class SurfaceProp:
                 game_mat = None
 
             prev[prop.name] = SurfaceProp(
-                prop.real_name,
+                prop.real_name or '',
                 base,
                 density=prop.float('density', None),
                 elasticity=prop.float('elasticity', None),
@@ -280,38 +280,37 @@ class SurfaceProp:
                 snd_strain=prop['strain', None],
                 snd_break=prop['break', None],
                 snd_roll=prop['roll', None],
-                
+
                 audio_reflectivity=prop.float('audioreflectivity', None),
                 audio_hardness_factor=prop.float('audiohardnessfactor', None),
                 audio_roughness_factor=prop.float('audioroughnessfactor', None),
                 scrape_rough_thres=prop.float('scrapeRoughThreshold', None),
                 impact_hard_thres=prop.float('impactHardThreshold', None),
                 hard_velocity_thres=prop.float('audioHardMinVelocity', None),
-                
+
                 gamemat=game_mat,
                 jump_factor=prop.float('jump_factor', None),
                 climbable=prop.bool('climbable', None),
             )
-            
+
         return prev
-        
+
     @staticmethod
     def parse_manifest(fsys: FileSystem, file: File=None) -> Dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
-        
+
         "scripts/surfaceproperties_manifest.txt" will be used if a file is
         not specified.
-        """  
-        with fsys:
-            if not file:
-                file = fsys['scripts/surfaceproperties_manifest.txt']
-            
-            with file.open_str() as f:
-                manifest = Property.parse(f, file.path)
-                
-            surf: dict[str, SurfaceProp] = {}
-            
-            for prop in manifest.find_all('surfaceproperties_manifest', 'file'):
-                surf = SurfaceProp.parse_file(fsys.read_prop(prop.value), surf)
+        """
+        if not file:
+            file = fsys['scripts/surfaceproperties_manifest.txt']
 
-            return surf
+        with file.open_str() as f:
+            manifest = Property.parse(f, file.path)
+
+        surf: dict[str, SurfaceProp] = {}
+
+        for prop in manifest.find_all('surfaceproperties_manifest', 'file'):
+            surf = SurfaceProp.parse_file(fsys.read_prop(prop.value), surf)
+
+        return surf
