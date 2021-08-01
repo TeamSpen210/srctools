@@ -592,18 +592,18 @@ class Helper:
         The default implementation expects no arguments.
         """
         if args:
-            raise ValueError(
-                'No arguments accepted by {}()!'.format(cls.TYPE.name)
-            )
+            raise ValueError('No arguments accepted by {}()!'.format(
+                cls.TYPE.name if cls.TYPE is not None else cls.__name__
+            ))
         return cls()
 
     def export(self) -> List[str]:
         """Produce the argument text to recreate this helper type."""
         return []
 
-    def get_resources(self, entity: 'EntityDef') -> List[str]:
+    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
         """Return the resources used by this helper."""
-        return []
+        return ()
 
     def overrides(self) -> Collection[HelperTypes]:
         """Specify which types can be overriden by this.
@@ -651,7 +651,8 @@ def _init_helper_impl() -> None:
     from srctools import _fgd_helpers as helper_mod
     for helper_type in vars(helper_mod).values():
         if isinstance(helper_type, type) and issubclass(helper_type, Helper):
-            HELPER_IMPL[helper_type.TYPE] = helper_type
+            if helper_type.TYPE is not None:
+                HELPER_IMPL[helper_type.TYPE] = helper_type
 
     for helper in HelperTypes:
         if helper not in HELPER_IMPL:
@@ -1144,6 +1145,8 @@ class EntityDef:
 
                 if help_type_cust is not None:
                     entity.helpers.append(UnknownHelper(help_type_cust, args))
+                elif help_type is None:
+                    raise tok.error('help_type not set?')
                 elif help_type is HelperTypes.INHERIT:
                     for base in args:
                         if eval_bases:

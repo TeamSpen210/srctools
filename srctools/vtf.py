@@ -1079,6 +1079,6 @@ def test_vtf(h: bytes, f: Optional[BinaryIO]) -> Optional[str]:
     return None
 
 import imghdr
-imghdr.test_vtf = test_vtf
+imghdr.test_vtf = test_vtf  # type: ignore
 imghdr.tests.append(test_vtf)
 del imghdr, test_vtf

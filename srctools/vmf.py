@@ -2344,7 +2344,7 @@ class Entity:
         - A tuple can be passed for the default to be set, inside the
           [] syntax.
         """
-        default: str | T
+        default: Union[str, T]
         if isinstance(key, tuple):
             key, default = key
         else:
