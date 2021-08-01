@@ -1,6 +1,8 @@
 # Explicitly include the C/C++ sources, for cythonless installs.
 global-include *.c *.cpp *.h *.hpp
+# Lookup table.
+include libsquish/singlecolourlookup.inl
 # Include test samples
-graft srctools\test
+recursive-include srctools/test *
 # Then remove pycache folder that included.
-prune **\__pycache__\**
+prune **/__pycache__/**
