@@ -146,7 +146,7 @@ cdef class BaseTokenizer:
     def error_type(self):
         """Return the TokenSyntaxError subclass raised when errors occur."""
         return self.error_type
-    
+
     @error_type.setter
     def error_type(self, value):
         """Alter the TokenSyntaxError subclass raised when errors occur."""
@@ -340,7 +340,7 @@ cdef class Tokenizer(BaseTokenizer):
 
     def __dealloc__(self):
         PyMem_Free(self.val_buffer)
-    
+
     def __init__(
         self,
         data not None,
@@ -376,7 +376,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.cur_chunk = ''
             self.chunk_size = 0
             self.chunk_buf = EMPTY_BUF
-            
+
             # If a file, use the read method to pull bulk data.
             try:
                 self.chunk_iter = data.read
@@ -416,7 +416,7 @@ cdef class Tokenizer(BaseTokenizer):
     @property
     def string_bracket(self) -> bool:
         """Check if [bracket] blocks are parsed as a single string-like block.
-        
+
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
         return self.flags & FL_STRING_BRACKETS != 0
@@ -424,14 +424,14 @@ cdef class Tokenizer(BaseTokenizer):
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
         """Set if [bracket] blocks are parsed as a single string-like block.
-        
+
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
         if value:
             self.flags |= FL_STRING_BRACKETS
         else:
             self.flags &= ~FL_STRING_BRACKETS
-            
+
     @property
     def allow_escapes(self) -> bool:
         """Check if backslash escapes will be parsed."""
@@ -444,7 +444,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.flags |= FL_ALLOW_ESCAPES
         else:
             self.flags &= ~FL_ALLOW_ESCAPES
-            
+
     @property
     def allow_star_comments(self) -> bool:
         """Check if /**/ style comments will be enabled."""
@@ -501,14 +501,14 @@ cdef class Tokenizer(BaseTokenizer):
         self.char_index += 1
         if self.char_index < self.chunk_size:
             return self.chunk_buf[self.char_index]
-            
+
         if self.chunk_iter is None:
             return CHR_EOF
-            
+
         if self.flags & FL_FILE_INPUT:
             self.cur_chunk = self.chunk_iter(FILE_BUFFER)
             self.char_index = 0
-            
+
             if type(self.cur_chunk) is str:
                 self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
             else:
@@ -917,10 +917,10 @@ def escape_text(str text not None: str) -> str:
     cdef Py_ssize_t final_size = 0
     cdef int i, j
     cdef uchar letter
-    cdef uchar *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
+    cdef const uchar *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
     final_size = size
-    
-    # First loop to compute the full string length, and check if we need to 
+
+    # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
         if in_buf[i] in b'\\"\t\n':
@@ -987,7 +987,7 @@ cdef class _VPK_IterNullstr:
 
     def __init__(self, file):
         self.file = file
-        
+
     def __iter__(self):
         return self
 
