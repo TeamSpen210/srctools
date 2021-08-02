@@ -3,6 +3,7 @@ from typing import Type, Tuple
 
 import pytest
 import codecs
+import platform
 
 from pytest import raises
 
@@ -20,6 +21,7 @@ from srctools.tokenizer import (
 )
 
 T = Token
+IS_CPYTHON = platform.python_implementation() == 'CPython'
 
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
@@ -479,7 +481,9 @@ def test_obj_config(py_c_token):
 def test_escape_text(inp: str, out: str, func) -> None:
     """Test the Python and C escape_text() functions."""
     assert func(inp) == out
-    if inp == out:  # If the same, reuses the string.
+    # If the same it should reuse the string.
+    # But don't check on PyPy etc, may have primitive optimisations.
+    if inp == out and IS_CPYTHON:
         assert func(inp) is inp
 
 
