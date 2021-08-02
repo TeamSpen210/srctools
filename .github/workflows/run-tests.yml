@@ -11,12 +11,11 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        python-version: [3.6, 3.7, 3.8, 3.9]
+        python-version: ['3.6', '3.7', '3.8', '3.9', '3.10', 'pypy-3.6', 'pypy-3.7']
 
     steps:
     - uses: actions/checkout@v2
@@ -31,6 +30,7 @@ jobs:
         python -m pip install --upgrade pip
         python -m pip install flake8 pytest cython
         python -m pip install attrs
+        # In Python 3.7 importlib_resources is in stdlib, so we don't need it.
         if python -c "import sys; sys.exit(sys.hexversion>=0x03070000)"; then pip install importlib_resources; fi
     - name: Build package
       run: |
