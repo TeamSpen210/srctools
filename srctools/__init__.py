@@ -11,7 +11,7 @@ from collections import deque
 
 
 __all__ = [
-    'Vec', 'Vec_tuple', 'parse_vec_str',
+    'Vec', 'Vec_tuple', 'parse_vec_str', 'lerp',
     'Angle', 'Matrix',
 
     'NoKeyError', 'KeyValError', 'Property',
