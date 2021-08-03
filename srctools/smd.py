@@ -434,9 +434,8 @@ class Mesh:
                     exc.start
                 ) from None
 
-            # We need to process the material name, it can have various things
-            # in it - ignored folders, file extensions.
-            mat_name = os.path.basename(mat_name.rstrip('\\/ \t\b\n\r'))
+            # The file extension is ignored, and we may have extra whitespace.
+            mat_name, _ = os.path.splitext(mat_name.rstrip('\\/ \t\b\n\r'))
 
             # Grab the three lines.
             for i in range(3):
@@ -785,4 +784,3 @@ class Mesh:
             norm = tri.normal()
             for vert in tri:
                 vert.norm = norm
-
