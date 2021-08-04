@@ -113,7 +113,7 @@ class KeyValError(TokenSyntaxError):
     line_num = The line where the error occurred.
     """
 
-    
+
 class NoKeyError(LookupError):
     """Raised if a key is not found when searching from find_key().
 
@@ -324,7 +324,7 @@ class Property:
                 prop_type, prop_value = tokenizer()
 
                 # It's a block followed by flag. ("name" [stuff])
-                if prop_type is PROP_FLAG: 
+                if prop_type is PROP_FLAG:
                     # That must be the end of the line..
                     tokenizer.expect(NEWLINE)
                     if _read_flag(flags, prop_value):
@@ -485,21 +485,29 @@ class Property:
         for block in self.find_all(*keys):
             yield from block
 
-    def find_key(self, key: str, def_: str=_NO_KEY_FOUND) -> 'Property':
+    @overload
+    def find_key(self, key: str, def_: str=...) -> 'Property': ...
+    @overload
+    def find_key(self, key: str, *, or_blank: bool) -> 'Property': ...
+    def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Property':
         """Obtain the child Property with a given name.
 
         - If no child is found with the given name, this will return the
-          default value wrapped in a Property, or raise NoKeyError if
-          none is provided.
+          default value wrapped in a Property. If or_blank is set,
+          it will be a blank block instead. If neither default is provided
+          this will raise NoKeyError.
         - This prefers keys located closer to the end of the value list.
         """
         if not self.has_children():
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        for prop in reversed(self._value):  # type: Property
+        prop: Property
+        for prop in reversed(self._value):
             if prop._folded_name == key:
                 return prop
-        if def_ is _NO_KEY_FOUND:
+        if or_blank:
+            return Property(key, [])
+        elif def_ is _NO_KEY_FOUND:
             raise NoKeyError(key)
         else:
             # We were given a default, return it wrapped in a Property.

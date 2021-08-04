@@ -72,16 +72,16 @@ def test_constructor():
 def test_names():
     """Test the behaviour of Property.name."""
     prop = Property('Test1', 'value')
-    
+
     # Property.name casefolds the argument.
     assert prop.name == 'test1'
     assert prop.real_name == 'Test1'
-    
+
     # Editing name modifies both values
     prop.name = 'SECOND_test'
     assert prop.name == 'second_test'
     assert prop.real_name == 'SECOND_test'
-    
+
     # It can also be set to None.
     prop.name = None
     assert prop.name is prop.real_name is None
@@ -245,7 +245,7 @@ def test_parse(py_c_token):
 
     # Check export roundtrips.
     assert_tree(parse_result, Property.parse(parse_result.export()))
-    
+
 def test_build():
     """Test the .build() constructor."""
     prop = Property(None, [])
@@ -270,7 +270,7 @@ def test_build():
             b.Escapes('\t \n \\d')
             with b.Oneliner:
                 b.name('value')
-        
+
         with b.CommentChecks:
             b['after ']('value')
             b.Flag('allowed')
@@ -319,7 +319,7 @@ def test_build_exc() -> None:
         Property('leaf', 'value'),
         Property('subprop', []),
     ]), prop)
-    
+
 
 def test_parse_fails(py_c_token) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
@@ -557,3 +557,39 @@ def test_blockfuncs_fail_on_leaf() -> None:
         leaf.set_key(("blah", "another"), 45)
     with pytest.raises(ValueError):
         leaf.merge_children()
+
+
+def test_search() -> None:
+    """Test various key search funcs."""
+    key1 = Property('key1', '1')
+    key2 = Property('key2', '2')
+    kEy1 = Property('kEy1', '3')
+    bLock1 = Property('bLock1', [Property('leaf', '45')])
+    test1 = Property('Block', [key1, key2, bLock1, kEy1])
+
+    # Search preferring later keys, case-insensitive.
+    assert test1.find_key('keY1') is kEy1
+    assert test1.find_key('key2') is key2
+    # Default values.
+    assert test1.find_key('missing', '45') == Property('missing', '45')
+    assert test1.find_key('missing', or_blank=True) == Property('missing', [])
+    assert test1.find_key('key1', '45') is kEy1
+    assert test1.find_key('key1', or_blank=True) is kEy1
+
+    assert test1['key1'] == '3'
+    assert test1['key2'] == '2'
+    assert test1['missing', 'default'] == 'default'
+
+    assert list(test1.find_all('Key1')) == [key1, kEy1]
+
+    with pytest.raises(IndexError):
+        test1['notpresent']
+    with pytest.raises(NoKeyError):
+        test1.find_key('nonpresent')
+    # Find_block ignores leaf keys.
+    with pytest.raises(NoKeyError):
+        test1.find_block('key1')
+    with pytest.raises(NoKeyError):
+        test1.find_block('Block2')
+    assert test1.find_block('blOCk1') is bLock1
+    assert test1.find_block('Block2', or_blank=True) == Property('Block2', [])
