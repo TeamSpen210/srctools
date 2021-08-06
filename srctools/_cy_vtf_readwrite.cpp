@@ -1367,9 +1367,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallMethO(PyObject *func, PyObject
 /* PyObjectCallOneArg.proto */
 static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObject *arg);
 
-/* None.proto */
-static CYTHON_INLINE long __Pyx_div_long(long, long);
-
 /* IncludeStringH.proto */
 #include <string.h>
 
@@ -1630,6 +1627,9 @@ static CYTHON_INLINE int __Pyx_PyList_Append(PyObject* list, PyObject* x) {
 
 /* None.proto */
 static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname);
+
+/* None.proto */
+static CYTHON_INLINE long __Pyx_div_long(long, long);
 
 /* ImportFrom.proto */
 static PyObject* __Pyx_ImportFrom(PyObject* module, PyObject* name);
@@ -2585,7 +2585,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_ppm_convert(CYTHON_UNUSE
  *         b = bg[2]
  *         for off in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
  *             a = pixels[4 * off + 3] / <float>255.0
- *             inv_a = 1.0 - a
+ *             inv_a = <float>1.0 - a
  */
     {
         #ifdef WITH_THREAD
@@ -2624,7 +2624,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_ppm_convert(CYTHON_UNUSE
  *         b = bg[2]
  *         for off in prange(width * height, nogil=True, schedule='static'):
  *             a = pixels[4 * off + 3] / <float>255.0             # <<<<<<<<<<<<<<
- *             inv_a = 1.0 - a
+ *             inv_a = <float>1.0 - a
  *             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
  */
                               __pyx_t_9 = ((4 * __pyx_v_off) + 3);
@@ -2633,15 +2633,15 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_ppm_convert(CYTHON_UNUSE
                               /* "srctools/_cy_vtf_readwrite.pyx":71
  *         for off in prange(width * height, nogil=True, schedule='static'):
  *             a = pixels[4 * off + 3] / <float>255.0
- *             inv_a = 1.0 - a             # <<<<<<<<<<<<<<
+ *             inv_a = <float>1.0 - a             # <<<<<<<<<<<<<<
  *             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
  *             buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
  */
-                              __pyx_v_inv_a = (1.0 - __pyx_v_a);
+                              __pyx_v_inv_a = (((float)1.0) - __pyx_v_a);
 
                               /* "srctools/_cy_vtf_readwrite.pyx":72
  *             a = pixels[4 * off + 3] / <float>255.0
- *             inv_a = 1.0 - a
+ *             inv_a = <float>1.0 - a
  *             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)             # <<<<<<<<<<<<<<
  *             buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
  *             buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
@@ -2650,7 +2650,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_ppm_convert(CYTHON_UNUSE
                               (__pyx_v_buffer[((__pyx_v_header_size + (3 * __pyx_v_off)) + 0)]) = ((uint8_t)(((*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_9)) ))) * __pyx_v_a) + (__pyx_v_inv_a * __pyx_v_r)));
 
                               /* "srctools/_cy_vtf_readwrite.pyx":73
- *             inv_a = 1.0 - a
+ *             inv_a = <float>1.0 - a
  *             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
  *             buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)             # <<<<<<<<<<<<<<
  *             buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
@@ -2686,7 +2686,7 @@ static PyObject *__pyx_pf_8srctools_17_cy_vtf_readwrite_ppm_convert(CYTHON_UNUSE
  *         b = bg[2]
  *         for off in prange(width * height, nogil=True, schedule='static'):             # <<<<<<<<<<<<<<
  *             a = pixels[4 * off + 3] / <float>255.0
- *             inv_a = 1.0 - a
+ *             inv_a = <float>1.0 - a
  */
         /*finally:*/ {
           /*normal exit:*/{
@@ -8062,7 +8062,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88(__Pyx_memviewslice __
  *         r = pixels[4*offset + R]
  *         g = pixels[4*offset + G]             # <<<<<<<<<<<<<<
  *         b = pixels[4*offset + B]
- *         data[2 * offset + 0] = (r + g + b) // 3
+ *         data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)
  */
                             __pyx_t_4 = ((4 * __pyx_v_offset) + 1);
                             __pyx_v_g = (*((uint8_t const  *) ( /* dim=0 */ ((char *) (((uint8_t const  *) __pyx_v_pixels.data) + __pyx_t_4)) )));
@@ -8071,7 +8071,7 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88(__Pyx_memviewslice __
  *         r = pixels[4*offset + R]
  *         g = pixels[4*offset + G]
  *         b = pixels[4*offset + B]             # <<<<<<<<<<<<<<
- *         data[2 * offset + 0] = (r + g + b) // 3
+ *         data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)
  *         data[2 * offset + 1] = pixels[4*offset + A]
  */
                             __pyx_t_4 = ((4 * __pyx_v_offset) + 2);
@@ -8080,16 +8080,16 @@ static int __pyx_f_8srctools_17_cy_vtf_readwrite_save_ia88(__Pyx_memviewslice __
                             /* "srctools/_cy_vtf_readwrite.pyx":496
  *         g = pixels[4*offset + G]
  *         b = pixels[4*offset + B]
- *         data[2 * offset + 0] = (r + g + b) // 3             # <<<<<<<<<<<<<<
+ *         data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)             # <<<<<<<<<<<<<<
  *         data[2 * offset + 1] = pixels[4*offset + A]
  * 
  */
                             __pyx_t_4 = ((2 * __pyx_v_offset) + 0);
-                            *((uint8_t *) ( /* dim=0 */ ((char *) (((uint8_t *) __pyx_v_data.data) + __pyx_t_4)) )) = __Pyx_div_long(((__pyx_v_r + __pyx_v_g) + __pyx_v_b), 3);
+                            *((uint8_t *) ( /* dim=0 */ ((char *) (((uint8_t *) __pyx_v_data.data) + __pyx_t_4)) )) = ((uint8_t)__Pyx_div_int(((__pyx_v_r + __pyx_v_g) + __pyx_v_b), ((uint_fast16_t)3)));
 
                             /* "srctools/_cy_vtf_readwrite.pyx":497
  *         b = pixels[4*offset + B]
- *         data[2 * offset + 0] = (r + g + b) // 3
+ *         data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)
  *         data[2 * offset + 1] = pixels[4*offset + A]             # <<<<<<<<<<<<<<
  * 
  * 
@@ -27467,14 +27467,6 @@ static CYTHON_INLINE PyObject* __Pyx_PyObject_CallOneArg(PyObject *func, PyObjec
 }
 #endif
 
-/* None */
-static CYTHON_INLINE long __Pyx_div_long(long a, long b) {
-    long q = a / b;
-    long r = a - q*b;
-    q -= ((r != 0) & ((r ^ b) < 0));
-    return q;
-}
-
 /* decode_c_string */
 static CYTHON_INLINE PyObject* __Pyx_decode_c_string(
          const char* cstring, Py_ssize_t start, Py_ssize_t stop,
@@ -28474,6 +28466,14 @@ static PyObject* __Pyx_PyInt_AddObjC(PyObject *op1, PyObject *op2, CYTHON_UNUSED
 /* None */
 static CYTHON_INLINE void __Pyx_RaiseUnboundLocalError(const char *varname) {
     PyErr_Format(PyExc_UnboundLocalError, "local variable '%s' referenced before assignment", varname);
+}
+
+/* None */
+static CYTHON_INLINE long __Pyx_div_long(long a, long b) {
+    long q = a / b;
+    long r = a - q*b;
+    q -= ((r != 0) & ((r ^ b) < 0));
+    return q;
 }
 
 /* ImportFrom */

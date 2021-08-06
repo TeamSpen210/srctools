@@ -68,7 +68,7 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
         b = bg[2]
         for off in prange(width * height, nogil=True, schedule='static'):
             a = pixels[4 * off + 3] / <float>255.0
-            inv_a = 1.0 - a
+            inv_a = <float>1.0 - a
             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
             buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
             buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
@@ -493,7 +493,7 @@ cdef bint save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint hei
         r = pixels[4*offset + R]
         g = pixels[4*offset + G]
         b = pixels[4*offset + B]
-        data[2 * offset + 0] = (r + g + b) // 3
+        data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)
         data[2 * offset + 1] = pixels[4*offset + A]
 
 
