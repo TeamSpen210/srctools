@@ -1775,8 +1775,6 @@ class BSP:
 
         [prop_count] = struct_read('<i', static_lump)
 
-        prop_length = (len(data) - static_lump.tell()) / prop_count
-
         for i in range(prop_count):
             origin = Vec(struct_read('fff', static_lump))
             angles = Angle(struct_read('fff', static_lump))
