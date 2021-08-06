@@ -1329,13 +1329,13 @@ class Matrix:
             return NotImplemented
 
     @overload
-    def __rmatmul__(self, other: 'Vec | tuple[float, float, float]') -> 'Vec': ...
+    def __rmatmul__(self, other: 'Vec | Tuple3') -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
 
-    def __rmatmul__(self, other: object) -> object:
+    def __rmatmul__(self, other: 'Vec | Tuple3 | Matrix | Angle') -> 'Vec | Matrix | Angle':
         if isinstance(other, Py_Vec) or isinstance(other, tuple):
             result = Py_Vec(other)
             self._vec_rot(result)
@@ -1719,7 +1719,9 @@ class Angle:
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
     @overload
-    def __rmatmul__(self, other: 'Vec | tuple[float, float, float]') -> 'Vec': ...
+    def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
+    @overload
+    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
 
     def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
