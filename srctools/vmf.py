@@ -388,8 +388,8 @@ class VMF:
         The entity should have been created with this VMF as a parent.
         """
         self.entities.append(item)
-        self.by_class[item['classname', None]].add(item)
-        self.by_target[item['targetname', None]].add(item)
+        self.by_class[item['classname', ''].casefold() or None].add(item)
+        self.by_target[item['targetname', ''].casefold() or None].add(item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -409,8 +409,8 @@ class VMF:
         except ValueError:
             pass  # Already removed.
 
-        self.by_class[item['classname', None]].discard(item)
-        self.by_target[item['targetname', None]].discard(item)
+        self.by_class[item['classname', ''].casefold() or None].discard(item)
+        self.by_target[item['targetname', ''].casefold() or None].discard(item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -430,8 +430,8 @@ class VMF:
         ents = list(ents)
         self.entities.extend(ents)
         for item in ents:
-            self.by_class[item['classname', None]].add(item)
-            self.by_target[item['targetname', None]].add(item)
+            self.by_class[item['classname', ''].casefold() or None].add(item)
+            self.by_target[item['targetname', ''].casefold() or None].add(item)
             if 'nodeid' in item:
                 try:
                     node_id = int(item['nodeid'])
