@@ -11,7 +11,8 @@ Vectors support arithmetic with scalars, applying the operation to the three
 components.
 Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
 dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
-when used in math operations and comparing values.
+when used in math operations and comparing values. This allows these to be
+constant-folded.
 
 Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 2 index access.
 
@@ -29,11 +30,12 @@ Scales magnitude:
  - Scalar * Angle
 
 Rotates LHS by RHS:
- - Vec @ Angle
- - Vec @ Matrix
- - Angle @ Angle
- - Angle @ Matrix
- - Matrix @ Matrix
+ - Vec @ Angle -> Vec
+ - Vec @ Matrix -> Vec
+ - 3-tuple @ Angle -> Vec
+ - Angle @ Angle -> Angle
+ - Angle @ Matrix -> Angle
+ - Matrix @ Matrix -> Matrix
 """
 import math
 import contextlib
@@ -1327,15 +1329,15 @@ class Matrix:
             return NotImplemented
 
     @overload
-    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+    def __rmatmul__(self, other: 'Vec | tuple[float, float, float]') -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
 
     def __rmatmul__(self, other: object) -> object:
-        if isinstance(other, Py_Vec):
-            result = other.copy()
+        if isinstance(other, Py_Vec) or isinstance(other, tuple):
+            result = Py_Vec(other)
             self._vec_rot(result)
             return result
         elif isinstance(other, Py_Angle):
@@ -1717,12 +1719,15 @@ class Angle:
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
     @overload
-    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+    def __rmatmul__(self, other: 'Vec | tuple[float, float, float]') -> 'Vec': ...
 
     def __rmatmul__(self, other):
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Py_Vec):
             return other @ Py_Matrix.from_angle(self)
+        elif isinstance(other, tuple):
+            x, y, z = other
+            return Vec(x, y, z) @ Py_Matrix.from_angle(self)
         elif isinstance(other, Py_Angle):
             # Should always be done by __mul__!
             return self._rotate_angle(other)

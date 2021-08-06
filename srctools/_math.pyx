@@ -2030,6 +2030,12 @@ cdef class Matrix:
         elif isinstance(second, Matrix):
             if isinstance(first, Vec):
                 vec = Vec.__new__(Vec)
+                memcpy(&vec.val, &(<Vec>first).val, sizeof(vec_t))
+                vec_rot(&vec.val, (<Matrix>second).mat)
+                return vec
+            elif isinstance(first, tuple):
+                vec = Vec.__new__(Vec)
+                vec.val.x, vec.val.y, vec.val.z = <tuple>first
                 vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, Angle):
@@ -2419,9 +2425,14 @@ cdef class Angle:
             _mat_to_angle(&(<Angle>res).val, temp1)
             return res
         elif isinstance(second, Angle):
+            _mat_from_angle(temp2, &(<Angle>second).val)
+            if isinstance(first, tuple):
+                res = Vec.__new__(Vec)
+                (<Vec>res).val.x, (<Vec>res).val.y, (<Vec>res).val.z = <tuple>first
+                vec_rot(&(<Vec>res).val, temp2)
+                return res
             # These classes should do this themselves, but this is here for
             # completeness.
-            _mat_from_angle(temp2, &(<Angle>second).val)
             if isinstance(first, Matrix):
                 res = Matrix.__new__(Matrix)
                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))

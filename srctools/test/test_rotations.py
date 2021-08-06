@@ -2,7 +2,7 @@
 import copy
 import os.path
 import pickle
-from typing import NamedTuple, List, Tuple
+from typing import NamedTuple, List
 
 from srctools.test import *
 from srctools import Vec
@@ -343,6 +343,26 @@ def test_rotating_vectors(
         assert_vec(mat.forward(), data.for_x, data.for_y, data.for_z)
         assert_vec(mat.left(), data.left_x, data.left_y, data.left_z)
         assert_vec(mat.up(), data.up_x, data.up_y, data.up_z)
+
+
+def test_rotating_vec_tuples(
+    py_c_vec: PyCVec,
+    rotation_data: List[RotationData],
+) -> None:
+    """Test rotation is permitted with 3-tuples"""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    for data in rotation_data:
+        ang = Angle(data.angle)
+        mat = Matrix.from_angle(ang)
+
+        assert_vec((1, 0, 0) @ mat, data.for_x, data.for_y, data.for_z)
+        assert_vec((0.0, 1.0, 0.0) @ mat, data.left_x, data.left_y, data.left_z)
+        assert_vec((0.0, 0.0, 1.0) @ mat, data.up_x, data.up_y, data.up_z)
+
+        assert_vec((1, 0, 0) @ ang, data.for_x, data.for_y, data.for_z)
+        assert_vec((0.0, 1.0, 0.0) @ ang, data.left_x, data.left_y, data.left_z)
+        assert_vec((0.0, 0.0, 1.0) @ ang, data.up_x, data.up_y, data.up_z)
 
 
 def test_rotated_matrix_data(
