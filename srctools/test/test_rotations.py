@@ -60,7 +60,7 @@ def test_vec_identities(py_c_vec: PyCVec) -> None:
         assert_rot(Matrix.from_pitch(ang), Matrix.from_angle(Angle(pitch=ang)))
         assert_rot(Matrix.from_yaw(ang), Matrix.from_angle(Angle(yaw=ang)))
         assert_rot(Matrix.from_roll(ang), Matrix.from_angle(Angle(roll=ang)))
-        
+
         # Various magnitudes to test
         for mag in (-250, -1, 0, 1, 250):
             assert_vec(Vec(y=mag) @ Matrix.from_pitch(ang), 0, mag, 0)
@@ -74,13 +74,13 @@ def test_vec_basic_yaw(py_c_vec: PyCVec) -> None:
 
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(0), 200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(0), 0, 150, 0)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(90), 0, 200, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(90), -150, 0, 0)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(180), -200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(180), 0, -150, 0)
-    
+
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(270), 0, -200, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(270), 150, 0, 0)
 
@@ -319,7 +319,10 @@ def test_bad_from_basis(py_c_vec: PyCVec) -> None:
         Matrix.from_basis(z=v)
 
 
-def test_rotation_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
+def test_rotating_vectors(
+    py_c_vec: PyCVec,
+    rotation_data: List[RotationData],
+) -> None:
     """Test our rotation code with engine rotation data."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
@@ -340,6 +343,22 @@ def test_rotation_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
         assert_vec(mat.forward(), data.for_x, data.for_y, data.for_z)
         assert_vec(mat.left(), data.left_x, data.left_y, data.left_z)
         assert_vec(mat.up(), data.up_x, data.up_y, data.up_z)
+
+
+def test_rotated_matrix_data(
+    py_c_vec: PyCVec,
+    rotation_data: List[RotationData],
+) -> None:
+    """Test our rotation code with engine rotation data."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    X = Vec(x=1)
+    Y = Vec(y=1)
+    Z = Vec(z=1)
+
+    for data in rotation_data:
+        mat = Matrix.from_angle(*data.angle)
+        assert_rot(mat, Matrix.from_angle(Angle(data.angle)))
 
         assert math.isclose(data.for_x, mat[0, 0], abs_tol=EPSILON)
         assert math.isclose(data.for_y, mat[0, 1], abs_tol=EPSILON)
