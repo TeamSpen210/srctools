@@ -33,7 +33,7 @@ def test_matching_apis(cls: str) -> None:
 
 
 @parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
-def test_lerp(lerp_func) -> None:
+def test_scalar_lerp(lerp_func) -> None:
     """Test the lerp function."""
     assert lerp_func(-4.0, -4.0, 10, 50.0, 80.0) == pytest.approx(50.0)
     assert lerp_func(10.0, -4.0, 10, 50.0, 80.0) == pytest.approx(80.0)
@@ -260,6 +260,26 @@ def test_rev_iteration(py_c_vec: PyCVec):
         next(it)
     with pytest.raises(StopIteration):
         next(it)
+
+
+def test_vec_lerp(py_c_vec: PyCVec) -> None:
+    """Test the vector lerp function."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    assert_vec(
+        Vec.lerp(14.0, 10.0, 20.0, Vec(20.0, -30.0, 8.0), Vec(40.0, -40.0, 8.0)),
+        28.0, -34.0, 8.0,
+    )
+    assert_vec(
+        Vec.lerp(15.0, 10.0, 20.0, Vec(8.0, 20.0, -30.0), Vec(8.0, 40.0, -40.0)),
+        8.0, 30.0, -35.0,
+    )
+    assert_vec(
+        Vec.lerp(16.0, 10.0, 20.0, Vec(-30.0, 8.0, 20.0), Vec(-40.0, 8.0, 40.0)),
+        -36.0, 8.0, 32.0,
+    )
+
+    with raises_zero_div:
+        Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
 
 
 def test_scalar(py_c_vec: PyCVec):

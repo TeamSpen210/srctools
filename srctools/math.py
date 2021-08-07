@@ -42,10 +42,14 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, Type,
+    Union, Tuple, overload, Type, TYPE_CHECKING,
     Dict, NamedTuple,
     Iterator, Iterable, SupportsRound, Optional,
 )
+if TYPE_CHECKING:
+    from typing import final
+else:
+    globals()['final'] = lambda x: x
 
 
 __all__ = [
@@ -258,6 +262,7 @@ def __i{func}__(self, other: float):
 globals()['SupportsRound'] = {'Vec': object}
 
 
+@final
 class Vec(SupportsRound['Vec']):
     """A 3D Vector. This has most standard Vector functions.
 
@@ -832,6 +837,20 @@ class Vec(SupportsRound['Vec']):
         if self.z > other[2]:
             self.z = other[2]
 
+    @classmethod
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
+        """Linerarly interpolate between two vectors.
+
+        If in_min and in_max are the same, ZeroDivisionError is raised.
+        """
+        x_off = x - in_min
+        diff = in_max - in_min
+        return cls(
+            out_min.x + (x_off * (out_max.x - out_min.x)) / diff,
+            out_min.y + (x_off * (out_max.y - out_min.y)) / diff,
+            out_min.z + (x_off * (out_max.z - out_min.z)) / diff,
+        )
+
     def __round__(self, ndigits: int=0) -> 'Vec':
         """Performing round() on a Py_Vec rounds each axis."""
         return Py_Vec(
@@ -1032,6 +1051,7 @@ _IND_TO_SLOT = {
 }
 
 
+@final
 class Matrix:
     """Represents a matrix via a transformation matrix."""
     __slots__ = [
@@ -1393,6 +1413,7 @@ class Matrix:
         vec.z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
 
+@final
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 

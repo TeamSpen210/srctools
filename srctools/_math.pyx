@@ -964,6 +964,23 @@ cdef class Vec:
 
         return it
 
+    @classmethod
+    @cython.cdivision(True)  # Manually do it once.
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
+        """Linerarly interpolate between two vectors.
+
+        If in_min and in_max are the same, ZeroDivisionError is raised.
+        """
+        cdef double diff = in_max - in_min
+        cdef double off = x - in_min
+        if diff == 0.0:
+            raise ZeroDivisionError('In values must not be equal!')
+        return _vector(
+            out_min.val.x + (off * (out_max.val.x - out_min.val.x)) / diff,
+            out_min.val.y + (off * (out_max.val.y - out_min.val.y)) / diff,
+            out_min.val.z + (off * (out_max.val.z - out_min.val.z)) / diff,
+        )
+
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
         cdef bint x, y, z
