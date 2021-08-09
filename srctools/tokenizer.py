@@ -111,7 +111,6 @@ _OPERATORS = {
     '{': Token.BRACE_OPEN,
     '}': Token.BRACE_CLOSE,
 
-    ':': Token.COLON,
     '=': Token.EQUALS,
     '+': Token.PLUS,
     ',': Token.COMMA,
@@ -131,7 +130,7 @@ ESCAPES = {
 }
 
 # Characters not allowed for bare names on a line.
-BARE_DISALLOWED = set('"\'{};:,[]()\n\t ')
+BARE_DISALLOWED = set('"\'{};,[]()\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
@@ -324,6 +323,8 @@ class Tokenizer(BaseTokenizer):
           If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         * allow_escapes controls whether \\n-style escapes are expanded.
         * allow_star_comments if enabled allows /* */ comments.
+        * colon_operator controls if : produces COLON tokens, or is treated as
+          a bare string.
     """
     chunk_iter: Iterator[str]
 
@@ -335,6 +336,7 @@ class Tokenizer(BaseTokenizer):
         string_bracket: bool=False,
         allow_escapes: bool=True,
         allow_star_comments: bool=False,
+        colon_operator: bool=False,
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
@@ -363,6 +365,7 @@ class Tokenizer(BaseTokenizer):
         self.string_bracket = bool(string_bracket)
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
+        self.colon_operator = bool(colon_operator)
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -534,6 +537,9 @@ class Tokenizer(BaseTokenizer):
                 # If not on line 1 we fall out of the if,
                 # and get an unexpected char error.
 
+            elif next_char == ':' and self.colon_operator:
+                return Token.COLON, ':'
+
             elif next_char == ']':
                 if self.string_bracket:
                     # If string_bracket is set (using PROP_FLAG), this is a
@@ -544,7 +550,7 @@ class Tokenizer(BaseTokenizer):
             elif next_char == ')':
                 raise self.error('No open () to close with ")"!')
 
-            elif next_char == '#': # A #name "directive", which we casefold.
+            elif next_char == '#':  # A #name "directive", which we casefold.
                 value_chars = []
                 while True:
                     next_char = self._next_char()
@@ -565,7 +571,7 @@ class Tokenizer(BaseTokenizer):
                 value_chars = [next_char]
                 while True:
                     next_char = self._next_char()
-                    if next_char in BARE_DISALLOWED:
+                    if next_char in BARE_DISALLOWED or (next_char == ':' and self.colon_operator):
                         # We need to repeat this so we return the ending
                         # char next. If it's not allowed, that'll error on
                         # next call.

@@ -22,7 +22,10 @@ import attr
 
 import srctools
 from srctools.filesys import FileSystem, File
-from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError, escape_text
+from srctools.tokenizer import (
+    BaseTokenizer, Tokenizer, Token,
+    TokenSyntaxError, escape_text,
+)
 from srctools.binformat import struct_read
 
 try:
@@ -1096,7 +1099,7 @@ class EntityDef:
     def parse(
         cls,
         fgd: 'FGD',
-        tok: Tokenizer,
+        tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool=True,
     ):
@@ -2048,6 +2051,7 @@ class FGD:
                 filename=file.path,
                 error=FGDParseError,
                 string_bracket=False,
+                colon_operator=True,
             )
             for token, token_value in tokeniser:
                 # The only things at top-level would be bare strings, and empty lines.

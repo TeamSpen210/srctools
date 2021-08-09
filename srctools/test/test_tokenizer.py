@@ -113,7 +113,7 @@ noprop_parse_test = """
 #ﬁmport test
 #EXclßÀde value
 #caseA\u0345\u03a3test
-{ ]]{ }}}[[ {{] + = :: "test" + "ing" == vaLUE
+{ ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE
 """
 
 noprop_parse_tokens = [
@@ -124,7 +124,7 @@ noprop_parse_tokens = [
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
     T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
     T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE, T.PLUS,
-    T.EQUALS, T.COLON, T.COLON, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
+    T.EQUALS, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
     T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.NEWLINE
 ]
 
@@ -440,6 +440,7 @@ def test_tok_filename(py_c_token):
     ('string_bracket', False),
     ('allow_escapes', True),
     ('allow_star_comments', False),
+    ('colon_operator', False),
 ])
 def test_obj_config(py_c_token, parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
@@ -525,7 +526,43 @@ def test_brackets(py_c_token):
     ])
 
 
-def test_invalid_bracket(py_c_token):
+def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
+    """Test : can be detected as a string or operator depending on the option."""
+    # Explicit string, unaffected.
+    check_tokens(py_c_token('"test:call"', colon_operator=False), [
+        (Token.STRING, 'test:call'),
+    ])
+    check_tokens(py_c_token('"test:call"', colon_operator=True), [
+        (Token.STRING, 'test:call'),
+    ])
+
+    # Applies to bare strings, also note another char after.
+    check_tokens(py_c_token('test:call:{}', colon_operator=False), [
+        (Token.STRING, 'test:call:'),
+        Token.BRACE_OPEN, Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token('test:call:{}', colon_operator=True), [
+        (Token.STRING, 'test'),
+        Token.COLON,
+        (Token.STRING, 'call'),
+        Token.COLON,
+        Token.BRACE_OPEN, Token.BRACE_CLOSE,
+    ])
+
+    # Test the string starting with a colon.
+    check_tokens(py_c_token('{:test:call}', colon_operator=False), [
+        Token.BRACE_OPEN,
+        (Token.STRING, ':test:call'),
+        Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token('{:test:call}', colon_operator=True), [
+        Token.BRACE_OPEN, Token.COLON,
+        (Token.STRING, 'test'), Token.COLON,
+        (Token.STRING, 'call'), Token.BRACE_CLOSE,
+    ])
+
+
+def test_invalid_bracket(py_c_token: Type[Tokenizer]):
     """Test detecting various invalid combinations of [] brackets."""
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
