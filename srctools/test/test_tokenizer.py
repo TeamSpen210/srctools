@@ -436,33 +436,35 @@ def test_tok_filename(py_c_token):
     assert Tokenizer('file', b'binary/filename\xE3\x00.txt').filename == 'binary/filename\\xe3\\x00.txt'
 
 
-def test_obj_config(py_c_token):
+@pytest.mark.parametrize('parm, default', [
+    ('string_bracket', False),
+    ('allow_escapes', True),
+    ('allow_star_comments', False),
+])
+def test_obj_config(py_c_token, parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token
 
-    assert Tokenizer('').string_bracket is False
-    assert Tokenizer('').allow_escapes is True
-
-    assert Tokenizer('', string_bracket=1).string_bracket is True
-    assert Tokenizer('', string_bracket=True).string_bracket is True
-    assert Tokenizer('', string_bracket=False).string_bracket is False
-    assert Tokenizer('', allow_escapes=[]).allow_escapes is False
-    assert Tokenizer('', allow_escapes=True).allow_escapes is True
-    assert Tokenizer('', allow_escapes=False).allow_escapes is False
+    assert getattr(Tokenizer(''), parm) is default
+    assert getattr(Tokenizer('', **{parm: True}), parm) is True
+    assert getattr(Tokenizer('', **{parm: False}), parm) is False
+    assert getattr(Tokenizer('', **{parm: 1}), parm) is True
+    assert getattr(Tokenizer('', **{parm: []}), parm) is False
 
     tok = Tokenizer('')
-    assert tok.string_bracket is False
-    tok.string_bracket = True
-    assert tok.string_bracket is True
-    tok.string_bracket = False
-    assert tok.string_bracket is False
+    setattr(tok, parm, False)
+    assert getattr(tok, parm) is False
 
-    tok = Tokenizer('')
-    assert tok.allow_escapes is True
-    tok.allow_escapes = False
-    assert tok.allow_escapes is False
-    tok.allow_escapes = True
-    assert tok.allow_escapes is True
+    setattr(tok, parm, True)
+    assert getattr(tok, parm) is True
+
+    # Don't check it does force setting them to bools, Python version doesn't
+    # need to do that.
+    setattr(tok, parm, '')
+    assert not getattr(tok, parm)
+
+    setattr(tok, parm, {1, 2, 3})
+    assert getattr(tok, parm)
 
 
 @pytest.mark.parametrize('inp, out', [
@@ -521,6 +523,7 @@ def test_brackets(py_c_token):
         (Token.STRING, 'unopened'),
         Token.BRACK_CLOSE,
     ])
+
 
 def test_invalid_bracket(py_c_token):
     """Test detecting various invalid combinations of [] brackets."""
