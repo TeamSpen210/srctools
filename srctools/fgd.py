@@ -11,7 +11,7 @@ import math
 import operator
 
 from typing import (
-    Optional, Union, overload, ClassVar, Any,
+    Optional, Union, overload, cast, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
@@ -706,6 +706,32 @@ class KeyValues:
     readonly: bool = False
     reportable: bool = False
 
+    @property
+    def choices_list(self) -> List[Tuple[str, str, FrozenSet[str]]]:
+        """Check that the keyvalues are CHOICES type, and then return val_list.
+
+        This isolates the type ambiguity of the attr.
+        """
+        if self.type is not ValueTypes.CHOICES:
+            raise TypeError
+        if self.val_list is None:
+            lst: List[Tuple[str, str, FrozenSet[str]]] = []
+            self.val_list = lst
+        return cast(list, self.val_list)
+
+    @property
+    def flags_list(self) -> List[Tuple[int, str, bool, FrozenSet[str]]]:
+        """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
+
+        This isolates the type ambiguity of the attr.
+        """
+        if self.type is not ValueTypes.SPAWNFLAGS:
+            raise TypeError
+        if self.val_list is None:
+            lst: List[Tuple[int, str, bool, FrozenSet[str]]] = []
+            self.val_list = lst
+        return cast(list, self.val_list)
+
     def copy(self) -> 'KeyValues':
         """Create a duplicate of this keyvalue."""
         return KeyValues(
@@ -735,16 +761,13 @@ class KeyValues:
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
-        if self.val_list is not None:
-            if self.type is ValueTypes.CHOICES:
-                options = {val_list[0] for val_list in self.val_list}
-                options.add(self.default)
-                yield from options
-            elif self.type is ValueTypes.SPAWNFLAGS:
-                for bitflag, name, default, tags in self.val_list:
-                    yield bitflag
-            else:
-                yield self.default
+        if self.type is ValueTypes.CHOICES:
+            options = {val_list[0] for val_list in self.choices_list}
+            options.add(self.default)
+            yield from options
+        elif self.type is ValueTypes.SPAWNFLAGS:
+            for bitflag, name, default, tags in self.flags_list:
+                yield str(bitflag)
         else:
             yield self.default
 
@@ -785,7 +808,7 @@ class KeyValues:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
-                for index, name, default, tags in self.val_list or ():
+                for index, name, default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
@@ -795,7 +818,7 @@ class KeyValues:
                     else:
                         file.write('\n')
             elif self.type is ValueTypes.CHOICES:
-                for value, name, tags in self.val_list or ():
+                for value, name, tags in self.choices_list:
                     # Numbers can be unquoted, everything else cannot.
                     try:
                         float(value)
@@ -828,13 +851,13 @@ class KeyValues:
         # Spawnflags have integer names and defaults,
         # choices has string values and no default.
         if self.type is ValueTypes.SPAWNFLAGS:
-            file.write(_fmt_8bit.pack(len(self.val_list)))
+            file.write(_fmt_8bit.pack(len(self.flags_list)))
             # spawnflags go up to at least 1<<23.
-            for val, name, default, tags in self.val_list:
+            for mask, name, default, tags in self.flags_list:
                 BinStrDict.write_tags(file, str_dict, tags)
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
-                power = int(math.log2(val))
+                power = int(math.log2(mask))
                 assert power < 128, "Spawnflags are too big for packing into a byte!"
                 if default:  # Pack the default as the MSB.
                     power |= 128
@@ -846,8 +869,8 @@ class KeyValues:
 
         if self.type is ValueTypes.CHOICES:
             # Use two bytes, these can be large (soundscapes).
-            file.write(_fmt_16bit.pack(len(self.val_list)))
-            for val, name, tags in self.val_list:
+            file.write(_fmt_16bit.pack(len(self.choices_list)))
+            for val, name, tags in self.choices_list:
                 BinStrDict.write_tags(file, str_dict, tags)
                 file.write(str_dict(val))
                 file.write(str_dict(name))
