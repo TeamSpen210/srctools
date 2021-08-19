@@ -892,7 +892,7 @@ class KeyValues:
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
             [val_count] = struct_read(_fmt_8bit, file)
-            val_list = [0] * val_count
+            val_list = [()] * val_count
             for ind in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
                 [power] = struct_read(_fmt_8bit, file)
@@ -919,7 +919,7 @@ class KeyValues:
             disp_name,
             default,
             '',
-            val_list,
+            val_list,  # type: ignore
             readonly,
         )
 
@@ -1057,7 +1057,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
                     return value
         raise KeyError((name, search_tags))
 
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterator[str]:
         """Yields all keys this object has."""
         seen: set[str] = set()
         for ent_map in self._maps():
@@ -1174,9 +1174,8 @@ class EntityDef:
                 elif help_type is None:
                     raise tok.error('help_type not set?')
                 elif help_type is HelperTypes.INHERIT:
-                    for base in args:
-                        if eval_bases:
-                            base = fgd[base]
+                    for base_s in args:
+                        base: Union[str, EntityDef] = fgd[base_s] if eval_bases else base_s
                         if base not in entity.bases:
                             entity.bases.append(base)
                 elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
@@ -1302,14 +1301,14 @@ class EntityDef:
                     )
 
                 # Read desc
-                attrs, token = read_colon_list(tok)
+                io_vals, token = read_colon_list(tok)
 
                 if token is token.EQUALS:
                     raise tok.error(token)
 
-                if attrs:
+                if io_vals:
                     try:
-                        [io_desc] = attrs
+                        [io_desc] = io_vals
                     except ValueError:
                         raise tok.error('Too many values for IO definition!')
                 else:
@@ -1345,7 +1344,7 @@ class EntityDef:
 
                 is_readonly = show_in_report = had_colon = False
                 has_equal: Optional[Token] = None
-                attrs: Optional[list[str]] = None
+                kv_vals: Optional[list[str]] = None
 
                 if next_token is Token.STRING:
                     # 'report' or 'readonly'
@@ -1364,29 +1363,29 @@ class EntityDef:
                     # Special case - spawnflags doesn't have to have
                     # any info - skips straight to the end.
                     if val_typ is ValueTypes.SPAWNFLAGS:
-                        attrs = []
+                        kv_vals = []
                         has_equal = next_token
                 elif next_token is Token.NEWLINE:
-                    attrs = []
+                    kv_vals = []
                     has_equal = next_token
                 else:
                     raise tok.error(next_token)
 
-                if attrs is None:
-                    attrs, has_equal = read_colon_list(tok, had_colon)
-                attr_len = len(attrs)
+                if kv_vals is None:
+                    kv_vals, has_equal = read_colon_list(tok, had_colon)
+                attr_len = len(kv_vals)
 
                 kv_desc = default = ''
                 if attr_len == 3:
-                    disp_name, default, kv_desc = attrs
+                    disp_name, default, kv_desc = kv_vals
                 elif attr_len == 2:
-                    disp_name, default = attrs
+                    disp_name, default = kv_vals
                 elif attr_len == 1:
-                    [disp_name] = attrs
+                    [disp_name] = kv_vals
                 elif attr_len == 0:
                     disp_name = name
                 else:
-                    raise tok.error('Too many attributes for keyvalue!\n{!r}', attrs)
+                    raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
 
                 if val_typ is ValueTypes.BOOL:
                     # These are old aliases, change them to proper booleans.
@@ -1399,11 +1398,7 @@ class EntityDef:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
                     # Read the choices in the []
-                    val_list: Union[
-                        None,
-                        list[tuple[int, str, bool, frozenset[str]]],
-                        list[tuple[str, str, frozenset[str]]],
-                    ] = []
+                    val_list: Optional[list[tuple]] = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1552,7 +1547,7 @@ class EntityDef:
     @overload
     def get_helpers(self, typ: str) -> Iterator[UnknownHelper]: ...
 
-    def get_helpers(self, typ: Union[HelperT, str]) -> Iterator[Helper]:
+    def get_helpers(self, typ: Union[Type[HelperT], str]) -> Iterator[Helper]:
         """Find all helpers with this specific type."""
         if isinstance(typ, str):
             for helper in self.helpers:
@@ -1578,11 +1573,8 @@ class EntityDef:
                     reverse=True,
                 ):
                     if match_tags(tags, key_tag):
-                        category[key] = {
-                            frozenset(): value
-                        }
+                        category[key] = {frozenset(): value}
                         if isinstance(value, KeyValues) and value.val_list:
-
                             # Filter the value list as well.
                             value.val_list = [
                                 val[:-1] + (frozenset(), )
@@ -1616,8 +1608,10 @@ class EntityDef:
                 file.write('\n\thalfgridsnap')
             elif isinstance(helper, UnknownHelper):
                 file.write('\n\t{}({})'.format(helper.name, ', '.join(args)))
-            else:
+            elif helper.TYPE is not None:
                 file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+            else:
+                raise TypeError(f'Helper {helper!r} has no TYPE attr?')
             if isinstance(helper, HelperExtOrderBy):
                 kv_order_list.extend(map(str.casefold, args))
 
@@ -1937,11 +1931,11 @@ class FGD:
                     for tag, kv in base_kv_map.items():
                         if tag not in ent_kv_map:
                             ent_kv_map[tag] = kv.copy()
-                        elif kv.type.has_list:
+                        elif kv.type.has_list and ent_kv_map[tag].type is kv.type:
                             # If both are lists, merge those. This is mainly
                             # for spawnflags.
                             targ_list = ent_kv_map[tag].val_list
-                            if targ_list:
+                            if targ_list is not None and kv.val_list is not None:
                                 for val in kv.val_list:
                                     if val not in targ_list:
                                         targ_list.append(val)
