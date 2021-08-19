@@ -344,7 +344,7 @@ VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
-def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
+def read_colon_list(tok: BaseTokenizer, had_colon=False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
 
     The token found at the end is returned.
@@ -411,7 +411,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
-def read_tags(tok: Tokenizer) -> FrozenSet[str]:
+def read_tags(tok: BaseTokenizer) -> FrozenSet[str]:
     """Parse a set of tags from the file.
 
     The open bracket was just read.
