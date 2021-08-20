@@ -15,10 +15,8 @@ from sys import intern
 
 from typing import (
     Optional, Union, overload, TypeVar, Generic,
-    Dict, List, Tuple, Set, Mapping, IO,
-    Iterable, Iterator, AbstractSet,
-    MutableMapping,
-    Pattern, Match,
+    Dict, List, Tuple, Set, Mapping, MutableMapping, IO,
+    Iterable, Iterator, AbstractSet, Pattern, Match,
 )
 
 import attr
@@ -3108,21 +3106,14 @@ class Output:
 
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""
-        buffer.write(ind + self._get_text())
+        buffer.write(ind + self.as_keyvalue())
 
-    def _get_text(self) -> str:
+    def as_keyvalue(self) -> str:
         """Generate the text form of the output."""
+        sep = ',' if self.comma_sep else self.SEP
         return (
-            '"{output}" "{targ}{sep}{input}{sep}{params}'
-            '{sep}{delay:g}{sep}{times}"\n'.format(
-                output=self.exp_out(),
-                targ=self.target,
-                input=self.exp_in(),
-                params=self.params,
-                delay=self.delay,
-                times=self.times,
-                sep=',' if self.comma_sep else OUTPUT_SEP,
-            )
+            f'"{self.exp_out()}" "{self.target}{sep}{self.exp_in()}'
+            f'{sep}{self.params}{sep}{self.delay:g}{sep}{self.times}"\n'
         )
 
     def copy(self) -> 'Output':
@@ -3152,12 +3143,7 @@ class Output:
         else:
             target = self.target
 
-        return '{out} {name}{d}{inp}{d}{param}{d}{time}{d}{rep}'.format(
-            d=delim,
-            out=self.output,
-            name=target,
-            inp=self.input,
-            param=self.params,
-            time=self.delay,
-            rep=self.times,
+        return (
+            f'{self.output} {target}{delim}{self.input}{delim}'
+            f'{self.params}{delim}{self.delay}{delim}{self.times}'
         )

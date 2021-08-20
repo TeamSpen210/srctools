@@ -1718,7 +1718,7 @@ class BSP:
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
-                out.write(output._get_text().encode('ascii'))
+                out.write(output.as_keyvalue().encode('ascii'))
             out.write(b'}\n')
         out.write(b'\x00')
 
