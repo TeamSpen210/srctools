@@ -118,3 +118,30 @@ appliesto(tag1, tag2, !tag3)
             ('four', 'Fourth', frozenset()),
         ],
     )
+
+@pytest.mark.parametrize('code, is_readonly, is_report', [
+    ('(int): "None"', False, False),
+    ('(int) readonly: "Readonly"', True, False),
+    ('(*int): "Old Report"', False, True),
+    ('(int) report: "New Report"', False, True),
+    ('(*int) readonly: "Both old-style"', True, True),
+    ('(int) readonly report: "Both new-style"', True, True),
+    # 'report readonly' is not allowed.
+    ('(*int) report: "Redundant"', False, True),
+    ('(*int) readonly report: "Redundant + readonly"', True, True),
+])
+def test_parse_kv_flags(code, is_readonly, is_report) -> None:
+    """Test the readonly and reportable flags can be set."""
+    fsys = VirtualFileSystem({'test.fgd': f"""
+    @PointClass = ent
+        [
+        keyvalue{code}: 1
+        ]
+    """})
+    fgd = FGD()
+    with fsys:
+        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+    kv = fgd['ent'].kv['keyvalue']
+
+    assert kv.readonly is is_readonly, kv
+    assert kv.reportable is is_report, kv

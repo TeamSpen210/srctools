@@ -1321,6 +1321,7 @@ class EntityDef:
             else:
                 # Keyvalue
                 name = io_type
+                is_readonly = show_in_report = had_colon = False
 
                 # Next is either the value type parens, or a tags brackets.
 
@@ -1335,29 +1336,31 @@ class EntityDef:
                     raise tok.error(val_token)
 
                 raw_value_type = raw_value_type.strip()
+                if raw_value_type.startswith('*'):
+                    # Old format for specifying 'reportable' flag.
+                    show_in_report = True
+                    raw_value_type = raw_value_type[1:]
                 try:
                     val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
                 except KeyError:
                     raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
 
+                # Look for the 'readonly' and 'report' flags, in that order.
                 next_token, key_flag = tok()
+                if next_token is Token.STRING and key_flag.casefold() == 'readonly':
+                    is_readonly = True
+                    # Fetch next in case it has both.
+                    next_token, key_flag = tok()
 
-                is_readonly = show_in_report = had_colon = False
+                if next_token is Token.STRING and key_flag.casefold() == 'report':
+                    show_in_report = True
+                    # Fetch for the rest of the checks.
+                    next_token, key_flag = tok()
+
                 has_equal: Optional[Token] = None
                 kv_vals: Optional[list[str]] = None
 
-                if next_token is Token.STRING:
-                    # 'report' or 'readonly'
-                    if key_flag.casefold() == 'readonly':
-                        is_readonly = True
-                    elif key_flag.casefold() == 'report':
-                        show_in_report = True
-                    else:
-                        raise tok.error(
-                            'Invalid keyword after keyvalue type: {!r}',
-                            key_flag
-                        )
-                elif next_token is Token.COLON:
+                if next_token is Token.COLON:
                     had_colon = True
                 elif next_token is Token.EQUALS:
                     # Special case - spawnflags doesn't have to have
