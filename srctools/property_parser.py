@@ -486,9 +486,9 @@ class Property:
             yield from block
 
     @overload
-    def find_key(self, key: str, def_: str=...) -> 'Property': ...
-    @overload
     def find_key(self, key: str, *, or_blank: bool) -> 'Property': ...
+    @overload
+    def find_key(self, key: str, def_: str=...) -> 'Property': ...
     def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Property':
         """Obtain the child Property with a given name.
 
