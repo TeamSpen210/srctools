@@ -916,10 +916,7 @@ class BSP:
     def _lmp_read_primitives(self, data: bytes) -> Iterator['Primitive']:
         """Parse the primitives lumps."""
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
-        indices = list(struct.unpack(
-            '<' + 'H' * (len(self.lumps[BSP_LUMPS.PRIMINDICES].data) // 2),
-            self.lumps[BSP_LUMPS.PRIMINDICES].data,
-        ))
+        indices = read_array('<H', self.lumps[BSP_LUMPS.PRIMINDICES].data)
         for (
             prim_type,
             first_ind, ind_count,
@@ -943,7 +940,7 @@ class BSP:
                 add_ind(prim.indexed_verts), len(prim.indexed_verts),
                 add_vert(prim.verts), len(prim.verts),
             )
-        self.lumps[BSP_LUMPS.PRIMINDICES].data = struct.pack('<' + 'H' * len(indices), *indices)
+        self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
         self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join([
             struct.pack('<fff', pos.x, pos.y, pos.z) for pos in verts
         ])
