@@ -52,6 +52,7 @@ HEADER_LUMP = '<3i4s'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
+KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers don't work for that.
 Edge = Tuple[Vec, Vec]
 
 # Game lump IDs
@@ -366,7 +367,7 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
 def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) -> Callable[[List[T]], int]:
     """Create a function for positioning a sublist inside the larger list, adding it if required.
 
-    This is used to build up structure arrays where othe lumps access subsections of it.
+    This is used to build up structure arrays where other lumps access subsections of it.
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
     # occurrences of the first index to speed up the search.
@@ -380,12 +381,18 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
             # Array is empty, so the index doesn't matter, it'll never be
             # dereferenced.
             return 0
-        for i in by_index.get(key_func(items[0]), ()):
-            if item_list[i:i + len(items)] == items:
-                return i
+        try:
+            indices = by_index[key_func(items[0])]
+        except KeyError:
+            pass
+        else:
+            for i in indices:
+                if item_list[i:i + len(items)] == items:
+                    return i
         # Not found, append to the end.
         i = len(item_list)
         item_list.extend(items)
+        assert item_list[i: i + len(items)] == items
         # Update the index.
         for j, item2 in enumerate(items):
             by_index.setdefault(key_func(item2), []).append(i + j)
@@ -979,6 +986,7 @@ class BSP:
             # If orig faces is provided, that is the original face
             # we were created from. Additionally, it seems the original
             # face data has invalid texinfo, so copy ours on top of it.
+            hammer_id: Optional[int]
             if _orig_faces is not None:
                 orig_face = _orig_faces[orig_face_ind]
                 orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
@@ -1392,7 +1400,7 @@ class BSP:
             )
 
         # Loop over entities, map to their brush model.
-        brush_ents = WeakKeyDictionary()
+        brush_ents: WeakKeyDictionary[Entity, BModel] = WeakKeyDictionary()
         vmf: VMF = self.ents
         brush_ents[vmf.spawn] = bmodel_list[0]
         for ent in vmf.entities:
@@ -1457,7 +1465,8 @@ class BSP:
     def _lmp_read_pakfile(self, data: bytes) -> ZipFile:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
-        zipfile.filename = self.filename
+        if self.filename is not None:
+            zipfile.filename = self.filename
         return zipfile
 
     def _lmp_write_pakfile(self, file: ZipFile) -> bytes:
@@ -2295,7 +2304,7 @@ class TexInfo:
 @attr.define(eq=False)
 class Plane:
     """A plane."""
-    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> None:
+    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> Vec:
         """Recompute the plane type whenever the normal is changed."""
         value = Vec(value)
         self.type = PlaneType.from_normal(value)
@@ -2309,7 +2318,7 @@ class Plane:
     dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
     type: PlaneType = attr.Factory(_type_default, takes_self=True)
 
-    del _normal_setattr,_type_default
+    del _normal_setattr, _type_default
 
 
 @attr.define(eq=False)
@@ -2341,7 +2350,7 @@ class Face:
     orig_face: Optional['Face']
     primitives: List[Primitive]
     smoothing_groups: int
-    hammer_id: int  # The original ID of the Hammer face.
+    hammer_id: Optional[int]  # The original ID of the Hammer face.
 
 
 @attr.define(eq=False)
