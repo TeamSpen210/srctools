@@ -85,13 +85,10 @@ def read_array(fmt: str, data: bytes) -> List[int]:
 def write_array(fmt: str, data: List[int]) -> bytes:
     """Build a packed array of integers."""
     if len(fmt) == 2:
-        endianness, fmt = fmt
+        endianness = fmt[0]
+        fmt = fmt[1]
     else:
         endianness = ''
-    try:
-        item_size = SIZES[fmt]
-    except KeyError:
-        raise ValueError(f'Unknown format character {fmt!r}!')
 
     return Struct(endianness + fmt * len(data)).pack(*data)
 
