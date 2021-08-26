@@ -3,6 +3,6 @@ global-include *.c *.cpp *.h *.hpp
 # Lookup table.
 include libsquish/singlecolourlookup.inl
 # Include test samples
-recursive-include srctools/test *
-# Then remove pycache folder that included.
-prune **/__pycache__/**
+recursive-include srctools/test/test_dmx *
+recursive-include srctools/test/test_rotations *
+recursive-include srctools/test/test_vec *

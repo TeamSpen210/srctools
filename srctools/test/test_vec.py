@@ -3,14 +3,10 @@ import pickle
 import copy
 
 import operator as op
+from pathlib import Path
 
 from srctools.test import *
 from srctools import Vec_tuple, math as vec_mod
-
-try:
-    from importlib.resources import path as import_file_path
-except ImportError:
-    from importlib_resources import path as import_file_path
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
@@ -1114,26 +1110,21 @@ def test_bbox(py_c_vec: PyCVec):
     test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
 
 
-def test_vmf_rotation(py_c_vec: PyCVec):
+def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
     """Complex test.
 
     Use a compiled map to check the functionality of Vec.rotate().
     """
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
-
     from srctools.bsp import BSP
-    import srctools.test
 
-    with import_file_path(srctools.test, 'rot_main.bsp') as bsp_path:
-        bsp = BSP(bsp_path)
-        vmf = bsp.read_ent_data()
-    del bsp
+    vmf = BSP(datadir / 'rot_main.bsp').ents
 
     for ent in vmf.entities:
         if ent['classname'] != 'info_target':
             continue
         angle_str = ent['angles']
-        angles = Vec.from_str(angle_str)
+        angles = Angle.from_str(angle_str)
         local_vec = Vec(
             float(ent['local_x']),
             float(ent['local_y']),
@@ -1145,6 +1136,7 @@ def test_vmf_rotation(py_c_vec: PyCVec):
 
         assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3)
         assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3)
+        assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3)
 
 
 def test_cross_product_axes(py_c_vec):

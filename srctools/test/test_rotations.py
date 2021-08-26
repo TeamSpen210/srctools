@@ -1,7 +1,7 @@
 """Test rotations in srctools.vec."""
 import copy
-import os.path
 import pickle
+from pathlib import Path
 from typing import NamedTuple, List
 
 from srctools.test import *
@@ -25,12 +25,13 @@ class RotationData(NamedTuple):
     up_z: float
 
 
+# TODO: pytest-datadir doesn't have session-scope fixture.
 @pytest.fixture(scope='session')
 def rotation_data() -> List[RotationData]:
     """Parse the rotation data dumped from the engine, used to check our math."""
     data = []
-    with open(os.path.join(RESLOC, 'rotation.txt')) as f:
-        for line_num, line in enumerate(f, start=1):
+    with (Path(__file__).with_suffix('') / 'rotation.txt').open() as f:
+        for line in f:
             if not line.startswith('|'):
                 # Skip other junk in the log.
                 continue

@@ -87,9 +87,9 @@ setup(
         ],
         # Data used by tests.
         'srctools.test': [
-            'dmx_samples/*.dmx',
-            'rot_main.bsp',
-            'rotation.txt',
+            'test_dmx/*.dmx',
+            'test_rotations/rotation.txt',
+            'test_vec/rot_main.bsp',
         ]
     },
 
@@ -112,5 +112,9 @@ setup(
     extras_require={
         'wx': ['wxPython'],  # VTF support.
         'cy': ['cython'],  # Force Cython so extensions can be buildable.
+        'test': [
+            'pytest',
+            'pytest-datadir',
+        ],
     }
 )
