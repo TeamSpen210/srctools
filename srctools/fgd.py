@@ -1961,9 +1961,9 @@ class FGD:
             ent.bases.clear()
 
     @overload
-    def export(self) -> str: ...
-    @overload
     def export(self, file: TextIO) -> None: ...
+    @overload
+    def export(self) -> str: ...
     def export(self, file=None):
         """Write the FGD contents into a text file.
 
