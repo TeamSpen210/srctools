@@ -81,7 +81,6 @@ setup(
     package_data={
         'srctools': [
             'fgd.lzma',
-            'srctools.fgd',
             'py.typed',
             '*.pxd',  # Cython headers
         ],

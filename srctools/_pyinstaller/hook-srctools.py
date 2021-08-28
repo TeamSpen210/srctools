@@ -5,9 +5,8 @@ import os
 srctools_loc = os.path.dirname(get_module_file_attribute('srctools'))
 
 datas = [
-    # Add our FGD database and our srctools custom FGD.
+    # Add our FGD database.
     (os.path.join(srctools_loc, 'fgd.lzma'), 'srctools'),
-    (os.path.join(srctools_loc, 'srctools.fgd'), 'srctools'),
 ]
 
 excludedimports = [
