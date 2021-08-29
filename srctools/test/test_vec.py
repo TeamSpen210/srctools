@@ -804,12 +804,13 @@ def test_iter_grid(py_c_vec):
     assert list(Vec.iter_grid(Vec(35, 40, 20), Vec(35, 40, 20))) == [Vec(35, 40, 20)]
 
 
+# Various keys similar to correct values, in order to test edge cases in logic.
 INVALID_KEYS = [
     '4',
     '',
     -1,
-    4,
-    4.0,
+    3, 4,
+    3.0, 4.0,
     bool,
     slice(0, 1),
     None,
@@ -819,6 +820,7 @@ INVALID_KEYS = [
     -2 ** 256,
     '♞',
 ]
+
 
 def test_getitem(py_c_vec):
     """Test vec[x] with various args."""
@@ -863,11 +865,11 @@ def test_getitem(py_c_vec):
 
     for invalid in INVALID_KEYS:
         try:
-            v[invalid]
+            res = v[invalid]
         except KeyError:
             pass
         else:
-            pytest.fail(f"Key succeeded: {invalid!r}")
+            pytest.fail(f"Key succeeded: {invalid!r} -> {res!r}")
 
 
 def test_setitem(py_c_vec):

@@ -1722,8 +1722,8 @@ cdef class Vec:
         Useful in conjunction with a loop to apply commands to all values.
         """
         cdef int ind
-        cdef Py_UCS4 chr
-        if isinstance(ind_obj, int):
+        cdef Py_UCS4 axis
+        if isinstance(ind_obj, int) and ind_obj is not None:
             try:
                 ind = ind_obj
             except (TypeError, ValueError, OverflowError):
@@ -1735,21 +1735,18 @@ cdef class Vec:
                     return self.val.y
                 elif ind == 2:
                     return self.val.z
-            raise KeyError(f'Invalid axis: {ind!r}' '!')
         else:
-            if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                chr = (<str>ind_obj)[0]
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+            if isinstance(ind_obj, str) and ind_obj is not None and len(<str>ind_obj) == 1:
+                axis = (<str>ind_obj)[0]
 
-            if chr == "x":
-                return self.val.x
-            elif chr == "y":
-                return self.val.y
-            elif chr == "z":
-                return self.val.z
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                if axis == "x":
+                    return self.val.x
+                elif axis == "y":
+                    return self.val.y
+                elif axis == "z":
+                    return self.val.z
+
+        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
     def __setitem__(self, ind_obj, double val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -1758,7 +1755,7 @@ cdef class Vec:
         Useful in conjunction with a loop to apply commands to all values.
         """
         cdef int ind
-        cdef Py_UCS4 chr
+        cdef Py_UCS4 axis
         if isinstance(ind_obj, int):
             try:
                 ind = ind_obj
@@ -1774,21 +1771,21 @@ cdef class Vec:
                 elif ind == 2:
                     self.val.z = val
                     return
-            raise KeyError(f'Invalid axis: {ind!r}')
         else:
             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                chr = (<str>ind_obj)[0]
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                axis = (<str>ind_obj)[0]
 
-            if chr == "x":
-                self.val.x = val
-            elif chr == "y":
-                self.val.y = val
-            elif chr == "z":
-                self.val.z = val
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                if axis == "x":
+                    self.val.x = val
+                    return
+                elif axis == "y":
+                    self.val.y = val
+                    return
+                elif axis == "z":
+                    self.val.z = val
+                    return
+
+        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
     def transform(self):
         """Perform rotations on this Vector efficiently.
