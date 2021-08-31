@@ -178,7 +178,7 @@ class Property:
     @property
     def value(self) -> _Prop_Value:
         """Return the value of a leaf property."""
-        if self.has_children():
+        if isinstance(self._value, list):
             warnings.warn("Accessing internal property block list is deprecated", DeprecationWarning, 2)
         return self._value
 
@@ -498,7 +498,7 @@ class Property:
           this will raise NoKeyError.
         - This prefers keys located closer to the end of the value list.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         prop: Property
@@ -521,7 +521,7 @@ class Property:
           be raised.
         - This prefers keys located closer to the end of the value list.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         prop: Property
@@ -542,7 +542,7 @@ class Property:
           default value, or raise NoKeyError if none is provided.
         - This prefers keys located closer to the end of the value list.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
         prop: Property
@@ -568,7 +568,7 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         try:
             return int(self._get_value(key))
@@ -588,7 +588,7 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         try:
             return float(self._get_value(key))
@@ -608,7 +608,7 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         try:
             return BOOL_LOOKUP[self._get_value(key).casefold()]
@@ -626,7 +626,7 @@ class Property:
         If multiple keys with the same name are present, this will use the
         last only.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         try:
             return _Vec.from_str(self._get_value(key), x, y, z)
@@ -640,7 +640,7 @@ class Property:
           blank properties will be added automatically
         - path should be a tuple of names, or a single string.
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
 
         current_prop = self
@@ -670,7 +670,7 @@ class Property:
 
     def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
-        if self.has_children():
+        if isinstance(self._value, list):
             # This recurses if needed
             return Property(
                 self.real_name,
@@ -688,7 +688,7 @@ class Property:
 
         This keeps only the last if multiple items have the same name.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             return {item._folded_name: item.as_dict() for item in self}
         else:
             return self._value
@@ -706,7 +706,7 @@ class Property:
         yielded. Otherwise, each child must be a single value and each
         of those will be yielded. The name is ignored.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             arr = []
             for child in self._value:
                 if child.has_children():
@@ -739,13 +739,13 @@ class Property:
 
     def __len__(self) -> builtins.int:
         """Determine the number of child properties."""
-        if self.has_children():
+        if isinstance(self._value, list):
             return len(self._value)
         raise ValueError("{!r} has no children!".format(self))
 
     def __bool__(self) -> builtins.bool:
         """Properties are true if we have children, or have a value."""
-        if self.has_children():
+        if isinstance(self._value, list):
             return len(self._value) > 0
         else:
             return bool(self._value)
@@ -754,7 +754,7 @@ class Property:
         """Iterate through the value list.
 
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             return iter(self._value)
         else:
             raise ValueError(
@@ -769,7 +769,7 @@ class Property:
         If blocks is True, the property blocks will be returned as well as
         keyvalues. If false, only keyvalues will be yielded.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             return self._iter_tree(blocks)
         else:
             raise ValueError(
@@ -789,7 +789,7 @@ class Property:
     def __contains__(self, key: str) -> builtins.bool:
         """Check to see if a name is present in the children."""
         key = key.casefold()
-        if self.has_children():
+        if isinstance(self._value, list):
             for prop in self._value:
                 if prop._folded_name == key:
                     return True
@@ -813,7 +813,7 @@ class Property:
           (Default can be chosen by passing a 2-tuple like Prop[key, default])
         - If none are found, it raises IndexError.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             if isinstance(index, int):
                 return self._value[index]
             else:
@@ -829,10 +829,10 @@ class Property:
             raise ValueError("Can't index a Property without children!")
 
     def __setitem__(
-            self,
-            index: Union[builtins.int, slice, str],
-            value: _Prop_Value
-            ):
+        self,
+        index: Union[builtins.int, slice, str],
+        value: _Prop_Value
+    ) -> None:
         """Allow setting the values of the children directly.
 
         If the value is a Property, this will be inserted under the given
@@ -843,49 +843,47 @@ class Property:
         - If given a tuple of strings, it will search through that path,
           and set the value of the last matching Property.
         """
-        if self.has_children():
-            if isinstance(index, int):
-                self._value[index] = value
-            else:
-                if isinstance(value, Property):
-                    # We don't want to assign properties, we want to add them under
-                    # this name!
-                    value.name = index
-                    try:
-                        # Replace at the same location..
-                        index = self._value.index(self.find_key(index))
-                    except NoKeyError:
-                        self._value.append(value)
-                    else:
-                        self._value[index] = value
-                else:
-                    try:
-                        self.find_key(index)._value = value
-                    except NoKeyError:
-                        self._value.append(Property(index, value))
-        else:
+        if not isinstance(self._value, list):
             raise ValueError("Can't index a Property without children!")
+        if isinstance(index, (int, slice)):
+            self._value[index] = value
+        else:
+            if isinstance(value, Property):
+                # We don't want to assign properties, we want to add them under
+                # this name!
+                value.name = index
+                try:
+                    # Replace at the same location..
+                    index = self._value.index(self.find_key(index))
+                except NoKeyError:
+                    self._value.append(value)
+                else:
+                    self._value[index] = value
+            else:
+                try:
+                    self.find_key(index)._value = value
+                except NoKeyError:
+                    self._value.append(Property(index, value))
 
-    def __delitem__(self, index: Union[builtins.int, str]) -> None:
+    def __delitem__(self, index: Union[builtins.int, slice, str]) -> None:
         """Delete the given property index.
 
         - If given an integer, it will delete by position.
         - If given a string, it will delete the last Property with that name.
         """
-        if self.has_children():
-            if isinstance(index, int):
-                del self._value[index]
-            else:
-                try:
-                    self._value.remove(self.find_key(index))
-                except NoKeyError as no_key:
-                    raise IndexError(no_key) from no_key
-        else:
+        if not isinstance(self._value, list):
             raise IndexError("Can't index a Property without children!")
+        if isinstance(index, (int, slice)):
+            del self._value[index]
+        else:
+            try:
+                self._value.remove(self.find_key(index))
+            except NoKeyError as no_key:
+                raise IndexError(no_key) from no_key
 
     def clear(self) -> None:
         """Delete the contents of a block."""
-        if self.has_children():
+        if isinstance(self._value, list):
             self._value.clear()
         else:
             raise ValueError("Can't clear a Property without children!")
@@ -896,7 +894,7 @@ class Property:
         This deep-copies the Property tree first.
         Works with either a sequence of Properties or a single Property.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             copy = self.copy()
             if isinstance(other, Property):
                 if other._folded_name is None:
@@ -916,7 +914,7 @@ class Property:
 
         This is the += op, where it does not copy the object.
         """
-        if self.has_children():
+        if isinstance(self._value, list):
             if isinstance(other, Property):
                 if other._folded_name is None:
                     self._value.extend(other._value)
@@ -936,8 +934,8 @@ class Property:
         After execution, this tree will have only one sub-Property for
         each of the given names. This ignores leaf Properties.
         """
-        if not self.has_children():
-            raise ValueError("{!r} has no children!".format(self))
+        if not isinstance(self._value, list):
+            raise ValueError(f"{self!r} has no children!")
         folded_names = [name.casefold() for name in names]
         new_list = []
         merge: dict[str, Property] = {
@@ -961,6 +959,8 @@ class Property:
 
     def ensure_exists(self, key: str) -> 'Property':
         """Ensure a Property group exists with this name, and return it."""
+        if not isinstance(self._value, list):
+            raise ValueError(f"{self!r} has no children!")
         try:
             return self.find_key(key)
         except NoKeyError:
@@ -1046,7 +1046,7 @@ class Property:
         >>> print(repr(prop))
         Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
         """
-        if not self.has_children():
+        if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         return _Builder(self)
 
