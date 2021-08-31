@@ -1240,17 +1240,17 @@ class Matrix:
 
         return mat
 
-    def forward(self) -> 'Vec':
-        """Return a normalised vector pointing in the +X direction."""
-        return Py_Vec(self._aa, self._ab, self._ac)
+    def forward(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the X axis."""
+        return Py_Vec(mag * self._aa, mag * self._ab, mag * self._ac)
 
-    def left(self) -> 'Vec':
-        """Return a normalised vector pointing in the +Y direction."""
-        return Py_Vec(self._ba, self._bb, self._bc)
+    def left(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the Y axis."""
+        return Py_Vec(mag * self._ba, mag * self._bb, mag * self._bc)
 
-    def up(self) -> 'Vec':
-        """Return a normalised vector pointing in the +Z direction."""
-        return Py_Vec(self._ca, self._cb, self._cc)
+    def up(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the Z axis."""
+        return Py_Vec(mag * self._ca, mag * self._cb, mag * self._cc)
 
     def __getitem__(self, item: Tuple[int, int]) -> float:
         """Retrieve an individual matrix value by x, y position (0-2)."""

@@ -4,6 +4,8 @@ import pickle
 from pathlib import Path
 from typing import NamedTuple, List
 
+import pytest
+
 from srctools.test import *
 from srctools import Vec
 
@@ -335,15 +337,40 @@ def test_rotating_vectors(
         mat = Matrix.from_angle(*data.angle)
         assert_rot(mat, Matrix.from_angle(Angle(data.angle)))
 
-        # Then check rotating vectors works correctly.
+        # Check rotating vectors works correctly.
         assert_vec(X @ mat, data.for_x, data.for_y, data.for_z)
         assert_vec(Y @ mat, data.left_x, data.left_y, data.left_z)
         assert_vec(Z @ mat, data.up_x, data.up_y, data.up_z)
 
-        # Check the direct matrix values.
+
+def test_matrix_getters(
+    py_c_vec: PyCVec,
+    rotation_data: List[RotationData],
+) -> None:
+    """Test functions which return the basis vectors for the matrix."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    for data in rotation_data:
+        mat = Matrix.from_angle(*data.angle)
+
         assert_vec(mat.forward(), data.for_x, data.for_y, data.for_z)
         assert_vec(mat.left(), data.left_x, data.left_y, data.left_z)
         assert_vec(mat.up(), data.up_x, data.up_y, data.up_z)
+
+
+@pytest.mark.parametrize('mag', [-5.0, 1.0, -1.0, 0.0, 12.45, -28.37])
+def test_matrix_getters_with_mag(
+    py_c_vec: PyCVec,
+    rotation_data: List[RotationData],
+    mag: float,
+) -> None:
+    """Test computing the basis vector with a magnitude."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    for data in rotation_data:
+        mat = Matrix.from_angle(*data.angle)
+
+        assert_vec(mat.forward(mag), mag * data.for_x, mag * data.for_y, mag * data.for_z, tol=1e-3)
+        assert_vec(mat.left(mag), mag * data.left_x, mag * data.left_y, mag * data.left_z, tol=1e-3)
+        assert_vec(mat.up(mag), mag * data.up_x, mag * data.up_y, mag * data.up_z, tol=1e-3)
 
 
 def test_rotating_vec_tuples(

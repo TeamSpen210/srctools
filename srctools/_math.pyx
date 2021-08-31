@@ -1475,7 +1475,7 @@ cdef class Vec:
             res_2.val.z = other_d % vec.val.z
             res_1.val.z = other_d // vec.val.z
         else:
-            raise TypeError("Called with non-vectors??")
+            return NotImplemented
 
         return res_1, res_2
 
@@ -1957,17 +1957,17 @@ cdef class Matrix:
 
         return mat
 
-    def forward(self):
-        """Return a normalised vector pointing in the +X direction."""
-        return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])
+    def forward(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the X axis."""
+        return _vector(mag * self.mat[0][0], mag * self.mat[0][1], mag * self.mat[0][2])
 
-    def left(self):
-        """Return a normalised vector pointing in the +Y direction."""
-        return _vector(self.mat[1][0], self.mat[1][1], self.mat[1][2])
+    def left(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the Y axis."""
+        return _vector(mag * self.mat[1][0], mag * self.mat[1][1], mag * self.mat[1][2])
 
-    def up(self):
-        """Return a normalised vector pointing in the +Z direction."""
-        return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])
+    def up(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the Z axis."""
+        return _vector(mag * self.mat[2][0], mag * self.mat[2][1], mag * self.mat[2][2])
 
     def __getitem__(self, item):
         """Retrieve an individual matrix value by x, y position (0-2)."""
