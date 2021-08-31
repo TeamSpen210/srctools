@@ -1,4 +1,4 @@
-# cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
 from libc cimport math
 from libc.math cimport sin, cos, tan, NAN
@@ -31,13 +31,13 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     ang.val.z = roll
     return ang
 
+cdef object Tuple, Iterator, Union  # Keep private.
+from typing import Tuple, Iterator, Union
 
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_vec
-cdef object unpickle_ang
-cdef object unpickle_mat
+cdef object unpickle_vec, unpickle_ang, unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
@@ -705,7 +705,7 @@ cdef class Vec:
 
     @classmethod
     @cython.boundscheck(False)
-    def with_axes(cls, *args) -> 'Vec':
+    def with_axes(cls, *args) -> Vec:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -759,7 +759,7 @@ cdef class Vec:
         double yaw: float=0.0,
         double roll: float=0.0,
         bint round_vals: bool=True,
-    ) -> 'Vec':
+    ) -> Vec:
         """Rotate a vector by a Source rotational angle.
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
@@ -795,7 +795,7 @@ cdef class Vec:
         double yaw=0.0,
         double roll=0.0,
         bint round_vals=True,
-    ) -> 'Vec':
+    ) -> Vec:
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
@@ -909,10 +909,10 @@ cdef class Vec:
     @classmethod
     def iter_grid(
         cls,
-        min_pos,
-        max_pos,
-        stride=1,
-    ):
+        object min_pos: Union[Vec, Tuple[int, int, int]],
+        object max_pos: Union[Vec, Tuple[int, int, int]],
+        stride: int = 1,
+    ) -> Iterator[Vec]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -938,7 +938,7 @@ cdef class Vec:
 
         return it
 
-    def iter_line(self, end: 'Vec', stride: int=1):
+    def iter_line(self, end: Vec, stride: int=1) -> Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -966,7 +966,7 @@ cdef class Vec:
 
     @classmethod
     @cython.cdivision(True)  # Manually do it once.
-    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: Vec, out_max: Vec) -> Vec:
         """Linerarly interpolate between two vectors.
 
         If in_min and in_max are the same, ZeroDivisionError is raised.
@@ -1000,7 +1000,7 @@ cdef class Vec:
         )
 
     @cython.boundscheck(False)
-    def other_axes(self, object axis) -> 'Tuple[float, float]':
+    def other_axes(self, object axis) -> Tuple[float, float]:
         """Get the values for the other two axes."""
         cdef char axis_chr
         if isinstance(axis, str) and len(<str>axis) == 1:
@@ -1034,7 +1034,7 @@ cdef class Vec:
             avec.z <= self.val.z <= bvec.z
         )
 
-    def as_tuple(self) -> 'Tuple[float, float, float]':
+    def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the
         # Python __new__.
@@ -1057,7 +1057,7 @@ cdef class Vec:
             norm_ang(roll),
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
+    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -1074,7 +1074,7 @@ cdef class Vec:
         _mat_to_angle(&ang.val, mat)
         return ang
 
-    def rotation_around(self, double rot: float=90) -> 'Vec':
+    def rotation_around(self, double rot: float=90) -> Vec:
         """For an axis-aligned normal, return the angles which rotate around it.
 
         This is deprecated, use Matrix.axis_angle().to_angle() which works
@@ -1613,7 +1613,7 @@ cdef class Vec:
         _vec_normalise(&vec.val, &self.val)
         return vec
 
-    def norm_mask(self, normal: 'Vec') -> 'Vec':
+    def norm_mask(self, normal: 'Vec') -> Vec:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
@@ -1649,7 +1649,7 @@ cdef class Vec:
             self.val.z * oth.z
         )
 
-    def cross(self, other) -> 'Vec':
+    def cross(self, other) -> Vec:
         """Return the cross product of both Vectors."""
         cdef vec_t oth
         cdef Vec res
@@ -2516,3 +2516,6 @@ try:
     lerp.__module__ = 'srctools.math'
 except Exception:
     pass  # Perfectly fine.
+
+# Drop references.
+Tuple = Iterator = Union = None
