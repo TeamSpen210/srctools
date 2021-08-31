@@ -84,10 +84,10 @@ _NO_KEY_FOUND = cast(str, object())
 
 _Prop_Value = Union[List['Property'], str, Any]
 # We don't have recursive definitions, just go deep enough it should be fine.
-_As_Dict_Ret = Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
-               Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
-               Dict[str, Union[str, Dict[str, Union[str, Dict[str, Union[str,
-               dict]]]]]]]]]]]]]]]]]]
+_As_Dict_Ret = Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
+               Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
+               Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
+               Any]]]]]]]]]]]]]]]]]]
 
 T = TypeVar('T')
 
@@ -533,7 +533,7 @@ class Property:
         else:
             raise NoKeyError(key)
 
-    def _get_value(self, key: str, def_: T=_NO_KEY_FOUND) -> Union[str, T]:
+    def _get_value(self, key: str, def_: Union[builtins.str, T]=_NO_KEY_FOUND) -> Union[str, T]:
         """Obtain the value of the child Property with a given name.
 
         Effectively find_key() but doesn't make a new property.
@@ -560,7 +560,7 @@ class Property:
         else:
             return def_
 
-    def int(self, key: str, def_: T=0) -> Union[builtins.int, T]:
+    def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
         Equivalent to int(prop[key]), but with a default value if missing or
@@ -575,12 +575,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    @overload
-    def float(self, key: str) -> builtins.float: ...
-    @overload
-    def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
-
-    def float(self, key: str, def_: T=0.0) -> Union[builtins.float, T]:
+    def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
         Equivalent to float(prop[key]), but with a default value if missing or
@@ -595,12 +590,7 @@ class Property:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
-    @overload
-    def bool(self, key: str) -> builtins.bool: ...
-    @overload
-    def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
-
-    def bool(self, key: str, def_: T=False) -> Union[builtins.bool, T]:
+    def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
 
         The value may be case-insensitively 'true', 'false', '1', '0', 'T',
@@ -814,7 +804,7 @@ class Property:
         - If none are found, it raises IndexError.
         """
         if isinstance(self._value, list):
-            if isinstance(index, int):
+            if isinstance(index, (int, slice)):
                 return self._value[index]
             else:
                 if isinstance(index, tuple):
