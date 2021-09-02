@@ -12,7 +12,6 @@ from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
 VPK_SIG = 0x55aa1234  # First byte of the file..
 DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
-
 FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 
@@ -38,7 +37,7 @@ def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
     while True:
         char = file.read(1)
         if char == b'\x00':
-            string = chars.decode('ascii')
+            string = chars.decode('ascii', 'surrogateescape')
             chars.clear()
 
             if string == ' ':  # Blank strings are saved as ' '
@@ -56,7 +55,7 @@ def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
 def _write_nullstring(file: IO[bytes], string: str) -> None:
     """Write a null-terminated ASCII string back to the file."""
     if string:
-        file.write(string.encode('ascii') + b'\x00')
+        file.write(string.encode('ascii', 'surrogateescape') + b'\x00')
     else:
         # Empty strings are written as a space.
         file.write(b' \x00')
@@ -115,14 +114,20 @@ def _join_file_parts(path: str, filename: str, ext: str) -> str:
 
     Any of the segments can be blank, to skip them.
     """
-    return (path + '/' if path else '') + filename + ('.' + ext if ext else '')
+    return f"{path}{'/' if path else ''}{filename}{'.' if ext else ''}{ext}"
 
 
-def _is_ascii(self: 'FileInfo', at: attr.Attribute, value: str) -> None:
-    """VPK filenames must be ascii, it doesn't store or care about encoding."""
-    # Assert the path is ASCII.
+def _is_ascii(info: 'FileInfo', at: attr.Attribute, value: str) -> None:
+    """VPK filenames must be ascii, it doesn't store or care about encoding.
+
+    Allow the surrogateescape bytes also, so roundtripping existing VPKs is
+    allowed.
+    """
     if not value.isascii():
-        raise ValueError('VPK filenames must be ASCII format!')
+        for c in value:
+            ind = ord(c)
+            if ind >= 128 and not (0xDC80 <= ind <= 0xDCFF):
+                raise ValueError('VPK filenames must be ASCII format!')
 
 
 @attr.define(eq=False)
@@ -196,7 +201,8 @@ class FileInfo:
         If this file already exists in the VPK, the old data is not removed.
         For this reason VPK writes should be done once per file if possible.
         """
-        self.vpk._check_writable()
+        if not self.vpk.mode.writable:
+            raise ValueError(f"VPK mode {self.vpk.mode.name} does not allow writing!")
         # Split the file based on a certain limit.
 
         new_checksum = checksum(data)
@@ -549,10 +555,10 @@ class VPK:
 
     def extract_all(self, dest_dir: str) -> None:
         """Extract the contents of this VPK to a directory."""
-        for ext, folders in self._fileinfo.items():
+        for folders in self._fileinfo.values():
             for folder, files in folders.items():
                 os.makedirs(os.path.join(dest_dir, folder), exist_ok=True)
-                for file, info in files.items():
+                for info in files.values():
                     with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 

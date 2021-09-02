@@ -13243,7 +13243,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_16_VPK_IterNullstr_8__next__(st
  *                     self.used = 0
  *                     raise StopIteration             # <<<<<<<<<<<<<<
  *                 else:
- *                     res = self.chars[:self.used].decode('ascii')
+ *                     res = self.chars[:self.used].decode('ascii', 'surrogateescape')
  */
         __Pyx_Raise(__pyx_builtin_StopIteration, 0, 0, 0);
         __PYX_ERR(0, 1035, __pyx_L1_error)
@@ -13260,19 +13260,19 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_16_VPK_IterNullstr_8__next__(st
       /* "srctools/_tokenizer.pyx":1037
  *                     raise StopIteration
  *                 else:
- *                     res = self.chars[:self.used].decode('ascii')             # <<<<<<<<<<<<<<
+ *                     res = self.chars[:self.used].decode('ascii', 'surrogateescape')             # <<<<<<<<<<<<<<
  *                     self.used = 0
  *                     return res
  */
       /*else*/ {
-        __pyx_t_1 = __Pyx_decode_c_string(((char const *)__pyx_v_self->chars), 0, __pyx_v_self->used, NULL, NULL, PyUnicode_DecodeASCII); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1037, __pyx_L1_error)
+        __pyx_t_1 = __Pyx_decode_c_string(((char const *)__pyx_v_self->chars), 0, __pyx_v_self->used, NULL, ((char const *)"surrogateescape"), PyUnicode_DecodeASCII); if (unlikely(!__pyx_t_1)) __PYX_ERR(0, 1037, __pyx_L1_error)
         __Pyx_GOTREF(__pyx_t_1);
         __pyx_v_res = __pyx_t_1;
         __pyx_t_1 = 0;
 
         /* "srctools/_tokenizer.pyx":1038
  *                 else:
- *                     res = self.chars[:self.used].decode('ascii')
+ *                     res = self.chars[:self.used].decode('ascii', 'surrogateescape')
  *                     self.used = 0             # <<<<<<<<<<<<<<
  *                     return res
  *             else:
@@ -13280,7 +13280,7 @@ static PyObject *__pyx_pf_8srctools_10_tokenizer_16_VPK_IterNullstr_8__next__(st
         __pyx_v_self->used = 0;
 
         /* "srctools/_tokenizer.pyx":1039
- *                     res = self.chars[:self.used].decode('ascii')
+ *                     res = self.chars[:self.used].decode('ascii', 'surrogateescape')
  *                     self.used = 0
  *                     return res             # <<<<<<<<<<<<<<
  *             else:

@@ -1034,7 +1034,7 @@ cdef class _VPK_IterNullstr:
                     self.used = 0
                     raise StopIteration
                 else:
-                    res = self.chars[:self.used].decode('ascii')
+                    res = self.chars[:self.used].decode('ascii', 'surrogateescape')
                     self.used = 0
                     return res
             else:
