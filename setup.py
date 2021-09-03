@@ -114,6 +114,7 @@ setup(
         'test': [
             'pytest',
             'pytest-datadir',
+            'pytest-regressions',
         ],
     }
 )

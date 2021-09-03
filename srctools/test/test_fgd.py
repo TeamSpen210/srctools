@@ -1,7 +1,9 @@
 """Test the FGD module."""
+from srctools import Vec
 from srctools.filesys import VirtualFileSystem
 from srctools.fgd import *
 import pytest
+import io
 
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
@@ -119,6 +121,7 @@ appliesto(tag1, tag2, !tag3)
         ],
     )
 
+
 @pytest.mark.parametrize('code, is_readonly, is_report', [
     ('(int): "None"', False, False),
     ('(int) readonly: "Readonly"', True, False),
@@ -145,3 +148,48 @@ def test_parse_kv_flags(code, is_readonly, is_report) -> None:
 
     assert kv.readonly is is_readonly, kv
     assert kv.reportable is is_report, kv
+
+
+def test_export_regressions(file_regression) -> None:
+    """Generate a FGD file to ensure code doesn't unintentionally alter output."""
+    fgd = FGD()
+    base_origin = EntityDef(EntityTypes.BASE, 'Origin')
+    base_angles = EntityDef(EntityTypes.BASE, 'Angles')
+
+    ent = EntityDef(EntityTypes.NPC, 'npc_test')
+    ent.bases = [base_origin, base_angles]
+
+    fgd.entities = {
+        # 'origin': base_origin,
+        'angles': base_angles,
+        'npc_test': ent,
+    }
+    base_origin.keyvalues['origin'] = {frozenset(): KeyValues(
+        'origin',
+        ValueTypes.VEC_ORIGIN,
+        'Origin',
+        '0 0 0',
+    )}
+    base_angles.keyvalues['angles'] = {frozenset(): KeyValues(
+        'angles',
+        ValueTypes.ANGLES,
+        'Angles (Pitch Yaw Roll)',
+        '0 0 0',
+    )}
+
+    ent.helpers = [
+        HelperSphere(255.0, 128.0, 64.0, 'radius'),
+        HelperModel('models/editor/a_prop.mdl'),
+        HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
+    ]
+    ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
+    ent.keyvalues['test_kv'] = {frozenset(): KeyValues(
+        'test_kv',
+        ValueTypes.COLOR_255,
+        'A test keyvalue',
+        '255 255 128',
+        'Help text for a keyvalue',
+    )}
+    buf = io.StringIO()
+    fgd.export(buf)
+    file_regression.check(buf.getvalue(), extension='.fgd')
