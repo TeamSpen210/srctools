@@ -1882,8 +1882,13 @@ class FGD:
                                 base, ent.classname,
                             ))
                     if base not in done:
+                        # Base not done yet, we need to defer this.
                         deferred.add(ent)
-                        deferred.add(base)
+                        # If the base isn't in any of our sets, it's one
+                        # just in the .bases attr, not in the fgd.entities
+                        # dict - defer it too so it can be added.
+                        if base not in todo:
+                            deferred.add(base)
                         ready = False
                 if not ready:
                     deferred.add(ent)
