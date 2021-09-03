@@ -1216,8 +1216,9 @@ class Element(MutableMapping[str, Attribute]):
                 for attr in other:
                     if isinstance(attr, Attribute):
                         self._members[attr.name.casefold()] = attr
-                    key, value = attr
-                    self[key] = value
+                    else:
+                        key, value = attr
+                        self[key] = value
         for key, value in kwds.items():
             self[key] = value
 
