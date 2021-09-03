@@ -1729,11 +1729,29 @@ class Angle:
             )
         return NotImplemented
 
-    def __matmul__(self, other: 'Angle') -> 'Angle':
-        """Angle @ Angle rotates the first by the second.
-        """
+    # noinspection PyProtectedMember
+    def __matmul__(self, other: 'Angle | Matrix') -> 'Angle':
+        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, Py_Angle):
             return other._rotate_angle(self)
+        elif isinstance(other, Py_Matrix):
+            mat = Py_Matrix.from_angle(self)
+            mat._mat_mul(other)
+            return mat.to_angle()
+        else:
+            return NotImplemented
+
+    # noinspection PyProtectedMember
+    def __imatmul__(self, other: 'Angle | Matrix') -> 'Angle':
+        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        if isinstance(other, Py_Angle):
+            self._pitch, self._yaw, self._roll = other._rotate_angle(self)
+            return self
+        elif isinstance(other, Py_Matrix):
+            mat = Py_Matrix.from_angle(self)
+            mat._mat_mul(other)
+            self._pitch, self._yaw, self._roll = mat.to_angle()
+            return self
         else:
             return NotImplemented
 
@@ -1752,7 +1770,7 @@ class Angle:
             x, y, z = other
             return Vec(x, y, z) @ Py_Matrix.from_angle(self)
         elif isinstance(other, Py_Angle):
-            # Should always be done by __mul__!
+            # Should always be done by __matmul__!
             return self._rotate_angle(other)
         return NotImplemented
 

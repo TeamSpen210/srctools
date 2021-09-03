@@ -343,6 +343,53 @@ def test_rotating_vectors(
         assert_vec(Z @ mat, data.up_x, data.up_y, data.up_z)
 
 
+def test_matmul_direct(py_c_vec: PyCVec) -> None:
+    """Test that directly calling the magic methods produces the right results.
+
+    Normally __rmatmul__ isn't going to be called, so it may be incorrect.
+    """
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    vec = Vec(34, 72, -10)
+    ang = Angle(10, 30, 70)
+    ang2 = Angle(56, -10, 25)
+    mat = Matrix.from_angle(ang)
+    mat2 = Matrix.from_angle(ang2)
+
+    assert vec.__matmul__(mat) == mat.__rmatmul__(vec) == vec @ mat, vec @ mat
+    assert vec.__matmul__(ang) == ang.__rmatmul__(vec) == vec @ ang, vec @ ang
+    assert ang.__matmul__(ang2) == ang2.__rmatmul__(ang) == ang @ ang2, ang @ ang2
+    assert ang.__matmul__(mat) == mat.__rmatmul__(ang) == ang @ mat, ang @ mat
+    assert mat.__matmul__(mat2) == mat2.__rmatmul__(mat) == mat @ mat2, mat @ mat2
+
+
+def test_inplace_rotation(py_c_vec: PyCVec) -> None:
+    """Test inplace rotation operates correctly."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+
+    vec = Vec(34, 72, -10)
+    ang = Angle(10, 30, 70)
+    ang2 = Angle(56, -10, 25)
+    mat = Matrix.from_angle(ang)
+    mat2 = Matrix.from_angle(ang2)
+
+    v = vec.copy()
+    v @= ang
+    assert v == vec @ ang
+
+    a = ang.copy()
+    a @= ang2
+    assert a == ang @ ang2
+
+    a = ang.copy()
+    a @= mat2
+    assert a == ang @ mat2
+
+    m = mat.copy()
+    m @= mat2
+    assert m == mat @ mat2
+
+
 def test_matrix_getters(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],

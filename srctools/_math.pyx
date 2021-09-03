@@ -2460,6 +2460,19 @@ cdef class Angle:
 
         return NotImplemented
 
+    def __imatmul__(self, second):
+        cdef mat_t mat_self, temp2
+        _mat_from_angle(mat_self, &(<Angle>self).val)
+        if isinstance(second, Angle):
+            _mat_from_angle(temp2, &(<Angle>second).val)
+            mat_mul(mat_self, temp2)
+        elif isinstance(second, Matrix):
+            mat_mul(mat_self, (<Matrix>second).mat)
+        else:
+            return NotImplemented
+        _mat_to_angle(&self.val, mat_self)
+        return self
+
     def transform(self):
         """Perform transformations on this angle.
 
