@@ -176,7 +176,7 @@ class Property:
         self._value = value
 
     @property
-    def value(self) -> _Prop_Value:
+    def value(self) -> str:
         """Return the value of a leaf property."""
         if isinstance(self._value, list):
             warnings.warn("Accessing internal property block list is deprecated", DeprecationWarning, 2)
