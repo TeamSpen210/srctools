@@ -20,20 +20,16 @@ def assert_tree(tree1: Element, tree2: Element) -> None:
     return _assert_tree_elem(tree1.name, tree1, tree2, set())
 
 
-def export(elem: Element, version: 'int | bool', unicode: str) -> bytes:
+def export(elem: Element, version: str, unicode: str = 'ascii') -> bytes:
     """Export a element and return the result, doing both text/binary in one for parameterisation."""
     buf = BytesIO()
-    if isinstance(version, bool):
-        elem.export_kv2(buf, flat=version, unicode=unicode)
+    if version.startswith('binary_'):
+        elem.export_binary(buf, int(version[-1]), unicode=unicode)
     else:
-        elem.export_binary(buf, version, unicode=unicode)
+        elem.export_kv2(buf, flat='flat' in version, unicode=unicode)
     return buf.getvalue()
 
 EXPORT_VALS = [
-    1, 2, 3, 4, 5,
-    False, True,
-]
-EXPORT_IDS = [
     'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
     'text_indent', 'text_flat',
 ]
@@ -592,8 +588,8 @@ def test_export_kv2_roundtrip(datadir: Path, flat: bool) -> None:
     verify_sample(rnd_root)
 
 
-@pytest.mark.parametrize('version', EXPORT_VALS, ids=EXPORT_IDS)
-def test_ext_roundtrip_unicode(version: 'int | bool', file_regression) -> None:
+@pytest.mark.parametrize('version', EXPORT_VALS)
+def test_ext_roundtrip_unicode(version: str) -> None:
     """Test the 'silent' extension doesn't affect ASCII only files,
 
     but allows roundtrip of unicode.
@@ -631,3 +627,11 @@ def test_ext_roundtrip_unicode(version: 'int | bool', file_regression) -> None:
     ]:
         new_attr = elem['key']
         assert new_attr.val_str == unicode_text, f'{name}: {new_attr.val_str!r} != {unicode_text!r}'
+
+
+@pytest.mark.parametrize('version', EXPORT_VALS)
+def test_export_regression(version: str, datadir: Path, file_regression) -> None:
+    """Test regressions in the export results."""
+    with (datadir / 'binary_v5.dmx').open('rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+    file_regression.check(export(root, version), extension='.dmx', binary=True)
