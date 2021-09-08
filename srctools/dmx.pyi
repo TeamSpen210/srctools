@@ -445,6 +445,7 @@ class Element(Mapping[str, Attribute]):
         *,
         flat: bool = False,
         unicode: Literal['ascii', 'format', 'silent'] = ...,
+        cull_uuid: bool = False,
     ) -> None: ...
 
     def _export_kv2(
@@ -453,6 +454,7 @@ class Element(Mapping[str, Attribute]):
         indent: bytes,
         roots: set[UUID],
         encoding: str,
+        cull_uuid: bool,
     ) -> None: ...
 
     def __repr__(self) -> str: ...

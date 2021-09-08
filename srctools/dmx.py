@@ -859,8 +859,7 @@ class Element(MutableMapping[str, Attribute]):
             elem._members[attr_name.casefold()] = attr
 
         if elem.uuid is _UNSET_UUID:
-            # No UUID set, just generate one. Valve probably doesn't do this,
-            # it'll just mean it can't recurse.
+            # No UUID set, just generate one.
             elem.uuid = get_uuid()
         return elem
 
@@ -1013,22 +1012,28 @@ class Element(MutableMapping[str, Attribute]):
         *,
         flat: bool = False,
         unicode: str='ascii',
+        cull_uuid: bool = False,
     ) -> None:
         """Write out a DMX tree, using the text-based KeyValues2 format.
 
         The format name and version can be anything, to indicate which
-        application should read the file. If flat is enabled, elements will
-        all be placed at the toplevel, so they don't nest inside each other.
+        application should read the file.
 
-        Unicode controls whether Unicode characters are permitted:
-        - 'ascii' (the default) raises an error if any value is non-ASCII. This
-          ensures no encoding issues occur when read by the game.
-        - 'format' changes the encoding format to 'unicode_keyvalues2', allowing
-          the file to be rejected if the game tries to read it and this module's
-          parser to automatically switch to Unicode.
-        - 'silent' outputs UTF8 without any marker, meaning it could be parsed
-          incorrectly by the game or other utilties. This must be parsed with
-          unicode=True to succeed.
+        * If flat is enabled, elements will all be placed at the toplevel,
+          so they don't nest inside each other.
+        * If cull_uuid is enabled, UUIDs are only written for self-referential
+          elements. When parsed by this or Valve's parser, new ones will simply
+          be generated.
+
+        * unicode controls whether Unicode characters are permitted:
+            - 'ascii' (the default) raises an error if any value is non-ASCII.
+              This ensures no encoding issues occur when read by the game.
+            - 'format' changes the encoding format to 'unicode_keyvalues2',
+              allowing the file to be rejected if the game tries to read it and
+              this module's parser to automatically switch to Unicode.
+            - 'silent' outputs UTF8 without any marker, meaning it could be
+              parsed incorrectly by the game or other utilties. This must be
+              parsed with  unicode=True to succeed.
         """
         file.write(b'<!-- dmx encoding %skeyvalues2 1 format %b %i -->\r\n' % (
             b'unicode_' if unicode == 'format' else b'',
@@ -1040,7 +1045,7 @@ class Element(MutableMapping[str, Attribute]):
         # If `flat` is enabled, all elements are like that. Otherwise,
         # it's only self and any used multiple times.
         elements: List[Element] = [self]
-        use_count: Dict[UUID, int] = {self.uuid: 2}
+        use_count: Dict[UUID, int] = {self.uuid: 1}
 
         # Use the fact that list iteration will continue through appended items.
         for elem in elements:
@@ -1060,6 +1065,8 @@ class Element(MutableMapping[str, Attribute]):
             roots = set(use_count)
         else:
             roots = {uuid for uuid, count in use_count.items() if count > 1}
+        # We're always a root!
+        roots.add(self.uuid)
 
         encoding = 'utf8' if unicode != 'ascii' else 'ascii'
 
@@ -1067,7 +1074,7 @@ class Element(MutableMapping[str, Attribute]):
             if flat or elem.uuid in roots:
                 if elem is not self:
                     file.write(b'\r\n')
-                elem._export_kv2(file, b'', roots, encoding)
+                elem._export_kv2(file, b'', roots, encoding, cull_uuid)
                 file.write(b'\r\n')
 
     def _export_kv2(
@@ -1076,6 +1083,7 @@ class Element(MutableMapping[str, Attribute]):
         indent: bytes,
         roots: Set[UUID],
         encoding: str,
+        cull_uuid: bool,
     ) -> None:
         """Export a single element to the file.
 
@@ -1085,7 +1093,8 @@ class Element(MutableMapping[str, Attribute]):
         """
         indent_child = indent + b'\t'
         file.write(b'"%b"\r\n%b{\r\n' % (self.type.encode('ascii'), indent))
-        file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
+        if not cull_uuid or self.uuid in roots:
+            file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
         file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode(encoding)))
         for attr in self.values():
             file.write(b'%b"%b" ' % (
@@ -1101,7 +1110,7 @@ class Element(MutableMapping[str, Attribute]):
                         if child.uuid in roots:
                             file.write(b'"element" "%b"' % str(child.uuid).encode('ascii'))
                         else:
-                            child._export_kv2(file, indent_arr, roots, encoding)
+                            child._export_kv2(file, indent_arr, roots, encoding, cull_uuid)
                     else:
                         str_value = TYPE_CONVERT[attr.type, ValueType.STRING](child).encode(encoding)
                         file.write(b'"%b"' % (str_value, ))
@@ -1114,7 +1123,7 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.val_elem.uuid in roots:
                     file.write(b'"element" "%b"\r\n' % str(attr.val_elem.uuid).encode('ascii'))
                 else:
-                    attr.val_elem._export_kv2(file, indent_child, roots, encoding)
+                    attr.val_elem._export_kv2(file, indent_child, roots, encoding, cull_uuid)
                     file.write(b'\r\n')
             else:
                 file.write(b'"%b" "%b"\r\n' % (

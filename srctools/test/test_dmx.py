@@ -26,12 +26,12 @@ def export(elem: Element, version: str, unicode: str = 'ascii') -> bytes:
     if version.startswith('binary_'):
         elem.export_binary(buf, int(version[-1]), unicode=unicode)
     else:
-        elem.export_kv2(buf, flat='flat' in version, unicode=unicode)
+        elem.export_kv2(buf, flat='flat' in version, unicode=unicode, cull_uuid='cull' in version)
     return buf.getvalue()
 
 EXPORT_VALS = [
     'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
-    'text_indent', 'text_flat',
+    'text_indent', 'text_flat', 'text_indent_cull', 'text_flat_cull'
 ]
 
 
