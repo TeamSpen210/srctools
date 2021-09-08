@@ -20,6 +20,25 @@ def assert_tree(tree1: Element, tree2: Element) -> None:
     return _assert_tree_elem(tree1.name, tree1, tree2, set())
 
 
+def export(elem: Element, version: 'int | bool', unicode: str) -> bytes:
+    """Export a element and return the result, doing both text/binary in one for parameterisation."""
+    buf = BytesIO()
+    if isinstance(version, bool):
+        elem.export_kv2(buf, flat=version, unicode=unicode)
+    else:
+        elem.export_binary(buf, version, unicode=unicode)
+    return buf.getvalue()
+
+EXPORT_VALS = [
+    1, 2, 3, 4, 5,
+    False, True,
+]
+EXPORT_IDS = [
+    'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
+    'text_indent', 'text_flat',
+]
+
+
 def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
     """Checks two elements are the same."""
     if tree1 is None:
@@ -573,14 +592,8 @@ def test_export_kv2_roundtrip(datadir: Path, flat: bool) -> None:
     verify_sample(rnd_root)
 
 
-@pytest.mark.parametrize('version', [
-    1, 2, 3, 4, 5,
-    False, True,
-], ids=[
-    'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
-    'text_indent', 'text_flat',
-])
-def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
+@pytest.mark.parametrize('version', EXPORT_VALS, ids=EXPORT_IDS)
+def test_ext_roundtrip_unicode(version: 'int | bool', file_regression) -> None:
     """Test the 'silent' extension doesn't affect ASCII only files,
 
     but allows roundtrip of unicode.
@@ -589,27 +602,14 @@ def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
     root = Element('name', 'DMERoot')
     root['key'] = attr = Attribute.string('key', ascii_text)
 
-    if isinstance(version, bool):
-        def export(elem: Element, unicode: str) -> bytes:
-            """Export in text mode."""
-            buf = BytesIO()
-            elem.export_kv2(buf, flat=version, unicode=unicode)
-            return buf.getvalue()
-    else:
-        def export(elem: Element, unicode: str) -> bytes:
-            """Export in binary mode."""
-            buf = BytesIO()
-            elem.export_binary(buf, version, unicode=unicode)
-            return buf.getvalue()
-
-    orig = export(root, 'ascii')
-    silent = export(root, 'silent')
+    orig = export(root, version, 'ascii')
+    silent = export(root, version, 'silent')
 
     assert orig == silent
 
     attr.val_str = unicode_text = 'Ascii ╒══╕ text and some 🤐♝♛🥌♚♝'
-    silent = export(root, 'silent')
-    explicit = export(root, 'format')
+    silent = export(root, version, 'silent')
+    explicit = export(root, version, 'format')
 
     # No flags, fails. UnicodeError from binary, TokenSyntaxError from text.
     with pytest.raises((UnicodeError, TokenSyntaxError)):
