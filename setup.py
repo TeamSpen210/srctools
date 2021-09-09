@@ -78,19 +78,7 @@ setup(
         ),
     ],
 
-    package_data={
-        'srctools': [
-            'fgd.lzma',
-            'py.typed',
-            '*.pxd',  # Cython headers
-        ],
-        # Data used by tests.
-        'srctools.test': [
-            'test_dmx/*.dmx',
-            'test_rotations/rotation.txt',
-            'test_vec/rot_main.bsp',
-        ]
-    },
+    include_package_data=True,
 
     entry_points={
         'console_scripts': [
