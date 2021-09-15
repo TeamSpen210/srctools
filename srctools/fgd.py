@@ -2070,7 +2070,7 @@ class FGD:
 
         self._parse_list.add(file)
 
-        with filesys, file.open_str(encoding) as f:
+        with file.open_str(encoding) as f:
             tokeniser = Tokenizer(
                 f,
                 filename=file.path,
