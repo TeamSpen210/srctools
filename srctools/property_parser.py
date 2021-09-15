@@ -213,7 +213,7 @@ class Property:
             self.real_name = name
             self._folded_name = name.casefold()
         if value is not None:
-            self.value = value
+            self._value = value
         return self
 
     @staticmethod
@@ -552,7 +552,7 @@ class Property:
                 if prop.has_children():
                     block_prop = True
                 else:
-                    return prop.value
+                    return prop._value
         if block_prop:
             warnings.warn('This will ignore block properties!', DeprecationWarning, stacklevel=3)
         if def_ is _NO_KEY_FOUND:
@@ -654,7 +654,7 @@ class Property:
                     current_prop = new_prop
             path = path[-1]
         try:
-            current_prop.find_key(path).value = value
+            current_prop.find_key(path)._value = value
         except NoKeyError:
             current_prop._value.append(Property(path, value))
 
@@ -698,6 +698,7 @@ class Property:
         """
         if isinstance(self._value, list):
             arr = []
+            child: Property
             for child in self._value:
                 if child.has_children():
                     raise ValueError(
@@ -780,6 +781,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if isinstance(self._value, list):
+            prop: Property
             for prop in self._value:
                 if prop._folded_name == key:
                     return True
@@ -1100,5 +1102,5 @@ class _BuilderElem:
         self._builder._parents.append(prop)
         return prop
 
-    def __exit__(self, exc_type, exc_val, exc_tb):
+    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
         self._builder._parents.pop()
