@@ -335,6 +335,485 @@ class DetailPropOrientation(Enum):
     SCREEN_ALIGNED_VERTICAL = 2
 
 
+@attr.define(eq=False)
+class Lump:
+    """Represents a lump header in a BSP file.
+
+    """
+    type: BSP_LUMPS
+    version: int
+    ident: bytes
+    data: bytes = b''
+
+    def __repr__(self) -> str:
+        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
+            self.type.name,
+            self.version,
+            self.ident,
+            len(self.data),
+        )
+
+
+@attr.define(eq=False)
+class GameLump:
+    """Represents a game lump.
+
+    These are designed to be game-specific.
+    """
+    id: bytes
+    flags: int
+    version: int
+    data: bytes = b''
+
+    ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
+
+    def __repr__(self) -> str:
+        return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
+            repr(self.id)[1:],
+            self.flags,
+            self.version,
+            len(self.data),
+        )
+
+
+@attr.define(eq=False)
+class TexData:
+    """Represents some additional infomation for textures.
+
+    Do not construct directly, use BSP.create_texinfo() or TexInfo.set().
+    """
+    mat: str
+    reflectivity: Vec
+    width: int
+    height: int
+    # TexData has a 'view' width/height too, but it isn't used at all and is
+    # always the same as regular width/height.
+
+    @classmethod
+    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
+        """Given a filesystem, parse the specified material and compute the texture values."""
+        orig_mat = mat_name
+        mat_folded = mat_name.casefold()
+        if not mat_folded.replace('\\', '/').startswith('materials/'):
+            mat_name = 'materials/' + mat_name
+
+        mat_fname = mat_name
+        if mat_folded[-4] != '.':
+            mat_fname += '.vmt'
+
+        with fsys, fsys[mat_fname].open_str() as tfile:
+            mat = Material.parse(tfile, mat_name)
+            mat.apply_patches(fsys)
+
+        # Figure out the matching texture. If no texture, we look for one
+        # with the same name as the material.
+        tex_name = mat.get('$basetexture', mat_name)
+        if not tex_name.casefold().replace('\\', '/').startswith('materials/'):
+            tex_name = 'materials/' + tex_name
+        if tex_name[-4] != '.':
+            tex_name += '.vtf'
+
+        try:
+            with fsys, fsys[tex_name].open_bin() as bfile:
+                vtf = VTF.read(bfile)
+                reflect = vtf.reflectivity.copy()
+                width, height = vtf.width, vtf.height
+        except FileNotFoundError:
+            width = height = 0
+            reflect = Vec(0.2, 0.2, 0.2)  # CMaterial:CMaterial()
+
+        try:
+            reflect = Vec.from_str(mat['$reflectivity'])
+            print(reflect, repr(mat['$reflectivity']))
+        except KeyError:
+            pass
+        return TexData(orig_mat, reflect, width, height)
+
+
+@attr.define(eq=True)
+class TexInfo:
+    """Represents texture positioning / scaling info."""
+    s_off: Vec
+    s_shift: float
+    t_off: Vec
+    t_shift: float
+    lightmap_s_off: Vec
+    lightmap_s_shift: float
+    lightmap_t_off: Vec
+    lightmap_t_shift: float
+    flags: SurfFlags
+    _info: TexData
+
+    def __repr__(self) -> str:
+        """For overlays, all the shift data is not important."""
+        #  s_off=Vec(0, 0, 0), s_shift=-99999.0, t_off=Vec(0, 0, 0), t_shift=-99999.0, lightmap_s_off=Vec(0, 0, 0), lightmap_s_shift=-99999.0, lightmap_t_off=Vec(0, 0, 0), lightmap_t_shift=-99999.0
+        res = []
+        if self.s_off or self.s_shift != -99999.0:
+            res.append(f's_off={self.s_off}, s_shift={self.s_shift}')
+        if self.t_off or self.t_shift != -99999.0:
+            res.append(f't_off={self.t_off}, t_shift={self.t_shift}')
+        if self.lightmap_s_off or self.lightmap_s_shift != -99999.0:
+            res.append(f'lightmap_s_off={self.lightmap_s_off}, lightmap_s_shift={self.lightmap_s_shift}')
+        if self.lightmap_t_off or self.lightmap_t_shift != -99999.0:
+            res.append(f'lightmap_t_off={self.lightmap_t_off}, lightmap_t_shift={self.lightmap_t_shift}')
+        res.append(f'flags={self.flags}, _info={self._info}')
+        return f'TexInfo({", ".join(res)})'
+
+    @property
+    def mat(self) -> str:
+        """The material used for this texinfo."""
+        return self._info.mat
+
+    @property
+    def reflectivity(self) -> Vec:
+        """The reflectivity of the texture."""
+        return self._info.reflectivity.copy()
+
+    @property
+    def tex_size(self) -> Tuple[int, int]:
+        """The size of the texture."""
+        return self._info.width, self._info.height
+
+    @overload
+    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem) -> None: ...
+    @overload
+    def set(self, bsp: 'BSP', mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
+
+    def set(
+        self,
+        bsp: 'BSP', mat: str,
+        reflectivity: Vec=None, width: int=0, height: int=0,
+        fsys: FileSystem=None,
+    ) -> None:
+        """Set the material used for this texinfo.
+
+        If it is not already used in the BSP, some additional info is required.
+        This can either be parsed from the VMT and VTF, or provided directly.
+        """
+        try:
+            data = bsp._texdata[mat.casefold()]
+        except KeyError:
+            # Need to create.
+            if fsys is None:
+                if reflectivity is None or not width or not height:
+                    raise TypeError('Either valid data must be provided or a filesystem to read them from!')
+                data = TexData(mat, reflectivity.copy(), width, height)
+            else:
+                data = TexData.from_material(fsys, mat)
+            bsp._texdata[mat.casefold()] = data
+        self._info = data
+
+
+@attr.define(eq=False)
+class Plane:
+    """A plane."""
+    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> Vec:
+        """Recompute the plane type whenever the normal is changed."""
+        value = Vec(value)
+        self.type = PlaneType.from_normal(value)
+        return value
+
+    def _type_default(self) -> 'PlaneType':
+        """Compute the plane type parameter if not provided."""
+        return PlaneType.from_normal(self.normal)
+
+    normal: Vec = attr.ib(on_setattr=_normal_setattr)
+    dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
+    type: PlaneType = attr.Factory(_type_default, takes_self=True)
+
+    del _normal_setattr, _type_default
+
+
+@attr.define(eq=False)
+class Primitive:
+    """A 'primitive' surface (AKA t-junction, waterverts).
+
+    These are generated to stitch together T-junction faces.
+    """
+    is_tristrip: bool
+    indexed_verts: List[int]
+    verts: List[Vec]
+
+
+@attr.define(eq=False)
+class Face:
+    """A brush face definition."""
+    plane: Plane
+    same_dir_as_plane: bool
+    on_node: bool
+    edges: List[Edge]
+    texinfo: TexInfo
+    _dispinfo_ind: int  # TODO
+    surf_fog_volume_id: int
+    light_styles: bytes
+    _lightmap_off: int  # TODO
+    area: float
+    lightmap_mins: Tuple[int, int]
+    lightmap_size: Tuple[int, int]
+    orig_face: Optional['Face']
+    primitives: List[Primitive]
+    smoothing_groups: int
+    hammer_id: Optional[int]  # The original ID of the Hammer face.
+
+
+@attr.define(eq=False)
+class DetailProp:
+    """A detail prop, automatically placed on surfaces.
+
+    This is a base class, use one of the subclasses only.
+    """
+    origin: Vec
+    angles: Angle
+    orientation: DetailPropOrientation
+    leaf: int
+    lighting: Tuple[int, int, int, int]
+    _light_styles: Tuple[int, int]  # TODO: generate List[int]
+    sway_amount: int
+
+    def __attrs_pre_init__(self) -> None:
+        """Only allow instantiation of subclasses."""
+        if type(self) is DetailProp:
+            raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
+
+
+@attr.define(eq=False)
+class DetailPropModel(DetailProp):
+    """A MDL detail prop."""
+    model: str
+
+
+@attr.define(eq=False)
+class DetailPropSprite(DetailProp):
+    """A sprite-type detail prop."""
+    sprite_scale: float
+    dims_upper_left: Tuple[float, float]
+    dims_lower_right: Tuple[float, float]
+    texcoord_upper_left: Tuple[float, float]
+    texcoord_lower_right: Tuple[float, float]
+
+
+@attr.define(eq=False)
+class DetailPropShape(DetailPropSprite):
+    """A shape-type detail prop, rendered as a triangle or cross shape."""
+    is_cross: bool
+    shape_angle: int
+    shape_size: int
+
+
+@attr.define(eq=False)
+class Cubemap:
+    """A env_cubemap positioned in the map.
+
+    The position is integral, and the size can be zero for the default
+    or a positive number for different powers of 2.
+    """
+    origin: Vec  # Always integer coordinates
+    size: int = 0
+
+    @property
+    def resolution(self) -> int:
+        """Return the actual image size."""
+        if self.size == 0:
+            return 32
+        return 2**(self.size-1)
+
+
+@attr.define(eq=False)
+class Overlay:
+    """An overlay embedded in the map."""
+    id: int = attr.ib(eq=True)
+    origin: Vec
+    normal: Vec
+    texture: TexInfo
+    face_count: int
+    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
+        attr.validators.instance_of(int),
+        attr.validators.instance_of(list),
+    ))
+    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
+    u_min: float = 0.0
+    u_max: float = 1.0
+    v_min: float = 0.0
+    v_max: float = 1.0
+    # Four corner handles of the overlay.
+    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
+    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
+    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
+    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+
+    fade_min_sq: float = -1.0
+    fade_max_sq: float = 0.0
+
+    # If system exceeds these limits, the overlay is skipped.
+    min_cpu: int = -1
+    max_cpu: int = -1
+    min_gpu: int = -1
+    max_gpu: int = -1
+
+
+@attr.define(eq=False)
+class BrushSide:
+    """A side of the original brush geometry which the map is constructed from.
+
+    This matches the original VMF.
+    """
+    plane: Plane
+    texinfo: TexInfo
+    _dispinfo: int  # TODO
+    is_bevel_plane: bool
+    # The bevel member should be bool, but it has other bits set randomly.
+    _unknown_bevel_bits: int = 0
+
+
+@attr.define(eq=False)
+class Brush:
+    """A brush definition."""
+    contents: BrushContents
+    sides: List[BrushSide]
+
+
+@attr.define(eq=False)
+class VisLeaf:
+    """A leaf in the visleaf/BSP data.
+
+    The bounds is defined implicitly by the parent node planes.
+    """
+    contents: BrushContents
+    cluster_id: int
+    area: int
+    flags: VisLeafFlags
+    mins: Vec
+    maxes: Vec
+    faces: List[Face]
+    brushes: List[Brush]
+    water_id: int
+    _ambient: bytes = bytes(24)
+
+    def test_point(self, point: Vec) -> Optional['VisLeaf']:
+        """Test the given point against us, returning ourself or None."""
+        return self if point.in_bbox(self.mins, self.maxes) else None
+
+
+@attr.define(eq=False)
+class VisTree:
+    """A tree node in the visleaf/BSP data.
+
+    Each of these is a plane splitting the map in two, which then has a child
+    tree or visleaf on either side.
+    """
+    plane: Plane
+    mins: Vec
+    maxes: Vec
+    faces: List[Face]
+    area_ind: int
+    # Initialised empty, set during loading.
+    child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
+    child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
+
+    @property
+    def plane_norm(self) -> Vec:
+        """Deprecated alias for tree.plane.normal."""
+        warnings.warn('Use tree.plane.normal', DeprecationWarning, stacklevel=2)
+        return self.plane.normal
+
+    @property
+    def plane_dist(self) -> float:
+        """Deprecated alias for tree.plane.dist."""
+        warnings.warn('Use tree.plane.dist', DeprecationWarning, stacklevel=2)
+        return self.plane.dist
+
+    def test_point(self, point: Vec) -> Optional[VisLeaf]:
+        """Test the given point against us, returning the hit leaf or None."""
+        # Quick early out.
+        if not point.in_bbox(self.mins, self.maxes):
+            return None
+        dist = self.plane.dist - point.dot(self.plane.normal)
+        if dist > -1e-6:
+            res = self.child_pos.test_point(point)
+            if res is not None:
+                return res
+        elif dist < 1e-6:
+            res = self.child_neg.test_point(point)
+            if res is not None:
+                return res
+        return None
+
+    def iter_leafs(self) -> Iterator[VisLeaf]:
+        """Iterate over all child leafs, recursively."""
+        checked: set[int] = set()  # Guard against recursion.
+        nodes = [self]
+        while nodes:
+            node = nodes.pop()
+            if id(node) in checked:
+                continue
+            checked.add(id(node))
+            for child in [node.child_neg, node.child_pos]:
+                if isinstance(child, VisLeaf):
+                    yield child
+                else:
+                    nodes.append(child)
+
+
+@attr.define(eq=False)
+class BModel:
+    """A brush model definition, used for the world entity along with all other brush ents."""
+    mins: Vec
+    maxes: Vec
+    origin: Vec
+    node: VisTree
+    faces: List[Face]
+
+    # If solid, the .phy file-like physics data.
+    # This is a text section, and a list of blocks.
+    phys_keyvalues: Optional[Property] = None
+    _phys_solids: List[bytes] = []
+
+
+@attr.define(eq=False)
+class StaticProp:
+    """Represents a prop_static in the BSP.
+
+    Different features were added in different versions.
+    v5+ allows fade_scale.
+    v6 and v7 allow min/max DXLevel.
+    v8+ allows min/max GPU and CPU levels.
+    v7+ allows model tinting, and renderfx.
+    v9+ allows disabling on XBox 360.
+    v10+ adds 4 unknown bytes (float?), and an expanded flags section.
+    v11+ adds uniform scaling and removes XBox disabling.
+    """
+    model: str
+    origin: Vec
+    angles: Angle = attr.ib(factory=Angle)
+    scaling: float = 1.0
+    visleafs: Set[VisLeaf] = attr.ib(factory=set)
+    solidity: int = 6
+    flags: StaticPropFlags = StaticPropFlags.NONE
+    skin: int = 0
+    min_fade: float = 0.0
+    max_fade: float = 0.0
+    # If not provided, uses origin.
+    lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
+    fade_scale: float = -1.0
+    min_dx_level: int = 0
+    max_dx_level: int = 0
+    min_cpu_level: int = 0
+    max_cpu_level: int = 0
+    min_gpu_level: int = 0
+    max_gpu_level: int = 0
+    tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    renderfx: int = 255
+    disable_on_xbox: bool = False
+
+    def __repr__(self) -> str:
+        return '<Prop "{}#{}" @ {} rot {}>'.format(
+            self.model,
+            self.skin,
+            self.origin,
+            self.angles,
+        )
+
+
 def identity(x: T) -> T:
     """Identity function."""
     return x
@@ -965,6 +1444,7 @@ class BSP:
             hammer_ids = read_array('H', self.lumps[BSP_LUMPS.FACEIDS].data)
         else:
             hammer_ids = []
+
         for i, (
             plane_num,
             side,
@@ -1001,6 +1481,7 @@ class BSP:
                 self.planes[plane_num],
                 side, on_node,
                 self.surfedges[first_edge:first_edge+num_edges],
+                # (first_edge, num_edges),
                 texinfo,
                 dispinfo,
                 surf_fog_vol_id,
@@ -1051,6 +1532,7 @@ class BSP:
                 face.same_dir_as_plane,
                 face.on_node,
                 add_edges(face.edges), len(face.edges),
+                # *face.edges,
                 texinfo,
                 face._dispinfo_ind,
                 face.surf_fog_volume_id,
@@ -2130,482 +2612,3 @@ class BSP:
         """Parse the visleaf data, and return the root node."""
         # First node is the top of the tree.
         return self.nodes[0]
-
-
-@attr.define(eq=False)
-class Lump:
-    """Represents a lump header in a BSP file.
-
-    """
-    type: BSP_LUMPS
-    version: int
-    ident: bytes
-    data: bytes = b''
-
-    def __repr__(self) -> str:
-        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
-            self.type.name,
-            self.version,
-            self.ident,
-            len(self.data),
-        )
-
-
-@attr.define(eq=False)
-class GameLump:
-    """Represents a game lump.
-
-    These are designed to be game-specific.
-    """
-    id: bytes
-    flags: int
-    version: int
-    data: bytes = b''
-
-    ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
-
-    def __repr__(self) -> str:
-        return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
-            repr(self.id)[1:],
-            self.flags,
-            self.version,
-            len(self.data),
-        )
-
-
-@attr.define(eq=False)
-class TexData:
-    """Represents some additional infomation for textures.
-
-    Do not construct directly, use BSP.create_texinfo() or TexInfo.set().
-    """
-    mat: str
-    reflectivity: Vec
-    width: int
-    height: int
-    # TexData has a 'view' width/height too, but it isn't used at all and is
-    # always the same as regular width/height.
-
-    @classmethod
-    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
-        """Given a filesystem, parse the specified material and compute the texture values."""
-        orig_mat = mat_name
-        mat_folded = mat_name.casefold()
-        if not mat_folded.replace('\\', '/').startswith('materials/'):
-            mat_name = 'materials/' + mat_name
-
-        mat_fname = mat_name
-        if mat_folded[-4] != '.':
-            mat_fname += '.vmt'
-
-        with fsys, fsys[mat_fname].open_str() as tfile:
-            mat = Material.parse(tfile, mat_name)
-            mat.apply_patches(fsys)
-
-        # Figure out the matching texture. If no texture, we look for one
-        # with the same name as the material.
-        tex_name = mat.get('$basetexture', mat_name)
-        if not tex_name.casefold().replace('\\', '/').startswith('materials/'):
-            tex_name = 'materials/' + tex_name
-        if tex_name[-4] != '.':
-            tex_name += '.vtf'
-
-        try:
-            with fsys, fsys[tex_name].open_bin() as bfile:
-                vtf = VTF.read(bfile)
-                reflect = vtf.reflectivity.copy()
-                width, height = vtf.width, vtf.height
-        except FileNotFoundError:
-            width = height = 0
-            reflect = Vec(0.2, 0.2, 0.2)  # CMaterial:CMaterial()
-
-        try:
-            reflect = Vec.from_str(mat['$reflectivity'])
-            print(reflect, repr(mat['$reflectivity']))
-        except KeyError:
-            pass
-        return TexData(orig_mat, reflect, width, height)
-
-
-@attr.define(eq=True)
-class TexInfo:
-    """Represents texture positioning / scaling info."""
-    s_off: Vec
-    s_shift: float
-    t_off: Vec
-    t_shift: float
-    lightmap_s_off: Vec
-    lightmap_s_shift: float
-    lightmap_t_off: Vec
-    lightmap_t_shift: float
-    flags: SurfFlags
-    _info: TexData
-
-    def __repr__(self) -> str:
-        """For overlays, all the shift data is not important."""
-        #  s_off=Vec(0, 0, 0), s_shift=-99999.0, t_off=Vec(0, 0, 0), t_shift=-99999.0, lightmap_s_off=Vec(0, 0, 0), lightmap_s_shift=-99999.0, lightmap_t_off=Vec(0, 0, 0), lightmap_t_shift=-99999.0
-        res = []
-        if self.s_off or self.s_shift != -99999.0:
-            res.append(f's_off={self.s_off}, s_shift={self.s_shift}')
-        if self.t_off or self.t_shift != -99999.0:
-            res.append(f't_off={self.t_off}, t_shift={self.t_shift}')
-        if self.lightmap_s_off or self.lightmap_s_shift != -99999.0:
-            res.append(f'lightmap_s_off={self.lightmap_s_off}, lightmap_s_shift={self.lightmap_s_shift}')
-        if self.lightmap_t_off or self.lightmap_t_shift != -99999.0:
-            res.append(f'lightmap_t_off={self.lightmap_t_off}, lightmap_t_shift={self.lightmap_t_shift}')
-        res.append(f'flags={self.flags}, _info={self._info}')
-        return f'TexInfo({", ".join(res)})'
-
-    @property
-    def mat(self) -> str:
-        """The material used for this texinfo."""
-        return self._info.mat
-
-    @property
-    def reflectivity(self) -> Vec:
-        """The reflectivity of the texture."""
-        return self._info.reflectivity.copy()
-
-    @property
-    def tex_size(self) -> Tuple[int, int]:
-        """The size of the texture."""
-        return self._info.width, self._info.height
-
-    @overload
-    def set(self, bsp: BSP, mat: str, *, fsys: FileSystem) -> None: ...
-    @overload
-    def set(self, bsp: BSP, mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
-
-    def set(
-        self,
-        bsp: BSP, mat: str,
-        reflectivity: Vec=None, width: int=0, height: int=0,
-        fsys: FileSystem=None,
-    ) -> None:
-        """Set the material used for this texinfo.
-
-        If it is not already used in the BSP, some additional info is required.
-        This can either be parsed from the VMT and VTF, or provided directly.
-        """
-        try:
-            data = bsp._texdata[mat.casefold()]
-        except KeyError:
-            # Need to create.
-            if fsys is None:
-                if reflectivity is None or not width or not height:
-                    raise TypeError('Either valid data must be provided or a filesystem to read them from!')
-                data = TexData(mat, reflectivity.copy(), width, height)
-            else:
-                data = TexData.from_material(fsys, mat)
-            bsp._texdata[mat.casefold()] = data
-        self._info = data
-
-
-@attr.define(eq=False)
-class Plane:
-    """A plane."""
-    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> Vec:
-        """Recompute the plane type whenever the normal is changed."""
-        value = Vec(value)
-        self.type = PlaneType.from_normal(value)
-        return value
-
-    def _type_default(self) -> 'PlaneType':
-        """Compute the plane type parameter if not provided."""
-        return PlaneType.from_normal(self.normal)
-
-    normal: Vec = attr.ib(on_setattr=_normal_setattr)
-    dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
-    type: PlaneType = attr.Factory(_type_default, takes_self=True)
-
-    del _normal_setattr, _type_default
-
-
-@attr.define(eq=False)
-class Primitive:
-    """A 'primitive' surface (AKA t-junction, waterverts).
-
-    These are generated to stitch together T-junction faces.
-    """
-    is_tristrip: bool
-    indexed_verts: List[int]
-    verts: List[Vec]
-
-
-@attr.define(eq=False)
-class Face:
-    """A brush face definition."""
-    plane: Plane
-    same_dir_as_plane: bool
-    on_node: bool
-    edges: List[Edge]
-    texinfo: TexInfo
-    _dispinfo_ind: int  # TODO
-    surf_fog_volume_id: int
-    light_styles: bytes
-    _lightmap_off: int  # TODO
-    area: float
-    lightmap_mins: Tuple[int, int]
-    lightmap_size: Tuple[int, int]
-    orig_face: Optional['Face']
-    primitives: List[Primitive]
-    smoothing_groups: int
-    hammer_id: Optional[int]  # The original ID of the Hammer face.
-
-
-@attr.define(eq=False)
-class StaticProp:
-    """Represents a prop_static in the BSP.
-
-    Different features were added in different versions.
-    v5+ allows fade_scale.
-    v6 and v7 allow min/max DXLevel.
-    v8+ allows min/max GPU and CPU levels.
-    v7+ allows model tinting, and renderfx.
-    v9+ allows disabling on XBox 360.
-    v10+ adds 4 unknown bytes (float?), and an expanded flags section.
-    v11+ adds uniform scaling and removes XBox disabling.
-    """
-    model: str
-    origin: Vec
-    angles: Angle = attr.ib(factory=Angle)
-    scaling: float = 1.0
-    visleafs: Set['VisLeaf'] = attr.ib(factory=set)
-    solidity: int = 6
-    flags: StaticPropFlags = StaticPropFlags.NONE
-    skin: int = 0
-    min_fade: float = 0.0
-    max_fade: float = 0.0
-    # If not provided, uses origin.
-    lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
-    fade_scale: float = -1.0
-    min_dx_level: int = 0
-    max_dx_level: int = 0
-    min_cpu_level: int = 0
-    max_cpu_level: int = 0
-    min_gpu_level: int = 0
-    max_gpu_level: int = 0
-    tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
-    renderfx: int = 255
-    disable_on_xbox: bool = False
-
-    def __repr__(self) -> str:
-        return '<Prop "{}#{}" @ {} rot {}>'.format(
-            self.model,
-            self.skin,
-            self.origin,
-            self.angles,
-        )
-
-
-@attr.define(eq=False)
-class DetailProp:
-    """A detail prop, automatically placed on surfaces.
-
-    This is a base class, use one of the subclasses only.
-    """
-    origin: Vec
-    angles: Angle
-    orientation: DetailPropOrientation
-    leaf: int
-    lighting: Tuple[int, int, int, int]
-    _light_styles: Tuple[int, int]  # TODO: generate List[int]
-    sway_amount: int
-
-    def __attrs_pre_init__(self) -> None:
-        """Only allow instantiation of subclasses."""
-        if type(self) is DetailProp:
-            raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
-
-
-@attr.define(eq=False)
-class DetailPropModel(DetailProp):
-    """A MDL detail prop."""
-    model: str
-
-
-@attr.define(eq=False)
-class DetailPropSprite(DetailProp):
-    """A sprite-type detail prop."""
-    sprite_scale: float
-    dims_upper_left: Tuple[float, float]
-    dims_lower_right: Tuple[float, float]
-    texcoord_upper_left: Tuple[float, float]
-    texcoord_lower_right: Tuple[float, float]
-
-
-@attr.define(eq=False)
-class DetailPropShape(DetailPropSprite):
-    """A shape-type detail prop, rendered as a triangle or cross shape."""
-    is_cross: bool
-    shape_angle: int
-    shape_size: int
-
-
-@attr.define(eq=False)
-class Cubemap:
-    """A env_cubemap positioned in the map.
-
-    The position is integral, and the size can be zero for the default
-    or a positive number for different powers of 2.
-    """
-    origin: Vec  # Always integer coordinates
-    size: int = 0
-
-    @property
-    def resolution(self) -> int:
-        """Return the actual image size."""
-        if self.size == 0:
-            return 32
-        return 2**(self.size-1)
-
-
-@attr.define(eq=False)
-class Overlay:
-    """An overlay embedded in the map."""
-    id: int = attr.ib(eq=True)
-    origin: Vec
-    normal: Vec
-    texture: TexInfo
-    face_count: int
-    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
-        attr.validators.instance_of(int),
-        attr.validators.instance_of(list),
-    ))
-    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
-    u_min: float = 0.0
-    u_max: float = 1.0
-    v_min: float = 0.0
-    v_max: float = 1.0
-    # Four corner handles of the overlay.
-    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
-    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
-    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
-    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
-
-    fade_min_sq: float = -1.0
-    fade_max_sq: float = 0.0
-
-    # If system exceeds these limits, the overlay is skipped.
-    min_cpu: int = -1
-    max_cpu: int = -1
-    min_gpu: int = -1
-    max_gpu: int = -1
-
-
-@attr.define(eq=False)
-class BModel:
-    """A brush model definition, used for the world entity along with all other brush ents."""
-    mins: Vec
-    maxes: Vec
-    origin: Vec
-    node: 'VisTree'
-    faces: List[Face]
-
-    # If solid, the .phy file-like physics data.
-    # This is a text section, and a list of blocks.
-    phys_keyvalues: Optional[Property] = None
-    _phys_solids: List[bytes] = []
-
-
-@attr.define(eq=False)
-class BrushSide:
-    """A side of the original brush geometry which the map is constructed from.
-
-    This matches the original VMF.
-    """
-    plane: Plane
-    texinfo: TexInfo
-    _dispinfo: int  # TODO
-    is_bevel_plane: bool
-    # The bevel member should be bool, but it has other bits set randomly.
-    _unknown_bevel_bits: int = 0
-
-
-@attr.define(eq=False)
-class Brush:
-    """A brush definition."""
-    contents: BrushContents
-    sides: List[BrushSide]
-
-
-@attr.define(eq=False)
-class VisLeaf:
-    """A leaf in the visleaf/BSP data.
-
-    The bounds is defined implicitly by the parent node planes.
-    """
-    contents: BrushContents
-    cluster_id: int
-    area: int
-    flags: VisLeafFlags
-    mins: Vec
-    maxes: Vec
-    faces: List[Face]
-    brushes: List[Brush]
-    water_id: int
-    _ambient: bytes = bytes(24)
-
-    def test_point(self, point: Vec) -> Optional['VisLeaf']:
-        """Test the given point against us, returning ourself or None."""
-        return self if point.in_bbox(self.mins, self.maxes) else None
-
-
-@attr.define(eq=False)
-class VisTree:
-    """A tree node in the visleaf/BSP data.
-
-    Each of these is a plane splitting the map in two, which then has a child
-    tree or visleaf on either side.
-    """
-    plane: Plane
-    mins: Vec
-    maxes: Vec
-    faces: List[Face]
-    area_ind: int
-    # Initialised empty, set during loading.
-    child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
-    child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
-
-    @property
-    def plane_norm(self) -> Vec:
-        """Deprecated alias for tree.plane.normal."""
-        warnings.warn('Use tree.plane.normal', DeprecationWarning, stacklevel=2)
-        return self.plane.normal
-
-    @property
-    def plane_dist(self) -> float:
-        """Deprecated alias for tree.plane.dist."""
-        warnings.warn('Use tree.plane.dist', DeprecationWarning, stacklevel=2)
-        return self.plane.dist
-
-    def test_point(self, point: Vec) -> Optional[VisLeaf]:
-        """Test the given point against us, returning the hit leaf or None."""
-        # Quick early out.
-        if not point.in_bbox(self.mins, self.maxes):
-            return None
-        dist = self.plane.dist - point.dot(self.plane.normal)
-        if dist > -1e-6:
-            res = self.child_pos.test_point(point)
-            if res is not None:
-                return res
-        elif dist < 1e-6:
-            res = self.child_neg.test_point(point)
-            if res is not None:
-                return res
-        return None
-
-    def iter_leafs(self) -> Iterator[VisLeaf]:
-        """Iterate over all child leafs, recursively."""
-        checked: set[int] = set()  # Guard against recursion.
-        nodes = [self]
-        while nodes:
-            node = nodes.pop()
-            if id(node) in checked:
-                continue
-            checked.add(id(node))
-            for child in [node.child_neg, node.child_pos]:
-                if isinstance(child, VisLeaf):
-                    yield child
-                else:
-                    nodes.append(child)
