@@ -1890,22 +1890,20 @@ class FGD:
                         if base not in todo:
                             deferred.add(base)
                         ready = False
-                if not ready:
+                if ready:
+                    batch.append(ent)
+                else:
                     deferred.add(ent)
-                    continue
-
-                batch.append(ent)
 
             batch.sort(key=cls_getter)
             yield from batch
 
             done.update(batch)
 
-            # All the entities have a dependency on another.
-            if deferred and todo.difference(batch) == deferred:
+            # All the entities have a dependency on another, we failed to produce anything.
+            if not batch:
                 raise ValueError(
-                    "Loop in bases! \n "
-                    "Problematic entities: \n{}".format([
+                    "Loop in bases! \n Problematic entities: \n{}".format([
                         ent.classname
                         for ent in deferred
                     ]))
