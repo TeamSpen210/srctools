@@ -1902,12 +1902,12 @@ class FGD:
             done.update(batch)
 
             # All the entities have a dependency on another.
-            if todo == deferred:
+            if deferred and todo.difference(batch) == deferred:
                 raise ValueError(
                     "Loop in bases! \n "
                     "Problematic entities: \n{}".format([
                         ent.classname
-                        for ent in todo
+                        for ent in deferred
                     ]))
 
             todo = deferred.difference(done)
