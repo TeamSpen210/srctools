@@ -483,13 +483,13 @@ class Vec(SupportsRound['Vec']):
 
         Both borders will be included.
         """
-        min_x = int(min_pos.x)
-        min_y = int(min_pos.y)
-        min_z = int(min_pos.z)
+        min_x = round(min_pos.x)
+        min_y = round(min_pos.y)
+        min_z = round(min_pos.z)
 
-        max_x = int(max_pos.x)
-        max_y = int(max_pos.y)
-        max_z = int(max_pos.z)
+        max_x = round(max_pos.x)
+        max_y = round(max_pos.y)
+        max_z = round(max_pos.z)
 
         for x in range(min_x, max_x + 1, stride):
             for y in range(min_y, max_y + 1, stride):

@@ -1,7 +1,7 @@
 # cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
 from libc cimport math
-from libc.math cimport sin, cos, tan, NAN
+from libc.math cimport sin, cos, tan, llround, NAN
 from libc.string cimport memcpy, memcmp, memset
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport sscanf
@@ -430,17 +430,17 @@ cdef class VecIter:
 cdef class VecIterGrid:
     """Implements Vec.iter_grid()."""
     cdef:
-        long start_x
-        long start_y
-        long start_z
+        long long start_x
+        long long start_y
+        long long start_z
 
-        long stop_x
-        long stop_y
-        long stop_z
+        long long stop_x
+        long long stop_y
+        long long stop_z
 
-        long cur_x
-        long cur_y
-        long cur_z
+        long long cur_x
+        long long cur_y
+        long long cur_z
 
         long stride
 
@@ -474,8 +474,8 @@ cdef class VecIterLine:
         vec_t start
         vec_t diff
         long stride
-        long cur_off
-        long max
+        long long cur_off
+        long long max
         vec_t end
 
     def __iter__(self) -> VecIterLine:
@@ -926,13 +926,13 @@ cdef class Vec:
         if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
             return EMPTY_ITER
 
-        it.cur_x = it.start_x = int(mins.x)
-        it.cur_y = it.start_y = int(mins.y)
-        it.cur_z = it.start_z = int(mins.z)
+        it.cur_x = it.start_x = llround(mins.x)
+        it.cur_y = it.start_y = llround(mins.y)
+        it.cur_z = it.start_z = llround(mins.z)
 
-        it.stop_x = int(maxs.x)
-        it.stop_y = int(maxs.y)
-        it.stop_z = int(maxs.z)
+        it.stop_x = llround(maxs.x)
+        it.stop_y = llround(maxs.y)
+        it.stop_z = llround(maxs.z)
 
         it.stride = stride
 
@@ -959,7 +959,7 @@ cdef class Vec:
         it.start = self.val
         it.end = end.val
         it.cur_off = 0
-        it.max = int(length)
+        it.max = llround(length)
         it.stride = int(stride)
 
         return it

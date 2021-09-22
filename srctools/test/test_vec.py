@@ -755,7 +755,7 @@ def test_iter_line(py_c_vec):
 def test_iter_grid(py_c_vec):
     """Test Vec.iter_grid()."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    it = Vec.iter_grid(Vec(35, 60, 90), Vec(40, 70, 110), 5)
+    it = Vec.iter_grid(Vec(35, 59.99999, 90), Vec(40, 70, 110.001), 5)
 
     assert_vec(next(it), 35, 60, 90)
     assert_vec(next(it), 35, 60, 95)

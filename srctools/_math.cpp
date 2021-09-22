@@ -950,15 +950,15 @@ struct __pyx_obj_8srctools_5_math_VecIter {
  */
 struct __pyx_obj_8srctools_5_math_VecIterGrid {
   PyObject_HEAD
-  long start_x;
-  long start_y;
-  long start_z;
-  long stop_x;
-  long stop_y;
-  long stop_z;
-  long cur_x;
-  long cur_y;
-  long cur_z;
+  PY_LONG_LONG start_x;
+  PY_LONG_LONG start_y;
+  PY_LONG_LONG start_z;
+  PY_LONG_LONG stop_x;
+  PY_LONG_LONG stop_y;
+  PY_LONG_LONG stop_z;
+  PY_LONG_LONG cur_x;
+  PY_LONG_LONG cur_y;
+  PY_LONG_LONG cur_z;
   long stride;
 };
 
@@ -975,8 +975,8 @@ struct __pyx_obj_8srctools_5_math_VecIterLine {
   struct __pyx_t_8srctools_5_math_vec_t start;
   struct __pyx_t_8srctools_5_math_vec_t diff;
   long stride;
-  long cur_off;
-  long max;
+  PY_LONG_LONG cur_off;
+  PY_LONG_LONG max;
   struct __pyx_t_8srctools_5_math_vec_t end;
 };
 
@@ -6722,7 +6722,7 @@ static PyObject *__pyx_pf_8srctools_5_math_11VecIterGrid_2__next__(struct __pyx_
   __Pyx_RefNannyDeclarations
   int __pyx_t_1;
   PyObject *__pyx_t_2 = NULL;
-  long __pyx_t_3;
+  PY_LONG_LONG __pyx_t_3;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -7029,7 +7029,7 @@ static PyObject *__pyx_pf_8srctools_5_math_11VecIterLine_2__next__(struct __pyx_
  *         else:
  *             vec =_vector(
  */
-    __pyx_v_self->cur_off = -1L;
+    __pyx_v_self->cur_off = -1LL;
 
     /* "srctools/_math.pyx":489
  *             raise StopIteration
@@ -11792,7 +11792,8 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_20iter_grid(CYTHON_UNUSED PyType
   unsigned char __pyx_t_2;
   int __pyx_t_3;
   int __pyx_t_4;
-  long __pyx_t_5;
+  PY_LONG_LONG __pyx_t_5;
+  long __pyx_t_6;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
   int __pyx_clineno = 0;
@@ -11857,7 +11858,7 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_20iter_grid(CYTHON_UNUSED PyType
  *         if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
  *             return EMPTY_ITER             # <<<<<<<<<<<<<<
  * 
- *         it.cur_x = it.start_x = int(mins.x)
+ *         it.cur_x = it.start_x = llround(mins.x)
  */
     __Pyx_XDECREF(__pyx_r);
     __Pyx_INCREF(__pyx_v_8srctools_5_math_EMPTY_ITER);
@@ -11876,69 +11877,72 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_20iter_grid(CYTHON_UNUSED PyType
   /* "srctools/_math.pyx":929
  *             return EMPTY_ITER
  * 
- *         it.cur_x = it.start_x = int(mins.x)             # <<<<<<<<<<<<<<
- *         it.cur_y = it.start_y = int(mins.y)
- *         it.cur_z = it.start_z = int(mins.z)
+ *         it.cur_x = it.start_x = llround(mins.x)             # <<<<<<<<<<<<<<
+ *         it.cur_y = it.start_y = llround(mins.y)
+ *         it.cur_z = it.start_z = llround(mins.z)
  */
-  __pyx_v_it->cur_x = ((long)__pyx_v_mins.x);
-  __pyx_v_it->start_x = ((long)__pyx_v_mins.x);
+  __pyx_t_5 = llround(__pyx_v_mins.x);
+  __pyx_v_it->cur_x = __pyx_t_5;
+  __pyx_v_it->start_x = __pyx_t_5;
 
   /* "srctools/_math.pyx":930
  * 
- *         it.cur_x = it.start_x = int(mins.x)
- *         it.cur_y = it.start_y = int(mins.y)             # <<<<<<<<<<<<<<
- *         it.cur_z = it.start_z = int(mins.z)
+ *         it.cur_x = it.start_x = llround(mins.x)
+ *         it.cur_y = it.start_y = llround(mins.y)             # <<<<<<<<<<<<<<
+ *         it.cur_z = it.start_z = llround(mins.z)
  * 
  */
-  __pyx_v_it->cur_y = ((long)__pyx_v_mins.y);
-  __pyx_v_it->start_y = ((long)__pyx_v_mins.y);
+  __pyx_t_5 = llround(__pyx_v_mins.y);
+  __pyx_v_it->cur_y = __pyx_t_5;
+  __pyx_v_it->start_y = __pyx_t_5;
 
   /* "srctools/_math.pyx":931
- *         it.cur_x = it.start_x = int(mins.x)
- *         it.cur_y = it.start_y = int(mins.y)
- *         it.cur_z = it.start_z = int(mins.z)             # <<<<<<<<<<<<<<
+ *         it.cur_x = it.start_x = llround(mins.x)
+ *         it.cur_y = it.start_y = llround(mins.y)
+ *         it.cur_z = it.start_z = llround(mins.z)             # <<<<<<<<<<<<<<
  * 
- *         it.stop_x = int(maxs.x)
+ *         it.stop_x = llround(maxs.x)
  */
-  __pyx_v_it->cur_z = ((long)__pyx_v_mins.z);
-  __pyx_v_it->start_z = ((long)__pyx_v_mins.z);
+  __pyx_t_5 = llround(__pyx_v_mins.z);
+  __pyx_v_it->cur_z = __pyx_t_5;
+  __pyx_v_it->start_z = __pyx_t_5;
 
   /* "srctools/_math.pyx":933
- *         it.cur_z = it.start_z = int(mins.z)
+ *         it.cur_z = it.start_z = llround(mins.z)
  * 
- *         it.stop_x = int(maxs.x)             # <<<<<<<<<<<<<<
- *         it.stop_y = int(maxs.y)
- *         it.stop_z = int(maxs.z)
+ *         it.stop_x = llround(maxs.x)             # <<<<<<<<<<<<<<
+ *         it.stop_y = llround(maxs.y)
+ *         it.stop_z = llround(maxs.z)
  */
-  __pyx_v_it->stop_x = ((long)__pyx_v_maxs.x);
+  __pyx_v_it->stop_x = llround(__pyx_v_maxs.x);
 
   /* "srctools/_math.pyx":934
  * 
- *         it.stop_x = int(maxs.x)
- *         it.stop_y = int(maxs.y)             # <<<<<<<<<<<<<<
- *         it.stop_z = int(maxs.z)
+ *         it.stop_x = llround(maxs.x)
+ *         it.stop_y = llround(maxs.y)             # <<<<<<<<<<<<<<
+ *         it.stop_z = llround(maxs.z)
  * 
  */
-  __pyx_v_it->stop_y = ((long)__pyx_v_maxs.y);
+  __pyx_v_it->stop_y = llround(__pyx_v_maxs.y);
 
   /* "srctools/_math.pyx":935
- *         it.stop_x = int(maxs.x)
- *         it.stop_y = int(maxs.y)
- *         it.stop_z = int(maxs.z)             # <<<<<<<<<<<<<<
+ *         it.stop_x = llround(maxs.x)
+ *         it.stop_y = llround(maxs.y)
+ *         it.stop_z = llround(maxs.z)             # <<<<<<<<<<<<<<
  * 
  *         it.stride = stride
  */
-  __pyx_v_it->stop_z = ((long)__pyx_v_maxs.z);
+  __pyx_v_it->stop_z = llround(__pyx_v_maxs.z);
 
   /* "srctools/_math.pyx":937
- *         it.stop_z = int(maxs.z)
+ *         it.stop_z = llround(maxs.z)
  * 
  *         it.stride = stride             # <<<<<<<<<<<<<<
  * 
  *         return it
  */
-  __pyx_t_5 = __Pyx_PyInt_As_long(__pyx_v_stride); if (unlikely((__pyx_t_5 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 937, __pyx_L1_error)
-  __pyx_v_it->stride = __pyx_t_5;
+  __pyx_t_6 = __Pyx_PyInt_As_long(__pyx_v_stride); if (unlikely((__pyx_t_6 == (long)-1) && PyErr_Occurred())) __PYX_ERR(0, 937, __pyx_L1_error)
+  __pyx_v_it->stride = __pyx_t_6;
 
   /* "srctools/_math.pyx":939
  *         it.stride = stride
@@ -12141,7 +12145,7 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_22iter_line(struct __pyx_obj_8sr
  *         it.start = self.val
  *         it.end = end.val             # <<<<<<<<<<<<<<
  *         it.cur_off = 0
- *         it.max = int(length)
+ *         it.max = llround(length)
  */
   __pyx_t_2 = __pyx_v_end->val;
   __pyx_v_it->end = __pyx_t_2;
@@ -12150,7 +12154,7 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_22iter_line(struct __pyx_obj_8sr
  *         it.start = self.val
  *         it.end = end.val
  *         it.cur_off = 0             # <<<<<<<<<<<<<<
- *         it.max = int(length)
+ *         it.max = llround(length)
  *         it.stride = int(stride)
  */
   __pyx_v_it->cur_off = 0;
@@ -12158,15 +12162,15 @@ static PyObject *__pyx_pf_8srctools_5_math_3Vec_22iter_line(struct __pyx_obj_8sr
   /* "srctools/_math.pyx":962
  *         it.end = end.val
  *         it.cur_off = 0
- *         it.max = int(length)             # <<<<<<<<<<<<<<
+ *         it.max = llround(length)             # <<<<<<<<<<<<<<
  *         it.stride = int(stride)
  * 
  */
-  __pyx_v_it->max = ((long)__pyx_v_length);
+  __pyx_v_it->max = llround(__pyx_v_length);
 
   /* "srctools/_math.pyx":963
  *         it.cur_off = 0
- *         it.max = int(length)
+ *         it.max = llround(length)
  *         it.stride = int(stride)             # <<<<<<<<<<<<<<
  * 
  *         return it
