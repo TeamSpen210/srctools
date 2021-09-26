@@ -4,7 +4,7 @@ so it's better done in type stub form.
 from enum import Enum
 from collections.abc import Iterable, Iterator, Mapping
 from typing import NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
-from uuid import UUID
+from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
 from srctools import Matrix, Angle
 import builtins
 
