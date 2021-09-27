@@ -308,7 +308,7 @@ class StaticPropVersion(Enum):
 
     # Source 2013, also appears with version 7 but is identical.
     # Based on v6, adds lightmapped props.
-    V_LIGHTMAP_v7 = (10, 72)
+    V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
     V11_MESA  = (11, 76)  # Adds just rendercolor.
 
@@ -316,6 +316,11 @@ class StaticPropVersion(Enum):
     UNKNOWN = (0, 0)  # Before prop is read.
     # All games should recognise this, so switch to this if set to unknown.
     DEFAULT = V5
+
+    @property
+    def is_lightmap(self) -> bool:
+        """Check if this is either lightmap version."""
+        return self.name.startswith('V_LIGHTMAP')
 
 
 class StaticPropFlags(Flag):
@@ -2468,7 +2473,6 @@ class BSP:
         # These two are the same, it just changed version numbers later.
         # It's more similar to V7 though.
         if version is VER.V_LIGHTMAP_v10:
-            version = VER.V_LIGHTMAP_v7
             vers_num = 7
 
         for i in range(prop_count):
@@ -2494,7 +2498,7 @@ class BSP:
             lighting_origin = Vec(struct_read('<fff', static_lump))
 
             if vers_num >= 5:
-                fade_scale = struct_read('<f', static_lump)[0]
+                [fade_scale] = struct_read('<f', static_lump)
             else:
                 fade_scale = 1  # default
 
@@ -2510,14 +2514,14 @@ class BSP:
                     max_cpu_level,
                     min_gpu_level,
                     max_gpu_level,
-                ) = struct_read('BBBB', static_lump)
+                ) = struct_read('<BBBB', static_lump)
             else:
                 # None
                 min_cpu_level = max_cpu_level = 0
                 min_gpu_level = max_gpu_level = 0
 
-            if vers_num >= 7 and version is not VER.V_LIGHTMAP_v7:
-                r, g, b, renderfx = struct_read('BBBB', static_lump)
+            if vers_num >= 7 and not version.is_lightmap:
+                r, g, b, renderfx = struct_read('<BBBB', static_lump)
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
             else:
@@ -2529,13 +2533,13 @@ class BSP:
                 # Unknown data, though it's float-like.
                 unknown_1 = struct_read('<i', static_lump)
 
-            if vers_num >= 10:
-                # Extra flags, post-CSGO.
+            if vers_num >= 10 or version.is_lightmap:
+                # Extra flags, post-CSGO or in TF2.
                 flags |= struct_read('<I', static_lump)[0] << 8
 
-            if version is VER.V_LIGHTMAP_v7:
+            if version.is_lightmap:
                 # Regular flags byte above is totally ignored!
-                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
+                [lightmap_x, lightmap_y] = struct_read('<HH', static_lump)
             else:
                 # FGD default.
                 lightmap_x = lightmap_y = 32
@@ -2599,6 +2603,8 @@ class BSP:
 
         version = self.static_prop_version
         vers_num = self.static_prop_version.version
+        if version.is_lightmap:
+            vers_num = 7
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -2607,12 +2613,13 @@ class BSP:
             prop_lump.write(struct.pack('<128s', name.encode('ascii')))
 
         prop_lump.write(struct.pack('<i', len(leaf_array)))
-        prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
+        prop_lump.write(write_array('<H', leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
         for (leaf_off, model_ind), prop in zip(indexes, props):
+            start = prop_lump.tell()
             prop_lump.write(struct.pack(
-                '<6fH',
+                '<3f3fH',
                 prop.origin.x,
                 prop.origin.y,
                 prop.origin.z,
@@ -2623,7 +2630,7 @@ class BSP:
             ))
 
             prop_lump.write(struct.pack(
-                '<HHBBifffff',
+                '<HHBBiff3f',
                 leaf_off,
                 len(prop.visleafs),
                 prop.solidity,
@@ -2654,7 +2661,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if vers_num >= 7:
+            if vers_num >= 7 and not version.is_lightmap:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -2663,16 +2670,28 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if vers_num >= 10:
-                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
-
             if vers_num >= 11:
                 # Unknown padding/data, though it's always zero.
+                prop_lump.write(b'\0\0\0\0')
 
-                prop_lump.write(struct.pack('<xxxxf', prop.scaling))
+            if vers_num >= 10 or version.is_lightmap:
+                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
+
+            if version.is_lightmap:
+                prop_lump.write(struct.pack(
+                    '<HH',
+                    prop.lightmap_x, prop.lightmap_y,
+                ))
+
+            if vers_num >= 11:
+                prop_lump.write(struct.pack('<f', prop.scaling))
             elif vers_num >= 9:
                 # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
+
+            real_size = prop_lump.tell() - start
+            if version.size != real_size:
+                raise ValueError(f'Expected {version.size} for {version}, got {real_size}!')
 
         return prop_lump.getvalue()
 
