@@ -346,6 +346,11 @@ class StaticPropFlags(Flag):
         """Return the data for the secondary flag byte."""
         return self.value >> 8
 
+    @property
+    def value_lightmap(self) -> int:
+        """Return the data for the original flag byte. Branches with lightmaps use more."""
+        return self.value & (0xFF or 0xFFF)
+
 
 class VisLeafFlags(Flag):
     """Visleaf flags."""
@@ -2532,6 +2537,8 @@ class BSP:
             indexes.append((len(leaf_array), add_model(prop.model)))
             leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
+        VER = StaticPropVersion
+
         if self.static_prop_version is StaticPropVersion.UNKNOWN:
             self.static_prop_version = StaticPropVersion.DEFAULT
 
@@ -2592,7 +2599,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if vers_num >= 7:
+            if vers_num >= 7 and version is not VER.V_LIGHTMAP_v7:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -2603,6 +2610,14 @@ class BSP:
 
             if vers_num >= 10:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
+
+            if version is VER.V_LIGHTMAP_v7:
+                prop_lump.write(struct.pack(
+                    '<IHH',
+                    prop.flags.value_lightmap,
+                    prop.lightmap_x,
+                    prop.lightmap_y,
+                    ))
 
             if vers_num >= 11:
                 # Unknown padding/data, though it's always zero.
