@@ -843,15 +843,21 @@ class StaticProp:
     # If not provided, uses origin.
     lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
     fade_scale: float = -1.0
+
     min_dx_level: int = 0
     max_dx_level: int = 0
     min_cpu_level: int = 0
     max_cpu_level: int = 0
     min_gpu_level: int = 0
     max_gpu_level: int = 0
+
     tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
     renderfx: int = 255
     disable_on_xbox: bool = False
+
+    lightmap_x: int = 32
+    lightmap_y: int = 32
+
 
     def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
@@ -2356,13 +2362,13 @@ class BSP:
         warnings.warn('Assign to BSP.props', DeprecationWarning, stacklevel=2)
         self.props = props
 
-    def _lmp_read_props(self, version: int, data: bytes) -> Iterator['StaticProp']:
+    def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
-        if version > 11:
-            raise ValueError('Unknown version ({})!'.format(version))
-        if version < 4:
-            # Predates HL2...
-            raise ValueError('Static prop version {} is too old!')
+        if vers_num > 11:
+            raise ValueError(f'Unknown version ({vers_num})!')
+        if vers_num < 4:
+            # Predates HL2, no game produces these.
+            raise ValueError(f'Static prop version {vers_num} is too old!')
 
         static_lump = BytesIO(data)
 
@@ -2377,7 +2383,34 @@ class BSP:
 
         [prop_count] = struct_read('<i', static_lump)
 
+        if prop_count == 0:
+            # No props, following code will divide by zero, also no point anyway.
+            # Use the 'standard' version for the given version number.
+            for vers in StaticPropVersion:
+                if vers.version == vers_num:
+                    self.version = vers
+            return
+        struct_size = (len(data) - static_lump.tell()) / prop_count
+
+        # The prop data itself changes drastically, depending on version.
+        # Some numbers are reused, so add the size of the struct to guess the
+        # version.
+        try:
+            self.static_prop_version = version = StaticPropVersion((vers_num, struct_size))
+        except ValueError:
+            raise ValueError(
+                "Don't know a static prop "
+                f"version={vers_num} with a size of {struct_size} bytes!"
+            )
+        VER = StaticPropVersion
+        # These two are the same, it just changed version numbers later.
+        # It's more similar to V7 though.
+        if version is VER.V_LIGHTMAP_v10:
+            version = VER.V_LIGHTMAP_v7
+            vers_num = 7
+
         for i in range(prop_count):
+            start = static_lump.tell()
             origin = Vec(struct_read('fff', static_lump))
             angles = Angle(struct_read('fff', static_lump))
 
@@ -2398,18 +2431,18 @@ class BSP:
             visleafs = set(visleaf_list[first_leaf:first_leaf + leaf_count])
             lighting_origin = Vec(struct_read('<fff', static_lump))
 
-            if version >= 5:
+            if vers_num >= 5:
                 fade_scale = struct_read('<f', static_lump)[0]
             else:
                 fade_scale = 1  # default
 
-            if version in (6, 7):
+            if vers_num in (6, 7):
                 min_dx_level, max_dx_level = struct_read('<HH', static_lump)
             else:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
 
-            if version >= 8:
+            if vers_num >= 8:
                 (
                     min_cpu_level,
                     max_cpu_level,
@@ -2421,7 +2454,7 @@ class BSP:
                 min_cpu_level = max_cpu_level = 0
                 min_gpu_level = max_gpu_level = 0
 
-            if version >= 7:
+            if vers_num >= 7 and version is not VER.V_LIGHTMAP_v7:
                 r, g, b, renderfx = struct_read('BBBB', static_lump)
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
@@ -2430,25 +2463,36 @@ class BSP:
                 tint = Vec(255, 255, 255)
                 renderfx = 255
 
-            if version >= 11:
+            if vers_num >= 11:
                 # Unknown data, though it's float-like.
                 unknown_1 = struct_read('<i', static_lump)
 
-            if version >= 10:
+            if vers_num >= 10:
                 # Extra flags, post-CSGO.
                 flags |= struct_read('<I', static_lump)[0] << 8
+
+            if version is VER.V_LIGHTMAP_v7:
+                # Regular flags byte above is totally ignored!
+                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
+            else:
+                # FGD default.
+                lightmap_x = lightmap_y = 32
 
             flags = StaticPropFlags(flags)
 
             scaling = 1.0
             disable_on_xbox = False
 
-            if version >= 11:
+            if vers_num >= 11:
                 # XBox support was removed. Instead this is the scaling factor.
                 [scaling] = struct_read("<f", static_lump)
-            elif version >= 9:
+            elif vers_num >= 9:
                 # The single boolean byte also produces 3 pad bytes.
                 [disable_on_xbox] = struct_read('<?xxx', static_lump)
+
+            real_size = static_lump.tell() - start
+            if struct_size != real_size:
+                raise ValueError(f'Expected {struct_size} for {version}, got {real_size}!')
 
             yield StaticProp(
                 model_name,
@@ -2472,6 +2516,7 @@ class BSP:
                 tint,
                 renderfx,
                 disable_on_xbox,
+                lightmap_x, lightmap_y,
             )
 
     def _lmp_write_props(self, props: List['StaticProp']) -> bytes:
@@ -2487,7 +2532,11 @@ class BSP:
             indexes.append((len(leaf_array), add_model(prop.model)))
             leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
-        version = self.game_lumps[LMP_ID_STATIC_PROPS].version
+        if self.static_prop_version is StaticPropVersion.UNKNOWN:
+            self.static_prop_version = StaticPropVersion.DEFAULT
+
+        version = self.static_prop_version
+        vers_num = self.static_prop_version.version
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -2524,17 +2573,17 @@ class BSP:
                 prop.lighting.y,
                 prop.lighting.z,
             ))
-            if version >= 5:
+            if vers_num >= 5:
                 prop_lump.write(struct.pack('<f', prop.fade_scale))
 
-            if version in (6, 7):
+            if vers_num in (6, 7):
                 prop_lump.write(struct.pack(
                     '<HH',
                     prop.min_dx_level,
                     prop.max_dx_level,
                 ))
 
-            if version >= 8:
+            if vers_num >= 8:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     prop.min_cpu_level,
@@ -2543,7 +2592,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if version >= 7:
+            if vers_num >= 7:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -2552,14 +2601,14 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if version >= 10:
+            if vers_num >= 10:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if version >= 11:
+            if vers_num >= 11:
                 # Unknown padding/data, though it's always zero.
 
                 prop_lump.write(struct.pack('<xxxxf', prop.scaling))
-            elif version >= 9:
+            elif vers_num >= 9:
                 # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
