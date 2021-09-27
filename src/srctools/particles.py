@@ -42,6 +42,7 @@ class Particle:
     constraints: List[Operator] = attr.ib(converter=list, factory=list)
     children: List[Operator] = attr.ib(converter=list, factory=list)
 
+    @classmethod
     @overload
     def parse(
         cls,
@@ -54,7 +55,6 @@ class Particle:
         cls,
         file: IO[bytes],
     ) -> Dict[str, 'Particle']: ...
-    @classmethod
 
     @classmethod
     def parse(
