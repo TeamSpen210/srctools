@@ -1,14 +1,16 @@
-# cython: language_level=3, embedsignature=True, auto_pickle=False
+# cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
 from libc cimport math
-from libc.math cimport sin, cos, tan, NAN
+from libc.math cimport sin, cos, tan, llround, NAN
 from libc.string cimport memcpy, memcmp, memset
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport sscanf
 from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
 from cpython.ref cimport Py_INCREF
 from cpython.exc cimport PyErr_WarnEx
-cimport cython
+from libcpp.vector cimport vector
+from srctools cimport quickhull
+cimport cython.operator
 
 cdef extern from *:
     const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
@@ -29,13 +31,13 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     ang.val.z = roll
     return ang
 
+cdef object Tuple, Iterator, Union  # Keep private.
+from typing import Tuple, Iterator, Union
 
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_vec
-cdef object unpickle_ang
-cdef object unpickle_mat
+cdef object unpickle_vec, unpickle_ang, unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
@@ -401,13 +403,12 @@ def to_matrix(value) -> Matrix:
 @cython.final
 @cython.internal
 cdef class VecIter:
-    """Implements iter(Vec)."""
-    cdef Vec vec
+    """Implements Vec/Angle iteration."""
     cdef uint_fast8_t index
+    cdef double a, b, c
 
-    def __cinit__(self, Vec vec not None):
-        self.vec = vec
-        self.index = 0
+    def __cinit__(self):
+        self.index = self.a = self.b = self.c = 0
 
     def __iter__(self) -> VecIter:
         return self
@@ -417,14 +418,11 @@ cdef class VecIter:
             raise StopIteration
         self.index += 1
         if self.index == 1:
-            return self.vec.val.x
+            return self.a
         elif self.index == 2:
-            return self.vec.val.y
+            return self.b
         elif self.index == 3:
-            # Drop our reference.
-            ret = self.vec.val.z
-            self.vec = None
-            return ret
+            return self.c
 
 
 @cython.final
@@ -432,17 +430,17 @@ cdef class VecIter:
 cdef class VecIterGrid:
     """Implements Vec.iter_grid()."""
     cdef:
-        long start_x
-        long start_y
-        long start_z
+        long long start_x
+        long long start_y
+        long long start_z
 
-        long stop_x
-        long stop_y
-        long stop_z
+        long long stop_x
+        long long stop_y
+        long long stop_z
 
-        long cur_x
-        long cur_y
-        long cur_z
+        long long cur_x
+        long long cur_y
+        long long cur_z
 
         long stride
 
@@ -476,8 +474,8 @@ cdef class VecIterLine:
         vec_t start
         vec_t diff
         long stride
-        long cur_off
-        long max
+        long long cur_off
+        long long max
         vec_t end
 
     def __iter__(self) -> VecIterLine:
@@ -505,35 +503,6 @@ cdef class VecIterLine:
 
 @cython.final
 @cython.internal
-cdef class AngleIter:
-    """Implements iter(Angle)."""
-    cdef Angle ang
-    cdef uint_fast8_t index
-
-    def __cinit__(self, Angle ang not None):
-        self.ang = ang
-        self.index = 0
-
-    def __iter__(self) -> AngleIter:
-        return self
-
-    def __next__(self) -> Angle:
-        if self.index == 3:
-            raise StopIteration
-        self.index += 1
-        if self.index == 1:
-            return self.ang.val.x
-        elif self.index == 2:
-            return self.ang.val.y
-        elif self.index == 3:
-            # Drop our reference.
-            ret = self.ang.val.z
-            self.ang = None
-            return ret
-
-
-@cython.final
-@cython.internal
 cdef class VecTransform:
     """Implements Vec.transform()."""
     cdef Matrix mat
@@ -550,8 +519,8 @@ cdef class VecTransform:
         if (
             self.mat is not None and
             self.vec is not None and
-            exc_type is None and 
-            exc_val is None and 
+            exc_type is None and
+            exc_val is None and
             exc_tb is None
         ):
             vec_rot(&self.vec.val, self.mat.mat)
@@ -592,6 +561,8 @@ cdef class Vec:
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
+    __match_args__ = ('x', 'y', 'z')
+
     # Various constants.
     INV_AXIS = {
         'x': ('y', 'z'),
@@ -734,7 +705,7 @@ cdef class Vec:
 
     @classmethod
     @cython.boundscheck(False)
-    def with_axes(cls, *args) -> 'Vec':
+    def with_axes(cls, *args) -> Vec:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -788,14 +759,14 @@ cdef class Vec:
         double yaw: float=0.0,
         double roll: float=0.0,
         bint round_vals: bool=True,
-    ) -> 'Vec':
+    ) -> Vec:
         """Rotate a vector by a Source rotational angle.
         Returns the vector, so you can use it in the form
         val = Vec(0,1,0).rotate(p, y, r)
 
         If round is True, all values will be rounded to 3 decimals
         (since these calculations always have small inprecision.)
-        
+
         This is deprecated - use an Angle and the @ operator.
         """
         cdef vec_t angle
@@ -824,7 +795,7 @@ cdef class Vec:
         double yaw=0.0,
         double roll=0.0,
         bint round_vals=True,
-    ) -> 'Vec':
+    ) -> Vec:
         """Rotate a vector, using a string instead of a vector.
 
         If the string cannot be parsed, use the passed in values instead.
@@ -938,10 +909,10 @@ cdef class Vec:
     @classmethod
     def iter_grid(
         cls,
-        min_pos,
-        max_pos,
-        stride=1,
-    ):
+        object min_pos: Union[Vec, Tuple[int, int, int]],
+        object max_pos: Union[Vec, Tuple[int, int, int]],
+        stride: int = 1,
+    ) -> Iterator[Vec]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -954,20 +925,20 @@ cdef class Vec:
 
         if maxs.x < mins.x or maxs.y < mins.y or maxs.z < mins.z:
             return EMPTY_ITER
-        
-        it.cur_x = it.start_x = int(mins.x)
-        it.cur_y = it.start_y = int(mins.y)
-        it.cur_z = it.start_z = int(mins.z)
 
-        it.stop_x = int(maxs.x)
-        it.stop_y = int(maxs.y)
-        it.stop_z = int(maxs.z)
+        it.cur_x = it.start_x = llround(mins.x)
+        it.cur_y = it.start_y = llround(mins.y)
+        it.cur_z = it.start_z = llround(mins.z)
+
+        it.stop_x = llround(maxs.x)
+        it.stop_y = llround(maxs.y)
+        it.stop_z = llround(maxs.z)
 
         it.stride = stride
 
         return it
 
-    def iter_line(self, end: 'Vec', stride: int=1):
+    def iter_line(self, end: Vec, stride: int=1) -> Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -988,10 +959,27 @@ cdef class Vec:
         it.start = self.val
         it.end = end.val
         it.cur_off = 0
-        it.max = int(length)
+        it.max = llround(length)
         it.stride = int(stride)
 
         return it
+
+    @classmethod
+    @cython.cdivision(True)  # Manually do it once.
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: Vec, out_max: Vec) -> Vec:
+        """Linerarly interpolate between two vectors.
+
+        If in_min and in_max are the same, ZeroDivisionError is raised.
+        """
+        cdef double diff = in_max - in_min
+        cdef double off = x - in_min
+        if diff == 0.0:
+            raise ZeroDivisionError('In values must not be equal!')
+        return _vector(
+            out_min.val.x + (off * (out_max.val.x - out_min.val.x)) / diff,
+            out_min.val.y + (off * (out_max.val.y - out_min.val.y)) / diff,
+            out_min.val.z + (off * (out_max.val.z - out_min.val.z)) / diff,
+        )
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
@@ -1012,7 +1000,7 @@ cdef class Vec:
         )
 
     @cython.boundscheck(False)
-    def other_axes(self, object axis) -> 'Tuple[float, float]':
+    def other_axes(self, object axis) -> Tuple[float, float]:
         """Get the values for the other two axes."""
         cdef char axis_chr
         if isinstance(axis, str) and len(<str>axis) == 1:
@@ -1046,7 +1034,7 @@ cdef class Vec:
             avec.z <= self.val.z <= bvec.z
         )
 
-    def as_tuple(self) -> 'Tuple[float, float, float]':
+    def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the
         # Python __new__.
@@ -1069,7 +1057,7 @@ cdef class Vec:
             norm_ang(roll),
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=...) -> 'Angle':
+    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -1086,7 +1074,7 @@ cdef class Vec:
         _mat_to_angle(&ang.val, mat)
         return ang
 
-    def rotation_around(self, double rot: float=90) -> 'Vec':
+    def rotation_around(self, double rot: float=90) -> Vec:
         """For an axis-aligned normal, return the angles which rotate around it.
 
         This is deprecated, use Matrix.axis_angle().to_angle() which works
@@ -1487,7 +1475,7 @@ cdef class Vec:
             res_2.val.z = other_d % vec.val.z
             res_1.val.z = other_d // vec.val.z
         else:
-            raise TypeError("Called with non-vectors??")
+            return NotImplemented
 
         return res_1, res_2
 
@@ -1502,12 +1490,8 @@ cdef class Vec:
         return False
 
     def __len__(self):
-        """The len() of a vector is the number of non-zero axes."""
-        return (
-            (abs(self.val.x) > TOL) +
-            (abs(self.val.y) > TOL) +
-            (abs(self.val.z) > TOL)
-        )
+        """The len() of a vector is always 3."""
+        return 3
 
     # All the comparisons are similar, so we can use richcmp to
     # nicely combine the parsing code.
@@ -1629,7 +1613,7 @@ cdef class Vec:
         _vec_normalise(&vec.val, &self.val)
         return vec
 
-    def norm_mask(self, normal: 'Vec') -> 'Vec':
+    def norm_mask(self, normal: 'Vec') -> Vec:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
@@ -1665,7 +1649,7 @@ cdef class Vec:
             self.val.z * oth.z
         )
 
-    def cross(self, other) -> 'Vec':
+    def cross(self, other) -> Vec:
         """Return the cross product of both Vectors."""
         cdef vec_t oth
         cdef Vec res
@@ -1718,7 +1702,18 @@ cdef class Vec:
         return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
 
     def __iter__(self) -> VecIter:
-        return VecIter.__new__(VecIter, self)
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.x
+        viter.b = self.val.y
+        viter.c = self.val.z
+        return viter
+
+    def __reversed__(self):
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.z
+        viter.b = self.val.y
+        viter.c = self.val.x
+        return viter
 
     def __getitem__(self, ind_obj) -> float:
         """Allow reading values by index instead of name if desired.
@@ -1727,8 +1722,8 @@ cdef class Vec:
         Useful in conjunction with a loop to apply commands to all values.
         """
         cdef int ind
-        cdef Py_UCS4 chr
-        if isinstance(ind_obj, int):
+        cdef Py_UCS4 axis
+        if isinstance(ind_obj, int) and ind_obj is not None:
             try:
                 ind = ind_obj
             except (TypeError, ValueError, OverflowError):
@@ -1740,21 +1735,18 @@ cdef class Vec:
                     return self.val.y
                 elif ind == 2:
                     return self.val.z
-            raise KeyError(f'Invalid axis: {ind!r}' '!')
         else:
-            if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                chr = (<str>ind_obj)[0]
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+            if isinstance(ind_obj, str) and ind_obj is not None and len(<str>ind_obj) == 1:
+                axis = (<str>ind_obj)[0]
 
-            if chr == "x":
-                return self.val.x
-            elif chr == "y":
-                return self.val.y
-            elif chr == "z":
-                return self.val.z
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                if axis == "x":
+                    return self.val.x
+                elif axis == "y":
+                    return self.val.y
+                elif axis == "z":
+                    return self.val.z
+
+        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
     def __setitem__(self, ind_obj, double val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -1763,7 +1755,7 @@ cdef class Vec:
         Useful in conjunction with a loop to apply commands to all values.
         """
         cdef int ind
-        cdef Py_UCS4 chr
+        cdef Py_UCS4 axis
         if isinstance(ind_obj, int):
             try:
                 ind = ind_obj
@@ -1779,21 +1771,21 @@ cdef class Vec:
                 elif ind == 2:
                     self.val.z = val
                     return
-            raise KeyError(f'Invalid axis: {ind!r}')
         else:
             if isinstance(ind_obj, str) and len(<str>ind_obj) == 1:
-                chr = (<str>ind_obj)[0]
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                axis = (<str>ind_obj)[0]
 
-            if chr == "x":
-                self.val.x = val
-            elif chr == "y":
-                self.val.y = val
-            elif chr == "z":
-                self.val.z = val
-            else:
-                raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+                if axis == "x":
+                    self.val.x = val
+                    return
+                elif axis == "y":
+                    self.val.y = val
+                    return
+                elif axis == "z":
+                    self.val.z = val
+                    return
+
+        raise KeyError(f'Invalid axis {ind_obj!r}' '!')
 
     def transform(self):
         """Perform rotations on this Vector efficiently.
@@ -1965,17 +1957,17 @@ cdef class Matrix:
 
         return mat
 
-    def forward(self):
-        """Return a normalised vector pointing in the +X direction."""
-        return _vector(self.mat[0][0], self.mat[0][1], self.mat[0][2])
+    def forward(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the X axis."""
+        return _vector(mag * self.mat[0][0], mag * self.mat[0][1], mag * self.mat[0][2])
 
-    def left(self):
-        """Return a normalised vector pointing in the +Y direction."""
-        return _vector(self.mat[1][0], self.mat[1][1], self.mat[1][2])
+    def left(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the Y axis."""
+        return _vector(mag * self.mat[1][0], mag * self.mat[1][1], mag * self.mat[1][2])
 
-    def up(self):
-        """Return a normalised vector pointing in the +Z direction."""
-        return _vector(self.mat[2][0], self.mat[2][1], self.mat[2][2])
+    def up(self, mag: float = 1.0):
+        """Return a vector with the given magnitude pointing along the Z axis."""
+        return _vector(mag * self.mat[2][0], mag * self.mat[2][1], mag * self.mat[2][2])
 
     def __getitem__(self, item):
         """Retrieve an individual matrix value by x, y position (0-2)."""
@@ -2052,6 +2044,12 @@ cdef class Matrix:
         elif isinstance(second, Matrix):
             if isinstance(first, Vec):
                 vec = Vec.__new__(Vec)
+                memcpy(&vec.val, &(<Vec>first).val, sizeof(vec_t))
+                vec_rot(&vec.val, (<Matrix>second).mat)
+                return vec
+            elif isinstance(first, tuple):
+                vec = Vec.__new__(Vec)
+                vec.val.x, vec.val.y, vec.val.z = <tuple>first
                 vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, Angle):
@@ -2088,6 +2086,7 @@ cdef class Angle:
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
+    __match_args__ = ('pitch', 'yaw', 'roll')
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
         """Create an Angle.
@@ -2233,9 +2232,25 @@ cdef class Angle:
         """Return the Angle as a tuple."""
         return Vec_tuple(self.val.x, self.val.y, self.val.z)
 
-    def __iter__(self) -> AngleIter:
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
+    def __iter__(self) -> VecIter:
         """Iterating over the angles returns each value in turn."""
-        return AngleIter.__new__(AngleIter, self)
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.x
+        viter.b = self.val.y
+        viter.c = self.val.z
+        return viter
+
+    def __reversed__(self) -> VecIter:
+        """Iterating over the angles returns each value in turn."""
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.z
+        viter.b = self.val.y
+        viter.c = self.val.x
+        return viter
 
 
     @classmethod
@@ -2424,9 +2439,14 @@ cdef class Angle:
             _mat_to_angle(&(<Angle>res).val, temp1)
             return res
         elif isinstance(second, Angle):
+            _mat_from_angle(temp2, &(<Angle>second).val)
+            if isinstance(first, tuple):
+                res = Vec.__new__(Vec)
+                (<Vec>res).val.x, (<Vec>res).val.y, (<Vec>res).val.z = <tuple>first
+                vec_rot(&(<Vec>res).val, temp2)
+                return res
             # These classes should do this themselves, but this is here for
             # completeness.
-            _mat_from_angle(temp2, &(<Angle>second).val)
             if isinstance(first, Matrix):
                 res = Matrix.__new__(Matrix)
                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
@@ -2440,6 +2460,19 @@ cdef class Angle:
 
         return NotImplemented
 
+    def __imatmul__(self, second):
+        cdef mat_t mat_self, temp2
+        _mat_from_angle(mat_self, &(<Angle>self).val)
+        if isinstance(second, Angle):
+            _mat_from_angle(temp2, &(<Angle>second).val)
+            mat_mul(mat_self, temp2)
+        elif isinstance(second, Matrix):
+            mat_mul(mat_self, (<Matrix>second).mat)
+        else:
+            return NotImplemented
+        _mat_to_angle(&self.val, mat_self)
+        return self
+
     def transform(self):
         """Perform transformations on this angle.
 
@@ -2449,6 +2482,34 @@ cdef class Angle:
         """
         return AngleTransform.__new__(AngleTransform, self)
 
+
+def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
+    """Use the quickhull algorithm to construct a convex hull around the provided points."""
+    cdef size_t v1, v2, v3, ind
+    cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
+    cdef list vert_list, result
+    cdef Vec vecobj
+    cdef quickhull.QuickHull[double] qhull = quickhull.QuickHull[double]()
+
+    for vecobj in vertexes:
+        values.push_back(quickhull.Vector3[double](vecobj.val.x, vecobj.val.y, vecobj.val.z))
+
+    cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
+
+    cdef list vectors = [
+        _vector(v.x, v.y, v.z)
+        for v in result_hull.getVertexBuffer()
+    ]
+    cdef vector[size_t] indices = result_hull.getIndexBuffer()
+    res = []
+    for ind in range(0, indices.size(), 3):
+        v1 = indices[ind + 0]
+        v2 = indices[ind + 1]
+        v3 = indices[ind + 2]
+        res.append((vectors[v1], vectors[v2], vectors[v3]))
+    return res
+
+
 # Override the class' names to match the public one.
 # This fixes all the methods too, though not in exceptions.
 
@@ -2457,10 +2518,9 @@ if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
-    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_iterator"
-    (<PyTypeObject *>AngleIter).tp_name = b"srctools.math._Angle_iterator"
+    (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
-    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math.Vec_line_iterator"
+    (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math._Vec_line_iterator"
     (<PyTypeObject *>VecTransform).tp_name = b"srctools.math._Vec_transform_cm"
     (<PyTypeObject *>AngleTransform).tp_name = b"srctools.math._Angle_transform_cm"
 try:
@@ -2469,3 +2529,6 @@ try:
     lerp.__module__ = 'srctools.math'
 except Exception:
     pass  # Perfectly fine.
+
+# Drop references.
+Tuple = Iterator = Union = None

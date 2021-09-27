@@ -3,6 +3,7 @@
 """Cython version of the Tokenizer class."""
 cimport cython
 from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from libc.stdint cimport uint_fast8_t
 
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
@@ -56,14 +57,15 @@ cdef:
 
 # Characters not allowed for bare names on a line.
 # Convert to tuple to only check the chars.
-DEF BARE_DISALLOWED = b'"\'{};:,[]()\n\t '
+DEF BARE_DISALLOWED = b'"\'{};,[]()\n\t '
 
 # Controls what syntax is allowed
 DEF FL_STRING_BRACKETS     = 1<<0
 DEF FL_ALLOW_ESCAPES       = 1<<1
 DEF FL_ALLOW_STAR_COMMENTS = 1<<2
+DEF FL_COLON_OPERATOR      = 1<<3
 # If set, the file_iter is a bound read() method.
-DEF FL_FILE_INPUT          = 1<<3
+DEF FL_FILE_INPUT          = 1<<4
 
 DEF FILE_BUFFER = 1024
 DEF CHR_EOF = 0x03  # Indicate the end of the file.
@@ -85,7 +87,7 @@ cdef class BaseTokenizer:
     cdef object pushback_val
 
     cdef public int line_num
-    cdef int flags
+    cdef uint_fast8_t flags
 
     def __init__(self, filename, error):
         # Use os method to convert to string.
@@ -146,7 +148,7 @@ cdef class BaseTokenizer:
     def error_type(self):
         """Return the TokenSyntaxError subclass raised when errors occur."""
         return self.error_type
-    
+
     @error_type.setter
     def error_type(self, value):
         """Alter the TokenSyntaxError subclass raised when errors occur."""
@@ -340,7 +342,7 @@ cdef class Tokenizer(BaseTokenizer):
 
     def __dealloc__(self):
         PyMem_Free(self.val_buffer)
-    
+
     def __init__(
         self,
         data not None,
@@ -349,6 +351,7 @@ cdef class Tokenizer(BaseTokenizer):
         bint string_bracket=False,
         bint allow_escapes=True,
         bint allow_star_comments=False,
+        bint colon_operator=False,
     ):
         # Early warning for this particular error.
         if isinstance(data, bytes) or isinstance(data, bytearray):
@@ -364,6 +367,8 @@ cdef class Tokenizer(BaseTokenizer):
             flags |= FL_ALLOW_ESCAPES
         if allow_star_comments:
             flags |= FL_ALLOW_STAR_COMMENTS
+        if colon_operator:
+            flags |= FL_COLON_OPERATOR
 
         # For direct strings, we can immediately assign that as our chunk,
         # and then set the iterable to indicate EOF after that.
@@ -376,7 +381,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.cur_chunk = ''
             self.chunk_size = 0
             self.chunk_buf = EMPTY_BUF
-            
+
             # If a file, use the read method to pull bulk data.
             try:
                 self.chunk_iter = data.read
@@ -416,7 +421,7 @@ cdef class Tokenizer(BaseTokenizer):
     @property
     def string_bracket(self) -> bool:
         """Check if [bracket] blocks are parsed as a single string-like block.
-        
+
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
         return self.flags & FL_STRING_BRACKETS != 0
@@ -424,14 +429,14 @@ cdef class Tokenizer(BaseTokenizer):
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
         """Set if [bracket] blocks are parsed as a single string-like block.
-        
+
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
         if value:
             self.flags |= FL_STRING_BRACKETS
         else:
             self.flags &= ~FL_STRING_BRACKETS
-            
+
     @property
     def allow_escapes(self) -> bool:
         """Check if backslash escapes will be parsed."""
@@ -444,7 +449,7 @@ cdef class Tokenizer(BaseTokenizer):
             self.flags |= FL_ALLOW_ESCAPES
         else:
             self.flags &= ~FL_ALLOW_ESCAPES
-            
+
     @property
     def allow_star_comments(self) -> bool:
         """Check if /**/ style comments will be enabled."""
@@ -457,6 +462,19 @@ cdef class Tokenizer(BaseTokenizer):
             self.flags |= FL_ALLOW_STAR_COMMENTS
         else:
             self.flags &= ~FL_ALLOW_STAR_COMMENTS
+
+    @property
+    def colon_operator(self) -> bool:
+        """Check if : characters are treated as a COLON token, or part of strings."""
+        return self.flags & FL_COLON_OPERATOR != 0
+
+    @colon_operator.setter
+    def colon_operator(self, bint value) -> None:
+        """Set if : characters are treated as a COLON token, or part of strings."""
+        if value:
+            self.flags |= FL_COLON_OPERATOR
+        else:
+            self.flags &= ~FL_COLON_OPERATOR
 
     cdef inline void buf_reset(self):
         """Reset the temporary buffer."""
@@ -501,14 +519,14 @@ cdef class Tokenizer(BaseTokenizer):
         self.char_index += 1
         if self.char_index < self.chunk_size:
             return self.chunk_buf[self.char_index]
-            
+
         if self.chunk_iter is None:
             return CHR_EOF
-            
+
         if self.flags & FL_FILE_INPUT:
             self.cur_chunk = self.chunk_iter(FILE_BUFFER)
             self.char_index = 0
-            
+
             if type(self.cur_chunk) is str:
                 self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
             else:
@@ -569,8 +587,6 @@ cdef class Tokenizer(BaseTokenizer):
                 return BRACE_OPEN_TUP
             elif next_char == b'}':
                 return BRACE_CLOSE_TUP
-            elif next_char == b':':
-                return COLON_TUP
             elif next_char == b'+':
                 return PLUS_TUP
             elif next_char == b'=':
@@ -734,7 +750,10 @@ cdef class Tokenizer(BaseTokenizer):
                         else:
                             return DIRECTIVE, self.buf_get_text().casefold()
 
-                    elif next_char in BARE_DISALLOWED:
+                    elif (
+                        next_char in BARE_DISALLOWED or
+                        (next_char == b':' and self.flags & FL_COLON_OPERATOR)
+                    ):
                         # We need to repeat this so we return the ending
                         # char next. If it's not allowed, that'll error on
                         # next call.
@@ -746,7 +765,7 @@ cdef class Tokenizer(BaseTokenizer):
                             # Have to go through Unicode lowering.
                             return DIRECTIVE, self.buf_get_text().casefold()
                     elif next_char >= 128:
-                        # This is some UTF char, run through the full
+                        # This is non-ASCII, run through the full
                         # Unicode-compliant conversion.
                         ascii_only = False
                         self.buf_add_char(next_char)
@@ -757,7 +776,9 @@ cdef class Tokenizer(BaseTokenizer):
                         else:
                             self.buf_add_char(next_char)
 
-            else: # Not-in can't be in a switch, so we need to nest this.
+            else:  # These complex checks can't be in a switch, so we need to nest this.
+                if next_char == b':' and FL_COLON_OPERATOR & self.flags:
+                    return COLON_TUP
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
                     self.buf_reset()
@@ -769,8 +790,10 @@ cdef class Tokenizer(BaseTokenizer):
                             # It could be a value for the last prop.
                             return STRING, self.buf_get_text()
 
-                        elif next_char in BARE_DISALLOWED:
-                            # We need to repeat this so we return the ending
+                        elif (
+                            next_char in BARE_DISALLOWED or
+                            (next_char == b':' and FL_COLON_OPERATOR & self.flags)
+                        ):  # We need to repeat this so we return the ending
                             # char next. If it's not allowed, that'll error on
                             # next call.
                             # We need to repeat this so we return the newline.
@@ -917,10 +940,10 @@ def escape_text(str text not None: str) -> str:
     cdef Py_ssize_t final_size = 0
     cdef int i, j
     cdef uchar letter
-    cdef uchar *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
+    cdef const uchar *in_buf = PyUnicode_AsUTF8AndSize(text, &size)
     final_size = size
-    
-    # First loop to compute the full string length, and check if we need to 
+
+    # First loop to compute the full string length, and check if we need to
     # escape at all.
     for i in range(size):
         if in_buf[i] in b'\\"\t\n':
@@ -987,7 +1010,7 @@ cdef class _VPK_IterNullstr:
 
     def __init__(self, file):
         self.file = file
-        
+
     def __iter__(self):
         return self
 
@@ -1011,7 +1034,7 @@ cdef class _VPK_IterNullstr:
                     self.used = 0
                     raise StopIteration
                 else:
-                    res = self.chars[:self.used].decode('ascii')
+                    res = self.chars[:self.used].decode('ascii', 'surrogateescape')
                     self.used = 0
                     return res
             else:

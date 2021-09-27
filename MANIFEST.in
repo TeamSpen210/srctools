@@ -1,6 +1,13 @@
 # Explicitly include the C/C++ sources, for cythonless installs.
-global-include *.c *.cpp *.h
+global-include *.c *.cpp *.h *.hpp
+# Cython headers
+global-include *.pxd'
+
+# FGD database.
+include srctools/fgd.lzma
+# Marks as having type hints.
+include srctools/py.typed
+# Lookup table.
+include libsquish/singlecolourlookup.inl
 # Include test samples
-graft srctools\test
-# Then remove pycache folder that included.
-prune **\__pycache__\**
+recursive-include srctools/test/test_* *

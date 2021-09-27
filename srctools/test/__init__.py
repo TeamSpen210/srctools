@@ -23,8 +23,7 @@ VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 # In SMD files the maximum precision is this, so it should be a good reference.
 EPSILON = 1e-6
-# Incorrect if not in source form, but that's not an issue.
-RESLOC = os.path.dirname(__file__)
+
 PyCVec = Tuple[Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix], Callable[..., Tuple[float, float, float]]]
 
 

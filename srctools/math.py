@@ -11,7 +11,8 @@ Vectors support arithmetic with scalars, applying the operation to the three
 components.
 Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
 dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
-when used in math operations and comparing values.
+when used in math operations and comparing values. This allows these to be
+constant-folded.
 
 Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 2 index access.
 
@@ -29,21 +30,26 @@ Scales magnitude:
  - Scalar * Angle
 
 Rotates LHS by RHS:
- - Vec @ Angle
- - Vec @ Matrix
- - Angle @ Angle
- - Angle @ Matrix
- - Matrix @ Matrix
+ - Vec @ Angle -> Vec
+ - Vec @ Matrix -> Vec
+ - 3-tuple @ Angle -> Vec
+ - Angle @ Angle -> Angle
+ - Angle @ Matrix -> Angle
+ - Matrix @ Matrix -> Matrix
 """
 import math
 import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, Type,
+    Union, Tuple, overload, Type, TYPE_CHECKING,
     Dict, NamedTuple,
-    Iterator, Iterable, SupportsRound, Optional, TYPE_CHECKING,
+    Iterator, Iterable, SupportsRound, Optional,
 )
+if TYPE_CHECKING:
+    from typing import final
+else:
+    globals()['final'] = lambda x: x
 
 
 __all__ = [
@@ -256,12 +262,13 @@ def __i{func}__(self, other: float):
 globals()['SupportsRound'] = {'Vec': object}
 
 
+@final
 class Vec(SupportsRound['Vec']):
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
-    __slots__ = ('x', 'y', 'z')
+    __match_args__ = __slots__ = ('x', 'y', 'z')
     # Make type checkers understand that you can't do str->str or tuple->tuple.
     INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
         'x': ('y', 'z'),
@@ -476,13 +483,13 @@ class Vec(SupportsRound['Vec']):
 
         Both borders will be included.
         """
-        min_x = int(min_pos.x)
-        min_y = int(min_pos.y)
-        min_z = int(min_pos.z)
+        min_x = round(min_pos.x)
+        min_y = round(min_pos.y)
+        min_z = round(min_pos.z)
 
-        max_x = int(max_pos.x)
-        max_y = int(max_pos.y)
-        max_z = int(max_pos.z)
+        max_x = round(max_pos.x)
+        max_y = round(max_pos.y)
+        max_z = round(max_pos.z)
 
         for x in range(min_x, max_x + 1, stride):
             for y in range(min_y, max_y + 1, stride):
@@ -830,6 +837,20 @@ class Vec(SupportsRound['Vec']):
         if self.z > other[2]:
             self.z = other[2]
 
+    @classmethod
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
+        """Linerarly interpolate between two vectors.
+
+        If in_min and in_max are the same, ZeroDivisionError is raised.
+        """
+        x_off = x - in_min
+        diff = in_max - in_min
+        return cls(
+            out_min.x + (x_off * (out_max.x - out_min.x)) / diff,
+            out_min.y + (x_off * (out_max.y - out_min.y)) / diff,
+            out_min.z + (x_off * (out_max.z - out_min.z)) / diff,
+        )
+
     def __round__(self, ndigits: int=0) -> 'Vec':
         """Performing round() on a Py_Vec rounds each axis."""
         return Py_Vec(
@@ -873,6 +894,12 @@ class Vec(SupportsRound['Vec']):
         yield self.x
         yield self.y
         yield self.z
+
+    def __reversed__(self) -> Iterator[float]:
+        """Allow iterating through the dimensions, in reverse."""
+        yield self.z
+        yield self.y
+        yield self.x
 
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
@@ -930,12 +957,8 @@ class Vec(SupportsRound['Vec']):
         return self.x**2 + self.y**2 + self.z**2
 
     def __len__(self) -> int:
-        """The len() of a vector is the number of non-zero axes."""
-        return (
-            (abs(self.x) > 1e-6) +
-            (abs(self.y) > 1e-6) +
-            (abs(self.z) > 1e-6)
-        )
+        """The len() of a vector is always 3."""
+        return 3
 
     def __contains__(self, val: float) -> bool:
         """Check to see if an axis is set to the given value.
@@ -1028,6 +1051,7 @@ _IND_TO_SLOT = {
 }
 
 
+@final
 class Matrix:
     """Represents a matrix via a transformation matrix."""
     __slots__ = [
@@ -1216,17 +1240,17 @@ class Matrix:
 
         return mat
 
-    def forward(self) -> 'Vec':
-        """Return a normalised vector pointing in the +X direction."""
-        return Py_Vec(self._aa, self._ab, self._ac)
+    def forward(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the X axis."""
+        return Py_Vec(mag * self._aa, mag * self._ab, mag * self._ac)
 
-    def left(self) -> 'Vec':
-        """Return a normalised vector pointing in the +Y direction."""
-        return Py_Vec(self._ba, self._bb, self._bc)
+    def left(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the Y axis."""
+        return Py_Vec(mag * self._ba, mag * self._bb, mag * self._bc)
 
-    def up(self) -> 'Vec':
-        """Return a normalised vector pointing in the +Z direction."""
-        return Py_Vec(self._ca, self._cb, self._cc)
+    def up(self, mag: float = 1.0) -> 'Vec':
+        """Return a vector with the given magnitude pointing along the Z axis."""
+        return Py_Vec(mag * self._ca, mag * self._cb, mag * self._cc)
 
     def __getitem__(self, item: Tuple[int, int]) -> float:
         """Retrieve an individual matrix value by x, y position (0-2)."""
@@ -1312,12 +1336,7 @@ class Matrix:
         mat._ca, mat._cb, mat._cc = z.norm()
         return mat
 
-    @overload
-    def __matmul__(self, other: 'Matrix') -> 'Matrix': ...
-    @overload
-    def __matmul__(self, other: 'Angle') -> 'Matrix': ...
-
-    def __matmul__(self, other: 'Matrix | Angle') -> 'Matrix':
+    def __matmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             mat = self.copy()
             mat._mat_mul(other)
@@ -1330,15 +1349,15 @@ class Matrix:
             return NotImplemented
 
     @overload
-    def __rmatmul__(self, other: Vec) -> Vec: ...
+    def __rmatmul__(self, other: 'Vec | Tuple3') -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
 
-    def __rmatmul__(self, other):
-        if isinstance(other, Py_Vec):
-            result = other.copy()
+    def __rmatmul__(self, other: 'Vec | Tuple3 | Matrix | Angle') -> 'Vec | Matrix | Angle':
+        if isinstance(other, Py_Vec) or isinstance(other, tuple):
+            result = Py_Vec(other)
             self._vec_rot(result)
             return result
         elif isinstance(other, Py_Angle):
@@ -1352,12 +1371,7 @@ class Matrix:
         else:
             return NotImplemented
 
-    @overload
-    def __imatmul__(self, other: 'Matrix') -> 'Matrix': ...
-    @overload
-    def __imatmul__(self, other: 'Angle') -> 'Matrix': ...
-
-    def __imatmul__(self, other: 'Matrix | Angle') -> 'Matrix':
+    def __imatmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
@@ -1399,6 +1413,7 @@ class Matrix:
         vec.z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
 
+@final
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
 
@@ -1407,7 +1422,8 @@ class Angle:
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
-    __slots__ = ['_pitch', '_yaw', '_roll']
+    # Use the private attrs for matching also, we only hook assignment.
+    __match_args__ = __slots__ = ['_pitch', '_yaw', '_roll']
 
     def __init__(
         self,
@@ -1517,11 +1533,21 @@ class Angle:
         """Return the Angle as a tuple."""
         return Vec_tuple(self._pitch, self._yaw, self._roll)
 
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
     def __iter__(self) -> Iterator[float]:
         """Iterating over the angles returns each value in turn."""
         yield self._pitch
         yield self._yaw
         yield self._roll
+
+    def __reversed__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._roll
+        yield self._yaw
+        yield self._pitch
 
     @classmethod
     @overload
@@ -1703,16 +1729,36 @@ class Angle:
             )
         return NotImplemented
 
-    def __matmul__(self, other: 'Angle') -> 'Angle':
-        """Angle @ Angle rotates the first by the second.
-        """
+    # noinspection PyProtectedMember
+    def __matmul__(self, other: 'Angle | Matrix') -> 'Angle':
+        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, Py_Angle):
             return other._rotate_angle(self)
+        elif isinstance(other, Py_Matrix):
+            mat = Py_Matrix.from_angle(self)
+            mat._mat_mul(other)
+            return mat.to_angle()
+        else:
+            return NotImplemented
+
+    # noinspection PyProtectedMember
+    def __imatmul__(self, other: 'Angle | Matrix') -> 'Angle':
+        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        if isinstance(other, Py_Angle):
+            self._pitch, self._yaw, self._roll = other._rotate_angle(self)
+            return self
+        elif isinstance(other, Py_Matrix):
+            mat = Py_Matrix.from_angle(self)
+            mat._mat_mul(other)
+            self._pitch, self._yaw, self._roll = mat.to_angle()
+            return self
         else:
             return NotImplemented
 
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    @overload
+    def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
 
@@ -1720,8 +1766,11 @@ class Angle:
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Py_Vec):
             return other @ Py_Matrix.from_angle(self)
+        elif isinstance(other, tuple):
+            x, y, z = other
+            return Vec(x, y, z) @ Py_Matrix.from_angle(self)
         elif isinstance(other, Py_Angle):
-            # Should always be done by __mul__!
+            # Should always be done by __matmul__!
             return self._rotate_angle(other)
         return NotImplemented
 

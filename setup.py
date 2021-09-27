@@ -66,8 +66,10 @@ setup(
         ),
         Extension(
             "srctools._math",
-            sources=["srctools/_math.pyx"],
+            include_dirs=[os.path.abspath("quickhull/")],
+            language='c++',
             optional=True,
+            sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ] if WIN else [
@@ -76,12 +78,7 @@ setup(
         ),
     ],
 
-    package_data={'srctools': [
-        'fgd.lzma',
-        'srctools.fgd',
-        'py.typed',
-        '*.pxd',  # Cython headers
-    ]},
+    include_package_data=True,
 
     entry_points={
         'console_scripts': [
@@ -102,5 +99,10 @@ setup(
     extras_require={
         'wx': ['wxPython'],  # VTF support.
         'cy': ['cython'],  # Force Cython so extensions can be buildable.
+        'test': [
+            'pytest',
+            'pytest-datadir',
+            'pytest-regressions',
+        ],
     }
 )

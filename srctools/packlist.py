@@ -36,18 +36,18 @@ class FileType(Enum):
 
     GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
     PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
-    
+
     PARTICLE_FILE = 'pcf'  # Should be added to the manifest
-    
+
     VSCRIPT_SQUIRREL = 'nut'
-    
+
     # Implies packing referenced materials and textures.
     MATERIAL = 'vmt'
-    
+
     TEXTURE = 'vtf'  # May want .hdr.vtf too.
 
     CHOREO = 'vcd'  # Choreographed scenes.
-    
+
     # Requires lookup of vtx, vvd, phy files too - in the model data.
     # also any skins used.
     MODEL = 'mdl'
@@ -94,14 +94,14 @@ def load_fgd() -> FGD:
 
 class PackFile:
     """Represents a single file we are packing.
-    
+
     data is raw data to pack directly, instead of from the filesystem.
     """
     __slots__ = ['type', 'filename', 'data', '_analysed', 'optional']
     def __init__(
-        self, 
+        self,
         type: FileType,
-        filename: str, 
+        filename: str,
         data: bytes = None,
         optional: bool = False,
     ):
@@ -435,7 +435,7 @@ class PackList:
         The sounds registered by this soundscript are returned.
         """
         try:
-            with file.sys, file.open_str() as f:
+            with file.open_str() as f:
                 props = Property.parse(f, file.path, allow_escapes=False)
         except FileNotFoundError:
             # It doesn't exist, complain and pretend it's empty.
@@ -484,7 +484,7 @@ class PackList:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
-        cache the file reading for later use. 
+        cache the file reading for later use.
         """
         try:
             man = self.fsys.read_prop('scripts/game_sounds_manifest.txt')
@@ -520,53 +520,52 @@ class PackList:
         else:
             new_cache_data = new_cache_sounds = None
 
-        with self.fsys:
-            for prop in man.find_children('game_sounds_manifest'):
-                if not prop.name.endswith('_file'):
-                    continue
-                try:
-                    cache_key, cache_files = cache_data[prop.value.casefold()]
-                except KeyError:
-                    cache_key = -1
-                    cache_files = None
+        for prop in man.find_children('game_sounds_manifest'):
+            if not prop.name.endswith('_file'):
+                continue
+            try:
+                cache_key, cache_files = cache_data[prop.value.casefold()]
+            except KeyError:
+                cache_key = -1
+                cache_files = None
 
-                try:
-                    file = self.fsys[prop.value]
-                except FileNotFoundError:
-                    LOGGER.warning('Soundscript "{}" does not exist!', prop.value)
-                    # Don't write anything into the cache, so we check this
-                    # every time.
-                    continue
-                cur_key = file.cache_key()
+            try:
+                file = self.fsys[prop.value]
+            except FileNotFoundError:
+                LOGGER.warning('Soundscript "{}" does not exist!', prop.value)
+                # Don't write anything into the cache, so we check this
+                # every time.
+                continue
+            cur_key = file.cache_key()
 
-                if cache_key != cur_key or cache_key == -1:
-                    sounds = self.load_soundscript(file, always_include=True)
-                else:
-                    # Read from cache.
-                    sounds = []
-                    for cache_prop in cache_files:
-                        sounds.append(cache_prop.real_name)
-                        self.soundscripts[cache_prop.real_name] = (prop.value, [
-                            snd.value
-                            for snd in cache_prop
+            if cache_key != cur_key or cache_key == -1:
+                sounds = self.load_soundscript(file, always_include=True)
+            else:
+                # Read from cache.
+                sounds = []
+                for cache_prop in cache_files:
+                    sounds.append(cache_prop.real_name)
+                    self.soundscripts[cache_prop.real_name] = (prop.value, [
+                        snd.value
+                        for snd in cache_prop
+                    ])
+
+            # The soundscripts in the manifests are always included,
+            # since many would be part of the core code (physics, weapons,
+            # ui, etc). Just keep those loaded, no harm since vanilla does.
+            self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
+
+            if new_cache_sounds is not None:
+                new_cache_sounds.append(Property(prop.value, [
+                    Property('cache_key', str(cur_key)),
+                    Property('Files', [
+                        Property(snd, [
+                            Property('snd', raw)
+                            for raw in self.soundscripts[snd][1]
                         ])
-
-                # The soundscripts in the manifests are always included,
-                # since many would be part of the core code (physics, weapons,
-                # ui, etc). Just keep those loaded, no harm since vanilla does.
-                self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
-
-                if new_cache_sounds is not None:
-                    new_cache_sounds.append(Property(prop.value, [
-                        Property('cache_key', str(cur_key)),
-                        Property('Files', [
-                            Property(snd, [
-                                Property('snd', raw)
-                                for raw in self.soundscripts[snd][1]
-                            ])
-                            for snd in sounds
-                        ])
-                    ]))
+                        for snd in sounds
+                    ])
+                ]))
 
         if cache_file is not None:
             # Write back out our new cache with updated data.
@@ -598,7 +597,7 @@ class PackList:
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
-        for prop in bsp.static_props():
+        for prop in bsp.props:
             # Static props obviously only use one skin.
             self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
 
@@ -739,8 +738,7 @@ class PackList:
         if detail_script:
             self.pack_file(detail_script, FileType.GENERIC)
             try:
-                with self.fsys:
-                    detail_props = self.fsys.read_prop(detail_script, 'ansi')
+                detail_props = self.fsys.read_prop(detail_script, 'ansi')
             except FileNotFoundError:
                 LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
             except Exception:
@@ -815,41 +813,40 @@ class PackList:
         else:
             only_dump = False  # Pointless to not dump to pakfile or folder.
 
-        with self.fsys:
-            for file in self._files.values():
-                # Need to ensure / separators.
-                fname = file.filename.replace('\\', '/')
+        for file in self._files.values():
+            # Need to ensure / separators.
+            fname = file.filename.replace('\\', '/')
 
-                if file.data is not None:
-                    # Always pack, we've got custom data.
-                    LOGGER.debug('CUSTOM DATA: {}', fname)
-                    if not only_dump:
-                        packed_files[fname.casefold()] = (fname, file.data)
-                    if dump_loc is not None:
-                        path = dump_loc / fname
-                        path.parent.mkdir(exist_ok=True, parents=True)
-                        path.write_bytes(file.data)
-                    continue
+            if file.data is not None:
+                # Always pack, we've got custom data.
+                LOGGER.debug('CUSTOM DATA: {}', fname)
+                if not only_dump:
+                    packed_files[fname.casefold()] = (fname, file.data)
+                if dump_loc is not None:
+                    path = dump_loc / fname
+                    path.parent.mkdir(exist_ok=True, parents=True)
+                    path.write_bytes(file.data)
+                continue
 
-                try:
-                    sys_file = self.fsys[file.filename]
-                except FileNotFoundError:
-                    if not file.optional and fname.casefold() not in packed_files:
-                        LOGGER.warning('WARNING: "{}" not packed!', file.filename)
-                    continue
+            try:
+                sys_file = self.fsys[file.filename]
+            except FileNotFoundError:
+                if not file.optional and fname.casefold() not in packed_files:
+                    LOGGER.warning('WARNING: "{}" not packed!', file.filename)
+                continue
 
-                if self.fsys.get_system(sys_file) in allowed:
-                    LOGGER.debug('ADD:  {}', fname)
-                    with sys_file.open_bin() as f:
-                        data = f.read()
-                    if not only_dump:
-                        packed_files[fname.casefold()] = (fname, data)
-                    if dump_loc is not None:
-                        path = dump_loc / fname
-                        path.parent.mkdir(exist_ok=True, parents=True)
-                        path.write_bytes(data)
-                else:
-                    LOGGER.debug('SKIP: {}', fname)
+            if self.fsys.get_system(sys_file) in allowed:
+                LOGGER.debug('ADD:  {}', fname)
+                with sys_file.open_bin() as f:
+                    data = f.read()
+                if not only_dump:
+                    packed_files[fname.casefold()] = (fname, data)
+                if dump_loc is not None:
+                    path = dump_loc / fname
+                    path.parent.mkdir(exist_ok=True, parents=True)
+                    path.write_bytes(data)
+            else:
+                LOGGER.debug('SKIP: {}', fname)
 
         LOGGER.info('Compressing packfile...')
         # Note no with statement, the BSP takes ownership and needs it open.
@@ -865,33 +862,32 @@ class PackList:
         """
         # Run though repeatedly, until all are analysed.
         todo = True
-        with self.fsys:
-            while todo:
-                todo = False
+        while todo:
+            todo = False
 
-                for file in list(self._files.values()):
-                    if file._analysed:
-                        continue
-                    file._analysed = True
-                    todo = True
+            for file in list(self._files.values()):
+                if file._analysed:
+                    continue
+                file._analysed = True
+                todo = True
 
-                    try:
-                        if file.type is FileType.MATERIAL:
-                            self._get_material_files(file)
-                        elif file.type is FileType.MODEL:
-                            self._get_model_files(file)
-                        elif file.type is FileType.TEXTURE:
-                            # Try packing the '.hdr.vtf' file as well if present.
-                            # But don't recurse!
-                            if not file.filename.endswith('.hdr.vtf'):
-                                hdr_tex = file.filename[:-3] + 'hdr.vtf'
-                                if hdr_tex in self.fsys:
-                                    self.pack_file(hdr_tex, optional=True)
-                        elif file.type is FileType.VSCRIPT_SQUIRREL:
-                            self._get_vscript_files(file)
-                    except Exception as exc:
-                        # Skip errors in the file format - means we can't find the dependencies.
-                        LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
+                try:
+                    if file.type is FileType.MATERIAL:
+                        self._get_material_files(file)
+                    elif file.type is FileType.MODEL:
+                        self._get_model_files(file)
+                    elif file.type is FileType.TEXTURE:
+                        # Try packing the '.hdr.vtf' file as well if present.
+                        # But don't recurse!
+                        if not file.filename.endswith('.hdr.vtf'):
+                            hdr_tex = file.filename[:-3] + 'hdr.vtf'
+                            if hdr_tex in self.fsys:
+                                self.pack_file(hdr_tex, optional=True)
+                    elif file.type is FileType.VSCRIPT_SQUIRREL:
+                        self._get_vscript_files(file)
+                except Exception as exc:
+                    # Skip errors in the file format - means we can't find the dependencies.
+                    LOGGER.warning('Bad file "{}"!', file.filename, exc_info=exc)
 
     def _get_model_files(self, file: PackFile) -> None:
         """Find any needed files for a model."""
@@ -905,14 +901,12 @@ class PackList:
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.
-            virtual_system = VirtualFileSystem({
+            self.fsys.add_sys(VirtualFileSystem({
                 file.filename: file.data,
-            })
-            virtual_system.open_ref()
-            self.fsys.systems.insert(0, (virtual_system, ''))
+            }), priority=True)
             try:
                 mdl = Model(self.fsys, self.fsys[file.filename])
-            finally:
+            finally:  # Remove this system.
                 self.fsys.systems.pop(0)
         else:
             try:
@@ -946,7 +940,7 @@ class PackList:
                     file.filename,
                 )
             else:
-                with self.fsys, self.fsys.open_str(file.filename) as f:
+                with self.fsys.open_str(file.filename) as f:
                     mat = Material.parse(f, file.filename)
         except FileNotFoundError:
             if not file.optional:
@@ -1000,7 +994,7 @@ class PackList:
             data = file.data
         else:
             try:
-                with self.fsys, self.fsys.open_bin(file.filename) as f:
+                with self.fsys.open_bin(file.filename) as f:
                     data = f.read()
             except FileNotFoundError:
                 if not file.optional:

@@ -17,7 +17,7 @@ VALID_ZERONUMS = VALID_NUMS + [0, -0]
 def test_construction(py_c_vec):
     """Check various parts of the constructor - Vec(), Vec.from_str()."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    
+
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
         assert_ang(Angle(pit, yaw, rol), pit, yaw, rol)
         assert_ang(Angle(pit, yaw), pit, yaw, 0)
@@ -143,6 +143,8 @@ def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax:
     """Test the pitch/yaw/roll attributes and item access."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     ang = Angle()
+    # Should be constant.
+    assert len(ang) == 3
 
     def check(targ: float, other: float):
         """Check all the indexes are correct."""
@@ -172,6 +174,38 @@ def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax:
         for x_set, x_read in nums:
             setattr(ang, axis, x_set)
             check(x_read, oth_read)
+
+
+def test_iteration(py_c_vec: PyCVec):
+    """Test vector iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Angle(45.0, 50, 65)
+    it = iter(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 45.0
+    assert next(it) == 50.0
+    assert next(it) == 65.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_rev_iteration(py_c_vec: PyCVec):
+    """Test reversed iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Angle(45.0, 50, 65)
+    it = reversed(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 65.0
+    assert next(it) == 50.0
+    assert next(it) == 45.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
 
 
 def test_equality(py_c_vec) -> None:

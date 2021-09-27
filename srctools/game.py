@@ -22,17 +22,17 @@ class Game:
             self.path = Path(path)
         with open(self.path / GINFO) as f:
             gameinfo = Property.parse(f).find_key('GameInfo')
-        fsystems = gameinfo.find_key('Filesystem', [])
+        fsystems = gameinfo.find_key('Filesystem', or_blank=True)
 
         self.game_name = gameinfo['Game']
         self.app_id = fsystems['SteamAppId']
         self.tools_id = fsystems['ToolsAppId', None]
         self.additional_content = fsystems['AdditionalContentId', None]
         self.fgd_loc = gameinfo['GameData', 'None']
-        self.search_paths = []  # type: List[Path]
+        self.search_paths: list[Path] = []
 
-        for path in fsystems.find_children('SearchPaths'):
-            exp_path = self.parse_search_path(path)
+        for search_path in fsystems.find_children('SearchPaths'):
+            exp_path = self.parse_search_path(search_path)
             # Expand /* if at the end of paths.
             if exp_path.name == '*':
                 try:
@@ -143,7 +143,7 @@ class Game:
 
 def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
     """Locate the game we're in, if launched as a a compiler.
-    
+
     This checks the following:
     * -vproject
     * -game

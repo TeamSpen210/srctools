@@ -15,10 +15,8 @@ from sys import intern
 
 from typing import (
     Optional, Union, overload, TypeVar, Generic,
-    Dict, List, Tuple, Set, Mapping, IO,
-    Iterable, Iterator, AbstractSet,
-    MutableMapping,
-    Pattern, Match,
+    Dict, List, Tuple, Set, Mapping, MutableMapping, IO,
+    Iterable, Iterator, AbstractSet, Pattern, Match,
 )
 
 import attr
@@ -240,10 +238,10 @@ def make_overlay(
         endu=format(u_repeat, 'g'),
         endv=format(v_repeat, 'g'),
 
-        uv0='{:g} {:g} 0'.format(-u_dist, -v_dist),
-        uv1='{:g} {:g} 0'.format(-u_dist, v_dist),
-        uv2='{:g} {:g} 0'.format(u_dist, v_dist),
-        uv3='{:g} {:g} 0'.format(u_dist, -v_dist),
+        uv0=f'{-u_dist:g} {-v_dist:g} 0',
+        uv1=f'{-u_dist:g} {v_dist:g} 0',
+        uv2=f'{u_dist:g} {v_dist:g} 0',
+        uv3=f'{u_dist:g} {-v_dist:g} 0',
     )
 
 
@@ -388,8 +386,8 @@ class VMF:
         The entity should have been created with this VMF as a parent.
         """
         self.entities.append(item)
-        self.by_class[item['classname', None]].add(item)
-        self.by_target[item['targetname', None]].add(item)
+        self.by_class[item['classname', ''].casefold() or None].add(item)
+        self.by_target[item['targetname', ''].casefold() or None].add(item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -409,8 +407,8 @@ class VMF:
         except ValueError:
             pass  # Already removed.
 
-        self.by_class[item['classname', None]].discard(item)
-        self.by_target[item['targetname', None]].discard(item)
+        self.by_class[item['classname', ''].casefold() or None].discard(item)
+        self.by_target[item['targetname', ''].casefold() or None].discard(item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -430,8 +428,8 @@ class VMF:
         ents = list(ents)
         self.entities.extend(ents)
         for item in ents:
-            self.by_class[item['classname', None]].add(item)
-            self.by_target[item['targetname', None]].add(item)
+            self.by_class[item['classname', ''].casefold() or None].add(item)
+            self.by_target[item['targetname', ''].casefold() or None].add(item)
             if 'nodeid' in item:
                 try:
                     node_id = int(item['nodeid'])
@@ -468,7 +466,7 @@ class VMF:
                 tree = Property.parse(file)
 
         map_info = {}
-        ver_info = tree.find_key('versioninfo', [])
+        ver_info = tree.find_block('versioninfo', or_blank=True)
         for key in ('editorversion',
                     'mapversion',
                     'editorbuild',
@@ -481,9 +479,9 @@ class VMF:
             raise Exception(
                 'Unknown VMF format version " ' +
                 map_info['formatversion'] + '"!'
-                )
+            )
 
-        view_opt = tree.find_key('viewsettings', [])
+        view_opt = tree.find_block('viewsettings', or_blank=True)
         view_dict = {
             'bSnapToGrid': 'snaptogrid',
             'bShowGrid': 'showgrid',
@@ -494,15 +492,15 @@ class VMF:
         for key in view_dict:
             map_info[view_dict[key]] = view_opt[key, '']
 
-        cordons = tree.find_key('cordons', [])
+        cordons = tree.find_block('cordons', or_blank=True)
         map_info['cordons_on'] = cordons['active', '0']
 
-        cam_props = tree.find_key('cameras', [])
+        cam_props = tree.find_block('cameras', or_blank=True)
         map_info['active_cam'] = cam_props['activecamera', '-1']
-        map_info['quickhide'] = tree.find_key('quickhide', [])['count', '']
+        map_info['quickhide'] = tree.find_block('quickhide', or_blank=True)['count', '']
 
         # We have to create an incomplete map before parsing any data.
-        # This ensures the IDman objects have been created, so we can
+        # This ensures the ID manager objects have been created, so we can
         # ensure unique IDs in brushes, entities and faces.
         map_obj = VMF(map_info=map_info, preserve_ids=preserve_ids)
 
@@ -528,7 +526,7 @@ class VMF:
                     Entity.parse(map_obj, ent, hidden=True)
                 )
 
-        map_spawn = tree.find_key('world', [])
+        map_spawn = tree.find_block('world', or_blank=True)
         if map_spawn is None:
             # Generate a fake default to parse through
             map_spawn = Property("world", [])
@@ -570,10 +568,10 @@ class VMF:
             self.map_ver += 1
 
         dest_file.write('versioninfo\n{\n')
-        dest_file.write('\t"editorversion" "' + str(self.hammer_ver) + '"\n')
-        dest_file.write('\t"editorbuild" "' + str(self.hammer_build) + '"\n')
-        dest_file.write('\t"mapversion" "' + str(self.map_ver) + '"\n')
-        dest_file.write('\t"formatversion" "' + str(self.format_ver) + '"\n')
+        dest_file.write(f'\t"editorversion" "{self.hammer_ver}"\n')
+        dest_file.write(f'\t"editorbuild" "{self.hammer_build}"\n')
+        dest_file.write(f'\t"mapversion" "{self.map_ver}"\n')
+        dest_file.write(f'\t"formatversion" "{self.format_ver}"\n')
         dest_file.write('\t"prefab" "' +
                         srctools.bool_as_int(self.is_prefab) + '"\n}\n')
 
@@ -590,8 +588,7 @@ class VMF:
                             srctools.bool_as_int(self.show_grid) + '"\n')
             dest_file.write('\t"bShowLogicalGrid" "' +
                             srctools.bool_as_int(self.show_logic_grid) + '"\n')
-            dest_file.write('\t"nGridSpacing" "' +
-                            str(self.grid_spacing) + '"\n')
+            dest_file.write(f'\t"nGridSpacing" "{self.grid_spacing}"\n')
             dest_file.write('\t"bShow3DGrid" "' +
                             srctools.bool_as_int(self.show_3d_grid) + '"\n}\n')
 
@@ -609,7 +606,7 @@ class VMF:
             dest_file.write('cameras\n{\n')
             if len(self.cameras) == 0:
                 self.active_cam = -1
-            dest_file.write('\t"activecamera" "' + str(self.active_cam) + '"\n')
+            dest_file.write(f'\t"activecamera" "{self.active_cam}"\n')
             for cam in self.cameras:
                 cam.export(dest_file, '\t')
             dest_file.write('}\n')
@@ -626,9 +623,12 @@ class VMF:
             dest_file.write('}\n')
 
         if self.quickhide_count > 0:
-            dest_file.write('quickhide\n{\n')
-            dest_file.write('\t"count" "' + str(self.quickhide_count) + '"\n')
-            dest_file.write('}\n')
+            dest_file.write(
+                'quickhide\n'
+                '{\n'
+                f'\t"count" "{self.quickhide_count}"\n'
+                '}\n'
+            )
 
         if ret_string:
             assert isinstance(dest_file, io.StringIO)
@@ -751,9 +751,7 @@ class VMF:
         # Sanity check - all dimensions must be different, otherwise we'll
         # have an invalid zero-thick brush.
         if b_min.x == b_max.x or b_min.y == b_max.y or b_min.z == b_max.z:
-            raise ValueError("Zero volume brush requested! ({}, {})".format(
-                b_min, b_max,
-            ))
+            raise ValueError(f"Zero volume brush requested! ({b_min}, {b_max})")
 
         f_bottom = Side(
             self,
@@ -957,8 +955,8 @@ class Camera:
         """Export the camera to the VMF file."""
         buffer.write(ind + 'camera\n')
         buffer.write(ind + '{\n')
-        buffer.write('{}\t"position" "[{}]"\n'.format(ind, self.pos))
-        buffer.write('{}\t"look" "[{}]"\n'.format(ind, self.target))
+        buffer.write(f'{ind}\t"position" "[{self.pos}]"\n')
+        buffer.write(f'{ind}\t"look" "[{self.target}]"\n')
         buffer.write(ind + '}\n')
 
 
@@ -984,7 +982,7 @@ class Cordon:
         """Parse a cordon from the VMF file."""
         name = tree['name', 'cordon']
         is_active = tree.bool('active', False)
-        bounds = tree.find_key('box', [])
+        bounds = tree.find_block('box', or_blank=True)
         min_ = bounds.vec('mins', 0, 0, 0)
         max_ = bounds.vec('maxs', 128, 128, 128)
         return Cordon(vmf_file, min_, max_, is_active, name)
@@ -1039,7 +1037,7 @@ class VisGroup:
     def parse(cls, vmf: VMF, props: Property) -> 'VisGroup':
         """Parse a visgroup from the VMF file."""
         vis_id = props.int('visgroupid', -1)
-        name = props['name', 'VisGroup_{}'.format(vis_id)]
+        name = props['name', f'VisGroup_{vis_id}']
         color = props.vec('color', 255, 255, 255)
 
         children = [
@@ -1057,11 +1055,14 @@ class VisGroup:
         )
 
     def export(self, buffer: IO[str], ind: str='') -> None:
-        buffer.write(ind + 'visgroup\n')
-        buffer.write(ind + '{\n')
-        buffer.write(ind + '\t"name" "{}"\n'.format(self.name))
-        buffer.write(ind + '\t"visgroupid" "{}"\n'.format(self.id))
-        buffer.write(ind + '\t"color" "{}"\n'.format(self.color))
+        """Write out the VMF text for a visgroup"""
+        buffer.write(
+            f'{ind}visgroup\n'
+            f'{ind}{{\n'
+            f'{ind}\t"name" "{self.name}"\n'
+            f'{ind}\t"visgroupid" "{self.id}"\n'
+            f'{ind}\t"color" "{self.color}"\n'
+        )
         for child in self.child_groups:
             child.export(buffer, ind + '\t')
         buffer.write(ind + '}\n')
@@ -1223,12 +1224,12 @@ class Solid:
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
-        buffer.write('{}\t\t"color" "{}"\n'.format(ind, self.editor_color))
+        buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
         if self.group_id is not None:
-            buffer.write('{}\t\t"groupid" "{}"\n'.format(ind, self.group_id))
+            buffer.write(f'{ind}\t\t"groupid" "{self.group_id}"\n')
 
         for group in self.visgroup_ids:
-            buffer.write('{}\t\t"visgroupid" "{}"\n'.format(ind, group))
+            buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
 
         buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
             ind,
@@ -1239,10 +1240,7 @@ class Solid:
             srctools.bool_as_int(self.vis_auto_shown),
         ))
         if self.cordon_solid is not None:
-            buffer.write('{}\t\t"cordonsolid" "{}"\n'.format(
-                ind,
-                self.cordon_solid,
-            ))
+            buffer.write(f'{ind}\t\t"cordonsolid" "{self.cordon_solid}"\n')
 
         buffer.write(ind + '\t}\n')
 
@@ -1310,12 +1308,12 @@ class Vec4:
         return bool(self.x or self.y or self.z or self.w)
 
 
-def _list4_validator(inst: object, attr: attr.Attribute, value: object) -> None:
+def _list4_validator(_: object, attrib: attr.Attribute, value: object) -> None:
     """Validate the value is a list of 4 elements."""
     if not isinstance(value, list):
-        raise TypeError(attr.name + ' should be a list!')
+        raise TypeError(attrib.name + ' should be a list!')
     if len(value) != 4:
-        raise ValueError(attr.name + ' must have 4 values!')
+        raise ValueError(attrib.name + ' must have 4 values!')
 
 
 @attr.define(frozen=False)
@@ -1448,25 +1446,17 @@ class UVAxis:
 
     def __str__(self) -> str:
         """Generate the text form for this UV data."""
-        return '[{x:g} {y:g} {z:g} {off:g}] {scale:g}'.format(
-            x=self.x,
-            y=self.y,
-            z=self.z,
-            off=self.offset,
-            scale=self.scale,
+        return (
+            f'[{self.x:g} {self.y:g} {self.z:g} '
+            f'{self.offset:g}] {self.scale:g}'
         )
 
     def __repr__(self) -> str:
-        rep = '{cls}({x:g}, {y:g}, {z:g}'.format(
-            cls=self.__class__.__name__,
-            x=self.x,
-            y=self.y,
-            z=self.z,
-        )
+        rep = f'{self.__class__.__name__}({self.x:g}, {self.y:g}, {self.z:g}'
         if self.offset != 0:
-            rep += ', offset={:g}'.format(self.offset)
+            rep += f', offset={self.offset:g}'
         if self.scale != 0.25:
-            rep += ', scale={:g}'.format(self.scale)
+            rep += f', scale={self.scale:g}'
         return rep + ')'
 
 
@@ -1800,26 +1790,28 @@ class Side:
         """
         buffer.write(ind + 'side\n')
         buffer.write(ind + '{\n')
-        buffer.write(f'{ind}\t"id" "{self.id}"\n')
-        pl_str = ('(' + p.join(' ') + ')' for p in self.planes)
-        buffer.write(f'{ind}\t"plane" "{" ".join(pl_str)}"\n')
-        buffer.write(f'{ind}\t"material" "{self.mat}"\n')
-        buffer.write(f'{ind}\t"uaxis" "{self.uaxis}"\n')
-        buffer.write(f'{ind}\t"vaxis" "{self.vaxis}"\n')
-        buffer.write(f'{ind}\t"rotation" "{self.ham_rot:g}\"\n')
-        buffer.write(f'{ind}\t"lightmapscale" "{self.lightmap}"\n')
-        buffer.write(f'{ind}\t"smoothing_groups" "{self.smooth}"\n')
+        buffer.write(
+            f'{ind}\t"id" "{self.id}"\n'
+            f'{ind}\t"plane" "({self.planes[0]}) ({self.planes[1]}) ({self.planes[2]})"\n'
+            f'{ind}\t"material" "{self.mat}"\n'
+            f'{ind}\t"uaxis" "{self.uaxis}"\n'
+            f'{ind}\t"vaxis" "{self.vaxis}"\n'
+            f'{ind}\t"rotation" "{self.ham_rot:g}\"\n'
+            f'{ind}\t"lightmapscale" "{self.lightmap}"\n'
+            f'{ind}\t"smoothing_groups" "{self.smooth}"\n'
+        )
         if self.disp_power > 0:
             assert self._disp_verts is not None
             assert self.disp_allowed_vert is not None
-            buffer.write(ind + '\tdispinfo\n')
-            buffer.write(ind + '\t{\n')
-
-            buffer.write(f'{ind}\t\t"power" "{self.disp_power}"\n')
-            buffer.write(f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n')
-            buffer.write(f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n')
-            buffer.write(f'{ind}\t\t"elevation" "{self.disp_elevation}"\n')
-            buffer.write(f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n')
+            buffer.write(
+                f'{ind}\tdispinfo\n'
+                f'{ind}\t{{\n'
+                f'{ind}\t\t"power" "{self.disp_power}"\n'
+                f'{ind}\t\t"startposition" "[{self.disp_pos}]"\n'
+                f'{ind}\t\t"flags" "{_DISP_COLL_TO_FLAG[self.disp_flags & DispFlag.COLL_ALL]}"\n'
+                f'{ind}\t\t"elevation" "{self.disp_elevation}"\n'
+                f'{ind}\t\t"subdiv" "{"1" if DispFlag.SUBDIV in self.disp_flags else "0"}"\n'
+            )
 
             size = self.disp_size
             self._export_disp_rowset('normals', 'normal', buffer, ind, size)
@@ -2008,17 +2000,19 @@ class Side:
 
         return Vec.cross(point_1, point_2).norm()
 
-    def scale_set(self, value: float) -> None:
+    def _scale_setter(self, value: float) -> None:
+        """Set both scale attributes easily."""
         self.uaxis.scale = value
         self.vaxis.scale = value
-    scale = property(fset=scale_set, doc='Set both scale attributes easily.')
 
-    def offset_set(self, value: float) -> None:
+    def _offset_setter(self, value: float) -> None:
+        """Set both offset attributes easily."""
         self.uaxis.offset = value
         self.vaxis.offset = value
-    offset = property(fset=offset_set, doc='Set both offset attributes easily.')
 
-    del scale_set, offset_set
+    scale = property(fset=_scale_setter, doc='Set both scale attributes easily.')
+    offset = property(fset=_offset_setter, doc='Set both offset attributes easily.')
+    del _scale_setter, _offset_setter
 
 
 class Entity:
@@ -2066,7 +2060,7 @@ class Entity:
         self.vis_shown = vis_shown
         self.vis_auto_shown = vis_auto_shown
         self.editor_color = Vec(editor_color)
-        self.logical_pos = logical_pos or '[0 {}]'.format(self.id)
+        self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
 
     def copy(
@@ -2218,14 +2212,14 @@ class Entity:
         """
 
         if self.hidden:
-            buffer.write('{0}hidden\n{0}{{\n'.format(ind))
+            buffer.write(f'{ind}hidden\n{ind}{{\n')
             ind += '\t'
 
-        buffer.write('{}{}\n'.format(ind, ent_name))
+        buffer.write(f'{ind}{ent_name}\n')
         buffer.write(ind + '{\n')
-        buffer.write('{}\t"id" "{}"\n'.format(ind, str(self.id)))
+        buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
         for key, value in sorted(self.keys.items(), key=operator.itemgetter(0)):
-            buffer.write('{}\t"{}" "{!s}"\n'.format(ind, key, value))
+            buffer.write(f'{ind}\t"{key}" "{value!s}"\n')
 
         self.fixup.export(buffer, ind)
 
@@ -2241,13 +2235,13 @@ class Entity:
 
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
-        buffer.write('{}\t\t"color" "{}"\n'.format(ind, self.editor_color))
+        buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
 
         for group in self.groups:
-            buffer.write('{}\t\t"groupid" "{}"\n'.format(ind, group))
+            buffer.write(f'{ind}\t\t"groupid" "{group}"\n')
 
         for group in self.visgroup_ids:
-            buffer.write('{}\t\t"visgroupid" "{}"\n'.format(ind, group))
+            buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
 
         buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
             ind,
@@ -2257,8 +2251,9 @@ class Entity:
             ind,
             srctools.bool_as_int(self.vis_auto_shown),
         ))
-        buffer.write('{}\t\t"logicalpos" "{}"\n'.format(ind, self.logical_pos))
-        buffer.write('{}\t\t"comments" "{}"\n'.format(ind, self.comments))
+        buffer.write(f'{ind}\t\t"logicalpos" "{self.logical_pos}"\n')
+        if self.comments:
+            buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
         buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
@@ -2321,12 +2316,12 @@ class Entity:
         st = "<Entity>: \n{\n"
         for k, v in self.keys.items():
             if not isinstance(v, list):
-                st += "\t " + k + ' = "' + v + '"\n'
+                st += f"\t {k} = \"{v}\"\n"
         for k, v in self.fixup.items():
-            st += "\t $" + k + ' = "' + v + '"\n'
+            st += f"\t ${k} = \"{v}\"\n"
 
         for out in self.outputs:
-            st += '\t' + str(out) + '\n'
+            st += f'\t{out!s}\n'
         st += "}\n"
         return st
 
@@ -2344,7 +2339,7 @@ class Entity:
         - A tuple can be passed for the default to be set, inside the
           [] syntax.
         """
-        default: str | T
+        default: Union[str, T]
         if isinstance(key, tuple):
             key, default = key
         else:
@@ -2541,6 +2536,7 @@ class EntityFixup(MutableMapping[str, str]):
 
     @overload
     def get(self, var: str) -> str: ...
+    # noinspection PyMethodOverriding
     @overload
     def get(self, var: str, default: Union[str, T]) -> Union[str, T]: ...
 
@@ -2822,7 +2818,7 @@ class EntityGroup:
     @classmethod
     def parse(cls, vmf_file: VMF, props: Property) -> 'EntityGroup':
         """Parse an entity group from the VMF file."""
-        editor_block = props.find_key('editor', [])
+        editor_block = props.find_block('editor', or_blank=True)
         return cls(
             vmf_file,
             props.int('id', -1),
@@ -2845,7 +2841,7 @@ class EntityGroup:
         """Write out a group into a VMF file."""
         buffer.write(ind + 'group\n')
         buffer.write(ind + '\t{\n')
-        buffer.write(ind + '\t"id" "' + str(self.id) + '"\n')
+        buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t\t{\n')
         buffer.write(ind + '\t\t"visgroupshown" "{}"'.format(
@@ -2944,7 +2940,7 @@ class Output:
         try:
             targ, inp, param, delay, times = vals
         except ValueError as e:
-            raise ValueError('Bad output value: "{}"'.format(prop.value)) from e
+            raise ValueError(f'Bad output value: "{prop.value}"') from e
 
         inst_out, out = Output.parse_name(prop.real_name)
         inst_inp, inp = Output.parse_name(inp)
@@ -2995,7 +2991,7 @@ class Output:
                 # Incorrectly-formatted instance: names will crash VBSP,
                 # so abort now.
                 raise Exception(
-                    '"Instance:" in/output without command! ({})'.format(name)
+                    f'"Instance:" in/output without command! ({name})'
                 ).with_traceback(e.__traceback__)
             else:
                 return inst_part[9:], command
@@ -3052,9 +3048,7 @@ class Output:
         if self.delay != 0:
             st += " after " + str(self.delay) + " seconds"
         if self.times != -1:
-            st += " (once" if self.times == 1 else (
-                " ({!s} times".format(self.times)
-            )
+            st += " (once" if self.times == 1 else f" ({self.times!s} times"
             st += " only)"
         return st
 
@@ -3108,21 +3102,14 @@ class Output:
 
     def export(self, buffer: IO[str], ind: str='') -> None:
         """Generate the text required to define this output in the VMF."""
-        buffer.write(ind + self._get_text())
+        buffer.write(ind + self.as_keyvalue())
 
-    def _get_text(self) -> str:
+    def as_keyvalue(self) -> str:
         """Generate the text form of the output."""
+        sep = ',' if self.comma_sep else self.SEP
         return (
-            '"{output}" "{targ}{sep}{input}{sep}{params}'
-            '{sep}{delay:g}{sep}{times}"\n'.format(
-                output=self.exp_out(),
-                targ=self.target,
-                input=self.exp_in(),
-                params=self.params,
-                delay=self.delay,
-                times=self.times,
-                sep=',' if self.comma_sep else OUTPUT_SEP,
-            )
+            f'"{self.exp_out()}" "{self.target}{sep}{self.exp_in()}'
+            f'{sep}{self.params}{sep}{self.delay:g}{sep}{self.times}"\n'
         )
 
     def copy(self) -> 'Output':
@@ -3152,12 +3139,7 @@ class Output:
         else:
             target = self.target
 
-        return '{out} {name}{d}{inp}{d}{param}{d}{time}{d}{rep}'.format(
-            d=delim,
-            out=self.output,
-            name=target,
-            inp=self.input,
-            param=self.params,
-            time=self.delay,
-            rep=self.times,
+        return (
+            f'{self.output} {target}{delim}{self.input}{delim}'
+            f'{self.params}{delim}{self.delay}{delim}{self.times}'
         )

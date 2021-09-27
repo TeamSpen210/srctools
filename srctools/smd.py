@@ -2,6 +2,7 @@
 import os
 import re
 import warnings
+from collections import defaultdict
 from copy import deepcopy
 from operator import itemgetter
 
@@ -11,14 +12,12 @@ from typing import (
     BinaryIO,
     Any,
 )
-
-from srctools import Vec
+from srctools.math import Vec, Angle, Matrix, to_matrix
 
 __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
 ]
 
-from srctools.math import to_matrix, Angle, Matrix
 
 
 class Bone:
@@ -199,6 +198,25 @@ class Triangle:
             self.point2.copy(),
             self.point3.copy(),
         )
+
+    def _norm_and_sa(self) -> Vec:
+        """Return the normal of this triangle,
+
+        with the magnitude equal to double the surface area.
+        See www.ma.ic.ac.uk/~rn/centroid.pdf.
+        """
+        return Vec.cross(
+            self.point2.pos - self.point1.pos,
+            self.point3.pos - self.point1.pos,
+        )
+
+    def surface_area(self) -> float:
+        """Compute the surface area of this triangle."""
+        return self._norm_and_sa().mag() / 2.0
+
+    def normal(self) -> Vec:
+        """Compute the normal of this triangle, ignoring vertex normals."""
+        return self._norm_and_sa().norm()
 
 
 class ParseError(Exception):
@@ -416,9 +434,8 @@ class Mesh:
                     exc.start
                 ) from None
 
-            # We need to process the material name, it can have various things
-            # in it - ignored folders, file extensions.
-            mat_name = os.path.basename(mat_name.rstrip('\\/ \t\b\n\r'))
+            # The file extension is ignored, and we may have extra whitespace.
+            mat_name, _ = os.path.splitext(mat_name.rstrip('\\/ \t\b\n\r'))
 
             # Grab the three lines.
             for i in range(3):
@@ -465,6 +482,9 @@ class Mesh:
                         except KeyError:
                             raise ParseError(line_num, 'Unknown bone {}!', links_raw[off])
                         links.append((bone, float(links_raw[off+1])))
+                    if not links:
+                        # Okay, there's no links set here, use the first index.
+                        links = [(parent, 1.0)]
                 else:
                     links = [(parent, 1.0)]
 
@@ -641,7 +661,6 @@ class Mesh:
         ],
     ]
 
-
     @classmethod
     def build_bbox(cls, root_bone: str, mat: str, bbox_min: Vec, bbox_max: Vec) -> 'Mesh':
         """Construct a mesh for a bounding box."""
@@ -665,3 +684,103 @@ class Mesh:
             ])
             mesh.triangles.append(tri)
         return mesh
+
+    def weld_vertexes(self, dist_tol: float = 1e-5, normal_tol: float = 0.999) -> None:
+        """Run through all vertexes in the triangles, 'welding' close ones together.
+
+        This will result in adjacent faces sharing vertex objects.
+        The shared vertexes should have approximately the same position as well
+        as normal. This can be accomplished using a mesh with smoothed normals
+        as with most studioMDL collision models, or by giving each section the
+        same unique normal.
+        """
+        # pos -> list of vertexes close to here.
+        weld_table: dict[tuple[float, float, float], list[Vertex]] = {}
+        for tri in self.triangles:
+            vert: Vertex
+            for i, vert in enumerate(tri):
+                key = vert.pos.x // 2.0, vert.pos.y // 2.0, vert.pos.z // 2.0
+                try:
+                    existing = weld_table[key]
+                except KeyError:
+                    weld_table[key] = [vert]
+                    continue
+                for other_vert in existing:
+                    if (vert.pos - other_vert.pos).mag() < dist_tol and Vec.dot(vert.norm, other_vert.norm) > normal_tol:
+                        tri[i] = other_vert
+                        break
+                else:
+                    existing.append(vert)
+
+    def split_collision(self) -> 'list[Mesh]':
+        """Partition a concave collision mesh into each convex volume.
+
+        This will first 'weld' the vertexes, so each convex volume will share
+        vertex objects.
+        """
+        self.weld_vertexes()
+        vert_to_tris: dict[Vertex, list[Triangle]] = defaultdict(list)
+        for tri in self.triangles:
+            for vert in tri:
+                vert_to_tris[vert].append(tri)
+
+        groups: list[set[Triangle]] = []
+        todo: set[Triangle] = set(self.triangles)
+        # To group, we have to recursively go through the verts.
+        # We use the id() of vertexes to match, since they're the same now.
+        while todo:
+            start = todo.pop()
+            unchecked: set[Triangle] = {start}
+            group: set[Triangle] = {start}
+            verts: set[Vertex] = set()
+            groups.append(group)
+            while unchecked:
+                tri = unchecked.pop()
+                for vert in tri:
+                    if vert in verts:
+                        continue
+                    verts.add(vert)
+                    group.update(vert_to_tris[vert])
+                    unchecked.update(vert_to_tris[vert])
+                unchecked.discard(tri)  # The above update() will add it back.
+            todo -= group
+        return [
+            Mesh(self.bones, self.animation, list(group))
+            for group in groups
+        ]
+
+    def compute_volume(self) -> float:
+        """Compute the volume of this mesh. It does not need to be convex.
+
+        See www.ma.ic.ac.uk/~rn/centroid.pdf.
+        """
+        # noinspection PyProtectedMember
+        return sum(
+            Vec.dot(tri.point1.pos, tri._norm_and_sa())
+            for tri in self.triangles
+        ) / 6.0
+
+    def smooth_normals(self) -> None:
+        """Replace all normals with ones smoothing adjacient faces."""
+        vert_to_tris: dict[
+            tuple[float, float, float],
+            tuple[list[Triangle], list[Vertex]]
+        ] = defaultdict(lambda: ([], []))
+        tri_to_normal: dict[Triangle, Vec] = {}
+        for tri in self.triangles:
+            for vert in tri:
+                tris, verts = vert_to_tris[vert.pos.as_tuple()]
+                tris.append(tri)
+                verts.append(vert)
+            tri_to_normal[tri] = tri.normal()
+        for tris, verts in vert_to_tris.values():
+            normal = sum(map(tri_to_normal.__getitem__, tris), Vec()).norm()
+            for vert in verts:
+                vert.norm = normal
+
+    def flatten_normals(self) -> None:
+        """Replace all vertex normals with the triangle normal."""
+        for tri in self.triangles:
+            norm = tri.normal()
+            for vert in tri:
+                vert.norm = norm

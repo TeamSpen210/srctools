@@ -13,6 +13,7 @@ import warnings
 from io import BytesIO
 
 from srctools import binformat, EmptyMapping
+from srctools.const import add_unknown
 from srctools.math import Vec
 
 from typing import (
@@ -241,15 +242,9 @@ class VTFFlags(Flag):
     SS_BUMP = 0x08000000
     BORDER = 0x20000000
 
-    # Generic names for the remaining unused bits.
-    UNUSED_20 = 1 << 20
-    UNUSED_21 = 1 << 21
-    UNUSED_22 = 1 << 22
-    UNUSED_24 = 1 << 24
-    UNUSED_28 = 1 << 28
-    UNUSED_30 = 1 << 30
-    UNUSED_31 = 1 << 31
-    UNUSED_32 = 1 << 32
+    # Generate members for the remaining bits, so we can preserve flags we
+    # don't recognise.
+    add_unknown(locals())
 
 
 class ResourceID(bytes, Enum):
@@ -533,7 +528,7 @@ class Frame:
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
     def __init__(
-        self, 
+        self,
         width: int,
         height: int,
         version: Tuple[int, int]=(7, 5),
@@ -607,14 +602,14 @@ class VTF:
             height >>= 1
         self.mipmap_count = mip_count
 
-    @classmethod    
+    @classmethod
     def read(cls: 'Type[VTF]', file: IO[bytes]) -> 'VTF':
         """Read in a VTF file."""
         signature = file.read(4)
         if signature != b'VTF\0':
             raise ValueError('Bad file signature!')
         version_major, version_minor = struct.unpack('II', file.read(8))
-        
+
         if version_major != 7 or not (0 <= version_minor <= 5):
             raise ValueError(
                 "VTF version {}.{} is not "
@@ -624,7 +619,7 @@ class VTF:
             )
 
         vtf = cls.__new__(cls)
-        
+
         (
             header_size,
             width,
@@ -1084,6 +1079,6 @@ def test_vtf(h: bytes, f: Optional[BinaryIO]) -> Optional[str]:
     return None
 
 import imghdr
-imghdr.test_vtf = test_vtf
+imghdr.test_vtf = test_vtf  # type: ignore
 imghdr.tests.append(test_vtf)
 del imghdr, test_vtf

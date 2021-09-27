@@ -41,7 +41,7 @@ class VarType(Enum):
     MATRIX = 'SHADER_PARAM_TYPE_MATRIX'  # 9-matrix, or center scale rotate etc
     MATRIX_4X2 = 'SHADER_PARAM_TYPE_MATRIX4X2'  # Partially implemented, only a 2x4=8 matrix?
 
-    #ENVMAP = 'SHADER_PARAM_TYPE_ENVMAP' # Obsolete apparently
+    # ENVMAP = 'SHADER_PARAM_TYPE_ENVMAP'  # Obsolete apparently
     # Special case - pointer to arbitrary shader-specific data.
     FOUR_CC = 'SHADER_PARAM_TYPE_FOURCC'
 
@@ -87,10 +87,10 @@ def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]
 
 class Material(MutableMapping[str, str]):
     """Represents a material.
-    
+
     Attributes:
         shader: The name of the shader.
-        proxies: List of Material Proxies defined for the material. 
+        proxies: List of Material Proxies defined for the material.
             Each is a tuple of the string name and a dict of keys-> values.
             "Empty" proxies are removed.
         blocks: Other sub-blocks inside the material definition. These are
@@ -99,7 +99,7 @@ class Material(MutableMapping[str, str]):
     """
 
     def __init__(
-        self, 
+        self,
         shader: str,
         params: Mapping[str, str]=EmptyMapping,
         blocks: Iterable[Property]=(),
@@ -113,15 +113,15 @@ class Material(MutableMapping[str, str]):
 
         for key, value in params.items():
             self[key] = value
-    
+
     @classmethod
     def parse(cls, data: Iterable[str], filename: str=''):
-        """Parse a VMT from the file. 
-        
+        """Parse a VMT from the file.
+
         """
         # Block escapes, so "files\test\tex" doesn't have a tab in it.
         tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
-        
+
         # First look for the shader name -
         # which must be the first string
         # in the file.
@@ -155,14 +155,14 @@ class Material(MutableMapping[str, str]):
             elif token is not Tok.STRING:
                 raise tok.error(token)
             token, param_value = tok()
-            
+
             if token is Tok.STRING:
                 # We have the value.
                 pass
             elif token is Tok.NEWLINE:
                 # Name by itself: '%compilenodraw' etc...
                 param_value = ''
-                # We need to check there's a newline after that - for proxies, 
+                # We need to check there's a newline after that - for proxies,
                 # or errors.
                 token, ignored = tok()
                 while token is Tok.NEWLINE:
@@ -183,12 +183,12 @@ class Material(MutableMapping[str, str]):
                     raise tok.error(token)
             else:
                 raise tok.error(token)
-                
+
             mat[param_name] = param_value
-             
+
         # We expect nothing else now.
         tok.expect(Tok.EOF)
-        
+
         return mat
 
     @staticmethod
@@ -334,7 +334,7 @@ class Material(MutableMapping[str, str]):
         if parent_func is not None:
             parent_func(parent_file.path)
 
-        with fsys, parent_file.open_str() as f:
+        with parent_file.open_str() as f:
             parent = Material.parse(f, filename)
 
         parent = parent._apply_patch(fsys, count + 1, limit, parent_func)

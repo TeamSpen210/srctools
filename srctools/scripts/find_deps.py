@@ -2,7 +2,7 @@
 import argparse
 import os
 import sys
-from typing import List, Set, Optional, Tuple
+from typing import List
 
 from srctools import Property, VMF, FGD
 from srctools.bsp import BSP
@@ -11,6 +11,7 @@ from srctools.game import Game
 from srctools.packlist import PackList
 
 fgd = FGD.engine_dbase()
+
 
 def main(args: List[str]) -> None:
     """Main script."""
@@ -58,61 +59,60 @@ def main(args: List[str]) -> None:
 
     file_path: str = result.path
     print('Finding files...')
-    with fsys:
-        if '*' in file_path:  # Multiple files
-            if file_path.count('*') > 1:
-                raise ValueError('Multiple * in path!')
-            prefix, suffix = file_path.split('*')
-            folder, prefix = os.path.split(prefix)
-            prefix = prefix.casefold()
-            suffix = suffix.casefold()
-            print(f'Prefix: {prefix!r}, suffix: {suffix!r}')
-            print(f'Searching folder {folder}...')
+    if '*' in file_path:  # Multiple files
+        if file_path.count('*') > 1:
+            raise ValueError('Multiple * in path!')
+        prefix, suffix = file_path.split('*')
+        folder, prefix = os.path.split(prefix)
+        prefix = prefix.casefold()
+        suffix = suffix.casefold()
+        print(f'Prefix: {prefix!r}, suffix: {suffix!r}')
+        print(f'Searching folder {folder}...')
 
-            files = []
-            for file in fsys.walk_folder(folder):
-                file_path = file.path.casefold()
-                if not os.path.basename(file_path).startswith(prefix):
-                    continue
-                if file_path.endswith(suffix):
-                    print(' ' + file.path)
-                    files.append(file)
-        else:  # Single file
-            files = [fsys[file_path]]
-        for file in files:
-            ext = file.path[-4:].casefold()
-            if ext == '.vmf':
-                with file.open_str() as f:
-                    vmf_props = Property.parse(f)
-                    vmf = VMF.parse(vmf_props)
-                packlist.pack_fgd(vmf, fgd)
-                del vmf, vmf_props  # Hefty, don't want to keep.
-            elif ext == '.bsp':
-                child_sys = fsys.get_system(file)
-                if not isinstance(child_sys, RawFileSystem):
-                    raise ValueError('Cannot inspect BSPs in VPKs!')
-                bsp = BSP(os.path.join(child_sys.path, file.path))
-                packlist.pack_from_bsp(bsp)
-                packlist.pack_fgd(bsp.read_ent_data(), fgd)
-                del bsp
-            else:
-                packlist.pack_file(file.path)
-        print('Evaluating dependencies...')
-        packlist.eval_dependencies()
-        print('Done.')
-
-        if result.unused:
-            print('Unused files:')
-            used = set(packlist.filenames())
-            for folder in result.filters:
-                for file in fsys.walk_folder(folder):
-                    if file.path.casefold() not in used:
-                        print(' ' + file.path)
+        files = []
+        for file in fsys.walk_folder(folder):
+            file_path = file.path.casefold()
+            if not os.path.basename(file_path).startswith(prefix):
+                continue
+            if file_path.endswith(suffix):
+                print(' ' + file.path)
+                files.append(file)
+    else:  # Single file
+        files = [fsys[file_path]]
+    for file in files:
+        ext = file.path[-4:].casefold()
+        if ext == '.vmf':
+            with file.open_str() as f:
+                vmf_props = Property.parse(f)
+                vmf = VMF.parse(vmf_props)
+            packlist.pack_fgd(vmf, fgd)
+            del vmf, vmf_props  # Hefty, don't want to keep.
+        elif ext == '.bsp':
+            child_sys = fsys.get_system(file)
+            if not isinstance(child_sys, RawFileSystem):
+                raise ValueError('Cannot inspect BSPs in VPKs!')
+            bsp = BSP(os.path.join(child_sys.path, file.path))
+            packlist.pack_from_bsp(bsp)
+            packlist.pack_fgd(bsp.ents, fgd)
+            del bsp
         else:
-            print('Dependencies:')
-            for filename in packlist.filenames():
-                if not result.filters or any(map(filename.casefold().startswith, result.filters)):
-                    print(' ' + filename)
+            packlist.pack_file(file.path)
+    print('Evaluating dependencies...')
+    packlist.eval_dependencies()
+    print('Done.')
+
+    if result.unused:
+        print('Unused files:')
+        used = set(packlist.filenames())
+        for folder in result.filters:
+            for file in fsys.walk_folder(folder):
+                if file.path.casefold() not in used:
+                    print(' ' + file.path)
+    else:
+        print('Dependencies:')
+        for filename in packlist.filenames():
+            if not result.filters or any(map(filename.casefold().startswith, result.filters)):
+                print(' ' + filename)
 
 if __name__ == '__main__':
     main(sys.argv[1:])

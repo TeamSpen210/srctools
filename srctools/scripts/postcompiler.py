@@ -94,8 +94,6 @@ def main(argv: List[str]) -> None:
         plugin,
     ) = config.parse(path, args.game_folder)
 
-    fsys.open_ref()
-
     LOGGER.info('Loading plugins...')
     plugin.load_all()
 
@@ -189,6 +187,8 @@ def main(argv: List[str]) -> None:
             crowbar_loc=crowbar_loc,
             auto_range=conf.get(int, 'propcombine_auto_range'),
             min_cluster=conf.get(int, 'propcombine_min_cluster'),
+            blacklist=conf.get(Property, 'propcombine_blacklist').as_array(),
+            volume_tolerance=conf.get(float, 'propcombine_volume_tolerance'),
             debug_tint=args.showgroups,
             debug_dump=args.dumpgroups,
         )
@@ -254,4 +254,3 @@ def main(argv: List[str]) -> None:
 
 if __name__ == '__main__':
     main(sys.argv[1:])
-

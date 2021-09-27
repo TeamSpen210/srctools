@@ -1,5 +1,6 @@
 """Test the datamodel exchange implementation."""
 from io import BytesIO
+from pathlib import Path
 from typing import Callable, cast, Set
 from uuid import UUID
 
@@ -17,6 +18,21 @@ from srctools.tokenizer import TokenSyntaxError
 def assert_tree(tree1: Element, tree2: Element) -> None:
     """Checks both trees are identical, recursively."""
     return _assert_tree_elem(tree1.name, tree1, tree2, set())
+
+
+def export(elem: Element, version: str, unicode: str = 'ascii') -> bytes:
+    """Export a element and return the result, doing both text/binary in one for parameterisation."""
+    buf = BytesIO()
+    if version.startswith('binary_'):
+        elem.export_binary(buf, int(version[-1]), unicode=unicode)
+    else:
+        elem.export_kv2(buf, flat='flat' in version, unicode=unicode, cull_uuid='cull' in version)
+    return buf.getvalue()
+
+EXPORT_VALS = [
+    'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
+    'text_indent', 'text_flat', 'text_indent_cull', 'text_flat_cull'
+]
 
 
 def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
@@ -354,16 +370,20 @@ def test_deduce_type_adv() -> None:
     'binary_v4',  # L4D2's dmxconvert
     'binary_v5',  # P2+'s dmxconvert
 ])
-def test_parse(filename: str, root: Element=None) -> None:
+def test_parse(datadir: Path, filename: str) -> None:
     """Test parsing all the format types."""
+    with (datadir / f'{filename}.dmx').open('rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+    assert fmt_name == 'dmx'
+    assert fmt_version == 4
+
+    verify_sample(root)
+
+
+def verify_sample(root: Element) -> None:
+    """Verify this DMX matches the sample files."""
     # string <-> double <-> float conversions are not quite accurate.
     a = cast(Callable[[float], float], pytest.approx)
-
-    if root is None:
-        with open(os.path.join(RESLOC, f'dmx_samples/{filename}.dmx'), 'rb') as f:
-            root, fmt_name, fmt_version = Element.parse(f)
-        assert fmt_name == 'dmx'
-        assert fmt_version == 4
 
     assert root.name == 'Root_Name'
     assert root.type == 'DmeRootElement'
@@ -522,23 +542,23 @@ def test_parse(filename: str, root: Element=None) -> None:
     assert arr_elem[3].val is arr_elem_1
 
 
-def test_parse_binaryv3() -> None:
+def test_parse_binaryv3(datadir: Path) -> None:
     """Test parsing of binary version 3.
 
     We don't have a DMXconvert that produces this, so instead compare an existing
     file to the text version.
     """
-    with open(os.path.join(RESLOC, f'dmx_samples/tf_movies.dmx'), 'rb') as f:
+    with (datadir / 'tf_movies.dmx').open('rb') as f:
         root_bin, fmt_name, fmt_version = Element.parse(f)
-    with open(os.path.join(RESLOC, f'dmx_samples/tf_movies_text.dmx'), 'rb') as f:
+    with (datadir / 'tf_movies_text.dmx').open('rb') as f:
         root_txt, fmt_name, fmt_version = Element.parse(f)
     assert_tree(root_bin, root_txt)
 
 
 @pytest.mark.parametrize('version', [2, 4, 5])
-def test_export_bin_roundtrip(version: int) -> None:
+def test_export_bin_roundtrip(datadir: Path, version: int) -> None:
     """Test exporting binary types roundtrip."""
-    with open(os.path.join(RESLOC, f'dmx_samples/binary_v5.dmx'), 'rb') as f:
+    with (datadir / 'binary_v5.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()
@@ -549,13 +569,13 @@ def test_export_bin_roundtrip(version: int) -> None:
     assert rnd_name == fmt_name
     assert rnd_ver == fmt_version
     # Check when parsed it matches the assertions above.
-    test_parse('', root=rnd_root)
+    verify_sample(rnd_root)
 
 
 @pytest.mark.parametrize('flat', [False, True], ids=['indented', 'flat'])
-def test_export_kv2_roundtrip(flat: bool) -> None:
+def test_export_kv2_roundtrip(datadir: Path, flat: bool) -> None:
     """Test exporting keyvalues2 roundtrip."""
-    with open(os.path.join(RESLOC, f'dmx_samples/keyvalues2.dmx'), 'rb') as f:
+    with (datadir / 'keyvalues2.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
 
     buf = BytesIO()
@@ -565,18 +585,11 @@ def test_export_kv2_roundtrip(flat: bool) -> None:
     rnd_root, rnd_name, rnd_ver = Element.parse(buf)
     assert rnd_name == fmt_name
     assert rnd_ver == fmt_version
-    # Check when parsed it matches the assertions above.
-    test_parse('', root=rnd_root)
+    verify_sample(rnd_root)
 
 
-@pytest.mark.parametrize('version', [
-    1, 2, 3, 4, 5,
-    False, True,
-], ids=[
-    'binary_v1', 'binary_v2', 'binary_v3', 'binary_v4', 'binary_v5',
-    'text_indent', 'text_flat',
-])
-def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
+@pytest.mark.parametrize('version', EXPORT_VALS)
+def test_ext_roundtrip_unicode(version: str) -> None:
     """Test the 'silent' extension doesn't affect ASCII only files,
 
     but allows roundtrip of unicode.
@@ -585,27 +598,14 @@ def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
     root = Element('name', 'DMERoot')
     root['key'] = attr = Attribute.string('key', ascii_text)
 
-    if isinstance(version, bool):
-        def export(elem: Element, unicode: str) -> bytes:
-            """Export in text mode."""
-            buf = BytesIO()
-            elem.export_kv2(buf, flat=version, unicode=unicode)
-            return buf.getvalue()
-    else:
-        def export(elem: Element, unicode: str) -> bytes:
-            """Export in binary mode."""
-            buf = BytesIO()
-            elem.export_binary(buf, version, unicode=unicode)
-            return buf.getvalue()
-
-    orig = export(root, 'ascii')
-    silent = export(root, 'silent')
+    orig = export(root, version, 'ascii')
+    silent = export(root, version, 'silent')
 
     assert orig == silent
 
     attr.val_str = unicode_text = 'Ascii ╒══╕ text and some 🤐♝♛🥌♚♝'
-    silent = export(root, 'silent')
-    explicit = export(root, 'format')
+    silent = export(root, version, 'silent')
+    explicit = export(root, version, 'format')
 
     # No flags, fails. UnicodeError from binary, TokenSyntaxError from text.
     with pytest.raises((UnicodeError, TokenSyntaxError)):
@@ -628,3 +628,10 @@ def test_ext_roundtrip_unicode(version: 'int | bool') -> None:
         new_attr = elem['key']
         assert new_attr.val_str == unicode_text, f'{name}: {new_attr.val_str!r} != {unicode_text!r}'
 
+
+@pytest.mark.parametrize('version', EXPORT_VALS)
+def test_export_regression(version: str, datadir: Path, file_regression) -> None:
+    """Test regressions in the export results."""
+    with (datadir / 'binary_v5.dmx').open('rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+    file_regression.check(export(root, version), extension='.dmx', binary=True)

@@ -3,3 +3,6 @@ srctools/*.c linguist-generated=true
 srctools/*.cpp linguist-generated=true
 
 libsquish/* linguist-vendored=true
+
+# Force to binary, KV2 should use windows line endings.
+*.dmx -text binary

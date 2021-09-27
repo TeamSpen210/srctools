@@ -1,5 +1,6 @@
 """Tests for the VMF library."""
-from srctools.vmf import Entity, VMF
+from srctools import Vec, Angle
+from srctools.vmf import Entity, VMF, Output
 from pytest import raises
 
 
@@ -112,3 +113,16 @@ def test_fixup_substitution_invert() -> None:
     # If defaults are provided, those can be flipped too.
     assert ent.fixup.substitute('$missing !$flipped', '0', allow_invert=True) == '0 1'
     assert ent.fixup.substitute('$missing !$flipped', '1', allow_invert=True) == '1 0'
+
+
+def test_regression(file_regression) -> None:
+    """Generate a VMF to ensure code doesn't unintentionally alter output."""
+    vmf = VMF()
+    vmf.create_ent(
+        'info_target',
+        origin=Vec(24, 38, 1028),
+        angles=Angle(10, 270, 0)
+    ).add_out(
+        Output('OnUser1', '!player', 'HolsterWeapon', delay=0.1),
+    )
+    file_regression.check(vmf.export(), extension='.vmf')

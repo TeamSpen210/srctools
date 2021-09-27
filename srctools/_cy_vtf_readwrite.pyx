@@ -1,7 +1,7 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
 from libc.stdio cimport sprintf
-from libc.stdint cimport uint8_t as byte
+from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from libc.string cimport memcpy, memset, strcmp
 from cython.parallel cimport prange, parallel
@@ -31,9 +31,9 @@ cdef extern from "squish.h" namespace "squish":
 ctypedef unsigned int uint
 
 cdef struct RGB:
-    byte r
-    byte g
-    byte b
+    fastbyte r
+    fastbyte g
+    fastbyte b
 
 # Offsets for the colour channels.
 DEF R = 0
@@ -54,19 +54,21 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
 
     DEF PPM_HEADER = b'P6 %u %u 255\n'
     cdef uint header_size = sprintf(NULL, PPM_HEADER, width, height)
-    # Allocate an uninitalised bytes object, that we can write to it.
+    # Allocate an uninitialised bytes object, that we can write to it.
     # That's allowed as long as we don't give anyone else access.
     cdef bytes result = PyBytes_FromStringAndSize(NULL, size + header_size)
     cdef byte *buffer = result
 
     sprintf(<char *>buffer, PPM_HEADER, width, height)
     if bg is not None:
-        r = float(<int> bg[0])
-        g = float(<int> bg[1])
-        b = float(<int> bg[2])
+        if len(bg) != 3:
+            raise ValueError('Background must be a 3-tuple!')
+        r = bg[0]
+        g = bg[1]
+        b = bg[2]
         for off in prange(width * height, nogil=True, schedule='static'):
-            a = pixels[4 * off + 3] / 255.0
-            inv_a = 1.0 - a
+            a = pixels[4 * off + 3] / <float>255.0
+            inv_a = <float>1.0 - a
             buffer[header_size + 3*off + R] = <byte> (pixels[4*off] * a + inv_a * r)
             buffer[header_size + 3*off + G] = <byte> (pixels[4*off + 1] * a + inv_a * g)
             buffer[header_size + 3*off + B] = <byte> (pixels[4*off + 2] * a + inv_a * b)
@@ -91,12 +93,14 @@ def alpha_flatten(const byte[::1] pixels, byte[::1] buffer, uint width, uint hei
     cdef Py_ssize_t size = 3 * width * height
 
     if bg is not None:
-        r = <int>bg[0]
-        g = <int>bg[1]
-        b = <int>bg[2]
+        if len(bg) != 3:
+            raise ValueError('Background must be a 3-tuple!')
+        r = bg[0]
+        g = bg[1]
+        b = bg[2]
         for off in prange(width * height, nogil=True, schedule='static'):
-            a = pixels[4*off + 3] / 255.0
-            inv_a = 1.0 - a
+            a = pixels[4*off + 3] / <float>255.0
+            inv_a = <float>1.0 - a
             buffer[3*off + R] = <byte>(pixels[4*off] * a + inv_a * r)
             buffer[3*off + G] = <byte>(pixels[4*off + 1] * a + inv_a * g)
             buffer[3*off + B] = <byte>(pixels[4*off + 2] * a + inv_a * b)
@@ -141,12 +145,12 @@ def scale_down(
                 off = 4 * (width * y + x)
                 off2 = 4 * (per_row * y + per_column * x)
                 for channel in range(4):
-                    dest[off + channel] = (
+                    dest[off + channel] = <byte>((
                         src[off2 + channel] +
                         src[off2 + channel + horiz_off] +
                         src[off2 + channel + vert_off] +
                         src[off2 + channel + vert_off + horiz_off]
-                    ) // 4
+                    ) // <uint_fast16_t>4)
         return
 
     # Otherwise, nearest-neighbour.
@@ -190,8 +194,8 @@ cdef inline RGB decomp565(byte a, byte b) nogil:
 cdef inline (byte, byte) compress565(byte r, byte g, byte b) nogil:
     """Compress RGB triplets into 565-packed data."""
     return (
+        (g << 3) & 0b11100000 | (b >> 3),
         (r & 0b11111000) | (g >> 5),
-        (g << 5) & 0b11100000 | (b >> 3)
     )
 
 
@@ -373,7 +377,7 @@ cdef bint save_bgr565(const byte[::1] pixels, byte[::1] data, uint width, uint h
 cdef bint load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     cdef Py_ssize_t offset
-    cdef byte a, b
+    cdef fastbyte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
@@ -386,16 +390,16 @@ cdef bint load_bgra4444(byte[::1] pixels, const byte[::1] data, uint width, uint
 cdef bint save_bgra4444(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGRA format images, using only 4 bits each."""
     cdef Py_ssize_t offset
-    cdef byte a, b
+    cdef fastbyte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
-        data[2 * offset + 0] = (pixels[4 * offset + B] & 0b11110000) | (pixels[4 * offset + G] >> 4)
-        data[2 * offset + 1] = (pixels[4 * offset + R] & 0b11110000) | (pixels[4 * offset + A] >> 4)
+        data[2 * offset + 0] = (pixels[4 * offset + G] & 0b11110000) | (pixels[4 * offset + B] >> 4)
+        data[2 * offset + 1] = (pixels[4 * offset + A] & 0b11110000) | (pixels[4 * offset + R] >> 4)
 
 
 cdef bint load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     cdef Py_ssize_t offset
-    cdef byte a, b
+    cdef fastbyte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
@@ -408,7 +412,7 @@ cdef bint load_bgra5551(byte[::1] pixels, const byte[::1] data, uint width, uint
 cdef bint save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGRA format images, using 5 bits for color and 1 for alpha."""
     cdef Py_ssize_t offset
-    cdef byte r, g, b, a
+    cdef fastbyte r, g, b, a
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = pixels[4 * offset + R]
         g = pixels[4 * offset + G]
@@ -422,7 +426,7 @@ cdef bint save_bgra5551(const byte[::1] pixels, byte[::1] data, uint width, uint
 cdef bint load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """BGR format, 5 bits per color, alpha ignored."""
     cdef Py_ssize_t offset
-    cdef byte a, b
+    cdef fastbyte a, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         a = data[2 * offset]
         b = data[2 * offset + 1]
@@ -435,7 +439,7 @@ cdef bint load_bgrx5551(byte[::1] pixels, const byte[::1] data, uint width, uint
 cdef bint save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate BGR format images, using 5 bits for color and 1 spare bit."""
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = pixels[4 * offset + R]
         g = pixels[4 * offset + G]
@@ -448,7 +452,7 @@ cdef bint save_bgrx5551(const byte[::1] pixels, byte[::1] data, uint width, uint
 cdef bint load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B"""
     cdef Py_ssize_t offset
-    cdef byte color
+    cdef fastbyte color
     for offset in prange(width * height, nogil=True, schedule='static'):
         color = data[offset]
         pixels[4*offset + R] = color
@@ -460,18 +464,19 @@ cdef bint load_i8(byte[::1] pixels, const byte[::1] data, uint width, uint heigh
 cdef bint save_i8(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save in greyscale."""
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = pixels[4*offset + R]
         g = pixels[4*offset + G]
         b = pixels[4*offset + B]
-        data[offset] = (r + g + b) // 3
+        # Only need to compute 3*255 / 3.
+        data[offset] = <byte>((r + g + b) // <uint_fast16_t>3)
 
 
 cdef bint load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint height) except 1:
     """I8 format, R=G=B + A"""
     cdef Py_ssize_t offset
-    cdef byte color
+    cdef fastbyte color
     for offset in prange(width * height, nogil=True, schedule='static'):
         color = data[2*offset]
         pixels[4*offset + R] = color
@@ -483,12 +488,12 @@ cdef bint load_ia88(byte[::1] pixels, const byte[::1] data, uint width, uint hei
 cdef bint save_ia88(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Save in greyscale, with alpha."""
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = pixels[4*offset + R]
         g = pixels[4*offset + G]
         b = pixels[4*offset + B]
-        data[2 * offset + 0] = (r + g + b) // 3
+        data[2 * offset + 0] = <byte>((r + g + b) // <uint_fast16_t>3)
         data[2 * offset + 1] = pixels[4*offset + A]
 
 
@@ -534,7 +539,7 @@ cdef bint load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint wi
     Pure blue pixels are transparent.
     """
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset]
         g = data[3 * offset + 1]
@@ -552,7 +557,7 @@ cdef bint load_rgb888_bluescreen(byte[::1] pixels, const byte[::1] data, uint wi
 cdef bint save_rgb888_bluescreen(const byte[::1] pixels, byte[::1] data, uint width, uint height) except 1:
     """Generate RGB format, using pure blue for transparent pixels."""
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         if pixels[4*offset + A] < 128:
             data[3 * offset + 0] = 0
@@ -570,7 +575,7 @@ cdef bint load_bgr888_bluescreen(byte[::1] pixels, const byte[::1] data, uint wi
     Pure blue pixels are transparent.
     """
     cdef Py_ssize_t offset
-    cdef byte r, g, b
+    cdef fastbyte r, g, b
     for offset in prange(width * height, nogil=True, schedule='static'):
         r = data[3 * offset + 2]
         g = data[3 * offset + 1]
@@ -791,4 +796,3 @@ def save(object fmt: 'srctools.vtf.ImageFormats', const byte[::1] pixels, byte[:
         FORMATS[index].save(pixels, data, width, height)
     else:
         raise NotImplementedError(f"Saving {fmt.name} not implemented!")
-

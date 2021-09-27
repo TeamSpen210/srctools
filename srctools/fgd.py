@@ -1,25 +1,31 @@
 """Parse FGD files, used to describe Hammer entities."""
-import itertools
 from copy import deepcopy
 from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
-
+from functools import partial
+import itertools
 import io
 import math
+import operator
 
 from typing import (
-    Optional, Union, overload, cast,
+    Optional, Union, overload, cast, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO, Any,
+    TextIO, Container, IO
 )
+
+import attr
 
 import srctools
 from srctools.filesys import FileSystem, File
-from srctools.tokenizer import Tokenizer, Token, TokenSyntaxError, escape_text
+from srctools.tokenizer import (
+    BaseTokenizer, Tokenizer, Token,
+    TokenSyntaxError, escape_text,
+)
 from srctools.binformat import struct_read
 
 try:
@@ -30,7 +36,7 @@ except ImportError:
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'AutoVisgroup',
+    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
     'match_tags', 'validate_tags',
 
     # From srctools._fgd_helpers
@@ -60,6 +66,8 @@ _fmt_ent_header = Struct('<BBBBBB')
 BIN_FORMAT_VERSION = 5
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
+T = TypeVar('T')
+
 
 class FGDParseError(TokenSyntaxError):
     """Raised if the FGD contains invalid syntax."""
@@ -154,10 +162,10 @@ class ValueTypes(Enum):
         }
 
 
-VALUE_TYPE_LOOKUP = {
+VALUE_TYPE_LOOKUP: Dict[str, ValueTypes] = {
     typ.value: typ
     for typ in ValueTypes
-} # type: Dict[str, ValueTypes]
+}
 # These have two names pointing to the same type...
 VALUE_TYPE_LOOKUP['bool'] = ValueTypes.BOOL
 VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
@@ -165,10 +173,10 @@ VALUE_TYPE_LOOKUP['int'] = ValueTypes.INT
 # In I/O definitions, types are constrained.
 # So this is the most appropriate type to use instead for all types.
 # First, string can reproduce everything if not allowed.
-VALUE_TO_IO_DECAY = {
+VALUE_TO_IO_DECAY: Dict[ValueTypes, ValueTypes] = {
     typ: typ if typ.valid_for_io else ValueTypes.STRING
     for typ in ValueTypes
-}  # type: Dict[ValueTypes, ValueTypes]
+}
 
 # Then manually set others.
 VALUE_TO_IO_DECAY[ValueTypes.SPAWNFLAGS] = ValueTypes.INT
@@ -188,6 +196,7 @@ VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 
 class EntityTypes(Enum):
+    """The kind of entity each definition is."""
     BASE = 'baseclass'  # Not an entity, others inherit from this.
     POINT = 'pointclass'  # Point entity
     BRUSH = 'solidclass'  # Brush entity. Can't have 'model'
@@ -335,7 +344,7 @@ VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
-def read_colon_list(tok: Tokenizer, had_colon=False) -> Tuple[List[str], Token]:
+def read_colon_list(tok: BaseTokenizer, had_colon=False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
 
     The token found at the end is returned.
@@ -402,7 +411,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
-def read_tags(tok: Tokenizer) -> FrozenSet[str]:
+def read_tags(tok: BaseTokenizer) -> FrozenSet[str]:
     """Parse a set of tags from the file.
 
     The open bracket was just read.
@@ -576,28 +585,28 @@ class Helper:
     This should not be instantiated, only subclasses in _fgd_helpers.
     """
     # The HelperType which this implements.
-    TYPE = None  # type: HelperTypes
-    IS_EXTENSION = False  # true for our extensions to the format.
+    TYPE: ClassVar[Optional[HelperTypes]] = None
+    IS_EXTENSION: ClassVar[bool] = False  # true for our extensions to the format.
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'Helper':
+    def parse(cls: Type['HelperT'], args: List[str]) -> 'HelperT':
         """Parse this helper from the given arguments.
 
         The default implementation expects no arguments.
         """
         if args:
-            raise ValueError(
-                'No arguments accepted by {}()!'.format(cls.TYPE.name)
-            )
+            raise ValueError('No arguments accepted by {}()!'.format(
+                cls.TYPE.name if cls.TYPE is not None else cls.__name__
+            ))
         return cls()
 
     def export(self) -> List[str]:
         """Produce the argument text to recreate this helper type."""
         return []
 
-    def get_resources(self, entity: 'EntityDef') -> List[str]:
+    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
         """Return the resources used by this helper."""
-        return []
+        return ()
 
     def overrides(self) -> Collection[HelperTypes]:
         """Specify which types can be overriden by this.
@@ -621,10 +630,23 @@ class Helper:
         return self.TYPE is not other.TYPE or vars(self) != vars(other)
 
 
+class UnknownHelper(Helper):
+    """Represents an unknown helper."""
+    TYPE = None
+    def __init__(self, name: str, args: List[str]) -> None:
+        """Unknown helpers have a name attribute."""
+        self.name = name
+        self.args = args
+
+    def export(self) -> List[str]:
+        """Produce the argument text to recreate this helper type."""
+        return self.args[:]
+
+
 HelperT = TypeVar('HelperT', bound=Helper)
 # Each helper type -> the class implementing them.
 # We fill this at the end of the module.
-HELPER_IMPL = {}  # type: Dict[HelperTypes, Type[Helper]]
+HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 
 
 def _init_helper_impl() -> None:
@@ -632,7 +654,8 @@ def _init_helper_impl() -> None:
     from srctools import _fgd_helpers as helper_mod
     for helper_type in vars(helper_mod).values():
         if isinstance(helper_type, type) and issubclass(helper_type, Helper):
-            HELPER_IMPL[helper_type.TYPE] = helper_type
+            if helper_type.TYPE is not None:
+                HELPER_IMPL[helper_type.TYPE] = helper_type
 
     for helper in HelperTypes:
         if helper not in HELPER_IMPL:
@@ -646,6 +669,7 @@ del _init_helper_impl
 from srctools._fgd_helpers import *
 
 
+@attr.define(order=True, hash=True, eq=True)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -653,48 +677,15 @@ class AutoVisgroup:
     We put all the groups into a single dictionary, and on each specify the name
     of the parent. Note they're case-sensitive, and can include punctuation.
     """
-    def __init__(self, name: str, parent: str) -> None:
-        self.name = name
-        self.parent = parent
-        self.ents = set()  # type: Set[str]
+    name: str
+    parent: str = attr.ib(hash=False, eq=False, order=False)
+    ents: Set[str] = attr.ib(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
         return '<AutoVisgroup "{}">'.format(self.name)
 
-    def __hash__(self) -> int:
-        return hash(self.name)
 
-    def __eq__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name == other.name
-        return NotImplemented
-
-    def __ne__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name != other.name
-        return NotImplemented
-
-    def __lt__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name < other.name
-        return NotImplemented
-
-    def __gt__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name > other.name
-        return NotImplemented
-
-    def __le__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name <= other.name
-        return NotImplemented
-
-    def __ge__(self, other) -> bool:
-        if isinstance(other, AutoVisgroup):
-            return self.name >= other.name
-        return NotImplemented
-
-
+@attr.define
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -702,56 +693,44 @@ class KeyValues:
     * For choices it's a list of (value, name, tags) tuples.
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
-    __slots__ = [
-        'name', 'type', 'default',
-        'disp_name', 'desc', 'val_list',
-        'readonly', 'reportable',
-    ]
-    def __init__(
-        self,
-        name: str,
-        val_type: ValueTypes,
-        disp_name: str,
-        default: str,
-        doc: str,
-        val_list: Union[
-            None,
-            List[Tuple[int, str, bool, FrozenSet[str]]],
-            List[Tuple[str, str, FrozenSet[str]]],
-        ],
-        is_readonly: bool=False,
-        show_in_report: bool=False,
-    ):
-        self.name = name
-        self.type = val_type
-        self.default = default
-        self.disp_name = disp_name
-        self.desc = doc
-        self.val_list = val_list
-        self.readonly = is_readonly
-        self.reportable = show_in_report
+    name: str
+    type: ValueTypes
+    disp_name: str
+    default: str = ''
+    desc: str = ''
+    val_list: Union[
+        None,
+        List[Tuple[int, str, bool, FrozenSet[str]]],
+        List[Tuple[str, str, FrozenSet[str]]],
+    ] = None
+    readonly: bool = False
+    reportable: bool = False
 
-    def __repr__(self) -> str:
-        return (
-            'KeyValues({s.name!r}, {s.type!r}, '
-            '{s.disp_name!r}, {s.default!r}, '
-            '{s.desc!r}, {s.val_list!r}, '
-            '{s.readonly}, {s.reportable})'.format(s=self)
-        )
+    @property
+    def choices_list(self) -> List[Tuple[str, str, FrozenSet[str]]]:
+        """Check that the keyvalues are CHOICES type, and then return val_list.
 
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, KeyValues):
-            return (
-                self.name == other.name
-                and self.type is other.type
-                and self.disp_name == other.disp_name
-                and self.default == other.default
-                and self.desc == other.desc
-                and self.val_list == other.val_list
-                and self.readonly is other.readonly
-                and self.reportable is other.reportable
-            )
-        return NotImplemented
+        This isolates the type ambiguity of the attr.
+        """
+        if self.type is not ValueTypes.CHOICES:
+            raise TypeError
+        if self.val_list is None:
+            lst: List[Tuple[str, str, FrozenSet[str]]] = []
+            self.val_list = lst
+        return cast(list, self.val_list)
+
+    @property
+    def flags_list(self) -> List[Tuple[int, str, bool, FrozenSet[str]]]:
+        """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
+
+        This isolates the type ambiguity of the attr.
+        """
+        if self.type is not ValueTypes.SPAWNFLAGS:
+            raise TypeError
+        if self.val_list is None:
+            lst: List[Tuple[int, str, bool, FrozenSet[str]]] = []
+            self.val_list = lst
+        return cast(list, self.val_list)
 
     def copy(self) -> 'KeyValues':
         """Create a duplicate of this keyvalue."""
@@ -782,16 +761,13 @@ class KeyValues:
 
     def known_options(self) -> Iterator[str]:
         """Use the default value and value list to determine values this can be set to."""
-        if self.val_list is not None:
-            if self.type is ValueTypes.CHOICES:
-                options = {val_list[0] for val_list in self.val_list}
-                options.add(self.default)
-                yield from options
-            elif self.type is ValueTypes.SPAWNFLAGS:
-                for bitflag, name, default, tags in self.val_list:
-                    yield bitflag
-            else:
-                yield self.default
+        if self.type is ValueTypes.CHOICES:
+            options = {val_list[0] for val_list in self.choices_list}
+            options.add(self.default)
+            yield from options
+        elif self.type is ValueTypes.SPAWNFLAGS:
+            for bitflag, name, default, tags in self.flags_list:
+                yield str(bitflag)
         else:
             yield self.default
 
@@ -832,7 +808,7 @@ class KeyValues:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
-                for index, name, default, tags in self.val_list or ():
+                for index, name, default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
@@ -842,7 +818,7 @@ class KeyValues:
                     else:
                         file.write('\n')
             elif self.type is ValueTypes.CHOICES:
-                for value, name, tags in self.val_list or ():
+                for value, name, tags in self.choices_list:
                     # Numbers can be unquoted, everything else cannot.
                     try:
                         float(value)
@@ -875,13 +851,13 @@ class KeyValues:
         # Spawnflags have integer names and defaults,
         # choices has string values and no default.
         if self.type is ValueTypes.SPAWNFLAGS:
-            file.write(_fmt_8bit.pack(len(self.val_list)))
+            file.write(_fmt_8bit.pack(len(self.flags_list)))
             # spawnflags go up to at least 1<<23.
-            for val, name, default, tags in self.val_list:
+            for mask, name, default, tags in self.flags_list:
                 BinStrDict.write_tags(file, str_dict, tags)
                 # We can write 2^n instead of the full number,
                 # since they're all powers of two.
-                power = int(math.log2(val))
+                power = int(math.log2(mask))
                 assert power < 128, "Spawnflags are too big for packing into a byte!"
                 if default:  # Pack the default as the MSB.
                     power |= 128
@@ -893,8 +869,8 @@ class KeyValues:
 
         if self.type is ValueTypes.CHOICES:
             # Use two bytes, these can be large (soundscapes).
-            file.write(_fmt_16bit.pack(len(self.val_list)))
-            for val, name, tags in self.val_list:
+            file.write(_fmt_16bit.pack(len(self.choices_list)))
+            for val, name, tags in self.choices_list:
                 BinStrDict.write_tags(file, str_dict, tags)
                 file.write(str_dict(val))
                 file.write(str_dict(name))
@@ -916,7 +892,7 @@ class KeyValues:
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
             [val_count] = struct_read(_fmt_8bit, file)
-            val_list = [0] * val_count
+            val_list = [()] * val_count
             for ind in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
                 [power] = struct_read(_fmt_8bit, file)
@@ -943,20 +919,19 @@ class KeyValues:
             disp_name,
             default,
             '',
-            val_list,
+            val_list,  # type: ignore
             readonly,
         )
 
 
+@attr.define
 class IODef:
     """Represents an input or output for an entity."""
-    __slots__ = ['name', 'type', 'desc']
-    def __init__(self, name, val_type: ValueTypes, description: str=''):
-        self.name = name
-        self.type = val_type
-        self.desc = description
+    name: str
+    type: ValueTypes
+    desc: str = ''
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         txt = '{}({!r}, {!r}'.format(
             self.__class__.__name__,
             self.name,
@@ -974,15 +949,6 @@ class IODef:
 
     def __deepcopy__(self, memodict: dict) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
-
-    def __eq__(self, other: object) -> bool:
-        if isinstance(other, IODef):
-            return (
-                self.name == other.name
-                and self.type == other.type
-                and self.desc == other.desc
-            )
-        return NotImplemented
 
     def export(
         self,
@@ -1029,16 +995,12 @@ class IODef:
         return IODef(name, value_type)
 
 
-T = TypeVar('T')
-
-
 class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
-    __slots__ = ['_ent', '_attr', '_disp_attr',]
+    __slots__ = ['_ent', '_attr', '_disp_attr']
 
     # Note, we expect the maps to have casefolded their keys.
-
-    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str):
+    def __init__(self, ent: 'EntityDef', attr_name: str, disp_name: str) -> None:
         self._ent = ent
         self._attr = attr_name
         self._disp_attr = disp_name
@@ -1072,7 +1034,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
             search_tags = None
         elif isinstance(name, tuple):
             name, search_tags = name
-            search_tags = frozenset({t.casefold() for t in search_tags})
+            search_tags = frozenset({t.upper() for t in search_tags})
         else:
             raise TypeError(
                 'Expected str or (str, Iterable[str]), '
@@ -1095,7 +1057,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
                     return value
         raise KeyError((name, search_tags))
 
-    def __iter__(self) -> Iterator[T]:
+    def __iter__(self) -> Iterator[str]:
         """Yields all keys this object has."""
         seen: set[str] = set()
         for ent_map in self._maps():
@@ -1122,35 +1084,45 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
 del _EntityView.__slots__
 
 
+@attr.define(slots=False, eq=False)
 class EntityDef:
     """A definition for an entity."""
-    def __init__(self, typ: EntityTypes) -> None:
-        self.type = typ
-        self.classname = ''
-        # These are (name) -> {tags} -> value dicts.
-        self.keyvalues = {}  # type: Dict[str, Dict[FrozenSet[str], KeyValues]]
-        self.inputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
-        self.outputs = {}  # type: Dict[str, Dict[FrozenSet[str], IODef]]
+    type: EntityTypes
+    classname: str = ''
 
-        # Keyvalues have an order. If not present in here,
-        # they appear at the end.
-        self.kv_order = []  # type: List[str]
+    # These are (name) -> {tags} -> value dicts.
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attr.Factory(dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
 
-        # Base type names - base()
-        self.bases = []  # type: List[Union[EntityDef, str]]
-        self.helpers = []  # type: List[Helper]
-        self.desc = ''
+    # Keyvalues have an order. If not present in here,
+    # they appear at the end.
+    kv_order: List[str] = attr.Factory(list)
 
-        # Views for accessing data among all the entities.
-        self.kv: _EntityView[KeyValues] = _EntityView(self, 'keyvalues', 'kv')
-        self.inp: _EntityView[IODef] = _EntityView(self, 'inputs', 'inp')
-        self.out: _EntityView[IODef] = _EntityView(self, 'outputs', 'out')
+    # Base type names - base()
+    bases: List[Union['EntityDef', str]] = attr.Factory(list)
+    helpers: List[Helper] = attr.Factory(list)
+    desc: str = ''
+
+    # Views for accessing data among all the entities.
+    kv: _EntityView[KeyValues] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
+        takes_self=True,
+    ))
+    inp: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='inputs', disp_name='inp'),
+        takes_self=True,
+    ))
+    out: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+        partial(_EntityView, attr_name='outputs', disp_name='out'),
+        takes_self=True,
+    ))
 
     @classmethod
     def parse(
         cls,
         fgd: 'FGD',
-        tok: Tokenizer,
+        tok: BaseTokenizer,
         ent_type: EntityTypes,
         eval_bases: bool=True,
     ):
@@ -1158,8 +1130,9 @@ class EntityDef:
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
-        ext_autovisgroups = []  # type: List[List[str]]
-        help_type = None
+        ext_autovisgroups: list[list[str]] = []
+        help_type: Optional[HelperTypes] = None
+        help_type_cust: Optional[str] = None
         for token, token_value in tok:
             if token is Token.NEWLINE:
                 continue
@@ -1168,10 +1141,7 @@ class EntityDef:
                     try:
                         help_type = HelperTypes(token_value)
                     except ValueError:
-                        raise tok.error(
-                            'Unknown HelperType "{}"!',
-                            token_value,
-                        )
+                        help_type_cust = token_value
                 else:
                     # No arguments for the previous helper, add it in.
                     try:
@@ -1187,7 +1157,7 @@ class EntityDef:
                 continue
 
             elif token is Token.PAREN_ARGS:
-                if help_type is None:
+                if help_type is None and help_type_cust is None:
                     raise tok.error('Args without helper type! ({!r})', token_value)
 
                 args = [
@@ -1199,33 +1169,32 @@ class EntityDef:
                 if len(args) == 1 and args[0] == '':
                     args.clear()
 
-                if help_type is HelperTypes.INHERIT:
-                    for base in args:
-                        if eval_bases:
-                            base = fgd[base]
+                if help_type_cust is not None:
+                    entity.helpers.append(UnknownHelper(help_type_cust, args))
+                elif help_type is None:
+                    raise tok.error('help_type not set?')
+                elif help_type is HelperTypes.INHERIT:
+                    for base_s in args:
+                        base: Union[str, EntityDef] = fgd[base_s] if eval_bases else base_s
                         if base not in entity.bases:
                             entity.bases.append(base)
-                    help_type = None
-                    continue
                 elif help_type is HelperTypes.EXT_AUTO_VISGROUP:
                     if len(args) > 0 and args[0].casefold() != 'auto':
                         args.insert(0, 'Auto')
                     if len(args) < 2:
                         raise tok.error('autovis() requires 2 or more arguments!')
                     ext_autovisgroups.append(args)
-                    help_type = None
-                    continue
+                else:
+                    try:
+                        entity.helpers.append(HELPER_IMPL[help_type].parse(args))
+                    except (TypeError, ValueError) as exc:
+                        raise tok.error(
+                            'Invalid helper arguments for {}():\n',
+                            help_type.value,
+                            '\n'.join(map(str, exc.args)),
+                        ) from exc
 
-                try:
-                    entity.helpers.append(HELPER_IMPL[help_type].parse(args))
-                except (TypeError, ValueError) as exc:
-                    raise tok.error(
-                        'Invalid helper arguments for {}():\n',
-                        help_type.value,
-                        '\n'.join(map(str, exc.args)),
-                    ) from exc
-
-                help_type = None
+                help_type = help_type_cust = None
 
             elif token is Token.EQUALS:
                 break
@@ -1236,7 +1205,9 @@ class EntityDef:
 
         # We were waiting for arguments for the previous helper.
         # We need to add with none.
-        if help_type:
+        if help_type_cust is not None:
+            entity.helpers.append(UnknownHelper(help_type_cust, []))
+        elif help_type:
             if help_type is HelperTypes.EXT_AUTO_VISGROUP or help_type is HelperTypes.INHERIT:
                 raise tok.error('{}() requires at least one argument!', help_type.value)
             try:
@@ -1251,7 +1222,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc = None  # type: Optional[List[str]]
+        desc: Optional[list[str]] = None
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1330,14 +1301,14 @@ class EntityDef:
                     )
 
                 # Read desc
-                attrs, token = read_colon_list(tok)
+                io_vals, token = read_colon_list(tok)
 
                 if token is token.EQUALS:
                     raise tok.error(token)
 
-                if attrs:
+                if io_vals:
                     try:
-                        [io_desc] = attrs
+                        [io_desc] = io_vals
                     except ValueError:
                         raise tok.error('Too many values for IO definition!')
                 else:
@@ -1350,6 +1321,7 @@ class EntityDef:
             else:
                 # Keyvalue
                 name = io_type
+                is_readonly = show_in_report = had_colon = False
 
                 # Next is either the value type parens, or a tags brackets.
 
@@ -1364,60 +1336,62 @@ class EntityDef:
                     raise tok.error(val_token)
 
                 raw_value_type = raw_value_type.strip()
+                if raw_value_type.startswith('*'):
+                    # Old format for specifying 'reportable' flag.
+                    show_in_report = True
+                    raw_value_type = raw_value_type[1:]
                 try:
                     val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
                 except KeyError:
                     raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
 
+                # Look for the 'readonly' and 'report' flags, in that order.
                 next_token, key_flag = tok()
+                if next_token is Token.STRING and key_flag.casefold() == 'readonly':
+                    is_readonly = True
+                    # Fetch next in case it has both.
+                    next_token, key_flag = tok()
 
-                is_readonly = show_in_report = had_colon = False
+                if next_token is Token.STRING and key_flag.casefold() == 'report':
+                    show_in_report = True
+                    # Fetch for the rest of the checks.
+                    next_token, key_flag = tok()
+
                 has_equal: Optional[Token] = None
-                attrs = None  # type: Optional[List[str]]
+                kv_vals: Optional[list[str]] = None
 
-                if next_token is Token.STRING:
-                    # 'report' or 'readonly'
-                    if key_flag.casefold() == 'readonly':
-                        is_readonly = True
-                    elif key_flag.casefold() == 'report':
-                        show_in_report = True
-                    else:
-                        raise tok.error(
-                            'Invalid keyword after keyvalue type: {!r}',
-                            key_flag
-                        )
-                elif next_token is Token.COLON:
+                if next_token is Token.COLON:
                     had_colon = True
                 elif next_token is Token.EQUALS:
                     # Special case - spawnflags doesn't have to have
                     # any info - skips straight to the end.
                     if val_typ is ValueTypes.SPAWNFLAGS:
-                        attrs = []
+                        kv_vals = []
                         has_equal = next_token
                 elif next_token is Token.NEWLINE:
-                    attrs = []
+                    kv_vals = []
                     has_equal = next_token
                 else:
                     raise tok.error(next_token)
 
-                if attrs is None:
-                    attrs, has_equal = read_colon_list(tok, had_colon)
-                attr_len = len(attrs)
+                if kv_vals is None:
+                    kv_vals, has_equal = read_colon_list(tok, had_colon)
+                attr_len = len(kv_vals)
 
                 kv_desc = default = ''
                 if attr_len == 3:
-                    disp_name, default, kv_desc = attrs
+                    disp_name, default, kv_desc = kv_vals
                 elif attr_len == 2:
-                    disp_name, default = attrs
+                    disp_name, default = kv_vals
                 elif attr_len == 1:
-                    [disp_name] = attrs
+                    [disp_name] = kv_vals
                 elif attr_len == 0:
                     disp_name = name
                 else:
-                    raise tok.error('Too many attributes for keyvalue!\n{!r}', attrs)
+                    raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
 
                 if val_typ is ValueTypes.BOOL:
-                    # These are old aliases, change them to proper bools.
+                    # These are old aliases, change them to proper booleans.
                     if default.casefold() == 'yes':
                         default = '1'
                     elif default.casefold() == 'no':
@@ -1427,11 +1401,7 @@ class EntityDef:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
                     # Read the choices in the []
-                    val_list: Union[
-                        None,
-                        list[tuple[int, str, bool, frozenset[str]]],
-                        list[tuple[str, str, frozenset[str]]],
-                    ] = []
+                    val_list: Optional[list[tuple]] = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1531,10 +1501,10 @@ class EntityDef:
         copy.desc = self.desc
 
         # Avoid copy for these, we know the tags-map is immutable.
-        for attr in ['keyvalues', 'inputs', 'outputs']:
+        for val_key in ['keyvalues', 'inputs', 'outputs']:
             coll: dict[str, dict[frozenset[str], Any]] = {}
-            setattr(copy, attr, coll)
-            for key, tags_map in getattr(self, attr).items():
+            setattr(copy, val_key, coll)
+            for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
                     for key, value in tags_map.items()
@@ -1575,11 +1545,21 @@ class EntityDef:
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
 
-    def get_helpers(self, typ: HelperT) -> Iterator[HelperT]:
+    @overload
+    def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
+    @overload
+    def get_helpers(self, typ: str) -> Iterator[UnknownHelper]: ...
+
+    def get_helpers(self, typ: Union[Type[HelperT], str]) -> Iterator[Helper]:
         """Find all helpers with this specific type."""
-        for helper in self.helpers:
-            if helper.TYPE == typ.TYPE:
-                yield cast(HelperT, helper)
+        if isinstance(typ, str):
+            for helper in self.helpers:
+                if isinstance(helper, UnknownHelper) and helper.name == typ:
+                    yield helper
+        else:
+            for helper in self.helpers:
+                if helper.TYPE == typ.TYPE:
+                    yield helper
 
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
@@ -1596,11 +1576,8 @@ class EntityDef:
                     reverse=True,
                 ):
                     if match_tags(tags, key_tag):
-                        category[key] = {
-                            frozenset(): value
-                        }
+                        category[key] = {frozenset(): value}
                         if isinstance(value, KeyValues) and value.val_list:
-
                             # Filter the value list as well.
                             value.val_list = [
                                 val[:-1] + (frozenset(), )
@@ -1632,8 +1609,12 @@ class EntityDef:
             if isinstance(helper, HelperHalfGridSnap):
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
-            else:
+            elif isinstance(helper, UnknownHelper):
+                file.write('\n\t{}({})'.format(helper.name, ', '.join(args)))
+            elif helper.TYPE is not None:
                 file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+            else:
+                raise TypeError(f'Helper {helper!r} has no TYPE attr?')
             if isinstance(helper, HelperExtOrderBy):
                 kv_order_list.extend(map(str.casefold, args))
 
@@ -1814,7 +1795,7 @@ class FGD:
         # Automatic visgroups.
         # The way Valve implemented this is rather strange, so we need
         # to match their data structure really to get good results.
-        # Despite it appearing hierachical in editor, we and Hammer store
+        # Despite it appearing hierarchical in editor, we and Hammer store
         # it flattened. Each visgroup has a parent (or None for auto), and then
         # a list of the ents it contains.
 
@@ -1886,10 +1867,11 @@ class FGD:
         Otherwise entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
-        todo = set(self)  # type: Set[EntityDef]
-        done = set()  # type: Set[EntityDef]
+        todo: set[EntityDef] = set(self)
+        done: set[EntityDef] = set()
+        cls_getter = operator.attrgetter('classname')
         while todo:
-            deferred = set()  # type: Set[EntityDef]
+            deferred: set[EntityDef] = set()
             batch = []
             for ent in todo:
                 ready = True
@@ -1897,30 +1879,33 @@ class FGD:
                     if isinstance(base, str):
                         raise ValueError(
                             'Unevaluated base: {} in {}!'.format(
-                                base, ent.classname
+                                base, ent.classname,
                             ))
                     if base not in done:
+                        # Base not done yet, we need to defer this.
                         deferred.add(ent)
-                        deferred.add(base)
+                        # If the base isn't in any of our sets, it's one
+                        # just in the .bases attr, not in the fgd.entities
+                        # dict - defer it too so it can be added.
+                        if base not in todo:
+                            deferred.add(base)
                         ready = False
-                if not ready:
+                if ready:
+                    batch.append(ent)
+                else:
                     deferred.add(ent)
-                    continue
 
-                batch.append(ent)
-
-            batch.sort(key=lambda ent: ent.classname)
+            batch.sort(key=cls_getter)
             yield from batch
 
             done.update(batch)
 
-            # All the entities have a dependency on another.
-            if todo == deferred:
+            # All the entities have a dependency on another, we failed to produce anything.
+            if not batch:
                 raise ValueError(
-                    "Loop in bases! \n "
-                    "Problematic entities: \n{}".format([
+                    "Loop in bases! \n Problematic entities: \n{}".format([
                         ent.classname
-                        for ent in todo
+                        for ent in deferred
                     ]))
 
             todo = deferred.difference(done)
@@ -1952,11 +1937,11 @@ class FGD:
                     for tag, kv in base_kv_map.items():
                         if tag not in ent_kv_map:
                             ent_kv_map[tag] = kv.copy()
-                        elif kv.type.has_list:
+                        elif kv.type.has_list and ent_kv_map[tag].type is kv.type:
                             # If both are lists, merge those. This is mainly
                             # for spawnflags.
                             targ_list = ent_kv_map[tag].val_list
-                            if targ_list:
+                            if targ_list is not None and kv.val_list is not None:
                                 for val in kv.val_list:
                                     if val not in targ_list:
                                         targ_list.append(val)
@@ -1979,9 +1964,9 @@ class FGD:
             ent.bases.clear()
 
     @overload
-    def export(self) -> str: ...
-    @overload
     def export(self, file: TextIO) -> None: ...
+    @overload
+    def export(self) -> str: ...
     def export(self, file=None):
         """Write the FGD contents into a text file.
 
@@ -2007,8 +1992,7 @@ class FGD:
                 file.write('\t"{!s}"\n'.format(folder))
             file.write('\t]\n\n')
 
-
-        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
+        vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
@@ -2084,12 +2068,13 @@ class FGD:
 
         self._parse_list.add(file)
 
-        with filesys, file.open_str(encoding) as f:
+        with file.open_str(encoding) as f:
             tokeniser = Tokenizer(
                 f,
                 filename=file.path,
                 error=FGDParseError,
                 string_bracket=False,
+                colon_operator=True,
             )
             for token, token_value in tokeniser:
                 # The only things at top-level would be bare strings, and empty lines.

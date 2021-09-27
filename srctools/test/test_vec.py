@@ -3,14 +3,10 @@ import pickle
 import copy
 
 import operator as op
+from pathlib import Path
 
 from srctools.test import *
 from srctools import Vec_tuple, math as vec_mod
-
-try:
-    from importlib.resources import path as import_file_path
-except ImportError:
-    from importlib_resources import path as import_file_path
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
@@ -19,18 +15,21 @@ raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 
 
-def test_matching_apis() -> None:
+@pytest.mark.parametrize('cls', ['Vec', 'Matrix', 'Angle'])
+def test_matching_apis(cls: str) -> None:
     """Check each class pair has the same methods."""
-    def get_public(typ: type) -> set:
-        """Skip __dunder__ and _private attrs."""
-        return {name for name in vars(typ) if not name.startswith('_')}
-    assert get_public(vec_mod.Cy_Vec) == get_public(vec_mod.Py_Vec)
-    assert get_public(vec_mod.Cy_Matrix) == get_public(vec_mod.Py_Matrix)
-    assert get_public(vec_mod.Cy_Angle) == get_public(vec_mod.Py_Angle)
+    py_type = getattr(vec_mod, 'Py_' + cls)
+    cy_type = getattr(vec_mod, 'Cy_' + cls)
+    if py_type is cy_type:
+        pytest.fail(f'No Cython version of {cls}!')
+    # Skip dunder and private attributes, not part of the api.
+    py_attrs = {name for name in vars(py_type) if not name.startswith('_')}
+    cy_attrs = {name for name in vars(cy_type) if not name.startswith('_')}
+    assert cy_attrs == py_attrs
 
 
 @parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
-def test_lerp(lerp_func) -> None:
+def test_scalar_lerp(lerp_func) -> None:
     """Test the lerp function."""
     assert lerp_func(-4.0, -4.0, 10, 50.0, 80.0) == pytest.approx(50.0)
     assert lerp_func(10.0, -4.0, 10, 50.0, 80.0) == pytest.approx(80.0)
@@ -45,7 +44,7 @@ def test_lerp(lerp_func) -> None:
 
 def test_construction(py_c_vec):
     """Check various parts of the constructor.
-    
+
     This tests Vec(), Vec.from_str() and parse_vec_str().
     """
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -168,7 +167,7 @@ def test_with_axes(py_c_vec: PyCVec):
             continue
         for x, y, z in iter_vec(VALID_ZERONUMS):
             vec = Vec.with_axes(a, x, b, y, c, z)
-            msg = '{} = {}={}, {}={}, {}={}'.format(vec, a, x, b, y, c, z)
+            msg = f'{vec} = {a}={x}, {b}={y}, {c}={z}'
             assert vec[a] == x, msg
             assert vec[b] == y, msg
             assert vec[c] == z, msg
@@ -225,6 +224,58 @@ def test_contains(py_c_vec: PyCVec):
     for num in VALID_NUMS:
         for x, y, z in iter_vec(VALID_NUMS):
             assert (num in Vec(x, y, z)) == (num in [x, y, z])
+
+
+def test_iteration(py_c_vec: PyCVec):
+    """Test vector iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Vec(45.0, 50, 65)
+    it = iter(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 45.0
+    assert next(it) == 50.0
+    assert next(it) == 65.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_rev_iteration(py_c_vec: PyCVec):
+    """Test reversed iteration."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    v = Vec(45.0, 50, 65)
+    it = reversed(v)
+    assert iter(it) is iter(it)
+
+    assert next(it) == 65.0
+    assert next(it) == 50.0
+    assert next(it) == 45.0
+    with pytest.raises(StopIteration):
+        next(it)
+    with pytest.raises(StopIteration):
+        next(it)
+
+
+def test_vec_lerp(py_c_vec: PyCVec) -> None:
+    """Test the vector lerp function."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    assert_vec(
+        Vec.lerp(14.0, 10.0, 20.0, Vec(20.0, -30.0, 8.0), Vec(40.0, -40.0, 8.0)),
+        28.0, -34.0, 8.0,
+    )
+    assert_vec(
+        Vec.lerp(15.0, 10.0, 20.0, Vec(8.0, 20.0, -30.0), Vec(8.0, 40.0, -40.0)),
+        8.0, 30.0, -35.0,
+    )
+    assert_vec(
+        Vec.lerp(16.0, 10.0, 20.0, Vec(-30.0, 8.0, 20.0), Vec(-40.0, 8.0, 40.0)),
+        -36.0, 8.0, 32.0,
+    )
+
+    with raises_zero_div:
+        Vec.lerp(48.4, -64.0, -64.0, Vec(), Vec())
 
 
 def test_scalar(py_c_vec: PyCVec):
@@ -308,6 +359,8 @@ def test_vec_props(py_c_vec: PyCVec, axis: str, index: int, u: str, v: str, u_ax
     """Test the X/Y/Z attributes and item access."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
     vec = Vec()
+    # Should be constant.
+    assert len(vec) == 3
 
     def check(targ: float, other: float):
         """Check all the indexes are correct."""
@@ -522,7 +575,7 @@ def test_vector_mult_fail(py_c_vec):
                 with raises_typeerror:
                     divmod(Vec(num, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
-                
+
                 with raises_typeerror:
                     divmod(Vec(0, num, num), Vec(num2, num2, num2))
                     pytest.fail(msg)
@@ -688,25 +741,6 @@ def test_bool(py_c_vec):
         assert Vec(val, val, val)
 
 
-def test_len(py_c_vec):
-    """Test len(Vec)."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-
-    # len(Vec) is the number of non-zero axes.
-
-    assert len(Vec(0, 0, 0)) == 0
-    assert len(Vec(-0, -0, -0)) == 0
-
-    for val in VALID_NUMS:
-        assert len(Vec(val, 0, -0)) == 1
-        assert len(Vec(0, val, 0)) == 1
-        assert len(Vec(0, -0, val)) == 1
-        assert len(Vec(0, val, val)) == 2
-        assert len(Vec(val, 0, val)) == 2
-        assert len(Vec(val, val, -0)) == 2
-        assert len(Vec(val, val, val)) == 3
-
-
 def test_iter_line(py_c_vec):
     """Test Vec.iter_line()"""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
@@ -721,7 +755,7 @@ def test_iter_line(py_c_vec):
 def test_iter_grid(py_c_vec):
     """Test Vec.iter_grid()."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    it = Vec.iter_grid(Vec(35, 60, 90), Vec(40, 70, 110), 5)
+    it = Vec.iter_grid(Vec(35, 59.99999, 90), Vec(40, 70, 110.001), 5)
 
     assert_vec(next(it), 35, 60, 90)
     assert_vec(next(it), 35, 60, 95)
@@ -770,12 +804,13 @@ def test_iter_grid(py_c_vec):
     assert list(Vec.iter_grid(Vec(35, 40, 20), Vec(35, 40, 20))) == [Vec(35, 40, 20)]
 
 
+# Various keys similar to correct values, in order to test edge cases in logic.
 INVALID_KEYS = [
     '4',
     '',
     -1,
-    4,
-    4.0,
+    3, 4,
+    3.0, 4.0,
     bool,
     slice(0, 1),
     None,
@@ -785,6 +820,7 @@ INVALID_KEYS = [
     -2 ** 256,
     '♞',
 ]
+
 
 def test_getitem(py_c_vec):
     """Test vec[x] with various args."""
@@ -829,11 +865,11 @@ def test_getitem(py_c_vec):
 
     for invalid in INVALID_KEYS:
         try:
-            v[invalid]
+            res = v[invalid]
         except KeyError:
             pass
         else:
-            pytest.fail(f"Key succeeded: {invalid!r}")
+            pytest.fail(f"Key succeeded: {invalid!r} -> {res!r}")
 
 
 def test_setitem(py_c_vec):
@@ -1076,26 +1112,21 @@ def test_bbox(py_c_vec: PyCVec):
     test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
 
 
-def test_vmf_rotation(py_c_vec: PyCVec):
+def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
     """Complex test.
 
     Use a compiled map to check the functionality of Vec.rotate().
     """
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
-
     from srctools.bsp import BSP
-    import srctools.test
 
-    with import_file_path(srctools.test, 'rot_main.bsp') as bsp_path:
-        bsp = BSP(bsp_path)
-        vmf = bsp.read_ent_data()
-    del bsp
+    vmf = BSP(datadir / 'rot_main.bsp').ents
 
     for ent in vmf.entities:
         if ent['classname'] != 'info_target':
             continue
         angle_str = ent['angles']
-        angles = Vec.from_str(angle_str)
+        angles = Angle.from_str(angle_str)
         local_vec = Vec(
             float(ent['local_x']),
             float(ent['local_y']),
@@ -1107,6 +1138,7 @@ def test_vmf_rotation(py_c_vec: PyCVec):
 
         assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3)
         assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3)
+        assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3)
 
 
 def test_cross_product_axes(py_c_vec):

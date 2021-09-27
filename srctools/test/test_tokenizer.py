@@ -3,6 +3,7 @@ from typing import Type, Tuple
 
 import pytest
 import codecs
+import platform
 
 from pytest import raises
 
@@ -20,6 +21,7 @@ from srctools.tokenizer import (
 )
 
 T = Token
+IS_CPYTHON = platform.python_implementation() == 'CPython'
 
 # The correct result of parsing prop_parse_test.
 # Either the token, or token + value (which must be correct).
@@ -111,7 +113,7 @@ noprop_parse_test = """
 #ﬁmport test
 #EXclßÀde value
 #caseA\u0345\u03a3test
-{ ]]{ }}}[[ {{] + = :: "test" + "ing" == vaLUE
+{ ]]{ }}}[[ {{] + = "test" + "ing" == vaLUE
 """
 
 noprop_parse_tokens = [
@@ -122,7 +124,7 @@ noprop_parse_tokens = [
     (T.DIRECTIVE, "casea\u03b9\u03c3test"), T.NEWLINE,
     T.BRACE_OPEN, T.BRACK_CLOSE, T.BRACK_CLOSE, T.BRACE_OPEN, T.BRACE_CLOSE, T.BRACE_CLOSE, T.BRACE_CLOSE,
     T.BRACK_OPEN, T.BRACK_OPEN, T.BRACE_OPEN, T.BRACE_OPEN, T.BRACK_CLOSE, T.PLUS,
-    T.EQUALS, T.COLON, T.COLON, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
+    T.EQUALS, (T.STRING, "test"), T.PLUS, (T.STRING, "ing"),
     T.EQUALS, T.EQUALS, (T.STRING, "vaLUE"), T.NEWLINE
 ]
 
@@ -434,33 +436,36 @@ def test_tok_filename(py_c_token):
     assert Tokenizer('file', b'binary/filename\xE3\x00.txt').filename == 'binary/filename\\xe3\\x00.txt'
 
 
-def test_obj_config(py_c_token):
+@pytest.mark.parametrize('parm, default', [
+    ('string_bracket', False),
+    ('allow_escapes', True),
+    ('allow_star_comments', False),
+    ('colon_operator', False),
+])
+def test_obj_config(py_c_token, parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token
 
-    assert Tokenizer('').string_bracket is False
-    assert Tokenizer('').allow_escapes is True
-
-    assert Tokenizer('', string_bracket=1).string_bracket is True
-    assert Tokenizer('', string_bracket=True).string_bracket is True
-    assert Tokenizer('', string_bracket=False).string_bracket is False
-    assert Tokenizer('', allow_escapes=[]).allow_escapes is False
-    assert Tokenizer('', allow_escapes=True).allow_escapes is True
-    assert Tokenizer('', allow_escapes=False).allow_escapes is False
+    assert getattr(Tokenizer(''), parm) is default
+    assert getattr(Tokenizer('', **{parm: True}), parm) is True
+    assert getattr(Tokenizer('', **{parm: False}), parm) is False
+    assert getattr(Tokenizer('', **{parm: 1}), parm) is True
+    assert getattr(Tokenizer('', **{parm: []}), parm) is False
 
     tok = Tokenizer('')
-    assert tok.string_bracket is False
-    tok.string_bracket = True
-    assert tok.string_bracket is True
-    tok.string_bracket = False
-    assert tok.string_bracket is False
+    setattr(tok, parm, False)
+    assert getattr(tok, parm) is False
 
-    tok = Tokenizer('')
-    assert tok.allow_escapes is True
-    tok.allow_escapes = False
-    assert tok.allow_escapes is False
-    tok.allow_escapes = True
-    assert tok.allow_escapes is True
+    setattr(tok, parm, True)
+    assert getattr(tok, parm) is True
+
+    # Don't check it does force setting them to bools, Python version doesn't
+    # need to do that.
+    setattr(tok, parm, '')
+    assert not getattr(tok, parm)
+
+    setattr(tok, parm, {1, 2, 3})
+    assert getattr(tok, parm)
 
 
 @pytest.mark.parametrize('inp, out', [
@@ -479,7 +484,9 @@ def test_obj_config(py_c_token):
 def test_escape_text(inp: str, out: str, func) -> None:
     """Test the Python and C escape_text() functions."""
     assert func(inp) == out
-    if inp == out:  # If the same, reuses the string.
+    # If the same it should reuse the string.
+    # But don't check on PyPy etc, may have primitive optimisations.
+    if inp == out and IS_CPYTHON:
         assert func(inp) is inp
 
 
@@ -518,7 +525,44 @@ def test_brackets(py_c_token):
         Token.BRACK_CLOSE,
     ])
 
-def test_invalid_bracket(py_c_token):
+
+def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
+    """Test : can be detected as a string or operator depending on the option."""
+    # Explicit string, unaffected.
+    check_tokens(py_c_token('"test:call"', colon_operator=False), [
+        (Token.STRING, 'test:call'),
+    ])
+    check_tokens(py_c_token('"test:call"', colon_operator=True), [
+        (Token.STRING, 'test:call'),
+    ])
+
+    # Applies to bare strings, also note another char after.
+    check_tokens(py_c_token('test:call:{}', colon_operator=False), [
+        (Token.STRING, 'test:call:'),
+        Token.BRACE_OPEN, Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token('test:call:{}', colon_operator=True), [
+        (Token.STRING, 'test'),
+        Token.COLON,
+        (Token.STRING, 'call'),
+        Token.COLON,
+        Token.BRACE_OPEN, Token.BRACE_CLOSE,
+    ])
+
+    # Test the string starting with a colon.
+    check_tokens(py_c_token('{:test:call}', colon_operator=False), [
+        Token.BRACE_OPEN,
+        (Token.STRING, ':test:call'),
+        Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token('{:test:call}', colon_operator=True), [
+        Token.BRACE_OPEN, Token.COLON,
+        (Token.STRING, 'test'), Token.COLON,
+        (Token.STRING, 'call'), Token.BRACE_CLOSE,
+    ])
+
+
+def test_invalid_bracket(py_c_token: Type[Tokenizer]):
     """Test detecting various invalid combinations of [] brackets."""
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
