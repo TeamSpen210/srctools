@@ -53,7 +53,6 @@ HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers don't work for that.
-Edge = Tuple[Vec, Vec]
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
@@ -533,6 +532,56 @@ class Primitive:
     is_tristrip: bool
     indexed_verts: List[int]
     verts: List[Vec]
+
+
+class Edge:
+    """A pair of vertexes defining an edge of a face.
+
+    The face on the other side of the edge has a RevEdge instead, which shares these vectors.
+    """
+    a: Vec
+    b: Vec
+    opposite: 'Edge'
+    def __init__(self, a: Vec, b: Vec) -> None:
+        self.a = a
+        self.b = b
+        self.opposite = RevEdge(self)
+
+    def __repr__(self) -> str:
+        return f'Edge({self.a!r}, {self.b!r})'
+
+    def key(self) -> tuple:
+        """A key to match the edge with."""
+        a, b = self.a, self.b
+        return (a.x, a.y, a.z, b.x, b.y, b.z)
+
+
+class RevEdge(Edge):
+    """The edge on the opposite side from the original."""
+    # noinspection PyMissingConstructor
+    def __init__(self, ed: Edge) -> None:
+        # Deliberately not calling super to set a and b.
+        self.opposite = ed
+
+    def __repr__(self) -> str:
+        return f'RevEdge({self.a!r}, {self.b!r})'
+
+    @property
+    def a(self) -> Vec:
+        """This is a proxy for our opposite's B vec."""
+        return self.opposite.b
+
+    @a.setter
+    def a(self, value: Vec) -> None:
+        self.opposite.b = value
+    @property
+    def b(self) -> Vec:
+        """This is a proxy for our opposite's A vec."""
+        return self.opposite.a
+
+    @b.setter
+    def b(self, value: Vec) -> None:
+        self.opposite.a = value
 
 
 @attr.define(eq=False)
@@ -1347,12 +1396,12 @@ class BSP:
     def _lmp_read_surfedges(self, vertexes: bytes) -> Iterator[Edge]:
         verts: list[Vec] = self.vertexes
         edges = [
-            (verts[a], verts[b])
+            Edge(verts[a], verts[b])
             for a, b in struct.iter_unpack('<HH', self.lumps[BSP_LUMPS.EDGES].data)
         ]
         for [ind] in struct.iter_unpack('i', vertexes):
             if ind < 0:  # If negative, the vertexes are reversed order.
-                yield edges[-ind][::-1]
+                yield edges[-ind].opposite
             else:
                 yield edges[ind]
 
@@ -1361,40 +1410,23 @@ class BSP:
         edge_buf = BytesIO()
         surf_buf = BytesIO()
 
-        # (a, b) -> edge
-        edge_to_ind: dict[tuple[float, float, float, float, float, float], int] = {}
+        edges: List[Edge] = []
+        add_edge = _find_or_insert(edges)
         add_vert = _find_or_insert(self.vertexes, Vec.as_tuple)
 
-        for a, b in surf_edges:
+        for edge in surf_edges:
             # Check to see if this edge is already defined.
             # positive indexes are in forward order, negative
             # allows us to refer to a reversed definition.
-            try:
-                ind = edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z]
-            except KeyError:
-                pass
+            if isinstance(edge, RevEdge):
+                ind = -add_edge(edge.opposite)
             else:
-                surf_buf.write(struct.pack('i', ind))
-                continue
-
-            try:
-                ind = -edge_to_ind[b.x, b.y, b.z, a.x, a.y, a.z]
-                if ind == 0:
-                    # Edge case, zero is for the forward order.
-                    # We need to add the edge definition elsewhere.
-                    raise KeyError
-            except KeyError:
-                pass
-            else:
-                surf_buf.write(struct.pack('i', ind))
-                continue
-
-            # No luck, we need to add an edge definition.
-            ind = len(edge_to_ind)
-            edge_to_ind[a.x, a.y, a.z, b.x, b.y, b.z] = ind
-
-            edge_buf.write(struct.pack('<HH',  add_vert(a), add_vert(b)))
+                ind = add_edge(edge)
             surf_buf.write(struct.pack('i', ind))
+
+        for edge in edges:
+            assert not isinstance(edge, RevEdge), edge
+            edge_buf.write(struct.pack('<HH',  add_vert(edge.a), add_vert(edge.b)))
 
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()
@@ -1502,15 +1534,10 @@ class BSP:
         If this isn't the orig faces array, get_orig_face should be
         _find_or_insert(self.orig_faces).
         """
-        def edge_key(edges) -> tuple:
-            """Key function to allow hashing the edges tuples."""
-            a, b = edges
-            return (a.x, a.y, a.z, b.x, b.y, b.z)
-
         face_buf = BytesIO()
         add_texinfo = _find_or_insert(self.texinfo)
         add_plane = _find_or_insert(self.planes)
-        add_edges = _find_or_extend(self.surfedges, edge_key)
+        add_edges = _find_or_extend(self.surfedges)
         add_prims = _find_or_extend(self.primitives)
         hammer_ids = []
 
