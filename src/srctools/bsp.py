@@ -2533,13 +2533,13 @@ class BSP:
                 # Unknown data, though it's float-like.
                 unknown_1 = struct_read('<i', static_lump)
 
-            if vers_num >= 10 or version.is_lightmap:
-                # Extra flags, post-CSGO or in TF2.
+            if vers_num >= 10 and not version.is_lightmap:
+                # Extra flags, post-CSGO
                 flags |= struct_read('<I', static_lump)[0] << 8
 
             if version.is_lightmap:
                 # Regular flags byte above is totally ignored!
-                [lightmap_x, lightmap_y] = struct_read('<HH', static_lump)
+                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
             else:
                 # FGD default.
                 lightmap_x = lightmap_y = 32
@@ -2634,7 +2634,8 @@ class BSP:
                 leaf_off,
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value_prim,
+                # TF2 doesn't use this, it's random.
+                0 if version.is_lightmap else prop.flags.value_prim,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -2674,14 +2675,14 @@ class BSP:
                 # Unknown padding/data, though it's always zero.
                 prop_lump.write(b'\0\0\0\0')
 
-            if vers_num >= 10 or version.is_lightmap:
-                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
-
             if version.is_lightmap:
                 prop_lump.write(struct.pack(
-                    '<HH',
+                    '<IHH',
+                    prop.flags.value,
                     prop.lightmap_x, prop.lightmap_y,
                 ))
+            elif vers_num >= 10:
+                prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
             if vers_num >= 11:
                 prop_lump.write(struct.pack('<f', prop.scaling))
