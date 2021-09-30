@@ -9,7 +9,7 @@ import os
 import sys
 import io
 import traceback
-import threading
+import contextvars
 import contextlib
 from types import TracebackType
 from typing import (
@@ -18,7 +18,7 @@ from typing import (
 )
 
 
-CTX_STACK = threading.local()
+CTX_STACK = contextvars.ContextVar('srctools_logger')
 
 
 class LogMessage:
@@ -107,8 +107,8 @@ class LoggerAdapter(logging.LoggerAdapter):
         """
         if self.isEnabledFor(level):
             try:
-                ctx = CTX_STACK.stack[-1]
-            except (AttributeError, IndexError):
+                ctx = ', '.join(CTX_STACK.get())
+            except LookupError:
                 ctx = ''
 
             if extra is None:
@@ -374,9 +374,10 @@ def context(name: str) -> Generator[str, None, None]:
     The specified string gets included in the log messages.
     """
     try:
-        stack = CTX_STACK.stack
-    except AttributeError:
-        stack = CTX_STACK.stack = []
+        stack = CTX_STACK.get()
+    except LookupError:
+        stack = []
+        CTX_STACK.set(stack)
     stack.append(name)
     try:
         yield name

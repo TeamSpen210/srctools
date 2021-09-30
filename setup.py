@@ -94,6 +94,7 @@ setup(
     install_requires=[
         # In stdlib after this.
         "importlib_resources;python_version<'3.7'",
+        "contextvars;python_version<'3.7'",
         "attrs",
     ],
     extras_require={
