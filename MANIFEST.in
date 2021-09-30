@@ -1,7 +1,9 @@
 # Explicitly include the C/C++ sources, for cythonless installs.
 global-include *.c *.cpp *.h *.hpp
 # Cython headers
-global-include *.pxd'
+global-include *.pxd
+
+prune .tox
 
 # FGD database.
 include srctools/fgd.lzma
