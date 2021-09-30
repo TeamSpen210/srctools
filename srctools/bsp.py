@@ -1411,8 +1411,9 @@ class BSP:
         surf_buf = BytesIO()
 
         edges: List[Edge] = []
+        # We cannot share vertexes or edges, it breaks VRAD!
         add_edge = _find_or_insert(edges)
-        add_vert = _find_or_insert(self.vertexes, Vec.as_tuple)
+        add_vert = _find_or_insert(self.vertexes)
 
         for edge in surf_edges:
             # Check to see if this edge is already defined.
