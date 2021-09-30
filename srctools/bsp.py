@@ -950,12 +950,13 @@ class ParsedLump(Generic[T]):
         assert self.lump in LUMP_REBUILD_ORDER, self.lump
 
     def __set_name__(self, owner: Type['BSP'], name: str) -> None:
+        func_suffix = name.lstrip('_')  # Don't have us do blah__name if private.
         self.__name__ = name
         self.__objclass__ = owner
-        self._read = getattr(owner, '_lmp_read_' + name)
-        self._check = getattr(owner, '_lmp_check_' + name, None)
+        self._read = getattr(owner, '_lmp_read_' + func_suffix)
+        self._check = getattr(owner, '_lmp_check_' + func_suffix, None)
         # noinspection PyProtectedMember
-        owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + name)
+        owner._save_funcs[self.lump] = getattr(owner, '_lmp_write_' + func_suffix)
 
     def __repr__(self) -> str:
         return f'<srctools.BSP.{self.__name__} member>'
