@@ -834,6 +834,11 @@ class PackList:
                 if not file.optional and fname.casefold() not in packed_files:
                     LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                 continue
+                
+            if fname.casefold().endswith('.bik'):
+                # BINK cannot be packed, always skip.
+                LOGGER.debug('EXT:  {}', fname)
+                continue
 
             if self.fsys.get_system(sys_file) in allowed:
                 LOGGER.debug('ADD:  {}', fname)
