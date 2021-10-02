@@ -7,6 +7,8 @@ res('prop_floor_button')  # Model set in keyvalues.
 res('prop_floor_ball_button', mdl('models/props/ball_button.mdl'))
 res('prop_floor_cube_button', mdl('models/props/box_socket.mdl'))
 res('prop_combine_ball',
+    mdl('models/effects/combineball.mdl'),
+    mat('sprites/combineball_trail_black_1.vmt'),
     mat("materials/sprites/lgtning.vmt"),
     sound("NPC_CombineBall.Launch"),
     sound("NPC_CombineBall.KillImpact"),
@@ -44,14 +46,16 @@ res('prop_dropship_container',
     mdl('models/gibs/hgibs.mdl'),
     )
 res('prop_energy_ball',
-    mdl('models/effects/combineball.mdl'),
     mat('materials/effects/eball_finite_life.vmt'),
     mat('materials/effects/eball_infinite_life.vmt'),
+    mat('decals/smscorch1model.vmt'),
+    mat('decals/smscorch1_subrect.vmt'),
     sound('EnergyBall.Explosion'),
     sound('EnergyBall.Launch'),
     sound('EnergyBall.KillImpact'),
     sound('EnergyBall.Impact'),
     sound('EnergyBall.AmbientLoop'),
+    includes='prop_combine_ball',
     )
 
 res('prop_exploding_barrel',
