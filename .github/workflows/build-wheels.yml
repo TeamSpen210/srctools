@@ -20,6 +20,8 @@ jobs:
         env:
           # Ensure both 32-bit and 64-bit are built
           CIBW_ARCHS: auto
+          # Skip building on < 3.8, 32-bit Linux.
+          CIBW_SKIP: "cp36-* *-manylinux_i686"
 
       - uses: actions/upload-artifact@v2
         with:
