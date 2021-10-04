@@ -21,6 +21,8 @@ optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
 
 setup(
     packages=find_packages(include=['srctools', 'srctools.*']),
+    # Exclude the test data for wheels.
+    exclude_package_data={} if 'INCLUDE_TESTS' in os.environ else {'srctools.test': ['*']},
     # Setuptools automatically runs Cython, if available.
     ext_modules=[
         Extension(
