@@ -16,6 +16,8 @@ SQUISH_CPP = [
     'libsquish/singlecolourfit.cpp',
     'libsquish/squish.cpp',
 ]
+# Mandatory in CI!
+optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
 
 setup(
     packages=find_packages(include=['srctools', 'srctools.*']),
@@ -24,7 +26,7 @@ setup(
         Extension(
             "srctools._tokenizer",
             sources=["srctools/_tokenizer.pyx"],
-            optional=True,
+            optional=optional_ext,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ],
@@ -33,7 +35,7 @@ setup(
             "srctools._cy_vtf_readwrite",
             include_dirs=[os.path.abspath("libsquish/")],
             language='c++',
-            optional=True,
+            optional=optional_ext,
             sources=[
                 "srctools/_cy_vtf_readwrite.pyx",
             ] + SQUISH_CPP,
@@ -49,7 +51,7 @@ setup(
             "srctools._math",
             include_dirs=[os.path.abspath("quickhull/")],
             language='c++',
-            optional=True,
+            optional=optional_ext,
             sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
