@@ -18,25 +18,6 @@ SQUISH_CPP = [
 ]
 
 setup(
-    name='srctools',
-    version='1.2.0',
-    description="Modules for working with Valve's Source Engine file formats.",
-    url='https://github.com/TeamSpen210/srctools',
-
-    author='TeamSpen210',
-    author_email='spencerb21@live.com',
-    license='mit',
-
-    keywords='',
-    classifiers=[
-        'License :: Public Domain',
-        'Programming Language :: Python :: 3.6',
-        'Programming Language :: Python :: 3.7',
-        'Programming Language :: Python :: 3.8',
-        'Programming Language :: Python :: 3.9',
-        'Programming Language :: Python :: 3.10',
-        'Programming Language :: Python :: 3 :: Only',
-    ],
     packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
     ext_modules=[
@@ -77,33 +58,4 @@ setup(
             ],
         ),
     ],
-
-    include_package_data=True,
-
-    entry_points={
-        'console_scripts': [
-            'srctools_dump_parms = srctools.scripts.dump_parms:main',
-            'srctools_diff = srctools.scripts.diff:main',
-            'srctools_find_deps = srctools.scripts.find_deps:main',
-        ],
-        'pyinstaller40': [
-            'hook-dirs = srctools._pyinstaller:get_hook_dirs',
-        ]
-    },
-    python_requires='>=3.6, <4',
-    install_requires=[
-        # In stdlib after this.
-        "importlib_resources;python_version<'3.7'",
-        "contextvars;python_version<'3.7'",
-        "attrs",
-    ],
-    extras_require={
-        'wx': ['wxPython'],  # VTF support.
-        'cy': ['cython'],  # Force Cython so extensions can be buildable.
-        'test': [
-            'pytest',
-            'pytest-datadir',
-            'pytest-regressions',
-        ],
-    }
 )
