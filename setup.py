@@ -60,6 +60,8 @@ setup(
             sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
+            ] if WIN else [
+                '-std=c++11',  # Needed for Mac to work
             ],
         ),
     ],
