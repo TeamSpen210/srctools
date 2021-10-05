@@ -80,7 +80,7 @@ class HelperHalfGridSnap(Helper):
     This causes the entity to snap to half a grid.
     This argument doesn't use () in Valve's files.
     """
-    TYPE: ClassVar = HelperTypes.HALF_GRID_SNAP
+    TYPE: ClassVar[HelperTypes] = HelperTypes.HALF_GRID_SNAP
 
 
 @attr.define(init=False)
@@ -89,7 +89,7 @@ class HelperSize(Helper):
 
     This sets the bbox for the entity.
     """
-    TYPE: ClassVar = HelperTypes.CUBE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.CUBE
     bbox_min: Vec
     bbox_max: Vec
 
@@ -128,13 +128,13 @@ class HelperSize(Helper):
 @attr.define
 class HelperBBox(HelperSize):
     """Helper implementation for bbox()."""
-    TYPE: ClassVar = HelperTypes.BBOX
+    TYPE: ClassVar[HelperTypes] = HelperTypes.BBOX
 
 
 @attr.define
 class HelperRenderColor(Helper):
     """Helper implementation for color()."""
-    TYPE: ClassVar = HelperTypes.TINT
+    TYPE: ClassVar[HelperTypes] = HelperTypes.TINT
 
     r: float
     g: float
@@ -145,7 +145,7 @@ class HelperRenderColor(Helper):
         return [HelperTypes.TINT]
 
     @classmethod
-    def parse(cls: 'type[HelperRenderColor]', args: List[str]) -> 'HelperRenderColor':
+    def parse(cls, args: List[str]) -> 'HelperRenderColor':
         """Parse color(R G B)."""
         try:
             [tint] = args
@@ -166,7 +166,7 @@ class HelperRenderColor(Helper):
 @attr.define
 class HelperSphere(Helper):
     """Helper implementation for sphere()."""
-    TYPE: ClassVar = HelperTypes.SPHERE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.SPHERE
     r: float
     g: float
     b: float
@@ -213,7 +213,7 @@ class HelperLine(Helper):
     If the second pair are present it does the same for those for the other
     line end.
     """
-    TYPE: ClassVar = HelperTypes.LINE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.LINE
 
     r: float
     g: float
@@ -263,7 +263,7 @@ class HelperLine(Helper):
 @attr.define
 class HelperFrustum(Helper):
     """Helper for env_projectedtexture visuals."""
-    TYPE: ClassVar = HelperTypes.FRUSTUM
+    TYPE: ClassVar[HelperTypes] = HelperTypes.FRUSTUM
 
     fov: Union[str, float]
     near_z: Union[str, float]
@@ -350,7 +350,7 @@ class HelperCylinder(HelperLine):
 
     Cylinder has the same sort of arguments as line(), plus radii for both positions.
     """
-    TYPE: ClassVar = HelperTypes.CYLINDER
+    TYPE: ClassVar[HelperTypes] = HelperTypes.CYLINDER
 
     start_radius: Optional[str] = None
     end_radius: Optional[str] = None
@@ -403,26 +403,26 @@ class HelperCylinder(HelperLine):
 
 class HelperOrigin(_HelperOneOptional):
     """Parse the origin() helper."""
-    TYPE: ClassVar = HelperTypes.ORIGIN
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ORIGIN
     _DEFAULT = 'origin'
 
 
 class HelperVecLine(_HelperOneOptional):
     """A variant of line() which draws a line to the entity."""
-    TYPE: ClassVar = HelperTypes.VECLINE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.VECLINE
     _DEFAULT = 'origin'
 
 
 class HelperBrushSides(_HelperOneOptional):
     """Highlights brush faces in a space-sepearated keyvalue."""
-    TYPE: ClassVar = HelperTypes.BRUSH_SIDES
+    TYPE: ClassVar[HelperTypes] = HelperTypes.BRUSH_SIDES
     _DEFAULT = 'sides'
 
 
 @attr.define
 class HelperBoundingBox(Helper):
     """Displays bounding box between two keyvalues."""
-    TYPE: ClassVar = HelperTypes.BOUNDING_BOX_HELPER
+    TYPE: ClassVar[HelperTypes] = HelperTypes.BOUNDING_BOX_HELPER
 
     min: str
     max: str
@@ -446,12 +446,12 @@ class HelperBoundingBox(Helper):
 
 class HelperSweptPlayerHull(Helper):
     """Draws the movement of a player-sized bounding box from A to B."""
-    TYPE: ClassVar = HelperTypes.SWEPT_HULL
+    TYPE: ClassVar[HelperTypes] = HelperTypes.SWEPT_HULL
 
 
 class HelperOrientedBBox(HelperBoundingBox):
     """A bounding box oriented to angles."""
-    TYPE: ClassVar = HelperTypes.ORIENTED_BBOX
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ORIENTED_BBOX
 
 
 @attr.define
@@ -517,7 +517,7 @@ class HelperSprite(Helper):
 
 class HelperEnvSprite(HelperSprite):
     """Variant of iconsprite() specifically for env_sprite."""
-    TYPE = HelperTypes.ENT_SPRITE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_SPRITE
 
 
 @attr.define
@@ -526,8 +526,7 @@ class HelperModel(Helper):
 
     If the model is not provided, the 'model' key is used.
     """
-    TYPE: ClassVar = HelperTypes.MODEL
-
+    TYPE: ClassVar[HelperTypes] = HelperTypes.MODEL
     model: Optional[str]
 
     def overrides(self) -> Collection[HelperTypes]:
@@ -582,7 +581,7 @@ class HelperModel(Helper):
 
 class HelperModelProp(HelperModel):
     """Model helper which does not affect the bounding box."""
-    TYPE = HelperTypes.MODEL_PROP
+    TYPE: ClassVar[HelperTypes] = HelperTypes.MODEL_PROP
 
 
 # These are all specialised for a particular entity.
@@ -591,39 +590,39 @@ class HelperModelProp(HelperModel):
 
 class HelperModelLight(HelperModel):
     """Special model helper, with inverted pitch."""
-    TYPE = HelperTypes.MODEL_NEG_PITCH
+    TYPE: ClassVar[HelperTypes] = HelperTypes.MODEL_NEG_PITCH
 
 
 
 class HelperInstance(Helper):
     """Specialized helper for func_instance."""
-    TYPE = HelperTypes.ENT_INSTANCE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_INSTANCE
 
 
 class HelperDecal(Helper):
     """Specialized helper for infodecal."""
-    TYPE = HelperTypes.ENT_DECAL
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_DECAL
 
 
 class HelperOverlay(Helper):
     """Specialized helper for env_overlay."""
-    TYPE = HelperTypes.ENT_OVERLAY
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_OVERLAY
 
 
 class HelperOverlayTransition(Helper):
     """Specialized helper for env_overlay_transition."""
-    TYPE = HelperTypes.ENT_OVERLAY_WATER
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_OVERLAY_WATER
 
 
 class HelperLight(Helper):
     """Specialized helper for omnidirectional lights."""
-    TYPE = HelperTypes.ENT_LIGHT
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT
 
 
 @attr.define
 class HelperLightSpot(Helper):
     """Specialized helper for displaying spotlight previews."""
-    TYPE: ClassVar = HelperTypes.ENT_LIGHT_CONE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT_CONE
 
     inner: str
     outer: str
@@ -672,7 +671,7 @@ class HelperLightSpot(Helper):
 @attr.define
 class HelperLightSpotBlackMesa(Helper):
     """A new helper for Black Mesa's new spot entity."""
-    TYPE: ClassVar = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
 
     theta: str
     phi: str
@@ -694,7 +693,7 @@ class HelperLightSpotBlackMesa(Helper):
 
 class HelperRope(Helper):
     """Specialized helper for displaying move_rope and keyframe_rope."""
-    TYPE = HelperTypes.ENT_ROPE
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_ROPE
 
 
 class HelperTrack(Helper):
@@ -702,17 +701,17 @@ class HelperTrack(Helper):
 
     This no longer does anything.
     """
-    TYPE = HelperTypes.ENT_TRACK
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_TRACK
 
 
 class HelperBreakableSurf(Helper):
     """Specialized helper for func_breakable_surf."""
-    TYPE = HelperTypes.ENT_BREAKABLE_SURF
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_BREAKABLE_SURF
 
 
 class HelperWorldText(Helper):
     """Specialized helper for point_worldtext."""
-    TYPE = HelperTypes.ENT_WORLDTEXT
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_WORLDTEXT
 
 
 # Extensions to the FGD format.
@@ -720,7 +719,7 @@ class HelperWorldText(Helper):
 @attr.define
 class HelperExtAppliesTo(Helper):
     """Allows specifying "tags" to indicate an entity is only used in certain games."""
-    TYPE: ClassVar = HelperTypes.EXT_APPLIES_TO
+    TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_APPLIES_TO
     IS_EXTENSION: ClassVar[bool] = True
 
     tags: List[str] = attr.Factory(list)
@@ -736,7 +735,7 @@ class HelperExtAppliesTo(Helper):
 @attr.define
 class HelperExtOrderBy(Helper):
     """Reorder keyvalues. Args = names in order."""
-    TYPE: ClassVar = HelperTypes.EXT_ORDERBY
+    TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_ORDERBY
     IS_EXTENSION: ClassVar[bool] = True
 
     order: List[str] = attr.Factory(list)
@@ -754,8 +753,8 @@ class HelperExtAutoVisgroups(Helper):
     """Convenience for parsing, adds @AutoVisgroups to entities.
 
     'Auto' is implied at the start."""
-    TYPE: ClassVar = HelperTypes.EXT_AUTO_VISGROUP
-    IS_EXTENSION: ClassVar = True
+    TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_AUTO_VISGROUP
+    IS_EXTENSION: ClassVar[bool] = True
 
     path: List[str] = attr.Factory(list)
 

@@ -299,7 +299,8 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         """Popitem() raises, since no items are in EmptyMapping."""
         raise KeyError('EmptyMapping is empty')
 
-class _EmptySetView:
+
+class _EmptySetView(AbstractSet[Any]):
     """Common code between EmptyKeysView and EmptyItemsView."""
     __slots__ = ()
 
@@ -374,16 +375,6 @@ class _EmptyKeysView(_EmptySetView, KeysView[Any]):
     def __reduce__(self) -> str:
         return 'EmptyKeysView'
 
-    # TODO: MyPy drops the generic vars if these are inherited.
-    __lt__ = _EmptySetView.__ne__
-    __ge__ = _EmptySetView.__eq__
-    __rand__ = _EmptySetView.__and__
-    __ror__ = _EmptySetView.__or__
-    __sub__ = _EmptySetView.__and__
-    __rsub__ = _EmptySetView.__or__
-    __xor__ = _EmptySetView.__or__
-    __rxor__ = _EmptySetView.__or__
-
 
 class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
     """A Mapping view implementation that always acts empty, and supports set operations."""
@@ -394,15 +385,6 @@ class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
 
     def __reduce__(self) -> str:
         return 'EmptyItemsView'
-
-    __lt__ = _EmptySetView.__ne__
-    __ge__ = _EmptySetView.__eq__
-    __rand__ = _EmptySetView.__and__
-    __ror__ = _EmptySetView.__or__
-    __sub__ = _EmptySetView.__and__
-    __rsub__ = _EmptySetView.__or__
-    __xor__ = _EmptySetView.__or__
-    __rxor__ = _EmptySetView.__or__
 
 
 class _EmptyValuesView(ValuesView[Any]):

@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator,
+    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator, cast,
 )
 from io import BytesIO
 from enum import Enum, Flag
@@ -591,7 +591,7 @@ class Face:
     same_dir_as_plane: bool
     on_node: bool
     edges: List[Edge]
-    texinfo: TexInfo
+    texinfo: Optional[TexInfo]
     _dispinfo_ind: int  # TODO
     surf_fog_volume_id: int
     light_styles: bytes
@@ -976,6 +976,7 @@ class ParsedLump(Generic[T]):
             pass
         if self._read is None:
             raise TypeError('ParsedLump.__set_name__ was never called!')
+        result: T
         if isinstance(self.lump, bytes):  # Game lump
             gm_lump = instance.game_lumps[self.lump]
             result = self._read(instance, gm_lump.version, gm_lump.data)
@@ -983,7 +984,7 @@ class ParsedLump(Generic[T]):
             data = instance.lumps[self.lump].data
             result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
-            result = list(result)  # type: ignore
+            result = cast(T, list(result))
 
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:
@@ -1111,13 +1112,18 @@ class BSP:
             lump_offset = 4
 
             for _ in range(lump_count):
+                game_lump_id: bytes
+                flags: int
+                glump_version: int
+                file_off: int
+                file_len: int
                 (
                     game_lump_id,
                     flags,
                     glump_version,
                     file_off,
                     file_len,
-                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)  # type: bytes, int, int, int, int
+                ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
                 lump_offset += GameLump.ST.size
 
                 file.seek(file_off)
@@ -1143,7 +1149,7 @@ class BSP:
             except KeyError:
                 pass
             else:
-                lump_result = self._save_funcs[lump_or_game](self, data)
+                lump_result: bytes = cast(bytes, self._save_funcs[lump_or_game](self, data))
                 # Convenience, yield to accumulate into bytes.
                 if inspect.isgenerator(lump_result):
                     buf = BytesIO()
@@ -1977,7 +1983,7 @@ class BSP:
         """Read the raw binary as writable zip archive."""
         zipfile = ZipFile(BytesIO(data), mode='a')
         if self.filename is not None:
-            zipfile.filename = self.filename
+            zipfile.filename = os.fspath(self.filename)
         return zipfile
 
     def _lmp_write_pakfile(self, file: ZipFile) -> bytes:

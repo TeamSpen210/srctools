@@ -181,7 +181,10 @@ def scale_down(
         raise ValueError(f"Unknown filter {filt}!")
 
 
-def saveload_rgba(mode: str):
+def saveload_rgba(mode: str) -> Tuple[
+    Callable[[array.array, bytes, int, int], None],
+    Callable[[array.array, bytearray, int, int], None],
+]:
     """Make the RGB save and load functions."""
     r_off = mode.index('r')
     g_off = mode.index('g')
@@ -189,36 +192,40 @@ def saveload_rgba(mode: str):
     try:
         a_off = mode.index('a')
     except ValueError:
-        def loader(pixels: array.array, data: bytes, width: int, height: int) -> None:
+        def loader_rgba(pixels: array.array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[3 * offset + r_off]
                 pixels[4 * offset + 1] = data[3 * offset + g_off]
                 pixels[4 * offset + 2] = data[3 * offset + b_off]
                 pixels[4 * offset + 3] = 255
 
-        def saver(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgba(pixels: array.array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
                 data[3 * offset + b_off] = pixels[4 * offset + 2]
+
+        loader_rgba.__name__ = 'load_' + mode
+        saver_rgba.__name__ = 'save_' + mode
+        return loader_rgba, saver_rgba
     else:
-        def loader(pixels: array.array, data: bytes, width: int, height: int) -> None:
+        def loader_rgb(pixels: array.array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[4 * offset + r_off]
                 pixels[4 * offset + 1] = data[4 * offset + g_off]
                 pixels[4 * offset + 2] = data[4 * offset + b_off]
                 pixels[4 * offset + 3] = data[4 * offset + a_off]
 
-        def saver(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgb(pixels: array.array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
                 data[3 * offset + b_off] = pixels[4 * offset + 2]
                 data[3 * offset + a_off] = pixels[4 * offset + 3]
 
-    loader.__name__ = 'load_' + mode
-    saver.__name__ = 'save_' + mode
-    return loader, saver
+        loader_rgb.__name__ = 'load_' + mode
+        saver_rgb.__name__ = 'save_' + mode
+        return loader_rgb, saver_rgb
 
 
 load_rgba8888, save_rgba8888 = saveload_rgba('rgba')
