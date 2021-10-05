@@ -211,17 +211,17 @@ def _make_val_prop(val_type: ValueType, typ: type) -> property:
         return self._read_val(val_type)
 
     if val_type.name[0].casefold() in 'aeiou':
-        desc = f' the value as an {val_type.name.lower()}.'
+        desc = f'an {val_type.name.lower()}.'
     else:
-        desc = f' the value as a {val_type.name.lower()}.'
-    getter.__doc__ = 'Return' + desc
-    setter.__doc__ = 'Convert' + desc
+        desc = f'a {val_type.name.lower()}.'
+    getter.__doc__ = 'Return the value as ' + desc
+    setter.__doc__ = 'Convert the value to ' + desc
     getter.__annotations__['return'] = typ
     setter.__annotations__['value'] = typ
     return property(
         fget=getter,
         fset=setter,
-        doc='Access' + desc,
+        doc='Access the value as ' + desc,
     )
 
 
