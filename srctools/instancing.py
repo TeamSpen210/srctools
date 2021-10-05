@@ -308,9 +308,9 @@ def collapse_one(
             else:
                 visgroup.child_groups.append(new_group)
     if isinstance(visgroup, VisGroup):
-        ungrouped_group = [visgroup.id]
+        ungrouped_group = {visgroup.id}
     else:
-        ungrouped_group = []
+        ungrouped_group = set()
 
     for old_brush in file.vmf.brushes:
         if old_brush.hidden or not old_brush.vis_shown:
@@ -321,10 +321,10 @@ def collapse_one(
         new_brush.localise(origin, orient)
         # Convert across the IDs.
         if visgroup is not False:
-            new_brush.visgroup_ids = [
+            new_brush.visgroup_ids = {
                 inst.visgroup_ids[old]
                 for old in new_brush.visgroup_ids
-            ] or ungrouped_group.copy()
+            } or ungrouped_group.copy()
 
     # Before adding the ents, apply instance inputs.
     folded_inst_name = inst.name.casefold()
