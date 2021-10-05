@@ -7,3 +7,13 @@ requires-python = ">=3.6"
 [build-system]
 requires = ["setuptools>=42", "wheel", "cython"]
 build-backend = "setuptools.build_meta"
+
+[tool.pyright]
+include = [
+	"srctools/"
+	]
+exclude = [
+	# Tests deliberately do incorrect things to test error handling, so ignore types.
+	"srctools/test/",
+	"**/__pycache__"
+	]
