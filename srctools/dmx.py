@@ -423,7 +423,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def _write_val(self, newtype: ValueType, value: Value) -> None:
         """Change the type of the atribute."""
         self._typ = newtype
-        self._value = value  # type: ignore # This changes the generic...
+        self._value = CONVERSIONS[newtype](value)  # type: ignore # This changes the generic...
 
     def __repr__(self) -> str:
         return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
