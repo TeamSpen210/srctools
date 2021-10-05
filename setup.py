@@ -4,6 +4,7 @@ import sys
 import os
 
 WIN = sys.platform.startswith('win')
+MAC = sys.platform.startswith('darwin')
 
 SQUISH_CPP = [
     'libsquish/alpha.cpp',
@@ -18,6 +19,13 @@ SQUISH_CPP = [
 ]
 # Mandatory in CI!
 optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
+
+if WIN:
+    openmp = ['/openmp']
+elif MAC:
+    openmp = []  # Not supported by system Clang.
+else:
+    openmp = ['-fopenmp']
 
 setup(
     packages=find_packages(include=['srctools', 'srctools.*']),
@@ -40,12 +48,9 @@ setup(
                 "srctools/_cy_vtf_readwrite.pyx",
             ] + SQUISH_CPP,
             extra_compile_args=[
-                '/openmp',
                 # '/FAs',  # MS ASM dump
-            ] if WIN else [
-                '-fopenmp',
-            ],
-            extra_link_args=[] if WIN else ['-fopenmp'],
+            ] + openmp,
+            extra_link_args=openmp,
         ),
         Extension(
             "srctools._math",
@@ -55,8 +60,6 @@ setup(
             sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
-            ] if WIN else [
-
             ],
         ),
     ],
