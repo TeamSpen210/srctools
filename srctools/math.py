@@ -42,12 +42,11 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, Type, TYPE_CHECKING,
-    Dict, NamedTuple,
-    Iterator, Iterable, SupportsRound, Optional,
+    Union, Tuple, overload, cast, Type, TYPE_CHECKING,
+    NamedTuple, Iterator, Iterable, SupportsRound, Optional
 )
 if TYPE_CHECKING:
-    from typing import final
+    from typing import final, Literal
 else:
     globals()['final'] = lambda x: x
 
@@ -133,6 +132,41 @@ class Vec_tuple(NamedTuple):
     y: float
     z: float
 
+
+if TYPE_CHECKING:
+    class _InvAxis:
+        """Dummy class to type-check Vec.INV_AXIS"""
+        @overload
+        def __getitem__(self, item: Literal['x']) -> tuple[Literal['y', 'z']]: ...
+        @overload
+        def __getitem__(self, item: Literal['y']) -> tuple[Literal['x', 'z']]: ...
+        @overload
+        def __getitem__(self, item: Literal['z']) -> tuple[Literal['x', 'y']]: ...
+
+        @overload
+        def __getitem__(self, item: tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
+        @overload
+        def __getitem__(self, item: tuple[Literal['z'], Literal['y']]) -> Literal['x']: ...
+
+        @overload
+        def __getitem__(self, item: tuple[Literal['x'], Literal['z']]) -> Literal['y']: ...
+        @overload
+        def __getitem__(self, item: tuple[Literal['z'], Literal['x']]) -> Literal['y']: ...
+
+        @overload
+        def __getitem__(self, item: tuple[Literal['x'], Literal['y']]) -> Literal['z']: ...
+        @overload
+        def __getitem__(self, item: tuple[Literal['y'], Literal['x']]) -> Literal['z']: ...
+
+        @overload
+        def __getitem__(self, item: str) -> tuple[str, str]: ...
+        @overload
+        def __getitem__(self, item: tuple[str, str]) -> str: ...
+
+        def __getitem__(self, item):
+            return None  # type: ignore
+else:
+    globals()['_InvAxis'] = None
 
 # Use template code to reduce duplication in the various magic number methods.
 
@@ -269,8 +303,7 @@ class Vec(SupportsRound['Vec']):
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
     __match_args__ = __slots__ = ('x', 'y', 'z')
-    # Make type checkers understand that you can't do str->str or tuple->tuple.
-    INV_AXIS: Union[Dict[str, Tuple[str, str]], Dict[Tuple[str, str], str]] = {
+    INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
         'z': ('x', 'y'),
@@ -282,7 +315,7 @@ class Vec(SupportsRound['Vec']):
         ('z', 'y'): 'x',
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
-    }
+    })
 
     # Vectors pointing in all cardinal directions
     N = north = y_pos = Vec_tuple(0, 1, 0)
@@ -775,7 +808,7 @@ class Vec(SupportsRound['Vec']):
         else:
             return NotImplemented
 
-    def __gt__(self,other: AnyVec) -> bool:
+    def __gt__(self, other: AnyVec) -> bool:
         """A>B test.
 
         Two Vectors are compared based on the axes.
@@ -790,9 +823,9 @@ class Vec(SupportsRound['Vec']):
             )
         elif isinstance(other, tuple) and len(other) == 3:
             return (
-                (self.x > other[0]) > 1e-6 and
-                (self.y > other[1]) > 1e-6 and
-                (self.z > other[2]) > 1e-6
+                (self.x - other[0]) > 1e-6 and
+                (self.y - other[1]) > 1e-6 and
+                (self.z - other[2]) > 1e-6
             )
         else:
             return NotImplemented
