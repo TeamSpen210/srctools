@@ -17,3 +17,5 @@ exclude = [
 	"srctools/test/",
 	"**/__pycache__"
 	]
+# We want to do conversions when setting.
+reportPropertyTypeMismatch = false

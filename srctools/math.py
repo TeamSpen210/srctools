@@ -46,7 +46,7 @@ from typing import (
     NamedTuple, Iterator, Iterable, SupportsRound, Optional
 )
 if TYPE_CHECKING:
-    from typing import final, Literal
+    from typing import final, Literal, Any
 else:
     globals()['final'] = lambda x: x
 
@@ -164,7 +164,7 @@ if TYPE_CHECKING:
         def __getitem__(self, item: tuple[str, str]) -> str: ...
 
         def __getitem__(self, item):
-            return None  # type: ignore
+            return cast(Any, '')
 else:
     globals()['_InvAxis'] = None
 

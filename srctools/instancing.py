@@ -330,10 +330,10 @@ def collapse_one(
     folded_inst_name = inst.name.casefold()
     for ent in vmf.entities:
         for out in ent.outputs:
-            if out.target.casefold() != folded_inst_name and out.inst_in:
+            if out.target.casefold() != folded_inst_name or out.inst_in is None:
                 continue
             try:
-                proxy_out = file.proxy_inputs[out.inst_in, out.input]
+                proxy_out = file.proxy_inputs[out.inst_in, out.input]  # type: ignore
             except KeyError:
                 # Not an error, could be another instance with our name.
                 continue
@@ -389,7 +389,7 @@ def collapse_one(
             ent_type = fgd[classname]
         except KeyError:
             ent_type = base_entity
-        break
+
         # Set a hidden attribute to keep track of recursive instancing.
         if classname.casefold() == 'func_instance':
             setattr(new_ent, RECUR_COUNT_ATTR, inst.recur_count + 1)
@@ -457,6 +457,9 @@ def collapse_one(
             out.target = inst.fixup_name(inst.fixup.substitute(out.target, ''))
 
     for out in inst.outputs:
+        # Non-instance output, ignore - on regular ents it'd never fire.
+        if out.inst_out is None:
+            continue
         try:
             ent_id, prox_out = file.proxy_outputs[out.inst_out.casefold(), out.output.casefold()]
         except KeyError:

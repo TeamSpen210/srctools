@@ -129,7 +129,7 @@ class Game:
             # in WOW64 mode.
             machine = os.environ.get(
                 "PROCESSOR_ARCHITEW6432",
-                os.environ.get('PROCESSOR_ARCHITECTURE')
+                os.environ.get('PROCESSOR_ARCHITECTURE', '')
             )
             if machine.endswith('64'):
                 bit_folder = folder / 'win64'

@@ -633,7 +633,7 @@ class VTF:
             mipmap_count,
             low_format,
             low_width, low_height,
-        ) = _HEADER.unpack(file.read(_HEADER.size))  # type: int, int, int, int, int, int, float, float, float, float, int, int, int, int, int
+        ) = _HEADER.unpack(file.read(_HEADER.size))
 
         vtf._frames = {}
 
@@ -658,7 +658,8 @@ class VTF:
         if vtf.depth <= 0:
             vtf.depth = 1
 
-        low_res_offset = high_res_offset = None  # type: Optional[int]
+        low_res_offset: Optional[int] = None
+        high_res_offset: Optional[int] = None
 
         vtf.resources = {}
         vtf.sheet_info = {}

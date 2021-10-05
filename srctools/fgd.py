@@ -1732,7 +1732,7 @@ class EntityDef:
             inp_count,
             out_count,
             clsname_length,
-        ] = struct_read(_fmt_ent_header, file)  # type: int, int, int, int, int, int
+        ] = struct_read(_fmt_ent_header, file)
 
         ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
         ent.classname = file.read(clsname_length).decode('utf8')
