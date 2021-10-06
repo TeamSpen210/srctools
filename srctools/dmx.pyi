@@ -4,6 +4,7 @@ so it's better done in type stub form.
 from enum import Enum
 from collections.abc import Iterable, Iterator, Mapping
 from typing import NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
+from typing_extensions import TypeAlias
 from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
 from srctools import Matrix, Angle
 import builtins
@@ -66,7 +67,7 @@ class AngleTup(NamedTuple):
     roll: float
 
 Time = NewType('Time', float)
-Value = (
+Value: TypeAlias = (
     int | float | bool | str | bytes |
     Color | Time |
     Vec2 | Vec3 |
@@ -346,51 +347,71 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def binary(cls, name: str, value: builtins.bytes) -> Attribute[builtins.bytes]: ...
 
+    @overload
     @classmethod
-    def vec2(
-        cls, name: str,
-        x: builtins.float | Iterable[builtins.float] = 0.0,
-        y: builtins.float = 0.0,
-    ) -> Attribute[Vec2]: ...
+    def vec2(cls, name: str, it: Iterable[builtins.float], /) -> Attribute[Vec2]: ...
+    @overload
+    @classmethod
+    def vec2(cls, name: str, /, x: builtins.float = 0.0, y: builtins.float = 0.0) -> Attribute[Vec2]: ...
 
+    @overload
+    @classmethod
+    def vec3(cls, name: str, it: Iterable[builtins.float], /) -> Attribute[Vec3]: ...
+    @overload
     @classmethod
     def vec3(
-        cls, name: str,
-        x: builtins.float | Iterable[builtins.float] = 0.0,
+        cls, name: str, /,
+        x: builtins.float = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
     ) -> Attribute[Vec3]: ...
 
+    @overload
+    @classmethod
+    def vec4(cls, name: str, __it: Iterable[builtins.float], /) -> Attribute[Vec4]: ...
+    @overload
     @classmethod
     def vec4(
-        cls, name: str,
+        cls, name: str, /,
         x: builtins.float | Iterable[builtins.float] = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
     ) -> Attribute[Vec4]: ...
 
+    @overload
+    @classmethod
+    def vec4(cls, name: str, __it: Iterable[builtins.int], /) -> Attribute[Color]: ...
+    @overload
     @classmethod
     def color(
-        cls, name: str,
-        r: builtins.int | Iterable[builtins.int] = 0,
+        cls, name: str, /,
+        r: builtins.int = 0,
         g: builtins.int = 0,
         b: builtins.int = 0,
         a: builtins.int = 255,
-    ) -> 'Attribute[Color]': ...
+    ) -> Attribute[Color]: ...
 
+    @overload
+    @classmethod
+    def angle(cls, name: str, __it: Iterable[builtins.float], /) -> Attribute[AngleTup]: ...
+    @overload
     @classmethod
     def angle(
-        cls, name: str,
-        pitch: builtins.float | Iterable[builtins.float] = 0.0,
+        cls, name: str, /,
+        pitch: builtins.float = 0.0,
         yaw: builtins.float = 0.0,
         roll: builtins.float = 0.0,
-    ) -> Attribute[Vec4]: ...
+    ) -> Attribute[AngleTup]: ...
 
+    @overload
+    @classmethod
+    def quaternion(cls, name: str, __it: Iterable[builtins.float], /) -> Attribute[Quaternion]: ...
+    @overload
     @classmethod
     def quaternion(
-        cls, name: str,
-        x: builtins.float | Iterable[builtins.float] = 0.0,
+        cls, name: str, /,
+        x: builtins.float = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
         w: builtins.float = 0.0,
