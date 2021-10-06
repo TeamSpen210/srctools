@@ -348,64 +348,76 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def vec2(cls, name, x=0.0, y=0.0) -> 'Attribute[Vec2]':
         """Create an attribute with a 2D vector."""
-        if not isinstance(x, (int, float)):
+        if isinstance(x, (int, float)):
+            x_ = float(x)
+        else:
             it = iter(x)
-            x = float(next(it, 0.0))
+            x_ = float(next(it, 0.0))
             y = float(next(it, y))
-        return Attribute(name, ValueType.VEC2, Vec2(x, y))
+        return Attribute(name, ValueType.VEC2, Vec2(x_, y))
 
     @classmethod
     def vec3(cls, name, x=0.0, y=0.0, z=0.0) -> 'Attribute[Vec3]':
         """Create an attribute with a 3D vector."""
-        if not isinstance(x, (int, float)):
+        if isinstance(x, (int, float)):
+            x_ = float(x)
+        else:
             it = iter(x)
-            x = float(next(it, 0.0))
+            x_ = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
-        return Attribute(name, ValueType.VEC3, Vec3(x, y, z))
+        return Attribute(name, ValueType.VEC3, Vec3(x_, y, z))
 
     @classmethod
     def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0) -> 'Attribute[Vec4]':
         """Create an attribute with a 4D vector."""
-        if not isinstance(x, (int, float)):
+        if isinstance(x, (int, float)):
+            x_ = float(x)
+        else:
             it = iter(x)
-            x = float(next(it, 0.0))
+            x_ = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return Attribute(name, ValueType.VEC4, Vec4(x, y, z, w))
+        return Attribute(name, ValueType.VEC4, Vec4(x_, y, z, w))
 
     @classmethod
     def color(cls, name, r=0, g=0, b=0, a=255) -> 'Attribute[Color]':
         """Create an attribute with a color."""
-        if not isinstance(r, (int, float)):
+        if isinstance(r, int):
+            r_ = r
+        else:
             it = iter(r)
-            r = int(next(it, 0.0))
+            r_ = int(next(it, 0))
             g = int(next(it, g))
             b = int(next(it, b))
             a = int(next(it, a))
-        return Attribute(name, ValueType.COLOR, Color(r, g, b, a))
+        return Attribute(name, ValueType.COLOR, Color(r_, g, b, a))
 
     @classmethod
-    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0) -> 'Attribute[Angle]':
+    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0) -> 'Attribute[AngleTup]':
         """Create an attribute with an Euler angle."""
-        if not isinstance(pitch, (int, float)):
+        if isinstance(pitch, (int, float)):
+            pitch_ = float(pitch)
+        else:
             it = iter(pitch)
-            pitch = float(next(it, 0.0))
+            pitch_ = float(next(it, 0.0))
             yaw = float(next(it, yaw))
             roll = float(next(it, roll))
-        return Attribute(name, ValueType.ANGLE, AngleTup(pitch, yaw, roll))
+        return Attribute(name, ValueType.ANGLE, AngleTup(pitch_, yaw, roll))
 
     @classmethod
     def quaternion(cls, name: str, x=0.0, y=0.0, z=0.0, w=1.0) -> 'Attribute[Quaternion]':
         """Create an attribute with a quaternion rotation."""
-        if not isinstance(x, (int, float)):
+        if isinstance(x, (int, float)):
+            x_ = float(x)
+        else:
             it = iter(x)
-            x = float(next(it, 0.0))
+            x_ = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
             w = float(next(it, w))
-        return Attribute(name, ValueType.QUATERNION, Quaternion(x, y, z, w))
+        return Attribute(name, ValueType.QUATERNION, Quaternion(x_, y, z, w))
 
     def _read_val(self, newtype: ValueType) -> Value:
         """Convert to the desired type."""
