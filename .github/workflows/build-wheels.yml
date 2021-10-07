@@ -46,7 +46,9 @@ jobs:
           python-version: '3.9'
 
       - name: Build sdist
-        run: python setup.py build sdist
+        # First run develop, to ensure versions are built.
+        run: |
+          python setup.py develop sdist
 
       - uses: actions/upload-artifact@v2
         with:
