@@ -10,8 +10,8 @@ requires = [
 	]
 build-backend = "setuptools.build_meta"
 
-[tool.versioningit]
-default-version = '0+unknown'
+[tool.versioningit.vcs]
+default-tag = "v0.0.0"
 
 [tool.versioningit.tag2version]
 rmprefix = "postcompiler_"  # For old tags
