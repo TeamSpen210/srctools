@@ -1,5 +1,6 @@
 import itertools as _itertools
 import os as _os
+import sys as _sys
 from typing import (
     Type, TypeVar, Union, Any, NoReturn, Optional, overload,
     Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
@@ -9,8 +10,12 @@ from typing import (
 from types import TracebackType
 from collections import deque
 
+from ._version import __version__
+del _sys.modules[_version.__name__]
+del _version  # Discard the useless module.
 
 __all__ = [
+    '__version__',
     'Vec', 'Vec_tuple', 'parse_vec_str', 'lerp',
     'Angle', 'Matrix',
 

@@ -43,8 +43,6 @@ build/
 dist/
 srctools.egg-info/
 
-# Built output
-srctools-*/
 
 # C extensions
 *.so
@@ -103,3 +101,6 @@ target/
 srctools/*.html
 
 .cache
+
+# Versions of package and postcompiler
+_version.py

@@ -1,12 +1,26 @@
 [project]
 requires-python = ">=3.6"
 
-# Aside - in pyproject.toml you should always specify minimal build
-# system options, like this:
-
 [build-system]
-requires = ["setuptools>=42", "wheel", "cython"]
+requires = [
+	"setuptools>=42",
+	"wheel",
+	"cython",
+	"versioningit ~= 0.3.0"
+	]
 build-backend = "setuptools.build_meta"
+
+[tool.versioningit.tag2version]
+rmprefix = "postcompiler_"  # For old tags
+
+[tool.versioningit.format]
+distance = "{version}.dev_{distance}+{rev}"
+dirty = "{version}+dirty_{build_date:%Y%m%d}"
+distance-dirty = "{version}.dev_{distance}+{rev}.dirty_{build_date:%Y%m%d}"
+
+[tool.versioningit.write]
+method = "basic"
+file = "srctools/_version.py"
 
 [tool.pyright]
 include = [
