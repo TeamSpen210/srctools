@@ -37,6 +37,8 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: true
+          # Need full depth to have tags.
+          fetch-depth: 0
 
       - uses: actions/setup-python@v2
         name: Install Python
