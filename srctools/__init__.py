@@ -10,10 +10,14 @@ from typing import (
 from types import TracebackType
 from collections import deque
 
-from ._version import __version__
-# Discard the now-useless module.
-del _sys.modules[_version.__name__] # noqa
-del _version # noqa
+try:
+    from ._version import __version__
+except ImportError:
+    __version__ = '<unknown>'
+else:
+    # Discard the now-useless module.
+    del _sys.modules[_version.__name__] # noqa
+    del _version # noqa
 
 __all__ = [
     '__version__',
