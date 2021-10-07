@@ -11,8 +11,9 @@ from types import TracebackType
 from collections import deque
 
 from ._version import __version__
-del _sys.modules[_version.__name__]
-del _version  # Discard the useless module.
+# Discard the now-useless module.
+del _sys.modules[_version.__name__] # noqa
+del _version # noqa
 
 __all__ = [
     '__version__',
