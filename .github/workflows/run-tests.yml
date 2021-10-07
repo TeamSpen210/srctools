@@ -28,7 +28,7 @@ jobs:
     - name: Install dependencies
       run: |
         python -m pip install --upgrade pip setuptools wheel
-        python -m pip install flake8 pytest pytest-datadir pytest-regressions cython
+        python -m pip install flake8 pytest pytest-datadir pytest-regressions cython versioningit
     - name: Build package
       run: |
         python -m pip install --editable .
