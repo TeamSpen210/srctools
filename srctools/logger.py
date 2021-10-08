@@ -233,7 +233,6 @@ class NullStream(io.TextIOBase, TextIO):
 
 class NewLogRecord(logging.LogRecord):
     """Allow passing an alias and context for log modules."""
-    # This breaks %-formatting, so only set when init_logging() is called.
     alias: Optional[str] = None
 
     def getMessage(self):
@@ -243,7 +242,8 @@ class NewLogRecord(logging.LogRecord):
         """
         if self.alias is not None:
             self.module = self.alias
-        return str(self.msg)
+        # If this is one of our logs it {}-formats, otherwise it %-formats.
+        return super().getMessage()
 
 
 def init_logging(
