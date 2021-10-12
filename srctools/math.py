@@ -137,11 +137,11 @@ if TYPE_CHECKING:
     class _InvAxis:
         """Dummy class to type-check Vec.INV_AXIS"""
         @overload
-        def __getitem__(self, item: Literal['x']) -> tuple[Literal['y', 'z']]: ...
+        def __getitem__(self, item: Literal['x']) -> tuple[Literal['y'], Literal['z']]: ...
         @overload
-        def __getitem__(self, item: Literal['y']) -> tuple[Literal['x', 'z']]: ...
+        def __getitem__(self, item: Literal['y']) -> tuple[Literal['x'], Literal['z']]: ...
         @overload
-        def __getitem__(self, item: Literal['z']) -> tuple[Literal['x', 'y']]: ...
+        def __getitem__(self, item: Literal['z']) -> tuple[Literal['x'], Literal['y']]: ...
 
         @overload
         def __getitem__(self, item: tuple[Literal['y'], Literal['z']]) -> Literal['x']: ...
@@ -786,7 +786,7 @@ class Vec(SupportsRound['Vec']):
         else:
             return NotImplemented
 
-    def __le__(self,other: AnyVec) -> bool:
+    def __le__(self, other: AnyVec) -> bool:
         """A<=B test.
 
         Two Vectors are compared based on the axes.

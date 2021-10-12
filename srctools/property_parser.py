@@ -179,7 +179,7 @@ class Property:
         """Return the value of a leaf property."""
         if isinstance(self._value, list):
             warnings.warn("Accessing internal property block list is deprecated", DeprecationWarning, 2)
-        return self._value
+        return cast(str, self._value)
 
     @value.setter
     def value(self, value: str) -> None:
@@ -565,7 +565,7 @@ class Property:
                 if prop.has_children():
                     block_prop = True
                 else:
-                    return prop._value
+                    return cast(str, prop._value)
         if block_prop:
             warnings.warn('This will ignore block properties!', DeprecationWarning, stacklevel=3)
         if def_ is _NO_KEY_FOUND:
@@ -667,9 +667,9 @@ class Property:
                     current_prop = new_prop
             path = path[-1]
         try:
-            current_prop.find_key(path)._value = value
+            current_prop.find_key(path).value = value
         except NoKeyError:
-            current_prop._value.append(Property(path, value))
+            current_prop.append(Property(path, value))
 
     def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
@@ -696,13 +696,7 @@ class Property:
         else:
             return self._value
 
-    @overload
-    def as_array(self) -> List[str]: ...
-
-    @overload
-    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
-
-    def as_array(self, *, conv: Callable[[str], T]=str) -> List[T]:
+    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> List[T]:
         """Convert a property block into a list of values.
 
         If the property is a single keyvalue, the single value will be
@@ -850,7 +844,7 @@ class Property:
         """
         if not isinstance(self._value, list):
             raise ValueError("Can't index a Property without children!")
-        if isinstance(index, (int, slice)):
+        if isinstance(index, int) or isinstance(index, slice):
             self._value[index] = value
         else:
             if isinstance(value, Property):
@@ -893,7 +887,7 @@ class Property:
         else:
             raise ValueError("Can't clear a Property without children!")
 
-    def __add__(self, other: Union[Iterable['Property'], 'Property']):
+    def __add__(self, other: Iterable['Property']) -> 'Property':
         """Extend this property with the contents of another, or an iterable.
 
         This deep-copies the Property tree first.
@@ -919,7 +913,7 @@ class Property:
         else:
             return NotImplemented
 
-    def __iadd__(self, other: 'Property') -> 'Property':
+    def __iadd__(self, other: Iterable['Property']) -> 'Property':
         """Extend this property with the contents of another, or an iterable.
 
         Deprecated behaviour: This also accepts a non-root property, which will be appended

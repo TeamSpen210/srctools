@@ -3,7 +3,7 @@ so it's better done in type stub form.
 """
 from enum import Enum
 from collections.abc import Iterable, Iterator, Mapping
-from typing import NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
+from typing import Union, Optional, NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
 from typing_extensions import TypeAlias
 from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
 from srctools import Matrix, Angle
@@ -67,26 +67,26 @@ class AngleTup(NamedTuple):
     roll: float
 
 Time = NewType('Time', float)
-Value: TypeAlias = (
-    int | float | bool | str | bytes |
-    Color | Time |
-    Vec2 | Vec3 |
-    Vec4 |
-    AngleTup |
-    Quaternion |
-    Matrix |
-    Element | None
-)
+Value = Union[
+    int, float, bool, str, bytes,
+    Color, Time,
+    Vec2, Vec3,
+    Vec4,
+    AngleTup,
+    Quaternion,
+    Matrix,
+    Element, None
+]
 
 ValueT = TypeVar(
     'ValueT',
     int, float, bool, str, bytes,
     Color, Time,
     Vec2, Vec3, Vec4,
-    Angle,
+    AngleTup,
     Quaternion,
     Matrix,
-    Element | None,
+    Optional[Element],
 )
 
 TYPE_CONVERT: dict[tuple[ValueType, ValueType], Callable[[Value], Value]]
@@ -97,47 +97,11 @@ TYPE_TO_VALTYPE: dict[type, ValueType]
 def parse_vector(text: str, count: int) -> list[float]: ...
 
 @overload
-def deduce_type(value: list[bool]) -> tuple[ValueType, list[bool]]: ...
-@overload
-def deduce_type(value: list[int]) -> tuple[ValueType, list[int]]: ...
-@overload
-def deduce_type(value: list[float]) -> tuple[ValueType, list[float]]: ...
-@overload
-def deduce_type(value: list[object]) -> tuple[ValueType, list[ValueT]]: ...
-@overload
-def deduce_type(value: list[Iterable[float]]) -> tuple[ValueType, list[tuple]]: ...
-@overload
-def deduce_type(value: list[tuple]) -> tuple[ValueType, list[tuple]]: ...
-@overload
-def deduce_type(value: list[Angle | AngleTup]) -> tuple[ValueType, AngleTup]: ...
-@overload
-def deduce_type(value: list[ValueT]) -> tuple[ValueType, ValueT]: ...
-
-@overload
-def deduce_type(value: Angle | AngleTup) -> tuple[ValueType, AngleTup]: ...
+def deduce_type(value: list[ValueT]) -> tuple[ValueType, list[ValueT]]: ...
 @overload
 def deduce_type(value: ValueT) -> tuple[ValueType, ValueT]: ...
 
-@overload
-def deduce_type_array(value: list[bool]) -> tuple[ValueType, list[bool]]: ...
-@overload
-def deduce_type_array(value: list[int | bool]) -> tuple[ValueType, list[int]]: ...
-@overload
-def deduce_type_array(value: list[int | float | bool]) -> tuple[ValueType, list[float]]: ...
-@overload
-def deduce_type_array(value: list[object]) -> tuple[ValueType, list[ValueT]]: ...
-@overload
-def deduce_type_array(value: list[Iterable[float]]) -> tuple[ValueType, list[tuple]]: ...
-@overload
-def deduce_type_array(value: list[tuple]) -> tuple[ValueType, list[tuple]]: ...
-@overload
-def deduce_type_array(value: list[Angle | AngleTup]) -> tuple[ValueType, AngleTup]: ...
-@overload
-def deduce_type_array(value: list[ValueT]) -> tuple[ValueType, ValueT]: ...
-
-@overload
-def deduce_type_single(value: Angle | AngleTup) -> tuple[ValueType, AngleTup]: ...
-@overload
+def deduce_type_array(value: list[ValueT]) -> tuple[ValueType, list[ValueT]]: ...
 def deduce_type_single(value: ValueT) -> tuple[ValueType, ValueT]: ...
 
 
@@ -381,7 +345,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @overload
     @classmethod
-    def vec4(cls, name: str, __it: Iterable[builtins.int], /) -> Attribute[Color]: ...
+    def color(cls, name: str, __it: Iterable[builtins.int], /) -> Attribute[Color]: ...
     @overload
     @classmethod
     def color(
