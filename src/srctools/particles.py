@@ -3,7 +3,7 @@ from typing import Union, IO, Dict, overload, List, Iterable
 
 import attr
 
-from srctools.dmx import Element, ValueType, Value as DMXValue, UUID, Vec3, Attribute
+from srctools.dmx import Element, ValueType, Attribute
 
 
 # The name of the file format used in DMX files.
@@ -14,13 +14,13 @@ FORMAT_VERSION: int = 2
 
 class Operator:
     """A generic option in particles."""
-    def __init__(self, name: str, function: str, options: Dict[str, DMXValue]) -> None:
+    def __init__(self, name: str, function: str, options: Dict[str, Attribute]) -> None:
         self.function = function
         self.name = name
         self.options = options
 
     def __repr__(self) -> str:
-        return f'<Op {self.name}.{self.function}({self.options})>'
+        return f'<Op {self.name}.{self.function}({", ".join(map(repr, self.options.values()))})>'
 
 
 @attr.define(eq=False)
@@ -33,7 +33,7 @@ class Child:
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, DMXValue] = attr.Factory({}.copy)
+    options: Dict[str, Attribute] = attr.Factory({}.copy)
     renderers: List[Operator] = attr.ib(converter=list, factory=list)
     operators: List[Operator] = attr.ib(converter=list, factory=list)
     initializers: List[Operator] = attr.ib(converter=list, factory=list)
@@ -85,12 +85,15 @@ class Particle:
 
         def generic_attr(el: Element, name: str) -> Iterable['Operator']:
             try:
-                attr = el.pop(name)
+                value = el.pop(name)
             except KeyError:
                 return ()
+            if value.type is not ValueType.ELEMENT or not value.is_array:
+                raise ValueError('{} must be an element array!')
             return [
-                Operator(elem.name, elem.pop('functionName').val_str, dict(elem))
-                for elem in attr
+                Operator(ele.name, ele.pop('functionName').val_str, dict(ele))
+                for ele in value
+                if isinstance(ele, Element)
             ]
 
         elem: Element
@@ -103,7 +106,7 @@ class Particle:
             constraints = generic_attr(elem, 'constraints')
             try:
                 child_attr = elem.pop('children')
-                if child_attr.type != ValueType.ELEMENT:
+                if child_attr.type is not ValueType.ELEMENT or not child_attr.is_array:
                     raise ValueError('Children must be an element array!')
             except KeyError:
                 children = []
@@ -112,9 +115,15 @@ class Particle:
                     Child(subelem.name) for subelem
                     in child_attr
                 ]
+            # Everything else.
+            options = {
+                value.name.casefold(): value
+                for value in elem.values()
+            }
 
             systems[elem.name.casefold()] = Particle(
                 elem.name,
+                options,
                 renderers,
                 operators,
                 initializers,
