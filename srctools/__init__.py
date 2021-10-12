@@ -15,9 +15,8 @@ try:
 except ImportError:
     __version__ = '<unknown>'
 else:
-    # Discard the now-useless module.
-    del _sys.modules[_version.__name__] # noqa
-    del _version # noqa
+    # Discard the now-useless module. Use globals so static analysis ignores this.
+    del _sys.modules[globals().pop('_version').__name__]
 
 __all__ = [
     '__version__',
