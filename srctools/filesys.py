@@ -24,7 +24,6 @@ __all__ = [
 ]
 
 FileSysT = TypeVar('FileSysT', bound='FileSystem')
-ChildSysT = TypeVar('ChildSysT', bound='FileSystem')
 
 # This is the type of File._data. It should only be used by subclasses.
 _FileDataT = TypeVar('_FileDataT')
@@ -219,12 +218,12 @@ class FileSystem(Generic[_FileDataT]):
         return -1
 
 
-class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
+class FileSystemChain(FileSystem[File[FileSystem]]):
     """Chains several filesystem into one prioritised whole."""
 
-    def __init__(self, *systems: Union[ChildSysT, Tuple[ChildSysT, str]]) -> None:
+    def __init__(self, *systems: Union[FileSystem, Tuple[FileSystem, str]]) -> None:
         super().__init__('')
-        self.systems: list[tuple[ChildSysT, str]] = []
+        self.systems: list[tuple[FileSystem, str]] = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -243,7 +242,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
         return hash(tuple(self.systems))
 
     @classmethod
-    def get_system(cls, file: File['FileSystemChain[ChildSysT]']) -> ChildSysT:
+    def get_system(cls, file: File['FileSystemChain']) -> FileSystem:
         """Retrieve the system for a File, if it was produced from a FileSystemChain."""
         if not isinstance(file.sys, FileSystemChain):
             raise ValueError('File is not from a FileSystemChain..')
@@ -251,7 +250,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
 
     def add_sys(
         self,
-        sys: ChildSysT,
+        sys: FileSystem,
         prefix: str='',
         *,
         priority: bool=False,
@@ -265,7 +264,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
         else:
             self.systems.append((sys, prefix))
 
-    def _get_file(self, name: str) -> File['FileSystemChain[ChildSysT]']:
+    def _get_file(self, name: str) -> File['FileSystemChain']:
         """Search for a file on each filesystem in turn."""
         for sys, prefix in self.systems:
             full_name = os.path.join(prefix, name).replace('\\', '/')
@@ -278,7 +277,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
             return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self, name: Union[str, File['FileSystemChain[ChildSysT]']], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File['FileSystemChain']], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -287,7 +286,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
             return self._get_data(name).open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self, name: Union[str, File['FileSystemChain[ChildSysT]']]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File['FileSystemChain']]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -296,7 +295,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
             return self._get_data(name).open_bin()
         return self._get_file(name).open_bin()
 
-    def walk_folder(self, folder: str) -> Iterator[File['FileSystemChain[ChildSysT]']]:
+    def walk_folder(self, folder: str) -> Iterator[File['FileSystemChain']]:
         """Walk folders, not repeating files."""
         done: set[str] = set()
         for file in self.walk_folder_repeat(folder):
@@ -306,7 +305,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
             done.add(folded)
             yield file
 
-    def walk_folder_repeat(self, folder: str='') -> Iterator[File['FileSystemChain[ChildSysT]']]:
+    def walk_folder_repeat(self, folder: str='') -> Iterator[File['FileSystemChain']]:
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded
@@ -321,7 +320,7 @@ class FileSystemChain(Generic[ChildSysT], FileSystem[File[ChildSysT]]):
                     file,
                 )
 
-    def _get_cache_key(self, file: File['FileSystemChain[ChildSysT]']) -> int:
+    def _get_cache_key(self, file: File['FileSystemChain']) -> int:
         """Return the last modified time of this file.
 
         If individual timestamps are not stored, the modification time of the
