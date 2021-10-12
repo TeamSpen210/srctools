@@ -40,7 +40,7 @@ class Particle:
     emitters: List[Operator] = attr.ib(converter=list, factory=list)
     forces: List[Operator] = attr.ib(converter=list, factory=list)
     constraints: List[Operator] = attr.ib(converter=list, factory=list)
-    children: List[Operator] = attr.ib(converter=list, factory=list)
+    children: List[Child] = attr.ib(converter=list, factory=list)
 
     @classmethod
     @overload
