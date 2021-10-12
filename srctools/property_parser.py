@@ -164,10 +164,9 @@ class Property:
         name: Optional[str],
         value: _Prop_Value,
     ) -> None:
-        """Create a new property instance.
-
-        """
+        """Create a new property instance."""
         if name is None:
+            warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
             self._folded_name = self.real_name = None
         else:
             self.real_name = sys.intern(name)
@@ -196,11 +195,14 @@ class Property:
         This ensures comparisons are always case-insensitive.
         Read .real_name to get the original value.
         """
+        if self._folded_name is None:
+            warnings.warn("The name of root properties will change to a blank string in the future.", DeprecationWarning, 2)
         return self._folded_name
 
     @name.setter
     def name(self, new_name: Optional[str]) -> None:
         if new_name is None:
+            warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
             self._folded_name = self.real_name = None
         else:
             # Intern names to help reduce duplicates in memory.
@@ -215,6 +217,17 @@ class Property:
         if value is not None:
             self._value = value
         return self
+
+    @classmethod
+    def root(cls, *children: 'Property') -> 'Property':
+        """Return a new 'root' property."""
+        prop = cls.__new__(cls)
+        prop._folded_name = prop.real_name = None
+        for child in children:
+            if not isinstance(child, Property):
+                raise TypeError(f'{type(prop).__name__} is not a Property!')
+        prop._value = list(children)
+        return prop
 
     @staticmethod
     def parse(
@@ -1011,6 +1024,14 @@ class Property:
     def has_children(self) -> builtins.bool:
         """Does this have child properties?"""
         return type(self._value) is list
+
+    def is_root(self) -> builtins.bool:
+        """Check if the property is a root, returned from the parse() method.
+
+        The root when exported produces its children, allowing multiple properties to be at the
+        topmost indent level in a file.
+        """
+        return self.real_name is None
 
     def __repr__(self) -> str:
         return 'Property({0!r}, {1!r})'.format(self.real_name, self._value)

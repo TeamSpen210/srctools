@@ -513,10 +513,10 @@ class PackList:
             # Regenerate from scratch each time - that way we remove old files
             # from the list.
             new_cache_sounds = Property('Sounds', [])
-            new_cache_data = Property(None, [
+            new_cache_data = Property.root(
                 Property('version', SOUND_CACHE_VERSION),
                 new_cache_sounds,
-            ])
+            )
         else:
             new_cache_data = new_cache_sounds = None
 
@@ -834,7 +834,7 @@ class PackList:
                 if not file.optional and fname.casefold() not in packed_files:
                     LOGGER.warning('WARNING: "{}" not packed!', file.filename)
                 continue
-                
+
             if fname.casefold().endswith('.bik'):
                 # BINK cannot be packed, always skip.
                 LOGGER.debug('EXT:  {}', fname)

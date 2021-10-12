@@ -313,7 +313,7 @@ class Model:
         self.version = 49
         self.checksum = b'\0\0\0\0'
 
-        self.phys_keyvalues = Property(None, [])
+        self.phys_keyvalues = Property.root()
         with self._file.open_bin() as f:
             self._load(f)
 
