@@ -881,49 +881,92 @@ class Property:
             raise ValueError("Can't clear a Property without children!")
 
     def __add__(self, other: Union[Iterable['Property'], 'Property']):
-        """Allow appending other properties to this one.
+        """Extend this property with the contents of another, or an iterable.
 
         This deep-copies the Property tree first.
-        Works with either a sequence of Properties or a single Property.
+        Deprecated behaviour: This also accepts a non-root property, which will be appended
+        instead.
         """
         if isinstance(self._value, list):
             copy = self.copy()
-            if isinstance(other, Property):
-                if other._folded_name is None:
-                    copy._value.extend(other._value)
-                else:
-                    # We want to add the other property tree to our
-                    # own, not its values.
-                    copy._value.append(other)
+            if isinstance(other, Property) and other._folded_name is not None:
+                # Deprecated behaviour, add the other property to ourselves,
+                # not its values.
+                warnings.warn(
+                    "Using + to add a single property is confusing, use append() instead.",
+                    DeprecationWarning, 2,
+                )
+                copy._value.append(other.copy())
             else:  # Assume a sequence.
                 for prop in other:
                     if not isinstance(prop, Property):
                         raise TypeError(f'{type(prop).__name__} is not a Property!')
-                    self._value.append(prop)
+                    self._value.append(prop.copy())
             return copy
         else:
             return NotImplemented
 
-    def __iadd__(self, other: Union[Iterable['Property'], 'Property']):
-        """Allow appending other properties to this one.
+    def __iadd__(self, other: 'Property') -> 'Property':
+        """Extend this property with the contents of another, or an iterable.
 
-        This is the += op, where it does not copy the object.
+        Deprecated behaviour: This also accepts a non-root property, which will be appended
+        instead.
+        """
+        if isinstance(self._value, list):
+            if isinstance(other, Property) and other._folded_name is not None:
+                # Deprecated behaviour, add the other property to ourselves,
+                # not its values.
+                warnings.warn(
+                    "Using += to add a single property is confusing, use append() instead.",
+                    DeprecationWarning, 2,
+                )
+                self._value.append(other.copy())
+            else:
+                for prop in other:
+                    if not isinstance(prop, Property):
+                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    self._value.append(prop.copy())
+            return self
+        else:
+            raise ValueError('Cannot += a Property without children!')
+
+    def append(self, other: Union[Iterable['Property'], 'Property']) -> None:
+        """Append another property to this one.
+
+        Deprecated behaviour: Accept an iterable of properties or a root property
+        which are merged into this one.
         """
         if isinstance(self._value, list):
             if isinstance(other, Property):
                 if other._folded_name is None:
+                    warnings.warn(
+                        "Append()ing a root property is confusing, use extend() instead.",
+                        DeprecationWarning, 2,
+                    )
                     self._value.extend(other._value)
                 else:
                     self._value.append(other)
             else:
+                warnings.warn(
+                    "Use extend() for appending iterables of properties, not append().",
+                    DeprecationWarning, 2,
+                )
                 for prop in other:
                     if not isinstance(prop, Property):
                         raise TypeError(f'{type(prop).__name__} is not a Property!')
                     self._value.append(prop)
         else:
-            return NotImplemented
+            raise ValueError('Cannot append to a Property without children!')
 
-    append = __iadd__
+    def extend(self, other: Iterable['Property']) -> None:
+        """Extend this property with the contents of another, or an iterable."""
+        if not isinstance(self._value, list):
+            raise ValueError('Cannot append to a Property without children!')
+
+        for prop in other:
+            if not isinstance(prop, Property):
+                raise TypeError(f'{type(prop)} is not a Property!')
+            self._value.append(prop.copy())
 
     def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
@@ -981,7 +1024,7 @@ class Property:
         Recursively calls itself for all child properties.
         """
         if isinstance(self._value, list):
-            if self.name is None:
+            if self.real_name is None:
                 # If the name is None, we just output the children
                 # without a "Name" { } surround. These Property
                 # objects represent the root.
