@@ -896,7 +896,10 @@ class Property:
                     # own, not its values.
                     copy._value.append(other)
             else:  # Assume a sequence.
-                copy._value += other  # Add the values to ours.
+                for prop in other:
+                    if not isinstance(prop, Property):
+                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    self._value.append(prop)
             return copy
         else:
             return NotImplemented
@@ -913,8 +916,10 @@ class Property:
                 else:
                     self._value.append(other)
             else:
-                self._value += other
-            return self
+                for prop in other:
+                    if not isinstance(prop, Property):
+                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    self._value.append(prop)
         else:
             return NotImplemented
 
