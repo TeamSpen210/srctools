@@ -159,11 +159,7 @@ class Property:
     real_name: Optional[str]
     _value: _Prop_Value
 
-    def __init__(
-        self: 'Property',
-        name: Optional[str],
-        value: _Prop_Value,
-    ) -> None:
+    def __init__(self, name: Optional[str], value: _Prop_Value) -> None:
         """Create a new property instance."""
         if name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
