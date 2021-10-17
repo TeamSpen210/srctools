@@ -30,8 +30,8 @@ They end with a quote."
     Property values should be either a string, or a list of children Properties.
     Names will be converted to lowercase automatically; use Prop.real_name to
     obtain the original spelling. To allow multiple root blocks in a file, the
-    returned property from Property.parse() has a name of None - this property
-    type will export with un-indented children.
+    returned property from Property.parse() is special and will export with
+    un-indented children.
 
     Properties with children can be indexed by their names, or by a
     ('name', default) tuple:
@@ -49,7 +49,7 @@ They end with a quote."
     >>> props['child3', 'default']
     'default'
     >>> props['child4', object()]
-    <object object ax 0x...>
+    <object object at 0x...>
     >>> del props['child2']
     >>> props['child3'] = 'new value'
     >>> props
