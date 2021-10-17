@@ -3,22 +3,22 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
+import contextlib
+import contextvars
 import itertools
 import logging
 import os
 import sys
-import io
 import traceback
-import contextvars
-import contextlib
+from io import StringIO
 from types import TracebackType
 from typing import (
-    Dict, Tuple, Union, Type, Callable, Any, cast, Optional,
-    Generator, TextIO,
+    cast, Optional, Union, Any,
+    Dict, Tuple, Type, Callable, Generator, Iterable, TextIO,
 )
 
 
-CTX_STACK = contextvars.ContextVar('srctools_logger')
+CTX_STACK: 'contextvars.ContextVar[list[str]]' = contextvars.ContextVar('srctools_logger')
 
 
 class LogMessage:
@@ -116,6 +116,7 @@ class LoggerAdapter(logging.LoggerAdapter):
             extra['alias'] = self.alias
             extra['context'] = f' ({ctx})' if ctx else ''
 
+            # noinspection PyProtectedMember
             self.logger._log(
                 level,
                 LogMessage(msg, args, kwargs),
@@ -142,7 +143,7 @@ class Formatter(logging.Formatter):
     ]) -> str:
         """Ignore importlib, cx_freeze and PyInstaller."""
         exc_type, exc_value, exc_tb = ei
-        buffer = io.StringIO()
+        buffer = StringIO()
 
         trace: Optional[TracebackType] = exc_tb
 
@@ -167,6 +168,7 @@ class Formatter(logging.Formatter):
         return buffer.getvalue().rstrip('\n')
 
     def format(self, record: logging.LogRecord) -> str:
+        """Ensure a default context is set in the record."""
         record.__dict__.setdefault('context', '')
         return super().format(record)
 
@@ -213,22 +215,85 @@ def get_handler(filename: 'str | os.PathLike[str]') -> logging.FileHandler:
         raise AssertionError  # Never terminates
 
 
-class NullStream(io.TextIOBase, TextIO):
+class NullStream(TextIO):
     """A stream object that discards all data.
 
     This is needed for multiprocessing, since it tries to flush stdout.
     That'll fail if it is None.
     """
-    def __init__(self) -> None:
-        super().__init__()
+    def __enter__(self) -> 'NullStream':
+        return self
+
+    def __exit__(
+        self,
+        typ: Optional[Type[BaseException]],
+        value: Optional[BaseException],
+        tback: Optional[TracebackType],
+    ) -> None:
+        return None
+
+    def __next__(self) -> str:
+        raise StopIteration
+
+    def __iter__(self) -> 'NullStream':
+        return self
+
+    def close(self) -> None:
+        """Closing does nothing."""
+
+    def isatty(self) -> bool:
+        """We are not a TTY."""
+
+    def readable(self) -> bool:
+        """Pretend we are readable."""
+        return True
+
+    def seekable(self) -> bool:
+        """Pretend we are seekable."""
+        return True
+
+    def writable(self) -> bool:
+        """Pretend we are writable."""
+        return True
+
+    def fileno(self) -> int:
+        """We do not have a file number."""
+        raise OSError('No file number.')
+
+    def flush(self) -> None:
+        """Flushing does nothing."""
+
+    def read(self, size: int = None) -> str:
+        """We never have data."""
+        return ''
+
+    def readline(self, limit: int=-1) -> str:
+        """We never have data."""
+        return ''
+
+    def readlines(self, hint: int=-1) -> list[str]:
+        """We never have data."""
+        return []
 
     def write(self, text: str) -> int:
         """Write nothing to the file."""
         return 0
 
-    def read(self, size: int = None) -> str:
-        """We never have data."""
-        return ''
+    def writelines(self, lines: Iterable[str]) -> None:
+        """Write nothing to the file."""
+        pass
+
+    def seek(self, offset: int, whence: int = 0) -> int:
+        """Seeking does nothing."""
+        return 0
+
+    def tell(self) -> int:
+        """We are always at the start position."""
+        return 0
+
+    def truncate(self, size: Optional[int]=None) -> int:
+        """Truncation does nothing."""
+        return 0
 
 
 class NewLogRecord(logging.LogRecord):
