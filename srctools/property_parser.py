@@ -21,9 +21,9 @@ They end with a quote."
     Property.parse(file, 'name') to parse a file.
 
     This will perform a round-trip file read:
-    >>> with open('filename.txt', 'r') as f:
+    >>> with open('filename.txt', 'r') as f:  # doctest: +SKIP
     ...     props = Property.parse(f, 'filename.txt')
-    >>> with open('filename_2.txt', 'w') as f:
+    ... with open('filename_2.txt', 'w') as f:
     ...     for line in props.export():
     ...         f.write(line)
 
@@ -40,7 +40,7 @@ They end with a quote."
     ...     Property('child1', '1'),
     ...     Property('child2', '0'),
     ... ])
-    ... props['child1']
+    >>> props['child1']
     '1'
     >>> props['child3']
     Traceback (most recent call last):

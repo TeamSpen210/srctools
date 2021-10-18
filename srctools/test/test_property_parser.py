@@ -26,7 +26,7 @@ def py_c_token(request):
         pp_mod.Tokenizer = orig_tok
 
 
-def assert_tree(first, second, path=''):
+def assert_tree(first, second, path='') -> None:
     """Check that two property trees match exactly (including case)."""
     assert first.name == second.name, (first, second)
     assert first.real_name == second.real_name, (first, second)
@@ -40,7 +40,13 @@ def assert_tree(first, second, path=''):
         assert first.value == second.value, (first, second)
 
 
-def test_constructor():
+def test_docstring() -> None:
+    """Run doctests on the module."""
+    import doctest
+    assert doctest.testmod(pp_mod, optionflags=doctest.ELLIPSIS).failed == 0
+
+
+def test_constructor() -> None:
     """Test the constructor for Property objects."""
     Property(None, [])
     Property('Test', 'value with spaces and ""')
@@ -69,7 +75,7 @@ def test_constructor():
     assert len(sub_children) == 1
 
 
-def test_names():
+def test_names() -> None:
     """Test the behaviour of Property.name."""
     prop = Property('Test1', 'value')
 
@@ -220,7 +226,7 @@ parse_result = P(None, [
 del P
 
 
-def test_parse(py_c_token):
+def test_parse(py_c_token) -> None:
     """Test parsing strings."""
     result = Property.parse(
         # iter() ensures sequence methods aren't used anywhere.
@@ -246,7 +252,8 @@ def test_parse(py_c_token):
     # Check export roundtrips.
     assert_tree(parse_result, Property.parse(parse_result.export()))
 
-def test_build():
+
+def test_build() -> None:
     """Test the .build() constructor."""
     prop = Property(None, [])
 
@@ -291,6 +298,7 @@ def test_build():
                 b.key('value2')
 
     assert_tree(parse_result, prop)
+
 
 def test_build_exc() -> None:
     """Test the with statement handles exceptions correctly."""
@@ -484,7 +492,7 @@ text with
     ''')
 
 
-def test_edit():
+def test_edit() -> None:
     """Check functionality of Property.edit()"""
     test_prop = Property('Name', 'Value')
 
@@ -513,7 +521,7 @@ def test_edit():
     assert list(test_prop)[0] is child_1
 
 
-def test_bool():
+def test_bool() -> None:
     """Check bool(Property)."""
     assert bool(Property('Name', '')) is False
     assert bool(Property('Name', 'value')) is True
