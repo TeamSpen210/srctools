@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator, Mapping
 from typing import Union, Optional, NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
 from typing_extensions import TypeAlias
 from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
-from srctools import Matrix, Angle
+from srctools import Matrix, Angle, Property
 import builtins
 
 from srctools import Vec_tuple as Vec3  # Re-export.
@@ -441,6 +441,9 @@ class Element(Mapping[str, Attribute]):
         encoding: str,
         cull_uuid: bool,
     ) -> None: ...
+
+    @classmethod
+    def from_kv1(cls, props: Property, fmt_ext: bool=True) -> Element: ...
 
     def __repr__(self) -> str: ...
 

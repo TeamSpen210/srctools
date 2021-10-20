@@ -11,7 +11,6 @@ from srctools.math import (
 from srctools import math as vec_mod
 import pytest
 import math
-import os.path
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.

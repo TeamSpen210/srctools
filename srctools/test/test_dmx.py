@@ -6,7 +6,7 @@ from uuid import UUID
 
 import pytest
 
-from srctools import Matrix, Angle
+from srctools import Matrix, Angle, Property
 from srctools.test import *
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
@@ -635,3 +635,65 @@ def test_export_regression(version: str, datadir: Path, file_regression) -> None
     with (datadir / 'binary_v5.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     file_regression.check(export(root, version), extension='.dmx', binary=True)
+
+
+@pytest.mark.parametrize('use_ext', [False, True])
+def test_kv1_to_dmx(use_ext: bool) -> None:
+    """Test converting KV1 property trees into DMX works."""
+    tree1 = Property('rOOt', [
+        Property('leaf', 'a_value'),
+        Property('child1', [Property('key', 'value')]),
+        Property('child2', [
+            Property('key', 'value'),
+            Property('key2', '45'),
+        ]),
+    ])
+    elem1 = Element.from_kv1(tree1, use_ext)
+    assert elem1.type == 'DmElement'
+    assert elem1.name == 'rOOt'
+    assert elem1['leaf'].type is ValueType.STRING
+    assert elem1['leaf'].val_str == 'a_value'
+    subkey: Attribute[Element] = elem1['subkeys']
+    assert subkey.type is ValueType.ELEMENT and subkey.is_array
+    [child1, child2] = subkey
+    assert child1.type == 'DmElement'
+    assert child1.name == 'child1'
+    assert child1['key'].type is ValueType.STRING
+    assert child1['key'].val_str == 'value'
+
+    assert child2['key'].type is ValueType.STRING
+    assert child2['key'].val_str == 'value'
+    assert child2['key2'].type is ValueType.STRING
+    assert child2['key2'].val_str == '45'
+
+
+def test_kv1_to_dmx_dupleafs() -> None:
+    """Test converting KV1 trees with duplicate keys."""
+    tree = Property('Root', [
+        Property('Key1', 'blah'),
+        Property('key2', 'another'),
+        Property('key1', 'value'),
+    ])
+    # Not allowed without extensions.
+    with pytest.raises(ValueError):
+        Element.from_kv1(tree, fmt_ext=False)
+    root = Element.from_kv1(tree, fmt_ext=True)
+    assert root.type == 'DmElement'
+    assert root.name == 'Root'
+    subkeys: Attribute[Element] = root['subkeys']
+    assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
+    [k1, k2, k3] = subkeys
+    assert k1.name == 'Key1'
+    assert k1.type == 'DmElementLeaf'
+    assert k1['value'].type is ValueType.STRING
+    assert k1['value'].val_str == 'blah'
+
+    assert k2.name == 'key2'
+    assert k2.type == 'DmElementLeaf'
+    assert k2['value'].type is ValueType.STRING
+    assert k2['value'].val_str == 'another'
+
+    assert k3.name == 'key2'
+    assert k3.type == 'DmElementLeaf'
+    assert k3['value'].type is ValueType.STRING
+    assert k3['value'].val_str == 'value'
