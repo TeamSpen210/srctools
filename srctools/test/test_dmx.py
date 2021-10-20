@@ -637,22 +637,19 @@ def test_export_regression(version: str, datadir: Path, file_regression) -> None
     file_regression.check(export(root, version), extension='.dmx', binary=True)
 
 
-@pytest.mark.parametrize('use_ext', [False, True])
-def test_kv1_to_dmx(use_ext: bool) -> None:
+def test_kv1_to_dmx() -> None:
     """Test converting KV1 property trees into DMX works."""
     tree1 = Property('rOOt', [
-        Property('leaf', 'a_value'),
         Property('child1', [Property('key', 'value')]),
         Property('child2', [
             Property('key', 'value'),
             Property('key2', '45'),
         ]),
     ])
-    elem1 = Element.from_kv1(tree1, use_ext)
+    elem1 = Element.from_kv1(tree1)
     assert elem1.type == 'DmElement'
     assert elem1.name == 'rOOt'
-    assert elem1['leaf'].type is ValueType.STRING
-    assert elem1['leaf'].val_str == 'a_value'
+
     subkey: Attribute[Element] = elem1['subkeys']
     assert subkey.type is ValueType.ELEMENT and subkey.is_array
     [child1, child2] = subkey
@@ -674,10 +671,7 @@ def test_kv1_to_dmx_dupleafs() -> None:
         Property('key2', 'another'),
         Property('key1', 'value'),
     ])
-    # Not allowed without extensions.
-    with pytest.raises(ValueError):
-        Element.from_kv1(tree, fmt_ext=False)
-    root = Element.from_kv1(tree, fmt_ext=True)
+    root = Element.from_kv1(tree)
     assert root.type == 'DmElement'
     assert root.name == 'Root'
     subkeys: Attribute[Element] = root['subkeys']
@@ -693,7 +687,7 @@ def test_kv1_to_dmx_dupleafs() -> None:
     assert k2['value'].type is ValueType.STRING
     assert k2['value'].val_str == 'another'
 
-    assert k3.name == 'key2'
+    assert k3.name == 'key1'
     assert k3.type == 'DmElementLeaf'
     assert k3['value'].type is ValueType.STRING
     assert k3['value'].val_str == 'value'

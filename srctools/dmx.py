@@ -162,7 +162,7 @@ SIZES: Dict[ValueType, int]
 # Name used for keyvalues1 properties.
 NAME_KV1 = 'DmElement'
 # Additional name, to handle blocks with mixed properties or duplicate names.
-NAME_KV1_LEAF = 'DMElementLeaf'
+NAME_KV1_LEAF = 'DmElementLeaf'
 
 def parse_vector(text: str, count: int) -> List[float]:
     """Parse a space-delimited vector."""
@@ -1149,24 +1149,21 @@ class Element(MutableMapping[str, Attribute]):
         file.write(indent + b'}')
 
     @classmethod
-    def from_kv1(cls, props: Property, fmt_ext: bool=True) -> 'Element':
+    def from_kv1(cls, props: Property) -> 'Element':
         """Convert a KeyValues 1 property tree into DMX format.
 
         All blocks have a type of "DmElement", with children stored in the "subkeys" array. Leaf
         properties are stored as regular attributes. The following attributes are prepended with
         an underscore when converting as they are reserved: "name" and "subkeys".
 
-        If fmt_ext is True, blocks with multiple leaf properties with the same name or a
-        mix of blocks and leafs will use "DmElementLeaf" elements to store these (this is not in
-        Valve's code).
+        If multiple leaf properties with the same name or the element has a mix of blocks and leafs
+        all elements will be put in the subkeys array. Leafs will use "DmElementLeaf" elements with
+        values in the "value" key.
         """
         if not props.has_children():
-            if fmt_ext:
-                elem = cls(props.real_name, NAME_KV1_LEAF)
-                elem['value'] = props.value
-                return elem
-            else:
-                raise ValueError('fmt_ext must be enabled to produce an element for leaf properties!')
+            elem = cls(props.real_name, NAME_KV1_LEAF)
+            elem['value'] = props.value
+            return elem
 
         elem = cls(props.real_name, NAME_KV1)
         subkeys: Optional[Attribute[Element]] = None
@@ -1174,42 +1171,34 @@ class Element(MutableMapping[str, Attribute]):
         # The names "name" and "subkeys" are reserved, and can't appear in the DMX.
         # ID is not, because it has a unique attr type to distinguish.
 
-        # First go through to check if we have blocks, leafs, or duplicate names.
-        # If we have duplicates fmt_ext must be true.
-        # If we have leafs after blocks, we will switch if allowed to preserve the order.
-        # If we have any of the reserved names, we also want to switch.
+        # First go through to check if we can inline attributes, or have to nest.
+        # If we have duplicates, both types, or any of the reserved names we need to do so.
         leaf_names: set[str] = set()
         has_leaf = False
         has_block = False
-        needs_fmt_ext = False
-        wants_fmt_ext = False
+        no_inline = False
         for child in props:
             if child.has_children():
                 has_block = True
             else:
                 has_leaf = True
-                if has_block:
-                    # Without this, we always export blocks after.
-                    wants_fmt_ext = True
                 if child.name in {"names", "subkeys"}:
-                    wants_fmt_ext = True
+                    no_inline = True
                 if child.name in leaf_names:
-                    needs_fmt_ext = True
+                    no_inline = True
                 else:
                     leaf_names.add(child.name)
-        if needs_fmt_ext and not fmt_ext:
-            raise ValueError('Block has duplicate {} key, but format extension disabled!')
-        elif fmt_ext and wants_fmt_ext:
-            # Switch to this so the order is preserved.
-            needs_fmt_ext = True
+        del leaf_names
+        if has_block and has_leaf:
+            no_inline = True
 
-        if needs_fmt_ext or has_block:
+        if no_inline or has_block:
             elem['subkeys'] = subkeys = Attribute.array('subkeys', ValueType.ELEMENT)
 
         for child in props:
-            if needs_fmt_ext or child.has_children():
+            if no_inline or child.has_children():
                 assert subkeys is not None
-                subkeys.append(cls.from_kv1(child, fmt_ext))
+                subkeys.append(cls.from_kv1(child))
             else:
                 if child.name in {'name', 'subkeys'}:
                     elem['_' + child.real_name] = child.value
