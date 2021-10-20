@@ -691,3 +691,21 @@ def test_kv1_to_dmx_dupleafs() -> None:
     assert k3.type == 'DmElementLeaf'
     assert k3['value'].type is ValueType.STRING
     assert k3['value'].val_str == 'value'
+
+
+def test_kv1_to_dmx_leaf_and_blocks() -> None:
+    """If both leafs and blocks, we upgrade to an element per attribute."""
+    tree = Property('blah', [
+        Property('a_leaf', 'result'),
+        Property('block', []),
+    ])
+    root = Element.from_kv1(tree)
+    assert root.type == 'DmElement'
+    assert root.name == 'blah'
+    subkeys: Attribute[Element] = root['subkeys']
+    assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
+    [e1, e2] = subkeys
+    assert e1.type == 'DmElementLeaf'
+    assert e1['value'].val_str == 'result'
+    assert e2.type == 'DmElement'
+    assert len(e2) == 0
