@@ -163,6 +163,7 @@ SIZES: Dict[ValueType, int]
 NAME_KV1 = 'DmElement'
 # Additional name, to handle blocks with mixed properties or duplicate names.
 NAME_KV1_LEAF = 'DmElementLeaf'
+NAME_KV1_ROOT = 'DmElementRoot'
 
 def parse_vector(text: str, count: int) -> List[float]:
     """Parse a space-delimited vector."""
@@ -1165,11 +1166,10 @@ class Element(MutableMapping[str, Attribute]):
             elem['value'] = props.value
             return elem
 
-        elem = cls(props.real_name, NAME_KV1)
-        subkeys: Optional[Attribute[Element]] = None
-
-        # The names "name" and "subkeys" are reserved, and can't appear in the DMX.
-        # ID is not, because it has a unique attr type to distinguish.
+        if props.is_root():
+            elem = cls('', NAME_KV1_ROOT)
+        else:
+            elem = cls(props.real_name, NAME_KV1)
 
         # First go through to check if we can inline attributes, or have to nest.
         # If we have duplicates, both types, or any of the reserved names we need to do so.
@@ -1182,7 +1182,9 @@ class Element(MutableMapping[str, Attribute]):
                 has_block = True
             else:
                 has_leaf = True
-                if child.name in {"names", "subkeys"}:
+                # The names "name" and "subkeys" are reserved, and can't be used as attributes.
+                # ID isn't, because it has a unique attr type to distinguish.
+                if child.name in {'name', 'subkeys'}:
                     no_inline = True
                 if child.name in leaf_names:
                     no_inline = True
@@ -1192,6 +1194,7 @@ class Element(MutableMapping[str, Attribute]):
         if has_block and has_leaf:
             no_inline = True
 
+        subkeys: Optional[Attribute[Element]] = None
         if no_inline or has_block:
             elem['subkeys'] = subkeys = Attribute.array('subkeys', ValueType.ELEMENT)
 
@@ -1200,11 +1203,7 @@ class Element(MutableMapping[str, Attribute]):
                 assert subkeys is not None
                 subkeys.append(cls.from_kv1(child))
             else:
-                if child.name in {'name', 'subkeys'}:
-                    elem['_' + child.real_name] = child.value
-                else:
-                    elem[child.real_name] = child.value
-
+                elem[child.real_name] = child.value
         return elem
 
     def __repr__(self) -> str:
