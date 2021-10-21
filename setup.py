@@ -7,19 +7,8 @@ WIN = sys.platform.startswith('win')
 MAC = sys.platform.startswith('darwin')
 root = os.path.dirname(__file__)
 
-SQUISH_CPP = [
-    'libsquish/alpha.cpp',
-    'libsquish/clusterfit.cpp',
-    'libsquish/colourblock.cpp',
-    'libsquish/colourfit.cpp',
-    'libsquish/colourset.cpp',
-    'libsquish/maths.cpp',
-    'libsquish/rangefit.cpp',
-    'libsquish/singlecolourfit.cpp',
-    'libsquish/squish.cpp',
-]
 # Mandatory in CI!
-optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
+optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1' and False
 
 if WIN:
     openmp = ['/openmp']
@@ -46,7 +35,16 @@ setup(
             optional=optional_ext,
             sources=[
                 "src/srctools/_cy_vtf_readwrite.pyx",
-            ] + SQUISH_CPP,
+                "src/libsquish/alpha.cpp",
+                "src/libsquish/clusterfit.cpp",
+                "src/libsquish/colourblock.cpp",
+                "src/libsquish/colourfit.cpp",
+                "src/libsquish/colourset.cpp",
+                "src/libsquish/maths.cpp",
+                "src/libsquish/rangefit.cpp",
+                "src/libsquish/singlecolourfit.cpp",
+                "src/libsquish/squish.cpp",
+            ],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ] + openmp,
