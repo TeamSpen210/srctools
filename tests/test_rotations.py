@@ -6,7 +6,7 @@ from typing import NamedTuple, List
 
 import pytest
 
-from srctools.test import *
+from helpers import *
 from srctools import Vec
 
 

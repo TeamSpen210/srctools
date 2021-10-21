@@ -7,13 +7,12 @@ from uuid import UUID
 import pytest
 
 from srctools import Matrix, Angle, Property
-from srctools.test import *
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
 )
 from srctools.tokenizer import TokenSyntaxError
-
+from helpers import *
 
 def assert_tree(tree1: Element, tree2: Element) -> None:
     """Checks both trees are identical, recursively."""

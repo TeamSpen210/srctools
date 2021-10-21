@@ -2,7 +2,7 @@ import copy
 import pickle
 
 from srctools import Angle
-from srctools.test import *
+from helpers import *
 
 
 VALID_NUMS = [

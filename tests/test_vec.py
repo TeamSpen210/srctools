@@ -5,7 +5,8 @@ import copy
 import operator as op
 from pathlib import Path
 
-from srctools.test import *
+import pytest
+from helpers import *
 from srctools import Vec_tuple, math as vec_mod
 
 # Reuse these context managers.

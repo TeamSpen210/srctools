@@ -7,7 +7,7 @@ import platform
 
 from pytest import raises
 
-from srctools.test.test_property_parser import parse_test as prop_parse_test
+from test_property_parser import parse_test as prop_parse_test
 from srctools.property_parser import KeyValError
 from srctools.tokenizer import (
     Token,
