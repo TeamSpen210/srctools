@@ -1206,8 +1206,35 @@ class Element(MutableMapping[str, Attribute]):
                 elem[child.real_name] = child.value
         return elem
 
+    def to_kv1(self) -> Property:
+        """Convert an element tree containing a KeyValues 1 tree back into a Property.
+
+        These must satisfy the format from_kv1() produces - all elements have the type DmElement,
+        all attributes are strings except for the "subkeys" attribute which is an element array.
+        """
+        if self.type == NAME_KV1_LEAF:
+            return Property(self.name, self['value'].val_str)
+        elif self.type == NAME_KV1:
+            prop = Property(self.name, [])
+        elif self.type == NAME_KV1_ROOT:
+            prop = Property.root()
+        else:
+            raise ValueError(f'{self.type}({self.name!r}) is not a KeyValues1 tree!')
+        subkeys: Optional[Attribute[Element]] = None
+        for attr in self.values():
+            if attr.name == 'subkeys':
+                if attr.type != ValueType.ELEMENT or not attr.is_array:
+                    raise ValueError('"subkeys" must be an Element array!')
+                subkeys = attr
+            else:
+                prop.append(Property(attr.name, attr.val_str))
+        if subkeys is not None:
+            for elem in subkeys:
+                prop.append(elem.to_kv1())
+        return prop
+
     def __repr__(self) -> str:
-        if self.type and self.name:
+        if self.type:
             return f'<{self.type}({self.name!r}): {self._members!r}>'
         elif self.name:
             return f'<Element {self.name!r}: {self._members!r}>'

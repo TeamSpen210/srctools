@@ -709,3 +709,11 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
     assert e1['value'].val_str == 'result'
     assert e2.type == 'DmElement'
     assert len(e2) == 0
+
+
+def test_dmx_to_kv1_roundtrip() -> None:
+    """Test we can smuggle KV1 trees in DMX elements."""
+    from .test_property_parser import parse_result, assert_tree
+    elem = Element.from_kv1(parse_result)
+    roundtrip = elem.to_kv1()
+    assert_tree(roundtrip, parse_result)
