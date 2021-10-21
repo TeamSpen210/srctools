@@ -6,8 +6,8 @@ global-include *.pxd
 prune .tox
 
 # FGD database.
-include srctools/fgd.lzma
+include src/srctools/fgd.lzma
 # Marks as having type hints.
-include srctools/py.typed
+include src/srctools/py.typed
 # Lookup table.
-include libsquish/singlecolourlookup.inl
+include src/libsquish/singlecolourlookup.inl
