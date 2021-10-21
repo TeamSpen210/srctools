@@ -11,5 +11,3 @@ include srctools/fgd.lzma
 include srctools/py.typed
 # Lookup table.
 include libsquish/singlecolourlookup.inl
-# Include test samples
-recursive-include srctools/test/test_* *

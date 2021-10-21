@@ -23,15 +23,15 @@ distance-dirty = "{version}.dev{distance}+{rev}.dirty_{build_date:%Y.%m.%d}"
 
 [tool.versioningit.write]
 method = "basic"
-file = "srctools/_version.py"
+file = "src/srctools/_version.py"
 
 [tool.pyright]
 include = [
-	"srctools/"
+	"src/srctools/"
 	]
 exclude = [
 	# Tests deliberately do incorrect things to test error handling, so ignore types.
-	"srctools/test/",
+	"tests/",
 	"**/__pycache__"
 	]
 # We want to do conversions when setting.

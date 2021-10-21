@@ -28,12 +28,11 @@ else:
     openmp = ['-fopenmp']
 
 setup(
-    packages=find_packages(include=['srctools', 'srctools.*']),
     # Setuptools automatically runs Cython, if available.
     ext_modules=[
         Extension(
             "srctools._tokenizer",
-            sources=["srctools/_tokenizer.pyx"],
+            sources=["src/srctools/_tokenizer.pyx"],
             optional=optional_ext,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
@@ -41,11 +40,11 @@ setup(
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
-            include_dirs=[os.path.abspath("libsquish/")],
+            include_dirs=[os.path.abspath("src/libsquish/")],
             language='c++',
             optional=optional_ext,
             sources=[
-                "srctools/_cy_vtf_readwrite.pyx",
+                "src/srctools/_cy_vtf_readwrite.pyx",
             ] + SQUISH_CPP,
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
@@ -54,10 +53,10 @@ setup(
         ),
         Extension(
             "srctools._math",
-            include_dirs=[os.path.abspath("quickhull/")],
+            include_dirs=[os.path.abspath("src/quickhull/")],
             language='c++',
             optional=optional_ext,
-            sources=["srctools/_math.pyx", "quickhull/QuickHull.cpp"],
+            sources=["src/srctools/_math.pyx", "src/quickhull/QuickHull.cpp"],
             extra_compile_args=[
                 # '/FAs',  # MS ASM dump
             ] if WIN else [
