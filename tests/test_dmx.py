@@ -14,6 +14,7 @@ from srctools.dmx import (
 from srctools.tokenizer import TokenSyntaxError
 from helpers import *
 
+
 def assert_tree(tree1: Element, tree2: Element) -> None:
     """Checks both trees are identical, recursively."""
     return _assert_tree_elem(tree1.name, tree1, tree2, set())
@@ -712,7 +713,7 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
 
 def test_dmx_to_kv1_roundtrip() -> None:
     """Test we can smuggle KV1 trees in DMX elements."""
-    from .test_property_parser import parse_result, assert_tree
+    from test_property_parser import parse_result, assert_tree as assert_prop
     elem = Element.from_kv1(parse_result)
     roundtrip = elem.to_kv1()
-    assert_tree(roundtrip, parse_result)
+    assert_prop(roundtrip, parse_result)
