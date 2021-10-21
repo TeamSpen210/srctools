@@ -5,6 +5,7 @@ import os
 
 WIN = sys.platform.startswith('win')
 MAC = sys.platform.startswith('darwin')
+root = os.path.dirname(__file__)
 
 SQUISH_CPP = [
     'libsquish/alpha.cpp',
@@ -40,7 +41,7 @@ setup(
         ),
         Extension(
             "srctools._cy_vtf_readwrite",
-            include_dirs=[os.path.abspath("src/libsquish/")],
+            include_dirs=[os.path.abspath(os.path.join(root, "src", "libsquish"))],
             language='c++',
             optional=optional_ext,
             sources=[
@@ -53,7 +54,7 @@ setup(
         ),
         Extension(
             "srctools._math",
-            include_dirs=[os.path.abspath("src/quickhull/")],
+            include_dirs=[os.path.abspath(os.path.join(root, "src", "quickhull/"))],
             language='c++',
             optional=optional_ext,
             sources=["src/srctools/_math.pyx", "src/quickhull/QuickHull.cpp"],
