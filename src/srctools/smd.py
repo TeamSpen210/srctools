@@ -62,6 +62,7 @@ class Bone:
 class BoneFrame:
     """Represents a single frame of bone animation."""
     __slots__ = ('bone', 'position', 'rotation')
+    rotation: Angle
 
     def __init__(self, bone: Bone, position: Vec, rotation: Angle):
         self.bone = bone
@@ -293,9 +294,9 @@ class Mesh:
         """
         file_iter = _clean_file(file)
 
-        bones = None
-        anim = None
-        tri = None
+        bones: Optional[dict[int, Bone]] = None
+        anim: Optional[dict[Optional[int], list[BoneFrame]]] = None
+        tri: List[Triangle] = []
 
         line_num = 1
 
@@ -321,28 +322,25 @@ class Mesh:
                         line_num,
                         'Duplicate animation section!',
                     )
-                anim = Mesh._parse_smd_anim(file_iter, bones)
-            elif line == b'triangles':
-                if tri is not None:
+                elif bones is None:
                     raise ParseError(
                         line_num,
-                        'Duplicate triangle section!',
+                        'Animations section before bones section!'
                     )
-                elif bones is None:
+                anim = Mesh._parse_smd_anim(file_iter, bones)
+            elif line == b'triangles':
+                if bones is None:
                     raise ParseError(
                         line_num,
                         'Triangles section before bones section!'
                     )
-                tri = Mesh._parse_smd_tri(file_iter, bones)
+                tri.extend(Mesh._parse_smd_tri(file_iter, bones))
 
         if bones is None:
             raise ParseError(line_num, 'No bone section!')
 
         if anim is None:
             raise ParseError(line_num, 'No animation section!')
-
-        if tri is None:
-            tri = []
 
         return Mesh({
             bone.name: bone
@@ -419,8 +417,9 @@ class Mesh:
     @staticmethod
     def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]):
         """Parse the 'triangles' section of SMDs."""
-        tris = []
-        points = [None, None, None]
+        tris: List[Triangle] = []
+        # Temporary vertex, which we overwrite in the loop.
+        points = [Vertex(Vec(), Vec(), 0.0, 0.0, [])] * 3
         for line_num, line in file_iter:
             if line == b'end':
                 return tris
@@ -563,7 +562,7 @@ class Mesh:
         self,
         mdl: 'Mesh',
         rotation: Union[Angle, Matrix, Vec, None]=None,
-        offset: Vec=(0.0, 0.0, 0.0),
+        offset: Vec=None,
         scale: float=1.0,
     ) -> None:
         """Append another model's geometry onto this one.
@@ -573,6 +572,8 @@ class Mesh:
         if not mdl.triangles:
             # Nothing to add.
             return
+        if offset is None:
+            offset = Vec()
 
         for bone in self.bones.values():
             if bone.parent is None:
