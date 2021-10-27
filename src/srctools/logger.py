@@ -14,7 +14,7 @@ from io import StringIO
 from types import TracebackType
 from typing import (
     cast, Optional, Union, Any,
-    Dict, Tuple, Type, Callable, Generator, Iterable, TextIO,
+    Dict, Tuple, List, Type, Callable, Generator, Iterable, TextIO,
 )
 
 
@@ -271,7 +271,7 @@ class NullStream(TextIO):
         """We never have data."""
         return ''
 
-    def readlines(self, hint: int=-1) -> list[str]:
+    def readlines(self, hint: int=-1) -> List[str]:
         """We never have data."""
         return []
 
