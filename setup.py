@@ -8,7 +8,7 @@ MAC = sys.platform.startswith('darwin')
 root = os.path.dirname(__file__)
 
 # Mandatory in CI!
-optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1' and False
+optional_ext = os.environ.get('CIBUILDWHEEL', '0') != '1'
 
 if WIN:
     openmp = ['/openmp']
