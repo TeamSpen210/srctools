@@ -212,6 +212,7 @@ class BSP_LUMPS(Enum):
     PHYSLEVEL = 62
     DISP_MULTIBLEND = 63
 
+
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
 
 # Special-case the packfile lump, put it at the end.
@@ -445,7 +446,6 @@ class TexInfo:
 
     def __repr__(self) -> str:
         """For overlays, all the shift data is not important."""
-        #  s_off=Vec(0, 0, 0), s_shift=-99999.0, t_off=Vec(0, 0, 0), t_shift=-99999.0, lightmap_s_off=Vec(0, 0, 0), lightmap_s_shift=-99999.0, lightmap_t_off=Vec(0, 0, 0), lightmap_t_shift=-99999.0
         res = []
         if self.s_off or self.s_shift != -99999.0:
             res.append(f's_off={self.s_off}, s_shift={self.s_shift}')
@@ -539,13 +539,28 @@ class Edge:
 
     The face on the other side of the edge has a RevEdge instead, which shares these vectors.
     """
-    a: Vec
-    b: Vec
     opposite: 'Edge'
+
     def __init__(self, a: Vec, b: Vec) -> None:
-        self.a = a
-        self.b = b
+        self._a = a
+        self._b = b
         self.opposite = RevEdge(self)
+
+    @property
+    def a(self) -> Vec:
+        return self._a
+
+    @a.setter
+    def a(self, value: Vec) -> None:
+        self._a = value
+
+    @property
+    def b(self) -> Vec:
+        return self._b
+
+    @b.setter
+    def b(self, value: Vec) -> None:
+        self._b = value
 
     def __repr__(self) -> str:
         return f'Edge({self.a!r}, {self.b!r})'
@@ -574,6 +589,7 @@ class RevEdge(Edge):
     @a.setter
     def a(self, value: Vec) -> None:
         self.opposite.b = value
+
     @property
     def b(self) -> Vec:
         """This is a proxy for our opposite's A vec."""
@@ -1434,7 +1450,7 @@ class BSP:
 
         for edge in edges:
             assert not isinstance(edge, RevEdge), edge
-            edge_buf.write(struct.pack('<HH',  add_vert(edge.a), add_vert(edge.b)))
+            edge_buf.write(struct.pack('<HH', add_vert(edge.a), add_vert(edge.b)))
 
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()
