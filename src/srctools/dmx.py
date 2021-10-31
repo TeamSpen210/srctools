@@ -9,14 +9,15 @@ from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
     Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterator,
-    Set, Mapping, Any, ValuesView,
+    Set, Mapping, Any, ValuesView, cast,
 )
 from struct import Struct, pack
 import io
 import re
+import copy
 from uuid import UUID, uuid4 as get_uuid
 
-from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle
+from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, EmptyMapping
 from srctools.property_parser import Property
 from srctools.tokenizer import Py_Tokenizer as Tokenizer, Token
 
@@ -507,6 +508,30 @@ class Attribute(Generic[ValueT], _ValProps):
         else:
             self._value.append(result)
 
+    def __copy__(self) -> 'Attribute[ValueT]':
+        """Duplicate this attribute shallowly, retaining references if this is an Element type."""
+        cpy = Attribute(self.name, self._typ, None)
+        # Deep-copy this anyway, to make it behave immutably.
+        needs_deep = self.type is ValueType.MATRIX
+        if self.is_array:
+            cpy._value = []
+            for value in cast('list[ValueT]', self._value):
+                if needs_deep:
+                    cpy._value.append(value.copy())
+                else:
+                    cpy._value.append(value)
+        elif needs_deep:
+            cpy._value = self._value.copy()
+        else:
+            cpy._value = self._value
+        return cpy
+
+    copy = __copy__
+
+    def __deepcopy__(self, memodict=EmptyMapping) -> 'Attribute[ValueT]':
+        """Duplicate this attribute and all children."""
+        return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
+
 
 class Element(MutableMapping[str, Attribute]):
     """An element in a DMX tree."""
@@ -583,7 +608,7 @@ class Element(MutableMapping[str, Attribute]):
         return result, fmt_name, fmt_vers
 
     @classmethod
-    def parse_bin(cls, file, version, unicode=False):
+    def parse_bin(cls, file, version, unicode=False) -> 'Element':
         """Parse the core binary data in a DMX file.
 
         The <!-- --> format comment line should have already be read.
@@ -729,7 +754,7 @@ class Element(MutableMapping[str, Attribute]):
         return elements[0]
 
     @classmethod
-    def parse_kv2(cls, file, version):
+    def parse_kv2(cls, file, version) -> 'Element':
         """Parse a DMX file encoded in KeyValues2.
 
         The <!-- --> format comment line should have already be read.

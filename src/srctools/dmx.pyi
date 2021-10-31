@@ -2,9 +2,8 @@
 so it's better done in type stub form.
 """
 from enum import Enum
-from collections.abc import Iterable, Iterator, Mapping
+from collections.abc import Iterable, Iterator, Mapping, MutableMapping
 from typing import Union, Optional, NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
-from typing_extensions import TypeAlias
 from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
 from srctools import Matrix, Angle, Property
 import builtins
@@ -392,6 +391,10 @@ class Attribute(Generic[ValueT], _ValProps):
     def __len__(self) -> builtins.int: ...
     def __iter__(self) -> Iterator[ValueT]: ...
     def append(self, value: ValueT) -> None: ...
+
+    def copy(self) -> Attribute[ValueT]: ...
+    def __copy__(self) -> Attribute[ValueT]: ...
+    def __deepcopy__(self, memodict: MutableMapping=...) -> Attribute[ValueT]: ...
 
 
 class Element(Mapping[str, Attribute]):
