@@ -2,6 +2,7 @@
 from typing import Union, IO, Dict, overload, List, Iterable
 
 import attr
+import copy
 
 from srctools.dmx import Element, ValueType, Attribute
 
@@ -91,7 +92,7 @@ class Particle:
             if value.type is not ValueType.ELEMENT or not value.is_array:
                 raise ValueError('{} must be an element array!')
             return [
-                Operator(ele.name, ele.pop('functionName').val_str, dict(ele))
+                Operator(ele.name, ele.pop('functionName').val_str, copy.deepcopy(dict(ele)))
                 for ele in value
                 if isinstance(ele, Element)
             ]
@@ -117,7 +118,7 @@ class Particle:
                 ]
             # Everything else.
             options = {
-                value.name.casefold(): value
+                value.name.casefold(): copy.deepcopy(value)
                 for value in elem.values()
             }
 
@@ -133,3 +134,44 @@ class Particle:
                 children,
             )
         return systems
+
+    @classmethod
+    def export(cls, particles: Iterable['Particle']) -> Element:
+        """Reconstruct a DMX file with the specified particles."""
+        root = Element('', 'DmElement')
+        root['particleSystemDefinitions'] = part_list = Attribute.array('', ValueType.ELEMENT)
+
+        name_to_elem: dict[str, Element] = {}
+
+        for part in particles:
+            part_elem = Element(part.name, 'DmeParticleSystemDefinition')
+            part_list.append(part_elem)
+            part_elem.name = part.name
+            name_to_elem[part.name.casefold()] = part_elem
+            for identifier in [
+                'renderers', 'operators', 'initializers',
+                'emitters', 'forces', 'constraints',
+            ]:
+                op_list: list[Operator] = getattr(part, identifier)
+                part_elem[identifier] = op_attrlist = Attribute.array(identifier, ValueType.ELEMENT)
+                for operator in op_list:
+                    op_elem = Element(operator.name, 'DmeParticleOperator')
+                    op_attrlist.append(op_elem)
+                    op_elem['functionName'] = operator.function
+                    for op_attr in operator.options.values():
+                        op_elem[op_attr.name.casefold()] = copy.deepcopy(op_attr)
+
+            # Initialise early to cause it to be placed above regular options.
+            part_elem['children'] = Attribute.array('children', ValueType.ELEMENT)
+
+            for option in part.options.values():
+                part_elem[option.name.casefold()] = copy.deepcopy(option)
+
+        # Now append the children.
+        for part in particles:
+            child_attr: Attribute[Element] = name_to_elem[part.name]['children']
+            assert child_attr.type is ValueType.ELEMENT and child_attr.is_array, child_attr
+            for child in part.children:
+                child_attr.append(name_to_elem[child.particle.casefold()])
+
+        return root
