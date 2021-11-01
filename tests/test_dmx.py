@@ -237,6 +237,31 @@ def test_attr_val_vector_3() -> None:
     assert Attribute.vec3('Fals', 0.0, 0.0, 0.0).val_bool is False
 
 
+def test_attr_eq() -> None:
+    """Test that attributes can be compared to each other."""
+    assert Attribute.string('test', 'blah') == Attribute.string('test', 'blah')
+    assert not Attribute.string('test', 'blah') != Attribute.string('test', 'blah')
+
+    # Names are case-insensitive.
+    assert Attribute.float('caseDiff', 3.5) == Attribute.float('CAsediff', 3.5)
+    assert not Attribute.float('caseDiff', 3.5) != Attribute.float('CAsediff', 3.5)
+    # Types must be the same.
+    assert Attribute.string('name', '43') != Attribute.int('name', 43)
+    assert not Attribute.string('name', '43') == Attribute.int('name', 43)
+    # Array != scalar.
+    arr1: Attribute[bool] = Attribute.array('NAM', ValueType.BOOL)
+    arr1.append(True)
+    assert Attribute.bool('NAM', True) != arr1
+    assert not Attribute.bool('NAM', True) == arr1
+    arr1.append(False)
+
+    arr2: Attribute[bool] = Attribute.array('NAM', ValueType.BOOL)
+    arr2.append(True)
+    arr2.append(False)
+    assert arr1 == arr2
+    assert not arr1 != arr2
+
+
 @pytest.mark.parametrize('typ, attr, value, binary, text', [
     (ValueType.INT, 'val_int',  0, b'\0\0\0\0', '0'),
     (ValueType.INT, 'val_int',  308823027, bytes.fromhex('f3 43 68 12'), '308823027'),

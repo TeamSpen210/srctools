@@ -446,14 +446,32 @@ class Attribute(Generic[ValueT], _ValProps):
     def __repr__(self) -> str:
         return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
 
-    def __getitem__(self, item):
+    def __eq__(self, other) -> bool:
+        if isinstance(other, Attribute):
+            return (
+                self._typ is other._typ and
+                self.name.casefold() == other.name.casefold() and
+                self._value == other._value
+            )
+        return NotImplemented
+
+    def __ne__(self, other) -> bool:
+        if isinstance(other, Attribute):
+            return (
+                self._typ is not other._typ or
+                self.name.casefold() != other.name.casefold() or
+                self._value != other._value
+            )
+        return NotImplemented
+
+    def __getitem__(self, item) -> AttrMember:
         """Read values in an array element."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
         _ = self._value[item]  # Raise IndexError/KeyError if not present.
         return AttrMember(self, item)
 
-    def __setitem__(self, ind, value):
+    def __setitem__(self, item, value: ValueT) -> None:
         """Set a specific array element to a value."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
@@ -465,9 +483,9 @@ class Attribute(Generic[ValueT], _ValProps):
             except KeyError:
                 raise ValueError(
                     f'Cannot convert ({val_type}) to {self._typ} type!')
-            self._value[ind] = func(result)
+            self._value[item] = func(result)
         else:
-            self._value[ind] = result
+            self._value[item] = result
 
     def __delitem__(self, item):
         """Remove the specified array index."""
