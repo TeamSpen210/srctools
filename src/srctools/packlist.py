@@ -144,25 +144,23 @@ def unify_path(path: str):
 class PackList:
     """Represents a list of resources for a map."""
     def __init__(self, fsys: FileSystemChain):
-        self._files = {}  # type: Dict[str, PackFile]
+        self._files: dict[str, PackFile] = {}
         self.fsys = fsys
         # Soundscript name -> soundscript path, raw WAVs
-        self.soundscripts = {}  # type: Dict[str, Tuple[str, List[str]]]
+        self.soundscripts: dict[str, tuple[str, list[str]]] = {}
         # Filenames of soundscripts - used to generate the manifest.
         # Ordered dictionary to keep the order intact, with
-        # filename keys mapping to a bool value indicating if it's included
-        # in the map.
-        self.soundscript_files = OrderedDict()  # type: Dict[str, FileMode]
-
+        # filename keys mapping to whether it's included in the map.
+        self.soundscript_files: dict[str, FileMode] = OrderedDict()
         # folder, ext, data -> filename used
-        self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
+        self._inject_files: dict[tuple[str, str, bytes], str] = {}
 
         # Cache of the models used for breakable chunks.
-        self._break_chunks = {}  # type: Optional[Dict[str, List[str]]]
+        self._break_chunks: dict[str, list[str]] = {}
 
         # For each model, defines the skins the model uses. None means at least
         # one use is unknown, so all skins could be used.
-        self.skinsets = {}  # type: Dict[str, Optional[Set[int]]]
+        self.skinsets: dict[str, Optional[set[int]]] = {}
 
     def __getitem__(self, path: str) -> PackFile:
         """Look up a packfile by filename."""
