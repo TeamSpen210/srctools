@@ -2,6 +2,8 @@
 from enum import Enum
 from chunk import Chunk as WAVChunk
 
+import attr
+
 from srctools import Property, conv_float
 from typing import (
     Optional, Union, TypeVar, Callable,
@@ -23,7 +25,7 @@ class Pitch(float, Enum):
     PITCH_NORM = 100.0
     PITCH_LOW = 95.0
     PITCH_HIGH = 120.0
-    
+
     def __str__(self) -> str:
         return self.name
 
@@ -97,22 +99,22 @@ class Level(Enum):
     SNDLVL_145dB = 'SNDLVL_145dB'
     SNDLVL_150dB = 'SNDLVL_150dB'
     SNDLVL_180dB = 'SNDLVL_180dB'
-    
+
     def __str__(self) -> str:
         return self.name
-    
+
 
 EnumType = TypeVar('EnumType', bound=Enum)
 
 
 def split_float(
-    val: str, 
+    val: str,
     enum: Callable[[str], Union[float, EnumType]],
     default: Union[float, EnumType],
     name: str,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
     """Handle values which can be either single or a low, high pair of numbers.
-    
+
     If single, low and high are the same.
     enum is a Enum with values to match text constants, or a converter function
     returning enums or raising ValueError, KeyError or IndexError.
@@ -122,17 +124,17 @@ def split_float(
         raise ValueError(f'Property block used for option in {name} sound!')
     if ',' in val:
         s_low, s_high = val.split(',')
-        try: 
+        try:
             low = enum(s_low.upper())
         except (LookupError, ValueError):
             low = conv_float(s_low, default)
-        try: 
+        try:
             high = enum(s_high.upper())
         except (LookupError, ValueError):
             high = conv_float(s_high, default)
         return low, high
     else:
-        try: 
+        try:
             out = enum(val.upper())
         except (LookupError, ValueError):
             out = conv_float(val, default)
@@ -169,11 +171,20 @@ def wav_is_looped(file: IO[bytes]) -> bool:
         chunk.skip()
 
 
+@attr.define(eq=False)
 class Sound:
     """Represents a single soundscript."""
-    stack_start: Property
-    stack_update: Property
-    stack_stop: Property
+    name: str
+    sounds: List[str]
+    volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]]
+    channel: Channel
+    level: Tuple[Union[float, Level], Union[float, Level]]
+    pitch: Tuple[Union[float, Pitch], Union[float, Pitch]]
+
+    _stack_start: Optional[Property]
+    _stack_update: Optional[Property]
+    _stack_stop: Optional[Property]
+    use_v2: bool
 
     def __init__(
         self,
@@ -183,7 +194,7 @@ class Sound:
         channel: Channel=Channel.DEFAULT,
         level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=(Level.SNDLVL_NORM, Level.SNDLVL_NORM),
         pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
-        
+
         # Operator stacks
         stack_start: Optional[Property]=None,
         stack_update: Optional[Property]=None,
@@ -210,23 +221,59 @@ class Sound:
             self.pitch = pitch
         else:
             self.pitch = pitch, pitch
-        
-        self.stack_start = Property('', []) if stack_start is None else stack_start
-        self.stack_update = Property('', []) if stack_update is None else stack_update
-        self.stack_stop = Property('', []) if stack_stop is None else stack_stop
+
+        self._stack_start = stack_start
+        self._stack_update = stack_update
+        self._stack_stop = stack_stop
+
+    @property
+    def stack_start(self) -> Property:
+        """Initialise the stack if not already produced."""
+        if self._stack_start is None:
+            self._stack_start = Property('', [])
+        return self._stack_start
+
+    @stack_start.setter
+    def stack_start(self, tree: Property) -> None:
+        """Change the start stack to another tree."""
+        self._stack_start = tree
+
+    @property
+    def stack_update(self) -> Property:
+        """Initialise the stack if not already produced."""
+        if self._stack_update is None:
+            self._stack_update = Property('', [])
+        return self._stack_update
+
+    @stack_update.setter
+    def stack_update(self, tree: Property) -> None:
+        """Change the update stack to another tree."""
+        self._stack_update = tree
+
+    @property
+    def stack_stop(self) -> Property:
+        """Initialise the stack if not already produced."""
+        if self._stack_stop is None:
+            self._stack_stop = Property('', [])
+        return self._stack_stop
+
+    @stack_stop.setter
+    def stack_stop(self, tree: Property) -> None:
+        """Change the stop stack to another tree."""
+        self._stack_stop = tree
 
     def __repr__(self) -> str:
         res = f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, channel={self.channel}, level={self.level}, pitch={self.pitch}'
-        if self.force_v2 or self.stack_start or self.stack_update or self.stack_stop:
+        if self.force_v2 or self._stack_start or self._stack_update or self._stack_stop:
             res += f', stack_start={self.stack_start!r}, stack_update={self.stack_update!r}, stack_stop={self.stack_stop!r})'
         else:
             res += ')'
         return res
 
-    @classmethod 
+    @classmethod
     def parse(cls, file: Property) -> Dict[str, 'Sound']:
         """Parses a soundscript file.
-        
+
         This returns a dict mapping casefolded names to Sounds.
         """
         sounds = {}
@@ -277,31 +324,27 @@ class Sound:
                         wavs.append(subprop.value)
 
             channel = Channel(snd_prop['channel', 'CHAN_AUTO'])
-            
+
             sound_version = snd_prop.int('soundentry_version', 1)
-            
+
             if 'operator_stacks' in snd_prop:
                 if sound_version == 1:
                     raise ValueError(
                         'Operator stacks used with version '
                         'less than 2 in "{}"!'.format(snd_prop.real_name))
-                
+
                 start_stack, update_stack, stop_stack = [
                     Property(stack_name, [
                         prop.copy()
-                        for prop in 
+                        for prop in
                         snd_prop.find_children('operator_stacks', stack_name)
                     ])
-                    for stack_name in 
+                    for stack_name in
                     ['start_stack', 'update_stack', 'stop_stack']
                 ]
             else:
-                start_stack, update_stack, stop_stack = [
-                    Property(stack_name, [])
-                    for stack_name in 
-                    ['start_stack', 'update_stack', 'stop_stack']
-                ]
-            
+                start_stack, update_stack, stop_stack = [None, None, None]
+
             sounds[snd_prop.name] = Sound(
                 snd_prop.real_name,
                 wavs,
@@ -318,7 +361,7 @@ class Sound:
 
     def export(self, file: TextIO):
         """Write a sound to a file.
-        
+
         Pass a file-like object open for text writing.
         """
         file.write('"{}"\n\t{{\n'.format(self.name))
