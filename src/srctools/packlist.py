@@ -4,18 +4,20 @@ import itertools
 import shutil
 from collections import OrderedDict
 from pathlib import Path
-from typing import Iterable, Dict, Tuple, List, Iterator, Set, Optional
+from typing import Optional, TypeVar, Generic, Iterable, Dict, Tuple, List, Iterator, Set
 from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
 import re
+
+import attr
 
 from srctools import conv_bool
 from srctools.tokenizer import TokenSyntaxError
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, EntityTypes
-from srctools.bsp import BSP, BSP_LUMPS
+from srctools.bsp import BSP
 from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
     VirtualFileSystem,
@@ -26,8 +28,8 @@ from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
 
 LOGGER = srctools.logger.get_logger(__name__)
-SOUND_CACHE_VERSION = '1'  # Used to allow ignoring incompatible versions.
-
+SOUND_CACHE_VERSION = '2'  # Used to allow ignoring incompatible versions.
+ParsedT = TypeVar('ParsedT')
 
 class FileType(Enum):
     """Types of files we might pack."""
@@ -141,17 +143,58 @@ def unify_path(path: str):
     return path.lstrip('/')
 
 
+@attr.define
+class ManifestedFiles(Generic[ParsedT]):
+    """Handles a file type which contains a bunch of named objects.
+
+    We parse those to load the names, then when the names are referenced we pack the files they're
+    defined in.
+    """
+    # When packing the file, use this filetype.
+    pack_type: FileType
+    # For each identifier, the filename it's in and whatever data this was parsed into.
+    name_to_parsed: dict[str, tuple[str, ParsedT]] = attr.Factory(dict)
+    # All the filenames we know about, in order. The value is then
+    # whether they should be packed.
+    _files: dict[str, FileMode] = attr.Factory(OrderedDict)
+
+    def force_exclude(self, filename: str) -> None:
+        """Mark this soundscript file as excluded."""
+        self._files[filename] = FileMode.EXCLUDE
+
+    def add_file(
+        self, filename: str,
+        items: Iterable[Tuple[str, ParsedT]],
+        force_include: bool,
+    ) -> None:
+        """Add a file with its parsed soundscripts"""
+        # Do not override this.
+        if self._files.get(filename, None) is not FileMode.EXCLUDE:
+            self._files[filename] = FileMode.INCLUDE if force_include else FileMode.UNKNOWN
+        for identifier, data in items:
+            self.name_to_parsed[identifier] = (filename, data)
+
+    def pack_and_get(self, lst: 'PackList', identifier: str) -> ParsedT:
+        """Pack the associated filename, then return the data."""
+        [filename, data] = self.name_to_parsed[identifier]
+        if self._files[filename] is FileMode.UNKNOWN:
+            self._files[filename] = FileMode.INCLUDE
+            lst.pack_file(filename, self.pack_type)
+        return data
+
+    def packed_files(self) -> Iterator[str]:
+        """Yield the used files in order."""
+        for file, used in self._files.items():
+            if used is FileMode.INCLUDE:
+                yield file
+
+
 class PackList:
     """Represents a list of resources for a map."""
     def __init__(self, fsys: FileSystemChain):
         self._files: dict[str, PackFile] = {}
         self.fsys = fsys
-        # Soundscript name -> soundscript path, raw WAVs
-        self.soundscripts: dict[str, tuple[str, list[str]]] = {}
-        # Filenames of soundscripts - used to generate the manifest.
-        # Ordered dictionary to keep the order intact, with
-        # filename keys mapping to whether it's included in the map.
-        self.soundscript_files: dict[str, FileMode] = OrderedDict()
+        self.soundscript: ManifestedFiles[Sound] = ManifestedFiles(FileType.SOUNDSCRIPT)
         # folder, ext, data -> filename used
         self._inject_files: dict[tuple[str, str, bytes], str] = {}
 
@@ -385,17 +428,13 @@ class PackList:
             return
 
         try:
-            script_path, sound = self.soundscripts[sound_name]
+            soundscript = self.soundscript.pack_and_get(self, sound_name)
         except KeyError:
             LOGGER.warning('Unknown sound "{}"!', sound_name)
             return
 
-        # Mark the soundscript as something we need to add to the manifest.
-        self.soundscript_files[script_path] = FileMode.INCLUDE
-        self.pack_file(script_path, FileType.SOUNDSCRIPT)
-
-        for raw_file in sound:
-            self.pack_file('sound/' + raw_file)
+        for sound in soundscript.sounds:
+            self.pack_file('sound/' + sound.lstrip(SND_CHARS).replace('\\', '/'))
 
     def pack_breakable_chunk(self, chunkname: str) -> None:
         """Pack the generic gib model for the given chunk name."""
@@ -427,7 +466,7 @@ class PackList:
         file: File,
         *,
         always_include: bool=False,
-    ) -> Iterable[str]:
+    ) -> Iterable[Sound]:
         """Read in a soundscript and record which files use it.
 
         If always_include is True, it will be included in the manifests even
@@ -453,33 +492,21 @@ class PackList:
         props: Property,
         path: str,
         always_include: bool = False,
-    ) -> Iterable[str]:
+    ) -> List[Sound]:
         """Read in a soundscript and record which files use it.
 
         If always_include is True, it will be included in the manifests even
         if it isn't used.
         """
-        # If set to excluded, ignore always_include.
-        if self.soundscript_files.get(path, None) is not FileMode.EXCLUDE:
-            self.soundscript_files[path] = (
-                FileMode.INCLUDE
-                if always_include else
-                FileMode.UNKNOWN
-            )
-
         try:
             scripts = Sound.parse(props)
         except ValueError:
             LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
-            return ()
+            return []
 
-        for name, sound in scripts.items():
-            self.soundscripts[name] = path, [
-                snd.lstrip(SND_CHARS).replace('\\', '/')
-                for snd in sound.sounds
-            ]
+        self.soundscript.add_file(path, scripts.items(), always_include)
 
-        return list(scripts.keys())
+        return list(scripts.values())
 
     def load_soundscript_manifest(self, cache_file: str=None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
@@ -492,7 +519,7 @@ class PackList:
         except FileNotFoundError:
             return
 
-        cache_data = {}  # type: Dict[str, Tuple[int, Property]]
+        cache_data: dict[str, tuple[int, Property]] = {}
         if cache_file is not None:
             # If the file doesn't exist or is corrupt, that's
             # fine. We'll just parse the soundscripts the slow
@@ -539,30 +566,31 @@ class PackList:
                 continue
             cur_key = file.cache_key()
 
+            # The soundscripts in the manifests are always included,
+            # since many would be part of the core code (physics, weapons,
+            # ui, etc). Just keep those loaded, no harm since vanilla does.
+
             if cache_key != cur_key or cache_key == -1:
                 sounds = self.load_soundscript(file, always_include=True)
             else:
                 # Read from cache.
-                sounds = []
-                for cache_prop in cache_files:
-                    sounds.append(cache_prop.real_name)
-                    self.soundscripts[cache_prop.real_name] = (prop.value, [
-                        snd.value
-                        for snd in cache_prop
-                    ])
-
-            # The soundscripts in the manifests are always included,
-            # since many would be part of the core code (physics, weapons,
-            # ui, etc). Just keep those loaded, no harm since vanilla does.
-            self.soundscript_files[file.path] = FileMode.INCLUDE
+                sounds = [
+                    Sound(cache_prop.real_name, cache_prop.as_array())
+                    for cache_prop in cache_files
+                ]
+                self.soundscript.add_file(
+                    prop.value,
+                    ((sound.name, sound) for sound in sounds),
+                    force_include=True
+                )
 
             if new_cache_sounds is not None:
                 new_cache_sounds.append(Property(prop.value, [
                     Property('cache_key', str(cur_key)),
                     Property('Files', [
-                        Property(snd, [
+                        Property(snd.name, [
                             Property('snd', raw)
-                            for raw in self.soundscripts[snd][1]
+                            for raw in snd.sounds
                         ])
                         for snd in sounds
                     ])
@@ -582,8 +610,7 @@ class PackList:
         """
         manifest = Property('game_sounds_manifest', [
             Property('precache_file', snd)
-            for snd, is_enabled in self.soundscript_files.items()
-            if is_enabled is FileMode.INCLUDE
+            for snd in self.soundscript.packed_files()
         ])
 
         buf = bytearray()
