@@ -53,11 +53,14 @@ class FileType(Enum):
     MODEL = 'mdl'
 
 
-class SoundScriptMode(Enum):
-    """Value of Packlist.soundscript_files[]"""
-    UNKNOWN = 'unknown'  # Normal, we know about this script but it's not used.
-    INCLUDE = 'include'  # Something uses this script.
-    EXCLUDE = 'exclude'  # Ordered to NOT include this script.
+class FileMode(Enum):
+    """Mode for files we may want to pack like soundscripts or particles."""
+    UNKNOWN = 'unknown'  # Normal, we know about this file but it's not used.
+    INCLUDE = 'include'  # Something uses this file.
+    EXCLUDE = 'exclude'  # Ordered to NOT include this file.
+
+
+SoundScriptMode = FileMode  # Old name, deprecated.
 
 
 EXT_TYPE = {
@@ -149,7 +152,7 @@ class PackList:
         # Ordered dictionary to keep the order intact, with
         # filename keys mapping to a bool value indicating if it's included
         # in the map.
-        self.soundscript_files = OrderedDict()  # type: Dict[str, SoundScriptMode]
+        self.soundscript_files = OrderedDict()  # type: Dict[str, FileMode]
 
         # folder, ext, data -> filename used
         self._inject_files = {}  # type: Dict[Tuple[str, str, bytes], str]
@@ -390,7 +393,7 @@ class PackList:
             return
 
         # Mark the soundscript as something we need to add to the manifest.
-        self.soundscript_files[script_path] = SoundScriptMode.INCLUDE
+        self.soundscript_files[script_path] = FileMode.INCLUDE
         self.pack_file(script_path, FileType.SOUNDSCRIPT)
 
         for raw_file in sound:
@@ -459,11 +462,11 @@ class PackList:
         if it isn't used.
         """
         # If set to excluded, ignore always_include.
-        if self.soundscript_files.get(path, None) is not SoundScriptMode.EXCLUDE:
+        if self.soundscript_files.get(path, None) is not FileMode.EXCLUDE:
             self.soundscript_files[path] = (
-                SoundScriptMode.INCLUDE
+                FileMode.INCLUDE
                 if always_include else
-                SoundScriptMode.UNKNOWN
+                FileMode.UNKNOWN
             )
 
         try:
@@ -553,7 +556,7 @@ class PackList:
             # The soundscripts in the manifests are always included,
             # since many would be part of the core code (physics, weapons,
             # ui, etc). Just keep those loaded, no harm since vanilla does.
-            self.soundscript_files[file.path] = SoundScriptMode.INCLUDE
+            self.soundscript_files[file.path] = FileMode.INCLUDE
 
             if new_cache_sounds is not None:
                 new_cache_sounds.append(Property(prop.value, [
@@ -582,7 +585,7 @@ class PackList:
         manifest = Property('game_sounds_manifest', [
             Property('precache_file', snd)
             for snd, is_enabled in self.soundscript_files.items()
-            if is_enabled is SoundScriptMode.INCLUDE
+            if is_enabled is FileMode.INCLUDE
         ])
 
         buf = bytearray()
