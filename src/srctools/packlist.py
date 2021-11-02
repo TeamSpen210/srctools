@@ -256,9 +256,7 @@ class PackList:
             return
 
         if '\t' in filename:
-            raise ValueError(
-                'No tabs are allowed in filenames ({!r})'.format(filename)
-            )
+            raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
 
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
@@ -344,7 +342,7 @@ class PackList:
             elif data == file.data:
                 pass  # Overrode with the same data, that's fine
             elif data:
-                raise ValueError('"{}": two different data streams!'.format(filename))
+                raise ValueError(f'"{filename}": two different data streams!')
             # else: we had an override, but asked to just pack now. That's fine.
 
             # Override optional packing with required packing.
@@ -360,11 +358,10 @@ class PackList:
             elif data_type is FileType.GENERIC:
                 pass  # If we know it has behaviour already, that trumps generic.
             else:
-                raise ValueError('"{}": {} can\'t become a {}!'.format(
-                    filename,
-                    file.type.name,
-                    data_type.name,
-                ))
+                raise ValueError(
+                    f'"{filename}": {file.type.name} '
+                    f"can't become a {data_type.name}!"
+                )
             return  # Don't re-add this.
 
         start, ext = os.path.splitext(filename)
@@ -377,7 +374,7 @@ class PackList:
                 pass
         elif data_type is FileType.SOUNDSCRIPT:
             if ext != '.txt':
-                raise ValueError('"{}" cannot be a soundscript!'.format(filename))
+                raise ValueError(f'"{filename}" cannot be a soundscript!')
 
         self._files[filename] = PackFile(data_type, filename, data, optional)
 
@@ -398,7 +395,7 @@ class PackList:
         # Also abs() to remove ugly minus signs.
         name_hash = format(abs(hash(data)), 'x')
         while True:
-            full_name = "{}/INJECT_{}.{}".format(folder, name_hash, ext)
+            full_name = f"{folder}/INJECT_{name_hash}.{ext}"
             if full_name not in self._files:
                 break
             name_hash = format(abs(hash(name_hash)), 'x')
