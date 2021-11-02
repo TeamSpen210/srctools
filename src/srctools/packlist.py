@@ -162,6 +162,10 @@ class ManifestedFiles(Generic[ParsedT]):
         """Mark this soundscript file as excluded."""
         self._files[filename] = FileMode.EXCLUDE
 
+    def __len__(self) -> int:
+        """Return the number of sounds we know about."""
+        return len(self.name_to_parsed)
+
     def add_file(
         self, filename: str,
         items: Iterable[Tuple[str, ParsedT]],
