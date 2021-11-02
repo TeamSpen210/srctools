@@ -529,16 +529,15 @@ class Attribute(Generic[ValueT], _ValProps):
     def __copy__(self) -> 'Attribute[ValueT]':
         """Duplicate this attribute shallowly, retaining references if this is an Element type."""
         cpy = Attribute(self.name, self._typ, None)
-        # Deep-copy this anyway, to make it behave immutably.
-        needs_deep = self.type is ValueType.MATRIX
         if self.is_array:
             cpy._value = []
             for value in cast('list[ValueT]', self._value):
-                if needs_deep:
+                if isinstance(value, Matrix):
                     cpy._value.append(value.copy())
                 else:
                     cpy._value.append(value)
-        elif needs_deep:
+        # Deep-copy this anyway, to make it behave immutably.
+        elif isinstance(self._value, Matrix):
             cpy._value = self._value.copy()
         else:
             cpy._value = self._value
@@ -652,9 +651,9 @@ class Element(MutableMapping[str, Attribute]):
         elif version >= 2:
             stringdb_size = stringdb_ind = '<h'
         else:
-            stringdb_size = stringdb_ind = None
+            stringdb_size = stringdb_ind = ''
 
-        if stringdb_size is not None:
+        if stringdb_size:
             [string_count] = binformat.struct_read(stringdb_size, file)
             stringdb = binformat.read_nullstr_array(file, string_count, encoding)
         else:
