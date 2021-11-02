@@ -13,7 +13,9 @@ import re
 import attr
 
 from srctools import conv_bool
+from srctools.dmx import Element
 from srctools.tokenizer import TokenSyntaxError
+from srctools.particles import Particle, FORMAT_NAME as PARTICLE_FORMAT_NAME
 from srctools.property_parser import Property, KeyValError
 from srctools.vmf import VMF
 from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, EntityTypes
@@ -59,7 +61,12 @@ class FileMode(Enum):
     """Mode for files we may want to pack like soundscripts or particles."""
     UNKNOWN = 'unknown'  # Normal, we know about this file but it's not used.
     INCLUDE = 'include'  # Something uses this file.
+    PRELOAD = 'preload'  # This file is used, and we want to preload it.
     EXCLUDE = 'exclude'  # Ordered to NOT include this file.
+
+    @property
+    def is_used(self) -> bool:
+        return self.value in ['include', 'preload']
 
 
 SoundScriptMode = FileMode  # Old name, deprecated.
@@ -169,27 +176,28 @@ class ManifestedFiles(Generic[ParsedT]):
     def add_file(
         self, filename: str,
         items: Iterable[Tuple[str, ParsedT]],
-        force_include: bool,
+        mode: FileMode = FileMode.UNKNOWN,
     ) -> None:
         """Add a file with its parsed soundscripts"""
         # Do not override this.
         if self._files.get(filename, None) is not FileMode.EXCLUDE:
-            self._files[filename] = FileMode.INCLUDE if force_include else FileMode.UNKNOWN
+            self._files[filename] = mode
         for identifier, data in items:
             self.name_to_parsed[identifier] = (filename, data)
 
-    def pack_and_get(self, lst: 'PackList', identifier: str) -> ParsedT:
+    def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool=False) -> ParsedT:
         """Pack the associated filename, then return the data."""
         [filename, data] = self.name_to_parsed[identifier]
-        if self._files[filename] is FileMode.UNKNOWN:
-            self._files[filename] = FileMode.INCLUDE
+        old = self._files[filename]
+        if old is not FileMode.EXCLUDE:
+            self._files[filename] = FileMode.PRELOAD if preload else FileMode.INCLUDE
             lst.pack_file(filename, self.pack_type)
         return data
 
     def packed_files(self) -> Iterator[str]:
         """Yield the used files in order."""
-        for file, used in self._files.items():
-            if used is FileMode.INCLUDE:
+        for file, mode in self._files.items():
+            if mode.is_used:
                 yield file
 
 
@@ -199,6 +207,8 @@ class PackList:
         self._files: dict[str, PackFile] = {}
         self.fsys = fsys
         self.soundscript: ManifestedFiles[Sound] = ManifestedFiles(FileType.SOUNDSCRIPT)
+        self.particles: ManifestedFiles[Particle] = ManifestedFiles(FileType.PARTICLE_FILE)
+        self._packed_particles: set[str] = set()
         # folder, ext, data -> filename used
         self._inject_files: dict[tuple[str, str, bytes], str] = {}
 
@@ -262,7 +272,7 @@ class PackList:
             self.pack_soundscript(filename)
             return  # This packs the soundscript and wav for us.
         if data_type is FileType.PARTICLE:
-            # self.pack_particle(filename)  # TODO: Particle parsing
+            self.pack_particle(filename)
             return  # This packs the PCF and material if required.
         if data_type is FileType.CHOREO:
             # self.pack_choreo(filename)  # TODO: Choreo scene parsing
@@ -437,6 +447,31 @@ class PackList:
         for sound in soundscript.sounds:
             self.pack_file('sound/' + sound.lstrip(SND_CHARS).replace('\\', '/'))
 
+    def pack_particle(self, particle_name: str, preload: bool = False) -> None:
+        """Pack a particle system and the raw PCFs."""
+        # Blank means no particle is used, also skip if we already packed.
+        if not particle_name or particle_name in self._packed_particles:
+            return
+        particle = self.particles.pack_and_get(self, particle_name)
+        # Pack the sprites the particle system uses.
+        try:
+            mat = particle.options['material'].val_str
+        except KeyError:
+            pass
+        else:
+            self.pack_file(mat, FileType.MATERIAL)
+        for rend in particle.renderers:
+            if rend.function.casefold() == 'render models':
+                try:
+                    mdl = rend.options['sequence 0 model'].val_str
+                except KeyError:
+                    LOGGER.warning('Particle {} has model render with no model?', particle_name)
+                else:
+                    self.pack_file(mdl, FileType.MODEL)
+        for child in particle.children:
+            self._packed_particles.add(child.particle)
+            self.pack_particle(child.particle)
+
     def pack_breakable_chunk(self, chunkname: str) -> None:
         """Pack the generic gib model for the given chunk name."""
         if self._break_chunks is None:
@@ -505,7 +540,7 @@ class PackList:
             LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
             return []
 
-        self.soundscript.add_file(path, scripts.items(), always_include)
+        self.soundscript.add_file(path, scripts.items(), FileMode.INCLUDE if always_include else FileMode.UNKNOWN)
 
         return list(scripts.values())
 
@@ -582,7 +617,7 @@ class PackList:
                 self.soundscript.add_file(
                     prop.value,
                     ((sound.name, sound) for sound in sounds),
-                    force_include=True
+                    FileMode.INCLUDE,
                 )
 
             if new_cache_sounds is not None:
@@ -602,6 +637,31 @@ class PackList:
             with srctools.AtomicWriter(cache_file) as f:
                 for line in new_cache_data.export():
                     f.write(line)
+
+    def load_particle_manifest(self) -> None:
+        """Read the particle manifest, and read all mentioned scripts."""
+        try:
+            man = self.fsys.read_prop('particles/particles_manifest.txt')
+        except FileNotFoundError:
+            LOGGER.warning('No particles manifest.')
+            return
+
+        for prop in man.find_children('particles_manifest'):
+            if prop.value.startswith('!'):
+                file_mode = FileMode.PRELOAD
+                fname = prop.value[1:]
+            else:
+                file_mode = FileMode.INCLUDE
+                fname = prop.value
+
+            with self.fsys.open_bin(fname) as f:
+                dmx, fmt_name, fmt_version = Element.parse(f)
+            if fmt_name != PARTICLE_FORMAT_NAME:
+                LOGGER.warning('"{}" is not a particle file!', fname)
+                continue
+            LOGGER.debug('Parsing particle {}', fname)
+            particles = Particle.parse(dmx, fmt_version)
+            self.particles.add_file(fname, particles.items(), file_mode)
 
     def write_manifest(self) -> None:
         """Produce and pack a manifest file for this map.
@@ -731,6 +791,8 @@ class PackList:
                     self.pack_file(value, FileType.MATERIAL)
                 elif val_type is KVTypes.STR_SOUND:
                     self.pack_soundscript(value)
+                elif val_type is KVTypes.STR_PARTICLE:
+                    self.pack_particle(value)
 
         # Handle resources that's coded into different entities with our
         # internal database.
