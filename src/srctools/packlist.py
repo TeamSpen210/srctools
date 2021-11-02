@@ -518,10 +518,29 @@ class PackList:
             LOGGER.warning('Soundscript "{}" does not exist!', file.path)
             return ()
         except (KeyValError, ValueError):
-            LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
+            LOGGER.warning('Soundscript "{}" could not be parsed:', file.path, exc_info=True)
             return ()
 
         return self._parse_soundscript(props, file.path, always_include)
+
+    def load_particle_system(self, filename: str, mode: FileMode=FileMode.UNKNOWN) -> Iterable[Particle]:
+        """Read in the specified particle system and record the particles for usage checking."""
+        try:
+            with self.fsys.open_bin(filename) as f:
+                dmx, fmt_name, fmt_version = Element.parse(f)
+            if fmt_name != PARTICLE_FORMAT_NAME:
+                raise ValueError(f'"{filename}" is not a particle file!')
+            particles = Particle.parse(dmx, fmt_version)
+        except FileNotFoundError:
+            # It doesn't exist, complain and pretend it's empty.
+            LOGGER.warning('Particle system "{}" does not exist!', filename)
+            return ()
+        except ValueError:
+            LOGGER.warning('Particle system "{}" could not be parsed:', filename, exc_info=True)
+            return ()
+
+        self.particles.add_file(filename, particles.items(), mode)
+        return particles.values()
 
     def _parse_soundscript(
         self,
@@ -653,15 +672,7 @@ class PackList:
             else:
                 file_mode = FileMode.INCLUDE
                 fname = prop.value
-
-            with self.fsys.open_bin(fname) as f:
-                dmx, fmt_name, fmt_version = Element.parse(f)
-            if fmt_name != PARTICLE_FORMAT_NAME:
-                LOGGER.warning('"{}" is not a particle file!', fname)
-                continue
-            LOGGER.debug('Parsing particle {}', fname)
-            particles = Particle.parse(dmx, fmt_version)
-            self.particles.add_file(fname, particles.items(), file_mode)
+            self.load_particle_system(fname, file_mode)
 
     def write_manifest(self) -> None:
         """Produce and pack a manifest file for this map.
