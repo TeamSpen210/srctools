@@ -261,6 +261,7 @@ res('info_node_link_logic')
 res('info_node_link_oneway')
 res('info_null')
 res('info_overlay_accessor')
+res('info_particle_system')  # Particle packed by FGD database.
 res('info_radial_link_controller')
 res('info_remarkable')
 res('info_snipertarget')
@@ -328,7 +329,7 @@ res('point_energy_ball_launcher',
 res('point_entity_finder')
 res('point_entity_replace')
 res('point_flesh_effect_target')
-res('point_futbol_shooter', 
+res('point_futbol_shooter',
     sound('World.Wheatley.fire'),
     includes='prop_exploding_futbol',
     )
