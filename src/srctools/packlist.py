@@ -33,6 +33,7 @@ LOGGER = srctools.logger.get_logger(__name__)
 SOUND_CACHE_VERSION = '2'  # Used to allow ignoring incompatible versions.
 ParsedT = TypeVar('ParsedT')
 
+
 class FileType(Enum):
     """Types of files we might pack."""
     GENERIC = auto_enum()  # Other file types.
@@ -66,6 +67,7 @@ class FileMode(Enum):
 
     @property
     def is_used(self) -> bool:
+        """Return if this file should be packed into the map."""
         return self.value in ['include', 'preload']
 
 
@@ -452,7 +454,7 @@ class PackList:
         # Blank means no particle is used, also skip if we already packed.
         if not particle_name or particle_name in self._packed_particles:
             return
-        particle = self.particles.pack_and_get(self, particle_name)
+        particle = self.particles.pack_and_get(self, particle_name, preload)
         # Pack the sprites the particle system uses.
         try:
             mat = particle.options['material'].val_str
@@ -470,7 +472,7 @@ class PackList:
                     self.pack_file(mdl, FileType.MODEL)
         for child in particle.children:
             self._packed_particles.add(child.particle)
-            self.pack_particle(child.particle)
+            self.pack_particle(child.particle, preload)
 
     def pack_breakable_chunk(self, chunkname: str) -> None:
         """Pack the generic gib model for the given chunk name."""
@@ -878,16 +880,16 @@ class PackList:
         # old data if required.
 
         # First retrieve the data.
-        packed_files = {
+        packed_files: dict[str, tuple[str, bytes]] = {
             info.filename.casefold(): (info.filename, bsp.pakfile.read(info))
             for info in bsp.pakfile.infolist()
-        }  # type: Dict[str, Tuple[str, bytes]]
+        }
 
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
-        all_systems = {
-            sys for sys, prefix in
+        all_systems: set[FileSystem] = {
+            sys for sys, _ in
             self.fsys.systems
-        }  # type: Set[FileSystem]
+        }
 
         allowed = set(all_systems)
 
@@ -902,7 +904,7 @@ class PackList:
         allowed.difference_update(blacklist)
 
         LOGGER.debug('Allowed filesystems:\n{}', '\n'.join([
-            ('+ ' if sys in allowed else '- ') + repr(sys) for sys, prefix in
+            ('+ ' if sys in allowed else '- ') + repr(sys) for sys, _ in
             self.fsys.systems
         ]))
 
