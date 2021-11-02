@@ -614,10 +614,13 @@ class Element(MutableMapping[str, Attribute]):
             fmt_vers = 0
 
         if enc_name == b'keyvalues2':
-            result = cls.parse_kv2(
-                io.TextIOWrapper(file, encoding='utf8' if unicode else 'ascii'),
-                enc_vers,
-            )
+            file_txt = io.TextIOWrapper(file, encoding='utf8' if unicode else 'ascii')
+            try:
+                result = cls.parse_kv2(file_txt, enc_vers)
+            finally:
+                # The caller opened our file, so we want to return it to their control.
+                # If we don't detach or close, we get a ResourceWarning.
+                file_txt.detach()
         elif enc_name == b'binary':
             result = cls.parse_bin(file, enc_vers, unicode)
         else:
