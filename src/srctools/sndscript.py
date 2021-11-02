@@ -175,16 +175,16 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 class Sound:
     """Represents a single soundscript."""
     name: str
-    sounds: List[str]
-    volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]]
-    channel: Channel
-    level: Tuple[Union[float, Level], Union[float, Level]]
-    pitch: Tuple[Union[float, Pitch], Union[float, Pitch]]
+    sounds: List[str] = attr.Factory(list)
+    volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
+    channel: Channel = Channel.DEFAULT
+    level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
+    pitch: Tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
-    _stack_start: Optional[Property]
-    _stack_update: Optional[Property]
-    _stack_stop: Optional[Property]
-    use_v2: bool
+    _stack_start: Optional[Property] = None
+    _stack_update: Optional[Property] = None
+    _stack_stop: Optional[Property] = None
+    force_v2: bool = False
 
     def __init__(
         self,
@@ -199,13 +199,13 @@ class Sound:
         stack_start: Optional[Property]=None,
         stack_update: Optional[Property]=None,
         stack_stop: Optional[Property]=None,
-        use_v2: bool=False,
+        force_v2: bool=False,
     ) -> None:
         """Create a soundscript."""
         self.name = name
         self.sounds = sounds
         self.channel = channel
-        self.force_v2 = use_v2
+        self.force_v2 = force_v2
 
         if isinstance(volume, tuple):
             self.volume = volume
