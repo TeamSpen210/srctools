@@ -202,12 +202,13 @@ class ManifestedFiles(Generic[ParsedT]):
         if self._files.get(filename, None) is not FileMode.EXCLUDE:
             self._files[filename] = mode
         for identifier, data in items:
+            identifier = identifier.casefold()
             if identifier not in self.name_to_parsed:
                 self.name_to_parsed[identifier] = (filename, data)
 
     def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool=False) -> ParsedT:
         """Pack the associated filename, then return the data."""
-        [filename, data] = self.name_to_parsed[identifier]
+        [filename, data] = self.name_to_parsed[identifier.casefold()]
         old = self._files[filename]
         if old is not FileMode.EXCLUDE:
             self._files[filename] = FileMode.PRELOAD if preload else FileMode.INCLUDE
@@ -472,7 +473,12 @@ class PackList:
         # Blank means no particle is used, also skip if we already packed.
         if not particle_name or particle_name in self._packed_particles:
             return
-        particle = self.particles.pack_and_get(self, particle_name, preload)
+        try:
+            particle = self.particles.pack_and_get(self, particle_name, preload)
+        except KeyError:
+            LOGGER.warning('Unknown particle "{}"!', particle_name)
+            self._packed_particles.add(particle_name)
+            return
         # Pack the sprites the particle system uses.
         try:
             mat = particle.options['material'].val_str
