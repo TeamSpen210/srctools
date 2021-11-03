@@ -25,7 +25,7 @@ from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
     VirtualFileSystem,
 )
-from srctools.mdl import Model, MDL_EXTS
+from srctools.mdl import Model, MDL_EXTS, AnimEvents
 from srctools.vmt import Material, VarType
 from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
@@ -91,6 +91,18 @@ SCRIPT_FUNC_TYPES: Dict[bytes, Tuple[str, FileType]] = {
     b'PrecacheModel': ('', FileType.MODEL),
 }
 
+# Events which play sounds
+ANIM_EVENT_SOUND = {
+    AnimEvents.AE_CL_PLAYSOUND,
+    AnimEvents.AE_SV_PLAYSOUND,
+    AnimEvents.SCRIPT_EVENT_SOUND,
+    AnimEvents.SCRIPT_EVENT_SOUND_VOICE,
+}
+# Events which play a hardcoded footstep.
+ANIM_EVENT_FOOTSTEP = {
+    AnimEvents.AE_NPC_LEFTFOOT,
+    AnimEvents.AE_NPC_RIGHTFOOT,
+}
 
 def load_fgd() -> FGD:
     """Extract the local copy of FGD data.
@@ -1061,8 +1073,16 @@ class PackList:
         for mdl_file in mdl.included_models:
             self.pack_file(mdl_file.filename, FileType.MODEL, optional=file.optional)
 
-        for snd in mdl.find_sounds():
-            self.pack_soundscript(snd)
+        for seq in mdl.sequences:
+            for event in seq.events:
+                if event.type in ANIM_EVENT_SOUND:
+                    self.pack_soundscript(event.options)
+                elif event.type in ANIM_EVENT_FOOTSTEP:
+                    npc = event.options or "NPC_CombineS"
+                    self.pack_soundscript(npc + ".RunFootstepLeft")
+                    self.pack_soundscript(npc + ".RunFootstepRight")
+                    self.pack_soundscript(npc + ".FootstepLeft")
+                    self.pack_soundscript(npc + ".FootstepRight")
 
         for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
             self.pack_file(break_mdl.value, FileType.MODEL, optional=file.optional)

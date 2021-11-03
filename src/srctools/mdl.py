@@ -780,29 +780,3 @@ class Model:
                 if full in self._sys:
                     yield full
                     break
-
-    def find_sounds(self) -> Iterator[str]:
-        """Yield all sounds used by animations.
-
-        """
-        sound_events = [
-            AnimEvents.AE_CL_PLAYSOUND,
-            AnimEvents.AE_SV_PLAYSOUND,
-            AnimEvents.SCRIPT_EVENT_SOUND,
-            AnimEvents.SCRIPT_EVENT_SOUND_VOICE,
-        ]
-        footstep_events = [
-            AnimEvents.AE_NPC_LEFTFOOT,
-            AnimEvents.AE_NPC_RIGHTFOOT,
-        ]
-
-        for seq in self.sequences:
-            for event in seq.events:
-                if event.type in sound_events:
-                    yield event.options
-                if event.type in footstep_events:
-                    npc = event.options or "NPC_CombineS"
-                    yield npc + ".RunFootstepLeft"
-                    yield npc + ".RunFootstepRight"
-                    yield npc + ".FootstepLeft"
-                    yield npc + ".FootstepRight"
