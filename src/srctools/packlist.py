@@ -103,6 +103,8 @@ ANIM_EVENT_FOOTSTEP = {
     AnimEvents.AE_NPC_LEFTFOOT,
     AnimEvents.AE_NPC_RIGHTFOOT,
 }
+ANIM_EVENT_PARTICLE = AnimEvents.AE_CL_CREATE_PARTICLE_EFFECT
+
 
 def load_fgd() -> FGD:
     """Extract the local copy of FGD data.
@@ -1083,6 +1085,16 @@ class PackList:
                     self.pack_soundscript(npc + ".RunFootstepRight")
                     self.pack_soundscript(npc + ".FootstepLeft")
                     self.pack_soundscript(npc + ".FootstepRight")
+                elif event.type is ANIM_EVENT_PARTICLE:
+                    try:
+                        part_name, attach_type, attach_name = event.options.split(' ')
+                    except ValueError:
+                        LOGGER.warning(
+                            'Invalid particle anim event params "{}" in "{}" sequence on "{}"!',
+                            event.options, seq.label, file.filename,
+                        )
+                    else:
+                        self.pack_particle(part_name)
 
         for break_mdl in mdl.phys_keyvalues.find_all('break', 'model'):
             self.pack_file(break_mdl.value, FileType.MODEL, optional=file.optional)
