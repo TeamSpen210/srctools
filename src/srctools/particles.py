@@ -169,7 +169,7 @@ class Particle:
 
         # Now append the children.
         for part in particles:
-            child_attr: Attribute[Element] = name_to_elem[part.name]['children']
+            child_attr: Attribute[Element] = name_to_elem[part.name.casefold()]['children']
             assert child_attr.type is ValueType.ELEMENT and child_attr.is_array, child_attr
             for child in part.children:
                 child_attr.append(name_to_elem[child.particle.casefold()])
