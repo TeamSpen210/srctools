@@ -160,10 +160,12 @@ class ManifestedFiles(Generic[ParsedT]):
     We parse those to load the names, then when the names are referenced we pack the files they're
     defined in.
     """
+    name: str  # Our file type.
     # When packing the file, use this filetype.
     pack_type: FileType
     # For each identifier, the filename it's in and whatever data this was parsed into.
-    name_to_parsed: dict[str, tuple[str, ParsedT]] = attr.Factory(dict)
+    # Do not display in the repr, there's thousands of these.
+    name_to_parsed: dict[str, tuple[str, ParsedT]] = attr.ib(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
     _files: dict[str, FileMode] = attr.Factory(OrderedDict)
@@ -186,7 +188,8 @@ class ManifestedFiles(Generic[ParsedT]):
         if self._files.get(filename, None) is not FileMode.EXCLUDE:
             self._files[filename] = mode
         for identifier, data in items:
-            self.name_to_parsed[identifier] = (filename, data)
+            if identifier not in self.name_to_parsed:
+                self.name_to_parsed[identifier] = (filename, data)
 
     def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool=False) -> ParsedT:
         """Pack the associated filename, then return the data."""
@@ -197,11 +200,11 @@ class ManifestedFiles(Generic[ParsedT]):
             lst.pack_file(filename, self.pack_type)
         return data
 
-    def packed_files(self) -> Iterator[str]:
+    def packed_files(self) -> Iterator[tuple[str, FileMode]]:
         """Yield the used files in order."""
         for file, mode in self._files.items():
             if mode.is_used:
-                yield file
+                yield file, mode
 
 
 class PackList:
@@ -209,8 +212,8 @@ class PackList:
     def __init__(self, fsys: FileSystemChain):
         self._files: dict[str, PackFile] = {}
         self.fsys = fsys
-        self.soundscript: ManifestedFiles[Sound] = ManifestedFiles(FileType.SOUNDSCRIPT)
-        self.particles: ManifestedFiles[Particle] = ManifestedFiles(FileType.PARTICLE_FILE)
+        self.soundscript: ManifestedFiles[Sound] = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT)
+        self.particles: ManifestedFiles[Particle] = ManifestedFiles('particle', FileType.PARTICLE_FILE)
         self._packed_particles: set[str] = set()
         # folder, ext, data -> filename used
         self._inject_files: dict[tuple[str, str, bytes], str] = {}
@@ -666,7 +669,9 @@ class PackList:
             man = self.fsys.read_prop('particles/particles_manifest.txt')
         except FileNotFoundError:
             LOGGER.warning('No particles manifest.')
-            return
+            man = Property.root()
+
+        in_manifest: set[str] = set()
 
         for prop in man.find_children('particles_manifest'):
             if prop.value.startswith('!'):
@@ -675,7 +680,15 @@ class PackList:
             else:
                 file_mode = FileMode.INCLUDE
                 fname = prop.value
+            in_manifest.add(fname)
             self.load_particle_system(fname, file_mode)
+
+        # Now, manually look for any particles not in the manifest, those are added if referenced.
+        for part_file in self.fsys.walk_folder('particles/'):
+            if not part_file.path[-4:].casefold() == '.pcf':
+                continue
+            if part_file.path not in in_manifest:
+                self.load_particle_system(part_file.path)
 
     def write_manifest(self) -> None:
         """Deprecated, call write_soundscript_manifest()."""
@@ -690,18 +703,28 @@ class PackList:
         """
         manifest = Property('game_sounds_manifest', [
             Property('precache_file', snd)
-            for snd in self.soundscript.packed_files()
+            for snd, _ in self.soundscript.packed_files()
         ])
 
         buf = bytearray()
         for line in manifest.export():
             buf.extend(line.encode('utf8'))
 
-        self.pack_file(
-            'scripts/game_sounds_manifest.txt',
-            FileType.SOUNDSCRIPT,
-            bytes(buf),
-        )
+        self.pack_file('scripts/game_sounds_manifest.txt', FileType.GENERIC, bytes(buf))
+
+    def write_particles_manifest(self, manifest_name: str) -> None:
+        """Write a particles manifest, so that used particles can be loaded."""
+        manifest = Property('particles_manifest', [])
+        for filename, mode in self.particles.packed_files():
+            if mode is FileMode.PRELOAD:
+                filename = '!' + filename
+            manifest.append(Property('file', filename))
+
+        buf = bytearray()
+        for line in manifest.export():
+            buf.extend(line.encode('utf8'))
+
+        self.pack_file(manifest_name, FileType.GENERIC, bytes(buf))
 
     def pack_from_bsp(self, bsp: BSP) -> None:
         """Pack files found in BSP data (excluding entities)."""
