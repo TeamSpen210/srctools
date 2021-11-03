@@ -2,6 +2,7 @@
 import io
 import itertools
 import shutil
+import warnings
 from collections import OrderedDict
 from pathlib import Path
 from typing import Optional, TypeVar, Generic, Iterable, Dict, Tuple, List, Iterator, Set
@@ -677,7 +678,12 @@ class PackList:
             self.load_particle_system(fname, file_mode)
 
     def write_manifest(self) -> None:
-        """Produce and pack a manifest file for this map.
+        """Deprecated, call write_soundscript_manifest()."""
+        warnings.warn('Renamed to write_soundscript_manifest()', DeprecationWarning)
+        self.write_soundscript_manifest()
+
+    def write_soundscript_manifest(self) -> None:
+        """Produce and pack a soundscript manifest file for this map.
 
         It will be packed such that it can override the master manifest with
         sv_soundemitter_flush.
@@ -703,6 +709,7 @@ class PackList:
             # Static props obviously only use one skin.
             self.pack_file(prop.model, FileType.MODEL, skinset={prop.skin})
 
+        # These are all the materials the BSP references, including brushes and overlays.
         for mat in bsp.textures:
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
