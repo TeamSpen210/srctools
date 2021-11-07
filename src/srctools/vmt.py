@@ -82,7 +82,10 @@ def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
 
 def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     """Retrieve the type a parameter has, or return the default."""
-    return _SHADER_PARAM_TYPES.get(name.lstrip('$').casefold(), default)
+    try:
+        return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
+    except KeyError:
+        return default
 
 
 class Material(MutableMapping[str, str]):
