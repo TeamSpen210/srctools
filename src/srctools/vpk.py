@@ -347,15 +347,21 @@ class VPK:
             self.header_len = dirfile.tell() + tree_length
 
             self._fileinfo.clear()
-
+            entry = struct.Struct('<IHHIIH')
             # Read directory contents
             # These are in a tree of extension, directory, file. '' terminates a part.
             for ext in iter_nullstr(dirfile):
-                ext_dict = self._fileinfo.setdefault(ext, {})
+                try:
+                    ext_dict = self._fileinfo[ext]
+                except KeyError:
+                    ext_dict = self._fileinfo[ext] = {}
                 for directory in iter_nullstr(dirfile):
-                    dir_dict = ext_dict.setdefault(directory, {})
+                    try:
+                        dir_dict = ext_dict[directory]
+                    except KeyError:
+                        dir_dict = ext_dict[directory] = {}
                     for file in iter_nullstr(dirfile):
-                        crc, index_len, arch_ind, offset, arch_len, end = struct_read('<IHHIIH', dirfile)
+                        crc, index_len, arch_ind, offset, arch_len, end = entry.unpack(dirfile.read(entry.size))
                         if arch_ind == DIR_ARCH_INDEX:
                             arch_ind = None
 
