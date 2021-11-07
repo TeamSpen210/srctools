@@ -54,6 +54,34 @@ def test_fixup_basic() -> None:
     assert list(ent.fixup.items()) == list(zip(ent.fixup.keys(), ent.fixup.values()))
 
 
+def test_fixup_containment() -> None:
+    """Check in operators in Entity.fixup."""
+    ent = VMF().create_ent('any')
+    ent.fixup['$test'] = 'hello'
+    ent.fixup['VALUE'] = '45.75'
+    ent.fixup['true'] = '1'
+    ent.fixup['false'] = '0'
+    # Invalid types should return False, not TypeError.
+    assert '$test' in ent.fixup.keys()
+    assert 'fAlSe' in ent.fixup.keys()
+    assert '' not in ent.fixup.keys()
+    assert ValueError not in ent.fixup.keys()
+
+    assert '1' in ent.fixup.values()
+    assert '45.75' in ent.fixup.values()
+    assert '' not in ent.fixup.values()
+    assert 'false' not in ent.fixup.values()
+    assert ValueError not in ent.fixup.values()
+
+    assert ('$true', '1') in ent.fixup.items()
+    assert ('VaLuE', '45.75') in ent.fixup.items()
+    assert ('$true', '0') not in ent.fixup.items()
+    assert ('FaLse', object) not in ent.fixup.items()
+    assert ('', 'test') not in ent.fixup.items()
+    assert ('false', ) not in ent.fixup.items()
+    assert ValueError not in ent.fixup.items()
+
+
 def test_fixup_substitution() -> None:
     """Test Entity.fixup.substitute()."""
     ent = VMF().create_ent('any')

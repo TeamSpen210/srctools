@@ -15,7 +15,8 @@ from sys import intern
 
 from typing import (
     Optional, Union, overload, TypeVar, Generic,
-    Dict, List, Tuple, Set, Mapping, MutableMapping, IO,
+    Dict, List, Tuple, Set, IO,
+    Mapping, MutableMapping, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
 )
 
@@ -1028,7 +1029,7 @@ class VisGroup:
     name: str
     id: int = attr.ib(default=-1)
     color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
-    child_groups: List['VisGroup'] = attr.ib(converter=list, factory=list)
+    child_groups: List['VisGroup'] = attr.ib(factory=list)
 
     def __attrs_post_init__(self) -> None:
         self.id = self.vmf.vis_id.get_id(self.id)
@@ -2119,6 +2120,7 @@ class Entity:
         editor_color = Vec()
         for item in tree_list:
             name = item.name
+            assert name is not None, repr(item)
             if name == "id" and item.value.isnumeric():
                 ent_id = int(item.value)
             elif name.startswith('replace'):
@@ -2656,24 +2658,18 @@ class EntityFixup(MutableMapping[str, str]):
             # We've changed the keys so this needs to be regenerated.
             self._matcher = None
 
-    def keys(self) -> Iterator[str]:
-        """Iterate over all set variable names."""
-        for value in self._fixup.values():
-            yield value.var
-
     def __iter__(self) -> Iterator[str]:
         """Iterate over all set variable names."""
-        return self.keys()
+        for fixup in self._fixup.values():
+            yield fixup.var
 
-    def items(self) -> Iterator[Tuple[str, str]]:
+    def items(self) -> '_EntityFixupItems':
         """Iterate over all variable-value pairs."""
-        for value in self._fixup.values():
-            yield value.var, value.value
+        return _EntityFixupItems(self)
 
-    def values(self) -> Iterator[str]:
+    def values(self) -> '_EntityFixupValues':
         """Iterate over all variable values."""
-        for value in self._fixup.values():
-            yield value.value
+        return _EntityFixupValues(self)
 
     def export(self, buffer: IO[str], ind: str) -> None:
         """Export all the replace values into the VMF."""
@@ -2796,6 +2792,52 @@ class EntityFixup(MutableMapping[str, str]):
     ) -> Vec:
         """Return the given fixup, converted to a vector."""
         return Vec.from_str(self.get(key), x, y, z)
+
+
+# noinspection PyProtectedMember
+class _EntityFixupValues(ValuesView[str]):
+    """Implements Entity.fixup.values()."""
+    __slots__ = ()
+    _mapping: EntityFixup  # Defined in constructor.
+
+    def __iter__(self) -> Iterator[str]:
+        """Yield each value one by one."""
+        for fixup in self._mapping._fixup.values():
+            yield fixup.value
+
+    def __contains__(self, item: object) -> bool:
+        """Check if any fixup has the given value."""
+        for fixup in self._mapping._fixup.values():
+            if item == fixup.value:
+                return True
+        return False
+
+
+# noinspection PyProtectedMember
+class _EntityFixupItems(ItemsView[str, str]):
+    """Implements Entity.fixup.items()."""
+    __slots__ = ()
+    _mapping: EntityFixup  # Defined in constructor.
+
+    def __iter__(self) -> Iterator[Tuple[str, str]]:
+        """Yield each key, value pair."""
+        for fixup in self._mapping._fixup.values():
+            yield fixup.var, fixup.value
+
+    def __contains__(self, item: object) -> bool:
+        """Check if any fixup has the given value."""
+        if isinstance(item, tuple) and len(item) == 2:
+            var, value = item
+        else:
+            return False
+        if isinstance(var, str):
+            if var and var[0] == '$':
+                var = var[1:]
+            try:
+                return self._mapping._fixup[var.casefold()].value == value
+            except KeyError:
+                return False
+        return False
 
 
 class EntityGroup:
