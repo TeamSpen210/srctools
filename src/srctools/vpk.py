@@ -123,11 +123,10 @@ def _is_ascii(info: 'FileInfo', at: attr.Attribute, value: str) -> None:
     Allow the surrogateescape bytes also, so roundtripping existing VPKs is
     allowed.
     """
-    if not value.isascii():
-        for c in value:
-            ind = ord(c)
-            if ind >= 128 and not (0xDC80 <= ind <= 0xDCFF):
-                raise ValueError('VPK filenames must be ASCII format!')
+    for c in value:
+        ind = ord(c)
+        if ind >= 128 and not (0xDC80 <= ind <= 0xDCFF):
+            raise ValueError('VPK filenames must be ASCII format!')
 
 
 @attr.define(eq=False)
@@ -510,7 +509,7 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
-        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
+        all_folders: Iterable[Dict[str, Dict[str, FileInfo]]]
         if ext:
             all_folders = [self._fileinfo.get(ext, {})]
         else:
@@ -529,7 +528,7 @@ class VPK:
         If an extension or folder is specified, only files with this extension
         or in this folder are returned.
         """
-        all_folders: Iterable[dict[str, dict[str, FileInfo]]]
+        all_folders: Iterable[Dict[str, Dict[str, FileInfo]]]
         if ext:
             all_folders = [self._fileinfo.get(ext, {})]
         else:
