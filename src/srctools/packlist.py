@@ -294,6 +294,7 @@ class PackList:
                 raise ValueError('Data provided with no filename!')
             return
 
+        # Disallow tabs, to guard against cases where we incorrectly parse \t in file paths.
         if '\t' in filename:
             raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
 
