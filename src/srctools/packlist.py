@@ -34,6 +34,12 @@ LOGGER = srctools.logger.get_logger(__name__)
 SOUND_CACHE_VERSION = '2'  # Used to allow ignoring incompatible versions.
 ParsedT = TypeVar('ParsedT')
 
+__all__ = [
+    'FileType', 'FileMode', 'SoundScriptMode',
+    'PackFile', 'PackList',
+    'unify_path', 'CLASS_RESOURCES', 'ALT_NAMES'
+]
+
 
 class FileType(Enum):
     """Types of files we might pack."""
@@ -121,25 +127,18 @@ def load_fgd() -> FGD:
     return FGD.engine_dbase()
 
 
+@attr.define(eq=False)
 class PackFile:
     """Represents a single file we are packing.
 
     data is raw data to pack directly, instead of from the filesystem.
     """
-    __slots__ = ['type', 'filename', 'data', '_analysed', 'optional']
-    def __init__(
-        self,
-        type: FileType,
-        filename: str,
-        data: bytes = None,
-        optional: bool = False,
-    ):
-        self.type = type
-        self.filename = filename
-        self.data = data
-        self.optional = optional
-        # If we've checked for dependencies of this yet.
-        self._analysed = False
+    type: FileType
+    filename: str
+    data: bytes = None
+    optional: bool = False
+    # If we've checked for dependencies of this yet.
+    _analysed: bool = attr.ib(init=False, default=False)
 
     @property
     def virtual(self) -> bool:
@@ -159,7 +158,7 @@ class PackFile:
         return text
 
 
-def unify_path(path: str):
+def unify_path(path: str) -> str:
     """Convert paths to a unique form."""
     path = os.path.normpath(path).casefold().replace('\\', '/')
     if '../' in path:
@@ -224,21 +223,30 @@ class ManifestedFiles(Generic[ParsedT]):
 
 class PackList:
     """Represents a list of resources for a map."""
-    def __init__(self, fsys: FileSystemChain):
-        self._files: dict[str, PackFile] = {}
+    fsys: FileSystemChain
+
+    soundscript: ManifestedFiles[Sound]
+    particles: ManifestedFiles[Particle]
+
+    _packed_particles: set[str]
+    _files: Dict[str, PackFile]
+    # folder, ext, data -> filename used
+    _inject_files: Dict[Tuple[str, str, bytes], str]
+    # Cache of the models used for breakable chunks.
+    _break_chunks: Dict[str, List[str]]
+    # For each model, defines the skins the model uses. None means at least
+    # one use is unknown, so all skins could potentially be used.
+    skinsets: Dict[str, Optional[Set[int]]]
+
+    def __init__(self, fsys: FileSystemChain) -> None:
         self.fsys = fsys
-        self.soundscript: ManifestedFiles[Sound] = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT)
-        self.particles: ManifestedFiles[Particle] = ManifestedFiles('particle', FileType.PARTICLE_FILE)
-        self._packed_particles: set[str] = set()
-        # folder, ext, data -> filename used
-        self._inject_files: dict[tuple[str, str, bytes], str] = {}
-
-        # Cache of the models used for breakable chunks.
-        self._break_chunks: dict[str, list[str]] = {}
-
-        # For each model, defines the skins the model uses. None means at least
-        # one use is unknown, so all skins could be used.
-        self.skinsets: dict[str, Optional[set[int]]] = {}
+        self.soundscript = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT)
+        self.particles = ManifestedFiles('particle', FileType.PARTICLE_FILE)
+        self._packed_particles = set()
+        self._files = {}
+        self._inject_files = {}
+        self._break_chunks = {}
+        self.skinsets = {}
 
     def __getitem__(self, path: str) -> PackFile:
         """Look up a packfile by filename."""
