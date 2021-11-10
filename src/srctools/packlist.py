@@ -1101,7 +1101,7 @@ class PackList:
                     self.pack_soundscript(npc + ".FootstepRight")
                 elif event.type is ANIM_EVENT_PARTICLE:
                     try:
-                        part_name, attach_type, attach_name = event.options.split(' ')
+                        part_name, attach_type, attach_name = event.options.split()
                     except ValueError:
                         LOGGER.warning(
                             'Invalid particle anim event params "{}" in "{}" sequence on "{}"!',
