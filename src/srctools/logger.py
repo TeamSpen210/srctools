@@ -18,7 +18,8 @@ from typing import (
 )
 
 
-CTX_STACK: 'contextvars.ContextVar[list[str]]' = contextvars.ContextVar('srctools_logger')
+# Only generic in stubs!
+CTX_STACK: 'contextvars.ContextVar[List[str]]' = contextvars.ContextVar('srctools_logger')
 
 
 class LogMessage:
