@@ -179,10 +179,10 @@ class ManifestedFiles(Generic[ParsedT]):
     pack_type: FileType
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
-    name_to_parsed: dict[str, tuple[str, ParsedT]] = attr.ib(factory=dict, repr=False)
+    name_to_parsed: Dict[str, Tuple[str, ParsedT]] = attr.ib(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
-    _files: dict[str, FileMode] = attr.Factory(OrderedDict)
+    _files: Dict[str, FileMode] = attr.Factory(OrderedDict)
 
     def force_exclude(self, filename: str) -> None:
         """Mark this soundscript file as excluded."""
