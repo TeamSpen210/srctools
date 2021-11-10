@@ -581,7 +581,7 @@ class PackList:
         props: Property,
         path: str,
         always_include: bool = False,
-    ) -> List[Sound]:
+    ) -> Iterable[Sound]:
         """Read in a soundscript and record which files use it.
 
         If always_include is True, it will be included in the manifests even
@@ -595,7 +595,7 @@ class PackList:
 
         self.soundscript.add_file(path, scripts.items(), FileMode.INCLUDE if always_include else FileMode.UNKNOWN)
 
-        return list(scripts.values())
+        return scripts.values()
 
     def load_soundscript_manifest(self, cache_file: str=None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
