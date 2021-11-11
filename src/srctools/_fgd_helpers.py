@@ -278,7 +278,7 @@ class HelperFrustum(Helper):
         fov: Union[str, float] = '_fov'
         nearz: Union[str, float] = '_nearplane'
         farz: Union[str, float] = '_farz'
-        color: Union[str, tuple[float, float, float]] = '_light'
+        color: Union[str, Tuple[float, float, float]] = '_light'
         pitch: Union[str, float] = -1.0
 
         try:
@@ -428,7 +428,7 @@ class HelperBoundingBox(Helper):
     max: str
 
     @classmethod
-    def parse(cls: 'type[HelperBoundingBox]', args: List[str]) -> 'HelperBoundingBox':
+    def parse(cls: Type['HelperBoundingBox'], args: List[str]) -> 'HelperBoundingBox':
         """Parse wirebox(min, max)"""
         try:
             [key_min, key_max] = args
@@ -630,7 +630,7 @@ class HelperLightSpot(Helper):
     pitch_scale: float
 
     @classmethod
-    def parse(cls: 'type[HelperLightSpot]', args: List[str]) -> 'HelperLightSpot':
+    def parse(cls: Type['HelperLightSpot'], args: List[str]) -> 'HelperLightSpot':
         """Parse lightcone(inner, outer, color, pitch_scale)."""
         if len(args) >= 1:
             inner_cone = args[0]
@@ -759,7 +759,7 @@ class HelperExtAutoVisgroups(Helper):
     path: List[str] = attr.Factory(list)
 
     @classmethod
-    def parse(cls: 'type[HelperExtAutoVisgroups]', args: List[str]) -> 'HelperExtAutoVisgroups':
+    def parse(cls: Type['HelperExtAutoVisgroups'], args: List[str]) -> 'HelperExtAutoVisgroups':
         if len(args) > 0 and args[0].casefold() != 'auto':
             args.insert(0, 'Auto')
         if len(args) < 2:

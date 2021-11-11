@@ -42,11 +42,11 @@ class Instance:
         self.fixup = EntityFixup(fixup)
         self.outputs = list(outputs)
         # After collapsing, this is the original -> new ID mapping.
-        self.ent_ids: dict[int, int] = {}
-        self.face_ids: dict[int, int] = {}
-        self.brush_ids: dict[int, int] = {}
-        self.node_ids: dict[int, int] = {}
-        self.visgroup_ids: dict[int, int] = {}
+        self.ent_ids: Dict[int, int] = {}
+        self.face_ids: Dict[int, int] = {}
+        self.brush_ids: Dict[int, int] = {}
+        self.node_ids: Dict[int, int] = {}
+        self.visgroup_ids: Dict[int, int] = {}
         # Keep track of recursive instances to handle loops.
         self.recur_count = 0
 
@@ -166,7 +166,7 @@ class Manifest(Instance):
         self.is_toplevel = is_toplevel
 
     @classmethod
-    def parse(cls, tree: Property) -> 'list[Manifest]':
+    def parse(cls, tree: Property) -> List['Manifest']:
         """Parse a VMM file."""
         return [
             cls(

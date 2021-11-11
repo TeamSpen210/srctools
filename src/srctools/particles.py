@@ -141,7 +141,7 @@ class Particle:
         root = Element('', 'DmElement')
         root['particleSystemDefinitions'] = part_list = Attribute.array('', ValueType.ELEMENT)
 
-        name_to_elem: dict[str, Element] = {}
+        name_to_elem: Dict[str, Element] = {}
 
         for part in particles:
             part_elem = Element(part.name, 'DmeParticleSystemDefinition')
@@ -152,7 +152,7 @@ class Particle:
                 'renderers', 'operators', 'initializers',
                 'emitters', 'forces', 'constraints',
             ]:
-                op_list: list[Operator] = getattr(part, identifier)
+                op_list: List[Operator] = getattr(part, identifier)
                 part_elem[identifier] = op_attrlist = Attribute.array(identifier, ValueType.ELEMENT)
                 for operator in op_list:
                     op_elem = Element(operator.name, 'DmeParticleOperator')

@@ -110,7 +110,7 @@ class Material(MutableMapping[str, str]):
     ) -> None:
         """Create a material."""
         self.shader = shader
-        self._params: dict[str, Variable] = {}
+        self._params: Dict[str, Variable] = {}
         self.blocks = list(blocks)
         self.proxies = list(proxies)
 

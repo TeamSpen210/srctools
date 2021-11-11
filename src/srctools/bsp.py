@@ -805,7 +805,7 @@ class VisTree:
 
     def iter_leafs(self) -> Iterator[VisLeaf]:
         """Iterate over all child leafs, recursively."""
-        checked: set[int] = set()  # Guard against recursion.
+        checked: Set[int] = set()  # Guard against recursion.
         nodes = [self]
         while nodes:
             node = nodes.pop()
@@ -894,7 +894,7 @@ def _find_or_insert(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
     The key function is used to match existing items.
 
     """
-    by_index: dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
+    by_index: Dict[Hashable, int] = {key_func(item): i for i, item in enumerate(item_list)}
 
     def finder(item: T) -> int:
         """Find or append the item."""
@@ -915,7 +915,7 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
     """
     # We expect repeated items to be fairly uncommon, so we can skip to all
     # occurrences of the first index to speed up the search.
-    by_index: dict[Hashable, List[int]] = {}
+    by_index: Dict[Hashable, List[int]] = {}
     for k, item in enumerate(item_list):
         by_index.setdefault(key_func(item), []).append(k)
 
@@ -1039,9 +1039,9 @@ class BSP:
     def __init__(self, filename: Union[str, os.PathLike], version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
-        self.lumps: dict[BSP_LUMPS, Lump] = {}
-        self._parsed_lumps: dict[Union[bytes, BSP_LUMPS], Any] = {}
-        self.game_lumps: dict[bytes, GameLump] = {}
+        self.lumps: Dict[BSP_LUMPS, Lump] = {}
+        self._parsed_lumps: Dict[Union[bytes, BSP_LUMPS], Any] = {}
+        self.game_lumps: Dict[bytes, GameLump] = {}
         self.header_off = 0
         self.version = version  # type: ignore  # read() will make it non-none.
         # Tracks if the ent lump is using the new x1D output separators,
@@ -1417,7 +1417,7 @@ class BSP:
         return b''.join([struct.pack('<fff', pos.x, pos.y, pos.z) for pos in vertexes])
 
     def _lmp_read_surfedges(self, vertexes: bytes) -> Iterator[Edge]:
-        verts: list[Vec] = self.vertexes
+        verts: List[Vec] = self.vertexes
         edges = [
             Edge(verts[a], verts[b])
             for a, b in struct.iter_unpack('<HH', self.lumps[BSP_LUMPS.EDGES].data)
@@ -1471,8 +1471,8 @@ class BSP:
             )
 
     def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
-        verts: list[Vec] = []
-        indices: list[int] = []
+        verts: List[Vec] = []
+        indices: List[int] = []
         add_vert = _find_or_extend(verts, Vec.as_tuple)
         add_ind = _find_or_extend(indices, identity)
         for prim in prims:
@@ -1621,7 +1621,7 @@ class BSP:
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
 
     def _lmp_write_brushes(self, brushes: List['Brush']) -> bytes:
-        sides: list[BrushSide] = []
+        sides: List[BrushSide] = []
         add_plane = _find_or_insert(self.planes)
         add_texinfo = _find_or_insert(self.texinfo)
         add_sides = _find_or_extend(sides)
@@ -1754,8 +1754,8 @@ class BSP:
 
     def _lmp_write_visleafs(self, visleafs: List['VisLeaf']) -> bytes:
         """Reconstruct the leafs of the visleaf/bsp tree."""
-        leaf_faces: list[int] = []
-        leaf_brushes: list[int] = []
+        leaf_faces: List[int] = []
+        leaf_brushes: List[int] = []
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
@@ -1861,10 +1861,10 @@ class BSP:
     def _lmp_write_texinfo(self, texinfos: List['TexInfo']) -> bytes:
         """Rebuild the texinfo and texdata lump."""
         find_or_add_texture = _find_or_insert(self.textures, str.casefold)
-        texdata_ind: dict[TexData, int] = {}
+        texdata_ind: Dict[TexData, int] = {}
 
-        texdata_list: list[bytes] = []
-        texinfo_result: list[bytes] = []
+        texdata_list: List[bytes] = []
+        texinfo_result: List[bytes] = []
 
         for info in texinfos:
             # noinspection PyProtectedMember
@@ -2414,12 +2414,12 @@ class BSP:
     def _lmp_write_props(self, props: List['StaticProp']) -> bytes:
         # First generate the visleaf and model-names block.
         # Unfortunately it seems reusing visleaf parts isn't possible.
-        leaf_array: list[int] = []
-        model_list: list[str] = []
+        leaf_array: List[int] = []
+        model_list: List[str] = []
         add_model = _find_or_insert(model_list, identity)
         add_leaf = _find_or_insert(self.visleafs)
 
-        indexes: list[tuple[int, int]] = []
+        indexes: List[Tuple[int, int]] = []
         for prop in props:
             indexes.append((len(leaf_array), add_model(prop.model)))
             leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
@@ -2594,11 +2594,11 @@ class BSP:
 
     def _lmp_write_detail_props(self, props: List['DetailProp']) -> Iterator[bytes]:
         """Reconstruct the detail props lump."""
-        sprites: list[tuple[
+        sprites: List[Tuple[
             float, float, float, float,
             float, float, float, float,
         ]] = []
-        models: list[str] = []
+        models: List[str] = []
 
         add_sprite = _find_or_insert(sprites, identity)
         add_model = _find_or_insert(models, identity)

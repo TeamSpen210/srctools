@@ -15,7 +15,7 @@ from sys import intern
 
 from typing import (
     Optional, Union, overload, TypeVar, Generic,
-    Dict, List, Tuple, Set, IO,
+    Dict, List, Tuple, Set, IO, FrozenSet,
     Mapping, MutableMapping, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
 )
@@ -268,7 +268,7 @@ class CopySet(Generic[T], Set[T]):
     __slots__ = ()  # No extra vars
 
     def __iter__(self) -> Iterator[T]:
-        cur_items: frozenset[T] = frozenset(self)
+        cur_items: FrozenSet[T] = frozenset(self)
 
         yield from cur_items
         # after iterating through ourselves, iterate through any new ents.
@@ -323,15 +323,15 @@ class VMF:
 
         # Allow quick searching for particular groups, without checking
         # the whole map
-        self.by_target: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
-        self.by_class: defaultdict[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
+        self.by_target: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
+        self.by_class: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
 
-        self.entities: list[Entity] = []
+        self.entities: List[Entity] = []
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
-        self.brushes: list[Solid] = brushes or []
-        self.cameras: list[Camera] = cameras or []
-        self.cordons: list[Cordon] = cordons or []
-        self.vis_tree: list[VisGroup] = vis_tree or []
+        self.brushes: List[Solid] = brushes or []
+        self.cameras: List[Camera] = cameras or []
+        self.cordons: List[Cordon] = cordons or []
+        self.vis_tree: List[VisGroup] = vis_tree or []
 
         # mapspawn entity, which is the entity world brushes are saved to.
         self.spawn: Entity = spawn or Entity(self)
@@ -2051,8 +2051,8 @@ class Entity:
             keys.items()
         }
         self.fixup = EntityFixup(fixup)
-        self.outputs: list[Output] = outputs or []
-        self.solids: list[Solid] = solids or []
+        self.outputs: List[Output] = outputs or []
+        self.solids: List[Solid] = solids or []
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
         self.groups = list(groups)
@@ -2072,7 +2072,7 @@ class Entity:
         keep_vis=True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
-        new_keys: dict[str, str] = {}
+        new_keys: Dict[str, str] = {}
         new_fixup = self.fixup.copy_values()
         for key, value in self.keys.items():
             new_keys[key] = value
@@ -2517,15 +2517,15 @@ class EntityFixup(MutableMapping[str, str]):
     __slots__ = ['_fixup', '_matcher']
 
     def __init__(self, fixup: Iterable[FixupValue]=()):
-        self._fixup: dict[str, FixupValue] = {}
+        self._fixup: Dict[str, FixupValue] = {}
         self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
         # value, index) with keys equal to the casefolded var name.
         # var_name is kept to allow restoring the original case when exporting.
 
         # Do a check to ensure all fixup values have valid indexes:
-        used_indexes: set[int] = set()
-        extra_vals: list[FixupValue] = []
+        used_indexes: Set[int] = set()
+        extra_vals: List[FixupValue] = []
         for fix in fixup:
             if fix.id not in used_indexes:
                 used_indexes.add(fix.id)

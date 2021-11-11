@@ -214,7 +214,7 @@ class ManifestedFiles(Generic[ParsedT]):
             lst.pack_file(filename, self.pack_type)
         return data
 
-    def packed_files(self) -> Iterator[tuple[str, FileMode]]:
+    def packed_files(self) -> Iterator[Tuple[str, FileMode]]:
         """Yield the used files in order."""
         for file, mode in self._files.items():
             if mode.is_used:
@@ -228,7 +228,7 @@ class PackList:
     soundscript: ManifestedFiles[Sound]
     particles: ManifestedFiles[Particle]
 
-    _packed_particles: set[str]
+    _packed_particles: Set[str]
     _files: Dict[str, PackFile]
     # folder, ext, data -> filename used
     _inject_files: Dict[Tuple[str, str, bytes], str]
@@ -609,7 +609,7 @@ class PackList:
         except FileNotFoundError:
             return
 
-        cache_data: dict[str, tuple[int, Property]] = {}
+        cache_data: Dict[str, Tuple[int, Property]] = {}
         if cache_file is not None:
             # If the file doesn't exist or is corrupt, that's
             # fine. We'll just parse the soundscripts the slow
@@ -700,7 +700,7 @@ class PackList:
             LOGGER.warning('No particles manifest.')
             man = Property.root()
 
-        in_manifest: set[str] = set()
+        in_manifest: Set[str] = set()
 
         for prop in man.find_children('particles_manifest'):
             if prop.value.startswith('!'):
@@ -939,13 +939,13 @@ class PackList:
         # old data if required.
 
         # First retrieve the data.
-        packed_files: dict[str, tuple[str, bytes]] = {
+        packed_files: Dict[str, Tuple[str, bytes]] = {
             info.filename.casefold(): (info.filename, bsp.pakfile.read(info))
             for info in bsp.pakfile.infolist()
         }
 
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
-        all_systems: set[FileSystem] = {
+        all_systems: Set[FileSystem] = {
             sys for sys, _ in
             self.fsys.systems
         }

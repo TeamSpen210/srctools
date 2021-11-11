@@ -1,7 +1,7 @@
 """Common code for handling binary formats."""
 from binascii import crc32
 from struct import Struct
-from typing import IO, List, Hashable, Union
+from typing import IO, List, Hashable, Union, Dict, Tuple
 from srctools import Vec
 
 ST_VEC = Struct('fff')
@@ -38,7 +38,7 @@ def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str
             return ''
         file.seek(pos)
 
-    text: list[bytes] = []
+    text: List[bytes] = []
     while True:
         char = file.read(1)
         if char == b'\0':
@@ -119,9 +119,9 @@ class DeferredWrites:
     def __init__(self, file: IO[bytes]) -> None:
         self.file = file
         # Position to write to, and the struct format to use.
-        self.loc: dict[Hashable, tuple[int, Struct]] = {}
+        self.loc: Dict[Hashable, Tuple[int, Struct]] = {}
         # Then the bytes to write there.
-        self.data: dict[Hashable, bytes] = {}
+        self.data: Dict[Hashable, bytes] = {}
 
     def defer(self, key: Hashable, fmt: Union[str, Struct], write=False) -> None:
         """Mark that the given format data is going to be written here.

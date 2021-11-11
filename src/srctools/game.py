@@ -29,7 +29,7 @@ class Game:
         self.tools_id = fsystems['ToolsAppId', None]
         self.additional_content = fsystems['AdditionalContentId', None]
         self.fgd_loc = gameinfo['GameData', 'None']
-        self.search_paths: list[Path] = []
+        self.search_paths: List[Path] = []
 
         for search_path in fsystems.find_children('SearchPaths'):
             exp_path = self.parse_search_path(search_path)

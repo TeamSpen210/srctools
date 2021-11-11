@@ -887,7 +887,7 @@ class KeyValues:
         readonly = value_ind & 128
         value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
-        val_list: Optional[list[tuple]] = None
+        val_list: Optional[List[tuple]] = None
 
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
@@ -1059,7 +1059,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
 
     def __iter__(self) -> Iterator[str]:
         """Yields all keys this object has."""
-        seen: set[str] = set()
+        seen: Set[str] = set()
         for ent_map in self._maps():
             for name in ent_map:
                 if name in seen:
@@ -1074,7 +1074,7 @@ class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
         return False
 
     def __len__(self) -> int:
-        seen: set[str] = set()
+        seen: Set[str] = set()
         for ent_map in self._maps():
             seen.update(ent_map)
         return len(seen)
@@ -1130,7 +1130,7 @@ class EntityDef:
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
-        ext_autovisgroups: list[list[str]] = []
+        ext_autovisgroups: List[List[str]] = []
         help_type: Optional[HelperTypes] = None
         help_type_cust: Optional[str] = None
         for token, token_value in tok:
@@ -1222,7 +1222,7 @@ class EntityDef:
 
         # We next might have a ':' then docstring before the [,
         # or directly to [.
-        desc: Optional[list[str]] = None
+        desc: Optional[List[str]] = None
         for doc_token, token_value in tok:
             if doc_token is Token.NEWLINE:
                 continue
@@ -1358,7 +1358,7 @@ class EntityDef:
                     next_token, key_flag = tok()
 
                 has_equal: Optional[Token] = None
-                kv_vals: Optional[list[str]] = None
+                kv_vals: Optional[List[str]] = None
 
                 if next_token is Token.COLON:
                     had_colon = True
@@ -1401,7 +1401,7 @@ class EntityDef:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
                     # Read the choices in the []
-                    val_list: Optional[list[tuple]] = []
+                    val_list: Optional[List[tuple]] = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1502,7 +1502,7 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: dict[str, dict[frozenset[str], Any]] = {}
+            coll: Dict[str, Dict[FrozenSet[str], Any]] = {}
             setattr(copy, val_key, coll)
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
@@ -1566,7 +1566,7 @@ class EntityDef:
 
         Only values matching the given tags will be kept.
         """
-        category: dict[str, dict[frozenset[str], Union[KeyValues, IODef]]]
+        category: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
         for category in [self.keyvalues, self.inputs, self.outputs]:
             for key, tag_map in list(category.items()):
                 # Force longer more-specific tags to match first.
@@ -1602,7 +1602,7 @@ class EntityDef:
             ]))
             file.write(') ')
 
-        kv_order_list: list[str] = []
+        kv_order_list: List[str] = []
 
         for helper in self.helpers:
             args = helper.export()
@@ -1692,7 +1692,7 @@ class EntityDef:
             else:
                 file.write(str_dict(base_ent.classname))
 
-        obj_type: dict[str, dict[frozenset[str], Union[IODef, KeyValues]]]
+        obj_type: Dict[str, Dict[FrozenSet[str], Union[IODef, KeyValues]]]
         for obj_type in (self.keyvalues, self.inputs, self.outputs):
             for tag_map in obj_type.values():
                 # We don't need to write the name, since that's stored
@@ -1774,32 +1774,34 @@ class EntityDef:
 
 class FGD:
     """A FGD set for a game. May be composed of several files."""
+    # List of names we have already parsed.
+    # We don't parse them again, to prevent infinite loops.
+    _parse_list: Set[File]
+    # Entity definitions
+    entities: Dict[str, EntityDef]
+    # Maximum bounding box of map
+    map_size_min: int
+    map_size_max: int
+
+    # Directories we have excluded.
+    mat_exclusions: Set[PurePosixPath]
+    # Additional dirs restricted to specific engines with tags.
+    tagged_mat_exclusions: Dict[FrozenSet[str], Set[PurePosixPath]]
+
+    # Automatic visgroups.
+    # The way Valve implemented this is rather strange, so we need to match
+    # their data structure really to get good results. Despite it appearing
+    # hierarchical in editor, we and Hammer store it flattened. Each visgroup
+    # has a parent (or None for auto), and then a list of the ents it contains.
+    auto_visgroups: Dict[str, AutoVisgroup]
     def __init__(self) -> None:
         """Create a FGD."""
-        # List of names we have already parsed.
-        # We don't parse them again, to prevent infinite loops.
-        self._parse_list: set[File] = set()
-
-        # Entity definitions
-        self.entities: Dict[str, EntityDef] = {}
-
-        # Maximum bounding box of map
-        self.map_size_min = 0
-        self.map_size_max = 0
-
-        # Directories we have excluded.
-        self.mat_exclusions: Set[PurePosixPath] = set()
-        # Additional dirs restricted to specific engines with tags.
-        self.tagged_mat_exclusions: Dict[FrozenSet[str], Set[PurePosixPath]] = defaultdict(set)
-
-        # Automatic visgroups.
-        # The way Valve implemented this is rather strange, so we need
-        # to match their data structure really to get good results.
-        # Despite it appearing hierarchical in editor, we and Hammer store
-        # it flattened. Each visgroup has a parent (or None for auto), and then
-        # a list of the ents it contains.
-
-        self.auto_visgroups: Dict[str, AutoVisgroup] = {}
+        self._parse_list = set()
+        self.entities = {}
+        self.map_size_min = self.map_size_max = 0
+        self.mat_exclusions = set()
+        self.tagged_mat_exclusions = defaultdict(set)
+        self.auto_visgroups = {}
 
     @classmethod
     def parse(
@@ -1867,11 +1869,11 @@ class FGD:
         Otherwise entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
-        todo: set[EntityDef] = set(self)
-        done: set[EntityDef] = set()
+        todo: Set[EntityDef] = set(self)
+        done: Set[EntityDef] = set()
         cls_getter = operator.attrgetter('classname')
         while todo:
-            deferred: set[EntityDef] = set()
+            deferred: Set[EntityDef] = set()
             batch = []
             for ent in todo:
                 ready = True

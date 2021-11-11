@@ -497,8 +497,8 @@ class Model:
 
         # Build texture data
         f.seek(texture_offset)
-        textures = [None] * texture_count  # type: List[Tuple[str, int, int]]
-        tex_temp = [None] * texture_count  # type: List[Tuple[int, Tuple[int, int, int]]]
+        textures: List[Tuple[str, int, int]] = [None] * texture_count
+        tex_temp: List[Tuple[int, Tuple[int, int, int]]] = [None] * texture_count
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
                 f.tell(),

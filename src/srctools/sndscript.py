@@ -315,7 +315,7 @@ class Sound:
                 level = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
 
             # Either 1 "wave", or multiple in "rndwave".
-            wavs: list[str] = []
+            wavs: List[str] = []
             for prop in snd_prop:
                 if prop.name == 'wave':
                     wavs.append(prop.value)

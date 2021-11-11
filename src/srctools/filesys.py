@@ -6,7 +6,7 @@ Files are case-insensitive, and both slashes are converted to '/'.
 from zipfile import ZipFile, ZipInfo
 from typing import (
     TypeVar, Type, Generic, Any, Union, Optional, cast,
-    Tuple, Dict, Iterator, TextIO, BinaryIO,
+    Tuple, Dict, List, Set, Iterator, TextIO, BinaryIO,
 )
 import io
 import os
@@ -223,7 +223,7 @@ class FileSystemChain(FileSystem[File[FileSystem]]):
 
     def __init__(self, *systems: Union[FileSystem, Tuple[FileSystem, str]]) -> None:
         super().__init__('')
-        self.systems: list[tuple[FileSystem, str]] = []
+        self.systems: List[Tuple[FileSystem, str]] = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -297,7 +297,7 @@ class FileSystemChain(FileSystem[File[FileSystem]]):
 
     def walk_folder(self, folder: str) -> Iterator[File['FileSystemChain']]:
         """Walk folders, not repeating files."""
-        done: set[str] = set()
+        done: Set[str] = set()
         for file in self.walk_folder_repeat(folder):
             folded = file.path.casefold()
             if folded in done:
@@ -504,7 +504,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             self._no_close = False
             self.zip = ZipFile(path)
 
-        self._name_to_info: dict[str, ZipInfo] = {
+        self._name_to_info: Dict[str, ZipInfo] = {
             info.filename.casefold(): info
             for info in self.zip.infolist()
             # Some zip files include entries for the directories too.
@@ -572,7 +572,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
         super().__init__(path)
         self.vpk = VPK(self.path)
         # Used to enforce case-insensitivity.
-        self._name_to_file: dict[str, VPKFile] = {
+        self._name_to_file: Dict[str, VPKFile] = {
             file.filename.replace('\\', '/').casefold(): file
             for file in self.vpk
         }
