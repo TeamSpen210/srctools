@@ -792,18 +792,27 @@ class Property:
 
         raise ValueError("Can't search through properties without children!")
 
+    @overload
+    def __getitem__(self, index: builtins.int) -> 'Property': ...
+    @overload
+    def __getitem__(self, index: slice) -> List['Property']: ...
+    @overload
+    def __getitem__(self, index: Union[str, Tuple[str, str]]) -> str: ...
+    @overload
+    def __getitem__(self, index: Tuple[str, T]) -> Union[str, T]: ...
+
     def __getitem__(
         self,
         index: Union[
             str,
             builtins.int,
             slice,
-            Tuple[Union[str, builtins.int, slice], Union[str, Any]]
+            Tuple[str, Union[str, T]],
         ],
-    ) -> str:
+    ) -> Union['Property', List['Property'], str, T]:
         """Allow indexing the children directly.
 
-        - If given an index, it will search by position.
+        - If given an index, it will return the properties in that position.
         - If given a string, it will find the last Property with that name.
           (Default can be chosen by passing a 2-tuple like Prop[key, default])
         - If none are found, it raises IndexError.

@@ -545,7 +545,21 @@ def test_blockfuncs_fail_on_leaf() -> None:
     with pytest.raises(ValueError):
         leaf['blah']
     with pytest.raises(ValueError):
+        leaf[0]
+    with pytest.raises(ValueError):
+        leaf[1:2]
+    with pytest.raises(ValueError):
+        leaf['blah', '']
+
+    with pytest.raises(ValueError):
         leaf['blah'] = 't'
+    with pytest.raises(ValueError):
+        leaf[0] = 't'
+    with pytest.raises(ValueError):
+        leaf[1:2] = 't'
+    with pytest.raises(ValueError):
+        leaf['blah', ''] = 't'
+
     with pytest.raises(ValueError):
         leaf.int('blah')
     with pytest.raises(ValueError):
@@ -601,3 +615,31 @@ def test_search() -> None:
         test1.find_block('Block2')
     assert test1.find_block('blOCk1') is bLock1
     assert test1.find_block('Block2', or_blank=True) == Property('Block2', [])
+
+
+def test_getitem() -> None:
+    """Test various modes of getitem functions correctly."""
+    key1 = Property('key1', '1')
+    key2 = Property('key2', '2')
+    kEy1 = Property('kEy1', '3')
+    bLock1 = Property('bLock1', [Property('leaf', '45')])
+    root = Property('Block', [key1, key2, bLock1, kEy1])
+
+    assert root[0] is key1
+    assert root[2] is bLock1
+
+    plist = root[1:4]
+    assert isinstance(plist, list) and len(plist) == 3
+    assert plist[0] is key2
+    assert plist[1] is bLock1
+    assert plist[2] is kEy1
+
+    plist = root[2::-2]
+    assert isinstance(plist, list) and len(plist) == 2
+    assert plist[0] is bLock1
+    assert plist[1] is key1
+
+    assert root['key1'] == '3'
+    assert root['key45', 'default'] == 'default'
+    assert root['key2', any] == '2'
+    assert root['key45', any] is any
