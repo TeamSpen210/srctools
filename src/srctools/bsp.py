@@ -1000,7 +1000,7 @@ class ParsedLump(Generic[T]):
             data = instance.lumps[self.lump].data
             result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
-            result = cast(T, list(result))
+            result = list(result)  # type: ignore
 
         instance._parsed_lumps[self.lump] = result # noqa
         for lump in self.to_clear:

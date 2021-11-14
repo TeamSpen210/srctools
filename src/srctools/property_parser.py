@@ -703,7 +703,7 @@ class Property:
             arr = []
             child: Property
             for child in self._value:
-                if child.has_children():
+                if not isinstance(child._value, str):
                     raise ValueError(
                         'Cannot have sub-children in a '
                         '"{}" array of values!'.format(self.real_name)
@@ -772,6 +772,8 @@ class Property:
 
     def _iter_tree(self, blocks: builtins.bool) -> Iterator['Property']:
         """Implementation of iter_tree(). This assumes self has children."""
+        assert isinstance(self._value, list)
+        prop: Property
         for prop in self._value:
             if prop.has_children():
                 if blocks:
@@ -901,6 +903,7 @@ class Property:
         """
         if isinstance(self._value, list):
             copy = self.copy()
+            assert isinstance(copy._value, list)
             if isinstance(other, Property) and other._folded_name is not None:
                 # Deprecated behaviour, add the other property to ourselves,
                 # not its values.
@@ -955,6 +958,8 @@ class Property:
                         "Append()ing a root property is confusing, use extend() instead.",
                         DeprecationWarning, 2,
                     )
+                    if isinstance(other._value, str):
+                        raise ValueError('A leaf root property should not exist!')
                     self._value.extend(other._value)
                 else:
                     self._value.append(other)
@@ -990,13 +995,14 @@ class Property:
             raise ValueError(f"{self!r} has no children!")
         folded_names = [name.casefold() for name in names]
         new_list = []
-        merge: dict[str, Property] = {
+        merge: Dict[str, Property] = {
             name.casefold(): Property(name, [])
             for name in
             names
         }
 
-        for item in self._value[:]:  # type: Property
+        item: Property
+        for item in self._value[:]:
             if item._folded_name in folded_names:
                 merge[item._folded_name]._value.extend(item._value)
             else:
@@ -1082,7 +1088,7 @@ class Property:
         Property('unusual name', 'value')
         >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
         "config" "value"
-        >>> print(prop) # doctest: +NORMALIZE_WHITESPACE
+        >>> print(''.join(prop.export())) # doctest: +NORMALIZE_WHITESPACE
         "name"
             {
             "root1" "blah"

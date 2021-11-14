@@ -803,7 +803,7 @@ class PackList:
                 skinset = None
 
             value: str
-
+            key: str
             for key in set(ent.keys) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.

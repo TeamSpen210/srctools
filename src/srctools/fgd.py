@@ -32,7 +32,7 @@ try:
     from importlib.resources import open_binary
 except ImportError:
     # Backport module for before Python 3.7
-    from importlib_resources import open_binary
+    from importlib_resources import open_binary  # type: ignore
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',

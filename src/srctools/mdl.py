@@ -510,7 +510,7 @@ class Model:
                 # 2 4-byte pointers in studiomdl to the material class, for
                 #      server and client - shouldn't be in the file...
                 # 40 bytes of unused space (for expansion...)
-                struct_read('iii 4x 8x 40x', f)
+                cast('Tuple[int, int, int]', struct_read('iii 4x 8x 40x', f)),
             )
         for tex_ind, (offset, data) in enumerate(tex_temp):
             name_offset, flags, used = data
@@ -613,6 +613,7 @@ class Model:
                 event_end = f.tell()
 
                 # There are two event systems.
+                event_type: Union[AnimEvents, str]
                 if event_flags == 1 << 10:
                     # New system, name in the file.
                     event_name = read_nullstr(f, event_start + event_nameloc)

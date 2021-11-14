@@ -1,16 +1,17 @@
 """Compute diffs between files that srctools handles."""
-import sys
-import os
 from pathlib import Path
+import sys
+
+
 from srctools import VPK
 
 
 def diff_vpk(path1: Path, path2: Path):
     """Compute the diff of two VPK files."""
-    vpk1 = VPK(path1)  # type: VPK
-    vpk2 = VPK(path2)  # type: VPK
+    vpk1 = VPK(path1)
+    vpk2 = VPK(path2)
 
-    files = set().union(vpk1.filenames(), vpk2.filenames())
+    files = set(vpk1.filenames()) | set(vpk2.filenames())
 
     table = []
 
