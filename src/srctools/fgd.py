@@ -248,6 +248,7 @@ class HelperTypes(Enum):
     ENT_TRACK = 'animator'
     ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
     ENT_WORLDTEXT = 'worldtext'  # Renders 3D text in-world.
+    ENT_CATAPULT = 'catapult'  # Renders trigger_catpault trajectors prediction
 
     ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  # New helper added in Black Mesa
 

@@ -7,7 +7,7 @@ from typing import (
 import attr
 
 from srctools import Vec, parse_vec_str
-from srctools.fgd import HelperTypes, Helper
+from srctools.fgd import HelperTypes, UnknownHelper, Helper
 
 if TYPE_CHECKING:  # Circular import.
     from srctools.fgd import EntityDef
@@ -129,6 +129,11 @@ class HelperSize(Helper):
 class HelperBBox(HelperSize):
     """Helper implementation for bbox()."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.BBOX
+
+@attr.define
+class HelperCatapult(Helper):
+    """Helper implementation for catapult()."""
+    TYPE: ClassVar[UnknownHelper] = HelperTypes.ENT_CATAPULT
 
 
 @attr.define
