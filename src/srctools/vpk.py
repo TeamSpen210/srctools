@@ -117,7 +117,7 @@ def _join_file_parts(path: str, filename: str, ext: str) -> str:
     return f"{path}{'/' if path else ''}{filename}{'.' if ext else ''}{ext}"
 
 
-def _is_ascii(info: 'FileInfo', at: attr.Attribute, value: str) -> None:
+def _check_is_ascii(value: str) -> None:
     """VPK filenames must be ascii, it doesn't store or care about encoding.
 
     Allow the surrogateescape bytes also, so roundtripping existing VPKs is
@@ -136,9 +136,9 @@ class FileInfo:
     Do not call the constructor, it is only meant for VPK's use.
     """
     vpk: 'VPK'
-    dir: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
-    _filename: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
-    ext: str = attr.ib(validator=_is_ascii, on_setattr=attr.setters.frozen)
+    dir: str = attr.ib(on_setattr=attr.setters.frozen)
+    _filename: str = attr.ib(on_setattr=attr.setters.frozen)
+    ext: str = attr.ib(on_setattr=attr.setters.frozen)
     crc: int
     arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir
@@ -576,6 +576,7 @@ class VPK:
         FileExistsError will be raised if the file is already present.
         """
         self._check_writable()
+        _check_is_ascii(filename)
 
         path, name, ext = _get_file_parts(filename, root)
 
