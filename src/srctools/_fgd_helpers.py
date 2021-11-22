@@ -130,9 +130,10 @@ class HelperBBox(HelperSize):
     """Helper implementation for bbox()."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.BBOX
 
+
 @attr.define
 class HelperCatapult(Helper):
-    """Helper implementation for catapult()."""
+    """Helper implementation for catapult(), specific to Portal: Revolution."""
     TYPE: ClassVar[UnknownHelper] = HelperTypes.ENT_CATAPULT
 
 
@@ -695,30 +696,32 @@ class HelperLightSpotBlackMesa(Helper):
         """Produce the arguments for iconsprite()."""
         return [self.theta, self.phi, self.color]
 
+
 @attr.define
 class HelperRope(Helper):
     """Specialized helper for displaying move_rope and keyframe_rope."""
 
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_ROPE
 
-    name_kv: str
-    
+    name_kv: Optional[str]  # Extension in Portal: Revolution
+
     @classmethod
     def parse(cls, args: List[str]) -> 'Helper':
         """Parse keyframe(name)."""
         if len(args) > 1:
             raise ValueError(
-                'Expected 1 arguments, got ({})!'.format(args)
+                'Expected up to one argument, got ({})!'.format(args)
             )
         if len(args) == 0:
             return cls(None)
         return cls(args[0])
 
     def export(self) -> List[str]:
-        """Produce the arguments for iconsprite()."""
+        """Produce the arguments for keyframe()."""
         if not self.name_kv:
             return []
         return [self.name_kv]
+
 
 class HelperTrack(Helper):
     """Specialized helper for path_track-style entities.
