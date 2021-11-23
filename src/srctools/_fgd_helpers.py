@@ -694,7 +694,7 @@ class HelperLightSpotBlackMesa(Helper):
 
     def export(self) -> List[str]:
         """Produce the arguments for iconsprite()."""
-        return [self.theta, self.phi, self.color]
+        return [self.theta_kv, self.phi_kv, self.color_kv]
 
 
 @attr.define
