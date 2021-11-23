@@ -174,7 +174,6 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
                 return Game(os.getcwd())
 
             for folder in Path(os.getcwd()).parents:
-                path = folder / GINFO
-                if path.exists():
-                    return Game(path)
+                if Path(folder / GINFO).exists():
+                    return Game(folder)
     raise ValueError("Couldn't find gameinfo.txt!")
