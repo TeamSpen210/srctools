@@ -2,11 +2,12 @@
 import argparse
 import sys
 from pathlib import Path
-from typing import List
+from typing import List, Union
 
 from srctools import FGD, Property, Vec, VMF
 from srctools.instancing import Manifest, InstanceFile, collapse_one
 from srctools.filesys import RawFileSystem
+from srctools.vmf import VisGroup
 
 
 def main(args: List[str]) -> None:
@@ -60,6 +61,7 @@ def main(args: List[str]) -> None:
         with fsys[submap.filename].open_str() as f:
             sub_file = InstanceFile(VMF.parse(Property.parse(f)))
 
+        visgroup: Union[bool, VisGroup]
         if submap.is_toplevel:
             vmf.spawn.keys.update(sub_file.vmf.spawn.keys)
             visgroup = False

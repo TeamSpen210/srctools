@@ -692,6 +692,10 @@ class Property:
         else:
             return self._value
 
+    @overload
+    def as_array(self) -> List[str]: ...
+    @overload
+    def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
     def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> List[T]:
         """Convert a property block into a list of values.
 
