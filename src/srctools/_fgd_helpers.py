@@ -134,7 +134,7 @@ class HelperBBox(HelperSize):
 @attr.define
 class HelperCatapult(Helper):
     """Helper implementation for catapult(), specific to Portal: Revolution."""
-    TYPE: ClassVar[UnknownHelper] = HelperTypes.ENT_CATAPULT
+    TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_CATAPULT
 
 
 @attr.define
@@ -706,7 +706,7 @@ class HelperRope(Helper):
     name_kv: Optional[str]  # Extension in Portal: Revolution
 
     @classmethod
-    def parse(cls, args: List[str]) -> 'Helper':
+    def parse(cls, args: List[str]) -> 'HelperRope':
         """Parse keyframe(name)."""
         if len(args) > 1:
             raise ValueError(
