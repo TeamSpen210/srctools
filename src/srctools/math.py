@@ -42,11 +42,11 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, cast, Type, TYPE_CHECKING,
+    Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
     NamedTuple, Iterator, Iterable, SupportsRound, Optional
 )
 if TYPE_CHECKING:
-    from typing import final, Literal, Any
+    from typing import final, Literal
 else:
     globals()['final'] = lambda x: x
 
