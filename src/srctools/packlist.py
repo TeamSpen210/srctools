@@ -768,7 +768,7 @@ class PackList:
     def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
         # Don't show the same keyvalue warning twice, it's just noise.
-        unknown_keys = set()
+        unknown_keys: Set[Tuple[str, str]] = set()
 
         # Definitions for the common keyvalues on all entities.
         try:
@@ -786,19 +786,20 @@ class PackList:
             try:
                 ent_class = fgd[classname]
             except KeyError:
-                if classname not in unknown_keys:
+                if (classname, '') not in unknown_keys:
                     LOGGER.warning('Unknown class "{}"!', classname)
-                    unknown_keys.add(classname)
+                    unknown_keys.add((classname, ''))
                 # Fall back to generic keyvalues.
                 ent_class = base_entity
 
+            skinset: Optional[Set[int]]
             if ent['skinset'] != '':
                 # Special key for us - if set this is a list of skins this
                 # entity is pledging it will restrict itself to.
                 skinset = {
                     int(x)
                     for x in ent.keys.pop('skinset').split()
-                }  # type: Optional[Set[int]]
+                }
             else:
                 skinset = None
 

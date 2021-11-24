@@ -11,11 +11,11 @@ import math
 import operator
 
 from typing import (
-    Optional, Union, overload, cast, ClassVar, Any,
+    Generic, Optional, Union, overload, cast, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO
+    TextIO, Container, IO,
 )
 
 import attr
@@ -996,7 +996,7 @@ class IODef:
         return IODef(name, value_type)
 
 
-class _EntityView(Mapping[Union[str, Tuple[str, Collection[str]]], T]):
+class _EntityView(Generic[T]):
     """Provides a view over entity keyvalues, inputs, or outputs."""
     __slots__ = ['_ent', '_attr', '_disp_attr']
 

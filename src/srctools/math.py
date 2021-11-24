@@ -884,7 +884,12 @@ class Vec(SupportsRound['Vec']):
             out_min.z + (x_off * (out_max.z - out_min.z)) / diff,
         )
 
-    def __round__(self, ndigits: int=0) -> 'Vec':
+    @overload
+    def __round__(self) -> Any: ...
+    @overload
+    def __round__(self, ndigits: int) -> 'Vec': ...  # type: ignore
+
+    def __round__(self, ndigits: int=0) -> Union['Vec', Any]:
         """Performing round() on a Py_Vec rounds each axis."""
         return Py_Vec(
             round(self.x, ndigits),

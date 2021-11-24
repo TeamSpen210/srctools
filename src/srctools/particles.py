@@ -1,9 +1,8 @@
 """Parse particle system files."""
-from typing import Union, IO, Dict, overload, List, Iterable
-
-import attr
+from typing import Union, IO, Dict, overload, List, Iterable, TYPE_CHECKING
 import copy
 
+import attr
 from srctools.dmx import Element, ValueType, Attribute
 
 
@@ -29,19 +28,26 @@ class Child:
     """Options for a child particle reference."""
     particle: str
 
+# Workaround MyPy not evaluating generics on converters.
+if TYPE_CHECKING:
+    def _mk_operator(x: Iterable[Operator]) -> List[Operator]: return list(x)
+    def _mk_child(x: Iterable[Child]) -> List[Child]: return list(x)
+else:
+    _mk_operator = _mk_child = list
+
 
 @attr.define(eq=False)
 class Particle:
     """A particle system."""
     name: str
     options: Dict[str, Attribute] = attr.Factory({}.copy)
-    renderers: List[Operator] = attr.ib(converter=list, factory=list)
-    operators: List[Operator] = attr.ib(converter=list, factory=list)
-    initializers: List[Operator] = attr.ib(converter=list, factory=list)
-    emitters: List[Operator] = attr.ib(converter=list, factory=list)
-    forces: List[Operator] = attr.ib(converter=list, factory=list)
-    constraints: List[Operator] = attr.ib(converter=list, factory=list)
-    children: List[Child] = attr.ib(converter=list, factory=list)
+    renderers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    operators: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    initializers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    emitters: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    forces: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    constraints: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
+    children: List[Child] = attr.ib(converter=_mk_child, factory=list)
 
     @classmethod
     @overload
@@ -175,3 +181,6 @@ class Particle:
                 child_attr.append(name_to_elem[child.particle.casefold()])
 
         return root
+
+del _mk_operator
+del _mk_child
