@@ -363,10 +363,10 @@ def collapse_one(
         id_to_ent[old_ent.id] = new_ent
 
         if visgroup is not False:
-            new_ent.visgroup_ids = [
-                inst.visgroup_ids[old] for old in
-                old_ent.visgroup_ids
-            ] or ungrouped_group.copy()
+            new_ent.visgroup_ids = {
+                inst.visgroup_ids[old]
+                for old in old_ent.visgroup_ids
+            } or ungrouped_group.copy()
 
         for old_brush, new_brush in zip(old_ent.solids, new_ent.solids):
             inst.brush_ids[old_brush.id] = new_brush.id
@@ -374,10 +374,10 @@ def collapse_one(
 
             # Convert across the IDs.
             if visgroup is not False:
-                new_brush.visgroup_ids = [
-                    inst.visgroup_ids[old] for old in
-                    old_brush.visgroup_ids
-                ] or ungrouped_group.copy()
+                new_brush.visgroup_ids = {
+                    inst.visgroup_ids[old]
+                    for old in old_brush.visgroup_ids
+                } or ungrouped_group.copy()
 
     for new_ent in new_ents:
         # Find the FGD to use.
