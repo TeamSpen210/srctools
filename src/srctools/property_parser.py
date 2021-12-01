@@ -838,16 +838,21 @@ class Property:
         else:
             raise ValueError("Can't index a Property without children!")
 
+    @overload
+    def __setitem__(self, index: slice, value: Iterable['Property']) -> None: ...
+    @overload
+    def __setitem__(self, index: builtins.int, value: 'Property') -> None: ...
+    @overload
+    def __setitem__(self, index: Union[str, Tuple[str, ...]], value: str) -> None: ...
+
     def __setitem__(
         self,
-        index: Union[builtins.int, slice, str],
-        value: _Prop_Value
+        index: Union[builtins.int, slice, str, Tuple[str, ...]],
+        value: Union['Property', Iterable['Property'], str],
     ) -> None:
         """Allow setting the values of the children directly.
 
-        If the value is a Property, this will be inserted under the given
-        name or index.
-        - If given an index, it will search by position.
+        - If given an index or slice, it will add these properties in these positions.
         - If given a string, it will set the last Property with that name.
         - If none are found, it appends the value to the tree.
         - If given a tuple of strings, it will search through that path,
@@ -855,12 +860,23 @@ class Property:
         """
         if not isinstance(self._value, list):
             raise ValueError("Can't index a Property without children!")
-        if isinstance(index, int) or isinstance(index, slice):
-            self._value[index] = value
+        if isinstance(index, int):
+            if isinstance(value, Property):
+                self._value[index] = value
+            else:
+                raise TypeError(f"Cannot assign non-Property to position {index}: {value!r}")
+        elif isinstance(index, slice):
+            prop_list = []
+            for prop in value:
+                if isinstance(prop, Property):
+                    prop_list.append(prop)
+                else:
+                    raise TypeError(f'Must assign Properties to positions, not {type(prop).__name__}!')
+            self._value[index] = prop_list
         else:
             if isinstance(value, Property):
                 # We don't want to assign properties, we want to add them under
-                # this name!
+                # this name!,
                 value.name = index
                 try:
                     # Replace at the same location..

@@ -643,3 +643,53 @@ def test_getitem() -> None:
     assert root['key45', 'default'] == 'default'
     assert root['key2', any] == '2'
     assert root['key45', any] is any
+
+def test_setitem() -> None:
+    """Test various modes of setitem functions correctly."""
+    key1 = Property('key1', '1')
+    key2 = Property('key2', '2')
+    kEy1 = Property('kEy1', '3')
+    bLock1 = Property('bLock1', [Property('leaf', '45')])
+    root = Property('Block', [key1, key2, Property('key3', '45'), bLock1, kEy1])
+
+    root[0] = Property('kEy1', '2')
+    assert root[0] == Property('kEy1', '2')
+    assert root['key1'] == '3'  # It's not at the end.
+    root[4] = Property('KEY1', '4')
+    assert root['key1'] == '4'
+
+    with pytest.raises(TypeError):
+        root[0] = 'not_a_property'  # type: ignore
+
+    root[1:3] = [Property('another', '12'), Property('keys', '12')]
+    assert_tree(root, Property('Block', [
+        Property('kEy1', '2'),
+        Property('another', '12'),
+        Property('keys', '12'),
+        bLock1,
+        Property('KEY1', '4'),
+    ]))
+    # Modifying an existing key assigns to it.
+    assert len(root) == 5
+    root['aNother'] = 'new_value'
+    assert root['another'] == 'new_value'
+    assert len(root) == 5
+
+    # A new key is appended.
+    root['mIssing'] = 'blah'
+    assert root[-1] == Property('mIssing', 'blah')
+    assert len(root) == 6
+
+    # This also works when assigning property objects, with the name cleared.
+    prop_1 = Property('ignored', 'second')
+    root['anOther'] = prop_1
+    assert root.find_key('another') is prop_1
+    assert prop_1.real_name == 'anOther'
+    assert len(root) == 6
+
+    # And when appending.
+    prop_2 = Property('new_prop', [Property('a', '1'), Property('b', '2')])
+    root['added'] = prop_2
+    assert root.find_key('added') is prop_2
+    assert root[-1] is prop_2
+    assert len(root) == 7
