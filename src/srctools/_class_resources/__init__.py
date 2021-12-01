@@ -297,7 +297,7 @@ def move_rope(pack: PackList, ent: Entity) -> None:
     pack.pack_file('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL)
 
 # These classes are identical.
-CLASS_RESOURCES['keyframe_rope'] = CLASS_RESOURCES['move_rope']
+CLASS_FUNCS['keyframe_rope'] = CLASS_FUNCS['move_rope']
 ALT_NAMES['keyframe_rope'] = 'move_rope'
 
 res('passtime_ball',
