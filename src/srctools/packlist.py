@@ -37,7 +37,7 @@ ParsedT = TypeVar('ParsedT')
 __all__ = [
     'FileType', 'FileMode', 'SoundScriptMode',
     'PackFile', 'PackList',
-    'unify_path', 'CLASS_RESOURCES', 'ALT_NAMES'
+    'unify_path', 'CLASS_RESOURCES', 'CLASS_FUNCS', 'ALT_NAMES'
 ]
 
 
@@ -872,17 +872,21 @@ class PackList:
         # Use compress() to skip classnames that have no ents.
         for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
             try:
-                res = CLASS_RESOURCES[classname]
+                res_list = CLASS_RESOURCES[classname]
             except KeyError:
-                continue
-            if callable(res):
-                # Different stuff is packed based on keyvalues, so call a function.
-                for ent in vmf.by_class[classname]:
-                    res(self, ent)
+                pass
             else:
                 # Basic dependencies, if they're the same for any copy of this ent.
-                for file, filetype in res:
+                for file, filetype in res_list:
                     self.pack_file(file, filetype)
+            try:
+                res_func = CLASS_FUNCS[classname]
+            except KeyError:
+                pass
+            else:
+                # Different stuff is packed based on keyvalues, so call a function.
+                for ent in vmf.by_class[classname]:
+                    res_func(self, ent)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
@@ -1204,4 +1208,4 @@ class PackList:
 
 
 # noinspection PyProtectedMember
-from srctools._class_resources import CLASS_RESOURCES, ALT_NAMES
+from srctools._class_resources import CLASS_RESOURCES, CLASS_FUNCS, ALT_NAMES

@@ -4,20 +4,22 @@ Those are ones that don't simply appear in keyvalues.
 The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
-from typing import Callable, Tuple, Union, List, Dict, Iterable
+from typing import Callable, TypeVar, Tuple, Union, List, Dict, Iterable
 
 from srctools.packlist import FileType, PackList
 from srctools import Entity, conv_int
 
 #  For various entity classes, we know they require hardcoded files.
 # List them here - classname -> [(file, type), ...]
-# Alternatively it's a function to call with the entity to do class-specific
-# behaviour, yielding files to pack.
+# Additionally or instead you could have a function to call with the
+# entity to do class-specific behaviour, yielding files to pack.
 
 ClassFunc = Callable[[PackList, Entity], None]
-CLASS_RESOURCES = {}  # type: Dict[str, Union[ClassFunc, Iterable[Tuple[str, FileType] ]]]
-INCLUDES = {}  # type: Dict[str, List[str]]
-ALT_NAMES = {}  # type: Dict[str, str]
+ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
+CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]] = {}
+CLASS_FUNCS: Dict[str, ClassFunc] = {}
+INCLUDES: Dict[str, List[str]] = {}
+ALT_NAMES: Dict[str, str] = {}
 
 
 def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', aliases: str='') -> None:
@@ -27,33 +29,30 @@ def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', al
     aliases indicate additional classnames which are identical to ours.
     """
     if items:
-        CLASS_RESOURCES[cls] = [
+        CLASS_RESOURCES[cls] = res_list = [
             (file, FileType.GENERIC) if isinstance(file, str) else file
             for file in items
         ]
     else:
         # Use a tuple here for empty ones, to save a bit of memory
         # with the many ents that don't use resources.
-        CLASS_RESOURCES[cls] = ()
+        CLASS_RESOURCES[cls] = res_list = ()
     if includes:
         INCLUDES[cls] = includes.split()
     if aliases:
         for alt in aliases.split():
             ALT_NAMES[alt] = cls
-            CLASS_RESOURCES[alt] = CLASS_RESOURCES[cls]
+            CLASS_RESOURCES[alt] = res_list
 
 
-def cls_func(func: ClassFunc) -> ClassFunc:
+def cls_func(func: ClassFuncT) -> ClassFuncT:
     """Save a function to do special checks for a classname."""
-    CLASS_RESOURCES[func.__name__] = func
+    CLASS_FUNCS[func.__name__] = func
     return func
 
 
 def _process_includes() -> None:
     """Apply the INCLUDES dict."""
-    for cls in INCLUDES:
-        if callable(CLASS_RESOURCES[cls]):
-            raise ValueError('Class {} has include and function!'.format(cls))
     while INCLUDES:
         has_changed = False
         for cls in list(INCLUDES):
@@ -66,7 +65,9 @@ def _process_includes() -> None:
                     try:
                         resources.extend(CLASS_RESOURCES[inc_cls])
                     except KeyError:
-                        raise ValueError('{} included by {}!'.format(inc_cls, cls)) from None
+                        raise ValueError(f'{inc_cls} does not exist, but included by {cls}!') from None
+                    if inc_cls in CLASS_FUNCS:
+                        raise ValueError(f'{inc_cls} defines func, but included by {cls}!')
                     includes.remove(inc_cls)
                     has_changed = True
             if not includes:
@@ -112,7 +113,7 @@ def pack_ent_class(pack: PackList, clsname: str) -> None:
 
 def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
     """Add the resource matching the hardcoded set of sounds in button ents."""
-    pack.pack_soundscript('Buttons.snd{:d}'.format(conv_int(index)))
+    pack.pack_soundscript(f'Buttons.snd{conv_int(index):d}')
 
 # In alphabetical order:
 

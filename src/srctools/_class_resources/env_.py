@@ -59,7 +59,6 @@ res('env_fire_trail',
 @cls_func
 def env_fire(pack: PackList, ent: Entity) -> None:
     """Two types of fire, with different resources."""
-    pack.pack_file('Fire.Plasma', FileType.GAME_SOUND)
     fire_type = conv_int(ent['firetype'])
     if fire_type == 0:  # Natural
         flags = conv_int(ent['spawnflags'])
@@ -71,9 +70,9 @@ def env_fire(pack: PackList, ent: Entity) -> None:
             pack.pack_file('env_fire_{}{}'.format(name, suffix),
                            FileType.PARTICLE_SYSTEM)
     elif fire_type == 1:  # Plasma
-        for args in CLASS_RESOURCES['_plasma']:
-            pack.pack_file(*args)
-
+        for fname, ftype in CLASS_RESOURCES['_plasma']:
+            pack.pack_file(fname, ftype)
+res('env_fire', sound('Fire.Plasma'))
 
 res('env_firesensor')
 res('env_firesource')
