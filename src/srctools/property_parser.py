@@ -826,15 +826,16 @@ class Property:
         if isinstance(self._value, list):
             if isinstance(index, (int, slice)):
                 return self._value[index]
+            elif isinstance(index, tuple):
+                # With default value
+                return self._get_value(index[0], def_=index[1])
+            elif isinstance(index, str):
+                try:
+                    return self._get_value(index)
+                except NoKeyError as no_key:
+                    raise IndexError(no_key) from no_key
             else:
-                if isinstance(index, tuple):
-                    # With default value
-                    return self._get_value(index[0], def_=index[1])
-                else:
-                    try:
-                        return self._get_value(index)
-                    except NoKeyError as no_key:
-                        raise IndexError(no_key) from no_key
+                raise TypeError(f'Unknown key type: {index!r}')
         else:
             raise ValueError("Can't index a Property without children!")
 
@@ -843,11 +844,11 @@ class Property:
     @overload
     def __setitem__(self, index: builtins.int, value: 'Property') -> None: ...
     @overload
-    def __setitem__(self, index: Union[str, Tuple[str, ...]], value: str) -> None: ...
+    def __setitem__(self, index: str, value: str) -> None: ...
 
     def __setitem__(
         self,
-        index: Union[builtins.int, slice, str, Tuple[str, ...]],
+        index: Union[builtins.int, slice, str],
         value: Union['Property', Iterable['Property'], str],
     ) -> None:
         """Allow setting the values of the children directly.
@@ -855,8 +856,6 @@ class Property:
         - If given an index or slice, it will add these properties in these positions.
         - If given a string, it will set the last Property with that name.
         - If none are found, it appends the value to the tree.
-        - If given a tuple of strings, it will search through that path,
-          and set the value of the last matching Property.
         """
         if not isinstance(self._value, list):
             raise ValueError("Can't index a Property without children!")
@@ -873,13 +872,13 @@ class Property:
                 else:
                     raise TypeError(f'Must assign Properties to positions, not {type(prop).__name__}!')
             self._value[index] = prop_list
-        else:
+        elif isinstance(index, str):
             if isinstance(value, Property):
                 # We don't want to assign properties, we want to add them under
                 # this name!,
                 value.name = index
                 try:
-                    # Replace at the same location..
+                    # Replace at the same location.
                     index = self._value.index(self.find_key(index))
                 except NoKeyError:
                     self._value.append(value)
@@ -890,6 +889,8 @@ class Property:
                     self.find_key(index)._value = value
                 except NoKeyError:
                     self._value.append(Property(index, value))
+        else:
+            raise TypeError(f'Unknown key type: {index!r}')
 
     def __delitem__(self, index: Union[builtins.int, slice, str]) -> None:
         """Delete the given property index.
