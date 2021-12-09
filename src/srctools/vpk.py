@@ -117,7 +117,7 @@ def _join_file_parts(path: str, filename: str, ext: str) -> str:
     return f"{path}{'/' if path else ''}{filename}{'.' if ext else ''}{ext}"
 
 
-def _check_is_ascii(value: str) -> None:
+def _check_is_ascii(value: str) -> bool:
     """VPK filenames must be ascii, it doesn't store or care about encoding.
 
     Allow the surrogateescape bytes also, so roundtripping existing VPKs is
@@ -126,7 +126,8 @@ def _check_is_ascii(value: str) -> None:
     for c in value:
         ind = ord(c)
         if ind >= 128 and not (0xDC80 <= ind <= 0xDCFF):
-            raise ValueError('VPK filenames must be ASCII format!')
+            return False
+    return True
 
 
 @attr.define(eq=False)
@@ -576,9 +577,10 @@ class VPK:
         FileExistsError will be raised if the file is already present.
         """
         self._check_writable()
-        _check_is_ascii(filename)
 
         path, name, ext = _get_file_parts(filename, root)
+        if not _check_is_ascii(path) or not _check_is_ascii(name) or not _check_is_ascii(ext):
+            raise ValueError(f'VPK filename {filename!r} must be ASCII format!')
 
         try:
             ext_infos = self._fileinfo[ext]
