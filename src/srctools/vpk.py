@@ -123,9 +123,10 @@ def _check_is_ascii(value: str) -> bool:
     Allow the surrogateescape bytes also, so roundtripping existing VPKs is
     allowed.
     """
-    for c in value:
-        ind = ord(c)
-        if ind >= 128 and not (0xDC80 <= ind <= 0xDCFF):
+    for char in value:
+        # Do straightforward string comparison, only call ord for the surrogate-escape bytes
+        # which can't be direct constants.
+        if char >= '\x80' and not (0xDC80 <= ord(char) <= 0xDCFF):
             return False
     return True
 
