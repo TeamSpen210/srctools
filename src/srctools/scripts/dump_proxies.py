@@ -2,11 +2,10 @@
 import argparse
 import sys
 import traceback
-from pathlib import Path
-from collections import defaultdict, Counter
-from typing import List
+from collections import Counter
+from typing import List, DefaultDict
 
-from srctools.filesys import RawFileSystem
+from srctools.filesys import FileSystem, RawFileSystem
 from srctools.game import Game
 from srctools.vmt import Material
 
@@ -22,14 +21,15 @@ def main(args: List[str]) -> None:
     )
 
     result = parser.parse_args(args)
+    fsys: FileSystem
     try:
         fsys = Game(result.game).get_filesystem()
     except FileNotFoundError:
         fsys = RawFileSystem(result.game)
 
     # Shader/proxy -> parameter -> use count
-    shader_params = defaultdict(Counter)
-    shader_proxies = defaultdict(Counter)
+    shader_params = DefaultDict[str, Counter](Counter)
+    shader_proxies = DefaultDict[str, Counter](Counter)
 
     with fsys:
         for file in fsys.walk_folder('materials/'):
@@ -46,7 +46,7 @@ def main(args: List[str]) -> None:
                 continue
 
             param_count = shader_params[mat.shader.casefold()]
-            for name, param_type, value in mat:
+            for name in mat:
                 param_count[name.casefold()] += 1
 
             for prox in mat.proxies:
