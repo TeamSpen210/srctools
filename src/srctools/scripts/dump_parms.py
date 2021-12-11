@@ -5,23 +5,25 @@ This produces _shaderdb.py
 """
 import glob
 import ast
-import re
 import sys
 import collections
 from collections import defaultdict
-from typing import Dict, List, Set
+from typing import Union, Dict, Set
 
+import attr
 from srctools.vmt import VarType
 
 
-Var = collections.namedtuple('Var', [
-    'name',
-    'type',
-    'default',
-    'help',
-    'flags',
-    'filename',
-])
+@attr.frozen
+class Var:
+    """A shader var."""
+    name: str
+    type: VarType
+    default: object
+    help: object
+    flags: str
+    filename: str
+
 
 VARS: Dict[str, Var] = {}
 CONFLICTS: Dict[str, Set[Var]] = collections.defaultdict(set)
@@ -66,46 +68,51 @@ OVERRIDES: Dict[str, VarType] = {
 }
 
 
+def parse_ast_value(value: ast.expr) -> str:
+    """Convert simple literals to the text."""
+    if isinstance(value, ast.Name):
+        return value.id
+    else:
+        return str(ast.literal_eval(value))
+
+
 def process(filename: str, args: str) -> None:
     """Handle the parameters passed to a shader macro."""
     # Make python do the work, by parsing the data.
-    ast_tuple = ast.parse(args.lstrip(), filename, 'eval').body
+    ast_expr = ast.parse(args.lstrip(), filename, 'eval')
+    assert isinstance(ast_expr, ast.Expression), ast.dump(ast_expr)
+    assert isinstance(ast_expr.body, ast.Tuple), ast.dump(ast_expr)
+
+    ast_tuple: ast.Tuple = ast_expr.body
     elements = ast_tuple.elts
-    
+
     if len(elements) == 5:
         ast_name, ast_type, ast_default, ast_help, ast_flags = ast_tuple.elts
-        if isinstance(ast_flags, ast.Name):
-            flags = ast_flags.id
-        else:
-            flags = ast.literal_eval(ast_flags)
-        
+        flags = parse_ast_value(ast_flags)
+
     elif len(elements) == 4:
         ast_name, ast_type, ast_default, ast_help = ast_tuple.elts
-        flags = 0
+        flags = '0'
     elif len(elements) == 3:
         ast_name, ast_type, ast_default = ast_tuple.elts
         ast_help = None
-        flags = 0
-    else: 
+        flags = '0'
+    else:
         raise ValueError(ast.dump(ast_tuple))
 
-    if isinstance(ast_default, ast.Name):
-        default = ast_default.id
-    else:
-        default = ast.literal_eval(ast_default)
-    
-    name = '$' + ast_name.id.casefold()
-    if ast_name.id.casefold() in OVERRIDES:
+    name = '$' + parse_ast_value(ast_name)
+
+    if name.casefold() in OVERRIDES:
         return
     var = Var(
-        name=ast_name.id,
-        type=VarType(ast_type.id),
-        default=default,
+        name=name,
+        type=VarType(parse_ast_value(ast_type)),
+        default=parse_ast_value(ast_default),
         help=ast.literal_eval(ast_help) if ast_help else '',
         flags=flags,
         filename=filename,
     )
-    
+
     # Detect doubled-up vars!
     if name in VARS:
         other = VARS[name]
@@ -115,14 +122,14 @@ def process(filename: str, args: str) -> None:
             # but we don't care about help etc.
             if var.default != other.default:
                 if isinstance(other.default, frozenset):
-                    var = var._replace(default=other.default | {var.default})
+                    var = attr.evolve(var, default=other.default | {var.default})
                 else:
-                    var = var._replace(default=frozenset({var.default, other.default}))
-                    
+                    var = attr.evolve(var, default=frozenset({var.default, other.default}))
+
                 if isinstance(other.filename, frozenset):
-                    var = var._replace(filename=other.filename | {var.filename})
+                    var = attr.evolve(var, filename=other.filename | {var.filename})
                 else:
-                    var = var._replace(filename=frozenset({var.filename, other.filename}))
+                    var = attr.evolve(var, filename=frozenset({var.filename, other.filename}))
         else:
             # Different types, major issue.
             CONFLICTS[name].add(var)
@@ -139,7 +146,7 @@ def dump(folder):
                     break
             else:  # No shader params in this file...
                 continue
-            
+
             for line in f:
                 line = line.strip()
                 if line.startswith('SHADER_PARAM'):

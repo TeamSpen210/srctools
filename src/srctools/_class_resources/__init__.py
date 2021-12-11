@@ -28,6 +28,7 @@ def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', al
     includes adds the resources of the other ent to this one if we spawn another.
     aliases indicate additional classnames which are identical to ours.
     """
+    res_list: Iterable[Tuple[str, FileType]]
     if items:
         CLASS_RESOURCES[cls] = res_list = [
             (file, FileType.GENERIC) if isinstance(file, str) else file

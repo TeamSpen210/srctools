@@ -1017,15 +1017,16 @@ class Property:
         folded_names = [name.casefold() for name in names]
         new_list = []
         merge: Dict[str, Property] = {
-            name.casefold(): Property(name, [])
-            for name in
-            names
+            name: Property(name, [])
+            for name in folded_names
         }
 
         item: Property
         for item in self._value[:]:
-            if item._folded_name in folded_names:
-                merge[item._folded_name]._value.extend(item._value)
+            if isinstance(item._value, list) and item._folded_name in folded_names:
+                prop = merge[item._folded_name]
+                assert isinstance(prop._value, list)
+                prop._value.extend(item)
             else:
                 new_list.append(item)
 

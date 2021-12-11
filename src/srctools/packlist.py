@@ -5,7 +5,7 @@ import shutil
 import warnings
 from collections import OrderedDict
 from pathlib import Path
-from typing import Optional, TypeVar, Generic, Iterable, Dict, Tuple, List, Iterator, Set
+from typing import Optional, Union, TypeVar, Generic, Iterable, Dict, Tuple, List, Iterator, Set
 from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
 import os
@@ -598,7 +598,7 @@ class PackList:
 
         return scripts.values()
 
-    def load_soundscript_manifest(self, cache_file: str=None) -> None:
+    def load_soundscript_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
 
         If cache_file is provided, it should be a path to a file used to
@@ -1039,6 +1039,7 @@ class PackList:
             todo = False
 
             for file in list(self._files.values()):
+                # noinspection PyProtectedMember
                 if file._analysed:
                     continue
                 file._analysed = True
