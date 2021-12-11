@@ -147,7 +147,7 @@ def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
     if low == high:
         return str(low)
     else:
-        return '{!s},{!s}'.format(low, high)
+        return f'{low!s},{high!s}'
 
 
 def wav_is_looped(file: IO[bytes]) -> bool:
@@ -263,9 +263,16 @@ class Sound:
         self._stack_stop = tree
 
     def __repr__(self) -> str:
-        res = f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, channel={self.channel}, level={self.level}, pitch={self.pitch}'
+        res = (
+            f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, '
+            f'channel={self.channel}, level={self.level}, pitch={self.pitch}'
+        )
         if self.force_v2 or self._stack_start or self._stack_update or self._stack_stop:
-            res += f', stack_start={self.stack_start!r}, stack_update={self.stack_update!r}, stack_stop={self.stack_stop!r})'
+            res += (
+                f', stack_start={self.stack_start!r}'
+                f', stack_update={self.stack_update!r}'
+                f', stack_stop={self.stack_stop!r})'
+            )
         else:
             res += ')'
         return res
@@ -364,24 +371,22 @@ class Sound:
 
         Pass a file-like object open for text writing.
         """
-        file.write('"{}"\n\t{{\n'.format(self.name))
-
-        file.write('\t' 'channel {}\n'.format(self.channel.value))
-
-        file.write('\t' 'soundlevel {}\n'.format(join_float(self.level)))
+        file.write(f'"{self.name}"\n\t{{\n')
+        file.write(f'\t' 'channel {self.channel.value}\n')
+        file.write('\t' 'soundlevel {join_float(self.level)}\n')
 
         if self.volume != (1, 1):
-            file.write('\tvolume {}\n'.format(join_float(self.volume)))
+            file.write(f'\tvolume {join_float(self.volume)}\n')
         if self.pitch != (100, 100):
-            file.write('\tpitch {}\n'.format(join_float(self.pitch)))
+            file.write(f'\tpitch {join_float(self.pitch)}\n')
 
-        if len(self.sounds) > 1:
+        if len(self.sounds) != 1:
             file.write('\trndwave\n\t\t{\n')
             for wav in self.sounds:
-                file.write('\t\twave "{}"\n'.format(wav))
+                file.write(f'\t\twave "{wav}"\n')
             file.write('\t\t}\n')
         else:
-            file.write('\twave "{}"\n'.format(self.sounds[0]))
+            file.write(f'\twave "{self.sounds[0]}"\n')
 
         if self.force_v2 or self.stack_start or self.stack_stop or self.stack_update:
             file.write(
