@@ -141,8 +141,8 @@ def split_float(
         return out, out
 
 
-def join_float(val: Tuple[float, float]) -> str:
-    """Reverse split_float()."""
+def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
+    """Reverse split_float(). The two parameters should be stringifiable into floats/constants."""
     low, high = val
     if low == high:
         return str(low)
