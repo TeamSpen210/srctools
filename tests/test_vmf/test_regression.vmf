@@ -22,13 +22,6 @@ world
 	"id" "1"
 	"classname" "worldspawn"
 	"mapversion" "1"
-	editor
-	{
-		"color" "255 255 255"
-		"visgroupshown" "1"
-		"visgroupautoshown" "1"
-		"logicalpos" "[0 1]"
-	}
 }
 entity
 {

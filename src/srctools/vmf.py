@@ -332,6 +332,7 @@ class VMF:
         self.cameras: List[Camera] = cameras or []
         self.cordons: List[Cordon] = cordons or []
         self.vis_tree: List[VisGroup] = vis_tree or []
+        self.groups: Dict[int, EntityGroup] = {}
 
         # mapspawn entity, which is the entity world brushes are saved to.
         self.spawn: Entity = spawn or Entity(self)
@@ -515,26 +516,23 @@ class VMF:
         for ent in cordons.find_all('cordon'):
             Cordon.parse(map_obj, ent)
 
+        map_spawn = tree.find_block('world', or_blank=True)
+        map_obj.spawn = Entity.parse(map_obj, map_spawn, _worldspawn=True)
+
+        if map_obj.spawn.solids is not None:
+            map_obj.brushes = map_obj.spawn.solids
+
         for ent in tree.find_all('Entity'):
             map_obj.add_ent(
-                Entity.parse(map_obj, ent, hidden=False)
+                Entity.parse(map_obj, ent, False)  # hidden=False
             )
 
         # find hidden entities
         for hidden_ent in tree.find_all('hidden'):
             for ent in hidden_ent:
                 map_obj.add_ent(
-                    Entity.parse(map_obj, ent, hidden=True)
+                    Entity.parse(map_obj, ent, True)  # hidden=True
                 )
-
-        map_spawn = tree.find_block('world', or_blank=True)
-        if map_spawn is None:
-            # Generate a fake default to parse through
-            map_spawn = Property("world", [])
-        map_obj.spawn = Entity.parse(map_obj, map_spawn)
-
-        if map_obj.spawn.solids is not None:
-            map_obj.brushes = map_obj.spawn.solids
 
         return map_obj
 
@@ -597,7 +595,7 @@ class VMF:
         # Also force the classname, since this will crash if it's different.
         self.spawn['mapversion'] = str(self.map_ver)
         self.spawn['classname'] = 'worldspawn'
-        self.spawn.export(dest_file, ent_name='world', disp_multiblend=disp_multiblend)
+        self.spawn.export(dest_file, disp_multiblend=disp_multiblend, _is_worldspawn=True)
         del self.spawn['mapversion']
 
         for ent in self.entities:
@@ -2043,7 +2041,7 @@ class Entity:
         outputs: List['Output']=None,
         solids: List[Solid]=None,
         hidden: bool=False,
-        groups: Iterable['EntityGroup']=(),
+        groups: Iterable[int]=(),
         vis_ids=(),
         vis_shown: bool=True,
         vis_auto_shown: bool=True,
@@ -2062,7 +2060,7 @@ class Entity:
         self.solids: List[Solid] = solids or []
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
-        self.groups = list(groups)
+        self.groups = set(groups)
 
         self.visgroup_ids = set(vis_ids)
         self.vis_shown = vis_shown
@@ -2091,8 +2089,6 @@ class Entity:
         ]
         outs = [o.copy() for o in self.outputs]
 
-        new_groups = [group.copy() for group in self.groups]
-
         return Entity(
             vmf_file=vmf_file or self.map,
             keys=new_keys,
@@ -2101,7 +2097,7 @@ class Entity:
             outputs=outs,
             solids=new_solids,
             hidden=self.hidden if keep_vis else False,
-            groups=new_groups,
+            groups=self.groups.copy(),
 
             editor_color=self.editor_color,
             logical_pos=self.logical_pos,
@@ -2112,15 +2108,22 @@ class Entity:
         )
 
     @staticmethod
-    def parse(vmf_file, tree_list: Property, hidden=False):
-        """Parse a property tree into an Entity object."""
+    def parse(
+        vmf_file: VMF, tree_list: Property,
+        hidden: bool = False,
+        _worldspawn: bool = False,
+    ):
+        """Parse a property tree into an Entity object.
+
+        _worldspawn_groups is used while parsing the special worldspawn entity.
+        """
         ent_id = -1
-        solids = []
-        keys = {}
-        outputs = []
-        fixup = []
-        groups = []
-        visgroups = []
+        solids: List[Solid] = []
+        keys: Dict[str, str] = {}
+        outputs: List[Output] = []
+        fixup: List[FixupValue] = []
+        group_ids: List[int] = []
+        visgroup_ids: List[int] = []
         vis_shown = vis_auto_shown = True
         logical_pos = None
         comment = ''
@@ -2162,7 +2165,10 @@ class Entity:
                     item
                 )
             elif name == "group" and item.has_children():
-                groups.append(EntityGroup.parse(vmf_file, item))
+                if not _worldspawn:
+                    raise ValueError(f'Group blocks are only permitted on worldspawn!')
+                grp = EntityGroup.parse(vmf_file, item)
+                vmf_file.groups[grp.id] = grp
             elif name == "editor" and item.has_children():
                 for v in item:
                     if v.name == "visgroupshown":
@@ -2176,11 +2182,11 @@ class Entity:
                     elif v.name == 'comments':
                         comment = v.value
                     elif v.name == 'group':
-                        groups.append(int(v.value))
+                        group_ids.append(int(v.value))
                     elif v.name == 'visgroupid':
                         val = srctools.conv_int(v.value, default=-1)
                         if val:
-                            visgroups.append(val)
+                            visgroup_ids.append(val)
             else:
                 keys[item.name] = item.value
 
@@ -2192,8 +2198,8 @@ class Entity:
             outputs,
             solids,
             hidden,
-            groups,
-            visgroups,
+            group_ids,
+            visgroup_ids,
             vis_shown,
             vis_auto_shown,
             logical_pos,
@@ -2208,23 +2214,22 @@ class Entity:
     def export(
         self,
         buffer: IO[str],
-        ent_name: str='entity',
         ind: str='',
         disp_multiblend: bool = True,
+        _is_worldspawn: bool = False,
     ) -> None:
         """Generate the strings needed to create this entity.
 
-        - ent_name is the key used for the item's block, which is used to allow
-          generating the MapSpawn data block from the entity object.
         - disp_multiblend controls whether displacements produce their multiblend
-          data (added in ASW), or if it is skipped
+          data (added in ASW), or if it is skipped.
+        - _is_worldspawn is used interally to generate the special worldspawn block.
         """
 
         if self.hidden:
             buffer.write(f'{ind}hidden\n{ind}{{\n')
             ind += '\t'
 
-        buffer.write(f'{ind}{ent_name}\n')
+        buffer.write(f'{ind}{"world" if _is_worldspawn else "entity"}\n')
         buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
         for key, value in sorted(self.keys.items(), key=operator.itemgetter(0)):
@@ -2242,28 +2247,29 @@ class Entity:
                 o.export(buffer, ind=ind+'\t\t')
             buffer.write(ind + '\t}\n')
 
-        buffer.write(ind + '\teditor\n')
-        buffer.write(ind + '\t{\n')
-        buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
+        # For worldspawn, this includes all group blocks.
+        if _is_worldspawn:
+            for group in self.map.groups.values():
+                group.export(buffer, ind + '\t')
+        else:
+            # The editor{} block, indicating if shown/hidden.
+            # Worldspawn can't be hidden so it's not included.
+            buffer.write(ind + '\teditor\n')
+            buffer.write(ind + '\t{\n')
+            buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
 
-        for group in self.groups:
-            buffer.write(f'{ind}\t\t"groupid" "{group}"\n')
+            for group_id in self.groups:
+                buffer.write(f'{ind}\t\t"groupid" "{group_id}"\n')
 
-        for group in self.visgroup_ids:
-            buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
+            for vis_id in self.visgroup_ids:
+                buffer.write(f'{ind}\t\t"visgroupid" "{vis_id}"\n')
 
-        buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
-            ind,
-            srctools.bool_as_int(self.vis_shown),
-        ))
-        buffer.write('{}\t\t"visgroupautoshown" "{}"\n'.format(
-            ind,
-            srctools.bool_as_int(self.vis_auto_shown),
-        ))
-        buffer.write(f'{ind}\t\t"logicalpos" "{self.logical_pos}"\n')
-        if self.comments:
-            buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
-        buffer.write(ind + '\t}\n')
+            buffer.write(f'{ind}\t\t"visgroupshown" "{srctools.bool_as_int(self.vis_shown)}"\n')
+            buffer.write(f'{ind}\t\t"visgroupautoshown" "{srctools.bool_as_int(self.vis_auto_shown)}"\n')
+            buffer.write(f'{ind}\t\t"logicalpos" "{self.logical_pos}"\n')
+            if self.comments:
+                buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
+            buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
         if self.hidden:
@@ -2847,22 +2853,20 @@ class _EntityFixupItems(ItemsView[str, str]):
         return False
 
 
+@attr.define
 class EntityGroup:
-    """Represents the 'group' blocks in entities.
+    """Represents the 'group' blocks in worldspawn.
 
     This allows the grouping of brushes.
     """
-    def __init__(
-        self,
-        vmf_file: VMF,
-        grp_id: int,
-        vis_shown: bool=False,
-        vis_auto_shown: bool=False,
-    ) -> None:
-        self.map = vmf_file
-        self.id = vmf_file.group_id.get_id(grp_id)
-        self.shown = vis_shown
-        self.auto_shown = vis_auto_shown
+    vmf: VMF
+    id: int = attr.ib(default=-1)
+    shown: bool = True
+    auto_shown: bool = True
+    color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+
+    def __attrs_post_init__(self) -> None:
+        self.id = self.vmf.group_id.get_id(self.id)
 
     @classmethod
     def parse(cls, vmf_file: VMF, props: Property) -> 'EntityGroup':
@@ -2871,36 +2875,36 @@ class EntityGroup:
         return cls(
             vmf_file,
             props.int('id', -1),
-            vis_shown=editor_block.bool('visgroupshown', True),
-            vis_auto_shown=editor_block.bool('visgroupsautoshown', True),
+            editor_block.bool('visgroupshown', True),
+            editor_block.bool('visgroupsautoshown', True),
+            editor_block.vec('color', 255, 255, 255),
         )
 
-    def copy(self, vmf_file: VMF=None) -> 'EntityGroup':
+    def copy(self, vmf: VMF=None) -> 'EntityGroup':
         """Duplicate an entity group."""
-        if vmf_file is None:
-            vmf_file = self.map
+        if vmf is None:
+            vmf = self.vmf
+
         return EntityGroup(
-            vmf_file,
+            vmf,
             self.id,
             self.shown,
             self.auto_shown,
+            self.color.copy(),
         )
 
     def export(self, buffer: IO[str], ind: str) -> None:
         """Write out a group into a VMF file."""
         buffer.write(ind + 'group\n')
-        buffer.write(ind + '\t{\n')
+        buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
         buffer.write(ind + '\teditor\n')
-        buffer.write(ind + '\t\t{\n')
-        buffer.write(ind + '\t\t"visgroupshown" "{}"'.format(
-            srctools.bool_as_int(self.shown)
-        ))
-        buffer.write(ind + '\t\t"visgroupautoshown" "{}"'.format(
-            srctools.bool_as_int(self.auto_shown)
-        ))
-        buffer.write(ind + '\t\t}\n')
-        buffer.write(ind + '\t}')
+        buffer.write(ind + '\t{\n')
+        buffer.write(ind + f'\t\t"visgroupshown" "{int(self.shown)}"\n')
+        buffer.write(ind + f'\t\t"visgroupautoshown" "{int(self.auto_shown)}"\n')
+        buffer.write(ind + f'\t\t"color" "{self.color}"\n')
+        buffer.write(ind + '\t}\n')
+        buffer.write(ind + '}\n')
 
 
 class Output:
