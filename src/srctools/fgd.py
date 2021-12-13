@@ -11,7 +11,7 @@ import math
 import operator
 
 from typing import (
-    Generic, Optional, Union, overload, cast, ClassVar, Any,
+    Generic, Optional, TYPE_CHECKING, Union, overload, cast, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
@@ -652,6 +652,7 @@ HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 
 def _init_helper_impl() -> None:
     """Import and register the helper implementations."""
+    # noinspection PyProtectedMember
     from srctools import _fgd_helpers as helper_mod
     for helper_type in vars(helper_mod).values():
         if isinstance(helper_type, type) and issubclass(helper_type, Helper):
@@ -667,6 +668,7 @@ def _init_helper_impl() -> None:
 
 _init_helper_impl()
 del _init_helper_impl
+# noinspection PyProtectedMember
 from srctools._fgd_helpers import *
 
 
@@ -738,9 +740,9 @@ class KeyValues:
         return KeyValues(
             self.name,
             self.type,
+            self.desc,
             self.disp_name,
             self.default,
-            self.desc,
             self.val_list.copy() if self.val_list else None,
             self.readonly,
             self.reportable,
@@ -915,13 +917,12 @@ class KeyValues:
                     val_list[ind] = (from_dict(), from_dict(), tags)
 
         return KeyValues(
-            name,
-            value_type,
-            disp_name,
-            default,
-            '',
-            val_list,  # type: ignore
-            readonly,
+            name=name,
+            type=value_type,
+            disp_name=disp_name,
+            default=default,
+            val_list=val_list,  # type: ignore
+            readonly=readonly,
         )
 
 
@@ -1401,8 +1402,9 @@ class EntityDef:
                 if val_typ.has_list:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
-                    # Read the choices in the []
-                    val_list: Optional[List[tuple]] = []
+                    # Read the choices in the [].  There's two kinds of tuples here, typing this
+                    # doesn't work right.
+                    val_list: Optional[List[Any]] = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1475,14 +1477,14 @@ class EntityDef:
                     entity.kv_order.append(name.casefold())
 
                 tags_map[tags] = KeyValues(
-                    name,
-                    val_typ,
-                    disp_name,
-                    default,
-                    kv_desc,
-                    val_list,
-                    is_readonly,
-                    show_in_report,
+                    name=name,
+                    type=val_typ,
+                    desc=kv_desc,
+                    disp_name=disp_name,
+                    default=default,
+                    val_list=val_list,
+                    readonly=is_readonly,
+                    reportable=show_in_report,
                 )
 
     def __repr__(self) -> str:
@@ -1503,8 +1505,9 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: Dict[str, Dict[FrozenSet[str], Any]] = {}
+            coll: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]] = {}
             setattr(copy, val_key, coll)
+            tags_map: Dict[FrozenSet[str], Union[KeyValues, IODef]]
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
@@ -1562,13 +1565,19 @@ class EntityDef:
                 if helper.TYPE == typ.TYPE:
                     yield helper
 
+    def _iter_attrs(self) -> Iterator[Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]]:
+        """Iterate over both the keyvalues and I/O dicts.
+
+        This is used when we want to deal with both in the same way.
+        """
+        return iter([self.keyvalues, self.inputs, self.outputs])  # type: ignore
+
     def strip_tags(self, tags: FrozenSet[str]) -> None:
         """Strip all tags from this entity, blanking them.
 
         Only values matching the given tags will be kept.
         """
-        category: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
-        for category in [self.keyvalues, self.inputs, self.outputs]:
+        for category in self._iter_attrs():
             for key, tag_map in list(category.items()):
                 # Force longer more-specific tags to match first.
                 for key_tag, value in sorted(
@@ -1579,8 +1588,8 @@ class EntityDef:
                     if match_tags(tags, key_tag):
                         category[key] = {frozenset(): value}
                         if isinstance(value, KeyValues) and value.val_list:
-                            # Filter the value list as well.
-                            value.val_list = [
+                            # Filter the value list as well, then discard tags.
+                            value.val_list = [  # type: ignore
                                 val[:-1] + (frozenset(), )
                                 for val in value.val_list
                                 if match_tags(tags, val[-1])
@@ -1693,8 +1702,7 @@ class EntityDef:
             else:
                 file.write(str_dict(base_ent.classname))
 
-        obj_type: Dict[str, Dict[FrozenSet[str], Union[IODef, KeyValues]]]
-        for obj_type in (self.keyvalues, self.inputs, self.outputs):
+        for obj_type in self._iter_attrs():
             for tag_map in obj_type.values():
                 # We don't need to write the name, since that's stored
                 # also in the kv/io object itself.
@@ -1746,7 +1754,7 @@ class EntityDef:
         count: int
         val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
         cls: Type[Union[KeyValues, IODef]]
-        for count, val_map, cls in [
+        for count, val_map, cls in [  # type: ignore
             (kv_count, ent.keyvalues, KeyValues),
             (inp_count, ent.inputs, IODef),
             (out_count, ent.outputs, IODef),
@@ -1941,13 +1949,14 @@ class FGD:
                         if tag not in ent_kv_map:
                             ent_kv_map[tag] = kv.copy()
                         elif kv.type.has_list and ent_kv_map[tag].type is kv.type:
-                            # If both are lists, merge those. This is mainly
+                            # If both are lists of the same type, merge those. This is mainly
                             # for spawnflags.
                             targ_list = ent_kv_map[tag].val_list
                             if targ_list is not None and kv.val_list is not None:
                                 for val in kv.val_list:
                                     if val not in targ_list:
-                                        targ_list.append(val)
+                                        # Type checker can't know type attr indicates val_list type.
+                                        targ_list.append(val)  # type: ignore
 
                     if name not in keyvalue_names:
                         base_kv.append(name)
