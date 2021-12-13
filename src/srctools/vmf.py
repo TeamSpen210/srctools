@@ -14,7 +14,7 @@ from contextlib import suppress
 from sys import intern
 
 from typing import (
-    Optional, Union, overload, TypeVar, Generic,
+    Optional, Union, overload, TypeVar, Generic, TYPE_CHECKING,
     Dict, List, Tuple, Set, IO, FrozenSet,
     Mapping, MutableMapping, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
@@ -1115,13 +1115,20 @@ class VisGroup:
         return newgroup
 
 
+# Workaround MyPy not evaluating generics on converters.
+if TYPE_CHECKING:
+    def _conv_visgroups(x: Iterable[int]) -> Set[int]: return set(x)
+else:
+    _conv_visgroups = set
+
+
 @attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
     map: VMF
     id: int = attr.ib(default=-1)
     sides: List['Side'] = attr.ib(factory=list)
-    visgroup_ids: Set[int] = attr.ib(default=(), converter=set)
+    visgroup_ids: Set[int] = attr.ib(default=(), converter=_conv_visgroups)
     hidden: bool = False
     group_id: Optional[int] = None
     vis_shown: bool = True

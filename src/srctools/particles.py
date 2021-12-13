@@ -40,7 +40,7 @@ else:
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, Attribute] = attr.Factory({}.copy)
+    options: Dict[str, Attribute] = attr.Factory(dict)
     renderers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
     operators: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
     initializers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
