@@ -995,6 +995,7 @@ class Element(MutableMapping[str, Attribute]):
                     raise ValueError('TIME attributes are not permitted before binary v3!')
                 elif attr.type is ValueType.ELEMENT:
                     for subelem in attr:
+                        assert isinstance(subelem, Element)
                         if subelem is not None and subelem.type != STUB and subelem.uuid not in elem_to_ind:
                             elem_to_ind[subelem.uuid] = len(elements)
                             elements.append(subelem)
@@ -1111,6 +1112,7 @@ class Element(MutableMapping[str, Attribute]):
 
         # Use the fact that list iteration will continue through appended items.
         for elem in elements:
+            attr: Attribute[Element]
             for attr in elem.values():
                 if attr.type is not ValueType.ELEMENT:
                     continue
