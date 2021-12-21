@@ -983,7 +983,7 @@ class SheetSequence:
         self.duration = duration
 
     @classmethod
-    def from_resource(cls, data: bytes) -> Dict[str, 'SheetSequence']:
+    def from_resource(cls, data: bytes) -> Dict[int, 'SheetSequence']:
         """Decode from the resource data."""
         (
             version,
@@ -994,7 +994,7 @@ class SheetSequence:
         if version > 1:
             raise ValueError('Unknown version {}!'.format(version))
 
-        sequences: Dict[str, SheetSequence] = {}
+        sequences: Dict[int, SheetSequence] = {}
         if sequence_count > SheetSequence.MAX_COUNT:
             raise ValueError('Cannot have more than {} sequences ({})!'.format(
                 SheetSequence.MAX_COUNT,
@@ -1014,7 +1014,7 @@ class SheetSequence:
             if seq_num in sequences:
                 raise ValueError('Duplicate sequence number {}!'.format(seq_num))
 
-            frames = []  # type: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]]
+            frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]] = []
 
             for frame_ind in range(frame_count):
                 [duration] = struct.unpack_from('<f', data, offset)
