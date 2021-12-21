@@ -372,6 +372,10 @@ res('rpg_missile',
     mdl("models/weapons/w_missile_closed.mdl"),
     )
 
+res('script_intro',
+    mat('materials/scripted/intro_screenspaceeffect.vmt'),
+    )
+
 
 @cls_func
 def skybox_swapper(pack: PackList, ent: Entity) -> None:
