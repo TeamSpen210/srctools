@@ -13,7 +13,7 @@ import traceback
 from io import StringIO
 from types import TracebackType
 from typing import (
-    cast, Optional, Union, Any,
+    Mapping, cast, Optional, Union, Any,
     Dict, Tuple, List, Type, Callable, Generator, Iterable, TextIO,
 )
 
@@ -98,7 +98,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         ]=None,
         stack_info: bool=False,
         stacklevel: int = 0,
-        extra: Optional[Dict[str, Any]] = None,
+        extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
     ):
         """This version of .log() is for str.format() compatibility.
@@ -112,10 +112,9 @@ class LoggerAdapter(logging.LoggerAdapter):
             except LookupError:
                 ctx = ''
 
-            if extra is None:
-                extra = {}
-            extra['alias'] = self.alias
-            extra['context'] = f' ({ctx})' if ctx else ''
+            new_extra = {} if extra is None else dict(extra)
+            new_extra['alias'] = self.alias
+            new_extra['context'] = f' ({ctx})' if ctx else ''
 
             # noinspection PyProtectedMember
             self.logger._log(
@@ -123,7 +122,7 @@ class LoggerAdapter(logging.LoggerAdapter):
                 LogMessage(msg, args, kwargs),
                 (),  # No positional arguments, we do the formatting through
                 # LogMessage..
-                extra=extra,
+                extra=new_extra,
                 # Pull these arguments out of kwargs, so they can be set..
                 exc_info=exc_info,
                 stack_info=stack_info,
