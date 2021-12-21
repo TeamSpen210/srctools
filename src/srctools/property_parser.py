@@ -256,8 +256,10 @@ class Property:
         # Skip calling __init__ for speed.
         cur_block = root = Property.__new__(Property)
         cur_block._folded_name = cur_block.real_name = None
-        cur_block._value = []
 
+        # Cache off the value list.
+        cur_block_contents: List[Property]
+        cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
         open_properties = [(cur_block, 1)]
@@ -292,7 +294,7 @@ class Property:
 
         for token_type, token_value in tokenizer:
             if token_type is BRACE_OPEN:  # {
-                # Open a new block - make sure the last token was a name..
+                # Open a new block - make sure the last token was a name.
                 if block_line == BLOCK_LINE_NONE:
                     raise tokenizer.error(
                         'Property cannot have sub-section if it already '
@@ -301,12 +303,14 @@ class Property:
                     )
                 can_flag_replace = False
                 if block_line == BLOCK_LINE_SKIP:
-                    # It failed the flag check. Use a dummy property, so it's just discarded.
+                    # It failed the flag check. Use a dummy property object.
+                    # This isn't put into the tree, so after we parse the block it's popped
+                    # and discarded.
                     cur_block = Property.__new__(Property)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
                 else:
-                    cur_block = cur_block._value[-1]
-                cur_block._value = []
+                    cur_block = cur_block_contents[-1]
+                cur_block_contents = cur_block._value = []
                 open_properties.append((cur_block, block_line))
                 block_line = BLOCK_LINE_NONE
                 continue
@@ -343,12 +347,12 @@ class Property:
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
-                            cur_block._value[-1].real_name == token_value and
-                            cur_block._value[-1].has_children()
+                            cur_block_contents[-1].real_name == token_value and
+                            cur_block_contents[-1].has_children()
                         ):
-                            cur_block._value[-1] = keyvalue
+                            cur_block_contents[-1] = keyvalue
                         else:
-                            cur_block._value.append(keyvalue)
+                            cur_block_contents.append(keyvalue)
                         # Can't do twice in a row
                         can_flag_replace = False
                     else:
@@ -376,12 +380,12 @@ class Property:
                             # keyvalue with this name, replace it instead.
                             if (
                                 can_flag_replace and
-                                cur_block._value[-1].real_name == token_value and
-                                type(cur_block._value[-1].value) == str
+                                cur_block_contents[-1].real_name == token_value and
+                                type(cur_block_contents[-1].value) == str
                             ):
-                                cur_block._value[-1] = keyvalue
+                                cur_block_contents[-1] = keyvalue
                             else:
-                                cur_block._value.append(keyvalue)
+                                cur_block_contents.append(keyvalue)
                             # Can't do twice in a row
                             can_flag_replace = False
                     elif flag_token is STRING:
@@ -389,7 +393,7 @@ class Property:
                         # normally.
                         # ("name" "value" "name2" "value2")
                         if single_line:
-                            cur_block._value.append(keyvalue)
+                            cur_block_contents.append(keyvalue)
                             tokenizer.push_back(flag_token, flag_val)
                             continue
                         else:
@@ -401,7 +405,7 @@ class Property:
                         # So insert the keyvalue, and check the token
                         # in the next loop. This allows braces to be
                         # on the same line.
-                        cur_block._value.append(keyvalue)
+                        cur_block_contents.append(keyvalue)
                         can_flag_replace = True
                         tokenizer.push_back(flag_token, flag_val)
                     continue
@@ -412,7 +416,7 @@ class Property:
 
                     block_line = tokenizer.line_num
                     can_flag_replace = False
-                    cur_block._value.append(keyvalue)
+                    cur_block_contents.append(keyvalue)
                     tokenizer.push_back(prop_type, prop_value)
                     continue
 
@@ -428,6 +432,8 @@ class Property:
                         'An extra closing bracket was added which would '
                         'close the outermost level.',
                     )
+                # We know this isn't a leaf prop, we made it earlier.
+                cur_block_contents = cur_block._value  # type: ignore
                 # For replacing the block.
                 can_flag_replace = True
             else:
