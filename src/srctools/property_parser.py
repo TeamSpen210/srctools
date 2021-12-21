@@ -284,35 +284,34 @@ class Property:
 
         # If >= 0, we're requiring a block to open next ("name"\n must have { next.)
         # It's the line number of the header name then.
-        # If -1, there's no block.
-        # If -2, the block is disabled, so we need to skip it.
-        block_line = -1
+        BLOCK_LINE_NONE = -1  # there's no block.
+        BLOCK_LINE_SKIP = -2  # the block is disabled, so we need to skip it.
+        block_line = BLOCK_LINE_NONE
         # Are we permitted to replace the last property with a flagged version of the same?
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
             if token_type is BRACE_OPEN:  # {
                 # Open a new block - make sure the last token was a name..
-                if block_line == -1:
+                if block_line == BLOCK_LINE_NONE:
                     raise tokenizer.error(
                         'Property cannot have sub-section if it already '
                         'has an in-line value.\n\n'
                         'A "name" "value" line cannot then open a block.',
                     )
                 can_flag_replace = False
-                if block_line == -2:
-                    # It failed the flag check, use a dummy property
-                    # so it's just discarded.
+                if block_line == BLOCK_LINE_SKIP:
+                    # It failed the flag check. Use a dummy property, so it's just discarded.
                     cur_block = Property.__new__(Property)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
                 else:
                     cur_block = cur_block._value[-1]
                 cur_block._value = []
                 open_properties.append((cur_block, block_line))
-                block_line = -1
+                block_line = BLOCK_LINE_NONE
                 continue
             # Something else, but followed by '{'
-            elif block_line != -1 and token_type is not NEWLINE:
+            elif block_line != BLOCK_LINE_NONE and token_type is not NEWLINE:
                 raise tokenizer.error(
                     'Block opening ("{{") required!\n\n'
                     'A single "name" on a line should next have a open brace '
@@ -354,11 +353,11 @@ class Property:
                         can_flag_replace = False
                     else:
                         # Signal that the block needs to be discarded.
-                        block_line = -2
+                        block_line = BLOCK_LINE_SKIP
 
                 elif prop_type is STRING:
                     # A value.. ("name" "value")
-                    if block_line != -1:
+                    if block_line != BLOCK_LINE_NONE:
                         raise tokenizer.error(
                             'Keyvalue split across lines!\n\n'
                             'A value like "name" "value" must be on the same '
@@ -438,7 +437,7 @@ class Property:
 
         # We last had a ("name"\n), so we were expecting a block
         # next.
-        if block_line != -1:
+        if block_line != BLOCK_LINE_NONE:
             raise KeyValError(
                 'Block opening ("{") required, but hit EOF!\n'
                 'A "name" line was located at the end of the file, which needs'
