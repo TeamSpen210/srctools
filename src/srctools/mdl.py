@@ -23,10 +23,11 @@ from struct import Struct
 MDL_EXTS: SequenceType[str] = [
     '.mdl',
     '.phy',
+    '.vvd',
+    '.ani',
     '.dx90.vtx',
     '.dx80.vtx',
     '.sw.vtx',
-    '.vvd',
 ]
 
 
