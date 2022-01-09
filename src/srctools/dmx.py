@@ -3,12 +3,13 @@
 As an extension, optionally all strings may become full UTF-8, marked by a new
 set of 'unicode_XXX' encoding formats.
 """
+import builtins
 import struct
 import sys
 from enum import Enum
 from typing import (
     Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
-    Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterator,
+    Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterable, Iterator,
     Set, Mapping, Any, ValuesView, cast,
 )
 from struct import Struct, pack
@@ -85,7 +86,7 @@ class Vec3(NamedTuple):
     y: float
     z: float
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g})'
 
 
@@ -96,7 +97,7 @@ class Vec4(NamedTuple):
     z: float
     w: float
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
@@ -117,7 +118,7 @@ class Color(NamedTuple):
     b: int
     a: int
 
-    def __repr__(self) -> str:
+    def __str__(self) -> str:
         return f'{self[0]} {self[1]} {self[2]} {self[3]}'
 
 
@@ -207,13 +208,13 @@ def _get_converters() -> Tuple[dict, dict, dict]:
     return type_conv, convert, sizes
 
 
-def _make_val_prop(val_type: ValueType, typ: type) -> property:
+def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
     """Build the properties for each type."""
 
-    def setter(self, value):
+    def setter(self: '_ValProps', value: ValueT) -> None:
         self._write_val(val_type, value)
 
-    def getter(self):
+    def getter(self: '_ValProps') -> ValueT:
         return self._read_val(val_type)
 
     if val_type.name[0].casefold() in 'aeiou':
@@ -229,6 +230,16 @@ def _make_val_prop(val_type: ValueType, typ: type) -> property:
         fset=setter,
         doc='Access the value as ' + desc,
     )
+
+
+def _make_iter(val_type: ValueType, typ: Type[Value]) -> Callable[[], Iterator[ValueT]]:
+    """Build an iterator for the given value type."""
+    def iterator(self: 'Attribute') -> Iterator[ValueT]:
+        return self._iter_array(val_type)
+
+    iterator.__doc__ = f'Iterate over {val_type.name.lower()} values.'
+    iterator.__annotations__['return'] = Iterator[typ]
+    return iterator
 
 
 class _ValProps:
@@ -352,7 +363,10 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.BINARY, value)
 
     @classmethod
-    def vec2(cls, name, x=0.0, y=0.0) -> 'Attribute[Vec2]':
+    def vec2(
+        cls, name,
+        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0,
+    ) -> 'Attribute[Vec2]':
         """Create an attribute with a 2D vector."""
         if isinstance(x, (int, float)):
             x_ = float(x)
@@ -363,7 +377,10 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.VEC2, Vec2(x_, y))
 
     @classmethod
-    def vec3(cls, name, x=0.0, y=0.0, z=0.0) -> 'Attribute[Vec3]':
+    def vec3(
+        cls, name,
+        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0,
+    ) -> 'Attribute[Vec3]':
         """Create an attribute with a 3D vector."""
         if isinstance(x, (int, float)):
             x_ = float(x)
@@ -375,7 +392,10 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.VEC3, Vec3(x_, y, z))
 
     @classmethod
-    def vec4(cls, name, x=0.0, y=0.0, z=0.0, w=0.0) -> 'Attribute[Vec4]':
+    def vec4(
+        cls, name,
+        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0, w=0.0,
+    ) -> 'Attribute[Vec4]':
         """Create an attribute with a 4D vector."""
         if isinstance(x, (int, float)):
             x_ = float(x)
@@ -388,7 +408,10 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.VEC4, Vec4(x_, y, z, w))
 
     @classmethod
-    def color(cls, name, r=0, g=0, b=0, a=255) -> 'Attribute[Color]':
+    def color(
+        cls, name,
+        r: Union[builtins.float, Iterable[builtins.float]]=0, g=0, b=0, a=255,
+    ) -> 'Attribute[Color]':
         """Create an attribute with a color."""
         if isinstance(r, int):
             r_ = r
@@ -401,7 +424,9 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.COLOR, Color(r_, g, b, a))
 
     @classmethod
-    def angle(cls, name, pitch=0.0, yaw=0.0, roll=0.0) -> 'Attribute[AngleTup]':
+    def angle(
+        cls, name, pitch: Union[builtins.float, Iterable[builtins.float]]=0.0, yaw=0.0, roll=0.0,
+    ) -> 'Attribute[AngleTup]':
         """Create an attribute with an Euler angle."""
         if isinstance(pitch, (int, float)):
             pitch_ = float(pitch)
@@ -413,7 +438,10 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.ANGLE, AngleTup(pitch_, yaw, roll))
 
     @classmethod
-    def quaternion(cls, name: str, x=0.0, y=0.0, z=0.0, w=1.0) -> 'Attribute[Quaternion]':
+    def quaternion(
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0, w=1.0,
+    ) -> 'Attribute[Quaternion]':
         """Create an attribute with a quaternion rotation."""
         if isinstance(x, (int, float)):
             x_ = float(x)
@@ -437,6 +465,33 @@ class Attribute(Generic[ValueT], _ValProps):
             raise ValueError(
                 f'Cannot convert ({self._value!r}) to {newtype} type!')
         return func(self._value)
+
+    def _iter_array(self, newtype: ValueType) -> Iterator[Value]:
+        """Access the array of values converted to the desired type."""
+        if not isinstance(self._value, list):
+            raise ValueError('Cannot iterate over scalar attributes!')
+        try:
+            func = TYPE_CONVERT[self._typ, newtype]
+        except KeyError:
+            raise ValueError(
+                f'Cannot convert ({self._value!r}) to {newtype} type!')
+        return map(func, self._value)
+
+    iter_int = _make_iter(ValueType.INT, builtins.int)
+    iter_str = iter_string = _make_iter(ValueType.STRING, str)
+    iter_bin = iter_binary = iter_bytes = _make_iter(ValueType.BINARY, bytes)
+    iter_float = _make_iter(ValueType.FLOAT, builtins.float)
+    iter_time = _make_iter(ValueType.TIME, Time)
+    iter_bool = _make_iter(ValueType.BOOL, builtins.bool)
+    iter_colour = iter_color = _make_iter(ValueType.COLOR, Color)
+    iter_vec2 = _make_iter(ValueType.VEC2, Vec2)
+    iter_vec3 = _make_iter(ValueType.VEC3, Vec3)
+    iter_vec4 = _make_iter(ValueType.VEC4, Vec4)
+    iter_quat = iter_quaternion = _make_iter(ValueType.QUATERNION, Quaternion)
+    iter_ang = iter_angle = _make_iter(ValueType.ANGLE, AngleTup)
+    iter_mat = iter_matrix = _make_iter(ValueType.MATRIX, Matrix)
+    iter_compound = iter_elem = _make_iter(ValueType.ELEMENT, Optional['Element'])
+
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
         """Change the type of the atribute."""
@@ -1596,14 +1651,23 @@ _conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
 _conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
 _conv_vec3_to_angle = lambda v: AngleTup(v.x, v.y, v.z)
-_conv_vec3_to_color = lambda v: Color(int(v.x), int(v.y), int(v.z), 255)
+_conv_vec3_to_color = lambda v: Color(
+    max(0, min(round(v.x), 255)),
+    max(0, min(round(v.y), 255)),
+    max(0, min(round(v.z), 255)),
+    255)
 
 _conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
 _conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
 _conv_vec4_to_vec3 = lambda v: Vec3(v.x, v.y, v.z)
 _conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec4_to_quaternion = lambda v: Quaternion(v.x, v.y, v.z, v.w)
-_conv_vec4_to_color = lambda v: Color(int(v.x), int(v.y), int(v.z), int(v.w))
+_conv_vec4_to_color = lambda v: Color(
+    max(0, min(round(v.x), 255)),
+    max(0, min(round(v.y), 255)),
+    max(0, min(round(v.z), 255)),
+    max(0, min(round(v.w), 255))
+)
 
 _conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
 

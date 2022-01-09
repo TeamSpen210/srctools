@@ -184,33 +184,6 @@ class Attribute(Generic[ValueT], _ValProps):
     _typ: ValueType
     _value: Value | list
 
-    # These are all properties, but no need to annotate like that.
-    val_int: int
-    val_float: float
-    val_bool: bool
-
-    val_vec2: Vec2
-    val_vec3: Vec3
-    val_vec4: Vec4
-
-    val_color: Color
-    val_colour: Color
-
-    val_str: str
-    val_string: str
-
-    val_angle: AngleTup
-    val_ang: AngleTup
-
-    val_quat: Quaternion
-    val_quaternion: Quaternion
-
-    val_mat: Matrix
-    val_matrix: Matrix
-
-    val_elem: Element
-    val_compound: Element
-
     # Readonly
     @property
     def type(self) -> ValueType: ...
@@ -380,8 +353,70 @@ class Attribute(Generic[ValueT], _ValProps):
         w: builtins.float = 0.0,
     ) -> Attribute[Quaternion]: ...
 
+    @property
+    def iter_int(self) -> Iterator[builtins.int]: ...
+
+    @property
+    def iter_float(self) -> Iterator[builtins.int]: ...
+
+    @property
+    def iter_time(self) -> Iterator[Time]: ...
+
+    @property
+    def iter_bool(self) -> Iterator[builtins.bool]: ...
+
+    @property
+    def iter_vec2(self) -> Iterator[Vec2]: ...
+
+    @property
+    def iter_vec3(self) -> Iterator[Vec3]: ...
+
+    @property
+    def iter_vec4(self) -> Iterator[Vec4]: ...
+
+    @property
+    def iter_color(self) -> Iterator[Color]: ...
+    @property
+    def iter_colour(self) -> Iterator[Color]: ...
+
+    @property
+    def iter_str(self) -> Iterator[str]: ...
+    @property
+    def iter_string(self) -> Iterator[str]: ...
+
+    @property
+    def iter_angle(self) -> Iterator[AngleTup]: ...
+    @property
+    def iter_ang(self) -> Iterator[AngleTup]: ...
+
+    @property
+    def iter_quat(self) -> Iterator[Quaternion]: ...
+    @property
+    def iter_quaternion(self) -> Iterator[Quaternion]: ...
+
+    @property
+    def iter_mat(self) -> Iterator[Matrix]: ...
+    @property
+    def iter_matrix(self) -> Iterator[Matrix]: ...
+
+    @property
+    def iter_bytes(self) -> Iterator[bytes]: ...
+    @property
+    def iter_bin(self) -> Iterator[bytes]: ...
+    @property
+    def iter_binary(self) -> Iterator[bytes]: ...
+
+    @property
+    def iter_compound(self) -> Iterator[Element | None]: ...
+    @property
+    def iter_elem(self) -> Iterator[Element | None]: ...
+    @property
+    def arr(self) -> Iterator[Element | None]: ...
+
+
     def _read_val(self, newtype: ValueType) -> Value: ...
     def _write_val(self, newtype: ValueType, value: Value) -> None: ...
+    def _iter_array(self, newtype: ValueType) -> Iterator[Value]: ...
 
     def __repr__(self) -> str: ...
 

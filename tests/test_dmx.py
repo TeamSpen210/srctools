@@ -107,10 +107,33 @@ def test_attr_val_int() -> None:
     assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
     assert elem.val_vec4 == Vec4(45.0, 45.0, 45.0, 45.0)
     assert elem.val_color == Color(45, 45, 45, 255)
+    assert Attribute.int('min-clamp', -1).val_color == Color(0, 0, 0, 255)
+    assert Attribute.int('max-clamp', 260).val_color == Color(255, 255, 255, 255)
 
     assert Attribute.int('Blah', 45).val_bool is True
     assert Attribute.int('Blah', 0).val_bool is False
     assert Attribute.int('Blah', -2).val_bool is True
+
+
+def test_attr_array_int() -> None:
+    """Test integer-type values in arrays."""
+    elem: Attribute[int] = Attribute.array('Name', ValueType.INT)
+    elem.append(-123)
+    elem.append(45)
+    assert list(elem.iter_int()) == [-123, 45]
+    assert list(elem.iter_str()) == ['-123', '45']
+    assert list(elem.iter_float()) == [-123.0, 45.0]
+    assert list(elem.iter_time()) == [-123.0, 45.0]
+
+    assert list(elem.iter_vec2()) == [Vec2(-123.0, -123.0), Vec2(45.0, 45.0)]
+    assert list(elem.iter_vec3()) == [Vec3(-123.0, -123.0, -123.0), Vec3(45.0, 45.0, 45.0)]
+    assert list(elem.iter_vec4()) == [Vec4(-123.0, -123.0, -123.0, -123.0), Vec4(45.0, 45.0, 45.0, 45.0)]
+    assert list(elem.iter_color()) == [Color(0, 0, 0, 255), Color(45, 45, 45, 255)]
+
+    elem[0] = 45
+    elem[1] = 0
+    elem.append(-2)
+    assert list(elem.iter_bool()) == [True, False, True]
 
 
 def test_attr_val_float() -> None:
