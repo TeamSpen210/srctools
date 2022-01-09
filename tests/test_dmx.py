@@ -83,7 +83,7 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
         if attr1.type is ValueType.ELEMENT:
             if attr1.is_array:
                 assert len(attr1) == len(attr2), f'Mismatched len for {attr_path}'
-                for i, elem1 in enumerate(attr1):
+                for i, elem1 in enumerate(attr1.iter_elem()):
                     _assert_tree_elem(f'{attr_path}[{i}]', elem1, attr2[i].val_elem, checked)
             else:
                 _assert_tree_elem(attr_path, attr1.val_elem, attr2.val_elem, checked)
@@ -154,6 +154,27 @@ def test_attr_val_float() -> None:
     assert Attribute.float('Blah', -12.8).val_bool is True
 
 
+def test_attr_array_float() -> None:
+    """Test float-type values in arrays."""
+    elem = Attribute.array('Name', ValueType.FLOAT)
+    elem.append(-32.25)
+    elem.append(32.25)
+
+    assert list(elem.iter_int()) == [-32, 32]
+    assert list(elem.iter_str()) == ['-32.25', '32.25']
+    assert list(elem.iter_float()) == [-32.25, 32.25]
+    assert list(elem.iter_time()) == [-32.25, 32.25]
+
+    assert list(elem.iter_vec2()) == [Vec2(-32.25, -32.25), Vec2(32.25, 32.25)]
+    assert list(elem.iter_vec3()) == [Vec3(-32.25, -32.25, -32.25), Vec3(32.25, 32.25, 32.25)]
+    assert list(elem.iter_vec4()) == [Vec4(-32.25, -32.25, -32.25, -32.25), Vec4(32.25, 32.25, 32.25, 32.25)]
+
+    elem[0] = 32.25
+    elem[1] = 0.0
+    elem.append(-12.8)
+    assert list(elem.iter_bool()) == [True, False, True]
+
+
 def test_attr_val_str() -> None:
     """Test string-type values."""
     assert Attribute.string('', '45').val_str == '45'
@@ -201,6 +222,19 @@ def test_attr_val_bool() -> None:
     assert false.val_bytes == b'\x00'
 
 
+def test_attr_array_bool() -> None:
+    """Test bool value conversions."""
+    elem = Attribute.array('boolean', ValueType.BOOL)
+    elem.append(False)
+    elem.append(True)
+
+    assert list(elem.iter_bool()) == [False, True]
+    assert list(elem.iter_int()) == [0, 1]
+    assert list(elem.iter_float()) == [0.0, 1.0]
+    assert list(elem.iter_str()) == ['0', '1']
+    assert list(elem.iter_bytes()) == [b'\x00', b'\x01']
+
+
 def test_attr_val_time() -> None:
     """Test time value conversions."""
     elem = Attribute.float('Time', 32.25)
@@ -240,6 +274,22 @@ def test_attr_val_vector_2() -> None:
     assert Attribute.vec2('True', 3.4, 0.0).val_bool is True
     assert Attribute.vec2('True', 0.0, 3.4).val_bool is True
     assert Attribute.vec2('True', 0.0, 0.0).val_bool is False
+
+
+def test_attr_array_vector_2() -> None:
+    """Test 2d vector array conversions."""
+    elem = Attribute.array('2D', ValueType.VEC2)
+    elem.append(Vec2(4.5, 38.2))
+    elem.append(Vec2(5.0, -2.0))
+    assert list(elem.iter_vec2()) == [Vec2(4.5, 38.2), Vec2(5.0, -2.0)]
+    assert list(elem.iter_str()) == ['4.5 38.2', '5 -2']
+    assert list(elem.iter_vec3()) == [Vec3(4.5, 38.2, 0.0), Vec3(5.0, -2.0, 0.0)]
+    assert list(elem.iter_vec4()) == [Vec4(4.5, 38.2, 0.0, 0.0), Vec4(5.0, -2.0, 0.0, 0.0)]
+
+    elem.append(Vec2(3.4, 0.0))
+    elem.append(Vec2(0.0, -3.4))
+    elem.append(Vec2(0.0, 0.0))
+    assert list(elem.iter_bool()) == [True, True, True, True, False]
 
 
 def test_attr_val_vector_3() -> None:
