@@ -4,6 +4,7 @@ As an extension, optionally all strings may become full UTF-8, marked by a new
 set of 'unicode_XXX' encoding formats.
 """
 import builtins
+import warnings
 import struct
 import sys
 from enum import Enum
@@ -556,6 +557,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     def __iter__(self):
         """Yield each of the elements in an array."""
+        warnings.warn("Use explicit attr.iter_X() methods to indicate desired type.", DeprecationWarning, stacklevel=2)
         if isinstance(self._value, list):
             return iter(self._value)
         else:
