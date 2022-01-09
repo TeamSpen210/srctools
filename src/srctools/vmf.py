@@ -286,6 +286,23 @@ class PrismFace:
     east: 'Side'
     west: 'Side'
 
+    def __getitem__(self, item: Union[Vec, Tuple[float, float, float]]) -> 'Side':
+        """Given an axis-aligned normal, return the matching side."""
+        if item == (1, 0, 0):
+            return self.east
+        elif item == (-1, 0, 0):
+            return self.west
+        elif item == (0, 1, 0):
+            return self.north
+        elif item == (0, -1, 0):
+            return self.south
+        elif item == (0, 0, 1):
+            return self.top
+        elif item == (0, 0, -1):
+            return self.bottom
+        else:
+            raise KeyError(item)
+
 
 class VMF:
     """Represents a VMF file, and holds counters for various IDs used.
