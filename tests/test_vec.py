@@ -4,8 +4,8 @@ import copy
 import operator as op
 from pathlib import Path
 from random import Random
+import inspect
 
-import pytest
 from helpers import *
 from srctools import Vec_tuple, math as vec_mod
 
@@ -23,9 +23,13 @@ def test_matching_apis(cls: str) -> None:
     cy_type = getattr(vec_mod, 'Cy_' + cls)
     if py_type is cy_type:
         pytest.fail(f'No Cython version of {cls}!')
-    # Skip dunder and private attributes, not part of the api.
-    py_attrs = {name for name in vars(py_type) if not name.startswith('_')}
-    cy_attrs = {name for name in vars(cy_type) if not name.startswith('_')}
+
+    # Skip private attributes - not part of the API.
+    # For dunders, we'd like to match but C slots make that complicated - mapping vs sequence etc.
+    # So check that via our other tests.
+    # Use inspect() to include parent classes properly.
+    py_attrs = {name for name, _ in inspect.getmembers(py_type) if not name.startswith('_')}
+    cy_attrs = {name for name, _ in inspect.getmembers(cy_type) if not name.startswith('_')}
     assert cy_attrs == py_attrs
 
 
