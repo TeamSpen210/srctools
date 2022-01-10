@@ -335,6 +335,54 @@ def test_attr_eq() -> None:
     assert not arr1 != arr2
 
 
+def test_attr_append() -> None:
+    """Test appending values to an attribute array."""
+    arr = Attribute.array('arr', ValueType.STRING)
+    assert len(arr) == 0
+
+    arr.append('value')
+    assert len(arr) == 1
+    assert arr[0].val_str == 'value'
+
+    arr.append(Vec3(1, 2, 3))
+    assert len(arr) == 2
+    assert arr[0].val_str == 'value'
+    assert arr[1].val_str == '1 2 3'
+
+    arr.append(45.2)
+    assert len(arr) == 3
+    assert arr[0].val_str == 'value'
+    assert arr[1].val_str == '1 2 3'
+    assert arr[2].val_str == '45.2'
+
+    assert list(arr.iter_str()) == ['value', '1 2 3', '45.2']
+    arr.clear_array()
+    assert len(arr) == 0
+    assert list(arr.iter_str()) == []
+    assert list(arr.iter_quat()) == []
+
+
+def test_attr_extend() -> None:
+    """Test extending attribute arrays with iterables."""
+    arr = Attribute.array('arr', ValueType.FLOAT)
+    assert len(arr) == 0
+    arr.extend([1, 2.0, 3])
+    assert len(arr) == 3
+    assert arr[0].val_float == 1.0
+    assert arr[1].val_float == 2.0
+    assert arr[2].val_float == 3.0
+
+    arr.extend((x for x in [1.3, 4.2, '8.9']))
+    assert len(arr) == 6
+    assert arr[0].val_float == 1.0
+    assert arr[1].val_float == 2.0
+    assert arr[2].val_float == 3.0
+    assert arr[3].val_float == 1.3
+    assert arr[4].val_float == 4.2
+    assert arr[5].val_float == 8.9
+    assert list(arr.iter_str()) == ['1', '2', '3', '1.3', '4.2', '8.9']
+
+
 @pytest.mark.parametrize('typ, attr, value, binary, text', [
     (ValueType.INT, 'val_int',  0, b'\0\0\0\0', '0'),
     (ValueType.INT, 'val_int',  308823027, bytes.fromhex('f3 43 68 12'), '308823027'),

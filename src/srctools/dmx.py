@@ -535,7 +535,7 @@ class Attribute(Generic[ValueT], _ValProps):
         if val_type is not self._typ:
             # Try converting.
             try:
-                func = TYPE_CONVERT[self._typ, val_type]
+                func = TYPE_CONVERT[val_type, self._typ]
             except KeyError:
                 raise ValueError(
                     f'Cannot convert ({val_type}) to {self._typ} type!')
@@ -575,13 +575,39 @@ class Attribute(Generic[ValueT], _ValProps):
         if val_type is not self._typ:
             # Try converting.
             try:
-                func = TYPE_CONVERT[self._typ, val_type]
+                func = TYPE_CONVERT[val_type, self._typ]
             except KeyError:
-                raise ValueError(
-                    f'Cannot convert ({val_type}) to {self._typ} type!')
+                raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
             self._value.append(func(result))
         else:
             self._value.append(result)
+
+    def extend(self, values) -> None:
+        """Append multiple values to the array.
+
+        If not already an array, it is converted to one
+        holding the existing value.
+        """
+        if not isinstance(self._value, list):
+            self._value = [self._value]
+        for value in values:
+            [val_type, result] = deduce_type_single(value)
+            if val_type is not self._typ:
+                # Try converting.
+                try:
+                    func = TYPE_CONVERT[val_type, self._typ]
+                except KeyError:
+                    raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
+                self._value.append(func(result))
+            else:
+                self._value.append(result)
+
+    def clear_array(self) -> None:
+        """Remove all items in this, if it is an array."""
+        if isinstance(self._value, list):
+            self._value.clear()
+        else:
+            raise ValueError('Singular elements cannot be cleared!')
 
     def __copy__(self) -> 'Attribute[ValueT]':
         """Duplicate this attribute shallowly, retaining references if this is an Element type."""
