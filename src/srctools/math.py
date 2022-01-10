@@ -42,8 +42,8 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
-    NamedTuple, Iterator, Iterable, SupportsRound, Optional
+    TypeVar, Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
+    NamedTuple, Iterator, Iterable, SupportsRound, Optional,
 )
 if TYPE_CHECKING:
     from typing import final, Literal
@@ -53,13 +53,14 @@ else:
 
 __all__ = [
     'parse_vec_str', 'to_matrix', 'lerp',
-    'Vec', 'Vec_tuple',
+    'Vec', 'FrozenVec', 'Vec_tuple',
     'Angle', 'Matrix',
 ]
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
-AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
+AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
+VecT = TypeVar('VecT', bound='BaseVec')
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -220,7 +221,10 @@ def __r{func}__(self, other: Union['Vec', tuple, float]):
         return NotImplemented
     else:
         return Py_Vec(x, y, z)
+'''
 
+
+_VEC_ADDSUB_INPLACE_TEMP = '''
 def __i{func}__(self, other: Union['Vec', tuple, float]):
     """{op}= operation.
 
@@ -275,8 +279,10 @@ def __r{func}__(self, other: float):
             )
         except TypeError:
             return NotImplemented
+'''
 
 
+_VEC_MULDIV_INPLACE_TEMP  = '''
 def __i{func}__(self, other: float):
     """{op}= operation.
 
@@ -293,16 +299,17 @@ def __i{func}__(self, other: float):
 
 # Subclassing this causes isinstance() to become very slow, trying to check
 # for __round__ on everything. So at runtime swap it out so it doesn't inherit.
-globals()['SupportsRound'] = {'Vec': object}
+globals()['SupportsRound'] = {'Vec': object, 'FrozenVec': object}
 
 
-@final
-class Vec(SupportsRound['Vec']):
-    """A 3D Vector. This has most standard Vector functions.
+class VecBase:
+    """Base class for 3D vectors, implementing common methods.
+
+    This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
-    __match_args__ = __slots__ = ('x', 'y', 'z')
+    __match_args__ = __slots__ = ('_x', '_y', '_z')
     INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
@@ -325,9 +332,13 @@ class Vec(SupportsRound['Vec']):
     T = top = z_pos = Vec_tuple(0, 0, 1)
     B = bottom = z_neg = Vec_tuple(0, 0, -1)
 
+    _x: float
+    _y: float
+    _z: float
+
     def __init__(
         self,
-        x: Union[int, float, 'Vec', Iterable[float]]=0.0,
+        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
         y: float=0.0,
         z: float=0.0,
     ) -> None:
@@ -339,35 +350,40 @@ class Vec(SupportsRound['Vec']):
         used for x, y, and z.
         """
         if isinstance(x, (int, float)):
-            self.x = float(x)
-            self.y = float(y)
-            self.z = float(z)
+            self._x = float(x)
+            self._y = float(y)
+            self._z = float(z)
         elif isinstance(x, Py_Vec):
-            self.x = x.x
-            self.y = x.y
-            self.z = x.z
+            self._x = x.x
+            self._y = x.y
+            self._z = x.z
         else:
             it = iter(x)
-            self.x = float(next(it, 0.0))
-            self.y = float(next(it, y))
-            self.z = float(next(it, z))
+            self._x = float(next(it, 0.0))
+            self._y = float(next(it, y))
+            self._z = float(next(it, z))
 
-    def copy(self) -> 'Vec':
-        """Create a duplicate of this vector."""
-        return Py_Vec(self.x, self.y, self.z)
+    @property
+    def x(self) -> float:
+        """Return the X axis."""
+        return self._x
 
-    __copy__ = copy  # copy module support.
+    @property
+    def y(self) -> float:
+        """Return the Y axis."""
+        return self._y
 
-    def __reduce__(self) -> tuple:
-        """Pickling support.
+    @property
+    def z(self) -> float:
+        """Return the Z axis."""
+        return self._z
 
-        This redirects to a global function, so C/Python versions
-        interoperate.
-        """
-        return _mk_vec, (self.x, self.y, self.z)
+    def copy(self: VecT) -> VecT:
+        """Implemented by subclasses."""
+        raise NotImplementedError
 
     @classmethod
-    def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
+    def from_str(cls: Type[VecT], val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> VecT:
         """Convert a string in the form '(4 6 -4)' into a Vector.
 
          If the string is unparsable, this uses the defaults (x,y,z).
@@ -387,30 +403,30 @@ class Vec(SupportsRound['Vec']):
     @classmethod
     @overload
     def with_axes(
-        cls,
+        cls: Type[VecT],
         axis1: str, val1: Union[float, 'Vec'],
         axis2: str, val2: Union[float, 'Vec'],
-    ) -> 'Vec': ...
+    ) -> VecT: ...
 
     @classmethod
     @overload
     def with_axes(
-        cls,
+        cls: Type[VecT],
         axis1: str, val1: Union[float, 'Vec'],
         axis2: str, val2: Union[float, 'Vec'],
         axis3: str, val3: Union[float, 'Vec'],
-    ) -> 'Vec': ...
+    ) -> VecT: ...
 
     @classmethod
     def with_axes(
-        cls,
+        cls: Type[VecT],
         axis1: str,
         val1: Union[float, 'Vec'],
         axis2: str=None,
         val2: Union[float, 'Vec']=0.0,
         axis3: str=None,
         val3: Union[float, 'Vec']=0.0,
-    ) -> 'Vec':
+    ) -> VecT:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -429,52 +445,15 @@ class Vec(SupportsRound['Vec']):
                 vec[axis3] = val3[axis3] if isinstance(val3, Py_Vec) else val3
         return vec
 
-    def rotate(
-        self,
-        pitch: float=0.0,
-        yaw: float=0.0,
-        roll: float=0.0,
-        round_vals: bool=True,
-    ) -> 'Vec':
-        """Rotate a vector by a Source rotational angle.
-        Returns the vector, so you can use it in the form
-        val = Vec(0,1,0).rotate(p, y, r)
-
-        If round is True, all values will be rounded to 6 decimals
-        (since these calculations always have small inprecision.)
-        """
-        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
-        mat = Py_Matrix.from_angle(Py_Angle(pitch, yaw, roll))
-        mat._vec_rot(self)
-        if round_vals:
-            self.x = round(self.x, 6)
-            self.y = round(self.y, 6)
-            self.z = round(self.z, 6)
-        return self
-
-    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
-        """Rotate a vector, using a string instead of a vector.
-
-        If the string cannot be parsed, use the passed in values instead.
-        """
-        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
-        mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
-        mat._vec_rot(self)
-        if round_vals:
-            self.x = round(self.x, 6)
-            self.y = round(self.y, 6)
-            self.z = round(self.z, 6)
-        return self
-
-    @staticmethod
+    @classmethod
     @overload
-    def bbox(__point: Iterable['Vec']) -> Tuple['Vec', 'Vec']: ...
-    @staticmethod
+    def bbox(cls: Type[VecT],  __point: Iterable['VecBase']) -> Tuple[VecT, VecT]: ...
+    @classmethod
     @overload
-    def bbox(*points: 'Vec') -> Tuple['Vec', 'Vec']: ...
+    def bbox(cls: Type[VecT], *points: 'VecBase') -> Tuple[VecT, VecT]: ...
 
-    @staticmethod
-    def bbox(*points: Union[Iterable['Vec'], 'Vec']) -> Tuple['Vec', 'Vec']:
+    @classmethod
+    def bbox(cls: Type[VecT], *points: Union[Iterable['VecBase'], 'VecBase']) -> Tuple[VecT, VecT]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -482,8 +461,8 @@ class Vec(SupportsRound['Vec']):
         """
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by min()/max().
-        first: Vec
-        point_coll: Iterable[Vec]
+        first: VecBase
+        point_coll: Iterable[VecBase]
         if len(points) == 1 and not isinstance(points[0], Py_Vec):
             try:
                 [[first, *point_coll]] = points  # type: ignore # len() can't narrow
@@ -503,15 +482,18 @@ class Vec(SupportsRound['Vec']):
         for point in point_coll:
             bbox_min.min(point)
             bbox_max.max(point)
-        return bbox_min, bbox_max
+        if cls is FrozenVec:
+            return cls(bbox_min), cls(bbox_max)
+        else:
+            return bbox_min, bbox_max
 
     @classmethod
     def iter_grid(
-        cls,
-        min_pos: 'Vec',
-        max_pos: 'Vec',
+        cls: Type[VecT],
+        min_pos: 'VecBase',
+        max_pos: 'VecBase',
         stride: int=1,
-    ) -> Iterator['Vec']:
+    ) -> Iterator[VecT]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -529,7 +511,7 @@ class Vec(SupportsRound['Vec']):
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self, end: 'Vec', stride: int=1) -> Iterator['Vec']:
+    def iter_line(self, end: 'VecBase', stride: int=1) -> Iterator['Vec']:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -582,7 +564,7 @@ class Vec(SupportsRound['Vec']):
             roll,
         )
 
-    def to_angle_roll(self, z_norm: 'Vec', stride: int=0) -> 'Angle':
+    def to_angle_roll(self, z_norm: 'VecBase', stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -617,29 +599,23 @@ class Vec(SupportsRound['Vec']):
     # to annotate them in a way a type-checker can understand.
     # These are immediately overwritten.
 
-    def __add__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
-    def __radd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
-    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __add__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+    def __radd__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
 
-    def __sub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
-    def __rsub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
-    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __sub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+    def __rsub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
 
-    def __mul__(self, other: float) -> 'Vec': ...
-    def __rmul__(self, other: float) -> 'Vec': ...
-    def __imul__(self, other: float) -> 'Vec': ...
+    def __mul__(self: VecT, other: float) -> 'Vec': ...
+    def __rmul__(self: VecT, other: float) -> 'Vec': ...
 
-    def __truediv__(self, other: float) -> 'Vec': ...
-    def __rtruediv__(self, other: float) -> 'Vec': ...
-    def __itruediv__(self, other: float) -> 'Vec': ...
+    def __truediv__(self: VecT, other: float) -> VecT: ...
+    def __rtruediv__(self: VecT, other: float) -> VecT: ...
 
-    def __floordiv__(self, other: float) -> 'Vec': ...
-    def __rfloordiv__(self, other: float) -> 'Vec': ...
-    def __ifloordiv__(self, other: float) -> 'Vec': ...
+    def __floordiv__(self: VecT, other: float) -> VecT: ...
+    def __rfloordiv__(self: VecT, other: float) -> VecT: ...
 
-    def __mod__(self, other: float) -> 'Vec': ...
-    def __rmod__(self, other: float) -> 'Vec': ...
-    def __imod__(self, other: float) -> 'Vec': ...
+    def __mod__(self: VecT, other: float) -> VecT: ...
+    def __rmod__(self: VecT, other: float) -> VecT: ...
 
     funcname = op = pretty = None
 
@@ -668,7 +644,7 @@ class Vec(SupportsRound['Vec']):
     del funcname, op, pretty
 
     # Divmod is entirely unique.
-    def __divmod__(self, other: float) -> Tuple['Vec', 'Vec']:
+    def __divmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
         """Divide the vector by a scalar, returning the result and remainder."""
         if isinstance(other, Py_Vec):
             raise TypeError("Cannot divide 2 Vectors.")
@@ -680,9 +656,9 @@ class Vec(SupportsRound['Vec']):
             except TypeError:
                 return NotImplemented
             else:
-                return Py_Vec(x1, y1, z1), Py_Vec(x2, y2, z2)
+                return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __rdivmod__(self, other: float) -> Tuple['Vec', 'Vec']:
+    def __rdivmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
         """Divide a scalar by a vector, returning the result and remainder."""
         try:
             x1, x2 = divmod(other, self.x)
@@ -691,9 +667,9 @@ class Vec(SupportsRound['Vec']):
         except (TypeError, ValueError):
             return NotImplemented
         else:
-            return Py_Vec(x1, y1, z1), Py_Vec(x2, y2, z2)
+            return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __matmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+    def __matmul__(self: VecT, other: Union['Angle', 'Matrix']) -> VecT:
         """Rotate this vector by an angle or matrix."""
         if isinstance(other, Py_Matrix):
             mat = other
@@ -701,20 +677,9 @@ class Vec(SupportsRound['Vec']):
             mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
-        res = Vec(self.x, self.y, self.z)
+        res = type(self)(self.x, self.y, self.z)
         mat._vec_rot(res)
         return res
-
-    def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
-        """We need to define this, so it's in-place."""
-        if isinstance(other, Py_Matrix):
-            mat = other
-        elif isinstance(other, Py_Angle):
-            mat = Py_Matrix.from_angle(other)
-        else:
-            return NotImplemented
-        mat._vec_rot(self)
-        return self
 
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
@@ -727,7 +692,7 @@ class Vec(SupportsRound['Vec']):
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 abs(other.x - self.x) < 1e-6 and
                 abs(other.y - self.y) < 1e-6 and
@@ -749,7 +714,7 @@ class Vec(SupportsRound['Vec']):
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 abs(other.x - self.x) >= 1e-6 or
                 abs(other.y - self.y) >= 1e-6 or
@@ -771,7 +736,7 @@ class Vec(SupportsRound['Vec']):
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 (other.x - self.x) > 1e-6 and
                 (other.y - self.y) > 1e-6 and
@@ -793,7 +758,7 @@ class Vec(SupportsRound['Vec']):
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 (self.x - other.x) <= 1e-6 and
                 (self.y - other.y) <= 1e-6 and
@@ -815,7 +780,7 @@ class Vec(SupportsRound['Vec']):
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 (self.x - other.x) > 1e-6 and
                 (self.y - other.y) > 1e-6 and
@@ -852,26 +817,8 @@ class Vec(SupportsRound['Vec']):
         else:
             return NotImplemented
 
-    def max(self, other: AnyVec) -> None:
-        """Set this vector's values to the maximum of the two vectors."""
-        if self.x < other[0]:
-            self.x = other[0]
-        if self.y < other[1]:
-            self.y = other[1]
-        if self.z < other[2]:
-            self.z = other[2]
-
-    def min(self, other: AnyVec) -> None:
-        """Set this vector's values to be the minimum of the two vectors."""
-        if self.x > other[0]:
-            self.x = other[0]
-        if self.y > other[1]:
-            self.y = other[1]
-        if self.z > other[2]:
-            self.z = other[2]
-
     @classmethod
-    def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
+    def lerp(cls: VecT, x: float, in_min: float, in_max: float, out_min: 'VecBase', out_max: 'VecBase') -> VecT:
         """Linerarly interpolate between two vectors.
 
         If in_min and in_max are the same, ZeroDivisionError is raised.
@@ -887,11 +834,11 @@ class Vec(SupportsRound['Vec']):
     @overload
     def __round__(self) -> Any: ...
     @overload
-    def __round__(self, ndigits: int) -> 'Vec': ...  # type: ignore
+    def __round__(self: VecT, ndigits: int) -> VecT: ...  # type: ignore
 
-    def __round__(self, ndigits: int=0) -> Union['Vec', Any]:
+    def __round__(self: VecT, ndigits: int=0) -> Union[VecT, Any]:
         """Performing round() on a Py_Vec rounds each axis."""
-        return Py_Vec(
+        return type(self)(
             round(self.x, ndigits),
             round(self.y, ndigits),
             round(self.z, ndigits),
@@ -953,22 +900,7 @@ class Vec(SupportsRound['Vec']):
             return self.z
         raise KeyError(f'Invalid axis: {ind!r}')
 
-    def __setitem__(self, ind: Union[str, int], val: float) -> None:
-        """Allow editing values by index instead of name if desired.
-
-        This accepts either 0,1,2 or 'x','y','z' to edit values.
-        Useful in conjunction with a loop to apply commands to all values.
-        """
-        if ind == 0 or ind == "x":
-            self.x = float(val)
-        elif ind == 1 or ind == "y":
-            self.y = float(val)
-        elif ind == 2 or ind == "z":
-            self.z = float(val)
-        else:
-            raise KeyError(f'Invalid axis: {ind!r}')
-
-    def in_bbox(self, a: AnyVec, b: 'Vec') -> bool:
+    def in_bbox(self, a: AnyVec, b: AnyVec) -> bool:
         """Check if this point is inside the specified bounding box."""
         return (
             min(a[0], b[0]) <= self.x <= max(a[0], b[0]) and
@@ -977,7 +909,7 @@ class Vec(SupportsRound['Vec']):
         )
 
     @staticmethod
-    def bbox_intersect(min1: 'Vec', max1: 'Vec', min2: 'Vec', max2: 'Vec') -> bool:
+    def bbox_intersect(min1: 'VecBase', max1: 'VecBase', min2: 'VecBase', max2: 'VecBase') -> bool:
         """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
         if max1.x < min2.x or max2.x < min1.x:
             return False
@@ -1022,7 +954,7 @@ class Vec(SupportsRound['Vec']):
         """+ on a Vector simply copies it."""
         return Py_Vec(self.x, self.y, self.z)
 
-    def norm(self) -> 'Vec':
+    def norm(self: VecT) -> VecT:
         """Normalise the Vector.
 
          This is done by transforming it to have a magnitude of 1 but the same
@@ -1055,6 +987,205 @@ class Vec(SupportsRound['Vec']):
             self.x * other[1] - self.y * other[0],
         )
 
+    def norm_mask(self, normal: 'Vec') -> 'Vec':
+        """Subtract the components of this vector not in the direction of the normal.
+
+        If the normal is axis-aligned, this will zero out the other axes.
+        If not axis-aligned, it will do the equivalent.
+        """
+        norm = normal.norm()
+        return norm * self.dot(norm)
+
+    len = mag
+    mag_sq = len_sq
+
+
+class FrozenVec(VecBase, SupportsRound['FrozenVec']):
+    """Immutable vector class. This cannot be changed once created, but is hashable."""
+    __slots__ = []
+
+    def copy(self) -> 'FrozenVec':
+        """FrozenVec is immutable."""
+        return self
+
+    def __copy__(self) -> 'FrozenVec':
+        """FrozenVec is immutable."""
+        return self
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk_fvec, (self._x, self._y, self._z)
+
+    def __hash__(self) -> int:
+        """Hashing a frozen vec is the same as hashing the tuple form."""
+        return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
+
+
+class Vec(VecBase, SupportsRound['Vec']):
+    """Mutable vector class. This has in-place operations for efficiency."""
+    __slots__ = []
+
+    @property
+    def x(self) -> float:
+        """Return the X axis."""
+        return self._x
+
+    @x.setter
+    def x(self, value: float):
+        """Set the X axis."""
+        self._x = float(value)
+
+    @property
+    def y(self) -> float:
+        """Return the Y axis."""
+        return self._y
+
+    @y.setter
+    def y(self, value: float) -> None:
+        """Set the Y axis."""
+        self._y = float(value)
+
+    @property
+    def z(self) -> float:
+        """Return the Z axis."""
+        return self._z
+
+    @z.setter
+    def z(self, value: float) -> None:
+        """Set the Z axis."""
+        self._z = float(value)
+
+    def copy(self) -> 'Vec':
+        """Create a duplicate of this vector."""
+        return Py_Vec(self.x, self.y, self.z)
+
+    __copy__ = copy  # copy module support.
+
+    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __imul__(self, other: float) -> 'Vec': ...
+    def __itruediv__(self, other: float) -> 'Vec': ...
+    def __ifloordiv__(self, other: float) -> 'Vec': ...
+    def __imod__(self, other: float) -> 'Vec': ...
+
+    funcname = op = pretty = None
+    # Use exec() to generate all the number magic methods. This reduces code
+    # duplication since they're all very similar.
+    for funcname, op in (('add', '+'), ('sub', '-')):
+        exec(
+            _VEC_ADDSUB_INPLACE_TEMP.format(func=funcname, op=op),
+            globals(),
+            locals(),
+        )
+
+    for funcname, op, pretty in (
+            ('mul', '*', 'multiply'),
+            ('truediv', '/', 'divide'),
+            ('floordiv', '//', 'floor-divide'),
+            ('mod', '%', 'modulus'),
+    ):
+        exec(
+            _VEC_MULDIV_INPLACE_TEMP.format(func=funcname, op=op, pretty=pretty),
+            globals(),
+            locals(),
+        )
+
+    del funcname, op, pretty
+
+    def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+        """We need to define this, so it's in-place."""
+        if isinstance(other, Py_Matrix):
+            mat = other
+        elif isinstance(other, Py_Angle):
+            mat = Py_Matrix.from_angle(other)
+        else:
+            return NotImplemented
+        mat._vec_rot(self)
+        return self
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk_vec, (self.x, self.y, self.z)
+
+    def __setitem__(self, ind: Union[str, int], val: float) -> None:
+        """Allow editing values by index instead of name if desired.
+
+        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind == 0 or ind == "x":
+            self.x = float(val)
+        elif ind == 1 or ind == "y":
+            self.y = float(val)
+        elif ind == 2 or ind == "z":
+            self.z = float(val)
+        else:
+            raise KeyError(f'Invalid axis: {ind!r}')
+
+    # Deprecated, so no need to duplicate for FrozenVec.
+    def rotate(
+        self,
+        pitch: float=0.0,
+        yaw: float=0.0,
+        roll: float=0.0,
+        round_vals: bool=True,
+    ) -> 'Vec':
+        """Rotate a vector by a Source rotational angle.
+        Returns the vector, so you can use it in the form
+        val = Vec(0,1,0).rotate(p, y, r)
+
+        If round is True, all values will be rounded to 6 decimals
+        (since these calculations always have small inprecision.)
+        """
+        warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
+        mat = Py_Matrix.from_angle(Py_Angle(pitch, yaw, roll))
+        mat._vec_rot(self)
+        if round_vals:
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
+        return self
+
+    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
+        """Rotate a vector, using a string instead of a vector.
+
+        If the string cannot be parsed, use the passed in values instead.
+        """
+        warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
+        mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
+        mat._vec_rot(self)
+        if round_vals:
+            self.x = round(self.x, 6)
+            self.y = round(self.y, 6)
+            self.z = round(self.z, 6)
+        return self
+
+    def max(self, other: AnyVec) -> None:
+        """Set this vector's values to the maximum of the two vectors."""
+        if self.x < other[0]:
+            self.x = other[0]
+        if self.y < other[1]:
+            self.y = other[1]
+        if self.z < other[2]:
+            self.z = other[2]
+
+    def min(self, other: AnyVec) -> None:
+        """Set this vector's values to be the minimum of the two vectors."""
+        if self.x > other[0]:
+            self.x = other[0]
+        if self.y > other[1]:
+            self.y = other[1]
+        if self.z > other[2]:
+            self.z = other[2]
+
     def localise(
         self,
         origin: Union['Vec', Tuple3],
@@ -1067,19 +1198,7 @@ class Vec(SupportsRound['Vec']):
         """
         mat = to_matrix(angles)
         mat._vec_rot(self)
-        self += origin
-
-    def norm_mask(self, normal: 'Vec') -> 'Vec':
-        """Subtract the components of this vector not in the direction of the normal.
-
-        If the normal is axis-aligned, this will zero out the other axes.
-        If not axis-aligned, it will do the equivalent.
-        """
-        norm = normal.norm()
-        return norm * self.dot(norm)
-
-    len = mag
-    mag_sq = len_sq
+        self.__iadd__(origin)
 
     @contextlib.contextmanager
     def transform(self) -> Iterator['Matrix']:
@@ -1350,22 +1469,22 @@ class Matrix:
 
     @classmethod
     @overload
-    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Matrix': ...
+    def from_basis(cls, *, x: VecBase, y: VecBase, z: VecBase) -> 'Matrix': ...
     @classmethod
     @overload
-    def from_basis(cls, *, x: Vec, y: Vec) -> 'Matrix': ...
+    def from_basis(cls, *, x: VecBase, y: VecBase) -> 'Matrix': ...
     @classmethod
     @overload
-    def from_basis(cls, *, y: Vec, z: Vec) -> 'Matrix': ...
+    def from_basis(cls, *, y: VecBase, z: VecBase) -> 'Matrix': ...
     @classmethod
     @overload
-    def from_basis(cls, *, x: Vec, z: Vec) -> 'Matrix': ...
+    def from_basis(cls, *, x: VecBase, z: VecBase) -> 'Matrix': ...
     @classmethod
     def from_basis(
         cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
+        x: VecBase=None,
+        y: VecBase=None,
+        z: VecBase=None,
     ) -> 'Matrix':
         """Construct a matrix from at least two basis vectors.
 
@@ -1398,13 +1517,15 @@ class Matrix:
             return NotImplemented
 
     @overload
+    def __rmatmul__(self, other: FrozenVec) -> FrozenVec: ...
+    @overload
     def __rmatmul__(self, other: 'Vec | Tuple3') -> 'Vec': ...
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
     def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
 
-    def __rmatmul__(self, other: 'Vec | Tuple3 | Matrix | Angle') -> 'Vec | Matrix | Angle':
+    def __rmatmul__(self, other: 'VecBase | Tuple3 | Matrix | Angle') -> 'Vec | FrozenVec | Matrix | Angle':
         if isinstance(other, Py_Vec) or isinstance(other, tuple):
             result = Py_Vec(other)
             self._vec_rot(result)
@@ -1452,14 +1573,14 @@ class Matrix:
             self._ca * other._ac + self._cb * other._bc + self._cc * other._cc,
         )
 
-    def _vec_rot(self, vec: Vec) -> None:
-        """Rotate a vector by our value."""
+    def _vec_rot(self, vec: VecBase) -> None:
+        """Rotate a vector by our value, inplace (even if frozen)."""
         x = vec.x
         y = vec.y
         z = vec.z
-        vec.x = (x * self._aa) + (y * self._ba) + (z * self._ca)
-        vec.y = (x * self._ab) + (y * self._bb) + (z * self._cb)
-        vec.z = (x * self._ac) + (y * self._bc) + (z * self._cc)
+        vec._x = (x * self._aa) + (y * self._ba) + (z * self._ca)
+        vec._y = (x * self._ab) + (y * self._bb) + (z * self._cb)
+        vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
 
 @final
@@ -1855,10 +1976,19 @@ def _mk_vec(x: float, y: float, z: float) -> Vec:
     """
     # Skip __init__'s checks and coercion/iteration.
     v = Vec.__new__(Vec)
-    v.x = x
-    v.y = y
-    v.z = z
+    v._x = x
+    v._y = y
+    v._z = z
     return v
+
+
+def _mk_fvec(x: float, y: float, z: float) -> FrozenVec:
+    """Unpickle a FrozenVec object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # We can't skip, C-frozen is truely immutable.
+    return FrozenVec(x, y, z)
 
 
 def _mk_ang(pitch: float, yaw: float, roll: float) -> Angle:
@@ -1906,6 +2036,7 @@ _mk = _mk_vec
 # and choose an appropriate unprefixed version.
 
 Cy_Vec = Py_Vec = Vec
+Cy_FrozenVec = Py_FrozenVec = FrozenVec
 Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = Py_to_matrix = to_matrix
 Cy_lerp = Py_lerp = lerp
