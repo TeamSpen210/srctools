@@ -1471,21 +1471,22 @@ class BSP:
             )
 
     def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
-        verts: List[Vec] = []
+        verts: List[bytes] = []
         indices: List[int] = []
-        add_vert = _find_or_extend(verts, Vec.as_tuple)
-        add_ind = _find_or_extend(indices, identity)
+
         for prim in prims:
+            vert_loc = len(verts)
+            index_loc = len(indices)
+            verts += [struct.pack('<fff', pos.x, pos.y, pos.z) for pos in prim.verts]
+            indices.extend(prim.indexed_verts)
             yield struct.pack(
                 '<HHHHH',
                 prim.is_tristrip,
-                add_ind(prim.indexed_verts), len(prim.indexed_verts),
-                add_vert(prim.verts), len(prim.verts),
+                index_loc, len(prim.indexed_verts),
+                vert_loc, len(prim.verts),
             )
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
-        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join([
-            struct.pack('<fff', pos.x, pos.y, pos.z) for pos in verts
-        ])
+        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
     def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
         """Read one of the faces arrays.
@@ -1583,7 +1584,6 @@ class BSP:
                 face.same_dir_as_plane,
                 face.on_node,
                 add_edges(face.edges), len(face.edges),
-                # *face.edges,
                 texinfo,
                 face._dispinfo_ind,
                 face.surf_fog_volume_id,
@@ -1759,14 +1759,15 @@ class BSP:
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
-        add_faces = _find_or_extend(leaf_faces, identity)
-        add_brushes = _find_or_extend(leaf_brushes, identity)
 
         buf = BytesIO()
 
         for leaf in visleafs:
-            face_ind = add_faces([add_face(face) for face in leaf.faces])
-            brush_ind = add_brushes([add_brush(brush) for brush in leaf.brushes])
+            # Do not deduplicate these, engine assumes they aren't when allocating memory.
+            face_ind = len(leaf_faces)
+            brush_ind = len(leaf_brushes)
+            leaf_faces.extend(map(add_face, leaf.faces))
+            leaf_brushes.extend(map(add_brush, leaf.brushes))
 
             buf.write(struct.pack(
                 '<ihh6h4Hh',
@@ -1782,8 +1783,8 @@ class BSP:
                 buf.write(leaf._ambient)
             buf.write(b'\x00\x00')  # Padding.
 
-        self.lumps[BSP_LUMPS.LEAFFACES].data = struct.pack(f'<{len(leaf_faces)}H', *leaf_faces)
-        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = struct.pack(f'<{len(leaf_brushes)}H', *leaf_brushes)
+        self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
+        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
         return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
