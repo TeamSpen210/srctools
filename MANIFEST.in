@@ -2,6 +2,8 @@
 global-include *.c *.cpp *.h *.hpp
 # Cython headers
 global-include *.pxd
+# Include .pyi stubs.
+global-include *.pyi
 
 prune .tox
 
