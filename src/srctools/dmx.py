@@ -468,15 +468,16 @@ class Attribute(Generic[ValueT], _ValProps):
         return func(self._value)
 
     def _iter_array(self, newtype: ValueType) -> Iterator[Value]:
-        """Access the array of values converted to the desired type."""
-        if not isinstance(self._value, list):
-            raise ValueError('Cannot iterate over scalar attributes!')
+        """Iterate over the values, converted to the desired type."""
         try:
             func = TYPE_CONVERT[self._typ, newtype]
         except KeyError:
             raise ValueError(
                 f'Cannot convert ({self._value!r}) to {newtype} type!')
-        return map(func, self._value)
+        if isinstance(self._value, list):
+            return map(func, self._value)
+        else:
+            return iter([func(self._value)])
 
     iter_int = _make_iter(ValueType.INT, builtins.int)
     iter_str = iter_string = _make_iter(ValueType.STRING, str)
