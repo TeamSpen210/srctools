@@ -674,18 +674,16 @@ class Property:
 
     def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
+        # Bypass __init__() and name=None warnings.
+        result = Property.__new__(Property)
+        result.real_name = self.real_name
+        result._folded_name = self._folded_name
         if isinstance(self._value, list):
             # This recurses if needed
-            return Property(
-                self.real_name,
-                [
-                    child.copy()
-                    for child in
-                    self
-                ]
-            )
+            result._value = list(map(Property.copy, self._value))
         else:
-            return Property(self.real_name, self._value)
+            result._value = self._value
+        return result
 
     def as_dict(self) -> _As_Dict_Ret:
         """Convert this property tree into a tree of dictionaries.
