@@ -36,3 +36,11 @@ exclude = [
 	]
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+	# Any warnings in srctools = error.
+	"error:::srctools[.*]",
+	"error:::tests[.*]",  # Same for tests themselves.
+]
