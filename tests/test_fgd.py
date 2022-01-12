@@ -142,8 +142,7 @@ def test_parse_kv_flags(code, is_readonly, is_report) -> None:
         ]
     """})
     fgd = FGD()
-    with fsys:
-        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     kv = fgd['ent'].kv['keyvalue']
 
     assert kv.readonly is is_readonly, kv

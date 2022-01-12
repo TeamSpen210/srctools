@@ -494,7 +494,6 @@ class Attribute(Generic[ValueT], _ValProps):
     iter_mat = iter_matrix = _make_iter(ValueType.MATRIX, Matrix)
     iter_compound = iter_elem = _make_iter(ValueType.ELEMENT, Optional['Element'])
 
-
     def _write_val(self, newtype: ValueType, value: Value) -> None:
         """Change the type of the atribute."""
         self._typ = newtype
@@ -544,19 +543,19 @@ class Attribute(Generic[ValueT], _ValProps):
         else:
             self._value[item] = result
 
-    def __delitem__(self, item):
-        """Remove the specified array index."""
+    def __delitem__(self, item: Union[builtins.int, slice]) -> None:
+        """Remove the specified array index(s)."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
         del self._value[item]
 
-    def __len__(self):
+    def __len__(self) -> builtins.int:
         """Return the number of values in the array, if this is one."""
         if isinstance(self._value, list):
             return len(self._value)
         raise ValueError('Singular elements have no length!')
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[ValueT]:
         """Yield each of the elements in an array."""
         warnings.warn("Use explicit attr.iter_X() methods to indicate desired type.", DeprecationWarning, stacklevel=2)
         if isinstance(self._value, list):
@@ -1078,7 +1077,7 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.type is ValueType.TIME and version < 3:
                     raise ValueError('TIME attributes are not permitted before binary v3!')
                 elif attr.type is ValueType.ELEMENT:
-                    for subelem in attr:
+                    for subelem in attr.iter_elem():
                         assert isinstance(subelem, Element)
                         if subelem is not None and subelem.type != STUB and subelem.uuid not in elem_to_ind:
                             elem_to_ind[subelem.uuid] = len(elements)
@@ -1124,30 +1123,32 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.is_array:
                     file.write(pack('<i', len(attr)))
 
+                # We write a scalar like we would write a 1-long array.
+                # noinspection PyProtectedMember
+                subvalues = cast('list[Value]', attr._value if attr.is_array else [attr._value])
+
                 if attr.type is ValueType.STRING:
                     # Scalar strings after v4 use the DB.
                     if version >= 4 and not attr.is_array:
                         file.write(pack(stringdb_ind, string_to_ind[attr.val_str]))
                     else:
-                        for text in attr:
+                        for text in subvalues:
                             file.write(text.encode(encoding) + b'\0')
                 elif attr.type is ValueType.BINARY:
-                    for data in attr:
+                    for data in subvalues:
                         file.write(pack('<i', len(data)))
                         file.write(data)
                 elif attr.type is ValueType.ELEMENT:
-                    for subelem in attr:
+                    for subelem in subvalues:
                         if subelem is None:
-                            elm_ind = -1
                             file.write(pack('<i', -1))
                         elif subelem.type == STUB:
-                            elm_ind = -2
                             file.write(pack('<i', -2))
                         else:
                             file.write(pack('<i', elem_to_ind[subelem.uuid]))
                 else:
                     conv_func = TYPE_CONVERT[attr.type, ValueType.BINARY]
-                    for any_data in attr:
+                    for any_data in subvalues:
                         try:
                             file.write(conv_func(any_data))
                         except struct.error:
@@ -1200,7 +1201,8 @@ class Element(MutableMapping[str, Attribute]):
             for attr in elem.values():
                 if attr.type is not ValueType.ELEMENT:
                     continue
-                for subelem in attr:
+                # noinspection PyProtectedMember
+                for subelem in attr._value if attr.is_array else [attr._value]:
                     if subelem is None or subelem.type == STUB:
                         continue
                     if subelem.uuid not in use_count:
@@ -1252,7 +1254,7 @@ class Element(MutableMapping[str, Attribute]):
             if attr.is_array:
                 file.write(b'"%b_array"\r\n%b[\r\n' % (attr.type.value.encode(encoding), indent_child))
                 indent_arr = indent + b'\t\t'
-                for i, child in enumerate(attr):
+                for i, child in enumerate(attr._value):
                     file.write(indent_arr)
                     if isinstance(child, Element):
                         if child.uuid in roots:
@@ -1360,7 +1362,7 @@ class Element(MutableMapping[str, Attribute]):
             else:
                 prop.append(Property(attr.name, attr.val_str))
         if subkeys is not None:
-            for elem in subkeys:
+            for elem in subkeys.iter_elem():
                 prop.append(elem.to_kv1())
         return prop
 
