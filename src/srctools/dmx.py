@@ -9,9 +9,9 @@ import struct
 import sys
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Generic, NewType, KeysView,
+    Union, NamedTuple, TypeVar, Generic, NewType, Any, cast,
     Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterable, Iterator,
-    Set, Mapping, Any, ValuesView, cast,
+    Set, Mapping, KeysView, ValuesView
 )
 from struct import Struct, pack
 import io
@@ -660,14 +660,18 @@ class Element(MutableMapping[str, Attribute]):
         """
         # The format header is:
         # <!-- dmx encoding [encoding] [version] format [format] [version] -->
-        header = bytearray(file.read(4))
-        if header != b'<!--':
+        header = bytearray(file.read(256))
+        if not header.startswith(b'<!--'):
             raise ValueError('The file is not a DMX file.')
-        # Read until the -->, or we arbitrarily hit 1kb (assume it's corrupt)
-        for i in range(1024):
-            header.extend(file.read(1))
-            if header.endswith(b'-->'):
+
+        # To handle bigger headers, read until we find the -->, or until we
+        # arbitrarily read a lot of characters (assume the file is corrupt).
+        for i in range(32):
+            header_len = header.find(b'-->', -260)
+            if header_len > 0:
+                header_len += 3
                 break
+            header.extend(file.read(256))
         else:
             raise ValueError('Unterminated DMX heading comment!')
         match = re.match(
@@ -686,7 +690,7 @@ class Element(MutableMapping[str, Attribute]):
             # Try a "legacy" header, no version.
             match = re.match(br'<!--\s*DMXVersion\s+([a-z0-9]+)_v[a-z0-9]*\s*-->', header)
             if match is None:
-                raise ValueError(f'Invalid DMX header {bytes(header)!r}!')
+                raise ValueError(f'Invalid DMX header {bytes(header[:header_len])!r}!')
             enc_name = match.group(0)
             if enc_name == b'sfm':
                 enc_name = b'binary'
@@ -694,6 +698,9 @@ class Element(MutableMapping[str, Attribute]):
             enc_vers = 0
             fmt_name = ''
             fmt_vers = 0
+
+        # Seek back to where the end of the header is
+        file.seek(header_len)
 
         if enc_name == b'keyvalues2':
             file_txt = io.TextIOWrapper(file, encoding='utf8' if unicode else 'ascii')

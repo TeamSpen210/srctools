@@ -701,6 +701,17 @@ def test_parse_binaryv3(datadir: Path) -> None:
     assert_tree(root_bin, root_txt)
 
 
+def test_parse_long_header(datadir: Path) -> None:
+    """Test parsing a DMX with a long header, requiring additional reads to complete."""
+    with (datadir / 'kv2_long_header.dmx').open('rb') as f:
+        root, fmt_name, fmt_version = Element.parse(f)
+    assert len(fmt_name) == 205
+    assert fmt_version == 123456789
+    assert root.uuid == UUID('09ab03ae-93a2-455e-8a71-f6cc12374fa7')
+    assert root.name == "LongHeaders"
+    assert root['value'].val_int == 42
+
+
 @pytest.mark.parametrize('version', [2, 4, 5])
 def test_export_bin_roundtrip(datadir: Path, version: int) -> None:
     """Test exporting binary types roundtrip."""
