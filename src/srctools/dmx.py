@@ -902,11 +902,17 @@ class Element(MutableMapping[str, Attribute]):
         return elements[0]
 
     @classmethod
-    def _parse_kv2_element(cls, tok, id_to_elem, fixups, name, typ_name):
+    def _parse_kv2_element(
+        cls, tok, id_to_elem, fixups, name, typ_name,
+        # Load into locals for fast lookup.
+        STRING=Token.STRING, COMMA=Token.COMMA,
+        BRACK_OPEN=Token.BRACK_OPEN, BRACK_CLOSE=Token.BRACK_CLOSE,
+    ) -> 'Element':
         """Parse a compound element."""
         elem: Element = cls(name, typ_name, _UNSET_UUID)
+
         for attr_name in tok.block(name):
-            orig_typ_name = tok.expect(Token.STRING)
+            orig_typ_name = tok.expect(STRING)
             typ_name = orig_typ_name.casefold()
 
             # The UUID is a special element name/type combo.
@@ -917,7 +923,7 @@ class Element(MutableMapping[str, Attribute]):
                         '"elementid" type, not "{}"!',
                         typ_name
                     )
-                uuid_str = tok.expect(Token.STRING)
+                uuid_str = tok.expect(STRING)
                 if elem.uuid is not _UNSET_UUID:
                     raise tok.error('Duplicate UUID definition!')
                 try:
@@ -933,7 +939,7 @@ class Element(MutableMapping[str, Attribute]):
                         '"string" type, not "{}"!',
                         typ_name
                     )
-                elem.name = tok.expect(Token.STRING)
+                elem.name = tok.expect(STRING)
                 continue
 
             if typ_name.endswith('_array'):
@@ -954,15 +960,15 @@ class Element(MutableMapping[str, Attribute]):
             if is_array:
                 array = []
                 attr = Attribute(attr_name, attr_type, array)
-                tok.expect(Token.BRACK_OPEN)
-                for tok_typ, tok_value in tok:
-                    if tok_typ is Token.BRACK_CLOSE:
+                tok.expect(BRACK_OPEN)
+                for tok_typ, tok_value in tok.skipping_newlines():
+                    if tok_typ is BRACK_CLOSE:
                         break
-                    elif tok_typ is Token.STRING:
+                    elif tok_typ is STRING:
                         if attr_type is ValueType.ELEMENT:
                             if tok_value == 'element':
                                 # UUID reference.
-                                uuid_str = tok.expect(Token.STRING)
+                                uuid_str = tok.expect(STRING)
                                 if uuid_str:
                                     try:
                                         uuid = UUID(uuid_str)
@@ -985,15 +991,15 @@ class Element(MutableMapping[str, Attribute]):
                         next_tok, tok_value = tok()
                         while next_tok is Token.NEWLINE:
                             next_tok, tok_value = tok()
-                        if next_tok is not Token.COMMA:
+                        if next_tok is not COMMA:
                             tok.push_back(next_tok, tok_value)
-                    elif tok_typ is not Token.NEWLINE:
+                    else:
                         raise tok.error(tok_typ)
                 else:
                     raise tok.error('Unterminated array!')
             elif attr_type is ValueType.ELEMENT:
                 # This is a reference to another element.
-                uuid_str = tok.expect(Token.STRING)
+                uuid_str = tok.expect(STRING)
                 attr = Attribute(attr_name, attr_type, None)
                 if uuid_str:
                     try:
@@ -1005,7 +1011,7 @@ class Element(MutableMapping[str, Attribute]):
                 # Otherwise, this stays None.
             else:
                 # Single element.
-                unparsed = tok.expect(Token.STRING)
+                unparsed = tok.expect(STRING)
                 value = TYPE_CONVERT[ValueType.STRING, attr_type](unparsed)
                 attr = Attribute(attr_name, attr_type, value)
             elem._members[attr_name.casefold()] = attr
