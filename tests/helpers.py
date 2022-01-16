@@ -4,6 +4,7 @@ from typing import Type, Tuple, Callable, Iterable, Iterator
 
 from srctools.math import (
     Py_Vec, Cy_Vec,
+    Py_FrozenVec, Cy_FrozenVec,
     Py_Angle, Cy_Angle,
     Py_Matrix, Cy_Matrix,
     Py_parse_vec_str, Cy_parse_vec_str,
@@ -110,12 +111,12 @@ def assert_rot(rot, exp_rot, msg=''):
 
 
 if Py_Vec is Cy_Vec:
-    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str)]
+    parms = [(Py_Vec, Py_FrozenVec, Py_Angle, Py_Matrix, Py_parse_vec_str)]
     names = ['Python']
     print('No _vec! ')
 else:
-    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str),
-             (Cy_Vec, Cy_Angle, Cy_Matrix, Cy_parse_vec_str)]
+    parms = [(Py_Vec, Py_FrozenVec, Py_Angle, Py_Matrix, Py_parse_vec_str),
+             (Cy_Vec, Cy_FrozenVec, Cy_Angle, Cy_Matrix, Cy_parse_vec_str)]
     names = ['Python', 'Cython']
 
 
@@ -123,6 +124,7 @@ else:
 def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""
     orig_vec = vec_mod.Vec
+    orig_fvec = vec_mod.FrozenVec
     orig_Matrix = vec_mod.Matrix
     orig_Angle = vec_mod.Angle
     orig_parse = vec_mod.parse_vec_str
@@ -130,6 +132,7 @@ def py_c_vec(request):
     try:
         (
             vec_mod.Vec,
+            vec_mod.FrozenVec,
             vec_mod.Matrix,
             vec_mod.Angle,
             vec_mod.parse_vec_str,
@@ -137,6 +140,7 @@ def py_c_vec(request):
         yield request.param
     finally:
         vec_mod.Vec = orig_vec
+        vec_mod.FrozenVec = orig_fvec
         vec_mod.Matrix = orig_Matrix
         vec_mod.Angle = orig_Angle
         vec_mod.parse_vec_str = orig_parse
