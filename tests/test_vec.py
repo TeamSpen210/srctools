@@ -2,6 +2,7 @@
 import pickle
 import copy
 import operator as op
+import pytest
 from pathlib import Path
 from random import Random
 import inspect
@@ -16,13 +17,14 @@ raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
 VecClass = Type[vec_mod.VecBase]
 
+
 @pytest.fixture(params=['Vec', 'FrozenVec'])
 def frozen_thawed_vec(py_c_vec, request) -> VecClass:
     """Support testing both mutable and immutable vectors."""
     yield getattr(vec_mod, request.param)
 
 
-@pytest.mark.parametrize('cls', ['Vec', 'Matrix', 'Angle'])
+@pytest.mark.parametrize('cls', ['Vec', 'FrozenVec', 'Matrix', 'Angle'])
 def test_matching_apis(cls: str) -> None:
     """Check each class pair has the same methods."""
     py_type = getattr(vec_mod, 'Py_' + cls)
@@ -170,6 +172,29 @@ def test_from_str_fails(py_c_vec, frozen_thawed_vec):
         assert val == Vec.from_str('2 6 gh', z=val).z
         assert val == Vec.from_str('1.2 3.4', x=val).x
         assert val == Vec.from_str('34.5 38.4 -23 -38', z=val).z
+
+
+def test_thaw_freezing(py_c_vec: PyCVec):
+    """Test methods to convert between frozen <> mutable."""
+    Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
+    # Other way around is not provided.
+    with pytest.raises(AttributeError):
+        Vec.thaw()
+    with pytest.raises(AttributeError):
+        FrozenVec.freeze()
+
+    for x, y, z in iter_vec(VALID_ZERONUMS):
+        mut = Vec(x, y, z)
+        froze = mut.freeze()
+        thaw = froze.thaw()
+        assert isinstance(froze, FrozenVec)
+        assert isinstance(mut, Vec)
+        assert isinstance(thaw, Vec)
+
+        assert_vec(mut, x, y, z)
+        assert_vec(froze, x, y, z)
+        assert_vec(thaw, x, y, z)
 
 
 @pytest.mark.parametrize('value', [
