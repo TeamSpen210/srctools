@@ -177,7 +177,7 @@ def __{func}__(self, other: Union['Vec', tuple, float]):
 
     This additionally works on scalars (adds to all axes).
     """
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         return Py_Vec(
             self.x {op} other.x,
             self.y {op} other.y,
@@ -195,14 +195,14 @@ def __{func}__(self, other: Union['Vec', tuple, float]):
     except TypeError:
         return NotImplemented
     else:
-        return Py_Vec(x, y, z)
+        return type(self)(x, y, z)
 
-def __r{func}__(self, other: Union['Vec', tuple, float]):
+def __r{func}__(self, other: Union['VecBase', tuple, float]):
     """{op} operation with reversed operands.
 
     This additionally works on scalars (adds to all axes).
     """
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         return Py_Vec(
             other.x {op} self.x,
             other.y {op} self.y,
@@ -220,17 +220,17 @@ def __r{func}__(self, other: Union['Vec', tuple, float]):
     except TypeError:
         return NotImplemented
     else:
-        return Py_Vec(x, y, z)
+        return type(self)(x, y, z)
 '''
 
 
 _VEC_ADDSUB_INPLACE_TEMP = '''
-def __i{func}__(self, other: Union['Vec', tuple, float]):
+def __i{func}__(self, other: Union[VecBase, tuple, float]):
     """{op}= operation.
 
     Like the normal one except without duplication.
     """
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         self.x {op}= other.x
         self.y {op}= other.y
         self.z {op}= other.z
@@ -254,11 +254,11 @@ def __i{func}__(self, other: Union['Vec', tuple, float]):
 _VEC_MULDIV_TEMP = '''
 def __{func}__(self, other: float):
     """Vector {op} scalar operation."""
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         raise TypeError("Cannot {pretty} 2 Vectors.")
     else:
         try:
-            return Py_Vec(
+            return type(self)(
                 self.x {op} other,
                 self.y {op} other,
                 self.z {op} other,
@@ -268,11 +268,11 @@ def __{func}__(self, other: float):
 
 def __r{func}__(self, other: float):
     """scalar {op} Vector operation."""
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         raise TypeError("Cannot {pretty} 2 Vectors.")
     else:
         try:
-            return Py_Vec(
+            return type(self)(
                 other {op} self.x,
                 other {op} self.y,
                 other {op} self.z,
@@ -288,7 +288,7 @@ def __i{func}__(self, other: float):
 
     Like the normal one except without duplication.
     """
-    if isinstance(other, Py_Vec):
+    if isinstance(other, VecBase):
         raise TypeError("Cannot {pretty} 2 Vectors.")
     else:
         self.x {op}= other
