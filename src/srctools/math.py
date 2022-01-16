@@ -60,7 +60,7 @@ __all__ = [
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
-VecT = TypeVar('VecT', bound='BaseVec')
+VecT = TypeVar('VecT', bound='VecBase')
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -476,10 +476,11 @@ class VecBase:
         for point in point_coll:
             bbox_min.min(point)
             bbox_max.max(point)
-        if cls is FrozenVec:
+        if cls is Py_FrozenVec:
             return cls(bbox_min), cls(bbox_max)
         else:
-            return bbox_min, bbox_max
+            # We know cls is Py_Vec, and these are too.
+            return bbox_min, bbox_max  # type: ignore
 
     @classmethod
     def iter_grid(
@@ -505,26 +506,27 @@ class VecBase:
                 for z in range(min_z, max_z + 1, stride):
                     yield cls(x, y, z)
 
-    def iter_line(self, end: 'VecBase', stride: int=1) -> Iterator['Vec']:
+    def iter_line(self: VecT, end: 'VecBase', stride: int=1) -> Iterator[VecT]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
         If the distance is less than the stride, only end-points will be yielded.
         If they are the same, that point will be yielded.
         """
+        cls = type(self)
         offset = end - self
         length = offset.mag()
         if length < stride:
             # Not enough room, yield both
             yield self.copy()
             if self != end:
-                yield end.copy()
+                yield cls(end)
             return
 
         direction = offset.norm()
         for pos in range(0, int(length), int(stride)):
             yield self + direction * pos
-        yield end.copy()  # Directly yield - ensures no rounding errors.
+        yield cls(end)  # Directly yield - ensures no rounding errors.
 
     def axis(self) -> str:
         """For a normal vector, return the axis it is on."""
@@ -812,7 +814,7 @@ class VecBase:
             return NotImplemented
 
     @classmethod
-    def lerp(cls: VecT, x: float, in_min: float, in_max: float, out_min: 'VecBase', out_max: 'VecBase') -> VecT:
+    def lerp(cls: Type[VecT], x: float, in_min: float, in_max: float, out_min: 'VecBase', out_max: 'VecBase') -> VecT:
         """Linerarly interpolate between two vectors.
 
         If in_min and in_max are the same, ZeroDivisionError is raised.
@@ -828,10 +830,10 @@ class VecBase:
     @overload
     def __round__(self) -> Any: ...
     @overload
-    def __round__(self: VecT, ndigits: int) -> VecT: ...  # type: ignore
+    def __round__(self: VecT, ndigits: int) -> VecT: ...
 
-    def __round__(self: VecT, ndigits: int=0) -> Union[VecT, Any]:
-        """Performing round() on a Py_Vec rounds each axis."""
+    def __round__(self: VecT, ndigits: int=0) -> Any:
+        """Performing round() on a Vec rounds each axis."""
         return type(self)(
             round(self.x, ndigits),
             round(self.y, ndigits),
@@ -1079,10 +1081,14 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
         """Hashing a frozen vec is the same as hashing the tuple form."""
         return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
 
+    def thaw(self) -> 'Vec':
+        """Return a mutable copy of this vector."""
+        return Py_Vec(self.x, self.y, self.z)
+
 
 class Vec(VecBase, SupportsRound['Vec']):
     """Mutable vector class. This has in-place operations for efficiency."""
-    __slots__ = []
+    __slots__ = ()
 
     @property
     def x(self) -> float:
@@ -1124,7 +1130,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         cls,
         axis1: str, val1: Union[float, VecBase],
         axis2: str, val2: Union[float, VecBase],
-    ) -> VecT: ...
+    ) -> 'Vec': ...
 
     @classmethod
     @overload
@@ -1163,14 +1169,18 @@ class Vec(VecBase, SupportsRound['Vec']):
                 vec[axis3] = val3[axis3] if isinstance(val3, VecBase) else val3
         return vec
 
+    def freeze(self) -> FrozenVec:
+        """Return an immutable version of this vector."""
+        return Py_FrozenVec(self.x, self.y, self.z)
+
     def copy(self) -> 'Vec':
         """Create a duplicate of this vector."""
         return Py_Vec(self.x, self.y, self.z)
 
     __copy__ = copy  # copy module support.
 
-    def __iadd__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
-    def __isub__(self, other: Union['Vec', Tuple3, int, float]) -> 'Vec': ...
+    def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
+    def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
     def __imul__(self, other: float) -> 'Vec': ...
     def __itruediv__(self, other: float) -> 'Vec': ...
     def __ifloordiv__(self, other: float) -> 'Vec': ...
