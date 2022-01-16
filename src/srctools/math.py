@@ -1976,9 +1976,9 @@ def _mk_vec(x: float, y: float, z: float) -> Vec:
     """
     # Skip __init__'s checks and coercion/iteration.
     v = Vec.__new__(Vec)
-    v._x = x
-    v._y = y
-    v._z = z
+    v.x = x
+    v.y = y
+    v.z = z
     return v
 
 
