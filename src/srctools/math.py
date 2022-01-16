@@ -398,34 +398,34 @@ class VecBase:
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, 'Vec']) -> 'Vec': ...
+    def with_axes(cls: Type[VecT], axis1: str, val1: Union[float, 'VecBase']) -> VecT: ...
 
     @classmethod
     @overload
     def with_axes(
         cls: Type[VecT],
-        axis1: str, val1: Union[float, 'Vec'],
-        axis2: str, val2: Union[float, 'Vec'],
+        axis1: str, val1: Union[float, 'VecBase'],
+        axis2: str, val2: Union[float, 'VecBase'],
     ) -> VecT: ...
 
     @classmethod
     @overload
     def with_axes(
         cls: Type[VecT],
-        axis1: str, val1: Union[float, 'Vec'],
-        axis2: str, val2: Union[float, 'Vec'],
-        axis3: str, val3: Union[float, 'Vec'],
+        axis1: str, val1: Union[float, 'VecBase'],
+        axis2: str, val2: Union[float, 'VecBase'],
+        axis3: str, val3: Union[float, 'VecBase'],
     ) -> VecT: ...
 
     @classmethod
     def with_axes(
         cls: Type[VecT],
         axis1: str,
-        val1: Union[float, 'Vec'],
+        val1: Union[float, 'VecBase'],
         axis2: str=None,
-        val2: Union[float, 'Vec']=0.0,
+        val2: Union[float, 'VecBase']=0.0,
         axis3: str=None,
-        val3: Union[float, 'Vec']=0.0,
+        val3: Union[float, 'VecBase']=0.0,
     ) -> VecT:
         """Create a Vector, given a number of axes and corresponding values.
 
@@ -437,13 +437,7 @@ class VecBase:
         The magnitudes can also be Vectors, in which case the matching
         axis will be used from the vector.
         """
-        vec = cls()
-        vec[axis1] = val1[axis1] if isinstance(val1, Py_Vec) else val1
-        if axis2 is not None:
-            vec[axis2] = val2[axis2] if isinstance(val2, Py_Vec) else val2
-            if axis3 is not None:
-                vec[axis3] = val3[axis3] if isinstance(val3, Py_Vec) else val3
-        return vec
+        raise NotImplementedError
 
     @classmethod
     @overload
@@ -1002,7 +996,68 @@ class VecBase:
 
 class FrozenVec(VecBase, SupportsRound['FrozenVec']):
     """Immutable vector class. This cannot be changed once created, but is hashable."""
-    __slots__ = []
+    __slots__ = ()
+
+    @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, VecBase]) -> 'FrozenVec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, VecBase],
+        axis2: str, val2: Union[float, VecBase],
+    ) -> 'FrozenVec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, VecBase],
+        axis2: str, val2: Union[float, VecBase],
+        axis3: str, val3: Union[float, VecBase],
+    ) -> 'FrozenVec': ...
+
+    @classmethod
+    def with_axes(
+        cls,
+        axis1: str,
+        val1: Union[float, VecBase],
+        axis2: str=None,
+        val2: Union[float, VecBase]=0.0,
+        axis3: str=None,
+        val3: Union[float, VecBase]=0.0,
+    ) -> 'FrozenVec':
+        """Create a Vector, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            vec = Vec()
+            vec[axis1] = val1
+            vec[axis2] = val2
+            vec[axis3] = val3
+        The magnitudes can also be Vectors, in which case the matching
+        axis will be used from the vector.
+        """
+        vals = {'x': 0.0, 'y': 0.0, 'z': 0.0}
+        if isinstance(val1, VecBase):
+            vals[axis1] = val1[axis1]
+        else:
+            vals[axis1] = val1
+
+        if axis2 is not None:
+            if isinstance(val2, VecBase):
+                vals[axis2] = val2[axis2]
+            else:
+                vals[axis2] = val2
+
+            if axis3 is not None:
+                if isinstance(val3, VecBase):
+                    vals[axis3] = val3[axis3]
+                else:
+                    vals[axis3] = val3
+
+        return cls(**vals)
 
     def copy(self) -> 'FrozenVec':
         """FrozenVec is immutable."""
@@ -1058,6 +1113,55 @@ class Vec(VecBase, SupportsRound['Vec']):
     def z(self, value: float) -> None:
         """Set the Z axis."""
         self._z = float(value)
+
+    @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, VecBase]) -> 'Vec': ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, VecBase],
+        axis2: str, val2: Union[float, VecBase],
+    ) -> VecT: ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, VecBase],
+        axis2: str, val2: Union[float, VecBase],
+        axis3: str, val3: Union[float, VecBase],
+    ) -> 'Vec': ...
+
+    @classmethod
+    def with_axes(
+        cls,
+        axis1: str,
+        val1: Union[float, VecBase],
+        axis2: str=None,
+        val2: Union[float, VecBase]=0.0,
+        axis3: str=None,
+        val3: Union[float, VecBase]=0.0,
+    ) -> 'Vec':
+        """Create a Vector, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            vec = Vec()
+            vec[axis1] = val1
+            vec[axis2] = val2
+            vec[axis3] = val3
+        The magnitudes can also be Vectors, in which case the matching
+        axis will be used from the vector.
+        """
+        vec = cls()
+        vec[axis1] = val1[axis1] if isinstance(val1, VecBase) else val1
+        if axis2 is not None:
+            vec[axis2] = val2[axis2] if isinstance(val2, VecBase) else val2
+            if axis3 is not None:
+                vec[axis3] = val3[axis3] if isinstance(val3, VecBase) else val3
+        return vec
 
     def copy(self) -> 'Vec':
         """Create a duplicate of this vector."""
