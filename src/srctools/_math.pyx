@@ -15,9 +15,29 @@ cimport cython.operator
 cdef extern from *:
     const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
 
-cdef inline Vec _vector(double x, double y, double z):
-    """Make a Vector directly."""
+cdef inline Vec _vector_mut(double x, double y, double z):
+    """Make a mutable Vector directly."""
     cdef Vec vec = Vec.__new__(Vec)
+    vec.val.x = x
+    vec.val.y = y
+    vec.val.z = z
+    return vec
+
+cdef inline FrozenVec _vector_frozen(double x, double y, double z):
+    """Make a Vector directly."""
+    cdef FrozenVec vec = FrozenVec.__new__(FrozenVec)
+    vec.val.x = x
+    vec.val.y = y
+    vec.val.z = z
+    return vec
+
+cdef inline BaseVec _vector(type typ, double x, double y, double z):
+    """Make a Vector directly."""
+    cdef BaseVec vec
+    if typ is FrozenVec:
+        vec = <BaseVec>FrozenVec.__new__(FrozenVec)
+    else:
+        vec = <BaseVec>Vec.__new__(Vec)
     vec.val.x = x
     vec.val.y = y
     vec.val.z = z
@@ -37,11 +57,17 @@ from typing import Tuple, Iterator, Union
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_vec, unpickle_ang, unpickle_mat
+cdef object unpickle_mvec, unpickle_fvec, unpickle_ang, unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
-from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat
+from srctools.math import (
+    Vec_tuple,
+    _mk_vec as unpickle_mvec,
+    _mk_fvec as unpickle_fvec,
+    _mk_ang as unpickle_ang,
+    _mk_mat as unpickle_mat,
+)
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
@@ -85,16 +111,31 @@ cdef inline double norm_ang(double val):
     return val
 
 
+cdef BaseVec pick_vec_type(type left, type right):
+    # Given the LHS and RHS types, determine the Vec to create.
+    cdef bint frozen = False
+    # We use the type of the left, falling back to the right
+    # if the left isn't a vector.
+    if left is FrozenVec or (right is FrozenVec and left is not Vec):
+        return <BaseVec>FrozenVec.__new__(FrozenVec)
+    else:
+        return <BaseVec>Vec.__new__(Vec)
+
+cdef bint vec_check(obj):
+    # Check if this is a vector instance.
+    return type(obj) is Vec or type(obj) is FrozenVec
+
+
 cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1:
     cdef const char *buf
     cdef Py_ssize_t size, i
     cdef int read_amt
     cdef char c, end_delim = 0
 
-    if isinstance(value, Vec):
-        vec.x = (<Vec>value).val.x
-        vec.y = (<Vec>value).val.y
-        vec.z = (<Vec>value).val.z
+    if vec_check(value):
+        vec.x = (<BaseVec>value).val.x
+        vec.y = (<BaseVec>value).val.y
+        vec.z = (<BaseVec>value).val.z
     elif isinstance(value, Angle):
         vec.x = (<Angle>value).val.x
         vec.y = (<Angle>value).val.y
@@ -443,16 +484,20 @@ cdef class VecIterGrid:
         long long cur_z
 
         long stride
+        bint frozen
 
     def __iter__(self) -> VecIterGrid:
         return self
 
-    def __next__(self) -> Vec:
-        cdef Vec vec
+    def __next__(self):
+        cdef BaseVec vec
         if self.cur_x > self.stop_x:
             raise StopIteration
 
-        vec =_vector(self.cur_x, self.cur_y, self.cur_z)
+        if self.frozen:
+            vec = _vector_frozen(self.cur_x, self.cur_y, self.cur_z)
+        else:
+            vec = _vector_mut(self.cur_x, self.cur_y, self.cur_z)
 
         self.cur_z += self.stride
         if self.cur_z > self.stop_z:
@@ -477,25 +522,29 @@ cdef class VecIterLine:
         long long cur_off
         long long max
         vec_t end
+        bint frozen
 
     def __iter__(self) -> VecIterLine:
         return self
 
-    def __next__(self) -> Vec:
-        cdef Vec vec
+    def __next__(self):
+        cdef BaseVec vec
         if self.cur_off < 0:
             raise StopIteration
 
+        if self.frozen:
+            vec = _vector_frozen(0.0, 0.0, 0.0)
+        else:
+            vec = _vector_mut(0.0, 0.0, 0.0)
+
         if self.cur_off >= self.max:
             # Be exact here.
-            vec = _vector(self.end.x, self.end.y, self.end.z)
+            vec.val = self.end
             self.cur_off = -1
         else:
-            vec =_vector(
-                self.start.x + self.cur_off * self.diff.x,
-                self.start.y + self.cur_off * self.diff.y,
-                self.start.z + self.cur_off * self.diff.z,
-            )
+            vec.val.x = self.start.x + self.cur_off * self.diff.x
+            vec.val.y = self.start.y + self.cur_off * self.diff.y
+            vec.val.z = self.start.z + self.cur_off * self.diff.z
             self.cur_off += self.stride
 
         return vec
@@ -554,9 +603,9 @@ cdef class AngleTransform:
         return False
 
 
-@cython.freelist(16)
-@cython.final
-cdef class Vec:
+@cython.freelist(64)
+@cython.internal
+cdef class BaseVec:
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
@@ -586,39 +635,7 @@ cdef class Vec:
     T = top = z_pos = _make_tuple(0, 0, 1)
     B = bottom = z_neg = _make_tuple(0, 0, -1)
 
-    @property
-    def x(self):
-        """The X axis of the vector."""
-        return self.val.x
-
-    @x.setter
-    def x(self, value):
-        self.val.x = value
-
-    @property
-    def y(self):
-        """The Y axis of the vector."""
-        return self.val.y
-
-    @y.setter
-    def y(self, value):
-        self.val.y = value
-
-    @property
-    def z(self):
-        """The Z axis of the vector."""
-        return self.val.z
-
-    @z.setter
-    def z(self, value):
-        self.val.z = value
-
-    def __init__(
-        self,
-        x=0.0,
-        y=0.0,
-        z=0.0,
-    ) -> None:
+    def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
         """Create a Vector.
 
         All values are converted to Floats automatically.
@@ -627,14 +644,18 @@ cdef class Vec:
         used for x, y, and z.
         """
         cdef tuple tup
+
+        if type(self) is BaseVec:
+            raise TypeError('BaseVec cannot be instantiated!')
+
         if isinstance(x, float) or isinstance(x, int):
             self.val.x = x
             self.val.y = y
             self.val.z = z
-        elif isinstance(x, Vec):
-            self.val.x = (<Vec>x).val.x
-            self.val.y = (<Vec>x).val.y
-            self.val.z = (<Vec>x).val.z
+        elif vec_check(x):
+            self.val.x = (<BaseVec>x).val.x
+            self.val.y = (<BaseVec>x).val.y
+            self.val.z = (<BaseVec>x).val.z
         elif isinstance(x, tuple):
             tup = <tuple>x
             if len(tup) >= 1:
@@ -674,20 +695,6 @@ cdef class Vec:
             except StopIteration:
                 self.val.z = z
 
-    def copy(self):
-        """Create a duplicate of this vector."""
-        return _vector(self.val.x, self.val.y, self.val.z)
-
-    def __copy__(self):
-        """Create a duplicate of this vector."""
-        return _vector(self.val.x, self.val.y, self.val.z)
-
-    def __deepcopy__(self, memodict=None):
-        """Create a duplicate of this vector."""
-        return _vector(self.val.x, self.val.y, self.val.z)
-
-    def __reduce__(self):
-        return unpickle_vec, (self.val.x, self.val.y, self.val.z)
 
     @classmethod
     def from_str(cls, value, double x=0, double y=0, double z=0):
@@ -699,13 +706,13 @@ cdef class Vec:
 
         If the value is already a vector, a copy will be returned.
         """
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec = _vector(cls, 0.0, 0.0, 0.0)
         _parse_vec_str(&vec.val, value, x, y, z)
         return vec
 
     @classmethod
     @cython.boundscheck(False)
-    def with_axes(cls, *args) -> Vec:
+    def with_axes(cls, *args):
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -719,11 +726,11 @@ cdef class Vec:
         cdef Py_ssize_t arg_count = len(args)
         if arg_count not in (2, 4, 6):
             raise TypeError(
-                f'Vec.with_axis() takes 2, 4 or 6 positional arguments '
+                f'{cls.__name__}.with_axis() takes 2, 4 or 6 positional arguments '
                 f'but {arg_count} were given'
             )
 
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec = _vector(cls, 0.0, 0.0, 0.0)
         cdef Py_UCS4 axis
         cdef unsigned char i
         for i in range(0, arg_count, 2):
@@ -753,79 +760,16 @@ cdef class Vec:
 
         return vec
 
-    def rotate(
-        self,
-        double pitch: float=0.0,
-        double yaw: float=0.0,
-        double roll: float=0.0,
-        bint round_vals: bool=True,
-    ) -> Vec:
-        """Rotate a vector by a Source rotational angle.
-        Returns the vector, so you can use it in the form
-        val = Vec(0,1,0).rotate(p, y, r)
-
-        If round is True, all values will be rounded to 3 decimals
-        (since these calculations always have small inprecision.)
-
-        This is deprecated - use an Angle and the @ operator.
-        """
-        cdef vec_t angle
-        cdef mat_t matrix
-
-        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle() instead.", 1)
-
-        angle.x = pitch
-        angle.y = yaw
-        angle.z = roll
-
-        _mat_from_angle(matrix, &angle)
-        vec_rot(&self.val, matrix)
-
-        if round_vals:
-            self.val.x = round(self.val.x, ROUND_TO)
-            self.val.y = round(self.val.y, ROUND_TO)
-            self.val.z = round(self.val.z, ROUND_TO)
-
-        return self
-
-    def rotate_by_str(
-        self,
-        ang,
-        double pitch=0.0,
-        double yaw=0.0,
-        double roll=0.0,
-        bint round_vals=True,
-    ) -> Vec:
-        """Rotate a vector, using a string instead of a vector.
-
-        If the string cannot be parsed, use the passed in values instead.
-        This is deprecated - use Angle.from_str and the @ operator.
-        """
-        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle.from_str() instead.", 1)
-        cdef vec_t angle
-        cdef mat_t matrix
-
-        _parse_vec_str(&angle, ang, pitch, yaw, roll)
-        _mat_from_angle(matrix, &angle)
-        vec_rot(&self.val, matrix)
-
-        if round_vals:
-            self.val.x = round(self.val.x, ROUND_TO)
-            self.val.y = round(self.val.y, ROUND_TO)
-            self.val.z = round(self.val.z, ROUND_TO)
-
-        return self
-
     @classmethod
-    def bbox(cls, *points: Vec) -> 'Tuple[Vec, Vec]':
+    def bbox(cls, *points: BaseVec):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
         Returns a (min, max) tuple.
         """
-        cdef Vec bbox_min = Vec.__new__(Vec)
-        cdef Vec bbox_max = Vec.__new__(Vec)
-        cdef Vec sing_vec
+        cdef BaseVec bbox_min = _vector(cls, 0.0, 0.0, 0.0)
+        cdef BaseVec bbox_max = _vector(cls, 0.0, 0.0, 0.0)
+        cdef BaseVec sing_vec
         cdef vec_t vec
         cdef Py_ssize_t i
         # Allow passing a single iterable, but also handle a single Vec.
@@ -834,7 +778,7 @@ cdef class Vec:
         if len(points) == 1:
             if isinstance(points[0], Vec):
                 # Special case, don't iter over the vec, just copy.
-                sing_vec = <Vec>points[0]
+                sing_vec = <BaseVec>points[0]
                 bbox_min.val = sing_vec.val
                 bbox_max.val = sing_vec.val
                 return bbox_min, bbox_max
@@ -935,10 +879,11 @@ cdef class Vec:
         it.stop_z = llround(maxs.z)
 
         it.stride = stride
+        it.frozen = (cls is FrozenVec)
 
         return it
 
-    def iter_line(self, end: Vec, stride: int=1) -> Iterator[Vec]:
+    def iter_line(self, end: BaseVec, stride: int=1) -> Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -961,12 +906,13 @@ cdef class Vec:
         it.cur_off = 0
         it.max = llround(length)
         it.stride = int(stride)
+        it.frozen = type(self) is FrozenVec
 
         return it
 
     @classmethod
     @cython.cdivision(True)  # Manually do it once.
-    def lerp(cls, x: float, in_min: float, in_max: float, out_min: Vec, out_max: Vec) -> Vec:
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: BaseVec, out_max: BaseVec):
         """Linerarly interpolate between two vectors.
 
         If in_min and in_max are the same, ZeroDivisionError is raised.
@@ -976,6 +922,7 @@ cdef class Vec:
         if diff == 0.0:
             raise ZeroDivisionError('In values must not be equal!')
         return _vector(
+            cls,
             out_min.val.x + (off * (out_max.val.x - out_min.val.x)) / diff,
             out_min.val.y + (off * (out_max.val.y - out_min.val.y)) / diff,
             out_min.val.z + (off * (out_max.val.z - out_min.val.z)) / diff,
@@ -1066,69 +1013,17 @@ cdef class Vec:
             norm_ang(roll),
         )
 
-    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
-        """Produce a Source Engine angle with roll.
-
-        The z_normal should point in +z, and must be at right angles to this
-        vector.
-        This is deprecated, use Matrix.from_basis().to_angle().
-        Stride is no longer used.
-        """
-        cdef mat_t mat
-        cdef Angle ang
-        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.from_basis().to_angle()', 1)
-        ang = Angle.__new__(Angle)
-
-        _mat_from_basis(mat, x=self, z=z_norm, y=None)
-        _mat_to_angle(&ang.val, mat)
-        return ang
-
-    def rotation_around(self, double rot: float=90) -> Vec:
-        """For an axis-aligned normal, return the angles which rotate around it.
-
-        This is deprecated, use Matrix.axis_angle().to_angle() which works
-        for any orientation and has a consistent direction.
-        """
-        cdef Angle ang = Angle.__new__(Angle)
-        ang.val.x = ang.val.y = ang.val.z = 0.0
-        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
-
-        if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
-            ang.val.z = norm_ang(math.copysign(rot, self.val.x))
-        elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
-            ang.val.x = norm_ang(math.copysign(rot, self.val.y))
-        elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
-            ang.val.y = norm_ang(math.copysign(rot, self.val.z))
-        else:
-            raise ValueError(
-                f'({self.val.x}, {self.val.y}, {self.val.z}) is '
-                'not an on-axis vector!'
-            )
-        return ang
-
     def __abs__(self):
         """Performing abs() on a Vec takes the absolute value of all axes."""
-        return _vector(
-            abs(self.val.x),
-            abs(self.val.y),
-            abs(self.val.z),
-        )
+        return _vector(type(self), abs(self.val.x), abs(self.val.y), abs(self.val.z))
 
     def __neg__(self):
         """The inverted form of a Vector has inverted axes."""
-        return _vector(
-            -self.val.x,
-            -self.val.y,
-            -self.val.z,
-        )
+        return _vector(type(self),  -self.val.x, -self.val.y, -self.val.z)
 
     def __pos__(self):
         """+ on a Vector simply copies it."""
-        return _vector(
-            self.val.x,
-            self.val.y,
-            self.val.z,
-        )
+        return _vector(type(self), self.val.x, self.val.y, self.val.z)
 
     def __contains__(self, val) -> bool:
         """Check to see if an axis is set to the given value."""
@@ -1160,7 +1055,7 @@ cdef class Vec:
         except (TypeError, ValueError):
             return NotImplemented
 
-        cdef Vec result = Vec.__new__(Vec)
+        cdef BaseVec result = pick_vec_type(type(obj_a), type(obj_b))
         result.val.x = vec_a.x + vec_b.x
         result.val.y = vec_a.y + vec_b.y
         result.val.z = vec_a.z + vec_b.z
@@ -1179,7 +1074,7 @@ cdef class Vec:
         except (TypeError, ValueError):
             return NotImplemented
 
-        cdef Vec result = Vec.__new__(Vec)
+        cdef BaseVec result = pick_vec_type(type(obj_a), type(obj_b))
         result.val.x = vec_a.x - vec_b.x
         result.val.y = vec_a.y - vec_b.y
         result.val.z = vec_a.z - vec_b.z
@@ -1187,25 +1082,38 @@ cdef class Vec:
 
     def __mul__(obj_a, obj_b):
         """Vector * scalar operation."""
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec
         cdef double scalar
         # Vector * Vector is disallowed.
         if isinstance(obj_a, (int, float)):
             # scalar * vector
-            scalar = obj_a
+            if type(obj_b) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_b) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             conv_vec(&vec.val, obj_b, scalar=False)
+            scalar = obj_a
             vec.val.x = scalar * vec.val.x
             vec.val.y = scalar * vec.val.y
             vec.val.z = scalar * vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector * scalar.
+            if type(obj_a) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_a) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
+
             conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x * scalar
             vec.val.y = vec.val.y * scalar
             vec.val.z = vec.val.z * scalar
 
-        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+        elif isinstance(obj_a, BaseVec) and isinstance(obj_b, BaseVec):
             raise TypeError('Cannot multiply 2 Vectors.')
         else:
             # Both vector-like or vector * something else.
@@ -1214,11 +1122,17 @@ cdef class Vec:
 
     def __truediv__(obj_a, obj_b):
         """Vector / scalar operation."""
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec
         cdef double scalar
         # Vector / Vector is disallowed.
         if isinstance(obj_a, (int, float)):
             # scalar / vector
+            if type(obj_b) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_b) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             scalar = obj_a
             conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar / vec.val.x
@@ -1226,6 +1140,12 @@ cdef class Vec:
             vec.val.z = scalar / vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector / scalar.
+            if type(obj_a) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_a) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x / scalar
@@ -1241,11 +1161,17 @@ cdef class Vec:
 
     def __floordiv__(obj_a, obj_b):
         """Vector // scalar operation."""
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec
         cdef double scalar
         # Vector // Vector is disallowed.
         if isinstance(obj_a, (int, float)):
             # scalar // vector
+            if type(obj_b) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_b) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             scalar = obj_a
             conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar // vec.val.x
@@ -1253,6 +1179,12 @@ cdef class Vec:
             vec.val.z = scalar // vec.val.z
         elif isinstance(obj_b, (int, float)):
             # vector // scalar.
+            if type(obj_a) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_a) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x // scalar
@@ -1268,181 +1200,65 @@ cdef class Vec:
 
     def __mod__(obj_a, obj_b):
         """Vector % scalar operation."""
-        cdef Vec vec = Vec.__new__(Vec)
+        cdef BaseVec vec
         cdef double scalar
         # Vector % Vector is disallowed.
         if isinstance(obj_a, (int, float)):
             # scalar % vector
+            if type(obj_b) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_b) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             scalar = obj_a
             conv_vec(&vec.val, obj_b, scalar=False)
             vec.val.x = scalar % vec.val.x
             vec.val.y = scalar % vec.val.y
             vec.val.z = scalar % vec.val.z
+            return vec
         elif isinstance(obj_b, (int, float)):
             # vector % scalar.
+            if type(obj_a) is Vec:
+                vec = Vec.__new__(Vec)
+            elif type(obj_a) is FrozenVec:
+                vec = FrozenVec.__new__(FrozenVec)
+            else:  # Both aren't us??
+                return NotImplemented
             conv_vec(&vec.val, obj_a, scalar=False)
             scalar = obj_b
             vec.val.x = vec.val.x % scalar
             vec.val.y = vec.val.y % scalar
             vec.val.z = vec.val.z % scalar
+            return vec
 
-        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+        elif isinstance(obj_a, BaseVec) and isinstance(obj_b, BaseVec):
             raise TypeError('Cannot modulus 2 Vectors.')
-        else:
-            # Both vector-like or vector * something else.
-            return NotImplemented
-        return vec
 
-    def __matmul__(first, second):
-        cdef mat_t temp
-        cdef Vec res
-        if isinstance(first, Vec):
-            res = Vec.__new__(Vec)
-            res.val = (<Vec>first).val
-            if isinstance(second, Angle):
-                _mat_from_angle(temp, &(<Angle>second).val)
-                vec_rot(&res.val, temp)
-                return res
-            elif isinstance(second, Matrix):
-                vec_rot(&res.val, (<Matrix>second).mat)
-                return res
         return NotImplemented
 
-    # In-place operators. Self is always a Vec.
-
-    def __iadd__(self, other):
-        """+= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef vec_t vec_other
-        try:
-            conv_vec(&vec_other, other, scalar=True)
-        except (TypeError, ValueError):
-            return NotImplemented
-
-        self.val.x += vec_other.x
-        self.val.y += vec_other.y
-        self.val.z += vec_other.z
-
-        return self
-
-    def __isub__(self, other):
-        """-= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef vec_t vec_other
-        try:
-            conv_vec(&vec_other, other, scalar=True)
-        except (TypeError, ValueError):
-            return NotImplemented
-
-        self.val.x -= vec_other.x
-        self.val.y -= vec_other.y
-        self.val.z -= vec_other.z
-
-        return self
-
-    def __imul__(self, other):
-        """*= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef double scalar
-        if isinstance(other, (int, float)):
-            scalar = other
-            self.val.x *= scalar
-            self.val.y *= scalar
-            self.val.z *= scalar
-            return self
-        elif isinstance(other, Vec):
-            raise TypeError("Cannot multiply 2 Vectors.")
-        else:
-            return NotImplemented
-
-    def __itruediv__(self, other):
-        """/= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef double scalar
-        if isinstance(other, (int, float)):
-            scalar = other
-            self.val.x /= scalar
-            self.val.y /= scalar
-            self.val.z /= scalar
-            return self
-        elif isinstance(other, Vec):
-            raise TypeError("Cannot divide 2 Vectors.")
-        else:
-            return NotImplemented
-
-    def __ifloordiv__(self, other):
-        """//= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef double scalar
-        if isinstance(other, (int, float)):
-            scalar = other
-            self.val.x //= scalar
-            self.val.y //= scalar
-            self.val.z //= scalar
-            return self
-        elif isinstance(other, Vec):
-            raise TypeError("Cannot floor-divide 2 Vectors.")
-        else:
-            return NotImplemented
-
-    def __imod__(self, other):
-        """%= operation.
-
-        Like the normal one except without duplication.
-        """
-        cdef double scalar
-        if isinstance(other, (int, float)):
-            scalar = other
-            self.val.x %= scalar
-            self.val.y %= scalar
-            self.val.z %= scalar
-            return self
-        elif isinstance(other, Vec):
-            raise TypeError("Cannot modulus 2 Vectors.")
-        else:
-            return NotImplemented
-
-    def __matmul__(self, other):
+    def __matmul__(first, second):
         """Rotate this vector by an angle or matrix."""
         cdef mat_t temp
-        cdef Vec res
-        if not isinstance(self, Vec):
+        cdef BaseVec res
+        if type(first) is Vec:
+            res = Vec.__new__(Vec)
+            res.val = (<Vec>first).val
+        elif type(first) is FrozenVec:
+            res = FrozenVec.__new__(FrozenVec)
+            res.val = (<FrozenVec>first).val
+        else:
             return NotImplemented
 
-        res = Vec.__new__(Vec)
-        res.val.x = (<Vec>self).val.x
-        res.val.y = (<Vec>self).val.y
-        res.val.z = (<Vec>self).val.z
-        if isinstance(other, Angle):
-            _mat_from_angle(temp, &(<Angle>other).val)
+        if isinstance(second, Angle):
+            _mat_from_angle(temp, &(<Angle>second).val)
             vec_rot(&res.val, temp)
-        elif isinstance(other, Matrix):
-            vec_rot(&res.val, (<Matrix>other).mat)
+        elif isinstance(second, Matrix):
+            vec_rot(&res.val, (<Matrix>second).mat)
         else:
             return NotImplemented
-        return res
 
-    def __imatmul__(self, other):
-        """@= operation: rotate the vector by a matrix/angle."""
-        cdef mat_t temp
-        if isinstance(other, Angle):
-            _mat_from_angle(temp, &(<Angle>other).val)
-            vec_rot(&self.val, temp)
-        elif isinstance(other, Matrix):
-            vec_rot(&self.val, (<Matrix>other).mat)
-        else:
-            return NotImplemented
-        return self
+        return res
 
     def __divmod__(obj_a, obj_b):
         """Divide the vector by a scalar, returning the result and remainder."""
@@ -1559,31 +1375,6 @@ cdef class Vec:
         else:
             raise SystemError(f'Unknown operation {op!r}' '!')
 
-    def max(self, other):
-        """Set this vector's values to the maximum of the two vectors."""
-        cdef vec_t vec
-        conv_vec(&vec, other, scalar=False)
-        if self.val.x < vec.x:
-            self.val.x = vec.x
-
-        if self.val.y < vec.y:
-            self.val.y = vec.y
-
-        if self.val.z < vec.z:
-            self.val.z = vec.z
-
-    def min(self, other):
-        """Set this vector's values to be the minimum of the two vectors."""
-        cdef vec_t vec
-        conv_vec(&vec, other, scalar=False)
-        if self.val.x > vec.x:
-            self.val.x = vec.x
-
-        if self.val.y > vec.y:
-            self.val.y = vec.y
-
-        if self.val.z > vec.z:
-            self.val.z = vec.z
 
     def __round__(self, object n=0):
         """Performing round() on a Vec rounds each axis."""
@@ -1641,6 +1432,7 @@ cdef class Vec:
         )
 
         return _vector(
+            type(self),
             norm.x * dot,
             norm.y * dot,
             norm.z * dot,
@@ -1664,25 +1456,9 @@ cdef class Vec:
         cdef Vec res
 
         conv_vec(&oth, other, False)
-        res = Vec.__new__(Vec)
+        res = _vector(type(self), 0.0, 0.0, 0.0)
         _vec_cross(&res.val, &self.val, &oth)
         return res
-
-    def localise(self, object origin, object angles=None) -> None:
-        """Shift this point to be local to the given position and angles.
-
-        This effectively translates local-space offsets to a global location,
-        given the parent's origin and angles.
-        """
-        cdef mat_t matrix
-        cdef vec_t offset
-        _conv_matrix(matrix, angles)
-        conv_vec(&offset, origin, scalar=False)
-        vec_rot(&self.val, matrix)
-        self.val.x += offset.x
-        self.val.y += offset.y
-        self.val.z += offset.z
-
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
@@ -1700,15 +1476,11 @@ cdef class Vec:
         """
         return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
 
-    def __repr__(self) -> str:
-        """Code required to reproduce this vector."""
-        return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
-
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
         if not format_spec:
             format_spec = 'g'
-        return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
+        return f"{self.val.x:{format_spec}} {self.val.y:{format_spec}} {self.val.z:{format_spec}}"
 
     def __iter__(self) -> VecIter:
         cdef VecIter viter = VecIter.__new__(VecIter)
@@ -1756,6 +1528,368 @@ cdef class Vec:
                     return self.val.z
 
         raise KeyError(f'Invalid axis {ind_obj!r}' '!')
+
+
+@cython.final
+cdef class FrozenVec(BaseVec):
+    """Immutable vector class. This cannot be changed once created, but is hashable."""
+    @property
+    def x(self):
+        """The X axis of the vector."""
+        return self.val.x
+
+    @property
+    def y(self):
+        """The Y axis of the vector."""
+        return self.val.y
+
+    @property
+    def z(self):
+        """The Z axis of the vector."""
+        return self.val.z
+
+    def copy(self):
+        """FrozenVec is immutable."""
+        return self
+
+    def __copy__(self):
+        """FrozenVec is immutable."""
+        return self
+
+    def __reduce__(self):
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return unpickle_fvec, (self.val.x, self.val.y, self.val.z)
+
+    def __repr__(self) -> str:
+        """Code required to reproduce this vector."""
+        return f"FrozenVec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+
+    def __hash__(self) -> int:
+        """Hashing a frozen vec is the same as hashing the tuple form."""
+        # TODO: inline tuple.__hash__
+        return hash((round(self.val.x, 6), round(self.val.y, 6), round(self.val.z, 6)))
+
+    def thaw(self) -> 'Vec':
+        """Return a mutable copy of this vector."""
+        return _vector_mut(self.val.x, self.val.y, self.val.z)
+
+
+@cython.final
+cdef class Vec:
+    """Mutable vector class. This has in-place operations for efficiency."""
+    @property
+    def x(self):
+        """The X axis of the vector."""
+        return self.val.x
+
+    @x.setter
+    def x(self, value):
+        self.val.x = value
+
+    @property
+    def y(self):
+        """The Y axis of the vector."""
+        return self.val.y
+
+    @y.setter
+    def y(self, value):
+        self.val.y = value
+
+    @property
+    def z(self):
+        """The Z axis of the vector."""
+        return self.val.z
+
+    @z.setter
+    def z(self, value):
+        self.val.z = value
+
+    def copy(self):
+        """Create a duplicate of this vector."""
+        return _vector_mut(self.val.x, self.val.y, self.val.z)
+
+    def __copy__(self):
+        """Create a duplicate of this vector."""
+        return _vector_mut(self.val.x, self.val.y, self.val.z)
+
+    def __deepcopy__(self, memodict=None):
+        """Create a duplicate of this vector."""
+        return _vector_mut(self.val.x, self.val.y, self.val.z)
+
+    def __reduce__(self):
+        return unpickle_mvec, (self.val.x, self.val.y, self.val.z)
+
+    def __repr__(self) -> str:
+        """Code required to reproduce this vector."""
+        return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+
+    def freeze(self) -> 'FrozenVec':
+        """Return a frozen copy of this vector."""
+        return _vector_frozen(self.val.x, self.val.y, self.val.z)
+
+    def rotate(
+        self,
+        double pitch: float=0.0,
+        double yaw: float=0.0,
+        double roll: float=0.0,
+        bint round_vals: bool=True,
+    ) -> Vec:
+        """Rotate a vector by a Source rotational angle.
+        Returns the vector, so you can use it in the form
+        val = Vec(0,1,0).rotate(p, y, r)
+
+        If round is True, all values will be rounded to 3 decimals
+        (since these calculations always have small inprecision.)
+
+        This is deprecated - use an Angle and the @ operator.
+        """
+        cdef vec_t angle
+        cdef mat_t matrix
+
+        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle() instead.", 1)
+
+        angle.x = pitch
+        angle.y = yaw
+        angle.z = roll
+
+        _mat_from_angle(matrix, &angle)
+        vec_rot(&self.val, matrix)
+
+        if round_vals:
+            self.val.x = round(self.val.x, ROUND_TO)
+            self.val.y = round(self.val.y, ROUND_TO)
+            self.val.z = round(self.val.z, ROUND_TO)
+
+        return self
+
+    def rotate_by_str(
+        self,
+        ang,
+        double pitch=0.0,
+        double yaw=0.0,
+        double roll=0.0,
+        bint round_vals=True,
+    ) -> Vec:
+        """Rotate a vector, using a string instead of a vector.
+
+        If the string cannot be parsed, use the passed in values instead.
+        This is deprecated - use Angle.from_str and the @ operator.
+        """
+        PyErr_WarnEx(DeprecationWarning, "Use vec @ Angle.from_str() instead.", 1)
+        cdef vec_t angle
+        cdef mat_t matrix
+
+        _parse_vec_str(&angle, ang, pitch, yaw, roll)
+        _mat_from_angle(matrix, &angle)
+        vec_rot(&self.val, matrix)
+
+        if round_vals:
+            self.val.x = round(self.val.x, ROUND_TO)
+            self.val.y = round(self.val.y, ROUND_TO)
+            self.val.z = round(self.val.z, ROUND_TO)
+
+        return self
+
+    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
+        """Produce a Source Engine angle with roll.
+
+        The z_normal should point in +z, and must be at right angles to this
+        vector.
+        This is deprecated, use Matrix.from_basis().to_angle().
+        Stride is no longer used.
+        """
+        cdef mat_t mat
+        cdef Angle ang
+        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.from_basis().to_angle()', 1)
+        ang = Angle.__new__(Angle)
+
+        _mat_from_basis(mat, x=self, z=z_norm, y=None)
+        _mat_to_angle(&ang.val, mat)
+        return ang
+
+    def rotation_around(self, double rot: float=90) -> Vec:
+        """For an axis-aligned normal, return the angles which rotate around it.
+
+        This is deprecated, use Matrix.axis_angle().to_angle() which works
+        for any orientation and has a consistent direction.
+        """
+        cdef Angle ang = Angle.__new__(Angle)
+        ang.val.x = ang.val.y = ang.val.z = 0.0
+        PyErr_WarnEx(DeprecationWarning, 'Use Matrix.axis_angle().to_angle()', 1)
+
+        if self.val.x != 0 and self.val.y == 0 and self.val.z == 0:
+            ang.val.z = norm_ang(math.copysign(rot, self.val.x))
+        elif self.val.x == 0 and self.val.y != 0 and self.val.z == 0:
+            ang.val.x = norm_ang(math.copysign(rot, self.val.y))
+        elif self.val.x == 0 and self.val.y == 0 and self.val.z != 0:
+            ang.val.y = norm_ang(math.copysign(rot, self.val.z))
+        else:
+            raise ValueError(
+                f'({self.val.x}, {self.val.y}, {self.val.z}) is '
+                'not an on-axis vector!'
+            )
+        return ang
+
+    # In-place operators. Self is always a Vec.
+
+    def __iadd__(self, other):
+        """+= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef vec_t vec_other
+        try:
+            conv_vec(&vec_other, other, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        self.val.x += vec_other.x
+        self.val.y += vec_other.y
+        self.val.z += vec_other.z
+
+        return self
+
+    def __isub__(self, other):
+        """-= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef vec_t vec_other
+        try:
+            conv_vec(&vec_other, other, scalar=True)
+        except (TypeError, ValueError):
+            return NotImplemented
+
+        self.val.x -= vec_other.x
+        self.val.y -= vec_other.y
+        self.val.z -= vec_other.z
+
+        return self
+
+    def __imul__(self, other):
+        """*= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.val.x *= scalar
+            self.val.y *= scalar
+            self.val.z *= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot multiply 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __itruediv__(self, other):
+        """/= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.val.x /= scalar
+            self.val.y /= scalar
+            self.val.z /= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot divide 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __ifloordiv__(self, other):
+        """//= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.val.x //= scalar
+            self.val.y //= scalar
+            self.val.z //= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot floor-divide 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __imod__(self, other):
+        """%= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.val.x %= scalar
+            self.val.y %= scalar
+            self.val.z %= scalar
+            return self
+        elif isinstance(other, Vec):
+            raise TypeError("Cannot modulus 2 Vectors.")
+        else:
+            return NotImplemented
+
+    def __imatmul__(self, other):
+        """@= operation: rotate the vector by a matrix/angle."""
+        cdef mat_t temp
+        if isinstance(other, Angle):
+            _mat_from_angle(temp, &(<Angle>other).val)
+            vec_rot(&self.val, temp)
+        elif isinstance(other, Matrix):
+            vec_rot(&self.val, (<Matrix>other).mat)
+        else:
+            return NotImplemented
+        return self
+
+    def max(self, other):
+        """Set this vector's values to the maximum of the two vectors."""
+        cdef vec_t vec
+        conv_vec(&vec, other, scalar=False)
+        if self.val.x < vec.x:
+            self.val.x = vec.x
+
+        if self.val.y < vec.y:
+            self.val.y = vec.y
+
+        if self.val.z < vec.z:
+            self.val.z = vec.z
+
+    def min(self, other):
+        """Set this vector's values to be the minimum of the two vectors."""
+        cdef vec_t vec
+        conv_vec(&vec, other, scalar=False)
+        if self.val.x > vec.x:
+            self.val.x = vec.x
+
+        if self.val.y > vec.y:
+            self.val.y = vec.y
+
+        if self.val.z > vec.z:
+            self.val.z = vec.z
+
+    def localise(self, object origin, object angles=None) -> None:
+        """Shift this point to be local to the given position and angles.
+
+        This effectively translates local-space offsets to a global location,
+        given the parent's origin and angles.
+        """
+        cdef mat_t matrix
+        cdef vec_t offset
+        _conv_matrix(matrix, angles)
+        conv_vec(&offset, origin, scalar=False)
+        vec_rot(&self.val, matrix)
+        self.val.x += offset.x
+        self.val.y += offset.y
+        self.val.z += offset.z
 
     def __setitem__(self, ind_obj, double val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -1968,15 +2102,15 @@ cdef class Matrix:
 
     def forward(self, mag: float = 1.0):
         """Return a vector with the given magnitude pointing along the X axis."""
-        return _vector(mag * self.mat[0][0], mag * self.mat[0][1], mag * self.mat[0][2])
+        return _vector_mut(mag * self.mat[0][0], mag * self.mat[0][1], mag * self.mat[0][2])
 
     def left(self, mag: float = 1.0):
         """Return a vector with the given magnitude pointing along the Y axis."""
-        return _vector(mag * self.mat[1][0], mag * self.mat[1][1], mag * self.mat[1][2])
+        return _vector_mut(mag * self.mat[1][0], mag * self.mat[1][1], mag * self.mat[1][2])
 
     def up(self, mag: float = 1.0):
         """Return a vector with the given magnitude pointing along the Z axis."""
-        return _vector(mag * self.mat[2][0], mag * self.mat[2][1], mag * self.mat[2][2])
+        return _vector_mut(mag * self.mat[2][0], mag * self.mat[2][1], mag * self.mat[2][2])
 
     def __getitem__(self, item):
         """Retrieve an individual matrix value by x, y position (0-2)."""
@@ -2506,7 +2640,7 @@ def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
     cdef quickhull.ConvexHull[double] result_hull = qhull.getConvexHull(values, False, False)
 
     cdef list vectors = [
-        _vector(v.x, v.y, v.z)
+        _vector_mut(v.x, v.y, v.z)
         for v in result_hull.getVertexBuffer()
     ]
     cdef vector[size_t] indices = result_hull.getIndexBuffer()

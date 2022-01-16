@@ -244,11 +244,12 @@ def test_with_axes(frozen_thawed_vec: VecClass):
 def test_vec_stringification(frozen_thawed_vec: VecClass):
     """Test the various string methods."""
     Vec = frozen_thawed_vec
+    name = 'FrozenVec' if Vec is vec_mod.FrozenVec else 'Vec'
     # Add on the edge case where '.0' needs to be kept.
     for x, y, z in iter_vec(VALID_NUMS + [-210.048]):
         v = Vec(x, y, z)
         assert str(v) == f'{x:g} {y:g} {z:g}'
-        assert repr(v) == f'Vec({x:g}, {y:g}, {z:g})'
+        assert repr(v) == f'{name}({x:g}, {y:g}, {z:g})'
         assert v.join() == f'{x:g}, {y:g}, {z:g}'
         assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
         assert format(v) == f'{x:g} {y:g} {z:g}'

@@ -560,29 +560,6 @@ class VecBase:
             roll,
         )
 
-    def to_angle_roll(self, z_norm: 'VecBase', stride: int=0) -> 'Angle':
-        """Produce a Source Engine angle with roll.
-
-        The z_normal should point in +z, and must be at right angles to this
-        vector.
-        This is deprecated, use Matrix.from_basis().to_angle().
-        Stride is no longer used.
-        """
-        warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
-        return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
-
-    def rotation_around(self, rot: float=90) -> 'Angle':
-        """For an axis-aligned normal, return the angles which rotate around it."""
-        warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
-        if self.x and not self.y and not self.z:
-            return Py_Angle(roll=math.copysign(rot, self.x))
-        elif self.y and not self.x and not self.z:
-            return Py_Angle(pitch=math.copysign(rot, self.y))
-        elif self.z and not self.x and not self.y:
-            return Py_Angle(yaw=math.copysign(rot, self.z))
-        else:
-            raise ValueError('Zero vector!')
-
     def __abs__(self) -> 'Vec':
         """Performing abs() on a Vec takes the absolute value of all axes."""
         return Py_Vec(
@@ -1281,6 +1258,29 @@ class Vec(VecBase, SupportsRound['Vec']):
             self.y = round(self.y, 6)
             self.z = round(self.z, 6)
         return self
+
+    def to_angle_roll(self, z_norm: 'VecBase', stride: int=0) -> 'Angle':
+        """Produce a Source Engine angle with roll.
+
+        The z_normal should point in +z, and must be at right angles to this
+        vector.
+        This is deprecated, use Matrix.from_basis().to_angle().
+        Stride is no longer used.
+        """
+        warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
+        return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
+
+    def rotation_around(self, rot: float=90) -> 'Angle':
+        """For an axis-aligned normal, return the angles which rotate around it."""
+        warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
+        if self.x and not self.y and not self.z:
+            return Py_Angle(roll=math.copysign(rot, self.x))
+        elif self.y and not self.x and not self.z:
+            return Py_Angle(pitch=math.copysign(rot, self.y))
+        elif self.z and not self.x and not self.y:
+            return Py_Angle(yaw=math.copysign(rot, self.z))
+        else:
+            raise ValueError('Zero vector!')
 
     def max(self, other: AnyVec) -> None:
         """Set this vector's values to the maximum of the two vectors."""
@@ -2165,6 +2165,10 @@ try:
 except ImportError:
     pass
 else:
-    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix', 'lerp']:
+    for _name in [
+        'Vec', 'FrozenVec',
+        'Angle', 'Matrix',
+        'parse_vec_str', 'to_matrix', 'lerp',
+    ]:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
     del _glob, _name, _math
