@@ -12,6 +12,7 @@ from srctools.math import (
 from srctools import math as vec_mod
 import pytest
 import math
+import builtins
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.
@@ -69,12 +70,14 @@ def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON):
     pytest.fail(new_msg)
 
 
-def assert_vec(vec, x, y, z, msg='', tol=EPSILON):
+def assert_vec(vec, x, y, z, msg='', tol=EPSILON, type=None):
     """Asserts that Vec is equal to (x,y,z)."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    assert type(vec).__name__ in ('Vec', 'FrozenVec')
+    assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec')
+    if type is not None:
+        assert builtins.type(vec) is type
 
     if not math.isclose(vec.x, x, abs_tol=tol):
         failed = 'x'

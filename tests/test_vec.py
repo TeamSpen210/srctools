@@ -195,6 +195,9 @@ def test_thaw_freezing(py_c_vec: PyCVec):
         assert_vec(mut, x, y, z)
         assert_vec(froze, x, y, z)
         assert_vec(thaw, x, y, z)
+        # Test calling it on a temporary, in case this is optimised.
+        assert_vec(Vec(x, y, z).freeze(), x, y, z)
+        assert_vec(FrozenVec(x, y, z).thaw(), x, y, z)
 
 
 @pytest.mark.parametrize('value', [
@@ -482,10 +485,11 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             y1*z2-z1*y2,
             z1*x2-x1*z2,
             x1*y2-y1*x2,
+            type=Vec,
         )
         # Ensure they haven't modified the originals
-        assert_vec(vec1, x1, y1, z1)
-        assert_vec(vec2, x2, y2, z2)
+        assert_vec(vec1, x1, y1, z1, type=Vec)
+        assert_vec(vec2, x2, y2, z2, type=Vec)
 
         # Addition and subtraction
         for op_name, op_func, op_ifunc in operators:
@@ -497,6 +501,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             assert_vec(
                 op_func(vec1, vec2),
                 *result,
+                type=Vec,
                 msg='Vec({} {} {}) {} Vec({} {} {})'.format(
                     x1, y1, z1, op_name, x2, y2, z2,
                 )
@@ -508,6 +513,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             assert_vec(
                 op_func(vec1, Vec_tuple(x2, y2, z2)),
                 *result,
+                type=Vec,
                 msg='Vec({} {} {}) {} Vec_tuple({} {} {})'.format(
                     x1, y1, z1, op_name, x2, y2, z2,
                 )
@@ -517,6 +523,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             assert_vec(
                 op_func(Vec_tuple(x1, y1, z1), vec2),
                 *result,
+                type=Vec,
                 msg='Vec_tuple({} {} {}) {} Vec({} {} {})'.format(
                     x1, y1, z1, op_name, x2, y2, z2,
                 )
@@ -602,31 +609,31 @@ def test_scalar_zero(py_c_vec: PyCVec):
         with raises_zero_div: vec %= 0.0
 
 
-def test_divmod_vec_scalar(py_c_vec):
+def test_divmod_vec_scalar(frozen_thawed_vec):
     """Test divmod(vec, scalar)."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     for x, y, z in iter_vec(VALID_ZERONUMS):
         for num in VALID_NUMS:
             div, mod = divmod(Vec(x, y, z), num)
-            assert_vec(div, x // num, y // num, z // num)
-            assert_vec(mod, x % num, y % num, z % num)
+            assert_vec(div, x // num, y // num, z // num, type=Vec)
+            assert_vec(mod, x % num, y % num, z % num, type=Vec)
 
 
 def test_divmod_scalar_vec(py_c_vec):
     """Test divmod(scalar, vec)."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     for x, y, z in iter_vec(VALID_NUMS):
         for num in VALID_ZERONUMS:
             div, mod = divmod(num, Vec(x, y, z))
-            assert_vec(div, num // x, num // y, num // z)
-            assert_vec(mod, num % x, num % y, num % z)
+            assert_vec(div, num // x, num // y, num // z, type=Vec)
+            assert_vec(mod, num % x, num % y, num % z, type=Vec)
 
 
-def test_vector_mult_fail(py_c_vec):
+def test_vector_mult_fail(frozen_thawed_vec):
     """Test *, /, //, %, divmod always fails between vectors."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     funcs = [
         ('*', op.mul),
@@ -668,9 +675,9 @@ def test_vector_mult_fail(py_c_vec):
                     pytest.fail(msg)
 
 
-def test_order(py_c_vec):
+def test_order(frozen_thawed_vec):
     """Test ordering operations (>, <, <=, >=, ==)."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     comp_ops = [op.eq, op.le, op.lt, op.ge, op.gt, op.ne]
 
@@ -706,9 +713,9 @@ def test_order(py_c_vec):
             test(num, num, num, num, num, 0)
 
 
-def test_binop_fail(py_c_vec):
+def test_binop_fail(frozen_thawed_vec):
     """Test binary operations with invalid operands."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     vec = Vec()
     operations = [
@@ -734,9 +741,9 @@ def test_binop_fail(py_c_vec):
             pytest.raises(TypeError, operation, fail_object, vec)
 
 
-def test_axis(py_c_vec):
+def test_axis(frozen_thawed_vec):
     """Test the Vec.axis() function."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     for num in VALID_NUMS:
         assert Vec(num, 0, 0).axis() == 'x', num
@@ -772,9 +779,9 @@ def test_axis(py_c_vec):
         Vec().axis()
 
 
-def test_other_axes(py_c_vec):
+def test_other_axes(frozen_thawed_vec):
     """Test Vec.other_axes()."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     bad_args = ['p', '', 0, 1, 2, False, Vec(2, 3, 5)]
     for x, y, z in iter_vec(VALID_NUMS):
@@ -787,17 +794,17 @@ def test_other_axes(py_c_vec):
             with raises_keyerror: vec.other_axes(invalid)
 
 
-def test_abs(py_c_vec):
+def test_abs(frozen_thawed_vec):
     """Test the function of abs(Vec)."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     for x, y, z in iter_vec(VALID_ZERONUMS):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
 
 
-def test_bool(py_c_vec):
+def test_bool(frozen_thawed_vec):
     """Test bool() applied to Vec."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     # Empty vector is False
     assert not Vec(0, 0, 0)
@@ -813,57 +820,57 @@ def test_bool(py_c_vec):
         assert Vec(val, val, val)
 
 
-def test_iter_line(py_c_vec):
+def test_iter_line(frozen_thawed_vec):
     """Test Vec.iter_line()"""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
     for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11)):
-        assert_vec(pos, x, 5.82, -6.35)
+        assert_vec(pos, x, 5.82, -6.35, type=Vec)
     for pos, y in zip(Vec(-4.36, 10.82, -6.35).iter_line(Vec(-4.36, 5.82, -6.35), 1), range(10, 4, -1)):
-        assert_vec(pos, -4.36, y + 0.82, -6.35)
+        assert_vec(pos, -4.36, y + 0.82, -6.35, type=Vec)
     for pos, z in zip(Vec(3.78, 12.98, -5.65).iter_line(Vec(3.78, 12.98, 6.35), 1), range(-6, 7)):
-        assert_vec(pos, 3.78, 12.98, z + 0.35)
+        assert_vec(pos, 3.78, 12.98, z + 0.35, type=Vec)
 
 
-def test_iter_grid(py_c_vec):
+def test_iter_grid(frozen_thawed_vec):
     """Test Vec.iter_grid()."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
     it = Vec.iter_grid(Vec(35, 59.99999, 90), Vec(40, 70, 110.001), 5)
 
-    assert_vec(next(it), 35, 60, 90)
-    assert_vec(next(it), 35, 60, 95)
-    assert_vec(next(it), 35, 60, 100)
-    assert_vec(next(it), 35, 60, 105)
-    assert_vec(next(it), 35, 60, 110)
+    assert_vec(next(it), 35, 60, 90, type=Vec)
+    assert_vec(next(it), 35, 60, 95, type=Vec)
+    assert_vec(next(it), 35, 60, 100, type=Vec)
+    assert_vec(next(it), 35, 60, 105, type=Vec)
+    assert_vec(next(it), 35, 60, 110, type=Vec)
 
-    assert_vec(next(it), 35, 65, 90)
-    assert_vec(next(it), 35, 65, 95)
-    assert_vec(next(it), 35, 65, 100)
-    assert_vec(next(it), 35, 65, 105)
-    assert_vec(next(it), 35, 65, 110)
+    assert_vec(next(it), 35, 65, 90, type=Vec)
+    assert_vec(next(it), 35, 65, 95, type=Vec)
+    assert_vec(next(it), 35, 65, 100, type=Vec)
+    assert_vec(next(it), 35, 65, 105, type=Vec)
+    assert_vec(next(it), 35, 65, 110, type=Vec)
 
-    assert_vec(next(it), 35, 70, 90)
-    assert_vec(next(it), 35, 70, 95)
-    assert_vec(next(it), 35, 70, 100)
-    assert_vec(next(it), 35, 70, 105)
-    assert_vec(next(it), 35, 70, 110)
+    assert_vec(next(it), 35, 70, 90, type=Vec)
+    assert_vec(next(it), 35, 70, 95, type=Vec)
+    assert_vec(next(it), 35, 70, 100, type=Vec)
+    assert_vec(next(it), 35, 70, 105, type=Vec)
+    assert_vec(next(it), 35, 70, 110, type=Vec)
 
-    assert_vec(next(it), 40, 60, 90)
-    assert_vec(next(it), 40, 60, 95)
-    assert_vec(next(it), 40, 60, 100)
-    assert_vec(next(it), 40, 60, 105)
-    assert_vec(next(it), 40, 60, 110)
+    assert_vec(next(it), 40, 60, 90, type=Vec)
+    assert_vec(next(it), 40, 60, 95, type=Vec)
+    assert_vec(next(it), 40, 60, 100, type=Vec)
+    assert_vec(next(it), 40, 60, 105, type=Vec)
+    assert_vec(next(it), 40, 60, 110, type=Vec)
 
-    assert_vec(next(it), 40, 65, 90)
-    assert_vec(next(it), 40, 65, 95)
-    assert_vec(next(it), 40, 65, 100)
-    assert_vec(next(it), 40, 65, 105)
-    assert_vec(next(it), 40, 65, 110)
+    assert_vec(next(it), 40, 65, 90, type=Vec)
+    assert_vec(next(it), 40, 65, 95, type=Vec)
+    assert_vec(next(it), 40, 65, 100, type=Vec)
+    assert_vec(next(it), 40, 65, 105, type=Vec)
+    assert_vec(next(it), 40, 65, 110, type=Vec)
 
-    assert_vec(next(it), 40, 70, 90)
-    assert_vec(next(it), 40, 70, 95)
-    assert_vec(next(it), 40, 70, 100)
-    assert_vec(next(it), 40, 70, 105)
-    assert_vec(next(it), 40, 70, 110)
+    assert_vec(next(it), 40, 70, 90, type=Vec)
+    assert_vec(next(it), 40, 70, 95, type=Vec)
+    assert_vec(next(it), 40, 70, 100, type=Vec)
+    assert_vec(next(it), 40, 70, 105, type=Vec)
+    assert_vec(next(it), 40, 70, 110, type=Vec)
 
     with pytest.raises(StopIteration):
         next(it)
@@ -969,9 +976,9 @@ def test_setitem(py_c_vec):
         assert_vec(vec, 0, 0, 0, 'Invalid key set something!')
 
 
-def test_vec_constants(py_c_vec):
+def test_vec_constants(frozen_thawed_vec):
     """Check some of the constants assigned to Vec."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     assert Vec.N == Vec.north == Vec(y=1)
     assert Vec.S == Vec.south == Vec(y=-1)
@@ -1038,18 +1045,21 @@ ROUND_VALS = [
 ]
 
 
-def test_round(py_c_vec):
+def test_round(frozen_thawed_vec):
     """Test round(Vec)."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     for from_val, to_val in ROUND_VALS:
-        assert_vec(round(Vec(from_val, from_val, from_val)), to_val, to_val, to_val)
+        orig = Vec(from_val, from_val, from_val)
+        rnd = round(orig)
+        assert_vec(rnd, to_val, to_val, to_val, type=Vec)
+        assert orig is not rnd
 
     # Check it doesn't mix up orders..
     for val in VALID_NUMS:
-        assert_vec(round(Vec(val, 0, 0)), round(val), 0, 0)
-        assert_vec(round(Vec(0, val, 0)), 0, round(val), 0)
-        assert_vec(round(Vec(0, 0, val)), 0, 0, round(val))
+        assert_vec(round(Vec(val, 0, 0)), round(val), 0, 0, type=Vec)
+        assert_vec(round(Vec(0, val, 0)), 0, round(val), 0, type=Vec)
+        assert_vec(round(Vec(0, 0, val)), 0, 0, round(val), type=Vec)
 
 MINMAX_VALUES = [
     (0, 0),
@@ -1086,9 +1096,9 @@ def test_minmax(py_c_vec):
             assert vec_a[axis] == max_val, (a, b, axis, max_val)
 
 
-def test_copy_pickle(py_c_vec):
+def test_copy_pickle(frozen_thawed_vec):
     """Test pickling and unpickling and copying Vectors."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     test_data = 1.5, 0.2827, 2.3464545636e47
 
@@ -1105,28 +1115,31 @@ def test_copy_pickle(py_c_vec):
     assert orig is not cpy
     assert cpy_meth is not copy.copy(orig)
     assert orig == cpy
+    assert type(cpy) == Vec
 
     dcpy = copy.deepcopy(orig)
 
     assert orig is not dcpy
     assert orig == dcpy
+    assert type(dcpy) == Vec
 
     pick = pickle.dumps(orig)
     thaw = pickle.loads(pick)
 
     assert orig is not thaw
     assert orig == thaw
+    assert type(thaw) == Vec
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    cy_pick = pickle.dumps(Cy_Vec(test_data))
-    py_pick = pickle.dumps(Py_Vec(test_data))
+    cy_pick = pickle.dumps(getattr(vec_mod, 'Cy_' + Vec.__name__)(test_data))
+    py_pick = pickle.dumps(getattr(vec_mod, 'Py_' + Vec.__name__)(test_data))
 
     assert cy_pick == py_pick == pick
 
 
-def test_bbox(py_c_vec: PyCVec):
+def test_bbox(frozen_thawed_vec: VecClass) -> None:
     """Test the functionality of Vec.bbox()."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
 
     # No arguments
     with raises_typeerror:
@@ -1189,6 +1202,7 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
     Use a compiled map to check the functionality of Vec.rotate().
     """
     Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
     Matrix = vec_mod.Matrix
     Angle = vec_mod.Angle
     from srctools.bsp import BSP
@@ -1209,9 +1223,11 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
 
         msg = '{} @ {} => ({}, {}, {})'.format(local_vec, angles, x, y, z)
 
-        assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3)
-        assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3)
-        assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3)
+        assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=Vec)
+        assert_vec(FrozenVec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=FrozenVec)
+        # Since these two are deprecated, FrozenVec doesn't have them.
+        assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3, type=Vec)
+        assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3, type=Vec)
 
 
 def test_cross_product_axes(frozen_thawed_vec: VecClass):
