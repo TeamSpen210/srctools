@@ -872,19 +872,19 @@ class VecBase:
     def in_bbox(self, a: AnyVec, b: AnyVec) -> bool:
         """Check if this point is inside the specified bounding box."""
         return (
-            min(a[0], b[0]) <= self.x <= max(a[0], b[0]) and
-            min(a[1], b[1]) <= self.y <= max(a[1], b[1]) and
-            min(a[2], b[2]) <= self.z <= max(a[2], b[2])
+            min(a[0], b[0]) - 1e-6 <= self.x <= max(a[0], b[0]) + 1e-6 and
+            min(a[1], b[1]) - 1e-6 <= self.y <= max(a[1], b[1]) + 1e-6 and
+            min(a[2], b[2]) - 1e-6 <= self.z <= max(a[2], b[2]) + 1e-6
         )
 
     @staticmethod
     def bbox_intersect(min1: 'VecBase', max1: 'VecBase', min2: 'VecBase', max2: 'VecBase') -> bool:
         """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
-        if max1.x < min2.x or max2.x < min1.x:
+        if (min2.x - max1.x) > 1e-6 or (min1.x - max2.x) > 1e-6:
             return False
-        if max1.y < min2.y or max2.y < min1.y:
+        if (min2.y - max1.y) > 1e-6 or (min1.y - max2.y) > 1e-6:
             return False
-        if max1.z < min2.z or max2.z < min1.z:
+        if (min2.z - max1.z) > 1e-6 or (min1.z - max2.z) > 1e-6:
             return False
         return True
 

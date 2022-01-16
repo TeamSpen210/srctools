@@ -982,12 +982,12 @@ cdef class BaseVec:
         )
 
     @staticmethod
-    def bbox_intersect(min1: Vec, max1: Vec, min2: Vec, max2: Vec) -> bool:
+    def bbox_intersect(min1: BaseVec, max1: BaseVec, min2: BaseVec, max2: BaseVec) -> bool:
         """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
         return not (
-            max1.val.x < min2.val.x or max2.val.x < min1.val.x or
-            max1.val.y < min2.val.y or max2.val.y < min1.val.y or
-            max1.val.z < min2.val.z or max2.val.z < min1.val.z
+            (min2.val.x - max1.val.x) > TOL or (min1.val.x - max2.val.x) > TOL or
+            (min2.val.y - max1.val.y) > TOL or (min1.val.y - max2.val.y) > TOL or
+            (min2.val.z - max1.val.z) > TOL or (min1.val.z - max2.val.z) > TOL
         )
 
     def as_tuple(self) -> Tuple[float, float, float]:
@@ -1450,10 +1450,10 @@ cdef class BaseVec:
             self.val.z * oth.z
         )
 
-    def cross(self, other) -> Vec:
+    def cross(self, other):
         """Return the cross product of both Vectors."""
         cdef vec_t oth
-        cdef Vec res
+        cdef BaseVec res
 
         conv_vec(&oth, other, False)
         res = _vector(type(self), 0.0, 0.0, 0.0)
