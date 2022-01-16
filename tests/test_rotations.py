@@ -7,7 +7,6 @@ from typing import NamedTuple, List
 import pytest
 
 from helpers import *
-from srctools import Vec
 
 
 class RotationData(NamedTuple):
@@ -56,7 +55,9 @@ def rotation_data() -> List[RotationData]:
 
 def test_vec_identities(py_c_vec: PyCVec) -> None:
     """Check that vectors in the same axis as the rotation don't get spun."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     for ang in range(0, 360, 13):
         # Check the two constructors match.
@@ -73,7 +74,8 @@ def test_vec_identities(py_c_vec: PyCVec) -> None:
 
 def test_vec_basic_yaw(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in yaw."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
 
     assert_vec(Vec(200, 0, 0) @ Matrix.from_yaw(0), 200, 0, 0)
     assert_vec(Vec(0, 150, 0) @ Matrix.from_yaw(0), 0, 150, 0)
@@ -90,7 +92,8 @@ def test_vec_basic_yaw(py_c_vec: PyCVec) -> None:
 
 def test_vec_basic_pitch(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in pitch."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
 
     assert_vec(Vec(200, 0, 0) @ Matrix.from_pitch(0), 200, 0, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_pitch(0), 0, 0, 150)
@@ -107,7 +110,8 @@ def test_vec_basic_pitch(py_c_vec: PyCVec) -> None:
 
 def test_vec_basic_roll(py_c_vec: PyCVec) -> None:
     """Check each direction rotates appropriately in roll."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
 
     assert_vec(Vec(0, 200, 0) @ Matrix.from_roll(0), 0, 200, 0)
     assert_vec(Vec(0, 0, 150) @ Matrix.from_roll(0), 0, 0, 150)
@@ -124,7 +128,9 @@ def test_vec_basic_roll(py_c_vec: PyCVec) -> None:
 
 def test_ang_matrix_roundtrip(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     for p, y, r in iter_vec(range(0, 360, 90)):
         vert = (Vec(x=1) @ Angle(p, y, r)).z
@@ -137,7 +143,7 @@ def test_ang_matrix_roundtrip(py_c_vec: PyCVec) -> None:
 
 def test_to_angle_roundtrip(py_c_vec: PyCVec) -> None:
     """Check Vec.to_angle() roundtrips."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
 
     for x, y, z in iter_vec((-1, 0, 1)):
         if x == y == z == 0:
@@ -149,7 +155,9 @@ def test_to_angle_roundtrip(py_c_vec: PyCVec) -> None:
 
 def test_matrix_roundtrip_pitch(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     # We can't directly check the resulted value, some of these produce
     # gimbal lock and can't be recovered.
@@ -166,7 +174,7 @@ def test_matrix_roundtrip_pitch(py_c_vec: PyCVec) -> None:
 
 def test_matrix_roundtrip_yaw(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Matrix = vec_mod.Matrix
 
     for yaw in range(0, 360, 45):
         mat = Matrix.from_yaw(yaw)
@@ -175,7 +183,7 @@ def test_matrix_roundtrip_yaw(py_c_vec: PyCVec) -> None:
 
 def test_matrix_roundtrip_roll(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Matrix = vec_mod.Matrix
 
     for roll in range(0, 360, 45):
         if roll in (90, -90):
@@ -187,7 +195,7 @@ def test_matrix_roundtrip_roll(py_c_vec: PyCVec) -> None:
 
 def test_single_axis(py_c_vec: PyCVec) -> None:
     """In each axis, two rotations should be the same as adding."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = vec_mod.Angle
 
     # Pitch gives gimbal lock and breaks recovery of the values.
     for axis in ('yaw', 'roll'):
@@ -207,7 +215,9 @@ def test_single_axis(py_c_vec: PyCVec) -> None:
 
 def test_axis_angle(py_c_vec: PyCVec) -> None:
     """Test Matrix.axis_angle() computes the 6 basis vectors correctly."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     def test(axis, equiv_ang: Py_Angle):
         for ang in range(0, 360, 15):
@@ -241,7 +251,7 @@ def old_rotate(
     pitch: float=0.0,
     yaw: float=0.0,
     roll: float=0.0
-) -> 'Vec':
+) -> Py_Vec:
     """Code from an earlier version of Vec, that does rotation."""
     # pitch is in the y axis
     # yaw is the z axis
@@ -284,7 +294,9 @@ def old_rotate(
 
 def test_old_rotation(py_c_vec: PyCVec) -> None:
     """Verify that the code matches the results from the earlier Vec.rotate code."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     for pitch in range(0, 360, 15):
         for yaw in range(0, 360, 15):
@@ -310,7 +322,9 @@ def test_old_rotation(py_c_vec: PyCVec) -> None:
 # noinspection PyArgumentList
 def test_bad_from_basis(py_c_vec: PyCVec) -> None:
     """Test invalid arguments to Matrix.from_basis()"""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+
     v = Vec(0, 1, 0)
     with pytest.raises(TypeError):
         Matrix.from_basis()
@@ -327,7 +341,9 @@ def test_rotating_vectors(
     rotation_data: List[RotationData],
 ) -> None:
     """Test our rotation code with engine rotation data."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     X = Vec(x=1)
     Y = Vec(y=1)
@@ -348,7 +364,9 @@ def test_matmul_direct(py_c_vec: PyCVec) -> None:
 
     Normally __rmatmul__ isn't going to be called, so it may be incorrect.
     """
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     vec = Vec(34, 72, -10)
     ang = Angle(10, 30, 70)
@@ -365,7 +383,9 @@ def test_matmul_direct(py_c_vec: PyCVec) -> None:
 
 def test_inplace_rotation(py_c_vec: PyCVec) -> None:
     """Test inplace rotation operates correctly."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     vec = Vec(34, 72, -10)
     ang = Angle(10, 30, 70)
@@ -395,7 +415,7 @@ def test_matrix_getters(
     rotation_data: List[RotationData],
 ) -> None:
     """Test functions which return the basis vectors for the matrix."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Matrix = vec_mod.Matrix
     for data in rotation_data:
         mat = Matrix.from_angle(*data.angle)
 
@@ -411,7 +431,7 @@ def test_matrix_getters_with_mag(
     mag: float,
 ) -> None:
     """Test computing the basis vector with a magnitude."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Matrix = vec_mod.Matrix
     for data in rotation_data:
         mat = Matrix.from_angle(*data.angle)
 
@@ -425,7 +445,8 @@ def test_rotating_vec_tuples(
     rotation_data: List[RotationData],
 ) -> None:
     """Test rotation is permitted with 3-tuples"""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     for data in rotation_data:
         ang = Angle(data.angle)
@@ -445,11 +466,9 @@ def test_rotated_matrix_data(
     rotation_data: List[RotationData],
 ) -> None:
     """Test our rotation code with engine rotation data."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-
-    X = Vec(x=1)
-    Y = Vec(y=1)
-    Z = Vec(z=1)
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     for data in rotation_data:
         mat = Matrix.from_angle(*data.angle)
@@ -470,7 +489,10 @@ def test_rotated_matrix_data(
 
 def test_from_basis_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
     """Test matrix.from_basis() reproduces the matrix."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
+
     for data in rotation_data:
         mat = Matrix.from_angle(*data.angle)
 
@@ -491,7 +513,8 @@ def test_from_basis_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
 
 def test_vec_cross_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
     """Test Vec.cross() with engine rotation data."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Vec = vec_mod.Vec
+
     for data in rotation_data:
         x = Vec(data.for_x, data.for_y, data.for_z)
         y = Vec(data.left_x, data.left_y, data.left_z)
@@ -512,8 +535,8 @@ def test_vec_cross_w_engine_data(py_c_vec: PyCVec, rotation_data) -> None:
 
 def test_copy_pickle(py_c_vec: PyCVec) -> None:
     """Test pickling, unpickling and copying Matrixes."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    vec_mod.Matrix = Matrix
+    Matrix = vec_mod.Matrix
+    Angle = vec_mod.Angle
 
     # Some random rotation, so all points are different.
     test_data = (38, 42, 63)

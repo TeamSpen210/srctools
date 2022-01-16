@@ -74,7 +74,7 @@ def assert_vec(vec, x, y, z, msg='', tol=EPSILON):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    assert type(vec).__name__ == 'Vec'
+    assert type(vec).__name__ in ('Vec', 'FrozenVec')
 
     if not math.isclose(vec.x, x, abs_tol=tol):
         failed = 'x'
@@ -125,24 +125,24 @@ def py_c_vec(request):
     """Run the test twice, for the Python and C versions."""
     orig_vec = vec_mod.Vec
     orig_fvec = vec_mod.FrozenVec
-    orig_Matrix = vec_mod.Matrix
     orig_Angle = vec_mod.Angle
+    orig_Matrix = vec_mod.Matrix
     orig_parse = vec_mod.parse_vec_str
 
     try:
         (
             vec_mod.Vec,
             vec_mod.FrozenVec,
-            vec_mod.Matrix,
             vec_mod.Angle,
+            vec_mod.Matrix,
             vec_mod.parse_vec_str,
         ) = request.param
         yield request.param
     finally:
         vec_mod.Vec = orig_vec
         vec_mod.FrozenVec = orig_fvec
-        vec_mod.Matrix = orig_Matrix
         vec_mod.Angle = orig_Angle
+        vec_mod.Matrix = orig_Matrix
         vec_mod.parse_vec_str = orig_parse
 
 

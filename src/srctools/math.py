@@ -71,7 +71,7 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
     return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
 
-def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(val: Union[str, 'VecBase', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
@@ -82,7 +82,7 @@ def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple
      """
     if isinstance(val, str):
         pass  # Fast path to skip the below code.
-    elif isinstance(val, Py_Vec):
+    elif isinstance(val, VecBase):
         return val.x, val.y, val.z
     elif isinstance(val, Py_Angle):
         return val.pitch, val.yaw, val.roll
@@ -383,7 +383,7 @@ class VecBase:
         raise NotImplementedError
 
     @classmethod
-    def from_str(cls: Type[VecT], val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> VecT:
+    def from_str(cls: Type[VecT], val: Union[str, 'VecBase'], x: float=0.0, y: float=0.0, z: float=0.0) -> VecT:
         """Convert a string in the form '(4 6 -4)' into a Vector.
 
          If the string is unparsable, this uses the defaults (x,y,z).
