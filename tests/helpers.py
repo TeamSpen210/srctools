@@ -1,6 +1,6 @@
 """Helpers for performing tests."""
 import itertools
-from typing import Type, Tuple, Callable, Iterable, Iterator
+from typing import Type, Tuple, Callable, Iterable, Iterator, TypeVar
 
 from srctools.math import (
     Py_Vec, Cy_Vec,
@@ -25,9 +25,9 @@ VALID_ZERONUMS = VALID_NUMS + [0, -0]
 EPSILON = 1e-6
 
 PyCVec = Tuple[Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix], Callable[..., Tuple[float, float, float]]]
+T = TypeVar('T')
 
-
-def iter_vec(nums: Iterable[float]) -> Iterator[Tuple[float, float, float]]:
+def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
     for x in nums:
         for y in nums:
             for z in nums:
