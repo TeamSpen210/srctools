@@ -620,7 +620,7 @@ def test_divmod_vec_scalar(frozen_thawed_vec):
             assert_vec(mod, x % num, y % num, z % num, type=Vec)
 
 
-def test_divmod_scalar_vec(py_c_vec):
+def test_divmod_scalar_vec(frozen_thawed_vec):
     """Test divmod(scalar, vec)."""
     Vec = frozen_thawed_vec
 
@@ -631,48 +631,47 @@ def test_divmod_scalar_vec(py_c_vec):
             assert_vec(mod, num % x, num % y, num % z, type=Vec)
 
 
-def test_vector_mult_fail(frozen_thawed_vec):
+@pytest.mark.parametrize('name', 'func', [
+    ('*', op.mul),
+    ('/', op.truediv),
+    ('//', op.floordiv),
+    ('%', op.mod),
+    ('*=', op.imul),
+    ('/=', op.itruediv),
+    ('//=', op.ifloordiv),
+    ('%=', op.imod),
+    ('divmod', divmod),
+])
+def test_vector_mult_fail(frozen_thawed_vec, name, func):
     """Test *, /, //, %, divmod always fails between vectors."""
     Vec = frozen_thawed_vec
 
-    funcs = [
-        ('*', op.mul),
-        ('/', op.truediv),
-        ('//', op.floordiv),
-        ('%', op.mod),
-        ('*=', op.imul),
-        ('/=', op.itruediv),
-        ('//=', op.ifloordiv),
-        ('%=', op.imod),
-        ('divmod', divmod),
-    ]
-    for name, func in funcs:
-        msg = 'Expected TypError from vec {} vec'.format(name)
-        for num in VALID_ZERONUMS:
-            for num2 in VALID_NUMS:
-                # Test the whole value, then each axis individually
-                with raises_typeerror:
-                    divmod(Vec(num, num, num), Vec(num2, num2, num2))
-                    pytest.fail(msg)
+    msg = 'Expected TypError from vec {} vec'.format(name)
+    for num in VALID_ZERONUMS:
+        for num2 in VALID_NUMS:
+            # Test the whole value, then each axis individually
+            with raises_typeerror:
+                func(Vec(num, num, num), Vec(num2, num2, num2))
+                pytest.fail(msg)
 
-                with raises_typeerror:
-                    divmod(Vec(0, num, num), Vec(num2, num2, num2))
-                    pytest.fail(msg)
-                with raises_typeerror:
-                    divmod(Vec(num, 0, num), Vec(num2, num2, num2))
-                    pytest.fail(msg)
-                with raises_typeerror:
-                    divmod(Vec(num, num, 0), Vec(num2, num2, num2))
-                    pytest.fail(msg)
-                with raises_typeerror:
-                    divmod(Vec(num, num, num), Vec(0, num2, num2))
-                    pytest.fail(msg)
-                with raises_typeerror:
-                    divmod(Vec(num, num, num), Vec(num2, 0, num2))
-                    pytest.fail(msg)
-                with raises_typeerror:
-                    divmod(Vec(num, num, num), Vec(num2, num2, 0))
-                    pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(0, num, num), Vec(num2, num2, num2))
+                pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(num, 0, num), Vec(num2, num2, num2))
+                pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(num, num, 0), Vec(num2, num2, num2))
+                pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(num, num, num), Vec(0, num2, num2))
+                pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(num, num, num), Vec(num2, 0, num2))
+                pytest.fail(msg)
+            with raises_typeerror:
+                func(Vec(num, num, num), Vec(num2, num2, 0))
+                pytest.fail(msg)
 
 
 def test_order(frozen_thawed_vec):
@@ -1096,9 +1095,10 @@ def test_minmax(py_c_vec):
             assert vec_a[axis] == max_val, (a, b, axis, max_val)
 
 
-def test_copy_pickle(frozen_thawed_vec):
-    """Test pickling and unpickling and copying Vectors."""
-    Vec = frozen_thawed_vec
+def test_mut_copy(py_c_vec):
+    """Test copying Vectors."""
+    Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
 
     test_data = 1.5, 0.2827, 2.3464545636e47
 
@@ -1123,6 +1123,19 @@ def test_copy_pickle(frozen_thawed_vec):
     assert orig == dcpy
     assert type(dcpy) == Vec
 
+    frozen = FrozenVec(test_data)
+    # Copying FrozenVec does nothing.
+    assert frozen is frozen.copy()
+    assert frozen is copy.copy(frozen)
+    assert frozen is copy.deepcopy(frozen)
+
+
+def test_pickle(frozen_thawed_vec):
+    """Test pickling and unpickling Vectors."""
+    Vec = frozen_thawed_vec
+
+    test_data = 1.5, 0.2827, 2.3464545636e47
+    orig = Vec(test_data)
     pick = pickle.dumps(orig)
     thaw = pickle.loads(pick)
 

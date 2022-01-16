@@ -231,10 +231,10 @@ cdef inline unsigned char conv_vec(
     
     If scalar is True, allow int/float to set all axes.
     """
-    if isinstance(vec, Vec):
-        result.x = (<Vec>vec).val.x
-        result.y = (<Vec>vec).val.y
-        result.z = (<Vec>vec).val.z
+    if vec_check(vec):
+        result.x = (<BaseVec>vec).val.x
+        result.y = (<BaseVec>vec).val.y
+        result.z = (<BaseVec>vec).val.z
     elif isinstance(vec, float) or isinstance(vec, int):
         if scalar:
             result.x = result.y = result.z = vec
@@ -1262,36 +1262,49 @@ cdef class BaseVec:
 
     def __divmod__(obj_a, obj_b):
         """Divide the vector by a scalar, returning the result and remainder."""
-        cdef Vec vec
-        cdef Vec res_1 = Vec.__new__(Vec)
-        cdef Vec res_2 = Vec.__new__(Vec)
+        cdef BaseVec vec
+        cdef BaseVec res_1
+        cdef BaseVec res_2
         cdef double other_d
 
-        if isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
-            raise TypeError("Cannot divide 2 Vectors.")
-        elif isinstance(obj_a, Vec):
+        if vec_check(obj_a):
+            if vec_check(obj_b):
+                raise TypeError("Cannot divide 2 Vectors.")
             # vec / val
-            vec = <Vec>obj_a
+            vec = <BaseVec>obj_a
             try:
                 other_d = <double ?>obj_b
             except TypeError:
                 return NotImplemented
 
-            # We put % first, since Cython then produces a 'divmod' error.
+            if type(obj_a) is Vec:
+                res_1 = <BaseVec>Vec.__new__(Vec)
+                res_2 = <BaseVec>Vec.__new__(Vec)
+            else:
+                res_1 = <BaseVec>FrozenVec.__new__(FrozenVec)
+                res_2 = <BaseVec>FrozenVec.__new__(FrozenVec)
 
+            # We put % first, since Cython then produces a 'divmod' error.
             res_2.val.x = vec.val.x % other_d
             res_1.val.x = vec.val.x // other_d
             res_2.val.y = vec.val.y % other_d
             res_1.val.y = vec.val.y // other_d
             res_2.val.z = vec.val.z % other_d
             res_1.val.z = vec.val.z // other_d
-        elif isinstance(obj_b, Vec):
+        elif vec_check(obj_b):
             # val / vec
-            vec = <Vec>obj_b
+            vec = <BaseVec>obj_b
             try:
                 other_d = <double ?>obj_a
             except TypeError:
                 return NotImplemented
+
+            if type(obj_b) is Vec:
+                res_1 = <BaseVec>Vec.__new__(Vec)
+                res_2 = <BaseVec>Vec.__new__(Vec)
+            else:
+                res_1 = <BaseVec>FrozenVec.__new__(FrozenVec)
+                res_2 = <BaseVec>FrozenVec.__new__(FrozenVec)
 
             res_2.val.x = other_d % vec.val.x
             res_1.val.x = other_d // vec.val.x
@@ -1329,7 +1342,7 @@ cdef class BaseVec:
         """
         cdef vec_t other
         try:
-            conv_vec(&other, other_obj, False)
+            conv_vec(&other, other_obj, scalar=False)
         except (TypeError, ValueError):
             return NotImplemented
 

@@ -77,7 +77,7 @@ def assert_vec(vec, x, y, z, msg='', tol=EPSILON, type=None):
 
     assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec')
     if type is not None:
-        assert builtins.type(vec) is type
+        assert builtins.type(vec) is type, f'{builtins.type(vec)} != {type}: {msg}'
 
     if not math.isclose(vec.x, x, abs_tol=tol):
         failed = 'x'
