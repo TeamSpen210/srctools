@@ -187,6 +187,63 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
                 return 0
     return 1
 
+# All the comparisons are similar, so we can use richcmp to
+ # nicely combine the parsing code.
+cdef object vector_compare(BaseVec self, object other_obj, int op):
+    """Rich Comparisons.
+
+    Two Vectors are compared based on the axes.
+    A Vector can be compared with a 3-tuple as if it was a Vector also.
+    A tolerance of 1e-6 is accounted for automatically.
+    """
+    cdef vec_t other
+    try:
+        conv_vec(&other, other_obj, scalar=False)
+    except (TypeError, ValueError):
+        return NotImplemented
+
+    # 'redundant' == True prevents the individual comparisons from trying
+    # to convert the result individually on failure.
+    # Use subtraction so that values within TOL are accepted.
+    if op == Py_EQ:
+        return (
+            abs(self.val.x - other.x) <= TOL and
+            abs(self.val.y - other.y) <= TOL and
+            abs(self.val.z - other.z) <= TOL
+        ) == True
+    elif op == Py_NE:
+        return (
+            abs(self.val.x - other.x) > TOL or
+            abs(self.val.y - other.y) > TOL or
+            abs(self.val.z - other.z) > TOL
+        ) == True
+    elif op == Py_LT:
+        return (
+            (other.x - self.val.x) > TOL and
+            (other.y - self.val.y) > TOL and
+            (other.z - self.val.z) > TOL
+        ) == True
+    elif op == Py_GT:
+        return (
+            (self.val.x - other.x) > TOL and
+            (self.val.y - other.y) > TOL and
+            (self.val.z - other.z) > TOL
+        ) == True
+    elif op == Py_LE:  # !GT
+        return (
+            (self.val.x - other.x) <= TOL and
+            (self.val.y - other.y) <= TOL and
+            (self.val.z - other.z) <= TOL
+        ) == True
+    elif op == Py_GE: # !LT
+        return (
+            (other.x - self.val.x) <= TOL and
+            (other.y - self.val.y) <= TOL and
+            (other.z - self.val.z) <= TOL
+        ) == True
+    else:
+        raise SystemError(f'Unknown operation {op!r}' '!')
+
 
 def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
@@ -1353,63 +1410,6 @@ cdef class BaseVec:
         """The len() of a vector is always 3."""
         return 3
 
-    # All the comparisons are similar, so we can use richcmp to
-    # nicely combine the parsing code.
-    def __richcmp__(self, other_obj, int op):
-        """Rich Comparisons.
-
-        Two Vectors are compared based on the axes.
-        A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
-        """
-        cdef vec_t other
-        try:
-            conv_vec(&other, other_obj, scalar=False)
-        except (TypeError, ValueError):
-            return NotImplemented
-
-        # 'redundant' == True prevents the individual comparisons from trying
-        # to convert the result individually on failure.
-        # Use subtraction so that values within TOL are accepted.
-        if op == Py_EQ:
-            return (
-                abs(self.val.x - other.x) <= TOL and
-                abs(self.val.y - other.y) <= TOL and
-                abs(self.val.z - other.z) <= TOL
-            ) == True
-        elif op == Py_NE:
-            return (
-                abs(self.val.x - other.x) > TOL or
-                abs(self.val.y - other.y) > TOL or
-                abs(self.val.z - other.z) > TOL
-            ) == True
-        elif op == Py_LT:
-            return (
-                (other.x - self.val.x) > TOL and
-                (other.y - self.val.y) > TOL and
-                (other.z - self.val.z) > TOL
-            ) == True
-        elif op == Py_GT:
-            return (
-                (self.val.x - other.x) > TOL and
-                (self.val.y - other.y) > TOL and
-                (self.val.z - other.z) > TOL
-            ) == True
-        elif op == Py_LE:  # !GT
-            return (
-                (self.val.x - other.x) <= TOL and
-                (self.val.y - other.y) <= TOL and
-                (self.val.z - other.z) <= TOL
-            ) == True
-        elif op == Py_GE: # !LT
-            return (
-                (other.x - self.val.x) <= TOL and
-                (other.y - self.val.y) <= TOL and
-                (other.z - self.val.z) <= TOL
-            ) == True
-        else:
-            raise SystemError(f'Unknown operation {op!r}' '!')
-
     def mag_sq(self):
         """Compute the distance from the vector and the origin."""
         return _vec_mag_sq(&self.val)
@@ -1597,6 +1597,10 @@ cdef class FrozenVec(BaseVec):
 
         return vec
 
+    def __richcmp__(self, other_obj, int op):
+        """We have to redeclare this because of FrozenSet's __hash__."""
+        return vector_compare(self, other_obj, op)
+
     def __hash__(self) -> int:
         """Hashing a frozen vec is the same as hashing the tuple form."""
         # Not worth trying to inline tuple.__hash__():
@@ -1669,6 +1673,10 @@ cdef class Vec:
         vec.val.z = round(self.val.z, n)
 
         return vec
+
+    def __richcmp__(self, other_obj, int op):
+        """We have to redeclare this because of FrozenSet's __hash__."""
+        return vector_compare(self, other_obj, op)
 
     cross = cross_vec
 
