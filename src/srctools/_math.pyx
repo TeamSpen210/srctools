@@ -170,7 +170,7 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
                 break
 
         # Parse all three floats with scanf. < 3, because %n might not be counted?
-        if sscanf(buf+i, b"%lf %lf %lf%n", &vec.x, &vec.y, &vec.z, &read_amt) < 3:
+        if sscanf(&buf[i], b"%lf %lf %lf%n", &vec.x, &vec.y, &vec.z, &read_amt) < 3:
             vec.x = x
             vec.y = y
             vec.z = z
@@ -1583,7 +1583,9 @@ cdef class FrozenVec(BaseVec):
 
     def __hash__(self) -> int:
         """Hashing a frozen vec is the same as hashing the tuple form."""
-        # TODO: inline tuple.__hash__
+        # Not worth trying to inline tuple.__hash__():
+        # 3.11 uses a different algorithm.
+        # round() requires PyObject, so we're just making a tuple.
         return hash((round(self.val.x, 6), round(self.val.y, 6), round(self.val.z, 6)))
 
     def thaw(self) -> 'Vec':
@@ -2017,7 +2019,7 @@ cdef class Matrix:
         cdef double cos = math.cos(rad_pitch)
         cdef double sin = math.sin(rad_pitch)
 
-        cdef Matrix rot = cls.__new__(cls)
+        cdef Matrix rot = Matrix.__new__(Matrix)
 
         rot.mat[0] = cos, 0.0, -sin
         rot.mat[1] = 0.0, 1.0, 0.0
@@ -2034,7 +2036,7 @@ cdef class Matrix:
         cdef double sin = math.sin(rad_yaw)
         cdef double cos = math.cos(rad_yaw)
 
-        cdef Matrix rot = cls.__new__(cls)
+        cdef Matrix rot = Matrix.__new__(Matrix)
 
         rot.mat[0] = cos, sin, 0.0
         rot.mat[1] = -sin, cos, 0.0
@@ -2052,7 +2054,7 @@ cdef class Matrix:
         cdef double cos = math.cos(rad_roll)
         cdef double sin = math.sin(rad_roll)
 
-        cdef Matrix rot = cls.__new__(cls)
+        cdef Matrix rot = Matrix.__new__(Matrix)
 
         rot.mat[0] = [1.0, 0.0, 0.0]
         rot.mat[1] = [0.0, cos, sin]
@@ -2097,7 +2099,7 @@ cdef class Matrix:
         y = vec_axis.y
         z = vec_axis.z
 
-        cdef Matrix mat = Matrix.__new__(cls)
+        cdef Matrix mat = Matrix.__new__(Matrix)
 
         mat.mat[0][0] = x*x * icos + cos
         mat.mat[0][1] = x*y * icos - z*sin
@@ -2176,7 +2178,7 @@ cdef class Matrix:
 
         The third is computed, if not provided.
         """
-        cdef Matrix mat = Matrix.__new__(cls)
+        cdef Matrix mat = Matrix.__new__(Matrix)
         _mat_from_basis(mat.mat, x, y, z)
         return mat
 
