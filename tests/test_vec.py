@@ -712,7 +712,7 @@ def test_order(frozen_thawed_vec):
             test(num, num, num, num, num, 0)
 
 
-def test_binop_fail(frozen_thawed_vec):
+def test_binop_fail(frozen_thawed_vec) -> None:
     """Test binary operations with invalid operands."""
     Vec = frozen_thawed_vec
 
@@ -740,7 +740,7 @@ def test_binop_fail(frozen_thawed_vec):
             pytest.raises(TypeError, operation, fail_object, vec)
 
 
-def test_axis(frozen_thawed_vec):
+def test_axis(frozen_thawed_vec) -> None:
     """Test the Vec.axis() function."""
     Vec = frozen_thawed_vec
 
@@ -778,7 +778,7 @@ def test_axis(frozen_thawed_vec):
         Vec().axis()
 
 
-def test_other_axes(frozen_thawed_vec):
+def test_other_axes(frozen_thawed_vec) -> None:
     """Test Vec.other_axes()."""
     Vec = frozen_thawed_vec
 
@@ -793,7 +793,7 @@ def test_other_axes(frozen_thawed_vec):
             with raises_keyerror: vec.other_axes(invalid)
 
 
-def test_abs(frozen_thawed_vec):
+def test_abs(frozen_thawed_vec) -> None:
     """Test the function of abs(Vec)."""
     Vec = frozen_thawed_vec
 
@@ -801,7 +801,7 @@ def test_abs(frozen_thawed_vec):
         assert_vec(abs(Vec(x, y, z)), abs(x), abs(y), abs(z))
 
 
-def test_bool(frozen_thawed_vec):
+def test_bool(frozen_thawed_vec) -> None:
     """Test bool() applied to Vec."""
     Vec = frozen_thawed_vec
 
@@ -819,7 +819,27 @@ def test_bool(frozen_thawed_vec):
         assert Vec(val, val, val)
 
 
-def test_iter_line(frozen_thawed_vec):
+def test_hash(py_c_vec) -> None:
+    """Test hashing and dict key use for FrozenVec."""
+    FrozenVec = vec_mod.FrozenVec
+    Vec = vec_mod.Vec
+
+    with pytest.raises(TypeError):
+        hash(Vec())
+
+    for x, y, z in iter_vec(VALID_NUMS):
+        # Must match tuples.
+        assert hash(FrozenVec(x, y, z)) == hash((x, y, z))
+    test_dict = {
+        FrozenVec(4.0, 5.8, 9.6): 'a',
+        (12.8, -2.3, 12.0): 'b',
+    }
+    assert test_dict[4.0, 5.8, 9.6] == 'a'
+    assert test_dict[FrozenVec(12.8, -2.3, 12.0)] == 'b'
+    assert test_dict[Vec(12.8, -2.3, 12).freeze()] == 'b'
+
+
+def test_iter_line(frozen_thawed_vec) -> None:
     """Test Vec.iter_line()"""
     Vec = frozen_thawed_vec
     for pos, x in zip(Vec(4, 5.82, -6.35).iter_line(Vec(10, 5.82, -6.35), 1), range(4, 11)):
