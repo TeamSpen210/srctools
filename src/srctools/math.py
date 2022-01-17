@@ -178,7 +178,7 @@ def __{func}__(self, other: Union['Vec', tuple, float]):
     This additionally works on scalars (adds to all axes).
     """
     if isinstance(other, VecBase):
-        return Py_Vec(
+        return type(self)(
             self.x {op} other.x,
             self.y {op} other.y,
             self.z {op} other.z,
@@ -203,7 +203,7 @@ def __r{func}__(self, other: Union['VecBase', tuple, float]):
     This additionally works on scalars (adds to all axes).
     """
     if isinstance(other, VecBase):
-        return Py_Vec(
+        return type(self)(
             other.x {op} self.x,
             other.y {op} self.y,
             other.z {op} self.z,
@@ -525,6 +525,7 @@ class VecBase:
 
         direction = offset.norm()
         for pos in range(0, int(length), int(stride)):
+            print('ITER:', type(self), type(offset), type(direction), type(pos), type(direction * pos), type(self + direction * pos))
             yield self + direction * pos
         yield cls(end)  # Directly yield - ensures no rounding errors.
 
@@ -937,9 +938,12 @@ class VecBase:
             return self.copy()
         else:
             # Adding 0 clears -0 values - we don't want those.
-            val = self / self.mag()
-            val += 0
-            return val
+            mag = self.mag()
+            return type(self)(
+                self.x / mag + 0,
+                self.y / mag + 0,
+                self.z / mag + 0,
+            )
 
     def dot(self, other: AnyVec) -> float:
         """Return the dot product of both Vectors."""

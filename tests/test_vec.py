@@ -259,17 +259,17 @@ def test_vec_stringification(frozen_thawed_vec: VecClass):
         assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
 
 
-def test_unary_ops(py_c_vec: PyCVec):
+def test_unary_ops(frozen_thawed_vec: VecClass) -> None:
     """Test -vec and +vec."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
     for x, y, z in iter_vec(VALID_NUMS):
-        assert_vec(-Vec(x, y, z), -x, -y, -z)
-        assert_vec(+Vec(x, y, z), +x, +y, +z)
+        assert_vec(-Vec(x, y, z), -x, -y, -z, type=Vec)
+        assert_vec(+Vec(x, y, z), +x, +y, +z, type=Vec)
 
 
-def test_mag(py_c_vec: PyCVec):
+def test_mag(frozen_thawed_vec: VecClass) -> None:
     """Test magnitude methods."""
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
     for x, y, z in iter_vec(VALID_ZERONUMS):
         vec = Vec(x, y, z)
         mag = vec.mag()
@@ -285,20 +285,20 @@ def test_mag(py_c_vec: PyCVec):
         if x == y == z == 0:
             # Vec(0, 0, 0).norm() = 0, 0, 0
             # Not ZeroDivisionError
-            assert_vec(vec.norm(), 0, 0, 0)
+            assert_vec(vec.norm(), 0, 0, 0, type=Vec)
         else:
-            assert_vec(vec.norm(), x/length, y/length, z/length, vec)
+            assert_vec(vec.norm(), x/length, y/length, z/length, vec, type=Vec)
 
 
-def test_contains(py_c_vec: PyCVec):
+def test_contains(frozen_thawed_vec: VecClass) -> None:
     # Match to list.__contains__
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
     for num in VALID_NUMS:
         for x, y, z in iter_vec(VALID_NUMS):
             assert (num in Vec(x, y, z)) == (num in [x, y, z])
 
 
-def test_iteration(frozen_thawed_vec: VecClass):
+def test_iteration(frozen_thawed_vec: VecClass) -> None:
     """Test vector iteration."""
     Vec = frozen_thawed_vec
     v = Vec(45.0, 50, 65)
@@ -314,7 +314,7 @@ def test_iteration(frozen_thawed_vec: VecClass):
         next(it)
 
 
-def test_rev_iteration(frozen_thawed_vec: VecClass):
+def test_rev_iteration(frozen_thawed_vec: VecClass) -> None:
     """Test reversed iteration."""
     Vec = frozen_thawed_vec
     v = Vec(45.0, 50, 65)
@@ -330,7 +330,7 @@ def test_rev_iteration(frozen_thawed_vec: VecClass):
         next(it)
 
 
-def test_vec_lerp(frozen_thawed_vec: VecClass):
+def test_vec_lerp(frozen_thawed_vec: VecClass) -> None:
     """Test the vector lerp function."""
     Vec = frozen_thawed_vec
     assert_vec(
@@ -458,13 +458,14 @@ def test_vec_props(frozen_thawed_vec: VecClass, axis: str, index: int, u: str, v
             assert vec[v] == other, (vec, targ, other)
 
 
-def test_vec_to_vec(py_c_vec: PyCVec):
+def test_vec_to_vec(frozen_thawed_vec: VecClass):
     """Check that Vec() +/- Vec() does the correct thing.
 
     For +, -, two Vectors apply the operations to all values.
     Dot and cross products do something different.
     """
-    Vec = vec_mod.Vec
+    Vec = frozen_thawed_vec
+    mutable = Vec is vec_mod.Vec
     operators = [
         ('+', op.add, op.iadd),
         ('-', op.sub, op.isub),
@@ -502,9 +503,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
                 op_func(vec1, vec2),
                 *result,
                 type=Vec,
-                msg='Vec({} {} {}) {} Vec({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
-                )
+                msg=f'Vec({x1} {y1} {z1}) {op_name} Vec({x2} {y2} {z2})'
             )
             # Ensure they haven't modified the originals
             assert_vec(vec1, x1, y1, z1)
@@ -514,9 +513,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
                 op_func(vec1, Vec_tuple(x2, y2, z2)),
                 *result,
                 type=Vec,
-                msg='Vec({} {} {}) {} Vec_tuple({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
-                )
+                msg=f'Vec({x1} {y1} {z1}) {op_name} Vec_tuple({x2} {y2} {z2})'
             )
             assert_vec(vec1, x1, y1, z1)
 
@@ -524,9 +521,7 @@ def test_vec_to_vec(py_c_vec: PyCVec):
                 op_func(Vec_tuple(x1, y1, z1), vec2),
                 *result,
                 type=Vec,
-                msg='Vec_tuple({} {} {}) {} Vec({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
-                )
+                msg=f'Vec_tuple({x1} {y1} {z1}) {op_name} Vec({x2} {y2} {z2})'
             )
 
             assert_vec(vec2, x2, y2, z2)
@@ -535,35 +530,44 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             assert_vec(
                 op_ifunc(new_vec1, vec2),
                 *result,
-                msg='Return val: ({} {} {}) {}= ({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
-                )
+                msg=f'Return val: ({x1} {y1} {z1}) {op_name}= ({x2} {y2} {z2})',
+                type=Vec,
             )
-            # Check it modifies the original object too.
-            assert_vec(
-                new_vec1,
-                *result,
-                msg='Original: ({} {} {}) {}= ({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
+            if mutable:
+                # Check it modifies the original object too.
+                assert_vec(
+                    new_vec1,
+                    *result,
+                    msg=f'Original: {Vec}({x1} {y1} {z1}) {op_name}= {Vec}({x2} {y2} {z2})'
                 )
-            )
+            else:
+                # Check it did not modify the original.
+                assert_vec(
+                    new_vec1,
+                    x1, y1, z1,
+                    msg=f'Original: {Vec}({x1} {y1} {z1}) {op_name}= {Vec}({x2} {y2} {z2})'
+                )
 
             new_vec1 = Vec(x1, y1, z1)
             assert_vec(
                 op_ifunc(new_vec1, tuple(vec2)),
                 *result,
-                msg='Return val: ({} {} {}) {}= tuple({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
-                )
+                msg=f'Return val: ({x1} {y1} {z1}) {op_name}= tuple({x2} {y2} {z2})'
             )
-            # Check it modifies the original object too.
-            assert_vec(
-                new_vec1,
-                *result,
-                msg='Original: ({} {} {}) {}= tuple({} {} {})'.format(
-                    x1, y1, z1, op_name, x2, y2, z2,
+            if mutable:
+                # Check it modifies the original object too.
+                assert_vec(
+                    new_vec1,
+                    *result,
+                    msg=f'Original: {Vec}({x1} {y1} {z1}) {op_name}= tuple({x2} {y2} {z2})'
                 )
-            )
+            else:
+                # Check it did not modify the original.
+                assert_vec(
+                    new_vec1,
+                    x1, y1, z1,
+                    msg=f'Original: {Vec}({x1} {y1} {z1}) {op_name}= tuple({x2} {y2} {z2})'
+                )
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:
@@ -575,6 +579,18 @@ def test_vec_to_vec(py_c_vec: PyCVec):
             test(num, num, num, 0, num2, num2)
             test(num, num, num, num, 0, num2)
             test(num, num, num, num, num, 0)
+
+
+@pytest.mark.parametrize('op_func', [op.add, op.sub])
+def test_vec_to_vec_types(py_c_vec: PyCVec, op_func) -> None:
+    """Verify the correct types are returned when using differing types."""
+    Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
+
+    assert type(op_func(Vec(1, 2, 3), Vec(1, 2, 3))) is Vec
+    assert type(op_func(Vec(1, 2, 3), FrozenVec(1, 2, 3))) is Vec
+    assert type(op_func(FrozenVec(1, 2, 3), Vec(1, 2, 3))) is FrozenVec
+    assert type(op_func(FrozenVec(1, 2, 3), FrozenVec(1, 2, 3))) is FrozenVec
 
 
 def test_scalar_zero(py_c_vec: PyCVec):

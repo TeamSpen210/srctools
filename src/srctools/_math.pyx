@@ -1426,42 +1426,6 @@ cdef class BaseVec:
         """Compute the distance from the vector and the origin."""
         return _vec_mag(&self.val)
 
-    def norm(self):
-        """Normalise the Vector.
-
-         This is done by transforming it to have a magnitude of 1 but the same
-         direction.
-         The vector is left unchanged if it is equal to (0,0,0).
-         """
-        cdef Vec vec = Vec.__new__(Vec)
-        _vec_normalise(&vec.val, &self.val)
-        return vec
-
-    def norm_mask(self, normal: 'Vec') -> Vec:
-        """Subtract the components of this vector not in the direction of the normal.
-
-        If the normal is axis-aligned, this will zero out the other axes.
-        If not axis-aligned, it will do the equivalent.
-        """
-        cdef vec_t norm
-
-        conv_vec(&norm, normal, False)
-
-        _vec_normalise(&norm, &norm)
-
-        cdef double dot = (
-            self.val.x * norm.x +
-            self.val.y * norm.y +
-            self.val.z * norm.z
-        )
-
-        return _vector(
-            type(self),
-            norm.x * dot,
-            norm.y * dot,
-            norm.z * dot,
-        )
-
     def dot(self, other) -> float:
         """Return the dot product of both Vectors."""
         cdef vec_t oth
@@ -1608,6 +1572,41 @@ cdef class FrozenVec(BaseVec):
         # round() requires PyObject, so we're just making a tuple.
         return hash((round(self.val.x, 6), round(self.val.y, 6), round(self.val.z, 6)))
 
+    def norm(self):
+        """Normalise the Vector.
+
+         This is done by transforming it to have a magnitude of 1 but the same
+         direction.
+         The vector is left unchanged if it is equal to (0,0,0).
+         """
+        cdef FrozenVec vec = FrozenVec.__new__(FrozenVec)
+        _vec_normalise(&vec.val, &self.val)
+        return vec
+
+    def norm_mask(self, normal) -> FrozenVec:
+        """Subtract the components of this vector not in the direction of the normal.
+
+        If the normal is axis-aligned, this will zero out the other axes.
+        If not axis-aligned, it will do the equivalent.
+        """
+        cdef vec_t norm
+
+        conv_vec(&norm, normal, False)
+
+        _vec_normalise(&norm, &norm)
+
+        cdef double dot = (
+            self.val.x * norm.x +
+            self.val.y * norm.y +
+            self.val.z * norm.z
+        )
+
+        return _vector_frozen(
+            norm.x * dot,
+            norm.y * dot,
+            norm.z * dot,
+        )
+
     cross = cross_frozenvec
 
     def thaw(self) -> 'Vec':
@@ -1677,6 +1676,41 @@ cdef class Vec:
     def __richcmp__(self, other_obj, int op):
         """We have to redeclare this because of FrozenSet's __hash__."""
         return vector_compare(self, other_obj, op)
+
+    def norm(self):
+        """Normalise the Vector.
+
+         This is done by transforming it to have a magnitude of 1 but the same
+         direction.
+         The vector is left unchanged if it is equal to (0,0,0).
+         """
+        cdef Vec vec = Vec.__new__(Vec)
+        _vec_normalise(&vec.val, &self.val)
+        return vec
+
+    def norm_mask(self, normal):
+        """Subtract the components of this vector not in the direction of the normal.
+
+        If the normal is axis-aligned, this will zero out the other axes.
+        If not axis-aligned, it will do the equivalent.
+        """
+        cdef vec_t norm
+
+        conv_vec(&norm, normal, False)
+
+        _vec_normalise(&norm, &norm)
+
+        cdef double dot = (
+            self.val.x * norm.x +
+            self.val.y * norm.y +
+            self.val.z * norm.z
+        )
+
+        return _vector_mut(
+            norm.x * dot,
+            norm.y * dot,
+            norm.z * dot,
+        )
 
     cross = cross_vec
 
