@@ -776,7 +776,7 @@ cdef class BaseVec:
         # The error messages match those produced by min()/max().
 
         if len(points) == 1:
-            if isinstance(points[0], Vec):
+            if vec_check(points[0]):
                 # Special case, don't iter over the vec, just copy.
                 sing_vec = <BaseVec>points[0]
                 bbox_min.val = sing_vec.val
@@ -1113,7 +1113,7 @@ cdef class BaseVec:
             vec.val.y = vec.val.y * scalar
             vec.val.z = vec.val.z * scalar
 
-        elif isinstance(obj_a, BaseVec) and isinstance(obj_b, BaseVec):
+        elif vec_check(obj_a) and vec_check(obj_b):
             raise TypeError('Cannot multiply 2 Vectors.')
         else:
             # Both vector-like or vector * something else.
@@ -1152,7 +1152,7 @@ cdef class BaseVec:
             vec.val.y = vec.val.y / scalar
             vec.val.z = vec.val.z / scalar
 
-        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+        elif vec_check(obj_a) and vec_check(obj_b):
             raise TypeError('Cannot divide 2 Vectors.')
         else:
             # Both vector-like or vector * something else.
@@ -1191,7 +1191,7 @@ cdef class BaseVec:
             vec.val.y = vec.val.y // scalar
             vec.val.z = vec.val.z // scalar
 
-        elif isinstance(obj_a, Vec) and isinstance(obj_b, Vec):
+        elif vec_check(obj_a) and vec_check(obj_b):
             raise TypeError('Cannot floor-divide 2 Vectors.')
         else:
             # Both vector-like or vector * something else.
@@ -1232,7 +1232,7 @@ cdef class BaseVec:
             vec.val.z = vec.val.z % scalar
             return vec
 
-        elif isinstance(obj_a, BaseVec) and isinstance(obj_b, BaseVec):
+        elif vec_check(obj_a) and vec_check(obj_b):
             raise TypeError('Cannot modulus 2 Vectors.')
 
         return NotImplemented
@@ -1797,7 +1797,7 @@ cdef class Vec:
             self.val.y *= scalar
             self.val.z *= scalar
             return self
-        elif isinstance(other, Vec):
+        elif vec_check(other):
             raise TypeError("Cannot multiply 2 Vectors.")
         else:
             return NotImplemented
@@ -1814,7 +1814,7 @@ cdef class Vec:
             self.val.y /= scalar
             self.val.z /= scalar
             return self
-        elif isinstance(other, Vec):
+        elif vec_check(other):
             raise TypeError("Cannot divide 2 Vectors.")
         else:
             return NotImplemented
@@ -1831,7 +1831,7 @@ cdef class Vec:
             self.val.y //= scalar
             self.val.z //= scalar
             return self
-        elif isinstance(other, Vec):
+        elif vec_check(other):
             raise TypeError("Cannot floor-divide 2 Vectors.")
         else:
             return NotImplemented
@@ -1848,7 +1848,7 @@ cdef class Vec:
             self.val.y %= scalar
             self.val.z %= scalar
             return self
-        elif isinstance(other, Vec):
+        elif vec_check(other):
             raise TypeError("Cannot modulus 2 Vectors.")
         else:
             return NotImplemented
@@ -2185,7 +2185,7 @@ cdef class Matrix:
     def __matmul__(first, second):
         """Rotate two objects."""
         cdef mat_t temp, temp2
-        cdef Vec vec
+        cdef BaseVec vec
         cdef Matrix mat
         cdef Angle ang
         if isinstance(first, Matrix):
@@ -2201,8 +2201,13 @@ cdef class Matrix:
             return mat
         elif isinstance(second, Matrix):
             if isinstance(first, Vec):
-                vec = Vec.__new__(Vec)
-                memcpy(&vec.val, &(<Vec>first).val, sizeof(vec_t))
+                vec = <BaseVec>Vec.__new__(Vec)
+                memcpy(&vec.val, &(<BaseVec>first).val, sizeof(vec_t))
+                vec_rot(&vec.val, (<Matrix>second).mat)
+                return vec
+            elif isinstance(first, FrozenVec):
+                vec = <BaseVec>FrozenVec.__new__(FrozenVec)
+                memcpy(&vec.val, &(<BaseVec>first).val, sizeof(vec_t))
                 vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, tuple):
@@ -2614,6 +2619,11 @@ cdef class Angle:
                 res = Vec.__new__(Vec)
                 memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
                 vec_rot(&(<Vec>res).val, temp2)
+                return res
+            elif isinstance(first, FrozenVec):
+                res = FrozenVec.__new__(FrozenVec)
+                memcpy(&(<FrozenVec>res).val, &(<FrozenVec>first).val, sizeof(vec_t))
+                vec_rot(&(<FrozenVec>res).val, temp2)
                 return res
 
         return NotImplemented
