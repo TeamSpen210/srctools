@@ -1275,6 +1275,26 @@ def test_cross_product_axes(frozen_thawed_vec: VecClass):
     assert_vec(Vec.cross(Vec(z=1), Vec(y=1)), -1, 0, 0)
 
 
+def test_cross_types(py_c_vec) -> None:
+    """Test mixing types gives the right classes."""
+    Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
+    assert type(Vec(1, 2, 3).cross(Vec(1, 2, 3))) is Vec
+    assert type(Vec(1, 2, 3).cross(FrozenVec(1, 2, 3))) is Vec
+    assert type(FrozenVec(1, 2, 3).cross(Vec(1, 2, 3))) is FrozenVec
+    assert type(FrozenVec(1, 2, 3).cross(FrozenVec(1, 2, 3))) is FrozenVec
+
+    assert type(Vec.cross(Vec(1, 2, 3), Vec(1, 2, 3))) is Vec
+    assert type(Vec.cross(Vec(1, 2, 3), FrozenVec(1, 2, 3))) is Vec
+    assert type(Vec.cross(FrozenVec(1, 2, 3), Vec(1, 2, 3))) is Vec
+    assert type(Vec.cross(FrozenVec(1, 2, 3), FrozenVec(1, 2, 3))) is Vec
+
+    assert type(FrozenVec.cross(Vec(1, 2, 3), Vec(1, 2, 3))) is FrozenVec
+    assert type(FrozenVec.cross(Vec(1, 2, 3), FrozenVec(1, 2, 3))) is FrozenVec
+    assert type(FrozenVec.cross(FrozenVec(1, 2, 3), Vec(1, 2, 3))) is FrozenVec
+    assert type(FrozenVec.cross(FrozenVec(1, 2, 3), FrozenVec(1, 2, 3))) is FrozenVec
+
+
 @pytest.mark.parametrize('x, xvalid', [
     (-64, False),
     (-32, True),

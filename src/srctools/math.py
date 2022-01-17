@@ -457,7 +457,7 @@ class VecBase:
         # The error messages match those produced by min()/max().
         first: VecBase
         point_coll: Iterable[VecBase]
-        if len(points) == 1 and not isinstance(points[0], Py_Vec):
+        if len(points) == 1 and not isinstance(points[0], VecBase):
             try:
                 [[first, *point_coll]] = points  # type: ignore # len() can't narrow
             except ValueError:
@@ -560,9 +560,9 @@ class VecBase:
             roll,
         )
 
-    def __abs__(self) -> 'Vec':
+    def __abs__(self: VecT) -> VecT:
         """Performing abs() on a Vec takes the absolute value of all axes."""
-        return Py_Vec(
+        return type(self)(
             abs(self.x),
             abs(self.y),
             abs(self.z),
@@ -619,20 +619,21 @@ class VecBase:
     # Divmod is entirely unique.
     def __divmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
         """Divide the vector by a scalar, returning the result and remainder."""
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             raise TypeError("Cannot divide 2 Vectors.")
+        try:
+            x1, x2 = divmod(self.x, other)
+            y1, y2 = divmod(self.y, other)
+            z1, z2 = divmod(self.z, other)
+        except TypeError:
+            return NotImplemented
         else:
-            try:
-                x1, x2 = divmod(self.x, other)
-                y1, y2 = divmod(self.y, other)
-                z1, z2 = divmod(self.z, other)
-            except TypeError:
-                return NotImplemented
-            else:
-                return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
+            return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
     def __rdivmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
         """Divide a scalar by a vector, returning the result and remainder."""
+        if isinstance(other, VecBase):
+            raise TypeError("Cannot divide 2 Vectors.")
         try:
             x1, x2 = divmod(other, self.x)
             y1, y2 = divmod(other, self.y)
@@ -775,7 +776,7 @@ class VecBase:
         A Vector can be compared with a 3-tuple as if it was a Vector also.
         A tolerance of 1e-6 is accounted for automatically.
         """
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return (
                 (other.x - self.x) <= 1e-6 and
                 (other.y - self.y) <= 1e-6 and
@@ -915,13 +916,13 @@ class VecBase:
         """
         return abs(val - self.x) < 1e-6 or abs(val - self.y) < 1e-6 or abs(val - self.z) < 1e-6
 
-    def __neg__(self) -> 'Vec':
+    def __neg__(self: VecT) -> VecT:
         """The inverted form of a Vector has inverted axes."""
-        return Py_Vec(-self.x, -self.y, -self.z)
+        return type(self)(-self.x, -self.y, -self.z)
 
-    def __pos__(self) -> 'Vec':
+    def __pos__(self: VecT) -> VecT:
         """+ on a Vector simply copies it."""
-        return Py_Vec(self.x, self.y, self.z)
+        return type(self)(self.x, self.y, self.z)
 
     def norm(self: VecT) -> VecT:
         """Normalise the Vector.
@@ -948,9 +949,14 @@ class VecBase:
             self.z * other[2]
         )
 
-    def cross(self, other: AnyVec) -> 'Vec':
-        """Return the cross product of both Vectors."""
-        return Py_Vec(
+    def cross(self: VecT, other: AnyVec) -> VecT:
+        """Return the cross product of both Vectors.
+
+        If this is called as a method (a.cross(b)), the result will have the
+        same type as A. Otherwise, if called as Vec.cross(a, b) or FrozenVec.cross(a, b), the
+        type of the class takes priority.
+        """
+        return type(self)(
             self.y * other[2] - self.z * other[1],
             self.z * other[0] - self.x * other[2],
             self.x * other[1] - self.y * other[0],
@@ -1062,6 +1068,19 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
         """Hashing a frozen vec is the same as hashing the tuple form."""
         return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
 
+    def cross(self: VecT, other: AnyVec) -> 'FrozenVec':
+        """Return the cross product of both Vectors.
+
+        If this is called as a method (a.cross(b)), the result will have the
+        same type as A. Otherwise, if called as Vec.cross(a, b) or FrozenVec.cross(a, b), the
+        type of the class takes priority.
+        """
+        return Py_FrozenVec(
+            self.y * other[2] - self.z * other[1],
+            self.z * other[0] - self.x * other[2],
+            self.x * other[1] - self.y * other[0],
+        )
+
     def thaw(self) -> 'Vec':
         """Return a mutable copy of this vector."""
         return Py_Vec(self.x, self.y, self.z)
@@ -1163,6 +1182,19 @@ class Vec(VecBase, SupportsRound['Vec']):
         return Py_Vec(self.x, self.y, self.z)
 
     __copy__ = copy  # copy module support.
+
+    def cross(self: VecT, other: AnyVec) -> 'Vec':
+        """Return the cross product of both Vectors.
+
+        If this is called as a method (a.cross(b)), the result will have the
+        same type as A. Otherwise, if called as Vec.cross(a, b) or FrozenVec.cross(a, b), the
+        type of the class takes priority.
+        """
+        return Py_Vec(
+            self.y * other[2] - self.z * other[1],
+            self.z * other[0] - self.x * other[2],
+            self.x * other[1] - self.y * other[0],
+        )
 
     def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
     def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...

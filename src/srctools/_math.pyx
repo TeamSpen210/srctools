@@ -440,6 +440,28 @@ def to_matrix(value) -> Matrix:
     _conv_matrix(result.mat, value)
     return result
 
+def cross_frozenvec(left, right):
+    """Return the cross product of both Vectors."""
+    cdef vec_t a, b
+    cdef FrozenVec res
+
+    conv_vec(&a, left, False)
+    conv_vec(&b, right, False)
+    res = FrozenVec.__new__(FrozenVec)
+    _vec_cross(&res.val, &a, &b)
+    return res
+
+def cross_vec(left, right):
+    """Return the cross product of both Vectors."""
+    cdef vec_t a, b
+    cdef Vec res
+
+    conv_vec(&a, left, False)
+    conv_vec(&b, right, False)
+    res = Vec.__new__(Vec)
+    _vec_cross(&res.val, &a, &b)
+    return res
+
 
 @cython.final
 @cython.internal
@@ -1388,17 +1410,6 @@ cdef class BaseVec:
         else:
             raise SystemError(f'Unknown operation {op!r}' '!')
 
-
-    def __round__(self, object n=0):
-        """Performing round() on a Vec rounds each axis."""
-        cdef Vec vec = Vec.__new__(Vec)
-
-        vec.val.x = round(self.val.x, n)
-        vec.val.y = round(self.val.y, n)
-        vec.val.z = round(self.val.z, n)
-
-        return vec
-
     def mag_sq(self):
         """Compute the distance from the vector and the origin."""
         return _vec_mag_sq(&self.val)
@@ -1463,15 +1474,6 @@ cdef class BaseVec:
             self.val.z * oth.z
         )
 
-    def cross(self, other):
-        """Return the cross product of both Vectors."""
-        cdef vec_t oth
-        cdef BaseVec res
-
-        conv_vec(&oth, other, False)
-        res = _vector(type(self), 0.0, 0.0, 0.0)
-        _vec_cross(&res.val, &self.val, &oth)
-        return res
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
@@ -1585,12 +1587,24 @@ cdef class FrozenVec(BaseVec):
         """Code required to reproduce this vector."""
         return f"FrozenVec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
 
+    def __round__(self, object n=0):
+        """Performing round() on a FrozenVec rounds each axis."""
+        cdef FrozenVec vec = FrozenVec.__new__(FrozenVec)
+
+        vec.val.x = round(self.val.x, n)
+        vec.val.y = round(self.val.y, n)
+        vec.val.z = round(self.val.z, n)
+
+        return vec
+
     def __hash__(self) -> int:
         """Hashing a frozen vec is the same as hashing the tuple form."""
         # Not worth trying to inline tuple.__hash__():
         # 3.11 uses a different algorithm.
         # round() requires PyObject, so we're just making a tuple.
         return hash((round(self.val.x, 6), round(self.val.y, 6), round(self.val.z, 6)))
+
+    cross = cross_frozenvec
 
     def thaw(self) -> 'Vec':
         """Return a mutable copy of this vector."""
@@ -1645,6 +1659,18 @@ cdef class Vec:
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
         return f"Vec({self.val.x:g}, {self.val.y:g}, {self.val.z:g})"
+
+    def __round__(self, object n=0):
+        """Performing round() on a Vec rounds each axis."""
+        cdef Vec vec = Vec.__new__(Vec)
+
+        vec.val.x = round(self.val.x, n)
+        vec.val.y = round(self.val.y, n)
+        vec.val.z = round(self.val.z, n)
+
+        return vec
+
+    cross = cross_vec
 
     def freeze(self) -> 'FrozenVec':
         """Return a frozen copy of this vector."""
@@ -2699,8 +2725,10 @@ try:
     parse_vec_str.__module__ = 'srctools.math'
     to_matrix.__module__ = 'srctools.math'
     lerp.__module__ = 'srctools.math'
+    cross_frozenvec.__name__ = cross_vec.__name__ = 'cross'
 except Exception:
     pass  # Perfectly fine.
 
+del cross_vec, cross_frozenvec
 # Drop references.
 Tuple = Iterator = Union = None
