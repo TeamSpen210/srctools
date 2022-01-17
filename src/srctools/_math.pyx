@@ -1569,6 +1569,10 @@ cdef class FrozenVec(BaseVec):
         """FrozenVec is immutable."""
         return self
 
+    def __deepcopy__(self, memodict=None):
+        """FrozenVec is immutable."""
+        return self
+
     def __reduce__(self):
         """Pickling support.
 

@@ -1042,6 +1042,10 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
         """FrozenVec is immutable."""
         return self
 
+    def __deepcopy__(self, memodict=None) -> 'FrozenVec':
+        """FrozenVec is immutable."""
+        return self
+
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
         return f"FrozenVec({self.x:g}, {self.y:g}, {self.z:g})"

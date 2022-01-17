@@ -631,7 +631,7 @@ def test_divmod_scalar_vec(frozen_thawed_vec):
             assert_vec(mod, num % x, num % y, num % z, type=Vec)
 
 
-@pytest.mark.parametrize('name', 'func', [
+@pytest.mark.parametrize('name, func', [
     ('*', op.mul),
     ('/', op.truediv),
     ('//', op.floordiv),
