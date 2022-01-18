@@ -13455,7 +13455,7 @@ static PyObject *__pyx_pf_8srctools_5_math_7BaseVec_18in_bbox(struct __pyx_obj_8
   int __pyx_t_2;
   double __pyx_t_3;
   double __pyx_t_4;
-  PyObject *__pyx_t_5 = NULL;
+  int __pyx_t_5;
   PyObject *__pyx_t_6 = NULL;
   int __pyx_lineno = 0;
   const char *__pyx_filename = NULL;
@@ -13577,69 +13577,70 @@ static PyObject *__pyx_pf_8srctools_5_math_7BaseVec_18in_bbox(struct __pyx_obj_8
  *             avec.z, bvec.z = bvec.z, avec.z
  * 
  *         return (             # <<<<<<<<<<<<<<
- *             avec.x <= self.val.x <= bvec.x and
- *             avec.y <= self.val.y <= bvec.y and
+ *             avec.x - TOL <= self.val.x <= bvec.x + TOL and
+ *             avec.y - TOL <= self.val.y <= bvec.y + TOL and
  */
   __Pyx_XDECREF(__pyx_r);
 
   /* "srctools/_math.pyx":1058
  * 
  *         return (
- *             avec.x <= self.val.x <= bvec.x and             # <<<<<<<<<<<<<<
- *             avec.y <= self.val.y <= bvec.y and
- *             avec.z <= self.val.z <= bvec.z
+ *             avec.x - TOL <= self.val.x <= bvec.x + TOL and             # <<<<<<<<<<<<<<
+ *             avec.y - TOL <= self.val.y <= bvec.y + TOL and
+ *             avec.z - TOL <= self.val.z <= bvec.z + TOL
  */
-  __pyx_t_2 = (__pyx_v_avec.x <= __pyx_v_self->val.x);
-  if (__pyx_t_2) {
-    __pyx_t_2 = (__pyx_v_self->val.x <= __pyx_v_bvec.x);
+  __pyx_t_5 = ((__pyx_v_avec.x - 1e-06) <= __pyx_v_self->val.x);
+  if (__pyx_t_5) {
+    __pyx_t_5 = (__pyx_v_self->val.x <= (__pyx_v_bvec.x + 1e-06));
   }
-  if (__pyx_t_2) {
+  if (__pyx_t_5) {
   } else {
-    __pyx_t_6 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1058, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = __pyx_t_6;
-    __pyx_t_6 = 0;
+    __pyx_t_2 = __pyx_t_5;
     goto __pyx_L6_bool_binop_done;
   }
 
   /* "srctools/_math.pyx":1059
  *         return (
- *             avec.x <= self.val.x <= bvec.x and
- *             avec.y <= self.val.y <= bvec.y and             # <<<<<<<<<<<<<<
- *             avec.z <= self.val.z <= bvec.z
- *         )
+ *             avec.x - TOL <= self.val.x <= bvec.x + TOL and
+ *             avec.y - TOL <= self.val.y <= bvec.y + TOL and             # <<<<<<<<<<<<<<
+ *             avec.z - TOL <= self.val.z <= bvec.z + TOL
+ *         )  == True
  */
-  __pyx_t_2 = (__pyx_v_avec.y <= __pyx_v_self->val.y);
-  if (__pyx_t_2) {
-    __pyx_t_2 = (__pyx_v_self->val.y <= __pyx_v_bvec.y);
+  __pyx_t_5 = ((__pyx_v_avec.y - 1e-06) <= __pyx_v_self->val.y);
+  if (__pyx_t_5) {
+    __pyx_t_5 = (__pyx_v_self->val.y <= (__pyx_v_bvec.y + 1e-06));
   }
-  if (__pyx_t_2) {
+  if (__pyx_t_5) {
   } else {
-    __pyx_t_6 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1059, __pyx_L1_error)
-    __Pyx_GOTREF(__pyx_t_6);
-    __pyx_t_5 = __pyx_t_6;
-    __pyx_t_6 = 0;
+    __pyx_t_2 = __pyx_t_5;
     goto __pyx_L6_bool_binop_done;
   }
 
   /* "srctools/_math.pyx":1060
- *             avec.x <= self.val.x <= bvec.x and
- *             avec.y <= self.val.y <= bvec.y and
- *             avec.z <= self.val.z <= bvec.z             # <<<<<<<<<<<<<<
- *         )
+ *             avec.x - TOL <= self.val.x <= bvec.x + TOL and
+ *             avec.y - TOL <= self.val.y <= bvec.y + TOL and
+ *             avec.z - TOL <= self.val.z <= bvec.z + TOL             # <<<<<<<<<<<<<<
+ *         )  == True
  * 
  */
-  __pyx_t_2 = (__pyx_v_avec.z <= __pyx_v_self->val.z);
-  if (__pyx_t_2) {
-    __pyx_t_2 = (__pyx_v_self->val.z <= __pyx_v_bvec.z);
+  __pyx_t_5 = ((__pyx_v_avec.z - 1e-06) <= __pyx_v_self->val.z);
+  if (__pyx_t_5) {
+    __pyx_t_5 = (__pyx_v_self->val.z <= (__pyx_v_bvec.z + 1e-06));
   }
-  __pyx_t_6 = __Pyx_PyBool_FromLong(__pyx_t_2); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1060, __pyx_L1_error)
-  __Pyx_GOTREF(__pyx_t_6);
-  __pyx_t_5 = __pyx_t_6;
-  __pyx_t_6 = 0;
+  __pyx_t_2 = __pyx_t_5;
   __pyx_L6_bool_binop_done:;
-  __pyx_r = __pyx_t_5;
-  __pyx_t_5 = 0;
+
+  /* "srctools/_math.pyx":1061
+ *             avec.y - TOL <= self.val.y <= bvec.y + TOL and
+ *             avec.z - TOL <= self.val.z <= bvec.z + TOL
+ *         )  == True             # <<<<<<<<<<<<<<
+ * 
+ *     @staticmethod
+ */
+  __pyx_t_6 = __Pyx_PyBool_FromLong((__pyx_t_2 == 1)); if (unlikely(!__pyx_t_6)) __PYX_ERR(0, 1061, __pyx_L1_error)
+  __Pyx_GOTREF(__pyx_t_6);
+  __pyx_r = __pyx_t_6;
+  __pyx_t_6 = 0;
   goto __pyx_L0;
 
   /* "srctools/_math.pyx":1045
@@ -13652,7 +13653,6 @@ static PyObject *__pyx_pf_8srctools_5_math_7BaseVec_18in_bbox(struct __pyx_obj_8
 
   /* function exit code */
   __pyx_L1_error:;
-  __Pyx_XDECREF(__pyx_t_5);
   __Pyx_XDECREF(__pyx_t_6);
   __Pyx_AddTraceback("srctools._math.BaseVec.in_bbox", __pyx_clineno, __pyx_lineno, __pyx_filename);
   __pyx_r = NULL;
@@ -40574,7 +40574,7 @@ if (!__Pyx_RefNanny) {
   PyType_Modified(__pyx_ptype_8srctools_5_math_BaseVec);
 
   /* "srctools/_math.pyx":1063
- *         )
+ *         )  == True
  * 
  *     @staticmethod             # <<<<<<<<<<<<<<
  *     def bbox_intersect(min1: BaseVec, max1: BaseVec, min2: BaseVec, max2: BaseVec) -> bool:

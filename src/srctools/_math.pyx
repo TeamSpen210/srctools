@@ -1055,10 +1055,10 @@ cdef class BaseVec:
             avec.z, bvec.z = bvec.z, avec.z
 
         return (
-            avec.x <= self.val.x <= bvec.x and
-            avec.y <= self.val.y <= bvec.y and
-            avec.z <= self.val.z <= bvec.z
-        )
+            avec.x - TOL <= self.val.x <= bvec.x + TOL and
+            avec.y - TOL <= self.val.y <= bvec.y + TOL and
+            avec.z - TOL <= self.val.z <= bvec.z + TOL
+        )  == True
 
     @staticmethod
     def bbox_intersect(min1: BaseVec, max1: BaseVec, min2: BaseVec, max2: BaseVec) -> bool:
