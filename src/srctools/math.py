@@ -133,14 +133,15 @@ class Vec_tuple(NamedTuple):
     y: float
     z: float
 
-_old_vec_tup = Vec_tuple.__new__
-def _vec_tup_new(*args, **kwargs):
-    warnings.warn(
-        'Vec_tuple is deprecated, use FrozenVec instead.',
-        DeprecationWarning, stacklevel=2,
-    )
-    return _old_vec_tup(*args, **kwargs)
-Vec_tuple.__new__ = _vec_tup_new
+if not TYPE_CHECKING:
+    _old_vec_tup = Vec_tuple.__new__
+    def _vec_tup_new(*args, **kwargs):
+        warnings.warn(
+            'Vec_tuple is deprecated, use FrozenVec instead.',
+            DeprecationWarning, stacklevel=2,
+        )
+        return _old_vec_tup(*args, **kwargs)
+    Vec_tuple.__new__ = _vec_tup_new
 
 
 if TYPE_CHECKING:
@@ -312,12 +313,7 @@ globals()['SupportsRound'] = {'Vec': object, 'FrozenVec': object}
 
 
 class VecBase:
-    """Base class for 3D vectors, implementing common methods.
-
-    This has most standard Vector functions.
-
-    Many of the functions will accept a 3-tuple for comparison purposes.
-    """
+    """Internal Base class for 3D vectors, implementing common code."""
     __match_args__ = __slots__ = ('_x', '_y', '_z')
     INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
@@ -359,32 +355,10 @@ class VecBase:
     _y: float
     _z: float
 
-    def __init__(
-        self,
-        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
-        y: float=0.0,
-        z: float=0.0,
-    ) -> None:
-        """Create a Vector.
-
-        All values are converted to Floats automatically.
-        If no value is given, that axis will be set to 0.
-        An iterable can be passed in (as the x argument), which will be
-        used for x, y, and z.
-        """
-        if isinstance(x, (int, float)):
-            self._x = float(x)
-            self._y = float(y)
-            self._z = float(z)
-        elif isinstance(x, Py_Vec):
-            self._x = x.x
-            self._y = x.y
-            self._z = x.z
-        else:
-            it = iter(x)
-            self._x = float(next(it, 0.0))
-            self._y = float(next(it, y))
-            self._z = float(next(it, z))
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """VecBase cannot be instantiated."""
+        if type(self) is VecBase:
+            raise TypeError('VecBase cannot be instantiated.')
 
     @property
     def x(self) -> float:
@@ -1002,9 +976,42 @@ class VecBase:
     mag_sq = len_sq
 
 
+@final
 class FrozenVec(VecBase, SupportsRound['FrozenVec']):
     """Immutable vector class. This cannot be changed once created, but is hashable."""
     __slots__ = ()
+
+    def __new__(
+        cls,
+        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
+        y: float=0.0,
+        z: float=0.0,
+    ) -> 'FrozenVec':
+        """Create a FrozenVec.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the x argument), which will be
+        used for x, y, and z.
+        """
+        # Already a FrozenVec.
+        if isinstance(x, cls):
+            return x
+        res = object.__new__(cls)
+        if isinstance(x, (int, float)):
+            res._x = float(x)
+            res._y = float(y)
+            res._z = float(z)
+        elif isinstance(x, Py_Vec):
+            res._x = x.x
+            res._y = x.y
+            res._z = x.z
+        else:
+            it = iter(x)
+            res._x = float(next(it, 0.0))
+            res._y = float(next(it, y))
+            res._z = float(next(it, z))
+        return res
 
     @classmethod
     @overload
@@ -1121,9 +1128,38 @@ VecBase.B = VecBase.bottom = VecBase.z_neg = FrozenVec(z=-1)
 VecBase.T = VecBase.top    = VecBase.z_pos = FrozenVec(z=+1)
 
 
+@final
 class Vec(VecBase, SupportsRound['Vec']):
     """Mutable vector class. This has in-place operations for efficiency."""
     __slots__ = ()
+
+    # noinspection PyMissingConstructor
+    def __init__(
+        self,
+        x: Union[int, float, 'VecBase', Iterable[float]]=0.0,
+        y: float=0.0,
+        z: float=0.0,
+    ) -> None:
+        """Create a Vector.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the x argument), which will be
+        used for x, y, and z.
+        """
+        if isinstance(x, (int, float)):
+            self._x = float(x)
+            self._y = float(y)
+            self._z = float(z)
+        elif isinstance(x, Py_Vec):
+            self._x = x.x
+            self._y = x.y
+            self._z = x.z
+        else:
+            it = iter(x)
+            self._x = float(next(it, 0.0))
+            self._y = float(next(it, y))
+            self._z = float(next(it, z))
 
     @property
     def x(self) -> float:

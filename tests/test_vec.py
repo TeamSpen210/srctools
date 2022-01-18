@@ -94,11 +94,18 @@ def test_vec_copying(py_c_vec, frozen_thawed_vec):
 
         # Test doing the same with FrozenVec does not copy.
         fv = FrozenVec(x, y, z)
-        fv2 = FrozenVec(fv)
+        fv2 = FrozenVec(v)
         assert_vec(fv2, x, y, z)
-        assert v is not v3
+        assert fv2 is not v
 
         assert fv.copy() is fv
+
+        # Ensure this doesn't mistakenly return the existing one.
+        assert Vec(fv) is not fv
+        # FrozenVec should not make a copy.
+        # TODO: Cython doesn't let you override tp_new for this yet.
+        if FrozenVec is vec_mod.Py_FrozenVec:
+            assert FrozenVec(fv) is fv
 
 
 def test_vec_from_str(py_c_vec, frozen_thawed_vec):
