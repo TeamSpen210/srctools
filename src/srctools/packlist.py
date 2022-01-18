@@ -463,6 +463,7 @@ class PackList:
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
         if sound_name.endswith(('.wav', '.mp3')):
+            sound_name = sound_name.lstrip(SND_CHARS)
             if not sound_name.startswith('sound/'):
                 sound_name = 'sound/' + sound_name
             self.pack_file(sound_name)
