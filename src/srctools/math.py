@@ -43,7 +43,7 @@ import warnings
 
 from typing import (
     TypeVar, Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
-    NamedTuple, Iterator, Iterable, SupportsRound, Optional,
+    NamedTuple, Iterator, Iterable, SupportsRound, Optional, ClassVar
 )
 if TYPE_CHECKING:
     from typing import final, Literal
@@ -324,13 +324,27 @@ class VecBase:
         ('y', 'x'): 'z',
     })
 
-    # Vectors pointing in all cardinal directions
-    N = north = y_pos = Vec_tuple(0, 1, 0)
-    S = south = y_neg = Vec_tuple(0, -1, 0)
-    E = east = x_pos = Vec_tuple(1, 0, 0)
-    W = west = x_neg = Vec_tuple(-1, 0, 0)
-    T = top = z_pos = Vec_tuple(0, 0, 1)
-    B = bottom = z_neg = Vec_tuple(0, 0, -1)
+    # Vectors pointing in all cardinal directions.
+    # Variable annotation here, it has to be assigned after FrozenVec
+    # is actually defined.
+    N: ClassVar['FrozenVec']
+    S: ClassVar['FrozenVec']
+    E: ClassVar['FrozenVec']
+    W: ClassVar['FrozenVec']
+    T: ClassVar['FrozenVec']
+    B: ClassVar['FrozenVec']
+    north: ClassVar['FrozenVec']
+    south: ClassVar['FrozenVec']
+    east: ClassVar['FrozenVec']
+    west: ClassVar['FrozenVec']
+    top: ClassVar['FrozenVec']
+    bottom: ClassVar['FrozenVec']
+    y_pos: ClassVar['FrozenVec']
+    y_neg: ClassVar['FrozenVec']
+    x_pos: ClassVar['FrozenVec']
+    x_neg: ClassVar['FrozenVec']
+    z_pos: ClassVar['FrozenVec']
+    z_neg: ClassVar['FrozenVec']
 
     _x: float
     _y: float
@@ -1088,6 +1102,14 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
     def thaw(self) -> 'Vec':
         """Return a mutable copy of this vector."""
         return Py_Vec(self.x, self.y, self.z)
+    
+
+VecBase.W = VecBase.west   = VecBase.x_neg = FrozenVec(x=-1)
+VecBase.E = VecBase.east   = VecBase.x_pos = FrozenVec(x=+1)
+VecBase.S = VecBase.south  = VecBase.y_neg = FrozenVec(y=-1)
+VecBase.N = VecBase.north  = VecBase.y_pos = FrozenVec(y=+1)
+VecBase.B = VecBase.bottom = VecBase.z_neg = FrozenVec(z=-1)
+VecBase.T = VecBase.top    = VecBase.z_pos = FrozenVec(z=+1)
 
 
 class Vec(VecBase, SupportsRound['Vec']):

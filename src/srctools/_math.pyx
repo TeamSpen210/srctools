@@ -242,7 +242,7 @@ cdef object vector_compare(BaseVec self, object other_obj, int op):
             (other.z - self.val.z) <= TOL
         ) == True
     else:
-        raise SystemError(f'Unknown operation {op!r}' '!')
+        raise SystemError('Unknown operation', op)
 
 
 def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
@@ -705,14 +705,14 @@ cdef class BaseVec:
         ('z', 'x'): 'y',
         ('y', 'x'): 'z',
     }
+
     # Vectors pointing in all cardinal directions.
-    # Tuple.__new__() can't be unpacked...
-    N = north = y_pos = _make_tuple(0, 1, 0)
-    S = south = y_neg = _make_tuple(0, -1, 0)
-    E = east = x_pos = _make_tuple(1, 0, 0)
-    W = west = x_neg = _make_tuple(-1, 0, 0)
-    T = top = z_pos = _make_tuple(0, 0, 1)
-    B = bottom = z_neg = _make_tuple(0, 0, -1)
+    N = north = y_pos = _vector_frozen(0, 1, 0)
+    S = south = y_neg = _vector_frozen(0, -1, 0)
+    E = east = x_pos = _vector_frozen(1, 0, 0)
+    W = west = x_neg = _vector_frozen(-1, 0, 0)
+    T = top = z_pos = _vector_frozen(0, 0, 1)
+    B = bottom = z_neg = _vector_frozen(0, 0, -1)
 
     def __init__(self, x=0.0, y=0.0, z=0.0) -> None:
         """Create a Vector.
@@ -2756,6 +2756,7 @@ def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
 from cpython.object cimport PyTypeObject
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
+    (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
