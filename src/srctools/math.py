@@ -133,6 +133,15 @@ class Vec_tuple(NamedTuple):
     y: float
     z: float
 
+_old_vec_tup = Vec_tuple.__new__
+def _vec_tup_new(*args, **kwargs):
+    warnings.warn(
+        'Vec_tuple is deprecated, use FrozenVec instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    return _old_vec_tup(*args, **kwargs)
+Vec_tuple.__new__ = _vec_tup_new
+
 
 if TYPE_CHECKING:
     class _InvAxis:
