@@ -1643,9 +1643,18 @@ _conv_string_to_bool = lambda val: BOOL_LOOKUP[val.casefold()]
 _conv_string_to_vec2 = lambda text: Vec2._make(parse_vector(text, 2))
 _conv_string_to_vec3 = lambda text: Vec3._make(parse_vector(text, 3))
 _conv_string_to_vec4 = lambda text: Vec4._make(parse_vector(text, 4))
-_conv_string_to_color = lambda text: Color._make(parse_vector(text, 4))
 _conv_string_to_angle = lambda text: AngleTup._make(parse_vector(text, 3))
 _conv_string_to_quaternion = lambda text: Quaternion._make(parse_vector(text, 4))
+
+def _conv_string_to_color(text: str) -> Color:
+    """Colors can either have 3 or 4 values."""
+    parts = text.split()
+    if len(parts) == 3:
+        return Color(int(parts[0]), int(parts[1]), int(parts[2]), 255)
+    elif len(parts) == 4:
+        return Color._make(map(int, parts))
+    else:
+        raise ValueError(f"'{text}' is not a valid Color!")
 
 _conv_integer_to_string = str
 _conv_integer_to_float = float
