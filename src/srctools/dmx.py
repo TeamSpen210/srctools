@@ -1586,9 +1586,6 @@ def deduce_type_single(value):
         return ValueType.MATRIX, value.copy()
     if isinstance(value, Angle):  # Mutable version of values we use.
         return ValueType.ANGLE, AngleTup._make(value)
-    elif isinstance(value, Color):
-        [r, g, b, a] = value
-        return ValueType.COLOR, Color(int(r), int(g), int(b), int(a))
     try:
         # Match to one of the types directly.
         val_type = TYPE_TO_VALTYPE[type(value)]
