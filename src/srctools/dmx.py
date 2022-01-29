@@ -19,6 +19,8 @@ import re
 import copy
 from uuid import UUID, uuid4 as get_uuid
 
+import attr
+
 from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, EmptyMapping
 from srctools.property_parser import Property
 from srctools.tokenizer import Py_Tokenizer as Tokenizer, Token
@@ -112,15 +114,29 @@ class Quaternion(NamedTuple):
     #     return f'({self[0]} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
-class Color(NamedTuple):
+@attr.frozen
+class Color:
     """An RGB color."""
-    r: int
-    g: int
-    b: int
-    a: int
+
+    def _clamp_color(x: int) -> int:
+        """Clamp colors to 0-255."""
+        return max(0, min(255, round(x)))
+
+    r: int = attr.ib(converter=_clamp_color)
+    g: int = attr.ib(converter=_clamp_color)
+    b: int = attr.ib(converter=_clamp_color)
+    a: int = attr.ib(converter=_clamp_color, default=255)
+
+    del _clamp_color
+
+    def __iter__(self) -> Iterator[int]:
+        yield self.r
+        yield self.g
+        yield self.b
+        yield self.a
 
     def __str__(self) -> str:
-        return f'{self[0]} {self[1]} {self[2]} {self[3]}'
+        return f'{self.r} {self.g} {self.b} {self.a}'
 
 
 class AngleTup(NamedTuple):
@@ -1649,7 +1665,7 @@ def _conv_string_to_color(text: str) -> Color:
     if len(parts) == 3:
         return Color(int(parts[0]), int(parts[1]), int(parts[2]), 255)
     elif len(parts) == 4:
-        return Color._make(map(int, parts))
+        return Color(int(parts[0]), int(parts[1]), int(parts[2]), int(parts[3]))
     else:
         raise ValueError(f"'{text}' is not a valid Color!")
 
@@ -1701,23 +1717,14 @@ _conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
 _conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
 _conv_vec3_to_angle = lambda v: AngleTup(v.x, v.y, v.z)
-_conv_vec3_to_color = lambda v: Color(
-    max(0, min(round(v.x), 255)),
-    max(0, min(round(v.y), 255)),
-    max(0, min(round(v.z), 255)),
-    255)
+_conv_vec3_to_color = lambda v: Color(v.x, v.y, v.z)
 
 _conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
 _conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
 _conv_vec4_to_vec3 = lambda v: Vec3(v.x, v.y, v.z)
 _conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec4_to_quaternion = lambda v: Quaternion(v.x, v.y, v.z, v.w)
-_conv_vec4_to_color = lambda v: Color(
-    max(0, min(round(v.x), 255)),
-    max(0, min(round(v.y), 255)),
-    max(0, min(round(v.z), 255)),
-    max(0, min(round(v.w), 255))
-)
+_conv_vec4_to_color = lambda v: Color(v.x, v.y, v.z, v.w)
 
 _conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
 
@@ -1756,25 +1763,25 @@ def _binconv_basic(name: str, fmt: str):
     ns[f'_conv_binary_to_{name}'] = unpack
 
 
-def _binconv_ntup(name: str, fmt: str, Tup: Type[tuple]):
+def _binconv_cls(name: str, fmt: str, Tup: type):
     """Converter functions for a type matching a namedtuple."""
     shape = Struct(fmt)
     ns = globals()
     ns['_struct_' + name] = shape
     ns[f'_conv_{name}_to_binary'] = lambda val: shape.pack(*val)
-    ns[f'_conv_binary_to_{name}'] = lambda byt: Tup._make(shape.unpack(byt))
+    ns[f'_conv_binary_to_{name}'] = lambda byt: Tup(*shape.unpack(byt))
 
 _binconv_basic('integer', '<i')
 _binconv_basic('float', '<f')
 _binconv_basic('bool', '<?')
 
-_binconv_ntup('color', '<4B', Color)
-_binconv_ntup('angle', '<3f', AngleTup)
-_binconv_ntup('quaternion', '<4f', Quaternion)
+_binconv_cls('color', '<4B', Color)
+_binconv_cls('angle', '<3f', AngleTup)
+_binconv_cls('quaternion', '<4f', Quaternion)
 
-_binconv_ntup('vec2', '<2f', Vec2)
-_binconv_ntup('vec3', '<3f', Vec3)
-_binconv_ntup('vec4', '<4f', Vec4)
+_binconv_cls('vec2', '<2f', Vec2)
+_binconv_cls('vec3', '<3f', Vec3)
+_binconv_cls('vec4', '<4f', Vec4)
 
 _struct_time = Struct('<i')
 def _conv_time_to_binary(tim: Time) -> bytes:
@@ -1841,12 +1848,25 @@ def _converter_ntup(typ):
             return typ._make(value)
     return _convert
 
-_conv_color = _converter_ntup(Color)
 _conv_vec2 = _converter_ntup(Vec2)
 _conv_vec3 = _converter_ntup(Vec3)
 _conv_vec4 = _converter_ntup(Vec4)
 _conv_quaternion = _converter_ntup(Quaternion)
 del _converter_ntup
+
+
+def _conv_color(value) -> Color:
+    if isinstance(value, Color):
+        return value
+    try:
+        r, g, b, a = value
+    except ValueError:
+        try:
+            r, g, b = value
+            a = 255
+        except ValueError:
+            raise ValueError(f'Color() requires 3 or 4-long iterable, got: {value!r}')
+    return Color(r, g, b, a)
 
 
 def _conv_angle(value) -> AngleTup:
@@ -1869,7 +1889,7 @@ def _conv_matrix(value) -> Matrix:
 
 
 def _conv_element(value) -> Element:
-    if not isinstance(value, Element):
+    if value is not None and not isinstance(value, Element):
         raise ValueError('Element arrays must contain elements!')
     return value
 
