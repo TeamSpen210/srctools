@@ -359,14 +359,18 @@ class Mesh:
         for line_num, line in file_iter:
             if line == b'end':
                 return bones
+            match = re.fullmatch(
+                br'([0-9]+)\s*"([^"]*)"\s*(-?[0-9]+)',
+                line,
+            )
+            if match is None:
+                raise ParseError(line_num, 'Invalid line!') from None
+
+            bone_ind_bytes, bone_name, bone_parent_bytes = match.groups()
             try:
-                bone_ind_bytes, bone_name, bone_parent_bytes = re.fullmatch(
-                    br'([0-9]+)\s*"([^"]*)"\s*(-?[0-9]+)',
-                    line,
-                ).groups()
                 bone_ind = int(bone_ind_bytes)
                 bone_parent = int(bone_parent_bytes)
-            except (ValueError, AttributeError):  # None.groups()
+            except ValueError:  # None.groups()
                 raise ParseError(line_num, 'Invalid line!') from None
             else:
                 if bone_parent == -1:

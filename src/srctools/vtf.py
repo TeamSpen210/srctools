@@ -668,7 +668,10 @@ class VTF:
         if version_minor >= 3:
             [num_resources] = struct.unpack('<3xI8x', file.read(15))
             for i in range(num_resources):
-                [res_id, res_flags, data] = struct.unpack('<3sBI', file.read(8))  # type: bytes, int, int
+                res_id: bytes
+                res_flags: int
+                data: int
+                [res_id, res_flags, data] = struct.unpack('<3sBI', file.read(8))
                 if res_id in vtf.resources:
                     raise ValueError(f'Duplicate resource ID {repr(res_id)[1:]}!')
 

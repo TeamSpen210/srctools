@@ -34,6 +34,7 @@ exclude = [
 	"tests/",
 	"**/__pycache__"
 	]
+stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
 

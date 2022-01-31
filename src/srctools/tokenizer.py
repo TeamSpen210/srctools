@@ -172,7 +172,7 @@ class BaseTokenizer(abc.ABC):
     def error(self, message: Token, __value: str='') -> TokenSyntaxError: ...
     @overload
     def error(self, message: str, *args: object) -> TokenSyntaxError: ...
-    def error(self, message: Union[str, Token], *args) -> TokenSyntaxError:
+    def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the TokenSyntaxError instance, with

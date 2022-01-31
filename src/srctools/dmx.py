@@ -5,7 +5,6 @@ set of 'unicode_XXX' encoding formats.
 """
 import builtins
 import warnings
-import struct
 import sys
 from enum import Enum
 from typing import (
@@ -114,20 +113,19 @@ class Quaternion(NamedTuple):
     #     return f'({self[0]} {self[1]:.6g} {self[2]:.6g} {self[3]:.6g})'
 
 
+def _clamp_color(x: int) -> int:
+    """Clamp colors to 0-255."""
+    return max(0, min(255, round(x)))
+
+
 @attr.frozen
 class Color:
     """An RGB color."""
-
-    def _clamp_color(x: int) -> int:
-        """Clamp colors to 0-255."""
-        return max(0, min(255, round(x)))
 
     r: int = attr.ib(converter=_clamp_color)
     g: int = attr.ib(converter=_clamp_color)
     b: int = attr.ib(converter=_clamp_color)
     a: int = attr.ib(converter=_clamp_color, default=255)
-
-    del _clamp_color
 
     def __iter__(self) -> Iterator[int]:
         yield self.r
@@ -148,12 +146,9 @@ class AngleTup(NamedTuple):
 
 Time = NewType('Time', float)
 Value = Union[
-    int, float, bool, str,
-    bytes,
-    Color,
-    Time,
-    Vec2, Vec3,
-    Vec4,
+    int, float, bool, str, bytes,
+    Color, Time,
+    Vec2, Vec3, Vec4,
     AngleTup,
     Quaternion,
     Matrix,
@@ -232,7 +227,7 @@ def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
         self._write_val(val_type, value)
 
     def getter(self: '_ValProps') -> ValueT:
-        return self._read_val(val_type)
+        return self._read_val(val_type)  # type: ignore
 
     if val_type.name[0].casefold() in 'aeiou':
         desc = f'an {val_type.name.lower()}.'
@@ -249,10 +244,10 @@ def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
     )
 
 
-def _make_iter(val_type: ValueType, typ: Type[Value]) -> Callable[[], Iterator[ValueT]]:
+def _make_iter(val_type: ValueType, typ: Type[Value]) -> Callable:
     """Build an iterator for the given value type."""
     def iterator(self: 'Attribute') -> Iterator[ValueT]:
-        return self._iter_array(val_type)
+        return self._iter_array(val_type)  # type: ignore
 
     iterator.__doc__ = f'Iterate over {val_type.name.lower()} values.'
     iterator.__annotations__['return'] = Iterator[typ]
@@ -430,8 +425,8 @@ class Attribute(Generic[ValueT], _ValProps):
         r: Union[builtins.float, Iterable[builtins.float]]=0, g=0, b=0, a=255,
     ) -> 'Attribute[Color]':
         """Create an attribute with a color."""
-        if isinstance(r, int):
-            r_ = r
+        if isinstance(r, (int, float)):
+            r_ = int(r)
         else:
             it = iter(r)
             r_ = int(next(it, 0))
@@ -518,7 +513,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def __repr__(self) -> str:
         return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other) -> builtins.bool:
         if isinstance(other, Attribute):
             return (
                 self._typ is other._typ and
@@ -527,7 +522,7 @@ class Attribute(Generic[ValueT], _ValProps):
             )
         return NotImplemented
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other) -> builtins.bool:
         if isinstance(other, Attribute):
             return (
                 self._typ is not other._typ or
@@ -543,7 +538,7 @@ class Attribute(Generic[ValueT], _ValProps):
         _ = self._value[item]  # Raise IndexError/KeyError if not present.
         return AttrMember(self, item)
 
-    def __setitem__(self, item, value: ValueT) -> None:
+    def __setitem__(self, item, value: Value) -> None:
         """Set a specific array element to a value."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
@@ -551,13 +546,13 @@ class Attribute(Generic[ValueT], _ValProps):
         if val_type is not self._typ:
             # Try converting.
             try:
-                func = TYPE_CONVERT[val_type, self._typ]
+                func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
             except KeyError:
                 raise ValueError(
                     f'Cannot convert ({val_type}) to {self._typ} type!')
             self._value[item] = func(result)
         else:
-            self._value[item] = result
+            self._value[item] = cast(ValueT, result)
 
     def __delitem__(self, item: Union[builtins.int, slice]) -> None:
         """Remove the specified array index(s)."""
@@ -591,12 +586,12 @@ class Attribute(Generic[ValueT], _ValProps):
         if val_type is not self._typ:
             # Try converting.
             try:
-                func = TYPE_CONVERT[val_type, self._typ]
+                func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
             except KeyError:
                 raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
             self._value.append(func(result))
         else:
-            self._value.append(result)
+            self._value.append(result)  # type: ignore # (we know it's right)
 
     def extend(self, values) -> None:
         """Append multiple values to the array.
@@ -611,12 +606,12 @@ class Attribute(Generic[ValueT], _ValProps):
             if val_type is not self._typ:
                 # Try converting.
                 try:
-                    func = TYPE_CONVERT[val_type, self._typ]
+                    func = cast('Callable[[Value], ValueT]', TYPE_CONVERT[val_type, self._typ])
                 except KeyError:
                     raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
                 self._value.append(func(result))
             else:
-                self._value.append(result)
+                self._value.append(result)  # type: ignore # (we know it's right)
 
     def clear_array(self) -> None:
         """Remove all items in this, if it is an array."""
@@ -1152,23 +1147,19 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.is_array:
                     file.write(pack('<i', len(attr)))
 
-                # We write a scalar like we would write a 1-long array.
-                # noinspection PyProtectedMember
-                subvalues = cast('list[Value]', attr._value if attr.is_array else [attr._value])
-
                 if attr.type is ValueType.STRING:
                     # Scalar strings after v4 use the DB.
                     if version >= 4 and not attr.is_array:
                         file.write(pack(stringdb_ind, string_to_ind[attr.val_str]))
                     else:
-                        for text in subvalues:
+                        for text in attr.iter_string():
                             file.write(text.encode(encoding) + b'\0')
                 elif attr.type is ValueType.BINARY:
-                    for data in subvalues:
-                        file.write(pack('<i', len(data)))
-                        file.write(data)
+                    for bin_data in attr.iter_binary():
+                        file.write(pack('<i', len(bin_data)))
+                        file.write(bin_data)
                 elif attr.type is ValueType.ELEMENT:
-                    for subelem in subvalues:
+                    for subelem in attr.iter_elem():
                         if subelem is None:
                             file.write(pack('<i', -1))
                         elif subelem.type == STUB:
@@ -1176,12 +1167,9 @@ class Element(MutableMapping[str, Attribute]):
                         else:
                             file.write(pack('<i', elem_to_ind[subelem.uuid]))
                 else:
-                    conv_func = TYPE_CONVERT[attr.type, ValueType.BINARY]
-                    for any_data in subvalues:
-                        try:
-                            file.write(conv_func(any_data))
-                        except struct.error:
-                            raise ValueError(f'Cannot convert {attr.type}({any_data}) to binary!')
+                    # Convert to binary, then write inline.
+                    for bin_data in attr.iter_binary():
+                        file.write(bin_data)
 
     def export_kv2(
         self, file: IO[bytes],
@@ -1231,7 +1219,7 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.type is not ValueType.ELEMENT:
                     continue
                 # noinspection PyProtectedMember
-                for subelem in attr._value if attr.is_array else [attr._value]:
+                for subelem in attr.iter_elem():
                     if subelem is None or subelem.type == STUB:
                         continue
                     if subelem.uuid not in use_count:
@@ -1291,8 +1279,8 @@ class Element(MutableMapping[str, Attribute]):
                         else:
                             child._export_kv2(file, indent_arr, roots, encoding, cull_uuid)
                     else:
-                        str_value = TYPE_CONVERT[attr.type, ValueType.STRING](child).encode(encoding)
-                        file.write(b'"%b"' % (str_value, ))
+                        str_value = cast(str, TYPE_CONVERT[attr.type, ValueType.STRING](child))
+                        file.write(b'"%b"' % (str_value.encode(encoding), ))
                     if i == len(attr) - 1:
                         file.write(b'\r\n')
                     else:

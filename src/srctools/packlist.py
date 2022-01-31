@@ -135,7 +135,7 @@ class PackFile:
     """
     type: FileType
     filename: str
-    data: bytes = None
+    data: Optional[bytes] = None
     optional: bool = False
     # If we've checked for dependencies of this yet.
     _analysed: bool = attr.ib(init=False, default=False)

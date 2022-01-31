@@ -262,7 +262,7 @@ class Property:
         cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
-        open_properties = [(cur_block, 1)]
+        open_properties: List[Tuple[Property, int]] = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING = Token.STRING
@@ -699,7 +699,7 @@ class Property:
     def as_array(self) -> List[str]: ...
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
-    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> List[T]:
+    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
         """Convert a property block into a list of values.
 
         If the property is a single keyvalue, the single value will be
