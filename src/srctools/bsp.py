@@ -92,6 +92,8 @@ class VERSIONS(Enum):
     CS_GO = 21
     DEAR_ESTHER = 21
     STANLEY_PARABLE = 21
+
+    INFRA = 22
     DOTA2 = 22
     CONTAGION = 23
 
@@ -1459,11 +1461,17 @@ class BSP:
         """Parse the primitives lumps."""
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
         indices = read_array('<H', self.lumps[BSP_LUMPS.PRIMINDICES].data)
+        # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
+        # char type;
+        # int first_ind, ind_count;
+        # short vert_ind, vert_count;
+        # Then the type is promoted to int for structure alignment.
+        fmt = '<IIIHH' if self.version is VERSIONS.INFRA else '<HHHHH'
         for (
             prim_type,
             first_ind, ind_count,
             first_vert, vert_count,
-        ) in struct.iter_unpack('<HHHHH', data):
+        ) in struct.iter_unpack(fmt, data):
             yield Primitive(
                 prim_type,
                 indices[first_ind: first_ind + ind_count],
@@ -1474,13 +1482,13 @@ class BSP:
         verts: List[bytes] = []
         indices: List[int] = []
 
+        fmt = struct.Struct('<IIIHH' if self.version is VERSIONS.INFRA else '<HHHHH')
         for prim in prims:
             vert_loc = len(verts)
             index_loc = len(indices)
             verts += [struct.pack('<fff', pos.x, pos.y, pos.z) for pos in prim.verts]
             indices.extend(prim.indexed_verts)
-            yield struct.pack(
-                '<HHHHH',
+            yield fmt.pack(
                 prim.is_tristrip,
                 index_loc, len(prim.indexed_verts),
                 vert_loc, len(prim.verts),
