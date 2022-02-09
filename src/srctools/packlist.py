@@ -518,7 +518,7 @@ class PackList:
             except FileNotFoundError:
                 LOGGER.warning('No scripts/propdata.txt for breakable chunks!')
                 return
-            with propdata.open_str() as f:
+            with propdata.open_str(encoding='cp1252') as f:
                 props = Property.parse(f, 'scripts/propdata.txt', allow_escapes=False)
             self._break_chunks = {}
             for chunk_prop in props.find_children('BreakableModels'):
@@ -547,7 +547,7 @@ class PackList:
         The sounds registered by this soundscript are returned.
         """
         try:
-            with file.open_str() as f:
+            with file.open_str(encoding='cp1252') as f:
                 props = Property.parse(f, file.path, allow_escapes=False)
         except FileNotFoundError:
             # It doesn't exist, complain and pretend it's empty.
@@ -592,7 +592,7 @@ class PackList:
         try:
             scripts = Sound.parse(props)
         except ValueError:
-            LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
+            LOGGER.warning('Soundscript "{}" could not be parsed:', path, exc_info=True)
             return []
 
         self.soundscript.add_file(path, scripts.items(), FileMode.INCLUDE if always_include else FileMode.UNKNOWN)
@@ -606,7 +606,7 @@ class PackList:
         cache the file reading for later use.
         """
         try:
-            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt')
+            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt', encoding='cp1252')
         except FileNotFoundError:
             return
 
