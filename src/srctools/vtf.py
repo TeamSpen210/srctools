@@ -12,9 +12,9 @@ import struct
 import warnings
 from io import BytesIO
 
-from srctools import binformat, EmptyMapping
-from srctools.const import add_unknown
-from srctools.math import Vec
+from . import binformat, EmptyMapping
+from .const import add_unknown
+from .math import Vec
 
 from typing import (
     IO, Dict, List, Optional, Tuple, Iterable, Union,
@@ -34,14 +34,14 @@ if TYPE_CHECKING:
 # For type-checking purposes make it think the Cython version is the Python one.
 
 # noinspection PyProtectedMember
-from srctools import _py_vtf_readwrite as _py_format_funcs
+from . import _py_vtf_readwrite as _py_format_funcs
 _cy_format_funcs = _format_funcs = _py_format_funcs
 
 if not TYPE_CHECKING:
     try:
         # noinspection PyUnresolvedReferences, PyProtectedMember
-        from srctools import _cy_vtf_readwrite as _cy_format_funcs  # type: ignore
-        _format_funcs = _cy_format_funcs  # type: ignore
+        from . import _cy_vtf_readwrite as _cy_format_funcs
+        _format_funcs = _cy_format_funcs
     except ImportError:
         pass
 

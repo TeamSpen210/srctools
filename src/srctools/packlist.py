@@ -610,6 +610,8 @@ class PackList:
         except FileNotFoundError:
             return
 
+        new_cache_data: Optional[Property]
+        new_cache_sounds: Optional[Property]
         cache_data: Dict[str, Tuple[int, Property]] = {}
         if cache_file is not None:
             # If the file doesn't exist or is corrupt, that's
@@ -659,9 +661,8 @@ class PackList:
 
             # The soundscripts in the manifests are always included,
             # since many would be part of the core code (physics, weapons,
-            # ui, etc). Just keep those loaded, no harm since vanilla does.
-
-            if cache_key != cur_key or cache_key == -1:
+            # ui, etc). Just keep those loaded, no harm since the game does.
+            if cache_key != cur_key or cache_key == -1 or cache_files is None:
                 sounds = self.load_soundscript(file, always_include=True)
             else:
                 # Read from cache.

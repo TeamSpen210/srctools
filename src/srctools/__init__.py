@@ -343,13 +343,13 @@ class _EmptySetView(AbstractSet[Any]):
         """We are <= to all sets."""
         if isinstance(other, AbstractSet):
             return True
-        return NotImplemented  # type: ignore
+        return NotImplemented
 
     def __gt__(self, other) -> bool:
         """We are never > any set."""
         if isinstance(other, AbstractSet):
             return False
-        return NotImplemented  # type: ignore
+        return NotImplemented
 
     def __or__(self, other: Iterable[ValT]) -> Set[ValT]:
         """A binary operation which returns all the other values."""

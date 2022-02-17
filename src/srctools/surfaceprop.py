@@ -290,7 +290,7 @@ class SurfaceProp:
 
                 gamemat=game_mat,
                 jump_factor=prop.float('jump_factor', None),
-                climbable=prop.bool('climbable', None),
+                climbable=prop.bool('climbable', False),
             )
 
         return prev

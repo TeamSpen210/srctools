@@ -1916,7 +1916,7 @@ Cy_Matrix = Py_Matrix = Matrix
 _glob = globals()
 del _glob['SupportsRound']
 try:
-    from srctools import _math  # type: ignore
+    from srctools import _math
 except ImportError:
     pass
 else:

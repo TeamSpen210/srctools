@@ -1749,7 +1749,7 @@ class EntityDef:
 
         for _ in range(base_count):
             # We temporarily store strings, then evaluate later on.
-            ent.bases.append(from_dict())  # type: ignore
+            ent.bases.append(from_dict())
 
         count: int
         val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]

@@ -390,12 +390,7 @@ class Lump:
     is_compressed: bool = False
 
     def __repr__(self) -> str:
-        return '<BSP Lump {!r}, v{}, {} bytes>'.format(
-            self.type.name,
-            self.version,
-            self.ident,
-            len(self.data),
-        )
+        return f'<BSP Lump {self.type.name!r}, v{self.version}, {len(self.data)} bytes>'
 
 
 @attr.define(eq=False)
@@ -1271,7 +1266,7 @@ class BSP:
                 if inspect.isgenerator(lump_result):
                     buf = BytesIO()
                     for chunk in lump_result:
-                        buf.write(chunk)  # type: ignore
+                        buf.write(chunk)
                     lump_result = buf.getvalue()
                 if isinstance(lump_or_game, bytes):
                     self.game_lumps[lump_or_game].data = lump_result
@@ -1313,7 +1308,7 @@ class BSP:
                     # by checking the offset of the next part. So if
                     # the last is compressed, we need to add a dummy
                     # segment to supply the offset.
-                    dummy_segment = game_lumps and game_lumps[-1].is_compressed
+                    dummy_segment = 1 if (game_lumps and game_lumps[-1].is_compressed) else 0
 
                     file.write(struct.pack('<i', len(game_lumps) + dummy_segment))
                     for game_lump in game_lumps:
