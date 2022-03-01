@@ -189,6 +189,44 @@ def test_export_regressions(file_regression) -> None:
         '255 255 128',
         'Help text for a keyvalue',
     )}
+
+    # Test exporting with blank defaults and description.
+    ent.keyvalues['test_both'] = {frozenset(): KeyValues(
+        'test_both',
+        ValueTypes.STRING,
+        'Both default and desc',
+        'defaulted',
+        'A description',
+    )}
+    ent.keyvalues['test_desc'] = {frozenset(): KeyValues(
+        'test_desc',
+        ValueTypes.STRING,
+        'just desc',
+        desc='A description',
+    )}
+    ent.keyvalues['test_def'] = {frozenset(): KeyValues(
+        'test_def',
+        ValueTypes.STRING,
+        'Just default',
+        default='defaulted',
+    )}
+    ent.keyvalues['test_neither'] = {frozenset(): KeyValues(
+        'test_neither',
+        ValueTypes.STRING,
+        'Neither',
+    )}
+    # Special case, boolean must supply default.
+    ent.keyvalues['test_bool_neither'] = {frozenset(): KeyValues(
+        'test_bool_neither',
+        ValueTypes.BOOL,
+        'Neither',
+    )}
+    ent.keyvalues['test_bool_desc'] = {frozenset(): KeyValues(
+        'test_bool_desc',
+        ValueTypes.BOOL,
+        'Neither',
+        desc='A description',
+    )}
     buf = io.StringIO()
     fgd.export(buf)
     file_regression.check(buf.getvalue(), extension='.fgd')
