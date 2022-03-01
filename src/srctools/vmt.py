@@ -11,8 +11,6 @@ import attr
 from srctools import FileSystem, Property, EmptyMapping
 from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
 
-ArgT = TypeVar('ArgT')
-
 
 class VarType(Enum):
     """The different types shader variables can be.
@@ -60,7 +58,8 @@ class Variable:
     name: str  # With correct case
     value: str
 
-
+__all__ = ['VarType', 'Material', 'get_parm_type']
+ArgT = TypeVar('ArgT')
 _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 
 
