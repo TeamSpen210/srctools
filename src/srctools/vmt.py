@@ -1,7 +1,7 @@
 """Parses material files."""
 from typing import (
     Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    MutableMapping, Mapping, TextIO,
+    MutableMapping, Mapping, TextIO, overload
 )
 import sys
 from enum import Enum
@@ -63,9 +63,14 @@ ArgT = TypeVar('ArgT')
 _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 
 
+@overload
+def get_parm_type(name: str) -> Optional[VarType]: ...
+@overload
+def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
 def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
+    # noinspection PyProtectedMember
     from srctools._shaderdb import _shader_db
 
     _shader_db(VarType, _SHADER_PARAM_TYPES)
@@ -79,6 +84,10 @@ def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     return _get_parm_type_real(name, default)
 
 
+@overload
+def _get_parm_type_real(name: str) -> Optional[VarType]: ...
+@overload
+def _get_parm_type_real(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
 def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     """Retrieve the type a parameter has, or return the default."""
     try:
