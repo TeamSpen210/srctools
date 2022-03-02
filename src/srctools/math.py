@@ -54,13 +54,14 @@ else:
 __all__ = [
     'parse_vec_str', 'to_matrix', 'lerp',
     'Vec', 'FrozenVec', 'Vec_tuple',
-    'Angle', 'Matrix',
+    'Angle', 'FrozenAngle', 'Matrix',
 ]
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
 VecT = TypeVar('VecT', bound='VecBase')
+AngleT = TypeVar('AngleT', bound='AngleBase')
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -1117,7 +1118,11 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
 
     def thaw(self) -> 'Vec':
         """Return a mutable copy of this vector."""
-        return Py_Vec(self.x, self.y, self.z)
+        vec = Py_Vec.__new__(Py_Vec)
+        vec._x = self._x
+        vec._y = self._y
+        vec._z = self._z
+        return vec
     
 
 VecBase.W = VecBase.west   = VecBase.x_neg = FrozenVec(x=-1)
@@ -1554,14 +1559,14 @@ class Matrix:
 
     @classmethod
     @overload
-    def from_angle(cls, __angle: 'Angle') -> 'Matrix': ...
+    def from_angle(cls, __angle: 'AngleBase') -> 'Matrix': ...
     @classmethod
     @overload
     def from_angle(cls, pitch: float, yaw: float, roll: float) -> 'Matrix': ...
     @classmethod
     def from_angle(
         cls,
-        pitch: Union['Angle', float],
+        pitch: Union['AngleBase', float],
         yaw: Optional[float]=0.0,
         roll: Optional[float]=None,
     ) -> 'Matrix':
@@ -1569,7 +1574,7 @@ class Matrix:
 
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
         """
-        if isinstance(pitch, Py_Angle):
+        if isinstance(pitch, AngleBase):
             rad_pitch = math.radians(pitch.pitch)
             rad_yaw = math.radians(pitch.yaw)
             rad_roll = math.radians(pitch.roll)
@@ -1729,12 +1734,12 @@ class Matrix:
         mat._ca, mat._cb, mat._cc = z.norm()
         return mat
 
-    def __matmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
+    def __matmul__(self, other: Union['Matrix', 'AngleBase']) -> 'Matrix':
         if isinstance(other, Py_Matrix):
             mat = self.copy()
             mat._mat_mul(other)
             return mat
-        elif isinstance(other, Py_Angle):
+        elif isinstance(other, AngleBase):
             mat = self.copy()
             mat._mat_mul(Py_Matrix.from_angle(other))
             return mat
@@ -1748,17 +1753,18 @@ class Matrix:
     @overload
     def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
     @overload
-    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
+    def __rmatmul__(self, other: AngleT) -> AngleT: ...
 
-    def __rmatmul__(self, other: 'VecBase | Tuple3 | Matrix | Angle') -> 'Vec | FrozenVec | Matrix | Angle':
+    def __rmatmul__(self, other: 'VecBase | Tuple3 | Matrix | AngleBase') -> 'Vec | FrozenVec | Matrix | AngleBase':
         if isinstance(other, Py_Vec) or isinstance(other, tuple):
             result = Py_Vec(other)
             self._vec_rot(result)
             return result
-        elif isinstance(other, Py_Angle):
+        elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
             mat._mat_mul(self)
-            return mat.to_angle()
+            ang = mat.to_angle()
+            return ang.freeze() if isinstance(other, Py_FrozenAngle) else ang
         elif isinstance(other, Py_Matrix):
             mat = other.copy()
             mat._mat_mul(self)
@@ -1766,7 +1772,7 @@ class Matrix:
         else:
             return NotImplemented
 
-    def __imatmul__(self, other: Union['Matrix', 'Angle']) -> 'Matrix':
+    def __imatmul__(self, other: 'Matrix | AngleBase') -> 'Matrix':
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
@@ -1808,18 +1814,384 @@ class Matrix:
         vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
 
+class AngleBase:
+    """Internal base class for Euler angles, implements common code."""
+    # When normalising, we have to double-modulus because -1e-14 % 360.0 = 360.0.
+
+    # Use the private attrs for matching also, we only hook assignment in the mutable one.
+    __match_args__ = __slots__ = ['_pitch', '_yaw', '_roll']
+
+    _pitch: float
+    _yaw: float
+    _roll: float
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        """AngleBase cannot be instantiated."""
+        if type(self) is AngleBase:
+            raise TypeError('AngleBase cannot be instantiated.')
+
+    @property
+    def pitch(self) -> float:
+        """The Y-axis rotation, performed second."""
+        return self._pitch
+
+    @property
+    def yaw(self) -> float:
+        """The Z-axis rotation, performed last."""
+        return self._yaw
+
+    @property
+    def roll(self) -> float:
+        """The X-axis rotation, performed first."""
+        return self._roll
+
+    @classmethod
+    def from_str(cls: Type[AngleT], val: Union[str, 'AngleBase'], pitch=0.0, yaw=0.0, roll=0.0) -> AngleT:
+        """Convert a string in the form '(4 6 -4)' into an Angle.
+
+         If the string is unparsable, this uses the defaults.
+         The string can start with any of the (), {}, [], <> bracket
+         types, or none.
+
+         If the value is already an Angle, a copy will be returned.
+         """
+
+        pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
+        return cls(pitch, yaw, roll)
+
+    @classmethod
+    @overload
+    def from_basis(cls: Type[AngleT], *, x: Vec, y: Vec, z: Vec) -> AngleT: ...
+
+    @classmethod
+    @overload
+    def from_basis(cls: Type[AngleT], *, x: Vec, y: Vec) -> AngleT: ...
+
+    @classmethod
+    @overload
+    def from_basis(cls: Type[AngleT], *, y: Vec, z: Vec) -> AngleT: ...
+
+    @classmethod
+    @overload
+    def from_basis(cls: Type[AngleT], *, x: Vec, z: Vec) -> AngleT: ...
+
+    @classmethod
+    def from_basis(cls: Type[AngleT], **kwargs) -> AngleT:
+        """Return the rotation which results in the specified local axes.
+
+        At least two must be specified, with the third computed if necessary.
+        """
+        ang = Py_Matrix.from_basis(**kwargs).to_angle()
+        return ang.freeze() if cls is Py_FrozenAngle else ang
+
+    @classmethod
+    @overload
+    def with_axes(cls: Type[AngleT], axis1: str, val1: Union[float, 'AngleBase']) -> AngleT: ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls: Type[AngleT],
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+    ) -> AngleT:
+        ...
+
+    @classmethod
+    @overload
+    def with_axes(
+        cls: Type[AngleT],
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+        axis3: str, val3: Union[float, 'Angle'],
+    ) -> AngleT:
+        ...
+
+    @classmethod
+    def with_axes(cls: Type[AngleT], *args, **kwargs) -> AngleT:
+        """Create an Angle, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            ang = Angle()
+            ang[axis1] = val1
+            ang[axis2] = val2
+            ang[axis3] = val3
+        The magnitudes can also be Angles, in which case the matching
+        axis will be used from the angle.
+        """
+        raise NotImplementedError
+
+    def join(self, delim: str=', ') -> str:
+        """Return a string with all numbers joined by the passed delimiter.
+
+        This strips off the .0 if no decimal portion exists.
+        """
+        # :g strips the .0 off of floats if it's an integer.
+        return f'{self._pitch:g}{delim}{self._yaw:g}{delim}{self._roll:g}'
+
+    def __str__(self) -> str:
+        """Return the values, separated by spaces.
+
+        This is the main format in Valve's file formats, though identical to
+        vectors.
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
+
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self._pitch:{format_spec}} {self._yaw:{format_spec}} {self._roll:{format_spec}}"
+
+    def as_tuple(self) -> Tuple[float, float, float]:
+        """Return the Angle as a tuple."""
+        return Vec_tuple(self._pitch, self._yaw, self._roll)
+
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
+    def __iter__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._pitch
+        yield self._yaw
+        yield self._roll
+
+    def __reversed__(self) -> Iterator[float]:
+        """Iterating over the angles returns each value in turn."""
+        yield self._roll
+        yield self._yaw
+        yield self._pitch
+
+    def __getitem__(self, ind: Union[str, int]) -> float:
+        """Allow reading values by index instead of name if desired.
+
+        This accepts the following indexes to read values:
+        - 0, 1, 2
+        - pitch, yaw, roll
+        - pit, yaw, rol
+        - p, y, r
+        Useful in conjunction with a loop to apply commands to all values.
+        """
+        if ind in (0, 'p', 'pit', 'pitch'):
+            return self._pitch
+        elif ind in (1, 'y', 'yaw'):
+            return self._yaw
+        elif ind in (2, 'r', 'rol', 'roll'):
+            return self._roll
+        raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    def __eq__(self, other: object) -> bool:
+        """== test.
+
+        Two Angles are equal if all three axes are the same.
+        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        A tolerance of 1e-6 is accounted for automatically.
+        """
+        if isinstance(other, AngleBase):
+            return (
+                abs(other._pitch - self._pitch) <= 1e-6 and
+                abs(other._yaw - self._yaw) <= 1e-6 and
+                abs(other._roll - self._roll) <= 1e-6
+            )
+        elif isinstance(other, tuple) and len(other) == 3:
+            pit = other[0] % 360.0 % 360.0
+            yaw = other[1] % 360.0 % 360.0
+            rol = other[2] % 360.0 % 360.0
+            return (
+                abs(self._pitch - pit) <= 1e-6 and
+                abs(self._yaw - yaw) <= 1e-6 and
+                abs(self._roll - rol) <= 1e-6
+            )
+        else:
+            return NotImplemented
+
+    def __ne__(self, other: object) -> bool:
+        """!= test.
+
+        Two Angles are equal if all three axes are the same.
+        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        A tolerance of 1e-6 is accounted for automatically.
+        """
+        if isinstance(other, AngleBase):
+            return (
+                abs(other._pitch - self._pitch) > 1e-6 or
+                abs(other._yaw - self._yaw) > 1e-6 or
+                abs(other._roll - self._roll) > 1e-6
+            )
+        elif isinstance(other, tuple) and len(other) == 3:
+            pit = other[0] % 360.0 % 360.0
+            yaw = other[1] % 360.0 % 360.0
+            rol = other[2] % 360.0 % 360.0
+            return (
+                abs(self._pitch - pit) > 1e-6 or
+                abs(self._yaw   - yaw) > 1e-6 or
+                abs(self._roll  - rol) > 1e-6
+            )
+        else:
+            return NotImplemented
+
+    # No ordering, there isn't any sensible relationship.
+
+    def __mul__(self: AngleT, other: Union[int, float]) -> AngleT:
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return type(self)(
+                self._pitch * other,
+                self._yaw * other,
+                self._roll * other,
+            )
+        return NotImplemented
+
+    def __rmul__(self: AngleT, other: Union[int, float]) -> AngleT:
+        """Angle * float multiplies each value."""
+        if isinstance(other, (int, float)):
+            return type(self)(
+                other * self._pitch,
+                other * self._yaw,
+                other * self._roll,
+            )
+        return NotImplemented
+
+    def _rotate_angle(self, target: 'AngleBase') -> 'Angle':
+        """Rotate the target by this angle.
+
+        Inefficient if we have more than one rotation to do.
+        """
+        mat = Py_Matrix.from_angle(target)
+        mat @= self
+        return mat.to_angle()
+
+    # noinspection PyProtectedMember
+    def __matmul__(self: AngleT, other: 'AngleBase | Matrix') -> AngleT:
+        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        if isinstance(other, AngleBase):
+            ang = other._rotate_angle(self)
+        elif isinstance(other, Py_Matrix):
+            mat = Py_Matrix.from_angle(self)
+            mat._mat_mul(other)
+            ang = mat.to_angle()
+        else:
+            return NotImplemented
+        return ang.freeze() if isinstance(self, Py_FrozenAngle) else ang
+
+    @overload
+    def __rmatmul__(self: AngleT, other: 'AngleBase') -> AngleT: ...
+    @overload
+    def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
+    @overload
+    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+
+    def __rmatmul__(self, other):
+        """Vec @ Angle rotates the first by the second."""
+        if isinstance(other, Py_Vec):
+            return other @ Py_Matrix.from_angle(self)
+        elif isinstance(other, tuple):
+            x, y, z = other
+            return Vec(x, y, z) @ Py_Matrix.from_angle(self)
+        elif isinstance(other, AngleBase):
+            # Should always be done by __matmul__!
+            ang = self._rotate_angle(other)
+            return ang.freeze() if isinstance(self, Py_FrozenAngle) else ang
+        return NotImplemented
+
+
 @final
-class Angle:
+class FrozenAngle(AngleBase):
+    """Represents an immutable pitch-yaw-roll Euler angle."""
+    __slots__ = []
+
+
+    @classmethod
+    @overload
+    def with_axes(cls, axis1: str, val1: Union[float, 'Angle']) -> 'FrozenAngle': ...
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+    ) -> 'FrozenAngle': ...
+    @classmethod
+    @overload
+    def with_axes(
+        cls,
+        axis1: str, val1: Union[float, 'Angle'],
+        axis2: str, val2: Union[float, 'Angle'],
+        axis3: str, val3: Union[float, 'Angle'],
+    ) -> 'FrozenAngle': ...
+    @classmethod
+    def with_axes(
+        cls,
+        axis1: str,
+        val1: Union[float, 'Angle'],
+        axis2: str = None,
+        val2: Union[float, 'Angle'] = 0.0,
+        axis3: str = None,
+        val3: Union[float, 'Angle'] = 0.0,
+    ) -> 'FrozenAngle':
+        """Create an Angle, given a number of axes and corresponding values.
+
+        This is a convenience for doing the following:
+            ang = Angle()
+            ang[axis1] = val1
+            ang[axis2] = val2
+            ang[axis3] = val3
+        The magnitudes can also be Angles, in which case the matching
+        axis will be used from the angle.
+        """
+        res = {'pitch': 0.0, 'yaw': 0.0, 'roll': 0.0}
+        res[axis1] = val1[axis1] if isinstance(val1, AngleBase) else val1
+        if axis2 is not None:
+            res[axis2] = val2[axis2] if isinstance(val2, AngleBase) else val2
+            if axis3 is not None:
+                res[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
+        return Py_FrozenAngle(**res)
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return _mk_fang, (self._pitch, self._yaw, self._roll)
+    
+    def thaw(self) -> 'Angle':
+        """Return a mutable copy of this angle."""
+        ang = Py_Angle.__new__(Py_Angle)
+        ang._pitch = self._pitch
+        ang._yaw = self._yaw
+        ang._roll = self._roll
+        return ang
+
+    def copy(self) -> 'FrozenAngle':
+        """FrozenAngle is immutable."""
+        return self
+
+    def __copy__(self) -> 'FrozenAngle':
+        """FrozenAngle is immutable."""
+        return self
+
+    def __deepcopy__(self, memodict: Any=None) -> 'FrozenAngle':
+        """FrozenAngle is immutable."""
+        return self
+
+    def __repr__(self) -> str:
+        return f'FrozenAngle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+
+
+@final
+class Angle(AngleBase):
     """Represents a pitch-yaw-roll Euler angle.
 
     All values are remapped to between 0-360 when set.
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
-    # We have to double-modulus because -1e-14 % 360.0 = 360.0.
-    # Use the private attrs for matching also, we only hook assignment.
-    __match_args__ = __slots__ = ['_pitch', '_yaw', '_roll']
+    __slots__ = []
 
+    # noinspection PyMissingConstructor
     def __init__(
         self,
         pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
@@ -1856,20 +2228,14 @@ class Angle:
         interoperate.
         """
         return _mk_ang, (self._pitch, self._yaw, self._roll)
-
-    @classmethod
-    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
-        """Convert a string in the form '(4 6 -4)' into an Angle.
-
-         If the string is unparsable, this uses the defaults.
-         The string can start with any of the (), {}, [], <> bracket
-         types, or none.
-
-         If the value is already a Angle, a copy will be returned.
-         """
-
-        pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
-        return cls(pitch, yaw, roll)
+    
+    def freeze(self) -> FrozenAngle:
+        """Return an immutable copy of this angle."""
+        ang = Py_FrozenAngle.__new__(Py_FrozenAngle)
+        ang._pitch = self._pitch
+        ang._yaw = self._yaw
+        ang._roll = self._roll
+        return ang
 
     @property
     def pitch(self) -> float:
@@ -1898,51 +2264,8 @@ class Angle:
     def roll(self, roll: float) -> None:
         self._roll = float(roll) % 360 % 360
 
-    def join(self, delim: str=', ') -> str:
-        """Return a string with all numbers joined by the passed delimiter.
-
-        This strips off the .0 if no decimal portion exists.
-        """
-        # :g strips the .0 off of floats if it's an integer.
-        return f'{self._pitch:g}{delim}{self._yaw:g}{delim}{self._roll:g}'
-
-    def __str__(self) -> str:
-        """Return the values, separated by spaces.
-
-        This is the main format in Valve's file formats, though identical to
-        vectors.
-        This strips off the .0 if no decimal portion exists.
-        """
-        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
-
     def __repr__(self) -> str:
         return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
-
-    def __format__(self, format_spec: str) -> str:
-        """Control how the text is formatted."""
-        if not format_spec:
-            format_spec = 'g'
-        return f"{self._pitch:{format_spec}} {self._yaw:{format_spec}} {self._roll:{format_spec}}"
-
-    def as_tuple(self) -> Tuple[float, float, float]:
-        """Return the Angle as a tuple."""
-        return Vec_tuple(self._pitch, self._yaw, self._roll)
-
-    def __len__(self) -> int:
-        """The length of an Angle is always 3."""
-        return 3
-
-    def __iter__(self) -> Iterator[float]:
-        """Iterating over the angles returns each value in turn."""
-        yield self._pitch
-        yield self._yaw
-        yield self._roll
-
-    def __reversed__(self) -> Iterator[float]:
-        """Iterating over the angles returns each value in turn."""
-        yield self._roll
-        yield self._yaw
-        yield self._pitch
 
     @classmethod
     @overload
@@ -1989,54 +2312,12 @@ class Angle:
         axis will be used from the angle.
         """
         ang = cls()
-        ang[axis1] = val1[axis1] if isinstance(val1, Py_Angle) else val1
+        ang[axis1] = val1[axis1] if isinstance(val1, AngleBase) else val1
         if axis2 is not None:
-            ang[axis2] = val2[axis2] if isinstance(val2, Py_Angle) else val2
+            ang[axis2] = val2[axis2] if isinstance(val2, AngleBase) else val2
             if axis3 is not None:
-                ang[axis3] = val3[axis3] if isinstance(val3, Py_Angle) else val3
+                ang[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
         return ang
-
-    @classmethod
-    @overload
-    def from_basis(cls, *, x: Vec, y: Vec, z: Vec) -> 'Angle': ...
-
-    @classmethod
-    @overload
-    def from_basis(cls, *, x: Vec, y: Vec) -> 'Angle': ...
-
-    @classmethod
-    @overload
-    def from_basis(cls, *, y: Vec, z: Vec) -> 'Angle': ...
-
-    @classmethod
-    @overload
-    def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
-
-    @classmethod
-    def from_basis(cls, **kwargs) -> 'Angle':
-        """Return the rotation which results in the specified local axes.
-
-        At least two must be specified, with the third computed if necessary.
-        """
-        return Py_Matrix.from_basis(**kwargs).to_angle()
-
-    def __getitem__(self, ind: Union[str, int]) -> float:
-        """Allow reading values by index instead of name if desired.
-
-        This accepts the following indexes to read values:
-        - 0, 1, 2
-        - pitch, yaw, roll
-        - pit, yaw, rol
-        - p, y, r
-        Useful in conjunction with a loop to apply commands to all values.
-        """
-        if ind in (0, 'p', 'pit', 'pitch'):
-            return self._pitch
-        elif ind in (1, 'y', 'yaw'):
-            return self._yaw
-        elif ind in (2, 'r', 'rol', 'roll'):
-            return self._roll
-        raise KeyError('Invalid axis: {!r}'.format(ind))
 
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
@@ -2053,89 +2334,6 @@ class Angle:
         else:
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
-    def __eq__(self, other: object) -> bool:
-        """== test.
-
-        Two Angles are equal if all three axes are the same.
-        An Angle can be compared with a 3-tuple as if it was a Angle also.
-        A tolerance of 1e-6 is accounted for automatically.
-        """
-        if isinstance(other, Py_Angle):
-            return (
-                abs(other._pitch - self._pitch) <= 1e-6 and
-                abs(other._yaw - self._yaw) <= 1e-6 and
-                abs(other._roll - self._roll) <= 1e-6
-            )
-        elif isinstance(other, tuple) and len(other) == 3:
-            pit = other[0] % 360.0 % 360.0
-            yaw = other[1] % 360.0 % 360.0
-            rol = other[2] % 360.0 % 360.0
-            return (
-                abs(self._pitch - pit) <= 1e-6 and
-                abs(self._yaw - yaw) <= 1e-6 and
-                abs(self._roll - rol) <= 1e-6
-            )
-        else:
-            return NotImplemented
-
-    def __ne__(self, other: object) -> bool:
-        """!= test.
-
-        Two Angles are equal if all three axes are the same.
-        An Angle can be compared with a 3-tuple as if it was a Angle also.
-        A tolerance of 1e-6 is accounted for automatically.
-        """
-        if isinstance(other, Py_Angle):
-            return (
-                abs(other._pitch - self._pitch) > 1e-6 or
-                abs(other._yaw - self._yaw) > 1e-6 or
-                abs(other._roll - self._roll) > 1e-6
-            )
-        elif isinstance(other, tuple) and len(other) == 3:
-            pit = other[0] % 360.0 % 360.0
-            yaw = other[1] % 360.0 % 360.0
-            rol = other[2] % 360.0 % 360.0
-            return (
-                abs(self._pitch - pit) > 1e-6 or
-                abs(self._yaw   - yaw) > 1e-6 or
-                abs(self._roll  - rol) > 1e-6
-            )
-        else:
-            return NotImplemented
-    # No ordering, there isn't any sensible relationship.
-
-    def __mul__(self, other: Union[int, float]) -> 'Angle':
-        """Angle * float multiplies each value."""
-        if isinstance(other, (int, float)):
-            return Py_Angle(
-                self._pitch * other,
-                self._yaw * other,
-                self._roll * other,
-            )
-        return NotImplemented
-
-    def __rmul__(self, other: Union[int, float]) -> 'Angle':
-        """Angle * float multiplies each value."""
-        if isinstance(other, (int, float)):
-            return Py_Angle(
-                other * self._pitch,
-                other * self._yaw,
-                other * self._roll,
-            )
-        return NotImplemented
-
-    # noinspection PyProtectedMember
-    def __matmul__(self, other: 'Angle | Matrix') -> 'Angle':
-        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
-        if isinstance(other, Py_Angle):
-            return other._rotate_angle(self)
-        elif isinstance(other, Py_Matrix):
-            mat = Py_Matrix.from_angle(self)
-            mat._mat_mul(other)
-            return mat.to_angle()
-        else:
-            return NotImplemented
-
     # noinspection PyProtectedMember
     def __imatmul__(self, other: 'Angle | Matrix') -> 'Angle':
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
@@ -2149,34 +2347,6 @@ class Angle:
             return self
         else:
             return NotImplemented
-
-    @overload
-    def __rmatmul__(self, other: 'Angle') -> 'Angle': ...
-    @overload
-    def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
-    @overload
-    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
-
-    def __rmatmul__(self, other):
-        """Vec @ Angle rotates the first by the second."""
-        if isinstance(other, Py_Vec):
-            return other @ Py_Matrix.from_angle(self)
-        elif isinstance(other, tuple):
-            x, y, z = other
-            return Vec(x, y, z) @ Py_Matrix.from_angle(self)
-        elif isinstance(other, Py_Angle):
-            # Should always be done by __matmul__!
-            return self._rotate_angle(other)
-        return NotImplemented
-
-    def _rotate_angle(self, target: 'Angle') -> 'Angle':
-        """Rotate the target by this angle.
-
-        Inefficient if we have more than one rotation to do.
-        """
-        mat = Py_Matrix.from_angle(target)
-        mat @= self
-        return mat.to_angle()
 
     @contextlib.contextmanager
     def transform(self) -> Iterator[Matrix]:
@@ -2212,8 +2382,17 @@ def _mk_fvec(x: float, y: float, z: float) -> FrozenVec:
 
     Shortened name shrinks the data size.
     """
-    # We can't skip, C-frozen is truely immutable.
+    # We can't skip, C-frozen is truly immutable.
     return FrozenVec(x, y, z)
+
+
+def _mk_fang(pitch: float, yaw: float, roll: float) -> FrozenAngle:
+    """Unpickle a FrozenAngle object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # We can't skip, C-frozen is truly immutable.
+    return FrozenAngle(pitch, yaw, roll)
 
 
 def _mk_ang(pitch: float, yaw: float, roll: float) -> Angle:
@@ -2254,11 +2433,12 @@ def _mk_mat(
     return mat
 
 
-# Older name.
+# Older name, keep alias for pickle compatibility
 _mk = _mk_vec
 
-# A little dance to import both the Cython and Python versions,
-# and choose an appropriate unprefixed version.
+# A little dance to preserve both the Cython and Python versions,
+# and choose an appropriate unprefixed version. Static analysis then
+# also assumes all three are the Python version.
 
 Cy_Vec = Py_Vec = Vec
 Cy_FrozenVec = Py_FrozenVec = FrozenVec
@@ -2266,20 +2446,24 @@ Cy_parse_vec_str = Py_parse_vec_str = parse_vec_str
 Cy_to_matrix = Py_to_matrix = to_matrix
 Cy_lerp = Py_lerp = lerp
 Cy_Angle = Py_Angle = Angle
+Cy_FrozenAngle = Py_FrozenAngle = FrozenAngle
 Cy_Matrix = Py_Matrix = Matrix
 
 # Do it this way, so static analysis ignores this.
-_glob = globals()
-del _glob['SupportsRound']
-try:
-    from srctools import _math  # type: ignore
-except ImportError:
-    pass
-else:
-    for _name in [
-        'Vec', 'FrozenVec',
-        'Angle', 'Matrix',
-        'parse_vec_str', 'to_matrix', 'lerp',
-    ]:
-        _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
-    del _glob, _name, _math
+if not TYPE_CHECKING:
+    _glob = globals()
+    del _glob['SupportsRound']
+    try:
+        # noinspection PyProtectedMember
+        from srctools import _math
+    except ImportError:
+        pass
+    else:
+        for _name in [
+            'Vec', 'FrozenVec',
+            'Angle', # 'FrozenAngle',
+            'Matrix',
+            'parse_vec_str', 'to_matrix', 'lerp',
+        ]:
+            _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
+        del _glob, _name, _math
