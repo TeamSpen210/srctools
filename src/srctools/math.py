@@ -72,7 +72,7 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
     return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
 
-def parse_vec_str(val: Union[str, 'VecBase', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(val: Union[str, 'VecBase', 'AngleBase'], x=0.0, y=0.0, z=0.0) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
@@ -1660,6 +1660,13 @@ class Matrix:
 
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
+        return self._to_angle(Py_Angle.__new__(Py_Angle))
+
+    def _to_angle(self, ang: AngleT) -> AngleT:
+        """Set the specified angle to this rotation.
+
+        Internal, modifies the specified angle even if frozen -ensure it's new!
+        """
 
         # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
         for_x = self._aa
@@ -1674,18 +1681,15 @@ class Matrix:
 
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
-            return Py_Angle(
-                yaw=math.degrees(math.atan2(for_y, for_x)),
-                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
-                roll=math.degrees(math.atan2(left_z, up_z)),
-            )
+            ang._yaw = math.degrees(math.atan2(for_y, for_x))
+            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist))
+            ang._roll = math.degrees(math.atan2(left_z, up_z))
         else:
             # Vertical, gimbal lock (yaw=roll)...
-            return Py_Angle(
-                yaw=math.degrees(math.atan2(-left_x, left_y)),
-                pitch=math.degrees(math.atan2(-for_z, horiz_dist)),
-                roll=0,  # Can't produce.
-            )
+            ang._yaw = math.degrees(math.atan2(-left_x, left_y))
+            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist))
+            ang._roll = 0.0  # Can't produce.
+        return ang
 
     def transpose(self) -> 'Matrix':
         """Return the transpose of this matrix."""
@@ -1763,8 +1767,8 @@ class Matrix:
         elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
             mat._mat_mul(self)
-            ang = mat.to_angle()
-            return ang.freeze() if isinstance(other, Py_FrozenAngle) else ang
+            cls = type(other)
+            return mat._to_angle(cls.__new__(cls))
         elif isinstance(other, Py_Matrix):
             mat = other.copy()
             mat._mat_mul(self)
@@ -1814,6 +1818,7 @@ class Matrix:
         vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
 
 
+# noinspection PyArgumentList
 class AngleBase:
     """Internal base class for Euler angles, implements common code."""
     # When normalising, we have to double-modulus because -1e-14 % 360.0 = 360.0.
@@ -1881,8 +1886,9 @@ class AngleBase:
 
         At least two must be specified, with the third computed if necessary.
         """
-        ang = Py_Matrix.from_basis(**kwargs).to_angle()
-        return ang.freeze() if cls is Py_FrozenAngle else ang
+        # We just delegate to Matrix's arg validation.
+        # noinspection PyProtectedMember
+        return Py_Matrix.from_basis(**kwargs)._to_angle(cls.__new__(cls))
 
     @classmethod
     @overload
@@ -1892,8 +1898,8 @@ class AngleBase:
     @overload
     def with_axes(
         cls: Type[AngleT],
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, 'AngleBase'],
+        axis2: str, val2: Union[float, 'AngleBase'],
     ) -> AngleT:
         ...
 
@@ -1901,9 +1907,9 @@ class AngleBase:
     @overload
     def with_axes(
         cls: Type[AngleT],
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
-        axis3: str, val3: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, 'AngleBase'],
+        axis2: str, val2: Union[float, 'AngleBase'],
+        axis3: str, val3: Union[float, 'AngleBase'],
     ) -> AngleT:
         ...
 
@@ -2054,27 +2060,28 @@ class AngleBase:
             )
         return NotImplemented
 
-    def _rotate_angle(self, target: 'AngleBase') -> 'Angle':
+    def _rotate_angle(self, target: 'AngleBase', cls: Type[AngleT]) -> AngleT:
         """Rotate the target by this angle.
 
         Inefficient if we have more than one rotation to do.
         """
         mat = Py_Matrix.from_angle(target)
         mat @= self
-        return mat.to_angle()
+        # noinspection PyProtectedMember
+        return mat._to_angle(cls.__new__(cls))
 
     # noinspection PyProtectedMember
     def __matmul__(self: AngleT, other: 'AngleBase | Matrix') -> AngleT:
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
-            ang = other._rotate_angle(self)
+            return other._rotate_angle(self, type(self))
         elif isinstance(other, Py_Matrix):
             mat = Py_Matrix.from_angle(self)
             mat._mat_mul(other)
-            ang = mat.to_angle()
+            cls = type(self)
+            return mat._to_angle(cls.__new__(cls))
         else:
             return NotImplemented
-        return ang.freeze() if isinstance(self, Py_FrozenAngle) else ang
 
     @overload
     def __rmatmul__(self: AngleT, other: 'AngleBase') -> AngleT: ...
@@ -2083,7 +2090,7 @@ class AngleBase:
     @overload
     def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
 
-    def __rmatmul__(self, other):
+    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | Vec') -> 'Vec | AngleT':
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Py_Vec):
             return other @ Py_Matrix.from_angle(self)
@@ -2092,44 +2099,42 @@ class AngleBase:
             return Vec(x, y, z) @ Py_Matrix.from_angle(self)
         elif isinstance(other, AngleBase):
             # Should always be done by __matmul__!
-            ang = self._rotate_angle(other)
-            return ang.freeze() if isinstance(self, Py_FrozenAngle) else ang
+            return self._rotate_angle(other, type(self))
         return NotImplemented
 
 
 @final
 class FrozenAngle(AngleBase):
     """Represents an immutable pitch-yaw-roll Euler angle."""
-    __slots__ = []
-
+    __slots__ = ()
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, 'Angle']) -> 'FrozenAngle': ...
+    def with_axes(cls, axis1: str, val1: Union[float, AngleBase]) -> 'FrozenAngle': ...
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, AngleBase],
+        axis2: str, val2: Union[float, AngleBase],
     ) -> 'FrozenAngle': ...
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
-        axis3: str, val3: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, AngleBase],
+        axis2: str, val2: Union[float, AngleBase],
+        axis3: str, val3: Union[float, AngleBase],
     ) -> 'FrozenAngle': ...
     @classmethod
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, 'Angle'],
+        val1: Union[float, AngleBase],
         axis2: str = None,
-        val2: Union[float, 'Angle'] = 0.0,
+        val2: Union[float, AngleBase] = 0.0,
         axis3: str = None,
-        val3: Union[float, 'Angle'] = 0.0,
+        val3: Union[float, AngleBase] = 0.0,
     ) -> 'FrozenAngle':
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2189,7 +2194,7 @@ class Angle(AngleBase):
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
-    __slots__ = []
+    __slots__ = ()
 
     # noinspection PyMissingConstructor
     def __init__(
@@ -2269,15 +2274,15 @@ class Angle(AngleBase):
 
     @classmethod
     @overload
-    def with_axes(cls, axis1: str, val1: Union[float, 'Angle']) -> 'Angle':
+    def with_axes(cls, axis1: str, val1: Union[float, AngleBase]) -> 'Angle':
         ...
 
     @classmethod
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, AngleBase],
+        axis2: str, val2: Union[float, AngleBase],
     ) -> 'Angle':
         ...
 
@@ -2285,9 +2290,9 @@ class Angle(AngleBase):
     @overload
     def with_axes(
         cls,
-        axis1: str, val1: Union[float, 'Angle'],
-        axis2: str, val2: Union[float, 'Angle'],
-        axis3: str, val3: Union[float, 'Angle'],
+        axis1: str, val1: Union[float, AngleBase],
+        axis2: str, val2: Union[float, AngleBase],
+        axis3: str, val3: Union[float, AngleBase],
     ) -> 'Angle':
         ...
 
@@ -2295,11 +2300,11 @@ class Angle(AngleBase):
     def with_axes(
         cls,
         axis1: str,
-        val1: Union[float, 'Angle'],
+        val1: Union[float, AngleBase],
         axis2: str = None,
-        val2: Union[float, 'Angle'] = 0.0,
+        val2: Union[float, AngleBase] = 0.0,
         axis3: str = None,
-        val3: Union[float, 'Angle'] = 0.0,
+        val3: Union[float, AngleBase] = 0.0,
     ) -> 'Angle':
         """Create an Angle, given a number of axes and corresponding values.
 
@@ -2335,11 +2340,12 @@ class Angle(AngleBase):
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
     # noinspection PyProtectedMember
-    def __imatmul__(self, other: 'Angle | Matrix') -> 'Angle':
+    def __imatmul__(self, other: Union[AngleBase, Matrix]) -> 'Angle':
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
-        if isinstance(other, Py_Angle):
-            self._pitch, self._yaw, self._roll = other._rotate_angle(self)
-            return self
+        if isinstance(other, AngleBase):
+            mat = Py_Matrix.from_angle(self)
+            mat @= other
+            return mat._to_angle(self)  # Inplace
         elif isinstance(other, Py_Matrix):
             mat = Py_Matrix.from_angle(self)
             mat._mat_mul(other)
