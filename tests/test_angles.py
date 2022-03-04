@@ -13,45 +13,70 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
-def test_construction(py_c_vec, frozen_thawed_angle: AngleClass):
-    """Check various parts of the constructor - Angle(), Angle.from_str()."""
+def test_construction(frozen_thawed_angle: AngleClass) -> None:
+    """Check the Angle() constructor."""
     Angle = frozen_thawed_angle
 
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
-        assert_ang(Angle(pit, yaw, rol), pit, yaw, rol)
-        assert_ang(Angle(pit, yaw), pit, yaw, 0)
-        assert_ang(Angle(pit), pit, 0, 0)
-        assert_ang(Angle(), 0, 0, 0)
+        assert_ang(Angle(pit, yaw, rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle(pit, yaw), pit, yaw, 0, type=Angle)
+        assert_ang(Angle(pit), pit, 0, 0, type=Angle)
+        assert_ang(Angle(), 0, 0, 0, type=Angle)
 
-        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol)
-        assert_ang(Angle([pit, yaw], roll=rol), pit, yaw, rol)
-        assert_ang(Angle([pit], yaw=yaw, roll=rol), pit, yaw, rol)
-        assert_ang(Angle([pit]), pit, 0, 0)
-        assert_ang(Angle([pit, yaw]), pit, yaw, 0)
-        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol)
+        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit, yaw], roll=rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit], yaw=yaw, roll=rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit]), pit, 0, 0, type=Angle)
+        assert_ang(Angle([pit, yaw]), pit, yaw, 0, type=Angle)
+        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol, type=Angle)
 
+
+def test_copy(py_c_vec) -> None:
+    """Test calling Angle() on an existing vec merely copies."""
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
         # Test this does nothing (except copy).
         ang = Angle(pit, yaw, rol)
         ang2 = Angle(ang)
-        assert_ang(ang2, pit, yaw, rol)
+        assert_ang(ang2, pit, yaw, rol, type=Angle)
         assert ang is not ang2
 
         ang3 = Angle.copy(ang)
-        assert_ang(ang3, pit, yaw, rol)
+        assert_ang(ang3, pit, yaw, rol, type=Angle)
         assert ang is not ang3
 
-        # Test Angle.from_str()
-        assert_ang(Angle.from_str('{} {} {}'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('<{} {} {}>'.format(pit, yaw, rol)), pit, yaw, rol)
+        # Test doing the same with FrozenVec does not copy.
+        fang = FrozenAngle(pit, yaw, rol)
+        fang2 = FrozenAngle(ang)
+        assert_ang(fang2, pit, yaw, rol, type=FrozenAngle)
+        assert fang2 is not ang
+
+        assert fang.copy() is fang
+
+        # Ensure this doesn't mistakenly return the existing one.
+        assert Angle(fang) is not fang
+        # FrozenAngle should not make a copy.
+        # TODO: Cython doesn't let you override tp_new for this yet.
+        if FrozenAngle is vec_mod.Py_FrozenAngle:
+            assert FrozenAngle(fang) is fang
+
+
+def test_from_str(frozen_thawed_angle: AngleClass) -> None:
+    """Test the functionality of Angle.from_str()."""
+    Angle = frozen_thawed_angle
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
+        assert_ang(Angle.from_str(f'{pit} {yaw} {rol}'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'<{pit} {yaw} {rol}>'), pit, yaw, rol, type=Angle)
         # {x y z}
-        assert_ang(Angle.from_str('{{{} {} {}}}'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('({} {} {})'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('[{} {} {}]'.format(pit, yaw, rol)), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'{{{pit} {yaw} {rol}}}'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'({pit} {yaw} {rol})'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'[{pit} {yaw} {rol}]'), pit, yaw, rol, type=Angle)
 
         # Test converting a converted Angle
         orig = Angle(pit, yaw, rol)
         new = Angle.from_str(Angle(pit, yaw, rol))
-        assert_ang(new, pit, yaw, rol)
+        assert_ang(new, pit, yaw, rol, type=Angle)
         assert orig is not new  # It must be a copy
 
         # Check as_tuple() makes an equivalent tuple
@@ -134,6 +159,29 @@ def test_with_axes(frozen_thawed_angle: AngleClass) -> None:
             assert getattr(ang, a) == x
             assert getattr(ang, b) == y
             assert getattr(ang, c) == z
+
+
+def test_thaw_freezing(py_c_vec):
+    """Test methods to convert between frozen <> mutable."""
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
+    # Other way around is not provided.
+    with pytest.raises(AttributeError):
+        Angle.thaw()
+    with pytest.raises(AttributeError):
+        FrozenAngle.freeze()
+
+    for p, y, r in iter_vec(VALID_ZERONUMS):
+        mut = Angle(p, y, r)
+        froze = mut.freeze()
+        thaw = froze.thaw()
+
+        assert_ang(mut, p, y, r, type=Angle)
+        assert_ang(froze, p, y, r, type=FrozenAngle)
+        assert_ang(thaw, p, y, r, type=Angle)
+        # Test calling it on a temporary, in case this is optimised.
+        assert_ang(Angle(p, y, r).freeze(), p, y, r, type=FrozenAngle)
+        assert_ang(FrozenAngle(p, y, r).thaw(), p, y, r, type=Angle)
 
 
 @pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
@@ -293,7 +341,7 @@ def test_pickle(frozen_thawed_angle: AngleClass) -> None:
     assert orig == thaw
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    cy_pick = pickle.dumps(Cy_Angle(test_data))
-    py_pick = pickle.dumps(Py_Angle(test_data))
+    cy_pick = pickle.dumps(getattr(vec_mod, 'Cy_' + Angle.__name__)(test_data))
+    py_pick = pickle.dumps(getattr(vec_mod, 'Py_' + Angle.__name__)(test_data))
 
     assert cy_pick == py_pick == pick

@@ -24,7 +24,7 @@ cdef inline Vec _vector_mut(double x, double y, double z):
     return vec
 
 cdef inline FrozenVec _vector_frozen(double x, double y, double z):
-    """Make a Vector directly."""
+    """Make a frozen Vector directly."""
     cdef FrozenVec vec = FrozenVec.__new__(FrozenVec)
     vec.val.x = x
     vec.val.y = y
@@ -43,9 +43,29 @@ cdef inline VecBase _vector(type typ, double x, double y, double z):
     vec.val.z = z
     return vec
 
-cdef inline Angle _angle(double pitch, double yaw, double roll):
-    """Make an Angle directly."""
+cdef inline Angle _angle_mut(double pitch, double yaw, double roll):
+    """Make a mutable Angle directly."""
     cdef Angle ang = Angle.__new__(Angle)
+    ang.val.x = pitch
+    ang.val.y = yaw
+    ang.val.z = roll
+    return ang
+
+cdef inline FrozenAngle _angle_frozen(double pitch, double yaw, double roll):
+    """Make a frozen Angle directly."""
+    cdef FrozenAngle ang = FrozenAngle.__new__(FrozenAngle)
+    ang.val.x = pitch
+    ang.val.y = yaw
+    ang.val.z = roll
+    return ang
+
+cdef inline AngleBase _angle(type typ, double pitch, double yaw, double roll):
+    """Make an Angle directly."""
+    cdef AngleBase ang
+    if typ is FrozenAngle:
+        ang = <VecBase>FrozenAngle.__new__(FrozenAngle)
+    else:
+        ang = <VecBase>Angle.__new__(Angle)
     ang.val.x = pitch
     ang.val.y = yaw
     ang.val.z = roll
@@ -57,7 +77,7 @@ from typing import Tuple, Iterator, Union
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_mvec, unpickle_fvec, unpickle_ang, unpickle_mat
+cdef object unpickle_mvec, unpickle_fvec, unpickle_mang, unpickle_fang, unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
@@ -65,7 +85,8 @@ from srctools.math import (
     Vec_tuple,
     _mk_vec as unpickle_mvec,
     _mk_fvec as unpickle_fvec,
-    _mk_ang as unpickle_ang,
+    _mk_ang as unpickle_mang,
+    _mk_fang as unpickle_fang,
     _mk_mat as unpickle_mat,
 )
 
@@ -121,9 +142,24 @@ cdef VecBase pick_vec_type(type left, type right):
     else:
         return <VecBase>Vec.__new__(Vec)
 
+
+cdef AngleBase pick_ang_type(type left, type right):
+    # Given the LHS and RHS types, determine the Vec to create.
+    cdef bint frozen = False
+    # We use the type of the left, falling back to the right
+    # if the left isn't a vector.
+    if left is FrozenAngle or (right is FrozenAngle and left is not Angle):
+        return <AngleBase>FrozenAngle.__new__(FrozenAngle)
+    else:
+        return <AngleBase>Angle.__new__(Angle)
+
 cdef bint vec_check(obj):
     # Check if this is a vector instance.
     return type(obj) is Vec or type(obj) is FrozenVec
+
+cdef bint angle_check(obj):
+    # Check if this is an angle instance.
+    return type(obj) is Angle or type(obj) is FrozenAngle
 
 
 cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1:
@@ -136,10 +172,10 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
         vec.x = (<VecBase>value).val.x
         vec.y = (<VecBase>value).val.y
         vec.z = (<VecBase>value).val.z
-    elif isinstance(value, Angle):
-        vec.x = (<Angle>value).val.x
-        vec.y = (<Angle>value).val.y
-        vec.z = (<Angle>value).val.z
+    elif angle_check(value):
+        vec.x = (<AngleBase>value).val.x
+        vec.y = (<AngleBase>value).val.y
+        vec.z = (<AngleBase>value).val.z
     else:
         buf = PyUnicode_AsUTF8AndSize(value, &size)
         # First, skip through whitespace, and stop after the first
@@ -244,6 +280,35 @@ cdef object vector_compare(VecBase self, object other_obj, int op):
     else:
         raise SystemError('Unknown operation', op)
 
+# Shared among both classes.
+cdef object angle_compare(AngleBase self, object other_obj, int op):
+    cdef vec_t other
+    try:
+        conv_angles(&other, other_obj)
+    except (TypeError, ValueError):
+        return NotImplemented
+
+    # 'redundant' == True prevents the individual comparisons from
+    # trying
+    # to convert the result individually on failure.
+    # Use subtraction so that values within TOL are accepted.
+    if op == Py_EQ:
+        return (
+                   abs(self.val.x - other.x) <= TOL and
+                   abs(self.val.y - other.y) <= TOL and
+                   abs(self.val.z - other.z) <= TOL
+               ) == True
+    elif op == Py_NE:
+        return (
+                   abs(self.val.x - other.x) > TOL or
+                   abs(self.val.y - other.y) > TOL or
+                   abs(self.val.z - other.z) > TOL
+               ) == True
+    elif op in [Py_LT, Py_GT, Py_GE, Py_LE]:
+        return NotImplemented
+    else:
+        raise SystemError(f'Unknown operation {op!r}' '!')
+
 
 def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
     """Convert a string in the form '(4 6 -4)' into a set of floats.
@@ -315,10 +380,10 @@ cdef inline unsigned char conv_angles(vec_t *result, object ang) except False:
     If scalar is True, allow int/float to set all axes.
     """
     cdef double x, y, z
-    if isinstance(ang, Angle):
-        result.x = (<Angle>ang).val.x
-        result.y = (<Angle>ang).val.y
-        result.z = (<Angle>ang).val.z
+    if angle_check(ang):
+        result.x = (<AngleBase>ang).val.x
+        result.y = (<AngleBase>ang).val.y
+        result.z = (<AngleBase>ang).val.z
     elif isinstance(ang, float) or isinstance(ang, int):
         raise TypeError('Cannot convert scalars to an Angle!')
     elif isinstance(ang, tuple):
@@ -478,10 +543,10 @@ cdef bint _conv_matrix(mat_t result, object value) except True:
         _mat_identity(result)
     elif isinstance(value, Matrix):
         memcpy(result, (<Matrix>value).mat, sizeof(mat_t))
-    elif isinstance(value, Angle):
-        _mat_from_angle(result, &(<Angle>value).val)
-    elif isinstance(value, Vec):
-        _mat_from_angle(result, &(<Vec>value).val)
+    elif angle_check(value):
+        _mat_from_angle(result, &(<AngleBase>value).val)
+    elif vec_check(value):
+        _mat_from_angle(result, &(<VecBase>value).val)
     else:
         [ang.x, ang.y, ang.z] = value
         _mat_from_angle(result, &ang)
@@ -574,9 +639,9 @@ cdef class VecIterGrid:
             raise StopIteration
 
         if self.frozen:
-            vec = _vector_frozen(self.cur_x, self.cur_y, self.cur_z)
+            vec = _vector_frozen(<double>self.cur_x, <double>self.cur_y, <double>self.cur_z)
         else:
-            vec = _vector_mut(self.cur_x, self.cur_y, self.cur_z)
+            vec = _vector_mut(<double>self.cur_x, <double>self.cur_y, <double>self.cur_z)
 
         self.cur_z += self.stride
         if self.cur_z > self.stop_z:
@@ -725,7 +790,7 @@ cdef class VecBase:
         cdef tuple tup
 
         if type(self) is VecBase:
-            raise TypeError('VecBase cannot be instantiated!')
+            raise TypeError('This class cannot be instantiated!')
 
         if isinstance(x, float) or isinstance(x, int):
             self.val.x = x
@@ -1086,7 +1151,7 @@ cdef class VecBase:
         # Pitch is applied first, so we need to reconstruct the x-value.
         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
 
-        return _angle(
+        return _angle_mut(
             norm_ang(rad_2_deg * math.atan2(-self.val.z, horiz_dist)),
             norm_ang(math.atan2(self.val.y, self.val.x) * rad_2_deg),
             norm_ang(roll),
@@ -1562,7 +1627,7 @@ cdef class FrozenVec(VecBase):
         return vec
 
     def __richcmp__(self, other_obj, int op):
-        """We have to redeclare this because of FrozenSet's __hash__."""
+        """We have to redeclare this because of FrozenVec's __hash__."""
         return vector_compare(self, other_obj, op)
 
     def __hash__(self) -> int:
@@ -2142,8 +2207,8 @@ cdef class Matrix:
         """
         cdef Matrix rot = Matrix.__new__(Matrix)
         cdef vec_t ang
-        if isinstance(pitch, Angle):
-            ang = (<Angle>pitch).val
+        if angle_check(pitch):
+            ang = (<AngleBase>pitch).val
         elif yaw is None or roll is None:
             raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
         else:
@@ -2259,14 +2324,14 @@ cdef class Matrix:
         cdef mat_t temp, temp2
         cdef VecBase vec
         cdef Matrix mat
-        cdef Angle ang
+        cdef AngleBase ang
         if isinstance(first, Matrix):
             mat = Matrix.__new__(Matrix)
             memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
             if isinstance(second, Matrix):
                 mat_mul(mat.mat, (<Matrix>second).mat)
-            elif isinstance(second, Angle):
-                _mat_from_angle(temp, &(<Angle>second).val)
+            elif angle_check(second):
+                _mat_from_angle(temp, &(<AngleBase>second).val)
                 mat_mul(mat.mat, temp)
             else:
                 return NotImplemented
@@ -2289,7 +2354,13 @@ cdef class Matrix:
                 return vec
             elif isinstance(first, Angle):
                 ang = Angle.__new__(Angle)
-                _mat_from_angle(temp, &(<Angle>first).val)
+                _mat_from_angle(temp, &(<AngleBase>first).val)
+                mat_mul(temp, (<Matrix>second).mat)
+                _mat_to_angle(&ang.val, temp)
+                return ang
+            elif isinstance(first, FrozenAngle):
+                ang = FrozenAngle.__new__(FrozenAngle)
+                _mat_from_angle(temp, &(<AngleBase>first).val)
                 mat_mul(temp, (<Matrix>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
@@ -2313,14 +2384,9 @@ cdef class Matrix:
 
 # Lots of temporaries are expected.
 @cython.freelist(16)
-@cython.final
-cdef class Angle:
-    """Represents a pitch-yaw-roll Euler angle.
-
-    All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, matrix-multiplication with
-    Vec, Angle or Matrix rotates (RHS rotating LHS).
-    """
+@cython.internal
+cdef class AngleBase:
+    """Common code for pitch/yaw/roll Euler angles."""
     __match_args__ = ('pitch', 'yaw', 'roll')
 
     def __init__(self, pitch=0.0, yaw=0.0, roll=0.0) -> None:
@@ -2332,14 +2398,17 @@ cdef class Angle:
         used for pitch, yaw, and roll. This includes Vectors and other Angles.
         """
         cdef tuple tup
+        if type(self) is AngleBase:
+            raise TypeError('This class cannot be instantiated!')
+
         if isinstance(pitch, float) or isinstance(pitch, int):
             self.val.x = norm_ang(pitch)
             self.val.y = norm_ang(yaw)
             self.val.z = norm_ang(roll)
-        elif isinstance(pitch, Angle):
-            self.val.x = (<Angle>pitch).val.x
-            self.val.y = (<Angle>pitch).val.y
-            self.val.z = (<Angle>pitch).val.z
+        elif angle_check(pitch):
+            self.val.x = (<AngleBase>pitch).val.x
+            self.val.y = (<AngleBase>pitch).val.y
+            self.val.z = (<AngleBase>pitch).val.z
         elif isinstance(pitch, tuple):
             tup = <tuple>pitch
             if len(tup) >= 1:
@@ -2379,21 +2448,6 @@ cdef class Angle:
             except StopIteration:
                 self.val.z = norm_ang(roll)
 
-    def copy(self) -> 'Angle':
-        """Create a duplicate of this angle."""
-        return _angle(self.val.x, self.val.y, self.val.z)
-
-    def __copy__(self) -> 'Angle':
-        """Create a duplicate of this angle."""
-        return _angle(self.val.x, self.val.y, self.val.z)
-
-    def __deepcopy__(self, dict memodict=None) -> 'Angle':
-        """Create a duplicate of this angle."""
-        return _angle(self.val.x, self.val.y, self.val.z)
-
-    def __reduce__(self):
-        return unpickle_ang, (self.val.x, self.val.y, self.val.z)
-
     @classmethod
     def from_str(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
         """Convert a string in the form '(4 6 -4)' into an Angle.
@@ -2404,89 +2458,12 @@ cdef class Angle:
 
         If the value is already a Angle, a copy will be returned.
         """
-        cdef Angle ang = Angle.__new__(Angle)
+        cdef AngleBase ang = _angle(cls, pitch, yaw, roll)
         _parse_vec_str(&ang.val, val, pitch, yaw, roll)
         ang.val.x = norm_ang(ang.val.x)
         ang.val.y = norm_ang(ang.val.y)
         ang.val.z = norm_ang(ang.val.z)
         return ang
-
-    @property
-    def pitch(self) -> float:
-        """The Y-axis rotation, performed second."""
-        return self.val.x
-
-    @pitch.setter
-    def pitch(self, double pitch) -> None:
-        self.val.x = norm_ang(pitch)
-
-    @property
-    def yaw(self) -> float:
-        """The Z-axis rotation, performed last."""
-        return self.val.y
-
-    @yaw.setter
-    def yaw(self, double yaw) -> None:
-        self.val.y = norm_ang(yaw)
-
-    @property
-    def roll(self) -> float:
-        """The X-axis rotation, performed first."""
-        return self.val.z
-
-    @roll.setter
-    def roll(self, double roll) -> None:
-        self.val.z = norm_ang(roll)
-
-    def join(self, delim: str=', ') -> str:
-        """Return a string with all numbers joined by the passed delimiter.
-
-        This strips off the .0 if no decimal portion exists.
-        """
-        return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
-
-    def __str__(self) -> str:
-        """Return the values, separated by spaces.
-
-        This is the main format in Valve's file formats, though identical to
-        vectors.
-        This strips off the .0 if no decimal portion exists.
-        """
-        return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
-
-    def __repr__(self) -> str:
-        return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
-
-    def __format__(self, format_spec: str) -> str:
-        """Control how the text is formatted."""
-        if not format_spec:
-            format_spec = 'g'
-        return f"{self.val.x:{format_spec}} {self.val.y:{format_spec}} {self.val.z:{format_spec}}"
-
-    def as_tuple(self):
-        """Return the Angle as a tuple."""
-        return Vec_tuple(self.val.x, self.val.y, self.val.z)
-
-    def __len__(self) -> int:
-        """The length of an Angle is always 3."""
-        return 3
-
-    def __iter__(self) -> VecIter:
-        """Iterating over the angles returns each value in turn."""
-        cdef VecIter viter = VecIter.__new__(VecIter)
-        viter.a = self.val.x
-        viter.b = self.val.y
-        viter.c = self.val.z
-        return viter
-
-    def __reversed__(self) -> VecIter:
-        """Iterating over the angles returns each value in turn."""
-        cdef VecIter viter = VecIter.__new__(VecIter)
-        viter.a = self.val.z
-        viter.b = self.val.y
-        viter.c = self.val.x
-        return viter
-
 
     @classmethod
     @cython.boundscheck(False)
@@ -2508,47 +2485,76 @@ cdef class Angle:
                 f'but {arg_count} were given'
             )
 
-        cdef Angle ang = Angle.__new__(Angle)
+        cdef AngleBase ang = _angle(cls, 0.0, 0.0, 0.0)
         cdef str axis
         cdef unsigned char i
         for i in range(0, arg_count, 2):
             axis_val = args[i+1]
             axis = args[i]
             if axis in ('p', 'pit', 'pitch'):
-                if isinstance(axis_val, Angle):
-                    ang.val.x = (<Angle>axis_val).val.x
+                if angle_check(axis_val):
+                    ang.val.x = (<AngleBase>axis_val).val.x
                 else:
                     ang.val.x = norm_ang(axis_val)
             elif axis in ('y', 'yaw'):
-                if isinstance(axis_val, Angle):
-                    ang.val.y = (<Angle>axis_val).val.y
+                if angle_check(axis_val):
+                    ang.val.y = (<AngleBase>axis_val).val.y
                 else:
                     ang.val.y = norm_ang(axis_val)
             elif axis in ('r', 'rol', 'roll'):
-                if isinstance(axis_val, Angle):
-                    ang.val.z = (<Angle>axis_val).val.z
+                if angle_check(axis_val):
+                    ang.val.z = (<AngleBase>axis_val).val.z
                 else:
                     ang.val.z = norm_ang(axis_val)
 
         return ang
 
-    @classmethod
-    def from_basis(
-        cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
-    ) -> 'Angle':
-        """Return the rotation which results in the specified local axes.
 
-        At least two must be specified, with the third computed if necessary.
+    def __str__(self) -> str:
+        """Return the values, separated by spaces.
+
+        This is the main format in Valve's file formats, though identical to
+        vectors.
+        This strips off the .0 if no decimal portion exists.
         """
-        cdef mat_t mat
-        cdef Angle ang = Angle.__new__(Angle)
-        _mat_from_basis(mat, x, y, z)
-        _mat_to_angle(&ang.val, mat)
-        return ang
+        return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
 
+    def __format__(self, format_spec: str) -> str:
+        """Control how the text is formatted."""
+        if not format_spec:
+            format_spec = 'g'
+        return f"{self.val.x:{format_spec}} {self.val.y:{format_spec}} {self.val.z:{format_spec}}"
+
+    def as_tuple(self):
+        """Return the Angle as a tuple."""
+        return Vec_tuple(self.val.x, self.val.y, self.val.z)
+
+    def join(self, delim: str=', ') -> str:
+        """Return a string with all numbers joined by the passed delimiter.
+
+        This strips off the .0 if no decimal portion exists.
+        """
+        return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
+
+    def __len__(self) -> int:
+        """The length of an Angle is always 3."""
+        return 3
+
+    def __iter__(self) -> VecIter:
+        """Iterating over the angles returns each value in turn."""
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.x
+        viter.b = self.val.y
+        viter.c = self.val.z
+        return viter
+
+    def __reversed__(self) -> VecIter:
+        """Iterating over the angles returns each value in turn."""
+        cdef VecIter viter = VecIter.__new__(VecIter)
+        viter.a = self.val.z
+        viter.b = self.val.y
+        viter.c = self.val.x
+        return viter
 
     def __getitem__(self, pos):
         """Allow reading values by index instead of name if desired.
@@ -2581,6 +2587,241 @@ cdef class Angle:
                 return self.val.z
         raise KeyError(f'Invalid axis: {pos!r}')
 
+    def __mul__(obj_a, obj_b):
+        """Angle * float multiplies each value."""
+        cdef double scalar
+        cdef AngleBase angle, res
+        # Angle * Angle is disallowed.
+        if isinstance(obj_a, (int, float)):
+            # scalar * vector
+            if type(obj_b) is Angle:
+                res = Angle.__new__(Angle)
+            elif type(obj_b) is FrozenAngle:
+                res = FrozenAngle.__new__(FrozenAngle)
+            else:  # Both aren't us??
+                return NotImplemented
+            angle = <AngleBase>obj_b
+            scalar = obj_a
+            res.val.x = norm_ang(scalar * angle.val.x)
+            res.val.y = norm_ang(scalar * angle.val.y)
+            res.val.z = norm_ang(scalar * angle.val.z)
+        elif isinstance(obj_b, (int, float)):
+            # vector * scalar.
+            if type(obj_a) is Angle:
+                res = Angle.__new__(Angle)
+            elif type(obj_a) is FrozenAngle:
+                res = FrozenAngle.__new__(FrozenAngle)
+            else:  # Both aren't us??
+                return NotImplemented
+
+            angle = <AngleBase>obj_a
+            scalar = obj_b
+            res.val.x = norm_ang(angle.val.x * scalar)
+            res.val.y = norm_ang(angle.val.y * scalar)
+            res.val.z = norm_ang(angle.val.z * scalar)
+
+        elif angle_check(obj_a) and angle_check(obj_b):
+            raise TypeError('Cannot multiply 2 Angles.')
+        else:
+            # Angle * something else.
+            return NotImplemented
+    
+        return res
+
+    def __matmul__(first, second):
+        """Implement rotations."""
+        cdef mat_t temp1, temp2
+        if angle_check(first):
+            _mat_from_angle(temp1, &(<AngleBase>first).val)
+            if angle_check(second):
+                _mat_from_angle(temp2, &(<AngleBase>second).val)
+                mat_mul(temp1, temp2)
+            elif isinstance(second, Matrix):
+                mat_mul(temp1, (<Matrix>second).mat)
+            else:
+                return NotImplemented
+            res = pick_ang_type(type(first), type(second))
+            _mat_to_angle(&(<AngleBase>res).val, temp1)
+            return res
+        elif angle_check(second):
+            _mat_from_angle(temp2, &(<AngleBase>second).val)
+            if isinstance(first, tuple):
+                res = Vec.__new__(Vec)
+                (<Vec>res).val.x, (<Vec>res).val.y, (<Vec>res).val.z = <tuple>first
+                vec_rot(&(<Vec>res).val, temp2)
+                return res
+            # These classes should do this themselves, but this is here for
+            # completeness.
+            if isinstance(first, Matrix):
+                res = Matrix.__new__(Matrix)
+                memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
+                mat_mul((<Matrix>res).mat, temp2)
+                return res
+            elif isinstance(first, Vec):
+                res = Vec.__new__(Vec)
+                memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
+                vec_rot(&(<Vec>res).val, temp2)
+                return res
+            elif isinstance(first, FrozenVec):
+                res = FrozenVec.__new__(FrozenVec)
+                memcpy(&(<FrozenVec>res).val, &(<FrozenVec>first).val, sizeof(vec_t))
+                vec_rot(&(<FrozenVec>res).val, temp2)
+                return res
+
+        return NotImplemented
+
+
+@cython.final
+cdef class FrozenAngle(AngleBase):
+    """Represents an immutable pitch-yaw-roll Euler angle.
+
+    All values are remapped to between 0-360 when set.
+    Addition and subtraction modify values, matrix-multiplication with
+    Vec, Angle or Matrix rotates (RHS rotating LHS).
+    """
+    @property
+    def pitch(self) -> float:
+        """The Y-axis rotation, performed second."""
+        return self.val.x
+
+    @property
+    def yaw(self) -> float:
+        """The Z-axis rotation, performed last."""
+        return self.val.y
+
+    @property
+    def roll(self) -> float:
+        """The X-axis rotation, performed first."""
+        return self.val.z
+
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'FrozenAngle':
+        """Return the rotation which results in the specified local axes.
+
+        At least two must be specified, with the third computed if necessary.
+        """
+        cdef mat_t mat
+        cdef FrozenAngle ang = FrozenAngle.__new__(FrozenAngle)
+        _mat_from_basis(mat, x, y, z)
+        _mat_to_angle(&ang.val, mat)
+        return ang
+
+    def copy(self):
+        """FrozenAngle is immutable."""
+        return self
+
+    def thaw(self):
+        """Return a mutable copy of this angle."""
+        return _angle_mut(self.val.x, self.val.y, self.val.z)
+
+    def __repr__(self) -> str:
+        return f'FrozenAngle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
+
+    def __copy__(self):
+        """FrozenAngle is immutable."""
+        return self
+
+    def __deepcopy__(self, memodict=None):
+        """FrozenAngle is immutable."""
+        return self
+
+    def __reduce__(self):
+        return unpickle_fang, (self.val.x, self.val.y, self.val.z)
+
+    def __richcmp__(self, other, int op):
+        """Rich Comparisons.
+
+        Angles only support equality, since ordering is nonsensical.
+        """
+        return angle_compare(self, other, op)
+
+    def __hash__(self) -> int:
+        """Hashing a frozen angle is the same as hashing the tuple form."""
+        # Not worth trying to inline tuple.__hash__():
+        # 3.11 uses a different algorithm.
+        # round() requires PyObject, so we're just making a tuple.
+        return hash((round(self.val.x, 6), round(self.val.y, 6), round(self.val.z, 6)))
+
+
+@cython.final
+cdef class Angle(AngleBase):
+    """Represents a mutable pitch-yaw-roll Euler angle.
+
+    All values are remapped to between 0-360 when set.
+    Addition and subtraction modify values, matrix-multiplication with
+    Vec, Angle or Matrix rotates (RHS rotating LHS).
+    """
+    def copy(self) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle_mut(self.val.x, self.val.y, self.val.z)
+
+    def __copy__(self) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle_mut(self.val.x, self.val.y, self.val.z)
+
+    def __deepcopy__(self, dict memodict=None) -> 'Angle':
+        """Create a duplicate of this angle."""
+        return _angle_mut(self.val.x, self.val.y, self.val.z)
+
+    def freeze(self):
+        """Return a frozen copy of this angle."""
+        return _angle_frozen(self.val.x, self.val.y, self.val.z)
+
+    def __reduce__(self):
+        return unpickle_mang, (self.val.x, self.val.y, self.val.z)
+
+    @property
+    def pitch(self) -> float:
+        """The Y-axis rotation, performed second."""
+        return self.val.x
+
+    @pitch.setter
+    def pitch(self, double pitch) -> None:
+        self.val.x = norm_ang(pitch)
+
+    @property
+    def yaw(self) -> float:
+        """The Z-axis rotation, performed last."""
+        return self.val.y
+
+    @yaw.setter
+    def yaw(self, double yaw) -> None:
+        self.val.y = norm_ang(yaw)
+
+    @property
+    def roll(self) -> float:
+        """The X-axis rotation, performed first."""
+        return self.val.z
+
+    @roll.setter
+    def roll(self, double roll) -> None:
+        self.val.z = norm_ang(roll)
+
+    def __repr__(self) -> str:
+        return f'Angle({self.val.x:g}, {self.val.y:g}, {self.val.z:g})'
+
+    @classmethod
+    def from_basis(
+        cls, *,
+        x: Vec=None,
+        y: Vec=None,
+        z: Vec=None,
+    ) -> 'Angle':
+        """Return the rotation which results in the specified local axes.
+
+        At least two must be specified, with the third computed if necessary.
+        """
+        cdef mat_t mat
+        cdef Angle ang = Angle.__new__(Angle)
+        _mat_from_basis(mat, x, y, z)
+        _mat_to_angle(&ang.val, mat)
+        return ang
+
     def __setitem__(self, pos, double val) -> None:
         """Allow editing values by index instead of name if desired.
 
@@ -2609,96 +2850,12 @@ cdef class Angle:
                 self.val.z = val
         raise KeyError(f'Invalid axis: {pos!r}')
 
-    def __richcmp__(self, other_obj, int op):
+    def __richcmp__(self, other, int op):
         """Rich Comparisons.
 
         Angles only support equality, since ordering is nonsensical.
         """
-        cdef vec_t other
-        try:
-            conv_angles(&other, other_obj)
-        except (TypeError, ValueError):
-            return NotImplemented
-
-        # 'redundant' == True prevents the individual comparisons from
-        # trying
-        # to convert the result individually on failure.
-        # Use subtraction so that values within TOL are accepted.
-        if op == Py_EQ:
-            return (
-                abs(self.val.x - other.x) <= TOL and
-                abs(self.val.y - other.y) <= TOL and
-                abs(self.val.z - other.z) <= TOL
-            ) == True
-        elif op == Py_NE:
-            return (
-                abs(self.val.x - other.x) > TOL or
-                abs(self.val.y - other.y) > TOL or
-                abs(self.val.z - other.z) > TOL
-            ) == True
-        elif op in [Py_LT, Py_GT, Py_GE, Py_LE]:
-            return NotImplemented
-        else:
-            raise SystemError(f'Unknown operation {op!r}' '!')
-
-    def __mul__(first, second):
-        """Angle * float multiplies each value."""
-        cdef double scalar
-        cdef Angle angle
-        if isinstance(first, Angle) and isinstance(second, (int, float)):
-            scalar = second
-            angle = first
-        elif isinstance(first, (int, float)) and isinstance(second, Angle):
-            scalar = first
-            angle = second
-        else:
-            return NotImplemented
-        return _angle(
-            norm_ang(angle.val.x * scalar),
-            norm_ang(angle.val.y * scalar),
-            norm_ang(angle.val.z * scalar),
-        )
-
-    def __matmul__(first, second):
-        cdef mat_t temp1, temp2
-        if isinstance(first, Angle):
-            _mat_from_angle(temp1, &(<Angle>first).val)
-            if isinstance(second, Angle):
-                _mat_from_angle(temp2, &(<Angle>second).val)
-                mat_mul(temp1, temp2)
-            elif isinstance(second, Matrix):
-                mat_mul(temp1, (<Matrix>second).mat)
-            else:
-                return NotImplemented
-            res = Angle.__new__(Angle)
-            _mat_to_angle(&(<Angle>res).val, temp1)
-            return res
-        elif isinstance(second, Angle):
-            _mat_from_angle(temp2, &(<Angle>second).val)
-            if isinstance(first, tuple):
-                res = Vec.__new__(Vec)
-                (<Vec>res).val.x, (<Vec>res).val.y, (<Vec>res).val.z = <tuple>first
-                vec_rot(&(<Vec>res).val, temp2)
-                return res
-            # These classes should do this themselves, but this is here for
-            # completeness.
-            if isinstance(first, Matrix):
-                res = Matrix.__new__(Matrix)
-                memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
-                mat_mul((<Matrix>res).mat, temp2)
-                return res
-            elif isinstance(first, Vec):
-                res = Vec.__new__(Vec)
-                memcpy(&(<Vec>res).val, &(<Vec>first).val, sizeof(vec_t))
-                vec_rot(&(<Vec>res).val, temp2)
-                return res
-            elif isinstance(first, FrozenVec):
-                res = FrozenVec.__new__(FrozenVec)
-                memcpy(&(<FrozenVec>res).val, &(<FrozenVec>first).val, sizeof(vec_t))
-                vec_rot(&(<FrozenVec>res).val, temp2)
-                return res
-
-        return NotImplemented
+        return angle_compare(self, other, op)
 
     def __imatmul__(self, second):
         cdef mat_t mat_self, temp2
@@ -2754,10 +2911,11 @@ def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
 # This fixes all the methods too, though not in exceptions.
 
 from cpython.object cimport PyTypeObject
-if USE_TYPE_INTERNALS:
+if USE_TYPE_INTERNALS and 0:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
+    (<PyTypeObject *>FrozenAngle).tp_name = b"srctools.math.FrozenAngle"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"

@@ -2493,7 +2493,7 @@ if not TYPE_CHECKING:
     else:
         for _name in [
             'Vec', 'FrozenVec',
-            'Angle', # 'FrozenAngle',
+            'Angle', 'FrozenAngle',
             'Matrix',
             'parse_vec_str', 'to_matrix', 'lerp',
         ]:

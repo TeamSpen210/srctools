@@ -69,7 +69,7 @@ def test_construction(py_c_vec, frozen_thawed_vec):
         assert_vec(Vec([x, y, z]), x, y, z)
 
 
-def test_vec_copying(py_c_vec, frozen_thawed_vec):
+def test_vec_copying(py_c_vec):
     """Test calling Vec() on an existing vec merely copies."""
     Vec = vec_mod.Vec
     FrozenVec = vec_mod.FrozenVec
@@ -152,6 +152,7 @@ def test_vec_as_tuple(frozen_thawed_vec):
         assert tup.x == x
         assert tup.y == y
         assert tup.z == z
+
 
 def test_from_str_fails(py_c_vec, frozen_thawed_vec):
     """Check failures in Vec.from_str()"""
