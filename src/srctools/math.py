@@ -142,6 +142,7 @@ if not TYPE_CHECKING:
             DeprecationWarning, stacklevel=2,
         )
         return _old_vec_tup(*args, **kwargs)
+    # noinspection PyDeprecation
     Vec_tuple.__new__ = _vec_tup_new
 
 
@@ -309,7 +310,7 @@ def __i{func}__(self, other: float):
 '''
 
 # Subclassing this causes isinstance() to become very slow, trying to check
-# for __round__ on everything. So at runtime swap it out so it doesn't inherit.
+# for __round__ on everything. So at runtime swap it out to ensure it doesn't inherit.
 globals()['SupportsRound'] = {'Vec': object, 'FrozenVec': object}
 
 
@@ -416,15 +417,7 @@ class VecBase:
     ) -> VecT: ...
 
     @classmethod
-    def with_axes(
-        cls: Type[VecT],
-        axis1: str,
-        val1: Union[float, 'VecBase'],
-        axis2: str=None,
-        val2: Union[float, 'VecBase']=0.0,
-        axis3: str=None,
-        val3: Union[float, 'VecBase']=0.0,
-    ) -> VecT:
+    def with_axes(cls: Type[VecT], *args, **kwargs) -> VecT:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -651,6 +644,7 @@ class VecBase:
         else:
             return NotImplemented
         res = type(self)(self.x, self.y, self.z)
+        # noinspection PyProtectedMember
         mat._vec_rot(res)
         return res
 
@@ -1311,6 +1305,7 @@ class Vec(VecBase, SupportsRound['Vec']):
             mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
+        # noinspection PyProtectedMember
         mat._vec_rot(self)
         return self
 
@@ -1354,6 +1349,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         """
         warnings.warn("Use vec @ Angle() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle(pitch, yaw, roll))
+        # noinspection PyProtectedMember
         mat._vec_rot(self)
         if round_vals:
             self.x = round(self.x, 6)
@@ -1368,6 +1364,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
+        # noinspection PyProtectedMember
         mat._vec_rot(self)
         if round_vals:
             self.x = round(self.x, 6)
@@ -1427,6 +1424,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         given the parent's origin and angles.
         """
         mat = to_matrix(angles)
+        # noinspection PyProtectedMember
         mat._vec_rot(self)
         self.__iadd__(origin)
 
@@ -1440,6 +1438,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         """
         mat = Py_Matrix()
         yield mat
+        # noinspection PyProtectedMember
         mat._vec_rot(self)
 
 _IND_TO_SLOT = {
@@ -1992,7 +1991,7 @@ class AngleBase:
         """== test.
 
         Two Angles are equal if all three axes are the same.
-        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        An Angle can be compared with a 3-tuple as if it was an Angle also.
         A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, AngleBase):
@@ -2017,7 +2016,7 @@ class AngleBase:
         """!= test.
 
         Two Angles are equal if all three axes are the same.
-        An Angle can be compared with a 3-tuple as if it was a Angle also.
+        An Angle can be compared with a 3-tuple as if it was an Angle also.
         A tolerance of 1e-6 is accounted for automatically.
         """
         if isinstance(other, AngleBase):
@@ -2460,8 +2459,7 @@ if not TYPE_CHECKING:
     _glob = globals()
     del _glob['SupportsRound']
     try:
-        # noinspection PyProtectedMember
-        from srctools import _math
+        from . import _math
     except ImportError:
         pass
     else:
