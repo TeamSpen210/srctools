@@ -85,7 +85,7 @@ def parse_vec_str(val: Union[str, 'VecBase', 'AngleBase'], x=0.0, y=0.0, z=0.0) 
         pass  # Fast path to skip the below code.
     elif isinstance(val, VecBase):
         return val.x, val.y, val.z
-    elif isinstance(val, Py_Angle):
+    elif isinstance(val, AngleBase):
         return val.pitch, val.yaw, val.roll
     else:
         # Not a string.
@@ -635,11 +635,11 @@ class VecBase:
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __matmul__(self: VecT, other: Union['Angle', 'Matrix']) -> VecT:
+    def __matmul__(self: VecT, other: Union['AngleBase', 'Matrix']) -> VecT:
         """Rotate this vector by an angle or matrix."""
         if isinstance(other, Py_Matrix):
             mat = other
-        elif isinstance(other, Py_Angle):
+        elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
@@ -1297,11 +1297,11 @@ class Vec(VecBase, SupportsRound['Vec']):
 
     del funcname, op, pretty
 
-    def __imatmul__(self, other: Union['Angle', 'Matrix']) -> 'Vec':
+    def __imatmul__(self, other: Union['AngleBase', 'Matrix']) -> 'Vec':
         """We need to define this, so it's in-place."""
         if isinstance(other, Py_Matrix):
             mat = other
-        elif isinstance(other, Py_Angle):
+        elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
@@ -1416,7 +1416,7 @@ class Vec(VecBase, SupportsRound['Vec']):
     def localise(
         self,
         origin: Union['Vec', Tuple3],
-        angles: Union['Angle', 'Matrix']=None,
+        angles: Union['AngleBase', 'Matrix']=None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
@@ -1779,7 +1779,7 @@ class Matrix:
         if isinstance(other, Py_Matrix):
             self._mat_mul(other)
             return self
-        elif isinstance(other, Py_Angle):
+        elif isinstance(other, AngleBase):
             self._mat_mul(Py_Matrix.from_angle(other))
             return self
         else:
@@ -2106,6 +2106,34 @@ class AngleBase:
 class FrozenAngle(AngleBase):
     """Represents an immutable pitch-yaw-roll Euler angle."""
     __slots__ = ()
+
+    def __new__(
+        cls,
+        pitch: Union[int, float, Iterable[Union[int, float]]]=0.0,
+        yaw: Union[int, float]=0.0,
+        roll: Union[int, float]=0.0,
+    ) -> 'FrozenAngle':
+        """Create a FrozenAngle.
+
+        All values are converted to Floats automatically.
+        If no value is given, that axis will be set to 0.
+        An iterable can be passed in (as the pitch argument), which will be
+        used for pitch, yaw, and roll. This includes Vectors and other Angles.
+        """
+        # Already a FrozenVec.
+        if isinstance(pitch, cls):
+            return pitch
+        res = object.__new__(cls)
+        if isinstance(pitch, (int, float)):
+            res._pitch = float(pitch) % 360.0 % 360.0
+            res._yaw = float(yaw) % 360.0 % 360.0
+            res._roll = float(roll) % 360.0 % 360.0
+        else:
+            it = iter(pitch)
+            res._pitch = float(next(it, 0.0)) % 360.0 % 360.0
+            res._yaw = float(next(it, yaw)) % 360.0 % 360.0
+            res._roll = float(next(it, roll)) % 360.0 % 360.0
+        return res
 
     @classmethod
     @overload
