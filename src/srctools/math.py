@@ -1681,13 +1681,13 @@ class Matrix:
 
         horiz_dist = math.sqrt(for_x**2 + for_y**2)
         if horiz_dist > 0.001:
-            ang._yaw = math.degrees(math.atan2(for_y, for_x))
-            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist))
-            ang._roll = math.degrees(math.atan2(left_z, up_z))
+            ang._yaw = math.degrees(math.atan2(for_y, for_x)) % 360.0
+            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist)) % 360.0
+            ang._roll = math.degrees(math.atan2(left_z, up_z)) % 360.0
         else:
             # Vertical, gimbal lock (yaw=roll)...
-            ang._yaw = math.degrees(math.atan2(-left_x, left_y))
-            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist))
+            ang._yaw = math.degrees(math.atan2(-left_x, left_y)) % 360.0
+            ang._pitch = math.degrees(math.atan2(-for_z, horiz_dist)) % 360.0
             ang._roll = 0.0  # Can't produce.
         return ang
 
