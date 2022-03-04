@@ -27,6 +27,9 @@ EPSILON = 1e-6
 
 PyCVec = Tuple[Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix], Callable[..., Tuple[float, float, float]]]
 T = TypeVar('T')
+VecClass = Type[vec_mod.VecBase]
+AngleClass = Type[vec_mod.AngleBase]
+
 
 def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
     for x in nums:
@@ -155,3 +158,15 @@ def parameterize_cython(param: str, py_vers, cy_vers):
         return pytest.mark.parametrize(param, [py_vers], ids=['Python'])
     else:
         return pytest.mark.parametrize(param, [py_vers, cy_vers], ids=['Python', 'Cython'])
+
+
+@pytest.fixture(params=['Vec', 'FrozenVec'])
+def frozen_thawed_vec(py_c_vec, request) -> VecClass:
+    """Support testing both mutable and immutable vectors."""
+    yield getattr(vec_mod, request.param)
+
+
+@pytest.fixture(params=['Angle', 'FrozenAngle'])
+def frozen_thawed_angle(py_c_vec, request) -> AngleClass:
+    """Support testing both mutable and immutable angles."""
+    yield getattr(vec_mod, request.param)

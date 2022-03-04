@@ -8,23 +8,16 @@ from random import Random
 import inspect
 
 from helpers import *
-from srctools import Vec_tuple, math as vec_mod
+from srctools import Vec_tuple
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)
 raises_valueerror = pytest.raises(ValueError)
 raises_keyerror = pytest.raises(KeyError)
 raises_zero_div = pytest.raises(ZeroDivisionError)
-VecClass = Type[vec_mod.VecBase]
 
 
-@pytest.fixture(params=['Vec', 'FrozenVec'])
-def frozen_thawed_vec(py_c_vec, request) -> VecClass:
-    """Support testing both mutable and immutable vectors."""
-    yield getattr(vec_mod, request.param)
-
-
-@pytest.mark.parametrize('cls', ['Vec', 'FrozenVec', 'Matrix', 'Angle'])
+@pytest.mark.parametrize('cls', ['Vec', 'FrozenVec', 'Matrix', 'Angle', 'FrozenAngle'])
 def test_matching_apis(cls: str) -> None:
     """Check each class pair has the same methods."""
     py_type = getattr(vec_mod, 'Py_' + cls)
