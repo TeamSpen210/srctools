@@ -22,15 +22,15 @@ cdef void mat_mul(mat_t targ, mat_t rot)
 cdef void vec_rot(vec_t *vec, mat_t mat)
 
 @cython.internal
-cdef class BaseVec:
+cdef class VecBase:
     cdef vec_t val
 
 @cython.final
-cdef class Vec(BaseVec):
+cdef class Vec(VecBase):
     pass
 
 @cython.final
-cdef class FrozenVec(BaseVec):
+cdef class FrozenVec(VecBase):
     pass
 
 @cython.final

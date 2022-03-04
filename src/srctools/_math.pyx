@@ -31,13 +31,13 @@ cdef inline FrozenVec _vector_frozen(double x, double y, double z):
     vec.val.z = z
     return vec
 
-cdef inline BaseVec _vector(type typ, double x, double y, double z):
+cdef inline VecBase _vector(type typ, double x, double y, double z):
     """Make a Vector directly."""
-    cdef BaseVec vec
+    cdef VecBase vec
     if typ is FrozenVec:
-        vec = <BaseVec>FrozenVec.__new__(FrozenVec)
+        vec = <VecBase>FrozenVec.__new__(FrozenVec)
     else:
-        vec = <BaseVec>Vec.__new__(Vec)
+        vec = <VecBase>Vec.__new__(Vec)
     vec.val.x = x
     vec.val.y = y
     vec.val.z = z
@@ -111,15 +111,15 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef BaseVec pick_vec_type(type left, type right):
+cdef VecBase pick_vec_type(type left, type right):
     # Given the LHS and RHS types, determine the Vec to create.
     cdef bint frozen = False
     # We use the type of the left, falling back to the right
     # if the left isn't a vector.
     if left is FrozenVec or (right is FrozenVec and left is not Vec):
-        return <BaseVec>FrozenVec.__new__(FrozenVec)
+        return <VecBase>FrozenVec.__new__(FrozenVec)
     else:
-        return <BaseVec>Vec.__new__(Vec)
+        return <VecBase>Vec.__new__(Vec)
 
 cdef bint vec_check(obj):
     # Check if this is a vector instance.
@@ -133,9 +133,9 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
     cdef char c, end_delim = 0
 
     if vec_check(value):
-        vec.x = (<BaseVec>value).val.x
-        vec.y = (<BaseVec>value).val.y
-        vec.z = (<BaseVec>value).val.z
+        vec.x = (<VecBase>value).val.x
+        vec.y = (<VecBase>value).val.y
+        vec.z = (<VecBase>value).val.z
     elif isinstance(value, Angle):
         vec.x = (<Angle>value).val.x
         vec.y = (<Angle>value).val.y
@@ -189,7 +189,7 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
 
 # All the comparisons are similar, so we can use richcmp to
  # nicely combine the parsing code.
-cdef object vector_compare(BaseVec self, object other_obj, int op):
+cdef object vector_compare(VecBase self, object other_obj, int op):
     """Rich Comparisons.
 
     Two Vectors are compared based on the axes.
@@ -289,9 +289,9 @@ cdef inline unsigned char conv_vec(
     If scalar is True, allow int/float to set all axes.
     """
     if vec_check(vec):
-        result.x = (<BaseVec>vec).val.x
-        result.y = (<BaseVec>vec).val.y
-        result.z = (<BaseVec>vec).val.z
+        result.x = (<VecBase>vec).val.x
+        result.y = (<VecBase>vec).val.y
+        result.z = (<VecBase>vec).val.z
     elif isinstance(vec, float) or isinstance(vec, int):
         if scalar:
             result.x = result.y = result.z = vec
@@ -569,7 +569,7 @@ cdef class VecIterGrid:
         return self
 
     def __next__(self):
-        cdef BaseVec vec
+        cdef VecBase vec
         if self.cur_x > self.stop_x:
             raise StopIteration
 
@@ -607,7 +607,7 @@ cdef class VecIterLine:
         return self
 
     def __next__(self):
-        cdef BaseVec vec
+        cdef VecBase vec
         if self.cur_off < 0:
             raise StopIteration
 
@@ -684,7 +684,7 @@ cdef class AngleTransform:
 
 @cython.freelist(64)
 @cython.internal
-cdef class BaseVec:
+cdef class VecBase:
     """A 3D Vector. This has most standard Vector functions.
 
     Many of the functions will accept a 3-tuple for comparison purposes.
@@ -724,17 +724,17 @@ cdef class BaseVec:
         """
         cdef tuple tup
 
-        if type(self) is BaseVec:
-            raise TypeError('BaseVec cannot be instantiated!')
+        if type(self) is VecBase:
+            raise TypeError('VecBase cannot be instantiated!')
 
         if isinstance(x, float) or isinstance(x, int):
             self.val.x = x
             self.val.y = y
             self.val.z = z
         elif vec_check(x):
-            self.val.x = (<BaseVec>x).val.x
-            self.val.y = (<BaseVec>x).val.y
-            self.val.z = (<BaseVec>x).val.z
+            self.val.x = (<VecBase>x).val.x
+            self.val.y = (<VecBase>x).val.y
+            self.val.z = (<VecBase>x).val.z
         elif isinstance(x, tuple):
             tup = <tuple>x
             if len(tup) >= 1:
@@ -785,7 +785,7 @@ cdef class BaseVec:
 
         If the value is already a vector, a copy will be returned.
         """
-        cdef BaseVec vec = _vector(cls, 0.0, 0.0, 0.0)
+        cdef VecBase vec = _vector(cls, 0.0, 0.0, 0.0)
         _parse_vec_str(&vec.val, value, x, y, z)
         return vec
 
@@ -809,7 +809,7 @@ cdef class BaseVec:
                 f'but {arg_count} were given'
             )
 
-        cdef BaseVec vec = _vector(cls, 0.0, 0.0, 0.0)
+        cdef VecBase vec = _vector(cls, 0.0, 0.0, 0.0)
         cdef Py_UCS4 axis
         cdef unsigned char i
         for i in range(0, arg_count, 2):
@@ -840,15 +840,15 @@ cdef class BaseVec:
         return vec
 
     @classmethod
-    def bbox(cls, *points: BaseVec):
+    def bbox(cls, *points: VecBase):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
         Returns a (min, max) tuple.
         """
-        cdef BaseVec bbox_min = _vector(cls, 0.0, 0.0, 0.0)
-        cdef BaseVec bbox_max = _vector(cls, 0.0, 0.0, 0.0)
-        cdef BaseVec sing_vec
+        cdef VecBase bbox_min = _vector(cls, 0.0, 0.0, 0.0)
+        cdef VecBase bbox_max = _vector(cls, 0.0, 0.0, 0.0)
+        cdef VecBase sing_vec
         cdef vec_t vec
         cdef Py_ssize_t i
         # Allow passing a single iterable, but also handle a single Vec.
@@ -857,7 +857,7 @@ cdef class BaseVec:
         if len(points) == 1:
             if vec_check(points[0]):
                 # Special case, don't iter over the vec, just copy.
-                sing_vec = <BaseVec>points[0]
+                sing_vec = <VecBase>points[0]
                 bbox_min.val = sing_vec.val
                 bbox_max.val = sing_vec.val
                 return bbox_min, bbox_max
@@ -962,7 +962,7 @@ cdef class BaseVec:
 
         return it
 
-    def iter_line(self, end: BaseVec, stride: int=1) -> Iterator[Vec]:
+    def iter_line(self, end: VecBase, stride: int=1) -> Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -991,7 +991,7 @@ cdef class BaseVec:
 
     @classmethod
     @cython.cdivision(True)  # Manually do it once.
-    def lerp(cls, x: float, in_min: float, in_max: float, out_min: BaseVec, out_max: BaseVec):
+    def lerp(cls, x: float, in_min: float, in_max: float, out_min: VecBase, out_max: VecBase):
         """Linerarly interpolate between two vectors.
 
         If in_min and in_max are the same, ZeroDivisionError is raised.
@@ -1061,7 +1061,7 @@ cdef class BaseVec:
         )  == True
 
     @staticmethod
-    def bbox_intersect(min1: BaseVec, max1: BaseVec, min2: BaseVec, max2: BaseVec) -> bool:
+    def bbox_intersect(min1: VecBase, max1: VecBase, min2: VecBase, max2: VecBase) -> bool:
         """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
         return not (
             (min2.val.x - max1.val.x) > TOL or (min1.val.x - max2.val.x) > TOL or
@@ -1134,7 +1134,7 @@ cdef class BaseVec:
         except (TypeError, ValueError):
             return NotImplemented
 
-        cdef BaseVec result = pick_vec_type(type(obj_a), type(obj_b))
+        cdef VecBase result = pick_vec_type(type(obj_a), type(obj_b))
         result.val.x = vec_a.x + vec_b.x
         result.val.y = vec_a.y + vec_b.y
         result.val.z = vec_a.z + vec_b.z
@@ -1153,7 +1153,7 @@ cdef class BaseVec:
         except (TypeError, ValueError):
             return NotImplemented
 
-        cdef BaseVec result = pick_vec_type(type(obj_a), type(obj_b))
+        cdef VecBase result = pick_vec_type(type(obj_a), type(obj_b))
         result.val.x = vec_a.x - vec_b.x
         result.val.y = vec_a.y - vec_b.y
         result.val.z = vec_a.z - vec_b.z
@@ -1161,7 +1161,7 @@ cdef class BaseVec:
 
     def __mul__(obj_a, obj_b):
         """Vector * scalar operation."""
-        cdef BaseVec vec
+        cdef VecBase vec
         cdef double scalar
         # Vector * Vector is disallowed.
         if isinstance(obj_a, (int, float)):
@@ -1201,7 +1201,7 @@ cdef class BaseVec:
 
     def __truediv__(obj_a, obj_b):
         """Vector / scalar operation."""
-        cdef BaseVec vec
+        cdef VecBase vec
         cdef double scalar
         # Vector / Vector is disallowed.
         if isinstance(obj_a, (int, float)):
@@ -1240,7 +1240,7 @@ cdef class BaseVec:
 
     def __floordiv__(obj_a, obj_b):
         """Vector // scalar operation."""
-        cdef BaseVec vec
+        cdef VecBase vec
         cdef double scalar
         # Vector // Vector is disallowed.
         if isinstance(obj_a, (int, float)):
@@ -1279,7 +1279,7 @@ cdef class BaseVec:
 
     def __mod__(obj_a, obj_b):
         """Vector % scalar operation."""
-        cdef BaseVec vec
+        cdef VecBase vec
         cdef double scalar
         # Vector % Vector is disallowed.
         if isinstance(obj_a, (int, float)):
@@ -1319,7 +1319,7 @@ cdef class BaseVec:
     def __matmul__(first, second):
         """Rotate this vector by an angle or matrix."""
         cdef mat_t temp
-        cdef BaseVec res
+        cdef VecBase res
         if type(first) is Vec:
             res = Vec.__new__(Vec)
             res.val = (<Vec>first).val
@@ -1341,27 +1341,27 @@ cdef class BaseVec:
 
     def __divmod__(obj_a, obj_b):
         """Divide the vector by a scalar, returning the result and remainder."""
-        cdef BaseVec vec
-        cdef BaseVec res_1
-        cdef BaseVec res_2
+        cdef VecBase vec
+        cdef VecBase res_1
+        cdef VecBase res_2
         cdef double other_d
 
         if vec_check(obj_a):
             if vec_check(obj_b):
                 raise TypeError("Cannot divide 2 Vectors.")
             # vec / val
-            vec = <BaseVec>obj_a
+            vec = <VecBase>obj_a
             try:
                 other_d = <double ?>obj_b
             except TypeError:
                 return NotImplemented
 
             if type(obj_a) is Vec:
-                res_1 = <BaseVec>Vec.__new__(Vec)
-                res_2 = <BaseVec>Vec.__new__(Vec)
+                res_1 = <VecBase>Vec.__new__(Vec)
+                res_2 = <VecBase>Vec.__new__(Vec)
             else:
-                res_1 = <BaseVec>FrozenVec.__new__(FrozenVec)
-                res_2 = <BaseVec>FrozenVec.__new__(FrozenVec)
+                res_1 = <VecBase>FrozenVec.__new__(FrozenVec)
+                res_2 = <VecBase>FrozenVec.__new__(FrozenVec)
 
             # We put % first, since Cython then produces a 'divmod' error.
             res_2.val.x = vec.val.x % other_d
@@ -1372,18 +1372,18 @@ cdef class BaseVec:
             res_1.val.z = vec.val.z // other_d
         elif vec_check(obj_b):
             # val / vec
-            vec = <BaseVec>obj_b
+            vec = <VecBase>obj_b
             try:
                 other_d = <double ?>obj_a
             except TypeError:
                 return NotImplemented
 
             if type(obj_b) is Vec:
-                res_1 = <BaseVec>Vec.__new__(Vec)
-                res_2 = <BaseVec>Vec.__new__(Vec)
+                res_1 = <VecBase>Vec.__new__(Vec)
+                res_2 = <VecBase>Vec.__new__(Vec)
             else:
-                res_1 = <BaseVec>FrozenVec.__new__(FrozenVec)
-                res_2 = <BaseVec>FrozenVec.__new__(FrozenVec)
+                res_1 = <VecBase>FrozenVec.__new__(FrozenVec)
+                res_2 = <VecBase>FrozenVec.__new__(FrozenVec)
 
             res_2.val.x = other_d % vec.val.x
             res_1.val.x = other_d // vec.val.x
@@ -1510,7 +1510,7 @@ cdef class BaseVec:
 
 
 @cython.final
-cdef class FrozenVec(BaseVec):
+cdef class FrozenVec(VecBase):
     """Immutable vector class. This cannot be changed once created, but is hashable."""
     @property
     def x(self):
@@ -2257,7 +2257,7 @@ cdef class Matrix:
     def __matmul__(first, second):
         """Rotate two objects."""
         cdef mat_t temp, temp2
-        cdef BaseVec vec
+        cdef VecBase vec
         cdef Matrix mat
         cdef Angle ang
         if isinstance(first, Matrix):
@@ -2273,13 +2273,13 @@ cdef class Matrix:
             return mat
         elif isinstance(second, Matrix):
             if isinstance(first, Vec):
-                vec = <BaseVec>Vec.__new__(Vec)
-                memcpy(&vec.val, &(<BaseVec>first).val, sizeof(vec_t))
+                vec = <VecBase>Vec.__new__(Vec)
+                memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
                 vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, FrozenVec):
-                vec = <BaseVec>FrozenVec.__new__(FrozenVec)
-                memcpy(&vec.val, &(<BaseVec>first).val, sizeof(vec_t))
+                vec = <VecBase>FrozenVec.__new__(FrozenVec)
+                memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
                 vec_rot(&vec.val, (<Matrix>second).mat)
                 return vec
             elif isinstance(first, tuple):
