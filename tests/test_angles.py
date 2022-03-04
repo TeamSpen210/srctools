@@ -13,9 +13,9 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
-def test_construction(py_c_vec):
-    """Check various parts of the constructor - Vec(), Vec.from_str()."""
-    Angle = vec_mod.Angle
+def test_construction(py_c_vec, frozen_thawed_angle: AngleClass):
+    """Check various parts of the constructor - Angle(), Angle.from_str()."""
+    Angle = frozen_thawed_angle
 
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
         assert_ang(Angle(pit, yaw, rol), pit, yaw, rol)
@@ -82,22 +82,23 @@ def test_construction(py_c_vec):
         assert test_val == Angle.from_str('34.5 38.4 -23 -38', roll=val).roll
 
 
-def test_angle_stringification(py_c_vec):
+def test_angle_stringification(frozen_thawed_angle: AngleClass) -> None:
     """Test the various string methods."""
-    Angle = vec_mod.Angle
-    for x, y, z in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
-        v: Angle = Angle(x, y, z)
-        assert str(v) == f'{x:g} {y:g} {z:g}'
-        assert repr(v) == f'Angle({x:g}, {y:g}, {z:g})'
-        assert v.join() == f'{x:g}, {y:g}, {z:g}'
-        assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
-        assert format(v) == f'{x:g} {y:g} {z:g}'
-        assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
+    Angle = frozen_thawed_angle
+    name = 'FrozenAngle' if Angle is vec_mod.FrozenAngle else 'Angle'
+    for pitch, yaw, roll in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
+        v: Angle = Angle(pitch, yaw, roll)
+        assert str(v) == f'{pitch:g} {yaw:g} {roll:g}'
+        assert repr(v) == f'{name}({pitch:g}, {yaw:g}, {roll:g})'
+        assert v.join() == f'{pitch:g}, {yaw:g}, {roll:g}'
+        assert v.join(' : ') == f'{pitch:g} : {yaw:g} : {roll:g}'
+        assert format(v) == f'{pitch:g} {yaw:g} {roll:g}'
+        assert format(v, '.02f') == f'{pitch:.02f} {yaw:.02f} {roll:.02f}'
 
 
-def test_with_axes(py_c_vec):
+def test_with_axes(frozen_thawed_angle: AngleClass) -> None:
     """Test the with_axes() constructor."""
-    Angle = vec_mod.Angle
+    Angle = frozen_thawed_angle
 
     for axis, u, v in [
         ('pitch', 'yaw', 'roll'),
@@ -175,9 +176,9 @@ def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax:
             check(x_read, oth_read)
 
 
-def test_iteration(py_c_vec: PyCVec):
+def test_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> None:
     """Test vector iteration."""
-    Angle = vec_mod.Angle
+    Angle = frozen_thawed_angle
     v = Angle(45.0, 50, 65)
     it = iter(v)
     assert iter(it) is iter(it)
@@ -191,9 +192,9 @@ def test_iteration(py_c_vec: PyCVec):
         next(it)
 
 
-def test_rev_iteration(py_c_vec: PyCVec):
+def test_rev_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> None:
     """Test reversed iteration."""
-    Angle = vec_mod.Angle
+    Angle = frozen_thawed_angle
     v = Angle(45.0, 50, 65)
     it = reversed(v)
     assert iter(it) is iter(it)
@@ -207,9 +208,9 @@ def test_rev_iteration(py_c_vec: PyCVec):
         next(it)
 
 
-def test_equality(py_c_vec) -> None:
+def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
     """Test equality checks on Angles."""
-    Angle = vec_mod.Angle
+    Angle = frozen_thawed_angle
 
     def test(p1, y1, r1, p2, y2, r2):
         """Check an Angle pair for incorrect comparisons."""
@@ -246,10 +247,10 @@ def test_equality(py_c_vec) -> None:
         test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
 
 
-def test_copy_pickle(py_c_vec) -> None:
-    """Test pickling, unpickling and copying Angles."""
+def test_copy(py_c_vec) -> None:
+    """Test copying Angles and FrozenAngles."""
     Angle = vec_mod.Angle
-    vec_mod.Angle = Angle
+    FrozenAngle = vec_mod.FrozenAngle
 
     test_data = 38.0, 257.125, 0.0
 
@@ -272,6 +273,19 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig is not dcpy
     assert orig == dcpy
 
+    frozen = FrozenAngle(test_data)
+    # Copying FrozenAngle does nothing.
+    assert frozen is frozen.copy()
+    assert frozen is copy.copy(frozen)
+    assert frozen is copy.deepcopy(frozen)
+
+
+def test_pickle(frozen_thawed_angle: AngleClass) -> None:
+    """Test pickling and unpickling works."""
+    Angle = frozen_thawed_angle
+    test_data = 38.0, 257.125, 0.0
+
+    orig = Angle(test_data)
     pick = pickle.dumps(orig)
     thaw = pickle.loads(pick)
 
