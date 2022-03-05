@@ -295,7 +295,7 @@ def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
         test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
 
 
-def test_copy(py_c_vec) -> None:
+def test_copy_mod(py_c_vec) -> None:
     """Test copying Angles and FrozenAngles."""
     Angle = vec_mod.Angle
     FrozenAngle = vec_mod.FrozenAngle
