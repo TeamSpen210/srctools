@@ -1674,7 +1674,7 @@ cdef class FrozenVec(VecBase):
 
     cross = cross_frozenvec
 
-    def thaw(self) -> 'Vec':
+    def thaw(self) -> Vec:
         """Return a mutable copy of this vector."""
         return _vector_mut(self.val.x, self.val.y, self.val.z)
 
@@ -1779,7 +1779,7 @@ cdef class Vec:
 
     cross = cross_vec
 
-    def freeze(self) -> 'FrozenVec':
+    def freeze(self) -> FrozenVec:
         """Return a frozen copy of this vector."""
         return _vector_frozen(self.val.x, self.val.y, self.val.z)
 
@@ -2121,25 +2121,25 @@ cdef class Matrix:
             '>'
         )
 
-    def copy(self) -> 'Matrix':
+    def copy(self) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __copy__(self) -> 'Matrix':
+    def __copy__(self) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __deepcopy__(self, dict memodict=None) -> 'Matrix':
+    def __deepcopy__(self, dict memodict=None) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __reduce__(self):
+    def __reduce__(self) -> tuple:
         return unpickle_mat, (
             self.mat[0][0], self.mat[0][1], self.mat[0][2],
             self.mat[1][0], self.mat[1][1], self.mat[1][2],
@@ -2147,7 +2147,7 @@ cdef class Matrix:
         )
 
     @classmethod
-    def from_pitch(cls, double pitch):
+    def from_pitch(cls, double pitch) -> Matrix:
         """Return the matrix representing a pitch rotation.
 
         This is a rotation around the Y axis.
@@ -2165,7 +2165,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_yaw(cls, double yaw):
+    def from_yaw(cls, double yaw) -> Matrix:
         """Return the matrix representing a yaw rotation.
 
         """
@@ -2182,7 +2182,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_roll(cls, double roll):
+    def from_roll(cls, double roll) -> Matrix:
         """Return the matrix representing a roll rotation.
 
         This is a rotation around the X axis.
@@ -2200,7 +2200,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_angle(cls, pitch, yaw=None, roll=None):
+    def from_angle(cls, pitch, yaw=None, roll=None) -> Matrix:
         """Return the rotation representing an Euler angle.
 
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
@@ -2220,7 +2220,7 @@ cdef class Matrix:
 
 
     @classmethod
-    def axis_angle(cls, object axis, double angle) -> 'Matrix':
+    def axis_angle(cls, object axis, double angle) -> Matrix:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         cdef vec_t vec_axis
         cdef double sin, cos, icos, x, y, z
@@ -2252,19 +2252,19 @@ cdef class Matrix:
 
         return mat
 
-    def forward(self, mag: float = 1.0):
+    def forward(self, mag: float = 1.0) -> Vec:
         """Return a vector with the given magnitude pointing along the X axis."""
         return _vector_mut(mag * self.mat[0][0], mag * self.mat[0][1], mag * self.mat[0][2])
 
-    def left(self, mag: float = 1.0):
+    def left(self, mag: float = 1.0) -> Vec:
         """Return a vector with the given magnitude pointing along the Y axis."""
         return _vector_mut(mag * self.mat[1][0], mag * self.mat[1][1], mag * self.mat[1][2])
 
-    def up(self, mag: float = 1.0):
+    def up(self, mag: float = 1.0) -> Vec:
         """Return a vector with the given magnitude pointing along the Z axis."""
         return _vector_mut(mag * self.mat[2][0], mag * self.mat[2][1], mag * self.mat[2][2])
 
-    def __getitem__(self, item):
+    def __getitem__(self, item) -> float:
         """Retrieve an individual matrix value by x, y position (0-2)."""
         cdef int x, y
         try:
@@ -2288,13 +2288,13 @@ cdef class Matrix:
         else:
             raise KeyError(f'Invalid coordinate {x}, {y}' '!')
 
-    def to_angle(self):
+    def to_angle(self) -> Angle:
         """Return an Euler angle replicating this rotation."""
         cdef Angle ang = Angle.__new__(Angle)
         _mat_to_angle(&ang.val, self.mat)
         return ang
 
-    def transpose(self) -> 'Matrix':
+    def transpose(self) -> Matrix:
         """Return the transpose of this matrix."""
         cdef Matrix rot = Matrix.__new__(Matrix)
 
