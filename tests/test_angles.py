@@ -1,5 +1,6 @@
 import copy
 import pickle
+import pytest
 
 from helpers import *
 
@@ -79,8 +80,9 @@ def test_from_str(frozen_thawed_angle: AngleClass) -> None:
         assert_ang(new, pit, yaw, rol, type=Angle)
         assert orig is not new  # It must be a copy
 
-        # Check as_tuple() makes an equivalent tuple
-        tup = orig.as_tuple()
+        # Check as_tuple() makes an equivalent tuple - this is deprecated.
+        with pytest.deprecated_call():
+            tup = orig.as_tuple()
 
         # Flip to work arond the coercion.
         pit %= 360.0

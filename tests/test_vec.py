@@ -141,7 +141,8 @@ def test_vec_as_tuple(frozen_thawed_vec):
     for x, y, z in iter_vec(VALID_ZERONUMS):
         # Check as_tuple() makes an equivalent tuple
         orig = Vec(x, y, z)
-        tup = orig.as_tuple()
+        with pytest.deprecated_call():
+            tup = orig.as_tuple()
         assert isinstance(tup, tuple)
         assert (x, y, z) == tup
         assert hash((x, y, z)) == hash(tup)

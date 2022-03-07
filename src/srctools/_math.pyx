@@ -1136,8 +1136,7 @@ cdef class VecBase:
 
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Vector as a tuple."""
-        # Use tuple.__new__(cls, iterable) instead of calling the
-        # Python __new__.
+        PyErr_WarnEx(DeprecationWarning, 'Vec_tuple is deprecated, use FrozenVec instead.', 1)
         return _make_tuple(self.val.x, self.val.y, self.val.z)
 
     def to_angle(self, double roll: float=0):
@@ -2527,7 +2526,8 @@ cdef class AngleBase:
 
     def as_tuple(self):
         """Return the Angle as a tuple."""
-        return Vec_tuple(self.val.x, self.val.y, self.val.z)
+        PyErr_WarnEx(DeprecationWarning, 'Vec_tuple is deprecated, use FrozenVec instead.', 1)
+        return _make_tuple(self.val.x, self.val.y, self.val.z)
 
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
