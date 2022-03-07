@@ -135,7 +135,7 @@ class PackFile:
     """
     type: FileType
     filename: str
-    data: bytes = None
+    data: Optional[bytes] = None
     optional: bool = False
     # If we've checked for dependencies of this yet.
     _analysed: bool = attr.ib(init=False, default=False)
@@ -463,6 +463,7 @@ class PackList:
         sound_name = sound_name.casefold().replace('\\', '/')
         # Check for raw sounds first.
         if sound_name.endswith(('.wav', '.mp3')):
+            sound_name = sound_name.lstrip(SND_CHARS)
             if not sound_name.startswith('sound/'):
                 sound_name = 'sound/' + sound_name
             self.pack_file(sound_name)
@@ -517,7 +518,7 @@ class PackList:
             except FileNotFoundError:
                 LOGGER.warning('No scripts/propdata.txt for breakable chunks!')
                 return
-            with propdata.open_str() as f:
+            with propdata.open_str(encoding='cp1252') as f:
                 props = Property.parse(f, 'scripts/propdata.txt', allow_escapes=False)
             self._break_chunks = {}
             for chunk_prop in props.find_children('BreakableModels'):
@@ -546,7 +547,7 @@ class PackList:
         The sounds registered by this soundscript are returned.
         """
         try:
-            with file.open_str() as f:
+            with file.open_str(encoding='cp1252') as f:
                 props = Property.parse(f, file.path, allow_escapes=False)
         except FileNotFoundError:
             # It doesn't exist, complain and pretend it's empty.
@@ -591,7 +592,7 @@ class PackList:
         try:
             scripts = Sound.parse(props)
         except ValueError:
-            LOGGER.warning('Soundscript "{}" could not be parsed:', exc_info=True)
+            LOGGER.warning('Soundscript "{}" could not be parsed:', path, exc_info=True)
             return []
 
         self.soundscript.add_file(path, scripts.items(), FileMode.INCLUDE if always_include else FileMode.UNKNOWN)
@@ -605,10 +606,12 @@ class PackList:
         cache the file reading for later use.
         """
         try:
-            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt')
+            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt', encoding='cp1252')
         except FileNotFoundError:
             return
 
+        new_cache_data: Optional[Property]
+        new_cache_sounds: Optional[Property]
         cache_data: Dict[str, Tuple[int, Property]] = {}
         if cache_file is not None:
             # If the file doesn't exist or is corrupt, that's
@@ -658,9 +661,8 @@ class PackList:
 
             # The soundscripts in the manifests are always included,
             # since many would be part of the core code (physics, weapons,
-            # ui, etc). Just keep those loaded, no harm since vanilla does.
-
-            if cache_key != cur_key or cache_key == -1:
+            # ui, etc). Just keep those loaded, no harm since the game does.
+            if cache_key != cur_key or cache_key == -1 or cache_files is None:
                 sounds = self.load_soundscript(file, always_include=True)
             else:
                 # Read from cache.

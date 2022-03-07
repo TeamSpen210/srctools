@@ -501,8 +501,8 @@ class Model:
 
         # Build texture data
         f.seek(texture_offset)
-        textures: List[Tuple[str, int, int]] = [None] * texture_count
-        tex_temp: List[Tuple[int, Tuple[int, int, int]]] = [None] * texture_count
+        textures: List[Tuple[str, int, int]] = [('', 0, 0)] * texture_count
+        tex_temp: List[Tuple[int, Tuple[int, int, int]]] = [(0, (0, 0, 0))] * texture_count
         for tex_ind in range(texture_count):
             tex_temp[tex_ind] = (
                 f.tell(),
@@ -527,14 +527,14 @@ class Model:
         # Now parse through the family table, to match skins to textures.
         f.seek(skinref_ind)
         ref_data = f.read(2 * skinref_count * skin_count)
-        self.skins = [None] * skin_count  # type: List[List[str]]
+        self.skins: List[List[str]] = []
         skin_group = Struct('<{}H'.format(skinref_count))
         offset = 0
         for ind in range(skin_count):
-            self.skins[ind] = [
+            self.skins.append([
                 textures[i][0].replace('\\', '/').lstrip('/')
                 for i in skin_group.unpack_from(ref_data, offset)
-            ]
+            ])
             offset += skin_group.size
 
         # If models have folders, add those folders onto cdmaterials.
@@ -558,15 +558,15 @@ class Model:
             self.keyvalues = ''
 
         f.seek(includemodel_index)
-        self.included_models = [None] * includemodel_count  # type: List[IncludedMDL]
+        self.included_models = []
         for i in range(includemodel_count):
             pos = f.tell()
             # This is two offsets from the start of the structures.
             lbl_pos, filename_pos = struct_read('II', f)
-            self.included_models[i] = IncludedMDL(
+            self.included_models.append(IncludedMDL(
                 read_nullstr(f, pos + lbl_pos) if lbl_pos else '',
                 read_nullstr(f, pos + filename_pos) if filename_pos else '',
-            )
+            ))
             # Then return to after that struct - 4 bytes * 2.
             f.seek(pos + 4 * 2)
 

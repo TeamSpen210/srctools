@@ -69,12 +69,11 @@ Time = NewType('Time', float)
 Value = Union[
     int, float, bool, str, bytes,
     Color, Time,
-    Vec2, Vec3,
-    Vec4,
+    Vec2, Vec3, Vec4,
     AngleTup,
     Quaternion,
     Matrix,
-    Element, None
+    Optional[Element],
 ]
 
 ValueT = TypeVar(

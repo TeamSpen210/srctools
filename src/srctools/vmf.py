@@ -16,7 +16,7 @@ from sys import intern
 from typing import (
     Optional, Union, overload, TypeVar, Generic, TYPE_CHECKING,
     Dict, List, Tuple, Set, IO, FrozenSet,
-    Mapping, MutableMapping, ItemsView, ValuesView,
+    Mapping, MutableMapping, KeysView, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
 )
 
@@ -1172,7 +1172,7 @@ class Solid:
             vmf_file or self.map,
             des_id,
             sides,
-            self.visgroup_ids if keep_vis else (),  # type: ignore
+            self.visgroup_ids if keep_vis else (),
             self.hidden if keep_vis else False,
             self.group_id,
             self.vis_shown if keep_vis else True,
@@ -2038,7 +2038,13 @@ class Side:
     del _scale_setter, _offset_setter
 
 
-class Entity:
+class _KeyDict(Dict[str, str]):
+    """Temporary class to allow the Entity.keys dict to be accessed directly, as well as call keys()."""
+    def __call__(self) -> KeysView[str]:
+        return self.keys()
+
+
+class Entity(MutableMapping[str, str]):
     """A representation of either a point or brush entity.
 
     Creation:
@@ -2065,13 +2071,13 @@ class Entity:
         logical_pos: str=None,
         editor_color: Union[Vec, Tuple[int, int, int]]=(255, 255, 255),
         comments: str='',
-    ):
+    ) -> None:
         self.map = vmf_file
-        self.keys: Dict[str, str] = {
+        self._keys = _KeyDict({
             k: conv_kv(v)
             for k, v in
             keys.items()
-        }
+        })
         self.fixup = EntityFixup(fixup)
         self.outputs: List[Output] = outputs or []
         self.solids: List[Solid] = solids or []
@@ -2086,6 +2092,21 @@ class Entity:
         self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
 
+    @property
+    def keys(self) -> _KeyDict:  # type: ignore
+        """Access the internal keyvalues dict.
+
+        This use is deprecated, the entity is a MutableMapping. It can also be called to get
+        a keys view, as with other mappings.
+        """
+        warnings.warn('This is private, use the entity as a mapping.', DeprecationWarning, stacklevel=2)
+        return self._keys
+
+    # Override MutableMapping, we compare by identity.
+    __eq__ = object.__eq__
+    __ne__ = object.__ne__
+    __hash__ = object.__hash__
+
     def copy(
         self,
         des_id: int=-1,
@@ -2094,11 +2115,6 @@ class Entity:
         keep_vis=True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
-        new_keys: Dict[str, str] = {}
-        new_fixup = self.fixup.copy_values()
-        for key, value in self.keys.items():
-            new_keys[key] = value
-
         new_solids = [
             solid.copy(vmf_file=vmf_file, side_mapping=side_mapping)
             for solid in
@@ -2108,13 +2124,13 @@ class Entity:
 
         return Entity(
             vmf_file=vmf_file or self.map,
-            keys=new_keys,
-            fixup=new_fixup,
+            keys=self._keys,  # __init__() copies for us.
+            fixup=self.fixup.copy_values(),
             ent_id=des_id,
             outputs=outs,
             solids=new_solids,
             hidden=self.hidden if keep_vis else False,
-            groups=self.groups.copy(),
+            groups=self.groups,  # __init__() copies for us.
 
             editor_color=self.editor_color,
             logical_pos=self.logical_pos,
@@ -2132,7 +2148,8 @@ class Entity:
     ):
         """Parse a property tree into an Entity object.
 
-        _worldspawn_groups is used while parsing the special worldspawn entity.
+        _worldspawn indicates if this is the worldspawn entity, which additionally contains
+        the entity group definitions.
         """
         ent_id = -1
         solids: List[Solid] = []
@@ -2249,7 +2266,7 @@ class Entity:
         buffer.write(f'{ind}{"world" if _is_worldspawn else "entity"}\n')
         buffer.write(ind + '{\n')
         buffer.write(f'{ind}\t"id" "{str(self.id)}"\n')
-        for key, value in sorted(self.keys.items(), key=operator.itemgetter(0)):
+        for key, value in sorted(self._keys.items(), key=operator.itemgetter(0)):
             buffer.write(f'{ind}\t"{key}" "{value!s}"\n')
 
         self.fixup.export(buffer, ind)
@@ -2346,7 +2363,7 @@ class Entity:
     def __str__(self) -> str:
         """Dump a user-friendly representation of the entity."""
         st = "<Entity>: \n{\n"
-        for k, v in self.keys.items():
+        for k, v in self._keys.items():
             if not isinstance(v, list):
                 st += f"\t {k} = \"{v}\"\n"
         for k, v in self.fixup.items():
@@ -2356,6 +2373,14 @@ class Entity:
             st += f'\t{out!s}\n'
         st += "}\n"
         return st
+
+    def __len__(self) -> int:
+        """The length of an entity is the number of keyvalues."""
+        return len(self._keys)
+
+    def __iter__(self) -> Iterator[str]:
+        """Iteration iterates over all keyvalues."""
+        return iter(self._keys)
 
     @overload
     def __getitem__(self, key: str) -> str: ...
@@ -2378,9 +2403,9 @@ class Entity:
             default = ''
 
         key = key.casefold()
-        for k in self.keys:
+        for k in self._keys:
             if k.casefold() == key:
-                return self.keys[k]
+                return self._keys[k]
         else:
             return default
 
@@ -2397,16 +2422,16 @@ class Entity:
         """
         str_val = conv_kv(val)
         key_fold = key.casefold()
-        for k in self.keys:
+        for k in self._keys:
             if k.casefold() == key_fold:
                 # Check case-insensitively for this key first
-                orig_val = self.keys.get(k)
-                self.keys[k] = str_val
+                orig_val = self._keys.get(k)
+                self._keys[k] = str_val
                 key = k
                 break
         else:
-            orig_val = self.keys.get(key)
-            self.keys[key] = str_val
+            orig_val = self._keys.get(key)
+            self._keys[key] = str_val
 
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
@@ -2429,27 +2454,27 @@ class Entity:
             except (TypeError, ValueError):
                 pass
             else:
-                self.keys[key] = str(self.map.node_id.get_id(node_id))
+                self._keys[key] = str(self.map.node_id.get_id(node_id))
 
     def __delitem__(self, key: str) -> None:
         key = key.casefold()
         if key == 'targetname':
             with suppress(KeyError):
                 self.map.by_target[
-                    self.keys.get('targetname', None)
+                    self._keys.get('targetname', None)
                 ].remove(self)
             self.map.by_target[None].add(self)
 
         if key == 'classname':
             with suppress(KeyError):
                 self.map.by_class[
-                    self.keys.get('classname', None)
+                    self._keys.get('classname', None)
                 ].remove(self)
             self.map.by_class[None].add(self)
 
-        for k in self.keys:
+        for k in self._keys:
             if k.casefold() == key:
-                val = self.keys.pop(k)
+                val = self._keys.pop(k)
                 if key == 'nodeid':
                     try:
                         node_id = int(val)
@@ -2470,9 +2495,9 @@ class Entity:
           [] syntax.
         """
         key = key.casefold()
-        for k in self.keys:
+        for k in self._keys:
             if k.casefold() == key:
-                return self.keys[k]
+                return self._keys[k]
         else:
             return default
 
@@ -2481,18 +2506,18 @@ class Entity:
         # Delete these so the .by_class/name values are cleared.
         del self['targetname']
         del self['classname']
-        self.keys.clear()
+        self._keys.clear()
         # Clear $fixup as well.
         self.fixup.clear()
 
-    def __contains__(self, key: str) -> bool:
+    def __contains__(self, key: object) -> bool:
         """Determine if a value exists for the given key."""
-        key = key.casefold()
-        for k in self.keys:
-            if k.casefold() == key:
-                return True
-        else:
-            return False
+        if isinstance(key, str):
+            key = key.casefold()
+            for k in self._keys:
+                if k.casefold() == key:
+                    return True
+        return False
 
     get_key = __contains__
 

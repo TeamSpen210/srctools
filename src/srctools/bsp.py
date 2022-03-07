@@ -29,6 +29,7 @@ from srctools.binformat import (
     DeferredWrites,
     struct_read,
     read_array, write_array,
+    compress_lzma, decompress_lzma,
 )
 from srctools.property_parser import Property
 from srctools.const import SurfFlags, BSPContents as BrushContents, add_unknown
@@ -48,7 +49,7 @@ __all__ = [
 
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
-HEADER_LUMP = '<3i4s'  # Header section for each lump.
+HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 
 T = TypeVar('T')
@@ -92,6 +93,8 @@ class VERSIONS(Enum):
     CS_GO = 21
     DEAR_ESTHER = 21
     STANLEY_PARABLE = 21
+
+    INFRA = 22
     DOTA2 = 22
     CONTAGION = 23
 
@@ -281,6 +284,45 @@ class PlaneType(Enum):
         return cls.ANY_Z
 
 
+class StaticPropVersion(Enum):
+    """The detected version for static props.
+
+    Despite the format having version numbers, several engine branches
+    use the same number but have various changes.
+    Thanks to BSPSource for this information.
+    We record the version in the file, and the size of the structure.
+    """
+    def __init__(self, ver: int, size: int) -> None:
+        self.version = ver
+        self.size = size
+
+    # V4 and V5 are used in original HL2 maps.
+    V4 = (4, 56)
+    V5 = (5, 60)  # adds forcedFadeScale
+    V6 = (6, 64)  # Some TF2 maps, adds min/max DX level
+    V7 = (7, 68)  # Old L4D maps, adds rendercolor
+    V8 = (8, 68)  # Main L4D, removes min/max DX, adds min/max GPU and CPU
+    V9 = (9, 72)  # L4D2, adds disableX360.
+    V10 = (10, 76)  # Old CSGO, adds new flags integer
+    V11 = (11, 80)  # New CSGO, with uniform prop scaling.
+
+    # Source 2013, also appears with version 7 but is identical.
+    # Based on v6, adds lightmapped props.
+    V_LIGHTMAP_v7 = (7, 72)
+    V_LIGHTMAP_v10 = (10, 72)
+    V11_MESA  = (11, 76)  # Adds just rendercolor.
+
+    # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
+    UNKNOWN = (0, 0)  # Before prop is read.
+    # All games should recognise this, so switch to this if set to unknown.
+    DEFAULT = V5
+
+    @property
+    def is_lightmap(self) -> bool:
+        """Check if this is either lightmap version."""
+        return self.name.startswith('V_LIGHTMAP')
+
+
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
@@ -296,6 +338,7 @@ class StaticPropFlags(Flag):
 
     # These are set in the secondary flags section.
     NO_FLASHLIGHT = 0x100  # Disable projected texture lighting.
+    NO_LIGHTMAP = 0x100   # In V_LIGHTMAP only, disable per-luxel lighting.
     BOUNCED_LIGHTING = 0x0400  # Bounce lighting off the prop.
 
     # Add _BIT_XX members, so any bit combo can be preserved.
@@ -342,16 +385,12 @@ class Lump:
     """
     type: BSP_LUMPS
     version: int
-    ident: bytes
     data: bytes = b''
+    # If true, this is LZMA compressed.
+    is_compressed: bool = False
 
     def __repr__(self) -> str:
-        return '<BSP Lump {!r}, v{}, ident={!r}, {} bytes>'.format(
-            self.type.name,
-            self.version,
-            self.ident,
-            len(self.data),
-        )
+        return f'<BSP Lump {self.type.name!r}, v{self.version}, {len(self.data)} bytes>'
 
 
 @attr.define(eq=False)
@@ -366,6 +405,19 @@ class GameLump:
     data: bytes = b''
 
     ST: ClassVar[struct.Struct] = struct.Struct('<4s HH ii')
+
+    @property
+    def is_compressed(self) -> bool:
+        """This flag indicates if the lump was compressed."""
+        return self.flags & 0x1 != 0
+
+    @is_compressed.setter
+    def is_compressed(self, compressed: bool) -> None:
+        """Change if the lump will be compressed when saved."""
+        if compressed:
+            self.flags |= 0x1
+        else:
+            self.flags &= ~0x1
 
     def __repr__(self) -> str:
         return '<GameLump {}, flags={}, v{}, {} bytes>'.format(
@@ -860,15 +912,21 @@ class StaticProp:
     # If not provided, uses origin.
     lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
     fade_scale: float = -1.0
+
     min_dx_level: int = 0
     max_dx_level: int = 0
     min_cpu_level: int = 0
     max_cpu_level: int = 0
     min_gpu_level: int = 0
     max_gpu_level: int = 0
+
     tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
     renderfx: int = 255
     disable_on_xbox: bool = False
+
+    lightmap_x: int = 32
+    lightmap_y: int = 32
+
 
     def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
@@ -1048,6 +1106,7 @@ class BSP:
         # or the old comma separators. If no outputs are present there's no
         # way to determine this.
         self.out_comma_sep: Optional[bool] = None
+        self.static_prop_version: StaticPropVersion = StaticPropVersion.UNKNOWN
         # This internally stores the texdata values texinfo refers to. Users
         # don't interact directly, instead they use the create_texinfo / texinfo.set()
         # methods that create the data as required.
@@ -1103,22 +1162,29 @@ class BSP:
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
-                offset, length, version, ident = struct_read(HEADER_LUMP, file)
+                # The 4th value here is originally the fourCC identity, but is
+                # instead used to indicate the unpacked size if compressed.
+                offset, length, version, uncomp_size = struct_read(HEADER_LUMP, file)
                 lump_id = BSP_LUMPS(index)
                 self.lumps[lump_id] = Lump(
                     lump_id,
                     version,
-                    ident,
                 )
-                lump_offsets[lump_id] = offset, length
+                lump_offsets[lump_id] = offset, length, uncomp_size
 
             [self.map_revision] = struct_read(HEADER_2, file)
 
             for lump in self.lumps.values():
                 # Now read in each lump.
-                offset, length = lump_offsets[lump.type]
+                offset, length, uncomp_size = lump_offsets[lump.type]
                 file.seek(offset)
-                lump.data = file.read(length)
+                lump_data = file.read(length)
+                if uncomp_size > 0:
+                    lump.is_compressed = True
+                    lump_data = decompress_lzma(lump_data)
+                else:
+                    lump.is_compressed = False
+                lump.data = lump_data
 
             game_lump = self.lumps[BSP_LUMPS.GAME_LUMP]
 
@@ -1126,7 +1192,10 @@ class BSP:
 
             [lump_count] = struct.unpack_from('<i', game_lump.data)
             lump_offset = 4
-
+            gm_lump_offsets = {}
+            gm_lump_sizes = {}
+            prev_game_lump = b''
+            prev_lump_offset = 0
             for _ in range(lump_count):
                 game_lump_id: bytes
                 flags: int
@@ -1138,21 +1207,48 @@ class BSP:
                     flags,
                     glump_version,
                     file_off,
-                    file_len,
+                    uncomp_size,
                 ) = GameLump.ST.unpack_from(game_lump.data, lump_offset)
                 lump_offset += GameLump.ST.size
-
-                file.seek(file_off)
-
                 # The lump ID is backward..
                 game_lump_id = game_lump_id[::-1]
+
+                gm_lump_offsets[game_lump_id] = file_off, uncomp_size
+
+                # Determine the size of the lump by comparing offsets.
+                # This is necessary for compressed lumps, but still works
+                # normally. To allow this BSPs have an extra dummy entry with
+                # this ID which should have an offset value, but it's also
+                # just zero so it's useless. Skip that and use the size of the
+                # lump itself.
+                if game_lump_id == b'\x00\x00\x00\x00':
+                    continue
+
+                if prev_game_lump:
+                    gm_lump_sizes[prev_game_lump] = file_off - prev_lump_offset - 1
+                prev_game_lump = game_lump_id
+                prev_lump_offset = file_off
 
                 self.game_lumps[game_lump_id] = GameLump(
                     game_lump_id,
                     flags,
                     glump_version,
-                    file.read(file_len),
                 )
+            # Handle the last game lump offset, by comparing to the end of the
+            # whole lump.
+            if prev_game_lump:
+                gm_lump_start, gm_lump_length, _ = lump_offsets[BSP_LUMPS.GAME_LUMP]
+                gm_lump_sizes[prev_game_lump] = gm_lump_start + gm_lump_length - prev_lump_offset
+
+            for gm_lump in self.game_lumps.values():
+                file_off, uncomp_size = gm_lump_offsets[gm_lump.id]
+                file.seek(file_off)
+                if gm_lump.is_compressed:
+                    lump_data = file.read(gm_lump_sizes[gm_lump.id])
+                    gm_lump.data = decompress_lzma(lump_data)
+                else:
+                    gm_lump.data = file.read(uncomp_size)
+
             # This is not valid any longer.
             game_lump.data = b''
 
@@ -1170,7 +1266,7 @@ class BSP:
                 if inspect.isgenerator(lump_result):
                     buf = BytesIO()
                     for chunk in lump_result:
-                        buf.write(chunk)  # type: ignore
+                        buf.write(chunk)
                     lump_result = buf.getvalue()
                 if isinstance(lump_or_game, bytes):
                     self.game_lumps[lump_or_game].data = lump_result
@@ -1193,17 +1289,9 @@ class BSP:
 
             file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
 
-            # Write headers.
+            # Write dummy values for the headers.
             for lump_name in BSP_LUMPS:
-                lump = self.lumps[lump_name]
-                defer.defer(lump_name, '<ii')
-                file.write(struct.pack(
-                    HEADER_LUMP,
-                    0,  # offset
-                    0,  # length
-                    lump.version,
-                    lump.ident,
-                ))
+                defer.defer(lump_name, HEADER_LUMP, write=True)
 
             # After lump headers, the map revision...
             file.write(struct.pack(HEADER_2, self.map_revision))
@@ -1215,7 +1303,14 @@ class BSP:
                 if lump_name is BSP_LUMPS.GAME_LUMP:
                     # Construct this right here.
                     lump_start = file.tell()
-                    file.write(struct.pack('<i', len(game_lumps)))
+
+                    # The size of each compressed segment is determined
+                    # by checking the offset of the next part. So if
+                    # the last is compressed, we need to add a dummy
+                    # segment to supply the offset.
+                    dummy_segment = 1 if (game_lumps and game_lumps[-1].is_compressed) else 0
+
+                    file.write(struct.pack('<i', len(game_lumps) + dummy_segment))
                     for game_lump in game_lumps:
                         file.write(struct.pack(
                             '<4s HH',
@@ -1223,23 +1318,52 @@ class BSP:
                             game_lump.flags,
                             game_lump.version,
                         ))
-                        defer.defer(game_lump.id, '<i', write=True)
-                        file.write(struct.pack('<i', len(game_lump.data)))
+                        # Offset, then data length. But we have to compress if
+                        # required.
+                        defer.defer(game_lump.id, '<ii', write=True)
+                    if dummy_segment:
+                        defer.defer(GameLump, '<8xi4x', write=True)
 
                     # Now write data.
                     for game_lump in game_lumps:
-                        defer.set_data(game_lump.id, file.tell())
-                        file.write(game_lump.data)
+                        if game_lump.is_compressed:
+                            print('Compress: ', game_lump.id)
+                            lump_data = compress_lzma(game_lump.data)
+                        else:
+                            lump_data = game_lump.data
+                        defer.set_data(game_lump.id, file.tell(), len(game_lump.data))
+                        file.write(lump_data)
+                        # If compressed, this is a big buffer, so discard asap.
+                        del lump_data
+                        # Put a null byte between each, for reasons.
+                        if game_lump is not game_lumps[-1]:
+                            file.write(b'\0')
+                    if dummy_segment:
+                        # As described above, dummy segment with zero length
+                        # but valid ID.
+                        defer.set_data(GameLump, file.tell())
                     # Length of the game lump is current - start.
+                    # It is never compressed, and is always version 0.
                     defer.set_data(
                         lump_name,
                         lump_start,
                         file.tell() - lump_start,
+                        0, 0,
                     )
                 else:
-                    # Normal lump.
-                    defer.set_data(lump_name, file.tell(), len(lump.data))
-                    file.write(lump.data)
+                    # Normal lump, pakfiles can't be compressed.
+                    if lump.is_compressed and lump_name is not BSP_LUMPS.PAKFILE:
+                        lump_fourcc = len(lump.data)
+                        print('Compress: ', lump.type)
+                        lump_data = compress_lzma(lump.data)
+                    else:
+                        lump_data = lump.data
+                        lump_fourcc = 0
+                    defer.set_data(lump_name, file.tell(), len(lump_data), lump.version, lump_fourcc)
+                    file.write(lump_data)
+                    # If compressed, this is a big buffer, so discard asap.
+                    del lump_data
+
             # Apply all the deferred writes.
             defer.write()
 
@@ -1459,11 +1583,17 @@ class BSP:
         """Parse the primitives lumps."""
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
         indices = read_array('<H', self.lumps[BSP_LUMPS.PRIMINDICES].data)
+        # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
+        # char type;
+        # int first_ind, ind_count;
+        # short vert_ind, vert_count;
+        # Then the type is promoted to int for structure alignment.
+        fmt = '<IIIHH' if self.version is VERSIONS.INFRA else '<HHHHH'
         for (
             prim_type,
             first_ind, ind_count,
             first_vert, vert_count,
-        ) in struct.iter_unpack('<HHHHH', data):
+        ) in struct.iter_unpack(fmt, data):
             yield Primitive(
                 prim_type,
                 indices[first_ind: first_ind + ind_count],
@@ -1471,21 +1601,22 @@ class BSP:
             )
 
     def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
-        verts: List[Vec] = []
+        verts: List[bytes] = []
         indices: List[int] = []
-        add_vert = _find_or_extend(verts, Vec.as_tuple)
-        add_ind = _find_or_extend(indices, identity)
+
+        fmt = struct.Struct('<IIIHH' if self.version is VERSIONS.INFRA else '<HHHHH')
         for prim in prims:
-            yield struct.pack(
-                '<HHHHH',
+            vert_loc = len(verts)
+            index_loc = len(indices)
+            verts += [struct.pack('<fff', pos.x, pos.y, pos.z) for pos in prim.verts]
+            indices.extend(prim.indexed_verts)
+            yield fmt.pack(
                 prim.is_tristrip,
-                add_ind(prim.indexed_verts), len(prim.indexed_verts),
-                add_vert(prim.verts), len(prim.verts),
+                index_loc, len(prim.indexed_verts),
+                vert_loc, len(prim.verts),
             )
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
-        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join([
-            struct.pack('<fff', pos.x, pos.y, pos.z) for pos in verts
-        ])
+        self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
     def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
         """Read one of the faces arrays.
@@ -1583,7 +1714,6 @@ class BSP:
                 face.same_dir_as_plane,
                 face.on_node,
                 add_edges(face.edges), len(face.edges),
-                # *face.edges,
                 texinfo,
                 face._dispinfo_ind,
                 face.surf_fog_volume_id,
@@ -1759,14 +1889,15 @@ class BSP:
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
-        add_faces = _find_or_extend(leaf_faces, identity)
-        add_brushes = _find_or_extend(leaf_brushes, identity)
 
         buf = BytesIO()
 
         for leaf in visleafs:
-            face_ind = add_faces([add_face(face) for face in leaf.faces])
-            brush_ind = add_brushes([add_brush(brush) for brush in leaf.brushes])
+            # Do not deduplicate these, engine assumes they aren't when allocating memory.
+            face_ind = len(leaf_faces)
+            brush_ind = len(leaf_brushes)
+            leaf_faces.extend(map(add_face, leaf.faces))
+            leaf_brushes.extend(map(add_brush, leaf.brushes))
 
             buf.write(struct.pack(
                 '<ihh6h4Hh',
@@ -1782,8 +1913,8 @@ class BSP:
                 buf.write(leaf._ambient)
             buf.write(b'\x00\x00')  # Padding.
 
-        self.lumps[BSP_LUMPS.LEAFFACES].data = struct.pack(f'<{len(leaf_faces)}H', *leaf_faces)
-        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = struct.pack(f'<{len(leaf_brushes)}H', *leaf_brushes)
+        self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
+        self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
         return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
@@ -2293,13 +2424,13 @@ class BSP:
         warnings.warn('Assign to BSP.props', DeprecationWarning, stacklevel=2)
         self.props = props
 
-    def _lmp_read_props(self, version: int, data: bytes) -> Iterator['StaticProp']:
+    def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
-        if version > 11:
-            raise ValueError('Unknown version ({})!'.format(version))
-        if version < 4:
-            # Predates HL2...
-            raise ValueError('Static prop version {} is too old!')
+        if vers_num > 11:
+            raise ValueError(f'Unknown version ({vers_num})!')
+        if vers_num < 4:
+            # Predates HL2, no game produces these.
+            raise ValueError(f'Static prop version {vers_num} is too old!')
 
         static_lump = BytesIO(data)
 
@@ -2314,7 +2445,33 @@ class BSP:
 
         [prop_count] = struct_read('<i', static_lump)
 
+        if prop_count == 0:
+            # No props, following code will divide by zero, also no point anyway.
+            # Use the 'standard' version for the given version number.
+            for vers in StaticPropVersion:
+                if vers.version == vers_num:
+                    self.version = vers
+            return
+        struct_size = (len(data) - static_lump.tell()) / prop_count
+
+        # The prop data itself changes drastically, depending on version.
+        # Some numbers are reused, so add the size of the struct to guess the
+        # version.
+        try:
+            self.static_prop_version = version = StaticPropVersion((vers_num, struct_size))
+        except ValueError:
+            raise ValueError(
+                "Don't know a static prop "
+                f"version={vers_num} with a size of {struct_size} bytes!"
+            )
+        VER = StaticPropVersion
+        # These two are the same, it just changed version numbers later.
+        # It's more similar to V7 though.
+        if version is VER.V_LIGHTMAP_v10:
+            vers_num = 7
+
         for i in range(prop_count):
+            start = static_lump.tell()
             origin = Vec(struct_read('fff', static_lump))
             angles = Angle(struct_read('fff', static_lump))
 
@@ -2335,31 +2492,31 @@ class BSP:
             visleafs = set(visleaf_list[first_leaf:first_leaf + leaf_count])
             lighting_origin = Vec(struct_read('<fff', static_lump))
 
-            if version >= 5:
-                fade_scale = struct_read('<f', static_lump)[0]
+            if vers_num >= 5:
+                [fade_scale] = struct_read('<f', static_lump)
             else:
                 fade_scale = 1  # default
 
-            if version in (6, 7):
+            if vers_num in (6, 7):
                 min_dx_level, max_dx_level = struct_read('<HH', static_lump)
             else:
                 # Replaced by GPU & CPU in later versions.
                 min_dx_level = max_dx_level = 0  # None
 
-            if version >= 8:
+            if vers_num >= 8:
                 (
                     min_cpu_level,
                     max_cpu_level,
                     min_gpu_level,
                     max_gpu_level,
-                ) = struct_read('BBBB', static_lump)
+                ) = struct_read('<BBBB', static_lump)
             else:
                 # None
                 min_cpu_level = max_cpu_level = 0
                 min_gpu_level = max_gpu_level = 0
 
-            if version >= 7:
-                r, g, b, renderfx = struct_read('BBBB', static_lump)
+            if vers_num >= 7 and not version.is_lightmap:
+                r, g, b, renderfx = struct_read('<BBBB', static_lump)
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
             else:
@@ -2367,25 +2524,36 @@ class BSP:
                 tint = Vec(255, 255, 255)
                 renderfx = 255
 
-            if version >= 11:
+            if vers_num >= 11:
                 # Unknown data, though it's float-like.
                 unknown_1 = struct_read('<i', static_lump)
 
-            if version >= 10:
-                # Extra flags, post-CSGO.
+            if vers_num >= 10 and not version.is_lightmap:
+                # Extra flags, post-CSGO
                 flags |= struct_read('<I', static_lump)[0] << 8
+
+            if version.is_lightmap:
+                # Regular flags byte above is totally ignored!
+                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
+            else:
+                # FGD default.
+                lightmap_x = lightmap_y = 32
 
             flags = StaticPropFlags(flags)
 
             scaling = 1.0
             disable_on_xbox = False
 
-            if version >= 11:
+            if vers_num >= 11:
                 # XBox support was removed. Instead this is the scaling factor.
                 [scaling] = struct_read("<f", static_lump)
-            elif version >= 9:
+            elif vers_num >= 9:
                 # The single boolean byte also produces 3 pad bytes.
                 [disable_on_xbox] = struct_read('<?xxx', static_lump)
+
+            real_size = static_lump.tell() - start
+            if struct_size != real_size:
+                raise ValueError(f'Expected {struct_size} for {version}, got {real_size}!')
 
             yield StaticProp(
                 model_name,
@@ -2409,6 +2577,7 @@ class BSP:
                 tint,
                 renderfx,
                 disable_on_xbox,
+                lightmap_x, lightmap_y,
             )
 
     def _lmp_write_props(self, props: List['StaticProp']) -> bytes:
@@ -2424,7 +2593,13 @@ class BSP:
             indexes.append((len(leaf_array), add_model(prop.model)))
             leaf_array.extend(sorted([add_leaf(leaf) for leaf in prop.visleafs]))
 
-        version = self.game_lumps[LMP_ID_STATIC_PROPS].version
+        if self.static_prop_version is StaticPropVersion.UNKNOWN:
+            self.static_prop_version = StaticPropVersion.DEFAULT
+
+        version = self.static_prop_version
+        vers_num = self.static_prop_version.version
+        if version.is_lightmap:
+            vers_num = 7
 
         # Now write out the sections.
         prop_lump = BytesIO()
@@ -2433,12 +2608,13 @@ class BSP:
             prop_lump.write(struct.pack('<128s', name.encode('ascii')))
 
         prop_lump.write(struct.pack('<i', len(leaf_array)))
-        prop_lump.write(struct.pack('<{}H'.format(len(leaf_array)), *leaf_array))
+        prop_lump.write(write_array('<H', leaf_array))
 
         prop_lump.write(struct.pack('<i', len(props)))
         for (leaf_off, model_ind), prop in zip(indexes, props):
+            start = prop_lump.tell()
             prop_lump.write(struct.pack(
-                '<6fH',
+                '<3f3fH',
                 prop.origin.x,
                 prop.origin.y,
                 prop.origin.z,
@@ -2449,11 +2625,12 @@ class BSP:
             ))
 
             prop_lump.write(struct.pack(
-                '<HHBBifffff',
+                '<HHBBiff3f',
                 leaf_off,
                 len(prop.visleafs),
                 prop.solidity,
-                prop.flags.value_prim,
+                # TF2 doesn't use this, it's random.
+                0 if version.is_lightmap else prop.flags.value_prim,
                 prop.skin,
                 prop.min_fade,
                 prop.max_fade,
@@ -2461,17 +2638,17 @@ class BSP:
                 prop.lighting.y,
                 prop.lighting.z,
             ))
-            if version >= 5:
+            if vers_num >= 5:
                 prop_lump.write(struct.pack('<f', prop.fade_scale))
 
-            if version in (6, 7):
+            if vers_num in (6, 7):
                 prop_lump.write(struct.pack(
                     '<HH',
                     prop.min_dx_level,
                     prop.max_dx_level,
                 ))
 
-            if version >= 8:
+            if vers_num >= 8:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     prop.min_cpu_level,
@@ -2480,7 +2657,7 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if version >= 7:
+            if vers_num >= 7 and not version.is_lightmap:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -2489,16 +2666,28 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if version >= 10:
+            if vers_num >= 11:
+                # Unknown padding/data, though it's always zero.
+                prop_lump.write(b'\0\0\0\0')
+
+            if version.is_lightmap:
+                prop_lump.write(struct.pack(
+                    '<IHH',
+                    prop.flags.value,
+                    prop.lightmap_x, prop.lightmap_y,
+                ))
+            elif vers_num >= 10:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if version >= 11:
-                # Unknown padding/data, though it's always zero.
-
-                prop_lump.write(struct.pack('<xxxxf', prop.scaling))
-            elif version >= 9:
+            if vers_num >= 11:
+                prop_lump.write(struct.pack('<f', prop.scaling))
+            elif vers_num >= 9:
                 # The 1-byte bool gets expanded to the full 4-byte size.
                 prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
+
+            real_size = prop_lump.tell() - start
+            if version.size != real_size:
+                raise ValueError(f'Expected {version.size} for {version}, got {real_size}!')
 
         return prop_lump.getvalue()
 

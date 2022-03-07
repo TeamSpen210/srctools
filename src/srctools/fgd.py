@@ -791,13 +791,18 @@ class KeyValues:
             # Spawnflags never use names!
             file.write(': "{}"'.format(self.disp_name))
 
-        if self.default:
-            default_str = str(self.default)
+        default = self.default
+        if not default and self.type is ValueTypes.BOOL:
+            # This has to be present.
+            default = '0'
+
+        if default:
+            default_str = str(default)
             # We can write unquoted integers, but nothing else.
             if all(x in '0123456789-' for x in default_str):
                 file.write(' : ' + default_str)
             else:
-                file.write(' : "{}"'.format(default_str))
+                file.write(f' : "{default_str}"')
             if self.desc:
                 file.write(' : ')
         else:
@@ -1749,7 +1754,7 @@ class EntityDef:
 
         for _ in range(base_count):
             # We temporarily store strings, then evaluate later on.
-            ent.bases.append(from_dict())  # type: ignore
+            ent.bases.append(from_dict())
 
         count: int
         val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]

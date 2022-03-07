@@ -99,12 +99,11 @@ class Particle:
                 raise ValueError('{} must be an element array!')
             return [
                 Operator(ele.name, ele.pop('functionName').val_str, copy.deepcopy(dict(ele)))
-                for ele in value
+                for ele in value.iter_elem()
                 if isinstance(ele, Element)
             ]
 
-        elem: Element
-        for elem in part_list:
+        for elem in part_list.iter_elem():
             renderers = generic_attr(elem, 'renderers')
             operators = generic_attr(elem, 'operators')
             initializers = generic_attr(elem, 'initializers')
@@ -120,7 +119,7 @@ class Particle:
             else:
                 children = [
                     Child(subelem.name) for subelem
-                    in child_attr
+                    in child_attr.iter_elem()
                 ]
             # Everything else.
             options = {

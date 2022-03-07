@@ -1,7 +1,7 @@
 """Parses material files."""
 from typing import (
     Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    MutableMapping, Mapping, TextIO,
+    MutableMapping, Mapping, TextIO, overload
 )
 import sys
 from enum import Enum
@@ -10,8 +10,6 @@ import attr
 
 from srctools import FileSystem, Property, EmptyMapping
 from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
-
-ArgT = TypeVar('ArgT')
 
 
 class VarType(Enum):
@@ -60,13 +58,19 @@ class Variable:
     name: str  # With correct case
     value: str
 
-
+__all__ = ['VarType', 'Material', 'get_parm_type']
+ArgT = TypeVar('ArgT')
 _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 
 
+@overload
+def get_parm_type(name: str) -> Optional[VarType]: ...
+@overload
+def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
 def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
+    # noinspection PyProtectedMember
     from srctools._shaderdb import _shader_db
 
     _shader_db(VarType, _SHADER_PARAM_TYPES)
@@ -80,6 +84,10 @@ def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     return _get_parm_type_real(name, default)
 
 
+@overload
+def _get_parm_type_real(name: str) -> Optional[VarType]: ...
+@overload
+def _get_parm_type_real(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
 def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     """Retrieve the type a parameter has, or return the default."""
     try:
@@ -346,23 +354,35 @@ class Material(MutableMapping[str, str]):
         copy._params.update(parent._params)
 
         # Empty strings in these delete the value.
-        # Despite the name, both seem to do the same thing.
+        # If replace is used, the value must exist, otherwise it's skipped.
         for block in self.blocks:
-            if block.name not in ['insert', 'replace']:
+            if block.name == 'insert':
+                always_add = True
+            elif block.name == 'replace':
+                always_add = False
+            else:
                 raise ValueError(f'Unknown patch command "{block.real_name}"!')
             if not block.has_children():
                 raise ValueError(f'"{block.real_name}" must be a block, not a single value.')
             for prop in block:
-                if prop.has_children():
-                    raise ValueError(f'"{prop.real_name}" contains additional blocks?')
-                if prop.value == '':
+                if prop.name == 'proxies':
+                    if not prop.has_children():
+                        raise ValueError('Proxies must be a block, not a string!')
+                    for prox_block in prop:
+                        copy.proxies.append(prox_block.copy())
+                elif prop.has_children():
+                    # For replace keyvalues, they recursively append.
+                    if not always_add:  # Todo: recursively merge.
+                        copy.blocks.append(prop.copy())
+                elif prop.value == '':
                     try:
                         del copy._params[prop.name]
                     except KeyError:
                         pass
-                else:
+                elif always_add or prop.name in copy._params:
                     copy[prop.real_name] = prop.value
-
+                else: 
+                    pass
         return copy
 
     def __iter__(self) -> Iterator[str]:
@@ -371,6 +391,12 @@ class Material(MutableMapping[str, str]):
 
     def __len__(self) -> int:
         return len(self._params)
+
+    def __contains__(self, item: object) -> bool:
+        """Check if the given property is present."""
+        if isinstance(item, str):
+            return item.casefold() in self._params
+        return False
 
     def __getitem__(self, key: str) -> str:
         """Get the value of the specified property."""

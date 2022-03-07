@@ -1,0 +1,8 @@
+<!-- dmx encoding keyvalues2 1 format test_parsing_with_a_very_long_header_beyond_256_chars_abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz_cross256_on_end_mark 123456789 -->
+"DmeRootElement"
+	{
+	"id" "elementid" "09ab03ae-93a2-455e-8a71-f6cc12374fa7"
+	"name" "string" "LongHeaders"
+
+	"value" "int" "42"
+	}

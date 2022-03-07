@@ -34,5 +34,14 @@ exclude = [
 	"tests/",
 	"**/__pycache__"
 	]
+stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
+
+
+[tool.pytest.ini_options]
+filterwarnings = [
+	# Any warnings in srctools = error.
+	"error:::srctools[.*]",
+	"error:::tests[.*]",  # Same for tests themselves.
+]

@@ -569,7 +569,7 @@ class VPK:
                     with open(os.path.join(dest_dir, info.filename), 'wb') as f:
                         f.write(info.read())
 
-    def new_file(self, filename: FileName, root: Optional[str] = None) -> FileInfo:
+    def new_file(self, filename: FileName, root: str = '') -> FileInfo:
         """Create the given file, making it empty by default.
 
         If root is set, files are treated as relative to there,
@@ -612,7 +612,7 @@ class VPK:
         self,
         filename: FileName,
         data: bytes,
-        root: Optional[str] = None,
+        root: str = '',
         arch_index: Optional[int] = 0,
     ) -> None:
         """Add the given data to the VPK.

@@ -154,18 +154,18 @@ class Property:
         This is produced from Property.parse() calls.
     """
     # Helps decrease memory footprint with lots of Property values.
-    __slots__ = ('_folded_name', 'real_name', '_value')
+    __slots__ = ('_folded_name', '_real_name', '_value')
     _folded_name: Optional[str]
-    real_name: Optional[str]
+    _real_name: Optional[str]
     _value: _Prop_Value
 
     def __init__(self, name: Optional[str], value: _Prop_Value) -> None:
         """Create a new property instance."""
         if name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
-            self._folded_name = self.real_name = None
+            self._folded_name = self._real_name = None
         else:
-            self.real_name = sys.intern(name)
+            self._real_name = sys.intern(name)
             self._folded_name = sys.intern(name.casefold())
 
         self._value = value
@@ -185,7 +185,7 @@ class Property:
         self._value = value
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str:
         """Name automatically casefolds() any given names.
 
         This ensures comparisons are always case-insensitive.
@@ -193,22 +193,39 @@ class Property:
         """
         if self._folded_name is None:
             warnings.warn("The name of root properties will change to a blank string in the future.", DeprecationWarning, 2)
-        return self._folded_name
+        return self._folded_name  # type: ignore
 
     @name.setter
-    def name(self, new_name: Optional[str]) -> None:
+    def name(self, new_name: str) -> None:
         if new_name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
-            self._folded_name = self.real_name = None
+            self._folded_name = self._real_name = None
         else:
             # Intern names to help reduce duplicates in memory.
-            self.real_name = sys.intern(new_name)
+            self._real_name = sys.intern(new_name)
+            self._folded_name = sys.intern(new_name.casefold())
+
+    @property
+    def real_name(self) -> str:
+        """The original, case-sensitive version of this name."""
+        if self._real_name is None:
+            warnings.warn("The name of root properties will change to a blank string in the future.", DeprecationWarning, 2)
+        return self._real_name  # type: ignore
+
+    @real_name.setter
+    def real_name(self, new_name: str) -> None:
+        if new_name is None:
+            warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
+            self._folded_name = self._real_name = None
+        else:
+            # Intern names to help reduce duplicates in memory.
+            self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
     def edit(self, name: Optional[str]=None, value: Optional[str]=None) -> 'Property':
         """Simultaneously modify the name and value."""
         if name is not None:
-            self.real_name = name
+            self._real_name = name
             self._folded_name = name.casefold()
         if value is not None:
             self._value = value
@@ -218,7 +235,7 @@ class Property:
     def root(cls, *children: 'Property') -> 'Property':
         """Return a new 'root' property."""
         prop = cls.__new__(cls)
-        prop._folded_name = prop.real_name = None
+        prop._folded_name = prop._real_name = None
         for child in children:
             if not isinstance(child, Property):
                 raise TypeError(f'{type(prop).__name__} is not a Property!')
@@ -255,14 +272,14 @@ class Property:
         # Property object which has all the methods.
         # Skip calling __init__ for speed.
         cur_block = root = Property.__new__(Property)
-        cur_block._folded_name = cur_block.real_name = None
+        cur_block._folded_name = cur_block._real_name = None
 
         # Cache off the value list.
         cur_block_contents: List[Property]
         cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
-        open_properties = [(cur_block, 1)]
+        open_properties: List[Tuple[Property, int]] = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING = Token.STRING
@@ -347,7 +364,7 @@ class Property:
                         # keyvalue with this name, replace it instead.
                         if (
                             can_flag_replace and
-                            cur_block_contents[-1].real_name == token_value and
+                            cur_block_contents[-1]._real_name == token_value and
                             cur_block_contents[-1].has_children()
                         ):
                             cur_block_contents[-1] = keyvalue
@@ -380,7 +397,7 @@ class Property:
                             # keyvalue with this name, replace it instead.
                             if (
                                 can_flag_replace and
-                                cur_block_contents[-1].real_name == token_value and
+                                cur_block_contents[-1]._real_name == token_value and
                                 type(cur_block_contents[-1].value) == str
                             ):
                                 cur_block_contents[-1] = keyvalue
@@ -674,18 +691,16 @@ class Property:
 
     def copy(self) -> 'Property':
         """Deep copy this Property tree and return it."""
+        # Bypass __init__() and name=None warnings.
+        result = Property.__new__(Property)
+        result._real_name = self._real_name
+        result._folded_name = self._folded_name
         if isinstance(self._value, list):
             # This recurses if needed
-            return Property(
-                self.real_name,
-                [
-                    child.copy()
-                    for child in
-                    self
-                ]
-            )
+            result._value = list(map(Property.copy, self._value))
         else:
-            return Property(self.real_name, self._value)
+            result._value = self._value
+        return result
 
     def as_dict(self) -> _As_Dict_Ret:
         """Convert this property tree into a tree of dictionaries.
@@ -693,7 +708,7 @@ class Property:
         This keeps only the last if multiple items have the same name.
         """
         if isinstance(self._value, list):
-            return {item._folded_name: item.as_dict() for item in self}
+            return {item.name: item.as_dict() for item in self}
         else:
             return self._value
 
@@ -701,7 +716,7 @@ class Property:
     def as_array(self) -> List[str]: ...
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
-    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> List[T]:
+    def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
         """Convert a property block into a list of values.
 
         If the property is a single keyvalue, the single value will be
@@ -1063,10 +1078,10 @@ class Property:
         The root when exported produces its children, allowing multiple properties to be at the
         topmost indent level in a file.
         """
-        return self.real_name is None
+        return self._real_name is None
 
     def __repr__(self) -> str:
-        return 'Property({0!r}, {1!r})'.format(self.real_name, self._value)
+        return 'Property({0!r}, {1!r})'.format(self._real_name, self._value)
 
     def __str__(self) -> str:
         return ''.join(self.export())
@@ -1077,15 +1092,15 @@ class Property:
         Recursively calls itself for all child properties.
         """
         if isinstance(self._value, list):
-            if self.real_name is None:
+            if self._real_name is None:
                 # If the name is None, we just output the children
                 # without a "Name" { } surround. These Property
                 # objects represent the root.
                 for prop in self._value:
                     yield from prop.export()
             else:
-                assert self.real_name is not None, repr(self)
-                yield '"' + self.real_name + '"\n'
+                assert self._real_name is not None, repr(self)
+                yield f'"{self._real_name}"\n'
                 yield '\t{\n'
                 yield from (
                     '\t' + line
@@ -1094,9 +1109,9 @@ class Property:
                 )
                 yield '\t}\n'
         else:
-            # We need to escape quotes and backslashes so they don't get detected.
-            assert self.real_name is not None, repr(self)
-            yield '"{}" "{}"\n'.format(escape_text(self.real_name), escape_text(self._value))
+            # We need to escape quotes and backslashes, so they don't get detected.
+            assert self._real_name is not None, repr(self)
+            yield '"{}" "{}"\n'.format(escape_text(self._real_name), escape_text(self._value))
 
     def build(self) -> '_Builder':
         """Allows appending a tree to this property in a convenient way.

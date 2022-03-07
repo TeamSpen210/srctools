@@ -243,6 +243,7 @@ class NullStream(TextIO):
 
     def isatty(self) -> bool:
         """We are not a TTY."""
+        return False
 
     def readable(self) -> bool:
         """Pretend we are readable."""
