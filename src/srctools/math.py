@@ -516,7 +516,6 @@ class VecBase:
 
         direction = offset.norm()
         for pos in range(0, int(length), int(stride)):
-            print('ITER:', type(self), type(offset), type(direction), type(pos), type(direction * pos), type(self + direction * pos))
             yield self + direction * pos
         yield cls(end)  # Directly yield - ensures no rounding errors.
 
@@ -997,10 +996,11 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
             res._x = float(x)
             res._y = float(y)
             res._z = float(z)
-        elif isinstance(x, Py_Vec):
-            res._x = x.x
-            res._y = x.y
-            res._z = x.z
+        elif isinstance(x, VecBase):
+            # Mutable, we know it's safe to copy.
+            res._x = x._x
+            res._y = x._y
+            res._z = x._z
         else:
             it = iter(x)
             res._x = float(next(it, 0.0))
@@ -2128,6 +2128,11 @@ class FrozenAngle(AngleBase):
             res._pitch = float(pitch) % 360.0 % 360.0
             res._yaw = float(yaw) % 360.0 % 360.0
             res._roll = float(roll) % 360.0 % 360.0
+        elif isinstance(pitch, AngleBase):
+            # Bypass modulo, iteration and float conversion.
+            res._pitch = pitch._pitch
+            res._yaw = pitch._yaw
+            res._roll = pitch._roll
         else:
             it = iter(pitch)
             res._pitch = float(next(it, 0.0)) % 360.0 % 360.0
@@ -2241,6 +2246,11 @@ class Angle(AngleBase):
             self._pitch = float(pitch) % 360 % 360
             self._yaw = float(yaw) % 360 % 360
             self._roll = float(roll) % 360 % 360
+        elif isinstance(pitch, AngleBase):
+            # Bypass modulo, iteration and float conversion.
+            self._pitch = pitch._pitch
+            self._yaw = pitch._yaw
+            self._roll = pitch._roll
         else:
             it = iter(pitch)
             self._pitch = float(next(it, 0.0)) % 360 % 360
