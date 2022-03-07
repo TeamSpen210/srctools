@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator, cast,
+    List, Iterator, Tuple, Callable, Dict, Set, IO, Hashable, Generator, cast,
 )
 from io import BytesIO
 from enum import Enum, Flag
@@ -1274,7 +1274,7 @@ class BSP:
                     self.lumps[lump_or_game].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        file: BinaryIO
+        file: IO[bytes]
         with AtomicWriter(filename or self.filename, is_bytes=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
@@ -2450,7 +2450,7 @@ class BSP:
             # Use the 'standard' version for the given version number.
             for vers in StaticPropVersion:
                 if vers.version == vers_num:
-                    self.version = vers
+                    self.static_prop_version = vers
             return
         struct_size = (len(data) - static_lump.tell()) / prop_count
 
@@ -2464,10 +2464,9 @@ class BSP:
                 "Don't know a static prop "
                 f"version={vers_num} with a size of {struct_size} bytes!"
             )
-        VER = StaticPropVersion
         # These two are the same, it just changed version numbers later.
         # It's more similar to V7 though.
-        if version is VER.V_LIGHTMAP_v10:
+        if version is StaticPropVersion.V_LIGHTMAP_v10:
             vers_num = 7
 
         for i in range(prop_count):
