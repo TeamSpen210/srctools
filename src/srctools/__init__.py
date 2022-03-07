@@ -21,7 +21,7 @@ else:
 __all__ = [
     '__version__',
     'Vec', 'FrozenVec', 'parse_vec_str', 'lerp',
-    'Angle', 'Matrix',
+    'Angle', 'FrozenAngle', 'Matrix',
 
     'NoKeyError', 'KeyValError', 'Property',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
@@ -500,15 +500,19 @@ class AtomicWriter:
 
 
 # Import these, so people can reference 'srctools.Vec' instead of
-# 'srctools.vec.Vec'.
+# 'srctools.math.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
-from srctools.math import FrozenVec, Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
-from srctools.property_parser import NoKeyError, KeyValError, Property
-from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
-from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
-from srctools.vpk import VPK
-from srctools.fgd import FGD
-from srctools.const import GameID
-from srctools.surfaceprop import SurfaceProp, SurfChar
-from srctools.vtf import VTF
+from .math import (
+    FrozenVec, Vec, Vec_tuple,
+    parse_vec_str, lerp, Matrix,
+    FrozenAngle, Angle,
+)
+from .property_parser import NoKeyError, KeyValError, Property
+from .filesys import FileSystem, FileSystemChain, get_filesystem
+from .vmf import VMF, Entity, Solid, Side, Output, UVAxis
+from .vpk import VPK
+from .fgd import FGD
+from .const import GameID
+from .surfaceprop import SurfaceProp, SurfChar
+from .vtf import VTF
