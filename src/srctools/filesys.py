@@ -178,7 +178,7 @@ class FileSystem(Generic[_FileDataT]):
         """
         # File/Filesystem may use each other's internals.
         # noinspection PyProtectedMember
-        return file._data  # type: ignore
+        return file._data
 
     # The following should be overridden:
     def _file_exists(self, name: str) -> bool:

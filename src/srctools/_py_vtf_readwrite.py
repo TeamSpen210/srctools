@@ -27,7 +27,7 @@ def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple
     view_src = memoryview(pixels)
     view_dest = memoryview(buffer)
 
-    view_dest[0:img_off] = header  # type: ignore  # Thinks it needs sequence[bytes]...
+    view_dest[0:img_off] = header
 
     if bg is not None:
         r, g, b = bg

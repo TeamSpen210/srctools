@@ -1867,7 +1867,7 @@ class FGD:
                     continue
 
                 try:
-                    new_bases.append(self[base])  # type: ignore
+                    new_bases.append(self[base])
                 except KeyError:
                     raise ValueError(
                         'Unknown base ({}) for {}'.format(

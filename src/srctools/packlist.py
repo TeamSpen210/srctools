@@ -689,6 +689,7 @@ class PackList:
                 ]))
 
         if cache_file is not None:
+            assert new_cache_data is not None
             # Write back out our new cache with updated data.
             with srctools.AtomicWriter(cache_file) as f:
                 for line in new_cache_data.export():

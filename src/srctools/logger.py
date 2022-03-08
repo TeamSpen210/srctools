@@ -316,7 +316,7 @@ def init_logging(
     filename: Union[str, os.PathLike]=None,
     main_logger: str='',
     on_error: Callable[
-        [Type[BaseException], BaseException, TracebackType],
+        [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
     ]=None,
 ) -> logging.Logger:
@@ -393,7 +393,7 @@ def init_logging(
     def except_handler(
         exc_type: Type[BaseException],
         exc_value: BaseException,
-        exc_tb: TracebackType,
+        exc_tb: Optional[TracebackType],
     ) -> None:
         """Log uncaught exceptions."""
         if not issubclass(exc_type, Exception):
