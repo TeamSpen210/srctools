@@ -3,7 +3,10 @@ so it's better done in type stub form.
 """
 from enum import Enum
 from collections.abc import Iterable, Iterator, Mapping, MutableMapping
-from typing import Union, Optional, NamedTuple, TypeVar, Generic, NewType, Literal, Callable, IO, overload
+from typing import (
+    Final, Union, NamedTuple, TypeVar, Generic, NewType, Literal, Callable,
+    IO, overload,
+)
 from uuid import UUID as UUID, uuid4 as get_uuid  # Re-export
 from srctools import Matrix, Angle, Property
 import builtins
@@ -29,10 +32,16 @@ class ValueType(Enum):
     MATRIX = 'vmatrix'
 
 
+class _StubType(str, Enum):
+    """Kind of StubElement."""
+    STUB = 'DMEStubElement'
+    NULL = 'DMENullElement'
+
+
 VAL_TYPE_TO_IND: dict[ValueType, int]
 IND_TO_VALTYPE: dict[int, ValueType]
 ARRAY_OFFSET: int
-
+NULL: Final[StubElement]
 
 class Vec2(NamedTuple):
     x: float
@@ -73,7 +82,7 @@ Value = Union[
     AngleTup,
     Quaternion,
     Matrix,
-    Optional[Element],
+    Element,
 ]
 
 ValueT = TypeVar(
@@ -84,7 +93,7 @@ ValueT = TypeVar(
     AngleTup,
     Quaternion,
     Matrix,
-    Optional[Element],
+    Element,
 )
 
 TYPE_CONVERT: dict[tuple[ValueType, ValueType], Callable[[Value], Value]]
@@ -170,9 +179,9 @@ class _ValProps:
     val_bin: bytes
     val_binary: bytes
 
-    val_compound: Element | None
-    val_elem: Element | None
-    val: Element | None
+    val_compound: Element
+    val_elem: Element
+    val: Element
 
 class AttrMember(_ValProps):
     def __init__(self, owner: Attribute, index: int | str) -> None: ...
@@ -191,7 +200,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def is_array(self) -> bool: ...
 
     @overload
-    def __init__(self: Attribute[Element | None], name: str, val_type: Literal[ValueType.ELEMENT], value: Element | None | list[Element | None]) -> None: ...
+    def __init__(self: Attribute[Element], name: str, val_type: Literal[ValueType.ELEMENT], value: Element | list[Element]) -> None: ...
     @overload
     def __init__(self: Attribute[int], name: str, val_type: Literal[ValueType.INTEGER], value: int | list[int]) -> None: ...
     @overload
@@ -224,7 +233,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.ELEMENT]) -> Attribute[Element | None]: ...
+    def array(cls, name: str, val_type: Literal[ValueType.ELEMENT]) -> Attribute[Element]: ...
     @classmethod
     @overload
     def array(cls, name: str, val_type: Literal[ValueType.INTEGER]) -> Attribute[int]: ...
@@ -378,8 +387,8 @@ class Attribute(Generic[ValueT], _ValProps):
     def iter_bin(self) -> Iterator[bytes]: ...
     def iter_binary(self) -> Iterator[bytes]: ...
 
-    def iter_compound(self) -> Iterator[Element | None]: ...
-    def iter_elem(self) -> Iterator[Element | None]: ...
+    def iter_compound(self) -> Iterator[Element]: ...
+    def iter_elem(self) -> Iterator[Element]: ...
 
     def _read_val(self, newtype: ValueType) -> Value: ...
     def _write_val(self, newtype: ValueType, value: Value) -> None: ...
@@ -407,7 +416,7 @@ class Element(Mapping[str, Attribute]):
     name: str
     type: str
     uuid: UUID
-    _members: dict[str, Attribute]
+    _members: MutableMapping[str, Attribute]
 
     def __init__(self, name: str, type: str, uuid: UUID=None) -> None: ...
 
@@ -478,3 +487,12 @@ class Element(Mapping[str, Attribute]):
     def update(self, iterable: Iterable[tuple[str, ValueT] | Attribute], /, **kwargs: Attribute | Value | list[Value]) -> None: ...
     @overload
     def update(self, /, **kwargs: Attribute | Value | list[Value]) -> None: ...
+
+
+class StubElement(Element):
+    __slots__ = ['_type']
+    def __init__(self, typ: _StubType, uuid: UUID=None) -> None: ...  # Internal
+
+    @classmethod
+    def stub(cls, uuid: UUID = None) -> StubElement: ...
+    def __repr__(self) -> str: ...

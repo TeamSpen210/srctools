@@ -2,6 +2,9 @@
 
 As an extension, optionally all strings may become full UTF-8, marked by a new
 set of 'unicode_XXX' encoding formats.
+
+In binary files, special 'stub' elements are possible, which have no contents.
+These are represented by StubElement instances. Additionally, NULL represents missing elements.
 """
 import builtins
 import warnings
@@ -43,6 +46,12 @@ class ValueType(Enum):
     MATRIX = 'vmatrix'
 
 
+class _StubType(str, Enum):
+    """Kind of StubElement."""
+    STUB = 'DMEStubElement'
+    NULL = 'DMENullElement'
+
+
 # type -> enum index.
 VAL_TYPE_TO_IND = {
     ValueType.ELEMENT: 1,
@@ -69,8 +78,8 @@ IND_TO_VALTYPE = {
 # For parsing, set this initially to check one is set.
 _UNSET_UUID = get_uuid()
 _UNSET = object()  # Argument sentinel
-# Element type used to indicate binary "stub" elements...
-STUB = '<StubElement>'
+# Deprecated.
+STUB = _StubType.STUB
 
 
 class Vec2(NamedTuple):
@@ -650,7 +659,7 @@ class Element(MutableMapping[str, Attribute]):
     name: str
     type: str
     uuid: UUID
-    _members: Dict[str, Attribute]
+    _members: MutableMapping[str, Attribute]
 
     def __init__(self, name: str, type: str, uuid: UUID=None) -> None:
         self.name = name
@@ -660,6 +669,16 @@ class Element(MutableMapping[str, Attribute]):
             self.uuid = get_uuid()
         else:
             self.uuid = uuid
+
+    @property
+    def is_stub(self) -> bool:
+        """Check if this is a 'stub' element, found in binary DMXes."""
+        return isinstance(self, StubElement) and self._type is _StubType.STUB
+
+    @property
+    def is_null(self) -> bool:
+        """Check if this is a NULL element, found in binary DMXes."""
+        return isinstance(self, StubElement) and self._type is _StubType.NULL
 
     @classmethod
     def parse(cls, file: IO[bytes], unicode=False) -> Tuple['Element', str, int]:
@@ -760,7 +779,7 @@ class Element(MutableMapping[str, Attribute]):
         else:
             stringdb = None
 
-        stubs: Dict[UUID, Element] = {}
+        stubs: Dict[UUID, StubElement] = {}
 
         [element_count] = binformat.struct_read('<i', file)
         elements: List[Element] = [None] * element_count
@@ -806,7 +825,7 @@ class Element(MutableMapping[str, Attribute]):
                         for _ in range(array_size):
                             [ind] = binformat.struct_read('<i', file)
                             if ind == -1:
-                                child_elem = None
+                                child_elem = NULL
                             elif ind == -2:
                                 # Stub element, just with a UUID.
                                 [uuid_str] = binformat.read_nullstr(file)
@@ -814,14 +833,14 @@ class Element(MutableMapping[str, Attribute]):
                                 try:
                                     child_elem = stubs[uuid]
                                 except KeyError:
-                                    child_elem = stubs[uuid] = Element('', 'StubElement', uuid)
+                                    child_elem = stubs[uuid] = StubElement.stub(uuid)
                             else:
                                 child_elem = elements[ind]
                             array.append(child_elem)
                     else:
                         [ind] = binformat.struct_read('<i', file)
                         if ind == -1:
-                            child_elem = None
+                            child_elem = NULL
                         elif ind == -2:
                             # Stub element, just with a UUID.
                             [uuid_str] = binformat.read_nullstr(file)
@@ -829,7 +848,7 @@ class Element(MutableMapping[str, Attribute]):
                             try:
                                 child_elem = stubs[uuid]
                             except KeyError:
-                                child_elem = stubs[uuid] = Element('', 'StubElement', uuid)
+                                child_elem = stubs[uuid] = StubElement.stub(uuid)
                         else:
                             child_elem = elements[ind]
                         attr = Attribute(name, ValueType.ELEMENT, child_elem)
@@ -1102,8 +1121,7 @@ class Element(MutableMapping[str, Attribute]):
                     raise ValueError('TIME attributes are not permitted before binary v3!')
                 elif attr.type is ValueType.ELEMENT:
                     for subelem in attr.iter_elem():
-                        assert isinstance(subelem, Element)
-                        if subelem is not None and subelem.type != STUB and subelem.uuid not in elem_to_ind:
+                        if not isinstance(subelem, StubElement) and subelem.uuid not in elem_to_ind:
                             elem_to_ind[subelem.uuid] = len(elements)
                             elements.append(subelem)
                 # Only non-array strings get added to the DB.
@@ -1160,9 +1178,9 @@ class Element(MutableMapping[str, Attribute]):
                         file.write(bin_data)
                 elif attr.type is ValueType.ELEMENT:
                     for subelem in attr.iter_elem():
-                        if subelem is None:
+                        if subelem is NULL:  # It's a singleton.
                             file.write(pack('<i', -1))
-                        elif subelem.type == STUB:
+                        elif subelem.is_stub:
                             file.write(pack('<i', -2))
                         else:
                             file.write(pack('<i', elem_to_ind[subelem.uuid]))
@@ -1184,6 +1202,7 @@ class Element(MutableMapping[str, Attribute]):
         The format name and version can be anything, to indicate which
         application should read the file.
 
+        * Stub elements are not allowed in text files, only in binary files.
         * If flat is enabled, elements will all be placed at the toplevel,
           so they don't nest inside each other.
         * If cull_uuid is enabled, UUIDs are only written for self-referential
@@ -1220,8 +1239,8 @@ class Element(MutableMapping[str, Attribute]):
                     continue
                 # noinspection PyProtectedMember
                 for subelem in attr.iter_elem():
-                    if subelem is None or subelem.type == STUB:
-                        continue
+                    if isinstance(subelem, StubElement):
+                        raise ValueError('Stub elements are not valid in keyvalues2 files!')
                     if subelem.uuid not in use_count:
                         use_count[subelem.uuid] = 1
                         elements.append(subelem)
@@ -1498,12 +1517,42 @@ class Element(MutableMapping[str, Attribute]):
             return default
 
 
+class StubElement(Element):
+    """In binary DMXes, it is possible to have stub elements which are excluded from the file.
+
+    There can also be NULL elements.
+    """
+    __slots__ = ['_type']
+    def __init__(self, typ: _StubType, uuid: UUID=None) -> None:
+        """Internal use only."""
+        super().__init__('', typ, uuid)
+        # This acts always empty, and can be fake-written to.
+        self._members = EmptyMapping
+        self._type = typ  # Store redundantly so users trying to change this are ignored.
+
+    @classmethod
+    def stub(cls, uuid: UUID = None) -> 'StubElement':
+        """Create a stubbed element reference with the specified UUID."""
+        return cls(_StubType.STUB, uuid)
+
+    def __repr__(self) -> str:
+        if self._type is _StubType.STUB:
+            return f'<Stub Element: {self.uuid.hex}>'
+        elif self._type is _StubType.NULL:
+            return '<Null Element>'
+        else:
+            raise AssertionError(self._type)
+
+
+# Constant for null elements.
+NULL = StubElement(_StubType.NULL, UUID(bytes=bytes(16)))
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
 
 # Python types to their matching ValueType.
 TYPE_TO_VALTYPE: Dict[type, ValueType] = {
     Element: ValueType.ELEMENT,
+    StubElement: ValueType.ELEMENT,
     int: ValueType.INT,
     float: ValueType.FLOAT,
     bool: ValueType.BOOL,
