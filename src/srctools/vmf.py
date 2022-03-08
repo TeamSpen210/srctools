@@ -341,7 +341,7 @@ class VMF:
         # Allow quick searching for particular groups, without checking
         # the whole map
         self.by_target: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
-        self.by_class: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
+        self.by_class: MutableMapping[str, CopySet[Entity]] = defaultdict(CopySet)
 
         self.entities: List[Entity] = []
         self.add_ents(entities or [])  # We need to set the by_ dicts too.
@@ -405,7 +405,7 @@ class VMF:
         The entity should have been created with this VMF as a parent.
         """
         self.entities.append(item)
-        self.by_class[item['classname', ''].casefold() or None].add(item)
+        self.by_class[item['classname', ''].casefold()].add(item)
         self.by_target[item['targetname', ''].casefold() or None].add(item)
         if 'nodeid' in item:
             try:
@@ -426,8 +426,8 @@ class VMF:
         except ValueError:
             pass  # Already removed.
 
-        self.by_class[item['classname', ''].casefold() or None].discard(item)
-        self.by_target[item['targetname', ''].casefold() or None].discard(item)
+        self.by_class[item['classname'].casefold()].discard(item)
+        self.by_target[item['targetname'].casefold() or None].discard(item)
         if 'nodeid' in item:
             try:
                 node_id = int(item['nodeid'])
@@ -447,7 +447,7 @@ class VMF:
         ents = list(ents)
         self.entities.extend(ents)
         for item in ents:
-            self.by_class[item['classname', ''].casefold() or None].add(item)
+            self.by_class[item['classname'].casefold()].add(item)
             self.by_target[item['targetname', ''].casefold() or None].add(item)
             if 'nodeid' in item:
                 try:
@@ -2436,7 +2436,7 @@ class Entity(MutableMapping[str, str]):
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
             with suppress(KeyError):
-                self.map.by_class[orig_val].remove(self)
+                self.map.by_class[orig_val or ''].remove(self)
             self.map.by_class[str_val].add(self)
         elif key_fold == 'targetname':
             with suppress(KeyError):
@@ -2466,11 +2466,7 @@ class Entity(MutableMapping[str, str]):
             self.map.by_target[None].add(self)
 
         if key == 'classname':
-            with suppress(KeyError):
-                self.map.by_class[
-                    self._keys.get('classname', None)
-                ].remove(self)
-            self.map.by_class[None].add(self)
+            raise KeyError('Classnames cannot be deleted!')
 
         for k in self._keys:
             if k.casefold() == key:
