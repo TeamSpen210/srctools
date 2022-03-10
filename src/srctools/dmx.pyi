@@ -420,6 +420,11 @@ class Element(Mapping[str, Attribute]):
 
     def __init__(self, name: str, type: str, uuid: UUID=None) -> None: ...
 
+    @property
+    def is_stub(self) -> bool: ...
+    @property
+    def is_null(self) -> bool: ...
+
     @classmethod
     def parse(cls, file: IO[bytes], unicode: bool = False) -> tuple[Element, str, int]: ...
     @classmethod
@@ -432,6 +437,7 @@ class Element(Mapping[str, Attribute]):
         cls, tok: Tokenizer,
         id_to_elem: dict[UUID, Element],
         fixups: list[tuple[Attribute, int | None, UUID, int]],
+        stubs: dict[UUID, StubElement],
         name: str,
         typ_name: str,
     ) -> Element: ...

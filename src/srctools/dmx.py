@@ -3,9 +3,10 @@
 As an extension, optionally all strings may become full UTF-8, marked by a new
 set of 'unicode_XXX' encoding formats.
 
-In binary files, special 'stub' elements are possible, which have no contents.
-These are represented by StubElement instances. Additionally, NULL represents missing elements.
+Special 'stub' elements are possible, which represent elements not present in the file. 
+These are represented by StubElement instances. Additionally, NULL elements are possible.
 """
+import collections
 import builtins
 import warnings
 import sys
@@ -891,13 +892,18 @@ class Element(MutableMapping[str, Attribute]):
                         attr = Attribute(name, attr_type, conv(file.read(size)))
                 elem._members[name.casefold()] = attr
 
-        return elements[0]
+        try:
+            return elements[0]
+        except IndexError:
+            raise ValueError("No elements in DMX file!") from None
 
     @classmethod
-    def parse_kv2(cls, file, version) -> 'Element':
+    def parse_kv2(cls, file, version, missing_as_stub=False) -> 'Element':
         """Parse a DMX file encoded in KeyValues2.
 
-        The <!-- --> format comment line should have already be read.
+        The <!-- --> format comment line should have already been read.
+        If missing_as_stub is True, missing UUID references will be converted to stubs.
+        Otherwise, stubs are not possible.
         """
         # We apply UUID lookups after everything's parsed.
         id_to_elem: Dict[UUID, Element] = {}
@@ -905,6 +911,8 @@ class Element(MutableMapping[str, Attribute]):
         # Locations in arrays which are UUIDs (and need setting).
         # This is a (attr, index, uuid, line_num) tuple.
         fixups: List[Tuple[Attribute, Optional[int], UUID, int]] = []
+        # Ensure these reuse the same objects.
+        stubs: dict[UUID, StubElement] = collections.defaultdict(StubElement.stub)
 
         elements = []
 
@@ -916,24 +924,26 @@ class Element(MutableMapping[str, Attribute]):
                 continue
             else:
                 raise tok.error(token)
-            elements.append(cls._parse_kv2_element(tok, id_to_elem, fixups, '', elem_name))
+            elements.append(cls._parse_kv2_element(tok, id_to_elem, fixups, stubs, '', elem_name))
 
         for attr, index, uuid, line_num in fixups:
             try:
                 elem = id_to_elem[uuid]
             except KeyError:
-                tok.line_num = line_num
-                raise tok.error('UUID {} not found!', uuid)
+                continue  # It'll be a stub element.
             if index is None:
                 attr._value = elem
             else:
                 attr._value[index] = elem
 
-        return elements[0]
+        try:
+            return elements[0]
+        except IndexError:
+            raise tok.error("No elements in DMX file!") from None
 
     @classmethod
     def _parse_kv2_element(
-        cls, tok, id_to_elem, fixups, name, typ_name,
+        cls, tok, id_to_elem, fixups, stubs, name, typ_name,
         # Load into locals for fast lookup.
         STRING=Token.STRING, COMMA=Token.COMMA,
         BRACK_OPEN=Token.BRACK_OPEN, BRACK_CLOSE=Token.BRACK_CLOSE,
@@ -984,7 +994,7 @@ class Element(MutableMapping[str, Attribute]):
                 # It's an inline compound element.
                 elem._members[attr_name.casefold()] = Attribute(
                     attr_name, ValueType.ELEMENT,
-                    cls._parse_kv2_element(tok, id_to_elem, fixups, attr_name, orig_typ_name),
+                    cls._parse_kv2_element(tok, id_to_elem, fixups, stubs, attr_name, orig_typ_name),
                 )
                 continue
             if is_array:
@@ -1005,12 +1015,13 @@ class Element(MutableMapping[str, Attribute]):
                                     except ValueError:
                                         raise tok.error('Invalid UUID "{}"!', uuid_str)
                                     fixups.append((attr, len(array), uuid, tok.line_num))
-                                # If UUID is present, this None will be
-                                # overwritten after. Otherwise, this stays None.
-                                array.append(None)
+                                    # If UUID is present, this stub will be overwritten later.
+                                    array.append(stubs[uuid])
+                                else:
+                                    array.append(NULL)
                             else:
                                 # Inline compound
-                                array.append(cls._parse_kv2_element(tok, id_to_elem, fixups, attr_name, tok_value))
+                                array.append(cls._parse_kv2_element(tok, id_to_elem, fixups, stubs, attr_name, tok_value))
                         else:
                             # Other value
                             try:
@@ -1030,15 +1041,16 @@ class Element(MutableMapping[str, Attribute]):
             elif attr_type is ValueType.ELEMENT:
                 # This is a reference to another element.
                 uuid_str = tok.expect(STRING)
-                attr = Attribute(attr_name, attr_type, None)
+                attr = Attribute(attr_name, attr_type, NULL)
                 if uuid_str:
                     try:
                         uuid = UUID(uuid_str)
                     except ValueError:
                         raise tok.error('Invalid UUID "{}"!', uuid_str)
+                    attr.val_elem = stubs[uuid]
                     fixups.append((attr, None, uuid, tok.line_num))
-                # If UUID is present, the None value  will be overwritten after.
-                # Otherwise, this stays None.
+                    # If the element is present, the stub value  will be overwritten after.
+                # else: If blank, it's a NULL.
             else:
                 # Single element.
                 unparsed = tok.expect(STRING)
@@ -1202,7 +1214,6 @@ class Element(MutableMapping[str, Attribute]):
         The format name and version can be anything, to indicate which
         application should read the file.
 
-        * Stub elements are not allowed in text files, only in binary files.
         * If flat is enabled, elements will all be placed at the toplevel,
           so they don't nest inside each other.
         * If cull_uuid is enabled, UUIDs are only written for self-referential
@@ -1240,7 +1251,7 @@ class Element(MutableMapping[str, Attribute]):
                 # noinspection PyProtectedMember
                 for subelem in attr.iter_elem():
                     if isinstance(subelem, StubElement):
-                        raise ValueError('Stub elements are not valid in keyvalues2 files!')
+                        continue
                     if subelem.uuid not in use_count:
                         use_count[subelem.uuid] = 1
                         elements.append(subelem)
@@ -1293,7 +1304,9 @@ class Element(MutableMapping[str, Attribute]):
                 for i, child in enumerate(attr._value):
                     file.write(indent_arr)
                     if isinstance(child, Element):
-                        if child.uuid in roots:
+                        if child.is_null:
+                            file.write(b'"element" ""')
+                        elif child.uuid in roots or child.is_stub:
                             file.write(b'"element" "%b"' % str(child.uuid).encode('ascii'))
                         else:
                             child._export_kv2(file, indent_arr, roots, encoding, cull_uuid)
@@ -1306,10 +1319,13 @@ class Element(MutableMapping[str, Attribute]):
                         file.write(b',\r\n')
                 file.write(b'%b]\r\n' % (indent_child, ))
             elif isinstance(attr._value, Element):
-                if attr.val_elem.uuid in roots:
-                    file.write(b'"element" "%b"\r\n' % str(attr.val_elem.uuid).encode('ascii'))
+                child = attr.val_elem
+                if child.is_null:
+                    file.write(b'"element" ""\r\n')
+                elif child.uuid in roots or child.is_stub:
+                    file.write(b'"element" "%b"\r\n' % str(child.uuid).encode('ascii'))
                 else:
-                    attr.val_elem._export_kv2(file, indent_child, roots, encoding, cull_uuid)
+                    child._export_kv2(file, indent_child, roots, encoding, cull_uuid)
                     file.write(b'\r\n')
             else:
                 file.write(b'"%b" "%b"\r\n' % (

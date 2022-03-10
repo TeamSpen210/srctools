@@ -37,12 +37,9 @@ EXPORT_VALS = [
 
 def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
     """Checks two elements are the same."""
-    if tree1 is None:
-        if tree2 is None:
-            return  # Matches.
-        pytest.fail(f'{path}: NULL != {tree2}')
-    elif tree2 is None:
-        pytest.fail(f'{path}: {tree1} != NULL')
+    if tree1 is None or tree2 is None:
+        # Old code stored none for NULL elements
+        pytest.fail(f'{path}: {tree1!r} <-> {tree2}')
 
     # Don't re-check (infinite loop).
     if tree1.uuid in checked:
@@ -58,28 +55,19 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
     for key in tree1.keys() | tree2.keys():
         attr_path = f'{path}.{key}'
 
-        # Allow one to be NULL, but the other to be a missing element.
         try:
             attr1 = tree1[key]
         except KeyError:
-            attr1 = None
+            return pytest.fail(f'{attr_path}: {key} not in LHS')
         try:
             attr2 = tree2[key]
         except KeyError:
-            attr2 = None
-        if attr1 is None:
-            if attr2 is None:
-                raise AssertionError(f'{key} not in {tree1.keys()} and {tree2.keys()}, but in union?')
-            elif attr2.type is ValueType.ELEMENT or attr2.val_elem is None:
-                continue
-            raise AssertionError(f'{attr_path}: NULL != {attr2.type}')
-        elif attr2 is None:
-            if attr1.type is ValueType.ELEMENT and attr1.val_elem is None:
-                continue
-            raise AssertionError(f'{attr_path}: {attr1.type} != NULL')
+            return pytest.fail(f'{attr_path}: {key} not in RHS')
 
-        assert attr1.type is attr2.type, attr_path
+        if attr1.type is not attr2.type:
+            pytest.fail(f'{attr_path}: type {attr1.type} != {attr2.type}')
         assert attr1.name == attr2.name, attr_path
+
         if attr1.type is ValueType.ELEMENT:
             if attr1.is_array:
                 assert len(attr1) == len(attr2), f'Mismatched len for {attr_path}'
