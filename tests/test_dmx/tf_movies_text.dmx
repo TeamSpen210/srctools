@@ -1501,7 +1501,7 @@
 		"position" "vector3" "0 0 0"
 		"orientation" "quaternion" "0 0 0 1"
 	}
-	
+	"parentConstraint" "element" ""
 	"shape" "element" "374cf67b-99dd-4c05-b62f-cd918ab71326"
 	"visible" "bool" "1"
 	"children" "element_array" 
