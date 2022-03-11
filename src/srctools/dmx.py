@@ -521,7 +521,13 @@ class Attribute(Generic[ValueT], _ValProps):
         self._value = CONVERSIONS[newtype](value)  # type: ignore # This changes the generic...
 
     def __repr__(self) -> str:
-        return f'<{self._typ.name} Attr {self.name!r}: {self._value!r}>'
+        if self._typ is not ValueType.ELEMENT and isinstance(self._value, list) and len(self._value) > 8:
+            # Trim down long arrays to make it more readable.
+            value = ', '.join(map(repr, self._value[:8]))
+            value = f'[{value}, ...]'
+        else:
+            value = repr(self._value)
+        return f'<{self._typ.name} Attr {self.name!r}: {value}>'
 
     def __eq__(self, other) -> builtins.bool:
         if isinstance(other, Attribute):
