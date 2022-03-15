@@ -330,7 +330,7 @@ def collapse_one(
             if out.target.casefold() != folded_inst_name or out.inst_in is None:
                 continue
             try:
-                proxy_out = file.proxy_inputs[out.inst_in, out.input]  # type: ignore
+                proxy_out = file.proxy_inputs[out.inst_in, out.input]
             except KeyError:
                 # Not an error, could be another instance with our name.
                 continue

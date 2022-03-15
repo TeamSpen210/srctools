@@ -816,11 +816,11 @@ class KeyValues:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
-                for index, name, default, tags in self.flags_list:
+                for index, name, flag_default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
-                    file.write(' : 1' if default else ' : 0')
+                    file.write(' : 1' if flag_default else ' : 0')
                     if tags:
                         file.write(' [' + ', '.join(tags) + ']\n')
                     else:
@@ -1404,12 +1404,13 @@ class EntityDef:
                     elif default.casefold() == 'no':
                         default = '0'
 
+                # Read the choices in the [].  There's two kinds of tuples here, typing this
+                # doesn't work right.
+                val_list: Optional[List[Any]]
                 if val_typ.has_list:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
-                    # Read the choices in the [].  There's two kinds of tuples here, typing this
-                    # doesn't work right.
-                    val_list: Optional[List[Any]] = []
+                    val_list = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:

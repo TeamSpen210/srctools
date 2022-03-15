@@ -620,6 +620,9 @@ class VTF:
 
         vtf = cls.__new__(cls)
 
+        header_size: int
+        low_width: int
+        low_height: int
         (
             header_size,
             width,
@@ -719,10 +722,11 @@ class VTF:
 
         # If cubemaps are present, we iterate that for depth.
         # Otherwise it's the depth value.
+        depth_iter: Iterable[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in vtf.flags:
             # For version 7.5, the spheremap is skipped.
             if version_minor == 5:
-                depth_iter = CUBES  # type: Iterable[Union[int, CubeSide]]
+                depth_iter = CUBES
             else:
                 depth_iter = CUBES_WITH_SPHERE
         else:
