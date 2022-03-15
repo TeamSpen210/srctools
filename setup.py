@@ -65,8 +65,7 @@ setup(
     ],
     # Here so Github can read it.
     install_requires=[
-        "attrs",
-	    "versioningit",
+        "attrs >= 21.2.0",
 	    # In stdlib after this.
 	    "importlib_resources; python_version < '3.7'",
 	    "contextvars; python_version < '3.7'",
