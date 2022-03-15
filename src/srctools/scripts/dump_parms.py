@@ -8,7 +8,7 @@ import ast
 import sys
 import collections
 from collections import defaultdict
-from typing import Union, Dict, Set
+from typing import Optional, Dict, Set
 
 import attr
 from srctools.vmt import VarType
@@ -86,6 +86,7 @@ def process(filename: str, args: str) -> None:
     ast_tuple: ast.Tuple = ast_expr.body
     elements = ast_tuple.elts
 
+    ast_help: Optional[ast.expr]
     if len(elements) == 5:
         ast_name, ast_type, ast_default, ast_help, ast_flags = ast_tuple.elts
         flags = parse_ast_value(ast_flags)
@@ -187,7 +188,7 @@ def dump(folder):
                 type=VarType.FLAG,
                 default='0',
                 help='FLAG: sets bitfield.',
-                flags=0,
+                flags='0',
                 filename='shadersystem.cpp',
             )
 
@@ -235,8 +236,8 @@ def main():
             for var_type in VarType
         ])))
         for var_type in VarType:
-            for var in sorted(var_by_type[var_type]):
-                f.write('    DB[{!r}] = {}\n'.format(var, var_type.name))
+            for var_name in sorted(var_by_type[var_type]):
+                f.write('    DB[{!r}] = {}\n'.format(var_name, var_type.name))
             f.write('\n')
 
 

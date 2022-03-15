@@ -895,31 +895,32 @@ class KeyValues:
         readonly = value_ind & 128
         value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
-        val_list: Optional[List[tuple]] = None
+        val_list: Optional[List[tuple]]
 
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
             [val_count] = struct_read(_fmt_8bit, file)
-            val_list = [()] * val_count
+            val_list = []
             for ind in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
                 [power] = struct_read(_fmt_8bit, file)
                 val_name = from_dict()
-                val_list[ind] = (
+                val_list.append((
                     1 << (power & 127),
                     val_name,
                     (power & 128) != 0,
                     tags,
-                )
+                ))
         else:
             default = from_dict()
-
             if value_type is ValueTypes.CHOICES:
                 [val_count] = struct_read(_fmt_16bit, file)
-                val_list = [()] * val_count
+                val_list = []
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
-                    val_list[ind] = (from_dict(), from_dict(), tags)
+                    val_list.append((from_dict(), from_dict(), tags))
+            else:
+                val_list = None
 
         return KeyValues(
             name=name,

@@ -155,6 +155,7 @@ class AngleTup(NamedTuple):
 
 
 Time = NewType('Time', float)
+_Element = Union['Element', 'Element']  # Forward ref.
 Value = Union[
     int, float, bool, str, bytes,
     Color, Time,
@@ -162,7 +163,7 @@ Value = Union[
     AngleTup,
     Quaternion,
     Matrix,
-    Optional['Element'],
+    _Element,
 ]
 
 ValueT = TypeVar(
@@ -173,7 +174,7 @@ ValueT = TypeVar(
     AngleTup,
     Quaternion,
     Matrix,
-    Optional['Element'],
+    _Element,
 )
 
 # [from, to] -> conversion.
@@ -288,7 +289,7 @@ class _ValProps:
     val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
     val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
     val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
-    val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, Optional['Element'])
+    val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, _Element)
 
 del _make_val_prop
 
@@ -513,7 +514,7 @@ class Attribute(Generic[ValueT], _ValProps):
     iter_quat = iter_quaternion = _make_iter(ValueType.QUATERNION, Quaternion)
     iter_ang = iter_angle = _make_iter(ValueType.ANGLE, AngleTup)
     iter_mat = iter_matrix = _make_iter(ValueType.MATRIX, Matrix)
-    iter_compound = iter_elem = _make_iter(ValueType.ELEMENT, Optional['Element'])
+    iter_compound = iter_elem = _make_iter(ValueType.ELEMENT, _Element)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
         """Change the type of the atribute."""
@@ -597,7 +598,7 @@ class Attribute(Generic[ValueT], _ValProps):
         holding the existing value.
         """
         if not isinstance(self._value, list):
-            self._value = [self._value]
+            self._value = cast('list[ValueT]', [self._value])
         [val_type, result] = deduce_type_single(value)
         if val_type is not self._typ:
             # Try converting.
@@ -616,7 +617,7 @@ class Attribute(Generic[ValueT], _ValProps):
         holding the existing value.
         """
         if not isinstance(self._value, list):
-            self._value = [self._value]
+            self._value = cast('list[ValueT]', [self._value])
         for value in values:
             [val_type, result] = deduce_type_single(value)
             if val_type is not self._typ:
@@ -797,6 +798,7 @@ class Element(MutableMapping[str, Attribute]):
             else:
                 el_type = binformat.read_nullstr(file)
             if version >= 4:
+                assert stringdb is not None
                 [ind] = binformat.struct_read(stringdb_ind, file)
                 name = stringdb[ind]
             else:
@@ -867,7 +869,8 @@ class Element(MutableMapping[str, Attribute]):
                             binformat.read_nullstr_array(file, array_size),
                         )
                     else:  # Single string.
-                        if stringdb is not None and version >= 4:
+                        if version >= 4:
+                            assert stringdb is not None
                             [ind] = binformat.struct_read(stringdb_ind, file)
                             value = stringdb[ind]
                         else:
@@ -1163,6 +1166,7 @@ class Element(MutableMapping[str, Attribute]):
             else:
                 file.write(elem.type.encode(encoding) + b'\0')
             if version >= 4:
+                assert stringdb_ind is not None
                 file.write(pack(stringdb_ind, string_to_ind[elem.name]))
             else:
                 file.write(elem.name.encode(encoding) + b'\0')
@@ -1186,6 +1190,7 @@ class Element(MutableMapping[str, Attribute]):
                 if attr.type is ValueType.STRING:
                     # Scalar strings after v4 use the DB.
                     if version >= 4 and not attr.is_array:
+                        assert stringdb_ind is not None
                         file.write(pack(stringdb_ind, string_to_ind[attr.val_str]))
                     else:
                         for text in attr.iter_string():
@@ -1599,7 +1604,7 @@ def deduce_type(value):
         return deduce_type_single(value)
 
 
-def deduce_type_array(value: list):
+def deduce_type_array(value: list) -> Tuple[ValueType, List[Value]]:
     """Convert a Python list to an appropriate ValueType."""
     if len(value) == 0:
         raise TypeError('Cannot deduce type for empty list!')
@@ -1637,7 +1642,7 @@ def deduce_type_array(value: list):
             # NamedTuple, ensure they're a float.
             if issubclass(val_actual_type, tuple):
                 return val_type, [
-                    tuple.__new__(val_actual_type, map(float, val))
+                    tuple.__new__(val_actual_type, map(float, val))  # type: ignore
                     for val in value
                 ]
             else:
@@ -1656,7 +1661,7 @@ def deduce_type_array(value: list):
     return val_type, result
 
 
-def deduce_type_single(value):
+def deduce_type_single(value) -> Tuple[ValueType, Value]:
     if isinstance(value, Matrix):
         return ValueType.MATRIX, value.copy()
     if isinstance(value, Angle):  # Mutable version of values we use.
@@ -1670,7 +1675,8 @@ def deduce_type_single(value):
     else:
         # NamedTuple, ensure they're a float.
         if isinstance(value, tuple):
-            return val_type, tuple.__new__(type(value), map(float, value))
+            # Type checker doesn't know all value classes take floats.
+            return val_type, tuple.__new__(type(value), map(float, value))  # type: ignore
         else:  # No change needed.
             return val_type, value
     try:

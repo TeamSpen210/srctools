@@ -661,8 +661,8 @@ class VTF:
         if vtf.depth <= 0:
             vtf.depth = 1
 
-        low_res_offset: Optional[int] = None
-        high_res_offset: Optional[int] = None
+        low_res_offset = -1
+        high_res_offset = -1
 
         vtf.resources = {}
         vtf.sheet_info = {}
@@ -707,7 +707,7 @@ class VTF:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
 
-        if high_res_offset is None:
+        if high_res_offset < 0:
             raise ValueError('Missing main image resource!')
 
         # We don't implement these high-res formats.
@@ -716,7 +716,7 @@ class VTF:
 
         vtf._low_res = Frame(low_width, low_height)
         if low_fmt is not ImageFormats.NONE:
-            if low_res_offset is None:
+            if low_res_offset < 0:
                 raise ValueError('Missing low-res thumbnail resource!')
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 

@@ -323,6 +323,8 @@ class StaticPropVersion(Enum):
         return self.name.startswith('V_LIGHTMAP')
 
 
+_STATIC_PROP_VERSIONS = {(ver.version, ver.size): ver for ver in StaticPropVersion}
+
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
@@ -2458,12 +2460,12 @@ class BSP:
         # Some numbers are reused, so add the size of the struct to guess the
         # version.
         try:
-            self.static_prop_version = version = StaticPropVersion((vers_num, struct_size))
-        except ValueError:
+            self.static_prop_version = version = _STATIC_PROP_VERSIONS[vers_num, struct_size]
+        except KeyError:
             raise ValueError(
                 "Don't know a static prop "
                 f"version={vers_num} with a size of {struct_size} bytes!"
-            )
+            ) from None
         # These two are the same, it just changed version numbers later.
         # It's more similar to V7 though.
         if version is StaticPropVersion.V_LIGHTMAP_v10:

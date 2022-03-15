@@ -261,7 +261,7 @@ def localise_overlay(over: 'Entity', origin: Vec, angles: Union[Angle, Matrix]=N
         over[key] = ang.join(' ')
 
 
-class CopySet(Generic[T], Set[T]):
+class CopySet(Set[T]):
     """Modified version of a Set which allows modification during iteration.
 
     """
