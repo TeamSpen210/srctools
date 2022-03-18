@@ -1754,40 +1754,6 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    @overload
-    def update(__self, __mapping: Mapping[str, Attribute], **kwargs: Union[Attribute, ConvValue, List[ConvValue]]) -> None: ...
-    @overload
-    def update(__self, __iterable: Iterable[Union[Tuple[str, ValueT], Attribute]], **kwargs: Union[Attribute, ConvValue, List[ConvValue]]) -> None: ...
-    @overload
-    def update(self, **kwargs: Union[Attribute, Value, List[ConvValue]]) -> None: ...
-
-    def update(*args: Any, **kwds: Union[Attribute, ConvValue, List[ConvValue]]) -> None:
-        """Update from a mapping/iterable, and keyword args.
-            If E present and has a .keys() method, does:     for k in E: D[k] = E[k]
-            If E present and lacks .keys() method, does:     for (k, v) in E: D[k] = v
-            In either case, this is followed by: for k, v in F.items(): D[k] = v
-        """
-        if len(args) not in (1, 2):
-            raise TypeError(f'Expected 1-2 positional args, not {len(args)}!')
-        self: Element = args[0]
-        if len(args) == 2:
-            other = args[1]
-            if isinstance(other, Mapping):
-                for key in other:
-                    self[key] = other[key]
-            elif hasattr(other, "keys"):
-                for key in other.keys():
-                    self[key] = other[key]
-            else:
-                for attr in other:
-                    if isinstance(attr, Attribute):
-                        self._members[attr.name.casefold()] = attr
-                    else:
-                        key, value = attr
-                        self[key] = value
-        for key, value in kwds.items():
-            self[key] = value
-
     def setdefault(self, name: str, default: Union[Attribute, ConvValue, List[ConvValue]] = None) -> Attribute:
         """Return the specified attribute name.
 
