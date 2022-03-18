@@ -1146,11 +1146,12 @@ class Property:
         Set names by builder.name, builder['name']. For keywords append '_'.
 
         Alternatively:
-        >>> with Property('name', []).build() as (prop, builder):
+        >>> with Property('name', []).build() as builder:
         ...     builder.root1('blah')
         ...     builder.root2('blah')
         Property('root1', 'blah')
         Property('root2', 'blah')
+        >>> prop = builder()
         >>> print(repr(prop))
         Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
         """
@@ -1163,7 +1164,7 @@ class _Builder:
     """Allows constructing property trees using with: chains.
 
     This is the builder you get directly, which is interacted with for
-    all the hierachies.
+    all the hierachies.  Calling it then returns the original tree.
     """
     def __init__(self, parent: Property) -> None:
         self._parents = [parent]
