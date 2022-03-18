@@ -1165,7 +1165,7 @@ class _Builder:
     This is the builder you get directly, which is interacted with for
     all the hierachies.
     """
-    def __init__(self, parent: Property):
+    def __init__(self, parent: Property) -> None:
         self._parents = [parent]
 
     def __getattr__(self, name: str) -> '_BuilderElem':
@@ -1176,7 +1176,7 @@ class _Builder:
         return _BuilderElem(self, self._keywords.get(name, name))
 
     def __getitem__(self, name: str) -> '_BuilderElem':
-        """This allows accessing names dynamicallyt easily, or names which aren't identifiers."""
+        """This allows accessing names dynamically easily, or names which aren't identifiers."""
         return _BuilderElem(self, name)
 
     def __enter__(self) -> '_Builder':
@@ -1187,9 +1187,9 @@ class _Builder:
         """Ends the property block."""
         pass
 
-    def __iter__(self) -> Iterator[Union[Property, '_Builder']]:
-        """This allows doing as (x, y) to get the parent."""
-        return iter((self._parents[0], self))
+    def __call__(self) -> Property:
+        """Return the tree root."""
+        return self._parents[0]
 
     _keywords = {kw + '_': kw for kw in keyword.kwlist}
 
