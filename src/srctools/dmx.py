@@ -156,7 +156,7 @@ class AngleTup(NamedTuple):
 
 
 Time = NewType('Time', float)
-_Element = Union['Element', 'Element']  # Forward ref.
+_Element: TypeAlias = 'Element'  # Forward ref.
 Value = Union[
     int, float, bool, str, bytes,
     Color, Time,
@@ -504,16 +504,16 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     def array(cls, name: str, val_type: ValueType) -> 'Attribute':
-        """Create an attribute with an array of a specified type."""
+        """Create an attribute with an empty array of a specified type."""
         return Attribute(name, val_type, [])
 
     @classmethod
-    def int(cls, name: str, value: builtins.int) -> 'Attribute[builtins.int]':
+    def int(cls, name: str, value: Union[builtins.int, List[builtins.int]]) -> 'Attribute[builtins.int]':
         """Create an attribute with an integer value."""
         return Attribute(name, ValueType.INTEGER, value)
 
     @classmethod
-    def float(cls, name: str, value: builtins.float) -> 'Attribute[builtins.float]':
+    def float(cls, name: str, value: Union[builtins.float, List[builtins.float]]) -> 'Attribute[builtins.float]':
         """Create an attribute with a float value."""
         return Attribute(name, ValueType.FLOAT, value)
 
@@ -525,17 +525,17 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(name, ValueType.TIME, Time(value))
 
     @classmethod
-    def bool(cls, name: str, value: builtins.bool) -> 'Attribute[builtins.bool]':
+    def bool(cls, name: str, value: Union[builtins.bool, List[builtins.bool]]) -> 'Attribute[builtins.bool]':
         """Create an attribute with a boolean value."""
         return Attribute(name, ValueType.BOOL, value)
 
     @classmethod
-    def string(cls, name: str, value: builtins.str) -> 'Attribute[builtins.str]':
+    def string(cls, name: str, value: Union[builtins.str, List[builtins.str]]) -> 'Attribute[builtins.str]':
         """Create an attribute with a string value."""
         return Attribute(name, ValueType.STRING, value)
 
     @classmethod
-    def binary(cls, name: str, value: builtins.bytes) -> 'Attribute[builtins.bytes]':
+    def binary(cls, name: str, value: Union[builtins.bytes, List[builtins.bytes]]) -> 'Attribute[builtins.bytes]':
         """Create an attribute with binary data."""
         return Attribute(name, ValueType.BINARY, value)
 
@@ -1038,10 +1038,11 @@ class Element(Mapping[str, Attribute]):
             stringdb = None
 
         stubs: Dict[UUID, StubElement] = {}
+        attr: Attribute
 
         [element_count] = binformat.struct_read('<i', file)
-        elements: List[Element] = [None] * element_count
-        for i in range(element_count):
+        elements: List[Element] = []
+        for _ in range(element_count):
             if stringdb is not None:
                 [ind] = binformat.struct_read(stringdb_ind, file)
                 el_type = stringdb[ind]
@@ -1054,10 +1055,9 @@ class Element(Mapping[str, Attribute]):
             else:
                 name = binformat.read_nullstr(file, encoding=encoding)
             uuid = UUID(bytes_le=file.read(16))
-            elements[i] = Element(name, el_type, uuid)
+            elements.append(Element(name, el_type, uuid))
         # Now, the attributes in the elements.
-        for i in range(element_count):
-            elem = elements[i]
+        for elem in elements:
             [attr_count] = binformat.struct_read('<i', file)
             for attr_i in range(attr_count):
                 if stringdb is not None:
@@ -1079,7 +1079,7 @@ class Element(Mapping[str, Attribute]):
                     raise ValueError('Time attribute added in version 3!')
                 elif attr_type is ValueType.ELEMENT:
                     if array_size is not None:
-                        array = []
+                        array: List[Any] = []
                         attr = Attribute(name, attr_type, array)
                         for _ in range(array_size):
                             [ind] = binformat.struct_read('<i', file)
@@ -1087,8 +1087,7 @@ class Element(Mapping[str, Attribute]):
                                 child_elem = NULL
                             elif ind == -2:
                                 # Stub element, just with a UUID.
-                                [uuid_str] = binformat.read_nullstr(file)
-                                uuid = UUID(uuid_str)
+                                uuid = UUID(binformat.read_nullstr(file))
                                 try:
                                     child_elem = stubs[uuid]
                                 except KeyError:
@@ -1102,8 +1101,7 @@ class Element(Mapping[str, Attribute]):
                             child_elem = NULL
                         elif ind == -2:
                             # Stub element, just with a UUID.
-                            [uuid_str] = binformat.read_nullstr(file)
-                            uuid = UUID(uuid_str)
+                            uuid = UUID(binformat.read_nullstr(file))
                             try:
                                 child_elem = stubs[uuid]
                             except KeyError:
@@ -1114,10 +1112,7 @@ class Element(Mapping[str, Attribute]):
                 elif attr_type is ValueType.STRING:
                     if array_size is not None:
                         # Arrays are always raw ASCII in the file.
-                        attr = Attribute(
-                            name, attr_type,
-                            binformat.read_nullstr_array(file, array_size),
-                        )
+                        attr = Attribute.string(name, binformat.read_nullstr_array(file, array_size))
                     else:  # Single string.
                         if version >= 4:
                             assert stringdb is not None
@@ -1126,18 +1121,18 @@ class Element(Mapping[str, Attribute]):
                         else:
                             # Raw value.
                             value = binformat.read_nullstr(file, encoding=encoding)
-                        attr = Attribute(name, attr_type, value)
+                        attr = Attribute.string(name, value)
                 elif attr_type is ValueType.BINARY:
                     # Binary blobs.
                     if array_size is not None:
                         array = []
-                        attr = Attribute(name, attr_type, array)
+                        attr = Attribute.binary(name, array)
                         for _ in range(array_size):
                             [size] = binformat.struct_read('<i', file)
                             array.append(file.read(size))
                     else:
                         [size] = binformat.struct_read('<i', file)
-                        attr = Attribute(name, attr_type, file.read(size))
+                        attr = Attribute.binary(name, file.read(size))
                 else:
                     # All other types are fixed-length.
                     size = SIZES[attr_type]
@@ -1211,6 +1206,7 @@ class Element(Mapping[str, Attribute]):
         BRACK_OPEN=Token.BRACK_OPEN, BRACK_CLOSE=Token.BRACK_CLOSE,
     ) -> 'Element':
         """Parse a compound element."""
+        attr: Attribute[Any]
         elem: Element = cls(name, typ_name, _UNSET_UUID)
 
         for attr_name in tok.block(name):
@@ -1260,7 +1256,7 @@ class Element(Mapping[str, Attribute]):
                 )
                 continue
             if is_array:
-                array = []
+                array: List[Any] = []
                 attr = Attribute(attr_name, attr_type, array)
                 tok.expect(BRACK_OPEN)
                 for tok_typ, tok_value in tok.skipping_newlines():
@@ -1362,6 +1358,8 @@ class Element(Mapping[str, Attribute]):
                 fmt_name.encode('ascii'),
                 fmt_ver,
             ))
+        stringdb_size: Optional[str]
+        stringdb_ind: Optional[str]
         if version >= 5:
             stringdb_size = stringdb_ind = '<i'
         elif version >= 4:
@@ -1754,7 +1752,7 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Union[Attribute, ConvValue, List[ConvValue]] = None) -> Attribute:
+    def setdefault(self, name: str, default: Union[Attribute, ConvValue, List[ConvValue]]) -> Attribute:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.
@@ -1765,7 +1763,13 @@ class Element(Mapping[str, Attribute]):
         except KeyError:
             if not isinstance(default, Attribute):
                 typ, val = deduce_type(default)
-                default = Attribute(name, typ, val)
+                conv = CONVERSIONS[typ]
+                new_def: Union[Value, List[Value]]
+                if isinstance(val, list):
+                    new_def = list(map(conv, val))
+                else:
+                    new_def = conv(val)
+                default = Attribute(name, typ, new_def)  # type: ignore
             self._members[key] = default
             return default
 
@@ -1822,10 +1826,6 @@ TYPE_TO_VALTYPE: Dict[type, ValueType] = {
 }
 
 
-@overload
-def deduce_type(value: List[ConvValue]) -> Tuple[ValueType, List[Value]]: ...
-@overload
-def deduce_type(value: ConvValue) -> Tuple[ValueType, Value]: ...
 def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, List[Value]]]:
     """Convert Python objects to an appropriate ValueType."""
     if isinstance(value, list):  # Array.
@@ -1842,15 +1842,16 @@ def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, List[Value]]:
     if len(types) > 1:
         if types <= _NUMBERS:
             # Allow mixing numerics, casting to the largest subset.
+            num_values = cast('List[int | bool | float]', value)
             if float in types:
-                return ValueType.FLOAT, list(map(float, value))
+                return ValueType.FLOAT, [float(x) for x in num_values]
             if int in types:
-                return ValueType.INTEGER, list(map(int, value))
+                return ValueType.INTEGER, [int(x) for x in num_values]
             if bool in types:
-                return ValueType.BOOL, list(map(bool, value))
+                return ValueType.BOOL, [bool(x) for x in num_values]
             raise AssertionError('No numbers?', value)
         elif types == _ANGLES:
-            return ValueType.ANGLE, list(map(AngleTup._make, value))
+            return ValueType.ANGLE, [AngleTup._make(ang) for ang in cast('List[Union[Angle, AngleTup]]', value)]
         # Else, fall through and try iterables.
     else:
         [val_actual_type] = types
@@ -1876,7 +1877,7 @@ def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, List[Value]]:
                     for val in value
                 ]
             else:
-                return val_type, value.copy()
+                return val_type, cast('List[Value]', value).copy()
     # Deduce each type in the array, check they're the same.
     val_type, first = deduce_type_single(value[0])
     result = [first]
@@ -1908,9 +1909,9 @@ def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
             # Type checker doesn't know all value classes take floats.
             return val_type, tuple.__new__(type(value), map(float, value))  # type: ignore
         else:  # No change needed.
-            return val_type, value
+            return val_type, value  # type: ignore
     try:
-        it = iter(value)
+        it = iter(cast('Iterable[float]', value))  # Try-catch handles type errors.
     except TypeError:
         # Nope, not an iterable. So not valid.
         raise TypeError(f'Could not deduce value type for {type(value)}.') from None
