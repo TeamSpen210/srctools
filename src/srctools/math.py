@@ -45,10 +45,7 @@ from typing import (
     Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
     NamedTuple, Iterator, Iterable, SupportsRound, Optional
 )
-if TYPE_CHECKING:
-    from typing import final, Literal
-else:
-    globals()['final'] = lambda x: x
+from typing_extensions import Final, Literal, final
 
 
 __all__ = [
@@ -302,7 +299,8 @@ class Vec(SupportsRound['Vec']):
 
     Many of the functions will accept a 3-tuple for comparison purposes.
     """
-    __match_args__ = __slots__ = ('x', 'y', 'z')
+    __match_args__: Final = ('x', 'y', 'z')
+    __slots__: Final = ('x', 'y', 'z')
     INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
@@ -1472,7 +1470,8 @@ class Angle:
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     # Use the private attrs for matching also, we only hook assignment.
-    __match_args__ = __slots__ = ['_pitch', '_yaw', '_roll']
+    __match_args__: Final = ('_pitch', '_yaw', '_roll')
+    __slots__: Final = ('_pitch', '_yaw', '_roll')
 
     def __init__(
         self,
