@@ -2,7 +2,7 @@ import itertools as _itertools
 import os as _os
 import sys as _sys
 from typing import (
-    Type, TypeVar, Union, Any, NoReturn, Optional, overload,
+    Type, TypeVar, Union, Any, NoReturn, Optional, overload, TYPE_CHECKING,
     Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
     Sequence, List, Container, AbstractSet, Set,
     Iterable, Iterator, Tuple, IO,
@@ -17,6 +17,8 @@ except ImportError:
 else:
     # Discard the now-useless module. Use globals so static analysis ignores this.
     del _sys.modules[globals().pop('_version').__name__]
+if TYPE_CHECKING:
+    from _typeshed import SupportsKeysAndGetItem
 
 __all__ = [
     '__version__',
@@ -281,7 +283,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return default
 
     @overload
-    def update(self, __m: Mapping[Any, Any], **kwargs: Any) -> None: ...
+    def update(self, __m: SupportsKeysAndGetItem[Any, Any], **kwargs: Any) -> None: ...
     @overload
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
