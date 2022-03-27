@@ -2071,7 +2071,7 @@ class BSP:
         brush_ents[vmf.spawn] = bmodel_list[0]
         for ent in vmf.entities:
             if ent['model'].startswith('*'):
-                mdl_ind = int(ent.keys.pop('model')[1:])
+                mdl_ind = int(ent.pop('model')[1:])
                 brush_ents[ent] = bmodel_list[mdl_ind]
 
         return brush_ents
@@ -2385,8 +2385,8 @@ class BSP:
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
-            for key, value in ent.keys.items():
-                out.write('"{}" "{}"\n'.format(key, escape_text(value)).encode('ascii'))
+            for key, value in ent.items():
+                out.write(f'"{key}" "{escape_text(value)}"\n'.encode('ascii'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
