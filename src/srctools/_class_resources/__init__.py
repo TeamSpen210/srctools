@@ -415,6 +415,7 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
 res('test_proxytoggle')
 
+res('vort_charge_token', part('vortigaunt_charge_token'))
 
 @cls_func
 def vgui_movie_display(pack: PackList, ent: Entity):

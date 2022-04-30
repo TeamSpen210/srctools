@@ -686,6 +686,31 @@ res('npc_turret_lab',
 res('npc_vehicledriver',
     'models/roller_vehicledriver.mdl',
     )
+res('npc_vortigaunt',
+    mdl('models/vortigaunt.mdl'),  # Only if not set.
+    mat('materials/sprites/lgtning.vmt'),
+    mat('materials/sprites/vortring1.vmt'),
+    mat('materials/sprites/light_glow02_add'),
+    # EP2 only...
+    mat('materials/effects/rollerglow.vmt'),
+    sound('NPC_Vortigaunt.SuitOn'),
+    sound('NPC_Vortigaunt.SuitCharge'),
+    sound('NPC_Vortigaunt.ZapPowerup'),
+    sound('NPC_Vortigaunt.ClawBeam'),
+    sound('NPC_Vortigaunt.StartHealLoop'),
+    sound('NPC_Vortigaunt.Swing'),
+    sound('NPC_Vortigaunt.StartShootLoop'),
+    sound('NPC_Vortigaunt.FootstepLeft'),
+    sound('NPC_Vortigaunt.FootstepRight'),
+    sound('NPC_Vortigaunt.DispelStart'),
+    sound('NPC_Vortigaunt.DispelImpact'),
+    sound('NPC_Vortigaunt.Explode'),
+
+    part('vortigaunt_beam'),
+    part('vortigaunt_beam_charge'),
+    part('vortigaunt_hand_glow'),
+    included="vort_charge_token",
+    )
 
 res('npc_zombie',
     mdl("models/zombie/classic.mdl"),
