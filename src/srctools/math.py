@@ -42,7 +42,7 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, overload, cast, Type, TYPE_CHECKING, Any,
+    Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
     NamedTuple, Iterator, Iterable, SupportsRound, Optional
 )
 from typing_extensions import Final, Literal, final
@@ -885,7 +885,7 @@ class Vec(SupportsRound['Vec']):
     @overload
     def __round__(self) -> Any: ...
     @overload
-    def __round__(self, ndigits: int) -> 'Vec': ...  # type: ignore
+    def __round__(self, ndigits: int) -> 'Vec': ...  # noqa
 
     def __round__(self, ndigits: int=0) -> Union['Vec', Any]:
         """Performing round() on a Py_Vec rounds each axis."""
@@ -1847,6 +1847,11 @@ class Angle:
         self._roll = new_ang._roll
 
 
+def quickhull(vertexes: Iterable[Vec]) -> List[Tuple[Vec, Vec, Vec]]:
+    """Use the quickhull algorithm to construct a convex hull around the provided points."""
+    raise NotImplementedError('Requires C extension!')
+
+
 def _mk_vec(x: float, y: float, z: float) -> Vec:
     """Unpickle a Vec object, maintaining compatibility with C versions.
 
@@ -1912,13 +1917,16 @@ Cy_Angle = Py_Angle = Angle
 Cy_Matrix = Py_Matrix = Matrix
 
 # Do it this way, so static analysis ignores this.
-_glob = globals()
-del _glob['SupportsRound']
-try:
-    from srctools import _math
-except ImportError:
-    pass
-else:
-    for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix', 'lerp']:
-        _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
-    del _glob, _name, _math
+if not TYPE_CHECKING:
+    _glob = globals()
+    del _glob['SupportsRound']
+    try:
+        from srctools import _math  # noqa
+    except ImportError:
+        pass
+    else:
+        for _name in ['Vec', 'Angle', 'Matrix', 'parse_vec_str', 'to_matrix', 'lerp']:
+            _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
+        # Python version is useless.
+        _glob['quickhull'] = _math.quickhull
+        del _glob, _name, _math
