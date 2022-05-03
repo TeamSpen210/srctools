@@ -1230,11 +1230,14 @@ class Solid:
         buffer: IO[str],
         ind: str='',
         disp_multiblend: bool = True,
+        include_groups: bool = True,
     ) -> None:
         """Generate the strings needed to define this brush.
 
         - disp_multiblend controls whether displacements produce their multiblend
           data (added in ASW), or if it is stripped.
+        - include_groups specifies if visgroup/group values are included. This is not allowed
+          inside brush entities.
         """
         if self.hidden:
             buffer.write(ind + 'hidden\n' + ind + '{\n')
@@ -1248,11 +1251,12 @@ class Solid:
         buffer.write(ind + '\teditor\n')
         buffer.write(ind + '\t{\n')
         buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
-        if self.group_id is not None:
-            buffer.write(f'{ind}\t\t"groupid" "{self.group_id}"\n')
+        if include_groups:
+            if self.group_id is not None:
+                buffer.write(f'{ind}\t\t"groupid" "{self.group_id}"\n')
 
-        for group in self.visgroup_ids:
-            buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
+            for group in self.visgroup_ids:
+                buffer.write(f'{ind}\t\t"visgroupid" "{group}"\n')
 
         buffer.write('{}\t\t"visgroupshown" "{}"\n'.format(
             ind,
@@ -2273,7 +2277,12 @@ class Entity(MutableMapping[str, str]):
 
         if self.is_brush():
             for s in self.solids:
-                s.export(buffer, ind=ind+'\t', disp_multiblend=disp_multiblend)
+                s.export(
+                    buffer,
+                    ind=ind+'\t',
+                    disp_multiblend=disp_multiblend,
+                    include_groups=not _is_worldspawn,
+                )
         if len(self.outputs) > 0:
             buffer.write(ind + '\tconnections\n')
             buffer.write(ind + '\t{\n')
@@ -2285,13 +2294,13 @@ class Entity(MutableMapping[str, str]):
         if _is_worldspawn:
             for group in self.map.groups.values():
                 group.export(buffer, ind + '\t')
-        else:
-            # The editor{} block, indicating if shown/hidden.
-            # Worldspawn can't be hidden so it's not included.
-            buffer.write(ind + '\teditor\n')
-            buffer.write(ind + '\t{\n')
-            buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
 
+        buffer.write(ind + '\teditor\n')
+        buffer.write(ind + '\t{\n')
+        buffer.write(f'{ind}\t\t"color" "{self.editor_color}"\n')
+        # The editor{} block, indicating if shown/hidden.
+        # Worldspawn can't be hidden, so skip these.
+        if not _is_worldspawn:
             for group_id in self.groups:
                 buffer.write(f'{ind}\t\t"groupid" "{group_id}"\n')
 
@@ -2301,9 +2310,10 @@ class Entity(MutableMapping[str, str]):
             buffer.write(f'{ind}\t\t"visgroupshown" "{srctools.bool_as_int(self.vis_shown)}"\n')
             buffer.write(f'{ind}\t\t"visgroupautoshown" "{srctools.bool_as_int(self.vis_auto_shown)}"\n')
             buffer.write(f'{ind}\t\t"logicalpos" "{self.logical_pos}"\n')
-            if self.comments:
-                buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
-            buffer.write(ind + '\t}\n')
+
+        if self.comments:
+            buffer.write(f'{ind}\t\t"comments" "{self.comments}"\n')
+        buffer.write(ind + '\t}\n')
 
         buffer.write(ind + '}\n')
         if self.hidden:
