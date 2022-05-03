@@ -232,7 +232,6 @@ def __i{func}__(self, other: Union['Vec', tuple, float]):
         self.y {op}= other[1]
         self.z {op}= other[2]
     elif isinstance(other, (int, float)):
-        orig = self.x, self.y, self.z
         self.x {op}= other
         self.y {op}= other
         self.z {op}= other
