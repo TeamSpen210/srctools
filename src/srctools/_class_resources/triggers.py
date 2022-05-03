@@ -1,5 +1,5 @@
 """Trigger entities."""
-from srctools._class_resources import *
+from . import *
 
 
 res('trigger_active_weapon_detect')

@@ -1,6 +1,7 @@
 """NPC entities."""
-from srctools._class_resources import *
-
+from . import *
+from .. import conv_int, Entity
+from ..packlist import PackList, FileType
 
 res('npc_advisor',
     mdl("models/advisor.mdl"),
@@ -709,7 +710,7 @@ res('npc_vortigaunt',
     part('vortigaunt_beam'),
     part('vortigaunt_beam_charge'),
     part('vortigaunt_hand_glow'),
-    included="vort_charge_token",
+    includes="vort_charge_token",
     )
 
 res('npc_zombie',

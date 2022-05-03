@@ -1,5 +1,6 @@
 """func_ entities."""
-from srctools._class_resources import *
+from . import *
+
 
 MATERIAL_GIB_TYPES = {
     0: 'GlassChunks',

@@ -3,7 +3,7 @@
 Weapons are unusual, they don't directly specify the models.
 Instead it's specified in the weapon script.
 """
-from srctools._class_resources import *
+from . import *
 
 res('weapon_357')
 # res('weapon_adrenaline_spawn')

@@ -1,5 +1,5 @@
 """Filter entities."""
-from srctools._class_resources import res
+from . import res
 
 
 res('filter_activator_class')

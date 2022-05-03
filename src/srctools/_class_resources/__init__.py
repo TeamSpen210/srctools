@@ -6,8 +6,8 @@ should be imported from packlist instead.
 """
 from typing import Callable, TypeVar, Tuple, Union, List, Dict, Iterable
 
-from srctools.packlist import FileType, PackList
-from srctools import Entity, conv_int
+from ..packlist import FileType, PackList
+from .. import Entity, conv_int
 
 #  For various entity classes, we know they require hardcoded files.
 # List them here - classname -> [(file, type), ...]

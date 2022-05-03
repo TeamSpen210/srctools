@@ -1,6 +1,5 @@
 """Prop entities."""
-from srctools import Property, KeyValError, NoKeyError
-from srctools._class_resources import *
+from . import *
 
 
 res('prop_floor_button')  # Model set in keyvalues.

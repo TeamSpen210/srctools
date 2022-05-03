@@ -1,5 +1,7 @@
 """asw_ entities."""
-from srctools._class_resources import *
+from ..packlist import PackList
+from ..vmf import Entity
+from . import *
 
 
 res('asw_camera_control')

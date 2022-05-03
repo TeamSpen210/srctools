@@ -1,5 +1,5 @@
 """ai_ entities."""
-from srctools._class_resources import *
+from . import res
 
 
 res('ai_ally_manager')

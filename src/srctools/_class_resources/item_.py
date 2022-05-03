@@ -1,5 +1,7 @@
 """item_ entities."""
-from srctools._class_resources import *
+from ..packlist import PackList, FileType
+from ..vmf import Entity
+from . import *
 
 res('item_ammo_pistol',
     mdl('models/items/boxsrounds.mdl'),
