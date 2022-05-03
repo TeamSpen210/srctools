@@ -46,14 +46,16 @@ __all__ = [
     'Brush', 'BrushSide', 'BrushContents',
 ]
 
-
+# Various constants, some exposed to allow handling unreleased formats.
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
+FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
+FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
 
 T = TypeVar('T')
-KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers don't work for that.
+KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
@@ -1790,7 +1792,7 @@ class BSP:
             struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
 
-        leaf_fmt = '<ihh6h4Hh'
+        leaf_fmt = FMT_LEAF_BASE
         has_ambient = False
         # Some extra ambient light data.
         if self.version <= 19:
@@ -1825,7 +1827,7 @@ class BSP:
             )
 
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
-        """Parse the main visleaf/bsp trees."""
+        """Parse the main visleaf/bsp trees (dnode_t)."""
         # First parse all the nodes, then link them up.
         nodes: List[Tuple[VisTree, int, int]] = []
 
@@ -1834,7 +1836,7 @@ class BSP:
             min_x, min_y, min_z,
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
-        ) in struct.iter_unpack('<iii6hHHh2x', data):
+        ) in struct.iter_unpack(FMT_NODES, data):
             nodes.append((VisTree(
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
@@ -1875,7 +1877,7 @@ class BSP:
                 neg_ind = add_node(node.child_neg)
 
             buf.write(struct.pack(
-                '<iii6hHHh2x',
+                FMT_NODES,
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
@@ -1902,7 +1904,7 @@ class BSP:
             leaf_brushes.extend(map(add_brush, leaf.brushes))
 
             buf.write(struct.pack(
-                '<ihh6h4Hh',
+                FMT_LEAF_BASE,
                 leaf.contents.value, leaf.cluster_id,
                 (leaf.area << 7 | leaf.flags.value),
                 int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
