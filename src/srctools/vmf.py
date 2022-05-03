@@ -2106,6 +2106,14 @@ class Entity(MutableMapping[str, str]):
         warnings.warn('This is private, use the entity as a mapping.', DeprecationWarning, stacklevel=2)
         return self._keys
 
+    if not TYPE_CHECKING:  # Show as readonly.
+        @keys.setter
+        def keys(self, value: Dict[str, ValidKVs]) -> None:
+            """Deprecated method to replace all keys."""
+            warnings.warn('This is private, call .clear_keys() and update().', DeprecationWarning, stacklevel=2)
+            self.clear_keys()
+            self.update(value)
+
     # Override MutableMapping, we compare by identity.
     __eq__ = object.__eq__
     __ne__ = object.__ne__
@@ -2507,14 +2515,15 @@ class Entity(MutableMapping[str, str]):
         else:
             return default
 
-    def clear_keys(self) -> None:
+    def clear(self) -> None:
         """Remove all keyvalues from an item."""
         # Delete these so the .by_class/name values are cleared.
+        self['classname'] = 'info_null'
         del self['targetname']
-        del self['classname']
         self._keys.clear()
         # Clear $fixup as well.
         self.fixup.clear()
+    clear_keys = clear
 
     def __contains__(self, key: object) -> bool:
         """Determine if a value exists for the given key."""
