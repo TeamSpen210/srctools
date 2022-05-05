@@ -249,10 +249,11 @@ res('hunter_flechette',
     part("hunter_flechette_trail"),
     part("hunter_projectile_explosion_1"),
     )
-
+res('info_coop_spawn')
 res('info_constraint_anchor')
 res('info_camera_link')
 res('info_darknessmode_lightsource')
+res('info_deathmatch_spawn')
 res('info_hint')
 res('info_ladder_dismount')
 res('info_landmark')
@@ -268,6 +269,7 @@ res('info_node_link_controller')
 res('info_node_link_filtered')
 res('info_node_link_logic')
 res('info_node_link_oneway')
+res('info_npc_spawn_destination')
 res('info_null')
 res('info_overlay_accessor')
 res('info_particle_system')  # Particle packed by FGD database.
@@ -286,6 +288,8 @@ res('info_target_gunshipcrash')
 res('info_target_helicopter_crash')
 res('info_teleport_destination')
 
+res('info_landmark_entry')
+res('info_landmark_exit')
 res('light')
 res('light_directional')
 res('light_dynamic')

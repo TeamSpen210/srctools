@@ -39,14 +39,14 @@ res('env_credits',
     )
 res('env_detail_controller')
 res('env_dof_controller')
-res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
-res('env_embers', mat('materials/particle/fire.vmt'))
-res('env_explosion', mat('materials/sprites/zerogxplode.vmt'))
-
 res('env_dustpuff',
     mat("materials/particle/particle_smokegrenade.vmt"),
     mat("materials/particle/particle_noisesphere.vmt"),
     )
+res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
+res('env_entity_maker')
+res('env_embers', mat('materials/particle/fire.vmt'))
+res('env_explosion', mat('materials/sprites/zerogxplode.vmt'))
 res('env_fire_trail',
     mat("materials/sprites/flamelet1.vmt"),
     mat("materials/sprites/flamelet2.vmt"),

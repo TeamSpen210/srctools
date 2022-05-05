@@ -144,6 +144,7 @@ res('func_door_rotating',
 res('func_dust', mat('materials/particle/sparkles.vmt'))
 res('func_dustcloud', mat('materials/particle/sparkles.vmt'))
 res('func_dustmotes', mat('materials/particle/sparkles.vmt'))
+res('func_combine_ball_spawner', includes='prop_combine_ball')
 res('func_fish_pool')
 res('func_healthcharger',
     sound("WallHealth.Deny"),
@@ -245,4 +246,5 @@ def func_rot_button(pack: PackList, ent: Entity) -> None:
     func_button(pack, ent)
 
 res('func_water', includes='func_door')  # Same class.
+res('func_water_analog', includes='func_movelinear')  # Also same class.
 res('func_weight_button')
