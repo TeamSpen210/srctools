@@ -115,18 +115,6 @@ def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
     if flags & 0x80000 == 0:  # !SF_NO_IMPACT_EFFECTS
         pack.pack_file('particle/particle_noisesphere',
                        FileType.MATERIAL)  # AR2 explosion
-
-    # All three could be used, depending on exactly where the ent is and other
-    # stuff we can't easily check.
-    pack.pack_file('models/props_combine/headcrabcannister01a.mdl',
-                   FileType.MODEL)
-    pack.pack_file('models/props_combine/headcrabcannister01b.mdl',
-                   FileType.MODEL)
-    pack.pack_file('models/props_combine/headcrabcannister01a_skybox.mdl',
-                   FileType.MODEL)
-
-    pack.pack_soundscript('HeadcrabCanister.AfterLanding')
-    pack.pack_soundscript('HeadcrabCanister.Open')
     # Also precache the appropriate headcrab's resources.
     try:
         headcrab = (
@@ -137,8 +125,16 @@ def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
     except IndexError:
         pass
     else:
-        for args in CLASS_RESOURCES[headcrab]:
-            pack.pack_file(*args)
+        pack_ent_class(pack, headcrab)
+res('env_headcrabcanister',
+    # All three could be used, depending on exactly where the ent is and other
+    # stuff we can't easily check.
+    mdl('models/props_combine/headcrabcannister01a.mdl'),
+    mdl('models/props_combine/headcrabcannister01b.mdl'),
+    mdl('models/props_combine/headcrabcannister01a_skybox.mdl'),
+    sound('HeadcrabCanister.AfterLanding'),
+    sound('HeadcrabCanister.Open'),
+    )
 
 
 res('env_laser')
@@ -249,8 +245,6 @@ res('env_smoketrail',
 @cls_func
 def env_smokestack(pack: PackList, ent: Entity) -> None:
     """This tries using each numeric material that exists."""
-    pack.pack_file('materials/particle/SmokeStack.vmt', FileType.MATERIAL)
-
     mat_base = ent['smokematerial'].casefold().replace('\\', '/')
     if not mat_base:
         return
@@ -267,11 +261,8 @@ def env_smokestack(pack: PackList, ent: Entity) -> None:
             pack.pack_file(fname)
         else:
             break
-
-
-res('env_starfield',
-    mat('materials/effects/spark_noz.vmt'),
-    )
+res('env_smokestack', mat('materials/particle/SmokeStack.vmt'))
+res('env_starfield', mat('materials/effects/spark_noz.vmt'))
 
 res('env_steam',
     mat('materials/particle/particle_smokegrenade.vmt'),

@@ -67,8 +67,12 @@ def _process_includes() -> None:
                         resources.extend(CLASS_RESOURCES[inc_cls])
                     except KeyError:
                         raise ValueError(f'{inc_cls} does not exist, but included by {cls}!') from None
-                    if inc_cls in CLASS_FUNCS:
-                        raise ValueError(f'{inc_cls} defines func, but included by {cls}!')
+                    # If this inherits from a class func, we must also have one.
+                    if inc_cls in CLASS_FUNCS and cls not in CLASS_FUNCS:
+                        raise ValueError(
+                            f'{inc_cls} defines func, but included by '
+                            f'{cls} which doesn\'t have one!'
+                        )
                     includes.remove(inc_cls)
                     has_changed = True
             if not includes:
@@ -106,8 +110,8 @@ def choreo(path: str) -> Tuple[str, FileType]:
 def pack_ent_class(pack: PackList, clsname: str) -> None:
     """Call to pack another entity class."""
     reslist = CLASS_RESOURCES[clsname]
-    if callable(reslist):
-        raise ValueError("Can't pack \"{}\", has a custom function!".format(clsname))
+    if clsname in CLASS_FUNCS:
+        raise ValueError(f"Can't pack \"{clsname}\", it has a custom function!")
     for fname, ftype in reslist:
         pack.pack_file(fname, ftype)
 

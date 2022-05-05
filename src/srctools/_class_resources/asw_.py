@@ -161,15 +161,16 @@ def asw_emitter(pack: PackList, ent: Entity):
     # - "collisionsound"
     # - "collisiondecal"
 
-    pack.pack_file('materials/effects/yellowflare.vmt', FileType.MATERIAL)
+res('asw_emitter', mat('materials/effects/yellowflare.vmt'))
 
 
 @cls_func
 def asw_env_explosion(pack: PackList, ent: Entity):
     """Handle the no-sound spawnflag."""
-    pack.pack_file("asw_env_explosion", FileType.PARTICLE_SYSTEM)
     if (conv_int(ent['spawnflags']) & 0x00000010) == 0:
         pack.pack_file('ASW_Explosion.Explosion_Default', FileType.GAME_SOUND)
+
+res('asw_env_explosion', part('asw_env_explosion'))
 
 res('asw_parasite',
     mdl('models/aliens/parasite/parasite.mdl'),

@@ -81,8 +81,6 @@ AMMO_BOX_MDLS = [
 @cls_func
 def item_ammo_crate(pack: PackList, ent: Entity) -> None:
     """Handle loading the specific ammo box type."""
-    pack.pack_soundscript("AmmoCrate.Open")
-    pack.pack_soundscript("AmmoCrate.Close")
 
     try:
         mdl_valve, mdl_mbase = AMMO_BOX_MDLS[int(ent['AmmoType'])]
@@ -97,7 +95,10 @@ def item_ammo_crate(pack: PackList, ent: Entity) -> None:
             pack_ent_class(pack, 'weapon_frag')
         elif mdl_mbase == 'slam.mdl':
             pack_ent_class(pack, 'weapon_slam')
-
+res('item_ammo_crate',
+    sound("AmmoCrate.Open"),
+    sound("AmmoCrate.Close"),
+    )
 
 res('item_dynamic_resupply',
     # This just spawns a bunch of different ents.

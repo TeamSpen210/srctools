@@ -54,18 +54,6 @@ res('func_areaportal_oneway')
 @cls_func
 def func_breakable(pack: PackList, ent: Entity) -> None:
     """Packs a number of specific gibs/resources."""
-    pack.pack_soundscript("Breakable.MatGlass")
-    pack.pack_soundscript("Breakable.MatWood")
-    pack.pack_soundscript("Breakable.MatMetal")
-    pack.pack_soundscript("Breakable.MatFlesh")
-    pack.pack_soundscript("Breakable.MatConcrete")
-    pack.pack_soundscript("Breakable.Computer")
-    pack.pack_soundscript("Breakable.Crate")
-    pack.pack_soundscript("Breakable.Glass")
-    pack.pack_soundscript("Breakable.Metal")
-    pack.pack_soundscript("Breakable.Flesh")
-    pack.pack_soundscript("Breakable.Concrete")
-    pack.pack_soundscript("Breakable.Ceiling")
 
     mat_type = conv_int(ent['material'])
     pack.pack_breakable_chunk(MATERIAL_GIB_TYPES.get(mat_type, 'WoodChunks'))
@@ -75,6 +63,20 @@ def func_breakable(pack: PackList, ent: Entity) -> None:
         breakable_class = ''
     if breakable_class:
         pack_ent_class(pack, breakable_class)
+res('func_breakable',
+    sound("Breakable.MatGlass"),
+    sound("Breakable.MatWood"),
+    sound("Breakable.MatMetal"),
+    sound("Breakable.MatFlesh"),
+    sound("Breakable.MatConcrete"),
+    sound("Breakable.Computer"),
+    sound("Breakable.Crate"),
+    sound("Breakable.Glass"),
+    sound("Breakable.Metal"),
+    sound("Breakable.Flesh"),
+    sound("Breakable.Concrete"),
+    sound("Breakable.Ceiling"),
+    )
 
 
 @cls_func
@@ -82,8 +84,6 @@ def func_breakable_surf(pack: PackList, ent: Entity):
     """Additional materials required for func_breakable_surf."""
     # First pack the base func_breakable stuff.
     func_breakable(pack, ent)
-
-    pack.pack_file('models/brokenglass_piece.mdl', FileType.MODEL)
 
     surf_type = conv_int(ent['surfacetype'])
 
@@ -103,6 +103,10 @@ def func_breakable_surf(pack: PackList, ent: Entity):
                 '{0}broken_0{1}{2}.vmt'.format(mat_type, num, letter),
                 FileType.MATERIAL,
             )
+res('func_breakable_surf',
+    mdl('models/brokenglass_piece.mdl'),
+    includes='func_breakable',
+    )
 
 res('func_brush')
 res('func_conveyor')
@@ -133,6 +137,7 @@ def func_pushable(pack: PackList, ent: Entity) -> None:
 
 
 res('func_rotating', sound('DoorSound.Null'))
+
 
 # Subclass of that.
 @cls_func

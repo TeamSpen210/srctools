@@ -39,32 +39,34 @@ def npc_antlion(pack: PackList, ent: Entity):
         for size in ('small', 'medium', 'large'):
             pack.pack_file("models/gibs/antlion_gib_{}_{}.mdl".format(size, i), FileType.MODEL)
 
-    pack.pack_soundscript("NPC_Antlion.RunOverByVehicle")
-    pack.pack_soundscript("NPC_Antlion.MeleeAttack")
-    pack.pack_soundscript("NPC_Antlion.Footstep")
-    pack.pack_soundscript("NPC_Antlion.BurrowIn")
-    pack.pack_soundscript("NPC_Antlion.BurrowOut")
-    pack.pack_soundscript("NPC_Antlion.FootstepSoft")
-    pack.pack_soundscript("NPC_Antlion.FootstepHeavy")
-    pack.pack_soundscript("NPC_Antlion.MeleeAttackSingle")
-    pack.pack_soundscript("NPC_Antlion.MeleeAttackDouble")
-    pack.pack_soundscript("NPC_Antlion.Distracted")
-    pack.pack_soundscript("NPC_Antlion.Idle")
-    pack.pack_soundscript("NPC_Antlion.Pain")
-    pack.pack_soundscript("NPC_Antlion.Land")
-    pack.pack_soundscript("NPC_Antlion.WingsOpen")
-    pack.pack_soundscript("NPC_Antlion.LoopingAgitated")
-    pack.pack_soundscript("NPC_Antlion.Distracted")
+res('npc_antlion',
+    sound("NPC_Antlion.RunOverByVehicle"),
+    sound("NPC_Antlion.MeleeAttack"),
+    sound("NPC_Antlion.Footstep"),
+    sound("NPC_Antlion.BurrowIn"),
+    sound("NPC_Antlion.BurrowOut"),
+    sound("NPC_Antlion.FootstepSoft"),
+    sound("NPC_Antlion.FootstepHeavy"),
+    sound("NPC_Antlion.MeleeAttackSingle"),
+    sound("NPC_Antlion.MeleeAttackDouble"),
+    sound("NPC_Antlion.Distracted"),
+    sound("NPC_Antlion.Idle"),
+    sound("NPC_Antlion.Pain"),
+    sound("NPC_Antlion.Land"),
+    sound("NPC_Antlion.WingsOpen"),
+    sound("NPC_Antlion.LoopingAgitated"),
+    sound("NPC_Antlion.Distracted"),
 
     # TODO: These are Episodic only..
-    pack.pack_soundscript("NPC_Antlion.PoisonBurstScream")
-    pack.pack_soundscript("NPC_Antlion.PoisonBurstScreamSubmerged")
-    pack.pack_soundscript("NPC_Antlion.PoisonBurstExplode")
-    pack.pack_soundscript("NPC_Antlion.MeleeAttack_Muffled")
-    pack.pack_soundscript("NPC_Antlion.TrappedMetal")
-    pack.pack_soundscript("NPC_Antlion.ZappedFlip")
-    pack.pack_soundscript("NPC_Antlion.PoisonShoot")
-    pack.pack_soundscript("NPC_Antlion.PoisonBall")
+    sound("NPC_Antlion.PoisonBurstScream"),
+    sound("NPC_Antlion.PoisonBurstScreamSubmerged"),
+    sound("NPC_Antlion.PoisonBurstExplode"),
+    sound("NPC_Antlion.MeleeAttack_Muffled"),
+    sound("NPC_Antlion.TrappedMetal"),
+    sound("NPC_Antlion.ZappedFlip"),
+    sound("NPC_Antlion.PoisonShoot"),
+    sound("NPC_Antlion.PoisonBall"),
+)
 
 res('npc_antlion_grub',
     mdl("models/antlion_grub.mdl"),
@@ -93,9 +95,8 @@ def npc_antlion_template_maker(pack: PackList, ent: Entity):
         pack.pack_file("antlion_gib_02", FileType.PARTICLE)
         pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
 
-        for fname, ftype in CLASS_RESOURCES['grenade_spit']:
-            pack.pack_file(fname, ftype)
-            
+        pack_ent_class(pack, 'grenade_spit')
+
 res('npc_alyx',
     mdl('models/alyx_emptool_prop.mdl'),
     sound('npc_alyx.die'),
@@ -187,10 +188,6 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         # Special crowbar.
         pack.pack_file("models/props_canal/mattpipe.mdl", FileType.MODEL)
 
-    pack.pack_soundscript("NPC_Citizen.FootstepLeft")
-    pack.pack_soundscript("NPC_Citizen.FootstepRight")
-    pack.pack_soundscript("NPC_Citizen.Die")
-
     cit_type = conv_int(ent['citizentype'])
 
     if cit_type == 0:  # Default
@@ -223,7 +220,13 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         return
 
     for head in CIT_HEADS:
-        pack.pack_file('models/humans/{}/{}'.format(folder, head), FileType.MODEL)
+        pack.pack_file(f'models/humans/{folder}/{head}', FileType.MODEL)
+
+res('npc_citizen',
+    sound("NPC_Citizen.FootstepLeft"),
+    sound("NPC_Citizen.FootstepRight"),
+    sound("NPC_Citizen.Die"),
+    )
 
 res('npc_combine_camera',
     mdl("models/combine_camera/combine_camera.mdl"),
@@ -242,14 +245,6 @@ res('npc_combine_camera',
 @cls_func
 def npc_combinedropship(pack: PackList, ent: Entity) -> None:
     """The Combine Dropship may spawn with a variety of cargo types."""
-    pack.pack_file("models/combine_dropship.mdl", FileType.MODEL)
-    pack.pack_soundscript("NPC_CombineDropship.RotorLoop")
-    pack.pack_soundscript("NPC_CombineDropship.FireLoop")
-    pack.pack_soundscript("NPC_CombineDropship.NearRotorLoop")
-    pack.pack_soundscript("NPC_CombineDropship.OnGroundRotorLoop")
-    pack.pack_soundscript("NPC_CombineDropship.DescendingWarningLoop")
-    pack.pack_soundscript("NPC_CombineDropship.NearRotorLoop")
-
     cargo_type = conv_int(ent['cratetype'])
     if cargo_type == -3:  # Spawns a prop_dynamic Jeep
         pack.pack_file("models/buggy.mdl", FileType.MODEL)
@@ -262,6 +257,16 @@ def npc_combinedropship(pack: PackList, ent: Entity) -> None:
     #  0 = Roller Hopper, does nothing
     #  2 = No cargo
 
+res('npc_combinedropship',
+    mdl("models/combine_dropship.mdl"),
+    sound("NPC_CombineDropship.RotorLoop"),
+    sound("NPC_CombineDropship.FireLoop"),
+    sound("NPC_CombineDropship.NearRotorLoop"),
+    sound("NPC_CombineDropship.OnGroundRotorLoop"),
+    sound("NPC_CombineDropship.DescendingWarningLoop"),
+    sound("NPC_CombineDropship.NearRotorLoop"),
+    )
+
 
 @cls_func
 def npc_combinegunship(pack: PackList, ent: Entity) -> None:
@@ -273,29 +278,31 @@ def npc_combinegunship(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file("models/gunship.mdl", FileType.MODEL)
 
-    pack.pack_file("materials/sprites/lgtning.vmt", FileType.MATERIAL)
-    pack.pack_file("materials/effects/ar2ground2", FileType.MATERIAL)
-    pack.pack_file("materials/effects/blueblackflash", FileType.MATERIAL)
+res('npc_combinegunship',
+    mat("materials/sprites/lgtning.vmt"),
+    mat("materials/effects/ar2ground2"),
+    mat("materials/effects/blueblackflash"),
 
-    pack.pack_soundscript("NPC_CombineGunship.SearchPing")
-    pack.pack_soundscript("NPC_CombineGunship.PatrolPing")
-    pack.pack_soundscript("NPC_Strider.Charge")
-    pack.pack_soundscript("NPC_Strider.Shoot")
-    pack.pack_soundscript("NPC_CombineGunship.SeeEnemy")
-    pack.pack_soundscript("NPC_CombineGunship.CannonStartSound")
-    pack.pack_soundscript("NPC_CombineGunship.Explode")
-    pack.pack_soundscript("NPC_CombineGunship.Pain")
-    pack.pack_soundscript("NPC_CombineGunship.CannonStopSound")
+    sound("NPC_CombineGunship.SearchPing"),
+    sound("NPC_CombineGunship.PatrolPing"),
+    sound("NPC_Strider.Charge"),
+    sound("NPC_Strider.Shoot"),
+    sound("NPC_CombineGunship.SeeEnemy"),
+    sound("NPC_CombineGunship.CannonStartSound"),
+    sound("NPC_CombineGunship.Explode"),
+    sound("NPC_CombineGunship.Pain"),
+    sound("NPC_CombineGunship.CannonStopSound"),
 
-    pack.pack_soundscript("NPC_CombineGunship.DyingSound")
-    pack.pack_soundscript("NPC_CombineGunship.CannonSound")
-    pack.pack_soundscript("NPC_CombineGunship.RotorSound")
-    pack.pack_soundscript("NPC_CombineGunship.ExhaustSound")
-    pack.pack_soundscript("NPC_CombineGunship.RotorBlastSound")
+    sound("NPC_CombineGunship.DyingSound"),
+    sound("NPC_CombineGunship.CannonSound"),
+    sound("NPC_CombineGunship.RotorSound"),
+    sound("NPC_CombineGunship.ExhaustSound"),
+    sound("NPC_CombineGunship.RotorBlastSound"),
 
-    # TODO: if Episodic only
-    pack_ent_class(pack, 'env_citadel_energy_core')
-    pack.pack_file("materials/sprites/physbeam.vmt", FileType.MATERIAL)
+    # TODO: These two are Episodic only.
+    mat("materials/sprites/physbeam.vmt"),
+    includes='env_citadel_energy_core',
+    )
 
 res('npc_combine_cannon',
     mdl('models/combine_soldier.mdl'),
@@ -436,7 +443,7 @@ res('npc_headcrab_black',
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
     aliases='npc_headcrab_poison',
-    )
+)
 
 res('npc_headcrab_fast',
     mdl('models/headcrab.mdl'),
@@ -533,10 +540,13 @@ def npc_metropolice(pack: PackList, ent: Entity) -> None:
         pack.pack_file("models/police_cheaple.mdl", FileType.MODEL)
     else:
         pack.pack_file("models/police.mdl", FileType.MODEL)
-    pack.pack_soundscript("NPC_Metropolice.Shove")
-    pack.pack_soundscript("NPC_MetroPolice.WaterSpeech")
-    pack.pack_soundscript("NPC_MetroPolice.HidingSpeech")
-    # TODO: pack.pack_sentence_group("METROPOLICE")
+
+res('npc_metropolice',
+    sound("NPC_Metropolice.Shove"),
+    sound("NPC_MetroPolice.WaterSpeech"),
+    sound("NPC_MetroPolice.HidingSpeech"),
+    # TODO: pack.pack_sentence_group("METROPOLICE"),
+)
 
 res('npc_pigeon',
     mdl("models/pigeon.mdl"),
