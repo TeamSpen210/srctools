@@ -109,8 +109,38 @@ res('func_breakable_surf',
     )
 
 res('func_brush')
+
+@cls_func
+def func_button(pack: PackList, ent: Entity) -> None:
+    """Pack the legacy sound indexes."""
+    pack_button_sound(pack, ent['sounds'])
+    pack_button_sound(pack, ent['locked_sound'])
+    pack_button_sound(pack, ent['unlocked_sound'])
+    # TODO locked and unlocked sentences in HL1.
+    # locked_sentence -> ["NA", "ND", "NF", "NFIRE", "NCHEM", "NRAD", "NCON", "NH", "NG"]
+    # unlocked_sentence -> ["EA", "ED", "EF", "EFIRE", "ECHEM", "ERAD", "ECON", "EH"]
+
+
 res('func_conveyor')
 res('func_clip_vphysics')
+
+
+res('func_door',
+    # Defaults if unspecified.
+    sound('DoorSound.DefaultMove'),
+    sound('DoorSound.DefaultArrive'),
+    sound('DoorSound.DefaultLocked'),
+    sound('DoorSound.Null'),
+    # Todo: also locked and unlocked sentences in HL1.
+    )
+res('func_door_rotating',
+    # Defaults if unspecified.
+    sound('RotDoorSound.DefaultMove'),
+    sound('RotDoorSound.DefaultArrive'),
+    sound('RotDoorSound.DefaultLocked'),
+    sound('DoorSound.Null'),
+    )
+
 res('func_dust', mat('materials/particle/sparkles.vmt'))
 res('func_dustcloud', mat('materials/particle/sparkles.vmt'))
 res('func_dustmotes', mat('materials/particle/sparkles.vmt'))
@@ -123,7 +153,19 @@ res('func_healthcharger',
     )
 res('func_illusionary')
 res('func_instance_io_proxy')
+
+
+@cls_func
+def momentary_rot_button(pack: PackList, ent: Entity) -> None:
+    """Inherits from func_button, but doesn't always use 'sounds'."""
+    if conv_int(ent['spawnflags']) & 1024:  # USE_ACTIVATES
+        pack_button_sound(pack, ent['sounds'])
+    pack_button_sound(pack, ent['locked_sound'])
+    pack_button_sound(pack, ent['unlocked_sound'])
+
 res('func_movelinear', aliases='momentary_door')
+res('func_noportal_volume')
+res('func_null')
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
@@ -195,4 +237,12 @@ res('func_recharge',
     sound('SuitRecharge.Start'),
     sound('SuitRecharge.ChargingLoop'),
     )
+
+
+@cls_func
+def func_rot_button(pack: PackList, ent: Entity) -> None:
+    """Inherits from func_button."""
+    func_button(pack, ent)
+
+res('func_water', includes='func_door')  # Same class.
 res('func_weight_button')

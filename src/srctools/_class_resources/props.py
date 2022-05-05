@@ -138,3 +138,4 @@ res('prop_wall_projector',
     )
 res('prop_ragdoll', aliases='physics_prop_ragdoll')
 res('prop_scalable')
+res('prop_vehicle_crane', includes='crane_tip')

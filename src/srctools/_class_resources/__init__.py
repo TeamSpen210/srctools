@@ -186,6 +186,7 @@ def color_correction_volume(pack: PackList, ent: Entity) -> None:
 res('commentary_auto')
 res('commentary_dummy')
 res('commentary_zombie_spawner')
+res('crane_tip', mdl('models/props_junk/cardboard_box001a.mdl'))  # Needs a physics object.
 res('crossbow_bolt',
     mdl('models/crossbow_bolt.mdl'),
     mat('materials/sprites/light_glow02_noz.vmt'),
@@ -197,6 +198,7 @@ res('cycler_weapon')
 res('cycler_wreckage')
 res('ent_watery_leech', mdl("models/leech.mdl"))
 
+res('entity_blocker')
 res('event_queue_saveload_proxy')
 res('fish')
 res('floorturret_tipcontroller')
@@ -253,6 +255,7 @@ res('info_camera_link')
 res('info_darknessmode_lightsource')
 res('info_hint')
 res('info_ladder_dismount')
+res('info_landmark')
 res('info_lighting_relative')
 res('info_mass_center')
 res('info_node')
@@ -268,6 +271,13 @@ res('info_node_link_oneway')
 res('info_null')
 res('info_overlay_accessor')
 res('info_particle_system')  # Particle packed by FGD database.
+res('info_player_counterterrorist')
+res('info_player_deathmatch')
+res('info_player_marine')
+res('info_player_scientist')
+res('info_player_start')
+res('info_player_teamspawn')
+res('info_player_terrorist')
 res('info_radial_link_controller')
 res('info_remarkable')
 res('info_snipertarget')
@@ -319,11 +329,33 @@ res('passtime_ball',
 )
 
 res('phys_bone_follower')
+res('phys_constraint')  # Constraints just have sound KVs.
+res('phys_constraintsystem')
+res('phys_convert')
+res('phys_hinge')
+res('phys_keepupright')
+res('phys_lengthconstraint')
+res('phys_magnet')
+res('phys_motor')  # model in KVs
+res('phys_pulleyconstraint')
+res('phys_ragdollconstraint')
+res('phys_ragdollmagnet')
+res('phys_slideconstraint')
+res('phys_spring')
+res('phys_thruster')
+res('phys_torque')
+
 res('physics_cannister')  # All in KVs.
 res('physics_entity_solver')
 res('physics_npc_solver')
 
 res('point_advanced_finder')
+res('point_antlion_repellant')
+res('point_apc_controller')
+res('point_bonusmaps_accessor')
+res('point_broadcastclientcommand')
+res('point_bugbait')
+res('point_clientcommand')
 res('point_commentary_node',
     mdl('models/extras/info_speech.mdl'),
     includes='point_commentary_viewpoint',
@@ -348,6 +380,7 @@ res('point_prop_use_target')
 res('point_proximity_sensor')
 res('point_push')
 res('point_ragdollboogie', includes='env_ragdoll_boogie')
+res('point_servercommand')
 res('point_spotlight',
     'materials/sprites/light_glow03.vmt',
     'materials/sprites/glow_test02.vmt',
