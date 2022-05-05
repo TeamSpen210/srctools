@@ -35,23 +35,31 @@ cdef:
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
 
+    object COLON = Token.COLON
+    object EQUALS = Token.EQUALS
+    object PLUS = Token.PLUS
+    object COMMA = Token.COMMA
+
     object BRACE_OPEN = Token.BRACE_OPEN
     object BRACE_CLOSE = Token.BRACE_CLOSE
+
+    object BRACK_OPEN = Token.BRACK_OPEN
+    object BRACK_CLOSE = Token.BRACK_CLOSE
 
     # Reuse a single tuple for these, since the value is constant.
     tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
 
-    tuple COLON_TUP = (Token.COLON, ':')
-    tuple EQUALS_TUP = (Token.EQUALS, '=')
-    tuple PLUS_TUP = (Token.PLUS, '+')
-    tuple COMMA_TUP = (Token.COMMA, ',')
+    tuple COLON_TUP = (COLON, ':')
+    tuple EQUALS_TUP = (EQUALS, '=')
+    tuple PLUS_TUP = (PLUS, '+')
+    tuple COMMA_TUP = (COMMA, ',')
 
     tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
     tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
 
-    tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
-    tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
+    tuple BRACK_OPEN_TUP = (BRACK_OPEN, '[')
+    tuple BRACK_CLOSE_TUP = (BRACK_CLOSE, ']')
 
     uchar *EMPTY_BUF = b''  # Initial value, just so it's valid.
 
@@ -169,11 +177,41 @@ cdef class BaseTokenizer:
         if type(message) is Token:  # We know no subclasses exist..
             if len(args) > 1:
                 raise TypeError(f'Token {message.name} passed with multiple values: {args}')
-            if len(args) == 1 and (message is STRING or message is PAREN_ARGS or message is PROP_FLAG or message is DIRECTIVE):
-                tok_val = <str?>args[0]
-                str_msg = f'Unexpected token {message.name}({tok_val})!'
+
+            tok_val = '' if len(args) == 0 else args[0]
+            if tok_val is None:
+                raise TypeError('Token value should not be None!')
+
+            if message is PROP_FLAG:
+                str_msg = f'Unexpected property flags = [{tok_val}]!'
+            elif message is PAREN_ARGS:
+                str_msg = f'Unexpected parentheses block = ({tok_val})!'
+            elif message is STRING:
+                str_msg = f'Unexpected string = "{tok_val}"!'
+            elif message is DIRECTIVE:
+                str_msg = f'Unexpected directive "#{tok_val}"!'
+            elif message is EOF:
+                str_msg = 'File ended unexpectedly!'
+            elif message is NEWLINE:
+                str_msg = 'Unexpected newline!'
+            elif message is BRACE_OPEN:
+                str_msg = 'Unexpected "{"'
+            elif message is BRACE_CLOSE:
+                str_msg = 'Unexpected "}"'
+            elif message is BRACK_OPEN:
+                str_msg = 'Unexpected "["'
+            elif message is BRACK_CLOSE:
+                str_msg = 'Unexpected "]"'
+            elif message is COLON:
+                str_msg = 'Unexpected ":"'
+            elif message is EQUALS:
+                str_msg = 'Unexpected "="'
+            elif message is PLUS:
+                str_msg = 'Unexpected "+"'
+            elif message is COMMA:
+                str_msg = 'Unexpected ","'
             else:
-                str_msg = f'Unexpected token {message.name}' '!'
+                raise RuntimeError(message)
         elif args:
             str_msg = message.format(*args)
         else:

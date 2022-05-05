@@ -90,7 +90,7 @@ class Token(Enum):
         """If true, this type has an associated value."""
         return self.value in (1, 3, 4, 10)
 
-_PUSHBACK_VALS = {
+_OPERATOR_VALS = {
     Token.EOF: '',
     Token.NEWLINE: '\n',
 
@@ -186,10 +186,22 @@ class BaseTokenizer(abc.ABC):
         if isinstance(message, Token):
             if len(args) > 1:
                 raise TypeError(f'Token {message.name} passed with multiple values: {args}')
-            if message.has_value and len(args) == 1:
-                message = f'Unexpected token {message.name}({args[0]})!'
+            tok_val = '' if len(args) == 0 else args[0]
+
+            if message is Token.PROP_FLAG:
+                message = f'Unexpected property flags = [{tok_val}]!'
+            elif message is Token.PAREN_ARGS:
+                message = f'Unexpected parentheses block = ({tok_val})!'
+            elif message is Token.STRING:
+                message = f'Unexpected string = "{tok_val}"!'
+            elif message is Token.DIRECTIVE:
+                message = f'Unexpected directive "#{tok_val}"!'
+            elif message is Token.EOF:
+                message = 'File ended unexpectedly!'
+            elif message is Token.NEWLINE:
+                message = 'Unexpected newline!'
             else:
-                message = f'Unexpected token {message.name}!'
+                message = f'Unexpected "{_OPERATOR_VALS[message]}"'
         elif args:
             message = message.format(*args)
         return self.error_type(
@@ -243,7 +255,7 @@ class BaseTokenizer(abc.ABC):
             raise ValueError(repr(tok) + ' is not a Token!')
 
         try:
-            value = _PUSHBACK_VALS[tok]
+            value = _OPERATOR_VALS[tok]
         except KeyError:
             if value is None:
                 raise ValueError('Value required for {!r}!'.format(tok.name)) from None

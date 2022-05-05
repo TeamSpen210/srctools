@@ -17,7 +17,7 @@ from srctools.tokenizer import (
     Cy_BaseTokenizer, Py_BaseTokenizer,
     Cy_IterTokenizer, Py_IterTokenizer,
     escape_text, _py_escape_text,
-    TokenSyntaxError, _PUSHBACK_VALS as TOK_VALS,
+    TokenSyntaxError, _OPERATOR_VALS as TOK_VALS,
 )
 
 T = Token
@@ -653,34 +653,32 @@ def test_tok_error(py_c_token):
     assert tok.error('Param: {:.6f}, {!r}, {}', 1/3, "test", test_tok_error) == TokenSyntaxError(f"Param: {1/3:.6f}, 'test', {test_tok_error}", None, 9999)
 
 
-@pytest.mark.parametrize('token', [
-    Token.STRING,
-    Token.PROP_FLAG,
-    Token.PAREN_ARGS,
-    Token.DIRECTIVE,
-])
-def test_tok_error_hasval(py_c_token, token):
-    """Test the tok.error() handler with token types that accept values."""
-    tok: Tokenizer = py_c_token(['test'], 'fname')
-    tok.line_num = 23
-    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
-    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}(value)!', 'fname', 23)
-    with pytest.raises(TypeError):
-        tok.error(token, 'val1', 'val2')
+error_messages = {
+    Token.STRING: 'Unexpected string = "%"!',
+    Token.PROP_FLAG: 'Unexpected property flags = [%]!',
+    Token.PAREN_ARGS: 'Unexpected parentheses block = (%)!',
+    Token.DIRECTIVE: 'Unexpected directive "#%"!',
+    Token.EOF: 'File ended unexpectedly!',
+    Token.NEWLINE: 'Unexpected newline!',
+    Token.BRACE_OPEN: 'Unexpected "{"',
+    Token.BRACE_CLOSE: 'Unexpected "}"',
+    Token.BRACK_OPEN: 'Unexpected "["',
+    Token.BRACK_CLOSE: 'Unexpected "]"',
+    Token.COLON: 'Unexpected ":"',
+    Token.COMMA: 'Unexpected ","',
+    Token.EQUALS: 'Unexpected "="',
+    Token.PLUS: 'Unexpected "+"',
+}
 
 
-@pytest.mark.parametrize('token', [
-    Token.EOF, Token.NEWLINE,
-    Token.BRACE_OPEN, Token.BRACE_CLOSE,
-    Token.BRACK_OPEN, Token.BRACK_CLOSE,
-    Token.COLON, Token.EQUALS, Token.PLUS,
-])
-def test_tok_error_noval(py_c_token, token):
-    """Test the tok.error() handler with token types that have the same value always."""
+@pytest.mark.parametrize('token', Token)
+def test_tok_error_messages(py_c_token: Type[Tokenizer], token: Token) -> None:
+    """Test the tok.error() handler with token types."""
+    fmt = error_messages[token]  # If KeyError, needs to be updated.
     tok: Tokenizer = py_c_token(['test'], 'fname')
     tok.line_num = 23
-    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
-    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
+    assert tok.error(token) == TokenSyntaxError(fmt.replace('%', ''), 'fname', 23)
+    assert tok.error(token, 'the value') == TokenSyntaxError(fmt.replace('%', 'the value'), 'fname', 23)
     with pytest.raises(TypeError):
         tok.error(token, 'val1', 'val2')
 
