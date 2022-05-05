@@ -7,7 +7,7 @@ should be imported from packlist instead.
 from typing import Callable, TypeVar, Tuple, Union, List, Dict, Iterable
 
 from ..packlist import FileType, PackList
-from .. import Entity, conv_int
+from .. import VMF, Entity, conv_int
 
 #  For various entity classes, we know they require hardcoded files.
 # List them here - classname -> [(file, type), ...]
@@ -20,6 +20,7 @@ CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]] = {}
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
 INCLUDES: Dict[str, List[str]] = {}
 ALT_NAMES: Dict[str, str] = {}
+_blank_vmf = VMF(preserve_ids=False)
 
 
 def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', aliases: str='') -> None:
@@ -49,6 +50,8 @@ def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', al
 def cls_func(func: ClassFuncT) -> ClassFuncT:
     """Save a function to do special checks for a classname."""
     CLASS_FUNCS[func.__name__] = func
+    # Ensure this is also defined.
+    CLASS_RESOURCES.setdefault(func.__name__, ())
     return func
 
 
@@ -108,12 +111,17 @@ def choreo(path: str) -> Tuple[str, FileType]:
 
 
 def pack_ent_class(pack: PackList, clsname: str) -> None:
-    """Call to pack another entity class."""
+    """Call to pack another entity class generically."""
     reslist = CLASS_RESOURCES[clsname]
-    if clsname in CLASS_FUNCS:
-        raise ValueError(f"Can't pack \"{clsname}\", it has a custom function!")
     for fname, ftype in reslist:
         pack.pack_file(fname, ftype)
+    try:
+        cls_function = CLASS_FUNCS[clsname]
+    except KeyError:
+        pass
+    else:
+        # Create a dummy entity so we can call.
+        cls_function(pack, Entity(_blank_vmf, keys={'classname': clsname}))
 
 
 def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:

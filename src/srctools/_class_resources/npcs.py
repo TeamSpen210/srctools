@@ -514,6 +514,17 @@ res('npc_hunter',
 
     includes="hunter_flechette sparktrail",
     )
+
+
+@cls_func
+def npc_maker(pack: PackList, ent: Entity) -> None:
+    """We spawn the NPC automatically."""
+    try:
+        pack_ent_class(pack, ent['npctype'])
+    except ValueError:
+        # Dependent on keyvalues.
+        pass
+
 res('npc_manhack',
     mdl("models/manhack.mdl"),
     mat("materials/sprites/glow1.vmt"),
