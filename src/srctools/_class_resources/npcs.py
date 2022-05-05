@@ -34,11 +34,6 @@ def npc_antlion(pack: PackList, ent: Entity):
         pack.pack_file("models/antlion.mdl", FileType.MODEL)
         pack.pack_file("blood_impact_antlion_01")
         pack.pack_file("AntlionGib", FileType.PARTICLE)
-
-    for i in ('1', '2', '3'):
-        for size in ('small', 'medium', 'large'):
-            pack.pack_file("models/gibs/antlion_gib_{}_{}.mdl".format(size, i), FileType.MODEL)
-
 res('npc_antlion',
     sound("NPC_Antlion.RunOverByVehicle"),
     sound("NPC_Antlion.MeleeAttack"),
@@ -66,6 +61,11 @@ res('npc_antlion',
     sound("NPC_Antlion.ZappedFlip"),
     sound("NPC_Antlion.PoisonShoot"),
     sound("NPC_Antlion.PoisonBall"),
+    *[
+        mdl("models/gibs/antlion_gib_{}_{}.mdl".format(size, i))
+        for i in ('1', '2', '3')
+        for size in ('small', 'medium', 'large')
+    ]
 )
 
 res('npc_antlion_grub',
