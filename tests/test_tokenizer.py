@@ -1,5 +1,5 @@
 from itertools import zip_longest, tee
-from typing import Type, Tuple
+from typing import Callable, Iterator, Type, Tuple
 
 import pytest
 import codecs
@@ -359,7 +359,7 @@ def test_star_comments(py_c_token):
         pass
 
 
-def test_bom(py_c_token):
+def test_bom(py_c_token: Type[Tokenizer]) -> None:
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
 
@@ -404,7 +404,7 @@ def test_bom(py_c_token):
     check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
 
 
-def test_constructor(py_c_token):
+def test_constructor(py_c_token: Type[Tokenizer]) -> None:
     """Test various argument syntax for the tokenizer."""
     Tokenizer = py_c_token
 
@@ -416,7 +416,7 @@ def test_constructor(py_c_token):
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
 
-def test_tok_filename(py_c_token):
+def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     """Test that objects other than a direct string can be passed as filename."""
     Tokenizer = py_c_token
 
@@ -481,7 +481,7 @@ def test_obj_config(py_c_token, parm: str, default: bool) -> None:
     ("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜", r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"),
 ])
 @pytest.mark.parametrize('func', [_py_escape_text, escape_text], ids=['Py', 'Cy'])
-def test_escape_text(inp: str, out: str, func) -> None:
+def test_escape_text(inp: str, out: str, func: Callable[[str], str]) -> None:
     """Test the Python and C escape_text() functions."""
     assert func(inp) == out
     # If the same it should reuse the string.
@@ -490,7 +490,7 @@ def test_escape_text(inp: str, out: str, func) -> None:
         assert func(inp) is inp
 
 
-def test_brackets(py_c_token):
+def test_brackets(py_c_token: Type[Tokenizer]) -> None:
     """Test the [] handling produces the right results."""
     check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=True), [
         (Token.STRING, "blah"),
@@ -562,7 +562,7 @@ def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
     ])
 
 
-def test_invalid_bracket(py_c_token: Type[Tokenizer]):
+def test_invalid_bracket(py_c_token: Type[Tokenizer]) -> None:
     """Test detecting various invalid combinations of [] brackets."""
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
@@ -581,7 +581,7 @@ def test_invalid_bracket(py_c_token: Type[Tokenizer]):
             pass
 
 
-def test_invalid_paren(py_c_token):
+def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
             pass
@@ -641,7 +641,7 @@ Error occurred on line 45, with file "a file".'''
 Error occurred on line 250.'''
 
 
-def test_tok_error(py_c_token):
+def test_tok_error(py_c_token) -> None:
     """Test the tok.error() helper."""
     tok: Tokenizer = py_c_token(['test'], 'filename.py')
     tok.line_num = 45
@@ -683,9 +683,9 @@ def test_tok_error_messages(py_c_token: Type[Tokenizer], token: Token) -> None:
         tok.error(token, 'val1', 'val2')
 
 
-def test_unicode_error_wrapping(py_c_token):
+def test_unicode_error_wrapping(py_c_token: Type[Tokenizer]) -> None:
     """Test that Unicode errors are wrapped into TokenSyntaxError."""
-    def raises_unicode():
+    def raises_unicode() -> Iterator[str]:
         yield "line of_"
         yield "text\n"
         raise UnicodeDecodeError('utf8', bytes(100), 1, 2, 'reason')
@@ -698,12 +698,12 @@ def test_unicode_error_wrapping(py_c_token):
     assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
 
 
-def test_early_binary_arg(py_c_token):
+def test_early_binary_arg(py_c_token: Type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
 
-def test_block_iter(py_c_token):
+def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     """Test the Tokenizer.block() helper."""
     # First two correct usages:
     tok = py_c_token('''\
