@@ -92,7 +92,7 @@ def test_fixup_substitution() -> None:
     assert ent.fixup.substitute('prefix$varsuffix') == 'prefixoutsuffix'
     with raises(KeyError) as exc:
         ent.fixup.substitute('$notPRESent')
-    assert exc.value.args == ('$notPRESent', )
+    assert '$notPRESent' in str(exc)
 
     assert ent.fixup.substitute('blah_$notPresent45:more', 'def') == 'blah_def:more'
     # Potential edge case - 1-long var.
@@ -129,7 +129,7 @@ def test_fixup_substitution_invert() -> None:
     assert ent.fixup.substitute('$true $false') == '1 0'
     assert ent.fixup.substitute('$true $false', allow_invert=True) == '1 0'
 
-    # If unspecified, the ! is left intact.
+    # If unspecified, the "!" is left intact.
     assert ent.fixup.substitute('A!$trueB_C!$falseD') == 'A!1B_C!0D'
     # When specified, it doesn't affect other values.
     assert ent.fixup.substitute('A!$trueB_C!$falseD', allow_invert=True) == 'A0B_C1D'

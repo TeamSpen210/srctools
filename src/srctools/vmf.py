@@ -2575,8 +2575,8 @@ class EntityFixup(MutableMapping[str, str]):
     """A specialised mapping which keeps track of the variable indexes.
 
     This treats variable names case-insensitively, and optionally allows
-    writing variables with $ signs in front. The first assigned name for each
-    key is preserved however.
+    writing variables with $ signs in front. The case of the first assigned
+    name for each key is preserved.
 
     Additionally, lookups never fail - returning '' instead. Pass in a non-string
     default or use `in` to distinguish,.
@@ -2742,7 +2742,7 @@ class EntityFixup(MutableMapping[str, str]):
         return _EntityFixupValues(self)
 
     def export(self, buffer: IO[str], ind: str) -> None:
-        """Export all the replace values into the VMF."""
+        """Export all the fixup values into the VMF."""
         for fixup in sorted(self._fixup.values(), key=operator.attrgetter('id')):
             # When exporting, pad the index with zeros if needed
             buffer.write(
@@ -2778,33 +2778,30 @@ class EntityFixup(MutableMapping[str, str]):
         If allow_invert is enabled, a variable can additionally be specified
         like !$var to cause it to be inverted when substituted.
         """
-        if '$' not in text:
+        if '$' not in text:  # Early out, cannot substitute.
             return text
 
-        # Cache the pattern used, we can reuse it whenever called again without
-        # adding new variables.
+        # Cache the pattern used, we can reuse it whenever called again without adding new variables.
         if self._matcher is None:
             # Sort longer values first, so they are checked before smaller
             # counterparts.
-            sections = [
-                re.escape(key)
-                for key in
-                sorted(self._fixup.keys(), key=len, reverse=True)
-            ]
+            sections = map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True))
             # ! maybe, $, any known fixups, then a default any-identifier check.
             self._matcher = re.compile(
                 rf'(!)?\$({"|".join(sections)}|[a-z_][a-z0-9_]*)',
                 re.IGNORECASE,
             )
 
+        fixup = self._fixup  # Avoid making self a cell var.
+
         def replacer(match: 'Match[str]') -> str:
             """Handles the replacement semantics."""
             has_inv, varname = match.groups()
             try:
-                res = self._fixup[varname.casefold()].value
+                res = fixup[varname.casefold()].value
             except KeyError:
                 if default is None:
-                    raise KeyError('$' + varname) from None
+                    raise KeyError(f'${varname} not found, known: {["$"+var.var for var in fixup.values()]}') from None
                 res = default
             if has_inv is not None:
                 if allow_invert:
