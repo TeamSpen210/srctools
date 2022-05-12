@@ -1071,22 +1071,3 @@ class SheetSequence:
                     file.write(struct.pack('<4f', *tex_d))
 
         return file.getvalue()
-
-# Add support for the imghdr module.
-
-
-def test_vtf(h: bytes, f: Optional[BinaryIO]) -> Optional[str]:
-    """Source Engine Valve Texture Format."""
-    if h[:4] == b'VTF\0':
-        try:
-            version_major, version_minor = struct.unpack('II', h[4:12])
-        except struct.error:
-            return None
-        if version_major == 7 and (0 <= version_minor <= 5):
-            return 'source_vtf'
-    return None
-
-import imghdr
-imghdr.test_vtf = test_vtf  # type: ignore
-imghdr.tests.append(test_vtf)
-del imghdr, test_vtf
