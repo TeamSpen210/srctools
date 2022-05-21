@@ -53,6 +53,7 @@ HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
 FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
+OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
@@ -457,7 +458,7 @@ class TexData:
         if mat_folded[-4] != '.':
             mat_fname += '.vmt'
 
-        with fsys, fsys[mat_fname].open_str() as tfile:
+        with fsys[mat_fname].open_str() as tfile:
             mat = Material.parse(tfile, mat_name)
             mat.apply_patches(fsys)
 
@@ -2179,7 +2180,7 @@ class BSP:
         for block, fades, sys_levels in itertools.zip_longest(
             struct.iter_unpack(
                 '<ihH'  # id, texinfo, face-and-render-order
-                '64i'  # face array.
+                f'{OVERLAY_FACE_COUNT}i'  # face array.
                 '4f'  # UV min/max
                 '18f',  # 4 handle points, origin, normal
                 data,
@@ -2193,8 +2194,8 @@ class BSP:
             over_id, texinfo, face_ro = block[:3]
             face_count = face_ro & ((1 << 14) - 1)
             render_order = face_ro >> 14
-            if face_count > 64:
-                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            if face_count > OVERLAY_FACE_COUNT:
+                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             faces = list(block[3: 3 + face_count])
             u_min, u_max, v_min, v_max = block[67:71]
             uv1 = Vec(block[71:74])
@@ -2235,8 +2236,8 @@ class BSP:
         levels_buf = BytesIO()
         for over in overlays:
             face_cnt = len(over.faces)
-            if face_cnt > 64:
-                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            if face_cnt > OVERLAY_FACE_COUNT:
+                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
             levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
@@ -2246,7 +2247,7 @@ class BSP:
                 (over.render_order << 14 | face_cnt),
             )
             # Build the array, then zero fill the remaining space.
-            yield struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces)
+            yield struct.pack(f'<{face_cnt}i {4*(OVERLAY_FACE_COUNT-face_cnt)}x', *over.faces)
             yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
             yield struct.pack(
                 '<18f',
