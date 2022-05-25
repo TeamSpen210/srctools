@@ -18,7 +18,7 @@ import warnings
 import attr
 import os
 
-from srctools import AtomicWriter, conv_int
+from srctools import AtomicWriter, conv_int, logger
 from srctools.math import Vec, Angle
 from srctools.filesys import FileSystem
 from srctools.vtf import VTF
@@ -54,6 +54,7 @@ HEADER_2 = '<i'  # Header section after the lumps.
 FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
 FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
 OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
+TEXINFO_IND_TYPE = 'h' # The type used to index into texinfo (i or h).
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
@@ -61,6 +62,8 @@ KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't han
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
 LMP_ID_DETAIL_PROPS = b'dprp'
+
+LOGGER = logger.get_logger(__name__)
 
 
 class VERSIONS(Enum):
@@ -471,7 +474,7 @@ class TexData:
             tex_name += '.vtf'
 
         try:
-            with fsys, fsys[tex_name].open_bin() as bfile:
+            with fsys[tex_name].open_bin() as bfile:
                 vtf = VTF.read(bfile)
                 reflect = vtf.reflectivity.copy()
                 width, height = vtf.width, vtf.height
@@ -1059,9 +1062,11 @@ class ParsedLump(Generic[T]):
         result: T
         if isinstance(self.lump, bytes):  # Game lump
             gm_lump = instance.game_lumps[self.lump]
+            LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
             result = self._read(instance, gm_lump.version, gm_lump.data)
         else:
             data = instance.lumps[self.lump].data
+            LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
             result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
             result = list(result)  # type: ignore
@@ -1655,7 +1660,10 @@ class BSP:
             prim_num,
             prim_first,
             smoothing_group,
-        ) in enumerate(struct.iter_unpack('<H??i4h4sif5iHHI', data)):
+        ) in enumerate(struct.iter_unpack(
+            f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
+            data,
+        )):
             # If orig faces is provided, that is the original face
             # we were created from. Additionally, it seems the original
             # face data has invalid texinfo, so copy ours on top of it.
@@ -1721,7 +1729,7 @@ class BSP:
 
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
-                '<H??i4h4sif5iHHI',
+                f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
                 add_plane(face.plane),
                 face.same_dir_as_plane,
                 face.on_node,
@@ -1758,7 +1766,7 @@ class BSP:
         sides = [
             BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
             for (plane_num, texinfo, dispinfo, bevel)
-            in struct.iter_unpack('<Hhhh', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            in struct.iter_unpack('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
         ]
         for first_side, side_count, contents in struct.iter_unpack('<iii', data):
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
@@ -1777,9 +1785,10 @@ class BSP:
                 add_sides(brush.sides), len(brush.sides),
                 brush.contents.value,
             ))
+
+        side_struct = struct.Struct('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH')
         for side in sides:
-            sides_buf.write(struct.pack(
-                '<Hhhh',
+            sides_buf.write(side_struct.pack(
                 add_plane(side.plane),
                 add_texinfo(side.texinfo),
                 side._dispinfo,
@@ -2025,6 +2034,7 @@ class BSP:
                     '<3f5i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
                     find_or_add_texture(tdat.mat),
+                    # Second set is the 'view' width/height, always the same.
                     tdat.width, tdat.height, tdat.width, tdat.height,
                 ))
             texinfo_result.append(struct.pack(
@@ -2187,7 +2197,9 @@ class BSP:
         # are empty.
         for block, fades, sys_levels in itertools.zip_longest(
             struct.iter_unpack(
-                '<ihH'  # id, texinfo, face-and-render-order
+                '<i'  # ID
+                # texinfo, face-and-render-order
+                f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}' 
                 f'{OVERLAY_FACE_COUNT}i'  # face array.
                 '4f'  # UV min/max
                 '18f',  # 4 handle points, origin, normal
@@ -2249,7 +2261,8 @@ class BSP:
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
             levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
-                '<ihH',
+                # texinfo, face-and-render-order
+                '<iiHxx' if TEXINFO_IND_TYPE == "i" else '<ihH',
                 over.id,
                 add_texinfo(over.texture),
                 (over.render_order << 14 | face_cnt),
