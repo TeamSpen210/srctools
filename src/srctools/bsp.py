@@ -2173,7 +2173,7 @@ class BSP:
                 cube.size,
             )
 
-    def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
+    def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
         # Use zip longest, so we handle cases where these newer auxiliary lumps
         # are empty.
@@ -2197,14 +2197,14 @@ class BSP:
             if face_count > OVERLAY_FACE_COUNT:
                 raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             faces = list(block[3: 3 + face_count])
-            u_min, u_max, v_min, v_max = block[67:71]
-            uv1 = Vec(block[71:74])
-            uv2 = Vec(block[74:77])
-            uv3 = Vec(block[77:80])
-            uv4 = Vec(block[80:83])
-            origin = Vec(block[83:86])
-            normal = Vec(block[86:89])
-            assert len(block) == 89
+            u_min, u_max, v_min, v_max = block[-22:-18]
+            uv1 = Vec(block[-18:-15])
+            uv2 = Vec(block[-15:-12])
+            uv3 = Vec(block[-12:-9])
+            uv4 = Vec(block[-9:-6])
+            origin = Vec(block[-6:-3])
+            normal = Vec(block[-3:])
+            assert len(block) == 25 + OVERLAY_FACE_COUNT
 
             if fades is not None:
                 fade_min, fade_max = fades
@@ -2229,7 +2229,7 @@ class BSP:
                 min_gpu, max_gpu
             )
 
-    def _lmp_write_overlays(self, overlays: List['Overlay']) -> Iterator[bytes]:
+    def _lmp_write_overlays(self, overlays: List[Overlay]) -> Iterator[bytes]:
         """Write out all overlays."""
         add_texinfo = _find_or_insert(self.texinfo)
         fade_buf = BytesIO()
