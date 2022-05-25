@@ -674,6 +674,7 @@ class Face:
     lightmap_size: Tuple[int, int]
     orig_face: Optional['Face']
     primitives: List[Primitive]
+    dynamic_shadows: bool
     smoothing_groups: int
     hammer_id: Optional[int]  # The original ID of the Hammer face.
 
@@ -1683,7 +1684,8 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                self.primitives[prim_first:prim_first + prim_num],
+                self.primitives[prim_first:prim_first + (prim_num & 0x7fff)],
+                not (prim_num & 0x8000),
                 smoothing_group,
                 hammer_id,
             )
@@ -1711,6 +1713,11 @@ class BSP:
                 texinfo = add_texinfo(face.texinfo)
             else:
                 texinfo = -1
+            prim_count = len(face.primitives)
+            if prim_count > 0x7fff:
+                raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
+            if not face.dynamic_shadows:
+                prim_count |= 0x8000
 
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
@@ -1727,7 +1734,8 @@ class BSP:
                 face.area,
                 *face.lightmap_mins, *face.lightmap_size,
                 orig_ind,
-                len(face.primitives), add_prims(face.primitives),
+                prim_count,
+                add_prims(face.primitives),
                 face.smoothing_groups,
             ))
         if hammer_ids:
