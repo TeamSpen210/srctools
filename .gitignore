@@ -38,12 +38,6 @@ Icon
 *.prt
 *.filelist.txt
 
-# Disttools
-build/
-dist/
-srctools.egg-info/
-
-
 # C extensions
 *.so
 
@@ -102,5 +96,5 @@ srctools/*.html
 
 .cache
 
-# Versions of package and postcompiler
+# Version of the package
 _version.py
