@@ -10,11 +10,11 @@ import collections
 from collections import defaultdict
 from typing import Optional, Dict, Set
 
-import attr
+import attrs
 from srctools.vmt import VarType
 
 
-@attr.frozen
+@attrs.frozen
 class Var:
     """A shader var."""
     name: str
@@ -123,14 +123,14 @@ def process(filename: str, args: str) -> None:
             # but we don't care about help etc.
             if var.default != other.default:
                 if isinstance(other.default, frozenset):
-                    var = attr.evolve(var, default=other.default | {var.default})
+                    var = attrs.evolve(var, default=other.default | {var.default})
                 else:
-                    var = attr.evolve(var, default=frozenset({var.default, other.default}))
+                    var = attrs.evolve(var, default=frozenset({var.default, other.default}))
 
                 if isinstance(other.filename, frozenset):
-                    var = attr.evolve(var, filename=other.filename | {var.filename})
+                    var = attrs.evolve(var, filename=other.filename | {var.filename})
                 else:
-                    var = attr.evolve(var, filename=frozenset({var.filename, other.filename}))
+                    var = attrs.evolve(var, filename=frozenset({var.filename, other.filename}))
         else:
             # Different types, major issue.
             CONFLICTS[name].add(var)

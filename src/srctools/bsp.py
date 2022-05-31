@@ -18,7 +18,7 @@ import warnings
 import os
 
 from atomicwrites import atomic_write
-import attr
+import attrs
 
 from srctools import conv_int, logger
 from srctools.math import Vec, Angle
@@ -388,7 +388,7 @@ class DetailPropOrientation(Enum):
     SCREEN_ALIGNED_VERTICAL = 2
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Lump:
     """Represents a lump header in a BSP file.
 
@@ -403,7 +403,7 @@ class Lump:
         return f'<BSP Lump {self.type.name!r}, v{self.version}, {len(self.data)} bytes>'
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class GameLump:
     """Represents a game lump.
 
@@ -438,7 +438,7 @@ class GameLump:
         )
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class TexData:
     """Represents some additional infomation for textures.
 
@@ -492,7 +492,7 @@ class TexData:
         return TexData(orig_mat, reflect, width, height)
 
 
-@attr.define(eq=True)
+@attrs.define(eq=True)
 class TexInfo:
     """Represents texture positioning / scaling info."""
     s_off: Vec
@@ -565,10 +565,10 @@ class TexInfo:
         self._info = data
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Plane:
     """A plane."""
-    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> Vec:
+    def _normal_setattr(self, _: attrs.Attribute, value: Vec) -> Vec:
         """Recompute the plane type whenever the normal is changed."""
         value = Vec(value)
         self.type = PlaneType.from_normal(value)
@@ -578,14 +578,14 @@ class Plane:
         """Compute the plane type parameter if not provided."""
         return PlaneType.from_normal(self.normal)
 
-    normal: Vec = attr.ib(on_setattr=_normal_setattr)
-    dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
-    type: PlaneType = attr.Factory(_type_default, takes_self=True)
+    normal: Vec = attrs.field(on_setattr=_normal_setattr)
+    dist: float = attrs.field(converter=float, validator=attrs.validators.instance_of(float))
+    type: PlaneType = attrs.Factory(_type_default, takes_self=True)
 
     del _normal_setattr, _type_default
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Primitive:
     """A 'primitive' surface (AKA t-junction, waterverts).
 
@@ -662,7 +662,7 @@ class RevEdge(Edge):
         self.opposite.a = value
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Face:
     """A brush face definition."""
     plane: Plane
@@ -684,7 +684,7 @@ class Face:
     hammer_id: Optional[int]  # The original ID of the Hammer face.
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailProp:
     """A detail prop, automatically placed on surfaces.
 
@@ -704,13 +704,13 @@ class DetailProp:
             raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropModel(DetailProp):
     """A MDL detail prop."""
     model: str
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropSprite(DetailProp):
     """A sprite-type detail prop."""
     sprite_scale: float
@@ -720,7 +720,7 @@ class DetailPropSprite(DetailProp):
     texcoord_lower_right: Tuple[float, float]
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropShape(DetailPropSprite):
     """A shape-type detail prop, rendered as a triangle or cross shape."""
     is_cross: bool
@@ -728,7 +728,7 @@ class DetailPropShape(DetailPropSprite):
     shape_size: int
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Cubemap:
     """A env_cubemap positioned in the map.
 
@@ -746,28 +746,28 @@ class Cubemap:
         return 2**(self.size-1)
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Overlay:
     """An overlay embedded in the map."""
-    id: int = attr.ib(eq=True)
+    id: int = attrs.field(eq=True)
     origin: Vec
     normal: Vec
     texture: TexInfo
     face_count: int
-    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
-        attr.validators.instance_of(int),
-        attr.validators.instance_of(list),
+    faces: List[int] = attrs.field(factory=list, validator=attrs.validators.deep_iterable(
+        attrs.validators.instance_of(int),
+        attrs.validators.instance_of(list),
     ))
-    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
+    render_order: int = attrs.field(default=0, validator=attrs.validators.in_(range(4)))
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
     v_max: float = 1.0
     # Four corner handles of the overlay.
-    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
-    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
-    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
-    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+    uv1: Vec = attrs.field(factory=lambda: Vec(-16, -16))
+    uv2: Vec = attrs.field(factory=lambda: Vec(-16, +16))
+    uv3: Vec = attrs.field(factory=lambda: Vec(+16, +16))
+    uv4: Vec = attrs.field(factory=lambda: Vec(+16, -16))
 
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
@@ -779,7 +779,7 @@ class Overlay:
     max_gpu: int = -1
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class BrushSide:
     """A side of the original brush geometry which the map is constructed from.
 
@@ -793,14 +793,14 @@ class BrushSide:
     _unknown_bevel_bits: int = 0
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Brush:
     """A brush definition."""
     contents: BrushContents
     sides: List[BrushSide]
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
@@ -822,7 +822,7 @@ class VisLeaf:
         return self if point.in_bbox(self.mins, self.maxes) else None
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class VisTree:
     """A tree node in the visleaf/BSP data.
 
@@ -835,8 +835,8 @@ class VisTree:
     faces: List[Face]
     area_ind: int
     # Initialised empty, set during loading.
-    child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
-    child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
+    child_neg: Union['VisTree', VisLeaf] = attrs.field(default=None)
+    child_pos: Union['VisTree', VisLeaf] = attrs.field(default=None)
 
     @property
     def plane_norm(self) -> Vec:
@@ -882,7 +882,7 @@ class VisTree:
                     nodes.append(child)
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class BModel:
     """A brush model definition, used for the world entity along with all other brush ents."""
     mins: Vec
@@ -897,7 +897,7 @@ class BModel:
     _phys_solids: List[bytes] = []
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
@@ -912,16 +912,16 @@ class StaticProp:
     """
     model: str
     origin: Vec
-    angles: Angle = attr.ib(factory=Angle)
+    angles: Angle = attrs.field(factory=Angle)
     scaling: float = 1.0
-    visleafs: Set[VisLeaf] = attr.ib(factory=set)
+    visleafs: Set[VisLeaf] = attrs.field(factory=set)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
     min_fade: float = 0.0
     max_fade: float = 0.0
     # If not provided, uses origin.
-    lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
+    lighting: Vec = attrs.field(default=attrs.Factory(lambda prp: prp.origin.copy(), takes_self=True))
     fade_scale: float = -1.0
 
     min_dx_level: int = 0
@@ -931,7 +931,7 @@ class StaticProp:
     min_gpu_level: int = 0
     max_gpu_level: int = 0
 
-    tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
     renderfx: int = 255
     disable_on_xbox: bool = False
 

@@ -23,7 +23,7 @@ import re
 import copy
 from uuid import UUID, uuid4 as get_uuid
 
-import attr
+import attrs
 
 from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, EmptyMapping
 from srctools.property_parser import Property
@@ -129,14 +129,14 @@ def _clamp_color(x: int) -> int:
     return max(0, min(255, round(x)))
 
 
-@attr.frozen
+@attrs.frozen
 class Color:
     """An RGB color."""
 
-    r: int = attr.ib(converter=_clamp_color)
-    g: int = attr.ib(converter=_clamp_color)
-    b: int = attr.ib(converter=_clamp_color)
-    a: int = attr.ib(converter=_clamp_color, default=255)
+    r: int = attrs.field(converter=_clamp_color)
+    g: int = attrs.field(converter=_clamp_color)
+    b: int = attrs.field(converter=_clamp_color)
+    a: int = attrs.field(converter=_clamp_color, default=255)
 
     def __iter__(self) -> Iterator[int]:
         yield self.r

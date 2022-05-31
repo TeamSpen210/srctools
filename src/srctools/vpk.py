@@ -6,7 +6,7 @@ from enum import Enum
 from types import TracebackType
 from typing import Tuple, List, Dict, Type, Union, Optional, Iterator, Iterable, IO
 
-import attr
+import attrs
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
 
@@ -131,16 +131,16 @@ def _check_is_ascii(value: str) -> bool:
     return True
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class FileInfo:
     """Represents a file stored inside a VPK.
 
     Do not call the constructor, it is only meant for VPK's use.
     """
     vpk: 'VPK'
-    dir: str = attr.ib(on_setattr=attr.setters.frozen)
-    _filename: str = attr.ib(on_setattr=attr.setters.frozen)
-    ext: str = attr.ib(on_setattr=attr.setters.frozen)
+    dir: str = attrs.field(on_setattr=attrs.setters.frozen)
+    _filename: str = attrs.field(on_setattr=attrs.setters.frozen)
+    ext: str = attrs.field(on_setattr=attrs.setters.frozen)
     crc: int
     arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir

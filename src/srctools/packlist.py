@@ -12,7 +12,7 @@ import os
 import re
 
 from atomicwrites import atomic_write
-import attr
+import attrs
 
 from srctools import conv_bool
 from srctools.dmx import Element
@@ -128,7 +128,7 @@ def load_fgd() -> FGD:
     return FGD.engine_dbase()
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class PackFile:
     """Represents a single file we are packing.
 
@@ -139,7 +139,7 @@ class PackFile:
     data: Optional[bytes] = None
     optional: bool = False
     # If we've checked for dependencies of this yet.
-    _analysed: bool = attr.ib(init=False, default=False)
+    _analysed: bool = attrs.field(init=False, default=False)
 
     @property
     def virtual(self) -> bool:
@@ -167,7 +167,7 @@ def unify_path(path: str) -> str:
     return path.lstrip('/')
 
 
-@attr.define
+@attrs.define
 class ManifestedFiles(Generic[ParsedT]):
     """Handles a file type which contains a bunch of named objects.
 
@@ -179,10 +179,10 @@ class ManifestedFiles(Generic[ParsedT]):
     pack_type: FileType
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
-    name_to_parsed: Dict[str, Tuple[str, ParsedT]] = attr.ib(factory=dict, repr=False)
+    name_to_parsed: Dict[str, Tuple[str, ParsedT]] = attrs.field(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
-    _files: Dict[str, FileMode] = attr.Factory(OrderedDict)
+    _files: Dict[str, FileMode] = attrs.Factory(OrderedDict)
 
     def force_exclude(self, filename: str) -> None:
         """Mark this soundscript file as excluded."""

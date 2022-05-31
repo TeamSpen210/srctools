@@ -6,7 +6,7 @@ from typing import (
 import sys
 from enum import Enum
 
-import attr
+import attrs
 
 from srctools import FileSystem, Property, EmptyMapping
 from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
@@ -52,7 +52,7 @@ class VarType(Enum):
         return get_parm_type(name, cls.STR)
 
 
-@attr.define
+@attrs.define
 class Variable:
     """Allow storing the original case of the name."""
     name: str  # With correct case

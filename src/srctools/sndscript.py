@@ -2,7 +2,7 @@
 from enum import Enum
 from chunk import Chunk as WAVChunk
 
-import attr
+import attrs
 
 from srctools import Property, conv_float
 from typing import (
@@ -171,11 +171,11 @@ def wav_is_looped(file: IO[bytes]) -> bool:
         chunk.skip()
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Sound:
     """Represents a single soundscript."""
     name: str
-    sounds: List[str] = attr.Factory(list)
+    sounds: List[str] = attrs.Factory(list)
     volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
     channel: Channel = Channel.DEFAULT
     level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)

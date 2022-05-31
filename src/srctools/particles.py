@@ -2,7 +2,7 @@
 from typing import Union, IO, Dict, overload, List, Iterable, TYPE_CHECKING
 import copy
 
-import attr
+import attrs
 from srctools.dmx import Element, ValueType, Attribute
 
 
@@ -23,7 +23,7 @@ class Operator:
         return f'<Op {self.name}.{self.function}({", ".join(map(repr, self.options.values()))})>'
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Child:
     """Options for a child particle reference."""
     particle: str
@@ -36,18 +36,18 @@ else:
     _mk_operator = _mk_child = list
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, Attribute] = attr.Factory(dict)
-    renderers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    operators: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    initializers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    emitters: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    forces: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    constraints: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    children: List[Child] = attr.ib(converter=_mk_child, factory=list)
+    options: Dict[str, Attribute] = attrs.Factory(dict)
+    renderers: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    operators: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    initializers: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    emitters: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    forces: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    constraints: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
+    children: List[Child] = attrs.field(converter=_mk_child, factory=list)
 
     @classmethod
     @overload

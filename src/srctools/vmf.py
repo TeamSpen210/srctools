@@ -14,13 +14,13 @@ from contextlib import suppress
 from sys import intern
 
 from typing import (
-    Optional, Union, overload, TypeVar, Generic, TYPE_CHECKING,
+    Optional, Union, overload, TypeVar, TYPE_CHECKING,
     Dict, List, Tuple, Set, IO, FrozenSet,
     Mapping, MutableMapping, KeysView, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
 )
 
-import attr
+import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec, Angle, Matrix, to_matrix
@@ -275,7 +275,7 @@ class CopySet(Set[T]):
         yield from self - cur_items
 
 
-@attr.frozen
+@attrs.frozen
 class PrismFace:
     """Return value for VMF.make_prism()."""
     solid: 'Solid'
@@ -1037,14 +1037,14 @@ class Cordon:
         self.map.cordons.remove(self)
 
 
-@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
+@attrs.define(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class VisGroup:
     """Defines one visgroup."""
     vmf: VMF
     name: str
-    id: int = attr.ib(default=-1)
-    color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
-    child_groups: List['VisGroup'] = attr.ib(factory=list)
+    id: int = attrs.field(default=-1)
+    color: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
+    child_groups: List['VisGroup'] = attrs.field(factory=list)
 
     def __attrs_post_init__(self) -> None:
         self.id = self.vmf.vis_id.get_id(self.id)
@@ -1137,19 +1137,19 @@ else:
     _conv_visgroups = set
 
 
-@attr.s(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
+@attrs.define(auto_attribs=True, hash=False, eq=False, order=False, getstate_setstate=True)
 class Solid:
     """A single brush, serving as both world brushes and brush entities."""
     map: VMF
-    id: int = attr.ib(default=-1)
-    sides: List['Side'] = attr.ib(factory=list)
-    visgroup_ids: Set[int] = attr.ib(default=(), converter=_conv_visgroups)
+    id: int = attrs.field(default=-1)
+    sides: List['Side'] = attrs.field(factory=list)
+    visgroup_ids: Set[int] = attrs.field(default=(), converter=_conv_visgroups)
     hidden: bool = False
     group_id: Optional[int] = None
     vis_shown: bool = True
     vis_auto_shown: bool = True
     cordon_solid: Optional[int] = None
-    editor_color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    editor_color: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
 
     def __attrs_post_init__(self) -> None:
         self.id = self.map.solid_id.get_id(self.id)
@@ -1321,7 +1321,7 @@ class Solid:
             s.localise(origin, angles)
 
 
-@attr.define(frozen=True, hash=True, order=True)
+@attrs.define(frozen=True, hash=True, order=True)
 class Vec4:
     """Defines a 4-dimensional vector."""
     x: float = 0.0
@@ -1335,7 +1335,7 @@ class Vec4:
         return bool(self.x or self.y or self.z or self.w)
 
 
-def _list4_validator(_: object, attrib: attr.Attribute, value: object) -> None:
+def _list4_validator(_: object, attrib: attrs.Attribute, value: object) -> None:
     """Validate the value is a list of 4 elements."""
     if not isinstance(value, list):
         raise TypeError(attrib.name + ' should be a list!')
@@ -1343,16 +1343,16 @@ def _list4_validator(_: object, attrib: attr.Attribute, value: object) -> None:
         raise ValueError(attrib.name + ' must have 4 values!')
 
 
-@attr.define(frozen=False)
+@attrs.define(frozen=False)
 class DispVertex:
     """A vertex in dislacements."""
     x: int  # Position of the vertex in the displacement.
     y: int
 
-    normal: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    normal: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     distance: float = 0
-    offset: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
-    offset_norm: Vec = attr.ib(factory=Vec, validator=attr.validators.instance_of(Vec))
+    offset: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
+    offset_norm: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     alpha: float = 0.0  # 0-255
     # The pair of triangle tags for the quad in the +ve direction
     # from us. This means the last row/column's triangles are ignored.
@@ -1362,8 +1362,8 @@ class DispVertex:
     # These are for multiblend displacements, added in ASW+.
     multi_blend: Vec4 = Vec4()
     multi_alpha: Vec4 = Vec4()
-    multi_colors: Optional[List[Vec]] = attr.ib(default=None, validator=attr.validators.optional(
-        attr.validators.deep_iterable(attr.validators.instance_of(Vec), _list4_validator)
+    multi_colors: Optional[List[Vec]] = attrs.field(default=None, validator=attrs.validators.optional(
+        attrs.validators.deep_iterable(attrs.validators.instance_of(Vec), _list4_validator)
     ))
 
 
@@ -2563,7 +2563,7 @@ class Entity(MutableMapping[str, str]):
             return Vec.from_str(self['origin'])
 
 
-@attr.define(weakref_slot=False)
+@attrs.define(weakref_slot=False)
 class FixupValue:
     """One $fixup variable with its replacement."""
     var: str  # The original casing of the variable name.
@@ -2655,6 +2655,12 @@ class EntityFixup(MutableMapping[str, str]):
         """Wipe all the $fixup values."""
         self._fixup.clear()
         self._matcher = None
+
+    @overload
+    def setdefault(self, var: str) -> str: ...
+    # noinspection PyMethodOverriding
+    @overload
+    def setdefault(self, var: str, default: Union[ValidKV_T, str]) -> Union[str, ValidKV_T]: ...
 
     def setdefault(self, var: str, default: Union[ValidKV_T, str]='') -> Union[str, ValidKV_T]:
         """Return $key, but if not present set it to the default and return that."""
@@ -2785,7 +2791,7 @@ class EntityFixup(MutableMapping[str, str]):
         if self._matcher is None:
             # Sort longer values first, so they are checked before smaller
             # counterparts.
-            sections = map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True))
+            sections: Iterable[str] = map(re.escape, sorted(self._fixup.keys(), key=len, reverse=True))
             # ! maybe, $, any known fixups, then a default any-identifier check.
             self._matcher = re.compile(
                 rf'(!)?\$({"|".join(sections)}|[a-z_][a-z0-9_]*)',
@@ -2907,17 +2913,17 @@ class _EntityFixupItems(ItemsView[str, str]):
         return False
 
 
-@attr.define
+@attrs.define
 class EntityGroup:
     """Represents the 'group' blocks in worldspawn.
 
     This allows the grouping of brushes.
     """
     vmf: VMF
-    id: int = attr.ib(default=-1)
+    id: int = attrs.field(default=-1)
     shown: bool = True
     auto_shown: bool = True
-    color: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    color: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
 
     def __attrs_post_init__(self) -> None:
         self.id = self.vmf.group_id.get_id(self.id)
@@ -3159,13 +3165,13 @@ class Output:
             st += " only)"
         return st
 
-    def __getstate__(self) -> tuple:
+    def __getstate__(self) -> Tuple[object, ...]:
         """Produce the state for pickling.
 
         We know output/input names tend to be the same often,
         so interning here will simplify the pickle.
         """
-        basic = (
+        basic: Tuple[object, ...] = (
             intern(self.output),
             intern(self.target),
             intern(self.input),

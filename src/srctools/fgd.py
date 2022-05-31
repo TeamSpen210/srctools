@@ -18,7 +18,7 @@ from typing import (
     TextIO, Container, IO,
 )
 
-import attr
+import attrs
 
 import srctools
 from srctools.filesys import FileSystem, File
@@ -672,7 +672,7 @@ del _init_helper_impl
 from srctools._fgd_helpers import *
 
 
-@attr.define(order=True, hash=True, eq=True)
+@attrs.define(order=True, hash=True, eq=True)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -681,14 +681,14 @@ class AutoVisgroup:
     of the parent. Note they're case-sensitive, and can include punctuation.
     """
     name: str
-    parent: str = attr.ib(hash=False, eq=False, order=False)
-    ents: Set[str] = attr.ib(factory=set, hash=False, eq=False, order=False)
+    parent: str = attrs.field(hash=False, eq=False, order=False)
+    ents: Set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
         return '<AutoVisgroup "{}">'.format(self.name)
 
 
-@attr.define
+@attrs.define
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -932,7 +932,7 @@ class KeyValues:
         )
 
 
-@attr.define
+@attrs.define
 class IODef:
     """Represents an input or output for an entity."""
     name: str
@@ -1092,36 +1092,36 @@ class _EntityView(Generic[T]):
 del _EntityView.__slots__
 
 
-@attr.define(slots=False, eq=False)
+@attrs.define(slots=False, eq=False)
 class EntityDef:
     """A definition for an entity."""
     type: EntityTypes
     classname: str = ''
 
     # These are (name) -> {tags} -> value dicts.
-    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attr.Factory(dict)
-    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
-    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.Factory(dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
 
     # Keyvalues have an order. If not present in here,
     # they appear at the end.
-    kv_order: List[str] = attr.Factory(list)
+    kv_order: List[str] = attrs.Factory(list)
 
     # Base type names - base()
-    bases: List[Union['EntityDef', str]] = attr.Factory(list)
-    helpers: List[Helper] = attr.Factory(list)
+    bases: List[Union['EntityDef', str]] = attrs.Factory(list)
+    helpers: List[Helper] = attrs.Factory(list)
     desc: str = ''
 
     # Views for accessing data among all the entities.
-    kv: _EntityView[KeyValues] = attr.ib(init=False, default=attr.Factory(
+    kv: _EntityView[KeyValues] = attrs.field(init=False, default=attrs.Factory(
         partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
         takes_self=True,
     ))
-    inp: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+    inp: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
         partial(_EntityView, attr_name='inputs', disp_name='inp'),
         takes_self=True,
     ))
-    out: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
+    out: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
         partial(_EntityView, attr_name='outputs', disp_name='out'),
         takes_self=True,
     ))

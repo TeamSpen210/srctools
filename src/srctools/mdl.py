@@ -6,7 +6,7 @@ from typing import (
 )
 from enum import Flag as FlagEnum, Enum
 from pathlib import PurePosixPath
-import attr
+import attrs
 
 from srctools import Property
 from srctools.const import add_unknown
@@ -275,14 +275,14 @@ ANIM_EVENT_BY_NAME = {
 ST_PHY_HEADER = Struct('<iiil')
 
 
-@attr.define
+@attrs.define
 class IncludedMDL:
     """Additional model files to load animations from."""
     label: str
     filename: str
 
 
-@attr.define
+@attrs.define
 class SeqEvent:
     """An event that occurs at some point in an animation sequence."""
     # AnimEvents for known common ones, str for dynamic NPC-specific events.
@@ -291,7 +291,7 @@ class SeqEvent:
     options: str  # Additional event-specific data.
 
 
-@attr.define
+@attrs.define
 class Sequence:
     """An animation sequence."""
     label: str
