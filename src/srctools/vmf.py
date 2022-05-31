@@ -3004,6 +3004,36 @@ class Output:
     # Make this available here also.
     SEP = OUTPUT_SEP
 
+    # Only one of times and only_once should be used.
+    @overload
+    def __init__(
+        self,
+        out: str,
+        targ: Union[Entity, str],
+        inp: str,
+        param: ValidKVs='',
+        delay: float=0.0,
+        *,
+        times: int=-1,
+        inst_out: str=None,
+        inst_in: str=None,
+        comma_sep: bool=False,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        out: str,
+        targ: Union[Entity, str],
+        inp: str,
+        param: ValidKVs='',
+        delay: float=0.0,
+        *,
+        only_once: bool=False,
+        inst_out: str=None,
+        inst_in: str=None,
+        comma_sep: bool=False,
+    ) -> None: ...
+
     def __init__(
         self,
         out: str,
@@ -3017,7 +3047,7 @@ class Output:
         inst_out: str=None,
         inst_in: str=None,
         comma_sep: bool=False,
-    ):
+    ) -> None:
         self.output = out
         self.inst_out = inst_out
         if isinstance(targ, Entity):
