@@ -783,7 +783,7 @@ class PackList:
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
-            if conv_bool(ent.keys.pop('srctools_nopack', '')):
+            if conv_bool(ent.pop('srctools_nopack', '')):
                 continue
 
             classname = ent['classname']
@@ -802,14 +802,14 @@ class PackList:
                 # entity is pledging it will restrict itself to.
                 skinset = {
                     int(x)
-                    for x in ent.keys.pop('skinset').split()
+                    for x in ent.pop('skinset').split()
                 }
             else:
                 skinset = None
 
             value: str
             key: str
-            for key in set(ent.keys) | set(ent_class.kv):
+            for key in set(ent) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
                 # Origin/angles might be set (brushes, instances) even for ents
