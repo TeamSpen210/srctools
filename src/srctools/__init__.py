@@ -9,6 +9,7 @@ from typing import (
 )
 from types import TracebackType
 from collections import deque
+import warnings
 
 try:
     from ._version import __version__
@@ -34,7 +35,7 @@ __all__ = [
 
     'FileSystem', 'FileSystemChain', 'get_filesystem',
 
-    'EmptyMapping', 'AtomicWriter',
+    'EmptyMapping',
 
     'FGD', 'VPK',
     'VTF',
@@ -427,7 +428,7 @@ EmptyValuesView: ValuesView[Any] = _EmptyValuesView(EmptyMapping)
 
 
 class AtomicWriter:
-    """Atomically overwrite a file.
+    """Atomically overwrite a file. Deprecated, use atomicwrites.AtomicWriter.
 
     Use as a context manager - the returned temporary file
     should be written to. When cleanly exiting, the file will be transferred.
@@ -440,6 +441,7 @@ class AtomicWriter:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
+        warnings.warn("Use atomicwrites instead.", DeprecationWarning, stacklevel=2)
         self.filename = _os.fspath(filename)
         self.dir = _os.path.dirname(filename)
         self.encoding = encoding

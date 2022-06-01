@@ -15,10 +15,12 @@ import struct
 import inspect
 import contextlib
 import warnings
-import attr
 import os
 
-from srctools import AtomicWriter, conv_int, logger
+from atomicwrites import atomic_write
+import attr
+
+from srctools import conv_int, logger
 from srctools.math import Vec, Angle
 from srctools.filesys import FileSystem
 from srctools.vtf import VTF
@@ -1286,7 +1288,7 @@ class BSP:
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
         file: IO[bytes]
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
+        with atomic_write(filename or self.filename, mode='wb', overwrite=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
             defer = DeferredWrites(file)

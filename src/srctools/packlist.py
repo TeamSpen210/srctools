@@ -11,6 +11,7 @@ from zipfile import ZipFile
 import os
 import re
 
+from atomicwrites import atomic_write
 import attr
 
 from srctools import conv_bool
@@ -691,7 +692,7 @@ class PackList:
         if cache_file is not None:
             assert new_cache_data is not None
             # Write back out our new cache with updated data.
-            with srctools.AtomicWriter(cache_file) as f:
+            with atomic_write(cache_file, mode='wt', overwrite=True) as f:
                 for line in new_cache_data.export():
                     f.write(line)
 

@@ -1,0 +1,2 @@
+types-atomicwrites>=1.4.0
+types-Pillow~=8.3.0
