@@ -1,0 +1,6 @@
+[flake8]
+# Tests deliberately do incorrect things to test code.
+# _cls_resources is just intended to be run, flake8 fails on the star imports
+# used.
+exclude = .git,__pycache__,.tox,.eggs,*.egg,_class_resources,tests
+max-line-length=127

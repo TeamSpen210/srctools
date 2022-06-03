@@ -63,13 +63,4 @@ setup(
             ],
         ),
     ],
-    # Here so Github can read it.
-    install_requires=[
-        "attrs >= 21.2.0",
-        "typing_extensions >= 4.1.0",
-        "atomicwrites >= 1.4.0",
-	    # Backports for 3.6
-	    "importlib_resources; python_version < '3.7'",
-	    "contextvars; python_version < '3.7'",
-	],
 )

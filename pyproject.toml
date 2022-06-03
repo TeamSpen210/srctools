@@ -1,14 +1,75 @@
-[project]
-requires-python = ">=3.6"
-
 [build-system]
 requires = [
-	"setuptools>=42",
+	"setuptools>=61",
 	"wheel",
 	"cython",
 	"versioningit ~= 0.3.0"
 	]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "srctools"
+requires-python = ">=3.6"
+dynamic = ["version"]
+urls = {source="https://github.com/TeamSpen210/srctools"}
+description = "Modules for working with Valve's Source Engine file formats."
+readme = "README.md"
+keywords = ["Valve", "Source Engine"]
+authors = [
+	{name="TeamSpen210", email="spencerb21@live.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Framework :: Pytest",
+	"Framework :: tox",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Cython",
+	"Programming Language :: Python :: 3.6",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3 :: Only",
+	"Python :: Implementation :: CPython",
+	"Python :: Implementation :: PyPy",
+	"Software Development :: Libraries",
+	"Topic :: Games/Entertainment",
+	"Topic :: Multimedia :: Graphics :: 3D Modeling",
+	"Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies=[
+	"attrs >= 21.2.0",
+	"typing_extensions >= 4.1.0",
+	"atomicwrites >= 1.4.0",
+	# Backports for 3.6
+	"importlib_resources; python_version < '3.7'",
+	"contextvars; python_version < '3.7'",
+]
+[optional-dependencies]
+# VTF support.
+wx = ["wxPython"]
+test = [
+	"pytest",
+	"pytest-datadir",
+	"pytest-regressions",
+]
+
+
+[project.scripts]
+srctools_dump_parms = "srctools.scripts.dump_parms:main"
+srctools_diff = "srctools.scripts.diff:main"
+srctools_find_deps = "srctools.scripts.find_deps:main"
+
+[project.entry-points]
+pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}
+
+[tool.setuptools]
+	include-package-data = true
+
+[tool.setuptools.packages.find]
+	where = ["src"]
+	include = ["srctools*"]
 
 [tool.versioningit.vcs]
 default-tag = "v0.0.0"
@@ -37,7 +98,6 @@ exclude = [
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
-
 
 [tool.pytest.ini_options]
 filterwarnings = [
