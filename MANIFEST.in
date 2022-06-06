@@ -1,9 +1,12 @@
-# Explicitly include the C/C++ sources, for cythonless installs.
+# Include the C/C++ sources
 global-include *.c *.cpp *.h *.hpp
 # Cython headers
 global-include *.pxd
 # Include .pyi stubs.
 global-include *.pyi
+# Exclude Cython-generated code.
+exclude src/srctools/*.cpp
+exclude src/srctools/*.c
 
 prune .tox
 
