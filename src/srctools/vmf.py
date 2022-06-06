@@ -2059,6 +2059,7 @@ class Entity(MutableMapping[str, str]):
     Supports [] operations to read and write keyvalues.
     To read instance $replace values operate on entity.fixup[]
     """
+    _fixup: Optional['EntityFixup']
     def __init__(
         self,
         vmf_file: VMF,
@@ -2082,7 +2083,7 @@ class Entity(MutableMapping[str, str]):
             for k, v in
             keys.items()
         })
-        self.fixup = EntityFixup(fixup)
+        self._fixup = EntityFixup(fixup) if fixup else None
         self.outputs: List[Output] = outputs or []
         self.solids: List[Solid] = solids or []
         self.id = vmf_file.ent_id.get_id(ent_id)
@@ -2107,12 +2108,21 @@ class Entity(MutableMapping[str, str]):
         return self._keys
 
     if not TYPE_CHECKING:  # Show as readonly.
+        # noinspection PyDeprecation
         @keys.setter
         def keys(self, value: Dict[str, ValidKVs]) -> None:
             """Deprecated method to replace all keys."""
             warnings.warn('This is private, call .clear_keys() and update().', DeprecationWarning, stacklevel=2)
             self.clear_keys()
             self.update(value)
+
+    @property
+    def fixup(self) -> 'EntityFixup':
+        """Access $replace variables on instances."""
+        # Store None for non-instance entities, create if used.
+        if self._fixup is None:
+            self._fixup = EntityFixup()
+        return self._fixup
 
     # Override MutableMapping, we compare by identity.
     __eq__ = object.__eq__
@@ -2137,7 +2147,7 @@ class Entity(MutableMapping[str, str]):
         return Entity(
             vmf_file=vmf_file or self.map,
             keys=self._keys,  # __init__() copies for us.
-            fixup=self.fixup.copy_values(),
+            fixup=self._fixup.copy_values() if self._fixup is not None else (),
             ent_id=des_id,
             outputs=outs,
             solids=new_solids,
@@ -2281,7 +2291,8 @@ class Entity(MutableMapping[str, str]):
         for key, value in sorted(self._keys.items(), key=operator.itemgetter(0)):
             buffer.write(f'{ind}\t"{key}" "{value!s}"\n')
 
-        self.fixup.export(buffer, ind)
+        if self._fixup is not None:
+            self._fixup.export(buffer, ind)
 
         if self.is_brush():
             for s in self.solids:
@@ -2384,8 +2395,9 @@ class Entity(MutableMapping[str, str]):
         for k, v in self._keys.items():
             if not isinstance(v, list):
                 st += f"\t {k} = \"{v}\"\n"
-        for k, v in self.fixup.items():
-            st += f"\t ${k} = \"{v}\"\n"
+        if self._fixup is not None:
+            for k, v in self.fixup.items():
+                st += f"\t ${k} = \"{v}\"\n"
 
         for out in self.outputs:
             st += f'\t{out!s}\n'
@@ -2522,7 +2534,7 @@ class Entity(MutableMapping[str, str]):
         del self['targetname']
         self._keys.clear()
         # Clear $fixup as well.
-        self.fixup.clear()
+        self._fixup = None
     clear_keys = clear
 
     def __contains__(self, key: object) -> bool:
@@ -2586,7 +2598,7 @@ class EntityFixup(MutableMapping[str, str]):
     # for the type annotations.
     __slots__ = ['_fixup', '_matcher']
 
-    def __init__(self, fixup: Iterable[FixupValue]=()):
+    def __init__(self, fixup: Iterable[FixupValue]=()) -> None:
         self._fixup: Dict[str, FixupValue] = {}
         self._matcher: Optional[Pattern[str]] = None
         # In _fixup each variable is stored as a tuple of (var_name,
