@@ -2187,6 +2187,44 @@ class Entity(MutableMapping[str, str]):
         for item in tree_list:
             name = item.name
             assert name is not None, repr(item)
+            if item.has_children():
+                if name == "solid":
+                    solids.append(Solid.parse(vmf_file, item))
+                elif name == "connections":
+                    for out in item:
+                        outputs.append(Output.parse(out))
+                elif name == "editor":
+                    for editor_prop in item:
+                        if editor_prop.name == "visgroupshown":
+                            vis_shown = srctools.conv_bool(editor_prop.value, default=True)
+                        elif editor_prop.name == "visgroupautoshown":
+                            vis_auto_shown = srctools.conv_bool(editor_prop.value, default=True)
+                        elif editor_prop.name == 'color':
+                            editor_color = Vec.from_str(editor_prop.value, 255, 255, 255)
+                        elif editor_prop.name == 'logicalpos':
+                            logical_pos = editor_prop.value
+                        elif editor_prop.name == 'comments':
+                            comment = editor_prop.value
+                        elif editor_prop.name == 'group':
+                            group_ids.append(int(editor_prop.value))
+                        elif editor_prop.name == 'visgroupid':
+                            try:
+                                visgroup_ids.append(int(editor_prop.value))
+                            except (TypeError, ValueError):
+                                raise ValueError(f'Invalid visgroup ID "{editor_prop.value}"!') from None
+                elif name == "hidden":
+                    for brush_prop in item:
+                        if brush_prop.name == "solid":
+                            solids.append(Solid.parse(vmf_file, brush_prop, hidden=True))
+                        else:
+                            raise ValueError(f'Unknown hidden keyvalue "{brush_prop.name}"!')
+                elif name == "group":
+                    if not _worldspawn:
+                        raise ValueError('Group blocks are only permitted on worldspawn!')
+                    grp = EntityGroup.parse(vmf_file, item)
+                    vmf_file.groups[grp.id] = grp
+                else:
+                    raise ValueError(f'Unrecognised block keyvalue "{name}" in entity!')
             if name == "id" and item.value.isnumeric():
                 ent_id = int(item.value)
             elif name.startswith('replace'):
@@ -2209,40 +2247,6 @@ class Entity(MutableMapping[str, str]):
                     except ValueError:
                         # Failed!
                         keys[name] = item.value
-            elif name == "solid" and item.has_children():
-                solids.append(Solid.parse(vmf_file, item))
-            elif name == "connections" and item.has_children():
-                for out in item:
-                    outputs.append(Output.parse(out))
-            elif name == "hidden" and item.has_children():
-                solids.extend(
-                    Solid.parse(vmf_file, br, hidden=True)
-                    for br in
-                    item
-                )
-            elif name == "group" and item.has_children():
-                if not _worldspawn:
-                    raise ValueError(f'Group blocks are only permitted on worldspawn!')
-                grp = EntityGroup.parse(vmf_file, item)
-                vmf_file.groups[grp.id] = grp
-            elif name == "editor" and item.has_children():
-                for v in item:
-                    if v.name == "visgroupshown":
-                        vis_shown = srctools.conv_bool(v.value, default=True)
-                    elif v.name == "visgroupautoshown":
-                        vis_auto_shown = srctools.conv_bool(v.value, default=True)
-                    elif v.name == 'color':
-                        editor_color = Vec.from_str(v.value, 255, 255, 255)
-                    elif v.name == 'logicalpos':
-                        logical_pos = v.value
-                    elif v.name == 'comments':
-                        comment = v.value
-                    elif v.name == 'group':
-                        group_ids.append(int(v.value))
-                    elif v.name == 'visgroupid':
-                        val = srctools.conv_int(v.value, default=-1)
-                        if val:
-                            visgroup_ids.append(val)
             else:
                 keys[item.name] = item.value
 
