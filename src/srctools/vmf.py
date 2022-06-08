@@ -2225,7 +2225,7 @@ class Entity(MutableMapping[str, str]):
                     vmf_file.groups[grp.id] = grp
                 else:
                     raise ValueError(f'Unrecognised block keyvalue "{name}" in entity!')
-            if name == "id" and item.value.isnumeric():
+            elif name == "id" and item.value.isnumeric():
                 ent_id = int(item.value)
             elif name.startswith('replace'):
                 ind_str = name[-2:]  # Index is the last 2 digits
