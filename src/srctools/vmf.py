@@ -3129,7 +3129,9 @@ class Output:
             second.input,
             second.params or first.params,
             first.delay + second.delay,
-            times=min(first.times, second.times),
+            times=first.times if second.times < 0
+            else second.times if first.times < 0
+            else min(first.times, second.times),
             inst_out=first.inst_out,
             inst_in=second.inst_in,
             comma_sep=first.comma_sep and second.comma_sep,

@@ -1,7 +1,8 @@
 """Tests for the VMF library."""
+import pytest
+
 from srctools import Vec, Angle
 from srctools.vmf import Entity, VMF, Output
-from pytest import raises
 
 
 def test_fixup_basic() -> None:
@@ -90,7 +91,7 @@ def test_fixup_substitution() -> None:
     assert ent.fixup.substitute('no var 1234') == 'no var 1234'
     assert ent.fixup.substitute('$var') == 'out'
     assert ent.fixup.substitute('prefix$varsuffix') == 'prefixoutsuffix'
-    with raises(KeyError) as exc:
+    with pytest.raises(KeyError) as exc:
         ent.fixup.substitute('$notPRESent')
     assert '$notPRESent' in str(exc)
 
@@ -141,6 +142,53 @@ def test_fixup_substitution_invert() -> None:
     # If defaults are provided, those can be flipped too.
     assert ent.fixup.substitute('$missing !$flipped', '0', allow_invert=True) == '0 1'
     assert ent.fixup.substitute('$missing !$flipped', '1', allow_invert=True) == '1 0'
+
+
+@pytest.mark.parametrize('first, second, expected', [
+    (Output('OnTrigger', 'targ1', 'DoAnything', 'ignored'),
+     Output('OnWhatever', 'dest', 'Trigger', '45'),
+     Output('OnTrigger', 'dest', 'Trigger', '45')),
+
+    (Output('OnIgnited', 'relay', 'Trigger', '42', delay=0.25),
+     Output('OnTriggered', 'counter', 'SetValue', ''),
+     Output('OnIgnited', 'counter', 'SetValue', '42', delay=0.25)),
+
+    (Output('OnTrigger', 'targ1', 'DoAnything', '', inst_in='ignored', inst_out='output', delay=0.125),
+     Output('OnWhatever', 'dest', 'Trigger', '42', inst_in='input', inst_out='ignored', delay=1.0),
+     Output('OnTrigger', 'dest', 'Trigger', '42', inst_in='input', inst_out='output', delay=1.125)),
+
+    (Output('OnSingle', 'relay', 'Trigger', only_once=True),
+     Output('OnTrigger', 'target', 'FireUser1'),
+     Output('OnSingle', 'target', 'FireUser1', only_once=True)),
+
+    (Output('OnMulti', 'doit_once', 'Trigger'),
+     Output('OnTrigger', 'target', 'FireUser1', only_once=True),
+     Output('OnMulti', 'target', 'FireUser1', only_once=True)),
+
+    (Output('OnMulti', 'multi', 'Trigger', times=9),
+     Output('OnTrigger', 'target', 'FireUser1', times=4),
+     Output('OnMulti', 'target', 'FireUser1', times=4)),
+
+    (Output('OnFive', 'relay', 'Trigger', times=5),
+     Output('OnTrigger', 'target', 'FireUser1', times=10),
+     Output('OnFive', 'target', 'FireUser1', times=5)),
+], ids=[
+    'both_param', 'one_param',
+    'instance',
+    'first_once', 'second_once',
+    'first_times', 'second_times',
+])
+def test_output_combine(first: Output, second: Output, expected: Output) -> None:
+    """Test combining various outputs produces the right results."""
+    result = Output.combine(first, second)
+    assert result.output == expected.output
+    assert result.input == expected.input
+    assert result.inst_in == expected.inst_in
+    assert result.inst_out == expected.inst_out
+    assert result.params == expected.params
+    assert pytest.approx(result.delay) == expected.delay
+    assert result.times == expected.times
+    assert result.comma_sep == expected.comma_sep
 
 
 def test_regression(file_regression) -> None:
