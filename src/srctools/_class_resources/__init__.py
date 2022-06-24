@@ -5,6 +5,7 @@ The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
 from typing import Callable, TypeVar, Tuple, Union, List, Dict, Iterable
+from typing_extensions import TypeAlias
 
 from ..packlist import FileType, PackList
 from .. import VMF, Entity, conv_int
@@ -14,7 +15,7 @@ from .. import VMF, Entity, conv_int
 # Additionally or instead you could have a function to call with the
 # entity to do class-specific behaviour, yielding files to pack.
 
-ClassFunc = Callable[[PackList, Entity], None]
+ClassFunc: TypeAlias = Callable[[PackList, Entity], object]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]] = {}
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
@@ -179,6 +180,7 @@ res('combine_mine',
     aliases='bounce_bomb combine_bouncemine'
     )
 
+
 @cls_func
 def color_correction(pack: PackList, ent: Entity) -> None:
     """Pack the color correction file."""
@@ -310,6 +312,7 @@ res('mortarshell',
     mat('materials/effects/ar2ground2.vmt'),
     sound('Weapon_Mortar.Impact'),
     )
+
 
 @cls_func
 def move_rope(pack: PackList, ent: Entity) -> None:
