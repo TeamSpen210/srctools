@@ -49,7 +49,7 @@ from typing_extensions import Final, Literal, final
 
 
 __all__ = [
-    'parse_vec_str', 'to_matrix', 'lerp',
+    'parse_vec_str', 'to_matrix', 'lerp', 'quickhull',
     'Vec', 'Vec_tuple',
     'Angle', 'Matrix',
 ]
