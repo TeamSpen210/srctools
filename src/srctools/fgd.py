@@ -11,7 +11,7 @@ import math
 import operator
 
 from typing import (
-    Generic, Optional, TYPE_CHECKING, Union, overload, cast, ClassVar, Any,
+    Generic, Optional, Union, overload, cast, ClassVar, Any,
     TypeVar, Callable, Type,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
@@ -939,16 +939,6 @@ class IODef:
     type: ValueTypes
     desc: str = ''
 
-    def __str__(self) -> str:
-        txt = '{}({!r}, {!r}'.format(
-            self.__class__.__name__,
-            self.name,
-            self.type,
-        )
-        if self.desc:
-            txt += ', ' + repr(self.desc)
-        return txt + ')'
-
     def copy(self) -> 'IODef':
         """Create a duplicate of this IODef."""
         return IODef(self.name, self.type, self.desc)
@@ -968,19 +958,16 @@ class IODef:
 
         io_type should be "input" or "output".
         """
-        file.write('\t{} {}'.format(
-            io_type,
-            self.name,
-        ))
+        file.write(f'\t{io_type} {self.name}')
 
         if tags:
-            file.write('[' + ', '.join(tags) + ']')
+            file.write(f'[{", ".join(tags)}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
         if self.type is ValueTypes.BOOL:
             file.write('(bool)')
         else:
-            file.write('({})'.format(VALUE_TO_IO_DECAY[self.type].value))
+            file.write(f'({VALUE_TO_IO_DECAY[self.type].value})')
 
         if self.desc:
             file.write(' : ')
@@ -1044,10 +1031,7 @@ class _EntityView(Generic[T]):
             name, search_tags = name
             search_tags = frozenset({t.upper() for t in search_tags})
         else:
-            raise TypeError(
-                'Expected str or (str, Iterable[str]), '
-                'got "{}"'.format(name),
-            )
+            raise TypeError(f'Expected str or (str, Iterable[str]), got "{name}"')
         name = name.casefold()
         for ent_map in self._maps():
             try:
@@ -1445,11 +1429,9 @@ class EntityDef:
                                 power = 0.5  # Force the following code to raise
                             if power != round(power):
                                 raise tok.error(
-                                    'SpawnFlags must be powers of two, '
-                                    'not {} (in {})!'.format(
-                                        spawnflag,
-                                        entity.classname,
-                                    )
+                                    'SpawnFlags must be powers of two, not {} (in {})!',
+                                    spawnflag,
+                                    entity.classname,
                                 ) from None
                             # Spawnflags can have a default, others may not.
                             if len(vals) == 2:
@@ -1496,9 +1478,9 @@ class EntityDef:
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
-            return '<Entity Base "{}">'.format(self.classname)
+            return f'<Entity Base "{self.classname}">'
         else:
-            return '<Entity {}>'.format(self.classname)
+            return f'<Entity {self.classname}>'
 
     def __deepcopy__(self, memodict: dict) -> 'EntityDef':
         """Handle copying ourselves, to eliminate lookups when not required."""
@@ -1608,9 +1590,7 @@ class EntityDef:
     def export(self, file: TextIO) -> None:
         """Write the entity out to a FGD file."""
         # Make it look pretty: BaseClass
-        file.write('@{} '.format(
-            self.type.value.title().replace('class', 'Class')
-        ))
+        file.write(f'@{self.type.value.title().replace("class", "Class")} ')
         if self.bases:
             file.write('base(')
             file.write(', '.join([
@@ -1627,9 +1607,9 @@ class EntityDef:
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
             elif isinstance(helper, UnknownHelper):
-                file.write('\n\t{}({})'.format(helper.name, ', '.join(args)))
+                file.write(f'\n\t{helper.name}({", ".join(args)})')
             elif helper.TYPE is not None:
-                file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+                file.write(f'\n\t{helper.TYPE.value}({", ".join(args)})')
             else:
                 raise TypeError(f'Helper {helper!r} has no TYPE attr?')
             if isinstance(helper, HelperExtOrderBy):
@@ -1637,7 +1617,7 @@ class EntityDef:
 
         if self.helpers:
             file.write('\n')  # Put the classname on the following line.
-        file.write('= {}'.format(self.classname))
+        file.write(f'= {self.classname}')
 
         if self.desc:
             file.write(': ')
@@ -1844,9 +1824,7 @@ class FGD:
         elif isinstance(file, File):
             filesystem = file.sys
         else:
-            raise TypeError(
-                'String file path passed ({!r}), but no filesystem!'.format(file)
-            )
+            raise TypeError(f'String file path passed ({file!r}), but no filesystem!')
         assert filesystem is not None, (filesystem, file)
         fgd = cls()
         fgd.parse_file(filesystem, file)
@@ -1895,10 +1873,7 @@ class FGD:
                 ready = True
                 for base in ent.bases:
                     if isinstance(base, str):
-                        raise ValueError(
-                            'Unevaluated base: {} in {}!'.format(
-                                base, ent.classname,
-                            ))
+                        raise ValueError(f'Unevaluated base: {base} in {ent.classname}!')
                     if base not in done:
                         # Base not done yet, we need to defer this.
                         deferred.add(ent)
@@ -1921,10 +1896,9 @@ class FGD:
             # All the entities have a dependency on another, we failed to produce anything.
             if not batch:
                 raise ValueError(
-                    "Loop in bases! \n Problematic entities: \n{}".format([
-                        ent.classname
-                        for ent in deferred
-                    ]))
+                    f"Loop in bases! \n Problematic entities:\n"
+                    f"{[ent.classname for ent in deferred]}"
+                )
 
             todo = deferred.difference(done)
 
@@ -1944,12 +1918,7 @@ class FGD:
                     try:
                         base = self[base]
                     except KeyError:
-                        raise ValueError(
-                            'Unknown base ({}) for {}'.format(
-                                base,
-                                ent.classname,
-                            )
-                        ) from None
+                        raise ValueError(f'Unknown base ({base}) for {ent.classname}') from None
                 for name, base_kv_map in base.keyvalues.items():
                     ent_kv_map = ent.keyvalues.setdefault(name, {})
                     for tag, kv in base_kv_map.items():
@@ -1998,17 +1967,17 @@ class FGD:
             ret_string = False
 
         if self.map_size_min != self.map_size_max:
-            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
+            file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
 
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
             for folder in sorted(self.mat_exclusions):
-                file.write('\t"{!s}"\n'.format(folder))
+                file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
         for tag in sorted(self.tagged_mat_exclusions):
             file.write(f'@MaterialExclusion({", ".join(sorted(tag))})\n\t[\n')
             for folder in sorted(self.tagged_mat_exclusions[tag]):
-                file.write('\t"{!s}"\n'.format(folder))
+                file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
 
         vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
@@ -2039,11 +2008,11 @@ class FGD:
                         deferred.add(parent)
                         continue
                 # Otherwise, the parent is done, so we can generate.
-                file.write('@AutoVisgroup = "{}"\n\t[\n'.format(name_casing[parent]))
+                file.write(f'@AutoVisgroup = "{name_casing[parent]}"\n\t[\n')
                 for visgroup in sorted(vis_by_parent[parent]):
-                    file.write('\t"{}"\n\t\t[\n'.format(visgroup.name))
+                    file.write(f'\t"{visgroup.name}"\n\t\t[\n')
                     for ent in sorted(visgroup.ents):
-                        file.write('\t\t"{}"\n'.format(ent))
+                        file.write(f'\t\t"{ent}"\n')
                     file.write('\t\t]\n')
                 file.write('\t]\n')
                 done.add(parent)
@@ -2053,10 +2022,10 @@ class FGD:
                 # a loop or something.
                 raise ValueError(
                     'Cannot export visgroups, '
-                    'loop present in names: {}'.format(','.join([
-                        '"{}" -> "{}"'.format(self.auto_visgroups[group].parent, group)
+                    'loop present in names: ' + ','.join([
+                        f'"{self.auto_visgroups[group].parent}" -> "{group}"'
                         for group in sorted(todo)
-                    ]))
+                    ])
                 )
             todo = deferred
 
@@ -2220,7 +2189,7 @@ class FGD:
         try:
             return self.entities[classname.casefold()]
         except KeyError:
-            raise KeyError('No class "{}"!'.format(classname)) from None
+            raise KeyError(f'No class "{classname}"!') from None
 
     def __contains__(self, classname: object) -> bool:
         """Lookup entities by classname."""
@@ -2313,7 +2282,7 @@ class FGD:
         ] = struct_read(_fmt_header, file)
 
         if format_version != BIN_FORMAT_VERSION:
-            raise TypeError('Unknown format version "{}"!'.format(format_version))
+            raise TypeError(f'Unknown format version "{format_version}"!')
 
         from_dict = BinStrDict.unserialise(file)
 
