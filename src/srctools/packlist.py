@@ -7,7 +7,7 @@ from collections import OrderedDict
 from pathlib import Path
 from typing import (
     TypeVar, Generic, Union, Optional, Callable,
-    Dict, Tuple, List, Set, Iterable, Iterator,
+    Dict, Tuple, List, Set, Iterable, Iterator, Collection
 )
 from enum import Enum, auto as auto_enum
 from zipfile import ZipFile
@@ -42,6 +42,7 @@ __all__ = [
     'FileType', 'FileMode', 'SoundScriptMode',
     'PackFile', 'PackList',
     'unify_path',
+    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
 ]
 
 
@@ -1261,6 +1262,12 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
         return CLASS_FUNCS[classname.casefold()]
     except KeyError:
         raise KeyError(classname) from None
+
+
+def entclass_iter() -> Collection[str]:
+    """Yield all classnames with known behaviour."""
+    from ._class_resources import CLASS_RESOURCES
+    return CLASS_RESOURCES.keys()
 
 
 CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]]
