@@ -1,11 +1,13 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Union, Iterator, Iterable,
+    Any, Optional, Union, Iterator, Iterable,
     List, Dict, Tuple, cast,
     BinaryIO, Sequence as SequenceType,
 )
 from enum import Flag as FlagEnum, Enum
 from pathlib import PurePosixPath
+import io
+
 import attrs
 
 from srctools import Property
@@ -273,6 +275,115 @@ ANIM_EVENT_BY_NAME = {
 }  # type: Dict[str, AnimEvents]
 
 ST_PHY_HEADER = Struct('<iiil')
+
+
+class TrackedFile(io.RawIOBase, BinaryIO):
+    """A file-like object which tracks which bytes have been read.
+
+    This allows us to gradually implement parsing of the model, and when saving
+    re-insert unparsed data where it was originally.
+    """
+
+    def __init__(self, file: BinaryIO) -> None:
+        self.data = file.read()
+        self._cur_pos = 0
+        self._read = bytearray(len(self.data))
+        # Filled after the file is closed.
+        self.segments: list[tuple[int, bytes]] = []
+
+    def read(self, size: int = -1) -> bytes:
+        """Read data from the file."""
+        cur_pos = self._cur_pos
+        if size < 0:
+            self._cur_pos = end_pos = len(self.data)
+        else:
+            self._cur_pos = end_pos = min(cur_pos + size, len(self.data))
+        for i in range(cur_pos, end_pos):
+            self._read[i] = 0xFF
+        return self.data[cur_pos:end_pos]
+
+    def readinto(self, buffer: Any) -> int:
+        """Read into the provided buffer.
+
+        This calls read(), so it is not efficent.
+        """
+        view = memoryview(buffer)
+        size = len(view)
+        view[:] = self.read(size)
+        return size
+
+    def readall(self) -> bytes:
+        """Read all the remaining data."""
+        return self.read()
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        """Seek to the provided position."""
+        size = len(self.data)
+        if whence == io.SEEK_SET:
+            pass
+        elif whence == io.SEEK_CUR:
+            offset += self._cur_pos
+        elif whence == io.SEEK_END:
+            offset += size
+        else:
+            raise ValueError(f'Unknown whence value {whence}!')
+
+        if offset >= size:
+            offset = size - 1
+        self._cur_pos = offset
+        return offset
+
+    def tell(self) -> int:
+        """Return the current file offset."""
+        return self._cur_pos
+
+    def close(self) -> None:
+        """Closing collects the unparsed data."""
+        if self.segments:
+            # Closed already.
+            return
+
+        unread_start: Optional[int] = None
+        for pos, is_read in enumerate(self._read):
+            if unread_start is None and not is_read:
+                unread_start = pos
+            elif unread_start is not None and is_read:
+                self.segments.append((unread_start, self.data[unread_start:pos]))
+                unread_start = None
+        if unread_start is not None:
+            self.segments.append((unread_start, self.data[unread_start:]))
+        # Clear our data, not needed any more.
+        self.data = b''
+        self._read.clear()
+        self._cur_pos = 0
+
+    def readable(self) -> bool:
+        """We are readable."""
+        return True
+
+    def seekable(self) -> bool:
+        """We are seekable."""
+        return True
+
+    def writable(self) -> bool:
+        """We are not writable."""
+        return False
+
+    def fileno(self) -> int:
+        """This is not a real file."""
+        raise IOError('In-memory file!')
+
+    def truncate(self, size: int = None) -> int:
+        """This cannot be truncated."""
+        raise IOError('File cannot be modified!')
+
+    def write(self, buf: Any) -> Optional[int]:
+        """This cannot be written to."""
+        raise IOError('File cannot be modified!')
+
+    def writelines(self, lines: Any) -> None:
+        """This cannot be written to."""
+        raise IOError('File cannot be modified!')
 
 
 @attrs.define
