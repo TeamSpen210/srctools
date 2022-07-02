@@ -1,7 +1,7 @@
 """Common code for handling binary formats."""
 from binascii import crc32
-from struct import Struct, unpack_from
-from typing import IO, List, Hashable, Union, Dict, Tuple
+from struct import Struct
+from typing import IO, List, Hashable, Union, Dict, Tuple, overload
 import lzma
 
 from srctools import Vec
@@ -136,15 +136,21 @@ class DeferredWrites:
         # Then the bytes to write there.
         self.data: Dict[Hashable, bytes] = {}
 
-    def defer(self, key: Hashable, fmt: Union[str, Struct], write=False) -> None:
+    @overload
+    def defer(self, key: Hashable, fmt: Union[str, Struct], *, write=False) -> None: ...
+    @overload
+    def defer(self, key: Hashable, fmt: Union[str, Struct], *, offset: int=0) -> None: ...
+    def defer(self, key: Hashable, fmt: Union[str, Struct], *, write=False, offset: int=0) -> None:
         """Mark that the given format data is going to be written here.
 
-        If write is true, write null bytes.
+        If write is true, write null bytes to advance the position appropriately.
+        If offset is specified, the data is to be written some offset into the file.
+        Write and offset are mutally exclusive.
         """
         if isinstance(fmt, str):
             fmt = Struct(fmt)
-        self.loc[key] = (self.file.tell(), fmt)
-        if write:
+        self.loc[key] = (self.file.tell() + offset, fmt)
+        if write and not offset:
             self.file.write(bytes(fmt.size))
 
     def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]):
