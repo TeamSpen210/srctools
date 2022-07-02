@@ -1,11 +1,16 @@
 """Parses Source models, to extract metadata."""
+import itertools
+
 from typing import (
-    Any, Optional, Union, Iterator, Iterable,
-    List, Dict, Tuple, cast,
+    Generic, Union, Optional, Callable, Any, cast,
+    List, Dict, Tuple,
+    Iterator, Iterable,
     BinaryIO, Sequence as SequenceType,
 )
+from typing_extensions import TypeAlias, TypeVarTuple, Unpack, Self
 from enum import Flag as FlagEnum, Enum
 from pathlib import PurePosixPath
+from struct import Struct, pack as struct_pack
 import io
 
 import attrs
@@ -13,12 +18,11 @@ import attrs
 from srctools import Property
 from srctools.const import add_unknown
 from srctools.binformat import (
-    struct_read, read_nullstr, read_offset_array,
+    DeferredWrites, struct_read, read_nullstr, read_offset_array,
     str_readvec,
 )
 from srctools.filesys import FileSystem, File
 from srctools.math import Vec
-from struct import Struct
 
 
 # All the file extensions used for models.
@@ -275,6 +279,8 @@ ANIM_EVENT_BY_NAME = {
 }  # type: Dict[str, AnimEvents]
 
 ST_PHY_HEADER = Struct('<iiil')
+# Max size of a model filename.
+MAX_NAME_SIZE = 64
 
 
 class TrackedFile(io.RawIOBase, BinaryIO):
@@ -305,7 +311,7 @@ class TrackedFile(io.RawIOBase, BinaryIO):
     def readinto(self, buffer: Any) -> int:
         """Read into the provided buffer.
 
-        This calls read(), so it is not efficent.
+        This just calls read(), so it is not efficent.
         """
         view = memoryview(buffer)
         size = len(view)
@@ -421,6 +427,17 @@ class Model:
 
     This does not parse the animation or geometry data, only other metadata.
     """
+    version: int  # Format version.
+    checksum: bytes  # 4-byte checksum
+    name: str  # Filename of the model.
+    eye_pos: Vec  # For creatures, eye position.
+    illum_pos: Vec  # Offset to sample lighting from.
+
+    hull_min: Vec
+    hull_max: Vec
+    view_min: Vec
+    view_max: Vec
+
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
         self._file = file
@@ -429,8 +446,10 @@ class Model:
         self.checksum = b'\0\0\0\0'
 
         self.phys_keyvalues = Property.root()
-        with self._file.open_bin() as f:
-            self._load(f)
+        with self._file.open_bin() as f, TrackedFile(f) as tracker:
+            self._load(tracker)
+
+        self._unparsed = tracker.segments
 
         path = PurePosixPath(file.path)
         try:
@@ -441,7 +460,7 @@ class Model:
             with phy_file.open_bin() as f:
                 self._parse_phy(f, phy_file.path)
 
-    def _load(self, f: BinaryIO) -> None:
+    def _load(self, f: TrackedFile) -> None:
         """Read data from the MDL file."""
         assert f.tell() == 0, "Doesn't begin at start?"
         if f.read(4) != b'IDST':
@@ -454,18 +473,36 @@ class Model:
         ) = struct_read('i 4s 64s i', f)
 
         if not 44 <= self.version <= 49:
-            raise ValueError('Unknown MDL version {}!'.format(self.version))
+            raise ValueError(f'Unknown MDL version {self.version}!')
 
         self.name = name.rstrip(b'\0').decode('ascii')
-        self.eye_pos = str_readvec(f)
-        self.illum_pos = str_readvec(f)
-        # Approx dimensions
-        self.hull_min = str_readvec(f)
-        self.hull_max = str_readvec(f)
 
-        self.view_min = str_readvec(f)
-        self.view_max = str_readvec(f)
+        for chunk in _CHUNKS:
+            header_data = f.read(chunk.format.size)
+            pos = f.tell()
+            chunk.read(self, f, chunk.format.unpack(header_data))
+            f.seek(pos)
 
+        self._old_load(f)
+
+    def save(self, file: BinaryIO) -> None:
+        """Write the main MDL file."""
+        defer = DeferredWrites(file)
+        file.write(struct_pack('4si', b'IDST', self.version))
+        defer.defer('checksum', '4s', write=True)
+
+        byte_name = self.name.encode('ascii')
+        if len(byte_name) > MAX_NAME_SIZE:
+            raise ValueError(
+                f'Model filename must be smaller than {MAX_NAME_SIZE} '
+                f'bytes, not "{self.name}"!'
+            )
+        file.write(byte_name)
+        file.write(bytes(MAX_NAME_SIZE - len(byte_name)))
+        defer.defer('file_len', 'i', write=True)
+
+    def _old_load(self, f: BinaryIO) -> None:
+        """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
             flags,
@@ -896,3 +933,63 @@ class Model:
                 if full in self._sys:
                     yield full
                     break
+
+
+# Parsing code.
+ChunkTuple = TypeVarTuple('ChunkTuple')
+# This is given a block of data, then returns the offset where it was added.
+ChunkAdd: TypeAlias = Callable[[bytes], int]
+# Functions to read from and write to the file.
+ChunkRead: TypeAlias = Callable[[Model, BinaryIO, Tuple[Unpack[ChunkTuple]]], object]
+ChunkWrite: TypeAlias = Callable[[Model, BinaryIO, DeferredWrites, ChunkAdd], Tuple[Unpack[ChunkTuple]]]
+
+@attrs.define
+class Chunk(Generic[Unpack[ChunkTuple]]):
+    """Represents part of the """
+    format: Struct
+    read: ChunkRead[Unpack[ChunkTuple]]
+    write: Optional[ChunkWrite[Unpack[ChunkTuple]]] = None
+
+    @classmethod
+    def register(cls, fmt: str) -> Callable[[ChunkRead[Unpack[ChunkTuple]]], 'Chunk[Unpack[ChunkTuple]]']:
+        """Define a chunk. .writer must be called afterwards."""
+        def deco(func: ChunkRead[Unpack[ChunkTuple]]) -> Chunk[Unpack[ChunkTuple]]:
+            chunk = Chunk(Struct(fmt), func, None)
+            _CHUNKS.append(chunk)
+            return chunk
+        return deco
+
+    def writer(self, write: ChunkWrite[Unpack[ChunkTuple]]) -> Self:
+        """Define the writer."""
+        if self.write is not None:
+            raise ValueError("Can't define two writers.")
+        self.write = write
+        return self
+
+_CHUNKS: List[Chunk] = []
+
+
+@Chunk.register(f'3f 3f 3f')
+def _chunk_dimensions(mdl: Model, f: BinaryIO, data: Tuple[float, ...]) -> None:
+    """The beginning of the file, with the signature and versions."""
+    mdl.eye_pos = Vec(data[0:3])
+    mdl.illum_pos = Vec(data[3:6])
+    mdl.hull_min = Vec(data[6:9])
+    mdl.hull_max = Vec(data[9:12])
+    mdl.view_min = Vec(data[12:15])
+    mdl.view_max = Vec(data[15:18])
+    assert len(data) == 18
+
+
+@_chunk_dimensions.writer
+def _chunk_dimensions(
+    mdl: Model, f: BinaryIO,
+    defer: DeferredWrites, add_chunk: ChunkAdd,
+) -> Tuple[float, ...]:
+    """Write the header."""
+
+    return tuple(itertools.chain(
+        mdl.eye_pos, mdl.illum_pos,
+        mdl.hull_min, mdl.hull_max,
+        mdl.view_min, mdl.view_max,
+    ))
