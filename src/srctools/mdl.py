@@ -1,13 +1,11 @@
 """Parses Source models, to extract metadata."""
 import itertools
-
+import math
 from typing import (
-    Generic, Union, Optional, Callable, Any, cast,
-    List, Dict, Tuple,
-    Iterator, Iterable,
-    BinaryIO, Sequence as SequenceType,
+    Union, Optional, Callable, Any, cast,
+    List, Dict, Tuple, BinaryIO, Iterator, Iterable, Sequence as SequenceType,
 )
-from typing_extensions import TypeAlias, TypeVarTuple, Unpack, Self
+from typing_extensions import TypeAlias
 from enum import Flag as FlagEnum, Enum
 from pathlib import PurePosixPath
 from struct import Struct, pack as struct_pack
@@ -934,31 +932,31 @@ class Model:
 
 
 # Parsing code.
-ChunkTuple = TypeVarTuple('ChunkTuple')
-# This is given a block of data, then returns the offset where it was added.
-ChunkAdd: TypeAlias = Callable[[bytes], int]
+ChunkTuple: TypeAlias = Tuple  # TODO: Typevar inference for this doesn't work in .register call
+# This is either a block of data or a size, then returns the offset where it was added.
+ChunkAdd: TypeAlias = Callable[[Union[bytes, int]], int]
 # Functions to read from and write to the file.
-ChunkRead: TypeAlias = Callable[[Model, BinaryIO, Tuple[Unpack[ChunkTuple]]], object]
-ChunkWrite: TypeAlias = Callable[[Model, BinaryIO, DeferredWrites, ChunkAdd], Tuple[Unpack[ChunkTuple]]]
+ChunkRead: TypeAlias = Callable[[Model, BinaryIO, ChunkTuple], object]
+ChunkWrite: TypeAlias = Callable[[Model, BinaryIO, DeferredWrites, ChunkAdd], ChunkTuple]
 
 
 @attrs.define
-class Chunk(Generic[Unpack[ChunkTuple]]):
+class Chunk:
     """Represents part of the """
     format: Struct
     read: ChunkRead
     write: Optional[ChunkWrite] = None
 
     @classmethod
-    def register(cls, fmt: str) -> Callable[[ChunkRead], 'Chunk[Unpack[ChunkTuple]]']:
+    def register(cls, fmt: str) -> Callable[[ChunkRead], 'Chunk']:
         """Define a chunk. .writer must be called afterwards."""
-        def deco(func: ChunkRead) -> Chunk[Unpack[ChunkTuple]]:
-            chunk = Chunk(Struct(fmt), func, None)
+        def deco(func: ChunkRead) -> Chunk:
+            chunk = cls(Struct(fmt), func, None)
             _CHUNKS.append(chunk)
             return chunk
         return deco
 
-    def writer(self, write: ChunkWrite) -> Self:
+    def writer(self, write: ChunkWrite) -> 'Chunk':
         """Define the writer."""
         if self.write is not None:
             raise ValueError("Can't define two writers.")
