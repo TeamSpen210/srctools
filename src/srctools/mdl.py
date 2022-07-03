@@ -16,11 +16,12 @@ import attrs
 from srctools import Property
 from srctools.const import add_unknown
 from srctools.binformat import (
-    DeferredWrites, struct_read, read_nullstr, read_offset_array,
-    str_readvec,
+    DeferredWrites, parse_3x4_matrix, struct_read, read_nullstr, read_offset_array,
+    str_readvec, build_3x4_matrix
 )
+from srctools.const import BSPContents
 from srctools.filesys import FileSystem, File
-from srctools.math import Vec
+from srctools.math import Angle, Matrix, Vec
 
 
 # All the file extensions used for models.
@@ -407,6 +408,33 @@ class SeqEvent:
 
 
 @attrs.define
+class Bone:
+    """A model bone."""
+    name: str
+    parent: Optional['Bone'] = attrs.field(repr=False)  # Hide, you get recursive reprs.
+    controller_ind: Tuple[int, int, int, int, int, int]
+    pos: Vec
+    quat: Tuple[float, float, float, float]  # TODO Class
+    rotation: Angle
+
+    pos_scale: Vec
+    rot_scale: Vec
+
+    pose_to_bone: Matrix
+    pose_to_bone_off: Vec
+
+    q_alignment: Tuple[float, float, float, float]
+    flags: int  # TODO
+    proc_type: int
+    proc_index: int  # TODO
+    phys_bone: int
+    surfaceprop: str
+    contents: BSPContents
+
+ST_BONE = Struct('ii6i3f4f3f3f3f9f3f4f6i32x')
+
+
+@attrs.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -437,6 +465,7 @@ class Model:
     view_max: Vec
 
     flags: Flags
+    bones_order: List[Bone]
 
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
@@ -445,7 +474,9 @@ class Model:
         self.version = 49
         self.checksum = b'\0\0\0\0'
 
+        self.bones_order = []
         self.phys_keyvalues = Property.root()
+
         with self._file.open_bin() as f, TrackedFile(f) as tracker:
             self._load(tracker)
 
@@ -505,15 +536,12 @@ class Model:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
-            bone_count,
-            bone_off,
-
             bone_controller_count, bone_controller_off,
 
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<10I', f)
+        ) = struct_read('<8I', f)
 
         (
             activitylistversion, eventsindexed,
@@ -936,8 +964,8 @@ ChunkTuple: TypeAlias = Tuple  # TODO: Typevar inference for this doesn't work i
 # This is either a block of data or a size, then returns the offset where it was added.
 ChunkAdd: TypeAlias = Callable[[Union[bytes, int]], int]
 # Functions to read from and write to the file.
-ChunkRead: TypeAlias = Callable[[Model, BinaryIO, ChunkTuple], object]
-ChunkWrite: TypeAlias = Callable[[Model, BinaryIO, DeferredWrites, ChunkAdd], ChunkTuple]
+ChunkRead: TypeAlias = Callable[[Model, IO[bytes], ChunkTuple], object]
+ChunkWrite: TypeAlias = Callable[[Model, IO[bytes], DeferredWrites, ChunkAdd], ChunkTuple]
 
 
 @attrs.define
@@ -1000,7 +1028,81 @@ def _chunk_flags(mdl: Model, f: IO[bytes], data: Tuple[int]) -> None:
 @_chunk_flags.writer
 def _chunk_flags_write(
     mdl: Model, f: IO[bytes],
-    defer: DeferredWrites, add_chunk: ChunkAdd,
+    defer: DeferredWrites, malloc: ChunkAdd,
 ) -> Tuple[int]:
     """Main model bitflags."""
     return (mdl.flags.value, )
+
+
+@Chunk.register('ii')
+def _chunk_bones(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
+    """Bone definitions."""
+    count, off = header_data
+    mdl.bones_order.clear()
+    for _ in range(count):
+        f.seek(off)
+        data = ST_BONE.unpack(f.read(ST_BONE.size))
+        assert len(data) == 46, f'{len(data)} != 46'
+        pose_to_bone, pose_to_bone_off = parse_3x4_matrix(data[24:36])
+
+        mdl.bones_order.append(Bone(
+            name=read_nullstr(f, off + data[0]),
+            parent=data[1],
+            controller_ind=data[2:8],
+            pos=Vec(data[8:11]),
+            quat=data[11:15],
+            rotation=Angle(map(math.degrees, data[15:18])),
+            pos_scale=Vec(data[18:21]),
+            rot_scale=Vec(data[21:24]),
+            pose_to_bone=pose_to_bone,
+            pose_to_bone_off=pose_to_bone_off,
+            q_alignment=data[36:40],
+            flags=data[40],
+            proc_type=data[41],
+            proc_index=data[42],
+            phys_bone=data[43],
+            surfaceprop=read_nullstr(f, off + data[44]),
+            contents=BSPContents(data[45]),
+        ))
+        off += ST_BONE.size
+    for bone in mdl.bones_order:
+        if bone.parent == -1:
+            bone.parent = None
+        else:
+            bone.parent = mdl.bones_order[bone.parent]  # type: ignore
+
+
+@_chunk_bones.writer
+def _chunk_bones_write(
+    mdl: Model, f: IO[bytes],
+    defer: DeferredWrites, malloc: ChunkAdd,
+) -> Tuple[int, int]:
+    """Bone definitions."""
+    base_offset = offset = malloc(ST_BONE.size * len(mdl.bones_order))
+    bone_to_ind = {
+        bone: ind
+        for ind, bone in enumerate(mdl.bones_order)
+    }
+    for bone in mdl.bones_order:
+        f.seek(offset)
+        f.write(ST_BONE.pack(
+            malloc(bone.name.encode('ascii')) - offset,
+            bone_to_ind[bone.parent] if bone.parent is not None else -1,
+            *bone.controller_ind,
+            *bone.pos, *bone.quat,
+            math.radians(bone.rotation.pitch),
+            math.radians(bone.rotation.yaw),
+            math.radians(bone.rotation.roll),
+            *bone.pos_scale, *bone.rot_scale,
+            *build_3x4_matrix(bone.pose_to_bone, bone.pose_to_bone_off),
+            *bone.q_alignment,
+            bone.flags,
+            bone.proc_type,
+            bone.proc_index,
+            bone.phys_bone,
+            malloc(bone.surfaceprop.encode('ascii')) - offset,
+            bone.contents.value,
+        ))
+        offset += ST_BONE.size
+
+    return len(mdl.bones_order), base_offset
