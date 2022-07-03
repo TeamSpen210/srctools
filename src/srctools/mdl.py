@@ -943,23 +943,24 @@ ChunkAdd: TypeAlias = Callable[[bytes], int]
 ChunkRead: TypeAlias = Callable[[Model, BinaryIO, Tuple[Unpack[ChunkTuple]]], object]
 ChunkWrite: TypeAlias = Callable[[Model, BinaryIO, DeferredWrites, ChunkAdd], Tuple[Unpack[ChunkTuple]]]
 
+
 @attrs.define
 class Chunk(Generic[Unpack[ChunkTuple]]):
     """Represents part of the """
     format: Struct
-    read: ChunkRead[Unpack[ChunkTuple]]
-    write: Optional[ChunkWrite[Unpack[ChunkTuple]]] = None
+    read: ChunkRead
+    write: Optional[ChunkWrite] = None
 
     @classmethod
-    def register(cls, fmt: str) -> Callable[[ChunkRead[Unpack[ChunkTuple]]], 'Chunk[Unpack[ChunkTuple]]']:
+    def register(cls, fmt: str) -> Callable[[ChunkRead], 'Chunk[Unpack[ChunkTuple]]']:
         """Define a chunk. .writer must be called afterwards."""
-        def deco(func: ChunkRead[Unpack[ChunkTuple]]) -> Chunk[Unpack[ChunkTuple]]:
+        def deco(func: ChunkRead) -> Chunk[Unpack[ChunkTuple]]:
             chunk = Chunk(Struct(fmt), func, None)
             _CHUNKS.append(chunk)
             return chunk
         return deco
 
-    def writer(self, write: ChunkWrite[Unpack[ChunkTuple]]) -> Self:
+    def writer(self, write: ChunkWrite) -> Self:
         """Define the writer."""
         if self.write is not None:
             raise ValueError("Can't define two writers.")
