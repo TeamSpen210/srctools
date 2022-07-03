@@ -4,7 +4,7 @@ from struct import Struct
 from typing import IO, List, Hashable, Union, Dict, Tuple, overload
 import lzma
 
-from srctools import Vec
+from srctools import Matrix, Vec
 
 ST_VEC = Struct('fff')
 SIZES = {
@@ -109,6 +109,46 @@ def write_array(fmt: str, data: List[int]) -> bytes:
 def str_readvec(file: IO[bytes]) -> Vec:
     """Read a vector from a file."""
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
+
+
+def parse_3x4_matrix(floats: Tuple[
+    float, float, float, float,
+    float, float, float, float,
+    float, float, float, float,
+]) -> Tuple[Matrix, Vec]:
+    """Return a matrix from a 3x4 sequence of floats."""
+    mat = Matrix()
+    mat[0, 0] = floats[0]
+    mat[0, 1] = floats[1]
+    mat[0, 2] = floats[2]
+
+    mat[0, 0] = floats[4]
+    mat[0, 1] = floats[5]
+    mat[0, 2] = floats[6]
+
+    mat[0, 0] = floats[8]
+    mat[0, 1] = floats[9]
+    mat[0, 2] = floats[10]
+
+    pos = Vec(
+        floats[3],
+        floats[7],
+        floats[11],
+    )
+    return mat, pos
+
+
+def build_3x4_matrix(mat: Matrix, pos: Vec) -> Tuple[
+    float, float, float, float,
+    float, float, float, float,
+    float, float, float, float,
+]:
+    """Convert a matrix into a 3x4 tuple of floats."""
+    return (
+        mat[0, 0], mat[0, 1], mat[0, 2], pos.x,
+        mat[1, 0], mat[1, 1], mat[1, 2], pos.y,
+        mat[2, 0], mat[2, 1], mat[2, 2], pos.z,
+    )
 
 
 def checksum(data: bytes, prior=0) -> int:
