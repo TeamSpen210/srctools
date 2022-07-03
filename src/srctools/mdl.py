@@ -431,7 +431,20 @@ class Bone:
     surfaceprop: str
     contents: BSPContents
 
+
+@attrs.define
+class BoneController:
+    """Goldsource era control of bones via entity code."""
+    bone: int
+    type: int
+    start: float
+    end: float
+    rest: int
+    inputfield: int
+
+
 ST_BONE = Struct('ii6i3f4f3f3f3f9f3f4f6i32x')
+ST_BONE_CONTROLLER = Struct('iiffii32x')
 
 
 @attrs.define
@@ -466,6 +479,8 @@ class Model:
 
     flags: Flags
     bones_order: List[Bone]
+    bones: Dict[str, Bone]
+    bone_controllers: List[BoneController]
 
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
@@ -475,6 +490,8 @@ class Model:
         self.checksum = b'\0\0\0\0'
 
         self.bones_order = []
+        self.bones = {}
+        self.bone_controllers = []
         self.phys_keyvalues = Property.root()
 
         with self._file.open_bin() as f, TrackedFile(f) as tracker:
@@ -536,12 +553,10 @@ class Model:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
-            bone_controller_count, bone_controller_off,
-
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<8I', f)
+        ) = struct_read('<6I', f)
 
         (
             activitylistversion, eventsindexed,
@@ -970,8 +985,8 @@ ChunkWrite: TypeAlias = Callable[[Model, IO[bytes], DeferredWrites, ChunkAdd], C
 
 @attrs.define
 class Chunk:
-    """Represents part of the """
-    format: Struct
+    """Represents part of the model."""
+    format: Struct  # The part of the header this uses.
     read: ChunkRead
     write: Optional[ChunkWrite] = None
 
@@ -1039,13 +1054,14 @@ def _chunk_bones(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None
     """Bone definitions."""
     count, off = header_data
     mdl.bones_order.clear()
+    mdl.bones.clear()
     for _ in range(count):
         f.seek(off)
         data = ST_BONE.unpack(f.read(ST_BONE.size))
         assert len(data) == 46, f'{len(data)} != 46'
         pose_to_bone, pose_to_bone_off = parse_3x4_matrix(data[24:36])
 
-        mdl.bones_order.append(Bone(
+        bone = Bone(
             name=read_nullstr(f, off + data[0]),
             parent=data[1],
             controller_ind=data[2:8],
@@ -1063,7 +1079,9 @@ def _chunk_bones(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None
             phys_bone=data[43],
             surfaceprop=read_nullstr(f, off + data[44]),
             contents=BSPContents(data[45]),
-        ))
+        )
+        mdl.bones[bone.name] = bone
+        mdl.bones_order.append(bone)
         off += ST_BONE.size
     for bone in mdl.bones_order:
         if bone.parent == -1:
@@ -1106,3 +1124,49 @@ def _chunk_bones_write(
         offset += ST_BONE.size
 
     return len(mdl.bones_order), base_offset
+
+
+@Chunk.register('ii')
+def _chunk_bone_controllers(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
+    """Goldsource era control of bones via entity code."""
+    count, off = header_data
+    mdl.bone_controllers.clear()
+    f.seek(off)
+    for _ in range(count):
+        (
+            bone_ind,
+            kind,
+            start,
+            end,
+            rest,
+            inputfield
+        ) = ST_BONE_CONTROLLER.unpack(f.read(ST_BONE_CONTROLLER.size))
+        mdl.bone_controllers.append(BoneController(
+            mdl.bones[bone_ind],
+            kind,
+            start, end, rest,
+            inputfield,
+        ))
+
+
+@_chunk_bone_controllers.writer
+def _chunk_bone_controllers_write(
+    mdl: Model, f: IO[bytes],
+    defer: DeferredWrites, malloc: ChunkAdd,
+) -> Tuple[int, int]:
+    """Goldsource era control of bones via entity code."""
+    offset = malloc(ST_BONE_CONTROLLER.size * len(mdl.bone_controllers))
+    bone_to_ind = {
+        bone: ind
+        for ind, bone in enumerate(mdl.bones_order)
+    }
+    f.seek(offset)
+    for controller in mdl.bone_controllers:
+        f.write(ST_BONE_CONTROLLER.pack(
+            bone_to_ind[controller.bone],
+            controller.type,
+            controller.start, controller.end,
+            controller.rest,
+            controller.inputfield,
+        ))
+    return len(mdl.bone_controllers), offset
