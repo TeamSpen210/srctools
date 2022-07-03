@@ -438,6 +438,8 @@ class Model:
     view_min: Vec
     view_max: Vec
 
+    flags: Flags
+
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
         self._file = file
@@ -505,8 +507,6 @@ class Model:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
-            flags,
-
             bone_count,
             bone_off,
 
@@ -515,9 +515,7 @@ class Model:
             hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<11I', f)
-
-        self.flags = Flags(flags)
+        ) = struct_read('<10I', f)
 
         (
             activitylistversion, eventsindexed,
@@ -970,16 +968,16 @@ class Chunk(Generic[Unpack[ChunkTuple]]):
 _CHUNKS: List[Chunk] = []
 
 
-@Chunk.register(f'3f 3f 3f')
+@Chunk.register(f'3f 3f 3f 3f 3f 3f')
 def _chunk_dimensions(mdl: Model, f: BinaryIO, data: Tuple[float, ...]) -> None:
-    """The beginning of the file, with the signature and versions."""
+    """Basic model dimensions."""
     mdl.eye_pos = Vec(data[0:3])
     mdl.illum_pos = Vec(data[3:6])
     mdl.hull_min = Vec(data[6:9])
     mdl.hull_max = Vec(data[9:12])
     mdl.view_min = Vec(data[12:15])
     mdl.view_max = Vec(data[15:18])
-    assert len(data) == 18
+    assert len(data) == 18, data
 
 
 @_chunk_dimensions.writer
@@ -987,10 +985,24 @@ def _chunk_dimensions(
     mdl: Model, f: BinaryIO,
     defer: DeferredWrites, add_chunk: ChunkAdd,
 ) -> Tuple[float, ...]:
-    """Write the header."""
-
+    """Basic model dimensions."""
     return tuple(itertools.chain(
         mdl.eye_pos, mdl.illum_pos,
         mdl.hull_min, mdl.hull_max,
         mdl.view_min, mdl.view_max,
     ))
+
+
+@Chunk.register('i')
+def _chunk_flags(mdl: Model, f: BinaryIO, data: Tuple[int]) -> None:
+    """Main model bitflags."""
+    mdl.flags = Flags(*data)
+
+
+@_chunk_flags.writer
+def _chunk_flags(
+    mdl: Model, f: BinaryIO,
+    defer: DeferredWrites, add_chunk: ChunkAdd,
+) -> Tuple[int]:
+    """Main model bitflags."""
+    return (mdl.flags.value, )
