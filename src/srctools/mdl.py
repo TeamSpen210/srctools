@@ -3,7 +3,7 @@ import itertools
 import math
 from typing import (
     Union, Optional, Callable, Any, cast,
-    List, Dict, Tuple, BinaryIO, Iterator, Iterable, Sequence as SequenceType,
+    List, Dict, Tuple, IO, Iterator, Iterable, Sequence as SequenceType,
 )
 from typing_extensions import TypeAlias
 from enum import Flag as FlagEnum, Enum
@@ -281,19 +281,19 @@ ST_PHY_HEADER = Struct('<iiil')
 MAX_NAME_SIZE = 64
 
 
-class TrackedFile(io.RawIOBase, BinaryIO):
+class TrackedFile(io.RawIOBase, IO[bytes]):
     """A file-like object which tracks which bytes have been read.
 
     This allows us to gradually implement parsing of the model, and when saving
     re-insert unparsed data where it was originally.
     """
 
-    def __init__(self, file: BinaryIO) -> None:
+    def __init__(self, file: IO[bytes]) -> None:
         self.data = file.read()
         self._cur_pos = 0
         self._read = bytearray(len(self.data))
         # Filled after the file is closed.
-        self.segments: list[tuple[int, bytes]] = []
+        self.segments: List[Tuple[int, bytes]] = []
 
     def read(self, size: int = -1) -> bytes:
         """Read data from the file."""
@@ -377,11 +377,11 @@ class TrackedFile(io.RawIOBase, BinaryIO):
         """This is not a real file."""
         raise IOError('In-memory file!')
 
-    def truncate(self, size: int = None) -> int:
+    def truncate(self, size: Optional[int] = None) -> int:
         """This cannot be truncated."""
         raise IOError('File cannot be modified!')
 
-    def write(self, buf: Any) -> Optional[int]:
+    def write(self, buf: Any) -> int:
         """This cannot be written to."""
         raise IOError('File cannot be modified!')
 
@@ -485,7 +485,7 @@ class Model:
 
         self._old_load(f)
 
-    def save(self, file: BinaryIO) -> None:
+    def save(self, file: IO[bytes]) -> None:
         """Write the main MDL file."""
         defer = DeferredWrites(file)
         file.write(struct_pack('4si', b'IDST', self.version))
@@ -501,7 +501,7 @@ class Model:
         file.write(bytes(MAX_NAME_SIZE - len(byte_name)))
         defer.defer('file_len', 'i', write=True)
 
-    def _old_load(self, f: BinaryIO) -> None:
+    def _old_load(self, f: IO[bytes]) -> None:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
@@ -721,7 +721,7 @@ class Model:
         self._cull_skins_table(f, bodypart_count)
 
     @staticmethod
-    def _read_sequences(f: BinaryIO, count: int) -> List[Sequence]:
+    def _read_sequences(f: IO[bytes], count: int) -> List[Sequence]:
         """Split this off to decrease stack in main parse method."""
         sequences: List[Sequence] = [cast(Sequence, None)] * count
         for i in range(count):
@@ -812,7 +812,7 @@ class Model:
 
         return sequences
 
-    def _cull_skins_table(self, f: BinaryIO, body_count: int) -> None:
+    def _cull_skins_table(self, f: IO[bytes], body_count: int) -> None:
         """Fix the table of used skins to correspond to those actually used.
 
         StudioMDL is rather messy, and adds many extra columns that are not used
@@ -880,7 +880,7 @@ class Model:
         for skin_ind, tex in enumerate(self.skins):
             self.skins[skin_ind] = [tex[i] for i in used_inds]
 
-    def _parse_phy(self, f: BinaryIO, filename: str) -> None:
+    def _parse_phy(self, f: IO[bytes], filename: str) -> None:
         """Parse the physics data file, if present.
         """
         [
@@ -900,7 +900,7 @@ class Model:
             single_line=True,
         )
 
-    def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
+    def iter_textures(self, skins: Optional[Iterable[int]] = None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the
@@ -967,7 +967,7 @@ _CHUNKS: List[Chunk] = []
 
 
 @Chunk.register(f'3f 3f 3f 3f 3f 3f')
-def _chunk_dimensions(mdl: Model, f: BinaryIO, data: Tuple[float, ...]) -> None:
+def _chunk_dimensions(mdl: Model, f: IO[bytes], data: Tuple[float, ...]) -> None:
     """Basic model dimensions."""
     mdl.eye_pos = Vec(data[0:3])
     mdl.illum_pos = Vec(data[3:6])
@@ -979,8 +979,8 @@ def _chunk_dimensions(mdl: Model, f: BinaryIO, data: Tuple[float, ...]) -> None:
 
 
 @_chunk_dimensions.writer
-def _chunk_dimensions(
-    mdl: Model, f: BinaryIO,
+def _chunk_dimensions_write(
+    mdl: Model, f: IO[bytes],
     defer: DeferredWrites, add_chunk: ChunkAdd,
 ) -> Tuple[float, ...]:
     """Basic model dimensions."""
@@ -992,14 +992,14 @@ def _chunk_dimensions(
 
 
 @Chunk.register('i')
-def _chunk_flags(mdl: Model, f: BinaryIO, data: Tuple[int]) -> None:
+def _chunk_flags(mdl: Model, f: IO[bytes], data: Tuple[int]) -> None:
     """Main model bitflags."""
     mdl.flags = Flags(*data)
 
 
 @_chunk_flags.writer
-def _chunk_flags(
-    mdl: Model, f: BinaryIO,
+def _chunk_flags_write(
+    mdl: Model, f: IO[bytes],
     defer: DeferredWrites, add_chunk: ChunkAdd,
 ) -> Tuple[int]:
     """Main model bitflags."""
