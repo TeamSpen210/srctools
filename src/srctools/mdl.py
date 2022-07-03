@@ -448,6 +448,20 @@ ST_BONE_CONTROLLER = Struct('iiffii32x')
 
 
 @attrs.define
+class Hitbox:
+    """Hitbox bounding box."""
+    bone: int
+    group: int
+    name: str
+    min: Vec
+    max: Vec
+
+
+ST_HITBOX = Struct('ii3f3fi32x')
+ST_HITBOXSET = Struct('iii')
+
+
+@attrs.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -481,6 +495,7 @@ class Model:
     bones_order: List[Bone]
     bones: Dict[str, Bone]
     bone_controllers: List[BoneController]
+    hitboxes: Dict[str, List[Hitbox]]
 
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
@@ -492,6 +507,7 @@ class Model:
         self.bones_order = []
         self.bones = {}
         self.bone_controllers = []
+        self.hitboxes = {}
         self.phys_keyvalues = Property.root()
 
         with self._file.open_bin() as f, TrackedFile(f) as tracker:
@@ -531,7 +547,7 @@ class Model:
             chunk.read(self, f, chunk.format.unpack(header_data))
             f.seek(pos)
 
-        self._old_load(f)
+        # self._old_load(f)
 
     def save(self, file: IO[bytes]) -> None:
         """Write the main MDL file."""
@@ -553,10 +569,9 @@ class Model:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
         (
-            hitbox_count, hitbox_off,
             anim_count, anim_off,
             sequence_count, sequence_off,
-        ) = struct_read('<6I', f)
+        ) = struct_read('<4I', f)
 
         (
             activitylistversion, eventsindexed,
@@ -1170,3 +1185,66 @@ def _chunk_bone_controllers_write(
             controller.inputfield,
         ))
     return len(mdl.bone_controllers), offset
+
+
+@Chunk.register('ii')
+def _chunk_hitbox_sets(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
+    """The hitboxes for a model."""
+    set_count, set_off = header_data
+    for _ in range(set_count):
+        f.seek(set_off)
+        (name_off, hbox_count, hbox_off) = ST_HITBOXSET.unpack(f.read(ST_HITBOXSET.size))
+        hbset_name = read_nullstr(f, set_off + name_off)
+        hb_set: List[Hitbox] = []
+        mdl.hitboxes[hbset_name] = hb_set
+        hbox_off += set_off
+        for _ in range(hbox_count):
+            f.seek(hbox_off)
+            (
+                bone_ind, group,
+                min_x, min_y, min_z,
+                max_x, max_y, max_z,
+                name_off,
+            ) = ST_HITBOX.unpack(f.read(ST_HITBOX.size))
+            hb_set.append(Hitbox(
+                mdl.bones_order[bone_ind].name,
+                group,
+                read_nullstr(f, hbox_off + name_off) if name_off != 0 else "",
+                Vec(min_x, min_y, min_z),
+                Vec(max_x, max_y, max_z),
+            ))
+            hbox_off += ST_HITBOX.size
+
+        set_off += ST_HITBOXSET.size
+
+
+@_chunk_hitbox_sets.writer
+def _cunk_hitbox_sets_write(
+    mdl: Model, f: IO[bytes],
+    defer: DeferredWrites, malloc: ChunkAdd,
+) -> Tuple[int, int]:
+    """The hitboxes for a model."""
+    hboxset_base = hboxset_off = malloc(ST_HITBOXSET.size * len(mdl.hitboxes))
+    bone_to_ind = {
+        bone: ind
+        for ind, bone in enumerate(mdl.bones_order)
+    }
+    for hboxset_name, hboxes in mdl.hitboxes.items():
+        f.seek(hboxset_off)
+        hbox_off = malloc(ST_HITBOX.size * len(hboxes))
+        f.write(ST_HITBOXSET.pack(
+            malloc(hboxset_name.encode('ascii')) - hboxset_off,
+            len(hboxes),
+            hbox_off
+        ))
+        for hbox in hboxes:
+            f.seek(hbox_off)
+            f.write(ST_HITBOX.pack(
+                bone_to_ind[hbox.bone],
+                hbox.group,
+                malloc(hbox.name.encode('ascii')) - hbox_off if hbox.name else 0,
+                *hbox.min, *hbox.max,
+            ))
+            hbox_off += ST_HITBOX.size
+        hboxset_off += ST_HITBOXSET.size
+    return len(mdl.hitboxes), hboxset_base
