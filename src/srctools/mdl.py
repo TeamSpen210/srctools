@@ -462,6 +462,37 @@ ST_HITBOXSET = Struct('iii')
 
 
 @attrs.define
+class Animation:
+    """A more basic animation definition."""
+    name: str
+    fps: float
+    flags: int
+    frame_count: int
+    movement: Tuple[int, int]  # TODO parse
+    ikrule_zero: int
+    animblock: int
+    animindex: int
+
+    ikrule_count: int
+    ikrule_off: int
+    ikrule_animblock: int
+
+    local_hierarchy_count: int
+    local_hierarchy_off: int
+
+    section_off: int
+    section_frames: int
+
+    zeroframe_span: int
+    zeroframe_count: int
+    zeroframe_ind: int
+    zeroframe_stalltime: float
+
+
+ST_ANIMATION = Struct('4xif5i20x9ihhif')
+
+
+@attrs.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -496,6 +527,7 @@ class Model:
     bones: Dict[str, Bone]
     bone_controllers: List[BoneController]
     hitboxes: Dict[str, List[Hitbox]]
+    animations: Dict[str, Animation]
 
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
@@ -509,6 +541,7 @@ class Model:
         self.bone_controllers = []
         self.hitboxes = {}
         self.phys_keyvalues = Property.root()
+        self.animations = {}
 
         with self._file.open_bin() as f, TrackedFile(f) as tracker:
             self._load(tracker)
@@ -568,10 +601,7 @@ class Model:
     def _old_load(self, f: IO[bytes]) -> None:
         """Directly read from the model. TODO remove."""
         # Break up the reading a bit to limit the stack size.
-        (
-            anim_count, anim_off,
-            sequence_count, sequence_off,
-        ) = struct_read('<4I', f)
+        (sequence_count, sequence_off) = struct_read('<2I', f)
 
         (
             activitylistversion, eventsindexed,
@@ -1157,7 +1187,7 @@ def _chunk_bone_controllers(mdl: Model, f: IO[bytes], header_data: Tuple[int, in
             inputfield
         ) = ST_BONE_CONTROLLER.unpack(f.read(ST_BONE_CONTROLLER.size))
         mdl.bone_controllers.append(BoneController(
-            mdl.bones[bone_ind],
+            mdl.bones_order[bone_ind],
             kind,
             start, end, rest,
             inputfield,
@@ -1248,3 +1278,66 @@ def _cunk_hitbox_sets_write(
             hbox_off += ST_HITBOX.size
         hboxset_off += ST_HITBOXSET.size
     return len(mdl.hitboxes), hboxset_base
+
+
+@Chunk.register('ii')
+def _chunk_animation(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
+    """Basic animations."""
+    count, offset = header_data
+    for _ in range(count):
+        f.seek(offset)
+        (
+            name_ind,
+            fps,
+            flags,
+            num_frames,
+            movement_count,
+            movement_off,
+            ikrulezero_ind,
+            anim_block, anim_index,
+            ikrule_count, ikrule_off, ikrule_animblock_off,
+            local_hierachy_count, local_hierachy_off,
+            section_ind, section_frames,
+            zeroframe_span, zeroframe_count, zeroframe_index,
+            zeroframe_stalltime,
+        ) = ST_ANIMATION.unpack(f.read(ST_ANIMATION.size))
+        name = read_nullstr(f, offset + name_ind)
+        mdl.animations[name] = Animation(
+            name, fps, flags, num_frames,
+            (movement_count, movement_off),
+            ikrulezero_ind,
+            anim_block, anim_index,
+            ikrule_count, ikrule_off, ikrule_animblock_off,
+            local_hierachy_count, local_hierachy_off,
+            section_ind, section_frames,
+            zeroframe_span, zeroframe_count, zeroframe_index,
+            zeroframe_stalltime,
+        )
+        offset += ST_ANIMATION.size
+
+
+@_chunk_animation.writer
+def _chunk_animation_write(
+    mdl: Model, f: IO[bytes],
+    defer: DeferredWrites, malloc: ChunkAdd,
+) -> Tuple[int, int]:
+    """Basic animations."""
+    anim_base = anim_off = malloc(ST_ANIMATION.size * len(mdl.animations))
+    for anim in mdl.animations.values():
+        f.seek(anim_off)
+        f.write(ST_ANIMATION.pack(
+            malloc(anim.name.encode('ascii')) - anim_off,
+            anim.fps,
+            anim.flags,
+            anim.frame_count,
+            *anim.movement,
+            anim.ikrule_zero,
+            anim.animblock, anim.animindex,
+            anim.ikrule_count, anim.ikrule_off, anim.ikrule_animblock,
+            anim.local_hierarchy_count, anim.local_hierarchy_off,
+            anim.section_off, anim.section_frames,
+            anim.zeroframe_span, anim.zeroframe_count, anim.zeroframe_ind,
+            anim.zeroframe_stalltime,
+        ))
+        anim_off += ST_ANIMATION.size
+    return len(mdl.animations), anim_base
