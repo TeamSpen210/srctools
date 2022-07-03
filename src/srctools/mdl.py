@@ -450,7 +450,7 @@ ST_BONE_CONTROLLER = Struct('iiffii32x')
 @attrs.define
 class Hitbox:
     """Hitbox bounding box."""
-    bone: int
+    bone: Bone
     group: int
     name: str
     min: Vec
@@ -1237,7 +1237,7 @@ def _chunk_hitbox_sets(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -
                 name_off,
             ) = ST_HITBOX.unpack(f.read(ST_HITBOX.size))
             hb_set.append(Hitbox(
-                mdl.bones_order[bone_ind].name,
+                mdl.bones_order[bone_ind],
                 group,
                 read_nullstr(f, hbox_off + name_off) if name_off != 0 else "",
                 Vec(min_x, min_y, min_z),
