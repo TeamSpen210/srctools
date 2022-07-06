@@ -22,7 +22,7 @@ class TokenSyntaxError(Exception):
     def __init__(
         self,
         message: str,
-        file: Optional[str],
+        file: Union[str, PathLike, None],
         line: Optional[int],
     ) -> None:
         super().__init__()
@@ -31,11 +31,7 @@ class TokenSyntaxError(Exception):
         self.line_num = line
 
     def __repr__(self) -> str:
-        return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
-            self.mess,
-            self.file,
-            self.line_num,
-            )
+        return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):
@@ -61,7 +57,7 @@ class TokenSyntaxError(Exception):
         if self.file:
             if not self.line_num:
                 mess += '\nError occurred with file'
-            mess += ' "' + self.file + '".'
+            mess += f' "{self.file}".'
         return mess
 
 
@@ -169,11 +165,11 @@ class BaseTokenizer(abc.ABC):
         self.line_num = 1
 
     @overload
-    def error(self, message: Token) -> TokenSyntaxError: ...
+    def error(self, __message: Token) -> TokenSyntaxError: ...
     @overload
-    def error(self, message: Token, __value: str) -> TokenSyntaxError: ...
+    def error(self, __message: Token, __value: str) -> TokenSyntaxError: ...
     @overload
-    def error(self, message: str, *args: object) -> TokenSyntaxError: ...
+    def error(self, __message: str, *args: object) -> TokenSyntaxError: ...
     def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
@@ -345,7 +341,7 @@ class Tokenizer(BaseTokenizer):
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: Union[str, PathLike]=None,
+        filename: Union[str, 'PathLike[str]', None] = None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,

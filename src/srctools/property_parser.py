@@ -57,6 +57,7 @@ They end with a quote."
 
     \n, \t, and \\ will be converted in Property values.
 """
+import os
 import sys
 import keyword
 import builtins  # Property.bool etc shadows these.
@@ -245,7 +246,7 @@ class Property:
     @staticmethod
     def parse(
         file_contents: Union[str, BaseTokenizer, Iterator[str]],
-        filename='', *,
+        filename: Union[str, os.PathLike] = '', *,
         flags: Mapping[str, bool]=EmptyMapping,
         allow_escapes: bool=True,
         single_line: bool=False,
@@ -899,11 +900,11 @@ class Property:
                 value.name = index
                 try:
                     # Replace at the same location.
-                    index = self._value.index(self.find_key(index))
+                    pos = self._value.index(self.find_key(index))
                 except NoKeyError:
                     self._value.append(value)
                 else:
-                    self._value[index] = value
+                    self._value[pos] = value
             else:
                 try:
                     self.find_key(index)._value = value

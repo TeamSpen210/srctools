@@ -354,9 +354,9 @@ class VMF:
         # mapspawn entity, which is the entity world brushes are saved to.
         self.spawn: Entity = spawn or Entity(self)
         self.spawn.solids = self.brushes
-        self.is_prefab = srctools.conv_bool(map_info.get('prefab'), False)
-        self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on'), False)
-        self.map_ver = srctools.conv_int(map_info.get('mapversion'))
+        self.is_prefab = srctools.conv_bool(map_info.get('prefab', '0'), False)
+        self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on', '0'), False)
+        self.map_ver = srctools.conv_int(map_info.get('mapversion', '0'))
 
         if 'mapversion' in self.spawn:
             # This is saved only in the main VMF object, delete the copy.
@@ -364,29 +364,28 @@ class VMF:
         # The worldspawn entity should always be worldspawn.
         self.spawn['classname'] = 'worldspawn'
 
-        # These three are mostly useless for us, but we'll preserve them anyway
         self.format_ver = srctools.conv_int(
-            map_info.get('formatversion'), 100)
+            map_info.get('formatversion', '100'), 100)
         self.hammer_ver = srctools.conv_int(
-            map_info.get('editorversion'), CURRENT_HAMMER_VERSION)
+            map_info.get('editorversion', ''), CURRENT_HAMMER_VERSION)
         self.hammer_build = srctools.conv_int(
-            map_info.get('editorbuild'), CURRENT_HAMMER_BUILD)
+            map_info.get('editorbuild', ''), CURRENT_HAMMER_BUILD)
 
         # Various Hammer settings
         self.show_grid = srctools.conv_bool(
-            map_info.get('showgrid'), True)
+            map_info.get('showgrid', '1'), True)
         self.show_3d_grid = srctools.conv_bool(
-            map_info.get('show3dgrid'), False)
+            map_info.get('show3dgrid', '0'), False)
         self.snap_grid = srctools.conv_bool(
-            map_info.get('snaptogrid'), True)
+            map_info.get('snaptogrid', '1'), True)
         self.show_logic_grid = srctools.conv_bool(
-            map_info.get('showlogicalgrid'), False)
+            map_info.get('showlogicalgrid', '0'), False)
         self.grid_spacing = srctools.conv_int(
-            map_info.get('gridspacing'), 64)
+            map_info.get('gridspacing', '64'), 64)
         self.active_cam = srctools.conv_int(
-            map_info.get('active_cam'), -1)
+            map_info.get('active_cam', '-1'), -1)
         self.quickhide_count = srctools.conv_int(
-            map_info.get('quickhide'), -1)
+            map_info.get('quickhide', '-1'), -1)
 
     def add_brush(self, item: 'Solid'):
         """Add a world brush to this map."""
@@ -1172,7 +1171,7 @@ class Solid:
             vmf_file or self.map,
             des_id,
             sides,
-            self.visgroup_ids if keep_vis else (),
+            self.visgroup_ids if keep_vis else set(),
             self.hidden if keep_vis else False,
             self.group_id,
             self.vis_shown if keep_vis else True,
