@@ -86,13 +86,13 @@ include = [
 	"src/srctools/"
 	]
 exclude = [
-	# Tests deliberately do incorrect things to test error handling, so ignore types.
-	"tests/",
 	"**/__pycache__"
 	]
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
+pythonVersion = "3.8"
+strictParameterNoneValue = false
 
 [tool.pytest.ini_options]
 filterwarnings = [
