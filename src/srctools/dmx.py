@@ -166,6 +166,15 @@ Value = Union[
     Matrix,
     _Element,
 ]
+ValueList = Union[
+    List[int], List[float], List[bool], List[str], List[bytes],
+    List[Color], List[Time],
+    List[Vec2], List[Vec3], List[Vec4],
+    List[AngleTup],
+    List[Quaternion],
+    List[Matrix],
+    List[_Element],
+]
 # Additional values we convert to valid types.
 ConvValue = Union[Value, Iterable[float]]
 
@@ -182,9 +191,10 @@ ValueT = TypeVar(
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
-TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+# Use Any since we can't show the ValueType -> Value match to the type checker.
+TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Any]]
 # Take valid types, convert to the value.
-CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
+CONVERSIONS: Dict[ValueType, Callable[[object], Any]]
 # And type -> size, excluding str/bytes.
 SIZES: Dict[ValueType, int]
 # Name used for keyvalues1 properties.
@@ -438,6 +448,8 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None: ...
+    @overload
+    def __init__(self, name: str, val_type: ValueType, value: Union[Value, ValueList]) -> None: ...
 
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None:  # type: ignore
         """For internal use only."""
@@ -810,6 +822,7 @@ class Attribute(Generic[ValueT], _ValProps):
         """Set a specific array element to a value."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
+        arr: List[Value] = self._value  # type: ignore
         [val_type, result] = deduce_type_single(value)
         if val_type is not self._typ:
             # Try converting.
@@ -817,9 +830,9 @@ class Attribute(Generic[ValueT], _ValProps):
                 func = TYPE_CONVERT[val_type, self._typ]
             except KeyError:
                 raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
-            self._value[item] = cast(ValueT, func(result))
+            arr[item] = func(result)
         else:
-            self._value[item] = cast(ValueT, result)
+            arr[item] = result
 
     def __delitem__(self, item: Union[builtins.int, slice]) -> None:
         """Remove the specified array index(s)."""
@@ -898,11 +911,11 @@ class Attribute(Generic[ValueT], _ValProps):
                     value.append(copy.copy(subval))
                 else:
                     value.append(subval)
+            return Attribute(self.name, self._typ, value)
         elif isinstance(self._value, Matrix):
-            value = copy.copy(self._value)
+            return Attribute(self.name, self._typ, copy.copy(self._value))
         else:
-            value = self._value
-        return Attribute(self.name, self._typ, value)
+            return Attribute(self.name, self._typ, self._value)
 
     copy = __copy__
 
@@ -1826,7 +1839,7 @@ TYPE_TO_VALTYPE: Dict[type, ValueType] = {
 }
 
 
-def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, List[Value]]]:
+def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, ValueList]]:
     """Convert Python objects to an appropriate ValueType."""
     if isinstance(value, list):  # Array.
         return deduce_type_array(value)
@@ -1834,7 +1847,7 @@ def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Un
         return deduce_type_single(value)
 
 
-def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, List[Value]]:
+def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, ValueList]:
     """Convert a Python list to an appropriate ValueType."""
     if len(value) == 0:
         raise TypeError('Cannot deduce type for empty list!')

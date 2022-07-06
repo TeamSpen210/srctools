@@ -1097,18 +1097,15 @@ class EntityDef:
     desc: str = ''
 
     # Views for accessing data among all the entities.
-    kv: _EntityView[KeyValues] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
-        takes_self=True,
-    ))
-    inp: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='inputs', disp_name='inp'),
-        takes_self=True,
-    ))
-    out: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='outputs', disp_name='out'),
-        takes_self=True,
-    ))
+    kv: _EntityView[KeyValues] = attrs.field(init=False)
+    inp: _EntityView[IODef] = attrs.field(init=False)
+    out: _EntityView[IODef] = attrs.field(init=False)
+
+    def __attrs_post_init__(self) -> None:
+        """Setup Entity views."""
+        self.kv = _EntityView(self, 'keyvalues', 'kv')
+        self.inp = _EntityView(self, 'inputs', 'inp')
+        self.out = _EntityView(self, 'outputs', 'out')
 
     @classmethod
     def parse(
