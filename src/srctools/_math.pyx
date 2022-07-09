@@ -452,7 +452,7 @@ cdef class VecIterGrid:
         if self.cur_x > self.stop_x:
             raise StopIteration
 
-        vec =_vector(self.cur_x, self.cur_y, self.cur_z)
+        vec =_vector(<double>self.cur_x, <double>self.cur_y, <double>self.cur_z)
 
         self.cur_z += self.stride
         if self.cur_z > self.stop_z:
