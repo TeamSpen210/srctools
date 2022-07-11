@@ -1531,7 +1531,26 @@ class BSP:
         self.texinfo.append(new_texinfo)
         return new_texinfo
 
-    # Lump-specific commands:
+    def is_cordoned_heuristic(self) -> bool:
+        """Guess to see if the map uses cordons.
+
+        There's no definite flag, but we can guess based on the shape of the geometry. Cordoning
+        causes a brush almost the map size units to be created, then the cordon regions carved out
+        of it. So the overall map size will be very close to the max range.
+
+        This isn't certain, since users could manually create brushes this large, but that's not
+        too likely.
+        """
+        tree = self.nodes[0]
+        # Round to avoid precision issues. 32776 is the size in Desolation, which has a bigger
+        # map size.
+        return all(
+            round(abs(val)) in {16392, 32776}
+            for vec in [tree.mins, tree.maxes]
+            for val in vec
+        )
+
+    # Lump reading and writing code:
     def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
         for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
             yield Plane(Vec(x, y, z), dist, PlaneType(typ))
