@@ -772,11 +772,11 @@ class Overlay:
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
 
-    # If system exceeds these limits, the overlay is skipped.
-    min_cpu: int = -1
-    max_cpu: int = -1
-    min_gpu: int = -1
-    max_gpu: int = -1
+    # If system exceeds these limits, the overlay is skipped. Each is a single byte.
+    min_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    min_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
 
 
 @attrs.define(eq=False)
@@ -2280,7 +2280,7 @@ class BSP:
             if face_cnt > OVERLAY_FACE_COUNT:
                 raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
-            levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
                 # texinfo, face-and-render-order
                 '<iiHxx' if TEXINFO_IND_TYPE == "i" else '<ihH',
