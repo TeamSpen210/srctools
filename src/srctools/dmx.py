@@ -1091,24 +1091,15 @@ class Element(Mapping[str, Attribute]):
                     # It's elementid in these versions ???
                     raise ValueError('Time attribute added in version 3!')
                 elif attr_type is ValueType.ELEMENT:
+                    array: List[Any] = []
+                    array_iter: Iterable[int]
+                    attr = Attribute(name, attr_type, array)
                     if array_size is not None:
-                        array: List[Any] = []
-                        attr = Attribute(name, attr_type, array)
-                        for _ in range(array_size):
-                            [ind] = binformat.struct_read('<i', file)
-                            if ind == -1:
-                                child_elem = NULL
-                            elif ind == -2:
-                                # Stub element, just with a UUID.
-                                uuid = UUID(binformat.read_nullstr(file))
-                                try:
-                                    child_elem = stubs[uuid]
-                                except KeyError:
-                                    child_elem = stubs[uuid] = StubElement.stub(uuid)
-                            else:
-                                child_elem = elements[ind]
-                            array.append(child_elem)
+                        array_iter = range(array_size)
                     else:
+                        array_iter = (0, )  # Single element, run the loop once to reuse code.
+
+                    for _ in array_iter:
                         [ind] = binformat.struct_read('<i', file)
                         if ind == -1:
                             child_elem = NULL
@@ -1121,7 +1112,11 @@ class Element(Mapping[str, Attribute]):
                                 child_elem = stubs[uuid] = StubElement.stub(uuid)
                         else:
                             child_elem = elements[ind]
-                        attr = Attribute(name, ValueType.ELEMENT, child_elem)
+                        array.append(child_elem)
+                    if array_size is None:
+                        # Unpack into a single element.
+                        [attr._value] = array
+
                 elif attr_type is ValueType.STRING:
                     if array_size is not None:
                         # Arrays are always raw ASCII in the file.
@@ -1151,8 +1146,9 @@ class Element(Mapping[str, Attribute]):
                     size = SIZES[attr_type]
                     conv = TYPE_CONVERT[ValueType.BINARY, attr_type]
                     if array_size is not None:
+                        file_, size_ = file, size  #  Prevent other uses from being cellvars.
                         attr = Attribute(name, attr_type, [
-                            conv(file.read(size))
+                            conv(file_.read(size_))
                             for _ in range(array_size)
                         ])
                     else:
@@ -1230,9 +1226,9 @@ class Element(Mapping[str, Attribute]):
             if attr_name == 'id':
                 if typ_name != 'elementid':
                     raise tok.error(
-                        'Element ID attribute must be '
-                        '"elementid" type, not "{}"!',
-                        typ_name
+                        'Element {} attribute must be "{}" type, not "{}"!',
+                        # Format literal strings, so we can reuse the string below.
+                        'id', 'elementid', typ_name,
                     )
                 uuid_str = tok.expect(STRING)
                 if elem.uuid is not _UNSET_UUID:
@@ -1246,9 +1242,8 @@ class Element(Mapping[str, Attribute]):
             elif attr_name == 'name':  # This is also special.
                 if typ_name != 'string':
                     raise tok.error(
-                        'Element name attribute must be '
-                        '"string" type, not "{}"!',
-                        typ_name
+                        'Element {} attribute must be "{}" type, not "{}"!',
+                        'name', 'string', typ_name
                     )
                 elem.name = tok.expect(STRING)
                 continue

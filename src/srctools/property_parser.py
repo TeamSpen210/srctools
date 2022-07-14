@@ -68,14 +68,10 @@ from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
-    Optional, Union, Any,
-    List, Tuple, Dict, Iterator,
-    TypeVar,
-    Iterable,
-    overload, cast,
-    Callable,
-    Mapping,
+    Optional, Union, Any, TypeVar, overload, cast,
+    List, Tuple, Dict, Callable, Mapping, Iterable, Iterator,
 )
+from typing_extensions import Final
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
@@ -283,11 +279,11 @@ class Property:
         open_properties: List[Tuple[Property, int]] = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
-        STRING = Token.STRING
-        PROP_FLAG = Token.PROP_FLAG
-        NEWLINE = Token.NEWLINE
-        BRACE_OPEN = Token.BRACE_OPEN
-        BRACE_CLOSE = Token.BRACE_CLOSE
+        STRING: Final = Token.STRING
+        PROP_FLAG: Final = Token.PROP_FLAG
+        NEWLINE: Final = Token.NEWLINE
+        BRACE_OPEN: Final = Token.BRACE_OPEN
+        BRACE_CLOSE: Final = Token.BRACE_CLOSE
 
         if isinstance(file_contents, BaseTokenizer):
             tokenizer = file_contents
@@ -304,8 +300,8 @@ class Property:
 
         # If >= 0, we're requiring a block to open next ("name"\n must have { next.)
         # It's the line number of the header name then.
-        BLOCK_LINE_NONE = -1  # there's no block.
-        BLOCK_LINE_SKIP = -2  # the block is disabled, so we need to skip it.
+        BLOCK_LINE_NONE: Final = -1  # there's no block.
+        BLOCK_LINE_SKIP: Final = -2  # the block is disabled, so we need to skip it.
         block_line = BLOCK_LINE_NONE
         # Are we permitted to replace the last property with a flagged version of the same?
         can_flag_replace = False
@@ -698,7 +694,7 @@ class Property:
         result._folded_name = self._folded_name
         if isinstance(self._value, list):
             # This recurses if needed
-            result._value = list(map(Property.copy, self._value))
+            result._value = [child.copy() for child in self._value]
         else:
             result._value = self._value
         return result
