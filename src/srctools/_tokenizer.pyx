@@ -935,7 +935,7 @@ cdef class BlockIter:
         return f'<srctools.tokenizer.BaseTokenizer.block() at {id(self):X}>'
 
     def __init__(self, tok):
-        raise TypeError("Cannot create 'BlockIter' instances")
+        raise TypeError("Cannot create 'BlockIter' instances directly, use Tokenizer.block().")
 
     def __iter__(self):
         return self
