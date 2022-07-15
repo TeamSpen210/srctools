@@ -804,7 +804,7 @@ class Brush:
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
-    The bounds is defined implicitly by the parent node planes.
+    The bounds are defined implicitly by the parent node planes.
     """
     contents: BrushContents
     cluster_id: int
@@ -816,6 +816,8 @@ class VisLeaf:
     brushes: List[Brush]
     water_id: int
     _ambient: bytes = bytes(24)
+    # This is LEAF_MIN_DIST_TO_WATER
+    min_water_dist: int = 65535
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
         """Test the given point against us, returning ourself or None."""
@@ -1127,6 +1129,8 @@ class BSP:
 
         self.read()
 
+    # The first lump is the main one this reads/writes to, any additional are simpler lumps it
+    # reads and includes all the data for.
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
@@ -1136,7 +1140,7 @@ class BSP:
 
     bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
     brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
+    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER)
     nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
@@ -1830,6 +1834,8 @@ class BSP:
             self.faces.__getitem__,
             struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
+        # Another lump which is just an array of ints - no point being separate.
+        dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
 
         leaf_fmt = FMT_LEAF_BASE
         has_ambient = False
@@ -1847,7 +1853,7 @@ class BSP:
             first_face, num_faces,
             first_brush, num_brushes,
             *water_ind_and_ambient
-        ) in struct.iter_unpack(leaf_fmt, data):
+        ), water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
             area = area_and_flags >> 7
             flags = area_and_flags & 0b1111111
             if has_ambient:
@@ -1862,7 +1868,7 @@ class BSP:
                 Vec(max_x, max_y, max_z),
                 leaf_faces[first_face:first_face+num_faces],
                 leaf_brushes[first_brush:first_brush+num_brushes],
-                water_ind, ambient,
+                water_ind, ambient, water_dist,
             )
 
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
@@ -1929,6 +1935,7 @@ class BSP:
         """Reconstruct the leafs of the visleaf/bsp tree."""
         leaf_faces: List[int] = []
         leaf_brushes: List[int] = []
+        min_water_dists: List[int] = []
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
@@ -1941,6 +1948,7 @@ class BSP:
             brush_ind = len(leaf_brushes)
             leaf_faces.extend(map(add_face, leaf.faces))
             leaf_brushes.extend(map(add_brush, leaf.brushes))
+            min_water_dists.append(leaf.min_water_dist)
 
             buf.write(struct.pack(
                 FMT_LEAF_BASE,
@@ -1958,6 +1966,7 @@ class BSP:
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
+        self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data = write_array('<H', min_water_dists)
         return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
