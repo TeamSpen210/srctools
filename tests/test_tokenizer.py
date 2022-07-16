@@ -175,10 +175,15 @@ def check_tokens(tokenizer, tokens):
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert comp_type is token[0], "got {}, expected {} @ pos {}={}".format(token[0], comp_type, i, tokens[i-2: i+1])
-            assert comp_value == token[1], "got {!r}, expected {!r} @ pos {}={}".format(token[1], comp_value, i, tokens[i-2: i+1])
+            assert comp_type is token[0] and comp_value == token[1], (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_type}({comp_value!r}) @ pos {i}={tokens[i - 2: i + 1]}"
+            )
         else:
-            assert token[0] is comp_token, "got {}, expected {} @ pos {}={}".format(token[0], comp_token, i, tokens[i-2: i+1])
+            assert token[0] is comp_token, (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_token} @ pos {i}={tokens[i - 2: i + 1]}"
+            )
 
 
 def test_prop_tokens(py_c_token):
