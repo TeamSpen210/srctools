@@ -1505,15 +1505,15 @@ class BSP:
         manually or a filesystem provided for the VMT and VTFs to be read from.
         """
         if copy_from is not None:
-            s_off = copy_from.s_off
+            s_off = copy_from.s_off.copy()
             s_shift = copy_from.s_shift
-            t_off = copy_from.t_off
+            t_off = copy_from.t_off.copy()
             t_shift = copy_from.t_shift
-            lightmap_s_off = copy_from.lightmap_s_off
+            lightmap_s_off = copy_from.lightmap_s_off.copy()
             lightmap_s_shift = copy_from.lightmap_s_shift
-            lightmap_t_off = copy_from.lightmap_t_off
+            lightmap_t_off = copy_from.lightmap_t_off.copy()
             lightmap_t_shift = copy_from.lightmap_t_shift
-
+            flags = copy_from.flags
         try:
             data = self._texdata[mat.casefold()]
             search = True
