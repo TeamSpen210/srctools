@@ -376,6 +376,7 @@ class Tokenizer(BaseTokenizer):
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
+        self._last_was_cr = False
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -411,11 +412,22 @@ class Tokenizer(BaseTokenizer):
                 return _OPERATORS[next_char], next_char
             except KeyError:
                 pass
-            if next_char == '\n':
+            # Handle newlines, converting \r and \r\n to \n.
+            if next_char == '\r':
+                self._last_was_cr = True
                 self.line_num += 1
                 return Token.NEWLINE, '\n'
+            elif next_char == '\n':
+                # Consume the \n in \r\n.
+                if self._last_was_cr:
+                    self._last_was_cr = False
+                    continue
+                self.line_num += 1
+                return Token.NEWLINE, '\n'
+            else:
+                self._last_was_cr = False
 
-            elif next_char in ' \t':
+            if next_char in ' \t':
                 # Ignore whitespace..
                 continue
 
@@ -476,13 +488,25 @@ class Tokenizer(BaseTokenizer):
             # Strings
             elif next_char == '"':
                 value_chars: List[str] = []
+                last_was_cr = False
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
                         return Token.STRING, ''.join(value_chars)
-                    elif next_char == '\n':
+                    elif next_char == '\r':
                         self.line_num += 1
-                    elif next_char == '\\' and self.allow_escapes:
+                        last_was_cr = True
+                        value_chars.append('\n')
+                        continue
+                    elif next_char == '\n':
+                        if last_was_cr:
+                            last_was_cr = False
+                            continue
+                        self.line_num += 1
+                    else:
+                        last_was_cr = False
+
+                    if next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
                         if escape is None:
@@ -565,9 +589,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED:
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.DIRECTIVE, ''.join(value_chars)
                     elif next_char is None:
@@ -582,9 +605,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED or (next_char == ':' and self.colon_operator):
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.STRING, ''.join(value_chars)
                     elif next_char is None:

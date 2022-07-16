@@ -74,6 +74,7 @@ DEF FL_ALLOW_STAR_COMMENTS = 1<<2
 DEF FL_COLON_OPERATOR      = 1<<3
 # If set, the file_iter is a bound read() method.
 DEF FL_FILE_INPUT          = 1<<4
+DEF FL_LAST_WAS_CR         = 1<<5
 
 DEF FILE_BUFFER = 1024
 DEF CHR_EOF = 0x03  # Indicate the end of the file.
@@ -610,6 +611,7 @@ cdef class Tokenizer(BaseTokenizer):
             int start_line
             bint ascii_only
             uchar decode[5]
+            bint last_was_cr
 
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
@@ -618,6 +620,7 @@ cdef class Tokenizer(BaseTokenizer):
 
         while True:
             next_char = self._next_char()
+            # First try simple operators & EOF.
             if next_char == CHR_EOF:
                 return EOF_TUP
 
@@ -631,13 +634,23 @@ cdef class Tokenizer(BaseTokenizer):
                 return EQUALS_TUP
             elif next_char == b',':
                 return COMMA_TUP
-            # First try simple operators & EOF.
 
+            # Handle newlines, converting \r and \r\n to \n.
+            if next_char == b'\r':
+                self.line_num += 1
+                self.flags |= FL_LAST_WAS_CR
+                return NEWLINE_TUP
             elif next_char == b'\n':
+                # Consume the \n in \r\n.
+                if self.flags & FL_LAST_WAS_CR:
+                    self.flags &= ~FL_LAST_WAS_CR
+                    continue
                 self.line_num += 1
                 return NEWLINE_TUP
+            else:
+                self.flags &= ~FL_LAST_WAS_CR
 
-            elif next_char in b' \t':
+            if next_char in b' \t':
                 # Ignore whitespace..
                 continue
 
@@ -697,15 +710,27 @@ cdef class Tokenizer(BaseTokenizer):
             # Strings
             elif next_char == b'"':
                 self.buf_reset()
+                last_was_cr = False
                 while True:
                     next_char = self._next_char()
                     if next_char == CHR_EOF:
                         raise self._error('Unterminated string!')
                     elif next_char == b'"':
                         return STRING, self.buf_get_text()
-                    elif next_char == b'\n':
+                    elif next_char == b'\r':
                         self.line_num += 1
-                    elif next_char == b'\\' and self.flags & FL_ALLOW_ESCAPES:
+                        last_was_cr = True
+                        self.buf_add_char(b'\n')
+                        continue
+                    elif next_char == b'\n':
+                        if last_was_cr:
+                            last_was_cr = False
+                            continue
+                        self.line_num += 1
+                    else:
+                        last_was_cr = False
+
+                    if next_char == b'\\' and self.flags & FL_ALLOW_ESCAPES:
                         # Escape text
                         escape_char = self._next_char()
                         if escape_char == CHR_EOF:

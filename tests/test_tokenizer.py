@@ -1,5 +1,5 @@
 from itertools import zip_longest, tee
-from typing import Callable, Iterator, Type, Tuple
+from typing import Callable, Iterable, Iterator, Type, Tuple, Union
 
 import pytest
 import codecs
@@ -147,7 +147,10 @@ def py_c_token(request):
 del parms, ids
 
 
-def check_tokens(tokenizer, tokens):
+def check_tokens(
+    tokenizer: Iterable[Tuple[Token, str]],  # Iterable so a list can be passed to check.
+    tokens: Iterable[Union[Token, Tuple[Token, str]]],
+) -> None:
     """Check the tokenizer produces the given tokens.
 
     The arguments are either (token, value) tuples or tokens.
@@ -186,7 +189,7 @@ def check_tokens(tokenizer, tokens):
             )
 
 
-def test_prop_tokens(py_c_token):
+def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     Tokenizer = py_c_token
 
@@ -407,6 +410,24 @@ def test_bom(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(Tokenizer(['e']), [(Token.STRING, 'e')])
     check_tokens(Tokenizer(['e', 'x']), [(Token.STRING, 'ex')])
     check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
+
+
+def test_universal_newlines(py_c_token: Type[Tokenizer]) -> None:
+    r"""Test that \r characters are replaced by \n, even in direct strings."""
+    tokens = [
+        (Token.STRING, 'Line'),
+        (Token.STRING, 'one\ntwo'),
+        Token.NEWLINE,
+        (Token.STRING, 'Line\nTwo'),
+        Token.NEWLINE,
+        Token.COMMA,
+        Token.NEWLINE, Token.NEWLINE,
+        Token.EQUALS,
+        (Token.STRING, 'multi\nline'),
+    ]
+    text = ['Line "one\ntwo" \r', '"Line\rTwo"', '\r', '\n,', '\r\r', '=', '"multi\r\nline"']
+    check_tokens(py_c_token(text), tokens)
+    check_tokens(py_c_token(''.join(text)), tokens)
 
 
 def test_constructor(py_c_token: Type[Tokenizer]) -> None:
