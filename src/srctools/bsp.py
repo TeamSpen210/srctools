@@ -244,7 +244,8 @@ LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
     BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
-    BSP_LUMPS.LEAFS,  # References brushes, faces
+    BSP_LUMPS.LEAFS,  # References brushes, faces, leaf water info.
+    BSP_LUMPS.LEAFWATERDATA,  # References texinfo
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
 
@@ -486,7 +487,6 @@ class TexData:
 
         try:
             reflect = Vec.from_str(mat['$reflectivity'])
-            print(reflect, repr(mat['$reflectivity']))
         except KeyError:
             pass
         return TexData(orig_mat, reflect, width, height)
@@ -885,6 +885,14 @@ class VisTree:
 
 
 @attrs.define(eq=False)
+class LeafWaterInfo:
+    """Additional data about water volumes."""
+    surface_z: float
+    min_z: float
+    surface_texinfo: TexInfo
+
+
+@attrs.define(eq=False)
 class BModel:
     """A brush model definition, used for the world entity along with all other brush ents."""
     mins: Vec
@@ -1141,6 +1149,7 @@ class BSP:
     bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
     brushes: ParsedLump[List[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
     visleafs: ParsedLump[List[VisLeaf]] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER)
+    water_leaf_info: ParsedLump[List[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     nodes: ParsedLump[List[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
@@ -1822,7 +1831,19 @@ class BSP:
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
-    def _lmp_read_visleafs(self, data: bytes) -> Iterator['VisLeaf']:
+    def _lmp_read_water_leaf_info(self, data: bytes) -> Iterator[LeafWaterInfo]:
+        """Parse data associated with visleafs containing water."""
+        texinfo = self.texinfo
+        for surf_z, min_z, texinfo_ind in struct.iter_unpack('<ffH2x', data):
+            yield LeafWaterInfo(surf_z, min_z, texinfo[texinfo_ind])
+
+    def _lmp_write_water_leaf_info(self, data: List[LeafWaterInfo]) -> Iterator[bytes]:
+        """Write data associated with visleafs containing water."""
+        add_texinfo = _find_or_insert(self.texinfo)
+        for info in self.water_leaf_info:
+            yield struct.pack('<ffH2x', info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
+
+    def _lmp_read_visleafs(self, data: bytes) -> Iterator[VisLeaf]:
         """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
         # starmap() to unpack the 1-tuple struct result, then index with that.
