@@ -77,7 +77,7 @@ struct TokFlags {
     unsigned char allow_star_comments: 1;
     unsigned char file_input: 1;
     unsigned char last_was_cr: 1;
-}
+};
     """
     cdef struct TokFlags:
         bint string_brackets
