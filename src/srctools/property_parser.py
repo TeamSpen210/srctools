@@ -244,22 +244,26 @@ class Property:
         file_contents: Union[str, BaseTokenizer, Iterator[str]],
         filename: Union[str, os.PathLike] = '', *,
         flags: Mapping[str, bool]=EmptyMapping,
+        newline_keys: bool = False,
+        newline_values: bool = True,
         allow_escapes: bool=True,
         single_line: bool=False,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
-        filename, if set should be the source of the text for debug purposes.
-        file_contents should be an iterable of strings or a single string.
-        flags should be a mapping for additional flags to accept
-        (which overrides defaults).
-        allow_escapes allows choosing if \\t or similar escapes are parsed.
-        If single_line is set, allow multiple properties to be on the same line.
-        This means unterminated strings will be caught late (if at all), but
-        it allows parsing some 'internal' data blocks.
-
-        Alternatively, file_contents may be an already created tokenizer.
-        In this case allow_escapes is ignored.
+        * `file_contents` should be an iterable of strings or a single string.
+          Alternatively, file_contents may be an already created tokenizer.
+          In this case allow_escapes is ignored.
+        * `filename`, if set should be the source of the text for debug purposes. If not supplied,
+          file_contents.name will be used if present.
+        * flags should be a mapping for additional [flag] suffixes to accept.
+        * `allow_escapes` allows choosing if \\t or similar escapes are parsed.
+        * If `single_line` is set, allow multiple properties to be on the same line.
+          This means unterminated strings will be caught late (if at all), but
+          it allows parsing some 'internal' data blocks.
+        * `newline_keys` and `newline_values` specify if newline characters are allowed in keys or
+          values, respectively. Keys are prohibited by default, since this is fairly useless, but
+          if quote characters are mismatched it'll catch the mistake early.
         """
         # The block we are currently adding to.
 
@@ -339,6 +343,8 @@ class Property:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
+                if not newline_keys and '\n' in token_value or '\r' in token_value:
+                    raise tokenizer.error('Illegal newline found in key "{}"!', token_value)
                 # Skip calling __init__ for speed. Value needs to be set
                 # before using this, since it's unset here.
                 keyvalue = Property.__new__(Property)
@@ -381,6 +387,8 @@ class Property:
                             'A value like "name" "value" must be on the same '
                             'line.'
                         )
+                    if not newline_values and '\n' in prop_value or '\r' in prop_value:
+                        raise tokenizer.error('Illegal newline found in value "{}"!', prop_value)
 
                     keyvalue._value = prop_value
 
