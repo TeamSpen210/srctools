@@ -3197,19 +3197,18 @@ class Output:
         """Generate a user-friendly representation of this output."""
         st = "<Output> "
         if self.inst_out:
-            st += self.inst_out + ":"
-        st += self.output + " -> " + self.target
+            st += f'instance:{self.inst_out};'
+        st += f'''{self.output} -> {self.target or '""'} -> '''
         if self.inst_in:
-            st += "-" + self.inst_in
-        st += " -> " + self.input
+            st += f"instance:{self.inst_in};"
+        st += self.input
 
         if self.params and not self.inst_in:
-            st += " (" + self.params + ")"
+            st += f" ({self.params})"
         if self.delay != 0:
-            st += " after " + str(self.delay) + " seconds"
+            st += f" after {str(self.delay)} seconds"
         if self.times != -1:
-            st += " (once" if self.times == 1 else f" ({self.times!s} times"
-            st += " only)"
+            st += " (once only)" if self.times == 1 else f" ({self.times!s} times only)"
         return st
 
     def __getstate__(self) -> Tuple[object, ...]:
