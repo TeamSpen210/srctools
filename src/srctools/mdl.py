@@ -9,6 +9,7 @@ from typing_extensions import TypeAlias
 from enum import Flag as FlagEnum, Enum
 from pathlib import PurePosixPath
 from struct import Struct, pack as struct_pack
+import os
 import io
 
 import attrs
@@ -582,11 +583,17 @@ class Model:
 
         # self._old_load(f)
 
-    def save(self, file: IO[bytes]) -> None:
-        """Write the main MDL file."""
-        defer = DeferredWrites(file)
-        file.write(struct_pack('4si', b'IDST', self.version))
-        defer.defer('checksum', '4s', write=True)
+    def assemble(self) -> list[tuple[str, bytes]]:
+        """Build the model files.
+
+        This returns filename / content pairs.
+        """
+        mdl = io.BytesIO()
+        defer = DeferredWrites(mdl)
+        mdl.write(struct_pack('4si', b'IDST', self.version))
+        # Don't use DeferredWrites for checksum, it has to be done after that writes.
+        checksum_pos = mdl.tell()
+        mdl.write(b'\0\0\0\0')
 
         byte_name = self.name.encode('ascii')
         if len(byte_name) > MAX_NAME_SIZE:
@@ -594,9 +601,72 @@ class Model:
                 f'Model filename must be smaller than {MAX_NAME_SIZE} '
                 f'bytes, not "{self.name}"!'
             )
-        file.write(byte_name)
-        file.write(bytes(MAX_NAME_SIZE - len(byte_name)))
+        mdl.write(byte_name)
+        mdl.write(bytes(MAX_NAME_SIZE - len(byte_name)))
         defer.defer('file_len', 'i', write=True)
+
+        start = mdl.tell()
+        header_size = sum(chunk.format.size for chunk in _CHUNKS)
+        used = [slice(0, start + header_size)]
+        # First write zeros to extend length.
+        mdl.write(bytes(self._unparsed[-1][0] - start))
+        for off, data in self._unparsed:
+            mdl.seek(off)
+            mdl.write(data)
+            used.append(slice(off, off + len(data)))
+        holes = [
+            slice(prev.stop, used[i+1].start)
+            for i, prev in enumerate(used[:-1])
+        ]
+        file_len = mdl.tell()
+
+        def malloc(size_or_data: Union[int, bytes]) -> int:
+            """Used to request a free space in the model file."""
+            nonlocal file_len
+            prev_pos = mdl.tell()
+            if isinstance(size_or_data, int):
+                size = size_or_data
+            else:
+                size = len(size_or_data)
+            # This is not particularly efficient, but as we parse more,
+            # holes get fewer.
+            for i, seg in enumerate(holes):
+                if seg.stop - seg.start >= size:
+                    # Found a spot. Resize hole to account for this and return.
+                    # If it's totally full this becomes a zero-long slice, and gets
+                    # skipped after.
+                    holes[i] = slice(seg.start + size, seg.stop)
+                    offset = seg.start
+                    break
+            else:  # No space, put it at the end.
+                offset = file_len
+                file_len += size
+            if isinstance(size_or_data, bytes):
+                mdl.seek(offset)
+                mdl.write(size_or_data)
+            mdl.seek(prev_pos)
+            return offset
+
+        pos = start
+        for chunk in _CHUNKS:
+            mdl.seek(pos)
+            assert chunk.write is not None, f'No writer for {chunk.read!r}!'
+            data_tup = chunk.write(self, mdl, defer, malloc)
+            mdl.seek(pos)
+            mdl.write(chunk.format.pack(*data_tup))
+            pos = mdl.tell()
+
+        # Now write file length and checksum.
+        defer.set_data('file_len', mdl.seek(0, io.SEEK_END))
+        defer.write()
+        # TODO: recalculate this?
+        mdl.seek(checksum_pos)
+        mdl.write(self.checksum)
+
+        stem, _ = os.path.splitext(self.name)
+        return [
+            (stem + '.mdl', mdl.getvalue()),
+        ]
 
     def _old_load(self, f: IO[bytes]) -> None:
         """Directly read from the model. TODO remove."""
