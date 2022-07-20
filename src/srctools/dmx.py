@@ -166,6 +166,15 @@ Value = Union[
     Matrix,
     _Element,
 ]
+ValueList = Union[
+    List[int], List[float], List[bool], List[str], List[bytes],
+    List[Color], List[Time],
+    List[Vec2], List[Vec3], List[Vec4],
+    List[AngleTup],
+    List[Quaternion],
+    List[Matrix],
+    List[_Element],
+]
 # Additional values we convert to valid types.
 ConvValue = Union[Value, Iterable[float]]
 
@@ -182,9 +191,10 @@ ValueT = TypeVar(
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
-TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
+# Use Any since we can't show the ValueType -> Value match to the type checker.
+TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Any]]
 # Take valid types, convert to the value.
-CONVERSIONS: Dict[ValueType, Callable[[object], Value]]
+CONVERSIONS: Dict[ValueType, Callable[[object], Any]]
 # And type -> size, excluding str/bytes.
 SIZES: Dict[ValueType, int]
 # Name used for keyvalues1 properties.
@@ -438,6 +448,8 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None: ...
+    @overload
+    def __init__(self, name: str, val_type: ValueType, value: Union[Value, ValueList]) -> None: ...
 
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None:  # type: ignore
         """For internal use only."""
@@ -810,6 +822,7 @@ class Attribute(Generic[ValueT], _ValProps):
         """Set a specific array element to a value."""
         if not isinstance(self._value, list):
             raise ValueError('Cannot index singular elements.')
+        arr: List[Value] = self._value  # type: ignore
         [val_type, result] = deduce_type_single(value)
         if val_type is not self._typ:
             # Try converting.
@@ -817,9 +830,9 @@ class Attribute(Generic[ValueT], _ValProps):
                 func = TYPE_CONVERT[val_type, self._typ]
             except KeyError:
                 raise ValueError(f'Cannot convert ({val_type}) to {self._typ} type!')
-            self._value[item] = cast(ValueT, func(result))
+            arr[item] = func(result)
         else:
-            self._value[item] = cast(ValueT, result)
+            arr[item] = result
 
     def __delitem__(self, item: Union[builtins.int, slice]) -> None:
         """Remove the specified array index(s)."""
@@ -898,11 +911,11 @@ class Attribute(Generic[ValueT], _ValProps):
                     value.append(copy.copy(subval))
                 else:
                     value.append(subval)
+            return Attribute(self.name, self._typ, value)
         elif isinstance(self._value, Matrix):
-            value = copy.copy(self._value)
+            return Attribute(self.name, self._typ, copy.copy(self._value))
         else:
-            value = self._value
-        return Attribute(self.name, self._typ, value)
+            return Attribute(self.name, self._typ, self._value)
 
     copy = __copy__
 
@@ -1078,24 +1091,15 @@ class Element(Mapping[str, Attribute]):
                     # It's elementid in these versions ???
                     raise ValueError('Time attribute added in version 3!')
                 elif attr_type is ValueType.ELEMENT:
+                    array: List[Any] = []
+                    array_iter: Iterable[int]
+                    attr = Attribute(name, attr_type, array)
                     if array_size is not None:
-                        array: List[Any] = []
-                        attr = Attribute(name, attr_type, array)
-                        for _ in range(array_size):
-                            [ind] = binformat.struct_read('<i', file)
-                            if ind == -1:
-                                child_elem = NULL
-                            elif ind == -2:
-                                # Stub element, just with a UUID.
-                                uuid = UUID(binformat.read_nullstr(file))
-                                try:
-                                    child_elem = stubs[uuid]
-                                except KeyError:
-                                    child_elem = stubs[uuid] = StubElement.stub(uuid)
-                            else:
-                                child_elem = elements[ind]
-                            array.append(child_elem)
+                        array_iter = range(array_size)
                     else:
+                        array_iter = (0, )  # Single element, run the loop once to reuse code.
+
+                    for _ in array_iter:
                         [ind] = binformat.struct_read('<i', file)
                         if ind == -1:
                             child_elem = NULL
@@ -1108,7 +1112,11 @@ class Element(Mapping[str, Attribute]):
                                 child_elem = stubs[uuid] = StubElement.stub(uuid)
                         else:
                             child_elem = elements[ind]
-                        attr = Attribute(name, ValueType.ELEMENT, child_elem)
+                        array.append(child_elem)
+                    if array_size is None:
+                        # Unpack into a single element.
+                        [attr._value] = array
+
                 elif attr_type is ValueType.STRING:
                     if array_size is not None:
                         # Arrays are always raw ASCII in the file.
@@ -1138,8 +1146,9 @@ class Element(Mapping[str, Attribute]):
                     size = SIZES[attr_type]
                     conv = TYPE_CONVERT[ValueType.BINARY, attr_type]
                     if array_size is not None:
+                        file_, size_ = file, size  #  Prevent other uses from being cellvars.
                         attr = Attribute(name, attr_type, [
-                            conv(file.read(size))
+                            conv(file_.read(size_))
                             for _ in range(array_size)
                         ])
                     else:
@@ -1217,9 +1226,9 @@ class Element(Mapping[str, Attribute]):
             if attr_name == 'id':
                 if typ_name != 'elementid':
                     raise tok.error(
-                        'Element ID attribute must be '
-                        '"elementid" type, not "{}"!',
-                        typ_name
+                        'Element {} attribute must be "{}" type, not "{}"!',
+                        # Format literal strings, so we can reuse the string below.
+                        'id', 'elementid', typ_name,
                     )
                 uuid_str = tok.expect(STRING)
                 if elem.uuid is not _UNSET_UUID:
@@ -1233,9 +1242,8 @@ class Element(Mapping[str, Attribute]):
             elif attr_name == 'name':  # This is also special.
                 if typ_name != 'string':
                     raise tok.error(
-                        'Element name attribute must be '
-                        '"string" type, not "{}"!',
-                        typ_name
+                        'Element {} attribute must be "{}" type, not "{}"!',
+                        'name', 'string', typ_name
                     )
                 elem.name = tok.expect(STRING)
                 continue
@@ -1826,7 +1834,7 @@ TYPE_TO_VALTYPE: Dict[type, ValueType] = {
 }
 
 
-def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, List[Value]]]:
+def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, ValueList]]:
     """Convert Python objects to an appropriate ValueType."""
     if isinstance(value, list):  # Array.
         return deduce_type_array(value)
@@ -1834,7 +1842,7 @@ def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Un
         return deduce_type_single(value)
 
 
-def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, List[Value]]:
+def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, ValueList]:
     """Convert a Python list to an appropriate ValueType."""
     if len(value) == 0:
         raise TypeError('Cannot deduce type for empty list!')

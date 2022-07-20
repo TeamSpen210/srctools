@@ -244,7 +244,8 @@ LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
     BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
-    BSP_LUMPS.LEAFS,  # References brushes, faces
+    BSP_LUMPS.LEAFS,  # References brushes, faces, leaf water info.
+    BSP_LUMPS.LEAFWATERDATA,  # References texinfo
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
 
@@ -486,7 +487,6 @@ class TexData:
 
         try:
             reflect = Vec.from_str(mat['$reflectivity'])
-            print(reflect, repr(mat['$reflectivity']))
         except KeyError:
             pass
         return TexData(orig_mat, reflect, width, height)
@@ -772,11 +772,11 @@ class Overlay:
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
 
-    # If system exceeds these limits, the overlay is skipped.
-    min_cpu: int = -1
-    max_cpu: int = -1
-    min_gpu: int = -1
-    max_gpu: int = -1
+    # If system exceeds these limits, the overlay is skipped. Each is a single byte.
+    min_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    min_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
 
 
 @attrs.define(eq=False)
@@ -804,7 +804,7 @@ class Brush:
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
-    The bounds is defined implicitly by the parent node planes.
+    The bounds are defined implicitly by the parent node planes.
     """
     contents: BrushContents
     cluster_id: int
@@ -816,6 +816,8 @@ class VisLeaf:
     brushes: List[Brush]
     water_id: int
     _ambient: bytes = bytes(24)
+    # This is LEAF_MIN_DIST_TO_WATER
+    min_water_dist: int = 65535
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
         """Test the given point against us, returning ourself or None."""
@@ -880,6 +882,14 @@ class VisTree:
                     yield child
                 else:
                     nodes.append(child)
+
+
+@attrs.define(eq=False)
+class LeafWaterInfo:
+    """Additional data about water volumes."""
+    surface_z: float
+    min_z: float
+    surface_texinfo: TexInfo
 
 
 @attrs.define(eq=False)
@@ -1127,25 +1137,28 @@ class BSP:
 
         self.read()
 
+    # The first lump is the main one this reads/writes to, any additional are simpler lumps it
+    # reads and includes all the data for.
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
-    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
-    cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
-    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
+    texinfo: ParsedLump[List[TexInfo]] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
+    cubemaps: ParsedLump[List[Cubemap]] = ParsedLump(BSP_LUMPS.CUBEMAPS)
+    overlays: ParsedLump[List[Overlay]] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
 
     bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
-    brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
-    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
+    brushes: ParsedLump[List[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
+    visleafs: ParsedLump[List[VisLeaf]] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER)
+    water_leaf_info: ParsedLump[List[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
+    nodes: ParsedLump[List[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
-    planes: ParsedLump[List['Plane']] = ParsedLump(BSP_LUMPS.PLANES)
-    faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
-    orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
-    hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
-    primitives: ParsedLump[List['Primitive']] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
+    planes: ParsedLump[List[Plane]] = ParsedLump(BSP_LUMPS.PLANES)
+    faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES)
+    orig_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
+    hdr_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES_HDR)
+    primitives: ParsedLump[List[Primitive]] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
 
     # Game lumps
     props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
@@ -1492,15 +1505,15 @@ class BSP:
         manually or a filesystem provided for the VMT and VTFs to be read from.
         """
         if copy_from is not None:
-            s_off = copy_from.s_off
+            s_off = copy_from.s_off.copy()
             s_shift = copy_from.s_shift
-            t_off = copy_from.t_off
+            t_off = copy_from.t_off.copy()
             t_shift = copy_from.t_shift
-            lightmap_s_off = copy_from.lightmap_s_off
+            lightmap_s_off = copy_from.lightmap_s_off.copy()
             lightmap_s_shift = copy_from.lightmap_s_shift
-            lightmap_t_off = copy_from.lightmap_t_off
+            lightmap_t_off = copy_from.lightmap_t_off.copy()
             lightmap_t_shift = copy_from.lightmap_t_shift
-
+            flags = copy_from.flags
         try:
             data = self._texdata[mat.casefold()]
             search = True
@@ -1531,7 +1544,26 @@ class BSP:
         self.texinfo.append(new_texinfo)
         return new_texinfo
 
-    # Lump-specific commands:
+    def is_cordoned_heuristic(self) -> bool:
+        """Guess to see if the map uses cordons.
+
+        There's no definite flag, but we can guess based on the shape of the geometry. Cordoning
+        causes a brush almost the map size units to be created, then the cordon regions carved out
+        of it. So the overall map size will be very close to the max range.
+
+        This isn't certain, since users could manually create brushes this large, but that's not
+        too likely.
+        """
+        tree = self.nodes[0]
+        # Round to avoid precision issues. 32776 is the size in Desolation, which has a bigger
+        # map size.
+        return all(
+            round(abs(val)) in {16392, 32776}
+            for vec in [tree.mins, tree.maxes]
+            for val in vec
+        )
+
+    # Lump reading and writing code:
     def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
         for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
             yield Plane(Vec(x, y, z), dist, PlaneType(typ))
@@ -1799,7 +1831,19 @@ class BSP:
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
-    def _lmp_read_visleafs(self, data: bytes) -> Iterator['VisLeaf']:
+    def _lmp_read_water_leaf_info(self, data: bytes) -> Iterator[LeafWaterInfo]:
+        """Parse data associated with visleafs containing water."""
+        texinfo = self.texinfo
+        for surf_z, min_z, texinfo_ind in struct.iter_unpack('<ffH2x', data):
+            yield LeafWaterInfo(surf_z, min_z, texinfo[texinfo_ind])
+
+    def _lmp_write_water_leaf_info(self, data: List[LeafWaterInfo]) -> Iterator[bytes]:
+        """Write data associated with visleafs containing water."""
+        add_texinfo = _find_or_insert(self.texinfo)
+        for info in self.water_leaf_info:
+            yield struct.pack('<ffH2x', info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
+
+    def _lmp_read_visleafs(self, data: bytes) -> Iterator[VisLeaf]:
         """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
         # starmap() to unpack the 1-tuple struct result, then index with that.
@@ -1811,6 +1855,8 @@ class BSP:
             self.faces.__getitem__,
             struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
+        # Another lump which is just an array of ints - no point being separate.
+        dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
 
         leaf_fmt = FMT_LEAF_BASE
         has_ambient = False
@@ -1828,7 +1874,7 @@ class BSP:
             first_face, num_faces,
             first_brush, num_brushes,
             *water_ind_and_ambient
-        ) in struct.iter_unpack(leaf_fmt, data):
+        ), water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
             area = area_and_flags >> 7
             flags = area_and_flags & 0b1111111
             if has_ambient:
@@ -1843,7 +1889,7 @@ class BSP:
                 Vec(max_x, max_y, max_z),
                 leaf_faces[first_face:first_face+num_faces],
                 leaf_brushes[first_brush:first_brush+num_brushes],
-                water_ind, ambient,
+                water_ind, ambient, water_dist,
             )
 
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
@@ -1910,6 +1956,7 @@ class BSP:
         """Reconstruct the leafs of the visleaf/bsp tree."""
         leaf_faces: List[int] = []
         leaf_brushes: List[int] = []
+        min_water_dists: List[int] = []
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
@@ -1922,6 +1969,7 @@ class BSP:
             brush_ind = len(leaf_brushes)
             leaf_faces.extend(map(add_face, leaf.faces))
             leaf_brushes.extend(map(add_brush, leaf.brushes))
+            min_water_dists.append(leaf.min_water_dist)
 
             buf.write(struct.pack(
                 FMT_LEAF_BASE,
@@ -1939,6 +1987,7 @@ class BSP:
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
+        self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data = write_array('<H', min_water_dists)
         return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
@@ -2261,7 +2310,7 @@ class BSP:
             if face_cnt > OVERLAY_FACE_COUNT:
                 raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
-            levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
                 # texinfo, face-and-render-order
                 '<iiHxx' if TEXINFO_IND_TYPE == "i" else '<ihH',

@@ -57,6 +57,7 @@ They end with a quote."
 
     \n, \t, and \\ will be converted in Property values.
 """
+import os
 import sys
 import keyword
 import builtins  # Property.bool etc shadows these.
@@ -67,14 +68,10 @@ from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
-    Optional, Union, Any,
-    List, Tuple, Dict, Iterator,
-    TypeVar,
-    Iterable,
-    overload, cast,
-    Callable,
-    Mapping,
+    Optional, Union, Any, TypeVar, overload, cast,
+    List, Tuple, Dict, Callable, Mapping, Iterable, Iterator,
 )
+from typing_extensions import Final
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
@@ -245,24 +242,28 @@ class Property:
     @staticmethod
     def parse(
         file_contents: Union[str, BaseTokenizer, Iterator[str]],
-        filename='', *,
+        filename: Union[str, os.PathLike] = '', *,
         flags: Mapping[str, bool]=EmptyMapping,
+        newline_keys: bool = False,
+        newline_values: bool = True,
         allow_escapes: bool=True,
         single_line: bool=False,
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
-        filename, if set should be the source of the text for debug purposes.
-        file_contents should be an iterable of strings or a single string.
-        flags should be a mapping for additional flags to accept
-        (which overrides defaults).
-        allow_escapes allows choosing if \\t or similar escapes are parsed.
-        If single_line is set, allow multiple properties to be on the same line.
-        This means unterminated strings will be caught late (if at all), but
-        it allows parsing some 'internal' data blocks.
-
-        Alternatively, file_contents may be an already created tokenizer.
-        In this case allow_escapes is ignored.
+        * `file_contents` should be an iterable of strings or a single string.
+          Alternatively, file_contents may be an already created tokenizer.
+          In this case allow_escapes is ignored.
+        * `filename`, if set should be the source of the text for debug purposes. If not supplied,
+          file_contents.name will be used if present.
+        * flags should be a mapping for additional [flag] suffixes to accept.
+        * `allow_escapes` allows choosing if \\t or similar escapes are parsed.
+        * If `single_line` is set, allow multiple properties to be on the same line.
+          This means unterminated strings will be caught late (if at all), but
+          it allows parsing some 'internal' data blocks.
+        * `newline_keys` and `newline_values` specify if newline characters are allowed in keys or
+          values, respectively. Keys are prohibited by default, since this is fairly useless, but
+          if quote characters are mismatched it'll catch the mistake early.
         """
         # The block we are currently adding to.
 
@@ -282,11 +283,11 @@ class Property:
         open_properties: List[Tuple[Property, int]] = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
-        STRING = Token.STRING
-        PROP_FLAG = Token.PROP_FLAG
-        NEWLINE = Token.NEWLINE
-        BRACE_OPEN = Token.BRACE_OPEN
-        BRACE_CLOSE = Token.BRACE_CLOSE
+        STRING: Final = Token.STRING
+        PROP_FLAG: Final = Token.PROP_FLAG
+        NEWLINE: Final = Token.NEWLINE
+        BRACE_OPEN: Final = Token.BRACE_OPEN
+        BRACE_CLOSE: Final = Token.BRACE_CLOSE
 
         if isinstance(file_contents, BaseTokenizer):
             tokenizer = file_contents
@@ -303,8 +304,8 @@ class Property:
 
         # If >= 0, we're requiring a block to open next ("name"\n must have { next.)
         # It's the line number of the header name then.
-        BLOCK_LINE_NONE = -1  # there's no block.
-        BLOCK_LINE_SKIP = -2  # the block is disabled, so we need to skip it.
+        BLOCK_LINE_NONE: Final = -1  # there's no block.
+        BLOCK_LINE_SKIP: Final = -2  # the block is disabled, so we need to skip it.
         block_line = BLOCK_LINE_NONE
         # Are we permitted to replace the last property with a flagged version of the same?
         can_flag_replace = False
@@ -342,6 +343,8 @@ class Property:
             if token_type is NEWLINE:
                 continue
             if token_type is STRING:   # "string"
+                if not newline_keys and '\n' in token_value or '\r' in token_value:
+                    raise tokenizer.error('Illegal newline found in key "{}"!', token_value)
                 # Skip calling __init__ for speed. Value needs to be set
                 # before using this, since it's unset here.
                 keyvalue = Property.__new__(Property)
@@ -384,6 +387,8 @@ class Property:
                             'A value like "name" "value" must be on the same '
                             'line.'
                         )
+                    if not newline_values and '\n' in prop_value or '\r' in prop_value:
+                        raise tokenizer.error('Illegal newline found in value "{}"!', prop_value)
 
                     keyvalue._value = prop_value
 
@@ -697,7 +702,7 @@ class Property:
         result._folded_name = self._folded_name
         if isinstance(self._value, list):
             # This recurses if needed
-            result._value = list(map(Property.copy, self._value))
+            result._value = [child.copy() for child in self._value]
         else:
             result._value = self._value
         return result
@@ -899,11 +904,11 @@ class Property:
                 value.name = index
                 try:
                     # Replace at the same location.
-                    index = self._value.index(self.find_key(index))
+                    pos = self._value.index(self.find_key(index))
                 except NoKeyError:
                     self._value.append(value)
                 else:
-                    self._value[index] = value
+                    self._value[pos] = value
             else:
                 try:
                     self.find_key(index)._value = value

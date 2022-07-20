@@ -492,6 +492,19 @@ text with
     ''')
 
 
+def test_newline_strings(py_c_token) -> None:
+    """Test that newlines are correctly blocked if the parameter is set."""
+    with pytest.raises(KeyValError):
+        Property.parse('"key\nmultiline" "value"')
+    with pytest.raises(KeyValError):
+        Property.parse('"key" "value\nmultiline"', newline_values=False)
+    root = Property.parse('"key" "value\rmulti"')
+    assert_tree(root, Property.root(Property('key', 'value\nmulti')))
+
+    root = Property.parse('"key\nmulti" "value"', newline_keys=True)
+    assert_tree(root, Property.root(Property('key\nmulti', 'value')))
+
+
 def test_edit() -> None:
     """Check functionality of Property.edit()"""
     test_prop = Property('Name', 'Value')
@@ -643,6 +656,7 @@ def test_getitem() -> None:
     assert root['key45', 'default'] == 'default'
     assert root['key2', any] == '2'
     assert root['key45', any] is any
+
 
 def test_setitem() -> None:
     """Test various modes of setitem functions correctly."""

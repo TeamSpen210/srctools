@@ -22,7 +22,7 @@ class TokenSyntaxError(Exception):
     def __init__(
         self,
         message: str,
-        file: Optional[str],
+        file: Union[str, PathLike, None],
         line: Optional[int],
     ) -> None:
         super().__init__()
@@ -31,11 +31,7 @@ class TokenSyntaxError(Exception):
         self.line_num = line
 
     def __repr__(self) -> str:
-        return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
-            self.mess,
-            self.file,
-            self.line_num,
-            )
+        return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):
@@ -61,7 +57,7 @@ class TokenSyntaxError(Exception):
         if self.file:
             if not self.line_num:
                 mess += '\nError occurred with file'
-            mess += ' "' + self.file + '".'
+            mess += f' "{self.file}".'
         return mess
 
 
@@ -169,11 +165,11 @@ class BaseTokenizer(abc.ABC):
         self.line_num = 1
 
     @overload
-    def error(self, message: Token) -> TokenSyntaxError: ...
+    def error(self, __message: Token) -> TokenSyntaxError: ...
     @overload
-    def error(self, message: Token, __value: str) -> TokenSyntaxError: ...
+    def error(self, __message: Token, __value: str) -> TokenSyntaxError: ...
     @overload
-    def error(self, message: str, *args: object) -> TokenSyntaxError: ...
+    def error(self, __message: str, *args: object) -> TokenSyntaxError: ...
     def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
@@ -345,7 +341,7 @@ class Tokenizer(BaseTokenizer):
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: Union[str, PathLike]=None,
+        filename: Union[str, 'PathLike[str]', None] = None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
@@ -380,6 +376,7 @@ class Tokenizer(BaseTokenizer):
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
+        self._last_was_cr = False
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -415,11 +412,22 @@ class Tokenizer(BaseTokenizer):
                 return _OPERATORS[next_char], next_char
             except KeyError:
                 pass
-            if next_char == '\n':
+            # Handle newlines, converting \r and \r\n to \n.
+            if next_char == '\r':
+                self._last_was_cr = True
                 self.line_num += 1
                 return Token.NEWLINE, '\n'
+            elif next_char == '\n':
+                # Consume the \n in \r\n.
+                if self._last_was_cr:
+                    self._last_was_cr = False
+                    continue
+                self.line_num += 1
+                return Token.NEWLINE, '\n'
+            else:
+                self._last_was_cr = False
 
-            elif next_char in ' \t':
+            if next_char in ' \t':
                 # Ignore whitespace..
                 continue
 
@@ -480,13 +488,25 @@ class Tokenizer(BaseTokenizer):
             # Strings
             elif next_char == '"':
                 value_chars: List[str] = []
+                last_was_cr = False
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
                         return Token.STRING, ''.join(value_chars)
-                    elif next_char == '\n':
+                    elif next_char == '\r':
                         self.line_num += 1
-                    elif next_char == '\\' and self.allow_escapes:
+                        last_was_cr = True
+                        value_chars.append('\n')
+                        continue
+                    elif next_char == '\n':
+                        if last_was_cr:
+                            last_was_cr = False
+                            continue
+                        self.line_num += 1
+                    else:
+                        last_was_cr = False
+
+                    if next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
                         if escape is None:
@@ -569,9 +589,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED:
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.DIRECTIVE, ''.join(value_chars)
                     elif next_char is None:
@@ -586,9 +605,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED or (next_char == ':' and self.colon_operator):
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.STRING, ''.join(value_chars)
                     elif next_char is None:

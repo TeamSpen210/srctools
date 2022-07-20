@@ -1,5 +1,5 @@
 from itertools import zip_longest, tee
-from typing import Callable, Iterator, Type, Tuple
+from typing import Callable, Iterable, Iterator, Type, Tuple, Union
 
 import pytest
 import codecs
@@ -147,7 +147,10 @@ def py_c_token(request):
 del parms, ids
 
 
-def check_tokens(tokenizer, tokens):
+def check_tokens(
+    tokenizer: Iterable[Tuple[Token, str]],  # Iterable so a list can be passed to check.
+    tokens: Iterable[Union[Token, Tuple[Token, str]]],
+) -> None:
     """Check the tokenizer produces the given tokens.
 
     The arguments are either (token, value) tuples or tokens.
@@ -175,13 +178,18 @@ def check_tokens(tokenizer, tokens):
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert comp_type is token[0], "got {}, expected {} @ pos {}={}".format(token[0], comp_type, i, tokens[i-2: i+1])
-            assert comp_value == token[1], "got {!r}, expected {!r} @ pos {}={}".format(token[1], comp_value, i, tokens[i-2: i+1])
+            assert comp_type is token[0] and comp_value == token[1], (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_type}({comp_value!r}) @ pos {i}={tokens[i - 2: i + 1]}"
+            )
         else:
-            assert token[0] is comp_token, "got {}, expected {} @ pos {}={}".format(token[0], comp_token, i, tokens[i-2: i+1])
+            assert token[0] is comp_token, (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_token} @ pos {i}={tokens[i - 2: i + 1]}"
+            )
 
 
-def test_prop_tokens(py_c_token):
+def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     Tokenizer = py_c_token
 
@@ -402,6 +410,24 @@ def test_bom(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(Tokenizer(['e']), [(Token.STRING, 'e')])
     check_tokens(Tokenizer(['e', 'x']), [(Token.STRING, 'ex')])
     check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
+
+
+def test_universal_newlines(py_c_token: Type[Tokenizer]) -> None:
+    r"""Test that \r characters are replaced by \n, even in direct strings."""
+    tokens = [
+        (Token.STRING, 'Line'),
+        (Token.STRING, 'one\ntwo'),
+        Token.NEWLINE,
+        (Token.STRING, 'Line\nTwo'),
+        Token.NEWLINE,
+        Token.COMMA,
+        Token.NEWLINE, Token.NEWLINE,
+        Token.EQUALS,
+        (Token.STRING, 'multi\nline'),
+    ]
+    text = ['Line "one\ntwo" \r', '"Line\rTwo"', '\r', '\n,', '\r\r', '=', '"multi\r\nline"']
+    check_tokens(py_c_token(text), tokens)
+    check_tokens(py_c_token(''.join(text)), tokens)
 
 
 def test_constructor(py_c_token: Type[Tokenizer]) -> None:

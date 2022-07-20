@@ -1,5 +1,5 @@
 """Parse particle system files."""
-from typing import Union, IO, Dict, overload, List, Iterable, TYPE_CHECKING
+from typing import Union, IO, Dict, overload, List, Iterable
 import copy
 
 import attrs
@@ -28,26 +28,19 @@ class Child:
     """Options for a child particle reference."""
     particle: str
 
-# Workaround MyPy not evaluating generics on converters.
-if TYPE_CHECKING:
-    def _mk_operator(x: Iterable[Operator]) -> List[Operator]: return list(x)
-    def _mk_child(x: Iterable[Child]) -> List[Child]: return list(x)
-else:
-    _mk_operator = _mk_child = list
-
 
 @attrs.define(eq=False)
 class Particle:
     """A particle system."""
     name: str
     options: Dict[str, Attribute] = attrs.Factory(dict)
-    renderers: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    operators: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    initializers: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    emitters: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    forces: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    constraints: List[Operator] = attrs.field(converter=_mk_operator, factory=list)
-    children: List[Child] = attrs.field(converter=_mk_child, factory=list)
+    renderers: List[Operator] = attrs.field(factory=list)
+    operators: List[Operator] = attrs.field(factory=list)
+    initializers: List[Operator] = attrs.field(factory=list)
+    emitters: List[Operator] = attrs.field(factory=list)
+    forces: List[Operator] = attrs.field(factory=list)
+    constraints: List[Operator] = attrs.field(factory=list)
+    children: List[Child] = attrs.field(factory=list)
 
     @classmethod
     @overload
@@ -90,11 +83,11 @@ class Particle:
         if part_list.type != ValueType.ELEMENT or not part_list.is_array:
             raise ValueError('"particleSystemDefinitions" must be an element array!')
 
-        def generic_attr(el: Element, name: str) -> Iterable['Operator']:
+        def generic_attr(el: Element, name: str) -> List['Operator']:
             try:
                 value = el.pop(name)
             except KeyError:
-                return ()
+                return []
             if value.type is not ValueType.ELEMENT or not value.is_array:
                 raise ValueError('{} must be an element array!')
             return [
@@ -180,6 +173,3 @@ class Particle:
                 child_attr.append(name_to_elem[child.particle.casefold()])
 
         return root
-
-del _mk_operator
-del _mk_child

@@ -40,6 +40,7 @@ dependencies=[
 	"attrs >= 21.2.0",
 	"typing_extensions >= 4.1.0",
 	"atomicwrites >= 1.4.0",
+	"importlib_resources >= 5.8.0",
 ]
 [optional-dependencies]
 # VTF support.
@@ -86,13 +87,13 @@ include = [
 	"src/srctools/"
 	]
 exclude = [
-	# Tests deliberately do incorrect things to test error handling, so ignore types.
-	"tests/",
 	"**/__pycache__"
 	]
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
+pythonVersion = "3.8"
+strictParameterNoneValue = false
 
 [tool.pytest.ini_options]
 filterwarnings = [

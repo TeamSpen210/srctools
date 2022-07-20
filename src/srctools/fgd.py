@@ -4,7 +4,6 @@ from collections import defaultdict
 from enum import Enum
 from pathlib import PurePosixPath
 from struct import Struct
-from functools import partial
 import itertools
 import io
 import math
@@ -17,6 +16,7 @@ from typing import (
     Mapping, Iterator, Iterable, Collection,
     TextIO, Container, IO,
 )
+from importlib_resources import files
 
 import attrs
 
@@ -27,12 +27,6 @@ from srctools.tokenizer import (
     TokenSyntaxError, escape_text,
 )
 from srctools.binformat import struct_read
-
-try:
-    from importlib.resources import open_binary
-except ImportError:
-    # Backport module for before Python 3.7
-    from importlib_resources import open_binary  # type: ignore
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -1097,18 +1091,15 @@ class EntityDef:
     desc: str = ''
 
     # Views for accessing data among all the entities.
-    kv: _EntityView[KeyValues] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
-        takes_self=True,
-    ))
-    inp: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='inputs', disp_name='inp'),
-        takes_self=True,
-    ))
-    out: _EntityView[IODef] = attrs.field(init=False, default=attrs.Factory(
-        partial(_EntityView, attr_name='outputs', disp_name='out'),
-        takes_self=True,
-    ))
+    kv: _EntityView[KeyValues] = attrs.field(init=False)
+    inp: _EntityView[IODef] = attrs.field(init=False)
+    out: _EntityView[IODef] = attrs.field(init=False)
+
+    def __attrs_post_init__(self) -> None:
+        """Setup Entity views."""
+        self.kv = _EntityView(self, 'keyvalues', 'kv')
+        self.inp = _EntityView(self, 'inputs', 'inp')
+        self.out = _EntityView(self, 'outputs', 'out')
 
     @classmethod
     def parse(
@@ -2180,7 +2171,7 @@ class FGD:
         global _ENGINE_FGD
         if _ENGINE_FGD is None:
             from lzma import LZMAFile
-            with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
+            with (files(srctools) / 'fgd.lzma').open('rb') as comp, LZMAFile(comp) as f:
                 return cls.unserialise(f)
         return deepcopy(_ENGINE_FGD)
 
