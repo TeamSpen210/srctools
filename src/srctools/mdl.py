@@ -436,7 +436,7 @@ class Bone:
 @attrs.define
 class BoneController:
     """Goldsource era control of bones via entity code."""
-    bone: int
+    bone: Bone
     type: int
     start: float
     end: float
@@ -1213,14 +1213,14 @@ def _chunk_bones_write(
     """Bone definitions."""
     base_offset = offset = malloc(ST_BONE.size * len(mdl.bones_order))
     bone_to_ind = {
-        bone: ind
+        bone.name: ind
         for ind, bone in enumerate(mdl.bones_order)
     }
     for bone in mdl.bones_order:
         f.seek(offset)
         f.write(ST_BONE.pack(
-            malloc(bone.name.encode('ascii')) - offset,
-            bone_to_ind[bone.parent] if bone.parent is not None else -1,
+            malloc(bone.name.encode('ascii') + b'\0') - offset,
+            bone_to_ind[bone.parent.name] if bone.parent is not None else -1,
             *bone.controller_ind,
             *bone.pos, *bone.quat,
             math.radians(bone.rotation.pitch),
@@ -1233,7 +1233,7 @@ def _chunk_bones_write(
             bone.proc_type,
             bone.proc_index,
             bone.phys_bone,
-            malloc(bone.surfaceprop.encode('ascii')) - offset,
+            malloc(bone.surfaceprop.encode('ascii') + b'\0') - offset,
             bone.contents.value,
         ))
         offset += ST_BONE.size
@@ -1272,7 +1272,7 @@ def _chunk_bone_controllers_write(
     """Goldsource era control of bones via entity code."""
     offset = malloc(ST_BONE_CONTROLLER.size * len(mdl.bone_controllers))
     bone_to_ind = {
-        bone: ind
+        bone.name: ind
         for ind, bone in enumerate(mdl.bones_order)
     }
     f.seek(offset)
@@ -1333,7 +1333,7 @@ def _cunk_hitbox_sets_write(
         f.seek(hboxset_off)
         hbox_off = malloc(ST_HITBOX.size * len(hboxes))
         f.write(ST_HITBOXSET.pack(
-            malloc(hboxset_name.encode('ascii')) - hboxset_off,
+            malloc(hboxset_name.encode('ascii') + b'\0') - hboxset_off,
             len(hboxes),
             hbox_off
         ))
@@ -1342,7 +1342,7 @@ def _cunk_hitbox_sets_write(
             f.write(ST_HITBOX.pack(
                 bone_to_ind[hbox.bone],
                 hbox.group,
-                malloc(hbox.name.encode('ascii')) - hbox_off if hbox.name else 0,
+                malloc(hbox.name.encode('ascii') + b'\0') - hbox_off if hbox.name else 0,
                 *hbox.min, *hbox.max,
             ))
             hbox_off += ST_HITBOX.size
@@ -1396,7 +1396,7 @@ def _chunk_animation_write(
     for anim in mdl.animations.values():
         f.seek(anim_off)
         f.write(ST_ANIMATION.pack(
-            malloc(anim.name.encode('ascii')) - anim_off,
+            malloc(anim.name.encode('ascii') + b'\0') - anim_off,
             anim.fps,
             anim.flags,
             anim.frame_count,
