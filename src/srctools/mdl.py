@@ -500,11 +500,50 @@ class Sequence:
     act_name: str
     flags: int
     act_weight: int
-    events: List[SeqEvent]
+    # events: List[SeqEvent]
+    _event_off: int
+    _event_count: int
     bbox_min: Vec
     bbox_max: Vec
-    # More after here.
+
+    _num_blends: int
+    _anim_index_off: int
+    _movement_off: int
+    _groupsize: Tuple[int, int]
+
+    param_index: Tuple[int, int]
+    param_start: Tuple[float, float]
+    param_end: Tuple[float, float]
+    param_parent: int
+
+    fadein_time: float
+    fadeout_time: float
+
+    local_entry_node: int
+    local_exit_node: int
+    node_flags: int
+
+    entry_phase: float
+    exit_phase: float
+
+    last_frame: float
+    _next_sequence: int
+    pose: int
+    _num_ik_rules: int
+
+    _auto_layers_count: int
+    _auto_layer_index: int
+    _weightlist_off: int
+    _pose_key_off: int
+
+    _iklock_count: int
+    _iklock_off: int
+
     keyvalues: str
+    cycle_pose_index: int
+
+
+ST_SEQUENCE = Struct('<4xiii4xiii6fiii2i2i2f2fiffiiifff12i28x')
 
 
 class Model:
@@ -529,6 +568,7 @@ class Model:
     bone_controllers: List[BoneController]
     hitboxes: Dict[str, List[Hitbox]]
     animations: Dict[str, Animation]
+    sequences: Dict[str, Sequence]
 
     def __init__(self, filesystem: FileSystem, file: File):
         """Parse a model from a file."""
@@ -543,6 +583,7 @@ class Model:
         self.hitboxes = {}
         self.phys_keyvalues = Property.root()
         self.animations = {}
+        self.sequences = {}
 
         with self._file.open_bin() as f, TrackedFile(f) as tracker:
             self._load(tracker)
@@ -618,16 +659,21 @@ class Model:
             slice(prev.stop, used[i+1].start)
             for i, prev in enumerate(used[:-1])
         ]
+        holes.sort(key=lambda s: s.stop - s.start)
         file_len = mdl.tell()
+        allocated: dict[bytes, int] = {}
 
         def malloc(size_or_data: Union[int, bytes]) -> int:
             """Used to request a free space in the model file."""
             nonlocal file_len
             prev_pos = mdl.tell()
-            if isinstance(size_or_data, int):
-                size = size_or_data
+            if isinstance(size_or_data, bytes):
+                try:
+                    return allocated[size_or_data]
+                except KeyError:
+                    size = len(size_or_data)
             else:
-                size = len(size_or_data)
+                size = size_or_data
             needs_write = False
             # This is not particularly efficient, but as we parse more,
             # holes get fewer.
@@ -646,6 +692,7 @@ class Model:
             mdl.seek(offset)
             if isinstance(size_or_data, bytes):
                 mdl.write(size_or_data)
+                allocated[size_or_data] = offset
             elif needs_write: # If we're extending the file, ensure that happens.
                 mdl.write(bytes(size))
             mdl.seek(prev_pos)
@@ -876,103 +923,8 @@ class Model:
             # Then return to after that struct - 4 bytes * 2.
             f.seek(pos + 4 * 2)
 
-        f.seek(sequence_off)
-        self.sequences = self._read_sequences(f, sequence_count)
-
         f.seek(bodypart_offset)
         self._cull_skins_table(f, bodypart_count)
-
-    @staticmethod
-    def _read_sequences(f: IO[bytes], count: int) -> List[Sequence]:
-        """Split this off to decrease stack in main parse method."""
-        sequences: List[Sequence] = [cast(Sequence, None)] * count
-        for i in range(count):
-            start_pos = f.tell()
-            (
-                base_ptr,
-                label_pos,
-                act_name_pos,
-                flags,
-                _,  # Seems to be a pointer.
-                act_weight,
-                event_count,
-                event_pos,
-            ) = struct_read('8i', f)
-            bbox_min = str_readvec(f)
-            bbox_max = str_readvec(f)
-
-            # Skip 20 ints, 9 floats to get to keyvalues = 29*4 bytes
-            # Then 8 unused ints.
-            (
-                keyvalue_pos,
-                keyvalue_size,
-            ) = struct_read('116xii32x', f)
-            end_pos = f.tell()
-
-            f.seek(start_pos + event_pos)
-            events: List[SeqEvent] = [cast(SeqEvent, None)] * event_count
-            for j in range(event_count):
-                event_start = f.tell()
-                (
-                    event_cycle,
-                    event_index,
-                    event_flags,
-                    event_options,
-                    event_nameloc,
-                ) = struct_read('fii64si', f)
-                event_end = f.tell()
-
-                # There are two event systems.
-                event_type: Union[AnimEvents, str]
-                if event_flags == 1 << 10:
-                    # New system, name in the file.
-                    event_name = read_nullstr(f, event_start + event_nameloc)
-                    if event_name.isdigit():
-                        try:
-                            event_type = ANIM_EVENT_BY_INDEX[int(event_name)]
-                        except KeyError:
-                            raise ValueError('Unknown event index!')
-                    else:
-                        try:
-                            event_type = ANIM_EVENT_BY_NAME[event_name]
-                        except KeyError:
-                            # NPC-specific events, declared dynamically.
-                            event_type = event_name
-                else:
-                    # Old system, index.
-                    try:
-                        event_type = ANIM_EVENT_BY_INDEX[event_index]
-                    except KeyError:
-                        # raise ValueError('Unknown event index!')
-                        print('Unknown: ', event_index, event_options.rstrip(b'\0'))
-                        continue
-
-                f.seek(event_end)
-                events[j] = SeqEvent(
-                    type=event_type,
-                    cycle=event_cycle,
-                    options=event_options.rstrip(b'\0').decode('ascii')
-                )
-
-            if keyvalue_size:
-                keyvalues = read_nullstr(f, start_pos + keyvalue_pos)
-            else:
-                keyvalues = ''
-
-            sequences[i] = Sequence(
-                label=read_nullstr(f, start_pos + label_pos),
-                act_name=read_nullstr(f, start_pos + act_name_pos),
-                flags=flags,
-                act_weight=act_weight,
-                events=events,
-                bbox_min=bbox_min,
-                bbox_max=bbox_max,
-                keyvalues=keyvalues,
-            )
-
-            f.seek(end_pos)
-
-        return sequences
 
     def _cull_skins_table(self, f: IO[bytes], body_count: int) -> None:
         """Fix the table of used skins to correspond to those actually used.
@@ -1330,7 +1282,7 @@ def _cunk_hitbox_sets_write(
     """The hitboxes for a model."""
     hboxset_base = hboxset_off = malloc(ST_HITBOXSET.size * len(mdl.hitboxes))
     bone_to_ind = {
-        bone: ind
+        bone.name: ind
         for ind, bone in enumerate(mdl.bones_order)
     }
     for hboxset_name, hboxes in mdl.hitboxes.items():
@@ -1339,15 +1291,15 @@ def _cunk_hitbox_sets_write(
         f.write(ST_HITBOXSET.pack(
             malloc(hboxset_name.encode('ascii') + b'\0') - hboxset_off,
             len(hboxes),
-            hbox_off
+            hbox_off - hboxset_off
         ))
         for hbox in hboxes:
             f.seek(hbox_off)
             f.write(ST_HITBOX.pack(
-                bone_to_ind[hbox.bone],
+                bone_to_ind[hbox.bone.name],
                 hbox.group,
-                malloc(hbox.name.encode('ascii') + b'\0') - hbox_off if hbox.name else 0,
                 *hbox.min, *hbox.max,
+                malloc(hbox.name.encode('ascii') + b'\0') - hbox_off if hbox.name else 0,
             ))
             hbox_off += ST_HITBOX.size
         hboxset_off += ST_HITBOXSET.size
@@ -1358,6 +1310,7 @@ def _cunk_hitbox_sets_write(
 def _chunk_animation(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
     """Basic animations."""
     count, offset = header_data
+    # mdl._anim_pos = header_data
     for _ in range(count):
         f.seek(offset)
         (
@@ -1381,10 +1334,10 @@ def _chunk_animation(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> 
             (movement_count, movement_off),
             ikrulezero_ind,
             anim_block, anim_index,
-            ikrule_count, ikrule_off, ikrule_animblock_off,
-            local_hierachy_count, local_hierachy_off,
+            ikrule_count, ikrule_off + offset, ikrule_animblock_off + offset,
+            local_hierachy_count, local_hierachy_off + offset,
             section_ind, section_frames,
-            zeroframe_span, zeroframe_count, zeroframe_index,
+            zeroframe_span, zeroframe_count, zeroframe_index + offset,
             zeroframe_stalltime,
         )
         offset += ST_ANIMATION.size
@@ -1407,11 +1360,185 @@ def _chunk_animation_write(
             *anim.movement,
             anim.ikrule_zero,
             anim.animblock, anim.animindex,
-            anim.ikrule_count, anim.ikrule_off, anim.ikrule_animblock,
+            anim.ikrule_count, anim.ikrule_off - anim_off, anim.ikrule_animblock,
             anim.local_hierarchy_count, anim.local_hierarchy_off,
-            anim.section_off, anim.section_frames,
-            anim.zeroframe_span, anim.zeroframe_count, anim.zeroframe_ind,
+            anim.section_off - anim_off, anim.section_frames,
+            anim.zeroframe_span, anim.zeroframe_count, anim.zeroframe_ind - anim_off,
             anim.zeroframe_stalltime,
         ))
         anim_off += ST_ANIMATION.size
     return len(mdl.animations), anim_base
+    # return mdl._anim_pos
+
+
+@Chunk.register('ii')
+def _chunk_sequence(mdl: Model, f: IO[bytes], header_data: Tuple[int, int]) -> None:
+    """More advanced sequences."""
+    count, offset = header_data
+    for _ in range(count):
+        f.seek(offset)
+        (
+            label_pos,
+            act_name_pos,
+            flags,
+            act_weight,
+            event_count, event_pos,
+            min_x, min_y, min_z,
+            max_x, max_y, max_z,
+            blend_count,
+            anim_index_index,
+            movement_index,
+            groupsize_1, groupsize_2,
+            param_ind_1, param_ind_2,
+            param_start_1, param_start_2,
+            param_end_1, param_end_2,
+            param_parent,
+            fadein_time, fadeout_time,
+            local_entry_node, local_exit_node,
+            node_flags,
+            entry_phase, exit_phase,
+            last_frame,
+            next_seq,
+            pose,
+            num_ik_rules,
+            auto_layer_count, auto_layer_ind,
+            weightlist_ind,
+            posekey_ind,
+            iklock_count, iklock_ind,
+            keyvalues_off, keyvalues_count,
+            cyclepose_ind,
+        ) = ST_SEQUENCE.unpack(f.read(ST_SEQUENCE.size))
+
+        # f.seek(offset + event_pos)
+        # events: List[SeqEvent] = [cast(SeqEvent, None)] * event_count
+        # for j in range(event_count):
+        #     event_start = f.tell()
+        #     (
+        #         event_cycle,
+        #         event_index,
+        #         event_flags,
+        #         event_options,
+        #         event_nameloc,
+        #     ) = struct_read('fii64si', f)
+        #     event_end = f.tell()
+        #
+        #     # There are two event systems.
+        #     event_type: Union[AnimEvents, str]
+        #     if event_flags == 1 << 10:
+        #         # New system, name in the file.
+        #         event_name = read_nullstr(f, event_start + event_nameloc)
+        #         if event_name.isdigit():
+        #             try:
+        #                 event_type = ANIM_EVENT_BY_INDEX[int(event_name)]
+        #             except KeyError:
+        #                 raise ValueError('Unknown event index!')
+        #         else:
+        #             try:
+        #                 event_type = ANIM_EVENT_BY_NAME[event_name]
+        #             except KeyError:
+        #                 # NPC-specific events, declared dynamically.
+        #                 event_type = event_name
+        #     else:
+        #         # Old system, index.
+        #         try:
+        #             event_type = ANIM_EVENT_BY_INDEX[event_index]
+        #         except KeyError:
+        #             # raise ValueError('Unknown event index!')
+        #             print('Unknown: ', event_index, event_options.rstrip(b'\0'))
+        #             continue
+        #
+        #     f.seek(event_end)
+        #     events[j] = SeqEvent(
+        #         type=event_type,
+        #         cycle=event_cycle,
+        #         options=event_options.rstrip(b'\0').decode('ascii')
+        #     )
+
+        if keyvalues_count:
+            keyvalues = read_nullstr(f, offset + keyvalues_off)
+        else:
+            keyvalues = ''
+
+        name = read_nullstr(f, offset + label_pos)
+        mdl.sequences[name] = Sequence(
+            name,
+            read_nullstr(f, offset + act_name_pos),
+            flags,
+            act_weight,
+            event_pos + offset, event_count,
+            Vec(min_x, min_y, min_z),
+            Vec(max_x, max_y, max_z),
+
+            blend_count,
+            anim_index_index + offset,
+            movement_index,
+            (groupsize_1, groupsize_2),
+            (param_ind_1, param_ind_2),
+            (param_start_1, param_start_2),
+            (param_end_1, param_end_2),
+            param_parent,
+
+            fadein_time, fadeout_time,
+            local_entry_node, local_exit_node,
+            node_flags,
+            entry_phase, exit_phase,
+            last_frame,
+            next_seq,
+            pose,
+            num_ik_rules,
+            auto_layer_count, auto_layer_ind + offset,
+            weightlist_ind + offset,
+            posekey_ind + offset,
+            iklock_count, iklock_ind + offset,
+            keyvalues,
+            cyclepose_ind + offset,
+        )
+        offset += ST_SEQUENCE.size
+
+
+@_chunk_sequence.writer
+def _chunk_sequence_write(
+    mdl: Model, f: IO[bytes],
+    defer: DeferredWrites, malloc: ChunkAdd,
+) -> Tuple[int, int]:
+    """Basic animations."""
+    seq_base = seq_off = malloc(ST_SEQUENCE.size * len(mdl.sequences))
+    for seq in mdl.sequences.values():
+        f.seek(seq_off)
+        keyvalues_bytes = seq.keyvalues.encode('ascii')
+        keyvalues_off = malloc(keyvalues_bytes + b'\0') - seq_off
+        # noinspection PyProtectedMember
+        f.write(ST_SEQUENCE.pack(
+            malloc(seq.label.encode('ascii') + b'\0') - seq_off,
+            malloc(seq.act_name.encode('ascii') + b'\0') - seq_off,
+            seq.flags,
+            seq.act_weight,
+            seq._event_count, seq._event_off - seq_off,
+            *seq.bbox_min, *seq.bbox_max,
+            seq._num_blends,
+            seq._anim_index_off - seq_off,
+            seq._movement_off - seq_off,
+            *seq._groupsize,
+            *seq.param_index,
+            *seq.param_start,
+            *seq.param_end,
+            seq.param_parent,
+            seq.fadein_time, seq.fadeout_time,
+            seq.local_entry_node, seq.local_exit_node,
+            seq.node_flags,
+            seq.entry_phase, seq.exit_phase,
+            seq.last_frame,
+            seq._next_sequence,
+            seq.pose,
+            seq._num_ik_rules,
+            seq._auto_layers_count, seq._auto_layer_index - seq_off,
+            seq._weightlist_off - seq_off,
+            seq._pose_key_off - seq_off,
+            seq._iklock_count, seq._iklock_off - seq_off,
+            keyvalues_off, len(keyvalues_bytes),
+            seq.cycle_pose_index,
+        ))
+        seq_off += ST_SEQUENCE.size
+    return len(mdl.sequences), seq_base
+
+print('CHUNKS: ', _CHUNKS)
