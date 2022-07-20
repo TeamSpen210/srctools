@@ -628,6 +628,7 @@ class Model:
                 size = size_or_data
             else:
                 size = len(size_or_data)
+            needs_write = False
             # This is not particularly efficient, but as we parse more,
             # holes get fewer.
             for i, seg in enumerate(holes):
@@ -641,9 +642,12 @@ class Model:
             else:  # No space, put it at the end.
                 offset = file_len
                 file_len += size
+                needs_write = True
+            mdl.seek(offset)
             if isinstance(size_or_data, bytes):
-                mdl.seek(offset)
                 mdl.write(size_or_data)
+            elif needs_write: # If we're extending the file, ensure that happens.
+                mdl.write(bytes(size))
             mdl.seek(prev_pos)
             return offset
 
