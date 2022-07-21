@@ -24,11 +24,11 @@ class Game:
             gameinfo = Property.parse(f).find_key('GameInfo')
         fsystems = gameinfo.find_key('Filesystem', or_blank=True)
 
-        self.game_name = gameinfo['Game']
-        self.app_id = fsystems['SteamAppId']
+        self.game_name = gameinfo['Game', None]
+        self.app_id = fsystems['SteamAppId', None]
         self.tools_id = fsystems['ToolsAppId', None]
         self.additional_content = fsystems['AdditionalContentId', None]
-        self.fgd_loc = gameinfo['GameData', 'None']
+        self.fgd_loc = gameinfo['GameData', None]
         self.search_paths: List[Path] = []
 
         for search_path in fsystems.find_children('SearchPaths'):
