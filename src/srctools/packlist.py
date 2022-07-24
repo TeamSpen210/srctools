@@ -725,13 +725,20 @@ class PackList:
         if cache_file is not None:
             self.soundscript.save_cache(cache_file)
 
-    def load_particle_manifest(self) -> None:
-        """Read the particle manifest, and read all mentioned scripts."""
+    def load_particle_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
+        """Read the particle manifest, and read all mentioned scripts.
+
+        If cache_file is provided, it should be a path to a file used to
+        cache the file reading for later use.
+        """
         try:
             man = self.fsys.read_prop('particles/particles_manifest.txt')
         except FileNotFoundError:
             LOGGER.warning('No particles manifest.')
             man = Property.root()
+
+        if cache_file is not None:
+            self.particles.load_cache(cache_file)
 
         in_manifest: Set[str] = set()
 
@@ -743,14 +750,23 @@ class PackList:
                 file_mode = FileMode.INCLUDE
                 fname = prop.value
             in_manifest.add(fname)
-            self.load_particle_system(fname, file_mode)
+            try:
+                file = self.fsys[fname]
+            except FileNotFoundError:
+                # It doesn't exist, complain and pretend it's empty.
+                LOGGER.warning('Particle system "{}" does not exist!', fname)
+            else:
+                self.particles.add_cached_file(fname, file, file_mode)
 
         # Now, manually look for any particles not in the manifest, those are added if referenced.
         for part_file in self.fsys.walk_folder('particles/'):
             if not part_file.path[-4:].casefold() == '.pcf':
                 continue
             if part_file.path not in in_manifest:
-                self.load_particle_system(part_file.path)
+                self.particles.add_cached_file(part_file.path, part_file)
+
+        if cache_file is not None:
+            self.particles.save_cache(cache_file)
 
     def write_manifest(self) -> None:
         """Deprecated, call write_soundscript_manifest()."""
