@@ -2172,7 +2172,7 @@ class FGD:
         if _ENGINE_FGD is None:
             from lzma import LZMAFile
             with (files(srctools) / 'fgd.lzma').open('rb') as comp, LZMAFile(comp) as f:
-                return cls.unserialise(f)
+                _ENGINE_FGD = cls.unserialise(f)
         return deepcopy(_ENGINE_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
