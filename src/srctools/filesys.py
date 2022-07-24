@@ -25,6 +25,7 @@ __all__ = [
 ]
 
 FileSysT = TypeVar('FileSysT', bound='FileSystem')
+CACHE_KEY_INVALID = -1  # Returned from cache_key() to indicate invalid keys.
 
 # This is the type of File._data. It should only be used by subclasses.
 _FileDataT = TypeVar('_FileDataT')
@@ -214,9 +215,9 @@ class FileSystem(Generic[_FileDataT]):
     def _get_cache_key(self: FileSysT, file: File[FileSysT]) -> int:
         """Return a checksum or last-modified date suitable for caching.
 
-        This allows preventing re-parsing the file. If not possible, return -2.
+        This allows preventing re-parsing the file. If not possible, return CACHE_KEY_INVALID (-1).
         """
-        return -1
+        return CACHE_KEY_INVALID
 
 
 class FileSystemChain(FileSystem[File[FileSystem]]):

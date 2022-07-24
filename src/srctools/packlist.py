@@ -27,7 +27,7 @@ from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, Entit
 from srctools.bsp import BSP
 from srctools.filesys import (
     FileSystem, VPKFileSystem, FileSystemChain, File,
-    VirtualFileSystem,
+    VirtualFileSystem, CACHE_KEY_INVALID,
 )
 from srctools.mdl import Model, MDL_EXTS, AnimEvents
 from srctools.vmt import Material, VarType
@@ -84,7 +84,9 @@ class FileMode(Enum):
 
 
 SoundScriptMode = FileMode  # Old name, deprecated.
-
+# Binary keyvalues only stores 32-bit integers, ensure file mod times are within that
+# range.
+FILE_CACHE_TRUNC = 0x7FFF_FFFF
 
 EXT_TYPE = {
     '.' + filetype.value: filetype
@@ -217,7 +219,7 @@ class ManifestedFiles(Generic[ParsedT]):
             return
         for file_elem in root['files'].iter_elem():
             self._cache[file_elem.name] = (
-                file_elem['key'].val_int,
+                file_elem['key'].val_int & FILE_CACHE_TRUNC,
                 list(file_elem['files'].iter_string()),
             )
 
@@ -227,12 +229,15 @@ class ManifestedFiles(Generic[ParsedT]):
         file_arr = Attribute.array('files', ValueType.ELEMENT)
         root['files'] = file_arr
         for cached_file, (cache_key, files) in self._cache.items():
+            if cache_key == CACHE_KEY_INVALID:
+                continue
             elem = Element(cached_file, 'SrcCacheFile')
-            elem['key'] = cache_key
+            # Truncate to avoid overflow errors.
+            elem['key'] = cache_key & FILE_CACHE_TRUNC
             elem['files'] = files
             file_arr.append(elem)
         with atomic_write(filename, mode='wb', overwrite=True) as f:
-            root.export_kv2(f, 'SrcPacklistCache', 1)
+            root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
 
     def add_cached_file(
         self, filename: str, file: File,
@@ -246,12 +251,14 @@ class ManifestedFiles(Generic[ParsedT]):
         if self._files.get(filename, None) is not FileMode.EXCLUDE:
             self._files[filename] = mode
         key = file.cache_key()
+        if key != CACHE_KEY_INVALID:
+            key &= FILE_CACHE_TRUNC
         try:
             cached_key, identifiers = self._cache[filename]
         except KeyError:
             pass
         else:
-            if cached_key == key and key != -1:
+            if cached_key == key and key != CACHE_KEY_INVALID:
                 LOGGER.debug('Loading {} from cache', filename)
                 # Apply cache.
                 self._unparsed_file[filename] = file
