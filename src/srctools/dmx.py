@@ -17,7 +17,7 @@ from typing import (
     Set, Mapping, KeysView, ValuesView
 )
 from typing_extensions import Literal, TypeAlias, Final
-from struct import Struct, pack
+from struct import Struct, pack, error as StructError
 import io
 import re
 import copy
@@ -732,7 +732,11 @@ class Attribute(Generic[ValueT], _ValProps):
         if isinstance(self._value, list):
             return map(func, self._value)
         else:
-            return iter([func(self._value)])
+            try:
+                return iter([func(self._value)])
+            except StructError as exc:
+                # Struct errors don't include the value.
+                raise ValueError(f'Failed to convert: {exc}, with value {self._value!r}') from None
 
     if TYPE_CHECKING:
         def iter_int(self) -> Iterator[builtins.int]: ...
