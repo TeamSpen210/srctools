@@ -31,6 +31,7 @@ class Game:
         self.fgd_loc = gameinfo['GameData', None]
         self.search_paths: List[Path] = []
 
+        # Note: the behaviour of Source can be examined via the "path" command.
         for search_path in fsystems.find_children('SearchPaths'):
             exp_path = self.parse_search_path(search_path)
             # Expand /* if at the end of paths.
@@ -67,6 +68,10 @@ class Game:
 
             # Force including 'platform', for Hammer assets.
             self.search_paths.append(self.path.parent / 'platform')
+            # Update goes in front of everything.
+            path = folder / 'update'
+            if path.exists():
+                self.search_paths.insert(0, path)
 
     @property
     def root(self) -> Path:
