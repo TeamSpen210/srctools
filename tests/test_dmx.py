@@ -1,4 +1,6 @@
 """Test the datamodel exchange implementation."""
+import collections
+
 from io import BytesIO
 from pathlib import Path
 from typing import Callable, cast, Set
@@ -428,11 +430,6 @@ deduce_type_tests = [
     (AngleTup(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
     (Angle(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
     (Quaternion(4, 8, 23, 29.8), ValueType.QUATERNION, Quaternion(4.0, 8.0, 23.0, 29.8)),
-
-    # Iterable testing.
-    ((3, 4), ValueType.VEC2, Vec2(3.0, 4.0)),
-    ((3, 4, 5), ValueType.VEC3, Vec3(3.0, 4.0, 5.0)),
-    (range(4), ValueType.VEC4, Vec4(0.0, 1.0, 2.0, 3.0)),
 ]
 
 
@@ -459,8 +456,10 @@ def test_deduce_type_basic(input, val_type, output) -> None:
     # Angle/AngleTup can be mixed.
     ([Angle(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)], ValueType.ANGLE, [AngleTup(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)]),
 
-    # A list of lists is an iterable.
-    ([[4, 5], Vec2(6.0, 7.0)], ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)])
+    # Tuples and other sequences work
+    ((Vec2(4, 5), Vec2(6.0, 7.0)), ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)]),
+    (collections.deque([1.0, 2.0, 3.0]), ValueType.FLOAT, [1.0, 2.0, 3.0]),
+    (range(5), ValueType.INT, [0, 1, 2, 3, 4]),
 ])
 def test_deduce_type_array(input, val_type, output) -> None:
     """Test array deduction, and some special cases."""
@@ -480,21 +479,14 @@ def test_deduce_type_adv() -> None:
     with pytest.raises(TypeError):
         print(deduce_type([...]))
 
+    # Empty result.
     with pytest.raises(TypeError):
         print(deduce_type([]))
-    # Iterable with wrong size.
     with pytest.raises(TypeError):
         print(deduce_type(()))
     with pytest.raises(TypeError):
-        print(deduce_type((1, )))
-    with pytest.raises(TypeError):
-        print(deduce_type((1, 2, 3, 4, 5)))
-    with pytest.raises(TypeError):
         print(deduce_type(range(0)))
-    with pytest.raises(TypeError):
-        print(deduce_type(range(1)))
-    with pytest.raises(TypeError):
-        print(deduce_type(range(5)))
+
 
 
 # TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation

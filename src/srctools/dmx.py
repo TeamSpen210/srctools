@@ -12,9 +12,9 @@ import warnings
 import sys
 from enum import Enum
 from typing import (
-    Union, NamedTuple, TypeVar, Generic, NewType, Any, cast, overload, TYPE_CHECKING,
+    Sequence, Union, NamedTuple, TypeVar, Generic, NewType, Any, cast, overload, TYPE_CHECKING,
     Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterable, Iterator,
-    Set, Mapping, KeysView, ValuesView
+    Set, Mapping, KeysView, ValuesView,
 )
 from typing_extensions import Literal, TypeAlias, Final
 from struct import Struct, pack, error as StructError
@@ -157,7 +157,7 @@ class AngleTup(NamedTuple):
 
 Time = NewType('Time', float)
 _Element: TypeAlias = 'Element'  # Forward ref.
-Value = Union[
+Value: TypeAlias = Union[
     int, float, bool, str, bytes,
     Color, Time,
     Vec2, Vec3, Vec4,
@@ -176,7 +176,7 @@ ValueList = Union[
     List[_Element],
 ]
 # Additional values we convert to valid types.
-ConvValue = Union[Value, Iterable[float]]
+ConvValue: TypeAlias = Value
 
 ValueT = TypeVar(
     'ValueT',
@@ -786,7 +786,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def _write_val(self, newtype: ValueType, value: Value) -> None:
         """Change the type of the atribute."""
         self._typ = newtype
-        self._value = CONVERSIONS[newtype](value)  # type: ignore # This changes the generic...
+        self._value = CONVERSIONS[newtype](value)
 
     def __repr__(self) -> str:
         if self._typ is not ValueType.ELEMENT and isinstance(self._value, list) and len(self._value) > 8:
@@ -1721,7 +1721,7 @@ class Element(Mapping[str, Attribute]):
         """Remove the specified attribute."""
         del self._members[name.casefold()]
 
-    def __setitem__(self, name: str, value: Union[Attribute, ConvValue, List[ConvValue]]) -> None:
+    def __setitem__(self, name: str, value: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> None:
         """Set a specific value, by deducing the type.
 
         This means this cannot produce certain types like Time. Use an
@@ -1739,7 +1739,7 @@ class Element(Mapping[str, Attribute]):
         """Remove all attributes from the element."""
         self._members.clear()
 
-    def pop(self, name: str, default: Union[Attribute, ConvValue, List[ConvValue]] = _UNSET) -> Attribute:
+    def pop(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute:
         """Remove the specified attribute and return it.
 
         If not found, an attribute is created from the default if specified,
@@ -1764,7 +1764,7 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Union[Attribute, ConvValue, List[ConvValue]]) -> Attribute:
+    def setdefault(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> Attribute:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.
@@ -1781,7 +1781,7 @@ class Element(Mapping[str, Attribute]):
                     new_def = list(map(conv, val))
                 else:
                     new_def = conv(val)
-                default = Attribute(name, typ, new_def)  # type: ignore
+                default = Attribute(name, typ, new_def)
             self._members[key] = default
             return default
 
@@ -1838,15 +1838,19 @@ TYPE_TO_VALTYPE: Dict[type, ValueType] = {
 }
 
 
-def deduce_type(value: Union[ConvValue, List[ConvValue]]) -> Tuple[ValueType, Union[Value, ValueList]]:
+def deduce_type(value: Union[ConvValue, Sequence[ConvValue]]) -> Tuple[ValueType, Union[Value, ValueList]]:
     """Convert Python objects to an appropriate ValueType."""
-    if isinstance(value, list):  # Array.
+    if isinstance(value, list):
         return deduce_type_array(value)
-    else:  # Single value.
-        return deduce_type_single(value)
+    try:  # TypeError if cast is invalid.
+        return deduce_type_single(cast(ConvValue, value))
+    except TypeError:
+        if not isinstance(value, Sequence):
+            raise
+    return deduce_type_array(value)
 
 
-def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, ValueList]:
+def deduce_type_array(value: Sequence[ConvValue]) -> Tuple[ValueType, ValueList]:
     """Convert a Python list to an appropriate ValueType."""
     if len(value) == 0:
         raise TypeError('Cannot deduce type for empty list!')
@@ -1888,12 +1892,13 @@ def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, ValueList]:
                     tuple.__new__(val_actual_type, map(float, val))  # type: ignore
                     for val in value
                 ]
-            else:
-                return val_type, cast('List[Value]', value).copy()
+            else:  # Direct type, no need to convert.
+                return val_type, list(value)  # type: ignore
     # Deduce each type in the array, check they're the same.
-    val_type, first = deduce_type_single(value[0])
+    val_iter = iter(value)
+    val_type, first = deduce_type_single(next(val_iter))
     result = [first]
-    for val in value[1:]:
+    for val in val_iter:
         sec_type, sec_val = deduce_type_single(val)
         if sec_type is not val_type:
             raise TypeError(
@@ -1901,10 +1906,11 @@ def deduce_type_array(value: List[ConvValue]) -> Tuple[ValueType, ValueList]:
                 f'Got {val_type.name} and {sec_type.name}.'
             )
         result.append(sec_val)
-    return val_type, result
+    return val_type, result  # type: ignore
 
 
 def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
+    """Convert a scalar value to an appropriate ValueType."""
     if isinstance(value, Matrix):
         return ValueType.MATRIX, value.copy()
     if isinstance(value, Angle):  # Mutable version of values we use.
@@ -1921,35 +1927,8 @@ def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
             # Type checker doesn't know all value classes take floats.
             return val_type, tuple.__new__(type(value), map(float, value))  # type: ignore
         else:  # No change needed.
-            return val_type, value  # type: ignore
-    try:
-        it = iter(cast('Iterable[float]', value))  # Try-catch handles type errors.
-    except TypeError:
-        # Nope, not an iterable. So not valid.
-        raise TypeError(f'Could not deduce value type for {type(value)}.') from None
-    # Now determine the length.
-    try:
-        x = float(next(it))
-    except StopIteration:
-        raise TypeError(f'Could not deduce vector type for zero-length iterable {type(value)}.') from None
-    try:
-        y = float(next(it))
-    except StopIteration:
-        raise TypeError(f'Could not deduce vector type for one-long iterable {type(value)}.') from None
-    try:
-        z = float(next(it))
-    except StopIteration:
-        return ValueType.VEC2, Vec2(x, y)
-    try:
-        w = float(next(it))
-    except StopIteration:
-        return ValueType.VEC3, Vec3(x, y, z)
-    try:
-        next(it)
-    except StopIteration:
-        return ValueType.VEC4, Vec4(x, y, z, w)
-    else:
-        raise TypeError(f'Could not deduce vector type for 5+ long iterable {type(value)}.') from None
+            return val_type, value
+    raise TypeError(f'Could not deduce value type for {type(value)}.') from None
 
 
 # All the type converter functions.
