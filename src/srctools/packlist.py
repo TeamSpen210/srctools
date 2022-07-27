@@ -204,7 +204,7 @@ class ManifestedFiles(Generic[ParsedT]):
         """Return the number of items we know about."""
         return len(self.name_to_parsed)
 
-    def load_cache(self, filename: os.PathLike) -> None:
+    def load_cache(self, filename: Union[str, os.PathLike[str]]) -> None:
         """Load the cache data. If the file is invalid, this does nothing."""
         try:
             with open(filename, 'rb') as f:
@@ -223,7 +223,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 list(file_elem['files'].iter_string()),
             )
 
-    def save_cache(self, filename: os.PathLike) -> None:
+    def save_cache(self, filename: Union[str, os.PathLike[str]]) -> None:
         """Write back new cache data."""
         root = Element('FileList', 'SrcFileList')
         file_arr = Attribute.array('files', ValueType.ELEMENT)
@@ -253,6 +253,8 @@ class ManifestedFiles(Generic[ParsedT]):
         key = file.cache_key()
         if key != CACHE_KEY_INVALID:
             key &= FILE_CACHE_TRUNC
+
+        identifiers: List[str]
         try:
             cached_key, identifiers = self._cache[filename]
         except KeyError:
@@ -269,7 +271,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 return
         LOGGER.debug('Loading {}: not in cache', filename)
         # Otherwise, parse and add to the cache.
-        identifiers: List[str] = []
+        identifiers = []
         self._cache[filename] = key, identifiers
         for identifier, data in self.parse_func(file).items():
             identifiers.append(identifier)
