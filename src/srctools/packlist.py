@@ -234,7 +234,7 @@ class ManifestedFiles(Generic[ParsedT]):
             elem = Element(cached_file, 'SrcCacheFile')
             # Truncate to avoid overflow errors.
             elem['key'] = cache_key & FILE_CACHE_TRUNC
-            elem['files'] = files
+            elem['files'] = Attribute('files', ValueType.STR, files)
             file_arr.append(elem)
         with atomic_write(filename, mode='wb', overwrite=True) as f:
             root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
