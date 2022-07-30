@@ -8,7 +8,7 @@ from typing import (
     TypeVar, Type, Generic, Any, Union, Optional, cast,
     Tuple, Dict, List, Set, Iterator, TextIO, BinaryIO,
 )
-from typing_extensions import Self
+from typing_extensions import Self, Final
 import io
 import os
 import warnings
@@ -18,14 +18,14 @@ from srctools.property_parser import Property
 
 
 __all__ = [
-    'File', 'FileSystem', 'get_filesystem',
+    'File', 'FileSystem', 'get_filesystem', 'CACHE_KEY_INVALID',
 
     'RawFileSystem', 'VPKFileSystem', 'ZipFileSystem',
     'VirtualFileSystem', 'FileSystemChain',
 ]
 
 FileSysT = TypeVar('FileSysT', bound='FileSystem')
-CACHE_KEY_INVALID = -1  # Returned from cache_key() to indicate invalid keys.
+CACHE_KEY_INVALID: Final = -1  # Returned from cache_key() to indicate invalid keys.
 
 # This is the type of File._data. It should only be used by subclasses.
 _FileDataT = TypeVar('_FileDataT')
