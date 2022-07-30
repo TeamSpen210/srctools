@@ -42,12 +42,11 @@ def test_construction(py_c_vec):
         assert ang is not ang3
 
         # Test Angle.from_str()
-        assert_ang(Angle.from_str('{} {} {}'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('<{} {} {}>'.format(pit, yaw, rol)), pit, yaw, rol)
-        # {x y z}
-        assert_ang(Angle.from_str('{{{} {} {}}}'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('({} {} {})'.format(pit, yaw, rol)), pit, yaw, rol)
-        assert_ang(Angle.from_str('[{} {} {}]'.format(pit, yaw, rol)), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'{pit} {yaw} {rol}'), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'<{pit} {yaw} {rol}>'), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'{{{pit} {yaw} {rol}}}'), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'({pit} {yaw} {rol})'), pit, yaw, rol)
+        assert_ang(Angle.from_str(f'[{pit} {yaw} {rol}]'), pit, yaw, rol)
 
         # Test converting a converted Angle
         orig = Angle(pit, yaw, rol)

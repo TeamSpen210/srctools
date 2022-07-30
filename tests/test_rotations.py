@@ -126,13 +126,20 @@ def test_ang_matrix_roundtrip(py_c_vec: PyCVec) -> None:
     """Check converting to and from a Matrix does not change values."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
-    for p, y, r in iter_vec(range(0, 360, 90)):
-        vert = (Vec(x=1) @ Angle(p, y, r)).z
+    for pit, yaw, rol in iter_vec(range(0, 360, 90)):
+        vert = (Vec(x=1) @ Angle(pit, yaw, rol)).z
         if vert < 0.99 or vert > 0.99:
-            # If nearly vertical, gimbal lock prevents roundtrips.
+            # If nearly vertical, gimbal lock prevents round-tripping.
             continue
-        mat = Matrix.from_angle(Angle(p, y, r))
-        assert_ang(mat.to_angle(), p, y, r)
+        mat = Matrix.from_angle(Angle(pit, yaw, rol))
+        assert_ang(mat.to_angle(), pit, yaw, rol)
+
+        # Test from_str conversions.
+        assert_rot(Matrix.from_angstr(f'{pit} {yaw} {rol}'), mat)
+        assert_rot(Matrix.from_angstr(f'<{pit} {yaw} {rol}>'), mat)
+        assert_rot(Matrix.from_angstr(f'{{{pit} {yaw} {rol}}}'), mat)
+        assert_rot(Matrix.from_angstr(f'({pit} {yaw} {rol})'), mat)
+        assert_rot(Matrix.from_angstr(f'[{pit} {yaw} {rol}]'), mat)
 
 
 def test_to_angle_roundtrip(py_c_vec: PyCVec) -> None:
@@ -518,7 +525,7 @@ def test_copy_pickle(py_c_vec: PyCVec) -> None:
     # Some random rotation, so all points are different.
     test_data = (38, 42, 63)
 
-    orig = Matrix.from_angle(Angle(*test_data))
+    orig = Matrix.from_angle(*test_data)
 
     cpy_meth = orig.copy()
 

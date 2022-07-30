@@ -67,7 +67,7 @@ class Instance:
             name,
             filename,
             Vec.from_str(ent['origin']),
-            Matrix.from_angle(Angle.from_str(ent['angles'])),
+            Matrix.from_angstr(ent['angles']),
             fixup_style,
             ent.outputs,
             ent.fixup.copy_values(),

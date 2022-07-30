@@ -1932,6 +1932,18 @@ cdef class Matrix:
         _mat_from_angle(rot.mat, &ang)
         return rot
 
+    @classmethod
+    def from_angstr(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
+        """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
+
+        This is equivalent to Matrix.from_angle(Angle.from_str(val, pitch, yaw, roll)),
+        except more efficient.
+        """
+        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef vec_t ang
+        _parse_vec_str(&ang, val, pitch, yaw, roll)
+        _mat_from_angle(rot.mat, &ang)
+        return rot
 
     @classmethod
     def axis_angle(cls, object axis, double angle) -> 'Matrix':

@@ -120,7 +120,7 @@ def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
         return Matrix.from_angle(value)
     else:
         [p, y, r] = value
-        return Matrix.from_angle(Angle(p, y, r))
+        return Matrix.from_angle(p, y, r)
 
 
 class Vec_tuple(NamedTuple):
@@ -1261,6 +1261,22 @@ class Matrix:
         return rot
 
     @classmethod
+    def from_angstr(
+        cls,
+        val: Union[str, 'Angle'],
+        pitch: float = 0.0,
+        yaw: float = 0.0,
+        roll: float = 0.0,
+    ) -> 'Matrix':
+        """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
+
+        This is equivalent to Matrix.from_angle(Angle.from_str(val, pitch, yaw, roll)),
+        except more efficient.
+        """
+        pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
+        return cls.from_angle(pitch, yaw, roll)
+
+    @classmethod
     def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> 'Matrix':
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         x, y, z = Vec(axis).norm()
@@ -1510,14 +1526,20 @@ class Angle:
         return _mk_ang, (self._pitch, self._yaw, self._roll)
 
     @classmethod
-    def from_str(cls, val: Union[str, 'Angle'], pitch=0.0, yaw=0.0, roll=0.0):
+    def from_str(
+        cls,
+        val: Union[str, 'Angle'],
+        pitch: float = 0.0,
+        yaw: float = 0.0,
+        roll: float = 0.0,
+    ) -> 'Angle':
         """Convert a string in the form '(4 6 -4)' into an Angle.
 
          If the string is unparsable, this uses the defaults.
          The string can start with any of the (), {}, [], <> bracket
          types, or none.
 
-         If the value is already a Angle, a copy will be returned.
+         If the value is already an Angle, a copy will be returned.
          """
 
         pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
