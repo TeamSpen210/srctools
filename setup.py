@@ -1,5 +1,5 @@
 """Build the Srctools package."""
-from setuptools import setup, Extension, find_packages
+from setuptools import setup, Extension
 import sys
 import os
 

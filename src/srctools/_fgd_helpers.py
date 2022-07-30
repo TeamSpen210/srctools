@@ -7,7 +7,7 @@ from typing import (
 import attrs
 
 from srctools import Vec, parse_vec_str
-from srctools.fgd import HelperTypes, UnknownHelper, Helper
+from srctools.fgd import HelperTypes, Helper
 
 if TYPE_CHECKING:  # Circular import.
     from srctools.fgd import EntityDef

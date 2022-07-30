@@ -3,7 +3,7 @@ import collections
 
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, cast, Set
+from typing import cast, Set
 from uuid import UUID
 
 import pytest

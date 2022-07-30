@@ -1,6 +1,6 @@
 """Common code for handling binary formats."""
 from binascii import crc32
-from struct import Struct, unpack_from
+from struct import Struct
 from typing import IO, List, Hashable, Union, Dict, Tuple
 import lzma
 

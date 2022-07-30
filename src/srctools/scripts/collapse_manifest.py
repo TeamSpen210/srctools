@@ -4,7 +4,7 @@ import sys
 from pathlib import Path
 from typing import List, Union
 
-from srctools import FGD, Property, Vec, VMF
+from srctools import FGD, Property, VMF
 from srctools.instancing import Manifest, InstanceFile, collapse_one
 from srctools.filesys import RawFileSystem
 from srctools.vmf import VisGroup
