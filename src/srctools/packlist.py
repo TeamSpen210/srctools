@@ -236,7 +236,8 @@ class ManifestedFiles(Generic[ParsedT]):
             elem['key'] = cache_key & FILE_CACHE_TRUNC
             elem['files'] = Attribute('files', ValueType.STR, files)
             file_arr.append(elem)
-        with atomic_write(filename, mode='wb', overwrite=True) as f:
+        # No need to be atomic, if we corrupt this it'll just be rebuilt.
+        with open(filename, mode='wb') as f:
             root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
 
     def add_cached_file(
