@@ -806,6 +806,7 @@ def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
         next(b)
 
 
+# noinspection PyCallingNonCallable
 @pytest.mark.parametrize(
     'Tok',
     [Cy_BaseTokenizer, Py_BaseTokenizer],

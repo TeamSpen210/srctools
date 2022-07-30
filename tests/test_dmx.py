@@ -392,7 +392,7 @@ def test_attr_extend() -> None:
     (ValueType.QUATERNION, 'val_quat', Quaternion(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
     (
         ValueType.MATRIX, 'val_mat', Matrix(),
-        (b'1000' b'0100' b'0010' b'0001').replace(b'0', b'\x00\x00\x00\x00').replace(b'1', b'\x00\x00\x80?'),
+        b'1000' b'0100' b'0010' b'0001'.replace(b'0', b'\x00\x00\x00\x00').replace(b'1', b'\x00\x00\x80?'),
         '1.0 0.0 0.0 0.0\n'
         '0.0 1.0 0.0 0.0\n'
         '0.0 0.0 1.0 0.0\n'

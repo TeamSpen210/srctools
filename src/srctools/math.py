@@ -1064,7 +1064,7 @@ class Vec(SupportsRound['Vec']):
         """
         mat = to_matrix(angles)
         mat._vec_rot(self)
-        self += origin
+        self.__iadd__(origin)
 
     def norm_mask(self, normal: 'Vec') -> 'Vec':
         """Subtract the components of this vector not in the direction of the normal.

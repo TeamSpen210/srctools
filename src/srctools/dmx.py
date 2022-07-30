@@ -597,11 +597,11 @@ class Attribute(Generic[ValueT], _ValProps):
             z = float(next(it, z))
         return Attribute(name, ValueType.VEC3, Vec3(x_, y, z))
 
-    @overload
     @classmethod
+    @overload
     def vec4(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec4]': ...
-    @overload
     @classmethod
+    @overload
     def vec4(
         cls, __name: str,
         x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
@@ -625,11 +625,11 @@ class Attribute(Generic[ValueT], _ValProps):
             w = float(next(it, w))
         return Attribute(name, ValueType.VEC4, Vec4(x_, y, z, w))
 
-    @overload
     @classmethod
+    @overload
     def color(cls, __name: str, __it: Iterable[Union[builtins.float, builtins.int]]) -> 'Attribute[Color]': ...
-    @overload
     @classmethod
+    @overload
     def color(
         cls, __name: str,
         r: Union[builtins.float, builtins.int] = 0,
@@ -656,11 +656,11 @@ class Attribute(Generic[ValueT], _ValProps):
             a = next(it, a)
         return Attribute(name, ValueType.COLOR, Color(int(r_), int(g), int(b), int(a)))
 
-    @overload
     @classmethod
+    @overload
     def angle(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[AngleTup]': ...
-    @overload
     @classmethod
+    @overload
     def angle(
         cls, __name: str,
         pitch: builtins.float = 0.0,

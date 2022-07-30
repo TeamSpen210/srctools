@@ -213,18 +213,18 @@ class Material(MutableMapping[str, str]):
             tok.expect(Tok.BRACE_OPEN)  # Start of proxy values.
 
             # Looking for key-value parameters for a proxy
-            for token, param_name in tok.skipping_newlines():
-                if token is Tok.BRACE_CLOSE:
+            for par_tok, param_name in tok.skipping_newlines():
+                if par_tok is Tok.BRACE_CLOSE:
                     break
-                elif token is not Tok.STRING:
-                    raise tok.error(token)
+                elif par_tok is not Tok.STRING:
+                    raise tok.error(par_tok)
 
-                token, param_value = tok()
+                par_tok, param_value = tok()
 
-                if token is Tok.STRING:
+                if par_tok is Tok.STRING:
                     opts[param_name.casefold()] = param_value
                 else:
-                    raise tok.error(token)
+                    raise tok.error(par_tok)
             else:
                 raise tok.error('EOF while reading options for "{}" proxy', proxy_name)
             yield proxy_name, opts

@@ -1113,6 +1113,7 @@ def test_bbox(py_c_vec: PyCVec):
     test(Vec(2.346436e47, -4.345e49, 3.59e50), Vec(-7.54e50, 3.45e127, -1.23e140))
 
 
+# noinspection PyDeprecation
 def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
     """Complex test.
 
