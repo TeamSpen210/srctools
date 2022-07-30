@@ -211,7 +211,7 @@ class InstanceFile:
         """Parse func_instance_params and io_proxies in the map."""
         for params_ent in self.vmf.by_class['func_instance_parms']:
             params_ent.remove()
-            for key, value in params_ent.keys.items():
+            for key, value in params_ent.items():
                 if not key.startswith('param'):
                     continue
                 # Don't bother parsing the index, it doesn't matter.
@@ -400,7 +400,7 @@ def collapse_one(
             angles.yaw = conv_float(new_ent['yaw'])
         angles @= orient
 
-        for key, value in new_ent.keys.items():
+        for key, value in new_ent.items():
             folded = key.casefold()
             value = inst.fixup.substitute(value, '')
             # Hardcode these critical keyvalues to always be these types.
@@ -441,7 +441,7 @@ def collapse_one(
                     _UNKNOWN_KV.add((classname, key))
                 continue
 
-            new_ent.keys[key] = inst.fixup_key(vmf, fgd, kv.type, value)
+            new_ent[key] = inst.fixup_key(vmf, fgd, kv.type, value)
 
         # Remap fixups on instance entities too.
         for key, value in new_ent.fixup.items():
