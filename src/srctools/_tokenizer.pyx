@@ -610,6 +610,10 @@ cdef class Tokenizer(BaseTokenizer):
                 self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
                 return self.chunk_buf[0]
 
+    def _get_token(self):
+        """Compute the next token."""
+        return self.next_token()
+
     cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
@@ -621,6 +625,7 @@ cdef class Tokenizer(BaseTokenizer):
             uchar decode[5]
             bint last_was_cr
 
+        # Implement pushback directly for efficiency.
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
             self.pushback_tok = self.pushback_val = None
@@ -901,7 +906,12 @@ cdef class IterTokenizer(BaseTokenizer):
         else:
             return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
 
+    def _get_token(self):
+        """Compute the next token."""
+        return self.next_token()
+
     cdef next_token(self):
+        """Implement pushback directly for efficiency."""
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
             self.pushback_tok = self.pushback_val = None
