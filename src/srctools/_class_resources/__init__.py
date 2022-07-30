@@ -458,10 +458,10 @@ res('squadinsignia', "models/chefhat.mdl")  # Yeah.
 def team_control_point(pack: PackList, ent: Entity) -> None:
     """Special '_locked' materials."""
     for kvalue in ['team_icon_0', 'team_icon_1', 'team_icon_2']:
-        mat = ent[kvalue]
-        if mat:
-            pack.pack_file('materials/{}.vmt'.format(mat), FileType.MATERIAL)
-            pack.pack_file('materials/{}_locked.vmt'.format(mat), FileType.MATERIAL)
+        icon = ent[kvalue]
+        if icon:
+            pack.pack_file(f'materials/{icon}.vmt', FileType.MATERIAL)
+            pack.pack_file(f'materials/{icon}_locked.vmt', FileType.MATERIAL)
 
 
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
