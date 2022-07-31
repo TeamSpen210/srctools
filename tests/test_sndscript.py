@@ -1,3 +1,5 @@
+from pathlib import Path
+
 import pytest
 
 from srctools import sndscript
@@ -31,3 +33,13 @@ def test_join() -> None:
     assert sndscript.join_float((sndscript.Pitch.PITCH_LOW, sndscript.Pitch.PITCH_LOW)) == 'PITCH_LOW'
     assert sndscript.join_float((sndscript.VOL_NORM, 4.5)) == 'VOL_NORM, 4.5'
     assert sndscript.join_float((8.28, sndscript.VOL_NORM)) == '8.28, VOL_NORM'
+
+
+@pytest.mark.parametrize('fname, loop', [
+    ('sound_noloop.wav', False),
+    ('sound_loop.wav', True),
+])
+def test_looping_check(fname: str, loop: bool, datadir: Path) -> None:
+    """A very basic test of wav_is_looped, test two sample files."""
+    with open(datadir / fname, 'rb') as f:
+        assert sndscript.wav_is_looped(f) is loop
