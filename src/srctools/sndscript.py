@@ -1,5 +1,6 @@
 """Reads and writes Soundscripts."""
 from enum import Enum
+import struct
 
 import attrs
 
@@ -154,25 +155,18 @@ class _WAVChunk:
     """To allow reading CUE points, we need a copy of the former chunk module.
 
     This is copied from the Python Standard Library, 3.11.
+    We force little-endian, and to align to 2-byte boundaries.
     """
-    def __init__(self, file: IO[bytes], align=True, bigendian=True, inclheader=False) -> None:
-        import struct
+    def __init__(self, file: IO[bytes]) -> None:
         self.closed = False
-        self.align = align      # whether to align to word (2-byte) boundaries
-        if bigendian:
-            strflag = '>'
-        else:
-            strflag = '<'
         self.file = file
         self.chunkname = file.read(4)
         if len(self.chunkname) < 4:
             raise EOFError
         try:
-            self.chunksize = struct.unpack_from(strflag+'L', file.read(4))[0]
+            [self.chunksize] = struct.unpack_from('<L', file.read(4))
         except struct.error:
             raise EOFError from None
-        if inclheader:
-            self.chunksize = self.chunksize - 8 # subtract header
         self.size_read = 0
         try:
             self.offset = self.file.tell()
@@ -181,11 +175,8 @@ class _WAVChunk:
         else:
             self.seekable = True
 
-    def getname(self) -> bytes:
-        """Return the name (ID) of the current chunk."""
-        return self.chunkname
-
     def close(self) -> None:
+        """Close this chunk, skipping to the next."""
         if not self.closed:
             try:
                 self.skip()
@@ -211,11 +202,6 @@ class _WAVChunk:
         self.file.seek(self.offset + pos, 0)
         self.size_read = pos
 
-    def tell(self) -> int:
-        if self.closed:
-            raise ValueError("I/O operation on closed file")
-        return self.size_read
-
     def read(self, size: int = -1) -> bytes:
         """Read at most size bytes from the chunk.
         If size is omitted or negative, read until the end
@@ -231,7 +217,7 @@ class _WAVChunk:
             size = self.chunksize - self.size_read
         data = self.file.read(size)
         self.size_read = self.size_read + len(data)
-        if self.size_read == self.chunksize and self.align and (self.chunksize & 1):
+        if self.size_read == self.chunksize and (self.chunksize & 1):
             dummy = self.file.read(1)
             self.size_read = self.size_read + len(dummy)
         return data
@@ -248,7 +234,7 @@ class _WAVChunk:
             try:
                 n = self.chunksize - self.size_read
                 # maybe fix alignment
-                if self.align and (self.chunksize & 1):
+                if self.chunksize & 1:
                     n = n + 1
                 self.file.seek(n, 1)
                 self.size_read = self.size_read + n
@@ -267,18 +253,18 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 
     This code is partially copied from wave.Wave_read.initfp().
     """
-    first = _WAVChunk(file, bigendian=False)
-    if first.getname() != b'RIFF':
+    first = _WAVChunk(file)
+    if first.chunkname != b'RIFF':
         raise ValueError('File does not start with RIFF id.')
     if first.read(4) != b'WAVE':
         raise ValueError('Not a WAVE file.')
 
     while True:
         try:
-            chunk = _WAVChunk(file, bigendian=False)
+            chunk = _WAVChunk(file)
         except EOFError:
             return False
-        if chunk.getname() == b'cue ':
+        if chunk.chunkname == b'cue ':
             return True
         chunk.skip()
 
