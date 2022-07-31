@@ -8,9 +8,10 @@ from operator import itemgetter
 
 import math
 from typing import (
-    Union, Optional, Any, Protocol, Tuple,
+    Union, Optional, Any, Tuple,
     List, Dict, Set, Iterator, Iterable,
 )
+from typing_extensions import Protocol
 from srctools.math import Vec, Angle, Matrix, to_matrix
 
 __all__ = [
