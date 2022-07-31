@@ -121,21 +121,22 @@ def split_float(
     The name is used for error handling.
     """
     if isinstance(val, list):
+        # TODO: This won't work once .value raises instead of returning the list.
         raise ValueError(f'Property block used for option in {name} sound!')
     if ',' in val:
         s_low, s_high = val.split(',')
         try:
-            low = enum(s_low.upper())
+            low = enum(s_low.strip().upper())
         except (LookupError, ValueError):
             low = conv_float(s_low, default)
         try:
-            high = enum(s_high.upper())
+            high = enum(s_high.strip().upper())
         except (LookupError, ValueError):
             high = conv_float(s_high, default)
         return low, high
     else:
         try:
-            out = enum(val.upper())
+            out = enum(val.strip().upper())
         except (LookupError, ValueError):
             out = conv_float(val, default)
         return out, out
@@ -147,7 +148,7 @@ def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
     if low == high:
         return str(low)
     else:
-        return f'{low!s},{high!s}'
+        return f'{low!s}, {high!s}'
 
 
 def wav_is_looped(file: IO[bytes]) -> bool:
