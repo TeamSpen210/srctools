@@ -204,7 +204,7 @@ class ManifestedFiles(Generic[ParsedT]):
         """Return the number of items we know about."""
         return len(self.name_to_parsed)
 
-    def load_cache(self, filename: Union[str, os.PathLike[str]]) -> None:
+    def load_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
         """Load the cache data. If the file is invalid, this does nothing."""
         try:
             with open(filename, 'rb') as f:
@@ -223,7 +223,7 @@ class ManifestedFiles(Generic[ParsedT]):
                 list(file_elem['files'].iter_string()),
             )
 
-    def save_cache(self, filename: Union[str, os.PathLike[str]]) -> None:
+    def save_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
         """Write back new cache data."""
         root = Element('FileList', 'SrcFileList')
         file_arr = Attribute.array('files', ValueType.ELEMENT)
