@@ -1,6 +1,5 @@
 """Reads and writes Soundscripts."""
 from enum import Enum
-from chunk import Chunk as WAVChunk
 
 import attrs
 
@@ -151,12 +150,124 @@ def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
         return f'{low!s}, {high!s}'
 
 
+class _WAVChunk:
+    """To allow reading CUE points, we need a copy of the former chunk module.
+
+    This is copied from the Python Standard Library, 3.11.
+    """
+    def __init__(self, file: IO[bytes], align=True, bigendian=True, inclheader=False) -> None:
+        import struct
+        self.closed = False
+        self.align = align      # whether to align to word (2-byte) boundaries
+        if bigendian:
+            strflag = '>'
+        else:
+            strflag = '<'
+        self.file = file
+        self.chunkname = file.read(4)
+        if len(self.chunkname) < 4:
+            raise EOFError
+        try:
+            self.chunksize = struct.unpack_from(strflag+'L', file.read(4))[0]
+        except struct.error:
+            raise EOFError from None
+        if inclheader:
+            self.chunksize = self.chunksize - 8 # subtract header
+        self.size_read = 0
+        try:
+            self.offset = self.file.tell()
+        except (AttributeError, OSError):
+            self.seekable = False
+        else:
+            self.seekable = True
+
+    def getname(self) -> bytes:
+        """Return the name (ID) of the current chunk."""
+        return self.chunkname
+
+    def close(self) -> None:
+        if not self.closed:
+            try:
+                self.skip()
+            finally:
+                self.closed = True
+
+    def seek(self, pos: int, whence: int = 0) -> None:
+        """Seek to specified position into the chunk.
+        Default position is 0 (start of chunk).
+        If the file is not seekable, this will result in an error.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if not self.seekable:
+            raise OSError("cannot seek")
+        if whence == 1:
+            pos = pos + self.size_read
+        elif whence == 2:
+            pos = pos + self.chunksize
+        if pos < 0 or pos > self.chunksize:
+            raise RuntimeError
+        self.file.seek(self.offset + pos, 0)
+        self.size_read = pos
+
+    def tell(self) -> int:
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        return self.size_read
+
+    def read(self, size: int = -1) -> bytes:
+        """Read at most size bytes from the chunk.
+        If size is omitted or negative, read until the end
+        of the chunk.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.size_read >= self.chunksize:
+            return b''
+        if size < 0:
+            size = self.chunksize - self.size_read
+        if size > self.chunksize - self.size_read:
+            size = self.chunksize - self.size_read
+        data = self.file.read(size)
+        self.size_read = self.size_read + len(data)
+        if self.size_read == self.chunksize and self.align and (self.chunksize & 1):
+            dummy = self.file.read(1)
+            self.size_read = self.size_read + len(dummy)
+        return data
+
+    def skip(self) -> None:
+        """Skip the rest of the chunk.
+        If you are not interested in the contents of the chunk,
+        this method should be called so that the file points to
+        the start of the next chunk.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.seekable:
+            try:
+                n = self.chunksize - self.size_read
+                # maybe fix alignment
+                if self.align and (self.chunksize & 1):
+                    n = n + 1
+                self.file.seek(n, 1)
+                self.size_read = self.size_read + n
+                return
+            except OSError:
+                pass
+        while self.size_read < self.chunksize:
+            n = min(8192, self.chunksize - self.size_read)
+            dummy = self.read(n)
+            if not dummy:
+                raise EOFError
+
+
 def wav_is_looped(file: IO[bytes]) -> bool:
     """Check if the provided wave file contains loop cue points.
 
     This code is partially copied from wave.Wave_read.initfp().
     """
-    first = WAVChunk(file, bigendian=False)
+    first = _WAVChunk(file, bigendian=False)
     if first.getname() != b'RIFF':
         raise ValueError('File does not start with RIFF id.')
     if first.read(4) != b'WAVE':
@@ -164,7 +275,7 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 
     while True:
         try:
-            chunk = WAVChunk(file, bigendian=False)
+            chunk = _WAVChunk(file, bigendian=False)
         except EOFError:
             return False
         if chunk.getname() == b'cue ':
