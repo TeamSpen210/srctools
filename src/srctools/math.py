@@ -1,33 +1,14 @@
-"""A 3D vector class which matches Valve conventions.
+"""This module implements three classes for representing vectors, Euler angles and rotation matrices, 
+following Valve conventions. `Vec` represents an XYZ position and `Angle` represents a pitch-yaw-roll 
+angle (in degrees). `Matrix` represents a rotation also, but in a format that can be manipulated 
+properly. `Angle` will automatically compute a matrix when required, but it is more efficient to 
+perform repeated operations on a matrix.
 
-    >>> Vec(1, 2, 3)
-    Vec(1, 2, 3)
-    >>> Vec(1, 2, 3) * 2
-    Vec(2, 4, 6)
-    >>> Vec.from_str('<4 2 -45>')
-    Vec(4, 2, -45)
+These classes will be replaced by Cython-optimized versions where possible.
 
-Vectors support arithmetic with scalars, applying the operation to the three
-components.
-Call Vec.as_tuple() to get a tuple-version of the vector, useful as a
-dictionary key. Vec will treat 3-tuples as equivalent to itself, converting it
-when used in math operations and comparing values. This allows these to be
-constant-folded.
-
-Index via .x, .y, .z attributes, or 'x', 'y', 'z', 0, 1, 2 index access.
-
-Rotations are represented by Euler angles, but modifications need to be
-performed using matrices.
-
-Rotations are implemented as a matrix-multiplication, where the left is rotated
-by the right. Vectors can be rotated by matrices and angles and matrices
-can be rotated by angles, but not vice-versa.
-
-Scales magnitude:
- - Vec * Scalar
- - Scalar * Vec
- - Angle * Scalar
- - Scalar * Angle
+Perform rotations via the matrix-multiplication operator `@`, where the left is rotated by the 
+right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles, 
+but not vice-versa.
 
 Rotates LHS by RHS:
  - Vec @ Angle -> Vec
@@ -294,9 +275,30 @@ globals()['SupportsRound'] = {'Vec': object}
 
 @final
 class Vec(SupportsRound['Vec']):
-    """A 3D Vector. This has most standard Vector functions.
+    """A 3D Vector. This has most standard Vector functions. Call the class to 
 
-    Many of the functions will accept a 3-tuple for comparison purposes.
+	>>> Vec(1, 2, z=3)  # Positional or vec, defaults to 0.
+    Vec(1, 2, 3)
+	>> Vec(range(3))  # Any 1,2 or 3 long iterable
+	Vec(0, 1, 2)
+    >>> Vec(1, 2, 3) * 2
+    Vec(2, 4, 6)
+    >>> Vec.from_str('<4 2 -45>')  # Parse strings.
+    Vec(4, 2, -45)
+
+    Operators and comparisons will treat 3-tuples interchangably with vectors, which is more 
+	convenient when specifying constant values.
+	>>> Vec(3, 8, 7) - (0, 3, 4)
+	Vec(3, 5, 3)
+	
+	Addition/subtraction can be performed between either vectors or scalar values (applying equally
+	to all axes). Multiplication/division must be performed between a vector and scalar to scale -
+	use `Vec.dot()` or `Vec.cross()` for those operations.
+	
+	Values can be modified by either setting/getting `x`, `y` and `z` attributes.
+	In addition, the following indexes are allowed (case-insensitive):
+	    * `0`  `1`  `2`
+		* `"x"`, `"y"`, `"z"`
     """
     __match_args__: Final = ('x', 'y', 'z')
     __slots__: Final = ('x', 'y', 'z')
@@ -330,7 +332,7 @@ class Vec(SupportsRound['Vec']):
     ) -> None:
         """Create a Vector.
 
-        All values are converted to Floats automatically.
+        All values are converted to floats automatically.
         If no value is given, that axis will be set to 0.
         An iterable can be passed in (as the x argument), which will be
         used for x, y, and z.
@@ -433,9 +435,9 @@ class Vec(SupportsRound['Vec']):
         roll: float=0.0,
         round_vals: bool=True,
     ) -> 'Vec':
-        """Rotate a vector by a Source rotational angle.
-        Returns the vector, so you can use it in the form
-        val = Vec(0,1,0).rotate(p, y, r)
+        """Old method to rotate a vector by a Source rotational angle.
+        
+		This is deprecated, do `Vec(...) @ Angle(...)` instead.
 
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
@@ -452,7 +454,7 @@ class Vec(SupportsRound['Vec']):
     def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
-        If the string cannot be parsed, use the passed in values instead.
+		This is deprecated, use `Vec(...) @ Angle.from_str(...)` instead.
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
@@ -939,7 +941,7 @@ class Vec(SupportsRound['Vec']):
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
 
-        This accepts either 0,1,2 or 'x','y','z' to read values.
+        This accepts either `0`,`1`,`2` or `x`,`y`,`z` to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
@@ -953,7 +955,7 @@ class Vec(SupportsRound['Vec']):
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
-        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        This accepts either `0`,`1`,`2` or `x`,`y`,`z` to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
@@ -1037,7 +1039,10 @@ class Vec(SupportsRound['Vec']):
             return val
 
     def dot(self, other: AnyVec) -> float:
-        """Return the dot product of both Vectors."""
+        """Return the dot product of both Vectors.
+		
+		Tip: using this in the form `Vec.dot(a, b)` may be more readable.
+		"""
         return (
             self.x * other[0] +
             self.y * other[1] +
@@ -1045,7 +1050,10 @@ class Vec(SupportsRound['Vec']):
         )
 
     def cross(self, other: AnyVec) -> 'Vec':
-        """Return the cross product of both Vectors."""
+        """Return the cross product of both Vectors.
+		
+		Tip: using this in the form `Vec.cross(a, b)` may be more readable.
+		"""
         return Py_Vec(
             self.y * other[2] - self.z * other[1],
             self.z * other[0] - self.x * other[2],
@@ -1061,6 +1069,7 @@ class Vec(SupportsRound['Vec']):
 
         This effectively translates local-space offsets to a global location,
         given the parent's origin and angles.
+		This is an in-place version of `self @ angles + origin`.
         """
         mat = to_matrix(angles)
         mat._vec_rot(self)
@@ -1099,7 +1108,12 @@ _IND_TO_SLOT = {
 
 @final
 class Matrix:
-    """Represents a matrix via a transformation matrix."""
+    """Represents a rotation via a transformation matrix.
+	
+    When performing multiple rotations, it is more efficient to create one of these instead of using
+    an `Angle` directly. To construct a rotation, use one of the several classmethods available
+    depending on what rotation is desired.
+	"""
     __slots__ = [
         '_aa', '_ab', '_ac',
         '_ba', '_bb', '_bc',
@@ -1478,10 +1492,26 @@ class Matrix:
 @final
 class Angle:
     """Represents a pitch-yaw-roll Euler angle.
+	
+	>>> Angle(45, 0, z=-90)  # Positional or vec, defaults to 0.
+    Angle(45, 0, 270)
+	>> Vec(range(0, 270, 90))  # Any 1,2 or 3 long iterable
+	Vec(0, 90, 180)
+    >>> Vec(1, 2, 3) @ Angle(0, 0, 45)
+	Vec(1, -0.707107, 3.53553)
+    >>> Angle.from_str('(45 90 0)')  # Parse strings.
+    Angle(45, 90, 0)
 
-    All values are remapped to between 0-360 when set.
-    Addition and subtraction modify values, matrix-multiplication with
-    Vec, Angle or Matrix rotates (RHS rotating LHS).
+    Addition and subtraction can be performed 
+	between angles, while division/multiplication must be between an angle and scalar (to scale).
+	
+	Like vectors, each axis can be accessed by getting/setting `pitch`/`yaw` and `roll` attributes. 
+	In addition, the following indexes are allowed (case-insensitive):
+	    * `0`, `1`, `2`
+	    * `"p"`, `"y"`, `"r"`
+	    * `"pitch"`, `"yaw"`, `"roll"`	
+		* `"pit"`, `"yaw"`, `"rol"`
+	All values are remapped to between 0-360 when set. 
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     # Use the private attrs for matching also, we only hook assignment.
@@ -1496,7 +1526,7 @@ class Angle:
     ) -> None:
         """Create an Angle.
 
-        All values are converted to Floats automatically.
+        All values are converted to floats automatically.
         If no value is given, that axis will be set to 0.
         An iterable can be passed in (as the pitch argument), which will be
         used for pitch, yaw, and roll. This includes Vectors and other Angles.
