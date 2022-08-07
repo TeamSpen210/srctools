@@ -5,6 +5,14 @@ set of 'unicode_XXX' encoding formats.
 
 Special 'stub' elements are possible, which represent elements not present in the file. 
 These are represented by StubElement instances. Additionally, NULL elements are possible.
+
+To parse a DMX file, it must be opened in binary mode (the kind will be detected automatically):
+```py
+with open("path/to/file.dmx", "rb") as f:
+	dmx, format_name, format_version = Element.parse(f)
+```
+The format name/version are stored in the header, allowing indicating the kind of data stored in 
+the file.
 """
 import collections
 import builtins
@@ -410,7 +418,14 @@ class AttrMember(_ValProps):
 
 
 class Attribute(Generic[ValueT], _ValProps):
-    """A single attribute of an element."""
+    """A single attribute of an element.
+	
+	Attributes store either a single scalar value, or an array of multiple values of the same type. Creation is accomplished mainly via the many classmethods, one for each value type.
+	
+	To access the value, read/write one of the `val_*` properties, which will if possible convert
+	the value to the desired type. For arrays either use `iter_*()` or `attr[ind].val_*` to fetch
+	by index.
+	"""
     __slots__ = ['name', '_typ', '_value']
     name: str
     _typ: ValueType
@@ -929,11 +944,32 @@ class Attribute(Generic[ValueT], _ValProps):
 
 
 class Element(Mapping[str, Attribute]):
-    """An element in a DMX tree."""
+    """An element in a DMX tree.
+	
+	This is a mapping over `Attribute` objects, representing each key-value pair in the element. 
+	Other than the three special attributes `name`, `type` and `uuid`, keys are accessed by regular mapping methods, producing `Attribute` objects. As a
+	convenience, values or lists of values can be assigned directly to implicitly create the
+	Attribute. 
+	"""
     __slots__ = ['type', 'name', 'uuid', '_members']
     name: str
+	"""
+	The name can be any string, but usually is some sort of item ID. For elements which are
+	children of another element, the name usually matches the key. 
+	"""
+	
     type: str
+	"""
+	In Valve's formats, this is the name of the C++ class that the element should deserialise
+	into, like `DMElement` for example. It can be used for any purpose though. In binary files,
+	elements with identical types names are deduplicated in the file.
+	"""
     uuid: UUID
+	"""
+	This used in the serialised file to allow elements to be appear multiple times in the tree,
+	including recursively. This does not normally need to be set manually, since a random one 
+	will be computed for each new element automatically.
+	"""
     _members: MutableMapping[str, Attribute]
 
     def __init__(self, name: str, type: str, uuid: UUID=None) -> None:
@@ -959,9 +995,10 @@ class Element(Mapping[str, Attribute]):
     def parse(cls, file: IO[bytes], unicode: bool = False) -> Tuple['Element', str, int]:
         """Parse a DMX file encoded in binary or KV2 (text).
 
-        The return value is the tree, format name and version.
-        If unicode is set to True, strings will be treated as UTF8 instead
-        of safe ASCII.
+        The return value is the tree, format name and version. The format name and version
+		are stored in the header, and allow validating the kind of dat stored in the file.
+        If unicode is set to True, strings will always be treated as UTF8, even if this module's
+		encoding name is not provided. Otherwise, only ASCII characters are allowed for safety.
         """
         # The format header is:
         # <!-- dmx encoding [encoding] [version] format [format] [version] -->
@@ -1787,9 +1824,10 @@ class Element(Mapping[str, Attribute]):
 
 
 class StubElement(Element):
-    """In binary DMXes, it is possible to have stub elements which are excluded from the file.
+    """In binary DMXes, it is possible to have stub elements representing values excluded from the
+	file.
 
-    There can also be NULL elements.
+    This always has no members - attempting to add members will fail silently.
     """
     __slots__ = ['_type']
     def __init__(self, typ: _StubType, uuid: UUID=None) -> None:
@@ -1815,6 +1853,11 @@ class StubElement(Element):
 
 # Constant for null elements.
 NULL = StubElement(_StubType.NULL, UUID(bytes=bytes(16)))
+"""
+A special constant Element with an all-zero UUID, representing "null" elements in binary DMX 
+files. This always has no members.
+"""
+
 _NUMBERS = {int, float, bool}
 _ANGLES = {Angle, AngleTup}
 
