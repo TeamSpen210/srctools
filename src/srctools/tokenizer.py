@@ -26,14 +26,14 @@ import abc
 
 class TokenSyntaxError(Exception):
     """An error that occurred when parsing a file. 
-	
-	Normally this is created via `BaseTokenizer.error()` which formats text into the error and 
-	includes the filename/line number from the tokenizer.
+
+    Normally this is created via `BaseTokenizer.error()` which formats text into the error and
+    includes the filename/line number from the tokenizer.
 
     mess = The error message that occurred.
     file = The filename of the file beijg parsed, or None if not known.
     line_num = The line where the error occurred, or None if not applicable (EOF, for instance).
-	The string representation will include the latter two if present.
+    The string representation will include the latter two if present.
     """
     def __init__(
         self,
@@ -237,7 +237,7 @@ class BaseTokenizer(abc.ABC):
         raise NotImplementedError
 
     def __call__(self) -> Tuple[Token, str]:
-		"""Compute and fetch the next token."""
+        """Compute and fetch the next token."""
         if self._pushback is not None:
             next_val = self._pushback
             self._pushback = None
