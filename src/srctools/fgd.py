@@ -639,10 +639,6 @@ class UnknownHelper(Helper):
 
 
 HelperT = TypeVar('HelperT', bound=Helper)
-# Each helper type -> the class implementing them.
-# We fill this at the end of the module.
-HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
-
 
 def _init_helper_impl() -> None:
     """Import and register the helper implementations."""
@@ -656,11 +652,17 @@ def _init_helper_impl() -> None:
     for helper in HelperTypes:
         if helper not in HELPER_IMPL:
             raise ValueError(
-                'Missing helper implementation '
-                'for {}!'.format(helper)
+                f'Missing helper implementation for {helper}!'
             )
 
-_init_helper_impl()
+
+# Each helper type -> the class implementing them.
+try:
+    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
+    HELPER_IMPL  # We're importlib.reload()-ing, skip reassignment.
+except NameError:
+    HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
+    _init_helper_impl()
 del _init_helper_impl
 # noinspection PyProtectedMember
 from srctools._fgd_helpers import *
