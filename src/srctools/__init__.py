@@ -2,7 +2,7 @@ import itertools as _itertools
 import os as _os
 import sys as _sys
 from typing import (
-    Type, TypeVar, Union, Any, NoReturn, Optional, overload, TYPE_CHECKING,
+    Type, TypeVar, Tuple, Union, Any, NoReturn, Optional, overload, TYPE_CHECKING,
     Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
     Sequence, List, Container, AbstractSet, Set,
     Iterable, Iterator, Tuple, IO,
@@ -41,6 +41,11 @@ __all__ = [
     'VTF',
     'SurfaceProp', 'SurfChar',
     'GameID',
+
+    # Submodules:
+    'binformat', 'bsp', 'choreo', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
+    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'property_parser', 'run',
+    'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
 ]
 
 # import string
