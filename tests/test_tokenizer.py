@@ -686,14 +686,14 @@ error_messages = {
     Token.DIRECTIVE: 'Unexpected directive "#%"!',
     Token.EOF: 'File ended unexpectedly!',
     Token.NEWLINE: 'Unexpected newline!',
-    Token.BRACE_OPEN: 'Unexpected "{"',
-    Token.BRACE_CLOSE: 'Unexpected "}"',
-    Token.BRACK_OPEN: 'Unexpected "["',
-    Token.BRACK_CLOSE: 'Unexpected "]"',
-    Token.COLON: 'Unexpected ":"',
-    Token.COMMA: 'Unexpected ","',
-    Token.EQUALS: 'Unexpected "="',
-    Token.PLUS: 'Unexpected "+"',
+    Token.BRACE_OPEN: 'Unexpected "{" character!',
+    Token.BRACE_CLOSE: 'Unexpected "}" character!',
+    Token.BRACK_OPEN: 'Unexpected "[" character!',
+    Token.BRACK_CLOSE: 'Unexpected "]" character!',
+    Token.COLON: 'Unexpected ":" character!',
+    Token.COMMA: 'Unexpected "," character!',
+    Token.EQUALS: 'Unexpected "=" character!',
+    Token.PLUS: 'Unexpected "+" character!',
 }
 
 

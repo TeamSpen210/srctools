@@ -217,21 +217,21 @@ cdef class BaseTokenizer:
             elif message is NEWLINE:
                 str_msg = 'Unexpected newline!'
             elif message is BRACE_OPEN:
-                str_msg = 'Unexpected "{"'
+                str_msg = 'Unexpected "{" character!'
             elif message is BRACE_CLOSE:
-                str_msg = 'Unexpected "}"'
+                str_msg = 'Unexpected "}" character!'
             elif message is BRACK_OPEN:
-                str_msg = 'Unexpected "["'
+                str_msg = 'Unexpected "[" character!'
             elif message is BRACK_CLOSE:
-                str_msg = 'Unexpected "]"'
+                str_msg = 'Unexpected "]" character!'
             elif message is COLON:
-                str_msg = 'Unexpected ":"'
+                str_msg = 'Unexpected ":" character!'
             elif message is EQUALS:
-                str_msg = 'Unexpected "="'
+                str_msg = 'Unexpected "=" character!'
             elif message is PLUS:
-                str_msg = 'Unexpected "+"'
+                str_msg = 'Unexpected "+" character!'
             elif message is COMMA:
-                str_msg = 'Unexpected ","'
+                str_msg = 'Unexpected "," character!'
             else:
                 raise RuntimeError(message)
         elif args:
@@ -886,7 +886,7 @@ cdef class Tokenizer(BaseTokenizer):
                         self._next_char(),
                         0x00,
                     ]
-                    raise self._error(f'Unexpected character "{decode[:4].decode("utf8", "backslashreplace")}"' '!')
+                    raise self._error(f'Unexpected characters "{decode[:4].decode("utf8", "backslashreplace")}"' '!')
 
 
 cdef class IterTokenizer(BaseTokenizer):

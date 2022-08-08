@@ -213,7 +213,7 @@ class BaseTokenizer(abc.ABC):
             elif message is Token.NEWLINE:
                 message = 'Unexpected newline!'
             else:
-                message = f'Unexpected "{_OPERATOR_VALS[message]}"!'
+                message = f'Unexpected "{_OPERATOR_VALS[message]}" character!'
         elif args:
             message = message.format(*args)
         return self.error_type(
