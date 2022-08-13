@@ -625,6 +625,29 @@ def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
             pass
 
 
+def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
+    """Test parsing with and without escapes enabled."""
+    check_tokens(py_c_token(r'{ "string\n" "tab\ted" }', allow_escapes=False), [
+        Token.BRACE_OPEN,
+        (Token.STRING, r"string\n"),
+        (Token.STRING, r"tab\ted"),
+        Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token(r'{ "string\n" "tab\ted q\tuo\"te\"" }', allow_escapes=True), [
+        Token.BRACE_OPEN,
+        (Token.STRING, "string\n"),
+        (Token.STRING, 'tab\ted q\tuo\"te"'),
+        Token.BRACE_CLOSE,
+    ])
+
+    tok = py_c_token(r'"text\" with quote"', allow_escapes=False)
+    assert tok() == (Token.STRING, 'text\\')
+    assert tok() == (Token.STRING, 'with')
+    assert tok() == (Token.STRING, 'quote')
+    with pytest.raises(TokenSyntaxError):
+        tok()
+
+
 def test_token_syntax_error() -> None:
     """Test the TokenSyntaxError class."""
     # There's no C version - if we're erroring, we don't care about
