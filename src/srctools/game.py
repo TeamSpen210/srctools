@@ -21,7 +21,10 @@ class Game:
         else:
             self.path = Path(path)
         with open(self.path / GINFO) as f:
-            gameinfo = Property.parse(f).find_key('GameInfo')
+            gameinfo = Property.parse(
+                f,
+                allow_escapes=False,  # Allow backslashes in paths.
+            ).find_key('GameInfo')
         fsystems = gameinfo.find_key('Filesystem', or_blank=True)
 
         self.game_name = gameinfo['Game', None]
