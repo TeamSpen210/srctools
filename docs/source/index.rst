@@ -29,6 +29,7 @@ Srctools is a library for parsing and manipulating the various file formats used
 	modules/surfaceprop
 	modules/tokenizer
 	modules/vmf
+	modules/vec
 	modules/vmt
 	modules/vpk
 	modules/vtf

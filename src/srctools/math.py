@@ -299,8 +299,8 @@ class Vec(SupportsRound['Vec']):
 
     Values can be modified by either setting/getting `x`, `y` and `z` attributes.
     In addition, the following indexes are allowed (case-insensitive):
-        * `0`  `1`  `2`
-        * `"x"`, `"y"`, `"z"`
+    * `0`  `1`  `2`
+    * `"x"`, `"y"`, `"z"`
     """
     __match_args__: Final = ('x', 'y', 'z')
     __slots__: Final = ('x', 'y', 'z')
@@ -414,11 +414,13 @@ class Vec(SupportsRound['Vec']):
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
 
-        This is a convenience for doing the following:
+        This is a convenience for doing the following::
+
             vec = Vec()
             vec[axis1] = val1
             vec[axis2] = val2
             vec[axis3] = val3
+
         The magnitudes can also be Vectors, in which case the matching
         axis will be used from the vector.
         """
@@ -1513,10 +1515,12 @@ class Angle:
 
     Like vectors, each axis can be accessed by getting/setting `pitch`/`yaw` and `roll` attributes.
     In addition, the following indexes are allowed (case-insensitive):
-        * `0`, `1`, `2`
-        * `"p"`, `"y"`, `"r"`
-        * `"pitch"`, `"yaw"`, `"roll"`
-        * `"pit"`, `"yaw"`, `"rol"`
+
+    * `0`, `1`, `2`
+    * `"p"`, `"y"`, `"r"`
+    * `"pitch"`, `"yaw"`, `"roll"`
+    * `"pit"`, `"yaw"`, `"rol"`
+
     All values are remapped to between 0-360 when set.
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
@@ -1690,11 +1694,13 @@ class Angle:
     ) -> 'Angle':
         """Create an Angle, given a number of axes and corresponding values.
 
-        This is a convenience for doing the following:
+        This is a convenience for doing the following::
+
             ang = Angle()
             ang[axis1] = val1
             ang[axis2] = val2
             ang[axis3] = val3
+
         The magnitudes can also be Angles, in which case the matching
         axis will be used from the angle.
         """
