@@ -1,22 +1,26 @@
-"""Common code for handling binary formats."""
+"""
+The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
+
+"""
 from binascii import crc32
 from struct import Struct
-from typing import IO, List, Hashable, Union, Dict, Tuple
+from typing import IO, List, Hashable, Mapping, Union, Dict, Tuple
+from typing_extensions import Literal, Final
 import lzma
 
 from srctools import Vec
 
-ST_VEC = Struct('fff')
-SIZES = {
+ST_VEC: Final = Struct('fff')
+SIZES: Final[Mapping[str, int]] = {
     fmt: Struct('<' + fmt).size
     for fmt in 'cbB?hHiIlLqQfd'
 }
-SIZE_CHAR = SIZES['b']
-SIZE_SHORT = SIZES['h']
-SIZE_INT = SIZES['i']
-SIZE_LONG = SIZES['q']
-SIZE_FLOAT = SIZES['f']
-SIZE_DOUBLE = SIZES['d']
+SIZE_CHAR: Literal[1] = SIZES['b']
+SIZE_SHORT: Literal[2] = SIZES['h']
+SIZE_INT: Literal[4] = SIZES['i']
+SIZE_LONG: Literal[8] = SIZES['q']
+SIZE_FLOAT: Literal[4] = SIZES['f']
+SIZE_DOUBLE: Literal[8] = SIZES['d']
 
 assert SIZE_CHAR == 1
 assert SIZE_SHORT == 2
@@ -25,10 +29,10 @@ assert SIZE_LONG == 8
 assert SIZE_FLOAT == 4
 assert SIZE_DOUBLE == 8
 
-LZMA_DIC_MIN = (1 << 12)
-ST_LZMA_SOURCE = Struct('<4sIIbI')
+LZMA_DIC_MIN: Final = (1 << 12)
+ST_LZMA_SOURCE: Final = Struct('<4sIIbI')
 # The options Source seems to be using.
-LZMA_FILT = {
+LZMA_FILT: Final = {
     'id': lzma.FILTER_LZMA1,
     'dict_size': 1 << 24,
     'lc': 3,
@@ -112,15 +116,15 @@ def str_readvec(file: IO[bytes]) -> Vec:
 
 
 def checksum(data: bytes, prior: int = 0) -> int:
-    """Compute the VPK checksum for a file.
+    """Compute the VPK checksum for a file (CRC32).
 
-    Passing a previous computation to allow calculating
-    repeatedly.
+    Pass a previous computation to allow continuing a previous checksum.
     """
     return crc32(data, prior)
 
 
-EMPTY_CHECKSUM = checksum(b'')  # Checksum of empty bytes - 0.
+EMPTY_CHECKSUM: Final[int] = checksum(b'')
+"""CRC32 checksum of an empty bytes buffer."""
 
 
 class DeferredWrites:
@@ -137,9 +141,13 @@ class DeferredWrites:
         self.data: Dict[Hashable, bytes] = {}
 
     def defer(self, key: Hashable, fmt: Union[str, Struct], write: bool = False) -> None:
-        """Mark that the given format data is going to be written here.
+        """Mark that data of the specified format is going to be written here.
 
-        If write is true, write null bytes.
+        :param key: Any hashable object, used to identify this location later.
+        :param fmt: The structure of the data, either as an existing :external:py:class:`struct.Struct`
+            instance, or a string in the same format.
+        :param write: If true, write null bytes to temporarily the space in the file. Set to false
+            if you are doing this yourself.
         """
         if isinstance(fmt, str):
             fmt = Struct(fmt)
@@ -148,13 +156,20 @@ class DeferredWrites:
             self.file.write(bytes(fmt.size))
 
     def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]) -> None:
-        """Specify the data for the given key. Data is the same as pack()."""
+        """Specify the data for the given key.
+
+        :param key: Any hashable object, used to identify the location and format.
+        :param data: The values passed to :external:py:func:`struct.pack` to build the data.
+        """
         off, fmt = self.loc[key]
         self.data[key] = packed = fmt.pack(*data)
         assert len(packed) == fmt.size
 
     def pos_of(self, key: Hashable) -> int:
-        """Return the previously marked offset with the given name."""
+        """Return the previously marked offset with the given key.
+
+        :param key: Any hashable object, used to match this call to the earlier :func:`defer` call.
+        """
         off, fmt = self.loc[key]
         return off
 
@@ -175,13 +190,9 @@ class DeferredWrites:
 
 
 def decompress_lzma(data: bytes) -> bytes:
-    """Decompress LZMA, with Source's LZMA format.
-
-    This means we have to decode Source's header, then build LZMA's header to
-    allow it to be compressed.
-    If inc_header is true, the header (17 bytes) is included in the compressed
-    size.
-    """
+    """Decompress LZMA, with Source's LZMA format."""
+    # We have to decode Source's header, then build LZMA's header to
+    #     allow it to be compressed.
     if data[:4] != b'LZMA':
         return data  # Not compressed.
     real_comp_size = len(data)
@@ -229,12 +240,8 @@ def decompress_lzma(data: bytes) -> bytes:
 
 
 def compress_lzma(data: bytes) -> bytes:
-    """Re-compress data into Source's LZMA format.
-
-    This means we have to convert the standard LZMA header into Source's version.
-    If inc_header is true, the header (17 bytes) is included in the compressed
-    size.
-    """
+    """Re-compress data into Source's LZMA format."""
+    # We have to convert the standard LZMA header into Source's version.
     comp_data = lzma.compress(data, lzma.FORMAT_RAW, filters=[LZMA_FILT])
 
     # From LZMA spec.
