@@ -28,6 +28,7 @@ MDL_EXTS: SequenceType[str] = [
     '.dx90.vtx',
     '.dx80.vtx',
     '.sw.vtx',
+    '.vtx',
 ]
 
 
