@@ -32,8 +32,10 @@ def test_entity_parse() -> None:
 @PointClass base(Base1, Base2, Base3) 
 base(Base4, base_5)
 sphere(radii) 
+unknown(a, b, c)
 line(240 180 50, targetname, target)
 autovis(Auto, some, group)
+halfgridsnap // Special, no args
 appliesto(tag1, tag2, !tag3)
 = some_entity: "The description for this prop, which is spread over " 
 + "multiple lines."
@@ -71,7 +73,9 @@ appliesto(tag1, tag2, !tag3)
 
     assert ent.helpers == [
         HelperSphere(255, 255, 255, 'radii'),
+        UnknownHelper('unknown', ['a', 'b', 'c']),
         HelperLine(240, 180, 50, 'targetname', 'target'),
+        HelperHalfGridSnap(),
         HelperExtAppliesTo(['tag1', 'tag2', '!tag3'])
     ]
 
@@ -183,6 +187,7 @@ def test_export_regressions(file_regression) -> None:
     ent.helpers = [
         HelperSphere(255.0, 128.0, 64.0, 'radius'),
         HelperModel('models/editor/a_prop.mdl'),
+        UnknownHelper('extrahelper', ['1', '15', 'thirtytwo']),
         HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
     ]
     ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
@@ -192,6 +197,32 @@ def test_export_regressions(file_regression) -> None:
         'A test keyvalue',
         '255 255 128',
         'Help text for a keyvalue',
+    )}
+
+    # The two special types with value lists.
+    ent.keyvalues['spawnflags'] = {frozenset(): KeyValues(
+        'spawnflags',
+        ValueTypes.SPAWNFLAGS,
+        'Flags',
+        val_list=[
+            (1, 'A', False, frozenset()),
+            (2, 'B', True, frozenset()),
+            (4, 'C', False, frozenset()),
+            (8, 'D value', False, frozenset({'OLD', '!GOOD'})),
+            (8, 'E', True, frozenset({'NEW'})),
+        ],
+    )}
+
+    ent.keyvalues['multichoice'] = {frozenset(): KeyValues(
+        'multichoice',
+        ValueTypes.CHOICES,
+        'Multiple Choice',
+        val_list=[
+            ('-1', 'Loss', frozenset()),
+            ('0', 'Draw', frozenset()),
+            ('1', 'Win', frozenset()),
+            ('bad', 'Very Bad', frozenset({'NEW'})),
+        ],
     )}
 
     # Test exporting with blank defaults and description.
@@ -231,6 +262,20 @@ def test_export_regressions(file_regression) -> None:
         'Neither',
         desc='A description',
     )}
+
+    ent.inputs['Enable'] = {frozenset(): IODef('Enable')}
+    ent.inputs['SetSkin'] = {frozenset({'since_L4D'}): IODef('SetSkin', ValueTypes.INT, 'Set the skin.')}
+
+    ent.outputs['OnNoDesc'] = {frozenset(): IODef('OnNoDesc', ValueTypes.VOID)}
+    ent.outputs['OnSomething'] = {frozenset({'alpha'}): IODef('OnSomething', ValueTypes.VOID)}
+
+    # IO special case, boolean value type is named differently.
+    ent.outputs['OnGetValue'] = {frozenset(): IODef(
+        'OnGetValue',
+        ValueTypes.BOOL,
+        'Get some value',
+    )}
+
     buf = io.StringIO()
     fgd.export(buf)
     file_regression.check(buf.getvalue(), extension='.fgd')
