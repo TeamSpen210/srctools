@@ -31,8 +31,8 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
     ang.val.z = roll
     return ang
 
-cdef object Tuple, Iterator, Union  # Keep private.
-from typing import Tuple, Iterator, Union
+cdef object typing  # Keep private.
+import typing
 
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
@@ -817,7 +817,7 @@ cdef class Vec:
         return self
 
     @classmethod
-    def bbox(cls, *points: Vec) -> 'Tuple[Vec, Vec]':
+    def bbox(cls, *points: Vec) -> typing.Tuple[Vec, Vec]:
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
@@ -909,10 +909,10 @@ cdef class Vec:
     @classmethod
     def iter_grid(
         cls,
-        object min_pos: Union[Vec, Tuple[int, int, int]],
-        object max_pos: Union[Vec, Tuple[int, int, int]],
+        object min_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
+        object max_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
         stride: int = 1,
-    ) -> Iterator[Vec]:
+    ) -> typing.Iterator[Vec]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -938,7 +938,7 @@ cdef class Vec:
 
         return it
 
-    def iter_line(self, end: Vec, stride: int=1) -> Iterator[Vec]:
+    def iter_line(self, end: Vec, stride: int=1) -> typing.Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -1000,7 +1000,7 @@ cdef class Vec:
         )
 
     @cython.boundscheck(False)
-    def other_axes(self, object axis) -> Tuple[float, float]:
+    def other_axes(self, object axis) -> typing.Tuple[float, float]:
         """Get the values for the other two axes."""
         cdef char axis_chr
         if isinstance(axis, str) and len(<str>axis) == 1:
@@ -1043,7 +1043,7 @@ cdef class Vec:
             max1.val.z < min2.val.z or max2.val.z < min1.val.z
         )
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> typing.Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         # Use tuple.__new__(cls, iterable) instead of calling the
         # Python __new__.
@@ -1066,7 +1066,7 @@ cdef class Vec:
             norm_ang(roll),
         )
 
-    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
+    def to_angle_roll(self, z_norm: Vec, stride: int=0) -> Angle:
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -1622,7 +1622,7 @@ cdef class Vec:
         _vec_normalise(&vec.val, &self.val)
         return vec
 
-    def norm_mask(self, normal: 'Vec') -> Vec:
+    def norm_mask(self, normal: Vec) -> Vec:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
@@ -1835,19 +1835,19 @@ cdef class Matrix:
             '>'
         )
 
-    def copy(self) -> 'Matrix':
+    def copy(self) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __copy__(self) -> 'Matrix':
+    def __copy__(self) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
         return copy
 
-    def __deepcopy__(self, dict memodict=None) -> 'Matrix':
+    def __deepcopy__(self, dict memodict=None) -> Matrix:
         """Duplicate this matrix."""
         cdef Matrix copy = Matrix.__new__(Matrix)
         memcpy(copy.mat, self.mat, sizeof(mat_t))
@@ -1946,7 +1946,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def axis_angle(cls, object axis, double angle) -> 'Matrix':
+    def axis_angle(cls, object axis, double angle) -> Matrix:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         cdef vec_t vec_axis
         cdef double sin, cos, icos, x, y, z
@@ -2020,7 +2020,7 @@ cdef class Matrix:
         _mat_to_angle(&ang.val, self.mat)
         return ang
 
-    def transpose(self) -> 'Matrix':
+    def transpose(self) -> Matrix:
         """Return the transpose of this matrix."""
         cdef Matrix rot = Matrix.__new__(Matrix)
 
@@ -2036,7 +2036,7 @@ cdef class Matrix:
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> 'Matrix':
+    ) -> Matrix:
         """Construct a matrix from at least two basis vectors.
 
         The third is computed, if not provided.
@@ -2165,15 +2165,15 @@ cdef class Angle:
             except StopIteration:
                 self.val.z = norm_ang(roll)
 
-    def copy(self) -> 'Angle':
+    def copy(self) -> Angle:
         """Create a duplicate of this angle."""
         return _angle(self.val.x, self.val.y, self.val.z)
 
-    def __copy__(self) -> 'Angle':
+    def __copy__(self) -> Angle:
         """Create a duplicate of this angle."""
         return _angle(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, dict memodict=None) -> 'Angle':
+    def __deepcopy__(self, dict memodict=None) -> Angle:
         """Create a duplicate of this angle."""
         return _angle(self.val.x, self.val.y, self.val.z)
 
@@ -2324,7 +2324,7 @@ cdef class Angle:
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> 'Angle':
+    ) -> Angle:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2504,7 +2504,7 @@ cdef class Angle:
         return AngleTransform.__new__(AngleTransform, self)
 
 
-def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
+def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
     cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
@@ -2552,4 +2552,4 @@ except Exception:
     pass  # Perfectly fine.
 
 # Drop references.
-Tuple = Iterator = Union = None
+typing = None
