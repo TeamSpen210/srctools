@@ -776,8 +776,8 @@ class KeyValues:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
         if tags:
-            file.write('[' + ', '.join(tags) + ']')
-        file.write('({}) '.format(self.type.value))
+            file.write(f'[{", ".join(sorted(tags))}]')
+        file.write(f'({self.type.value}) ')
 
         if self.readonly:
             file.write('readonly ')
@@ -787,7 +787,7 @@ class KeyValues:
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
-            file.write(': "{}"'.format(self.disp_name))
+            file.write(f': "{self.disp_name}"')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
@@ -820,7 +820,7 @@ class KeyValues:
                     _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
                     file.write(' : 1' if flag_default else ' : 0')
                     if tags:
-                        file.write(' [' + ', '.join(tags) + ']\n')
+                        file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
             elif self.type is ValueTypes.CHOICES:
@@ -835,7 +835,7 @@ class KeyValues:
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
                     if tags:
-                        file.write(' [' + ', '.join(tags) + ']\n')
+                        file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
             else:
@@ -959,7 +959,7 @@ class IODef:
         file.write(f'\t{io_type} {self.name}')
 
         if tags:
-            file.write(f'[{", ".join(tags)}]')
+            file.write(f'[{", ".join(sorted(tags))}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
         if self.type is ValueTypes.BOOL:
