@@ -413,8 +413,12 @@ class VPK:
             # Write in sorted order - not required, but this ensures multiple
             # saves are deterministic.
             for ext, folders in sorted(self._fileinfo.items(), key=key_getter):
+                if not folders:
+                    continue
                 _write_nullstring(file, ext)
                 for folder, files in sorted(folders.items(), key=key_getter):
+                    if not files:
+                        continue
                     _write_nullstring(file, folder)
                     for filename, info in sorted(files.items(), key=key_getter):
                         _write_nullstring(file, filename)
