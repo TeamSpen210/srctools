@@ -495,12 +495,20 @@ class VPK:
         path, filename, ext = _get_file_parts(item)
 
         try:
-            self._fileinfo[ext][path].pop(filename)
+            folders = self._fileinfo[ext]
+            files = folders[path]
+            files.pop(filename)
         except KeyError:
             raise KeyError(
                 'No file "{}"!'.format(
                     _join_file_parts(path, filename, ext)
                 )) from None
+        if not files:
+            # Clear this folder.
+            folders.pop(path)
+            if not folders:
+                # Clear extension too.
+                self._fileinfo.pop(ext)
 
     def __iter__(self) -> Iterator[FileInfo]:
         """Yield all FileInfo objects."""
