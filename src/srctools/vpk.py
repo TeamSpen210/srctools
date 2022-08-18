@@ -47,7 +47,7 @@ def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
             else:
                 yield string
         elif char == b'':
-            raise Exception('Reached EOF without null-terminator in {!r}!'.format(bytes(chars)))
+            raise Exception(f'Reached EOF without null-terminator in {bytes(chars)!r}!')
         else:
             chars.extend(char)
 
@@ -70,7 +70,7 @@ def get_arch_filename(prefix='pak01', index: int=None):
     if index is None:
         return prefix + '_dir.vpk'
     else:
-        return '{}_{:>03}.vpk'.format(prefix, index)
+        return f'{prefix}_{index:>03}.vpk'
 
 
 def _get_file_parts(value: FileName, relative_to: str='') -> Tuple[str, str, str]:
@@ -154,9 +154,7 @@ class FileInfo:
     name = filename
 
     def __repr__(self) -> str:
-        return '<VPK File: "{}">'.format(
-            _join_file_parts(self.dir, self._filename, self.ext),
-        )
+        return f'<VPK File: "{_join_file_parts(self.dir, self._filename, self.ext)}">'
 
     @property
     def size(self) -> int:
@@ -265,7 +263,7 @@ class VPK:
             version: The desired version if the file is not read.
         """
         if version not in (1, 2):
-            raise ValueError("Invalid version ({}) - must be 1 or 2!".format(version))
+            raise ValueError(f"Invalid version ({version}) - must be 1 or 2!")
 
         self.folder = self.file_prefix = ''
         self.path = dir_file  # Sets the above correctly + checks.
@@ -305,10 +303,7 @@ class VPK:
         self.file_prefix = filename[:-8]
 
     def load_dirfile(self) -> None:
-        """Read in the directory file to get all filenames.
-
-        This erases all changes in the file.
-        """
+        """Read in the directory file to get all filenames. This erases all changes in the file."""
         if self.mode is OpenModes.WRITE:
             # Erase the directory file, we ignore current contents.
             open(self.path, 'wb').close()
@@ -333,7 +328,7 @@ class VPK:
                 raise ValueError('Bad VPK directory signature!')
 
             if version not in (1, 2):
-                raise ValueError("Bad VPK version {}!".format(self.version))
+                raise ValueError(f"Bad VPK version {self.version}!")
 
             self.version = version
 
@@ -370,10 +365,10 @@ class VPK:
                             offset = 0
 
                         if end != 0xffff:
-                            raise Exception('"{}" has bad terminator! {}'.format(
-                                _join_file_parts(directory, file, ext),
-                                (crc, index_len, arch_ind, offset, arch_len, end),
-                            ))
+                            raise Exception(
+                                f'"{_join_file_parts(directory, file, ext)}" has bad terminator! '
+                                f'{(crc, index_len, arch_ind, offset, arch_len, end)}'
+                            )
                         dir_dict[file] = FileInfo(
                             self,
                             directory,
@@ -394,10 +389,7 @@ class VPK:
             self.footer_data = dirfile.read()
 
     def write_dirfile(self) -> None:
-        """Write the directory file with the changes.
-
-        This must be performed after writing to the VPK.
-        """
+        """Write the directory file with the changes. This must be performed after writing to the VPK."""
         self._check_writable()
 
         if self.version > 1:
@@ -478,9 +470,8 @@ class VPK:
             return self._fileinfo[ext][path][filename]
         except KeyError:
             raise KeyError(
-                'No file "{}"!'.format(
-                    _join_file_parts(path, filename, ext)
-                )) from None
+                f'No file "{_join_file_parts(path, filename, ext)}"!'
+            ) from None
 
     def __delitem__(self, item: FileName) -> None:
         """Delete a file.
@@ -500,9 +491,8 @@ class VPK:
             files.pop(filename)
         except KeyError:
             raise KeyError(
-                'No file "{}"!'.format(
-                    _join_file_parts(path, filename, ext)
-                )) from None
+                f'No file "{_join_file_parts(path, filename, ext)}"!'
+            ) from None
         if not files:
             # Clear this folder.
             folders.pop(path)
@@ -606,7 +596,7 @@ class VPK:
 
         if name in dir_infos:
             raise FileExistsError(
-                'Filename already exists! ({!r})'.format(_join_file_parts(path, name, ext))
+                f'Filename already exists! ({_join_file_parts(path, name, ext)!r})'
             )
 
         dir_infos[name] = info = FileInfo(
