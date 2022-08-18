@@ -212,8 +212,8 @@ def decompress_lzma(data: bytes) -> bytes:
         'pb': pb,
     }
     decomp = lzma.LZMADecompressor(lzma.FORMAT_RAW, None, filters=[filt])
-    # This technically leaves the decompressor in an incomplete state, but the
-    # stream doesn't contain an EOF marker, so ignore that.
+    # This technically leaves the decompressor in an incomplete state, it's expecting an EOF marker.
+    # Valve doesn't include that, so just leave it like that.
     res = decomp.decompress(memoryview(data)[ST_LZMA_SOURCE.size:])
 
     # In some cases it seems to have an extra null byte.
