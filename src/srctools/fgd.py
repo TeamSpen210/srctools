@@ -736,9 +736,10 @@ class KeyValues:
         return KeyValues(
             self.name,
             self.type,
-            self.desc,
             self.disp_name,
             self.default,
+            self.desc,
+            # Always copy this.
             self.val_list.copy() if self.val_list else None,
             self.readonly,
             self.reportable,

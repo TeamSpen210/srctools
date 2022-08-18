@@ -1,9 +1,13 @@
 """Test the FGD module."""
+from typing import Callable
+import copy
+import io
+
+import pytest
+
 from srctools import Vec
 from srctools.filesys import VirtualFileSystem
 from srctools.fgd import *
-import pytest
-import io
 
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
@@ -230,3 +234,65 @@ def test_export_regressions(file_regression) -> None:
     buf = io.StringIO()
     fgd.export(buf)
     file_regression.check(buf.getvalue(), extension='.fgd')
+
+
+@pytest.mark.parametrize('func', [
+    KeyValues.copy, copy.copy, copy.deepcopy,
+], ids=['method', 'copy', 'deepcopy'])
+def test_kv_copy(func: Callable[[KeyValues], KeyValues]) -> None:
+    """Test copying of keyvalues objects."""
+    test_kv = KeyValues(
+        name='some_key',
+        type=ValueTypes.TARG_DEST,
+        disp_name='Some Key',
+        default='!player',
+        desc='Does something',
+        readonly=False,
+        reportable=True,
+    )
+    duplicate = func(test_kv)
+    assert duplicate.name == test_kv.name
+    assert duplicate.type is test_kv.type
+    assert duplicate.disp_name == test_kv.disp_name
+    assert duplicate.default == test_kv.default
+    assert duplicate.desc == test_kv.desc
+    assert duplicate.val_list is None
+    assert not duplicate.readonly
+    assert duplicate.reportable
+
+    test_kv = KeyValues(
+        name='another_key',
+        type=ValueTypes.CHOICES,
+        disp_name='Another Key',
+        default='45',
+        desc='Does something else',
+        readonly=True,
+        reportable=False,
+        val_list=[
+            ('43', 'Fourty-Three', frozenset()),
+            ('44', 'Fourty-Four', frozenset()),
+            ('45', 'Fourty-Five', frozenset()),
+        ]
+    )
+    duplicate = func(test_kv)
+    assert duplicate.type is test_kv.type
+    assert duplicate.val_list is not test_kv.val_list
+    assert duplicate.val_list == test_kv.val_list
+    assert duplicate.readonly
+    assert not duplicate.reportable
+
+
+@pytest.mark.parametrize('func', [
+    IODef.copy, copy.copy, copy.deepcopy,
+], ids=['method', 'copy', 'deepcopy'])
+def test_io_copy(func: Callable[[IODef], IODef]) -> None:
+    """Test copying of IODef objects."""
+    test_io = IODef(
+        name='OnWhatever',
+        type=ValueTypes.VOID,
+        desc='Does something',
+    )
+    duplicate = func(test_io)
+    assert duplicate.name == 'OnWhatever'
+    assert duplicate.type is ValueTypes.VOID
+    assert duplicate.desc == 'Does something'
