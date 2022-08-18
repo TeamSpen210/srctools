@@ -10,12 +10,13 @@ import math
 import operator
 
 from typing import (
-    Generic, Optional, Union, overload, cast, ClassVar, Any,
-    TypeVar, Callable, Type,
+    Generic, Optional, Union, overload, cast, TYPE_CHECKING,
+    TypeVar, Callable, Type, ClassVar, Any,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
     TextIO, Container, IO,
 )
+from typing_extensions import Final
 from importlib_resources import files
 
 import attrs
@@ -48,16 +49,16 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-_fmt_8bit = Struct('>B')
-_fmt_16bit = Struct('>H')
-_fmt_32bit = Struct('>I')
+_fmt_8bit: Final = Struct('>B')
+_fmt_16bit: Final = Struct('>H')
+_fmt_32bit: Final = Struct('>I')
 _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
 _fmt_ent_header = Struct('<BBBBBB')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 5
+BIN_FORMAT_VERSION: Final = 5
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
@@ -933,7 +934,7 @@ class KeyValues:
 class IODef:
     """Represents an input or output for an entity."""
     name: str
-    type: ValueTypes
+    type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
     desc: str = ''
 
     def copy(self) -> 'IODef':
