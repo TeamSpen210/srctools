@@ -1950,16 +1950,16 @@ class FGD:
     def export(self, file: TextIO) -> None: ...
     @overload
     def export(self) -> str: ...
-    def export(self, file=None):
+    def export(self, file: Optional[TextIO] = None) -> Optional[str]:
         """Write the FGD contents into a text file.
 
         If none are provided, the text will be returned.
         """
         if file is None:
-            file = io.StringIO()
-            ret_string = True
+            string_buf = io.StringIO()
+            file = string_buf
         else:
-            ret_string = False
+            string_buf = None
 
         if self.map_size_min != self.map_size_max:
             file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
@@ -1975,7 +1975,7 @@ class FGD:
                 file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
 
-        vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
+        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
@@ -2028,8 +2028,10 @@ class FGD:
             file.write('\n')
             ent_def.export(file)
 
-        if ret_string:
-            return file.getvalue()
+        if string_buf is not None:
+            return string_buf.getvalue()
+        else:
+            return None
 
     def parse_file(
         self,
