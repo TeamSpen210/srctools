@@ -294,7 +294,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
     def update(self, **kwargs: Any) -> None: ...
-    def update(self, *args, **kargs: Any) -> None:
+    def update(self, *args: Any, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
@@ -335,25 +335,25 @@ class _EmptySetView(AbstractSet[Any]):
 
     # Set ops. A lot can share implementations.
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         """All nonempty sets are non-equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) > 0
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Only empty sets are equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) == 0
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: object) -> bool:
         """We are <= to all sets."""
         if isinstance(other, AbstractSet):
             return True
         return NotImplemented
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: object) -> bool:
         """We are never > any set."""
         if isinstance(other, AbstractSet):
             return False
@@ -372,7 +372,7 @@ class _EmptySetView(AbstractSet[Any]):
         deque(other, 0)  # Consume all values.
         return set()
 
-    def isdisjoint(self, other) -> bool:
+    def isdisjoint(self, other: Iterable[Any]) -> bool:
         """This set is always disjoint."""
         iter(other)  # Check it's iterable.
         return True

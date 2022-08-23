@@ -592,7 +592,7 @@ class PackList:
             # Strip off the scripts/vscripts/ folder since it's implied.
         )[17:]
 
-    def pack_soundscript(self, sound_name: str):
+    def pack_soundscript(self, sound_name: str) -> None:
         """Pack a soundscript or raw sound file."""
         # Blank means no sound is used.
         if not sound_name:

@@ -303,19 +303,19 @@ class _ValProps:
         @property
         def val_int(self) -> int:  ...
         @val_int.setter
-        def val_int(self, value: Union[int, float]): ...
+        def val_int(self, value: Union[int, float]) -> None: ...
 
         val_float: float
 
         @property
         def val_time(self) -> Time: ...
         @val_time.setter
-        def val_time(self, value: Union[float, Time]): ...
+        def val_time(self, value: Union[float, Time]) -> None: ...
 
         @property
         def val_bool(self) -> bool: ...
         @val_bool.setter
-        def val_bool(self, value: object): ...
+        def val_bool(self, value: object) -> None: ...
 
         @property
         def val_vec2(self) -> Vec2: ...
@@ -574,8 +574,9 @@ class Attribute(Generic[ValueT], _ValProps):
     def vec2(cls, __name: str, x: builtins.float = 0.0, y: builtins.float = 0.0) -> 'Attribute[Vec2]': ...
     @classmethod
     def vec2(
-        cls, name,
-        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0,
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
     ) -> 'Attribute[Vec2]':
         """Create an attribute with a 2D vector."""
         if isinstance(x, (int, float)):
@@ -599,8 +600,10 @@ class Attribute(Generic[ValueT], _ValProps):
     ) -> 'Attribute[Vec3]': ...
     @classmethod
     def vec3(
-        cls, name,
-        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0,
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]]=0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
     ) -> 'Attribute[Vec3]':
         """Create an attribute with a 3D vector."""
         if isinstance(x, (int, float)):
@@ -626,8 +629,11 @@ class Attribute(Generic[ValueT], _ValProps):
     ) -> 'Attribute[Vec4]': ...
     @classmethod
     def vec4(
-        cls, name,
-        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0, w=0.0,
+        cls, name: str,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
+        w: builtins.float = 0.0,
     ) -> 'Attribute[Vec4]':
         """Create an attribute with a 4D vector."""
         if isinstance(x, (int, float)):
@@ -684,7 +690,9 @@ class Attribute(Generic[ValueT], _ValProps):
     ) -> 'Attribute[AngleTup]': ...
     @classmethod
     def angle(
-        cls, name, pitch: Union[builtins.float, Iterable[builtins.float]]=0.0, yaw=0.0, roll=0.0,
+        cls, name: str,
+        pitch: Union[builtins.float, Iterable[builtins.float]]=0.0,
+        yaw: builtins.float = 0.0, roll: builtins.float = 0.0,
     ) -> 'Attribute[AngleTup]':
         """Create an attribute with an Euler angle."""
         if isinstance(pitch, (int, float)):
@@ -711,7 +719,10 @@ class Attribute(Generic[ValueT], _ValProps):
     @classmethod
     def quaternion(
         cls, name: str,
-        x: Union[builtins.float, Iterable[builtins.float]]=0.0, y=0.0, z=0.0, w=1.0,
+        x: Union[builtins.float, Iterable[builtins.float]] = 0.0,
+        y: builtins.float = 0.0,
+        z: builtins.float = 0.0,
+        w: builtins.float = 0.0,
     ) -> 'Attribute[Quaternion]':
         """Create an attribute with a quaternion rotation."""
         if isinstance(x, (int, float)):
@@ -812,7 +823,7 @@ class Attribute(Generic[ValueT], _ValProps):
             value = repr(self._value)
         return f'<{self._typ.name} Attr {self.name!r}: {value}>'
 
-    def __eq__(self, other) -> builtins.bool:
+    def __eq__(self, other: object) -> builtins.bool:
         if isinstance(other, Attribute):
             return (
                 self._typ is other._typ and
@@ -821,7 +832,7 @@ class Attribute(Generic[ValueT], _ValProps):
             )
         return NotImplemented
 
-    def __ne__(self, other) -> builtins.bool:
+    def __ne__(self, other: object) -> builtins.bool:
         if isinstance(other, Attribute):
             return (
                 self._typ is not other._typ or
@@ -1251,16 +1262,13 @@ class Element(Mapping[str, Attribute]):
         stubs: Dict[UUID, 'StubElement'],
         name: str,
         typ_name: str,
-        # Load into locals for fast lookup.
-        STRING=Token.STRING, COMMA=Token.COMMA,
-        BRACK_OPEN=Token.BRACK_OPEN, BRACK_CLOSE=Token.BRACK_CLOSE,
     ) -> 'Element':
         """Parse a compound element."""
         attr: Attribute[Any]
         elem: Element = cls(name, typ_name, _UNSET_UUID)
 
         for attr_name in tok.block(name):
-            orig_typ_name = tok.expect(STRING)
+            orig_typ_name = tok.expect(Token.STRING)
             typ_name = orig_typ_name.casefold()
 
             # The UUID is a special element name/type combo.
@@ -1271,7 +1279,7 @@ class Element(Mapping[str, Attribute]):
                         # Format literal strings, so we can reuse the string below.
                         'id', 'elementid', typ_name,
                     )
-                uuid_str = tok.expect(STRING)
+                uuid_str = tok.expect(Token.STRING)
                 if elem.uuid is not _UNSET_UUID:
                     raise tok.error('Duplicate UUID definition!')
                 try:
@@ -1286,7 +1294,7 @@ class Element(Mapping[str, Attribute]):
                         'Element {} attribute must be "{}" type, not "{}"!',
                         'name', 'string', typ_name
                     )
-                elem.name = tok.expect(STRING)
+                elem.name = tok.expect(Token.STRING)
                 continue
 
             if typ_name.endswith('_array'):
@@ -1307,15 +1315,15 @@ class Element(Mapping[str, Attribute]):
             if is_array:
                 array: List[Any] = []
                 attr = Attribute(attr_name, attr_type, array)
-                tok.expect(BRACK_OPEN)
+                tok.expect(Token.BRACK_OPEN)
                 for tok_typ, tok_value in tok.skipping_newlines():
-                    if tok_typ is BRACK_CLOSE:
+                    if tok_typ is Token.BRACK_CLOSE:
                         break
-                    elif tok_typ is STRING:
+                    elif tok_typ is Token.STRING:
                         if attr_type is ValueType.ELEMENT:
                             if tok_value == 'element':
                                 # UUID reference.
-                                uuid_str = tok.expect(STRING)
+                                uuid_str = tok.expect(Token.STRING)
                                 if uuid_str:
                                     try:
                                         uuid = UUID(uuid_str)
@@ -1339,7 +1347,7 @@ class Element(Mapping[str, Attribute]):
                         next_tok, tok_value = tok()
                         while next_tok is Token.NEWLINE:
                             next_tok, tok_value = tok()
-                        if next_tok is not COMMA:
+                        if next_tok is not Token.COMMA:
                             tok.push_back(next_tok, tok_value)
                     else:
                         raise tok.error(tok_typ)
@@ -1347,7 +1355,7 @@ class Element(Mapping[str, Attribute]):
                     raise tok.error('Unterminated array!')
             elif attr_type is ValueType.ELEMENT:
                 # This is a reference to another element.
-                uuid_str = tok.expect(STRING)
+                uuid_str = tok.expect(Token.STRING)
                 attr = Attribute(attr_name, attr_type, NULL)
                 if uuid_str:
                     try:
@@ -1360,7 +1368,7 @@ class Element(Mapping[str, Attribute]):
                 # else: If blank, it's a NULL.
             else:
                 # Single element.
-                unparsed = tok.expect(STRING)
+                unparsed = tok.expect(Token.STRING)
                 value = TYPE_CONVERT[ValueType.STRING, attr_type](unparsed)
                 attr = Attribute(attr_name, attr_type, value)
             elem._members[attr_name.casefold()] = attr
@@ -2081,10 +2089,12 @@ else:
         return ' '.join([format(x, '02X') for x in byt])
 
 
-def _binconv_basic(name: str, fmt: str):
+def _binconv_basic(name: str, fmt: str) -> None:
     """Converter functions for a type with a single value."""
     shape = Struct(fmt)
-    def unpack(byt):
+
+    def unpack(byt: bytes) -> Any:
+        """Binary conversion func."""
         [val] = shape.unpack(byt)
         return val
     ns = globals()
@@ -2093,7 +2103,7 @@ def _binconv_basic(name: str, fmt: str):
     ns[f'_conv_binary_to_{name}'] = unpack
 
 
-def _binconv_cls(name: str, fmt: str, Tup: type):
+def _binconv_cls(name: str, fmt: str, Tup: type) -> None:
     """Converter functions for a type matching a namedtuple."""
     shape = Struct(fmt)
     ns = globals()
@@ -2186,7 +2196,7 @@ _conv_quaternion = _converter_ntup(Quaternion)
 del _converter_ntup
 
 
-def _conv_color(value) -> Color:
+def _conv_color(value: Union[Color, Iterable[int]]) -> Color:
     if isinstance(value, Color):
         return value
     try:
@@ -2200,7 +2210,7 @@ def _conv_color(value) -> Color:
     return Color(r, g, b, a)
 
 
-def _conv_angle(value) -> AngleTup:
+def _conv_angle(value: Union[Matrix, Iterable[float]]) -> AngleTup:
     if isinstance(value, AngleTup):
         return value
     elif isinstance(value, Matrix):
@@ -2209,7 +2219,7 @@ def _conv_angle(value) -> AngleTup:
         return AngleTup._make(value)
 
 
-def _conv_matrix(value) -> Matrix:
+def _conv_matrix(value: Union[AngleTup, Angle, Matrix]) -> Matrix:
     if isinstance(value, AngleTup):
         value = Matrix.from_angle(Angle(*value))
     elif isinstance(value, Angle):
@@ -2219,10 +2229,10 @@ def _conv_matrix(value) -> Matrix:
     return value.copy()
 
 
-def _conv_element(value) -> Element:
+def _conv_element(value: Element) -> Element:
     if not isinstance(value, Element):
         raise ValueError('Expected element, got: ' + repr(value))
     return value
 
-# Gather up all these functions, add to the dicts.
+# Gather all these functions, add to the dicts.
 TYPE_CONVERT, CONVERSIONS, SIZES = _get_converters()

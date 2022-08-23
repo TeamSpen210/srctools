@@ -111,7 +111,7 @@ def str_readvec(file: IO[bytes]) -> Vec:
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
 
 
-def checksum(data: bytes, prior=0) -> int:
+def checksum(data: bytes, prior: int = 0) -> int:
     """Compute the VPK checksum for a file.
 
     Passing a previous computation to allow calculating
@@ -136,7 +136,7 @@ class DeferredWrites:
         # Then the bytes to write there.
         self.data: Dict[Hashable, bytes] = {}
 
-    def defer(self, key: Hashable, fmt: Union[str, Struct], write=False) -> None:
+    def defer(self, key: Hashable, fmt: Union[str, Struct], write: bool = False) -> None:
         """Mark that the given format data is going to be written here.
 
         If write is true, write null bytes.
@@ -147,7 +147,7 @@ class DeferredWrites:
         if write:
             self.file.write(bytes(fmt.size))
 
-    def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]):
+    def set_data(self, key: Hashable, *data: Union[int, str, bytes, float]) -> None:
         """Specify the data for the given key. Data is the same as pack()."""
         off, fmt = self.loc[key]
         self.data[key] = packed = fmt.pack(*data)

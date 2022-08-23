@@ -1,7 +1,7 @@
 """Parses material files."""
 from typing import (
-    Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    MutableMapping, Mapping, TextIO, overload
+    Iterable, Tuple, TypeVar, Union, Dict, Callable, Optional, Iterator,
+    MutableMapping, Mapping, TextIO, overload,
 )
 import sys
 from enum import Enum
@@ -122,10 +122,8 @@ class Material(MutableMapping[str, str]):
             self[key] = value
 
     @classmethod
-    def parse(cls, data: Iterable[str], filename: str=''):
-        """Parse a VMT from the file.
-
-        """
+    def parse(cls, data: Iterable[str], filename: str = '') -> 'Material':
+        """Parse a VMT from the file."""
         # Block escapes, so "files\test\tex" doesn't have a tab in it.
         tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
 
@@ -199,7 +197,7 @@ class Material(MutableMapping[str, str]):
         return mat
 
     @staticmethod
-    def _parse_proxies(tok: Tokenizer):
+    def _parse_proxies(tok: Tokenizer) -> Iterator[Tuple[str, Dict[str, str]]]:
         # Parse the proxy block.
 
         for token, proxy_name in tok.skipping_newlines():
@@ -208,7 +206,7 @@ class Material(MutableMapping[str, str]):
             elif token is not Tok.STRING:
                 raise tok.error(token)
 
-            opts = {}
+            opts: Dict[str, str] = {}
 
             tok.expect(Tok.BRACE_OPEN)  # Start of proxy values.
 
@@ -300,8 +298,8 @@ class Material(MutableMapping[str, str]):
         self,
         fsys: FileSystem,
         *,
-        limit=100,
-        parent_func: Callable[[str], None]=None,
+        limit: int = 100,
+        parent_func: Optional[Callable[[str], None]] = None,
     ) -> 'Material':
         """If the file is a Patch shader expand to the full material.
 

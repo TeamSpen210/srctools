@@ -980,7 +980,7 @@ class Cordon:
         max_: Vec,
         is_active: bool = True,
         name: str = 'Cordon',
-    ):
+    ) -> None:
         self.map = vmf_file
         self.name = name
         self.bounds_min = min_

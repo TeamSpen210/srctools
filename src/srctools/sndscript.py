@@ -464,7 +464,7 @@ class Sound:
             )
         return sounds
 
-    def export(self, file: TextIO):
+    def export(self, file: TextIO) -> None:
         """Write a sound to a file.
 
         Pass a file-like object open for text writing.

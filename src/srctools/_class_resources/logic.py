@@ -29,7 +29,7 @@ res('logic_playerinfo')
 
 
 @cls_func
-def logic_playmovie(pack: PackList, ent: Entity):
+def logic_playmovie(pack: PackList, ent: Entity) -> None:
     """Mark the BIK movie as being used, though it can't be packed."""
     pack.pack_file('media/' + ent['MovieFilename'])
 

@@ -100,7 +100,7 @@ class LoggerAdapter(logging.LoggerAdapter):
         stacklevel: int = 0,
         extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
-    ):
+    ) -> None:
         """This version of .log() is for str.format() compatibility.
 
         The message is wrapped in a LogMessage object, which is given the
@@ -368,7 +368,7 @@ def init_logging(
         logger.addHandler(stdout_loghandler)
 
         if sys.stderr:
-            def ignore_warnings(record: logging.LogRecord):
+            def ignore_warnings(record: logging.LogRecord) -> bool:
                 """Filter out messages higher than WARNING.
 
                 Those are handled by stdError, and we don't want duplicates.

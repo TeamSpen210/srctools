@@ -80,7 +80,7 @@ res('func_breakable',
 
 
 @cls_func
-def func_breakable_surf(pack: PackList, ent: Entity):
+def func_breakable_surf(pack: PackList, ent: Entity) -> None:
     """Additional materials required for func_breakable_surf."""
     # First pack the base func_breakable stuff.
     func_breakable(pack, ent)

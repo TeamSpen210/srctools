@@ -1057,11 +1057,11 @@ class ParsedLump(Generic[T]):
         return f'<srctools.BSP.{self.__name__} member>'
 
     @overload
-    def __get__(self, instance: None, owner=None) -> 'ParsedLump[T]': ...
+    def __get__(self, instance: None, owner: Optional[type]=None) -> 'ParsedLump[T]': ...
     @overload
-    def __get__(self, instance: 'BSP', owner=None) -> T: ...
+    def __get__(self, instance: 'BSP', owner: Optional[type]=None) -> T: ...
 
-    def __get__(self, instance: Optional['BSP'], owner=None) -> Union['ParsedLump', T]:
+    def __get__(self, instance: Optional['BSP'], owner: Optional[type]=None) -> Union['ParsedLump', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
@@ -1278,7 +1278,7 @@ class BSP:
             # This is not valid any longer.
             game_lump.data = b''
 
-    def save(self, filename=None) -> None:
+    def save(self, filename: str = None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
         for lump_or_game in LUMP_REBUILD_ORDER:
@@ -2447,7 +2447,7 @@ class BSP:
         return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
 
     @staticmethod
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep=True) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
         This accepts a VMF file like that returned from read_ent_data().

@@ -149,7 +149,7 @@ res('asw_egg',
 
 
 @cls_func
-def asw_emitter(pack: PackList, ent: Entity):
+def asw_emitter(pack: PackList, ent: Entity) -> None:
     """Complicated thing, probably can't fully process here."""
     template = ent['template']
     if template and template != 'None':
@@ -165,7 +165,7 @@ res('asw_emitter', mat('materials/effects/yellowflare.vmt'))
 
 
 @cls_func
-def asw_env_explosion(pack: PackList, ent: Entity):
+def asw_env_explosion(pack: PackList, ent: Entity) -> None:
     """Handle the no-sound spawnflag."""
     if (conv_int(ent['spawnflags']) & 0x00000010) == 0:
         pack.pack_file('ASW_Explosion.Explosion_Default', FileType.GAME_SOUND)

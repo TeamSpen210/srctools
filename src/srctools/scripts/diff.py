@@ -6,7 +6,7 @@ import sys
 from srctools import VPK
 
 
-def diff_vpk(path1: Path, path2: Path):
+def diff_vpk(path1: Path, path2: Path) -> None:
     """Compute the diff of two VPK files."""
     vpk1 = VPK(path1)
     vpk2 = VPK(path2)

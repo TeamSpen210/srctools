@@ -3,6 +3,8 @@
 This allows accessing raw files, zips and VPKs in the same way.
 Files are case-insensitive, and both slashes are converted to '/'.
 """
+import types
+
 from zipfile import ZipFile, ZipInfo
 from typing import (
     TypeVar, Type, Generic, Any, Union, Optional, cast,
@@ -89,7 +91,7 @@ class File(Generic[FileSysT]):
         """
         return self.sys.open_bin(self)
 
-    def open_str(self, encoding='utf8') -> TextIO:
+    def open_str(self, encoding: str = 'utf8') -> TextIO:
         """Return a file-like object in unicode mode.
 
         This should be closed when done.
@@ -126,7 +128,7 @@ class FileSystem(Generic[_FileDataT]):
             DeprecationWarning, stacklevel=2,
         )
 
-    def read_prop(self, path: str, encoding='utf8') -> Property:
+    def read_prop(self, path: str, encoding: str = 'utf8') -> Property:
         """Read a Property file from the filesystem.
 
         This handles opening and closing files.
@@ -161,7 +163,10 @@ class FileSystem(Generic[_FileDataT]):
         )
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+    ) -> None:
         """Deprecated, no longer needs to be used as a context manager."""
         warnings.warn(
             'References concept removed, filesystems are always open.',
@@ -205,7 +210,7 @@ class FileSystem(Generic[_FileDataT]):
         """Yield files in a folder."""
         raise NotImplementedError
 
-    def open_str(self: FileSysT, name: Union[str, File[FileSysT]], encoding='utf8') -> TextIO:
+    def open_str(self: FileSysT, name: Union[str, File[FileSysT]], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -348,7 +353,7 @@ class VirtualFileSystem(FileSystem[str]):
     is called.
     """
 
-    def __init__(self, mapping: Dict[str, Union[str, bytes]], encoding='utf8'):
+    def __init__(self, mapping: Dict[str, Union[str, bytes]], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
         self._mapping = {
             self._clean_path(filename): (filename, data)
@@ -357,7 +362,7 @@ class VirtualFileSystem(FileSystem[str]):
         }
         self.bytes_encoding = encoding
 
-    def __eq__(self, other: object):
+    def __eq__(self, other: object) -> bool:
         if not isinstance(other, VirtualFileSystem):
             return NotImplemented
         return (
@@ -551,7 +556,11 @@ class ZipFileSystem(FileSystem[ZipInfo]):
         # Type of open() is IO[bytes], basically the same.
         return cast(BinaryIO, self.zip.open(info))
 
-    def open_str(self: ZipFSysT, name: Union[str, File[ZipFSysT]], encoding='utf8') -> io.TextIOWrapper:
+    def open_str(
+        self: ZipFSysT,
+        name: Union[str, File[ZipFSysT]],
+        encoding: str = 'utf8',
+    ) -> io.TextIOWrapper:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.

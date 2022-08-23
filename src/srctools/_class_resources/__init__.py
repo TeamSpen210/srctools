@@ -469,8 +469,9 @@ res('test_proxytoggle')
 
 res('vort_charge_token', part('vortigaunt_charge_token'))
 
+
 @cls_func
-def vgui_movie_display(pack: PackList, ent: Entity):
+def vgui_movie_display(pack: PackList, ent: Entity) -> None:
     """Mark the BIK movie as being used, though it can't be packed."""
     pack.pack_file(ent['MovieFilename'])
 

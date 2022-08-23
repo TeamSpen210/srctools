@@ -62,13 +62,14 @@ import sys
 import keyword
 import builtins  # Property.bool etc shadows these.
 import warnings
+import types
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 from typing import (
-    Optional, Union, Any, TypeVar, overload, cast,
+    Optional, Type, Union, Any, TypeVar, overload, cast,
     List, Tuple, Dict, Callable, Mapping, Iterable, Iterator,
 )
 from typing_extensions import Final
@@ -493,7 +494,7 @@ class Property:
         # Return that root property.
         return root
 
-    def find_all(self, *keys) -> Iterator['Property']:
+    def find_all(self, *keys: str) -> Iterator['Property']:
         """Search through the tree, yielding all properties that match a particular path.
 
         """
@@ -514,7 +515,7 @@ class Property:
                 else:
                     yield prop
 
-    def find_children(self, *keys) -> Iterator['Property']:
+    def find_children(self, *keys: str) -> Iterator['Property']:
         """Search through the tree, yielding children of properties in a path.
 
         """
@@ -1189,7 +1190,10 @@ class _Builder:
         """Start a property block."""
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+    ) -> None:
         """Ends the property block."""
         pass
 
@@ -1224,5 +1228,9 @@ class _BuilderElem:
         self._builder._parents.append(prop)
         return prop
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+    ) -> None:
+        """End a property block."""
         self._builder._parents.pop()

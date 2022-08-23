@@ -468,8 +468,8 @@ def collapse_one(
 def collapse_all(
     vmf: VMF,
     fsys: FileSystem,
-    recur_limit=100,
-    fgd: FGD=None,
+    recur_limit: int = 100,
+    fgd: FGD = None,
 ) -> None:
     """Searches for `func_instance`s in the map, then collapses them.
 

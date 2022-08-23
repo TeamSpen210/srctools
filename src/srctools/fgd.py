@@ -340,7 +340,7 @@ VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
-def read_colon_list(tok: BaseTokenizer, had_colon=False) -> Tuple[List[str], Token]:
+def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
 
     The token found at the end is returned.
@@ -460,7 +460,7 @@ def validate_tags(
     })
 
 
-def match_tags(search: Container[str], tags: Iterable[str]):
+def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
     """Check if the search constraints satisfy tags.
 
     The search tags should be uppercased.
@@ -844,7 +844,7 @@ class KeyValues:
 
         file.write('\n')
 
-    def serialise(self, file, str_dict: BinStrDict):
+    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
         """Write to the binary file."""
         file.write(str_dict(self.name))
         file.write(str_dict(self.disp_name))
@@ -1005,17 +1005,21 @@ class _EntityView(Generic[T]):
     def __repr__(self) -> str:
         return '{!r}.{}'.format(self._ent, self._disp_attr)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """We're private, so we should be the only instance for a given Entity."""
         return other is self
 
-    def _maps(self, ent=None) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
+    def _maps(
+        self,
+        ent: Optional['EntityDef'] = None,
+    ) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
 
         yield getattr(ent, self._attr)
         for base in ent.bases:
+            assert isinstance(base, EntityDef)
             yield from self._maps(base)
 
     def __getitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> T:
@@ -1111,8 +1115,8 @@ class EntityDef:
         fgd: 'FGD',
         tok: BaseTokenizer,
         ent_type: EntityTypes,
-        eval_bases: bool=True,
-    ):
+        eval_bases: bool = True,
+    ) -> None:
         """Parse an entity definition."""
         entity = cls(ent_type)
 
@@ -1664,7 +1668,7 @@ class EntityDef:
             yield ent
             yield from ent.iter_bases(_done)
 
-    def serialise(self, file, str_dict: BinStrDict):
+    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
         """Write to the binary file."""
         file.write(_fmt_ent_header.pack(
             ENTITY_TYPE_INDEX[self.type],
@@ -2039,7 +2043,7 @@ class FGD:
         file: File,
         *,
         eval_bases: bool=True,
-        encoding='cp1252',
+        encoding: str = 'cp1252',
     ) -> None:
         """Parse one file (recursively if needed).
 

@@ -22,7 +22,7 @@ res('env_bubbles', mat('materials/sprites/bubble.vmt'))
 
 
 @cls_func
-def env_break_shooter(pack: PackList, ent: Entity):
+def env_break_shooter(pack: PackList, ent: Entity) -> None:
     """Special behaviour on the 'model' KV."""
     if conv_int(ent['modeltype']) == 1:  # MODELTYPE_MODEL
         pack.pack_file(ent['model'], FileType.MODEL)
@@ -187,7 +187,7 @@ res('env_rotorwash_emitter',
 
 
 @cls_func
-def env_rotorshooter(pack: PackList, ent: Entity):
+def env_rotorshooter(pack: PackList, ent: Entity) -> None:
     """Inherits from env_shooter, so it just does that."""
     env_shooter(pack, ent)
 
@@ -199,7 +199,7 @@ res('env_screeneffect',
 
 
 @cls_func
-def env_shooter(pack: PackList, ent: Entity):
+def env_shooter(pack: PackList, ent: Entity) -> None:
     """A hardcoded array of sounds to play."""
     try:
         snd_name = (

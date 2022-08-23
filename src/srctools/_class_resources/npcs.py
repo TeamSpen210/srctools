@@ -20,7 +20,7 @@ res('npc_advisor',
 
 
 @cls_func
-def npc_antlion(pack: PackList, ent: Entity):
+def npc_antlion(pack: PackList, ent: Entity) -> None:
     """Antlions require different resources for the worker version."""
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 18):  # Is worker?
@@ -84,7 +84,7 @@ res('npc_antlion_grub',
 
 
 @cls_func
-def npc_antlion_template_maker(pack: PackList, ent: Entity):
+def npc_antlion_template_maker(pack: PackList, ent: Entity) -> None:
     """Depending on KVs this may or may not spawn workers."""
     # There will be an antlion present in the map, as the template
     # NPC. So we don't need to add those resources.

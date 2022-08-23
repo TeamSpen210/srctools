@@ -266,7 +266,8 @@ class VPK:
             raise ValueError(f"Invalid version ({version}) - must be 1 or 2!")
 
         self.folder = self.file_prefix = ''
-        self.path = dir_file  # Sets the above correctly + checks.
+        # Calls the property which sets the above correctly and checks the type.
+        self.path = dir_file
 
         # fileinfo[extension][directory][filename]
         self._fileinfo = {}
@@ -287,7 +288,7 @@ class VPK:
             raise ValueError(f"VPK mode {self.mode.name} does not allow writing!")
 
     @property
-    def path(self) -> str:
+    def path(self) -> Union[str, 'os.PathLike[str]']:  # TODO: Incorrect, Mypy doesn't have 2-type properties.
         """Return the location of the directory VPK file."""
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
