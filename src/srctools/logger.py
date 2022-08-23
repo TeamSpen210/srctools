@@ -72,6 +72,11 @@ class LogMessage:
         #
         return '\n | '.join(lines[:]) + '\n |___\n'
 
+_SysExcInfoType = Union[
+    Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    Tuple[None, None, None]
+]
+
 
 class LoggerAdapter(logging.LoggerAdapter):
     """Fix loggers to use str.format().
@@ -97,7 +102,6 @@ class LoggerAdapter(logging.LoggerAdapter):
             BaseException
         ]=None,
         stack_info: bool=False,
-        stacklevel: int = 0,
         extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
     ) -> None:
@@ -105,6 +109,7 @@ class LoggerAdapter(logging.LoggerAdapter):
 
         The message is wrapped in a LogMessage object, which is given the
         args and kwargs.
+        stacklevel is supported, but is silently ignored in Python 3.7.
         """
         if self.isEnabledFor(level):
             try:
@@ -116,17 +121,23 @@ class LoggerAdapter(logging.LoggerAdapter):
             new_extra['alias'] = self.alias
             new_extra['context'] = f' ({ctx})' if ctx else ''
 
+            # Pull these arguments out of kwargs, so they can be set..
+            log_args = {
+                'extra': new_extra,
+                'exc_info': exc_info,
+                'stack_info': stack_info,
+            }
+            # Not present in 3.7, silently discard.
+            if sys.version_info >= (3, 8) and 'stacklevel' in kwargs:
+                log_args['stacklevel'] = kwargs.pop('stacklevel')
+
             # noinspection PyProtectedMember
             self.logger._log(
                 level,
-                LogMessage(msg, args, kwargs),
+                LogMessage(str(msg), args, kwargs),
                 (),  # No positional arguments, we do the formatting through
                 # LogMessage..
-                extra=new_extra,
-                # Pull these arguments out of kwargs, so they can be set..
-                exc_info=exc_info,
-                stack_info=stack_info,
-                stacklevel=stacklevel,
+                **log_args,
             )
 
     def __getattr__(self, attr: str) -> Any:
