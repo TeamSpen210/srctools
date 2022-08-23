@@ -23,10 +23,10 @@ import contextlib
 import warnings
 
 from typing import (
-    Protocol, Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
+    Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
     NamedTuple, Iterator, Iterable, SupportsRound, Optional,
 )
-from typing_extensions import Final, Literal, final
+from typing_extensions import Final, Literal, Protocol, final
 
 
 __all__ = [
