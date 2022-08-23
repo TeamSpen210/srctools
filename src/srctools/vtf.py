@@ -17,9 +17,9 @@ from .const import add_unknown
 from .math import Vec
 
 from typing import (
-    IO, Dict, List, Optional, Tuple, Iterable, Union,
+    Any, IO, Dict, List, Optional, Tuple, Iterable, Union,
     TYPE_CHECKING, Type, Collection, overload, Sequence,
-    Mapping, BinaryIO,
+    Mapping,
 )
 
 # Only import while type checking, so these expensive libraries are only loaded
@@ -27,7 +27,6 @@ from typing import (
 if TYPE_CHECKING:
     from PIL.Image import Image as PIL_Image
     import tkinter
-    import wx
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -490,8 +489,9 @@ class Frame:
             ),
         )
 
-    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Image':
-        """Convert the given frame into a wxPython image.
+    # TODO: wx has no type hints, so we can't import.
+    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+        """Convert the given frame into a wxPython wx.Image.
 
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
@@ -499,14 +499,14 @@ class Frame:
         """
         self.load()
         assert self._data is not None
-        import wx
+        import wx  # type: ignore
 
         img = wx.Image(self.width, self.height)
         _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
         return img
 
-    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Bitmap':
-        """Convert the given frame into a wxPython bitmap.
+    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+        """Convert the given frame into a wxPython wx.Bitmap.
 
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
