@@ -2080,7 +2080,7 @@ _conv_quaternion_to_vec4 = lambda quat: Vec4(quat.x, quat.y, quat.z, quat.w)
 
 # Binary conversions.
 _conv_string_to_binary = bytes.fromhex
-if sys.version_info >= (3, 8, 0):
+if sys.version_info >= (3, 8):
     def _conv_binary_to_string(byt: bytes) -> str:
         """Format each byte, seperated by spaces."""
         return byt.hex(' ', 1).upper()
