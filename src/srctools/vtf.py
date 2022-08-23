@@ -10,6 +10,7 @@ import itertools
 import math
 import struct
 import warnings
+import types
 from io import BytesIO
 
 from . import binformat, EmptyMapping
@@ -98,7 +99,7 @@ _mk_fmt_ind = -1  # Incremented first time to 0
 
 class ImageFormats(Enum):
     """All VTF image formats, with their data sizes in the value."""
-    def __init__(self, r, g, b, a, size, ind) -> None:
+    def __init__(self, r: int, g: int, b: int, a: int, size: int, ind: int) -> None:
         self.r = r
         self.g = g
         self.b = b
@@ -886,7 +887,10 @@ class VTF:
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+    ) -> None:
         """Close the streams if any frames still have them open."""
         for frame in self._frames.values():
             frame._fileinfo = None

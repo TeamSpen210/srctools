@@ -427,7 +427,7 @@ class Mesh:
         raise ParseError('end', 'No end to skeleton section!')
 
     @staticmethod
-    def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]):
+    def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]) -> List[Triangle]:
         """Parse the 'triangles' section of SMDs."""
         tris: List[Triangle] = []
         # Temporary vertex, which we overwrite in the loop.

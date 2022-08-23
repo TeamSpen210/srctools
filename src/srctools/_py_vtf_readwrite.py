@@ -499,7 +499,7 @@ def load_dxt1_impl(
     width: int,
     height: int,
     black_color: Tuple[int, int, int, int],
-):
+) -> None:
     """Does the actual decompression."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -574,7 +574,7 @@ def dxt_color_table(
     block_wid: int,
     block_x: int,
     block_y: int,
-):
+) -> None:
     """Decodes the actual colour table into pixels."""
     for y in range(4):
         byte = data[block_off + 4 + y]
@@ -613,7 +613,7 @@ def dxt_alpha_table(
     block_x: int,
     block_y: int,
     layer: int,
-):
+) -> None:
     """Decode the DXT5 alpha block into pixels.
 
     This is split out for ATI1/2N support as well.

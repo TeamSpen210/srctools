@@ -48,7 +48,10 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
     return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
 
-def parse_vec_str(val: Union[str, 'Vec', 'Angle'], x=0.0, y=0.0, z=0.0) -> Tuple3:
+def parse_vec_str(
+    val: Union[str, 'Vec', 'Angle'],
+    x: float = 0.0, y: float = 0.0, z: float = 0.0,
+) -> Tuple3:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
@@ -451,7 +454,11 @@ class Vec(SupportsRound['Vec']):
             self.z = round(self.z, 6)
         return self
 
-    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
+    def rotate_by_str(
+        self, ang: str,
+        pitch: float = 0.0, yaw: float = 0.0, roll: float = 0.0,
+        round_vals: bool = True,
+    ) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
         This is deprecated, use `Vec(...) @ Angle.from_str(...)` instead.
@@ -1717,7 +1724,7 @@ class Angle:
     def from_basis(cls, *, x: Vec, z: Vec) -> 'Angle': ...
 
     @classmethod
-    def from_basis(cls, **kwargs) -> 'Angle':
+    def from_basis(cls, **kwargs: Vec) -> 'Angle':
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.

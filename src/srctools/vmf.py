@@ -315,7 +315,7 @@ class VMF:
     """
     def __init__(
         self,
-        map_info=EmptyMapping,
+        map_info: Mapping[str, str]=EmptyMapping,
         spawn: 'Entity'=None,
         entities: List['Entity']=None,
         brushes: List['Solid']=None,
@@ -326,9 +326,9 @@ class VMF:
     ):
         """Create a VMF.
 
-        If preserve_ids is False (default), various IDs will be changed to
-        ensure they are unique when adding items to the VMF. If True they will
-        stay the same. New items will aquire a unique ID.
+        If preserve_ids is False (default), various IDs will be changed to ensure they are unique
+        when adding items to the VMF. If True the IDs will be preseved. New items will aquire a
+        unique ID.
         """
         id_man = NullIDMan if preserve_ids else IDMan
         self.solid_id = id_man()  # All occupied solid ids
@@ -387,18 +387,18 @@ class VMF:
         self.quickhide_count = srctools.conv_int(
             map_info.get('quickhide', '-1'), -1)
 
-    def add_brush(self, item: 'Solid'):
+    def add_brush(self, item: 'Solid') -> None:
         """Add a world brush to this map."""
         self.brushes.append(item)
 
-    def remove_brush(self, brush: 'Solid'):
+    def remove_brush(self, brush: 'Solid') -> None:
         """Remove a world brush from this map."""
         try:
             self.brushes.remove(brush)
         except ValueError:
             pass  # Already removed.
 
-    def add_ent(self, item: 'Entity'):
+    def add_ent(self, item: 'Entity') -> None:
         """Add an entity to the map.
 
         The entity should have been created with this VMF as a parent.
@@ -414,7 +414,7 @@ class VMF:
             else:
                 item['nodeid'] = str(self.node_id.get_id(node_id))
 
-    def remove_ent(self, item: 'Entity'):
+    def remove_ent(self, item: 'Entity') -> None:
         """Remove an entity from the map.
 
         After this is called, the entity will no longer be exported.
@@ -437,11 +437,11 @@ class VMF:
 
         self.ent_id.discard(item.id)
 
-    def add_brushes(self, brushes: Iterable['Solid']):
+    def add_brushes(self, brushes: Iterable['Solid']) -> None:
         """Add multiple brushes to the map."""
         self.brushes.extend(brushes)
 
-    def add_ents(self, ents: Iterable['Entity']):
+    def add_ents(self, ents: Iterable['Entity']) -> None:
         """Add multiple entities to the map."""
         ents = list(ents)
         self.entities.extend(ents)
@@ -475,7 +475,7 @@ class VMF:
         return vis
 
     @staticmethod
-    def parse(tree: Union[Property, str], preserve_ids=False):
+    def parse(tree: Union[Property, str], preserve_ids: bool = False) -> 'VMF':
         """Convert a property_parser tree into VMF classes.
         """
         if not isinstance(tree, Property):
@@ -556,7 +556,7 @@ class VMF:
     def export(self, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> str: ...
     @overload
     def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version=True, minimal=False, disp_multiblend: bool = True):
+    def export(self, dest_file: IO[str]=None, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> Optional[str]:
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
@@ -570,13 +570,10 @@ class VMF:
           if only a single cordon is allowed.
         """
         if dest_file is None:
-            dest_file = io.StringIO()
-            # acts like a file object but is actually a string. We're
-            # using this to prevent having Python duplicate the entire
-            # string every time we append
-            ret_string = True
+            string_buf = io.StringIO()
+            dest_file = string_buf
         else:
-            ret_string = False
+            string_buf = None
 
         if inc_version:
             # Increment this to indicate the map was modified
@@ -645,11 +642,10 @@ class VMF:
                 '}\n'
             )
 
-        if ret_string:
-            assert isinstance(dest_file, io.StringIO)
-            string = dest_file.getvalue()
-            dest_file.close()
-            return string
+        if string_buf is not None:
+            return string_buf.getvalue()
+        else:
+            return None
 
     def iter_wbrushes(self, world: bool=True, detail: bool=True) -> Iterator['Solid']:
         """Iterate through all world and detail solids in the map."""
@@ -982,8 +978,8 @@ class Cordon:
         vmf_file: VMF,
         min_: Vec,
         max_: Vec,
-        is_active=True,
-        name='Cordon',
+        is_active: bool = True,
+        name: str = 'Cordon',
     ):
         self.map = vmf_file
         self.name = name
@@ -1308,12 +1304,12 @@ class Solid:
             bbox_min, bbox_max = self.get_bbox()
         return (bbox_min + bbox_max) / 2
 
-    def translate(self, diff: Vec):
+    def translate(self, diff: Vec) -> None:
         """Move this solid by the specified vector."""
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: Vec, angles: Union[Angle, Matrix]=None):
+    def localise(self, origin: Vec, angles: Union[Angle, Matrix, None] = None) -> None:
         """Shift this brush by the given origin/angles."""
         angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
@@ -2069,7 +2065,7 @@ class Entity(MutableMapping[str, str]):
         solids: List[Solid]=None,
         hidden: bool=False,
         groups: Iterable[int]=(),
-        vis_ids=(),
+        vis_ids: Iterable[int]=(),
         vis_shown: bool=True,
         vis_auto_shown: bool=True,
         logical_pos: str=None,
@@ -2133,7 +2129,7 @@ class Entity(MutableMapping[str, str]):
         des_id: int=-1,
         vmf_file: VMF=None,
         side_mapping: MutableMapping[int, int]=EmptyMapping,
-        keep_vis=True,
+        keep_vis: bool=True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
         new_solids = [
@@ -2166,7 +2162,7 @@ class Entity(MutableMapping[str, str]):
         vmf_file: VMF, tree_list: Property,
         hidden: bool = False,
         _worldspawn: bool = False,
-    ):
+    ) -> 'Entity':
         """Parse a property tree into an Entity object.
 
         _worldspawn indicates if this is the worldspawn entity, which additionally contains
@@ -2364,7 +2360,7 @@ class Entity(MutableMapping[str, str]):
         """Remove this entity from the map."""
         self.map.remove_ent(self)
 
-    def make_unique(self, unnamed_prefix='') -> 'Entity':
+    def make_unique(self, unnamed_prefix: str = '') -> 'Entity':
         """Ensure this entity is uniquely named, by adding a numeric suffix.
 
         If the entity doesn't start with a name, it will use the parameter.
@@ -2650,7 +2646,7 @@ class EntityFixup(MutableMapping[str, str]):
         fix._fixup = self._fixup.copy()
         return fix
 
-    def __deepcopy__(self, memodict=None) -> 'EntityFixup':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()

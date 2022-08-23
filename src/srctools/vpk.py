@@ -61,7 +61,7 @@ def _write_nullstring(file: IO[bytes], string: str) -> None:
         file.write(b' \x00')
 
 
-def get_arch_filename(prefix='pak01', index: int=None):
+def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str:
     """Generate the name for a VPK file.
 
     Prefix is the name of the file, usually 'pak01'.
@@ -244,7 +244,7 @@ class VPK:
 
     def __init__(
         self,
-        dir_file,
+        dir_file: Union[str, 'os.PathLike[str]'],
         *,
         mode: Union[OpenModes, str]='r',
         dir_data_limit: Optional[int]=1024,
@@ -292,7 +292,7 @@ class VPK:
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
     @path.setter
-    def path(self, path: str) -> None:
+    def path(self, path: Union[str, 'os.PathLike[str]']) -> None:
         """Set the location and folder from the directory VPK file."""
         folder, filename = os.path.split(path)
 
