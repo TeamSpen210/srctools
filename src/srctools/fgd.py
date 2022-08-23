@@ -10,7 +10,7 @@ import math
 import operator
 
 from typing import (
-    Generic, Optional, Union, overload, cast, TYPE_CHECKING,
+    Generic, Optional, Union, overload, cast,
     TypeVar, Callable, Type, ClassVar, Any,
     Dict, Tuple, List, Set, FrozenSet,
     Mapping, Iterator, Iterable, Collection,
@@ -2181,8 +2181,11 @@ class FGD:
         global _ENGINE_FGD
         if _ENGINE_FGD is None:
             from lzma import LZMAFile
-            with (files(srctools) / 'fgd.lzma').open('rb') as comp, LZMAFile(comp) as f:
-                _ENGINE_FGD = cls.unserialise(f)
+            # On 3.8, importlib_resources doesn't have the right stubs.
+            comp: IO[bytes]
+            with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
+                with LZMAFile(comp) as f:
+                    _ENGINE_FGD = cls.unserialise(f)
         return deepcopy(_ENGINE_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
