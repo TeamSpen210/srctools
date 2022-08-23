@@ -301,7 +301,7 @@ class NewLogRecord(logging.LogRecord):
     """Allow passing an alias and context for log modules."""
     alias: Optional[str] = None
 
-    def getMessage(self):
+    def getMessage(self) -> str:
         """We have to hook here to change the value of .module.
 
         It's called just before the formatting call is made.

@@ -8,7 +8,7 @@ import ast
 import sys
 import collections
 from collections import defaultdict
-from typing import Optional, Dict, Set
+from typing import List, Optional, Dict, Set
 
 import attrs
 from srctools.vmt import VarType
@@ -137,7 +137,7 @@ def process(filename: str, args: str) -> None:
     VARS[name] = var
 
 
-def dump(folder):
+def dump(folder: str) -> None:
     """Process the materialsystem/ folder from a game repro."""
     for file in glob.iglob(folder + '/**/*'):
         if not file.endswith(('.h', '.cpp', '.c')): continue
@@ -201,9 +201,9 @@ def dump(folder):
                     CONFLICTS[var_name] |= {var, other_var}
 
 
-def main():
+def main(args: List[str]) -> None:
     """Run this script."""
-    for folder in sys.argv[1:]:
+    for folder in args:
         print("Reading from", folder)
         dump(folder)
 
@@ -242,4 +242,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

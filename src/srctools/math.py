@@ -23,8 +23,8 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
-    NamedTuple, Iterator, Iterable, SupportsRound, Optional
+    Protocol, Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
+    NamedTuple, Iterator, Iterable, SupportsRound, Optional,
 )
 from typing_extensions import Final, Literal, final
 
@@ -115,7 +115,7 @@ class Vec_tuple(NamedTuple):
 
 
 if TYPE_CHECKING:
-    class _InvAxis:
+    class _InvAxis(Protocol):
         """Dummy class to type-check Vec.INV_AXIS"""
         @overload
         def __getitem__(self, item: Literal['x']) -> Tuple[Literal['y'], Literal['z']]: ...
@@ -144,8 +144,7 @@ if TYPE_CHECKING:
         @overload
         def __getitem__(self, item: Tuple[str, str]) -> str: ...
 
-        def __getitem__(self, item):
-            return cast(Any, '')
+        def __getitem__(self, item: Union[tuple, str]) -> Union[tuple, str]: ...
 else:
     globals()['_InvAxis'] = None
 
@@ -1868,7 +1867,7 @@ class Angle:
     @overload
     def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
 
-    def __rmatmul__(self, other):
+    def __rmatmul__(self, other: object) -> Union['Angle', 'Vec']:
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, Py_Vec):
             return other @ Py_Matrix.from_angle(self)

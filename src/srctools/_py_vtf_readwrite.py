@@ -708,7 +708,7 @@ def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None
                 pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 
 
-def load_dxt5(pixels, data, width, height):
+def load_dxt5(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -771,7 +771,7 @@ def load_dxt5(pixels, data, width, height):
 #     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
 #     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
 
-def load_ati2n(pixels, data, width, height):
+def load_ati2n(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load 'ATI2N' format data, also known as BC5.
 
     This uses two copies of the DXT5 alpha block for data.

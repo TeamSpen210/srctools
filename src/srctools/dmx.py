@@ -90,6 +90,7 @@ _UNSET_UUID: Final = get_uuid()
 _UNSET: Any = object()  # Argument sentinel
 # Deprecated.
 STUB = _StubType.STUB
+T = TypeVar('T')
 
 
 class Vec2(NamedTuple):
@@ -226,7 +227,7 @@ def _get_converters() -> Tuple[dict, dict, dict]:
     sizes = {}
     ns = globals()
 
-    def unchanged(x):
+    def unchanged(x: T) -> T:
         """No change means no conversion needed."""
         return x
 
@@ -2133,7 +2134,7 @@ def _conv_binary_to_time(byt: bytes) -> Time:
     return Time(num / 10000.0)
 
 _struct_matrix = Struct('<16f')
-def _conv_matrix_to_binary(mat):
+def _conv_matrix_to_binary(mat: Matrix) -> bytes:
     """We only set the 3x3 part."""
     return _struct_matrix.pack(
         mat[0, 0], mat[0, 1], mat[0, 2], 0.0,
@@ -2141,7 +2142,7 @@ def _conv_matrix_to_binary(mat):
         mat[2, 0], mat[2, 1], mat[2, 2], 0.0,
         0.0, 0.0, 0.0, 1.0,
     )
-def _conv_binary_to_matrix(byt):
+def _conv_binary_to_matrix(byt: bytes) -> Matrix:
     """We only set the 3x3 part."""
     data = _struct_matrix.unpack(byt)
     mat = Matrix()

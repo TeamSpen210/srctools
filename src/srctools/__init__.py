@@ -476,7 +476,7 @@ class AtomicWriter:
             except FileExistsError:
                 pass
 
-    def __enter__(self):
+    def __enter__(self) -> IO:
         """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
         assert self.temp is not None

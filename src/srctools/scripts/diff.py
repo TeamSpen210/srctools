@@ -1,4 +1,5 @@
 """Compute diffs between files that srctools handles."""
+from typing import List
 from pathlib import Path
 import sys
 
@@ -61,9 +62,7 @@ def diff_vpk(path1: Path, path2: Path) -> None:
         ))
 
 
-def main():
-    args = sys.argv[1:]
-
+def main(args: List[str]) -> None:
     ext = path = None
     if len(args) == 3:
         ext, fname1, fname2 = args
@@ -74,11 +73,11 @@ def main():
     elif len(args) == 2:
         fname1, fname2 = args
     else:
-        return '''Usage:
+        print('''Usage:
         diff.py file1 file2
         diff.py ext file1 file2
         diff.py path old-file old-hex old-mode new-file new-hex new-mode
-    '''
+    ''')
 
     if path is None:
         path = fname1
@@ -96,16 +95,18 @@ def main():
     if ext is None:
         # Guess extension.
         if file1.suffix.casefold() != file2.suffix.casefold():
-            return 'Extensions do not match!'
+            print('Extensions do not match!')
+            return
         ext = file1.suffix
 
     try:
         func = globals()['diff_' + ext.casefold()]
     except KeyError:
-        return 'Unknown extension "{}"!'.format(ext)
+        print(f'Unknown extension "{ext}"!')
+        return
 
     func(file1, file2)
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])
