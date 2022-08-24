@@ -20,7 +20,7 @@ import os
 from atomicwrites import atomic_write
 import attrs
 
-from srctools import conv_int, logger
+from srctools import conv_int, logger, StringPath
 from srctools.math import Vec, Angle
 from srctools.filesys import FileSystem
 from srctools.vtf import VTF
@@ -1117,7 +1117,7 @@ class BSP:
     ]] = {}
     version: Union[VERSIONS, int]
 
-    def __init__(self, filename: Union[str, os.PathLike], version: VERSIONS=None):
+    def __init__(self, filename: StringPath, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: Dict[BSP_LUMPS, Lump] = {}

@@ -64,7 +64,7 @@ import builtins  # Property.bool etc shadows these.
 import warnings
 import types
 
-from srctools import BOOL_LOOKUP, EmptyMapping
+from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
@@ -243,7 +243,7 @@ class Property:
     @staticmethod
     def parse(
         file_contents: Union[str, BaseTokenizer, Iterator[str]],
-        filename: Union[str, os.PathLike] = '', *,
+        filename: StringPath = '', *,
         flags: Mapping[str, bool]=EmptyMapping,
         newline_keys: bool = False,
         newline_values: bool = True,

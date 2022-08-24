@@ -15,13 +15,15 @@ letting you `raise BaseTokenizer.error(...)` to easily produce an exception list
 line number and filename.
 """
 from enum import Enum
-from os import fspath as _conv_path, PathLike
+from os import fspath as _conv_path
 from typing import (
     Union, Optional, Type, Any, overload,
     Iterable, Iterator,
     Tuple, List,
 )
 import abc
+
+from srctools import StringPath
 
 
 class TokenSyntaxError(Exception):
@@ -38,7 +40,7 @@ class TokenSyntaxError(Exception):
     def __init__(
         self,
         message: str,
-        file: Union[str, PathLike, None],
+        file: Optional[StringPath],
         line: Optional[int],
     ) -> None:
         super().__init__()
@@ -155,7 +157,7 @@ class BaseTokenizer(abc.ABC):
 
     def __init__(
         self,
-        filename: Union[str, PathLike, None],
+        filename: Optional[StringPath],
         error: Type[TokenSyntaxError],
     ) -> None:
         if filename is not None:
@@ -358,7 +360,7 @@ class Tokenizer(BaseTokenizer):
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: Union[str, 'PathLike[str]', None] = None,
+        filename: Optional[StringPath] = None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
@@ -648,7 +650,7 @@ class IterTokenizer(BaseTokenizer):
     def __init__(
         self,
         source: Iterable[Tuple[Token, str]],
-        filename: Union[str, PathLike]='',
+        filename: StringPath='',
         error: Type[TokenSyntaxError]=TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)

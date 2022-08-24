@@ -15,6 +15,7 @@ import io
 import os
 import warnings
 
+from srctools import StringPath
 from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
 
@@ -110,7 +111,7 @@ class File(Generic[FileSysT]):
 
 class FileSystem(Generic[_FileDataT]):
     """Base class for different systems defining the interface."""
-    def __init__(self, path: Union[str, os.PathLike]) -> None:
+    def __init__(self, path: StringPath) -> None:
         self.path = os.fspath(path)
         self._ref_count = 0
 
@@ -441,7 +442,7 @@ class RawFileSystem(FileSystem[str]):
 
     This can prohibit access to folders above the root.
     """
-    def __init__(self, path: Union[str, os.PathLike], constrain_path: bool=True) -> None:
+    def __init__(self, path: StringPath, constrain_path: bool=True) -> None:
         super().__init__(os.path.abspath(path))
         self.constrain_path = constrain_path
 
@@ -507,7 +508,7 @@ class RawFileSystem(FileSystem[str]):
 
 class ZipFileSystem(FileSystem[ZipInfo]):
     """Accesses files in a zip file."""
-    def __init__(self, path: Union[str, os.PathLike], zipfile: Optional[ZipFile]=None) -> None:
+    def __init__(self, path: StringPath, zipfile: Optional[ZipFile]=None) -> None:
         super().__init__(path)
 
         if zipfile is not None:
@@ -586,7 +587,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
 
 class VPKFileSystem(FileSystem[VPKFile]):
     """Accesses files in a VPK file."""
-    def __init__(self, path: Union[str, os.PathLike]) -> None:
+    def __init__(self, path: StringPath) -> None:
         super().__init__(path)
         self.vpk = VPK(self.path)
         # Used to enforce case-insensitivity.

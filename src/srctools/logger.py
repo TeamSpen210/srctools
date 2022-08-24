@@ -17,6 +17,8 @@ from typing import (
     Dict, Tuple, List, Type, Callable, Generator, Iterable, TextIO,
 )
 
+from srctools import StringPath
+
 
 # Only generic in stubs!
 CTX_STACK: 'contextvars.ContextVar[List[str]]' = contextvars.ContextVar('srctools_logger')
@@ -324,7 +326,7 @@ class NewLogRecord(logging.LogRecord):
 
 
 def init_logging(
-    filename: Union[str, os.PathLike]=None,
+    filename: StringPath=None,
     main_logger: str='',
     on_error: Callable[
         [Type[BaseException], BaseException, Optional[TracebackType]],

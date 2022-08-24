@@ -7,7 +7,7 @@ from typing import (
     Sequence, List, Container, AbstractSet, Set,
     Iterable, Iterator, IO,
 )
-from typing_extensions import Final, Protocol
+from typing_extensions import Final, TypeAlias, Protocol
 from types import TracebackType
 from collections import deque
 import warnings
@@ -34,7 +34,7 @@ __all__ = [
 
     'FileSystem', 'FileSystemChain', 'get_filesystem',
 
-    'EmptyMapping',
+    'EmptyMapping', 'StringPath',
 
     'FGD', 'VPK',
     'VTF',
@@ -56,6 +56,10 @@ _FILE_CHARS = frozenset(
     '-_ .|'
 )
 ValT = TypeVar('ValT')
+if _sys.version_info >= (3, 9):
+    StringPath: TypeAlias = Union[str, _os.PathLike[str]]
+else:
+    StringPath: TypeAlias = Union[str, _os.PathLike]
 
 
 def clean_line(line: str) -> str:
@@ -450,7 +454,7 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename: Union[_os.PathLike, str], is_bytes: bool=False, encoding: str='utf8') -> None:
+    def __init__(self, filename: StringPath, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
@@ -469,7 +473,7 @@ class AtomicWriter:
             self.temp.close()
             _os.remove(self.temp.name)
 
-        # Create folders if needed..
+        # Create folders if needed.
         if self.dir:
             _os.makedirs(self.dir, exist_ok=True)
 
