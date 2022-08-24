@@ -7,6 +7,7 @@ from struct import Struct
 import itertools
 import io
 import math
+import sys
 import operator
 
 from typing import (
@@ -640,33 +641,6 @@ class UnknownHelper(Helper):
 
 
 HelperT = TypeVar('HelperT', bound=Helper)
-
-def _init_helper_impl() -> None:
-    """Import and register the helper implementations."""
-    # noinspection PyProtectedMember
-    from srctools import _fgd_helpers as helper_mod
-    for helper_type in vars(helper_mod).values():
-        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
-            if helper_type.TYPE is not None:
-                HELPER_IMPL[helper_type.TYPE] = helper_type
-
-    for helper in HelperTypes:
-        if helper not in HELPER_IMPL:
-            raise ValueError(
-                f'Missing helper implementation for {helper}!'
-            )
-
-
-# Each helper type -> the class implementing them.
-try:
-    # noinspection PyUnresolvedReferences,PyUnboundLocalVariable
-    HELPER_IMPL  # We're importlib.reload()-ing, skip reassignment.
-except NameError:
-    HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
-    _init_helper_impl()
-del _init_helper_impl
-# noinspection PyProtectedMember
-from srctools._fgd_helpers import *
 
 
 @attrs.define(order=True, hash=True, eq=True)
@@ -2298,3 +2272,36 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
+
+
+def _init_helper_impl() -> None:
+    """Import and register the helper implementations."""
+    # noinspection PyProtectedMember
+    from srctools import _fgd_helpers as helper_mod
+    for helper_type in vars(helper_mod).values():
+        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
+            if helper_type.TYPE is not None:
+                HELPER_IMPL[helper_type.TYPE] = helper_type
+
+    for helper in HelperTypes:
+        if helper not in HELPER_IMPL:
+            raise ValueError(
+                f'Missing helper implementation for {helper}! : {HELPER_IMPL}'
+            )
+
+# Each helper type -> the class implementing them.
+HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
+
+# If we're importing, make sure _fgd_helpers is imported fresh. Otherwise, if the module is
+# reloaded it'll be using the old classes, breaking our registration.
+try:
+    del sys.modules['srctools._fgd_helpers']
+    del srctools._fgd_helpers  # type: ignore
+except (KeyError, AttributeError):
+    pass
+
+_init_helper_impl()
+del _init_helper_impl
+# Once done, import all the classes.
+# noinspection PyProtectedMember
+from srctools._fgd_helpers import *

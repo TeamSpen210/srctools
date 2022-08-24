@@ -7,10 +7,7 @@ from typing import (
 import attrs
 
 from srctools import Vec, parse_vec_str
-from srctools.fgd import HelperTypes, Helper
-
-if TYPE_CHECKING:  # Circular import.
-    from srctools.fgd import EntityDef
+from srctools.fgd import HelperTypes, Helper, EntityDef
 
 
 __all__ = [
@@ -499,7 +496,7 @@ class HelperSprite(Helper):
         else:
             return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
+    def get_resources(self, entity: EntityDef) -> Iterator[str]:
         """iconsprite() uses a single material."""
         materials: Iterable[str]
         if self.mat is None:
@@ -563,8 +560,8 @@ class HelperModel(Helper):
         else:
             return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
-        """studio() uses a single material."""
+    def get_resources(self, entity: EntityDef) -> Iterable[str]:
+        """studio() uses a single model."""
         models: Iterable[str]
         if self.model is None:
             try:
