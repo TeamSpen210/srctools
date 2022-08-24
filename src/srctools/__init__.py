@@ -56,10 +56,8 @@ _FILE_CHARS = frozenset(
     '-_ .|'
 )
 ValT = TypeVar('ValT')
-if _sys.version_info >= (3, 9):
-    StringPath: TypeAlias = Union[str, _os.PathLike[str]]
-else:
-    StringPath: TypeAlias = Union[str, _os.PathLike]
+# Pathlike can only be subscripted in 3.9+
+StringPath: TypeAlias = Union[str, '_os.PathLike[str]']
 
 
 def clean_line(line: str) -> str:
@@ -220,8 +218,10 @@ class _SupportsKeysAndGetItem(Protocol):
 
     Since this is for EmptyMapping we don't care about the item type.
     """
-    def keys(self) -> Iterable[Any]: ...
-    def __getitem__(self, __k: Any) -> Any: ...
+    def keys(self) -> Iterable[Any]:
+        raise NotImplementedError
+    def __getitem__(self, __k: Any) -> Any:
+        raise NotImplementedError
 
 
 class _EmptyMapping(MutableMapping[Any, Any]):
@@ -312,7 +312,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         # Also consume args[0] if an iterator - this raises if args > 1.
         {}.update(*args, **kargs)
 
-    __marker: Any = object()
+    __marker: Final[Any] = object()
     @overload
     def pop(self, key: Any) -> NoReturn: ...
     @overload
@@ -437,7 +437,7 @@ class _EmptyValuesView(ValuesView[Any]):
         """Iteration produces no values."""
         return iter(())
 
-_set_hash = hash(frozenset())
+_set_hash: Final = hash(frozenset())
 EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()
 EmptyKeysView: KeysView[Any] = _EmptyKeysView(EmptyMapping)
 EmptyItemsView: ItemsView[Any, Any] = _EmptyItemsView(EmptyMapping)

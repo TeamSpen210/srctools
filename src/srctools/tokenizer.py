@@ -154,6 +154,11 @@ class BaseTokenizer(abc.ABC):
      This is an abstract class, a subclass must be used to provide a source
      for the tokens.
     """
+    filename: Optional[str]
+    error_type: Type[TokenSyntaxError]
+    line_num: int
+    # If set, this token will be returned next.
+    _pushback: Optional[Tuple[Token, str]] = None
 
     def __init__(
         self,
@@ -170,7 +175,6 @@ class BaseTokenizer(abc.ABC):
         else:
             self.filename = None
 
-        self.error_type: Type[TokenSyntaxError]
         if error is None:
             self.error_type = TokenSyntaxError
         else:
@@ -178,8 +182,7 @@ class BaseTokenizer(abc.ABC):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
             self.error_type = error
 
-        # If set, this token will be returned next.
-        self._pushback: Optional[Tuple[Token, str]] = None
+        self._pushback = None
         self.line_num = 1
 
     @overload

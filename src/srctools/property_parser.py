@@ -292,7 +292,7 @@ class Property:
 
         if isinstance(file_contents, BaseTokenizer):
             tokenizer = file_contents
-            tokenizer.filename = filename
+            tokenizer.filename = os.fspath(filename)
             tokenizer.error_type = KeyValError
         else:
             tokenizer = Tokenizer(

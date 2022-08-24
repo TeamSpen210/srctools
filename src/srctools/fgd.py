@@ -2296,7 +2296,8 @@ HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 # reloaded it'll be using the old classes, breaking our registration.
 try:
     del sys.modules['srctools._fgd_helpers']
-    del srctools._fgd_helpers  # type: ignore
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    del srctools._fgd_helpers
 except (KeyError, AttributeError):
     pass
 
