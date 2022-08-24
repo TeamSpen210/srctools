@@ -318,11 +318,13 @@ class HelperFrustum(Helper):
         except ValueError:
             pass
 
-        try:
-            r, g, b = color.split()  # type: ignore
-            color = (float(r), float(g), float(b))
-        except ValueError:
-            pass
+        if isinstance(color, str):
+            try:
+                r, g, b = color.split()
+                color = (float(r), float(g), float(b))
+            except ValueError:
+                pass
+
 
         return cls(fov, nearz, farz, color, pitch)
 
