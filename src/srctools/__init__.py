@@ -2,11 +2,12 @@ import itertools as _itertools
 import os as _os
 import sys as _sys
 from typing import (
-    Type, TypeVar, Tuple, Union, Any, NoReturn, Optional, overload, TYPE_CHECKING,
+    Type, TypeVar, Tuple, Union, Any, NoReturn, Optional, overload,
     Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
     Sequence, List, Container, AbstractSet, Set,
-    Iterable, Iterator, Tuple, IO,
+    Iterable, Iterator, IO,
 )
+from typing_extensions import Final, Protocol
 from types import TracebackType
 from collections import deque
 import warnings
@@ -18,8 +19,6 @@ except ImportError:
 else:
     # Discard the now-useless module. Use globals so static analysis ignores this.
     del _sys.modules[globals().pop('_version').__name__]
-if TYPE_CHECKING:
-    from _typeshed import SupportsKeysAndGetItem
 
 __all__ = [
     '__version__',
@@ -212,6 +211,15 @@ def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Unio
         return default
 
 
+class _SupportsKeysAndGetItem(Protocol):
+    """The parts of a mapping that is required for dict.update().
+
+    Since this is for EmptyMapping we don't care about the item type.
+    """
+    def keys(self) -> Iterable[Any]: ...
+    def __getitem__(self, __k: Any) -> Any: ...
+
+
 class _EmptyMapping(MutableMapping[Any, Any]):
     """A Mapping class which is always empty.
 
@@ -289,7 +297,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
         return default
 
     @overload
-    def update(self, __m: 'SupportsKeysAndGetItem[Any, Any]', **kwargs: Any) -> None: ...
+    def update(self, __m: _SupportsKeysAndGetItem, **kwargs: Any) -> None: ...
     @overload
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
