@@ -1,4 +1,5 @@
 """ VMF Library
+
 Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
@@ -203,14 +204,14 @@ def make_overlay(
 ) -> 'Entity':
     """Generate an overlay on an axis-aligned surface.
 
-    - origin is the center point of the overlay.
-    - uax is the direction and distance for the texture's width ('right').
-    - vax is the direction and distance for the texture's height ('up').
-    - normal is the normal of the surfaces (axis-aligned).
-    - material is the material used.
-    - u_ and v_repeat define how many times to repeat the texture in that
-      direction.
-    - If swap is true, the texture will be rotated 90.
+    :param origin: The center point of the overlay.
+    :param uax: The direction and distance for the texture's width (``right``).
+    :param vax: The direction and distance for the texture's height (``up``).
+    :param normal: The normal of the surface.
+    :param material: The material used.
+    :param u_repeat: Defines how many times to repeat the texture in the U direction.
+    :param v_repeat: Defines how many times to repeat the texture in the V direction.
+    :param swap: If true, the texture will be rotated ``90``.
     """
     if swap:
         uax, vax = vax, -uax
@@ -2989,15 +2990,14 @@ class Output:
         delay: The number of seconds before the output should fire.
 
     Keyword only parameters:
-        inst_out: The local entity for an instance output (instance:name;Output)
-        inst_in: The local entity we are really triggering in instance inputs
-            (instance:name;Input)
-        comma_sep: Use a comma as a separator, instead of the OUTPUT_SEP
+        inst_out: The local entity for an instance output (``instance:name;Output``)
+        inst_in: The local entity we are really triggering in instance inputs (``instance:name;Input``)
+        comma_sep: Use a comma as a separator, instead of the py:const:`OUTPUT_SEP`
             character.
         times: The number of times to fire before being deleted.
-            -1 means forever, Hammer only uses (-1, 1).
-        only_once: Boolean alternative to 'times', setting -1/1 based on
-            True/False.
+            ``-1`` means forever, Hammer only uses ``-1`` and ``1``.
+        only_once: Boolean alternative to ``times``, setting ``-1``/``1`` based on
+            ``True``/``False``.
 
     """
     __slots__ = [

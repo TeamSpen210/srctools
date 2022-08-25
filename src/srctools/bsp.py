@@ -2450,10 +2450,10 @@ class BSP:
     def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
-        This accepts a VMF file like that returned from read_ent_data().
-        Brushes are ignored, so the VMF must use *xx model references.
-
-        use_comma_sep can be used to force using either commas, or 0x1D in I/O.
+        :deprecated: Read and write :py:attr:`BSP.ents` instead.
+        :param vmf: This accepts a VMF file like that returned from read_ent_data().
+            Brushes are ignored, so the VMF must use ``*xx`` model references.
+        :param use_comma_sep: This is used to force using either commas, or ``0x1D`` in I/O.
         """
         if _show_dep:
             warnings.warn('Modify BSP.ents instead', DeprecationWarning, stacklevel=2)

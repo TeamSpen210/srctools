@@ -86,7 +86,7 @@ class GameID(Enum):
 
 
 class SurfFlags(Flag):
-    """The various ``SURF_`` flags, indicating different attributes for faces."""
+    """The various `SURF_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L80-L97>` flags, indicating different attributes for faces."""
     NONE = 0
     LIGHT = 0x1
     """The face has lighting info."""
@@ -125,7 +125,7 @@ class SurfFlags(Flag):
 
 
 class BSPContents(Flag):
-    """The various ``CONTENTS_`` flags, indicating different collision types.
+    """The various `CONTENTS_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L24-L76>`_ flags, indicating different collision types.
 
     This is normally for brushes, but is also used on other things like models.
     """

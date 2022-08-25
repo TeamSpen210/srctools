@@ -82,7 +82,7 @@ class Game:
         return self.path.parent
 
     def parse_search_path(self, prop: Property) -> Path:
-        """Evaluate options like |gameinfo_path|."""
+        """Evaluate options like ``|gameinfo_path|``."""
         if prop.value.casefold().startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -150,13 +150,13 @@ class Game:
 
 
 def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
-    """Locate the game we're in, if launched as a a compiler.
+    """Locate the game we're in, if launched as a compiler.
 
     This checks the following:
-    * -vproject
-    * -game
-    * the VPROJECT environment variable
-    * the current folder and all parents.
+    * ``-vproject``
+    * ``-game``
+    * The :envvar:`VPROJECT` environment variable.
+    * The current folder and all parents.
     """
     if argv is None:
         argv = sys.argv

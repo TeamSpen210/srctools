@@ -6,11 +6,11 @@ set of 'unicode_XXX' encoding formats.
 Special 'stub' elements are possible, which represent elements not present in the file. 
 These are represented by StubElement instances. Additionally, NULL elements are possible.
 
-To parse a DMX file, it must be opened in binary mode (the kind will be detected automatically):
-```py
-with open("path/to/file.dmx", "rb") as f:
-    dmx, format_name, format_version = Element.parse(f)
-```
+To parse a DMX file, it must be opened in binary mode (the kind will be detected automatically)::
+
+    with open("path/to/file.dmx", "rb") as f:
+        dmx, format_name, format_version = Element.parse(f)
+
 The format name/version are stored in the header, allowing indicating the kind of data stored in 
 the file.
 """
@@ -1387,18 +1387,22 @@ class Element(Mapping[str, Attribute]):
     ) -> None:
         """Write out a DMX tree, using the binary format.
 
-        The version must be a number from 0-5.
-        The format name and version can be anything, to indicate which
-        application should read the file.
-        Unicode controls whether Unicode characters are permitted:
-        - 'ascii' (the default) raises an error if any value is non-ASCII. This
+        :param file: A writable binary file to save to.
+        :param version: Must be a number from 0-5.
+        :param fmt_name: This can be any string, to indicate what contents the file contains.
+        :param fmt_ver: This can be a format number, to indicate changes in the format.
+        :param unicode: This controls how Unicode characters are handled.
+
+        For the unicode parameter, the following values are permitted:
+
+        - ``"ascii"`` (the default) raises an error if any value is non-ASCII. This
           ensures no encoding issues occur when read by the game.
-        - 'format' changes the encoding format to 'unicode_binary', allowing
+        - ``"format"`` changes the encoding format to ``"unicode_binary"``, allowing
           the file to be rejected if the game tries to read it and this module's
           parser to automatically switch to Unicode.
-        - 'silent' outputs UTF8 without any marker, meaning it could be parsed
+        - ``"silent"`` outputs UTF8 without any marker, meaning it could be parsed
           incorrectly by the game or other utilties. This must be parsed with
-          unicode=True to succeed.
+          ``unicode=True`` to succeed.
         """
         if not (0 <= version <= 5):
             raise ValueError(f'Invalid version: {version} is not within range 0-5!')

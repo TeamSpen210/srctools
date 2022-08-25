@@ -97,8 +97,10 @@ class Instance:
     ) -> str:
         """Transform this keyvalue to the new instance's location and name.
 
-        - classnames is a set of known entity classnames, used to avoid renaming
-        those.
+        :param vmf: The rest of the map.
+        :param classnames: This is a set of known entity classnames, used to avoid renaming those.
+        :param type: The kind of FGD value.
+        :param value: The value of the key.
         """
         # All three are absolute positions.
         if type is ValueTypes.VEC or type is ValueTypes.VEC_ORIGIN or type is ValueTypes.VEC_LINE:
@@ -278,11 +280,11 @@ def collapse_one(
 
     The FGD is the data used to localise keyvalues. If none an internal database
     will be used.
-    The visgroup paramter controls how visgroups are handled:
-    * If false, visgroups are stripped.
-    * If true, the original visgroups will be kept
-    * If set to a specific visgroup, all ents and brushes will be added to it,
-        with any existing visgroups in the instance added as a child.
+    The visgroup parameter controls how visgroups are handled:
+
+    * If ``False``, visgroups are stripped.
+    * If ``True``, the original visgroups will be kept
+    * If set to a specific visgroup, all ents and brushes will be added to it, with any existing visgroups in the instance added as a child.
     """
     origin = inst.pos
     orient = inst.orient
@@ -471,11 +473,14 @@ def collapse_all(
     recur_limit: int = 100,
     fgd: FGD = None,
 ) -> None:
-    """Searches for `func_instance`s in the map, then collapses them.
+    """Searches for ``func_instance`` in the map, then collapses them.
 
-    The filesystem is used to find the relevant instances.
-    The recursion limit indicates how many instances can be contained
-    in another - if it's exceeded they're left in the map.
+    :param vmf: The map to analyse.
+    :param fsys: The filesystem is used to find the relevant instances.
+    :param recur_limit: The recursion limit indicates how many instances can be contained in
+        another - if it's exceeded they're left in the map.
+    :param fgd: The FGD is used to determine how to handle keyvalues. If not provided, an internal
+        database from HammerAddons is used.
     """
     if fgd is None:
         fgd = FGD.engine_dbase()

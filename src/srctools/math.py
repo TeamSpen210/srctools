@@ -610,7 +610,7 @@ class Vec(SupportsRound['Vec']):
         """For an axis-aligned normal, return the angles which rotate around it.
 
         This is deprecated, use :py:func:`Matrix.axis_angle()` and then :py:func:`Matrix.to_angle()`.
-        ``axis_angle()` works for any arbitary axis.
+        ``axis_angle()`` works for any arbitary axis.
         """
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self.x and not self.y and not self.z:

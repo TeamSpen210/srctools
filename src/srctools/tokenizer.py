@@ -3,16 +3,16 @@
 This is used internally for parsing KV1, text DMX, FGDs, VMTs, etc. If available this will be
 replaced with a faster Cython-optimised version.
 
-The `BaseTokenizer` class implements various helper functions for navigating through the token
-stream. The `Tokenizer` class then takes text file objects, a full string or an iterable of strings
-and actually parses it into tokens, while `IterTokenizer` allows transforming the stream before the
-destination receives it.
+The py:class:`BaseTokenizer` class implements various helper functions for navigating through the
+token stream. The py:class:`Tokenizer` class then takes text file objects, a full string or an
+iterable of strings and actually parses it into tokens, while py:class:`IterTokenizer` allows
+transforming the stream before the destination receives it.
 
 Once the tokenizer is created, either iterate over it or call the tokenizer to fetch the next
-token/value pair. One token of lookahead is supported, accessed by the `BaseTokenizer.peek()` and 
-`BaseTokenizer.push_back()` methods. They also track the current line number as data is read,
-letting you `raise BaseTokenizer.error(...)` to easily produce an exception listing the relevant
-line number and filename.
+token/value pair. One token of lookahead is supported, accessed by the
+:py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
+the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
+produce an exception listing the relevant line number and filename.
 """
 from enum import Enum
 from os import fspath as _conv_path
@@ -29,14 +29,18 @@ from srctools import StringPath
 class TokenSyntaxError(Exception):
     """An error that occurred when parsing a file. 
 
-    Normally this is created via `BaseTokenizer.error()` which formats text into the error and
-    includes the filename/line number from the tokenizer.
+    Normally this is created via py:func:`BaseTokenizer.error()` which formats text into the error
+    and includes the filename/line number from the tokenizer.
 
-    mess = The error message that occurred.
-    file = The filename of the file beijg parsed, or None if not known.
-    line_num = The line where the error occurred, or None if not applicable (EOF, for instance).
-    The string representation will include the latter two if present.
+    The string representation will include the provided file and line number if present.
     """
+    mess: str
+    """The error message that occurred."""
+    file: Optional[StringPath]
+    """The filename of the file beijg parsed, or None if not known."""
+    line_num: Optional[int]
+    """The line where the error occurred, or None if not applicable (EOF, for instance)."""
+
     def __init__(
         self,
         message: str,
@@ -67,7 +71,7 @@ class TokenSyntaxError(Exception):
         """
         mess = self.mess
         if self.line_num:
-            mess += '\nError occurred on line ' + str(self.line_num)
+            mess += f'\nError occurred on line {self.line_num}'
             if self.file:
                 mess += ', with file'
             else:
@@ -81,17 +85,17 @@ class TokenSyntaxError(Exception):
 
 class Token(Enum):
     """A token type produced by the tokenizer."""
-    EOF = 0  # Ran out of text.
-    STRING = 1  # Quoted or unquoted text
-    NEWLINE = 2  # \n
-    PAREN_ARGS = 3  # (data)
-    DIRECTIVE = 4  #  #name (automatically casefolded)
+    EOF = 0  #+ Ran out of text.
+    STRING = 1  #+ Quoted or unquoted text
+    NEWLINE = 2  #+ ``\n``
+    PAREN_ARGS = 3  #+ ``(data)``
+    DIRECTIVE = 4  #+ ``#name`` (automatically casefolded).
 
     BRACE_OPEN = 5
     BRACE_CLOSE = 6
 
-    PROP_FLAG = 10  # [!flag]
-    BRACK_OPEN = 11  # only if above is not used
+    PROP_FLAG = 10  #+ A ``[!flag]``
+    BRACK_OPEN = 11  #+ Only used if ``PROP_FLAG`` is not.
     BRACK_CLOSE = 12
 
     COLON = 13
@@ -143,7 +147,7 @@ ESCAPES = {
     '\n': '',
 }
 
-# Characters not allowed for bare names on a line.
+#+ Characters not allowed for bare names on a line.
 BARE_DISALLOWED = set('"\'{};,[]()\n\t ')
 
 
@@ -157,7 +161,7 @@ class BaseTokenizer(abc.ABC):
     filename: Optional[str]
     error_type: Type[TokenSyntaxError]
     line_num: int
-    # If set, this token will be returned next.
+    #+ If set, this token will be returned next.
     _pushback: Optional[Tuple[Token, str]] = None
 
     def __init__(
@@ -351,12 +355,14 @@ class Tokenizer(BaseTokenizer):
     Due to many inconsistencies in Valve's parsing of files,
     several options are available to control whether different
     syntaxes are accepted:
-        * string_bracket parses [bracket] blocks as a single string-like block.
-          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
-        * allow_escapes controls whether \\n-style escapes are expanded.
-        * allow_star_comments if enabled allows /* */ comments.
-        * colon_operator controls if : produces COLON tokens, or is treated as
-          a bare string.
+
+    * string_bracket parses `[bracket]` blocks as a single string-like block.
+        If disabled these are parsed as :py:const:`Token.BRACK_OPEN`, :py:const`Token.STRING` or
+        :py:const:`Token.BRACK_CLOSE`.
+    * allow_escapes controls whether ``\\n``-style escapes are expanded.
+    * allow_star_comments if enabled allows ``/* */`` comments.
+    * colon_operator controls if ``:`` produces :py:const:`Token.COLON` tokens, or is treated as
+      a bare string.
     """
     chunk_iter: Iterator[str]
 

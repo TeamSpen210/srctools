@@ -1,6 +1,7 @@
 """Reads and parses Valve's KeyValues files.
 
-These files follow the following general format:
+These files follow the following general format::
+
     "Name"
         {
         "Name" "Value" // Comment
@@ -12,29 +13,30 @@ These files follow the following general format:
         "SecondName" "ps3-only value" [ps3]
         "Third_Name" "never on Linux" [!linux]
         "Name" "multi-line values
-are supported like this.
-They end with a quote."
+    are supported like this.
+    They end with a quote."
         }
 
-    The names are usually case-insensitive.
-    Call 'Property(name, value) to get a property object, or
-    Property.parse(file, 'name') to parse a file.
+The names are usually case-insensitive.
+Call ``Property(name, value)`` to get a property object, or ``Property.parse(file, 'filename')``
+to parse a file.
 
-    This will perform a round-trip file read:
+This will perform a round-trip file read::
+
     >>> with open('filename.txt', 'r') as f:  # doctest: +SKIP
     ...     props = Property.parse(f, 'filename.txt')
     ... with open('filename_2.txt', 'w') as f:
     ...     for line in props.export():
     ...         f.write(line)
 
-    Property values should be either a string, or a list of children Properties.
-    Names will be converted to lowercase automatically; use Prop.real_name to
-    obtain the original spelling. To allow multiple root blocks in a file, the
-    returned property from Property.parse() is special and will export with
-    un-indented children.
+Property values should be either a string, or a list of children Properties.
+Names will be converted to lowercase automatically; use Prop.real_name to
+obtain the original spelling. To allow multiple root blocks in a file, the
+returned property from Property.parse() is special and will export with
+un-indented children.
 
-    Properties with children can be indexed by their names, or by a
-    ('name', default) tuple:
+Properties with children can be indexed by their names, or by a
+('name', default) tuple::
 
     >>> props = Property('Top', [
     ...     Property('child1', '1'),
@@ -55,7 +57,7 @@ They end with a quote."
     >>> props
     Property('Top', [Property('child1', '1'), Property('child3', 'new value')])
 
-    \n, \t, and \\ will be converted in Property values.
+Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
 import os
 import sys
@@ -148,8 +150,7 @@ class Property:
     Value should be a string (for leaf properties), or a list of children
     Property objects.
     The name should be a string, or None for a root object.
-    Root objects export each child at the topmost indent level.
-        This is produced from Property.parse() calls.
+    Root objects export each child at the topmost indent level. This is produced from ``Property.parse()`` calls.
     """
     # Helps decrease memory footprint with lots of Property values.
     __slots__ = ('_folded_name', '_real_name', '_value')
@@ -252,19 +253,13 @@ class Property:
     ) -> "Property":
         """Returns a Property tree parsed from given text.
 
-        * `file_contents` should be an iterable of strings or a single string.
-          Alternatively, file_contents may be an already created tokenizer.
-          In this case allow_escapes is ignored.
-        * `filename`, if set should be the source of the text for debug purposes. If not supplied,
-          file_contents.name will be used if present.
-        * flags should be a mapping for additional [flag] suffixes to accept.
-        * `allow_escapes` allows choosing if \\t or similar escapes are parsed.
-        * If `single_line` is set, allow multiple properties to be on the same line.
-          This means unterminated strings will be caught late (if at all), but
-          it allows parsing some 'internal' data blocks.
-        * `newline_keys` and `newline_values` specify if newline characters are allowed in keys or
-          values, respectively. Keys are prohibited by default, since this is fairly useless, but
-          if quote characters are mismatched it'll catch the mistake early.
+        :param file_contents: should be an iterable of strings or a single string. Alternatively, file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
+        :param filename: If set this should be the source of the text for debug purposes. If not supplied, ``file_contents.name`` will be used if present.
+        :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
+        :param allow_escapes: This allows choosing if ``\\t`` or similar escapes are parsed.
+        :param single_line: If this is set, allow multiple properties to be on the same line. This means unterminated strings will be caught late (if at all), but it allows parsing some 'internal' data blocks.
+        :param newline_keys: This specifies if newline characters are allowed in keys. Keys are prohibited by default, since this is fairly useless, but if quote characters are mismatched it'll catch the mistake early.
+        :param newline_values: This specifies if newline characters are allowed in string values.
         """
         # The block we are currently adding to.
 
@@ -663,8 +658,8 @@ class Property:
     def set_key(self, path: Union[Tuple[str, ...], str], value: str) -> None:
         """Set the value of a key deep in the tree hierarchy.
 
-        -If any of the hierarchy do not exist (or do not have children),
-          blank properties will be added automatically
+        - If any of the hierarchy do not exist (or do not have children), blank properties will be
+            added automatically.
         - path should be a tuple of names, or a single string.
         """
         if not isinstance(self._value, list):
@@ -1122,44 +1117,46 @@ class Property:
     def build(self) -> '_Builder':
         """Allows appending a tree to this property in a convenient way.
 
-        Use as follows:
-        # doctest: +NORMALIZE_WHITESPACE
-        >>> prop = Property('name', [])
-        >>> with prop.build() as builder:
-        ...     builder.root1('blah')
-        ...     builder.root2('blah')
-        ...     with builder.subprop:
-        ...         subprop = builder.config('value')
-        ...         builder['unusual name']('value')
-        Property('root1', 'blah')
-        Property('root2', 'blah')
-        Property('unusual name', 'value')
-        >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
-        "config" "value"
-        >>> print(''.join(prop.export())) # doctest: +NORMALIZE_WHITESPACE
-        "name"
-            {
-            "root1" "blah"
-            "root2" "blah"
-            "subprop"
+        Use as follows::
+
+            # doctest: +NORMALIZE_WHITESPACE
+            >>> prop = Property('name', [])
+            >>> with prop.build() as builder:
+            ...     builder.root1('blah')
+            ...     builder.root2('blah')
+            ...     with builder.subprop:
+            ...         subprop = builder.config('value')
+            ...         builder['unusual name']('value')
+            Property('root1', 'blah')
+            Property('root2', 'blah')
+            Property('unusual name', 'value')
+            >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
+            "config" "value"
+            >>> print(''.join(prop.export())) # doctest: +NORMALIZE_WHITESPACE
+            "name"
                 {
-                "config" "value"
-                "unusual name" "value"
+                "root1" "blah"
+                "root2" "blah"
+                "subprop"
+                    {
+                    "config" "value"
+                    "unusual name" "value"
+                    }
                 }
-            }
 
-        Return values/results of the context manager are the properties.
-        Set names by builder.name, builder['name']. For keywords append '_'.
+        The return values/results of the context manager are the properties.
+        Set names by ``builder.name``, ``builder['name']``. For keywords append ``_``.
 
-        Alternatively:
-        >>> with Property('name', []).build() as builder:
-        ...     builder.root1('blah')
-        ...     builder.root2('blah')
-        Property('root1', 'blah')
-        Property('root2', 'blah')
-        >>> prop = builder()
-        >>> print(repr(prop))
-        Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
+        Alternatively::
+
+            >>> with Property('name', []).build() as builder:
+            ...     builder.root1('blah')
+            ...     builder.root2('blah')
+            Property('root1', 'blah')
+            Property('root2', 'blah')
+            >>> prop = builder()
+            >>> print(repr(prop))
+            Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
         """
         if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))

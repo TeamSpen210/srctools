@@ -1780,11 +1780,9 @@ class FGD:
     ) -> 'FGD':
         """Parse an FGD file.
 
-        Parameters:
-        * file: A filesys.File representing the file to read, or a file path.
-        * filesystem: The system to lookup files in. This is needed to
-          resolve file inclusions. If not passed, file must be a filesystem
-          File to obtain a matching filesystem.
+        :param file: A :py:class:filesystem.File` representing the file to read, or a file path.
+        :param filesystem: The system to lookup files in. This is needed to resolve file inclusions.
+            If not passed, file must be a :py:class:filesystem.File` to retrieve this automatically.
         """
         if filesystem is not None and not isinstance(file, File):
             if not file.endswith('.fgd'):
