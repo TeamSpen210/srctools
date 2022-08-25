@@ -152,7 +152,7 @@ else:
 
 _VEC_ADDSUB_TEMP = '''
 def __{func}__(self, other: Union['Vec', tuple, float]):
-    """{op} operation.
+    """``{op}`` operation.
 
     This additionally works on scalars (adds to all axes).
     """
@@ -177,7 +177,7 @@ def __{func}__(self, other: Union['Vec', tuple, float]):
         return Py_Vec(x, y, z)
 
 def __r{func}__(self, other: Union['Vec', tuple, float]):
-    """{op} operation with reversed operands.
+    """``{op}`` operation with reversed operands.
 
     This additionally works on scalars (adds to all axes).
     """
@@ -202,7 +202,7 @@ def __r{func}__(self, other: Union['Vec', tuple, float]):
         return Py_Vec(x, y, z)
 
 def __i{func}__(self, other: Union['Vec', tuple, float]):
-    """{op}= operation.
+    """``{op}=`` operation.
 
     Like the normal one except without duplication.
     """
@@ -228,7 +228,7 @@ def __i{func}__(self, other: Union['Vec', tuple, float]):
 
 _VEC_MULDIV_TEMP = '''
 def __{func}__(self, other: float):
-    """Vector {op} scalar operation."""
+    """``Vector {op} scalar`` operation."""
     if isinstance(other, Py_Vec):
         raise TypeError("Cannot {pretty} 2 Vectors.")
     else:
@@ -242,7 +242,7 @@ def __{func}__(self, other: float):
             return NotImplemented
 
 def __r{func}__(self, other: float):
-    """scalar {op} Vector operation."""
+    """``scalar {op} Vector`` operation."""
     if isinstance(other, Py_Vec):
         raise TypeError("Cannot {pretty} 2 Vectors.")
     else:
@@ -257,7 +257,7 @@ def __r{func}__(self, other: float):
 
 
 def __i{func}__(self, other: float):
-    """{op}= operation.
+    """``{op}=`` operation.
 
     Like the normal one except without duplication.
     """
@@ -336,8 +336,8 @@ class Vec(SupportsRound['Vec']):
 
         All values are converted to floats automatically.
         If no value is given, that axis will be set to 0.
-        An iterable can be passed in (as the x argument), which will be
-        used for x, y, and z.
+        An iterable can be passed in (as the ``x`` argument), which will be
+        used for ``x``, ``y``, and ``z``.
         """
         if isinstance(x, (int, float)):
             self.x = float(x)
@@ -369,10 +369,10 @@ class Vec(SupportsRound['Vec']):
 
     @classmethod
     def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
-        """Convert a string in the form '(4 6 -4)' into a Vector.
+        """Convert a string in the form ``(4 6 -4)`` into a Vector.
 
-         If the string is unparsable, this uses the defaults (x,y,z).
-         The string can start with any of the (), {}, [], <> bracket
+         If the string is unparsable, this uses the defaults ``(x,y,z)``.
+         The string can start with any of the ``()``, ``{}``, ``[]``, ``<>`` bracket
          types, or none.
 
          If the value is already a vector, a copy will be returned.
@@ -441,7 +441,7 @@ class Vec(SupportsRound['Vec']):
     ) -> 'Vec':
         """Old method to rotate a vector by a Source rotational angle.
         
-        This is deprecated, do `Vec(...) @ Angle(...)` instead.
+        This is deprecated, do ``Vec(...) @ Angle(...)`` instead.
 
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
@@ -485,7 +485,7 @@ class Vec(SupportsRound['Vec']):
         """Compute the bounding box for a set of points.
 
         Pass either several Vecs, or an iterable of Vecs.
-        Returns a (min, max) tuple.
+        Returns a ``(min, max)`` :external:py:class:`tuple`.
         """
         # Allow passing a single iterable, but also handle a single Vec.
         # The error messages match those produced by min()/max().
@@ -537,9 +537,11 @@ class Vec(SupportsRound['Vec']):
                     yield cls(x, y, z)
 
     def iter_line(self, end: 'Vec', stride: int=1) -> Iterator['Vec']:
-        """Yield points between this point and 'end' (including both endpoints).
+        """Yield points in a line (including both endpoints).
 
-        Stride specifies the distance between each point.
+        :param stride: This specifies the distance between each point.
+        :param end: The other end of the line.
+
         If the distance is less than the stride, only end-points will be yielded.
         If they are the same, that point will be yielded.
         """
@@ -558,7 +560,10 @@ class Vec(SupportsRound['Vec']):
         yield end.copy()  # Directly yield - ensures no rounding errors.
 
     def axis(self) -> str:
-        """For a normal vector, return the axis it is on."""
+        """For an axis-aligned vector, return the axis it is on.
+
+        :raises ValueError: If the vector is not on-axis.
+        """
         x = abs(self.x) > 1e-6
         y = abs(self.y) > 1e-6
         z = abs(self.z) > 1e-6
@@ -576,10 +581,10 @@ class Vec(SupportsRound['Vec']):
     def to_angle(self, roll: float=0) -> 'Angle':
         """Convert a normal to a Source Engine angle.
 
-        A +x axis vector will result in a 0, 0, 0 angle. The roll is not
-        affected by the direction of the normal.
+        A ``+x`` vector will result in a ``0, 0, 0`` angle. The roll is not
+        affected by the direction of the vector, so it is provided separately.
 
-        The inverse of this is `Vec(x=1) @ Angle(pitch, yaw, roll)`.
+        The inverse of this is ``Vec(x=1) @ Angle(pitch, yaw, roll)``.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.hypot(self.x, self.y)
@@ -591,17 +596,22 @@ class Vec(SupportsRound['Vec']):
 
     def to_angle_roll(self, z_norm: 'Vec', stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
+        This is deprecated, use :py:func:`Matrix.from_basis()` and then
+        :py:func:`Matrix.to_angle()`. ``from_basis()`` can take any two direction pairs.
 
-        The z_normal should point in +z, and must be at right angles to this
-        vector.
-        This is deprecated, use Matrix.from_basis().to_angle().
-        Stride is no longer used.
+        :param z_norm: This must be at right angles to this vector. The resulting angle's ``+z``
+            axis will point in this direction.
+        :param stride: is no longer used, it defined the roll angles to try.
         """
         warnings.warn('Use Matrix.from_basis().to_angle()', DeprecationWarning)
         return Py_Matrix.from_basis(x=self, z=z_norm).to_angle()
 
     def rotation_around(self, rot: float=90) -> 'Angle':
-        """For an axis-aligned normal, return the angles which rotate around it."""
+        """For an axis-aligned normal, return the angles which rotate around it.
+
+        This is deprecated, use :py:func:`Matrix.axis_angle()` and then :py:func:`Matrix.to_angle()`.
+        ``axis_angle()` works for any arbitary axis.
+        """
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self.x and not self.y and not self.z:
             return Py_Angle(roll=math.copysign(rot, self.x))
@@ -613,7 +623,7 @@ class Vec(SupportsRound['Vec']):
             raise ValueError('Zero vector!')
 
     def __abs__(self) -> 'Vec':
-        """Performing abs() on a Vec takes the absolute value of all axes."""
+        """Performing :external:py:func:`abs()` on a Vec takes the absolute value of all axes."""
         return Py_Vec(
             abs(self.x),
             abs(self.y),
@@ -728,11 +738,11 @@ class Vec(SupportsRound['Vec']):
         return self.x != 0 or self.y != 0 or self.z != 0
 
     def __eq__(self, other: object) -> bool:
-        """== test.
+        """Equality test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
-        A tolerance of 1e-6 is accounted for automatically.
+        A tolerance of ``1e-6`` is accounted for automatically.
         """
         if isinstance(other, Py_Vec):
             return (
@@ -750,7 +760,7 @@ class Vec(SupportsRound['Vec']):
             return NotImplemented
 
     def __ne__(self, other: object) -> bool:
-        """!= test.
+        """Inequality test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
@@ -772,7 +782,7 @@ class Vec(SupportsRound['Vec']):
             return NotImplemented
 
     def __lt__(self, other: AnyVec) -> bool:
-        """A<B test.
+        """``A<B`` test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
@@ -794,7 +804,7 @@ class Vec(SupportsRound['Vec']):
             return NotImplemented
 
     def __le__(self, other: AnyVec) -> bool:
-        """A<=B test.
+        """``A<=B`` test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
@@ -816,7 +826,7 @@ class Vec(SupportsRound['Vec']):
             return NotImplemented
 
     def __gt__(self, other: AnyVec) -> bool:
-        """A>B test.
+        """``A>B`` test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
@@ -838,7 +848,7 @@ class Vec(SupportsRound['Vec']):
             return NotImplemented
 
     def __ge__(self, other: AnyVec) -> bool:
-        """A>=B test.
+        """``A>=B`` test.
 
         Two Vectors are compared based on the axes.
         A Vector can be compared with a 3-tuple as if it was a Vector also.
@@ -881,7 +891,7 @@ class Vec(SupportsRound['Vec']):
     def lerp(cls, x: float, in_min: float, in_max: float, out_min: 'Vec', out_max: 'Vec') -> 'Vec':
         """Linerarly interpolate between two vectors.
 
-        If in_min and in_max are the same, ZeroDivisionError is raised.
+        :raises ZeroDivisionError: If ``in_min`` and ``in_max`` are the same.
         """
         x_off = x - in_min
         diff = in_max - in_min
@@ -897,7 +907,7 @@ class Vec(SupportsRound['Vec']):
     def __round__(self, ndigits: int) -> 'Vec': ...  # noqa
 
     def __round__(self, ndigits: int=0) -> Union['Vec', Any]:
-        """Performing round() on a Py_Vec rounds each axis."""
+        """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return Py_Vec(
             round(self.x, ndigits),
             round(self.y, ndigits),
@@ -911,7 +921,7 @@ class Vec(SupportsRound['Vec']):
     def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
-        This strips off the .0 if no decimal portion exists.
+        This strips off the ``.0`` if no decimal portion exists.
         """
         # :g strips the .0 off of floats if it's an integer.
         return f'{self.x:g}{delim}{self.y:g}{delim}{self.z:g}'
@@ -925,17 +935,20 @@ class Vec(SupportsRound['Vec']):
         return f"{self.x:g} {self.y:g} {self.z:g}"
 
     def __format__(self, format_spec: str) -> str:
-        """Control how the text is formatted."""
+        """Control how the text is formatted.
+
+        This returns each axis formated with the provided specification, joined by spaces.
+        """
         if not format_spec:
             format_spec = 'g'
         return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
 
     def __repr__(self) -> str:
-        """Code required to reproduce this vector."""
+        """Produce the code required to reproduce this vector."""
         return f"Vec({self.x:g}, {self.y:g}, {self.z:g})"
 
     def __iter__(self) -> Iterator[float]:
-        """Allow iterating through the dimensions."""
+        """Iterating through the vector yields each axis in order."""
         yield self.x
         yield self.y
         yield self.z
@@ -985,7 +998,7 @@ class Vec(SupportsRound['Vec']):
 
     @staticmethod
     def bbox_intersect(min1: 'Vec', max1: 'Vec', min2: 'Vec', max2: 'Vec') -> bool:
-        """Check if the (min1, max1) bbox intersects the (min2, max2) bbox."""
+        """Check if the ``(min1, max1)`` bounding box intersects the ``(min2, max2)`` bounding box."""
         if max1.x < min2.x or max2.x < min1.x:
             return False
         if max1.y < min2.y or max2.y < min1.y:
@@ -1013,12 +1026,11 @@ class Vec(SupportsRound['Vec']):
         return self.x**2 + self.y**2 + self.z**2
 
     def __len__(self) -> int:
-        """The len() of a vector is always 3."""
+        """The :external:py:func:`len()` of a vector is always ``3``."""
         return 3
 
     def __contains__(self, val: float) -> bool:
-        """Check to see if an axis is set to the given value.
-        """
+        """Check to see if an axis is set to the given value."""
         return abs(val - self.x) < 1e-6 or abs(val - self.y) < 1e-6 or abs(val - self.z) < 1e-6
 
     def __neg__(self) -> 'Vec':
@@ -1026,7 +1038,7 @@ class Vec(SupportsRound['Vec']):
         return Py_Vec(-self.x, -self.y, -self.z)
 
     def __pos__(self) -> 'Vec':
-        """+ on a Vector simply copies it."""
+        """``+`` on a Vector simply copies it."""
         return Py_Vec(self.x, self.y, self.z)
 
     def norm(self) -> 'Vec':
@@ -1034,7 +1046,7 @@ class Vec(SupportsRound['Vec']):
 
          This is done by transforming it to have a magnitude of 1 but the same
          direction.
-         The vector is left unchanged if it is equal to (0,0,0)
+         The vector is left unchanged if it is equal to ``(0,0,0)``, instead of raising.
          """
         if self.x == 0 and self.y == 0 and self.z == 0:
             # Don't do anything for this - otherwise we'd get division
@@ -1049,7 +1061,7 @@ class Vec(SupportsRound['Vec']):
     def dot(self, other: AnyVec) -> float:
         """Return the dot product of both Vectors.
 
-        Tip: using this in the form `Vec.dot(a, b)` may be more readable.
+        Tip: using this in the form ``Vec.dot(a, b)`` may be more readable.
         """
         return (
             self.x * other[0] +
@@ -1060,7 +1072,7 @@ class Vec(SupportsRound['Vec']):
     def cross(self, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors.
 
-        Tip: using this in the form `Vec.cross(a, b)` may be more readable.
+        Tip: using this in the form ``Vec.cross(a, b)`` may be more readable.
         """
         return Py_Vec(
             self.y * other[2] - self.z * other[1],
@@ -1077,7 +1089,7 @@ class Vec(SupportsRound['Vec']):
 
         This effectively translates local-space offsets to a global location,
         given the parent's origin and angles.
-        This is an in-place version of `self @ angles + origin`.
+        This is an in-place version of ``self @ angles + origin``.
         """
         mat = to_matrix(angles)
         mat._vec_rot(self)
@@ -1119,7 +1131,7 @@ class Matrix:
     """Represents a rotation via a transformation matrix.
 
     When performing multiple rotations, it is more efficient to create one of these instead of using
-    an `Angle` directly. To construct a rotation, use one of the several classmethods available
+    an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
     depending on what rotation is desired.
     """
     __slots__ = [
@@ -1513,15 +1525,15 @@ class Angle:
     Addition and subtraction can be performed 
     between angles, while division/multiplication must be between an angle and scalar (to scale).
 
-    Like vectors, each axis can be accessed by getting/setting `pitch`/`yaw` and `roll` attributes.
+    Like vectors, each axis can be accessed by getting/setting ``pitch``/``yaw`` and ``roll`` attributes.
     In addition, the following indexes are allowed (case-insensitive):
 
-    * `0`, `1`, `2`
-    * `"p"`, `"y"`, `"r"`
-    * `"pitch"`, `"yaw"`, `"roll"`
-    * `"pit"`, `"yaw"`, `"rol"`
+    * ``0``, ``1``, ``2``
+    * ``"p"``, ``"y"``, ``r``
+    * ``"pitch"``, ``"yaw"``, ``"roll"``
+    * ``"pit"``, ``"yaw"``, ``"rol"``
 
-    All values are remapped to between 0-360 when set.
+    All values are remapped to between ``0-360`` when set.
     """
     # We have to double-modulus because -1e-14 % 360.0 = 360.0.
     # Use the private attrs for matching also, we only hook assignment.
@@ -1552,7 +1564,7 @@ class Angle:
             self._roll = float(next(it, roll)) % 360 % 360
 
     def copy(self) -> 'Angle':
-        """Create a duplicate of this vector."""
+        """Create a duplicate of this angle."""
         return Py_Angle(self._pitch, self._yaw, self._roll)
 
     __copy__ = copy
@@ -1573,10 +1585,10 @@ class Angle:
         yaw: float = 0.0,
         roll: float = 0.0,
     ) -> 'Angle':
-        """Convert a string in the form '(4 6 -4)' into an Angle.
+        """Convert a string in the form ``(4 6 -4)`` into an Angle.
 
          If the string is unparsable, this uses the defaults.
-         The string can start with any of the (), {}, [], <> bracket
+         The string can start with any of the ``()``, ``{}``, ``[]``, ``<>`` bracket
          types, or none.
 
          If the value is already an Angle, a copy will be returned.
@@ -1740,10 +1752,10 @@ class Angle:
         """Allow reading values by index instead of name if desired.
 
         This accepts the following indexes to read values:
-        - 0, 1, 2
-        - pitch, yaw, roll
-        - pit, yaw, rol
-        - p, y, r
+        - ``0``, ``1``, ``2``
+        - ``"pitch"``, ``"yaw"``, ``"roll"``
+        - ``"pit"``, ``"yaw"``, ``"rol"``
+        - ``"p"``, ``"y"``, ``"r"``
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind in (0, 'p', 'pit', 'pitch'):
@@ -1757,7 +1769,11 @@ class Angle:
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
-        This accepts either 0,1,2 or 'x','y','z' to edit values.
+        This accepts the following indexes to edit values:
+        - ``0``, ``1``, ``2``
+        - ``"pitch"``, ``"yaw"``, ``"roll"``
+        - ``"pit"``, ``"yaw"``, ``"rol"``
+        - ``"p"``, ``"y"``, ``"r"``
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind in (0, 'p', 'pit', 'pitch'):
@@ -1770,7 +1786,7 @@ class Angle:
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
     def __eq__(self, other: object) -> bool:
-        """== test.
+        """``==`` test.
 
         Two Angles are equal if all three axes are the same.
         An Angle can be compared with a 3-tuple as if it was a Angle also.
@@ -1795,7 +1811,7 @@ class Angle:
             return NotImplemented
 
     def __ne__(self, other: object) -> bool:
-        """!= test.
+        """``!=`` test.
 
         Two Angles are equal if all three axes are the same.
         An Angle can be compared with a 3-tuple as if it was a Angle also.
@@ -1821,7 +1837,7 @@ class Angle:
     # No ordering, there isn't any sensible relationship.
 
     def __mul__(self, other: Union[int, float]) -> 'Angle':
-        """Angle * float multiplies each value."""
+        """Angle ``*`` float multiplies each value."""
         if isinstance(other, (int, float)):
             return Py_Angle(
                 self._pitch * other,
@@ -1831,7 +1847,7 @@ class Angle:
         return NotImplemented
 
     def __rmul__(self, other: Union[int, float]) -> 'Angle':
-        """Angle * float multiplies each value."""
+        """Angle ``*`` float multiplies each value."""
         if isinstance(other, (int, float)):
             return Py_Angle(
                 other * self._pitch,
@@ -1842,7 +1858,7 @@ class Angle:
 
     # noinspection PyProtectedMember
     def __matmul__(self, other: 'Angle | Matrix') -> 'Angle':
-        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        """Angle ``@`` Angle or Angle ``@`` Matrix rotates the first by the second."""
         if isinstance(other, Py_Angle):
             return other._rotate_angle(self)
         elif isinstance(other, Py_Matrix):
@@ -1854,7 +1870,7 @@ class Angle:
 
     # noinspection PyProtectedMember
     def __imatmul__(self, other: 'Angle | Matrix') -> 'Angle':
-        """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
+        """Angle ``@`` Angle or Angle ``@`` Matrix rotates the first by the second."""
         if isinstance(other, Py_Angle):
             self._pitch, self._yaw, self._roll = other._rotate_angle(self)
             return self
@@ -1874,7 +1890,7 @@ class Angle:
     def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
 
     def __rmatmul__(self, other: object) -> Union['Angle', 'Vec']:
-        """Vec @ Angle rotates the first by the second."""
+        """Vec ``@`` Angle rotates the first by the second."""
         if isinstance(other, Py_Vec):
             return other @ Py_Matrix.from_angle(self)
         elif isinstance(other, tuple):

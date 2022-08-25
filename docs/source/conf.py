@@ -51,6 +51,12 @@ intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
 }
 
+
+# Fully-qualified is way too verbose.
+autodoc_typehints_format = 'short'
+autodoc_member_order = 'bysource'
+
+
 # -- Options for HTML output -------------------------------------------------
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
