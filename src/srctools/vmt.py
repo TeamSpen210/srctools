@@ -1,6 +1,6 @@
 """Parses material files."""
 from typing import (
-    Iterable, Tuple, TypeVar, Union, Dict, Callable, Optional, Iterator,
+    Iterable, List, Tuple, TypeVar, Union, Dict, Callable, Optional, Iterator,
     MutableMapping, Mapping, TextIO, overload,
 )
 import sys
@@ -95,15 +95,18 @@ def _get_parm_type_real(name: str, default: Optional[ArgT] = None) -> Union[VarT
 class Material(MutableMapping[str, str]):
     """Represents a material.
 
-    Attributes:
-        shader: The name of the shader.
-        proxies: List of Material Proxies defined for the material.
-            Each is a tuple of the string name and a dict of keys-> values.
-            "Empty" proxies are removed.
-        blocks: Other sub-blocks inside the material definition. These are
-            usually fallbacks or other similar definitions.
-        This behaves as a mapping, storing the shader parameters.
+    This behaves as a mapping, storing the shader parameters.
     """
+    shader: str
+    """The name of the shader."""
+    proxies: List[Property]
+    """
+    List of Material Proxies defined for the material.
+    Each is a tuple of the string name and a dict of keys-> values.
+    "Empty" proxies are removed.
+    """
+    blocks: List[Property]
+    """Other sub-blocks inside the material definition. These are usually fallbacks or other similar definitions."""
 
     def __init__(
         self,
@@ -301,12 +304,11 @@ class Material(MutableMapping[str, str]):
         limit: int = 100,
         parent_func: Optional[Callable[[str], None]] = None,
     ) -> 'Material':
-        """If the file is a Patch shader expand to the full material.
+        """If the material is a `Patch <https://developer.valvesoftware.com/wiki/Patch>` shader expand to the full material.
 
-        This reads from the supplied filesystem as needed. If more than
-        limit files are parsed, a RecursionError is raised.
-        If parent_func is provided, it will be called with the filenames
-        of the VMTs which are looked up.
+        :param fsys: This reads from the supplied filesystem as required.
+        :param limit: If more than this many files are parsed, a RecursionError is raised.
+        :param parent_func: If this is provided, it will be called with the filenames of the VMTs which are looked up. This allows tracking which are used.
         """
         return self._apply_patch(fsys, 1, limit, parent_func)
 

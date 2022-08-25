@@ -2980,26 +2980,7 @@ class EntityGroup:
 
 
 class Output:
-    """An output from one entity pointing to another.
-
-    Attributes:
-        output: The output which triggers this.
-        target: The target entity.
-        input: The input to fire.
-        params: Parameters to give the input, or '' for none.
-        delay: The number of seconds before the output should fire.
-
-    Keyword only parameters:
-        inst_out: The local entity for an instance output (``instance:name;Output``)
-        inst_in: The local entity we are really triggering in instance inputs (``instance:name;Input``)
-        comma_sep: Use a comma as a separator, instead of the py:const:`OUTPUT_SEP`
-            character.
-        times: The number of times to fire before being deleted.
-            ``-1`` means forever, Hammer only uses ``-1`` and ``1``.
-        only_once: Boolean alternative to ``times``, setting ``-1``/``1`` based on
-            ``True``/``False``.
-
-    """
+    """An output from one entity pointing to another."""
     __slots__ = [
         'output',
         'inst_out',
@@ -3011,39 +2992,27 @@ class Output:
         'times',
         'comma_sep',
     ]
+    output: str
+    """The output which triggers this."""
+    target: str
+    """The target entity."""
+    input: str
+    """The input to fire."""
+    params: str
+    """Parameters to give the input, or '' for none."""
+    delay: float
+    """The number of seconds before the output should fire."""
+    inst_out: Optional[str]
+    """The local entity for an instance output (``instance:name;Output``)"""
+    inst_in: Optional[str]
+    """The local entity we are really triggering in instance inputs (``instance:name;Input``)"""
+    comma_sep: bool
+    """Use a comma as a separator, instead of the :py:const:`OUTPUT_SEP` character."""
+    times: int
+    """The number of times to fire before being deleted. ``-1`` means forever, Hammer only uses ``-1`` and ``1``."""
 
     # Make this available here also.
     SEP = OUTPUT_SEP
-
-    # Only one of times and only_once should be used.
-    @overload
-    def __init__(
-        self,
-        out: str,
-        targ: Union[Entity, str],
-        inp: str,
-        param: ValidKVs='',
-        delay: float=0.0,
-        *,
-        times: int=-1,
-        inst_out: str=None,
-        inst_in: str=None,
-        comma_sep: bool=False,
-    ) -> None: ...
-    @overload
-    def __init__(
-        self,
-        out: str,
-        targ: Union[Entity, str],
-        inp: str,
-        param: ValidKVs='',
-        delay: float=0.0,
-        *,
-        only_once: bool=False,
-        inst_out: str=None,
-        inst_in: str=None,
-        comma_sep: bool=False,
-    ) -> None: ...
 
     def __init__(
         self,
@@ -3074,7 +3043,7 @@ class Output:
 
     @property
     def only_once(self) -> bool:
-        """Check if the output is active only once."""
+        """Instead of setting ``times``, this provides an interface like how Hammer does."""
         return self.times == 1
 
     @only_once.setter

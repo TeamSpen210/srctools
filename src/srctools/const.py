@@ -86,7 +86,7 @@ class GameID(Enum):
 
 
 class SurfFlags(Flag):
-    """The various `SURF_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L80-L97>` flags, indicating different attributes for faces."""
+    """The various `SURF_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L80-L97>`_ flags, indicating different attributes for faces."""
     NONE = 0
     LIGHT = 0x1
     """The face has lighting info."""
