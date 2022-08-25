@@ -1,16 +1,25 @@
 """Various useful constants and enums."""
+import os
+
 from enum import Enum, Flag
+from typing import Any, MutableMapping
 import operator
 import functools
 import sys
 
 
-def add_unknown(ns: dict, long: bool = False) -> None:
-    """Add dummy members for enums to allow all bits to be set.
+def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
+    """Add dummy members for :external:class:`enum.Flag` to allow all bits to be set.
 
-    This is useful to allow for some compatibility with unhandled games,
-    so the extra bits are preserved.
+    It should be called at the end of the class body. This is useful to allow for some
+    compatibility with unhandled games, ensuring extra bits are preserved when resaving.
+    All existing bits will be skipped.
+
+    :param ns: The class namespace to add members to. This should be set to :external:func:`locals()`
+        or :external:func:`vars()`.
+    :param long: If set, extend to 64 bits, not 32 bits.
     """
+
     # Don't alias bits we already have.
     used_bits = functools.reduce(
         operator.or_,
@@ -77,62 +86,100 @@ class GameID(Enum):
 
 
 class SurfFlags(Flag):
-    """The various SURF_ flags, indicating different attributes for faces."""
+    """The various ``SURF_`` flags, indicating different attributes for faces."""
     NONE = 0
-    LIGHT = 0x1  # The face has lighting info.
-    SKYBOX_2D = 0x2  # Nodraw, but when visible 2D skybox should be rendered.
-    SKYBOX_3D = 0x4  # Nodraw, but when visible 2D and 3D skybox should be rendered.
-    WATER_WARP = 0x8  # 'turbulent water warp'
-    TRANSLUCENT = 0x10  # Translucent material.
-    NOPORTAL = 0x20  # Portalgun blocking material.
-    TRIGGER = 0x40  # XBox only - is a trigger surface.
-    NODRAW = 0x80  # Texture isn't used, it's invisible.
-    HINT = 0x100  # A hint brush.
-    SKIP = 0x200  # Skip brush, removed from map.
-    NOLIGHT = 0x400  # No light needs to be calculated.
-    BUMPLIGHT = 0x800  # Needs three lightmaps for bumpmapping.
-    NO_SHADOWS = 0x1000  # Doesn't receive shadows.
-    NO_DECALS = 0x2000  # Rejects decals.
-    NO_SUBDIVIDE = 0x4000  # Not allowed to split up the brush face.
-    HITBOX = 0x8000  # 'Part of a hitbox'
+    LIGHT = 0x1
+    """The face has lighting info."""
+    SKYBOX_2D = 0x2
+    """Nodraw, but when visible 2D skybox should be rendered."""
+    SKYBOX_3D = 0x4
+    """Nodraw, but when visible 2D and 3D skybox should be rendered."""
+    WATER_WARP = 0x8
+    """According to the header, "turbulent water warp"."""
+    TRANSLUCENT = 0x10
+    """Translucent material."""
+    NOPORTAL = 0x20
+    """Portalgun blocking material."""
+    TRIGGER = 0x40
+    """XBox only - is a trigger surface."""
+    NODRAW = 0x80
+    """Texture isn't used, it's invisible."""
+    HINT = 0x100
+    """A hint brush."""
+    SKIP = 0x200
+    """Skip brush, removed from map."""
+    NOLIGHT = 0x400
+    """No light needs to be calculated for the surface."""
+    BUMPLIGHT = 0x800
+    """Needs three lightmaps for bumpmapping."""
+    NO_SHADOWS = 0x1000
+    """Doesn't receive shadows."""
+    NO_DECALS = 0x2000
+    """Rejects decals."""
+    NO_SUBDIVIDE = 0x4000
+    """Not allowed to split up the brush face."""
+    HITBOX = 0x8000
+    """According to the header, "Part of a hitbox"."""
+
     add_unknown(locals())
 
 
 class BSPContents(Flag):
-    """The various CONTENTS_ flags, indicating different collision types.
+    """The various ``CONTENTS_`` flags, indicating different collision types.
 
     This is normally for brushes, but is also used on other things like models.
     """
     EMPTY = 0
-    SOLID = 0x1  # Player camera is not valid inside here.
-    WINDOW = 0x2  # Translucent glass.
+    SOLID = 0x1
+    """Regular solid brush. Player camera is not valid inside here."""
+    WINDOW = 0x2
+    """Translucent glass."""
     AUX = 0x4
-    GRATE = 0x8  # Grating, bullets/LOS pass, objects do not.
-    SLIME = 0x10  # Slime-style liquid.
-    WATER = 0x20  # Is a water brush
+    GRATE = 0x8
+    """Grating, bullets/LOS pass, objects do not."""
+    SLIME = 0x10
+    """Slime-style liquid, opaque."""
+    WATER = 0x20
+    """Is a water brush"""
     MIST = 0x40
-    OPAQUE = 0x80  # Blocks LOS
-    TEST_FOG_VOLUME = 0x100  # May be non-solid, but cannot be seen through.
-    TEAM1 = 0x800  # Special team-only clips.
-    TEAM2 = 0x1000  # Special team-only clips.
-    IGNORE_NODRAW_OPAQUE = 0x2000  # ignore CONTENTS_OPAQUE on surfaces that have SURF_NODRAW
+    OPAQUE = 0x80
+    """Blocks LOS"""
+    TEST_FOG_VOLUME = 0x100
+    """May be non-solid, but cannot be seen through."""
+    TEAM1 = 0x800
+    """Special team-only clips."""
+    TEAM2 = 0x1000
+    """Special team-only clips."""
+    IGNORE_NODRAW_OPAQUE = 0x2000
+    """"Ignore ``CONTENTS_OPAQUE`` on surfaces that have ``SURF_NODRAW``."""
     MOVABLE = 0x4000
 
-    AREAPORTAL = 0x8000  # Is an areaportal brush.
-    PLAYER_CLIP = 0x10000  # Is tools/toolsplayerclip.
-    NPC_CLIP = 0x20000  # Is tools/toolsclip.
-    # Specifies water currents, can be mixed.
+    AREAPORTAL = 0x8000
+    """Is an areaportal brush."""
+    PLAYER_CLIP = 0x10000
+    """Functions like ``tools/toolsplayerclip``."""
+    NPC_CLIP = 0x20000
+    """Functions like ``tools/toolsclip``."""
+
     CURRENT_0 = 0x40000
+    """Specifies water currents, can be mixed."""
     CURRENT_90 = 0x80000
     CURRENT_180 = 0x100000
     CURRENT_270 = 0x200000
     CURRENT_UP = 0x400000
     CURRENT_DOWN = 0x800000
-    ORIGIN = 0x1000000  # tools/toolsorigin brush, used to set origin.
-    NPC = 0x2000000  # Shouldn't be on brushes, for NPCs.
+
+    ORIGIN = 0x1000000
+    """Behaves like a ``tools/toolsorigin`` brush, used to set origin. 
+    This is Goldsource era and is very deprecated.
+    """
+    NPC = 0x2000000
+    """This shouldn't be on brushes, it's used for NPCs."""
     DEBRIS = 0x4000000
-    DETAIL = 0x8000000  # Is func_detail.
-    TRANSLUCENT = 0x10000000  # Brush is $translucent/$alphatest/$alpha/etc
+    DETAIL = 0x8000000
+    """The brush is marked as ``func_detail``."""
+    TRANSLUCENT = 0x10000000
+    """A face uses ``$translucent``, ``$alphatest``, ``$alpha``, etc."""
     LADDER = 0x20000000
     HITBOX = 0x40000000
 
