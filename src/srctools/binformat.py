@@ -5,7 +5,7 @@ The binformat module :mod:`binformat` contains functionality for handling binary
 from binascii import crc32
 from struct import Struct
 from typing import IO, List, Hashable, Mapping, Union, Dict, Tuple
-from typing_extensions import Literal, Final
+from typing_extensions import Final
 import lzma
 
 from srctools import Vec
@@ -15,19 +15,19 @@ SIZES: Final[Mapping[str, int]] = {
     fmt: Struct('<' + fmt).size
     for fmt in 'cbB?hHiIlLqQfd'
 }
-SIZE_CHAR: Literal[1] = SIZES['b']
-SIZE_SHORT: Literal[2] = SIZES['h']
-SIZE_INT: Literal[4] = SIZES['i']
-SIZE_LONG: Literal[8] = SIZES['q']
-SIZE_FLOAT: Literal[4] = SIZES['f']
-SIZE_DOUBLE: Literal[8] = SIZES['d']
+SIZE_CHAR: Final = 1
+SIZE_SHORT: Final = 2
+SIZE_INT: Final = 4
+SIZE_LONG: Final = 8
+SIZE_FLOAT: Final = 4
+SIZE_DOUBLE: Final = 8
 
-assert SIZE_CHAR == 1
-assert SIZE_SHORT == 2
-assert SIZE_INT == 4
-assert SIZE_LONG == 8
-assert SIZE_FLOAT == 4
-assert SIZE_DOUBLE == 8
+assert SIZE_CHAR == SIZES['b']
+assert SIZE_SHORT == SIZES['h']
+assert SIZE_INT == SIZES['i']
+assert SIZE_LONG == SIZES['q']
+assert SIZE_FLOAT == SIZES['f']
+assert SIZE_DOUBLE == SIZES['d']
 
 LZMA_DIC_MIN: Final = (1 << 12)
 ST_LZMA_SOURCE: Final = Struct('<4sIIbI')
