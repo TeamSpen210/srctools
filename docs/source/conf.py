@@ -168,6 +168,10 @@ class EnumMemberDocumenter(AttributeDocumenter):
         except KeyError:
             aliases = []
         if aliases:
-            self.add_line(f'*Aliases:* ' + ', '.join([f'``{name}``' for name in aliases]), sourcename)
+            self.add_line(
+                ('*Aliases:* ' if len(aliases) > 1 else '*Alias:* ')
+                +  ', '.join([f'``{name}``' for name in aliases]),
+                sourcename,
+            )
             self.add_line('', sourcename)
         super().add_content(more_content, no_docstring)
