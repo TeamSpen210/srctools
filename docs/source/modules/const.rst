@@ -8,20 +8,19 @@ This module contains various constants and enums that are useful for multiple mo
 
 .. autofunction:: add_unknown
 
-.. autoclass:: srctools.const.GameID
-	:show-inheritance:
+.. autosrcenum:: srctools.const.GameID
 	:members:
 	:undoc-members:
 	:member-order: bysource
 
-.. autoclass:: BSPContents
-	:show-inheritance:
+.. autosrcenum:: BSPContents
 	:members:
 	:undoc-members:
+	:hex:
 	:member-order: bysource
 
-.. autoclass:: SurfFlags
-	:show-inheritance:
+.. autosrcenum:: SurfFlags
 	:members:
 	:undoc-members:
+	:hex:
 	:member-order: bysource
