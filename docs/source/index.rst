@@ -9,7 +9,6 @@ Srctools is a library for parsing and manipulating the various file formats used
 
 	modules/binformat
 	modules/bsp
-	modules/choreo
 	modules/cmdseq
 	modules/const
 	modules/dmx
