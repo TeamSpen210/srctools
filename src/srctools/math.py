@@ -53,7 +53,7 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 
 def parse_vec_str(
     val: Union[str, 'Vec', 'Angle'],
-    x: T1 = 0.0, y: T2 = 0.0, z: T3 = 0.0,
+    x: Union[T1, float] = 0.0, y: Union[T2, float] = 0.0, z: Union[T3, float] = 0.0,
 ) -> Tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
