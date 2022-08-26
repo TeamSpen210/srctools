@@ -46,7 +46,7 @@ T3 = TypeVar('T3')
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
     """Linearly interpolate from in to out.
 
-    If both in values are the same, ZeroDivisionError is raised.
+    :raises ZeroDivisionError: If both ``in`` values are the same.
     """
     return out_min + ((x - in_min) * (out_max - out_min)) / (in_max - in_min)
 
@@ -55,13 +55,12 @@ def parse_vec_str(
     val: Union[str, 'Vec', 'Angle'],
     x: T1 = 0.0, y: T2 = 0.0, z: T3 = 0.0,
 ) -> Tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
-    """Convert a string in the form '(4 6 -4)' into a set of floats.
+    """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
-    If the string is unparsable, this uses the defaults (x,y,z).
-    The string can start with any of the (), {}, [], <> bracket
-    types.
+    If the string is unparsable, this uses the defaults ``x``, ``y``, ``z``.
+    The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types.
 
-     If the 'string' is actually a Vec, the values will be returned.
+     If the 'string' is already a :py:class:`Vec` or :py:class:`Angle`, the values will be returned.
      """
     if isinstance(val, str):
         pass  # Fast path to skip the below code.
@@ -97,7 +96,7 @@ def parse_vec_str(
 def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
     """Convert various values to a rotation matrix.
 
-    Vectors will be treated as angles, and None as the identity.
+    :py:class:`Vec` will be treated as angles, and :external:py:data:`None` as the identity.
     """
     if value is None:
         return Py_Matrix()
@@ -280,7 +279,7 @@ globals()['SupportsRound'] = {'Vec': object}
 
 @final
 class Vec(SupportsRound['Vec']):
-    """A 3D Vector. This has most standard Vector functions. Call the class to 
+    """A 3D Vector. This has most standard Vector functions.
 
     >>> Vec(1, 2, z=3)  # Positional or vec, defaults to 0.
     Vec(1, 2, 3)
@@ -444,7 +443,7 @@ class Vec(SupportsRound['Vec']):
     ) -> 'Vec':
         """Old method to rotate a vector by a Source rotational angle.
         
-        This is deprecated, do ``Vec(...) @ Angle(...)`` instead.
+        :deprecated: do ``Vec(...) @ Angle(...)`` instead.
 
         If round is True, all values will be rounded to 6 decimals
         (since these calculations always have small inprecision.)
@@ -465,7 +464,7 @@ class Vec(SupportsRound['Vec']):
     ) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
-        This is deprecated, use `Vec(...) @ Angle.from_str(...)` instead.
+        :deprecated: use `Vec(...) @ Angle.from_str(...)` instead.
         """
         warnings.warn("Use vec @ Angle.from_str() instead.", DeprecationWarning, stacklevel=2)
         mat = Py_Matrix.from_angle(Py_Angle.from_str(ang, pitch, yaw, roll))
@@ -584,10 +583,10 @@ class Vec(SupportsRound['Vec']):
     def to_angle(self, roll: float=0) -> 'Angle':
         """Convert a normal to a Source Engine angle.
 
-        A ``+x`` vector will result in a ``0, 0, 0`` angle. The roll is not
-        affected by the direction of the vector, so it is provided separately.
-
+        The angle will point its ``+x`` axis in the direction of this vector.
         The inverse of this is ``Vec(x=1) @ Angle(pitch, yaw, roll)``.
+
+        :param roll: The roll is not affected by the direction of the vector, so it can be provided separately.
         """
         # Pitch is applied first, so we need to reconstruct the x-value
         horiz_dist = math.hypot(self.x, self.y)
@@ -599,9 +598,8 @@ class Vec(SupportsRound['Vec']):
 
     def to_angle_roll(self, z_norm: 'Vec', stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
-        This is deprecated, use :py:func:`Matrix.from_basis()` and then
-        :py:func:`Matrix.to_angle()`. ``from_basis()`` can take any two direction pairs.
 
+        :deprecated: Use :py:func:`Matrix.from_basis()` and then :py:func:`Matrix.to_angle()`. ``from_basis()`` can take any two direction pairs.
         :param z_norm: This must be at right angles to this vector. The resulting angle's ``+z``
             axis will point in this direction.
         :param stride: is no longer used, it defined the roll angles to try.
@@ -612,8 +610,7 @@ class Vec(SupportsRound['Vec']):
     def rotation_around(self, rot: float=90) -> 'Angle':
         """For an axis-aligned normal, return the angles which rotate around it.
 
-        This is deprecated, use :py:func:`Matrix.axis_angle()` and then :py:func:`Matrix.to_angle()`.
-        ``axis_angle()`` works for any arbitary axis.
+        :deprecated: Use :py:func:`Matrix.axis_angle()` and then :py:func:`Matrix.to_angle()`. ``axis_angle()`` works for any arbitary axis.
         """
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self.x and not self.y and not self.z:
@@ -991,7 +988,7 @@ class Vec(SupportsRound['Vec']):
         else:
             raise KeyError(f'Invalid axis: {ind!r}')
 
-    def in_bbox(self, a: AnyVec, b: 'Vec') -> bool:
+    def in_bbox(self, a: AnyVec, b: AnyVec) -> bool:
         """Check if this point is inside the specified bounding box."""
         return (
             min(a[0], b[0]) <= self.x <= max(a[0], b[0]) and
@@ -1191,10 +1188,7 @@ class Matrix:
 
     @classmethod
     def from_pitch(cls: Type['Matrix'], pitch: float) -> 'Matrix':
-        """Return the matrix representing a pitch rotation.
-
-        This is a rotation around the Y axis.
-        """
+        """Return the matrix representing a pitch rotation (Y axis)."""
         rad_pitch = math.radians(pitch)
         cos = math.cos(rad_pitch)
         sin = math.sin(rad_pitch)
@@ -1209,9 +1203,7 @@ class Matrix:
 
     @classmethod
     def from_yaw(cls: Type['Matrix'], yaw: float) -> 'Matrix':
-        """Return the matrix representing a yaw rotation.
-
-        """
+        """Return the matrix representing a yaw rotation (Z axis)."""
         rad_yaw = math.radians(yaw)
         sin = math.sin(rad_yaw)
         cos = math.cos(rad_yaw)
@@ -1226,10 +1218,7 @@ class Matrix:
 
     @classmethod
     def from_roll(cls: Type['Matrix'], roll: float) -> 'Matrix':
-        """Return the matrix representing a roll rotation.
-
-        This is a rotation around the X axis.
-        """
+        """Return the matrix representing a roll rotation (X axis)."""
         rad_roll = math.radians(roll)
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
@@ -1307,8 +1296,8 @@ class Matrix:
     ) -> 'Matrix':
         """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
 
-        This is equivalent to Matrix.from_angle(Angle.from_str(val, pitch, yaw, roll)),
-        except more efficient.
+        This is equivalent to combining :py:func:`Matrix.from_angle()` and
+        :py:func:`Angle.from_str`, except more efficient.
         """
         pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
         return cls.from_angle(pitch, yaw, roll)
