@@ -23,7 +23,7 @@ import contextlib
 import warnings
 
 from typing import (
-    Union, Tuple, List, overload, cast, Type, TYPE_CHECKING, Any,
+    Union, Tuple, List, overload, cast, Type, TypeVar, TYPE_CHECKING, Any,
     NamedTuple, Iterator, Iterable, SupportsRound, Optional,
 )
 from typing_extensions import Final, Literal, Protocol, final
@@ -38,6 +38,9 @@ __all__ = [
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['Vec', 'Vec_tuple', Tuple3]
+T1 = TypeVar('T1')
+T2 = TypeVar('T2')
+T3 = TypeVar('T3')
 
 
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -50,8 +53,8 @@ def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float)
 
 def parse_vec_str(
     val: Union[str, 'Vec', 'Angle'],
-    x: float = 0.0, y: float = 0.0, z: float = 0.0,
-) -> Tuple3:
+    x: T1 = 0.0, y: T2 = 0.0, z: T3 = 0.0,
+) -> Tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
     """Convert a string in the form '(4 6 -4)' into a set of floats.
 
     If the string is unparsable, this uses the defaults (x,y,z).
