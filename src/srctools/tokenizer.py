@@ -3,9 +3,9 @@
 This is used internally for parsing KV1, text DMX, FGDs, VMTs, etc. If available this will be
 replaced with a faster Cython-optimised version.
 
-The py:class:`BaseTokenizer` class implements various helper functions for navigating through the
-token stream. The py:class:`Tokenizer` class then takes text file objects, a full string or an
-iterable of strings and actually parses it into tokens, while py:class:`IterTokenizer` allows
+The :py:class:`BaseTokenizer` class implements various helper functions for navigating through the
+token stream. The :py:class:`Tokenizer` class then takes text file objects, a full string or an
+iterable of strings and actually parses it into tokens, while :py:class:`IterTokenizer` allows
 transforming the stream before the destination receives it.
 
 Once the tokenizer is created, either iterate over it or call the tokenizer to fetch the next
@@ -21,6 +21,7 @@ from typing import (
     Iterable, Iterator,
     Tuple, List,
 )
+from typing_extensions import Final
 import abc
 
 from srctools import StringPath
@@ -29,7 +30,7 @@ from srctools import StringPath
 class TokenSyntaxError(Exception):
     """An error that occurred when parsing a file. 
 
-    Normally this is created via py:func:`BaseTokenizer.error()` which formats text into the error
+    Normally this is created via :py:func:`BaseTokenizer.error()` which formats text into the error
     and includes the filename/line number from the tokenizer.
 
     The string representation will include the provided file and line number if present.
@@ -37,7 +38,7 @@ class TokenSyntaxError(Exception):
     mess: str
     """The error message that occurred."""
     file: Optional[StringPath]
-    """The filename of the file beijg parsed, or None if not known."""
+    """The filename of the file being parsed, or None if not known."""
     line_num: Optional[int]
     """The line where the error occurred, or None if not applicable (EOF, for instance)."""
 
@@ -85,23 +86,23 @@ class TokenSyntaxError(Exception):
 
 class Token(Enum):
     """A token type produced by the tokenizer."""
-    EOF = 0  #+ Ran out of text.
-    STRING = 1  #+ Quoted or unquoted text
-    NEWLINE = 2  #+ ``\n``
-    PAREN_ARGS = 3  #+ ``(data)``
-    DIRECTIVE = 4  #+ ``#name`` (automatically casefolded).
+    EOF = 0  #: Ran out of text.
+    STRING = 1  #: Quoted or unquoted text.
+    NEWLINE = 2  #: ``\n``
+    PAREN_ARGS = 3  #: Parenthesised ``(data)``.
+    DIRECTIVE = 4  #: ``#name`` (automatically casefolded).
 
-    BRACE_OPEN = 5
-    BRACE_CLOSE = 6
+    BRACE_OPEN = 5  #- A ``{`` character.
+    BRACE_CLOSE = 6  #- A ``}`` character.
 
-    PROP_FLAG = 10  #+ A ``[!flag]``
-    BRACK_OPEN = 11  #+ Only used if ``PROP_FLAG`` is not.
-    BRACK_CLOSE = 12
+    PROP_FLAG = 10  #: A ``[!flag]``
+    BRACK_OPEN = 11  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
+    BRACK_CLOSE = 12  #: A ``]`` character.
 
-    COLON = 13
-    EQUALS = 14
-    PLUS = 15
-    COMMA = 16
+    COLON = 13  #: A ``:`` character.
+    EQUALS = 14  #: A ``=`` character.
+    PLUS = 15  #: A ``+`` character.
+    COMMA = 16  #: A ``,`` character.
 
     @property
     def has_value(self) -> bool:
@@ -147,21 +148,20 @@ ESCAPES = {
     '\n': '',
 }
 
-#+ Characters not allowed for bare names on a line.
-BARE_DISALLOWED = set('"\'{};,[]()\n\t ')
+#: Characters not allowed for bare strings. These must be quoted.
+BARE_DISALLOWED: Final = frozenset('"\'{};,[]()\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
     """Provides an interface for processing text into tokens.
 
-     It then provides tools for using those to parse data.
-     This is an abstract class, a subclass must be used to provide a source
-     for the tokens.
+     It then provides tools for using those to parse data. This is an :external:py:class:`abc.ABC`,
+     a subclass must be used to provide a source for the tokens.
     """
     filename: Optional[str]
     error_type: Type[TokenSyntaxError]
     line_num: int
-    #+ If set, this token will be returned next.
+    #: If set, this token will be returned next.
     _pushback: Optional[Tuple[Token, str]] = None
 
     def __init__(
@@ -201,7 +201,7 @@ class BaseTokenizer(abc.ABC):
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
         The message can be a Token and the value to produce a wrong token error,
-        or a string which will be {}-formatted with the positional args
+        or a string which will be `{}-formatted <https://docs.python.org/3/library/string.html#formatstrings>`_ with the positional args
         if they are present.
         """
         if isinstance(message, Token):
@@ -268,8 +268,8 @@ class BaseTokenizer(abc.ABC):
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
-        for other token types.
+        The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
+        :py:const:`~Token.PROP_FLAGS`, but ignored for other token types.
         """
         if self._pushback is not None:
             raise ValueError('Token already pushed back!')
@@ -304,8 +304,8 @@ class BaseTokenizer(abc.ABC):
     def block(self, name: str, consume_brace: bool = True) -> Iterator[str]:
         """Helper iterator for parsing keyvalue style blocks.
 
-        This will first consume a {. Then it will skip newlines, and output
-        each string section found. When } is found it terminates, anything else
+        This will first consume a ``{``. Then it will skip newlines, and output
+        each string section found. When ``}`` is found it terminates, anything else
         produces an appropriate error.
         This is safely re-entrant, and tokens can be taken or put back as required.
         """
@@ -356,12 +356,12 @@ class Tokenizer(BaseTokenizer):
     several options are available to control whether different
     syntaxes are accepted:
 
-    * string_bracket parses `[bracket]` blocks as a single string-like block.
-        If disabled these are parsed as :py:const:`Token.BRACK_OPEN`, :py:const`Token.STRING` or
-        :py:const:`Token.BRACK_CLOSE`.
+    * string_bracket parses `[bracket]` blocks as a single string-like block. \
+        If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
+        then :py:const:`~Token.BRACK_CLOSE`.
     * allow_escapes controls whether ``\\n``-style escapes are expanded.
     * allow_star_comments if enabled allows ``/* */`` comments.
-    * colon_operator controls if ``:`` produces :py:const:`Token.COLON` tokens, or is treated as
+    * colon_operator controls if ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
       a bare string.
     """
     chunk_iter: Iterator[str]
@@ -681,7 +681,7 @@ class IterTokenizer(BaseTokenizer):
 def escape_text(text: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
-    Specifically, \, ", tab, and newline.
+    Specifically: ``\\``, ``"``, tab, and newline.
     """
     return (
         text.
