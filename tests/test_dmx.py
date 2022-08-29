@@ -1,4 +1,6 @@
 """Test the datamodel exchange implementation."""
+import array
+
 import collections
 
 from io import BytesIO
@@ -412,6 +414,62 @@ def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes,
     assert getattr(Attribute.string('', text), attr) == value
 
 
+@pytest.mark.parametrize('typ, iterable, expected', [
+    (ValueType.INTEGER, [1, 2, 8.0], [1, 2, 8]),
+    (ValueType.FLOAT, [2.4, 9.0, 23], [2.4, 9.0, 23.0]),
+    (ValueType.BOOL, [False, True, 1.0], [False, True, True]),
+    (ValueType.STR, ['', 'a', 'spam'], ['', 'a', 'spam']),
+    (ValueType.BIN,
+     [b'abcde', bytearray(b'fghjik'), array.array('B', [0x68, 0x65, 0x6c, 0x6c, 0x6f])],
+     [b'abcde', b'fghjik', b'hello'],
+     ),
+    (ValueType.COLOR,
+     [Color(255, 0, 255, 128), (25, 38, 123), (127, 180, 255, 192)],
+     [Color(255, 0, 255, 128), Color(25, 38, 123, 255), Color(127, 180, 255, 192)],
+     ),
+    (ValueType.TIME, [Time(0.0), 360.5], [Time(0.0), Time(360.5)]),
+    (ValueType.VEC2,
+     [Vec2(1.0, 2.0), (2.0, 3.0), [5, 8.0]],
+     [Vec2(1.0, 2.0), Vec2(2.0, 3.0), Vec2(5.0, 8.0)],
+     ),
+    (ValueType.VEC3,
+     [Vec3(2.0, 3.0, 4.0), (1.0, 2, 3.0), range(3)],
+     [Vec3(2.0, 3.0, 4.0), Vec3(1.0, 2.0, 3.0), Vec3(0.0, 1.0, 2.0)]
+     ),
+    (ValueType.VEC4,
+     [Vec4(5.0, 2.8, 9, 12), (4, 5, 28, 12.0), range(4, 8)],
+     [Vec4(5.0, 2.8, 9.0, 12.0), Vec4(4.0, 5.0, 28.0, 12.0), Vec4(4.0, 5.0, 6.0, 7.0)],
+     ),
+    (ValueType.ANGLE,
+     [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), (90.0, 45.0, 0.0)],
+     [AngleTup(45.0, 20.0, 337.5), AngleTup(45.0, 0.0, 0.0), AngleTup(90.0, 45.0, 0.0)],
+     ),
+    (ValueType.QUATERNION,
+     [Quaternion(1.0, 2.0, 3.0, 4.0), (8.0, -3.0, 0.5, 12.8)],
+     [Quaternion(1.0, 2.0, 3.0, 4.0), Quaternion(8.0, -3.0, 0.5, 12.8)],
+     ),
+    (ValueType.MATRIX,
+    [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), AngleTup(90.0, 45.0, 0.0)],
+    [Matrix.from_angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), Matrix.from_angle(90.0, 45.0, 0.0)],
+     ),
+], ids=[
+    'int', 'float', 'bool', 'str', 'bytes', 'time', 'color',
+    'vec2', 'vec3', 'vec4', 'angle', 'quaternion', 'matrix',
+])
+def test_attr_array_constructor(typ: ValueType, iterable: list, expected: list) -> None:
+    """Test constructing an array attribute."""
+    expected_type = type(expected[0])
+    attr = Attribute.array('some_array', typ, iterable)
+    assert attr.is_array
+    assert len(attr) == len(expected)
+    for i, (actual, expect) in enumerate(zip(attr._value, expected)):
+        assert type(actual) is expected_type, repr(actual)
+        if expected_type is Matrix:  # Matrix comparisons are difficult.
+            actual = actual.to_angle()
+            expect = expect.to_angle()
+        assert actual == expect, f'attr[{i}]: {actual!r} != {expect!r}'
+
+
 deduce_type_tests = [
     (5, ValueType.INT, 5),
     (5.0, ValueType.FLOAT, 5.0),
@@ -486,7 +544,6 @@ def test_deduce_type_adv() -> None:
         print(deduce_type(()))
     with pytest.raises(TypeError):
         print(deduce_type(range(0)))
-
 
 
 # TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation

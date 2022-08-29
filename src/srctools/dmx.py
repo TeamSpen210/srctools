@@ -485,55 +485,112 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.ELEMENT]) -> 'Attribute[Element]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.ELEMENT],
+        values: Iterable['Element'] = (),
+    ) -> 'Attribute[Element]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.INTEGER]) -> 'Attribute[builtins.int]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.INTEGER],
+        values: Iterable[builtins.int] = (),
+    ) -> 'Attribute[builtins.int]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.FLOAT]) -> 'Attribute[builtins.float]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.FLOAT],
+        values: Iterable[builtins.float] = (),
+    ) -> 'Attribute[builtins.float]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.BOOL]) -> 'Attribute[builtins.bool]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.BOOL],
+        values: Iterable[builtins.bool] = (),
+    ) -> 'Attribute[builtins.bool]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.STR]) -> 'Attribute[builtins.str]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.STR],
+        values: Iterable[builtins.str] = (),
+    ) -> 'Attribute[builtins.str]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.BIN]) -> 'Attribute[builtins.bytes]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.BIN],
+        values: Iterable[builtins.bytes] = (),
+    ) -> 'Attribute[builtins.bytes]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.TIME]) -> 'Attribute[Time]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.TIME],
+        values: Iterable[Time] = (),
+    ) -> 'Attribute[Time]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.COLOR]) -> 'Attribute[Color]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.COLOR],
+        values: Iterable[Color] = (),
+    ) -> 'Attribute[Color]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.VEC2]) -> 'Attribute[Vec2]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.VEC2],
+        values: Iterable[Vec2] = (),
+    ) -> 'Attribute[Vec2]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.VEC3]) -> 'Attribute[Vec3]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.VEC3],
+        values: Iterable[Vec2] = (),
+    ) -> 'Attribute[Vec3]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.VEC4]) -> 'Attribute[Vec4]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.VEC4],
+        values: Iterable[Vec2] = (),
+    ) -> 'Attribute[Vec4]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.ANGLE]) -> 'Attribute[AngleTup]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.ANGLE],
+        values: Iterable[Union[Matrix, Iterable[float]]] = (),
+    ) -> 'Attribute[AngleTup]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.QUATERNION]) -> 'Attribute[Quaternion]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.QUATERNION],
+        values: Iterable[Quaternion] = (),
+    ) -> 'Attribute[Quaternion]': ...
     @classmethod
     @overload
-    def array(cls, name: str, val_type: Literal[ValueType.MATRIX]) -> 'Attribute[Matrix]': ...
+    def array(
+        cls, name: str,
+        val_type: Literal[ValueType.MATRIX],
+        values: Iterable[Union[AngleTup, Angle, Matrix]] = (),
+    ) -> 'Attribute[Matrix]': ...
 
     @classmethod
     @overload
     def array(cls, name: str, val_type: ValueType) -> 'Attribute': ...
 
     @classmethod
-    def array(cls, name: str, val_type: ValueType) -> 'Attribute':
+    def array(cls, name: str, val_type: ValueType, values: Iterable[Any]=()) -> 'Attribute':
         """Create an attribute with an empty array of a specified type."""
-        return Attribute(name, val_type, [])
+        conv_func = CONVERSIONS[val_type]
+        return Attribute(name, val_type, list(map(conv_func, values)))
 
     @classmethod
     def int(cls, name: str, value: Union[builtins.int, List[builtins.int]]) -> 'Attribute[builtins.int]':
@@ -2179,10 +2236,14 @@ _struct_element = Struct('<i')
 # Property setter implementations:
 _conv_integer = int
 _conv_string = str
-_conv_binary = bytes
 _conv_float = float
 _conv_time = float
 _conv_bool = bool
+
+
+def _conv_binary(value: Union[bytes, bytearray, memoryview]) -> bytes:
+    """We accept any buffer, but not raw integer lengths."""
+    return bytes(memoryview(value))
 
 
 def _converter_ntup(typ: Type[ValueT]) -> Callable[[Union[ValueT, Iterable[float]]], ValueT]:
