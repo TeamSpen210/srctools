@@ -2014,6 +2014,10 @@ cdef class Matrix:
         else:
             raise KeyError(f'Invalid coordinate {x}, {y}' '!')
 
+    # TODO: This could just be set to None..
+    def __iter__(self):
+        raise TypeError("'Matrix' object is not iterable")
+
     def to_angle(self):
         """Return an Euler angle replicating this rotation."""
         cdef Angle ang = Angle.__new__(Angle)

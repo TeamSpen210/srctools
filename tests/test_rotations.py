@@ -397,6 +397,15 @@ def test_inplace_rotation(py_c_vec: PyCVec) -> None:
     assert m == mat @ mat2
 
 
+def test_matrix_no_iteration(py_c_vec: PyCVec) -> None:
+    """Test that Matrix cannot be iterated, as this is rather useless."""
+    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    with pytest.raises(TypeError):
+        iter(Matrix())
+    with pytest.raises(TypeError):
+        list(Matrix())
+
+
 def test_matrix_getters(
     py_c_vec: PyCVec,
     rotation_data: List[RotationData],

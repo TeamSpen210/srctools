@@ -1348,6 +1348,9 @@ class Matrix:
         """Set an individual matrix value by x, y position (0-2)."""
         setattr(self, _IND_TO_SLOT[item], value)
 
+    __iter__ = None
+    """Iteration doesn't make much sense."""
+
     def to_angle(self) -> 'Angle':
         """Return an Euler angle replicating this rotation."""
 
