@@ -96,7 +96,7 @@ IND_TO_VALTYPE: Final = {
 _UNSET_UUID: Final = get_uuid()
 _UNSET: Any = object()  # Argument sentinel
 # Deprecated.
-STUB = _StubType.STUB
+STUB = _StubType.STUB  #: :deprecated: Use :py:func:`StubElement.stub()`.
 T = TypeVar('T')
 
 

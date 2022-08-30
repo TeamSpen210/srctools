@@ -36,7 +36,7 @@ __all__ = [
     'overlay_bounds', 'make_overlay', 'localise_overlay',
     'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side',  'Entity', 'EntityGroup',
     'DispFlag', 'TriangleTag',
-    'PrismFace', 'UVAxis', 'EntityFixup',  # For typing, shouldn't be constructed.
+    'PrismFace', 'UVAxis', 'EntityFixup', 'FixupValue',  # For typing, shouldn't be constructed.
     'Output', 'OUTPUT_SEP',
 ]
 
@@ -45,7 +45,8 @@ CURRENT_HAMMER_VERSION = 400
 CURRENT_HAMMER_BUILD = 5304
 
 
-# The character used to separate output values.
+#: The character used to separate output values, after L4D. Before then commas (``,``) were used.
+#: This is also available as :py:attr:`Output.SEP`.
 OUTPUT_SEP: Final = chr(27)
 
 
@@ -290,14 +291,17 @@ class CopySet(Set[T]):
 
 @attrs.frozen
 class PrismFace:
-    """Return value for VMF.make_prism()."""
-    solid: 'Solid'
-    top: 'Side'
-    bottom: 'Side'
-    north: 'Side'
-    south: 'Side'
-    east: 'Side'
-    west: 'Side'
+    """Return value for VMF.make_prism().
+
+    This can be inded with an axis-aligned :py:class:`~srctools.Vec` or 3-tuple normal to fetch a side.
+    """
+    solid: 'Solid'  #: The generated brush.
+    top: 'Side'  #: The ``+z`` side of the brush.
+    bottom: 'Side'  #: The ``-z`` side of the brush.
+    north: 'Side'  #: The ``+y`` side of the brush.
+    south: 'Side'  #: The ``-y`` side of the brush.
+    east: 'Side'  #: The ``+x`` side of the brush.
+    west: 'Side'  #: The ``-x`` side of the brush.
 
     def __getitem__(self, item: Union[Vec, Tuple[float, float, float]]) -> 'Side':
         """Given an axis-aligned normal, return the matching side."""
@@ -3011,7 +3015,7 @@ class Output:
     input: str
     """The input to fire."""
     params: str
-    """Parameters to give the input, or '' for none."""
+    """Parameters to give the input, or ``""`` for none."""
     delay: float
     """The number of seconds before the output should fire."""
     inst_out: Optional[str]
@@ -3023,8 +3027,8 @@ class Output:
     times: int
     """The number of times to fire before being deleted. ``-1`` means forever, Hammer only uses ``-1`` and ``1``."""
 
-    # Make this available here also.
-    SEP = OUTPUT_SEP
+    #: The character used to separate output values, after L4D. Before then commas (``,``) were used.
+    SEP: Final = OUTPUT_SEP
 
     def __init__(
         self,

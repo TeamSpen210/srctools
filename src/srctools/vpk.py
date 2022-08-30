@@ -258,15 +258,14 @@ class VPK:
     ) -> None:
         """Create a VPK file.
 
-        Parameters:
-            dir_file: The path to the directory file. This must end in '_dir.vpk'.
-            mode: Open in (r)ead, (w)rite or (a)ppend mode.
-               In read mode, the file will not be modified and it must exist.
-               Write mode will create the directory if needed.
-               Append mode will also create the directory, but not wipe the file.
-            dir_data_limit: The maximum amount of data for files saved to the dir file.
-               None = no limit, and 0=save all to a data file.
-            version: The desired version if the file is not read.
+        - In read mode, the file will not be modified and it must exist.
+        - Write mode will create the directory if needed.
+        - Append mode will also create the directory, but not wipe the file.
+
+        :param dir_file: The path to the directory file. This must end in '_dir.vpk'.
+        :param mode: Open in (r)ead, (w)rite or (a)ppend mode.
+        :param dir_data_limit: The maximum amount of data for files saved to the dir file. :external:py:data:`None` = no limit, ``0`` = save all to a data file.
+        :param version: The desired version if the file is not read.
         """
         if version not in (1, 2):
             raise ValueError(f"Invalid version ({version}) - must be 1 or 2!")

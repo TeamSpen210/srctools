@@ -24,9 +24,9 @@ _UNKNOWN_KV: Set[Tuple[str, str]] = set()
 
 class FixupStyle(Enum):
     """The kind of fixup style to use."""
-    PREFIX = 0
-    SUFFIX = 1
-    NONE = 2
+    PREFIX = 0  #: Entities will be named :samp:`{inst_name}-{ent_name}`.
+    SUFFIX = 1  #: Entities will be named :samp:`{ent_name}-{inst_name}`.
+    NONE = 2  #: Entities will remain named :samp:`{ent_name}`.
 
 
 class Instance:
@@ -258,7 +258,7 @@ def get_inst_locs(map_filename: Path) -> FileSystemChain:
     """Given a map filename, find sdk_content and produce the lookup locations.
 
     The chained filesystem will first look relative to the map, then in
-    sdk_content/maps/ if that's a parent directory.
+    ``sdk_content/maps/`` if that's a parent directory.
     """
     fsys_rel = RawFileSystem(map_filename.parent)
     fsys = FileSystemChain(fsys_rel)
@@ -283,8 +283,8 @@ def collapse_one(
     will be used.
     The visgroup parameter controls how visgroups are handled:
 
-    * If ``False``, visgroups are stripped.
-    * If ``True``, the original visgroups will be kept
+    * If :external:py:data:`False`, visgroups are stripped.
+    * If :external:py:data:`True`, the original visgroups will be kept.
     * If set to a specific visgroup, all ents and brushes will be added to it, with any existing visgroups in the instance added as a child.
     """
     origin = inst.pos
