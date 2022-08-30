@@ -185,17 +185,12 @@ class Manifest(Instance):
         ]
 
 
+@attrs.define
 class Param:
     """Configuration for a specific fixup variable."""
-    def __init__(
-        self,
-        name: str,
-        type: ValueTypes=ValueTypes.STRING,
-        default: str='',
-    ) -> None:
-        self.name = name
-        self.type = type
-        self.default = default
+    name: str
+    type: ValueTypes = ValueTypes.STRING
+    default: str = ''
 
 
 class InstanceFile:
