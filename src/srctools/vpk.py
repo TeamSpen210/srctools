@@ -237,15 +237,35 @@ class FileInfo:
 class VPK:
     """Represents a VPK file set in a directory."""
     folder: str
+    """The directory the VPK is located in, used to find the numeric files."""
+
     file_prefix: str
+    """The VPK filename, without ``_dir.vpk``."""
 
     # fileinfo[extension][directory][filename]
     _fileinfo: Dict[str, Dict[str, Dict[str, FileInfo]]]
 
     mode: OpenModes
+    """How the file was opened.
+    
+    - Read mode, the file will not be modified and it must already exist.
+    - Write mode will create the directory if needed.
+    - Append mode will also create the directory, but not wipe the file.
+    """
+
     dir_limit: Optional[int]
+    """
+    The maximum amount of data for files saved to the dir file. 
+    
+    - :external:py:data:`None`: No limit.
+    - ``0``: Save all to a data file.
+    """
+
     footer_data: bytes
+    """The block of data after the header, which contains the file data for files stored in the ``_dir`` file, not numeric files."""
+
     version: int
+    """The VPK version, 1 or 2."""
 
     def __init__(
         self,
@@ -257,13 +277,9 @@ class VPK:
     ) -> None:
         """Create a VPK file.
 
-        - In read mode, the file will not be modified and it must exist.
-        - Write mode will create the directory if needed.
-        - Append mode will also create the directory, but not wipe the file.
-
-        :param dir_file: The path to the directory file. This must end in '_dir.vpk'.
-        :param mode: Open in (r)ead, (w)rite or (a)ppend mode.
-        :param dir_data_limit: The maximum amount of data for files saved to the dir file. :external:py:data:`None` = no limit, ``0`` = save all to a data file.
+        :param dir_file: The path to the directory file. This must end in  ``_dir.vpk``.
+        :param mode: The (r)ead, (w)rite or (a)ppend mode.
+        :param dir_data_limit: The maximum amount of data to save in the dir file.
         :param version: The desired version if the file is not read.
         """
         if version not in (1, 2):
@@ -292,7 +308,10 @@ class VPK:
 
     @property
     def path(self) -> Union[str, 'os.PathLike[str]']:  # TODO: Incorrect, Mypy doesn't have 2-type properties.
-        """Return the location of the directory VPK file."""
+        """The filename of the directory VPK file.
+
+        This can be assigned to set :py:attr:`folder` and :py:attr:`file_prefix`.
+        """
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
     @path.setter
