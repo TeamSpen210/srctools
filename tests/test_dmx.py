@@ -470,6 +470,18 @@ def test_attr_array_constructor(typ: ValueType, iterable: list, expected: list) 
         assert actual == expect, f'attr[{i}]: {actual!r} != {expect!r}'
 
 
+def test_attr_array_elem_constructor() -> None:
+    """Test constructing an Element array attribute."""
+    elem1 = Element('Elem1', 'DMElement')
+    elem2 = Element('Elem2', 'DMElement')
+    attr = Attribute.array('elements', ValueType.ELEMENT, [elem1, elem2, elem1])
+    assert attr.is_array
+    assert len(attr) == 3
+    assert attr[0].val_elem is elem1
+    assert attr[1].val_elem is elem2
+    assert attr[2].val_elem is elem1
+
+
 deduce_type_tests = [
     (5, ValueType.INT, 5),
     (5.0, ValueType.FLOAT, 5.0),
