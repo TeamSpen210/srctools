@@ -246,7 +246,6 @@ class VPK:
     dir_limit: Optional[int]
     footer_data: bytes
     version: int
-    header_len: int
 
     def __init__(
         self,
@@ -283,7 +282,6 @@ class VPK:
         self.footer_data = b''
 
         self.version = version
-        self.header_len = 0
 
         self.load_dirfile()
 
@@ -346,7 +344,7 @@ class VPK:
                     sig_size,
                 ) = struct_read('<4I', dirfile)
 
-            self.header_len = dirfile.tell() + tree_length
+            header_len = dirfile.tell() + tree_length
 
             self._fileinfo.clear()
             entry = struct.Struct('<IHHIIH')
@@ -388,7 +386,7 @@ class VPK:
                         )
 
                 # 1 for the ending b'' section
-                if dirfile.tell() + 1 == self.header_len:
+                if dirfile.tell() + 1 == header_len:
                     dirfile.read(1)  # Skip null byte.
                     break
 
