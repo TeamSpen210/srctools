@@ -19,6 +19,11 @@ from srctools.math import Vec
 from struct import Struct
 
 
+__all__ = [
+    'MDL_EXTS', 'Flags', 'Model',
+    'AnimEventTypes', 'CL', 'SV', 'AnimEvents',
+    'IncludedMDL', 'SeqEvent', 'Sequence',
+]
 # All the file extensions used for models.
 MDL_EXTS: SequenceType[str] = [
     '.mdl',

@@ -7,3 +7,8 @@ warnings.warn(
 )
 del warnings
 from srctools.math import *  # noqa
+
+__all__ = [
+    'Vec', 'Angle', 'Matrix', 'Vec_tuple',
+    'parse_vec_str', 'to_matrix', 'lerp',
+]

@@ -6,6 +6,10 @@ import attrs
 from srctools.dmx import Element, ValueType, Attribute
 
 
+__all__ = [
+    'FORMAT_NAME', 'FORMAT_VERSION',
+    'Operator', 'Child', 'Particle',
+]
 # The name of the file format used in DMX files.
 FORMAT_NAME: str = 'pcf'
 # PCF files can have version 1 or 2.

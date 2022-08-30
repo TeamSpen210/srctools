@@ -20,6 +20,7 @@ from typing import (
     Mapping, MutableMapping, KeysView, ItemsView, ValuesView,
     Iterable, Iterator, AbstractSet, Pattern, Match,
 )
+from typing_extensions import Final
 
 import attrs
 
@@ -28,13 +29,24 @@ from srctools.math import Vec, Angle, Matrix, to_matrix
 from srctools.property_parser import Property
 import srctools
 
+
+__all__ = [
+    'CURRENT_HAMMER_BUILD', 'CURRENT_HAMMER_VERSION',
+    'conv_kv', 'ValidKVs',
+    'overlay_bounds', 'make_overlay', 'localise_overlay',
+    'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side',  'Entity', 'EntityGroup',
+    'DispFlag', 'TriangleTag',
+    'PrismFace', 'UVAxis', 'EntityFixup',  # For typing, shouldn't be constructed.
+    'Output', 'OUTPUT_SEP',
+]
+
 # Used to set the defaults for versioninfo
 CURRENT_HAMMER_VERSION = 400
 CURRENT_HAMMER_BUILD = 5304
 
 
 # The character used to separate output values.
-OUTPUT_SEP = chr(27)
+OUTPUT_SEP: Final = chr(27)
 
 
 T = TypeVar('T')

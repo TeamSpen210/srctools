@@ -1,5 +1,6 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
 from typing import Union, List, Optional
+from typing_extensions import Final
 from pathlib import Path
 import os
 import sys
@@ -9,7 +10,8 @@ from srctools import Property
 from srctools.filesys import FileSystemChain, VPKFileSystem, RawFileSystem
 
 
-GINFO = 'gameinfo.txt'
+__all__ = ['GINFO', 'Game', 'find_gameinfo']
+GINFO: Final = 'gameinfo.txt'
 
 
 class Game:

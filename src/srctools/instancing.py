@@ -1,4 +1,5 @@
 """Implements support for collapsing instances."""
+import attrs
 from enum import Enum
 from pathlib import Path
 from typing import Union, Tuple, Dict, Set, Iterable, Container, List
@@ -9,6 +10,11 @@ from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
 import srctools.logger
 
 
+__all__ = [
+    'FixupStyle',
+    'Instance', 'Manifest', 'Param', 'InstanceFile',
+    'get_inst_locs', 'collapse_all', 'collapse_one',
+]
 LOGGER = srctools.logger.get_logger(__name__)
 # Hidden variable to track the number of recursions.
 RECUR_COUNT_ATTR = '_inst_recur_count'

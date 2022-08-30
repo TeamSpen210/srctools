@@ -19,7 +19,7 @@ from typing import (
 
 from srctools import StringPath
 
-
+__all__ = ['LoggerAdapter', 'get_handler', 'get_logger', 'init_logging', 'context']
 # Only generic in stubs!
 CTX_STACK: 'contextvars.ContextVar[List[str]]' = contextvars.ContextVar('srctools_logger')
 

@@ -27,6 +27,13 @@ import abc
 from srctools import StringPath
 
 
+__all__ = [
+    'TokenSyntaxError', 'BARE_DISALLOWED',
+    'Token', 'BaseTokenizer', 'Tokenizer', 'IterTokenizer',
+    'escape_text',
+]
+
+
 class TokenSyntaxError(Exception):
     """An error that occurred when parsing a file. 
 

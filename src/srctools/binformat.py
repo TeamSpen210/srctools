@@ -10,6 +10,17 @@ import lzma
 
 from srctools import Vec
 
+__all__ = [
+    'SIZES',
+    'SIZE_CHAR', 'SIZE_DOUBLE', 'SIZE_FLOAT', 'SIZE_INT', 'SIZE_LONG', 'SIZE_SHORT',
+    'struct_read', 'read_nullstr', 'read_nullstr_array', 'read_offset_array',
+    'read_array', 'write_array',
+    'str_readvec', 'ST_VEC',
+    'checksum', 'EMPTY_CHECKSUM',
+    'DeferredWrites',
+    'compress_lzma', 'decompress_lzma',
+]
+
 ST_VEC: Final = Struct('fff')
 SIZES: Final[Mapping[str, int]] = {
     fmt: Struct('<' + fmt).size

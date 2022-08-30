@@ -1,11 +1,14 @@
 """Various useful constants and enums."""
-import os
-
 from enum import Enum, Flag
 from typing import Any, MutableMapping
 import operator
 import functools
 import sys
+
+__all__ = [
+    'add_unknown',
+    'GameID', 'SurfFlags', 'BSPContents',
+]
 
 
 def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:

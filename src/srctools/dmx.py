@@ -38,6 +38,13 @@ from srctools.property_parser import Property
 from srctools.tokenizer import Tokenizer, Token
 
 
+__all__ = [
+    'ValueType', 'NULL',
+    'STUB',   # Deprecated.
+    'Vec2', 'Vec3', 'Vec4', 'Quaternion', 'Color','AngleTup', 'Time',
+    'Attribute', 'Element', 'StubElement',
+]
+
 class ValueType(Enum):
     """The type of value an element has."""
     ELEMENT = 'element'  # Another attribute

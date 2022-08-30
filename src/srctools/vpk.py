@@ -5,13 +5,19 @@ import operator
 from enum import Enum
 from types import TracebackType
 from typing import Tuple, List, Dict, Type, Union, Optional, Iterator, Iterable, IO
+from typing_extensions import Final
 
 import attrs
 from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
 
 
-VPK_SIG = 0x55aa1234  # First byte of the file..
-DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
+__all__ = [
+    'VPK_SIG', 'DIR_ARCH_INDEX', 'OpenModes',
+    'script_write', 'get_arch_filename',
+    'FileInfo', 'VPK',
+]
+VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
+DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used for the ``_dir`` file.
 FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 
