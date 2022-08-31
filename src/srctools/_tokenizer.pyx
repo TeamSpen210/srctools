@@ -1,9 +1,10 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # cython: binding=True
 """Cython version of the Tokenizer class."""
-cimport cython
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
 from libc.stdint cimport uint_fast8_t
+cimport cython
+
 
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
@@ -14,12 +15,14 @@ cdef extern from *:
 cdef object os_fspath
 from os import fspath as os_fspath
 
+
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
 # Also grab the exception object.
 
 cdef object Token, TokenSyntaxError
-from srctools.tokenizer import Token,  TokenSyntaxError
+from srctools.tokenizer import Token, TokenSyntaxError
+
 
 __all__ = ['BaseTokenizer', 'Tokenizer', 'IterTokenizer', 'escape_text']
 
@@ -1130,7 +1133,10 @@ cdef class _VPK_IterNullstr:
 
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
+
 from cpython.object cimport PyTypeObject
+
+
 cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 if USE_TYPE_INTERNALS:

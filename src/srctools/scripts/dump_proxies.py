@@ -1,9 +1,9 @@
 """Parse out all material proxies used in the given game."""
+from typing import DefaultDict, List
+from collections import Counter
 import argparse
 import sys
 import traceback
-from collections import Counter
-from typing import List, DefaultDict
 
 from srctools.filesys import FileSystem, RawFileSystem
 from srctools.game import Game

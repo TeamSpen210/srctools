@@ -1,4 +1,6 @@
 from typing import no_type_check
+
+
 @no_type_check
 def _shader_db(var_type, DB):
     """Build a database of material parameters to their types."""

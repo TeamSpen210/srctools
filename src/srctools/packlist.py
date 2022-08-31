@@ -1,38 +1,41 @@
 """Handles the list of files which are desired to be packed into the BSP."""
+from typing import (
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional,
+    Set, Tuple, TypeVar, Union,
+)
+from collections import OrderedDict
+from enum import Enum, auto as auto_enum
+from pathlib import Path
+from zipfile import ZipFile
 import io
 import itertools
-import shutil
-import warnings
-from collections import OrderedDict
-from pathlib import Path
-from typing import (
-    TypeVar, Generic, Union, Optional, Callable,
-    Dict, Tuple, List, Set, Iterable, Iterator, Collection
-)
-from enum import Enum, auto as auto_enum
-from zipfile import ZipFile
 import os
 import re
+import shutil
+import warnings
 
 from atomicwrites import atomic_write
 import attrs
 
 from srctools import conv_bool
-from srctools.dmx import Attribute, Element, ValueType
-from srctools.tokenizer import TokenSyntaxError
-from srctools.particles import Particle, FORMAT_NAME as PARTICLE_FORMAT_NAME
-from srctools.property_parser import Property, KeyValError
-from srctools.vmf import VMF, Entity
-from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, EntityTypes
 from srctools.bsp import BSP
-from srctools.filesys import (
-    FileSystem, VPKFileSystem, FileSystemChain, File,
-    VirtualFileSystem, CACHE_KEY_INVALID,
+from srctools.dmx import Attribute, Element, ValueType
+from srctools.fgd import (
+    FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes,
 )
-from srctools.mdl import Model, MDL_EXTS, AnimEvents
+from srctools.filesys import (
+    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem,
+    VPKFileSystem,
+)
+from srctools.mdl import MDL_EXTS, AnimEvents, Model
+from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
+from srctools.property_parser import KeyValError, Property
+from srctools.sndscript import SND_CHARS, Sound
+from srctools.tokenizer import TokenSyntaxError
+from srctools.vmf import VMF, Entity
 from srctools.vmt import Material, VarType
-from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
+
 
 LOGGER = srctools.logger.get_logger(__name__)
 SOUND_CACHE_VERSION = '2'  # Used to allow ignoring incompatible versions.
@@ -929,7 +932,7 @@ class PackList:
         # Handle resources that's coded into different entities with our
         # internal database.
         # Delay import, since this is a fair bit of code and many don't need it.
-        from ._class_resources import CLASS_RESOURCES, CLASS_FUNCS
+        from ._class_resources import CLASS_FUNCS, CLASS_RESOURCES
 
         # Use compress() to skip classnames that have no ents.
         for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
@@ -1275,7 +1278,7 @@ def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
 
     This allows those to be packed also.
     """
-    from ._class_resources import CLASS_RESOURCES, ALT_NAMES
+    from ._class_resources import ALT_NAMES, CLASS_RESOURCES
     try:
         classname = ALT_NAMES[classname.casefold()]
     except KeyError:
@@ -1304,7 +1307,7 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
 
     If the specified classname is one, return a callable that packs it.
     """
-    from ._class_resources import CLASS_FUNCS, ALT_NAMES
+    from ._class_resources import ALT_NAMES, CLASS_FUNCS
     try:
         classname = ALT_NAMES[classname.casefold()]
     except KeyError:

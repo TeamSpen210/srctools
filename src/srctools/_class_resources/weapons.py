@@ -5,6 +5,7 @@ Instead it's specified in the weapon script.
 """
 from . import *
 
+
 res('weapon_357')
 # res('weapon_adrenaline_spawn')
 # res('weapon_ak47')

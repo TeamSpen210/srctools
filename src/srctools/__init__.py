@@ -1,16 +1,16 @@
+from typing import (
+    IO, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
+    List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set, Tuple,
+    Type, TypeVar, Union, ValuesView, overload,
+)
+from typing_extensions import Final, Protocol, TypeAlias
+from collections import deque
+from types import TracebackType
 import itertools as _itertools
 import os as _os
 import sys as _sys
-from typing import (
-    Type, TypeVar, Tuple, Union, Any, NoReturn, Optional, overload,
-    Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
-    Sequence, List, Container, AbstractSet, Set,
-    Iterable, Iterator, IO,
-)
-from typing_extensions import Final, TypeAlias, Protocol
-from types import TracebackType
-from collections import deque
 import warnings
+
 
 try:
     from ._version import __version__
@@ -524,6 +524,7 @@ class AtomicWriter:
 # 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
+# isort: off
 from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
 from srctools.property_parser import NoKeyError, KeyValError, Property
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem

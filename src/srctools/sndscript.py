@@ -1,15 +1,14 @@
 """Reads and writes Soundscripts."""
+from typing import (
+    IO, Callable, Dict, List, Optional, TextIO, Tuple, TypeVar, Union,
+)
 from enum import Enum
 import struct
 
 import attrs
 
 from srctools import Property, conv_float
-from typing import (
-    Optional, Union, TypeVar, Callable,
-    List, Tuple, Dict,
-    TextIO, IO,
-)
+
 
 __all__ = [
     'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',

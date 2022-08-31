@@ -1,9 +1,10 @@
 """Various useful constants and enums."""
-from enum import Enum, Flag
 from typing import Any, MutableMapping
-import operator
+from enum import Enum, Flag
 import functools
+import operator
 import sys
+
 
 __all__ = [
     'add_unknown',

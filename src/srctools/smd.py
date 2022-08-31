@@ -1,18 +1,18 @@
 """Parses SMD model/animation data."""
-import os
-import re
-import warnings
+from typing import (
+    Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union,
+)
+from typing_extensions import Protocol
 from collections import defaultdict
 from copy import deepcopy
 from operator import itemgetter
-
 import math
-from typing import (
-    Union, Optional, Any, Tuple,
-    List, Dict, Set, Iterator, Iterable,
-)
-from typing_extensions import Protocol
-from srctools.math import Vec, Angle, Matrix, to_matrix
+import os
+import re
+import warnings
+
+from srctools.math import Angle, Matrix, Vec, to_matrix
+
 
 __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',

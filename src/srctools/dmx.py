@@ -14,28 +14,30 @@ To parse a DMX file, it must be opened in binary mode (the kind will be detected
 The format name/version are stored in the header, allowing indicating the kind of data stored in 
 the file.
 """
-import collections
-import builtins
-import warnings
-import sys
-from enum import Enum
 from typing import (
-    Sequence, Union, NamedTuple, TypeVar, Generic, NewType, Any, cast, overload, TYPE_CHECKING,
-    Dict, Tuple, Callable, IO, List, Optional, Type, MutableMapping, Iterable, Iterator,
-    Set, Mapping, KeysView, ValuesView,
+    IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator,
+    KeysView, List, Mapping, MutableMapping, NamedTuple, NewType, Optional,
+    Sequence, Set, Tuple, Type, TypeVar, Union, ValuesView, cast, overload,
 )
-from typing_extensions import Literal, TypeAlias, Final
-from struct import Struct, pack, error as StructError
+from typing_extensions import Final, Literal, TypeAlias
+from enum import Enum
+from struct import Struct, error as StructError, pack
+from uuid import UUID, uuid4 as get_uuid
+import builtins
+import collections
+import copy
 import io
 import re
-import copy
-from uuid import UUID, uuid4 as get_uuid
+import sys
+import warnings
 
 import attrs
 
-from srctools import binformat, bool_as_int, BOOL_LOOKUP, Matrix, Angle, EmptyMapping
+from srctools import (
+    BOOL_LOOKUP, Angle, EmptyMapping, Matrix, binformat, bool_as_int,
+)
 from srctools.property_parser import Property
-from srctools.tokenizer import Tokenizer, Token
+from srctools.tokenizer import Token, Tokenizer
 
 
 __all__ = [

@@ -3,31 +3,31 @@
 After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
+from typing import (
+    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Mapping, Optional,
+    Sequence, Tuple, Type, Union, overload,
+)
 from array import array
-from enum import Enum, Flag
 from collections import namedtuple
+from enum import Enum, Flag
+from io import BytesIO
 import itertools
 import math
 import struct
-import warnings
 import types
-from io import BytesIO
+import warnings
 
-from . import binformat, EmptyMapping
+from . import EmptyMapping, binformat
 from .const import add_unknown
 from .math import Vec
 
-from typing import (
-    Any, IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type, Collection, overload, Sequence,
-    Mapping,
-)
 
 # Only import while type checking, so these expensive libraries are only loaded
 # if the user used them elsewhere.
 if TYPE_CHECKING:
-    from PIL.Image import Image as PIL_Image
     import tkinter
+
+    from PIL.Image import Image as PIL_Image
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -35,6 +35,8 @@ if TYPE_CHECKING:
 
 # noinspection PyProtectedMember
 from . import _py_vtf_readwrite as _py_format_funcs
+
+
 _cy_format_funcs = _format_funcs = _py_format_funcs
 
 if not TYPE_CHECKING:

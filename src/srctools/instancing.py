@@ -1,12 +1,14 @@
 """Implements support for collapsing instances."""
-import attrs
+from typing import Container, Dict, Iterable, List, Set, Tuple, Union
 from enum import Enum
 from pathlib import Path
-from typing import Union, Tuple, Dict, Set, Iterable, Container, List
-from srctools import Matrix, Vec, Angle, conv_float, Property
-from srctools.vmf import Entity, EntityFixup, FixupValue, VMF, Output, VisGroup
-from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
-from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
+
+import attrs
+
+from srctools import Angle, Matrix, Property, Vec, conv_float
+from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
+from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
+from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
 
 

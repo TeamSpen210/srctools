@@ -3,38 +3,36 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, Tuple, Callable, Dict, Set, IO, Hashable, Generator, cast,
+    IO, Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator,
+    List, Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
-from io import BytesIO
 from enum import Enum, Flag
+from io import BytesIO
 from weakref import WeakKeyDictionary
 from zipfile import ZipFile
-import itertools
-import struct
-import inspect
 import contextlib
-import warnings
+import inspect
+import itertools
 import os
+import struct
+import warnings
 
 from atomicwrites import atomic_write
 import attrs
 
-from srctools import conv_int, logger, StringPath
-from srctools.math import Vec, Angle
-from srctools.filesys import FileSystem
-from srctools.vtf import VTF
-from srctools.vmt import Material
-from srctools.vmf import VMF, Entity, Output
-from srctools.tokenizer import escape_text
+from srctools import StringPath, conv_int, logger
 from srctools.binformat import (
-    DeferredWrites,
-    struct_read,
-    read_array, write_array,
-    compress_lzma, decompress_lzma,
+    DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read,
+    write_array,
 )
+from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
+from srctools.filesys import FileSystem
+from srctools.math import Angle, Vec
 from srctools.property_parser import Property
-from srctools.const import SurfFlags, BSPContents as BrushContents, add_unknown
+from srctools.tokenizer import escape_text
+from srctools.vmf import VMF, Entity, Output
+from srctools.vmt import Material
+from srctools.vtf import VTF
 
 
 __all__ = [

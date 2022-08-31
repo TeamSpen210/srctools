@@ -4,11 +4,12 @@ Those are ones that don't simply appear in keyvalues.
 The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
-from typing import Callable, TypeVar, Tuple, Union, List, Dict, Iterable
+from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Union
 from typing_extensions import TypeAlias
 
-from ..packlist import FileType, PackList
 from .. import VMF, Entity, conv_int
+from ..packlist import FileType, PackList
+
 
 #  For various entity classes, we know they require hardcoded files.
 # List them here - classname -> [(file, type), ...]
@@ -484,9 +485,10 @@ res('window_pane', mdl('models/brokenglass_piece.mdl'))
 
 
 from srctools._class_resources import (
-    ai_, asw_, env_, filters, func_,
-    item_, logic, npcs, props, triggers,
+    ai_, asw_, env_, filters, func_, item_, logic, npcs, props, triggers,
     weapons,
 )
+
+
 # Now all of these have been done, apply 'includes' commands.
 _process_includes()

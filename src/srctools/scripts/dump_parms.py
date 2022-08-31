@@ -3,14 +3,15 @@
 Run with a list of paths pointing to the materialsystem/ folders in the SDK.
 This produces _shaderdb.py
 """
-import glob
-import ast
-import sys
-import collections
+from typing import Dict, List, Optional, Set
 from collections import defaultdict
-from typing import List, Optional, Dict, Set
+import ast
+import collections
+import glob
+import sys
 
 import attrs
+
 from srctools.vmt import VarType
 
 

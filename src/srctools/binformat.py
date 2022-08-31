@@ -2,13 +2,14 @@
 The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
 
 """
+from typing import IO, Dict, Hashable, List, Mapping, Tuple, Union
+from typing_extensions import Final
 from binascii import crc32
 from struct import Struct
-from typing import IO, List, Hashable, Mapping, Union, Dict, Tuple
-from typing_extensions import Final
 import lzma
 
 from srctools import Vec
+
 
 __all__ = [
     'SIZES',

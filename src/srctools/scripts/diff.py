@@ -3,7 +3,6 @@ from typing import List
 from pathlib import Path
 import sys
 
-
 from srctools import VPK
 
 

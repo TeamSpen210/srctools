@@ -1,22 +1,21 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Union, Iterator, Iterable,
-    List, Dict, Tuple, cast,
-    BinaryIO, Sequence as SequenceType,
+    BinaryIO, Dict, Iterable, Iterator, List, Sequence as SequenceType, Tuple,
+    Union, cast,
 )
-from enum import Flag as FlagEnum, Enum
+from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
+from struct import Struct
+
 import attrs
 
 from srctools import Property
-from srctools.const import add_unknown
 from srctools.binformat import (
-    struct_read, read_nullstr, read_offset_array,
-    str_readvec,
+    read_nullstr, read_offset_array, str_readvec, struct_read,
 )
-from srctools.filesys import FileSystem, File
+from srctools.const import add_unknown
+from srctools.filesys import File, FileSystem
 from srctools.math import Vec
-from struct import Struct
 
 
 __all__ = [

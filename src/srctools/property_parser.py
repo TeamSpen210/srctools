@@ -59,22 +59,23 @@ Properties with children can be indexed by their names, or by a
 
 Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
+from typing import (
+    Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple,
+    Type, TypeVar, Union, cast, overload,
+)
+from typing_extensions import Final
+import builtins  # Property.bool etc shadows these.
+import keyword
 import os
 import sys
-import keyword
-import builtins  # Property.bool etc shadows these.
-import warnings
 import types
+import warnings
 
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
-from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
-
-from typing import (
-    Optional, Type, Union, Any, TypeVar, overload, cast,
-    List, Tuple, Dict, Callable, Mapping, Iterable, Iterator,
+from srctools.tokenizer import (
+    BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text,
 )
-from typing_extensions import Final
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']

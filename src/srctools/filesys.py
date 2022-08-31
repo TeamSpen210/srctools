@@ -17,21 +17,20 @@ supported.
 See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files into filesystems.
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
-import types
-
-from zipfile import ZipFile, ZipInfo
 from typing import (
-    TypeVar, Type, Generic, Any, Union, Optional, cast,
-    Tuple, Dict, List, Set, Iterator, TextIO, BinaryIO,
+    Any, BinaryIO, Dict, Generic, Iterator, List, Optional, Set, TextIO, Tuple,
+    Type, TypeVar, Union, cast,
 )
 from typing_extensions import Final
+from zipfile import ZipFile, ZipInfo
 import io
 import os
+import types
 import warnings
 
 from srctools import StringPath
-from srctools.vpk import VPK, FileInfo as VPKFile
 from srctools.property_parser import Property
+from srctools.vpk import VPK, FileInfo as VPKFile
 
 
 __all__ = [

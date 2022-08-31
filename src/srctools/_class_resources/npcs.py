@@ -1,7 +1,8 @@
 """NPC entities."""
+from .. import Entity, conv_int
+from ..packlist import FileType, PackList
 from . import *
-from .. import conv_int, Entity
-from ..packlist import PackList, FileType
+
 
 res('npc_advisor',
     mdl("models/advisor.mdl"),

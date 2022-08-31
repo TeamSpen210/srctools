@@ -1,10 +1,12 @@
 # cython: language_level=3, boundscheck=False, wraparound=False
 """Functions for reading/writing VTF data."""
-from libc.stdio cimport sprintf
-from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
 from cpython.bytes cimport PyBytes_FromStringAndSize
+from cython.parallel cimport parallel, prange
+from libc.stdint cimport (
+    uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t,
+)
+from libc.stdio cimport sprintf
 from libc.string cimport memcpy, memset, strcmp
-from cython.parallel cimport prange, parallel
 
 
 cdef extern from "squish.h" namespace "squish":

@@ -3,6 +3,12 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
+from typing import (
+    Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO,
+    Tuple, Type, Union, cast,
+)
+from io import StringIO
+from types import TracebackType
 import contextlib
 import contextvars
 import itertools
@@ -10,14 +16,9 @@ import logging
 import os
 import sys
 import traceback
-from io import StringIO
-from types import TracebackType
-from typing import (
-    Mapping, cast, Optional, Union, Any,
-    Dict, Tuple, List, Type, Callable, Generator, Iterable, TextIO,
-)
 
 from srctools import StringPath
+
 
 __all__ = ['LoggerAdapter', 'get_handler', 'get_logger', 'init_logging', 'context']
 # Only generic in stubs!

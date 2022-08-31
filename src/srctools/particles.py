@@ -1,9 +1,10 @@
 """Parse particle system files."""
-from typing import Union, IO, Dict, overload, List, Iterable
+from typing import IO, Dict, Iterable, List, Union, overload
 import copy
 
 import attrs
-from srctools.dmx import Element, ValueType, Attribute
+
+from srctools.dmx import Attribute, Element, ValueType
 
 
 __all__ = [

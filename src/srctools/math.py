@@ -18,15 +18,14 @@ Rotates LHS by RHS:
  - Angle @ Matrix -> Angle
  - Matrix @ Matrix -> Matrix
 """
-import math
-import contextlib
-import warnings
-
 from typing import (
-    Union, Tuple, List, overload, cast, Type, TypeVar, TYPE_CHECKING, Any,
-    NamedTuple, Iterator, Iterable, SupportsRound, Optional,
+    TYPE_CHECKING, Any, Iterable, Iterator, List, NamedTuple, Optional,
+    SupportsRound, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final, Literal, Protocol, final
+import contextlib
+import math
+import warnings
 
 
 __all__ = [

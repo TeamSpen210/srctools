@@ -1,10 +1,12 @@
 """Functions for reading/writing VTF data."""
+from typing import (
+    TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple,
+)
 import array
-from typing import Tuple, List, Dict, Callable, Iterable, Optional, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from srctools.vtf import ImageFormats, FilterMode
+    from srctools.vtf import FilterMode, ImageFormats
 else:
     ImageFormats = 'ImageFormats'
     FilterMode = 'FilterMode'

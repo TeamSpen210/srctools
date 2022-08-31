@@ -2,10 +2,10 @@
 
 These set the arguments to the compile tools.
 """
-from struct import Struct, unpack, pack
-from enum import Enum
+from typing import IO, Dict, List, Optional, Sequence, Union
 from collections import OrderedDict
-from typing import List, Optional, Dict, IO, Sequence, Union
+from enum import Enum
+from struct import Struct, pack, unpack
 
 
 ST_COMMAND = Struct('Bi260s260sii260sii')

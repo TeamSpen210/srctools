@@ -1,6 +1,6 @@
 """Tell PyInstaller to use the hook module."""
-import os.path
 from typing import List
+import os.path
 
 
 def get_hook_dirs() -> List[str]:

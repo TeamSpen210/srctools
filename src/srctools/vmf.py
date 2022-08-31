@@ -3,29 +3,27 @@
 Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
-import io
-import re
-import operator
-import builtins
-import warnings
-from array import ArrayType as Array
-from enum import Flag
-from collections import defaultdict
-from contextlib import suppress
-from sys import intern
-
 from typing import (
-    Optional, Union, overload, TypeVar, TYPE_CHECKING,
-    Dict, List, Tuple, Set, IO, FrozenSet,
-    Mapping, MutableMapping, KeysView, ItemsView, ValuesView,
-    Iterable, Iterator, AbstractSet, Pattern, Match,
+    IO, TYPE_CHECKING, AbstractSet, Dict, FrozenSet, ItemsView, Iterable,
+    Iterator, KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern,
+    Set, Tuple, TypeVar, Union, ValuesView, overload,
 )
 from typing_extensions import Final
+from array import ArrayType as Array
+from collections import defaultdict
+from contextlib import suppress
+from enum import Flag
+from sys import intern
+import builtins
+import io
+import operator
+import re
+import warnings
 
 import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.math import Vec, Angle, Matrix, to_matrix
+from srctools.math import Angle, Matrix, Vec, to_matrix
 from srctools.property_parser import Property
 import srctools
 

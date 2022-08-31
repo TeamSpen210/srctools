@@ -1,12 +1,12 @@
 """Collapses the submaps of a manifest map into a single VMF."""
+from typing import List, Union
+from pathlib import Path
 import argparse
 import sys
-from pathlib import Path
-from typing import List, Union
 
-from srctools import FGD, Property, VMF
-from srctools.instancing import Manifest, InstanceFile, collapse_one
+from srctools import FGD, VMF, Property
 from srctools.filesys import RawFileSystem
+from srctools.instancing import InstanceFile, Manifest, collapse_one
 from srctools.vmf import VisGroup
 
 

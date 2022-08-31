@@ -1,34 +1,31 @@
 """Parse FGD files, used to describe Hammer entities."""
-from copy import deepcopy
-from collections import defaultdict
-from enum import Enum
-from pathlib import PurePosixPath
-from struct import Struct
-import itertools
-import io
-import math
-import sys
-import operator
-
 from typing import (
-    Generic, Optional, Union, overload, cast,
-    TypeVar, Callable, Type, ClassVar, Any,
-    Dict, Tuple, List, Set, FrozenSet,
-    Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO,
+    IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet,
+    Generic, Iterable, Iterator, List, Mapping, Optional, Set, TextIO, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final
+from collections import defaultdict
+from copy import deepcopy
+from enum import Enum
 from importlib_resources import files
+from pathlib import PurePosixPath
+from struct import Struct
+import io
+import itertools
+import math
+import operator
+import sys
 
 import attrs
 
-import srctools
-from srctools.filesys import FileSystem, File
-from srctools.tokenizer import (
-    BaseTokenizer, Tokenizer, Token,
-    TokenSyntaxError, escape_text,
-)
 from srctools.binformat import struct_read
+from srctools.filesys import File, FileSystem
+from srctools.tokenizer import (
+    BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text,
+)
+import srctools
+
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -2153,6 +2150,7 @@ class FGD:
         global _ENGINE_FGD
         if _ENGINE_FGD is None:
             from lzma import LZMAFile
+
             # On 3.8, importlib_resources doesn't have the right stubs.
             comp: IO[bytes]
             with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore

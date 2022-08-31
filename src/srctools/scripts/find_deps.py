@@ -1,14 +1,15 @@
 """Finds dependencies used by resources or maps."""
+from typing import List
 import argparse
 import os
 import sys
-from typing import List
 
-from srctools import Property, VMF, FGD
+from srctools import FGD, VMF, Property
 from srctools.bsp import BSP
-from srctools.filesys import RawFileSystem, FileSystemChain
+from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
 from srctools.packlist import PackList
+
 
 fgd = FGD.engine_dbase()
 

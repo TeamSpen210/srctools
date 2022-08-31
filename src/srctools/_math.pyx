@@ -1,16 +1,20 @@
 # cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
+from cpython.exc cimport PyErr_WarnEx
+from cpython.object cimport (
+    Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject,
+)
+from cpython.ref cimport Py_INCREF
 from libc cimport math
-from libc.math cimport sin, cos, tan, llround, NAN
-from libc.string cimport memcpy, memcmp, memset
+from libc.math cimport NAN, cos, llround, sin, tan
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport sscanf
-from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
-from cpython.ref cimport Py_INCREF
-from cpython.exc cimport PyErr_WarnEx
+from libc.string cimport memcmp, memcpy, memset
 from libcpp.vector cimport vector
-from srctools cimport quickhull
 cimport cython.operator
+
+from srctools cimport quickhull
+
 
 cdef extern from *:
     const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
@@ -34,6 +38,7 @@ cdef inline Angle _angle(double pitch, double yaw, double roll):
 cdef object typing  # Keep private.
 import typing
 
+
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
@@ -41,7 +46,11 @@ cdef object unpickle_vec, unpickle_ang, unpickle_mat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
-from srctools.math import Vec_tuple, _mk_vec as unpickle_vec, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat
+from srctools.math import (
+    Vec_tuple, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat,
+    _mk_vec as unpickle_vec,
+)
+
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
@@ -2539,6 +2548,8 @@ def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, V
 # This fixes all the methods too, though not in exceptions.
 
 from cpython.object cimport PyTypeObject
+
+
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"

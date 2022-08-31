@@ -1,13 +1,13 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
-    List, Optional, Iterator, Union, Tuple, TYPE_CHECKING,
-    Collection, Iterable, ClassVar, TypeVar, Type,
+    TYPE_CHECKING, ClassVar, Collection, Iterable, Iterator, List, Optional,
+    Tuple, Type, TypeVar, Union,
 )
 
 import attrs
 
 from srctools import Vec, parse_vec_str
-from srctools.fgd import HelperTypes, Helper, EntityDef
+from srctools.fgd import EntityDef, Helper, HelperTypes
 
 
 __all__ = [

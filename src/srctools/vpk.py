@@ -1,14 +1,17 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-import os
-import struct
-import operator
+from typing import (
+    IO, Dict, Iterable, Iterator, List, Optional, Tuple, Type, Union,
+)
+from typing_extensions import Final
 from enum import Enum
 from types import TracebackType
-from typing import Tuple, List, Dict, Type, Union, Optional, Iterator, Iterable, IO
-from typing_extensions import Final
+import operator
+import os
+import struct
 
 import attrs
-from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
+
+from srctools.binformat import EMPTY_CHECKSUM, checksum, struct_read
 
 
 __all__ = [
@@ -724,7 +727,9 @@ def script_write(args: List[str]) -> None:
 # This function requires accumulating a character at a time, parsing the VPK
 # is very slow without a speedup.
 try:
-    from srctools._tokenizer import _VPK_IterNullstr as iter_nullstr  # type: ignore
+    from srctools._tokenizer import (  # type: ignore
+        _VPK_IterNullstr as iter_nullstr,
+    )
 except ImportError:
     pass
 
