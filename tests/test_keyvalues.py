@@ -2,9 +2,9 @@ import itertools
 
 import pytest
 
-from srctools.property_parser import Property, KeyValError, NoKeyError
+from srctools.keyvalues import Keyvalues, KeyValError, NoKeyError
 from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
-from srctools import property_parser as pp_mod
+from srctools import keyvalues as kv_mod
 
 if Cy_Tokenizer is not None:
     parms = [Cy_Tokenizer, Py_Tokenizer]
@@ -18,16 +18,16 @@ else:
 @pytest.fixture(params=parms, ids=ids)
 def py_c_token(request):
     """Run the test twice, for the Python and C versions of Tokenizer."""
-    orig_tok = pp_mod.Tokenizer
+    orig_tok = kv_mod.Tokenizer
     try:
-        pp_mod.Tokenizer = request.param
+        kv_mod.Tokenizer = request.param
         yield None
     finally:
-        pp_mod.Tokenizer = orig_tok
+        kv_mod.Tokenizer = orig_tok
 
 
 def assert_tree(first, second, path='') -> None:
-    """Check that two property trees match exactly (including case)."""
+    """Check that two keyvalues trees match exactly (including case)."""
     assert first.name == second.name, (first, second)
     assert first.real_name == second.real_name, (first, second)
     assert first.has_children() == second.has_children(), (first, second)
@@ -43,20 +43,20 @@ def assert_tree(first, second, path='') -> None:
 def test_docstring() -> None:
     """Run doctests on the module."""
     import doctest
-    assert doctest.testmod(pp_mod, optionflags=doctest.ELLIPSIS).failed == 0
+    assert doctest.testmod(kv_mod, optionflags=doctest.ELLIPSIS).failed == 0
 
 
 def test_constructor() -> None:
-    """Test the constructor for Property objects."""
-    Property(None, [])
-    Property('Test', 'value with spaces and ""')
-    block = Property('Test_block', [
-        Property('Test', 'value\0'),
-        Property('Test', [
-            Property('leaf', 'data'),
+    """Test the constructor for Keyvalues objects."""
+    Keyvalues(None, [])
+    Keyvalues('Test', 'value with spaces and ""')
+    block = Keyvalues('Test_block', [
+        Keyvalues('Test', 'value\0'),
+        Keyvalues('Test', [
+            Keyvalues('leaf', 'data'),
         ]),
-        Property('Test2', 'other'),
-        Property('Block', []),
+        Keyvalues('Test2', 'other'),
+        Keyvalues('Block', []),
     ])
     assert block.real_name == 'Test_block'
     children = list(block)
@@ -76,8 +76,8 @@ def test_constructor() -> None:
 
 
 def test_names() -> None:
-    """Test the behaviour of Property.name."""
-    prop = Property('Test1', 'value')
+    """Test the behaviour of Keyvalues.name."""
+    prop = Keyvalues('Test1', 'value')
 
     # Property.name casefolds the argument.
     assert prop.name == 'test1'
@@ -177,7 +177,7 @@ text"
         }
 '''
 
-P = Property
+P = Keyvalues
 parse_result = P(None, [
     P('Root1', [
         P("Key", "Value"),
@@ -198,7 +198,7 @@ parse_result = P(None, [
           ),
         # Note, invalid = unchanged.
         P('Escapes', '\t \n \\d'),
-        P('Oneliner', [Property('name', 'value')]),
+        P('Oneliner', [Keyvalues('name', 'value')]),
     ]),
     P('CommentChecks', [
         P('after ', 'value'),
@@ -228,7 +228,7 @@ del P
 
 def test_parse(py_c_token) -> None:
     """Test parsing strings."""
-    result = Property.parse(
+    result = Keyvalues.parse(
         # iter() ensures sequence methods aren't used anywhere.
         iter(parse_test.splitlines(keepends=True)),
         # Check active and inactive flags are correctly treated.
@@ -240,7 +240,7 @@ def test_parse(py_c_token) -> None:
     assert_tree(parse_result, result)
 
     # Test the whole string can be passed too.
-    result = Property.parse(
+    result = Keyvalues.parse(
         parse_test,
         flags={
             'test_enabled': True,
@@ -250,12 +250,12 @@ def test_parse(py_c_token) -> None:
     assert_tree(parse_result, result)
 
     # Check export roundtrips.
-    assert_tree(parse_result, Property.parse(parse_result.export()))
+    assert_tree(parse_result, Keyvalues.parse(parse_result.export()))
 
 
 def test_build() -> None:
     """Test the .build() constructor."""
-    prop = Property(None, [])
+    prop = Keyvalues(None, [])
 
     with prop.build() as b:
         with b.Root1:
@@ -305,15 +305,15 @@ def test_build_exc() -> None:
     class Exc(Exception):
         pass
 
-    prop = Property('Root', [])
+    prop = Keyvalues('Root', [])
 
     with pytest.raises(Exc):  # Should not swallow.
         with prop.build() as build:
             build.prop('Hi')
             raise Exc
     # Exception doesn't rollback.
-    assert_tree(Property('Root', [
-        Property('prop', 'Hi'),
+    assert_tree(Keyvalues('Root', [
+        Keyvalues('prop', 'Hi'),
     ]), prop)
 
     prop.clear()
@@ -323,9 +323,9 @@ def test_build_exc() -> None:
         with pytest.raises(Exc):
             with build.subprop as sub:
                 raise Exc
-    assert_tree(Property('Root', [
-        Property('leaf', 'value'),
-        Property('subprop', []),
+    assert_tree(Keyvalues('Root', [
+        Keyvalues('leaf', 'value'),
+        Keyvalues('subprop', []),
     ]), prop)
 
 
@@ -334,7 +334,7 @@ def test_parse_fails(py_c_token) -> None:
     def t(text):
         """Test a string to ensure it fails parsing."""
         try:
-            result = Property.parse(text)
+            result = Keyvalues.parse(text)
         except KeyValError:
             pass
         else:
@@ -495,58 +495,58 @@ text with
 def test_newline_strings(py_c_token) -> None:
     """Test that newlines are correctly blocked if the parameter is set."""
     with pytest.raises(KeyValError):
-        Property.parse('"key\nmultiline" "value"')
+        Keyvalues.parse('"key\nmultiline" "value"')
     with pytest.raises(KeyValError):
-        Property.parse('"key" "value\nmultiline"', newline_values=False)
-    root = Property.parse('"key" "value\rmulti"')
-    assert_tree(root, Property.root(Property('key', 'value\nmulti')))
+        Keyvalues.parse('"key" "value\nmultiline"', newline_values=False)
+    root = Keyvalues.parse('"key" "value\rmulti"')
+    assert_tree(root, Keyvalues.root(Keyvalues('key', 'value\nmulti')))
 
-    root = Property.parse('"key\nmulti" "value"', newline_keys=True)
-    assert_tree(root, Property.root(Property('key\nmulti', 'value')))
+    root = Keyvalues.parse('"key\nmulti" "value"', newline_keys=True)
+    assert_tree(root, Keyvalues.root(Keyvalues('key\nmulti', 'value')))
 
 
 def test_edit() -> None:
-    """Check functionality of Property.edit()"""
-    test_prop = Property('Name', 'Value')
+    """Check functionality of Keyvalues.edit()"""
+    test_prop = Keyvalues('Name', 'Value')
 
-    def check(prop: Property, name, value):
+    def check(prop: Keyvalues, name, value):
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
         assert prop is test_prop
         assert prop.real_name == name
         assert prop.value == value
-        test_prop = Property('Name', 'Value')
+        test_prop = Keyvalues('Name', 'Value')
 
     check(test_prop.edit(), 'Name', 'Value')
     check(test_prop.edit(name='new_name',), 'new_name', 'Value')
     check(test_prop.edit(value='new_value'), 'Name', 'new_value')
 
     # Check converting a block into a keyvalue
-    test_prop = Property('Name', [
-        Property('Name', 'Value')
+    test_prop = Keyvalues('Name', [
+        Keyvalues('Name', 'Value')
     ])
     check(test_prop.edit(value='Blah'), 'Name', 'Blah')
 
     # Check converting a keyvalue into a block.
-    child_1 = Property('Key', 'Value')
-    new_prop = test_prop.edit(value=[child_1, Property('Key2', 'Value')])
+    child_1 = Keyvalues('Key', 'Value')
+    new_prop = test_prop.edit(value=[child_1, Keyvalues('Key2', 'Value')])
     assert test_prop is new_prop
     assert list(test_prop)[0] is child_1
 
 
 def test_bool() -> None:
     """Check bool(Property)."""
-    assert bool(Property('Name', '')) is False
-    assert bool(Property('Name', 'value')) is True
-    assert bool(Property('Name', [])) is False
-    assert bool(Property('Name', [
-        Property('Key', 'Value')
+    assert bool(Keyvalues('Name', '')) is False
+    assert bool(Keyvalues('Name', 'value')) is True
+    assert bool(Keyvalues('Name', [])) is False
+    assert bool(Keyvalues('Name', [
+        Keyvalues('Key', 'Value')
     ])) is True
 
 
 def test_blockfuncs_fail_on_leaf() -> None:
-    """Check that methods requiring a block fail on a leaf property."""
-    leaf = Property('Name', 'blah')
+    """Check that methods requiring a block fail on a leaf key."""
+    leaf = Keyvalues('Name', 'blah')
     with pytest.raises(ValueError):
         for _ in leaf.find_all("blah"):
             pass
@@ -596,18 +596,18 @@ def test_blockfuncs_fail_on_leaf() -> None:
 
 def test_search() -> None:
     """Test various key search funcs."""
-    key1 = Property('key1', '1')
-    key2 = Property('key2', '2')
-    kEy1 = Property('kEy1', '3')
-    bLock1 = Property('bLock1', [Property('leaf', '45')])
-    test1 = Property('Block', [key1, key2, bLock1, kEy1])
+    key1 = Keyvalues('key1', '1')
+    key2 = Keyvalues('key2', '2')
+    kEy1 = Keyvalues('kEy1', '3')
+    bLock1 = Keyvalues('bLock1', [Keyvalues('leaf', '45')])
+    test1 = Keyvalues('Block', [key1, key2, bLock1, kEy1])
 
     # Search preferring later keys, case-insensitive.
     assert test1.find_key('keY1') is kEy1
     assert test1.find_key('key2') is key2
     # Default values.
-    assert test1.find_key('missing', '45') == Property('missing', '45')
-    assert test1.find_key('missing', or_blank=True) == Property('missing', [])
+    assert test1.find_key('missing', '45') == Keyvalues('missing', '45')
+    assert test1.find_key('missing', or_blank=True) == Keyvalues('missing', [])
     assert test1.find_key('key1', '45') is kEy1
     assert test1.find_key('key1', or_blank=True) is kEy1
 
@@ -627,16 +627,16 @@ def test_search() -> None:
     with pytest.raises(NoKeyError):
         test1.find_block('Block2')
     assert test1.find_block('blOCk1') is bLock1
-    assert test1.find_block('Block2', or_blank=True) == Property('Block2', [])
+    assert test1.find_block('Block2', or_blank=True) == Keyvalues('Block2', [])
 
 
 def test_getitem() -> None:
     """Test various modes of getitem functions correctly."""
-    key1 = Property('key1', '1')
-    key2 = Property('key2', '2')
-    kEy1 = Property('kEy1', '3')
-    bLock1 = Property('bLock1', [Property('leaf', '45')])
-    root = Property('Block', [key1, key2, bLock1, kEy1])
+    key1 = Keyvalues('key1', '1')
+    key2 = Keyvalues('key2', '2')
+    kEy1 = Keyvalues('kEy1', '3')
+    bLock1 = Keyvalues('bLock1', [Keyvalues('leaf', '45')])
+    root = Keyvalues('Block', [key1, key2, bLock1, kEy1])
 
     assert root[0] is key1
     assert root[2] is bLock1
@@ -660,28 +660,28 @@ def test_getitem() -> None:
 
 def test_setitem() -> None:
     """Test various modes of setitem functions correctly."""
-    key1 = Property('key1', '1')
-    key2 = Property('key2', '2')
-    kEy1 = Property('kEy1', '3')
-    bLock1 = Property('bLock1', [Property('leaf', '45')])
-    root = Property('Block', [key1, key2, Property('key3', '45'), bLock1, kEy1])
+    key1 = Keyvalues('key1', '1')
+    key2 = Keyvalues('key2', '2')
+    kEy1 = Keyvalues('kEy1', '3')
+    bLock1 = Keyvalues('bLock1', [Keyvalues('leaf', '45')])
+    root = Keyvalues('Block', [key1, key2, Keyvalues('key3', '45'), bLock1, kEy1])
 
-    root[0] = Property('kEy1', '2')
-    assert root[0] == Property('kEy1', '2')
+    root[0] = Keyvalues('kEy1', '2')
+    assert root[0] == Keyvalues('kEy1', '2')
     assert root['key1'] == '3'  # It's not at the end.
-    root[4] = Property('KEY1', '4')
+    root[4] = Keyvalues('KEY1', '4')
     assert root['key1'] == '4'
 
     with pytest.raises(TypeError):
         root[0] = 'not_a_property'  # type: ignore
 
-    root[1:3] = [Property('another', '12'), Property('keys', '12')]
-    assert_tree(root, Property('Block', [
-        Property('kEy1', '2'),
-        Property('another', '12'),
-        Property('keys', '12'),
+    root[1:3] = [Keyvalues('another', '12'), Keyvalues('keys', '12')]
+    assert_tree(root, Keyvalues('Block', [
+        Keyvalues('kEy1', '2'),
+        Keyvalues('another', '12'),
+        Keyvalues('keys', '12'),
         bLock1,
-        Property('KEY1', '4'),
+        Keyvalues('KEY1', '4'),
     ]))
     # Modifying an existing key assigns to it.
     assert len(root) == 5
@@ -691,18 +691,18 @@ def test_setitem() -> None:
 
     # A new key is appended.
     root['mIssing'] = 'blah'
-    assert root[-1] == Property('mIssing', 'blah')
+    assert root[-1] == Keyvalues('mIssing', 'blah')
     assert len(root) == 6
 
     # This also works when assigning property objects, with the name cleared.
-    prop_1 = Property('ignored', 'second')
+    prop_1 = Keyvalues('ignored', 'second')
     root['anOther'] = prop_1
     assert root.find_key('another') is prop_1
     assert prop_1.real_name == 'anOther'
     assert len(root) == 6
 
     # And when appending.
-    prop_2 = Property('new_prop', [Property('a', '1'), Property('b', '2')])
+    prop_2 = Keyvalues('new_prop', [Keyvalues('a', '1'), Keyvalues('b', '2')])
     root['added'] = prop_2
     assert root.find_key('added') is prop_2
     assert root[-1] is prop_2

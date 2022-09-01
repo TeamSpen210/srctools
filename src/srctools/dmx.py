@@ -35,7 +35,7 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
 from srctools.math import Angle, Matrix
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.tokenizer import Token, Tokenizer
 
 
@@ -1725,7 +1725,7 @@ class Element(Mapping[str, Attribute]):
         file.write(indent + b'}')
 
     @classmethod
-    def from_kv1(cls, props: Property) -> 'Element':
+    def from_kv1(cls, props: Keyvalues) -> 'Element':
         """Convert a KeyValues 1 property tree into DMX format.
 
         All blocks have a type of "DmElement", with children stored in the "subkeys" array. Leaf
@@ -1781,18 +1781,18 @@ class Element(Mapping[str, Attribute]):
                 elem[child.real_name] = child.value
         return elem
 
-    def to_kv1(self) -> Property:
+    def to_kv1(self) -> Keyvalues:
         """Convert an element tree containing a KeyValues 1 tree back into a Property.
 
         These must satisfy the format from_kv1() produces - all elements have the type DmElement,
         all attributes are strings except for the "subkeys" attribute which is an element array.
         """
         if self.type == NAME_KV1_LEAF:
-            return Property(self.name, self['value'].val_str)
+            return Keyvalues(self.name, self['value'].val_str)
         elif self.type == NAME_KV1:
-            prop = Property(self.name, [])
+            kv = Keyvalues(self.name, [])
         elif self.type == NAME_KV1_ROOT:
-            prop = Property.root()
+            kv = Keyvalues.root()
         else:
             raise ValueError(f'{self.type}({self.name!r}) is not a KeyValues1 tree!')
         subkeys: Optional[Attribute[Element]] = None
@@ -1802,11 +1802,11 @@ class Element(Mapping[str, Attribute]):
                     raise ValueError('"subkeys" must be an Element array!')
                 subkeys = attr
             else:
-                prop.append(Property(attr.name, attr.val_str))
+                kv.append(Keyvalues(attr.name, attr.val_str))
         if subkeys is not None:
             for elem in subkeys.iter_elem():
-                prop.append(elem.to_kv1())
-        return prop
+                kv.append(elem.to_kv1())
+        return kv
 
     def __repr__(self) -> str:
         if self.type:

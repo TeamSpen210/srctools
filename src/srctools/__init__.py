@@ -25,7 +25,7 @@ __all__ = [
     'Vec', 'Vec_tuple', 'parse_vec_str', 'lerp',
     'Angle', 'Matrix',
 
-    'NoKeyError', 'KeyValError', 'Property',
+    'NoKeyError', 'KeyValError', 'Keyvalues',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
 
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
@@ -43,7 +43,7 @@ __all__ = [
 
     # Submodules:
     'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
-    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'property_parser', 'run',
+    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues.py', 'run',
     'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
 ]
 
@@ -526,7 +526,7 @@ class AtomicWriter:
 # This shouldn't be used in our modules, to ensure the order here doesn't matter.
 # isort: off
 from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
-from srctools.property_parser import NoKeyError, KeyValError, Property
+from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
 from srctools.vpk import VPK
@@ -534,3 +534,5 @@ from srctools.fgd import FGD
 from srctools.const import GameID
 from srctools.surfaceprop import SurfaceProp, SurfChar
 from srctools.vtf import VTF
+
+Property = Keyvalues   #: :deprecated: Use srctools.Keyvalues.

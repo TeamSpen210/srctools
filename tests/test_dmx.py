@@ -10,7 +10,7 @@ from uuid import UUID
 
 import pytest
 
-from srctools import Matrix, Angle, Property
+from srctools import Matrix, Angle, Keyvalues
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
@@ -845,11 +845,11 @@ def test_export_regression(version: str, datadir: Path, file_regression) -> None
 
 def test_kv1_to_dmx() -> None:
     """Test converting KV1 property trees into DMX works."""
-    tree1 = Property('rOOt', [
-        Property('child1', [Property('key', 'value')]),
-        Property('child2', [
-            Property('key', 'value'),
-            Property('key2', '45'),
+    tree1 = Keyvalues('rOOt', [
+        Keyvalues('child1', [Keyvalues('key', 'value')]),
+        Keyvalues('child2', [
+            Keyvalues('key', 'value'),
+            Keyvalues('key2', '45'),
         ]),
     ])
     elem1 = Element.from_kv1(tree1)
@@ -872,10 +872,10 @@ def test_kv1_to_dmx() -> None:
 
 def test_kv1_to_dmx_dupleafs() -> None:
     """Test converting KV1 trees with duplicate keys."""
-    tree = Property('Root', [
-        Property('Key1', 'blah'),
-        Property('key2', 'another'),
-        Property('key1', 'value'),
+    tree = Keyvalues('Root', [
+        Keyvalues('Key1', 'blah'),
+        Keyvalues('key2', 'another'),
+        Keyvalues('key1', 'value'),
     ])
     root = Element.from_kv1(tree)
     assert root.type == 'DmElement'
@@ -901,9 +901,9 @@ def test_kv1_to_dmx_dupleafs() -> None:
 
 def test_kv1_to_dmx_leaf_and_blocks() -> None:
     """If both leafs and blocks, we upgrade to an element per attribute."""
-    tree = Property('blah', [
-        Property('a_leaf', 'result'),
-        Property('block', []),
+    tree = Keyvalues('blah', [
+        Keyvalues('a_leaf', 'result'),
+        Keyvalues('block', []),
     ])
     root = Element.from_kv1(tree)
     assert root.type == 'DmElement'
@@ -919,7 +919,7 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
 
 def test_dmx_to_kv1_roundtrip() -> None:
     """Test we can smuggle KV1 trees in DMX elements."""
-    from test_property_parser import parse_result, assert_tree as assert_prop
+    from test_keyvalues import parse_result, assert_tree as assert_prop
     elem = Element.from_kv1(parse_result)
     roundtrip = elem.to_kv1()
     assert_prop(roundtrip, parse_result)

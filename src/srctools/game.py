@@ -7,7 +7,7 @@ import os
 import sys
 
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']
@@ -23,7 +23,7 @@ class Game:
         else:
             self.path = Path(path)
         with open(self.path / GINFO) as f:
-            gameinfo = Property.parse(
+            gameinfo = Keyvalues.parse(
                 f,
                 allow_escapes=False,  # Allow backslashes in paths.
             ).find_key('GameInfo')
@@ -83,7 +83,7 @@ class Game:
         """Return the game's root folder."""
         return self.path.parent
 
-    def parse_search_path(self, prop: Property) -> Path:
+    def parse_search_path(self, prop: Keyvalues) -> Path:
         """Evaluate options like ``|gameinfo_path|``."""
         if prop.value.casefold().startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()

@@ -27,7 +27,7 @@ from srctools.binformat import (
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
 from srctools.math import Angle, Vec
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.tokenizer import escape_text
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material
@@ -900,7 +900,7 @@ class BModel:
 
     # If solid, the .phy file-like physics data.
     # This is a text section, and a list of blocks.
-    phys_keyvalues: Optional[Property] = None
+    phys_keyvalues: Optional[Keyvalues] = None
     _phys_solids: List[bytes] = []
 
 
@@ -2129,7 +2129,7 @@ class BSP:
                 for _ in range(solid_count)
             ]
             kvs = phys_buf.read(kv_size).rstrip(b'\x00').decode('ascii')
-            mdl.phys_keyvalues = Property.parse(
+            mdl.phys_keyvalues = Keyvalues.parse(
                 kvs,
                 f'bmodel[{mdl_ind}].keyvalues',
             )
@@ -2420,12 +2420,12 @@ class BSP:
             # successfully parse as numbers.
             if 27 in value:
                 # All outputs use the comma_sep, so we can ID them.
-                cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
                 if self.out_comma_sep is None:
                     self.out_comma_sep = False
             elif value.count(b',') == 4:
                 try:
-                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                    cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
                 except ValueError:
                     cur_ent[decoded_key] = decoded_value
                 if self.out_comma_sep is None:

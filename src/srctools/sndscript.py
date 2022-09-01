@@ -6,7 +6,7 @@ import struct
 import attrs
 
 from srctools import conv_float
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 
 
 __all__ = [
@@ -277,9 +277,9 @@ class Sound:
     level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
-    _stack_start: Optional[Property] = None
-    _stack_update: Optional[Property] = None
-    _stack_stop: Optional[Property] = None
+    _stack_start: Optional[Keyvalues] = None
+    _stack_update: Optional[Keyvalues] = None
+    _stack_stop: Optional[Keyvalues] = None
     force_v2: bool = False
 
     def __init__(
@@ -292,9 +292,9 @@ class Sound:
         pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
-        stack_start: Optional[Property]=None,
-        stack_update: Optional[Property]=None,
-        stack_stop: Optional[Property]=None,
+        stack_start: Optional[Keyvalues]=None,
+        stack_update: Optional[Keyvalues]=None,
+        stack_stop: Optional[Keyvalues]=None,
         force_v2: bool=False,
     ) -> None:
         """Create a soundscript."""
@@ -323,38 +323,38 @@ class Sound:
         self._stack_stop = stack_stop
 
     @property
-    def stack_start(self) -> Property:
+    def stack_start(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_start is None:
-            self._stack_start = Property('', [])
+            self._stack_start = Keyvalues('', [])
         return self._stack_start
 
     @stack_start.setter
-    def stack_start(self, tree: Property) -> None:
+    def stack_start(self, tree: Keyvalues) -> None:
         """Change the start stack to another tree."""
         self._stack_start = tree
 
     @property
-    def stack_update(self) -> Property:
+    def stack_update(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_update is None:
-            self._stack_update = Property('', [])
+            self._stack_update = Keyvalues('', [])
         return self._stack_update
 
     @stack_update.setter
-    def stack_update(self, tree: Property) -> None:
+    def stack_update(self, tree: Keyvalues) -> None:
         """Change the update stack to another tree."""
         self._stack_update = tree
 
     @property
-    def stack_stop(self) -> Property:
+    def stack_stop(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_stop is None:
-            self._stack_stop = Property('', [])
+            self._stack_stop = Keyvalues('', [])
         return self._stack_stop
 
     @stack_stop.setter
-    def stack_stop(self, tree: Property) -> None:
+    def stack_stop(self, tree: Keyvalues) -> None:
         """Change the stop stack to another tree."""
         self._stack_stop = tree
 
@@ -374,7 +374,7 @@ class Sound:
         return res
 
     @classmethod
-    def parse(cls, file: Property) -> Dict[str, 'Sound']:
+    def parse(cls, file: Keyvalues) -> Dict[str, 'Sound']:
         """Parses a soundscript file.
 
         This returns a dict mapping casefolded names to Sounds.
@@ -437,7 +437,7 @@ class Sound:
                         'less than 2 in "{}"!'.format(snd_prop.real_name))
 
                 start_stack, update_stack, stop_stack = [
-                    Property(stack_name, [
+                    Keyvalues(stack_name, [
                         prop.copy()
                         for prop in
                         snd_prop.find_children('operator_stacks', stack_name)

@@ -4,7 +4,7 @@ from typing import Dict, Optional, TypeVar
 from enum import Enum
 
 from srctools.filesys import File, FileSystem
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 
 
 __all__ = ['SurfChar', 'SurfaceProp']
@@ -229,7 +229,7 @@ class SurfaceProp:
 
     @staticmethod
     def parse_file(
-        props: Property,
+        props: Keyvalues,
         prev: Dict[str, 'SurfaceProp']=None,
     ) -> Dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
@@ -306,11 +306,11 @@ class SurfaceProp:
             file = fsys['scripts/surfaceproperties_manifest.txt']
 
         with file.open_str() as f:
-            manifest = Property.parse(f, file.path)
+            manifest = Keyvalues.parse(f, file.path)
 
         surf: Dict[str, SurfaceProp] = {}
 
         for prop in manifest.find_all('surfaceproperties_manifest', 'file'):
-            surf = SurfaceProp.parse_file(fsys.read_prop(prop.value), surf)
+            surf = SurfaceProp.parse_file(fsys.read_kv1(prop.value), surf)
 
         return surf

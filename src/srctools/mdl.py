@@ -12,7 +12,7 @@ from srctools.binformat import read_nullstr, read_offset_array, str_readvec, str
 from srctools.const import add_unknown
 from srctools.filesys import File, FileSystem
 from srctools.math import Vec
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 
 
 __all__ = [
@@ -319,7 +319,7 @@ class Model:
         self.version = 49
         self.checksum = b'\0\0\0\0'
 
-        self.phys_keyvalues = Property.root()
+        self.phys_keyvalues = Keyvalues.root()
         with self._file.open_bin() as f:
             self._load(f)
 
@@ -751,7 +751,7 @@ class Model:
         for solid in range(solid_count):
             [solid_size] = struct_read('i', f)
             f.read(solid_size)  # Skip the header.
-        self.phys_keyvalues = Property.parse(
+        self.phys_keyvalues = Keyvalues.parse(
             read_nullstr(f),
             filename + ":keyvalues",
             allow_escapes=False,

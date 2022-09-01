@@ -26,7 +26,7 @@ from srctools.filesys import (
 )
 from srctools.mdl import MDL_EXTS, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
-from srctools.property_parser import KeyValError, Property
+from srctools.keyvalues import KeyValError, Keyvalues
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError
 from srctools.vmf import VMF, Entity
@@ -330,8 +330,8 @@ def _load_soundscript(file: File) -> Dict[str, Sound]:
     """Parse a soundscript file, logging errors that occur."""
     try:
         with file.open_str(encoding='cp1252') as f:
-            props = Property.parse(f, file.path, allow_escapes=False)
-        return Sound.parse(props)
+            kv = Keyvalues.parse(f, file.path, allow_escapes=False)
+        return Sound.parse(kv)
     except FileNotFoundError:
         # It doesn't exist, complain and pretend it's empty.
         LOGGER.warning('Soundscript "{}" does not exist!', file.path)
@@ -448,7 +448,7 @@ class PackList:
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
             try:
-                sounds = Sound.parse(Property.parse(data.decode('cp1252'), filename))
+                sounds = Sound.parse(Keyvalues.parse(data.decode('cp1252'), filename))
             except (KeyValError, ValueError):
                 LOGGER.warning('Soundscript "{}" could not be parsed:', filename, exc_info=True)
             else:
@@ -657,9 +657,9 @@ class PackList:
                 LOGGER.warning('No scripts/propdata.txt for breakable chunks!')
                 return
             with propdata.open_str(encoding='cp1252') as f:
-                props = Property.parse(f, 'scripts/propdata.txt', allow_escapes=False)
+                kv = Keyvalues.parse(f, 'scripts/propdata.txt', allow_escapes=False)
             self._break_chunks = {}
-            for chunk_prop in props.find_children('BreakableModels'):
+            for chunk_prop in kv.find_children('BreakableModels'):
                 self._break_chunks[chunk_prop.name] = [
                     prop.real_name for prop in chunk_prop
                 ]
@@ -710,7 +710,7 @@ class PackList:
         cache the file reading for later use.
         """
         try:
-            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt', encoding='cp1252')
+            man = self.fsys.read_kv1('scripts/game_sounds_manifest.txt', encoding='cp1252')
         except FileNotFoundError:
             return
 
@@ -742,10 +742,10 @@ class PackList:
         cache the file reading for later use.
         """
         try:
-            man = self.fsys.read_prop('particles/particles_manifest.txt')
+            man = self.fsys.read_kv1('particles/particles_manifest.txt')
         except FileNotFoundError:
             LOGGER.warning('No particles manifest.')
-            man = Property.root()
+            man = Keyvalues.root()
 
         if cache_file is not None:
             self.particles.load_cache(cache_file)
@@ -789,8 +789,8 @@ class PackList:
         It will be packed such that it can override the master manifest with
         sv_soundemitter_flush.
         """
-        manifest = Property('game_sounds_manifest', [
-            Property('precache_file', snd)
+        manifest = Keyvalues('game_sounds_manifest', [
+            Keyvalues('precache_file', snd)
             for snd, _ in self.soundscript.packed_files()
         ])
 
@@ -802,11 +802,11 @@ class PackList:
 
     def write_particles_manifest(self, manifest_name: str) -> None:
         """Write a particles manifest, so that used particles can be loaded."""
-        manifest = Property('particles_manifest', [])
+        manifest = Keyvalues('particles_manifest', [])
         for filename, mode in self.particles.packed_files():
             if mode is FileMode.PRELOAD:
                 filename = '!' + filename
-            manifest.append(Property('file', filename))
+            manifest.append(Keyvalues('file', filename))
 
         buf = bytearray()
         for line in manifest.export():
@@ -968,7 +968,7 @@ class PackList:
         if detail_script:
             self.pack_file(detail_script, FileType.GENERIC)
             try:
-                detail_props = self.fsys.read_prop(detail_script, 'ansi')
+                detail_props = self.fsys.read_kv1(detail_script, 'ansi')
             except FileNotFoundError:
                 LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
             except Exception:

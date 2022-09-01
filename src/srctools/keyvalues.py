@@ -18,44 +18,44 @@ These files follow the following general format::
         }
 
 The names are usually case-insensitive.
-Call ``Property(name, value)`` to get a property object, or ``Property.parse(file, 'filename')``
+Call ``Keyvalues(name, value)`` to get a keyvalues object, or ``Keyvalues.parse(file, 'filename')``
 to parse a file.
 
 This will perform a round-trip file read::
 
     >>> with open('filename.txt', 'r') as f:  # doctest: +SKIP
-    ...     props = Property.parse(f, 'filename.txt')
+    ...     kv = Keyvalues.parse(f, 'filename.txt')
     ... with open('filename_2.txt', 'w') as f:
-    ...     for line in props.export():
+    ...     for line in kv.export():
     ...         f.write(line)
 
-Property values should be either a string, or a list of children Properties.
+Keyvalue ``values`` should be either a string, or a list of children Properties.
 Names will be converted to lowercase automatically; use Prop.real_name to
 obtain the original spelling. To allow multiple root blocks in a file, the
-returned property from Property.parse() is special and will export with
+returned keyvalues from Keyvalues.parse() is special and will export with
 un-indented children.
 
 Properties with children can be indexed by their names, or by a
 ('name', default) tuple::
 
-    >>> props = Property('Top', [
-    ...     Property('child1', '1'),
-    ...     Property('child2', '0'),
+    >>> kv = Keyvalues('Top', [
+    ...     Keyvalues('child1', '1'),
+    ...     Keyvalues('child2', '0'),
     ... ])
-    >>> props['child1']
+    >>> kv['child1']
     '1'
-    >>> props['child3']
+    >>> kv['child3']
     Traceback (most recent call last):
         ...
     IndexError: No key child3!
-    >>> props['child3', 'default']
+    >>> kv['child3', 'default']
     'default'
-    >>> props['child4', object()]
+    >>> kv['child4', object()]
     <object object at 0x...>
-    >>> del props['child2']
-    >>> props['child3'] = 'new value'
-    >>> props
-    Property('Top', [Property('child1', '1'), Property('child3', 'new value')])
+    >>> del kv['child2']
+    >>> kv['child3'] = 'new value'
+    >>> kv
+    Keyvalues('Top', [Keyvalues('child1', '1'), Keyvalues('child3', 'new value')])
 
 Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
@@ -64,7 +64,7 @@ from typing import (
     Union, cast, overload,
 )
 from typing_extensions import Final
-import builtins  # Property.bool etc shadows these.
+import builtins  # Keyvalues.bool etc shadows these.
 import keyword
 import os
 import sys
@@ -76,12 +76,12 @@ from srctools.math import Vec as _Vec
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 
-__all__ = ['KeyValError', 'NoKeyError', 'Property']
+__all__ = ['KeyValError', 'NoKeyError', 'Keyvalues']
 
 # Sentinel value to indicate that no default was given to find_key()
 _NO_KEY_FOUND = cast(str, object())
 
-_Prop_Value = Union[List['Property'], str, Any]
+_KV_Value = Union[List['Keyvalues'], str, Any]
 # We don't have recursive definitions, just go deep enough it should be fine.
 _As_Dict_Ret = Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
                Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
@@ -90,9 +90,9 @@ _As_Dict_Ret = Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
 
 T = TypeVar('T')
 
-# Various [flags] used after property names in some Valve files.
+# Various [flags] used after keyvalues names in some Valve files.
 # See https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/tier1/KeyValues.cpp#L2055
-PROP_FLAGS_DEFAULT = {
+FLAGS_DEFAULT = {
     # We know we're not on a console...
     'x360': False,
     'ps3': False,
@@ -108,7 +108,7 @@ class KeyValError(TokenSyntaxError):
     """An error that occurred when parsing a Valve KeyValues file.
 
     mess = The error message that occurred.
-    file = The filename passed to Property.parse(), if it exists
+    file = The filename passed to Keyvalues.parse(), if it exists
     line_num = The line where the error occurred.
     """
 
@@ -138,27 +138,26 @@ def _read_flag(flags: Mapping[str, bool], flag_val: str) -> bool:
     try:
         flag_result = bool(flags[flag_val])
     except KeyError:
-        flag_result = PROP_FLAGS_DEFAULT.get(flag_val, False)
+        flag_result = FLAGS_DEFAULT.get(flag_val, False)
     # If flag succeeds
     return flag_inv is not flag_result
 
 
-class Property:
-    """Represents Property found in property files, like those used by Valve.
+class Keyvalues:
+    """Represents Valve's Keyvalues 1 file format.
 
-    Value should be a string (for leaf properties), or a list of children
-    Property objects.
+    Value should be a string (for leaf properties), or a list of children Keyvalues objects.
     The name should be a string, or None for a root object.
-    Root objects export each child at the topmost indent level. This is produced from ``Property.parse()`` calls.
+    Root objects export each child at the topmost indent level. This is produced from ``Keyvalues.parse()`` calls.
     """
-    # Helps decrease memory footprint with lots of Property values.
+    # Helps decrease memory footprint with lots of Keyvalues values.
     __slots__ = ('_folded_name', '_real_name', '_value')
     _folded_name: Optional[str]
     _real_name: Optional[str]
-    _value: _Prop_Value
+    _value: _KV_Value
 
-    def __init__(self, name: Optional[str], value: _Prop_Value) -> None:
-        """Create a new property instance."""
+    def __init__(self, name: Optional[str], value: _KV_Value) -> None:
+        """Create a new keyvalues instance."""
         if name is None:
             warnings.warn("Root properties will change to a new class.", DeprecationWarning, 2)
             self._folded_name = self._real_name = None
@@ -170,16 +169,16 @@ class Property:
 
     @property
     def value(self) -> str:
-        """Return the value of a leaf property."""
+        """Return the value of a leaf keyvalue."""
         if isinstance(self._value, list):
-            warnings.warn("Accessing internal property block list is deprecated", DeprecationWarning, 2)
+            warnings.warn("Accessing internal keyvalues block list is deprecated", DeprecationWarning, 2)
         return cast(str, self._value)
 
     @value.setter
     def value(self, value: str) -> None:
-        """Set the value of a leaf property."""
+        """Set the value of a leaf keyvalue."""
         if not isinstance(value, str):
-            warnings.warn("Setting properties to non-string values will be fixed soon.", DeprecationWarning, 2)
+            warnings.warn("Setting keyvalues to non-string values will be fixed soon.", DeprecationWarning, 2)
         self._value = value
 
     @property
@@ -220,7 +219,7 @@ class Property:
             self._real_name = sys.intern(new_name)
             self._folded_name = sys.intern(new_name.casefold())
 
-    def edit(self, name: Optional[str]=None, value: Optional[str]=None) -> 'Property':
+    def edit(self, name: Optional[str]=None, value: Optional[str]=None) -> 'Keyvalues':
         """Simultaneously modify the name and value."""
         if name is not None:
             self._real_name = name
@@ -230,15 +229,15 @@ class Property:
         return self
 
     @classmethod
-    def root(cls, *children: 'Property') -> 'Property':
-        """Return a new 'root' property."""
-        prop = cls.__new__(cls)
-        prop._folded_name = prop._real_name = None
+    def root(cls, *children: 'Keyvalues') -> 'Keyvalues':
+        """Return a new 'root' keyvalues."""
+        kv = cls.__new__(cls)
+        kv._folded_name = kv._real_name = None
         for child in children:
-            if not isinstance(child, Property):
-                raise TypeError(f'{type(prop).__name__} is not a Property!')
-        prop._value = list(children)
-        return prop
+            if not isinstance(child, Keyvalues):
+                raise TypeError(f'{type(kv).__name__} is not a Keyvalues!')
+        kv._value = list(children)
+        return kv
 
     @staticmethod
     def parse(
@@ -249,8 +248,8 @@ class Property:
         newline_values: bool = True,
         allow_escapes: bool=True,
         single_line: bool=False,
-    ) -> "Property":
-        """Returns a Property tree parsed from given text.
+    ) -> "Keyvalues":
+        """Returns a Keyvalues tree parsed from given text.
 
         :param file_contents: should be an iterable of strings or a single string. Alternatively, file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
         :param filename: If set this should be the source of the text for debug purposes. If not supplied, ``file_contents.name`` will be used if present.
@@ -262,20 +261,20 @@ class Property:
         """
         # The block we are currently adding to.
 
-        # The special name 'None' marks it as the root property, which
+        # The special name 'None' marks it as the root keyvalue, which
         # just outputs its children when exported. This way we can handle
         # multiple root blocks in the file, while still returning a single
-        # Property object which has all the methods.
+        # Keyvalues object which has all the methods.
         # Skip calling __init__ for speed.
-        cur_block = root = Property.__new__(Property)
+        cur_block = root = Keyvalues.__new__(Keyvalues)
         cur_block._folded_name = cur_block._real_name = None
 
         # Cache off the value list.
-        cur_block_contents: List[Property]
+        cur_block_contents: List[Keyvalues]
         cur_block_contents = cur_block._value = []
         # A queue of the properties we are currently in (outside to inside).
         # And the line numbers of each of these, for error reporting.
-        open_properties: List[Tuple[Property, int]] = [(cur_block, 1)]
+        open_properties: List[Tuple[Keyvalues, int]] = [(cur_block, 1)]
 
         # Grab a reference to the token values, so we avoid global lookups.
         STRING: Final = Token.STRING
@@ -302,7 +301,7 @@ class Property:
         BLOCK_LINE_NONE: Final = -1  # there's no block.
         BLOCK_LINE_SKIP: Final = -2  # the block is disabled, so we need to skip it.
         block_line = BLOCK_LINE_NONE
-        # Are we permitted to replace the last property with a flagged version of the same?
+        # Are we permitted to replace the last keyvalue with a flagged version of the same?
         can_flag_replace = False
 
         for token_type, token_value in tokenizer:
@@ -310,16 +309,16 @@ class Property:
                 # Open a new block - make sure the last token was a name.
                 if block_line == BLOCK_LINE_NONE:
                     raise tokenizer.error(
-                        'Property cannot have sub-section if it already '
+                        'Keyvalues cannot have sub-section if it already '
                         'has an in-line value.\n\n'
                         'A "name" "value" line cannot then open a block.',
                     )
                 can_flag_replace = False
                 if block_line == BLOCK_LINE_SKIP:
-                    # It failed the flag check. Use a dummy property object.
+                    # It failed the flag check. Use a dummy keyvalue object.
                     # This isn't put into the tree, so after we parse the block it's popped
                     # and discarded.
-                    cur_block = Property.__new__(Property)
+                    cur_block = Keyvalues.__new__(Keyvalues)
                     cur_block._folded_name = cur_block.real_name = '<skipped>'
                 else:
                     cur_block = cur_block_contents[-1]
@@ -342,7 +341,7 @@ class Property:
                     raise tokenizer.error('Illegal newline found in key "{}"!', token_value)
                 # Skip calling __init__ for speed. Value needs to be set
                 # before using this, since it's unset here.
-                keyvalue = Property.__new__(Property)
+                keyvalue = Keyvalues.__new__(Keyvalues)
                 keyvalue._folded_name = sys.intern(token_value.casefold())
                 keyvalue.real_name = sys.intern(token_value)
 
@@ -476,7 +475,7 @@ class Property:
         if len(open_properties) > 1:
             raise KeyValError(
                 'End of text reached with remaining open sections.\n\n'
-                "File ended with at least one property that didn't "
+                "File ended with at least one keyvalue that didn't "
                 'have an ending "}".\n'
                 'Open properties: \n- Root at line 1\n' + '\n'.join([
                     f'- "{prop.real_name}" on line {line_num}'
@@ -485,10 +484,10 @@ class Property:
                 tokenizer.filename,
                 line=None,
             )
-        # Return that root property.
+        # Return that root keyvalue.
         return root
 
-    def find_all(self, *keys: str) -> Iterator['Property']:
+    def find_all(self, *keys: str) -> Iterator['Keyvalues']:
         """Search through the tree, yielding all properties that match a particular path.
 
         """
@@ -498,18 +497,16 @@ class Property:
 
         targ_key = keys[0].casefold()
         for prop in self:
-            if not isinstance(prop, Property):
-                raise ValueError(
-                    'Cannot find_all on a value that is not a Property!'
-                )
+            if not isinstance(prop, Keyvalues):
+                raise ValueError('Cannot find_all on a leaf Keyvalue!')
             if prop._folded_name == targ_key is not None:
                 if depth > 1:
                     if prop.has_children():
-                        yield from Property.find_all(prop, *keys[1:])
+                        yield from Keyvalues.find_all(prop, *keys[1:])
                 else:
                     yield prop
 
-    def find_children(self, *keys: str) -> Iterator['Property']:
+    def find_children(self, *keys: str) -> Iterator['Keyvalues']:
         """Search through the tree, yielding children of properties in a path.
 
         """
@@ -517,14 +514,14 @@ class Property:
             yield from block
 
     @overload
-    def find_key(self, key: str, *, or_blank: bool) -> 'Property': ...
+    def find_key(self, key: str, *, or_blank: bool) -> 'Keyvalues': ...
     @overload
-    def find_key(self, key: str, def_: str=...) -> 'Property': ...
-    def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Property':
-        """Obtain the child Property with a given name.
+    def find_key(self, key: str, def_: str=...) -> 'Keyvalues': ...
+    def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Keyvalues':
+        """Obtain the child Keyvalue with a given name.
 
         - If no child is found with the given name, this will return the
-          default value wrapped in a Property. If or_blank is set,
+          default value wrapped in a Keyvalue. If or_blank is set,
           it will be a blank block instead. If neither default is provided
           this will raise NoKeyError.
         - This prefers keys located closer to the end of the value list.
@@ -532,42 +529,42 @@ class Property:
         if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        prop: Property
+        prop: Keyvalues
         for prop in reversed(self._value):
             if prop._folded_name == key:
                 return prop
         if or_blank:
-            return Property(key, [])
+            return Keyvalues(key, [])
         elif def_ is _NO_KEY_FOUND:
             raise NoKeyError(key)
         else:
-            # We were given a default, return it wrapped in a Property.
-            return Property(key, def_)
+            # We were given a default, return it wrapped in a Keyvalue.
+            return Keyvalues(key, def_)
 
-    def find_block(self, key: str, or_blank: bool = False) -> 'Property':
-        """Obtain the child Property block with a given name.
+    def find_block(self, key: str, or_blank: bool = False) -> 'Keyvalues':
+        """Obtain the child Keyvalue block with a given name.
 
         - If no child is found with the given name and `or_blank` is true, a
-          blank Property block will be returned. Otherwise NoKeyError will
+          blank Keyvalue block will be returned. Otherwise NoKeyError will
           be raised.
         - This prefers keys located closer to the end of the value list.
         """
         if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        prop: Property
+        prop: Keyvalues
         for prop in reversed(self._value):
             if prop._folded_name == key and prop.has_children():
                 return prop
         if or_blank:
-            return Property(key, [])
+            return Keyvalues(key, [])
         else:
             raise NoKeyError(key)
 
     def _get_value(self, key: str, def_: Union[builtins.str, T]=_NO_KEY_FOUND) -> Union[str, T]:
-        """Obtain the value of the child Property with a given name.
+        """Obtain the value of the child Keyvalue with a given name.
 
-        Effectively find_key() but doesn't make a new property.
+        Effectively find_key() but doesn't make a new keyvalue.
 
         - If no child is found with the given name, this will return the
           default value, or raise NoKeyError if none is provided.
@@ -576,7 +573,7 @@ class Property:
         if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
         key = key.casefold()
-        prop: Property
+        prop: Keyvalues
         block_prop = False
         for prop in reversed(self._value):
             if prop._folded_name == key:
@@ -642,7 +639,7 @@ class Property:
         y: builtins.float=0.0,
         z: builtins.float=0.0,
     ) -> _Vec:
-        """Return the given property, converted to a vector.
+        """Return the given keyvalue, converted to a vector.
 
         If multiple keys with the same name are present, this will use the
         last only.
@@ -669,9 +666,8 @@ class Property:
             # Search through each item in the tree!
             for key in path[:-1]:
                 folded_key = key.casefold()
-                # We can't use find_key() here because we also
-                # need to check that the property has children to search
-                # through
+                # We can't use find_key() here because we also need to check that the keyvalue
+                # has children to search through.
                 for prop in reversed(self._value):
                     if (prop.name is not None and
                             prop.name == folded_key and
@@ -679,20 +675,20 @@ class Property:
                         current_prop = prop
                         break
                 else:
-                    # No matching property found
-                    new_prop = Property(key, [])
+                    # No matching keyvalue found
+                    new_prop = Keyvalues(key, [])
                     current_prop.append(new_prop)
                     current_prop = new_prop
             path = path[-1]
         try:
             current_prop.find_key(path).value = value
         except NoKeyError:
-            current_prop.append(Property(path, value))
+            current_prop.append(Keyvalues(path, value))
 
-    def copy(self) -> 'Property':
-        """Deep copy this Property tree and return it."""
+    def copy(self) -> 'Keyvalues':
+        """Deep copy this Keyvalue tree and return it."""
         # Bypass __init__() and name=None warnings.
-        result = Property.__new__(Property)
+        result = Keyvalues.__new__(Keyvalues)
         result._real_name = self._real_name
         result._folded_name = self._folded_name
         if isinstance(self._value, list):
@@ -703,7 +699,7 @@ class Property:
         return result
 
     def as_dict(self) -> _As_Dict_Ret:
-        """Convert this property tree into a tree of dictionaries.
+        """Convert this keyvalue tree into a tree of dictionaries.
 
         This keeps only the last if multiple items have the same name.
         """
@@ -717,15 +713,15 @@ class Property:
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
     def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
-        """Convert a property block into a list of values.
+        """Convert a keyvalue block into a list of values.
 
-        If the property is a single keyvalue, the single value will be
+        If the keyvalue is a single keyvalue, the single value will be
         yielded. Otherwise, each child must be a single value and each
         of those will be yielded. The name is ignored.
         """
         if isinstance(self._value, list):
             arr = []
-            child: Property
+            child: Keyvalues
             for child in self._value:
                 if not isinstance(child._value, str):
                     raise ValueError(
@@ -742,7 +738,7 @@ class Property:
 
         This ignores names.
         """
-        if isinstance(other, Property):
+        if isinstance(other, Keyvalues):
             return self._value == other._value
         else:
             return self._value == other  # Just compare values
@@ -750,7 +746,7 @@ class Property:
     def __ne__(self, other: Any) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
-        if isinstance(other, Property):
+        if isinstance(other, Keyvalues):
             return self._value != other._value
         else:
             return self._value != other  # Just compare values
@@ -768,7 +764,7 @@ class Property:
         else:
             return bool(self._value)
 
-    def __iter__(self) -> Iterator['Property']:
+    def __iter__(self) -> Iterator['Keyvalues']:
         """Iterate through the value list.
 
         """
@@ -779,12 +775,12 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Property']:
-        """Iterate through all properties in this tree.
+    def iter_tree(self, blocks: builtins.bool=False) -> Iterator['Keyvalues']:
+        """Iterate through all keyvalues in this tree.
 
-        This goes through properties in the same order that they will serialise
+        This goes through keyvalues in the same order that they will serialise
         into.
-        If blocks is True, the property blocks will be returned as well as
+        If blocks is True, the keyvalue blocks will be returned as well as
         keyvalues. If false, only keyvalues will be yielded.
         """
         if isinstance(self._value, list):
@@ -794,10 +790,10 @@ class Property:
                 "Can't iterate through {!r} without children!".format(self)
             )
 
-    def _iter_tree(self, blocks: builtins.bool) -> Iterator['Property']:
+    def _iter_tree(self, blocks: builtins.bool) -> Iterator['Keyvalues']:
         """Implementation of iter_tree(). This assumes self has children."""
         assert isinstance(self._value, list)
-        prop: Property
+        prop: Keyvalues
         for prop in self._value:
             if prop.has_children():
                 if blocks:
@@ -810,7 +806,7 @@ class Property:
         """Check to see if a name is present in the children."""
         key = key.casefold()
         if isinstance(self._value, list):
-            prop: Property
+            prop: Keyvalues
             for prop in self._value:
                 if prop._folded_name == key:
                     return True
@@ -819,9 +815,9 @@ class Property:
         raise ValueError("Can't search through properties without children!")
 
     @overload
-    def __getitem__(self, index: builtins.int) -> 'Property': ...
+    def __getitem__(self, index: builtins.int) -> 'Keyvalues': ...
     @overload
-    def __getitem__(self, index: slice) -> List['Property']: ...
+    def __getitem__(self, index: slice) -> List['Keyvalues']: ...
     @overload
     def __getitem__(self, index: Union[str, Tuple[str, str]]) -> str: ...
     @overload
@@ -835,11 +831,11 @@ class Property:
             slice,
             Tuple[str, Union[str, T]],
         ],
-    ) -> Union['Property', List['Property'], str, T]:
+    ) -> Union['Keyvalues', List['Keyvalues'], str, T]:
         """Allow indexing the children directly.
 
         - If given an index, it will return the properties in that position.
-        - If given a string, it will find the last Property with that name.
+        - If given a string, it will find the last Keyvalue with that name.
           (Default can be chosen by passing a 2-tuple like Prop[key, default])
         - If none are found, it raises IndexError.
         """
@@ -857,43 +853,43 @@ class Property:
             else:
                 raise TypeError(f'Unknown key type: {index!r}')
         else:
-            raise ValueError("Can't index a Property without children!")
+            raise ValueError("Can't index a Keyvalue without children!")
 
     @overload
-    def __setitem__(self, index: slice, value: Iterable['Property']) -> None: ...
+    def __setitem__(self, index: slice, value: Iterable['Keyvalues']) -> None: ...
     @overload
-    def __setitem__(self, index: builtins.int, value: 'Property') -> None: ...
+    def __setitem__(self, index: builtins.int, value: 'Keyvalues') -> None: ...
     @overload
     def __setitem__(self, index: str, value: str) -> None: ...
 
     def __setitem__(
         self,
         index: Union[builtins.int, slice, str],
-        value: Union['Property', Iterable['Property'], str],
+        value: Union['Keyvalues', Iterable['Keyvalues'], str],
     ) -> None:
         """Allow setting the values of the children directly.
 
         - If given an index or slice, it will add these properties in these positions.
-        - If given a string, it will set the last Property with that name.
+        - If given a string, it will set the last Keyvalue with that name.
         - If none are found, it appends the value to the tree.
         """
         if not isinstance(self._value, list):
-            raise ValueError("Can't index a Property without children!")
+            raise ValueError("Can't index a Keyvalue without children!")
         if isinstance(index, int):
-            if isinstance(value, Property):
+            if isinstance(value, Keyvalues):
                 self._value[index] = value
             else:
-                raise TypeError(f"Cannot assign non-Property to position {index}: {value!r}")
+                raise TypeError(f"Cannot assign non-Keyvalue to position {index}: {value!r}")
         elif isinstance(index, slice):
             prop_list = []
             for prop in value:
-                if isinstance(prop, Property):
+                if isinstance(prop, Keyvalues):
                     prop_list.append(prop)
                 else:
-                    raise TypeError(f'Must assign Properties to positions, not {type(prop).__name__}!')
+                    raise TypeError(f'Must assign Keyvalues to positions, not {type(prop).__name__}!')
             self._value[index] = prop_list
         elif isinstance(index, str):
-            if isinstance(value, Property):
+            if isinstance(value, Keyvalues):
                 # We don't want to assign properties, we want to add them under
                 # this name!,
                 value.name = index
@@ -908,18 +904,18 @@ class Property:
                 try:
                     self.find_key(index)._value = value
                 except NoKeyError:
-                    self._value.append(Property(index, value))
+                    self._value.append(Keyvalues(index, value))
         else:
             raise TypeError(f'Unknown key type: {index!r}')
 
     def __delitem__(self, index: Union[builtins.int, slice, str]) -> None:
-        """Delete the given property index.
+        """Delete the given keyvalues index.
 
         - If given an integer, it will delete by position.
-        - If given a string, it will delete the last Property with that name.
+        - If given a string, it will delete the last Keyvalue with that name.
         """
         if not isinstance(self._value, list):
-            raise IndexError("Can't index a Property without children!")
+            raise IndexError("Can't index a Keyvalue without children!")
         if isinstance(index, (int, slice)):
             del self._value[index]
         else:
@@ -933,115 +929,115 @@ class Property:
         if isinstance(self._value, list):
             self._value.clear()
         else:
-            raise ValueError("Can't clear a Property without children!")
+            raise ValueError("Can't clear a Keyvalue without children!")
 
-    def __add__(self, other: Iterable['Property']) -> 'Property':
-        """Extend this property with the contents of another, or an iterable.
+    def __add__(self, other: Iterable['Keyvalues']) -> 'Keyvalues':
+        """Extend this keyvalue with the contents of another, or an iterable.
 
-        This deep-copies the Property tree first.
-        Deprecated behaviour: This also accepts a non-root property, which will be appended
+        This deep-copies the Keyvalue tree first.
+        Deprecated behaviour: This also accepts a non-root keyvalue, which will be appended
         instead.
         """
         if isinstance(self._value, list):
             copy = self.copy()
             assert isinstance(copy._value, list)
-            if isinstance(other, Property) and other._folded_name is not None:
-                # Deprecated behaviour, add the other property to ourselves,
+            if isinstance(other, Keyvalues) and other._folded_name is not None:
+                # Deprecated behaviour, add the other keyvalue to ourselves,
                 # not its values.
                 warnings.warn(
-                    "Using + to add a single property is confusing, use append() instead.",
+                    "Using + to add a single Keyvalue is confusing, use append() instead.",
                     DeprecationWarning, 2,
                 )
                 copy._value.append(other.copy())
             else:  # Assume a sequence.
                 for prop in other:
-                    if not isinstance(prop, Property):
-                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    if not isinstance(prop, Keyvalues):
+                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
                     self._value.append(prop.copy())
             return copy
         else:
             return NotImplemented
 
-    def __iadd__(self, other: Iterable['Property']) -> 'Property':
-        """Extend this property with the contents of another, or an iterable.
+    def __iadd__(self, other: Iterable['Keyvalues']) -> 'Keyvalues':
+        """Extend this keyvalue with the contents of another, or an iterable.
 
-        Deprecated behaviour: This also accepts a non-root property, which will be appended
+        Deprecated behaviour: This also accepts a non-root keyvalue, which will be appended
         instead.
         """
         if isinstance(self._value, list):
-            if isinstance(other, Property) and other._folded_name is not None:
-                # Deprecated behaviour, add the other property to ourselves,
+            if isinstance(other, Keyvalues) and other._folded_name is not None:
+                # Deprecated behaviour, add the other keyvalue to ourselves,
                 # not its values.
                 warnings.warn(
-                    "Using += to add a single property is confusing, use append() instead.",
+                    "Using += to add a single Keyvalue is confusing, use append() instead.",
                     DeprecationWarning, 2,
                 )
                 self._value.append(other.copy())
             else:
                 for prop in other:
-                    if not isinstance(prop, Property):
-                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    if not isinstance(prop, Keyvalues):
+                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
                     self._value.append(prop.copy())
             return self
         else:
-            raise ValueError('Cannot += a Property without children!')
+            raise ValueError('Cannot += a Keyvalue without children!')
 
-    def append(self, other: Union[Iterable['Property'], 'Property']) -> None:
-        """Append another property to this one.
+    def append(self, other: Union[Iterable['Keyvalues'], 'Keyvalues']) -> None:
+        """Append another keyvalue to this one.
 
-        Deprecated behaviour: Accept an iterable of properties or a root property
+        Deprecated behaviour: Accept an iterable of properties or a root keyvalue
         which are merged into this one.
         """
         if isinstance(self._value, list):
-            if isinstance(other, Property):
+            if isinstance(other, Keyvalues):
                 if other._folded_name is None:
                     warnings.warn(
-                        "Append()ing a root property is confusing, use extend() instead.",
+                        "Append()ing a root Keyvalue is confusing, use extend() instead.",
                         DeprecationWarning, 2,
                     )
                     if isinstance(other._value, str):
-                        raise ValueError('A leaf root property should not exist!')
+                        raise ValueError('A leaf root Keyvalue should not exist!')
                     self._value.extend(other._value)
                 else:
                     self._value.append(other)
             else:
                 warnings.warn(
-                    "Use extend() for appending iterables of properties, not append().",
+                    "Use extend() for appending iterables of Keyvalues, not append().",
                     DeprecationWarning, 2,
                 )
                 for prop in other:
-                    if not isinstance(prop, Property):
-                        raise TypeError(f'{type(prop).__name__} is not a Property!')
+                    if not isinstance(prop, Keyvalues):
+                        raise TypeError(f'{type(prop).__name__} is not a Keyvalue!')
                     self._value.append(prop)
         else:
-            raise ValueError('Cannot append to a Property without children!')
+            raise ValueError('Cannot append to a Keyvalue without children!')
 
-    def extend(self, other: Iterable['Property']) -> None:
-        """Extend this property with the contents of another, or an iterable."""
+    def extend(self, other: Iterable['Keyvalues']) -> None:
+        """Extend this keyvalue with the contents of another, or an iterable."""
         if not isinstance(self._value, list):
-            raise ValueError('Cannot append to a Property without children!')
+            raise ValueError('Cannot append to a Keyvalue without children!')
 
         for prop in other:
-            if not isinstance(prop, Property):
-                raise TypeError(f'{type(prop)} is not a Property!')
+            if not isinstance(prop, Keyvalues):
+                raise TypeError(f'{type(prop)} is not a Keyvalue!')
             self._value.append(prop.copy())
 
     def merge_children(self, *names: str) -> None:
         """Merge together any children of ours with the given names.
 
-        After execution, this tree will have only one sub-Property for
+        After execution, this tree will have only one sub-Keyvalue for
         each of the given names. This ignores leaf Properties.
         """
         if not isinstance(self._value, list):
             raise ValueError(f"{self!r} has no children!")
         folded_names = [name.casefold() for name in names]
         new_list = []
-        merge: Dict[str, Property] = {
-            name: Property(name, [])
+        merge: Dict[str, Keyvalues] = {
+            name: Keyvalues(name, [])
             for name in folded_names
         }
 
-        item: Property
+        item: Keyvalues
         for item in self._value[:]:
             if isinstance(item._value, list) and item._folded_name in folded_names:
                 prop = merge[item._folded_name]
@@ -1057,14 +1053,14 @@ class Property:
 
         self._value = new_list
 
-    def ensure_exists(self, key: str) -> 'Property':
-        """Ensure a Property group exists with this name, and return it."""
+    def ensure_exists(self, key: str) -> 'Keyvalues':
+        """Ensure a Keyvalue block exists with this name, and return it."""
         if not isinstance(self._value, list):
             raise ValueError(f"{self!r} has no children!")
         try:
             return self.find_key(key)
         except NoKeyError:
-            prop = Property(key, [])
+            prop = Keyvalues(key, [])
             self._value.append(prop)
             return prop
 
@@ -1073,7 +1069,7 @@ class Property:
         return type(self._value) is list
 
     def is_root(self) -> builtins.bool:
-        """Check if the property is a root, returned from the parse() method.
+        """Check if the keyvalue is a root, returned from the parse() method.
 
         The root when exported produces its children, allowing multiple properties to be at the
         topmost indent level in a file.
@@ -1081,21 +1077,20 @@ class Property:
         return self._real_name is None
 
     def __repr__(self) -> str:
-        return 'Property({0!r}, {1!r})'.format(self._real_name, self._value)
+        return f'Keyvalues({self._real_name!r}, {self._value!r})'
 
     def __str__(self) -> str:
         return ''.join(self.export())
 
     def export(self) -> Iterator[str]:
-        """Generate the set of strings for a property file.
+        """Generate the set of strings for a keyvalues file.
 
         Recursively calls itself for all child properties.
         """
         if isinstance(self._value, list):
             if self._real_name is None:
                 # If the name is None, we just output the children
-                # without a "Name" { } surround. These Property
-                # objects represent the root.
+                # without a "Name" { } surround. These Keyvalue objects represent the root.
                 for prop in self._value:
                     yield from prop.export()
             else:
@@ -1114,21 +1109,21 @@ class Property:
             yield '"{}" "{}"\n'.format(escape_text(self._real_name), escape_text(self._value))
 
     def build(self) -> '_Builder':
-        """Allows appending a tree to this property in a convenient way.
+        """Allows appending a tree to this keyvalue in a convenient way.
 
         Use as follows::
 
             # doctest: +NORMALIZE_WHITESPACE
-            >>> prop = Property('name', [])
-            >>> with prop.build() as builder:
+            >>> kv = Keyvalues('name', [])
+            >>> with kv.build() as builder:
             ...     builder.root1('blah')
             ...     builder.root2('blah')
             ...     with builder.subprop:
             ...         subprop = builder.config('value')
             ...         builder['unusual name']('value')
-            Property('root1', 'blah')
-            Property('root2', 'blah')
-            Property('unusual name', 'value')
+            Keyvalues('root1', 'blah')
+            Keyvalues('root2', 'blah')
+            Keyvalues('unusual name', 'value')
             >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
             "config" "value"
             >>> print(''.join(prop.export())) # doctest: +NORMALIZE_WHITESPACE
@@ -1148,14 +1143,14 @@ class Property:
 
         Alternatively::
 
-            >>> with Property('name', []).build() as builder:
+            >>> with Keyvalues('name', []).build() as builder:
             ...     builder.root1('blah')
             ...     builder.root2('blah')
-            Property('root1', 'blah')
-            Property('root2', 'blah')
-            >>> prop = builder()
-            >>> print(repr(prop))
-            Property('name', [Property('root1', 'blah'), Property('root2', 'blah')])
+            Keyvalues('root1', 'blah')
+            Keyvalues('root2', 'blah')
+            >>> kv = builder()
+            >>> print(repr(kv))
+            Keyvalues('name', [Keyvalues('root1', 'blah'), Keyvalues('root2', 'blah')])
         """
         if not isinstance(self._value, list):
             raise ValueError("{!r} has no children!".format(self))
@@ -1163,12 +1158,12 @@ class Property:
 
 
 class _Builder:
-    """Allows constructing property trees using with: chains.
+    """Allows constructing keyvalues trees using with: chains.
 
     This is the builder you get directly, which is interacted with for
     all the hierachies.  Calling it then returns the original tree.
     """
-    def __init__(self, parent: Property) -> None:
+    def __init__(self, parent: Keyvalues) -> None:
         self._parents = [parent]
 
     def __getattr__(self, name: str) -> '_BuilderElem':
@@ -1183,17 +1178,17 @@ class _Builder:
         return _BuilderElem(self, name)
 
     def __enter__(self) -> '_Builder':
-        """Start a property block."""
+        """Start a keyvalue block."""
         return self
 
     def __exit__(
         self,
         exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
     ) -> None:
-        """Ends the property block."""
+        """Ends the keyvalue block."""
         pass
 
-    def __call__(self) -> Property:
+    def __call__(self) -> Keyvalues:
         """Return the tree root."""
         return self._parents[0]
 
@@ -1202,7 +1197,7 @@ class _Builder:
 
 # noinspection PyProtectedMember
 class _BuilderElem:
-    """Allows constructing property trees using with: chains.
+    """Allows constructing keyvalue trees using with: chains.
 
     This is produced when indexing or accessing attributes on the builder,
     and is then called or used as a context manager to enter the builder.
@@ -1211,15 +1206,15 @@ class _BuilderElem:
         self._builder = builder
         self._name = name
 
-    def __call__(self, value: str) -> Property:
+    def __call__(self, value: str) -> Keyvalues:
         """Add a key-value pair."""
-        prop = Property(self._name, value)
+        prop = Keyvalues(self._name, value)
         self._builder._parents[-1].append(prop)
         return prop
 
-    def __enter__(self) -> Property:
-        """Start a property block."""
-        prop = Property(self._name, [])
+    def __enter__(self) -> Keyvalues:
+        """Start a keyvalue block."""
+        prop = Keyvalues(self._name, [])
         self._builder._parents[-1].append(prop)
         self._builder._parents.append(prop)
         return prop
@@ -1228,5 +1223,5 @@ class _BuilderElem:
         self,
         exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
     ) -> None:
-        """End a property block."""
+        """End a keyvalue block."""
         self._builder._parents.pop()

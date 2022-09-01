@@ -10,7 +10,7 @@ import attrs
 
 from srctools import EmptyMapping
 from srctools.filesys import FileSystem
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.tokenizer import BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer
 
 
@@ -101,21 +101,21 @@ class Material(MutableMapping[str, str]):
     """
     shader: str
     """The name of the shader."""
-    proxies: List[Property]
+    proxies: List[Keyvalues]
     """
     List of Material Proxies defined for the material.
     Each is a tuple of the string name and a dict of keys-> values.
     "Empty" proxies are removed.
     """
-    blocks: List[Property]
+    blocks: List[Keyvalues]
     """Other sub-blocks inside the material definition. These are usually fallbacks or other similar definitions."""
 
     def __init__(
         self,
         shader: str,
         params: Mapping[str, str]=EmptyMapping,
-        blocks: Iterable[Property]=(),
-        proxies: Iterable[Property]=(),
+        blocks: Iterable[Keyvalues]=(),
+        proxies: Iterable[Keyvalues]=(),
     ) -> None:
         """Create a material."""
         self.shader = shader
@@ -235,9 +235,9 @@ class Material(MutableMapping[str, str]):
             raise tok.error('Proxy block not closed!')
 
     @staticmethod
-    def _parse_block(tok: Tokenizer, name: str) -> Property:
+    def _parse_block(tok: Tokenizer, name: str) -> Keyvalues:
         """Parse a block into a block of properties."""
-        prop = Property(name, [])
+        prop = Keyvalues(name, [])
 
         for token, param_name in tok:
             # End of our block
@@ -267,13 +267,13 @@ class Material(MutableMapping[str, str]):
                     pass
                 elif token is Tok.BRACE_CLOSE:
                     # End of us after single name.
-                    prop.append(Property(param_name, ''))
+                    prop.append(Keyvalues(param_name, ''))
                     break
                 else:
                     raise tok.error(token)
             else:
                 raise tok.error(token)
-            prop.append(Property(param_name, param_value))
+            prop.append(Keyvalues(param_name, param_value))
 
         raise tok.error('EOF without closed block!')
 

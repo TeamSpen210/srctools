@@ -24,7 +24,7 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.math import Angle, Matrix, Vec, to_matrix
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 import srctools
 
 
@@ -490,13 +490,13 @@ class VMF:
         return vis
 
     @staticmethod
-    def parse(tree: Union[Property, str], preserve_ids: bool = False) -> 'VMF':
+    def parse(tree: Union[Keyvalues, str], preserve_ids: bool = False) -> 'VMF':
         """Convert a property_parser tree into VMF classes.
         """
-        if not isinstance(tree, Property):
+        if not isinstance(tree, Keyvalues):
             # if not a tree, try to read the file
             with open(tree) as file:
-                tree = Property.parse(file)
+                tree = Keyvalues.parse(file)
 
         map_info = {}
         ver_info = tree.find_block('versioninfo', or_blank=True)
@@ -961,7 +961,7 @@ class Camera:
         self.map.active_cam = -1
 
     @classmethod
-    def parse(cls, vmf_file: VMF, tree: Property) -> 'Camera':
+    def parse(cls, vmf_file: VMF, tree: Keyvalues) -> 'Camera':
         """Read a camera from a property_parser tree."""
         pos = tree.vec('position')
         targ = tree.vec('look', 0.0, 64.0, 0.0)
@@ -1004,7 +1004,7 @@ class Cordon:
         vmf_file.cordons.append(self)
 
     @classmethod
-    def parse(cls, vmf_file: VMF, tree: Property) -> 'Cordon':
+    def parse(cls, vmf_file: VMF, tree: Keyvalues) -> 'Cordon':
         """Parse a cordon from the VMF file."""
         name = tree['name', 'cordon']
         is_active = tree.bool('active', False)
@@ -1060,7 +1060,7 @@ class VisGroup:
         self.id = self.vmf.vis_id.get_id(self.id)
 
     @classmethod
-    def parse(cls, vmf: VMF, props: Property) -> 'VisGroup':
+    def parse(cls, vmf: VMF, props: Keyvalues) -> 'VisGroup':
         """Parse a visgroup from the VMF file."""
         vis_id = props.int('visgroupid', -1)
         name = props['name', f'VisGroup_{vis_id}']
@@ -1192,7 +1192,7 @@ class Solid:
         )
 
     @classmethod
-    def parse(cls, vmf_file: VMF, tree: Property, hidden: bool=False) -> 'Solid':
+    def parse(cls, vmf_file: VMF, tree: Keyvalues, hidden: bool=False) -> 'Solid':
         """Parse a Property tree into a Solid object."""
         solid_id = tree.int('id', -1)
         sides = []
@@ -1586,7 +1586,7 @@ class Side:
         return 2 ** self.disp_power + 1
 
     @classmethod
-    def parse(cls, vmf_file: VMF, tree: Property) -> 'Side':
+    def parse(cls, vmf_file: VMF, tree: Keyvalues) -> 'Side':
         """Parse the property tree into a Side object."""
         # planes = "(x1 y1 z1) (x2 y2 z2) (x3 y3 z3)"
         verts = tree["plane", "(0 0 0) (0 0 0) (0 0 0)"][1:-1].split(") (")
@@ -1725,7 +1725,7 @@ class Side:
                 ) from None
         return side
 
-    def _iter_disp_row(self, tree: Property, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
+    def _iter_disp_row(self, tree: Keyvalues, name: str, size: int) -> Iterator[Tuple[int, List[str]]]:
         """Return y, row pairs of values from a displacement array row.
 
         It verifies the row is `size` long.
@@ -1744,7 +1744,7 @@ class Side:
                 )
             yield y, split
 
-    def _parse_disp_vecrow(self, tree: Property, name: str, member: Union[str, int]) -> None:
+    def _parse_disp_vecrow(self, tree: Keyvalues, name: str, member: Union[str, int]) -> None:
         """Parse one of the very similar per-vert sections.
 
         If member is a string, it is an attribute to set on the DispVertex.
@@ -2174,7 +2174,7 @@ class Entity(MutableMapping[str, str]):
 
     @staticmethod
     def parse(
-        vmf_file: VMF, tree_list: Property,
+        vmf_file: VMF, tree_list: Keyvalues,
         hidden: bool = False,
         _worldspawn: bool = False,
     ) -> 'Entity':
@@ -2955,7 +2955,7 @@ class EntityGroup:
         self.id = self.vmf.group_id.get_id(self.id)
 
     @classmethod
-    def parse(cls, vmf_file: VMF, props: Property) -> 'EntityGroup':
+    def parse(cls, vmf_file: VMF, props: Keyvalues) -> 'EntityGroup':
         """Parse an entity group from the VMF file."""
         editor_block = props.find_block('editor', or_blank=True)
         return cls(
@@ -3065,7 +3065,7 @@ class Output:
         self.times = 1 if is_once else -1
 
     @classmethod
-    def parse(cls, prop: Property) -> 'Output':
+    def parse(cls, prop: Keyvalues) -> 'Output':
         """Convert the VMF Property into an Output object."""
         if OUTPUT_SEP in prop.value:
             sep = False

@@ -9,7 +9,7 @@ from srctools.fgd import FGD
 from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
 from srctools.packlist import PackList
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.vmf import VMF
 
 
@@ -86,7 +86,7 @@ def main(args: List[str]) -> None:
         ext = file.path[-4:].casefold()
         if ext == '.vmf':
             with file.open_str() as f:
-                vmf_props = Property.parse(f)
+                vmf_props = Keyvalues.parse(f)
                 vmf = VMF.parse(vmf_props)
             packlist.pack_fgd(vmf, fgd)
             del vmf, vmf_props  # Hefty, don't want to keep.

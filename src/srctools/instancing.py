@@ -8,7 +8,7 @@ import attrs
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
 from srctools.math import Angle, Matrix, Vec
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
 
@@ -177,7 +177,7 @@ class Manifest(Instance):
         self.is_toplevel = is_toplevel
 
     @classmethod
-    def parse(cls, tree: Property) -> List['Manifest']:
+    def parse(cls, tree: Keyvalues) -> List['Manifest']:
         """Parse a VMM file."""
         return [
             cls(
@@ -506,7 +506,7 @@ def collapse_all(
             try:
                 file = cache[inst.filename]
             except KeyError:
-                props = fsys.read_prop(inst.filename)
+                props = fsys.read_kv1(inst.filename)
                 # except FileNotFoundError - fail.
                 file = cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
             collapse_one(vmf, inst, file, fgd)

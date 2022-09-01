@@ -29,7 +29,7 @@ import types
 import warnings
 
 from srctools import StringPath
-from srctools.property_parser import Property
+from srctools.keyvalues import Keyvalues
 from srctools.vpk import VPK, FileInfo as VPKFile
 
 
@@ -142,16 +142,24 @@ class FileSystem(Generic[_FileDataT]):
             DeprecationWarning, stacklevel=2,
         )
 
-    def read_prop(self, path: str, encoding: str = 'utf8') -> Property:
-        """Read a Property file from the filesystem.
+    def read_kv1(self, path: str, encoding: str = 'utf8') -> Keyvalues:
+        """Read a Keyvalues1 file from the filesystem.
 
         This handles opening and closing files.
         """
         with self.open_str(path, encoding) as file:
-            return Property.parse(
+            return Keyvalues.parse(
                 file,
                 self.path + ':' + path,
             )
+
+    def read_prop(self, path: str, encoding: str = 'utf8') -> Keyvalues:
+        """Read a Keyvalues1 file from the filesystem.
+
+        :deprecated: Use :py:meth:`~FileSystem.read_kv1()`.
+        """
+        warnings.warn('Use FileSystem.read_kv1() instead.', DeprecationWarning, stacklevel=2)
+        return self.read_kv1(path, encoding)
 
     def _check_open(self) -> None:
         """Ensure self._ref is valid."""
