@@ -1,6 +1,7 @@
 """Deprecated, this was renamed to srctools.keyvalues."""
-import warnings
 from typing import TYPE_CHECKING
+import warnings
+
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']
 
@@ -12,8 +13,7 @@ warnings.warn(
 
 if TYPE_CHECKING:
     from srctools.keyvalues import (
-        KeyValError as KeyValError, NoKeyError as NoKeyError,
-        Keyvalues as Property,
+        KeyValError as KeyValError, Keyvalues as Property, NoKeyError as NoKeyError,
     )
 else:
     from srctools import keyvalues

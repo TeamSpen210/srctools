@@ -2,6 +2,7 @@
 from typing import TYPE_CHECKING
 import warnings
 
+
 __all__ = [
     'Vec', 'Angle', 'Matrix', 'Vec_tuple',
     'parse_vec_str', 'to_matrix', 'lerp',
@@ -15,8 +16,8 @@ warnings.warn(
 
 if TYPE_CHECKING:
     from srctools.math import (
-        Vec as Vec, Angle as Angle, Matrix as Matrix, Vec_tuple as Vec_tuple,
-        parse_vec_str as parse_vec_str, to_matrix as to_matrix, lerp as lerp
+        Angle as Angle, Matrix as Matrix, Vec as Vec, Vec_tuple as Vec_tuple, lerp as lerp,
+        parse_vec_str as parse_vec_str, to_matrix as to_matrix,
     )
 else:
     from srctools import math

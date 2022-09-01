@@ -34,8 +34,8 @@ import warnings
 import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
-from srctools.math import Angle, Matrix
 from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Matrix
 from srctools.tokenizer import Token, Tokenizer
 
 

@@ -8,8 +8,8 @@ from srctools.bsp import BSP
 from srctools.fgd import FGD
 from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
-from srctools.packlist import PackList
 from srctools.keyvalues import Keyvalues
+from srctools.packlist import PackList
 from srctools.vmf import VMF
 
 

@@ -24,9 +24,9 @@ from srctools.fgd import FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as K
 from srctools.filesys import (
     CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
+from srctools.keyvalues import KeyValError, Keyvalues
 from srctools.mdl import MDL_EXTS, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
-from srctools.keyvalues import KeyValError, Keyvalues
 from srctools.sndscript import SND_CHARS, Sound
 from srctools.tokenizer import TokenSyntaxError
 from srctools.vmf import VMF, Entity

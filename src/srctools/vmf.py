@@ -23,8 +23,8 @@ import warnings
 import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
-from srctools.math import Angle, Matrix, Vec, to_matrix
 from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Matrix, Vec, to_matrix
 import srctools
 
 

@@ -11,8 +11,8 @@ import attrs
 from srctools.binformat import read_nullstr, read_offset_array, str_readvec, struct_read
 from srctools.const import add_unknown
 from srctools.filesys import File, FileSystem
-from srctools.math import Vec
 from srctools.keyvalues import Keyvalues
+from srctools.math import Vec
 
 
 __all__ = [

@@ -26,8 +26,8 @@ from srctools.binformat import (
 )
 from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
-from srctools.math import Angle, Vec
 from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Vec
 from srctools.tokenizer import escape_text
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material

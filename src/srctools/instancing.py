@@ -7,8 +7,8 @@ import attrs
 
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
-from srctools.math import Angle, Matrix, Vec
 from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Matrix, Vec
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
 
