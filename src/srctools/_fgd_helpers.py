@@ -6,8 +6,8 @@ from typing import (
 
 import attrs
 
-from srctools import Vec, parse_vec_str
 from srctools.fgd import EntityDef, Helper, HelperTypes
+from srctools.math import Vec, parse_vec_str
 
 
 __all__ = [

@@ -42,7 +42,7 @@ __all__ = [
     'GameID',
 
     # Submodules:
-    'binformat', 'bsp', 'choreo', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
+    'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
     'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'property_parser', 'run',
     'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
 ]
@@ -520,10 +520,10 @@ class AtomicWriter:
         return None  # Don't cancel the exception.
 
 
-# Import these, so people can reference 'srctools.Vec' instead of
-# 'srctools.vec.Vec'.
+# Import these, so people can reference 'srctools.Vec' instead of 'srctools.vec.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
+# This shouldn't be used in our modules, to ensure the order here doesn't matter.
 # isort: off
 from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
 from srctools.property_parser import NoKeyError, KeyValError, Property

@@ -7,8 +7,9 @@ should be imported from packlist instead.
 from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Union
 from typing_extensions import TypeAlias
 
-from .. import VMF, Entity, conv_int
+from .. import conv_int
 from ..packlist import FileType, PackList
+from ..vmf import VMF, Entity
 
 
 #  For various entity classes, we know they require hardcoded files.

@@ -4,11 +4,13 @@ import argparse
 import os
 import sys
 
-from srctools import FGD, VMF, Property
 from srctools.bsp import BSP
+from srctools.fgd import FGD
 from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
 from srctools.packlist import PackList
+from srctools.property_parser import Property
+from srctools.vmf import VMF
 
 
 fgd = FGD.engine_dbase()

@@ -9,13 +9,13 @@ from struct import Struct
 
 import attrs
 
-from srctools import Property
 from srctools.binformat import (
     read_nullstr, read_offset_array, str_readvec, struct_read,
 )
 from srctools.const import add_unknown
 from srctools.filesys import File, FileSystem
 from srctools.math import Vec
+from srctools.property_parser import Property
 
 
 __all__ = [

@@ -3,7 +3,7 @@ from typing import List
 from pathlib import Path
 import sys
 
-from srctools import VPK
+from srctools.vpk import VPK
 
 
 def diff_vpk(path1: Path, path2: Path) -> None:

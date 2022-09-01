@@ -4,10 +4,11 @@ from pathlib import Path
 import argparse
 import sys
 
-from srctools import FGD, VMF, Property
+from srctools.fgd import FGD
 from srctools.filesys import RawFileSystem
 from srctools.instancing import InstanceFile, Manifest, collapse_one
-from srctools.vmf import VisGroup
+from srctools.property_parser import Property
+from srctools.vmf import VMF, VisGroup
 
 
 def main(args: List[str]) -> None:

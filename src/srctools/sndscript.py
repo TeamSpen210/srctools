@@ -7,7 +7,8 @@ import struct
 
 import attrs
 
-from srctools import Property, conv_float
+from srctools import conv_float
+from srctools.property_parser import Property
 
 
 __all__ = [

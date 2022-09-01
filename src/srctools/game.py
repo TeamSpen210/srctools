@@ -6,8 +6,8 @@ import itertools
 import os
 import sys
 
-from srctools import Property
 from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
+from srctools.property_parser import Property
 
 
 __all__ = ['GINFO', 'Game', 'find_gameinfo']

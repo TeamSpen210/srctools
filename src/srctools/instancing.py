@@ -5,9 +5,10 @@ from pathlib import Path
 
 import attrs
 
-from srctools import Angle, Matrix, Property, Vec, conv_float
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
+from srctools.math import Angle, Matrix, Vec
+from srctools.property_parser import Property
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
 
@@ -400,9 +401,9 @@ def collapse_one(
         # First extract a rotated angles value, handling the special "pitch" and "yaw" keys.
         angles = Angle.from_str(new_ent['angles'])
         if 'pitch' in new_ent:
-            angles.pitch = conv_float(new_ent['pitch'])
+            angles.pitch = srctools.conv_float(new_ent['pitch'])
         if 'yaw' in new_ent:
-            angles.yaw = conv_float(new_ent['yaw'])
+            angles.yaw = srctools.conv_float(new_ent['yaw'])
         angles @= orient
 
         for key, value in new_ent.items():

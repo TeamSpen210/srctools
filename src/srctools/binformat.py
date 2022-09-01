@@ -8,7 +8,7 @@ from binascii import crc32
 from struct import Struct
 import lzma
 
-from srctools import Vec
+from srctools.math import Vec
 
 
 __all__ = [

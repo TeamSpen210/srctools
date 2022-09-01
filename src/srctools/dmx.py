@@ -33,9 +33,8 @@ import warnings
 
 import attrs
 
-from srctools import (
-    BOOL_LOOKUP, Angle, EmptyMapping, Matrix, binformat, bool_as_int,
-)
+from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
+from srctools.math import Angle, Matrix
 from srctools.property_parser import Property
 from srctools.tokenizer import Token, Tokenizer
 
@@ -46,6 +45,7 @@ __all__ = [
     'Vec2', 'Vec3', 'Vec4', 'Quaternion', 'Color','AngleTup', 'Time',
     'Attribute', 'Element', 'StubElement',
 ]
+
 
 class ValueType(Enum):
     """The type of value an element has."""

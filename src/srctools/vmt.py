@@ -8,7 +8,9 @@ import sys
 
 import attrs
 
-from srctools import EmptyMapping, FileSystem, Property
+from srctools import EmptyMapping
+from srctools.filesys import FileSystem
+from srctools.property_parser import Property
 from srctools.tokenizer import (
     BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer,
 )
