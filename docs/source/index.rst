@@ -7,6 +7,7 @@ Srctools is a library for parsing and manipulating the various file formats used
 	:maxdepth: 1
 	:caption: Core Modules:
 
+	modules/srctools
 	modules/math
 	modules/const
 	modules/logger
