@@ -1,7 +1,7 @@
 from typing import (
-    IO, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView, List, Mapping,
-    MutableMapping, NoReturn, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, ValuesView,
-    overload,
+    IO, TYPE_CHECKING, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
+    List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, ValuesView, overload,
 )
 from typing_extensions import Final, Protocol, TypeAlias
 from collections import deque
@@ -43,7 +43,7 @@ __all__ = [
 
     # Submodules:
     'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
-    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues.py', 'run',
+    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues', 'run',
     'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
 ]
 
@@ -535,4 +535,16 @@ from srctools.const import GameID
 from srctools.surfaceprop import SurfaceProp, SurfChar
 from srctools.vtf import VTF
 
-Property = Keyvalues   #: :deprecated: Use srctools.Keyvalues.
+
+if TYPE_CHECKING:
+    Property = Keyvalues   #: :deprecated: Use srctools.Keyvalues.
+else:
+    def __getattr__(name: str) -> object:
+        if name == 'Property':
+            warnings.warn(
+                'srctools.Property is renamed to srctools.Keyvalues',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return Keyvalues
+        raise AttributeError(name)
