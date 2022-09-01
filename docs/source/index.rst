@@ -4,34 +4,50 @@ Welcome to srctools's documentation!
 Srctools is a library for parsing and manipulating the various file formats used by the Source Engine.
 
 .. toctree::
-	:maxdepth: 2
-	:caption: Contents:
+	:maxdepth: 1
+	:caption: Core Modules:
 
+	modules/math
+	modules/const
+	modules/logger
 	modules/binformat
+	modules/filesys
+	modules/tokenizer
+
+.. toctree::
+	:maxdepth: 1
+	:caption: File Parsing Modules:
+
 	modules/bsp
 	modules/cmdseq
-	modules/const
 	modules/dmx
 	modules/fgd
-	modules/filesys
-	modules/game
-	modules/instancing
-	modules/logger
-	modules/math
+	modules/keyvalues
 	modules/mdl
-	modules/packlist
 	modules/particles
-	modules/property_parser
-	modules/run
 	modules/smd
 	modules/sndscript
 	modules/surfaceprop
-	modules/tokenizer
 	modules/vmf
-	modules/vec
 	modules/vmt
 	modules/vpk
 	modules/vtf
+
+.. toctree::
+	:maxdepth: 1
+	:caption: Other Modules
+
+	modules/game
+	modules/instancing
+	modules/packlist
+	modules/run
+
+.. toctree::
+	:maxdepth: 1
+	:caption: Deprecated Names:
+
+	modules/property_parser
+	modules/vec
 
 
 Indices and tables
