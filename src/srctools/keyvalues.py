@@ -1126,7 +1126,7 @@ class Keyvalues:
             Keyvalues('unusual name', 'value')
             >>> print(subprop) # doctest: +NORMALIZE_WHITESPACE
             "config" "value"
-            >>> print(''.join(prop.export())) # doctest: +NORMALIZE_WHITESPACE
+            >>> print(''.join(kv.export())) # doctest: +NORMALIZE_WHITESPACE
             "name"
                 {
                 "root1" "blah"
