@@ -1,7 +1,5 @@
 """Functions for reading/writing VTF data."""
-from typing import (
-    TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple,
-)
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 import array
 
 

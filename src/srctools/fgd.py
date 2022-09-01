@@ -1,8 +1,8 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
-    IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet,
-    Generic, Iterable, Iterator, List, Mapping, Optional, Set, TextIO, Tuple,
-    Type, TypeVar, Union, cast, overload,
+    IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
+    Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
+    overload,
 )
 from typing_extensions import Final
 from collections import defaultdict
@@ -21,9 +21,7 @@ import attrs
 
 from srctools.binformat import struct_read
 from srctools.filesys import File, FileSystem
-from srctools.tokenizer import (
-    BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text,
-)
+from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 import srctools
 
 

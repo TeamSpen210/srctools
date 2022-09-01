@@ -18,8 +18,8 @@ See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files 
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
 from typing import (
-    Any, BinaryIO, Dict, Generic, Iterator, List, Optional, Set, TextIO, Tuple,
-    Type, TypeVar, Union, cast,
+    Any, BinaryIO, Dict, Generic, Iterator, List, Optional, Set, TextIO, Tuple, Type, TypeVar,
+    Union, cast,
 )
 from typing_extensions import Final
 from zipfile import ZipFile, ZipInfo

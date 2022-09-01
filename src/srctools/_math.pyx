@@ -1,9 +1,7 @@
 # cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
 from cpython.exc cimport PyErr_WarnEx
-from cpython.object cimport (
-    Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject,
-)
+from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
 from libc cimport math
 from libc.math cimport NAN, cos, llround, sin, tan
@@ -47,8 +45,7 @@ cdef object unpickle_vec, unpickle_ang, unpickle_mat
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
 from srctools.math import (
-    Vec_tuple, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat,
-    _mk_vec as unpickle_vec,
+    Vec_tuple, _mk_ang as unpickle_ang, _mk_mat as unpickle_mat, _mk_vec as unpickle_vec,
 )
 
 

@@ -60,8 +60,8 @@ Properties with children can be indexed by their names, or by a
 Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enabled.
 """
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple,
-    Type, TypeVar, Union, cast, overload,
+    Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar,
+    Union, cast, overload,
 )
 from typing_extensions import Final
 import builtins  # Property.bool etc shadows these.
@@ -73,9 +73,7 @@ import warnings
 
 from srctools import BOOL_LOOKUP, EmptyMapping, StringPath
 from srctools.math import Vec as _Vec
-from srctools.tokenizer import (
-    BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text,
-)
+from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 
 
 __all__ = ['KeyValError', 'NoKeyError', 'Property']

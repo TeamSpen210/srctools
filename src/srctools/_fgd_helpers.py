@@ -1,7 +1,7 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
-    TYPE_CHECKING, ClassVar, Collection, Iterable, Iterator, List, Optional,
-    Tuple, Type, TypeVar, Union,
+    TYPE_CHECKING, ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Type,
+    TypeVar, Union,
 )
 
 import attrs

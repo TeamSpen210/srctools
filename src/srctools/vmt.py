@@ -1,7 +1,7 @@
 """Parses material files."""
 from typing import (
-    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional,
-    TextIO, Tuple, TypeVar, Union, overload,
+    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO, Tuple,
+    TypeVar, Union, overload,
 )
 from enum import Enum
 import sys
@@ -11,9 +11,7 @@ import attrs
 from srctools import EmptyMapping
 from srctools.filesys import FileSystem
 from srctools.property_parser import Property
-from srctools.tokenizer import (
-    BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer,
-)
+from srctools.tokenizer import BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer
 
 
 class VarType(Enum):

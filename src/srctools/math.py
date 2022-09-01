@@ -19,8 +19,8 @@ Rotates LHS by RHS:
  - Matrix @ Matrix -> Matrix
 """
 from typing import (
-    TYPE_CHECKING, Any, Iterable, Iterator, List, NamedTuple, Optional,
-    SupportsRound, Tuple, Type, TypeVar, Union, cast, overload,
+    TYPE_CHECKING, Any, Iterable, Iterator, List, NamedTuple, Optional, SupportsRound, Tuple,
+    Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final, Literal, Protocol, final
 import contextlib

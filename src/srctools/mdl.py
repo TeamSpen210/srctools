@@ -1,7 +1,6 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    BinaryIO, Dict, Iterable, Iterator, List, Sequence as SequenceType, Tuple,
-    Union, cast,
+    BinaryIO, Dict, Iterable, Iterator, List, Sequence as SequenceType, Tuple, Union, cast,
 )
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -9,9 +8,7 @@ from struct import Struct
 
 import attrs
 
-from srctools.binformat import (
-    read_nullstr, read_offset_array, str_readvec, struct_read,
-)
+from srctools.binformat import read_nullstr, read_offset_array, str_readvec, struct_read
 from srctools.const import add_unknown
 from srctools.filesys import File, FileSystem
 from srctools.math import Vec

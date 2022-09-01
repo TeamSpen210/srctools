@@ -4,8 +4,8 @@ After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Mapping, Optional,
-    Sequence, Tuple, Type, Union, overload,
+    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence,
+    Tuple, Type, Union, overload,
 )
 from array import array
 from collections import namedtuple

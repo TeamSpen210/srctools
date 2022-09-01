@@ -1,7 +1,7 @@
 from typing import (
-    IO, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
-    List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set, Tuple,
-    Type, TypeVar, Union, ValuesView, overload,
+    IO, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView, List, Mapping,
+    MutableMapping, NoReturn, Optional, Sequence, Set, Tuple, Type, TypeVar, Union, ValuesView,
+    overload,
 )
 from typing_extensions import Final, Protocol, TypeAlias
 from collections import deque

@@ -15,9 +15,9 @@ The format name/version are stored in the header, allowing indicating the kind o
 the file.
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator,
-    KeysView, List, Mapping, MutableMapping, NamedTuple, NewType, Optional,
-    Sequence, Set, Tuple, Type, TypeVar, Union, ValuesView, cast, overload,
+    IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, KeysView, List,
+    Mapping, MutableMapping, NamedTuple, NewType, Optional, Sequence, Set, Tuple, Type,
+    TypeVar, Union, ValuesView, cast, overload,
 )
 from typing_extensions import Final, Literal, TypeAlias
 from enum import Enum

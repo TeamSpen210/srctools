@@ -1,7 +1,5 @@
 """Parses SMD model/animation data."""
-from typing import (
-    Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union,
-)
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
 from typing_extensions import Protocol
 from collections import defaultdict
 from copy import deepcopy

@@ -486,8 +486,7 @@ res('window_pane', mdl('models/brokenglass_piece.mdl'))
 
 
 from srctools._class_resources import (
-    ai_, asw_, env_, filters, func_, item_, logic, npcs, props, triggers,
-    weapons,
+    ai_, asw_, env_, filters, func_, item_, logic, npcs, props, triggers, weapons,
 )
 
 

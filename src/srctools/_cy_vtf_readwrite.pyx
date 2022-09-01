@@ -2,9 +2,7 @@
 """Functions for reading/writing VTF data."""
 from cpython.bytes cimport PyBytes_FromStringAndSize
 from cython.parallel cimport parallel, prange
-from libc.stdint cimport (
-    uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t,
-)
+from libc.stdint cimport uint8_t as byte, uint_fast8_t as fastbyte, uint_fast16_t
 from libc.stdio cimport sprintf
 from libc.string cimport memcpy, memset, strcmp
 

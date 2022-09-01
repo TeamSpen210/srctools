@@ -1,7 +1,7 @@
 """Handles the list of files which are desired to be packed into the BSP."""
 from typing import (
-    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional,
-    Set, Tuple, TypeVar, Union,
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
+    TypeVar, Union,
 )
 from collections import OrderedDict
 from enum import Enum, auto as auto_enum
@@ -20,12 +20,9 @@ import attrs
 from srctools import conv_bool
 from srctools.bsp import BSP
 from srctools.dmx import Attribute, Element, ValueType
-from srctools.fgd import (
-    FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes,
-)
+from srctools.fgd import FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes
 from srctools.filesys import (
-    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem,
-    VPKFileSystem,
+    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
 from srctools.mdl import MDL_EXTS, AnimEvents, Model
 from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle

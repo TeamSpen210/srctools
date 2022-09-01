@@ -1,7 +1,5 @@
 """Reads and writes Soundscripts."""
-from typing import (
-    IO, Callable, Dict, List, Optional, TextIO, Tuple, TypeVar, Union,
-)
+from typing import IO, Callable, Dict, List, Optional, TextIO, Tuple, TypeVar, Union
 from enum import Enum
 import struct
 
