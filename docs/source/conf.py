@@ -69,9 +69,11 @@ html_css_files = [
 
 sys.path.append(str(Path(__file__).parent))
 from enum_class import EnumDocumenter, EnumMemberDocumenter
+from html_gen import SrctoolsHTMLTranslator
 
 
 def setup(app: Sphinx) -> None:
     """Perform modifications."""
     app.add_autodocumenter(EnumDocumenter)
     app.add_autodocumenter(EnumMemberDocumenter)
+    app.set_translator('html', SrctoolsHTMLTranslator)
