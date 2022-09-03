@@ -48,21 +48,35 @@ __all__ = [
 
 
 class ValueType(Enum):
-    """The type of value an element has."""
-    ELEMENT = 'element'  # Another attribute
+    """The type of value an element attribute has."""
+    ELEMENT = 'element'
+    """A child :py:class:`Element`. This may additionally be :py:data:`NULL` or a :py:class:`StubElement`, representing data stored elsewhere."""
     INTEGER = INT = 'int'
+    """A 32-bit signed :external:py:class:`int` value. In text format any value can be parsed/exported."""
     FLOAT = 'float'
+    """A single-precision :external:py:class:`float` point value. In text format the full Python double-precision value can be parsed/exported."""
     BOOL = 'bool'
+    """A :external:py:class:`bool` true/false value."""
     STRING = STR = 'string'
-    BINARY = BIN = VOID = 'binary'  # IE "void *", binary blob.
-    TIME = 'time'  # Seconds
+    """A general text string, though it should probably be kept to ASCII/CP-1252 to ensure Valve's parsers produce the correct result. See the ``unicode`` option in :py:meth:`Element.parse()`, :py:meth:`Element.export_kv2()` and :py:meth:`~Element.export_bin()`."""
+    BINARY = BIN = VOID = 'binary'
+    """A block of raw :external:py:class:`bytes` data. Any buffer object can be converted to this."""
+    TIME = 'time'
+    """Time since the begining of a level, in seconds. This is represented by the :py:class:`Time` typing type, but at runtime is simply a :external:py:class:`float`."""
     COLOR = COLOUR = 'color'
+    """An RGBA 8-bit colour. This can be converted from a 3 or 4-tuple, or a space separated string. In either case alpha defaults to ``255`` if not specified."""
     VEC2 = 'vector2'
+    """A generic XY vector, represented by the :py:class:`Vec2` namedtuple. This can be converted from an iterable of 4 floats."""
     VEC3 = 'vector3'
+    """A generic XYZ vector, represented by the :py:class:`srctools.math.Vec` classs. This can be converted from an iterable of 3 floats. The vector will be copied on insertion/extraction to ensure immutability."""
     VEC4 = 'vector4'
+    """A generic XYZW vector, represented by the :py:class:`Vec4` namedtuple. This can be converted from an iterable of 4 floats."""
     ANGLE = 'qangle'
+    """An Euler angle, represented by the :py:class:`AngleTup` namedtuple. This can be converted from an iterable of 3 floats, :py:class:`srctools.math.Angle` or :py:class:`srctools.math.Matrix`."""
     QUATERNION = 'quaternion'
+    """A rotational quaternion, represented by the :py:class:`Quaternion` namedtuple. This can be converted from a 4-element iterable."""
     MATRIX = 'vmatrix'
+    """A translation :py:class:`srctools.math.Matrix`. Values are copied on insertion/extraction to keep immutability."""
 
 
 class _StubType(str, Enum):
