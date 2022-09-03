@@ -2,5 +2,5 @@ srctools.game
 -------------
 
 .. automodule:: srctools.game
-	:synopsis: Parses gaminfo.txt files.
+	:synopsis: Parses gameinfo.txt files.
 	:members:
