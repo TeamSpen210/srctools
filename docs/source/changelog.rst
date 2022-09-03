@@ -1,6 +1,10 @@
 Changelog
 =========
 
+.. contents::
+	:local:
+	:backlinks: none
+
 ----------
 Dev branch
 ----------
@@ -14,9 +18,9 @@ Dev branch
 * Remove useless ``header_len`` attribute from :py:class:`srctools.vpk.VPK`.
 * Rename ``srctools.property_parser.Property`` to :py:class:`srctools.keyvalues.Keyvalues`. as well as :py:class:`~srctools.keyvalues.NoKeyError` and :py:class:`~srctools.keyvalues.KeyValError`.
 
-------
-v2.3.4
-------
+-------------
+Version 2.3.4
+-------------
 
 * Add public submodules to ``__all__``.
 * Disable escapes when parsing gameinfo files.
@@ -26,17 +30,17 @@ v2.3.4
 * Default :py:class:`srctools.fgd.IODef` to :py:attr:`srctools.fgd.ValueTypes.VOID`.
 * Sort tags when exporting FGDs, to make it determinstic.
 
-------
-v2.3.3
-------
+-------------
+Version 2.3.3
+-------------
 
 * Writing out soundscript/particle cache can be non-atomic.
 * Vendor code from deprecated ``chunk.Chunk`` standard library class.
 * Fix bad use of builtin generics.
 
-------
-v2.3.2
-------
+-------------
+Version 2.3.2
+-------------
 
 * Make particle systems use a cache file for the manifest too.
 * Make :py:meth:`srctools.fgd.FGD.engine_db()` actually cache and copy the database.
@@ -45,9 +49,9 @@ v2.3.2
 * Add :py:data:`srctools.filesys.CACHE_KEY_INVALID`.
 * Add :py:meth:`srctools.math.Matrix.from_angstr()`.
 
-------
-v2.3.1
-------
+-------------
+Version 2.3.1
+-------------
 
 * Fix :py:meth:`srctools.vmf.Output.combine` not handling ``times`` correctly.
 * :py:func:`srctools.math.quickhull()` is now public.
@@ -61,9 +65,9 @@ v2.3.1
 * Disallow newlines in keyvalues keys when parsing by default. This catches syntax errors earlier.
 * More :py:class:`srctools.game.Game` ``gameinfo.txt`` fields are now optional.
 
-------
-v2.3.0
-------
+-------------
+Version 2.3.0
+-------------
 
 * __Postcompiler code has been moved to HammerAddons.__
 * Fix raw sound filenames not stripping special characters from the start when packing.
@@ -90,17 +94,17 @@ v2.3.0
 * :py:attr:`srctools.vmf.Entity.fixup` will instantiate the :py:class:`~srctools.vmf.EntityFixup` object only when actually required.
 
 
-------
-v2.2.5
-------
+-------------
+Version 2.2.5
+-------------
 
 * Restore :py:meth:`srctools.dmx.Attribute.iter_str()` etc method's ability to iterate scalars.
 * Suppress warnings in :py:meth:`srtools.Property.copy()`.
 
 
-------
-v2.2.4
-------
+-------------
+Version 2.2.4
+-------------
 
 * Fix behaviour of :py:meth:`srctools.Property.__getitem__()` and :py:meth:`~srctools.Property.__setitem__()`.
 * Improve performance of :py:class:`~srctools.vpk.VPK` parsing.
@@ -116,33 +120,33 @@ v2.2.4
 * Add :py:meth:`srctools.dmx.Attribute.append()`, :py:meth:`~srctools.dmx.Attribute.extend()` and :py:meth:`~srctools.dmx.Attribute.clear_array()` methods.
 * Fix corruption from mistaken deduplication of :py:class:`srctools.bsp.VisLeaf` and :py:class:`~srctools.bsp.Primitive` lumps.
 
-------
-v2.2.3
-------
+-------------
+Version 2.2.3
+-------------
 
 * Fix use of builtin generics.
 
-------
-v2.2.2
-------
+-------------
+Version 2.2.2
+-------------
 
 * Document some known particle manifest paths.
 * Handle double-spacing in animation particle options.
 * Improve type hints in :py:mod:`srctools.smd`.
 
 
-------
-v2.2.1
-------
+-------------
+Version 2.2.1
+-------------
 
 * Missing particles is now an warning, not an error.
 * Particles are now case-insensitive.
 * py:meth:`srctools.vmf.EntityFixup.keys()`, :py:meth:`~srctools.vmf.EntityFixup.values()` and :py:meth:`~srctools.vmf.EntityFixup.items()` are now full mapping views.
 * Fix incompatibility with some Python versions.
 
-------
-v2.2.0
-------
+-------------
+Version 2.2.0
+-------------
 
 * Make ``srctools.compiler.mdl_compiler`` generic, to allow typechecking results.
 * Add :py:mod:`srctools.particles`.
@@ -151,9 +155,9 @@ v2.2.0
 * :py:class:`srctools.packlist.Packlist` now can pack particle systems, and generate particle manifests.
 * Animation events which spawn particles are also detected.
 
-------
-v2.1.0
-------
+-------------
+Version 2.1.0
+-------------
 
 * Fix ``%``-formatted logs breaking when :py:mod:`srctools.logger` is used.
 * Add :py:meth:`Property.extend()`, instead of using ``+`` or :py:meth:`Property.append()` with a block. That usage is deprecated.
