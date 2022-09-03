@@ -5,6 +5,12 @@ Srctools is a library for parsing and manipulating the various file formats used
 
 .. toctree::
 	:maxdepth: 1
+	:caption: General Information:
+
+	changelog
+
+.. toctree::
+	:maxdepth: 1
 	:caption: Core Modules:
 
 	modules/srctools
