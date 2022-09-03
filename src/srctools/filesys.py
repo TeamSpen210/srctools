@@ -41,7 +41,8 @@ __all__ = [
 ]
 
 FileSysT = TypeVar('FileSysT', bound='FileSystem')
-CACHE_KEY_INVALID: Final = -1  # Returned from cache_key() to indicate invalid keys.
+CACHE_KEY_INVALID: Final = -1
+"""This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed."""
 
 # This is the type of File._data. It should only be used by subclasses.
 _FileDataT = TypeVar('_FileDataT')
