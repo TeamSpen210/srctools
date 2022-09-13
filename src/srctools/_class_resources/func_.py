@@ -45,6 +45,7 @@ BREAKABLE_SPAWNS = [
     "",  # weapon_molotov
     "item_dynamic_resupply",
 ]
+# TODO: Mapbase, EZ2 etc additions?
 
 res('func_areaportal')
 res('func_areaportalwindow')
@@ -109,6 +110,7 @@ res('func_breakable_surf',
     )
 
 res('func_brush')
+res('func_bulletshield')
 
 @cls_func
 def func_button(pack: PackList, ent: Entity) -> None:

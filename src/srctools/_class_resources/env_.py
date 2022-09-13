@@ -36,6 +36,7 @@ res('env_citadel_energy_core',
     mat('materials/effects/combinemuzzle2.vmt'),
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
+res('env_closecaption')
 res('env_credits',
     'scripts/credits.txt',  # Script file with all the credits.
     )
@@ -46,9 +47,17 @@ res('env_dustpuff',
     mat("materials/particle/particle_noisesphere.vmt"),
     )
 res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
+res(
+    'env_entity_igniter',
+    sound('General.StopBurning'),
+    sound('General.BurningFlesh'),
+    sound('General.BurningObject'),
+    aliases='entityflame',
+)
 res('env_entity_maker')
 res('env_embers', mat('materials/particle/fire.vmt'))
 res('env_explosion', mat('materials/sprites/zerogxplode.vmt'))
+res('env_fade')
 res('env_fire_trail',
     mat("materials/sprites/flamelet1.vmt"),
     mat("materials/sprites/flamelet2.vmt"),
@@ -150,6 +159,12 @@ res('env_lightrail_endpoint',
     )
 res('env_microphone')
 res('env_movieexplosion', mat('materials/particle/particle_sphere.vmt'))
+res('env_muzzleflash',
+    mat('materials/effects/muzzleflash1.vmt'),
+    mat('materials/effects/muzzleflash2.vmt'),
+    mat('materials/effects/muzzleflash3.vmt'),
+    mat('materials/effects/muzzleflash4.vmt'),
+    )
 res('env_hudhint')
 res('env_player_surface_trigger')
 res('env_physexplosion')
@@ -221,6 +236,8 @@ def env_shooter(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file(ent['shootmodel'], FileType.MODEL)
 
+# TODO: env_soundscape -> cache the scape.
+res('env_soundscape_proxy')  # The env_soundscape this uses should do the precaching.
 
 res('env_spark',
     mat('materials/sprites/glow01.vmt'),

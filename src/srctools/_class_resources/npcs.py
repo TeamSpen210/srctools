@@ -17,6 +17,19 @@ res('npc_advisor',
     part("advisor_object_charge"),
     )
 
+res('npc_aliencrow', # Entropy Zero 2
+    mdl("models/aflock.mdl"),
+
+    sound("NPC_Boid.Hop"),
+    sound("NPC_Boid.Squawk"),
+    sound("NPC_Boid.Gib"),
+    sound("NPC_Boid.Idle"),
+    sound("NPC_Boid.Alert"),
+    sound("NPC_Boid.Die"),
+    sound("NPC_Boid.Pain"),
+    sound("NPC_Boid.Flat"),
+    aliases="npc_boid",
+    )
 
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity) -> None:
@@ -615,6 +628,25 @@ res('npc_seagull',
     sound("NPC_Crow.Squawk"),
     sound("NPC_Crow.Gib"),
     sound("NPC_Crow.Flap"),
+    )
+res('npc_stalker',
+    mdl('models/stalker.mdl'),
+    mat('materials/sprites/laser.vmt'),
+    mat('materials/sprites/redglow1.vmt'),
+    mat('materials/sprites/orangeglow1.vmt'),
+    mat('materials/sprites/yellowglow1.vmt'),
+    sound('NPC_Stalker.BurnFlesh'),
+    sound('NPC_Stalker.BurnWall'),
+    sound('NPC_Stalker.FootstepLeft'),
+    sound('NPC_Stalker.FootstepRight'),
+    sound('NPC_Stalker.Hit'),
+    sound('NPC_Stalker.Ambient01'),
+    sound('NPC_Stalker.Scream'),
+    sound('NPC_Stalker.Pain'),
+    sound('NPC_Stalker.Die'),
+
+    # TODO: Mapbase adds this only if "bleed" is set.
+    part('blood_impact_synth_01'),
     )
 res('npc_strider',
     mdl("models/combine_strider.mdl"),

@@ -136,6 +136,10 @@ res('prop_wall_projector',
     sound('music.sp_all_maps_lbout'),
     part('projected_wall_impact'),
     )
+res('prop_wilson_scanner',
+    mdl('models/props_lab/monitor02.mdl'),
+    sound('AI_BaseNPC.SentenceStop'),
+    )
 res('prop_ragdoll', aliases='physics_prop_ragdoll')
 res('prop_scalable')
 res('prop_vehicle_crane', includes='crane_tip')

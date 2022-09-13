@@ -156,6 +156,11 @@ res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
 res('assault_assaultpoint')
 res('assault_rallypoint')
 
+res('base_boss')
+res('beam_spotlight',
+    mat('materials/sprites/light_glow03.vmt'),
+    mat('materials/sprites/glow_test02.vmt'),
+    )
 res('bullseye_strider_focus', includes='npc_bullseye')  # Unchanged subclass.
 
 res('challenge_mode_end_node',
@@ -204,6 +209,7 @@ res('crossbow_bolt',
     mat('materials/sprites/light_glow02_noz.vmt'),
     )
 res('cycler')
+res('cycler_actor')
 res('cycler_blender')
 res('cycler_flex')
 res('cycler_weapon')
@@ -292,6 +298,7 @@ res('info_player_scientist')
 res('info_player_start')
 res('info_player_teamspawn')
 res('info_player_terrorist')
+res('info_radar_target')
 res('info_radial_link_controller')
 res('info_remarkable')
 res('info_snipertarget')
@@ -302,6 +309,7 @@ res('info_teleport_destination')
 
 res('info_landmark_entry')
 res('info_landmark_exit')
+res('keyframe_track')
 res('light')
 res('light_directional')
 res('light_dynamic')
@@ -332,6 +340,8 @@ def move_rope(pack: PackList, ent: Entity) -> None:
 CLASS_FUNCS['keyframe_rope'] = CLASS_FUNCS['move_rope']
 ALT_NAMES['keyframe_rope'] = 'move_rope'
 
+res('multisource')
+
 res('passtime_ball',
     mdl('models/passtime/ball/passtime_ball_halloween.mdl'),
     mdl('models/passtime/ball/passtime_ball.mdl'),
@@ -344,8 +354,10 @@ res('passtime_ball',
     sound('Passtime.BallHoming'),
     includes='_ballplayertoucher',
 )
+res('path_track')
 
 res('phys_bone_follower')
+res('phys_ballsocket')
 res('phys_constraint')  # Constraints just have sound KVs.
 res('phys_constraintsystem')
 res('phys_convert')
@@ -378,11 +390,13 @@ res('point_commentary_node',
     includes='point_commentary_viewpoint',
     )
 res('point_commentary_viewpoint', mat('materials/sprites/redglow1.vmt'))
+res('point_damageinfo')
 res('point_energy_ball_launcher',
     includes='prop_energy_ball',
     )
 res('point_entity_finder')
 res('point_entity_replace')
+res('point_event')
 res('point_flesh_effect_target')
 res('point_futbol_shooter',
     sound('World.Wheatley.fire'),
@@ -396,6 +410,7 @@ res('point_hurt')
 res('point_prop_use_target')
 res('point_proximity_sensor')
 res('point_push')
+res('point_radiation_source')
 res('point_ragdollboogie', includes='env_ragdoll_boogie')
 res('point_servercommand')
 res('point_spotlight',
@@ -484,6 +499,11 @@ res('vgui_screen',
 res('waterbullet', mdl('models/weapons/w_bullet.mdl'))
 res('window_pane', mdl('models/brokenglass_piece.mdl'))
 
+
+res('zombie_goo_puddle',
+    part('glow_puddle'),
+    sound('NPC_BaseGlowbie.glow_puddle'),
+    )  # EZ2 point_hurt subclass.
 
 from srctools._class_resources import (
     ai_, asw_, env_, filters, func_, item_, logic, npcs, props, triggers, weapons,

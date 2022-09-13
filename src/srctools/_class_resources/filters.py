@@ -1,4 +1,4 @@
-"""Filter entities."""
+"""Filter entities. These aren't going to precache anything."""
 from . import res
 
 
@@ -33,6 +33,7 @@ res('filter_player_held')
 res('filter_redirect_inflictor')
 res('filter_redirect_owner')
 res('filter_redirect_weapon')
+res('filter_script')
 res('filter_tf_bot_has_tag')
 res('filter_tf_class')
 res('filter_tf_condition')
