@@ -2122,7 +2122,7 @@ _conv_float_to_vec3 = lambda n: Vec3(n, n, n)
 _conv_float_to_vec4 = lambda n: Vec4(n, n, n, n)
 
 _conv_bool_to_integer = int
-_conv_bool_to_float = int
+_conv_bool_to_float = float
 _conv_bool_to_string = bool_as_int
 
 _conv_time_to_integer = int

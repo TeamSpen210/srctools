@@ -87,13 +87,16 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
             assert attr1.val_str == attr2.val_str, f'{attr_path}: {attr1._value} != {attr2._value}'
 
 
+# ExactType() enforces an exact type check + value check.
+
+
 def test_attr_val_int() -> None:
     """Test integer-type values."""
     elem = Attribute.int('Name', 45)
-    assert elem.val_int == 45
+    assert elem.val_int == ExactType(45)
     assert elem.val_str == '45'
-    assert elem.val_float == 45.0
-    assert elem.val_time == 45.0
+    assert elem.val_float == ExactType(45.0)
+    assert elem.val_time == ExactType(45.0)
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
     assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
@@ -131,11 +134,11 @@ def test_attr_array_int() -> None:
 def test_attr_val_float() -> None:
     """Test float-type values."""
     elem = Attribute.float('Name', 32.25)
-    assert elem.val_int == 32
-    assert Attribute.float('Name', -32.25).val_int == -32
+    assert elem.val_int == ExactType(32)
+    assert Attribute.float('Name', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == 32.25
-    assert elem.val_time == 32.25
+    assert elem.val_float == ExactType(32.25)
+    assert elem.val_time == ExactType(32.25)
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
     assert elem.val_vec3 == Vec3(32.25, 32.25, 32.25)
@@ -173,16 +176,16 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', '').val_str == ''
     assert Attribute.string('', 'testing str\ning').val_str == 'testing str\ning'
 
-    assert Attribute.string('Name', '45').val_int == 45
-    assert Attribute.string('Name', '-45').val_int == -45
-    assert Attribute.string('Name', '0').val_int == 0
+    assert Attribute.string('Name', '45').val_int == ExactType(45)
+    assert Attribute.string('Name', '-45').val_int == ExactType(-45)
+    assert Attribute.string('Name', '0').val_int == ExactType(0)
 
-    assert Attribute.string('', '45').val_float == 45.0
-    assert Attribute.string('', '45.0').val_float == 45.0
-    assert Attribute.string('', '45.375').val_float == 45.375
-    assert Attribute.string('', '-45.375').val_float == -45.375
-    assert Attribute.string('', '.25').val_float == 0.25
-    assert Attribute.string('', '0').val_float == 0.0
+    assert Attribute.string('', '45').val_float == ExactType(45.0)
+    assert Attribute.string('', '45.0').val_float == ExactType(45.0)
+    assert Attribute.string('', '45.375').val_float == ExactType(45.375)
+    assert Attribute.string('', '-45.375').val_float == ExactType(-45.375)
+    assert Attribute.string('', '.25').val_float == ExactType(0.25)
+    assert Attribute.string('', '0').val_float == ExactType(0.0)
 
     assert Attribute.string('', '1').val_bool is True
     assert Attribute.string('', '0').val_bool is False
@@ -202,14 +205,14 @@ def test_attr_val_bool() -> None:
     false = Attribute.bool('false', False)
 
     assert truth.val_bool is True
-    assert truth.val_int == 1
-    assert truth.val_float == 1.0
+    assert truth.val_int == ExactType(1)
+    assert truth.val_float == ExactType(1.0)
     assert truth.val_str == '1'
     assert truth.val_bytes == b'\x01'
 
     assert false.val_bool is False
-    assert false.val_int == 0
-    assert false.val_float == 0.0
+    assert false.val_int == ExactType(0)
+    assert false.val_float == ExactType(0.0)
     assert false.val_str == '0'
     assert false.val_bytes == b'\x00'
 
@@ -229,12 +232,12 @@ def test_attr_array_bool() -> None:
 
 def test_attr_val_time() -> None:
     """Test time value conversions."""
-    elem = Attribute.float('Time', 32.25)
-    assert elem.val_int == 32
-    assert Attribute.float('Time', -32.25).val_int == -32
+    elem = Attribute.time('Time', 32.25)
+    assert elem.val_int == ExactType(32)
+    assert Attribute.time('Time', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == 32.25
-    assert elem.val_time == 32.25
+    assert elem.val_float == ExactType(32.25)
+    assert elem.val_time == ExactType(32.25)
 
     assert Attribute.time('Blah', 32.25).val_bool is True
     assert Attribute.time('Blah', 0.0).val_bool is False
@@ -245,12 +248,12 @@ def test_attr_val_time() -> None:
 def test_attr_val_color() -> None:
     """Test color value conversions."""
     elem = Attribute.color('RGB', 240, 128, 64)
-    assert elem.val_color == Color(240, 128, 64, 255)
-    assert Attribute.color('RGB').val_color == Color(0, 0, 0, 255)
+    assert elem.val_color == ExactType(Color(240, 128, 64, 255))
+    assert Attribute.color('RGB').val_color == ExactType(Color(0, 0, 0, 255))
 
     assert elem.val_str == '240 128 64 255'
-    assert elem.val_vec3 == Vec3(240.0, 128.0, 64.0)
-    assert elem.val_vec4 == Vec4(240.0, 128.0, 64.0, 255.0)
+    assert elem.val_vec3 == ExactType(Vec3(240.0, 128.0, 64.0))
+    assert elem.val_vec4 == ExactType(Vec4(240.0, 128.0, 64.0, 255.0))
 
 
 def test_attr_val_vector_2() -> None:
@@ -302,8 +305,12 @@ def test_attr_val_vector_3() -> None:
     assert Attribute.vec3('Fals', 0.0, 0.0, 0.0).val_bool is False
 
 
+# TODO: Remaining value types.
+
+
 def test_attr_eq() -> None:
     """Test that attributes can be compared to each other."""
+    # We need to check both __eq__ and __ne__.
     assert Attribute.string('test', 'blah') == Attribute.string('test', 'blah')
     assert not Attribute.string('test', 'blah') != Attribute.string('test', 'blah')
 
