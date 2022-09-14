@@ -4,7 +4,7 @@ Those are ones that don't simply appear in keyvalues.
 The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
-from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Union
+from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Optional, Union
 from typing_extensions import TypeAlias, Final
 
 from .. import conv_int, conv_bool
@@ -26,11 +26,20 @@ ALT_NAMES: Dict[str, str] = {}
 _blank_vmf = VMF(preserve_ids=False)
 
 
-def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', aliases: str='') -> None:
+def res(
+    cls: str,
+    *items: Union[str, Tuple[str, FileType]],
+    includes: str='',
+    aliases: str='',
+    func: Optional[ClassFunc] = None,
+) -> None:
     """Add a class to class_resources, with each of the files it always uses.
 
-    includes adds the resources of the other ent to this one if we spawn another.
-    aliases indicate additional classnames which are identical to ours.
+    :param cls: The classname to register.
+    :param includes: This adds the resources of the other ent to this one if we spawn another.
+    :param aliases: This indicates additional classnames which are identical to ours.
+    :param items: The items to pack.
+    :param func: A function to call to do special additional packing checks.
     """
     res_list: Iterable[Tuple[str, FileType]]
     if items:
@@ -44,17 +53,27 @@ def res(cls: str, *items: Union[str, Tuple[str, FileType]], includes: str='', al
         CLASS_RESOURCES[cls] = res_list = ()
     if includes:
         INCLUDES[cls] = includes.split()
-    if aliases:
+    for alt in aliases.split():
+        ALT_NAMES[alt] = cls
+        CLASS_RESOURCES[alt] = res_list
+    if func is not None:
+        if cls in CLASS_FUNCS:
+            raise ValueError(f'Class function already defined for "{cls}"!')
+        CLASS_FUNCS[cls] = func
         for alt in aliases.split():
-            ALT_NAMES[alt] = cls
-            CLASS_RESOURCES[alt] = res_list
+            if alt in CLASS_FUNCS:
+                raise ValueError(f'Class function already defined for "{alt}"!')
+            CLASS_FUNCS[alt] = func
 
 
 def cls_func(func: ClassFuncT) -> ClassFuncT:
     """Save a function to do special checks for a classname."""
-    CLASS_FUNCS[func.__name__] = func
+    name = func.__name__
+    if name in CLASS_FUNCS:
+        raise ValueError(f'Class function already defined for "{name}"!')
+    CLASS_FUNCS[name] = func
     # Ensure this is also defined.
-    CLASS_RESOURCES.setdefault(func.__name__, ())
+    CLASS_RESOURCES.setdefault(name, ())
     return func
 
 
