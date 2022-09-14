@@ -34,18 +34,32 @@ res('npc_aliencrow', # Entropy Zero 2
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity) -> None:
     """Antlions require different resources for the worker version."""
+    ez_variant = conv_int(ent['ezvariant'])
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 18):  # Is worker?
-        pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
-        pack.pack_file("blood_impact_antlion_worker_01", FileType.PARTICLE)
-        pack.pack_file("antlion_gib_02", FileType.PARTICLE)
-        pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
+        if ez_variant == EZ_VARIANT_BLOOD:
+            pack.pack_file("models/bloodlion_worker.mdl", FileType.MODEL)
+        else:
+            pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
+        pack.pack_particle("blood_impact_antlion_worker_01")
+        pack.pack_particle("antlion_gib_02")
+        pack.pack_particle("blood_impact_yellow_01")
 
         pack_ent_class(pack, 'grenade_spit')
     else:
-        pack.pack_file("models/antlion.mdl", FileType.MODEL)
-        pack.pack_file("blood_impact_antlion_01")
-        pack.pack_file("AntlionGib", FileType.PARTICLE)
+        if ez_variant == EZ_VARIANT_RAD:
+            pack.pack_file("models/antlion_blue.mdl", FileType.MODEL)
+            pack.pack_particle("blood_impact_blue_01")
+        elif ez_variant == EZ_VARIANT_XEN:
+            pack.pack_file("models/antlion_xen.mdl", FileType.MODEL)
+            pack.pack_particle("blood_impact_antlion_01")
+        elif ez_variant == EZ_VARIANT_BLOOD:
+            pack.pack_file("models/bloodlion.mdl", FileType.MODEL)
+            pack.pack_particle("blood_impact_antlion_01")
+        else:
+            pack.pack_file("models/antlion.mdl", FileType.MODEL)
+            pack.pack_particle("blood_impact_antlion_01")
+        pack.pack_particle("AntlionGib")
 res('npc_antlion',
     sound("NPC_Antlion.RunOverByVehicle"),
     sound("NPC_Antlion.MeleeAttack"),
@@ -73,6 +87,7 @@ res('npc_antlion',
     sound("NPC_Antlion.ZappedFlip"),
     sound("NPC_Antlion.PoisonShoot"),
     sound("NPC_Antlion.PoisonBall"),
+    # These aren't though.
     *[
         mdl("models/gibs/antlion_gib_{}_{}.mdl".format(size, i))
         for i in ('1', '2', '3')
@@ -92,6 +107,56 @@ res('npc_antlion_grub',
     part("GrubSquashBlood"),
     part("GrubBlood"),
     includes="item_grubnugget",
+    )
+
+
+@cls_func
+def npc_antlionguard(pack: PackList, ent: Entity) -> None:
+    """In Entropy Zero, some alternate models are available."""
+    spawnflags = conv_int(ent['spawnflags'])
+    if spawnflags & (1 << 17):  # Inside Footsteps
+        pack.pack_soundscript("NPC_AntlionGuard.Inside.StepLight")
+        pack.pack_soundscript("NPC_AntlionGuard.Inside.StepHeavy")
+    else:
+        pack.pack_soundscript("NPC_AntlionGuard.StepLight")
+        pack.pack_soundscript("NPC_AntlionGuard.StepHeavy")
+    if 'ezvariant' in ent:  # Entropy Zero.
+        variant = conv_int(ent['ezvaraiant'])
+        if variant == EZ_VARIANT_XEN:
+            pack.pack_file("models/antlion_guard_xen.mdl", FileType.MODEL)
+            pack.pack_particle("xenpc_spawn")
+        elif variant == EZ_VARIANT_RAD:
+            pack.pack_file("models/antlion_guard_blue.mdl", FileType.MODEL)
+            pack.pack_particle("blood_impact_blue_01")
+        elif variant == EZ_VARIANT_BLOOD:
+            pack.pack_file("models/bloodlion_guard.mdl", FileType.MODEL)
+        else:
+            pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
+    else:  # Regular HL2.
+        pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
+res('npc_antlionguard',
+    mdl('NPC_AntlionGuard.Shove'),
+    mdl('NPC_AntlionGuard.HitHard'),
+    sound("NPC_AntlionGuard.Anger"),
+    sound("NPC_AntlionGuard.Roar"),
+    sound("NPC_AntlionGuard.Die"),
+    sound("NPC_AntlionGuard.GrowlHigh"),
+    sound("NPC_AntlionGuard.GrowlIdle"),
+    sound("NPC_AntlionGuard.BreathSound"),
+    sound("NPC_AntlionGuard.Confused"),
+    sound("NPC_AntlionGuard.Fallover"),
+    sound("NPC_AntlionGuard.FrustratedRoar"),
+    part('blood_antlionguard_injured_light'),
+    part('blood_antlionguard_injured_heavy'),
+    # TODO: Episodic only.
+    sound("NPC_AntlionGuard.NearStepLight"),
+    sound("NPC_AntlionGuard.NearStepHeavy"),
+    sound("NPC_AntlionGuard.FarStepLight"),
+    sound("NPC_AntlionGuard.FarStepHeavy"),
+    sound("NPC_AntlionGuard.BreatheLoop"),
+    sound("NPC_AntlionGuard.ShellCrack"),
+    sound("NPC_AntlionGuard.Pain_Roar"),
+    mat("materials/sprites/grubflare1.vmt"),
     )
 
 
@@ -121,7 +186,7 @@ res('npc_alyx',
     sound('Weapon_CombineGuard.Special1'),
     includes='env_alyxemp',
     )
-
+res('npc_apcdriver', includes='npc_vehicledriver')
 res('npc_barnacle',
     mdl('models/barnacle.mdl'),
     mdl("models/gibs/hgibs.mdl"),
@@ -346,6 +411,7 @@ res('npc_clawscanner',
     sound("NPC_SScanner.FlyLoop"),
     includes="combine_mine",
     )
+res('npc_cranedriver', includes='npc_vehicledriver')
 res('npc_crow',
     mdl("models/crow.mdl"),
     sound("NPC_Crow.Hop"),

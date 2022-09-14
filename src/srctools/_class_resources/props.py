@@ -42,6 +42,7 @@ res('prop_dynamic',
     )
 # The same class, but don't let these swap to each other!
 res('prop_dynamic_override', includes='prop_dynamic')
+res('prop_dynamic_ornament', includes='prop_dynamic')
 res('prop_dropship_container',
     mdl('models/combine_dropship_container.mdl'),
     mdl('models/gibs/helicopter_brokenpiece_01.mdl'),

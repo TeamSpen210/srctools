@@ -5,7 +5,7 @@ The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
 from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Union
-from typing_extensions import TypeAlias
+from typing_extensions import TypeAlias, Final
 
 from .. import conv_int
 from ..packlist import FileType, PackList
@@ -130,6 +130,15 @@ def pack_ent_class(pack: PackList, clsname: str) -> None:
 def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
     """Add the resource matching the hardcoded set of sounds in button ents."""
     pack.pack_soundscript(f'Buttons.snd{conv_int(index):d}')
+
+
+# Entropy Zero 2 variant constants.
+EZ_VARIANT_XEN: Final = 1
+EZ_VARIANT_RAD: Final = 2
+EZ_VARIANT_TEMPORAL: Final = 3
+EZ_VARIANT_ARBEIT: Final = 4
+EZ_VARIANT_BLOOD: Final = 5
+
 
 # In alphabetical order:
 
