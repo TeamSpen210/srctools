@@ -173,6 +173,8 @@ def npc_antlion_template_maker(pack: PackList, ent: Entity) -> None:
         pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
 
         pack_ent_class(pack, 'grenade_spit')
+    if conv_bool(ent['createspores']):
+        pack_ent_class(pack, 'env_sporeexplosion')
 
 res('npc_alyx',
     mdl('models/alyx_emptool_prop.mdl'),
@@ -636,6 +638,13 @@ res('npc_metropolice',
     sound("NPC_MetroPolice.HidingSpeech"),
     # TODO: pack.pack_sentence_group("METROPOLICE"),
 )
+res('npc_missiledefense',
+    mdl('models/missile_defense.mdl'),
+    mdl('models/gibs/missile_defense_gibs.mdl'),
+    sound('NPC_MissileDefense.Attack'),
+    sound('NPC_MissileDefense.Reload'),
+    sound('NPC_MissileDefense.Turn'),
+    )
 
 res('npc_pigeon',
     mdl("models/pigeon.mdl"),

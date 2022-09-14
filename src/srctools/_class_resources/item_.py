@@ -101,6 +101,8 @@ res('item_ammo_crate',
     sound("AmmoCrate.Close"),
     )
 
+res('item_creature_crate', part('creaturecrate_stasisbreak'))  # EZ2
+
 res('item_dynamic_resupply',
     # This just spawns a bunch of different ents.
     includes='''item_healthkit item_battery
@@ -140,6 +142,27 @@ res('item_healthcharger',
     sound('WallHealth.LoopingContinueCharge'),
     sound('WallHealth.Recharge'),
     )
+
+
+@cls_func
+def item_item_crate(pack: PackList, ent: Entity) -> None:
+    """Item crates can spawn another arbitary entity."""
+    appearance = conv_int(ent['crateappearance'])
+    if appearance == 0:  # Default
+        pack.pack_file('models/items/item_item_crate.mdl', FileType.MODEL)
+    elif appearance == 1:  # Beacon
+        pack.pack_file('models/items/item_beacon_crate.mdl', FileType.MODEL)
+    # else: 2 = Mapbase custom model, that'll be packed automatically.
+    if conv_int(ent['cratetype']) == 0 and ent['itemclass']:  # "Specific Item"
+        try:
+            if 'ezvariant' in ent:  # Transfer this for accurate packing.
+                pack_ent_class(pack, ent['itemclass'], ezvariant=ent['ezvariant'])
+            else:
+                pack_ent_class(pack, ent['itemclass'])
+        except KeyError:  # Invalid classname.
+            pass
+
+
 res('item_sodacan',
     mdl("models/can.mdl"),
     sound("ItemSoda.Bounce")

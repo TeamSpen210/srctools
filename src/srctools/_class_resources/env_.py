@@ -157,6 +157,7 @@ res('env_lightrail_endpoint',
     mat('materials/effects/combinemuzzle2.vmt'),
     mat('materials/effects/combinemuzzle2_dark.vmt'),
     )
+res('env_message')  # Sound can use generic KV system
 res('env_microphone')
 res('env_movieexplosion', mat('materials/particle/particle_sphere.vmt'))
 res('env_muzzleflash',
@@ -213,7 +214,7 @@ res('env_screeneffect',
     mat('materials/effects/stun.vmt'),
     mat('materials/effects/introblur.vmt'),
     )
-
+res('env_shake')
 
 @cls_func
 def env_shooter(pack: PackList, ent: Entity) -> None:
@@ -236,7 +237,7 @@ def env_shooter(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file(ent['shootmodel'], FileType.MODEL)
 
-# TODO: env_soundscape -> cache the scape.
+# TODO: env_soundscape, pack the scape and contents.
 res('env_soundscape_proxy')  # The env_soundscape this uses should do the precaching.
 
 res('env_spark',
@@ -252,6 +253,7 @@ res('env_splash',
     part('slime_splash_02'),
     part('slime_splash_03'),
     )
+res('env_sporeexplosion', mat('materials/particle/fire.vmt'))
 res('env_sprite', aliases='env_glow')
 res('env_sprite_clientside')
 res('env_sprite_oriented')

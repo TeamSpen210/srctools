@@ -7,9 +7,9 @@ should be imported from packlist instead.
 from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Union
 from typing_extensions import TypeAlias, Final
 
-from .. import conv_int
+from .. import conv_int, conv_bool
 from ..packlist import FileType, PackList
-from ..vmf import VMF, Entity
+from ..vmf import VMF, Entity, ValidKVs
 
 
 #  For various entity classes, we know they require hardcoded files.
@@ -113,7 +113,7 @@ def choreo(path: str) -> Tuple[str, FileType]:
     return (path, FileType.CHOREO)
 
 
-def pack_ent_class(pack: PackList, clsname: str) -> None:
+def pack_ent_class(pack: PackList, clsname: str, **keys: ValidKVs) -> None:
     """Call to pack another entity class generically."""
     reslist = CLASS_RESOURCES[clsname]
     for fname, ftype in reslist:
@@ -124,7 +124,7 @@ def pack_ent_class(pack: PackList, clsname: str) -> None:
         pass
     else:
         # Create a dummy entity so we can call.
-        cls_function(pack, Entity(_blank_vmf, keys={'classname': clsname}))
+        cls_function(pack, Entity(_blank_vmf, keys={'classname': clsname, **keys}))
 
 
 def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
@@ -276,6 +276,7 @@ res('hunter_flechette',
     part("hunter_flechette_trail"),
     part("hunter_projectile_explosion_1"),
     )
+res('infodecal')
 res('info_coop_spawn')
 res('info_constraint_anchor')
 res('info_camera_link')
@@ -307,6 +308,7 @@ res('info_player_scientist')
 res('info_player_start')
 res('info_player_teamspawn')
 res('info_player_terrorist')
+res('info_projecteddecal')
 res('info_radar_target')
 res('info_radial_link_controller')
 res('info_remarkable')
@@ -315,7 +317,6 @@ res('info_target')
 res('info_target_gunshipcrash')
 res('info_target_helicopter_crash')
 res('info_teleport_destination')
-
 res('info_landmark_entry')
 res('info_landmark_exit')
 res('keyframe_track')
@@ -326,6 +327,7 @@ res('light_environment')
 res('light_spot')
 res('lookdoorthinker')
 
+res('material_modify_control')
 res('mortarshell',
     mat('materials/sprites/physbeam.vmt'),
     mat('materials/effects/ar2ground2.vmt'),
@@ -399,6 +401,7 @@ res('point_commentary_node',
     includes='point_commentary_viewpoint',
     )
 res('point_commentary_viewpoint', mat('materials/sprites/redglow1.vmt'))
+res('point_copy_size')
 res('point_damageinfo')
 res('point_energy_ball_launcher',
     includes='prop_energy_ball',

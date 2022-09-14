@@ -1,4 +1,4 @@
-"""Logic entities. Not much resources here."""
+"""Logic entities. Not many resources here."""
 from ..packlist import PackList
 from ..vmf import Entity
 from . import *
@@ -13,9 +13,14 @@ res('logic_branch_listener')
 res('logic_case')
 res('logic_collision_pair')
 res('logic_console')
+res('logic_context_accessor')
+res('logic_convar')
 res('logic_compare')
 res('logic_coop_manager')
 res('logic_datadesc_accessor')
+res('logic_entity_position')
+res('logic_eventlistener')
+res('logic_eventlistener_itemequip')
 res('logic_format')
 res('logic_keyfield')
 res('logic_lineto')
@@ -42,11 +47,13 @@ res('logic_relay')
 res('logic_relay_queue')
 res('logic_scene_list_manager')
 res('logic_script')
+res('logic_script_client')
 res('logic_sequence')
 res('logic_skill')
 res('logic_timescale')
 res('logic_timer')
 
+res('math_clamp')
 res('math_counter')
 res('math_counter_advanced')
 res('math_generate')

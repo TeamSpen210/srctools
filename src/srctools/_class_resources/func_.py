@@ -47,6 +47,7 @@ BREAKABLE_SPAWNS = [
 ]
 # TODO: Mapbase, EZ2 etc additions?
 
+res('func_achievement')
 res('func_areaportal')
 res('func_areaportalwindow')
 res('func_areaportal_oneway')
@@ -123,9 +124,16 @@ def func_button(pack: PackList, ent: Entity) -> None:
     # unlocked_sentence -> ["EA", "ED", "EF", "EFIRE", "ECHEM", "ERAD", "ECON", "EH"]
 
 
-res('func_conveyor')
-res('func_clip_vphysics')
+@cls_func
+def func_button_timed(pack: PackList, ent: Entity) -> None:
+    """This simply inherits."""
+    func_button(pack, ent)
 
+
+res('func_commandredirect')
+res('func_conveyor')
+res('func_clip_client')
+res('func_clip_vphysics')
 
 res('func_door',
     # Defaults if unspecified.
@@ -147,7 +155,9 @@ res('func_dust', mat('materials/particle/sparkles.vmt'))
 res('func_dustcloud', mat('materials/particle/sparkles.vmt'))
 res('func_dustmotes', mat('materials/particle/sparkles.vmt'))
 res('func_combine_ball_spawner', includes='prop_combine_ball')
+res('func_fake_worldportal', includes='func_brush')
 res('func_fish_pool')
+res('func_friction')
 res('func_healthcharger',
     sound("WallHealth.Deny"),
     sound("WallHealth.Start"),
@@ -156,6 +166,7 @@ res('func_healthcharger',
     )
 res('func_illusionary')
 res('func_instance_io_proxy')
+res('func_ladderendpoint', includes='func_usableladder')
 
 
 @cls_func
@@ -235,6 +246,11 @@ res('func_tank_combine_cannon',
     )
 
 res('func_tankchange', sound('FuncTrackChange.Blocking'))
+res(
+    'func_usableladder',
+    sound('Ladder.StepRight'),
+    # TODO: need to load the surfaceprop here, "ladderSurfaceProperties" defaulting to "ladder".
+)
 res('func_recharge',
     sound('SuitRecharge.Deny'),
     sound('SuitRecharge.Start'),
@@ -250,3 +266,5 @@ def func_rot_button(pack: PackList, ent: Entity) -> None:
 res('func_water', includes='func_door')  # Same class.
 res('func_water_analog', includes='func_movelinear')  # Also same class.
 res('func_weight_button')
+res('func_wall')
+res('func_wall_toggle')
