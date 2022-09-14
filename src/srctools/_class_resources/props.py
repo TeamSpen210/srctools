@@ -39,6 +39,7 @@ res('prop_dynamic',
     sound("Metal.SawbladeStick"),
     sound("PropaneTank.Burst"),
     aliases='dynamic_prop',
+    includes='env_flare',  # TODO: Episodic only!
     )
 # The same class, but don't let these swap to each other!
 res('prop_dynamic_override', includes='prop_dynamic')
@@ -144,3 +145,8 @@ res('prop_wilson_scanner',
 res('prop_ragdoll', aliases='physics_prop_ragdoll')
 res('prop_scalable')
 res('prop_vehicle_crane', includes='crane_tip')
+res('prop_vehicle_prisoner_pod',
+    sound('d3_citadel.pod_open'),
+    sound('d3_citadel.pod_close'),
+    # TODO: Vehicle scripts
+    )

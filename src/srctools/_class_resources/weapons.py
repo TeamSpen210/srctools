@@ -1,7 +1,8 @@
 """All the weapon pickups.
 
 Weapons are unusual, they don't directly specify the models.
-Instead it's specified in the weapon script.
+Instead, it's specified in the weapon script.
+TODO: Parse weapon scripts!
 """
 from . import *
 

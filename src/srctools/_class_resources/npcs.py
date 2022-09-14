@@ -21,6 +21,16 @@ BASE_NPC = [
     sound("AI_BaseNPC.SentenceStop"),
 ]
 
+BASE_COMBINE = [
+    mdl('models/Weapons/w_grenade.mdl'),
+    sound('NPC_Combine.GrenadeLaunch'),
+    sound('NPC_Combine.WeaponBash'),
+    sound('Weapon_CombineGuard.Special1'),
+    # TODO: Entropy Zero only.
+    sound('NPC_Combine.Following'),
+    sound('NPC_Combine.StopFollowing'),
+]
+
 
 res('npc_advisor',
     *BASE_NPC,
@@ -436,6 +446,14 @@ res('npc_combine_cannon',
     sound('NPC_Combine_Cannon.FireBullet'),
     func=base_npc,
     )
+res('npc_combine_s',
+    *BASE_NPC, *BASE_COMBINE,
+    mdl('models/combine_soldier.mdl'),
+    # TODO: Manhacks added by Mapbase.
+    # Entity precaches npc_handgrenade, but they actually spawn these.
+    includes='npc_handgrenade npc_manhack item_healthvial weapon_frag item_ammo_ar2_altfire',
+    func=base_npc,
+    )
 res('npc_clawscanner',
     *BASE_NPC,
     mdl("models/shield_scanner.mdl"),
@@ -488,6 +506,7 @@ res('npc_dog',
 res('npc_eli', *BASE_NPC, mdl("models/eli.mdl"), func=base_npc)
 res('npc_enemyfinder', *BASE_NPC, mdl("models/player.mdl"), func=base_npc)
 res('npc_enemyfinder_combinecannon', includes='npc_enemyfinder', func=base_npc)
+res('npc_gman', *BASE_NPC, mdl('models/gman.mdl'), func=base_npc)
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
@@ -620,6 +639,7 @@ res('npc_helicopter',
     func=base_npc,
     )
 res('npc_helicoptersensor')
+res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
 res('npc_hunter',
     *BASE_NPC,
     mdl("models/hunter.mdl"),
@@ -669,6 +689,14 @@ res('npc_hunter',
     )
 
 
+res('npc_kleiner', *BASE_NPC, mdl('models/kleiner.mdl'), func=base_npc)
+res('npc_launcher',
+    *BASE_NPC,
+    mdl('models/player.mdl'),
+    includes='grenade_homer grenade_pathfollower',
+    func=base_npc,
+    )
+
 @cls_func
 def npc_maker(pack: PackList, ent: Entity) -> None:
     """We spawn the NPC automatically."""
@@ -716,11 +744,13 @@ def npc_metropolice(pack: PackList, ent: Entity) -> None:
         pack.pack_file("models/police.mdl", FileType.MODEL)
 
 res('npc_metropolice',
-    *BASE_NPC,
+    *BASE_NPC, *BASE_COMBINE,
     sound("NPC_Metropolice.Shove"),
     sound("NPC_MetroPolice.WaterSpeech"),
     sound("NPC_MetroPolice.HidingSpeech"),
     # TODO: pack.pack_sentence_group("METROPOLICE"),
+    # Entity precaches npc_handgrenade, but they actually spawn these.
+    includes='npc_grenade_frag npc_manhack',
 )
 res('npc_missiledefense',
     *BASE_NPC,
@@ -799,12 +829,28 @@ res('npc_seagull',
     func=base_npc,
     )
 
+res('npc_sniper',
+    mdl('models/combine_soldier.mdl'),
+    mat('materials/sprites/light_glow03.vmt'),
+    mat('materials/sprites/muzzleflash1.vmt'),
+    mat('materials/effects/bluelaser1.vmt'),
+    sound('NPC_Sniper.Die'),
+    sound('NPC_Sniper.TargetDestroyed'),
+    sound('NPC_Sniper.HearDange'),
+    sound('NPC_Sniper.FireBullet'),
+    sound('NPC_Sniper.Reload'),
+    sound('NPC_Sniper.SonicBoom'),
+    includes='sniperbullet',
+    )
+
+
 @cls_func
 def npc_stalker(pack: PackList, ent: Entity) -> None:
     """Mapbase optionally allows blood particles."""
     base_npc(pack, ent)
     if conv_bool(ent['bleed']):  # Mapbase
-        pack.pack_particle('blood_impact_synth_01'),
+        pack.pack_particle('blood_impact_synth_01')
+
 
 res('npc_stalker',
     *BASE_NPC,

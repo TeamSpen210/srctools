@@ -130,6 +130,7 @@ def func_button_timed(pack: PackList, ent: Entity) -> None:
     func_button(pack, ent)
 
 
+res('func_combine_ball_spawner', includes='prop_combine_ball')
 res('func_commandredirect')
 res('func_conveyor')
 res('func_clip_client')
@@ -218,6 +219,7 @@ res('func_precipitation',
     part("snow"),
     part("snow_outer"),
     )
+res('func_precipitation_blocker')
 
 
 res('func_tank',
@@ -246,6 +248,7 @@ res('func_tank_combine_cannon',
     )
 
 res('func_tankchange', sound('FuncTrackChange.Blocking'))
+res('func_traincontrols')
 res(
     'func_usableladder',
     sound('Ladder.StepRight'),
@@ -256,12 +259,16 @@ res('func_recharge',
     sound('SuitRecharge.Start'),
     sound('SuitRecharge.ChargingLoop'),
     )
+res('func_respawnroom')
+res('func_respawnroomvisualizer')
 
 
 @cls_func
 def func_rot_button(pack: PackList, ent: Entity) -> None:
     """Inherits from func_button."""
     func_button(pack, ent)
+
+res('func_vehicleclip')
 
 res('func_water', includes='func_door')  # Same class.
 res('func_water_analog', includes='func_movelinear')  # Also same class.

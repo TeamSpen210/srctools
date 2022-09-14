@@ -10,7 +10,7 @@ package_loc = Path(__file__, '..', '..', 'src', 'srctools')
     fname.stem
     for fname in package_loc.glob('*.py')
     if fname.stem != '__init__'
-])
+] + ['_class_resources'])
 def test_smoke(mod_name: str) -> None:
     """Ensure every module is importable."""
     importlib.import_module('srctools.' + mod_name)

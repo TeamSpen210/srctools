@@ -167,22 +167,12 @@ res('env_muzzleflash',
     mat('materials/effects/muzzleflash4.vmt'),
     )
 res('env_hudhint')
+res('env_particlelight')
 res('env_player_surface_trigger')
 res('env_physexplosion')
 res('env_physics_blocker')
 res('env_physimpact')
 res('env_physwire')
-res('env_quadratic_beam')
-res('env_rockettrail',
-    mat('materials/effects/muzzleflash1.vmt'),
-    mat('materials/effects/muzzleflash2.vmt'),
-    mat('materials/effects/muzzleflash3.vmt'),
-    mat('materials/effects/muzzleflash4.vmt'),
-    mat('materials/sprites/flamelet1.vmt'),
-    mat('materials/sprites/flamelet2.vmt'),
-    mat('materials/sprites/flamelet3.vmt'),
-    mat('materials/sprites/flamelet4.vmt'),
-    )
 
 res('env_portal_laser',
     mdl('models/props/laser_emitter.mdl'),
@@ -194,7 +184,18 @@ res('env_portal_laser',
     )
 
 res('env_projectedtexture')  # Texture handled by generic FGD parsing.
+res('env_quadratic_beam')
 res('env_ragdoll_boogie', sound('RagdollBoogie.Zap'))
+res('env_rockettrail',
+    mat('materials/effects/muzzleflash1.vmt'),
+    mat('materials/effects/muzzleflash2.vmt'),
+    mat('materials/effects/muzzleflash3.vmt'),
+    mat('materials/effects/muzzleflash4.vmt'),
+    mat('materials/sprites/flamelet1.vmt'),
+    mat('materials/sprites/flamelet2.vmt'),
+    mat('materials/sprites/flamelet3.vmt'),
+    mat('materials/sprites/flamelet4.vmt'),
+    )
 res('env_rotorwash_emitter',
     mat('materials/effects/splashwake3.vmt'),  # Water ripples
     mat('materials/effects/splash1.vmt'),  # Over water
@@ -214,6 +215,7 @@ res('env_screeneffect',
     mat('materials/effects/stun.vmt'),
     mat('materials/effects/introblur.vmt'),
     )
+res('env_screenoverlay')
 res('env_shake')
 
 @cls_func
@@ -255,6 +257,7 @@ res('env_splash',
     )
 res('env_sporeexplosion', mat('materials/particle/fire.vmt'))
 res('env_sprite', aliases='env_glow')
+res('env_spritetrail')
 res('env_sprite_clientside')
 res('env_sprite_oriented')
 res('env_smoketrail',

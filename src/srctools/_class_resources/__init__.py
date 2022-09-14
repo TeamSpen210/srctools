@@ -249,19 +249,30 @@ res('event_queue_saveload_proxy')
 res('fish')
 res('floorturret_tipcontroller')
 
+res('game_ragdoll_manager')
+res('game_convar_mod')
 res('game_ui')
 res('gib')
 res('gibshooter',
     mdl('models/gibs/hgibs.mdl'),
     mdl('models/germanygibs.mdl'),
     )
+res('grenade',
+    sound('BaseGrenade.Explode'),
+    # TODO: Entropy Zero only:
+    part("ExplosionCore"),
+    part("ExplosionEmbers"),
+    part("ExplosionFlash"),
+    )
 res('grenade_ar2',  # Actually the SMG's grenade.
     mdl("models/Weapons/ar2_grenade.mdl"),
+    includes='grenade',
     )
 res('grenade_beam',
     mdl('Models/weapons/flare.mdl'),  # Not visible, but loaded.
     mat('materials/sprites/laser.vmt'),
     sound("GrenadeBeam.HitSound"),
+    includes='grenade',
     )
 res('grenade_beam_chaser')  # The back part of the glow following grenades.
 res('grenade_helicopter',  # Bomb dropped by npc_helicopter
@@ -270,7 +281,26 @@ res('grenade_helicopter',  # Bomb dropped by npc_helicopter
     sound("NPC_AttackHelicopterGrenade.Ping"),
     sound("NPC_AttackHelicopterGrenade.PingCaptured"),
     sound("NPC_AttackHelicopterGrenade.HardImpact"),
+    includes='grenade',
     )
+res('grenade_homer',
+    mat('materials/sprites/lgtning.vmt'),
+    sound('GrenadeHomer.StopSounds'),
+    )
+res('grenade_pathfollower',
+    sound('GrenadePathfollower.StopSounds'),
+    includes='grenade',
+    )
+res('grenade_spit',
+    mdl("models/spitball_large.mdl"),
+    mdl("models/spitball_medium.mdl"),
+    mdl("models/spitball_small.mdl"),
+    sound("GrenadeSpit.Hit"),
+    part("antlion_spit_player"),
+    part("antlion_spit"),
+    includes='grenade',
+    )
+
 res('hammer_updateignorelist')
 res('helicopter_chunk',  # Broken bits of npc_helicopter
     mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
@@ -384,6 +414,8 @@ res('passtime_ball',
     sound('Passtime.BallHoming'),
     includes='_ballplayertoucher',
 )
+res('path_corner')
+res('path_corner_crash')
 res('path_track')
 
 res('phys_bone_follower')
@@ -408,13 +440,21 @@ res('physics_cannister')  # All in KVs.
 res('physics_entity_solver')
 res('physics_npc_solver')
 
+res('player_loadsaved')
+res('player_speedmod')
+res('player_weaponstrip')
+
 res('point_advanced_finder')
+res('point_anglesensor')
+res('point_angularvelocitysensor')
 res('point_antlion_repellant')
 res('point_apc_controller')
 res('point_bonusmaps_accessor')
 res('point_broadcastclientcommand')
 res('point_bugbait')
+res('point_camera')
 res('point_clientcommand')
+res('point_combine_ball_launcher', includes='prop_combine_ball')
 res('point_commentary_node',
     mdl('models/extras/info_speech.mdl'),
     includes='point_commentary_viewpoint',
@@ -475,6 +515,12 @@ res('rpg_missile',
 res('script_intro',
     mat('materials/scripted/intro_screenspaceeffect.vmt'),
     )
+res('simple_physics_brush')
+res('simple_physics_prop',
+    sound("Metal.SawbladeStick"),
+    sound("PropaneTank.Burst"),
+    includes='env_flare',  # TODO: Episodic only!
+    )
 
 
 @cls_func
@@ -492,6 +538,7 @@ def skybox_swapper(pack: PackList, ent: Entity) -> None:
             optional=True,
         )
 
+res('sniperbullet')
 res('soundent')
 res('spraycan', sound("SprayCan.Paint"))
 res('sparktrail', sound('DoSpark'))
