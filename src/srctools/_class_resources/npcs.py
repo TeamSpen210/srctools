@@ -2,7 +2,28 @@
 from . import *
 
 
+def base_npc(pack: PackList, ent: Entity) -> None:
+    """Resources precached in CAI_BaseNPC."""
+    if conv_int(ent['ezvariant']) == EZ_VARIANT_TEMPORAL:
+        pack.pack_soundscript('NPC_TemporalHeadcrab.Vanish')
+        pack.pack_soundscript('NPC_TemporalHeadcrab.Appear')
+        pack.pack_particle('ShadowCrab_Vanish')
+        pack.pack_particle('ShadowCrab_Appear')
+    equipment = ent['additionalequipment']
+    if equipment not in ('', '0'):
+        pack_ent_class(pack, equipment)
+
+
+BASE_NPC = [
+    sound("AI_BaseNPC.SwishSound"),
+    sound("AI_BaseNPC.BodyDrop_Heavy"),
+    sound("AI_BaseNPC.BodyDrop_Light"),
+    sound("AI_BaseNPC.SentenceStop"),
+]
+
+
 res('npc_advisor',
+    *BASE_NPC,
     mdl("models/advisor.mdl"),
     mat("materials/sprites/lgtning.vmt"),
     mat("materials/sprites/greenglow1.vmt"),
@@ -17,7 +38,8 @@ res('npc_advisor',
     part("advisor_object_charge"),
     )
 
-res('npc_aliencrow', # Entropy Zero 2
+res('npc_aliencrow',  # Entropy Zero 2
+    *BASE_NPC,
     mdl("models/aflock.mdl"),
 
     sound("NPC_Boid.Hop"),
@@ -31,9 +53,11 @@ res('npc_aliencrow', # Entropy Zero 2
     aliases="npc_boid",
     )
 
+
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity) -> None:
     """Antlions require different resources for the worker version."""
+    base_npc(pack, ent)
     ez_variant = conv_int(ent['ezvariant'])
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 18):  # Is worker?
@@ -61,6 +85,7 @@ def npc_antlion(pack: PackList, ent: Entity) -> None:
             pack.pack_particle("blood_impact_antlion_01")
         pack.pack_particle("AntlionGib")
 res('npc_antlion',
+    *BASE_NPC,
     sound("NPC_Antlion.RunOverByVehicle"),
     sound("NPC_Antlion.MeleeAttack"),
     sound("NPC_Antlion.Footstep"),
@@ -92,10 +117,11 @@ res('npc_antlion',
         mdl("models/gibs/antlion_gib_{}_{}.mdl".format(size, i))
         for i in ('1', '2', '3')
         for size in ('small', 'medium', 'large')
-    ]
+    ],
 )
 
 res('npc_antlion_grub',
+    *BASE_NPC,
     mdl("models/antlion_grub.mdl"),
     mdl("models/antlion_grub_squashed.mdl"),
     mat("materials/sprites/grubflare1.vmt"),
@@ -107,12 +133,14 @@ res('npc_antlion_grub',
     part("GrubSquashBlood"),
     part("GrubBlood"),
     includes="item_grubnugget",
+    func=base_npc,
     )
 
 
 @cls_func
 def npc_antlionguard(pack: PackList, ent: Entity) -> None:
     """In Entropy Zero, some alternate models are available."""
+    base_npc(pack, ent)
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 17):  # Inside Footsteps
         pack.pack_soundscript("NPC_AntlionGuard.Inside.StepLight")
@@ -135,6 +163,7 @@ def npc_antlionguard(pack: PackList, ent: Entity) -> None:
     else:  # Regular HL2.
         pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
 res('npc_antlionguard',
+    *BASE_NPC,
     mdl('NPC_AntlionGuard.Shove'),
     mdl('NPC_AntlionGuard.HitHard'),
     sound("NPC_AntlionGuard.Anger"),
@@ -177,6 +206,7 @@ def npc_antlion_template_maker(pack: PackList, ent: Entity) -> None:
         pack_ent_class(pack, 'env_sporeexplosion')
 
 res('npc_alyx',
+    *BASE_NPC,
     mdl('models/alyx_emptool_prop.mdl'),
     sound('npc_alyx.die'),
     sound('DoSpark'),
@@ -187,9 +217,11 @@ res('npc_alyx',
     sound('ep_01.al_dark_breathing01'),
     sound('Weapon_CombineGuard.Special1'),
     includes='env_alyxemp',
+    func=base_npc,
     )
-res('npc_apcdriver', includes='npc_vehicledriver')
+res('npc_apcdriver', includes='npc_vehicledriver', func=base_npc)
 res('npc_barnacle',
+    *BASE_NPC,
     mdl('models/barnacle.mdl'),
     mdl("models/gibs/hgibs.mdl"),
     mdl("models/gibs/hgibs_scapula.mdl"),
@@ -203,9 +235,11 @@ res('npc_barnacle',
     sound("NPC_Barnacle.FinalBite"),
     sound("NPC_Barnacle.Die"),
     includes='npc_barnacle_tongue_tip',
+    func=base_npc,
     )
 res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
 res('npc_barney',
+    *BASE_NPC,
     mdl("models/barney.mdl"),
     sound("NPC_Barney.FootstepLeft"),
     sound("NPC_Barney.FootstepRight"),
@@ -213,10 +247,12 @@ res('npc_barney',
     choreo("scenes/Expressions/BarneyIdle.vcd"),
     choreo("scenes/Expressions/BarneyAlert.vcd"),
     choreo("scenes/Expressions/BarneyCombat.vcd"),
+    func=base_npc,
     )
-res('npc_breen', mdl("models/breen.mdl"))
-res('npc_bullseye')
+res('npc_breen', *BASE_NPC, mdl("models/breen.mdl"))
+res('npc_bullseye', *BASE_NPC)
 res('npc_cscanner',
+    *BASE_NPC,
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
     # In episodic, npc_clawscanner is now available to force that specifically.
     # TODO: Check the BSP name, pack shield in that case.
@@ -239,6 +275,7 @@ res('npc_cscanner',
     sound("NPC_CScanner.DiveBomb"),
     sound("NPC_CScanner.DeployMine"),
     sound("NPC_CScanner.FlyLoop"),
+    func=base_npc,
     )
 
 CIT_HEADS = [
@@ -263,6 +300,7 @@ CIT_HEADS = [
 @cls_func
 def npc_citizen(pack: PackList, ent: Entity) -> None:
     """Cizizens have a complex set of precaching rules."""
+    base_npc(pack, ent)
     if ent['targetname'] == 'matt':
         # Special crowbar.
         pack.pack_file("models/props_canal/mattpipe.mdl", FileType.MODEL)
@@ -302,12 +340,14 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         pack.pack_file(f'models/humans/{folder}/{head}', FileType.MODEL)
 
 res('npc_citizen',
+    *BASE_NPC,
     sound("NPC_Citizen.FootstepLeft"),
     sound("NPC_Citizen.FootstepRight"),
     sound("NPC_Citizen.Die"),
     )
 
 res('npc_combine_camera',
+    *BASE_NPC,
     mdl("models/combine_camera/combine_camera.mdl"),
     mat("materials/sprites/glow1.vmt"),
     mat("materials/sprites/light_glow03.vmt"),
@@ -318,12 +358,14 @@ res('npc_combine_camera',
     sound("NPC_CombineCamera.Ping"),
     sound("NPC_CombineCamera.Angry"),
     sound("NPC_CombineCamera.Die"),
+    func=base_npc,
     )
 
 
 @cls_func
 def npc_combinedropship(pack: PackList, ent: Entity) -> None:
     """The Combine Dropship may spawn with a variety of cargo types."""
+    base_npc(pack, ent)
     cargo_type = conv_int(ent['cratetype'])
     if cargo_type == -3:  # Spawns a prop_dynamic Jeep
         pack.pack_file("models/buggy.mdl", FileType.MODEL)
@@ -337,6 +379,7 @@ def npc_combinedropship(pack: PackList, ent: Entity) -> None:
     #  2 = No cargo
 
 res('npc_combinedropship',
+    *BASE_NPC,
     mdl("models/combine_dropship.mdl"),
     sound("NPC_CombineDropship.RotorLoop"),
     sound("NPC_CombineDropship.FireLoop"),
@@ -350,6 +393,7 @@ res('npc_combinedropship',
 @cls_func
 def npc_combinegunship(pack: PackList, ent: Entity) -> None:
     """This has the ability to spawn as the helicopter instead."""
+    base_npc(pack, ent)
     if conv_int(ent['spawnflags']) & (1 << 13):
         pack.pack_file("models/combine_helicopter.mdl", FileType.MODEL)
         pack.pack_file("models/combine_helicopter_broken.mdl", FileType.MODEL)
@@ -358,6 +402,7 @@ def npc_combinegunship(pack: PackList, ent: Entity) -> None:
         pack.pack_file("models/gunship.mdl", FileType.MODEL)
 
 res('npc_combinegunship',
+    *BASE_NPC,
     mat("materials/sprites/lgtning.vmt"),
     mat("materials/effects/ar2ground2"),
     mat("materials/effects/blueblackflash"),
@@ -384,12 +429,15 @@ res('npc_combinegunship',
     )
 
 res('npc_combine_cannon',
+    *BASE_NPC,
     mdl('models/combine_soldier.mdl'),
     mat('materials/effects/bluelaser1.vmt'),
     mat('materials/sprites/light_glow03.vmt'),
     sound('NPC_Combine_Cannon.FireBullet'),
+    func=base_npc,
     )
 res('npc_clawscanner',
+    *BASE_NPC,
     mdl("models/shield_scanner.mdl"),
     mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
     mdl("models/gibs/Shield_Scanner_Gib2.mdl"),
@@ -412,9 +460,11 @@ res('npc_clawscanner',
     sound("NPC_SScanner.DeployMine"),
     sound("NPC_SScanner.FlyLoop"),
     includes="combine_mine",
+    func=base_npc,
     )
-res('npc_cranedriver', includes='npc_vehicledriver')
+res('npc_cranedriver', includes='npc_vehicledriver', func=base_npc)
 res('npc_crow',
+    *BASE_NPC,
     mdl("models/crow.mdl"),
     sound("NPC_Crow.Hop"),
     sound("NPC_Crow.Squawk"),
@@ -424,15 +474,20 @@ res('npc_crow',
     sound("NPC_Crow.Die"),
     sound("NPC_Crow.Pain"),
     sound("NPC_Crow.Flap"),
+    func=base_npc,
     )
 res('npc_dog',
+    *BASE_NPC,
     mdl("models/dog.mdl"),
     sound("Weapon_PhysCannon.Launch"),
     mat("materials/sprites/orangelight1.vmt"),
     mat("materials/sprites/physcannon_bluelight2.vmt"),
     mat("materials/sprites/glow04_noz.vmt"),
+    func=base_npc,
     )
-res('npc_eli', mdl("models/eli.mdl"))
+res('npc_eli', *BASE_NPC, mdl("models/eli.mdl"), func=base_npc)
+res('npc_enemyfinder', *BASE_NPC, mdl("models/player.mdl"), func=base_npc)
+res('npc_enemyfinder_combinecannon', includes='npc_enemyfinder', func=base_npc)
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
@@ -445,6 +500,7 @@ res('npc_grenade_frag',
     )
 
 res('npc_fastzombie',
+    *BASE_NPC,
     mdl("models/zombie/fast.mdl"),
     # TODO - Episodic only:
         mdl("models/zombie/Fast_torso.mdl"),
@@ -474,11 +530,17 @@ res('npc_fastzombie',
     sound("NPC_FastZombie.Die"),
     sound("NPC_FastZombie.Gurgle"),
     sound("NPC_FastZombie.Moan1"),
+    func=base_npc,
     )
 # Actually an alias, but we don't want to swap these.
-CLASS_RESOURCES['npc_fastzombie_torso'] = CLASS_RESOURCES['npc_fastzombie']
+res(
+    'npc_fastzombie_torso',
+    includes='npc_fastzombie',
+    func=base_npc,
+)
 
 res('npc_fisherman',
+    *BASE_NPC,
     mdl("models/lostcoast/fisherman/fisherman.mdl"),
     sound("NPC_Fisherman.FootstepLeft"),
     sound("NPC_Fisherman.FootstepRight"),
@@ -486,9 +548,11 @@ res('npc_fisherman',
     choreo("scenes/Expressions/FishermanIdle.vcd"),
     choreo("scenes/Expressions/FishermanAlert.vcd"),
     choreo("scenes/Expressions/FishermanCombat.vcd"),
+    func=base_npc,
     )
 
 res('npc_headcrab',
+    *BASE_NPC,
     mdl('models/headcrabclassic.mdl'),
     sound('NPC_HeadCrab.Gib'),
     sound('NPC_HeadCrab.Idle'),
@@ -499,9 +563,11 @@ res('npc_headcrab',
     sound('NPC_HeadCrab.Bite'),
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
+    func=base_npc,
     )
 
 res('npc_headcrab_black',
+    *BASE_NPC,
     mdl('models/headcrabblack.mdl'),
 
     sound('NPC_BlackHeadcrab.Telegraph'),
@@ -523,9 +589,11 @@ res('npc_headcrab_black',
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
     aliases='npc_headcrab_poison',
+    func=base_npc,
 )
 
 res('npc_headcrab_fast',
+    *BASE_NPC,
     mdl('models/headcrab.mdl'),
     sound('NPC_FastHeadCrab.Idle'),
     sound('NPC_FastHeadCrab.Alert'),
@@ -537,19 +605,23 @@ res('npc_headcrab_fast',
     sound('NPC_HeadCrab.Gib'),
     sound('NPC_Headcrab.BurrowIn'),
     sound('NPC_Headcrab.BurrowOut'),
+    func=base_npc,
     )
 
 res('npc_heli_avoidbox')
 res('npc_heli_avoidsphere')
 res('npc_heli_nobomb')
 res('npc_helicopter',
+    *BASE_NPC,
     mdl("models/combine_helicopter.mdl"),
     mdl("models/combine_helicopter_broken.mdl"),
     mat("materials/sprites/redglow1.vmt"),
     includes='helicopter_chunk grenade_helicopter',
+    func=base_npc,
     )
 res('npc_helicoptersensor')
 res('npc_hunter',
+    *BASE_NPC,
     mdl("models/hunter.mdl"),
 
     sound("NPC_Hunter.Idle"),
@@ -593,6 +665,7 @@ res('npc_hunter',
     mat("materials/effects/water_highlight.vmt"),
 
     includes="hunter_flechette sparktrail",
+    func=base_npc,
     )
 
 
@@ -606,6 +679,7 @@ def npc_maker(pack: PackList, ent: Entity) -> None:
         pass
 
 res('npc_manhack',
+    *BASE_NPC,
     mdl("models/manhack.mdl"),
     mat("materials/sprites/glow1.vmt"),
 
@@ -621,32 +695,45 @@ res('npc_manhack',
     sound("NPC_Manhack.EngineSound1"),
     sound("NPC_Manhack.EngineSound2"),
     sound("NPC_Manhack.BladeSound"),
+    func=base_npc,
+    )
+res('npc_monk',
+    *BASE_NPC,
+    mdl("models/monk.mdl"),
+    sound("NPC_Citizen.FootstepLeft"),
+    sound("NPC_Citizen.FootstepRight"),
+    func=base_npc,
     )
 
 
 @cls_func
 def npc_metropolice(pack: PackList, ent: Entity) -> None:
     """If a spawnflag is set, a cheap model is used."""
+    base_npc(pack, ent)
     if conv_int(ent['spawnflags']) & 5:
         pack.pack_file("models/police_cheaple.mdl", FileType.MODEL)
     else:
         pack.pack_file("models/police.mdl", FileType.MODEL)
 
 res('npc_metropolice',
+    *BASE_NPC,
     sound("NPC_Metropolice.Shove"),
     sound("NPC_MetroPolice.WaterSpeech"),
     sound("NPC_MetroPolice.HidingSpeech"),
     # TODO: pack.pack_sentence_group("METROPOLICE"),
 )
 res('npc_missiledefense',
+    *BASE_NPC,
     mdl('models/missile_defense.mdl'),
     mdl('models/gibs/missile_defense_gibs.mdl'),
     sound('NPC_MissileDefense.Attack'),
     sound('NPC_MissileDefense.Reload'),
     sound('NPC_MissileDefense.Turn'),
+    func=base_npc,
     )
 
 res('npc_pigeon',
+    *BASE_NPC,
     mdl("models/pigeon.mdl"),
     sound("NPC_Pigeon.Idle"),
 
@@ -655,9 +742,11 @@ res('npc_pigeon',
     sound("NPC_Crow.Gib"),
     sound("NPC_Crow.Pain"),
     sound("NPC_Crow.Die"),
+    func=base_npc,
     )
 
 res('npc_rocket_turret',
+    *BASE_NPC,
     mat('materials/effects/bluelaser1.vmt'),
     mat('materials/sprites/light_glow03.vmt'),
     mdl('models/props_bts/rocket_sentry.mdl'),
@@ -665,8 +754,10 @@ res('npc_rocket_turret',
     sound('NPC_FloorTurret.LockedBeep'),
     sound('NPC_FloorTurret.RocketFire'),
     includes='rocket_turret_projectile',
+    func=base_npc,
     )
 res('npc_rollermine',
+    *BASE_NPC,
     mdl("models/roller.mdl"),
     mdl("models/roller_spikes.mdl"),
     mat("materials/sprites/bluelight1.vmt"),
@@ -693,8 +784,10 @@ res('npc_rollermine',
 
     # TODO: Episodic only
     sound("RagdollBoogie.Zap"),
+    func=base_npc,
     )
 res('npc_seagull',
+    *BASE_NPC,
     mdl("models/seagull.mdl"),
     sound("NPC_Seagull.Idle"),
     sound("NPC_Seagull.Pain"),
@@ -703,8 +796,18 @@ res('npc_seagull',
     sound("NPC_Crow.Squawk"),
     sound("NPC_Crow.Gib"),
     sound("NPC_Crow.Flap"),
+    func=base_npc,
     )
+
+@cls_func
+def npc_stalker(pack: PackList, ent: Entity) -> None:
+    """Mapbase optionally allows blood particles."""
+    base_npc(pack, ent)
+    if conv_bool(ent['bleed']):  # Mapbase
+        pack.pack_particle('blood_impact_synth_01'),
+
 res('npc_stalker',
+    *BASE_NPC,
     mdl('models/stalker.mdl'),
     mat('materials/sprites/laser.vmt'),
     mat('materials/sprites/redglow1.vmt'),
@@ -719,11 +822,9 @@ res('npc_stalker',
     sound('NPC_Stalker.Scream'),
     sound('NPC_Stalker.Pain'),
     sound('NPC_Stalker.Die'),
-
-    # TODO: Mapbase adds this only if "bleed" is set.
-    part('blood_impact_synth_01'),
     )
 res('npc_strider',
+    *BASE_NPC,
     mdl("models/combine_strider.mdl"),
     sound("NPC_Strider.StriderBusterExplode"),
     sound("explode_5"),
@@ -750,9 +851,11 @@ res('npc_strider',
     mat("materials/effects/strider_muzzle"),
     mdl("models/chefhat.mdl"),  # For some reason...
     includes="concussiveblast sparktrail",
+    func=base_npc,
     )
 
 res('npc_turret_ceiling',
+    *BASE_NPC,
     mdl('models/combine_turrets/ceiling_turret.mdl'),
     mat('materials/sprites/glow1.vmt'),
     sound('NPC_CeilingTurret.Active'),
@@ -764,9 +867,11 @@ res('npc_turret_ceiling',
     sound('NPC_CeilingTurret.Retire'),
     sound('NPC_CeilingTurret.ShotSounds'),
     sound('NPC_FloorTurret.DryFire'),
+    func=base_npc,
     )
 
 res('npc_turret_ground',
+    *BASE_NPC,
     mdl('models/combine_turrets/ground_turret.mdl'),
     mat('materials/effects/bluelaser2.vmt'),
     sound('NPC_CeilingTurret.Deploy'),
@@ -774,9 +879,11 @@ res('npc_turret_ground',
     sound('NPC_FloorTurret.Die'),
     sound('NPC_FloorTurret.Ping'),
     sound('DoSpark'),
+    func=base_npc,
     )
 
 res('npc_turret_floor',
+    *BASE_NPC,
     mdl('models/combine_turrets/floor_turret.mdl'),
     mdl('models/combine_turrets/citizen_turret.mdl'),
     mat('materials/effects/laser1.vmt'),  # Citizen only
@@ -795,9 +902,11 @@ res('npc_turret_floor',
     sound('NPC_FloorTurret.Retract'),
     sound('NPC_FloorTurret.ShotSounds'),
     part('explosion_turret_break'),
+    func=base_npc,
     )
 
 res('npc_turret_lab',
+    *BASE_NPC,
     mdl('models/props_lab/labturret_npc.mdl'),
     mat('materials/sprites/glow1.vmt'),
     sound('NPC_LabTurret.Retire'),
@@ -809,12 +918,16 @@ res('npc_turret_lab',
     sound('NPC_LabTurret.Ping'),
     sound('NPC_LabTurret.Die'),
     sound('NPC_FloorTurret.DryFire'),
+    func=base_npc,
     )
 
 res('npc_vehicledriver',
+    *BASE_NPC,
     'models/roller_vehicledriver.mdl',
+    func=base_npc,
     )
 res('npc_vortigaunt',
+    *BASE_NPC,
     mdl('models/vortigaunt.mdl'),  # Only if not set.
     mat('materials/sprites/lgtning.vmt'),
     mat('materials/sprites/vortring1.vmt'),
@@ -838,9 +951,11 @@ res('npc_vortigaunt',
     part('vortigaunt_beam_charge'),
     part('vortigaunt_hand_glow'),
     includes="vort_charge_token",
+    func=base_npc,
     )
 
 res('npc_zombie',
+    *BASE_NPC,
     mdl("models/zombie/classic.mdl"),
     mdl("models/zombie/classic_torso.mdl"),
     mdl("models/zombie/classic_legs.mdl"),
@@ -860,10 +975,12 @@ res('npc_zombie',
     sound("NPC_BaseZombie.Moan2"),
     sound("NPC_BaseZombie.Moan3"),
     sound("NPC_BaseZombie.Moan4"),
+    func=base_npc,
     )
 # Actually an alias, but we don't want to swap these.
-CLASS_RESOURCES['npc_zombie_torso'] = CLASS_RESOURCES['npc_zombie']
+res('npc_zombie_torso', includes='npc_zombie', func=base_npc)
 res('npc_zombine',
+    *BASE_NPC,
     mdl("models/zombie/zombie_soldier.mdl"),
     sound("Zombie.FootstepRight"),
     sound("Zombie.FootstepLeft"),
@@ -880,4 +997,5 @@ res('npc_zombine',
     sound("Zombine.Charge"),
     sound("Zombie.Attack"),
     includes='npc_zombie',
+    func=base_npc,
     )
