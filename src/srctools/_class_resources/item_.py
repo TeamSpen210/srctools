@@ -142,6 +142,10 @@ res('item_healthcharger',
     sound('WallHealth.LoopingContinueCharge'),
     sound('WallHealth.Recharge'),
     )
+res('item_hopwire_holder',
+    mdl('models/items/xen_grenade_holder001a.mdl'),
+    includes='weapon_hopwire',
+    )
 
 
 @cls_func

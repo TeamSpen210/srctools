@@ -1,8 +1,20 @@
 """func_ entities."""
+from typing import Sequence, Mapping
 from . import *
 
+# Index->sound lists for CBasePlatTrain in HL:Source.
+HL1_PLAT_MOVE: Final[Sequence[str]] = [
+    'Plat.DefaultMoving', 'Plat.BigElev1', 'Plat.BigElev2', 'Plat.TechElev1', 'Plat.TechElev2',
+    'Plat.TechElev3', 'Plat.FreightElev1', 'Plat.FreightElev2', 'Plat.HeavyElev', 'Plat.RackElev',
+    'Plat.RailElev', 'Plat.SqueakElev', 'Plat.OddElev1', 'Plat.OddElev2',
+]
+HL1_PLAT_STOP: Final[Sequence[str]] = [
+    "Plat.DefaultArrive", "Plat.BigElevStop1", "Plat.BigElevStop2", "Plat.FreightElevStop",
+    "Plat.HeavyElevStop", "Plat.RackStop", "Plat.RailStop", "Plat.SqueakStop", "Plat.QuickStop",
+]
 
-MATERIAL_GIB_TYPES = {
+
+MATERIAL_GIB_TYPES: Final[Mapping[int, str]] = {
     0: 'GlassChunks',
     1: 'WoodChunks',
     2: 'MetalChunks',
@@ -16,7 +28,7 @@ MATERIAL_GIB_TYPES = {
 }
 
 # Classnames spawned by func_breakable.
-BREAKABLE_SPAWNS = [
+BREAKABLE_SPAWNS: Final[Sequence[str]] = [
     "",  # NULL
     "item_battery",
     "item_healthkit",
@@ -46,6 +58,25 @@ BREAKABLE_SPAWNS = [
     "item_dynamic_resupply",
 ]
 # TODO: Mapbase, EZ2 etc additions?
+
+
+def base_plat_train(pack: PackList, ent: Entity) -> None:
+    """Check for HL1 train movement sounds."""
+    if 'movesnd' in ent:
+        try:
+            sound = HL1_PLAT_MOVE[int(ent['movesnd'])]
+        except (IndexError, TypeError, ValueError):
+            pass
+        else:
+            pack.pack_soundscript(sound)
+    if 'stopsnd' in ent:
+        try:
+            sound = HL1_PLAT_STOP[int(ent['stopsnd'])]
+        except (IndexError, TypeError, ValueError):
+            pass
+        else:
+            pack.pack_soundscript(sound)
+
 
 res('func_achievement')
 res('func_areaportal')
@@ -113,6 +144,7 @@ res('func_breakable_surf',
 res('func_brush')
 res('func_bulletshield')
 
+
 @cls_func
 def func_button(pack: PackList, ent: Entity) -> None:
     """Pack the legacy sound indexes."""
@@ -168,7 +200,8 @@ res('func_healthcharger',
 res('func_illusionary')
 res('func_instance_io_proxy')
 res('func_ladderendpoint', includes='func_usableladder')
-
+res('func_lod')
+res('func_lookdoor', includes='lookdoorthinker func_movelinear')
 
 @cls_func
 def momentary_rot_button(pack: PackList, ent: Entity) -> None:
@@ -178,9 +211,19 @@ def momentary_rot_button(pack: PackList, ent: Entity) -> None:
     pack_button_sound(pack, ent['locked_sound'])
     pack_button_sound(pack, ent['unlocked_sound'])
 
+res('func_monitor', includes='func_brush')
 res('func_movelinear', aliases='momentary_door')
 res('func_noportal_volume')
 res('func_null')
+res('func_plat',
+    sound('Plat.DefaultMoving'),
+    sound('Plat.DefaultArrive'),
+    func=base_plat_train,
+    )
+res('func_platrot',
+    includes='func_plat',
+    func=base_plat_train,
+    )
 res('func_portal_bumper')
 res('func_portal_detector')
 res('func_portal_orientation')
@@ -248,6 +291,18 @@ res('func_tank_combine_cannon',
     )
 
 res('func_tankchange', sound('FuncTrackChange.Blocking'))
+res('func_trackautochange', includes='func_trackchange', func=base_plat_train)
+res('func_tracktrain')
+res('func_trackchange',
+    sound('FuncTrackChange.Blocking'),
+    includes='func_platrot',
+    func=base_plat_train,
+    )
+res('func_train',
+    sound('Plat.DefaultMoving'),
+    sound('Plat.DefaultArrive'),
+    func=base_plat_train,
+    )
 res('func_traincontrols')
 res(
     'func_usableladder',

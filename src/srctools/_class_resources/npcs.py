@@ -230,6 +230,29 @@ res('npc_alyx',
     func=base_npc,
     )
 res('npc_apcdriver', includes='npc_vehicledriver', func=base_npc)
+
+
+@cls_func
+def npc_arbeit_turret_floor(pack: PackList, ent: Entity) -> None:
+    """Arbeit/Aperture turrets have EZ variants."""
+    base_npc(pack, ent)
+    variant = conv_int(ent['ezvariant'])
+    if variant == EZ_VARIANT_RAD:
+        pack.pack_file('models/props/glowturret_01.mdl', FileType.MODEL)
+    elif variant == EZ_VARIANT_ARBEIT:
+        pack.pack_file('models/props/camoturret_01.mdl', FileType.MODEL)
+        pack.pack_file('models/props/camoturret_02.mdl', FileType.MODEL)
+    elif conv_int(ent['spawnflags']) & 0x200:  # Citizen Modified
+        pack.pack_file('models/props/hackedturret_01.mdl', FileType.MODEL)
+    else:
+        pack.pack_file('models/props/turret_01.mdl', FileType.MODEL)
+
+res('npc_arbeit_turret_floor',
+    sound('NPC_ArbeitTurret.DryFire'),
+    includes='npc_turret_floor',
+    )
+
+res('npc_badcop', mdl('models/bad_cop.mdl'), includes='npc_clonecop', func=base_npc)
 res('npc_barnacle',
     *BASE_NPC,
     mdl('models/barnacle.mdl'),
@@ -261,6 +284,63 @@ res('npc_barney',
     )
 res('npc_breen', *BASE_NPC, mdl("models/breen.mdl"))
 res('npc_bullseye', *BASE_NPC)
+
+
+@cls_func
+def npc_bullsquid(pack: PackList, ent: Entity) -> None:
+    """This has various EZ variants."""
+    base_npc(pack, ent)
+    variant = conv_int(ent['ezvariant'])
+    if variant == EZ_VARIANT_XEN:
+        pack.pack_file('models/bullsquid_xen.mdl', FileType.MODEL)
+        pack.pack_file('models/babysquid_xen.mdl', FileType.MODEL)
+        pack.pack_file('models/bullsquid_egg_xen.mdl', FileType.MODEL)
+        pack.pack_particle('blood_impact_yellow_01')
+    elif variant == EZ_VARIANT_RAD:
+        pack.pack_file('models/bullsquid_rad.mdl', FileType.MODEL)
+        pack.pack_file('models/babysquid_rad.mdl', FileType.MODEL)
+        pack.pack_file('models/bullsquid_egg_rad.mdl', FileType.MODEL)
+        pack.pack_particle('blood_impact_blue_01')
+    else:
+        pack.pack_file('models/bullsquid.mdl', FileType.MODEL)
+        pack.pack_file('models/babysquid.mdl', FileType.MODEL)
+        pack.pack_file('models/bullsquid_egg.mdl', FileType.MODEL)
+        pack.pack_particle('blood_impact_yellow_01')
+
+
+res('npc_bullsquid',  # This is the EZ2/HLS variant, TODO: resources for Black mesa version?
+    *BASE_NPC,
+    mat('materials/sprites/greenspit1.vmt'),
+    part('bullsquid_explode'),
+    sound('NPC_Bullsquid.Idle'),
+    sound('NPC_Bullsquid.Pain'),
+    sound('NPC_Bullsquid.Alert'),
+    sound('NPC_Bullsquid.Death'),
+    sound('NPC_Bullsquid.Attack1'),
+    sound('NPC_Bullsquid.FoundEnemy'),
+    sound('NPC_Bullsquid.Growl'),
+    sound('NPC_Bullsquid.TailWhi'),
+    sound('NPC_Bullsquid.Bite'),
+    sound('NPC_Bullsquid.Eat'),
+    sound('NPC_Babysquid.Idle'),
+    sound('NPC_Babysquid.Pain'),
+    sound('NPC_Babysquid.Alert'),
+    sound('NPC_Babysquid.Death'),
+    sound('NPC_Babysquid.Attack1'),
+    sound('NPC_Babysquid.FoundEnemy'),
+    sound('NPC_Babysquid.Growl'),
+    sound('NPC_Babysquid.TailWhip'),
+    sound('NPC_Babysquid.Bite'),
+    sound('NPC_Babysquid.Eat'),
+    sound('NPC_Antlion.PoisonShoot'),
+    sound('NPC_Antlion.PoisonBall'),
+    sound('NPC_Bullsquid.Explode'),
+    # The bullsquid might spawn an npc_egg, which then spawns bullsquid...
+    sound('npc_bullsquid.egg_alert'),
+    sound('npc_bullsquid.egg_hatch'),
+    part('bullsquid_egg_hatch'),
+    includes='grenade_spit',
+    )
 res('npc_cscanner',
     *BASE_NPC,
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
@@ -344,6 +424,7 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
     elif cit_type == 4:  # Use model in KVs directly.
         return
     else:  # Invalid type?
+        # TODO: Entropy Zero variants.
         return
 
     for head in CIT_HEADS:
@@ -354,6 +435,16 @@ res('npc_citizen',
     sound("NPC_Citizen.FootstepLeft"),
     sound("NPC_Citizen.FootstepRight"),
     sound("NPC_Citizen.Die"),
+    )
+
+res('npc_clonecop',
+    *BASE_NPC,
+    mdl('models/clone_cop.mdl'),
+    part('blood_spurt_synth_01'),
+    part('blood_drip_synth_01'),
+    part('blood_impact_blue_01'),  # Radiation/temporal only, but not really important.
+    includes='item_ammo_ar2_altfire',
+    func=base_npc,
     )
 
 res('npc_combine_camera',
@@ -503,6 +594,20 @@ res('npc_dog',
     mat("materials/sprites/glow04_noz.vmt"),
     func=base_npc,
     )
+
+
+@cls_func
+def npc_egg(pack: PackList, ent: Entity) -> None:
+    """These are EZ2 bullsquid eggs, which spawn a specific EZ variant."""
+    pack_ent_class(pack, 'npc_bullsquid', ezvariant=ent['ezvariant'])
+
+res('npc_egg',
+    *BASE_NPC,
+    mdl('models/eggs/bullsquid_egg.mdl'),
+    sound('npc_bullsquid.egg_alert'),
+    sound('npc_bullsquid.egg_hatch'),
+    part('bullsquid_egg_hatch'),
+    )
 res('npc_eli', *BASE_NPC, mdl("models/eli.mdl"), func=base_npc)
 res('npc_enemyfinder', *BASE_NPC, mdl("models/player.mdl"), func=base_npc)
 res('npc_enemyfinder_combinecannon', includes='npc_enemyfinder', func=base_npc)
@@ -510,12 +615,24 @@ res('npc_gman', *BASE_NPC, mdl('models/gman.mdl'), func=base_npc)
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
+    includes='grenade',
     )
 res('npc_grenade_frag',
     mdl("models/Weapons/w_grenade.mdl"),
     mat('materials/sprites/redglow1.vmt'),
     mat('materials/sprites/bluelaser1.vmt'),
     sound("Grenade.Blip"),
+    includes='grenade',
+    )
+res('npc_grenade_hopwire',  #  A primed EZ2 Xen Grenade.
+    mdl('models/props_junk/metal_paintcan001b.mdl'),  # "Dense Ball Model"
+    sound('NPC_Strider.Charge'),
+    sound('NPC_Strider.Shoot'),
+    sound('WeaponXenGrenade.Explode'),
+    sound('WeaponXenGrenade.SpawnXenPC'),
+    sound('WeaponXenGrenade.Blip'),
+    sound('WeaponXenGrenade.Hop'),
+    includes='vortex_controller grenade',
     )
 
 res('npc_fastzombie',
@@ -687,7 +804,8 @@ res('npc_hunter',
     includes="hunter_flechette sparktrail",
     func=base_npc,
     )
-
+# This uses a template so the hunter has to be already in the map and will be analysed.
+res('npc_hunter_maker', includes='npc_template_maker')
 
 res('npc_kleiner', *BASE_NPC, mdl('models/kleiner.mdl'), func=base_npc)
 res('npc_launcher',
@@ -706,6 +824,7 @@ def npc_maker(pack: PackList, ent: Entity) -> None:
         # Dependent on keyvalues.
         pass
 
+res('npc_magnusson', *BASE_NPC, mdl('models/magnusson.mdl'), func=base_npc)
 res('npc_manhack',
     *BASE_NPC,
     mdl("models/manhack.mdl"),
@@ -732,6 +851,7 @@ res('npc_monk',
     sound("NPC_Citizen.FootstepRight"),
     func=base_npc,
     )
+res('npc_mossman', *BASE_NPC, mdl('models/mossman.mdl'), func=base_npc)
 
 
 @cls_func
@@ -900,6 +1020,7 @@ res('npc_strider',
     func=base_npc,
     )
 
+res('npc_template_maker')  # This specially precaches, but the ent must exist in the map already.
 res('npc_turret_ceiling',
     *BASE_NPC,
     mdl('models/combine_turrets/ceiling_turret.mdl'),
@@ -998,6 +1119,66 @@ res('npc_vortigaunt',
     part('vortigaunt_hand_glow'),
     includes="vort_charge_token",
     func=base_npc,
+    )
+
+res('npc_wilson',
+    *BASE_NPC,
+    mdl('models/will_e.mdl'),
+    mdl('models/will_e_damaged.mdl'),
+    mat('materials/sprites/glow1.vmt'),
+    sound('NPC_Wilson.Destruct'),
+    sound('NPC_Combine.WeaponBash'),
+    sound('RagdollBoogie.Zap'),
+    part('explosion_turret_break'),
+    choreo('scenes/npc/wilson/expression_idle.vcd'),
+    choreo('scenes/npc/wilson/expression_alert.vcd'),
+    choreo('scenes/npc/wilson/expression_combat.vcd'),
+    choreo('scenes/npc/wilson/expression_dead.vcd'),
+    choreo('scenes/npc/wilson/expression_scanning.vcd'),
+    )
+
+
+@cls_func
+def npc_zassassin(pack: PackList, ent: Entity) -> None:
+    """Entropy Zero 2's "Plan B"/Gonome. """
+    base_npc(pack, ent)
+    variant = conv_int(ent['ezvariant'])
+    if variant == EZ_VARIANT_RAD:
+        pack.pack_file('models/glownome.mdl', FileType.MODEL)
+        pack.pack_particle('blood_impact_blue_01')
+        pack.pack_file('materials/cable/goocable.vmt', FileType.MATERIAL)
+        pack.pack_file('materials/sprites/glownomespit.vmt', FileType.MATERIAL)
+    else:
+        pack.pack_file('materials/sprites/gonomespit.vmt', FileType.MATERIAL)
+        if variant == EZ_VARIANT_XEN:
+            pack.pack_file('models/xonome.mdl', FileType.MODEL)
+        else:
+            pack.pack_file('models/gonome.mdl', FileType.MODEL)
+
+res('npc_zassassin',
+    *BASE_NPC,
+    sound('Gonome.Idle'),
+    sound('Gonome.Pain'),
+    sound('Gonome.Alert'),
+    sound('Gonome.Die'),
+    sound('Gonome.Attack'),
+    sound('Gonome.Bite'),
+    sound('Gonome.Growl'),
+    sound('Gonome.FoundEnem'),
+    sound('Gonome.RetreatMod'),
+    sound('Gonome.BerserkMod'),
+    sound('Gonome.RunFootstepLeft'),
+    sound('Gonome.RunFootstepRight'),
+    sound('Gonome.FootstepLeft'),
+    sound('Gonome.FootstepRight'),
+    sound('Gonome.JumpLand'),
+    sound('Gonome.Eat'),
+    sound('Gonome.BeginSpawnCrab'),
+    sound('Gonome.EndSpawnCrab'),
+    part('glownome_explode'),
+    sound('npc_zassassin.kickburst'),
+    includes='squidspit',
+    aliases='monster_gonome',
     )
 
 res('npc_zombie',

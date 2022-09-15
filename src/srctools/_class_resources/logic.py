@@ -53,6 +53,7 @@ res('logic_skill')
 res('logic_timescale')
 res('logic_timer')
 
+res('math_bits')
 res('math_clamp')
 res('math_counter')
 res('math_counter_advanced')

@@ -169,6 +169,7 @@ res('env_muzzleflash',
 res('env_hudhint')
 res('env_particlelight')
 res('env_player_surface_trigger')
+res('env_player_viewfinder')
 res('env_physexplosion')
 res('env_physics_blocker')
 res('env_physimpact')
