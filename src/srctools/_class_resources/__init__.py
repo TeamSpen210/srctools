@@ -19,7 +19,8 @@ from ..vmf import VMF, Entity, ValidKVs
 
 ClassFunc: TypeAlias = Callable[[PackList, Entity], object]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
-CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]] = {}
+ResourceTup: TypeAlias = Tuple[str, FileType]
+CLASS_RESOURCES: Dict[str, Iterable[ResourceTup]] = {}
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
 INCLUDES: Dict[str, List[str]] = {}
 ALT_NAMES: Dict[str, str] = {}
@@ -103,31 +104,39 @@ def _process_includes() -> None:
             if not includes:
                 del INCLUDES[cls]
                 has_changed = True
+            if not resources:  # Convert back to empty tuple.
+                CLASS_RESOURCES[cls] = ()
         if not has_changed:
             raise ValueError('Circular loop in includes: {}'.format(sorted(INCLUDES)))
+    # Copy over aliased class functions.
+    for alias, cls in ALT_NAMES.items():
+        try:
+            CLASS_FUNCS[alias] = CLASS_FUNCS[cls]
+        except KeyError:
+            pass
 
 
-def mdl(path: str) -> Tuple[str, FileType]:
+def mdl(path: str) -> ResourceTup:
     """Convienence function."""
     return (path, FileType.MODEL)
 
 
-def mat(path: str) -> Tuple[str, FileType]:
+def mat(path: str) -> ResourceTup:
     """Convienence function."""
     return (path, FileType.MATERIAL)
 
 
-def sound(path: str) -> Tuple[str, FileType]:
+def sound(path: str) -> ResourceTup:
     """Convienence function."""
     return (path, FileType.GAME_SOUND)
 
 
-def part(path: str) -> Tuple[str, FileType]:
+def part(path: str) -> ResourceTup:
     """Convienence function."""
     return (path, FileType.PARTICLE)
 
 
-def choreo(path: str) -> Tuple[str, FileType]:
+def choreo(path: str) -> ResourceTup:
     """Convienence function."""
     return (path, FileType.CHOREO)
 
@@ -326,6 +335,7 @@ res('hunter_flechette',
     part("hunter_projectile_explosion_1"),
     )
 res('infodecal')
+res('info_apc_missile_hint')
 res('info_coop_spawn')
 res('info_constraint_anchor')
 res('info_camera_link')
@@ -365,7 +375,9 @@ res('info_snipertarget')
 res('info_target')
 res('info_target_gunshipcrash')
 res('info_target_helicopter_crash')
+res('info_target_instructor_hint')
 res('info_teleport_destination')
+res('info_template_link_controller')
 res('info_landmark_entry')
 res('info_landmark_exit')
 res('keyframe_track')
@@ -478,6 +490,7 @@ res('point_message')
 res('point_message_localized')
 res('point_hurt')
 
+res('point_posecontroller')
 res('point_prop_use_target')
 res('point_proximity_sensor')
 res('point_push')
@@ -512,6 +525,7 @@ res('rpg_missile',
     mdl("models/weapons/w_missile_closed.mdl"),
     )
 
+res('scripted_sound')  # Sound via FGD.
 res('script_intro',
     mat('materials/scripted/intro_screenspaceeffect.vmt'),
     )
@@ -522,6 +536,7 @@ res('simple_physics_prop',
     includes='env_flare',  # TODO: Episodic only!
     )
 
+res('sky_camera')
 
 @cls_func
 def skybox_swapper(pack: PackList, ent: Entity) -> None:
@@ -546,7 +561,15 @@ res('spark_shower',
     mat('materials/sprites/glow01.vmt'),
     mat('materials/effects/yellowflare.vmt'),
     )
+res('spotlight_end')
 res('squadinsignia', "models/chefhat.mdl")  # Yeah.
+res('squidspit',  # EZ2 "Plan B"/Gonome spit
+    'NPC_BigMomma.SpitTouch1',
+    'NPC_BigMomma.SpitHit1',
+    'NPC_BigMomma.SpitHit2',
+    'Zombie.AttackHit',
+    'Zombie.AttackMiss',
+    )
 
 
 @cls_func
@@ -562,6 +585,17 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
 res('test_proxytoggle')
 
+res('vortex_controller',  # EZ2 Xen Grendade suction controller.
+    mdl("models/weapons/w_xengrenade.mdl"),
+    sound('WeaponXenGrenade.Schlorp_Huge'),
+    sound('WeaponXenGrenade.Schlorp_Large'),
+    sound('WeaponXenGrenade.Schlorp_Medium'),
+    sound('WeaponXenGrenade.Schlorp_Small'),
+    sound('WeaponXenGrenade.Schlorp_Tiny'),
+
+    part('xenpc_spawn'),
+    mat('materials/sprites/rollermine_shock.vmt'),
+    )
 res('vort_charge_token', part('vortigaunt_charge_token'))
 
 
