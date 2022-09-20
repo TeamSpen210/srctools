@@ -129,6 +129,9 @@ class FileSystem(Generic[_FileDataT]):
         self.path = os.fspath(path)
         self._ref_count = 0
 
+    def __repr__(self) -> str:
+        return f'{self.__class__.__name__}({self.path!r})'
+
     def open_ref(self) -> None:
         """:deprecated: No longer needs to be called."""
         warnings.warn(
@@ -272,7 +275,10 @@ class FileSystemChain(FileSystem[File[FileSystem]]):
                 self.add_sys(sys)
 
     def __repr__(self) -> str:
-        return 'FileSystemChain(\n{})'.format(',\n '.join(map(repr, self.systems)))
+        return '{}(\n{})'.format(
+            self.__class__.__name__,
+            ",\n ".join(map(repr, self.systems)),
+        )
 
     def __eq__(self, other: object) -> bool:
         if not isinstance(other, FileSystemChain):
@@ -481,7 +487,7 @@ class RawFileSystem(FileSystem[str]):
 
     def __repr__(self) -> str:
         return (
-            f'RawFileSystem({self.path!r}, ' 
+            f'{self.__class__.__name__}({self.path!r}, ' 
             f'constrain_path={self.constrain_path})'
         )
 
@@ -560,9 +566,6 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             if not info.filename.endswith('/')
         }
 
-    def __repr__(self) -> str:
-        return 'ZipFileSystem({!r})'.format(self.path)
-
     def walk_folder(self: ZipFSysT, folder: str = '') -> Iterator[File[ZipFSysT]]:
         """Yield files in a folder."""
         # \\ is not allowed in zips.
@@ -628,9 +631,6 @@ class VPKFileSystem(FileSystem[VPKFile]):
             file.filename.replace('\\', '/').casefold(): file
             for file in self.vpk
         }
-
-    def __repr__(self) -> str:
-        return 'VPKFileSystem({!r})'.format(self.path)
 
     def _file_exists(self, name: str) -> bool:
         return name.casefold().replace('\\', '/') in self._name_to_file

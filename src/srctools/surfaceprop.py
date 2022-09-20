@@ -187,7 +187,7 @@ class SurfaceProp:
         self.climbable = _attr_value(parent, 'climbable', climbable, False)
 
     def __repr__(self) -> str:
-        return '<SurfaceProp "{}", char={}>'.format(self.name, self.gamematerial.value)
+        return f'<{self.__class__.__name__} "{self.name}", char={self.gamematerial.value}>'
 
     def copy(self) -> 'SurfaceProp':
         """Duplicate this surfaceprop."""

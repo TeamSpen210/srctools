@@ -360,7 +360,7 @@ class Sound:
 
     def __repr__(self) -> str:
         res = (
-            f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, '
+            f'{self.__class__.__name__}({self.name!r}, {self.sounds}, volume={self.volume}, '
             f'channel={self.channel}, level={self.level}, pitch={self.pitch}'
         )
         if self.force_v2 or self._stack_start or self._stack_update or self._stack_stop:

@@ -105,8 +105,10 @@ class Vertex:
         self.tex_v = tex_v
 
     def __repr__(self) -> str:
-        return 'Vertex({!r}, {!r}, {}, {}, {})'.format(
-            self.pos, self.norm, self.tex_u, self.tex_v, self.links
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.pos!r}, {self.norm!r}, '
+            f'{self.tex_u}, {self.tex_v}, {self.links})'
         )
 
     def copy(self) -> 'Vertex':

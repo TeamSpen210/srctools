@@ -123,7 +123,7 @@ class NoKeyError(LookupError):
         self.key = key
 
     def __repr__(self) -> str:
-        return 'NoKeyError({!r})'.format(self.key)
+        return f'{self.__class__.__name__}({self.key!r})'
 
     def __str__(self) -> str:
         return "No key " + self.key + "!"

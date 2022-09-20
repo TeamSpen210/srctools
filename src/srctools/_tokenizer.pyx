@@ -905,9 +905,9 @@ cdef class IterTokenizer(BaseTokenizer):
 
     def __repr__(self):
         if self.error_type is TokenSyntaxError:
-            return f'IterTokenizer({self.source!r}, {self.filename!r})'
+            return f'{self.__class__.__name__}({self.source!r}, {self.filename!r})'
         else:
-            return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
+            return f'{self.__class__.__name__}({self.source!r}, {self.filename!r}, {self.error_type!r})'
 
     def _get_token(self):
         """Compute the next token."""

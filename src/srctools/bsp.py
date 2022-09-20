@@ -386,7 +386,7 @@ class DetailPropOrientation(Enum):
     SCREEN_ALIGNED_VERTICAL = 2
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, repr=False)
 class Lump:
     """Represents a lump header in a BSP file.
 
