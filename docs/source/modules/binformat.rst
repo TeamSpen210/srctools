@@ -12,11 +12,11 @@ Constants
 	:type: struct.Struct
 	:value: Struct('fff')
 
-	A :external:class:`struct.Struct` with three floats, for unpacking Vec, Angle etc.
+	A :external:class:`struct.Struct` with three floats, for unpacking :py:class:`~srctools.math.Vec`, :py:class:`~srctools.math.Angle`, etc.
 .. py:data:: SIZES
 	:type: dict[str, struct.Struct]
 
-	A dict mapping each fixed-size number format character to the size of the data.
+	A dict mapping each fixed-size number format character (``i``, ``L``, ``h``, etc) to the size of the data.
 
 -------------
 

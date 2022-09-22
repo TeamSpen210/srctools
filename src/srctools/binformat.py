@@ -2,7 +2,7 @@
 The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import IO, Dict, Hashable, List, Mapping, Tuple, Union
+from typing import Collection, IO, Dict, Hashable, List, Mapping, Tuple, Union
 from typing_extensions import Final
 from binascii import crc32
 from struct import Struct
@@ -54,14 +54,18 @@ LZMA_FILT: Final = {
 
 
 def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
-    """Read a structure from the file."""
+    """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
         fmt = Struct(fmt)
     return fmt.unpack(file.read(fmt.size))
 
 
 def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str:
-    """Read a null-terminated string from the file."""
+    """Read a null-terminated string from the file.
+
+    If the position is ``0``, this will instead immediately return an empty string. Otherwise if set
+    this will first seek to the location.
+    """
     if pos is not None:
         if pos == 0:
             return ''
@@ -78,7 +82,10 @@ def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str
 
 
 def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
-    """Read consecutive null-terminated strings from the file."""
+    """Read the specified number of consecutive null-terminated strings from a file.
+
+    If the count is zero, no reading will be performed at all.
+    """
     arr = [''] * count
     if not count:
         return arr
@@ -89,18 +96,30 @@ def read_nullstr_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> 
 
 
 def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> List[str]:
-    """Read an array of offsets to null-terminated strings from the file."""
-    offsets = struct_read(str(count) + 'i', file)
-    return [
+    """Read an array of offsets to null-terminated strings from the file.
+
+    This first reads the specified number of signed integers, then seeks to those locations and
+    reads a null-terminated string from each.
+    """
+    offsets = struct_read('<{0}i'.format(str(count)), file)
+    pos = file.tell()
+    arr = [
         read_nullstr(file, off, encoding)
         for off in offsets
     ]
+    file.seek(pos)
+    return arr
 
 
 def read_array(fmt: str, data: bytes) -> List[int]:
-    """Read a buffer containing a stream of integers."""
+    """Read a buffer containing a stream of integers.
+
+    The format string should be one of the integer format characters, optionally prefixed by an
+     endianness indicator. As many integers as possible will then be read from the data.
+    """
     if len(fmt) == 2:
-        endianness, fmt = list(fmt)
+        endianness = fmt[0]
+        fmt = fmt[1]
     else:
         endianness = ''
     try:
@@ -111,8 +130,12 @@ def read_array(fmt: str, data: bytes) -> List[int]:
     return list(Struct(endianness + fmt * count).unpack_from(data))
 
 
-def write_array(fmt: str, data: List[int]) -> bytes:
-    """Build a packed array of integers."""
+def write_array(fmt: str, data: Collection[int]) -> bytes:
+    """Build a packed array of integers.
+
+    The format string should be one of the integer format characters, optionally prefixed by an
+    endianness indicator. The integers in the data will then be packed into a bytes buffer and returned.
+     """
     if len(fmt) == 2:
         endianness = fmt[0]
         fmt = fmt[1]
@@ -123,7 +146,7 @@ def write_array(fmt: str, data: List[int]) -> bytes:
 
 
 def str_readvec(file: IO[bytes]) -> Vec:
-    """Read a vector from a file."""
+    """Shortcut to read a 3-float vector from a file."""
     return Vec(ST_VEC.unpack(file.read(ST_VEC.size)))
 
 
@@ -140,10 +163,16 @@ EMPTY_CHECKSUM: Final[int] = checksum(b'')
 
 
 class DeferredWrites:
-    """Several formats expect offsets to be written pointing to latter locations.
+    """Several formats require offsets or similar data to be written referring to data later in the file.
 
-    This makes these easier to write, by initially writing null data, then returning to fill it later.
-    The key can be any hashable type.
+    Doing this in one pass would be quite complicated, but this class assists in writing such files.
+    Initially null bytes are written in the slots, then the data is filled in at the end.
+
+    To use this class, initialise it with the open and seekable file. Call :py:func:`defer()` when
+    reaching the relevant parts of the file, passing a format string for the structure and a hashable
+    key used to identify it later. Once the value has been determined, call :py:func:`set_data()`
+    to store the data. When the file is written out, call :py:func:`write()` which will :external:py:meth:`~io.IOBase.seek`
+    back and fill in the values.
     """
     def __init__(self, file: IO[bytes]) -> None:
         self.file = file
@@ -158,7 +187,7 @@ class DeferredWrites:
         :param key: Any hashable object, used to identify this location later.
         :param fmt: The structure of the data, either as an existing :external:py:class:`struct.Struct`
             instance, or a string in the same format.
-        :param write: If true, write null bytes to temporarily the space in the file. Set to false
+        :param write: If true, write null bytes to occupy the space in the file. Set to false
             if you are doing this yourself.
         """
         if isinstance(fmt, str):
@@ -180,7 +209,7 @@ class DeferredWrites:
     def pos_of(self, key: Hashable) -> int:
         """Return the previously marked offset with the given key.
 
-        :param key: Any hashable object, used to match this call to the earlier :func:`defer` call.
+        :param key: Any hashable object, used to match this call to the earlier :py:func:`defer` call.
         """
         off, fmt = self.loc[key]
         return off
@@ -202,7 +231,7 @@ class DeferredWrites:
 
 
 def decompress_lzma(data: bytes) -> bytes:
-    """Decompress LZMA, with Source's LZMA format."""
+    """Decompress LZMA-encoded data, using the settings Source uses in BSP lumps."""
     # We have to decode Source's header, then build LZMA's header to
     #     allow it to be compressed.
     if data[:4] != b'LZMA':
@@ -252,7 +281,7 @@ def decompress_lzma(data: bytes) -> bytes:
 
 
 def compress_lzma(data: bytes) -> bytes:
-    """Re-compress data into Source's LZMA format."""
+    """Compress data using the LZMA algorithm and the settings Source uses in BSP lumps."""
     # We have to convert the standard LZMA header into Source's version.
     comp_data = lzma.compress(data, lzma.FORMAT_RAW, filters=[LZMA_FILT])
 
