@@ -336,7 +336,7 @@ def init_logging(
 ) -> logging.Logger:
     """Set up the logger and logging handlers.
 
-    This also sets :py:attr:`sys.except_hook`, so uncaught exceptions are captured.
+    This also sets :py:func:`sys.excepthook`, so uncaught exceptions are captured.
 
     :param filename: If this is set, all logs will be written to this file as well.
     :param on_error: should be a function to call when uncaught exceptions are thrown, taking ``(type, value, traceback)``. \

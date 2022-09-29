@@ -84,7 +84,7 @@ class Game:
         return self.path.parent
 
     def parse_search_path(self, prop: Keyvalues) -> Path:
-        """Evaluate options like ``|gameinfo_path|``."""
+        """Evaluate options like :code:`|gameinfo_path|`."""
         if prop.value.casefold().startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -129,7 +129,7 @@ class Game:
         return fsys
 
     def bin_folder(self) -> Path:
-        """Retrieve the location of the bin/ folder."""
+        """Retrieve the location of the :file:`bin/` folder."""
         folder = self.path.parent / 'bin'
 
         # Engine branches supporting 64-bit have binaries in win64/win32
@@ -155,9 +155,10 @@ def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
     """Locate the game we're in, if launched as a compiler.
 
     This checks the following:
-    * ``-vproject``
-    * ``-game``
-    * The :envvar:`VPROJECT` environment variable.
+
+    * :option:`!-vproject`
+    * :option:`!-game`
+    * The :envvar:`!VPROJECT` environment variable.
     * The current folder and all parents.
     """
     if argv is None:

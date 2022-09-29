@@ -19,32 +19,32 @@ class SurfChar(Enum):
     BLOODYFLESH = 'B'
     CONCRETE = 'C'
     DIRT = 'D'
-    EGGSHELL = 'E'  # The egg sacs in the tunnels in EP2.
+    EGGSHELL = 'E'  #: The egg sacs in the tunnels in EP2.
     FLESH = 'F'
     GRATE = 'G'
     ALIENFLESH = 'H'
     CLIP = 'I'
-    GRASS = 'J'  # L4D addition
-    # In ASW, this is mud. By CSGO it's snow.
+    GRASS = 'J'  #: L4D addition
+    #: In ASW, this is mud. In CSGO it's snow.
     MUD_ASW = SNOW = 'K'
     PLASTIC = 'L'
     METAL = 'M'
     SAND = 'N'
     FOLIAGE = 'O'
     COMPUTER = 'P'
-    ASPHALT = 'Q'  # L4D addition
-    # 2013 and P2 assigns this to reflective, brick in L4D+
+    ASPHALT = 'Q'  #: L4D addition
+    #: 2013 and P2 assigns this to reflective, brick in L4D+
     REFLECTIVE = BRICK = 'R'
     SLOSH = 'S'
     TILE = 'T'
-    CARDBOARD = 'U'  # L4D addition
+    CARDBOARD = 'U'  #: L4D addition
     VENT = 'V'
     WOOD = 'W'
-    NOFX = 'X'  # "fake" materials use this (ladders, wading, clips, etc)
+    NOFX = 'X'  #: "fake" materials use this (ladders, wading, clips, etc)
     GLASS = 'Y'
-    WARPSHIELD = 'Z'  # Weird-looking jello effect for advisor shield.
+    WARPSHIELD = 'Z'  #: Weird-looking jello effect for advisor shield.
 
-    # L4D adds these:
+    #: L4D adds these:
     CLAY = '1'
     PLASTER = '2'
     ROCK = '3'
@@ -57,10 +57,10 @@ class SurfChar(Enum):
     PUDDLE = '10'
     MUD_L4D = '11'
 
-    # ASW, shoots out steam
+    #: ASW, shoots out steam
     STEAM_PIPE = '11'
 
-    # CSGO
+    #: CSGO
     SANDBARREL = '12'
 
 _InitArgT = TypeVar('_InitArgT', float, str, bool, SurfChar)
@@ -234,10 +234,10 @@ class SurfaceProp:
     ) -> Dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
 
-        prev if passed is used to read parent properties from.
+        :param props: The keyvalues block to parse.
+        :param prev: If passed, this is used to read parent properties from.
 
-        DEFAULT will be inserted as the "default" surfaceprop if not provided
-        in prev.
+        A blank "default" surfaceprop  will be generated if not already present.
         """
         if prev is None:
             prev = {}
@@ -257,8 +257,9 @@ class SurfaceProp:
             except IndexError:
                 base = default
 
+            game_mat: Optional[SurfChar]
             try:
-                game_mat = SurfChar(prop['gamematerial'])  # type: Optional[SurfChar]
+                game_mat = SurfChar(prop['gamematerial'])
             except (LookupError, ValueError):
                 game_mat = None
 
@@ -299,7 +300,7 @@ class SurfaceProp:
     def parse_manifest(fsys: FileSystem, file: File=None) -> Dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
 
-        "scripts/surfaceproperties_manifest.txt" will be used if a file is
+        :file:`scripts/surfaceproperties_manifest.txt` will be used if a file is
         not specified.
         """
         if not file:

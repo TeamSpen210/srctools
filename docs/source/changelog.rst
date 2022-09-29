@@ -82,7 +82,7 @@ Version 2.3.0
 * Disallow entities to have a blank classname.
 * Elide long arrays in element reprs.
 * Add some additional logs when finding propcombine models fails.
-* Clean up :py:meth:`srctools.Property.build()` API.
+* Clean up :py:meth:`!srctools.kProperty.build()` API.
 * Make error messages more clear when :py:meth:`srctools.tokenizer.Tokenizer.error()` is used directly with a :py:class:`~srctools.tokenizer.Token`.
 * Include potential variables in :external:py:class:`KeyError` from :py:meth:`srctools.vmf.EntityFixup.substitute()`.
 * Remove support for deprecated ``imghdr`` module.
