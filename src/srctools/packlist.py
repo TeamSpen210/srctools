@@ -134,6 +134,18 @@ def load_fgd() -> FGD:
     return FGD.engine_dbase()
 
 
+def strip_extension(filename: str) -> str:
+    """Strip extensions from a filename, like Q_StripExtension()."""
+    try:
+        dot_pos = filename.rindex('.')
+    except ValueError:
+        return filename  # No extension.
+    # If there's a slash after here, it's probably a ../, dotted folder, etc.
+    if '/' in filename[dot_pos:]:
+        return filename
+    return filename[:dot_pos]
+
+
 @attrs.define(eq=False)
 class PackFile:
     """Represents a single file we are packing.
@@ -462,33 +474,29 @@ class PackList:
             data_type = FileType.MATERIAL
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if filename.endswith('.spr'):
-                # This is really wrong, spr materials don't exist anymore.
-                # Silently swap the extension.
-                filename = filename[:-3] + 'vmt'
-            elif not filename.endswith('.vmt'):
-                filename = filename + '.vmt'
+            # This will replace .spr materials, which don't exist any more.
+            filename = strip_extension(filename) + '.vmt'
         elif data_type is FileType.TEXTURE or (
             data_type is FileType.GENERIC and filename.endswith('.vtf')
         ):
             data_type = FileType.TEXTURE
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if not filename.endswith('.vtf'):
-                filename = filename + '.vtf'
+            if not filename.endswith('.hdr'):
+                # Strip all other extensions, then add vtf unconditionally.
+                filename = strip_extension(filename)
+            filename = filename + '.vtf'
         elif data_type is FileType.VSCRIPT_SQUIRREL or (
             data_type is FileType.GENERIC and filename.endswith('.nut')
         ):
             data_type = FileType.VSCRIPT_SQUIRREL
-            if not filename.endswith('.nut'):
-                filename = filename + '.nut'
+            filename = strip_extension(filename) + '.nut'
 
         if data_type is FileType.MODEL or filename.endswith('.mdl'):
             data_type = FileType.MODEL
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
-            if not filename.endswith('.mdl'):
-                filename = filename + '.mdl'
+            filename = strip_extension(filename) + '.mdl'
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
