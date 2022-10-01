@@ -13,10 +13,13 @@ Dev branch
 * Fix :py:meth:`srctools.logging.LoggerAdapter.log` being invalid in Python 3.7.
 * Make :py:mod:`srctools.fgd` work when reloaded.
 * Remove blank ``srctools.choreo`` module.
-* Disable iterating on :py:class:`srctools.math.Matrix`.
+* Disable iterating on :py:class:`srctools.math.Matrix`, this is not useful.
 * Add iterable parameter to :py:meth:`srctools.dmx.Attribute.array()`, for constructing arrays with values.
+* Fix DMX :external:py:class:`bool` to :external:py:class:`float` conversions mistakenly returning :external:py:class:`int` instead.
 * Remove useless ``header_len`` attribute from :py:class:`srctools.vpk.VPK`.
 * Rename ``srctools.property_parser.Property`` to :py:class:`srctools.keyvalues.Keyvalues`. as well as :py:class:`~srctools.keyvalues.NoKeyError` and :py:class:`~srctools.keyvalues.KeyValError`.
+* Allow parsing :py:class:`srctools.fgd.IODef` types which normally are not allowed for I/O. This will be substituted when exporting.
+* Use ``__class__.__name__`` in reprs, to better support subclasses.
 
 -------------
 Version 2.3.4
@@ -56,7 +59,7 @@ Version 2.3.1
 * Fix :py:meth:`srctools.vmf.Output.combine` not handling ``times`` correctly.
 * :py:func:`srctools.math.quickhull()` is now public.
 * Add :py:meth:`srctools.bsp.BSP.is_cordoned_heuristic()`.
-* Restrict :py:attr:`srctools.bsp.Overlay.min_cpu`, :py:attr:`~srctools.bsp.Overlay.max_cpu`, :py:attr:`~srctools.bsp.Overlay.min_gpu` and :py:attr:`~srctools.bsp.Overlay.max_ppu` to valid values.
+* Restrict :py:attr:`srctools.bsp.Overlay.min_cpu`, :py:attr:`~srctools.bsp.Overlay.max_cpu`, :py:attr:`~srctools.bsp.Overlay.min_gpu` and :py:attr:`~srctools.bsp.Overlay.max_gpu` to valid values.
 * Test against Python 3.11.
 * Read/write the :py:attr:`~srctools.bsp.BSP_LUMPS.LEAFMINDISTTOWATER` lump data into :py:attr:`srctools.bsp.VisLeaf.min_water_dist`.
 * Read/write the :py:attr:`~srctools.bsp.BSP_LUMPS.LEAFWATERDATA` lump.
@@ -82,13 +85,13 @@ Version 2.3.0
 * Disallow entities to have a blank classname.
 * Elide long arrays in element reprs.
 * Add some additional logs when finding propcombine models fails.
-* Clean up :py:meth:`!srctools.kProperty.build()` API.
+* Clean up :py:meth:`!srctools.Property.build()` API.
 * Make error messages more clear when :py:meth:`srctools.tokenizer.Tokenizer.error()` is used directly with a :py:class:`~srctools.tokenizer.Token`.
 * Include potential variables in :external:py:class:`KeyError` from :py:meth:`srctools.vmf.EntityFixup.substitute()`.
 * Remove support for deprecated ``imghdr`` module.
 * Upgrade plugin finding logic to ensure each source is mounted under a persistent ID.
 * Add missing :py:attr:`srctools.bsp.Primitive.dynamic_shadows`.
-* Deprecate :py:class:`srctools.Atomicwriter`, use the ``atomicwrites`` module.
+* Deprecate :py:class:`srctools.AtomicWriter`, use the ``atomicwrites`` module.
 * :py:mod:`srctools._class_resources` is now only imported when required.
 * Use Cython when building, instead of including sources.
 * :py:attr:`srctools.vmf.Entity.fixup` will instantiate the :py:class:`~srctools.vmf.EntityFixup` object only when actually required.
@@ -99,7 +102,7 @@ Version 2.2.5
 -------------
 
 * Restore :py:meth:`srctools.dmx.Attribute.iter_str()` etc method's ability to iterate scalars.
-* Suppress warnings in :py:meth:`srtools.Property.copy()`.
+* Suppress warnings in :py:meth:`srctools.Property.copy()`.
 
 
 -------------
