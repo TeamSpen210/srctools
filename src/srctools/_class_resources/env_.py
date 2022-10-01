@@ -80,11 +80,9 @@ def env_fire(pack: PackList, ent: Entity) -> None:
         else:
             suffix = '_smoke'  # env_fire_medium_smoke
         for name in ['tiny', 'small', 'medium', 'large']:
-            pack.pack_file('env_fire_{}{}'.format(name, suffix),
-                           FileType.PARTICLE_SYSTEM)
+            pack.pack_particle(f'env_fire_{name}{suffix}')
     elif fire_type == 1:  # Plasma
-        for fname, ftype in CLASS_RESOURCES['_plasma']:
-            pack.pack_file(fname, ftype)
+        pack_ent_class(pack, '_plasma')
 res('env_fire', sound('Fire.Plasma'))
 
 res('env_firesensor')

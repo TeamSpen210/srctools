@@ -173,7 +173,7 @@ EZ_VARIANT_BLOOD: Final = 5
 res('_ballplayertoucher')
 res('_firesmoke', *[
     # env_fire_[tiny/small/medium/large][_smoke]
-    part('env_fire_ ' + name + smoke)
+    part('env_fire_' + name + smoke)
     for name in ['tiny', 'small', 'medium', 'large']
     for smoke in ['', '_smoke']
 ])
