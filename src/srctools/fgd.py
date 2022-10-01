@@ -1047,7 +1047,7 @@ class _EntityView(Generic[T]):
 del _EntityView.__slots__
 
 
-@attrs.define(slots=False, eq=False)
+@attrs.define(slots=False, eq=False, repr=False)
 class EntityDef:
     """A definition for an entity."""
     type: EntityTypes
@@ -1251,14 +1251,6 @@ class EntityDef:
                         val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
                     except KeyError:
                         raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
-
-                if not val_typ.valid_for_io:
-                    raise tok.error(
-                        '"{}" value type is not valid for an input or '
-                        'output! Use "{}" instead.',
-                        val_typ.value,
-                        VALUE_TO_IO_DECAY[val_typ].value,
-                    )
 
                 # Read desc
                 io_vals, token = read_colon_list(tok)
