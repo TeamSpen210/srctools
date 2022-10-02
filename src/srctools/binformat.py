@@ -2,7 +2,7 @@
 The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import Collection, IO, Dict, Hashable, List, Mapping, Tuple, Union
+from typing import IO, Collection, Dict, Hashable, List, Mapping, Tuple, Union
 from typing_extensions import Final
 from binascii import crc32
 from struct import Struct
@@ -236,15 +236,14 @@ def decompress_lzma(data: bytes) -> bytes:
     #     allow it to be compressed.
     if data[:4] != b'LZMA':
         return data  # Not compressed.
-    real_comp_size = len(data)
     (sig, uncomp_size, comp_size, props, dict_size) = ST_LZMA_SOURCE.unpack_from(data)
     assert sig == b'LZMA'
-    real_comp_size -= ST_LZMA_SOURCE.size
-    if real_comp_size != comp_size:
-        raise ValueError(
-            f"File size doesn't match. Got {real_comp_size:,} "
-            f"bytes, expected {comp_size:,} bytes"
-        )
+    # Don't check against the expected size, some TF2 maps just have extra null data randomly.
+    # real_comp_size = len(data) - ST_LZMA_SOURCE.size
+    # if real_comp_size < comp_size:
+    #     raise ValueError(
+    #         f"File size doesn't match. Got {real_comp_size:,} bytes, expected {comp_size:,} bytes"
+    #     )
 
     # Parse properties - Code from LZMA spec
     if props >= (9 * 5 * 5):
@@ -266,16 +265,16 @@ def decompress_lzma(data: bytes) -> bytes:
     decomp = lzma.LZMADecompressor(lzma.FORMAT_RAW, None, filters=[filt])
     # This technically leaves the decompressor in an incomplete state, it's expecting an EOF marker.
     # Valve doesn't include that, so just leave it like that.
+    # Use a memoryview to avoid copying the whole buffer.
     res = decomp.decompress(memoryview(data)[ST_LZMA_SOURCE.size:])
 
     # In some cases it seems to have an extra null byte.
-    if len(res) == uncomp_size + 1 and res[-1] == 0:
-        res = res[:-1]
-    elif len(res) != uncomp_size:
-        raise ValueError(
-            'Incorrect decompressed size.'
-            f'Got {len(res):,} '
-            f'bytes, expected {uncomp_size:,} bytes'
+    if len(res) > uncomp_size:
+        return res[:uncomp_size]
+    # Sometimes the data is truncated to a single null byte??
+    elif len(res) < uncomp_size and res != b'\x00':
+        print(
+            f'Incorrect decompressed size. Got {len(res):,} bytes, expected {uncomp_size:,} bytes.'
         )
     return res
 

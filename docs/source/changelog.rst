@@ -20,6 +20,7 @@ Dev branch
 * Rename ``srctools.property_parser.Property`` to :py:class:`srctools.keyvalues.Keyvalues`. as well as :py:class:`~srctools.keyvalues.NoKeyError` and :py:class:`~srctools.keyvalues.KeyValError`.
 * Allow parsing :py:class:`srctools.fgd.IODef` types which normally are not allowed for I/O. This will be substituted when exporting.
 * Use ``__class__.__name__`` in reprs, to better support subclasses.
+* Issue `#14 <https://github.com/TeamSpen210/srctools/issues/14>`_: Disable some size checks on LZMA decompression, so more TF2 maps can be parsed.
 
 -------------
 Version 2.3.4
