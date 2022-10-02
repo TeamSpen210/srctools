@@ -1,6 +1,7 @@
 # Configuration file for the Sphinx documentation builder.
 from pathlib import Path
 import sys
+import os
 
 from sphinx.application import Sphinx
 
@@ -9,7 +10,6 @@ from sphinx.application import Sphinx
 sys.modules['srctools._tokenizer'] = None
 sys.modules['srctools._math'] = None
 sys.modules['srctools._cy_vtf_readwrite'] = None
-import srctools
 
 # -- Project information -----------------------------------------------------
 
@@ -18,7 +18,12 @@ copyright = '2022, TeamSpen210'
 author = 'TeamSpen210'
 
 # The full version, including alpha/beta/rc tags
-release = srctools.__version__
+# Use RTD version if available, otherwise check project.
+try:
+    release = os.environ['READTHEDOCS_VERSION_NAME']
+except KeyError:
+    import srctools
+    release = srctools.__version__
 
 
 # -- General configuration ---------------------------------------------------
