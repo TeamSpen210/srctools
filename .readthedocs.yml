@@ -11,6 +11,12 @@ build:
   tools:
     python: "3.10"
 
+# Install the package.
+python:
+  install:
+    - method: pip
+      path: .
+
 # Build documentation in the docs/ directory with Sphinx
 sphinx:
    configuration: docs/source/conf.py
