@@ -1,6 +1,8 @@
 """func_ entities."""
-from typing import Sequence, Mapping
+from typing import Mapping, Sequence
+
 from . import *
+
 
 # Index->sound lists for CBasePlatTrain in HL:Source.
 HL1_PLAT_MOVE: Final[Sequence[str]] = [

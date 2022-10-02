@@ -4,10 +4,10 @@ Those are ones that don't simply appear in keyvalues.
 The only public values are CLASS_RESOURCES and ALT_NAMES, but those
 should be imported from packlist instead.
 """
-from typing import Callable, Dict, Iterable, List, Tuple, TypeVar, Optional, Union
-from typing_extensions import TypeAlias, Final
+from typing import Callable, Dict, Iterable, List, Optional, Tuple, TypeVar, Union
+from typing_extensions import Final, TypeAlias
 
-from .. import conv_int, conv_bool
+from .. import conv_bool, conv_int
 from ..packlist import FileType, PackList
 from ..vmf import VMF, Entity, ValidKVs
 
