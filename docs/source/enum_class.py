@@ -2,16 +2,15 @@
 from collections import defaultdict
 
 from typing import Any, Dict, List, Optional, Tuple, Type
-import sys
+from dataclasses import dataclass
 import enum
 import functools
 
 from docutils.statemachine import StringList
 from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMembers, bool_option
-import attrs
 
 
-@attrs.define
+@dataclass
 class EnumInfo:
     """Computed member info."""
     cls: Type[enum.Enum]

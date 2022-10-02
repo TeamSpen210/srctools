@@ -2,7 +2,7 @@
 
 This makes long signatures chop onto multiple lines.
 """
-from sphinx.writers.html import HTMLTranslator, Element, addnodes
+from sphinx.writers.html import HTMLTranslator, Element
 
 MAX_CHARS = 40
 
