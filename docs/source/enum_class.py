@@ -100,7 +100,7 @@ class EnumMemberDocumenter(AttributeDocumenter):
             self.object = NoReprString(f'0x{int(self.object):x}')
         super().add_directive_header(sig)
 
-    def add_content(self, more_content: Optional[StringList], no_docstring: bool = False) -> None:
+    def add_content(self, *args, **kwargs) -> None:
         sourcename = self.get_sourcename()
         info = enum_aliases(self.parent)
         try:
@@ -114,4 +114,4 @@ class EnumMemberDocumenter(AttributeDocumenter):
                 sourcename,
             )
             self.add_line('', sourcename)
-        super().add_content(more_content, no_docstring)
+        super().add_content(*args, **kwargs)
