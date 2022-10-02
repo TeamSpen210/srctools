@@ -3,8 +3,8 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    IO, Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Optional,
-    Set, Tuple, Type, TypeVar, Union, cast, overload,
+    IO, Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
+    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from enum import Enum, Flag
 from io import BytesIO
@@ -329,7 +329,11 @@ class StaticPropVersion(Enum):
         return self.name.startswith('V_LIGHTMAP')
 
 
-_STATIC_PROP_VERSIONS = {(ver.version, ver.size): ver for ver in StaticPropVersion}
+_STATIC_PROP_VERSIONS: Mapping[Tuple[int, int], StaticPropVersion] = {
+    (ver.version, ver.size): ver
+    for ver in StaticPropVersion
+}
+
 
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
@@ -1843,14 +1847,13 @@ class BSP:
     def _lmp_read_visleafs(self, data: bytes) -> Iterator[VisLeaf]:
         """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
-        # starmap() to unpack the 1-tuple struct result, then index with that.
-        leaf_brushes = list(itertools.starmap(
+        leaf_brushes = list(map(
             self.brushes.__getitem__,
-            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
+            read_array('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
         ))
-        leaf_faces = list(itertools.starmap(
+        leaf_faces = list(map(
             self.faces.__getitem__,
-            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
+            read_array('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
         # Another lump which is just an array of ints - no point being separate.
         dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
