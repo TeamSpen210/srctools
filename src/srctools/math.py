@@ -4,13 +4,13 @@ angle (in degrees). `Matrix` represents a rotation also, but in a format that ca
 properly. `Angle` will automatically compute a matrix when required, but it is more efficient to 
 perform repeated operations on a matrix.
 
-These classes will be replaced by Cython-optimized versions where possible.
+These classes will be replaced by Cython-optimized versions where possible, which are interchangable
+if pickled.
 
-Perform rotations via the matrix-multiplication operator `@`, where the left is rotated by the 
-right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles, 
+Rotations are performed via the matrix-multiplication operator `@`, where the left is rotated by
+the right. Vectors can be rotated by matrices and angles and matrices can be rotated by angles,
 but not vice-versa.
 
-Rotates LHS by RHS:
  - Vec @ Angle -> Vec
  - Vec @ Matrix -> Vec
  - 3-tuple @ Angle -> Vec
@@ -56,11 +56,13 @@ def parse_vec_str(
 ) -> Tuple[Union[T1, float], Union[T2, float], Union[T3, float]]:
     """Convert a string in the form ``(4 6 -4)`` into a set of floats.
 
-    If the string is unparsable, this uses the defaults ``x``, ``y``, ``z``.
-    The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types.
+    If the string is unparsable or an invalid type, this uses the defaults ``x``, ``y``, ``z``.
+    The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types, which
+    are simply ignored.
 
-     If the 'string' is already a :py:class:`Vec` or :py:class:`Angle`, the values will be returned.
-     """
+    If the 'string' is already a :py:class:`Vec` or :py:class:`Angle`, this will be passed through.
+    If you do want a specific class, use :py:meth:`Vec.from_str`, :py:meth:`Angle.from_str` or :py:meth:`Matrix.from_angstr`.
+    """
     if isinstance(val, str):
         pass  # Fast path to skip the below code.
     elif isinstance(val, Py_Vec):
@@ -305,6 +307,9 @@ class Vec(SupportsRound['Vec']):
     """
     __match_args__: Final = ('x', 'y', 'z')
     __slots__: Final = ('x', 'y', 'z')
+
+    #: This is a dictionary containing complementary axes.
+    #: ``INV_AXIS["x", "y"]`` gives ``"z"``, and ``INV_AXIS["y"]`` returns ``("x", "z")``.
     INV_AXIS = cast(_InvAxis, {
         'x': ('y', 'z'),
         'y': ('x', 'z'),
@@ -372,12 +377,13 @@ class Vec(SupportsRound['Vec']):
     def from_str(cls, val: Union[str, 'Vec'], x: float=0.0, y: float=0.0, z: float=0.0) -> 'Vec':
         """Convert a string in the form ``(4 6 -4)`` into a Vector.
 
-         If the string is unparsable, this uses the defaults ``(x,y,z)``.
-         The string can start with any of the ``()``, ``{}``, ``[]``, ``<>`` bracket
-         types, or none.
+        If the string is unparsable, this uses the defaults ``(x,y,z)``.
+        The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types,
+        which are simply ignored.
 
-         If the value is already a vector, a copy will be returned.
-         """
+        If the value is already a vector, a copy will be returned.
+        To only do parsing, use :py:func:`parse_vec_str()`.
+        """
 
         x, y, z = Py_parse_vec_str(val, x, y, z)
         return cls(x, y, z)
@@ -961,7 +967,7 @@ class Vec(SupportsRound['Vec']):
     def __getitem__(self, ind: Union[str, int]) -> float:
         """Allow reading values by index instead of name if desired.
 
-        This accepts either `0`,`1`,`2` or `x`,`y`,`z` to edit values.
+        This accepts either ``0``, ``1``, ``2`` or ``x``, ``y``, ``z`` to read values.
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
@@ -975,7 +981,7 @@ class Vec(SupportsRound['Vec']):
     def __setitem__(self, ind: Union[str, int], val: float) -> None:
         """Allow editing values by index instead of name if desired.
 
-        This accepts either `0`,`1`,`2` or `x`,`y`,`z` to edit values.
+        This accepts either ``0``, ``1``, ``2`` or ``x``, ``y``, ``z`` to edit values.
         Useful in conjunction with a loop to apply commands to all values.
         """
         if ind == 0 or ind == "x":
@@ -1045,7 +1051,7 @@ class Vec(SupportsRound['Vec']):
 
          This is done by transforming it to have a magnitude of 1 but the same
          direction.
-         The vector is left unchanged if it is equal to ``(0,0,0)``, instead of raising.
+         The vector is left unchanged if it is equal to ``(0, 0, 0)``, instead of raising.
          """
         if self.x == 0 and self.y == 0 and self.z == 0:
             # Don't do anything for this - otherwise we'd get division
@@ -1581,12 +1587,13 @@ class Angle:
     ) -> 'Angle':
         """Convert a string in the form ``(4 6 -4)`` into an Angle.
 
-         If the string is unparsable, this uses the defaults.
-         The string can start with any of the ``()``, ``{}``, ``[]``, ``<>`` bracket
-         types, or none.
+        If the string is unparsable, the provided default values are used instead.
+        The string can be surrounded by any of the ``()``, ``{}``, ``[]``, ``<>`` bracket types,
+        which are simply ignored.
 
-         If the value is already an Angle, a copy will be returned.
-         """
+        If the value is already an Angle, a copy will be returned.
+        To only do parsing, use :py:func:`parse_vec_str()`.
+        """
 
         pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
         return cls(pitch, yaw, roll)
@@ -1921,7 +1928,10 @@ class Angle:
 
 
 def quickhull(vertexes: Iterable[Vec]) -> List[Tuple[Vec, Vec, Vec]]:
-    """Use the quickhull algorithm to construct a convex hull around the provided points."""
+    """Use the quickhull algorithm to construct a convex hull around the provided points.
+
+    This is only available when the C extension is compiled.
+    """
     raise NotImplementedError('Requires C extension!')
 
 
