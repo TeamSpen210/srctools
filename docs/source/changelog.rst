@@ -9,6 +9,10 @@ Changelog
 Dev branch
 ----------
 
+-------------
+Version 2.3.5
+-------------
+
 * Expand on documentation, build into explicit docs files.
 * Fix :py:meth:`srctools.logging.LoggerAdapter.log` being invalid in Python 3.7.
 * Make :py:mod:`srctools.fgd` work when reloaded.
