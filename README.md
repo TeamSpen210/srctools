@@ -1,5 +1,7 @@
 # `srctools`
 
+[![Documentation Status](https://readthedocs.org/projects/srctools/badge/?version=latest)](https://srctools.readthedocs.io/en/latest/?badge=latest)
+
 Modules for working with Valve's Source Engine file formats, as well as a 
 variety of tools using these.
 
@@ -18,7 +20,7 @@ as well as a prioritised chain like the engine's game folder system.
 * `binformat`: Some tools for handling binary file formats.
 
 ## File formats:
-* `property_parser`: Reads and writes KeyValues1 property trees.
+* `keyvalues`: Reads and writes KeyValues1 property trees.
 * `dmx`: Reads and writes DMX / KeyValues2 format files.
 * `vmf`: Reads and writes VMF map files.
 * `bsp`: Reads and writes compiled BSP maps files. 
