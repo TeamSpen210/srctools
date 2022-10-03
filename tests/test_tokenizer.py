@@ -1,5 +1,5 @@
 from itertools import zip_longest, tee
-from typing import Type, Tuple
+from typing import Callable, Iterable, Iterator, Type, Tuple, Union
 
 import pytest
 import codecs
@@ -7,8 +7,8 @@ import platform
 
 from pytest import raises
 
-from test_property_parser import parse_test as prop_parse_test
-from srctools.property_parser import KeyValError
+from test_keyvalues import parse_test as prop_parse_test
+from srctools.keyvalues import KeyValError
 from srctools.tokenizer import (
     Token,
     Tokenizer,
@@ -17,7 +17,7 @@ from srctools.tokenizer import (
     Cy_BaseTokenizer, Py_BaseTokenizer,
     Cy_IterTokenizer, Py_IterTokenizer,
     escape_text, _py_escape_text,
-    TokenSyntaxError, _PUSHBACK_VALS as TOK_VALS,
+    TokenSyntaxError, _OPERATOR_VALS as TOK_VALS,
 )
 
 T = Token
@@ -147,7 +147,10 @@ def py_c_token(request):
 del parms, ids
 
 
-def check_tokens(tokenizer, tokens):
+def check_tokens(
+    tokenizer: Iterable[Tuple[Token, str]],  # Iterable so a list can be passed to check.
+    tokens: Iterable[Union[Token, Tuple[Token, str]]],
+) -> None:
     """Check the tokenizer produces the given tokens.
 
     The arguments are either (token, value) tuples or tokens.
@@ -175,13 +178,18 @@ def check_tokens(tokenizer, tokens):
         assert isinstance(token, tuple)
         if isinstance(comp_token, tuple):
             comp_type, comp_value = comp_token
-            assert comp_type is token[0], "got {}, expected {} @ pos {}={}".format(token[0], comp_type, i, tokens[i-2: i+1])
-            assert comp_value == token[1], "got {!r}, expected {!r} @ pos {}={}".format(token[1], comp_value, i, tokens[i-2: i+1])
+            assert comp_type is token[0] and comp_value == token[1], (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_type}({comp_value!r}) @ pos {i}={tokens[i - 2: i + 1]}"
+            )
         else:
-            assert token[0] is comp_token, "got {}, expected {} @ pos {}={}".format(token[0], comp_token, i, tokens[i-2: i+1])
+            assert token[0] is comp_token, (
+                f"got {token[0]}({token[1]!r}), "
+                f"expected {comp_token} @ pos {i}={tokens[i - 2: i + 1]}"
+            )
 
 
-def test_prop_tokens(py_c_token):
+def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for this test string."""
     Tokenizer = py_c_token
 
@@ -359,7 +367,7 @@ def test_star_comments(py_c_token):
         pass
 
 
-def test_bom(py_c_token):
+def test_bom(py_c_token: Type[Tokenizer]) -> None:
     """Test skipping a UTF8 BOM at the beginning."""
     Tokenizer = py_c_token
 
@@ -404,7 +412,25 @@ def test_bom(py_c_token):
     check_tokens(Tokenizer(['e', ' ', 'f']), [(Token.STRING, 'e'), (Token.STRING, 'f')])
 
 
-def test_constructor(py_c_token):
+def test_universal_newlines(py_c_token: Type[Tokenizer]) -> None:
+    r"""Test that \r characters are replaced by \n, even in direct strings."""
+    tokens = [
+        (Token.STRING, 'Line'),
+        (Token.STRING, 'one\ntwo'),
+        Token.NEWLINE,
+        (Token.STRING, 'Line\nTwo'),
+        Token.NEWLINE,
+        Token.COMMA,
+        Token.NEWLINE, Token.NEWLINE,
+        Token.EQUALS,
+        (Token.STRING, 'multi\nline'),
+    ]
+    text = ['Line "one\ntwo" \r', '"Line\rTwo"', '\r', '\n,', '\r\r', '=', '"multi\r\nline"']
+    check_tokens(py_c_token(text), tokens)
+    check_tokens(py_c_token(''.join(text)), tokens)
+
+
+def test_constructor(py_c_token: Type[Tokenizer]) -> None:
     """Test various argument syntax for the tokenizer."""
     Tokenizer = py_c_token
 
@@ -416,7 +442,7 @@ def test_constructor(py_c_token):
     Tokenizer(['blah', 'blah'], string_bracket=True)
 
 
-def test_tok_filename(py_c_token):
+def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     """Test that objects other than a direct string can be passed as filename."""
     Tokenizer = py_c_token
 
@@ -481,7 +507,7 @@ def test_obj_config(py_c_token, parm: str, default: bool) -> None:
     ("\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜", r"\t♜♞\\🤐♝♛🥌♚♝\\\\♞\n♜"),
 ])
 @pytest.mark.parametrize('func', [_py_escape_text, escape_text], ids=['Py', 'Cy'])
-def test_escape_text(inp: str, out: str, func) -> None:
+def test_escape_text(inp: str, out: str, func: Callable[[str], str]) -> None:
     """Test the Python and C escape_text() functions."""
     assert func(inp) == out
     # If the same it should reuse the string.
@@ -490,7 +516,7 @@ def test_escape_text(inp: str, out: str, func) -> None:
         assert func(inp) is inp
 
 
-def test_brackets(py_c_token):
+def test_brackets(py_c_token: Type[Tokenizer]) -> None:
     """Test the [] handling produces the right results."""
     check_tokens(py_c_token('"blah" [ !!text45() ]', string_bracket=True), [
         (Token.STRING, "blah"),
@@ -562,7 +588,7 @@ def test_colon_op(py_c_token: Type[Tokenizer]) -> None:
     ])
 
 
-def test_invalid_bracket(py_c_token: Type[Tokenizer]):
+def test_invalid_bracket(py_c_token: Type[Tokenizer]) -> None:
     """Test detecting various invalid combinations of [] brackets."""
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('[ unclosed', string_bracket=True):
@@ -581,7 +607,7 @@ def test_invalid_bracket(py_c_token: Type[Tokenizer]):
             pass
 
 
-def test_invalid_paren(py_c_token):
+def test_invalid_paren(py_c_token: Type[Tokenizer]) -> None:
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( unclosed', string_bracket=True):
             pass
@@ -597,6 +623,29 @@ def test_invalid_paren(py_c_token):
     with raises(TokenSyntaxError):
         for tok, tok_value in py_c_token('( no ( nesting ) )', string_bracket=True):
             pass
+
+
+def test_allow_escapes(py_c_token: Type[Tokenizer]) -> None:
+    """Test parsing with and without escapes enabled."""
+    check_tokens(py_c_token(r'{ "string\n" "tab\ted" }', allow_escapes=False), [
+        Token.BRACE_OPEN,
+        (Token.STRING, r"string\n"),
+        (Token.STRING, r"tab\ted"),
+        Token.BRACE_CLOSE,
+    ])
+    check_tokens(py_c_token(r'{ "string\n" "tab\ted q\tuo\"te\"" }', allow_escapes=True), [
+        Token.BRACE_OPEN,
+        (Token.STRING, "string\n"),
+        (Token.STRING, 'tab\ted q\tuo\"te"'),
+        Token.BRACE_CLOSE,
+    ])
+
+    tok = py_c_token(r'"text\" with quote"', allow_escapes=False)
+    assert tok() == (Token.STRING, 'text\\')
+    assert tok() == (Token.STRING, 'with')
+    assert tok() == (Token.STRING, 'quote')
+    with pytest.raises(TokenSyntaxError):
+        tok()
 
 
 def test_token_syntax_error() -> None:
@@ -641,7 +690,7 @@ Error occurred on line 45, with file "a file".'''
 Error occurred on line 250.'''
 
 
-def test_tok_error(py_c_token):
+def test_tok_error(py_c_token) -> None:
     """Test the tok.error() helper."""
     tok: Tokenizer = py_c_token(['test'], 'filename.py')
     tok.line_num = 45
@@ -653,41 +702,39 @@ def test_tok_error(py_c_token):
     assert tok.error('Param: {:.6f}, {!r}, {}', 1/3, "test", test_tok_error) == TokenSyntaxError(f"Param: {1/3:.6f}, 'test', {test_tok_error}", None, 9999)
 
 
-@pytest.mark.parametrize('token', [
-    Token.STRING,
-    Token.PROP_FLAG,
-    Token.PAREN_ARGS,
-    Token.DIRECTIVE,
-])
-def test_tok_error_hasval(py_c_token, token):
-    """Test the tok.error() handler with token types that accept values."""
+error_messages = {
+    Token.STRING: 'Unexpected string = "%"!',
+    Token.PROP_FLAG: 'Unexpected property flags = [%]!',
+    Token.PAREN_ARGS: 'Unexpected parentheses block = (%)!',
+    Token.DIRECTIVE: 'Unexpected directive "#%"!',
+    Token.EOF: 'File ended unexpectedly!',
+    Token.NEWLINE: 'Unexpected newline!',
+    Token.BRACE_OPEN: 'Unexpected "{" character!',
+    Token.BRACE_CLOSE: 'Unexpected "}" character!',
+    Token.BRACK_OPEN: 'Unexpected "[" character!',
+    Token.BRACK_CLOSE: 'Unexpected "]" character!',
+    Token.COLON: 'Unexpected ":" character!',
+    Token.COMMA: 'Unexpected "," character!',
+    Token.EQUALS: 'Unexpected "=" character!',
+    Token.PLUS: 'Unexpected "+" character!',
+}
+
+
+@pytest.mark.parametrize('token', Token)
+def test_tok_error_messages(py_c_token: Type[Tokenizer], token: Token) -> None:
+    """Test the tok.error() handler with token types."""
+    fmt = error_messages[token]  # If KeyError, needs to be updated.
     tok: Tokenizer = py_c_token(['test'], 'fname')
     tok.line_num = 23
-    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
-    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}(value)!', 'fname', 23)
+    assert tok.error(token) == TokenSyntaxError(fmt.replace('%', ''), 'fname', 23)
+    assert tok.error(token, 'the value') == TokenSyntaxError(fmt.replace('%', 'the value'), 'fname', 23)
     with pytest.raises(TypeError):
         tok.error(token, 'val1', 'val2')
 
 
-@pytest.mark.parametrize('token', [
-    Token.EOF, Token.NEWLINE,
-    Token.BRACE_OPEN, Token.BRACE_CLOSE,
-    Token.BRACK_OPEN, Token.BRACK_CLOSE,
-    Token.COLON, Token.EQUALS, Token.PLUS,
-])
-def test_tok_error_noval(py_c_token, token):
-    """Test the tok.error() handler with token types that have the same value always."""
-    tok: Tokenizer = py_c_token(['test'], 'fname')
-    tok.line_num = 23
-    assert tok.error(token) == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
-    assert tok.error(token, 'value') == TokenSyntaxError(f'Unexpected token {token.name}!', 'fname', 23)
-    with pytest.raises(TypeError):
-        tok.error(token, 'val1', 'val2')
-
-
-def test_unicode_error_wrapping(py_c_token):
+def test_unicode_error_wrapping(py_c_token: Type[Tokenizer]) -> None:
     """Test that Unicode errors are wrapped into TokenSyntaxError."""
-    def raises_unicode():
+    def raises_unicode() -> Iterator[str]:
         yield "line of_"
         yield "text\n"
         raise UnicodeDecodeError('utf8', bytes(100), 1, 2, 'reason')
@@ -700,12 +747,12 @@ def test_unicode_error_wrapping(py_c_token):
     assert isinstance(exc_info.value.__cause__, UnicodeDecodeError)
 
 
-def test_early_binary_arg(py_c_token):
+def test_early_binary_arg(py_c_token: Type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
 
-def test_block_iter(py_c_token):
+def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     """Test the Tokenizer.block() helper."""
     # First two correct usages:
     tok = py_c_token('''\
@@ -782,6 +829,7 @@ def test_block_iter(py_c_token):
         next(b)
 
 
+# noinspection PyCallingNonCallable
 @pytest.mark.parametrize(
     'Tok',
     [Cy_BaseTokenizer, Py_BaseTokenizer],

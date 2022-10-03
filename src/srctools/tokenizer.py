@@ -1,28 +1,54 @@
 """Parses text into groups of tokens.
 
-This is used internally for parsing files.
+This is used internally for parsing KV1, text DMX, FGDs, VMTs, etc. If available this will be
+replaced with a faster Cython-optimised version.
+
+The :py:class:`BaseTokenizer` class implements various helper functions for navigating through the
+token stream. The :py:class:`Tokenizer` class then takes text file objects, a full string or an
+iterable of strings and actually parses it into tokens, while :py:class:`IterTokenizer` allows
+transforming the stream before the destination receives it.
+
+Once the tokenizer is created, either iterate over it or call the tokenizer to fetch the next
+token/value pair. One token of lookahead is supported, accessed by the
+:py:func:`BaseTokenizer.peek()` and  :py:func:`BaseTokenizer.push_back()` methods. They also track
+the current line number as data is read, letting you ``raise BaseTokenizer.error(...)`` to easily
+produce an exception listing the relevant line number and filename.
 """
+from typing import Any, Iterable, Iterator, List, Optional, Tuple, Type, Union, overload
+from typing_extensions import Final
 from enum import Enum
-from os import fspath as _conv_path, PathLike
-from typing import (
-    Union, Optional, Type, Any, overload,
-    Iterable, Iterator,
-    Tuple, List,
-)
+from os import fspath as _conv_path
 import abc
+
+from srctools import StringPath
+
+
+__all__ = [
+    'TokenSyntaxError', 'BARE_DISALLOWED',
+    'Token', 'BaseTokenizer', 'Tokenizer', 'IterTokenizer',
+    'escape_text',
+]
 
 
 class TokenSyntaxError(Exception):
-    """An error that occurred when parsing a file.
+    """An error that occurred when parsing a file. 
 
-    mess = The error message that occurred.
-    file = The filename passed to Property.parse(), if it exists
-    line_num = The line where the error occurred.
+    Normally this is created via :py:func:`BaseTokenizer.error()` which formats text into the error
+    and includes the filename/line number from the tokenizer.
+
+    The string representation will include the provided file and line number if present.
     """
+    mess: str
+    """The error message that occurred."""
+    file: Optional[StringPath]
+    """The filename of the file being parsed, or None if not known."""
+    line_num: Optional[int]
+    """The line where the error occurred, or None if not applicable (EOF, for instance)."""
+
     def __init__(
         self,
         message: str,
-        file: Optional[str],
+        file: Optional[StringPath],
         line: Optional[int],
     ) -> None:
         super().__init__()
@@ -31,11 +57,7 @@ class TokenSyntaxError(Exception):
         self.line_num = line
 
     def __repr__(self) -> str:
-        return 'TokenSyntaxError({!r}, {!r}, {!r})'.format(
-            self.mess,
-            self.file,
-            self.line_num,
-            )
+        return f'TokenSyntaxError({self.mess!r}, {self.file!r}, {self.line_num!r})'
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, TokenSyntaxError):
@@ -53,7 +75,7 @@ class TokenSyntaxError(Exception):
         """
         mess = self.mess
         if self.line_num:
-            mess += '\nError occurred on line ' + str(self.line_num)
+            mess += f'\nError occurred on line {self.line_num}'
             if self.file:
                 mess += ', with file'
             else:
@@ -61,36 +83,36 @@ class TokenSyntaxError(Exception):
         if self.file:
             if not self.line_num:
                 mess += '\nError occurred with file'
-            mess += ' "' + self.file + '".'
+            mess += f' "{self.file}".'
         return mess
 
 
 class Token(Enum):
     """A token type produced by the tokenizer."""
-    EOF = 0  # Ran out of text.
-    STRING = 1  # Quoted or unquoted text
-    NEWLINE = 2  # \n
-    PAREN_ARGS = 3  # (data)
-    DIRECTIVE = 4  #  #name (automatically casefolded)
+    EOF = 0  #: Ran out of text.
+    STRING = 1  #: Quoted or unquoted text.
+    NEWLINE = 2  #: ``\n``
+    PAREN_ARGS = 3  #: Parenthesised ``(data)``.
+    DIRECTIVE = 4  #: ``#name`` (automatically casefolded).
 
-    BRACE_OPEN = 5
-    BRACE_CLOSE = 6
+    BRACE_OPEN = 5  #- A ``{`` character.
+    BRACE_CLOSE = 6  #- A ``}`` character.
 
-    PROP_FLAG = 10  # [!flag]
-    BRACK_OPEN = 11  # only if above is not used
-    BRACK_CLOSE = 12
+    PROP_FLAG = 10  #: A ``[!flag]``
+    BRACK_OPEN = 11  #: A ``[`` character. Only used if ``PROP_FLAG`` is not.
+    BRACK_CLOSE = 12  #: A ``]`` character.
 
-    COLON = 13
-    EQUALS = 14
-    PLUS = 15
-    COMMA = 16
+    COLON = 13  #: A ``:`` character.
+    EQUALS = 14  #: A ``=`` character.
+    PLUS = 15  #: A ``+`` character.
+    COMMA = 16  #: A ``,`` character.
 
     @property
     def has_value(self) -> bool:
         """If true, this type has an associated value."""
         return self.value in (1, 3, 4, 10)
 
-_PUSHBACK_VALS = {
+_OPERATOR_VALS = {
     Token.EOF: '',
     Token.NEWLINE: '\n',
 
@@ -129,21 +151,25 @@ ESCAPES = {
     '\n': '',
 }
 
-# Characters not allowed for bare names on a line.
-BARE_DISALLOWED = set('"\'{};,[]()\n\t ')
+#: Characters not allowed for bare strings. These must be quoted.
+BARE_DISALLOWED: Final = frozenset('"\'{};,[]()\n\t ')
 
 
 class BaseTokenizer(abc.ABC):
     """Provides an interface for processing text into tokens.
 
-     It then provides tools for using those to parse data.
-     This is an abstract class, a subclass must be used to provide a source
-     for the tokens.
+     It then provides tools for using those to parse data. This is an :external:py:class:`abc.ABC`,
+     a subclass must be used to provide a source for the tokens.
     """
+    filename: Optional[str]
+    error_type: Type[TokenSyntaxError]
+    line_num: int
+    #: If set, this token will be returned next.
+    _pushback: Optional[Tuple[Token, str]] = None
 
     def __init__(
         self,
-        filename: Union[str, PathLike, None],
+        filename: Optional[StringPath],
         error: Type[TokenSyntaxError],
     ) -> None:
         if filename is not None:
@@ -156,7 +182,6 @@ class BaseTokenizer(abc.ABC):
         else:
             self.filename = None
 
-        self.error_type: Type[TokenSyntaxError]
         if error is None:
             self.error_type = TokenSyntaxError
         else:
@@ -164,30 +189,43 @@ class BaseTokenizer(abc.ABC):
                 raise TypeError('Invalid error instance "{}"!'.format(type(error).__name__))
             self.error_type = error
 
-        # If set, this token will be returned next.
-        self._pushback: Optional[Tuple[Token, str]] = None
+        self._pushback = None
         self.line_num = 1
 
     @overload
-    def error(self, message: Token, __value: str='') -> TokenSyntaxError: ...
+    def error(self, __message: Token) -> TokenSyntaxError: ...
     @overload
-    def error(self, message: str, *args: object) -> TokenSyntaxError: ...
+    def error(self, __message: Token, __value: str) -> TokenSyntaxError: ...
+    @overload
+    def error(self, __message: str, *args: object) -> TokenSyntaxError: ...
     def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
         This returns the TokenSyntaxError instance, with
         line number and filename attributes filled in.
-        The message can be a Token to indicate a wrong token,
-        or a string which will be {}-formatted with the positional args
+        The message can be a Token and the value to produce a wrong token error,
+        or a string which will be `{}-formatted <https://docs.python.org/3/library/string.html#formatstrings>`_ with the positional args
         if they are present.
         """
         if isinstance(message, Token):
             if len(args) > 1:
                 raise TypeError(f'Token {message.name} passed with multiple values: {args}')
-            if message.has_value and len(args) == 1:
-                message = f'Unexpected token {message.name}({args[0]})!'
+            tok_val = '' if len(args) == 0 else args[0]
+
+            if message is Token.PROP_FLAG:
+                message = f'Unexpected property flags = [{tok_val}]!'
+            elif message is Token.PAREN_ARGS:
+                message = f'Unexpected parentheses block = ({tok_val})!'
+            elif message is Token.STRING:
+                message = f'Unexpected string = "{tok_val}"!'
+            elif message is Token.DIRECTIVE:
+                message = f'Unexpected directive "#{tok_val}"!'
+            elif message is Token.EOF:
+                message = 'File ended unexpectedly!'
+            elif message is Token.NEWLINE:
+                message = 'Unexpected newline!'
             else:
-                message = f'Unexpected token {message.name}!'
+                message = f'Unexpected "{_OPERATOR_VALS[message]}" character!'
         elif args:
             message = message.format(*args)
         return self.error_type(
@@ -211,6 +249,7 @@ class BaseTokenizer(abc.ABC):
         raise NotImplementedError
 
     def __call__(self) -> Tuple[Token, str]:
+        """Compute and fetch the next token."""
         if self._pushback is not None:
             next_val = self._pushback
             self._pushback = None
@@ -232,8 +271,8 @@ class BaseTokenizer(abc.ABC):
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
-        The value is required for STRING, PAREN_ARGS and PROP_FLAGS, but ignored
-        for other token types.
+        The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
+        :py:const:`~Token.PROP_FLAGS`, but ignored for other token types.
         """
         if self._pushback is not None:
             raise ValueError('Token already pushed back!')
@@ -241,7 +280,7 @@ class BaseTokenizer(abc.ABC):
             raise ValueError(repr(tok) + ' is not a Token!')
 
         try:
-            value = _PUSHBACK_VALS[tok]
+            value = _OPERATOR_VALS[tok]
         except KeyError:
             if value is None:
                 raise ValueError('Value required for {!r}!'.format(tok.name)) from None
@@ -268,8 +307,8 @@ class BaseTokenizer(abc.ABC):
     def block(self, name: str, consume_brace: bool = True) -> Iterator[str]:
         """Helper iterator for parsing keyvalue style blocks.
 
-        This will first consume a {. Then it will skip newlines, and output
-        each string section found. When } is found it terminates, anything else
+        This will first consume a ``{``. Then it will skip newlines, and output
+        each string section found. When ``}`` is found it terminates, anything else
         produces an appropriate error.
         This is safely re-entrant, and tokens can be taken or put back as required.
         """
@@ -319,19 +358,21 @@ class Tokenizer(BaseTokenizer):
     Due to many inconsistencies in Valve's parsing of files,
     several options are available to control whether different
     syntaxes are accepted:
-        * string_bracket parses [bracket] blocks as a single string-like block.
-          If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
-        * allow_escapes controls whether \\n-style escapes are expanded.
-        * allow_star_comments if enabled allows /* */ comments.
-        * colon_operator controls if : produces COLON tokens, or is treated as
-          a bare string.
+
+    * string_bracket parses `[bracket]` blocks as a single string-like block. \
+        If disabled these are parsed as :py:const:`~Token.BRACK_OPEN`, :py:const:`~Token.STRING` \
+        then :py:const:`~Token.BRACK_CLOSE`.
+    * allow_escapes controls whether ``\\n``-style escapes are expanded.
+    * allow_star_comments if enabled allows ``/* */`` comments.
+    * colon_operator controls if ``:`` produces :py:const:`~Token.COLON` tokens, or is treated as
+      a bare string.
     """
     chunk_iter: Iterator[str]
 
     def __init__(
         self,
         data: Union[str, Iterable[str]],
-        filename: Union[str, PathLike]=None,
+        filename: Optional[StringPath] = None,
         error: Type[TokenSyntaxError]=TokenSyntaxError,
         string_bracket: bool=False,
         allow_escapes: bool=True,
@@ -366,6 +407,7 @@ class Tokenizer(BaseTokenizer):
         self.allow_escapes = bool(allow_escapes)
         self.allow_star_comments = bool(allow_star_comments)
         self.colon_operator = bool(colon_operator)
+        self._last_was_cr = False
 
     def _next_char(self) -> Optional[str]:
         """Return the next character, or None if no more characters are there."""
@@ -401,11 +443,22 @@ class Tokenizer(BaseTokenizer):
                 return _OPERATORS[next_char], next_char
             except KeyError:
                 pass
-            if next_char == '\n':
+            # Handle newlines, converting \r and \r\n to \n.
+            if next_char == '\r':
+                self._last_was_cr = True
                 self.line_num += 1
                 return Token.NEWLINE, '\n'
+            elif next_char == '\n':
+                # Consume the \n in \r\n.
+                if self._last_was_cr:
+                    self._last_was_cr = False
+                    continue
+                self.line_num += 1
+                return Token.NEWLINE, '\n'
+            else:
+                self._last_was_cr = False
 
-            elif next_char in ' \t':
+            if next_char in ' \t':
                 # Ignore whitespace..
                 continue
 
@@ -466,13 +519,25 @@ class Tokenizer(BaseTokenizer):
             # Strings
             elif next_char == '"':
                 value_chars: List[str] = []
+                last_was_cr = False
                 while True:
                     next_char = self._next_char()
                     if next_char == '"':
                         return Token.STRING, ''.join(value_chars)
-                    elif next_char == '\n':
+                    elif next_char == '\r':
                         self.line_num += 1
-                    elif next_char == '\\' and self.allow_escapes:
+                        last_was_cr = True
+                        value_chars.append('\n')
+                        continue
+                    elif next_char == '\n':
+                        if last_was_cr:
+                            last_was_cr = False
+                            continue
+                        self.line_num += 1
+                    else:
+                        last_was_cr = False
+
+                    if next_char == '\\' and self.allow_escapes:
                         # Escape text
                         escape = self._next_char()
                         if escape is None:
@@ -555,9 +620,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED:
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.DIRECTIVE, ''.join(value_chars)
                     elif next_char is None:
@@ -572,9 +636,8 @@ class Tokenizer(BaseTokenizer):
                 while True:
                     next_char = self._next_char()
                     if next_char in BARE_DISALLOWED or (next_char == ':' and self.colon_operator):
-                        # We need to repeat this so we return the ending
-                        # char next. If it's not allowed, that'll error on
-                        # next call.
+                        # We need to repeat this, so we return the ending char next.
+                        # If it's not allowed, that'll error on next call.
                         self.char_index -= 1
                         return Token.STRING, ''.join(value_chars)
                     elif next_char is None:
@@ -599,7 +662,7 @@ class IterTokenizer(BaseTokenizer):
     def __init__(
         self,
         source: Iterable[Tuple[Token, str]],
-        filename: Union[str, PathLike]='',
+        filename: StringPath='',
         error: Type[TokenSyntaxError]=TokenSyntaxError,
     ) -> None:
         super().__init__(filename, error)
@@ -621,7 +684,7 @@ class IterTokenizer(BaseTokenizer):
 def escape_text(text: str) -> str:
     r"""Escape special characters and backslashes, so tokenising reproduces them.
 
-    Specifically, \, ", tab, and newline.
+    Specifically: ``\\``, ``"``, tab, and newline.
     """
     return (
         text.

@@ -3,31 +3,31 @@
 After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
+from typing import (
+    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence,
+    Tuple, Type, Union, overload,
+)
 from array import array
-from enum import Enum, Flag
 from collections import namedtuple
+from enum import Enum, Flag
+from io import BytesIO
 import itertools
 import math
 import struct
+import types
 import warnings
-from io import BytesIO
 
-from . import binformat, EmptyMapping
+from . import EmptyMapping, binformat
 from .const import add_unknown
 from .math import Vec
 
-from typing import (
-    IO, Dict, List, Optional, Tuple, Iterable, Union,
-    TYPE_CHECKING, Type, Collection, overload, Sequence,
-    Mapping, BinaryIO,
-)
 
 # Only import while type checking, so these expensive libraries are only loaded
 # if the user used them elsewhere.
 if TYPE_CHECKING:
-    from PIL.Image import Image as PIL_Image
     import tkinter
-    import wx
+
+    from PIL.Image import Image as PIL_Image
 
 # A little dance to import both the Cython and Python versions,
 # and choose an appropriate unprefixed version.
@@ -35,6 +35,8 @@ if TYPE_CHECKING:
 
 # noinspection PyProtectedMember
 from . import _py_vtf_readwrite as _py_format_funcs
+
+
 _cy_format_funcs = _format_funcs = _py_format_funcs
 
 if not TYPE_CHECKING:
@@ -99,7 +101,7 @@ _mk_fmt_ind = -1  # Incremented first time to 0
 
 class ImageFormats(Enum):
     """All VTF image formats, with their data sizes in the value."""
-    def __init__(self, r, g, b, a, size, ind) -> None:
+    def __init__(self, r: int, g: int, b: int, a: int, size: int, ind: int) -> None:
         self.r = r
         self.g = g
         self.b = b
@@ -490,8 +492,9 @@ class Frame:
             ),
         )
 
-    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Image':
-        """Convert the given frame into a wxPython image.
+    # TODO: wx has no type hints, so we can't import.
+    def to_wx_image(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+        """Convert the given frame into a wxPython wx.Image.
 
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
@@ -499,14 +502,14 @@ class Frame:
         """
         self.load()
         assert self._data is not None
-        import wx
+        import wx  # type: ignore
 
         img = wx.Image(self.width, self.height)
         _format_funcs.alpha_flatten(self._data, img.GetDataBuffer(), self.width, self.height, bg)
         return img
 
-    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> 'wx.Bitmap':
-        """Convert the given frame into a wxPython bitmap.
+    def to_wx_bitmap(self, bg: Optional[Tuple[int, int, int]]=None) -> Any:
+        """Convert the given frame into a wxPython wx.Bitmap.
 
         This requires wxPython to be installed.
         If bg is set, the image will be composited onto this background.
@@ -620,6 +623,9 @@ class VTF:
 
         vtf = cls.__new__(cls)
 
+        header_size: int
+        low_width: int
+        low_height: int
         (
             header_size,
             width,
@@ -658,8 +664,8 @@ class VTF:
         if vtf.depth <= 0:
             vtf.depth = 1
 
-        low_res_offset: Optional[int] = None
-        high_res_offset: Optional[int] = None
+        low_res_offset = -1
+        high_res_offset = -1
 
         vtf.resources = {}
         vtf.sheet_info = {}
@@ -704,7 +710,7 @@ class VTF:
             low_res_offset = header_size
             high_res_offset = low_res_offset + low_fmt.frame_size(low_width, low_height)
 
-        if high_res_offset is None:
+        if high_res_offset < 0:
             raise ValueError('Missing main image resource!')
 
         # We don't implement these high-res formats.
@@ -713,16 +719,17 @@ class VTF:
 
         vtf._low_res = Frame(low_width, low_height)
         if low_fmt is not ImageFormats.NONE:
-            if low_res_offset is None:
+            if low_res_offset < 0:
                 raise ValueError('Missing low-res thumbnail resource!')
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 
         # If cubemaps are present, we iterate that for depth.
         # Otherwise it's the depth value.
+        depth_iter: Iterable[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in vtf.flags:
             # For version 7.5, the spheremap is skipped.
             if version_minor == 5:
-                depth_iter = CUBES  # type: Iterable[Union[int, CubeSide]]
+                depth_iter = CUBES
             else:
                 depth_iter = CUBES_WITH_SPHERE
         else:
@@ -882,7 +889,10 @@ class VTF:
         """
         return self
 
-    def __exit__(self, exc_type, exc_val, exc_tb) -> None:
+    def __exit__(
+        self,
+        exc_type: Type[BaseException], exc_val: BaseException, exc_tb: types.TracebackType,
+    ) -> None:
         """Close the streams if any frames still have them open."""
         for frame in self._frames.values():
             frame._fileinfo = None
@@ -1067,22 +1077,3 @@ class SheetSequence:
                     file.write(struct.pack('<4f', *tex_d))
 
         return file.getvalue()
-
-# Add support for the imghdr module.
-
-
-def test_vtf(h: bytes, f: Optional[BinaryIO]) -> Optional[str]:
-    """Source Engine Valve Texture Format."""
-    if h[:4] == b'VTF\0':
-        try:
-            version_major, version_minor = struct.unpack('II', h[4:12])
-        except struct.error:
-            return None
-        if version_major == 7 and (0 <= version_minor <= 5):
-            return 'source_vtf'
-    return None
-
-import imghdr
-imghdr.test_vtf = test_vtf  # type: ignore
-imghdr.tests.append(test_vtf)
-del imghdr, test_vtf

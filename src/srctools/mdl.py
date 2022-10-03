@@ -1,24 +1,25 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    Union, Iterator, Iterable,
-    List, Dict, Tuple, cast,
-    BinaryIO, Sequence as SequenceType,
+    BinaryIO, Dict, Iterable, Iterator, List, Sequence as SequenceType, Tuple, Union, cast,
 )
-from enum import Flag as FlagEnum, Enum
+from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
-import attr
-
-from srctools import Property
-from srctools.const import add_unknown
-from srctools.binformat import (
-    struct_read, read_nullstr, read_offset_array,
-    str_readvec,
-)
-from srctools.filesys import FileSystem, File
-from srctools.math import Vec
 from struct import Struct
 
+import attrs
 
+from srctools.binformat import read_nullstr, read_offset_array, str_readvec, struct_read
+from srctools.const import add_unknown
+from srctools.filesys import File, FileSystem
+from srctools.keyvalues import Keyvalues
+from srctools.math import Vec
+
+
+__all__ = [
+    'MDL_EXTS', 'Flags', 'Model',
+    'AnimEventTypes', 'CL', 'SV', 'AnimEvents',
+    'IncludedMDL', 'SeqEvent', 'Sequence',
+]
 # All the file extensions used for models.
 MDL_EXTS: SequenceType[str] = [
     '.mdl',
@@ -28,6 +29,7 @@ MDL_EXTS: SequenceType[str] = [
     '.dx90.vtx',
     '.dx80.vtx',
     '.sw.vtx',
+    '.vtx',
 ]
 
 
@@ -275,14 +277,14 @@ ANIM_EVENT_BY_NAME = {
 ST_PHY_HEADER = Struct('<iiil')
 
 
-@attr.define
+@attrs.define
 class IncludedMDL:
     """Additional model files to load animations from."""
     label: str
     filename: str
 
 
-@attr.define
+@attrs.define
 class SeqEvent:
     """An event that occurs at some point in an animation sequence."""
     # AnimEvents for known common ones, str for dynamic NPC-specific events.
@@ -291,7 +293,7 @@ class SeqEvent:
     options: str  # Additional event-specific data.
 
 
-@attr.define
+@attrs.define
 class Sequence:
     """An animation sequence."""
     label: str
@@ -317,7 +319,7 @@ class Model:
         self.version = 49
         self.checksum = b'\0\0\0\0'
 
-        self.phys_keyvalues = Property.root()
+        self.phys_keyvalues = Keyvalues.root()
         with self._file.open_bin() as f:
             self._load(f)
 
@@ -749,7 +751,7 @@ class Model:
         for solid in range(solid_count):
             [solid_size] = struct_read('i', f)
             f.read(solid_size)  # Skip the header.
-        self.phys_keyvalues = Property.parse(
+        self.phys_keyvalues = Keyvalues.parse(
             read_nullstr(f),
             filename + ":keyvalues",
             allow_escapes=False,

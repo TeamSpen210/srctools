@@ -1,13 +1,13 @@
 """Code for running VBSP and VRAD."""
-from typing import List, IO
-
-import os.path
-import sys
-import subprocess
+from typing import IO, List
 import logging
+import os.path
+import subprocess
+import sys
 import threading
 
 from srctools.logger import get_logger
+
 
 __all__ = ['run_compiler', 'get_compiler_name']
 

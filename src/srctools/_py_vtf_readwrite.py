@@ -1,10 +1,10 @@
 """Functions for reading/writing VTF data."""
+from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
 import array
-from typing import Tuple, List, Dict, Callable, Iterable, Optional, TYPE_CHECKING
 
 
 if TYPE_CHECKING:
-    from srctools.vtf import ImageFormats, FilterMode
+    from srctools.vtf import FilterMode, ImageFormats
 else:
     ImageFormats = 'ImageFormats'
     FilterMode = 'FilterMode'
@@ -27,7 +27,7 @@ def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple
     view_src = memoryview(pixels)
     view_dest = memoryview(buffer)
 
-    view_dest[0:img_off] = header  # type: ignore  # Thinks it needs sequence[bytes]...
+    view_dest[0:img_off] = header
 
     if bg is not None:
         r, g, b = bg
@@ -499,7 +499,7 @@ def load_dxt1_impl(
     width: int,
     height: int,
     black_color: Tuple[int, int, int, int],
-):
+) -> None:
     """Does the actual decompression."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -574,7 +574,7 @@ def dxt_color_table(
     block_wid: int,
     block_x: int,
     block_y: int,
-):
+) -> None:
     """Decodes the actual colour table into pixels."""
     for y in range(4):
         byte = data[block_off + 4 + y]
@@ -613,7 +613,7 @@ def dxt_alpha_table(
     block_x: int,
     block_y: int,
     layer: int,
-):
+) -> None:
     """Decode the DXT5 alpha block into pixels.
 
     This is split out for ATI1/2N support as well.
@@ -708,7 +708,7 @@ def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None
                 pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 
 
-def load_dxt5(pixels, data, width, height):
+def load_dxt5(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -771,7 +771,7 @@ def load_dxt5(pixels, data, width, height):
 #     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
 #     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
 
-def load_ati2n(pixels, data, width, height):
+def load_ati2n(pixels: array.array, data: bytes, width: int, height: int) -> None:
     """Load 'ATI2N' format data, also known as BC5.
 
     This uses two copies of the DXT5 alpha block for data.

@@ -1,12 +1,16 @@
 """Test the datamodel exchange implementation."""
+import array
+
+import collections
+
 from io import BytesIO
 from pathlib import Path
-from typing import Callable, cast, Set
+from typing import cast, Set
 from uuid import UUID
 
 import pytest
 
-from srctools import Matrix, Angle, Property
+from srctools import Matrix, Angle, Keyvalues
 from srctools.dmx import (
     Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
     Quaternion, deduce_type, TYPE_CONVERT, Time,
@@ -37,12 +41,9 @@ EXPORT_VALS = [
 
 def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UUID]) -> None:
     """Checks two elements are the same."""
-    if tree1 is None:
-        if tree2 is None:
-            return  # Matches.
-        pytest.fail(f'{path}: NULL != {tree2}')
-    elif tree2 is None:
-        pytest.fail(f'{path}: {tree1} != NULL')
+    if tree1 is None or tree2 is None:
+        # Old code stored none for NULL elements
+        pytest.fail(f'{path}: {tree1!r} <-> {tree2}')
 
     # Don't re-check (infinite loop).
     if tree1.uuid in checked:
@@ -58,28 +59,19 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
     for key in tree1.keys() | tree2.keys():
         attr_path = f'{path}.{key}'
 
-        # Allow one to be NULL, but the other to be a missing element.
         try:
             attr1 = tree1[key]
         except KeyError:
-            attr1 = None
+            return pytest.fail(f'{attr_path}: {key} not in LHS')
         try:
             attr2 = tree2[key]
         except KeyError:
-            attr2 = None
-        if attr1 is None:
-            if attr2 is None:
-                raise AssertionError(f'{key} not in {tree1.keys()} and {tree2.keys()}, but in union?')
-            elif attr2.type is ValueType.ELEMENT or attr2.val_elem is None:
-                continue
-            raise AssertionError(f'{attr_path}: NULL != {attr2.type}')
-        elif attr2 is None:
-            if attr1.type is ValueType.ELEMENT and attr1.val_elem is None:
-                continue
-            raise AssertionError(f'{attr_path}: {attr1.type} != NULL')
+            return pytest.fail(f'{attr_path}: {key} not in RHS')
 
-        assert attr1.type is attr2.type, attr_path
+        if attr1.type is not attr2.type:
+            pytest.fail(f'{attr_path}: type {attr1.type} != {attr2.type}')
         assert attr1.name == attr2.name, attr_path
+
         if attr1.type is ValueType.ELEMENT:
             if attr1.is_array:
                 assert len(attr1) == len(attr2), f'Mismatched len for {attr_path}'
@@ -95,13 +87,16 @@ def _assert_tree_elem(path: str, tree1: Element, tree2: Element, checked: Set[UU
             assert attr1.val_str == attr2.val_str, f'{attr_path}: {attr1._value} != {attr2._value}'
 
 
+# ExactType() enforces an exact type check + value check.
+
+
 def test_attr_val_int() -> None:
     """Test integer-type values."""
     elem = Attribute.int('Name', 45)
-    assert elem.val_int == 45
+    assert elem.val_int == ExactType(45)
     assert elem.val_str == '45'
-    assert elem.val_float == 45.0
-    assert elem.val_time == 45.0
+    assert elem.val_float == ExactType(45.0)
+    assert elem.val_time == ExactType(45.0)
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
     assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
@@ -139,11 +134,11 @@ def test_attr_array_int() -> None:
 def test_attr_val_float() -> None:
     """Test float-type values."""
     elem = Attribute.float('Name', 32.25)
-    assert elem.val_int == 32
-    assert Attribute.float('Name', -32.25).val_int == -32
+    assert elem.val_int == ExactType(32)
+    assert Attribute.float('Name', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == 32.25
-    assert elem.val_time == 32.25
+    assert elem.val_float == ExactType(32.25)
+    assert elem.val_time == ExactType(32.25)
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
     assert elem.val_vec3 == Vec3(32.25, 32.25, 32.25)
@@ -181,16 +176,16 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', '').val_str == ''
     assert Attribute.string('', 'testing str\ning').val_str == 'testing str\ning'
 
-    assert Attribute.string('Name', '45').val_int == 45
-    assert Attribute.string('Name', '-45').val_int == -45
-    assert Attribute.string('Name', '0').val_int == 0
+    assert Attribute.string('Name', '45').val_int == ExactType(45)
+    assert Attribute.string('Name', '-45').val_int == ExactType(-45)
+    assert Attribute.string('Name', '0').val_int == ExactType(0)
 
-    assert Attribute.string('', '45').val_float == 45.0
-    assert Attribute.string('', '45.0').val_float == 45.0
-    assert Attribute.string('', '45.375').val_float == 45.375
-    assert Attribute.string('', '-45.375').val_float == -45.375
-    assert Attribute.string('', '.25').val_float == 0.25
-    assert Attribute.string('', '0').val_float == 0.0
+    assert Attribute.string('', '45').val_float == ExactType(45.0)
+    assert Attribute.string('', '45.0').val_float == ExactType(45.0)
+    assert Attribute.string('', '45.375').val_float == ExactType(45.375)
+    assert Attribute.string('', '-45.375').val_float == ExactType(-45.375)
+    assert Attribute.string('', '.25').val_float == ExactType(0.25)
+    assert Attribute.string('', '0').val_float == ExactType(0.0)
 
     assert Attribute.string('', '1').val_bool is True
     assert Attribute.string('', '0').val_bool is False
@@ -210,14 +205,14 @@ def test_attr_val_bool() -> None:
     false = Attribute.bool('false', False)
 
     assert truth.val_bool is True
-    assert truth.val_int == 1
-    assert truth.val_float == 1.0
+    assert truth.val_int == ExactType(1)
+    assert truth.val_float == ExactType(1.0)
     assert truth.val_str == '1'
     assert truth.val_bytes == b'\x01'
 
     assert false.val_bool is False
-    assert false.val_int == 0
-    assert false.val_float == 0.0
+    assert false.val_int == ExactType(0)
+    assert false.val_float == ExactType(0.0)
     assert false.val_str == '0'
     assert false.val_bytes == b'\x00'
 
@@ -237,12 +232,12 @@ def test_attr_array_bool() -> None:
 
 def test_attr_val_time() -> None:
     """Test time value conversions."""
-    elem = Attribute.float('Time', 32.25)
-    assert elem.val_int == 32
-    assert Attribute.float('Time', -32.25).val_int == -32
+    elem = Attribute.time('Time', 32.25)
+    assert elem.val_int == ExactType(32)
+    assert Attribute.time('Time', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
-    assert elem.val_float == 32.25
-    assert elem.val_time == 32.25
+    assert elem.val_float == ExactType(32.25)
+    assert elem.val_time == ExactType(32.25)
 
     assert Attribute.time('Blah', 32.25).val_bool is True
     assert Attribute.time('Blah', 0.0).val_bool is False
@@ -253,12 +248,12 @@ def test_attr_val_time() -> None:
 def test_attr_val_color() -> None:
     """Test color value conversions."""
     elem = Attribute.color('RGB', 240, 128, 64)
-    assert elem.val_color == Color(240, 128, 64, 255)
-    assert Attribute.color('RGB').val_color == Color(0, 0, 0, 255)
+    assert elem.val_color == ExactType(Color(240, 128, 64, 255))
+    assert Attribute.color('RGB').val_color == ExactType(Color(0, 0, 0, 255))
 
     assert elem.val_str == '240 128 64 255'
-    assert elem.val_vec3 == Vec3(240.0, 128.0, 64.0)
-    assert elem.val_vec4 == Vec4(240.0, 128.0, 64.0, 255.0)
+    assert elem.val_vec3 == ExactType(Vec3(240.0, 128.0, 64.0))
+    assert elem.val_vec4 == ExactType(Vec4(240.0, 128.0, 64.0, 255.0))
 
 
 def test_attr_val_vector_2() -> None:
@@ -310,8 +305,12 @@ def test_attr_val_vector_3() -> None:
     assert Attribute.vec3('Fals', 0.0, 0.0, 0.0).val_bool is False
 
 
+# TODO: Remaining value types.
+
+
 def test_attr_eq() -> None:
     """Test that attributes can be compared to each other."""
+    # We need to check both __eq__ and __ne__.
     assert Attribute.string('test', 'blah') == Attribute.string('test', 'blah')
     assert not Attribute.string('test', 'blah') != Attribute.string('test', 'blah')
 
@@ -402,7 +401,7 @@ def test_attr_extend() -> None:
     (ValueType.QUATERNION, 'val_quat', Quaternion(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
     (
         ValueType.MATRIX, 'val_mat', Matrix(),
-        (b'1000' b'0100' b'0010' b'0001').replace(b'0', b'\x00\x00\x00\x00').replace(b'1', b'\x00\x00\x80?'),
+        b'1000' b'0100' b'0010' b'0001'.replace(b'0', b'\x00\x00\x00\x00').replace(b'1', b'\x00\x00\x80?'),
         '1.0 0.0 0.0 0.0\n'
         '0.0 1.0 0.0 0.0\n'
         '0.0 0.0 1.0 0.0\n'
@@ -420,6 +419,74 @@ def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes,
     assert TYPE_CONVERT[ValueType.STRING, typ](text) == value
     assert Attribute('', typ, value).val_str == text
     assert getattr(Attribute.string('', text), attr) == value
+
+
+@pytest.mark.parametrize('typ, iterable, expected', [
+    (ValueType.INTEGER, [1, 2, 8.0], [1, 2, 8]),
+    (ValueType.FLOAT, [2.4, 9.0, 23], [2.4, 9.0, 23.0]),
+    (ValueType.BOOL, [False, True, 1.0], [False, True, True]),
+    (ValueType.STR, ['', 'a', 'spam'], ['', 'a', 'spam']),
+    (ValueType.BIN,
+     [b'abcde', bytearray(b'fghjik'), array.array('B', [0x68, 0x65, 0x6c, 0x6c, 0x6f])],
+     [b'abcde', b'fghjik', b'hello'],
+     ),
+    (ValueType.COLOR,
+     [Color(255, 0, 255, 128), (25, 38, 123), (127, 180, 255, 192)],
+     [Color(255, 0, 255, 128), Color(25, 38, 123, 255), Color(127, 180, 255, 192)],
+     ),
+    (ValueType.TIME, [Time(0.0), 360.5], [Time(0.0), Time(360.5)]),
+    (ValueType.VEC2,
+     [Vec2(1.0, 2.0), (2.0, 3.0), [5, 8.0]],
+     [Vec2(1.0, 2.0), Vec2(2.0, 3.0), Vec2(5.0, 8.0)],
+     ),
+    (ValueType.VEC3,
+     [Vec3(2.0, 3.0, 4.0), (1.0, 2, 3.0), range(3)],
+     [Vec3(2.0, 3.0, 4.0), Vec3(1.0, 2.0, 3.0), Vec3(0.0, 1.0, 2.0)]
+     ),
+    (ValueType.VEC4,
+     [Vec4(5.0, 2.8, 9, 12), (4, 5, 28, 12.0), range(4, 8)],
+     [Vec4(5.0, 2.8, 9.0, 12.0), Vec4(4.0, 5.0, 28.0, 12.0), Vec4(4.0, 5.0, 6.0, 7.0)],
+     ),
+    (ValueType.ANGLE,
+     [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), (90.0, 45.0, 0.0)],
+     [AngleTup(45.0, 20.0, 337.5), AngleTup(45.0, 0.0, 0.0), AngleTup(90.0, 45.0, 0.0)],
+     ),
+    (ValueType.QUATERNION,
+     [Quaternion(1.0, 2.0, 3.0, 4.0), (8.0, -3.0, 0.5, 12.8)],
+     [Quaternion(1.0, 2.0, 3.0, 4.0), Quaternion(8.0, -3.0, 0.5, 12.8)],
+     ),
+    (ValueType.MATRIX,
+    [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), AngleTup(90.0, 45.0, 0.0)],
+    [Matrix.from_angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), Matrix.from_angle(90.0, 45.0, 0.0)],
+     ),
+], ids=[
+    'int', 'float', 'bool', 'str', 'bytes', 'time', 'color',
+    'vec2', 'vec3', 'vec4', 'angle', 'quaternion', 'matrix',
+])
+def test_attr_array_constructor(typ: ValueType, iterable: list, expected: list) -> None:
+    """Test constructing an array attribute."""
+    expected_type = type(expected[0])
+    attr = Attribute.array('some_array', typ, iterable)
+    assert attr.is_array
+    assert len(attr) == len(expected)
+    for i, (actual, expect) in enumerate(zip(attr._value, expected)):
+        assert type(actual) is expected_type, repr(actual)
+        if expected_type is Matrix:  # Matrix comparisons are difficult.
+            actual = actual.to_angle()
+            expect = expect.to_angle()
+        assert actual == expect, f'attr[{i}]: {actual!r} != {expect!r}'
+
+
+def test_attr_array_elem_constructor() -> None:
+    """Test constructing an Element array attribute."""
+    elem1 = Element('Elem1', 'DMElement')
+    elem2 = Element('Elem2', 'DMElement')
+    attr = Attribute.array('elements', ValueType.ELEMENT, [elem1, elem2, elem1])
+    assert attr.is_array
+    assert len(attr) == 3
+    assert attr[0].val_elem is elem1
+    assert attr[1].val_elem is elem2
+    assert attr[2].val_elem is elem1
 
 
 deduce_type_tests = [
@@ -440,11 +507,6 @@ deduce_type_tests = [
     (AngleTup(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
     (Angle(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
     (Quaternion(4, 8, 23, 29.8), ValueType.QUATERNION, Quaternion(4.0, 8.0, 23.0, 29.8)),
-
-    # Iterable testing.
-    ((3, 4), ValueType.VEC2, Vec2(3.0, 4.0)),
-    ((3, 4, 5), ValueType.VEC3, Vec3(3.0, 4.0, 5.0)),
-    (range(4), ValueType.VEC4, Vec4(0.0, 1.0, 2.0, 3.0)),
 ]
 
 
@@ -471,8 +533,10 @@ def test_deduce_type_basic(input, val_type, output) -> None:
     # Angle/AngleTup can be mixed.
     ([Angle(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)], ValueType.ANGLE, [AngleTup(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)]),
 
-    # A list of lists is an iterable.
-    ([[4, 5], Vec2(6.0, 7.0)], ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)])
+    # Tuples and other sequences work
+    ((Vec2(4, 5), Vec2(6.0, 7.0)), ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)]),
+    (collections.deque([1.0, 2.0, 3.0]), ValueType.FLOAT, [1.0, 2.0, 3.0]),
+    (range(5), ValueType.INT, [0, 1, 2, 3, 4]),
 ])
 def test_deduce_type_array(input, val_type, output) -> None:
     """Test array deduction, and some special cases."""
@@ -492,21 +556,13 @@ def test_deduce_type_adv() -> None:
     with pytest.raises(TypeError):
         print(deduce_type([...]))
 
+    # Empty result.
     with pytest.raises(TypeError):
         print(deduce_type([]))
-    # Iterable with wrong size.
     with pytest.raises(TypeError):
         print(deduce_type(()))
     with pytest.raises(TypeError):
-        print(deduce_type((1, )))
-    with pytest.raises(TypeError):
-        print(deduce_type((1, 2, 3, 4, 5)))
-    with pytest.raises(TypeError):
         print(deduce_type(range(0)))
-    with pytest.raises(TypeError):
-        print(deduce_type(range(1)))
-    with pytest.raises(TypeError):
-        print(deduce_type(range(5)))
 
 
 # TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation
@@ -796,11 +852,11 @@ def test_export_regression(version: str, datadir: Path, file_regression) -> None
 
 def test_kv1_to_dmx() -> None:
     """Test converting KV1 property trees into DMX works."""
-    tree1 = Property('rOOt', [
-        Property('child1', [Property('key', 'value')]),
-        Property('child2', [
-            Property('key', 'value'),
-            Property('key2', '45'),
+    tree1 = Keyvalues('rOOt', [
+        Keyvalues('child1', [Keyvalues('key', 'value')]),
+        Keyvalues('child2', [
+            Keyvalues('key', 'value'),
+            Keyvalues('key2', '45'),
         ]),
     ])
     elem1 = Element.from_kv1(tree1)
@@ -823,10 +879,10 @@ def test_kv1_to_dmx() -> None:
 
 def test_kv1_to_dmx_dupleafs() -> None:
     """Test converting KV1 trees with duplicate keys."""
-    tree = Property('Root', [
-        Property('Key1', 'blah'),
-        Property('key2', 'another'),
-        Property('key1', 'value'),
+    tree = Keyvalues('Root', [
+        Keyvalues('Key1', 'blah'),
+        Keyvalues('key2', 'another'),
+        Keyvalues('key1', 'value'),
     ])
     root = Element.from_kv1(tree)
     assert root.type == 'DmElement'
@@ -852,9 +908,9 @@ def test_kv1_to_dmx_dupleafs() -> None:
 
 def test_kv1_to_dmx_leaf_and_blocks() -> None:
     """If both leafs and blocks, we upgrade to an element per attribute."""
-    tree = Property('blah', [
-        Property('a_leaf', 'result'),
-        Property('block', []),
+    tree = Keyvalues('blah', [
+        Keyvalues('a_leaf', 'result'),
+        Keyvalues('block', []),
     ])
     root = Element.from_kv1(tree)
     assert root.type == 'DmElement'
@@ -870,7 +926,7 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
 
 def test_dmx_to_kv1_roundtrip() -> None:
     """Test we can smuggle KV1 trees in DMX elements."""
-    from test_property_parser import parse_result, assert_tree as assert_prop
+    from test_keyvalues import parse_result, assert_tree as assert_prop
     elem = Element.from_kv1(parse_result)
     roundtrip = elem.to_kv1()
     assert_prop(roundtrip, parse_result)

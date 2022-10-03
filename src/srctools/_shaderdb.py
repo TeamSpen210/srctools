@@ -1,4 +1,9 @@
+from typing import no_type_check
+
+
+@no_type_check
 def _shader_db(var_type, DB):
+    """Build a database of material parameters to their types."""
     [FLAG, MATERIAL, STR, TEXTURE, INT, FLOAT, BOOL, COLOR, VEC2, VEC3, VEC4, MATRIX, MATRIX_4X2, FOUR_CC] = var_type
     DB['%compile2dsky'] = FLAG
     DB['%compileblocklos'] = FLAG
@@ -1158,4 +1163,3 @@ def _shader_db(var_type, DB):
     DB['textransform3'] = MATRIX_4X2
 
     DB['lights'] = FOUR_CC
-

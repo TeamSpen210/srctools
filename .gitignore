@@ -38,12 +38,6 @@ Icon
 *.prt
 *.filelist.txt
 
-# Disttools
-build/
-dist/
-srctools.egg-info/
-
-
 # C extensions
 *.so
 
@@ -88,9 +82,6 @@ coverage.xml
 *.mo
 *.pot
 
-# Django stuff:
-*.log
-
 # Sphinx documentation
 docs/_build/
 
@@ -98,9 +89,9 @@ docs/_build/
 target/
 
 # Exclude Cython generated files.
-srctools/*.html
+src/srctools/*.html
+src/srctools/*.c
+src/srctools/*.cpp
 
-.cache
-
-# Versions of package and postcompiler
+# Version of the package
 _version.py

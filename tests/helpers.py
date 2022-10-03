@@ -39,6 +39,20 @@ def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
                 yield x, y, z
 
 
+class ExactType:
+    """Proxy object which verifies both value and types match."""
+    def __init__(self, val: object) -> None:
+        self.value = val
+
+    def __repr__(self) -> str:
+        return f'{self.value!r}'
+
+    def __eq__(self, other) -> bool:
+        if isinstance(other, ExactType):
+            other = other.value
+        return type(self.value) is type(other) and self.value == other
+
+
 def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON, type=None):
     """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.

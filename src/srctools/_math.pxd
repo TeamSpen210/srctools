@@ -1,6 +1,7 @@
 # cython: language_level=3
 cimport cython
 
+
 # Lightweight struct just holding the three values.
 # We can use this for temporaries. It's also used for angles.
 cdef struct vec_t:

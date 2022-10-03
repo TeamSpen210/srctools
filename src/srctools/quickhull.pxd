@@ -1,6 +1,7 @@
 """Cython definitions for the quickhull library."""
 from libcpp.vector cimport vector
 
+
 cdef extern from "Structs/Vector3.hpp" namespace "quickhull":
     cdef cppclass Vector3[T]:
         Vector3()

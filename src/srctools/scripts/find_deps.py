@@ -1,14 +1,17 @@
 """Finds dependencies used by resources or maps."""
+from typing import List
 import argparse
 import os
 import sys
-from typing import List
 
-from srctools import Property, VMF, FGD
 from srctools.bsp import BSP
-from srctools.filesys import RawFileSystem, FileSystemChain
+from srctools.fgd import FGD
+from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
+from srctools.keyvalues import Keyvalues
 from srctools.packlist import PackList
+from srctools.vmf import VMF
+
 
 fgd = FGD.engine_dbase()
 
@@ -83,7 +86,7 @@ def main(args: List[str]) -> None:
         ext = file.path[-4:].casefold()
         if ext == '.vmf':
             with file.open_str() as f:
-                vmf_props = Property.parse(f)
+                vmf_props = Keyvalues.parse(f)
                 vmf = VMF.parse(vmf_props)
             packlist.pack_fgd(vmf, fgd)
             del vmf, vmf_props  # Hefty, don't want to keep.

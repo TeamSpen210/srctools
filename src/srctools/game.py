@@ -1,15 +1,17 @@
 """Reads the GameInfo file to determine where Source game data is stored."""
-from typing import Union, List, Optional
+from typing import List, Optional, Union
+from typing_extensions import Final
 from pathlib import Path
+import itertools
 import os
 import sys
-import itertools
 
-from srctools import Property
-from srctools.filesys import FileSystemChain, VPKFileSystem, RawFileSystem
+from srctools.filesys import FileSystemChain, RawFileSystem, VPKFileSystem
+from srctools.keyvalues import Keyvalues
 
 
-GINFO = 'gameinfo.txt'
+__all__ = ['GINFO', 'Game', 'find_gameinfo']
+GINFO: Final = 'gameinfo.txt'
 
 
 class Game:
@@ -21,16 +23,20 @@ class Game:
         else:
             self.path = Path(path)
         with open(self.path / GINFO) as f:
-            gameinfo = Property.parse(f).find_key('GameInfo')
+            gameinfo = Keyvalues.parse(
+                f,
+                allow_escapes=False,  # Allow backslashes in paths.
+            ).find_key('GameInfo')
         fsystems = gameinfo.find_key('Filesystem', or_blank=True)
 
-        self.game_name = gameinfo['Game']
-        self.app_id = fsystems['SteamAppId']
+        self.game_name = gameinfo['Game', None]
+        self.app_id = fsystems['SteamAppId', None]
         self.tools_id = fsystems['ToolsAppId', None]
         self.additional_content = fsystems['AdditionalContentId', None]
-        self.fgd_loc = gameinfo['GameData', 'None']
+        self.fgd_loc = gameinfo['GameData', None]
         self.search_paths: List[Path] = []
 
+        # Note: the behaviour of Source can be examined via the "path" command.
         for search_path in fsystems.find_children('SearchPaths'):
             exp_path = self.parse_search_path(search_path)
             # Expand /* if at the end of paths.
@@ -67,14 +73,18 @@ class Game:
 
             # Force including 'platform', for Hammer assets.
             self.search_paths.append(self.path.parent / 'platform')
+            # Update goes in front of everything.
+            path = folder / 'update'
+            if path.exists():
+                self.search_paths.insert(0, path)
 
     @property
     def root(self) -> Path:
         """Return the game's root folder."""
         return self.path.parent
 
-    def parse_search_path(self, prop: Property) -> Path:
-        """Evaluate options like |gameinfo_path|."""
+    def parse_search_path(self, prop: Keyvalues) -> Path:
+        """Evaluate options like :code:`|gameinfo_path|`."""
         if prop.value.casefold().startswith('|gameinfo_path|'):
             return (self.path / prop.value[15:]).absolute()
 
@@ -119,7 +129,7 @@ class Game:
         return fsys
 
     def bin_folder(self) -> Path:
-        """Retrieve the location of the bin/ folder."""
+        """Retrieve the location of the :file:`bin/` folder."""
         folder = self.path.parent / 'bin'
 
         # Engine branches supporting 64-bit have binaries in win64/win32
@@ -142,13 +152,14 @@ class Game:
 
 
 def find_gameinfo(argv: Optional[List[str]] = None) -> Game:
-    """Locate the game we're in, if launched as a a compiler.
+    """Locate the game we're in, if launched as a compiler.
 
     This checks the following:
-    * -vproject
-    * -game
-    * the VPROJECT environment variable
-    * the current folder and all parents.
+
+    * :option:`!-vproject`
+    * :option:`!-game`
+    * The :envvar:`!VPROJECT` environment variable.
+    * The current folder and all parents.
     """
     if argv is None:
         argv = sys.argv

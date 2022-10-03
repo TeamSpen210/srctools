@@ -1,11 +1,16 @@
 """Parse particle system files."""
-from typing import Union, IO, Dict, overload, List, Iterable, TYPE_CHECKING
+from typing import IO, Dict, Iterable, List, Union, overload
 import copy
 
-import attr
-from srctools.dmx import Element, ValueType, Attribute
+import attrs
+
+from srctools.dmx import Attribute, Element, ValueType
 
 
+__all__ = [
+    'FORMAT_NAME', 'FORMAT_VERSION',
+    'Operator', 'Child', 'Particle',
+]
 # The name of the file format used in DMX files.
 FORMAT_NAME: str = 'pcf'
 # PCF files can have version 1 or 2.
@@ -23,31 +28,24 @@ class Operator:
         return f'<Op {self.name}.{self.function}({", ".join(map(repr, self.options.values()))})>'
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Child:
     """Options for a child particle reference."""
     particle: str
 
-# Workaround MyPy not evaluating generics on converters.
-if TYPE_CHECKING:
-    def _mk_operator(x: Iterable[Operator]) -> List[Operator]: return list(x)
-    def _mk_child(x: Iterable[Child]) -> List[Child]: return list(x)
-else:
-    _mk_operator = _mk_child = list
 
-
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, Attribute] = attr.Factory(dict)
-    renderers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    operators: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    initializers: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    emitters: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    forces: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    constraints: List[Operator] = attr.ib(converter=_mk_operator, factory=list)
-    children: List[Child] = attr.ib(converter=_mk_child, factory=list)
+    options: Dict[str, Attribute] = attrs.Factory(dict)
+    renderers: List[Operator] = attrs.field(factory=list)
+    operators: List[Operator] = attrs.field(factory=list)
+    initializers: List[Operator] = attrs.field(factory=list)
+    emitters: List[Operator] = attrs.field(factory=list)
+    forces: List[Operator] = attrs.field(factory=list)
+    constraints: List[Operator] = attrs.field(factory=list)
+    children: List[Child] = attrs.field(factory=list)
 
     @classmethod
     @overload
@@ -90,11 +88,11 @@ class Particle:
         if part_list.type != ValueType.ELEMENT or not part_list.is_array:
             raise ValueError('"particleSystemDefinitions" must be an element array!')
 
-        def generic_attr(el: Element, name: str) -> Iterable['Operator']:
+        def generic_attr(el: Element, name: str) -> List['Operator']:
             try:
                 value = el.pop(name)
             except KeyError:
-                return ()
+                return []
             if value.type is not ValueType.ELEMENT or not value.is_array:
                 raise ValueError('{} must be an element array!')
             return [
@@ -180,6 +178,3 @@ class Particle:
                 child_attr.append(name_to_elem[child.particle.casefold()])
 
         return root
-
-del _mk_operator
-del _mk_child

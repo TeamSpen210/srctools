@@ -1,14 +1,71 @@
-[project]
-requires-python = ">=3.6"
-
 [build-system]
 requires = [
-	"setuptools>=42",
-	"wheel",
-	"cython",
-	"versioningit ~= 0.3.0"
+	"setuptools >= 61",
+	"wheel >= 0.37.0",
+	"cython >= 0.29.30",
+	"versioningit >= 0.3.0"
 	]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "srctools"
+requires-python = ">=3.7"
+dynamic = ["version"]
+urls = {source="https://github.com/TeamSpen210/srctools"}
+description = "Modules for working with Valve's Source Engine file formats."
+readme = "README.md"
+keywords = ["Valve", "Source Engine"]
+authors = [
+	{name="TeamSpen210", email="spencerb21@live.com"}
+]
+license = {text = "MIT"}
+classifiers = [
+	"Development Status :: 5 - Production/Stable",
+	"Framework :: Pytest",
+	"Framework :: tox",
+	"License :: OSI Approved :: MIT License",
+	"Programming Language :: Cython",
+	"Programming Language :: Python :: 3.7",
+	"Programming Language :: Python :: 3.8",
+	"Programming Language :: Python :: 3.9",
+	"Programming Language :: Python :: 3.10",
+	"Programming Language :: Python :: 3 :: Only",
+	"Programming Language :: Python :: Implementation :: CPython",
+	"Programming Language :: Python :: Implementation :: PyPy",
+	"Topic :: Games/Entertainment",
+	"Topic :: Multimedia :: Graphics :: 3D Modeling",
+	"Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies=[
+	"attrs >= 21.2.0",
+	"typing_extensions >= 4.1.0",
+	"atomicwrites >= 1.4.0",
+	"importlib_resources >= 5.8.0",
+]
+[optional-dependencies]
+# VTF support.
+wx = ["wxPython"]
+test = [
+	"pytest",
+	"pytest-datadir",
+	"pytest-regressions",
+]
+
+
+[project.scripts]
+srctools_dump_parms = "srctools.scripts.dump_parms:main"
+srctools_diff = "srctools.scripts.diff:main"
+srctools_find_deps = "srctools.scripts.find_deps:main"
+
+[project.entry-points]
+pyinstaller40 = {hook-dirs="srctools._pyinstaller:get_hook_dirs"}
+
+[tool.setuptools]
+	include-package-data = true
+
+[tool.setuptools.packages.find]
+	where = ["src"]
+	include = ["srctools*"]
 
 [tool.versioningit.vcs]
 default-tag = "v0.0.0"
@@ -30,14 +87,13 @@ include = [
 	"src/srctools/"
 	]
 exclude = [
-	# Tests deliberately do incorrect things to test error handling, so ignore types.
-	"tests/",
 	"**/__pycache__"
 	]
 stubPath = "src/"   # Use our module for stubs.
 # We want to do conversions when setting.
 reportPropertyTypeMismatch = false
-
+pythonVersion = "3.8"
+strictParameterNoneValue = false
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -45,3 +101,35 @@ filterwarnings = [
 	"error:::srctools[.*]",
 	"error:::tests[.*]",  # Same for tests themselves.
 ]
+
+[tool.mypy]
+python_version = '3.8'
+warn_unused_ignores = true
+warn_redundant_casts = true
+warn_return_any = false
+warn_no_return = true
+
+disallow_incomplete_defs = true
+disallow_untyped_defs = true
+disallow_untyped_decorators = true
+disallow_untyped_calls = true
+
+strict_optional = true
+check_untyped_defs = true
+show_error_codes = true
+
+[tool.isort]
+sections=["FUTURE", "TYPING", "FRAMEWORK", "STDLIB", "THIRDPARTY", "FIRSTPARTY", "LOCALFOLDER"]
+known_framework = []
+extra_standard_library = ["importlib_resources"]
+known_typing = ["typing", "typing_extensions"]
+no_lines_before = ["TYPING", "FRAMEWORK", "STDLIB"]
+multi_line_output = 5 # hanging grid grouped
+line_length = 95
+lines_after_imports = 2
+use_parentheses = true
+order_by_type = true
+include_trailing_comma = true
+from_first = true
+combine_as_imports = true
+src_paths = ["src"]

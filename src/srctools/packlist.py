@@ -1,34 +1,38 @@
 """Handles the list of files which are desired to be packed into the BSP."""
+from typing import (
+    Callable, Collection, Dict, Generic, Iterable, Iterator, List, Optional, Set, Tuple,
+    TypeVar, Union,
+)
+from collections import OrderedDict
+from enum import Enum, auto as auto_enum
+from pathlib import Path
+from zipfile import ZipFile
 import io
 import itertools
-import shutil
-import warnings
-from collections import OrderedDict
-from pathlib import Path
-from typing import Optional, Union, TypeVar, Generic, Iterable, Dict, Tuple, List, Iterator, Set
-from enum import Enum, auto as auto_enum
-from zipfile import ZipFile
 import os
 import re
+import shutil
+import warnings
 
-import attr
+from atomicwrites import atomic_write
+import attrs
 
 from srctools import conv_bool
-from srctools.dmx import Element
-from srctools.tokenizer import TokenSyntaxError
-from srctools.particles import Particle, FORMAT_NAME as PARTICLE_FORMAT_NAME
-from srctools.property_parser import Property, KeyValError
-from srctools.vmf import VMF
-from srctools.fgd import FGD, ValueTypes as KVTypes, KeyValues, EntityDef, EntityTypes
 from srctools.bsp import BSP
+from srctools.dmx import Attribute, Element, ValueType
+from srctools.fgd import FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes
 from srctools.filesys import (
-    FileSystem, VPKFileSystem, FileSystemChain, File,
-    VirtualFileSystem,
+    CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
-from srctools.mdl import Model, MDL_EXTS, AnimEvents
+from srctools.keyvalues import KeyValError, Keyvalues
+from srctools.mdl import MDL_EXTS, AnimEvents, Model
+from srctools.particles import FORMAT_NAME as PARTICLE_FORMAT_NAME, Particle
+from srctools.sndscript import SND_CHARS, Sound
+from srctools.tokenizer import TokenSyntaxError
+from srctools.vmf import VMF, Entity
 from srctools.vmt import Material, VarType
-from srctools.sndscript import Sound, SND_CHARS
 import srctools.logger
+
 
 LOGGER = srctools.logger.get_logger(__name__)
 SOUND_CACHE_VERSION = '2'  # Used to allow ignoring incompatible versions.
@@ -37,7 +41,8 @@ ParsedT = TypeVar('ParsedT')
 __all__ = [
     'FileType', 'FileMode', 'SoundScriptMode',
     'PackFile', 'PackList',
-    'unify_path', 'CLASS_RESOURCES', 'CLASS_FUNCS', 'ALT_NAMES'
+    'unify_path',
+    'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
 ]
 
 
@@ -79,7 +84,9 @@ class FileMode(Enum):
 
 
 SoundScriptMode = FileMode  # Old name, deprecated.
-
+# Binary keyvalues only stores 32-bit integers, ensure file mod times are within that
+# range.
+FILE_CACHE_TRUNC = 0x7FFF_FFFF
 
 EXT_TYPE = {
     '.' + filetype.value: filetype
@@ -127,7 +134,19 @@ def load_fgd() -> FGD:
     return FGD.engine_dbase()
 
 
-@attr.define(eq=False)
+def strip_extension(filename: str) -> str:
+    """Strip extensions from a filename, like Q_StripExtension()."""
+    try:
+        dot_pos = filename.rindex('.')
+    except ValueError:
+        return filename  # No extension.
+    # If there's a slash after here, it's probably a ../, dotted folder, etc.
+    if '/' in filename[dot_pos:]:
+        return filename
+    return filename[:dot_pos]
+
+
+@attrs.define(eq=False)
 class PackFile:
     """Represents a single file we are packing.
 
@@ -138,7 +157,7 @@ class PackFile:
     data: Optional[bytes] = None
     optional: bool = False
     # If we've checked for dependencies of this yet.
-    _analysed: bool = attr.ib(init=False, default=False)
+    _analysed: bool = attrs.field(init=False, default=False)
 
     @property
     def virtual(self) -> bool:
@@ -166,7 +185,7 @@ def unify_path(path: str) -> str:
     return path.lstrip('/')
 
 
-@attr.define
+@attrs.define
 class ManifestedFiles(Generic[ParsedT]):
     """Handles a file type which contains a bunch of named objects.
 
@@ -176,28 +195,110 @@ class ManifestedFiles(Generic[ParsedT]):
     name: str  # Our file type.
     # When packing the file, use this filetype.
     pack_type: FileType
+    # A function which parses the data, given the filename and contents.
+    parse_func: Callable[[File], Dict[str, ParsedT]]
     # For each identifier, the filename it's in and whatever data this was parsed into.
     # Do not display in the repr, there's thousands of these.
-    name_to_parsed: Dict[str, Tuple[str, ParsedT]] = attr.ib(factory=dict, repr=False)
+    name_to_parsed: Dict[str, Tuple[str, Optional[ParsedT]]] = attrs.field(factory=dict, repr=False)
     # All the filenames we know about, in order. The value is then
     # whether they should be packed.
-    _files: Dict[str, FileMode] = attr.Factory(OrderedDict)
+    _files: Dict[str, FileMode] = attrs.Factory(OrderedDict)
+    _unparsed_file: Dict[str, File] = attrs.Factory(dict)
+    # Records the contents of the cache file.
+    # filename -> (cache_key, identifier_list)
+    _cache: Dict[str, Tuple[int, List[str]]] = attrs.Factory(dict)
 
     def force_exclude(self, filename: str) -> None:
         """Mark this soundscript file as excluded."""
         self._files[filename] = FileMode.EXCLUDE
 
     def __len__(self) -> int:
-        """Return the number of sounds we know about."""
+        """Return the number of items we know about."""
         return len(self.name_to_parsed)
+
+    def load_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
+        """Load the cache data. If the file is invalid, this does nothing."""
+        try:
+            with open(filename, 'rb') as f:
+                root, file_type, file_version = Element.parse(f)
+        except (FileNotFoundError, IOError, ValueError):
+            return
+        if file_type != 'SrcPacklistCache':
+            LOGGER.warning('Unknown cache file "{}"!', file_type)
+            return
+        if file_version != 1:
+            LOGGER.warning('Unrecognised cache file version {}', file_version)
+            return
+        for file_elem in root['files'].iter_elem():
+            self._cache[file_elem.name] = (
+                file_elem['key'].val_int & FILE_CACHE_TRUNC,
+                list(file_elem['files'].iter_string()),
+            )
+
+    def save_cache(self, filename: Union[str, 'os.PathLike[str]']) -> None:
+        """Write back new cache data."""
+        root = Element('FileList', 'SrcFileList')
+        file_arr = Attribute.array('files', ValueType.ELEMENT)
+        root['files'] = file_arr
+        for cached_file, (cache_key, files) in self._cache.items():
+            if cache_key == CACHE_KEY_INVALID:
+                continue
+            elem = Element(cached_file, 'SrcCacheFile')
+            # Truncate to avoid overflow errors.
+            elem['key'] = cache_key & FILE_CACHE_TRUNC
+            elem['files'] = Attribute('files', ValueType.STR, files)
+            file_arr.append(elem)
+        # No need to be atomic, if we corrupt this it'll just be rebuilt.
+        with open(filename, mode='wb') as f:
+            root.export_binary(f, fmt_name='SrcPacklistCache', fmt_ver=1, unicode='format')
+
+    def add_cached_file(
+        self, filename: str, file: File,
+        mode: FileMode = FileMode.UNKNOWN,
+    ) -> None:
+        """Load a file which may have been cached.
+
+        If the file is new we parse immediately, otherwise defer until actually required.
+        """
+        # Don't override exclude specifications.
+        if self._files.get(filename, None) is not FileMode.EXCLUDE:
+            self._files[filename] = mode
+        key = file.cache_key()
+        if key != CACHE_KEY_INVALID:
+            key &= FILE_CACHE_TRUNC
+
+        identifiers: List[str]
+        try:
+            cached_key, identifiers = self._cache[filename]
+        except KeyError:
+            pass
+        else:
+            if cached_key == key and key != CACHE_KEY_INVALID:
+                LOGGER.debug('Loading {} from cache', filename)
+                # Apply cache.
+                self._unparsed_file[filename] = file
+                for identifier in identifiers:
+                    identifier = identifier.casefold()
+                    if identifier not in self.name_to_parsed:
+                        self.name_to_parsed[identifier] = (filename, None)
+                return
+        LOGGER.debug('Loading {}: not in cache', filename)
+        # Otherwise, parse and add to the cache.
+        identifiers = []
+        self._cache[filename] = key, identifiers
+        for identifier, data in self.parse_func(file).items():
+            identifiers.append(identifier)
+            identifier = identifier.casefold()
+            if identifier not in self.name_to_parsed:
+                self.name_to_parsed[identifier] = (filename, data)
 
     def add_file(
         self, filename: str,
         items: Iterable[Tuple[str, ParsedT]],
         mode: FileMode = FileMode.UNKNOWN,
     ) -> None:
-        """Add a file with its parsed soundscripts"""
-        # Do not override this.
+        """Add a file with its parsed items."""
+        # Don't override exclude specifications.
         if self._files.get(filename, None) is not FileMode.EXCLUDE:
             self._files[filename] = mode
         for identifier, data in items:
@@ -205,9 +306,25 @@ class ManifestedFiles(Generic[ParsedT]):
             if identifier not in self.name_to_parsed:
                 self.name_to_parsed[identifier] = (filename, data)
 
+    def fetch_data(self, identifier: str) -> Tuple[str, ParsedT]:
+        """Fetch the parsed form of this data and the file it's in, without packing."""
+        [filename, data] = self.name_to_parsed[identifier.casefold()]
+        if data is None:
+            # Parse right now.
+            LOGGER.debug('Parsing {}', filename)
+            for ident, data in self.parse_func(self._unparsed_file.pop(filename)).items():
+                ident = ident.casefold()
+                if ident not in self.name_to_parsed or self.name_to_parsed[ident][1] is None:
+                    self.name_to_parsed[ident] = (filename, data)
+            [filename, data] = self.name_to_parsed[identifier.casefold()]
+            if data is None:
+                raise ValueError(f'Parsed "{filename}", but identifier "{identifier}" was not present!')
+        return filename, data
+
     def pack_and_get(self, lst: 'PackList', identifier: str, preload: bool=False) -> ParsedT:
         """Pack the associated filename, then return the data."""
-        [filename, data] = self.name_to_parsed[identifier.casefold()]
+        filename, data = self.fetch_data(identifier)
+
         old = self._files[filename]
         if old is not FileMode.EXCLUDE:
             self._files[filename] = FileMode.PRELOAD if preload else FileMode.INCLUDE
@@ -219,6 +336,38 @@ class ManifestedFiles(Generic[ParsedT]):
         for file, mode in self._files.items():
             if mode.is_used:
                 yield file, mode
+
+
+def _load_soundscript(file: File) -> Dict[str, Sound]:
+    """Parse a soundscript file, logging errors that occur."""
+    try:
+        with file.open_str(encoding='cp1252') as f:
+            kv = Keyvalues.parse(f, file.path, allow_escapes=False)
+        return Sound.parse(kv)
+    except FileNotFoundError:
+        # It doesn't exist, complain and pretend it's empty.
+        LOGGER.warning('Soundscript "{}" does not exist!', file.path)
+        return {}
+    except (KeyValError, ValueError):
+        LOGGER.warning('Soundscript "{}" could not be parsed:', file.path, exc_info=True)
+        return {}
+
+
+def _load_particle_system(file: File) -> Dict[str, Particle]:
+    """Parse a particle system file, logging errors that occur."""
+    try:
+        with file.open_bin() as f:
+            dmx, fmt_name, fmt_version = Element.parse(f)
+        if fmt_name != PARTICLE_FORMAT_NAME:
+            raise ValueError(f'"{file.path}" is not a particle file!')
+        return Particle.parse(dmx, fmt_version)
+    except FileNotFoundError:
+        # It doesn't exist, complain and pretend it's empty.
+        LOGGER.warning('Particle system "{}" does not exist!', file.path)
+        return {}
+    except ValueError:
+        LOGGER.warning('Particle system "{}" could not be parsed:', file.path, exc_info=True)
+        return {}
 
 
 class PackList:
@@ -240,8 +389,8 @@ class PackList:
 
     def __init__(self, fsys: FileSystemChain) -> None:
         self.fsys = fsys
-        self.soundscript = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT)
-        self.particles = ManifestedFiles('particle', FileType.PARTICLE_FILE)
+        self.soundscript = ManifestedFiles('soundscript', FileType.SOUNDSCRIPT, _load_soundscript)
+        self.particles = ManifestedFiles('particle', FileType.PARTICLE_FILE, _load_particle_system)
         self._packed_particles = set()
         self._files = {}
         self._inject_files = {}
@@ -310,11 +459,12 @@ class PackList:
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
-            self._parse_soundscript(
-                Property.parse(data.decode('utf8'), filename),
-                filename,
-                always_include=True,
-            )
+            try:
+                sounds = Sound.parse(Keyvalues.parse(data.decode('cp1252'), filename))
+            except (KeyValError, ValueError):
+                LOGGER.warning('Soundscript "{}" could not be parsed:', filename, exc_info=True)
+            else:
+                self.soundscript.add_file(filename, sounds.items(), FileMode.INCLUDE)
 
         filename = unify_path(filename)
 
@@ -324,33 +474,29 @@ class PackList:
             data_type = FileType.MATERIAL
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if filename.endswith('.spr'):
-                # This is really wrong, spr materials don't exist anymore.
-                # Silently swap the extension.
-                filename = filename[:-3] + 'vmt'
-            elif not filename.endswith('.vmt'):
-                filename = filename + '.vmt'
+            # This will replace .spr materials, which don't exist any more.
+            filename = strip_extension(filename) + '.vmt'
         elif data_type is FileType.TEXTURE or (
             data_type is FileType.GENERIC and filename.endswith('.vtf')
         ):
             data_type = FileType.TEXTURE
             if not filename.startswith('materials/'):
                 filename = 'materials/' + filename
-            if not filename.endswith('.vtf'):
-                filename = filename + '.vtf'
+            if not filename.endswith('.hdr'):
+                # Strip all other extensions, then add vtf unconditionally.
+                filename = strip_extension(filename)
+            filename = filename + '.vtf'
         elif data_type is FileType.VSCRIPT_SQUIRREL or (
             data_type is FileType.GENERIC and filename.endswith('.nut')
         ):
             data_type = FileType.VSCRIPT_SQUIRREL
-            if not filename.endswith('.nut'):
-                filename = filename + '.nut'
+            filename = strip_extension(filename) + '.nut'
 
         if data_type is FileType.MODEL or filename.endswith('.mdl'):
             data_type = FileType.MODEL
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
-            if not filename.endswith('.mdl'):
-                filename = filename + '.mdl'
+            filename = strip_extension(filename) + '.mdl'
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
@@ -454,7 +600,7 @@ class PackList:
             # Strip off the scripts/vscripts/ folder since it's implied.
         )[17:]
 
-    def pack_soundscript(self, sound_name: str):
+    def pack_soundscript(self, sound_name: str) -> None:
         """Pack a soundscript or raw sound file."""
         # Blank means no sound is used.
         if not sound_name:
@@ -519,9 +665,9 @@ class PackList:
                 LOGGER.warning('No scripts/propdata.txt for breakable chunks!')
                 return
             with propdata.open_str(encoding='cp1252') as f:
-                props = Property.parse(f, 'scripts/propdata.txt', allow_escapes=False)
+                kv = Keyvalues.parse(f, 'scripts/propdata.txt', allow_escapes=False)
             self._break_chunks = {}
-            for chunk_prop in props.find_children('BreakableModels'):
+            for chunk_prop in kv.find_children('BreakableModels'):
                 self._break_chunks[chunk_prop.name] = [
                     prop.real_name for prop in chunk_prop
                 ]
@@ -546,58 +692,24 @@ class PackList:
 
         The sounds registered by this soundscript are returned.
         """
-        try:
-            with file.open_str(encoding='cp1252') as f:
-                props = Property.parse(f, file.path, allow_escapes=False)
-        except FileNotFoundError:
-            # It doesn't exist, complain and pretend it's empty.
-            LOGGER.warning('Soundscript "{}" does not exist!', file.path)
-            return ()
-        except (KeyValError, ValueError):
-            LOGGER.warning('Soundscript "{}" could not be parsed:', file.path, exc_info=True)
-            return ()
-
-        return self._parse_soundscript(props, file.path, always_include)
+        scripts = _load_soundscript(file)
+        self.soundscript.add_file(
+            file.path, scripts.items(),
+            FileMode.INCLUDE if always_include else FileMode.UNKNOWN
+        )
+        return scripts.values()
 
     def load_particle_system(self, filename: str, mode: FileMode=FileMode.UNKNOWN) -> Iterable[Particle]:
         """Read in the specified particle system and record the particles for usage checking."""
         try:
-            with self.fsys.open_bin(filename) as f:
-                dmx, fmt_name, fmt_version = Element.parse(f)
-            if fmt_name != PARTICLE_FORMAT_NAME:
-                raise ValueError(f'"{filename}" is not a particle file!')
-            particles = Particle.parse(dmx, fmt_version)
+            particles = _load_particle_system(self.fsys[filename])
         except FileNotFoundError:
             # It doesn't exist, complain and pretend it's empty.
             LOGGER.warning('Particle system "{}" does not exist!', filename)
             return ()
-        except ValueError:
-            LOGGER.warning('Particle system "{}" could not be parsed:', filename, exc_info=True)
-            return ()
 
         self.particles.add_file(filename, particles.items(), mode)
         return particles.values()
-
-    def _parse_soundscript(
-        self,
-        props: Property,
-        path: str,
-        always_include: bool = False,
-    ) -> Iterable[Sound]:
-        """Read in a soundscript and record which files use it.
-
-        If always_include is True, it will be included in the manifests even
-        if it isn't used.
-        """
-        try:
-            scripts = Sound.parse(props)
-        except ValueError:
-            LOGGER.warning('Soundscript "{}" could not be parsed:', path, exc_info=True)
-            return []
-
-        self.soundscript.add_file(path, scripts.items(), FileMode.INCLUDE if always_include else FileMode.UNKNOWN)
-
-        return scripts.values()
 
     def load_soundscript_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
         """Read the soundscript manifest, and read all mentioned scripts.
@@ -606,50 +718,16 @@ class PackList:
         cache the file reading for later use.
         """
         try:
-            man = self.fsys.read_prop('scripts/game_sounds_manifest.txt', encoding='cp1252')
+            man = self.fsys.read_kv1('scripts/game_sounds_manifest.txt', encoding='cp1252')
         except FileNotFoundError:
             return
 
-        new_cache_data: Optional[Property]
-        new_cache_sounds: Optional[Property]
-        cache_data: Dict[str, Tuple[int, Property]] = {}
         if cache_file is not None:
-            # If the file doesn't exist or is corrupt, that's
-            # fine. We'll just parse the soundscripts the slow
-            # way.
-            try:
-                with open(cache_file) as f:
-                    old_cache = Property.parse(f, cache_file)
-                if man['version'] != SOUND_CACHE_VERSION:
-                    raise LookupError
-            except (FileNotFoundError, KeyValError, LookupError):
-                pass
-            else:
-                for cache_prop in old_cache.find_children('Sounds'):
-                    cache_data[cache_prop.name] = (
-                        cache_prop.int('cache_key'),
-                        cache_prop.find_key('files')
-                    )
-
-            # Regenerate from scratch each time - that way we remove old files
-            # from the list.
-            new_cache_sounds = Property('Sounds', [])
-            new_cache_data = Property.root(
-                Property('version', SOUND_CACHE_VERSION),
-                new_cache_sounds,
-            )
-        else:
-            new_cache_data = new_cache_sounds = None
+            self.soundscript.load_cache(cache_file)
 
         for prop in man.find_children('game_sounds_manifest'):
             if not prop.name.endswith('_file'):
                 continue
-            try:
-                cache_key, cache_files = cache_data[prop.value.casefold()]
-            except KeyError:
-                cache_key = -1
-                cache_files = None
-
             try:
                 file = self.fsys[prop.value]
             except FileNotFoundError:
@@ -657,50 +735,28 @@ class PackList:
                 # Don't write anything into the cache, so we check this
                 # every time.
                 continue
-            cur_key = file.cache_key()
-
             # The soundscripts in the manifests are always included,
             # since many would be part of the core code (physics, weapons,
             # ui, etc). Just keep those loaded, no harm since the game does.
-            if cache_key != cur_key or cache_key == -1 or cache_files is None:
-                sounds = self.load_soundscript(file, always_include=True)
-            else:
-                # Read from cache.
-                sounds = [
-                    Sound(cache_prop.real_name, cache_prop.as_array())
-                    for cache_prop in cache_files
-                ]
-                self.soundscript.add_file(
-                    prop.value,
-                    ((sound.name, sound) for sound in sounds),
-                    FileMode.INCLUDE,
-                )
-
-            if new_cache_sounds is not None:
-                new_cache_sounds.append(Property(prop.value, [
-                    Property('cache_key', str(cur_key)),
-                    Property('Files', [
-                        Property(snd.name, [
-                            Property('snd', raw)
-                            for raw in snd.sounds
-                        ])
-                        for snd in sounds
-                    ])
-                ]))
+            self.soundscript.add_cached_file(prop.value, file, FileMode.INCLUDE)
 
         if cache_file is not None:
-            # Write back out our new cache with updated data.
-            with srctools.AtomicWriter(cache_file) as f:
-                for line in new_cache_data.export():
-                    f.write(line)
+            self.soundscript.save_cache(cache_file)
 
-    def load_particle_manifest(self) -> None:
-        """Read the particle manifest, and read all mentioned scripts."""
+    def load_particle_manifest(self, cache_file: Union[Path, str, None]=None) -> None:
+        """Read the particle manifest, and read all mentioned scripts.
+
+        If cache_file is provided, it should be a path to a file used to
+        cache the file reading for later use.
+        """
         try:
-            man = self.fsys.read_prop('particles/particles_manifest.txt')
+            man = self.fsys.read_kv1('particles/particles_manifest.txt')
         except FileNotFoundError:
             LOGGER.warning('No particles manifest.')
-            man = Property.root()
+            man = Keyvalues.root()
+
+        if cache_file is not None:
+            self.particles.load_cache(cache_file)
 
         in_manifest: Set[str] = set()
 
@@ -712,14 +768,23 @@ class PackList:
                 file_mode = FileMode.INCLUDE
                 fname = prop.value
             in_manifest.add(fname)
-            self.load_particle_system(fname, file_mode)
+            try:
+                file = self.fsys[fname]
+            except FileNotFoundError:
+                # It doesn't exist, complain and pretend it's empty.
+                LOGGER.warning('Particle system "{}" does not exist!', fname)
+            else:
+                self.particles.add_cached_file(fname, file, file_mode)
 
         # Now, manually look for any particles not in the manifest, those are added if referenced.
         for part_file in self.fsys.walk_folder('particles/'):
             if not part_file.path[-4:].casefold() == '.pcf':
                 continue
             if part_file.path not in in_manifest:
-                self.load_particle_system(part_file.path)
+                self.particles.add_cached_file(part_file.path, part_file)
+
+        if cache_file is not None:
+            self.particles.save_cache(cache_file)
 
     def write_manifest(self) -> None:
         """Deprecated, call write_soundscript_manifest()."""
@@ -732,8 +797,8 @@ class PackList:
         It will be packed such that it can override the master manifest with
         sv_soundemitter_flush.
         """
-        manifest = Property('game_sounds_manifest', [
-            Property('precache_file', snd)
+        manifest = Keyvalues('game_sounds_manifest', [
+            Keyvalues('precache_file', snd)
             for snd, _ in self.soundscript.packed_files()
         ])
 
@@ -745,11 +810,11 @@ class PackList:
 
     def write_particles_manifest(self, manifest_name: str) -> None:
         """Write a particles manifest, so that used particles can be loaded."""
-        manifest = Property('particles_manifest', [])
+        manifest = Keyvalues('particles_manifest', [])
         for filename, mode in self.particles.packed_files():
             if mode is FileMode.PRELOAD:
                 filename = '!' + filename
-            manifest.append(Property('file', filename))
+            manifest.append(Keyvalues('file', filename))
 
         buf = bytearray()
         for line in manifest.export():
@@ -781,7 +846,7 @@ class PackList:
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
-            if conv_bool(ent.keys.pop('srctools_nopack', '')):
+            if conv_bool(ent.pop('srctools_nopack', '')):
                 continue
 
             classname = ent['classname']
@@ -800,14 +865,14 @@ class PackList:
                 # entity is pledging it will restrict itself to.
                 skinset = {
                     int(x)
-                    for x in ent.keys.pop('skinset').split()
+                    for x in ent.pop('skinset').split()
                 }
             else:
                 skinset = None
 
             value: str
             key: str
-            for key in set(ent.keys) | set(ent_class.kv):
+            for key in set(ent) | set(ent_class.kv):
                 # These are always present on entities, and we don't have to do
                 # any packing for them.
                 # Origin/angles might be set (brushes, instances) even for ents
@@ -871,6 +936,9 @@ class PackList:
 
         # Handle resources that's coded into different entities with our
         # internal database.
+        # Delay import, since this is a fair bit of code and many don't need it.
+        from ._class_resources import CLASS_FUNCS, CLASS_RESOURCES
+
         # Use compress() to skip classnames that have no ents.
         for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
             try:
@@ -908,7 +976,7 @@ class PackList:
         if detail_script:
             self.pack_file(detail_script, FileType.GENERIC)
             try:
-                detail_props = self.fsys.read_prop(detail_script, 'ansi')
+                detail_props = self.fsys.read_kv1(detail_script, 'ansi')
             except FileNotFoundError:
                 LOGGER.warning('detail.vbsp file does not exist: "{}"', detail_script)
             except Exception:
@@ -1210,5 +1278,70 @@ class PackList:
             self.pack_file(filename, param_type, optional=file.optional)
 
 
-# noinspection PyProtectedMember
-from srctools._class_resources import CLASS_RESOURCES, CLASS_FUNCS, ALT_NAMES
+def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
+    """Fetch a list of resources this entity class is known to use in code.
+
+    This allows those to be packed also.
+    """
+    from ._class_resources import ALT_NAMES, CLASS_RESOURCES
+    try:
+        classname = ALT_NAMES[classname.casefold()]
+    except KeyError:
+        pass
+    try:
+        return CLASS_RESOURCES[classname.casefold()]
+    except KeyError:
+        raise KeyError(classname) from None
+
+
+def entclass_canonicalise(classname: str) -> str:
+    """Canonicalise classnames - some ents have old classnames for compatibility and the like.
+
+    For example func_movelinear was originally momentary_door. This doesn't include names which
+    have observably different behaviour, like prop_physics_override.
+    """
+    from ._class_resources import ALT_NAMES
+    return ALT_NAMES.get(classname.casefold(), classname)
+
+
+entclass_canonicalize = entclass_canonicalise  # America.
+
+
+def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
+    """For some entities, they have unique packing behaviour depending on keyvalues.
+
+    If the specified classname is one, return a callable that packs it.
+    """
+    from ._class_resources import ALT_NAMES, CLASS_FUNCS
+    try:
+        classname = ALT_NAMES[classname.casefold()]
+    except KeyError:
+        pass
+    try:
+        return CLASS_FUNCS[classname.casefold()]
+    except KeyError:
+        raise KeyError(classname) from None
+
+
+def entclass_iter() -> Collection[str]:
+    """Yield all classnames with known behaviour."""
+    from ._class_resources import CLASS_RESOURCES
+    return CLASS_RESOURCES.keys()
+
+
+CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]]
+CLASS_FUNCS: Dict[str, Callable[[PackList, Entity], object]]
+ALT_NAMES: Dict[str, str]
+
+
+def __getattr__(name: str) -> dict:
+    """These were directly exposed, define the types and a getter to fetch them (with warning)."""
+    if name in {'CLASS_RESOURCES', 'CLASS_FUNCS', 'ALT_NAMES'}:
+        import warnings
+        warnings.warn(
+            f'Direct access to packlist.{name} is deprecated, use entclass_* functions.',
+            DeprecationWarning, stacklevel=2,
+        )
+        from . import _class_resources
+        return getattr(_class_resources, name)
+    raise AttributeError(name)

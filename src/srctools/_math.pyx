@@ -1,16 +1,18 @@
 # cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
+from cpython.exc cimport PyErr_WarnEx
+from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
+from cpython.ref cimport Py_INCREF
 from libc cimport math
-from libc.math cimport sin, cos, tan, llround, NAN
-from libc.string cimport memcpy, memcmp, memset
+from libc.math cimport NAN, cos, llround, sin, tan
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport sscanf
-from cpython.object cimport PyObject, PyTypeObject, Py_LT, Py_LE, Py_EQ, Py_NE, Py_GT, Py_GE
-from cpython.ref cimport Py_INCREF
-from cpython.exc cimport PyErr_WarnEx
+from libc.string cimport memcmp, memcpy, memset
 from libcpp.vector cimport vector
-from srctools cimport quickhull
 cimport cython.operator
+
+from srctools cimport quickhull
+
 
 cdef extern from *:
     const char* PyUnicode_AsUTF8AndSize(str string, Py_ssize_t *size) except NULL
@@ -71,8 +73,9 @@ cdef inline AngleBase _angle(type typ, double pitch, double yaw, double roll):
     ang.val.z = roll
     return ang
 
-cdef object Tuple, Iterator, Union  # Keep private.
-from typing import Tuple, Iterator, Union
+cdef object typing  # Keep private.
+import typing
+
 
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
@@ -89,6 +92,7 @@ from srctools.math import (
     _mk_fang as unpickle_fang,
     _mk_mat as unpickle_mat,
 )
+
 
 # Sanity check.
 if not issubclass(Vec_tuple, tuple):
@@ -111,11 +115,11 @@ DEF TOL = 1e-6
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef inline object _make_tuple(double x, double y, double z):
+cdef inline object _make_tuple(x, y, z):
     # Fast-construct a Vec_tuple. We make a normal tuple (fast),
     # then assign the namedtuple type. The type is on the heap
     # so we need to incref it.
-    cdef tuple tup = (round(x, ROUND_TO), round(y, ROUND_TO), round(z, ROUND_TO))
+    cdef tuple tup = (x, y, z)
     if USE_TYPE_INTERNALS:
         Py_INCREF(Vec_tuple)
         (<PyObject *>tup).ob_type = <PyTypeObject*>Vec_tuple
@@ -326,14 +330,7 @@ def parse_vec_str(object val, object x=0.0, object y=0.0, object z=0.0):
     if _parse_vec_str(&vec, val, NAN, NAN, NAN) == 1:
         return _make_tuple(vec.x, vec.y, vec.z)
     else:
-        tup = (x, y, z)
-        if USE_TYPE_INTERNALS:
-            Py_INCREF(Vec_tuple)
-            (<PyObject *> tup).ob_type = <PyTypeObject *> Vec_tuple
-            return tup
-        else:  # Not CPython, use more correct but slow method.
-            with cython.optimize.unpack_method_calls(False):
-                return tuple_new(Vec_tuple, tup)
+        return _make_tuple(x, y, z)
 
 @cython.cdivision(False)  # ZeroDivisionError is needed.
 def lerp(x: float, in_min: float, in_max: float, out_min: float, out_max: float) -> float:
@@ -997,10 +994,10 @@ cdef class VecBase:
     @classmethod
     def iter_grid(
         cls,
-        object min_pos: Union[Vec, Tuple[int, int, int]],
-        object max_pos: Union[Vec, Tuple[int, int, int]],
+        object min_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
+        object max_pos: typing.Union[Vec, typing.Tuple[int, int, int]],
         stride: int = 1,
-    ) -> Iterator[Vec]:
+    ) -> typing.Iterator[Vec]:
         """Loop over points in a bounding box. All coordinates should be integers.
 
         Both borders will be included.
@@ -1027,7 +1024,7 @@ cdef class VecBase:
 
         return it
 
-    def iter_line(self, end: VecBase, stride: int=1) -> Iterator[Vec]:
+    def iter_line(self, end: VecBase, stride: int=1) -> typing.Iterator[Vec]:
         """Yield points between this point and 'end' (including both endpoints).
 
         Stride specifies the distance between each point.
@@ -1091,7 +1088,7 @@ cdef class VecBase:
         )
 
     @cython.boundscheck(False)
-    def other_axes(self, object axis) -> Tuple[float, float]:
+    def other_axes(self, object axis) -> typing.Tuple[float, float]:
         """Get the values for the other two axes."""
         cdef char axis_chr
         if isinstance(axis, str) and len(<str>axis) == 1:
@@ -1134,10 +1131,10 @@ cdef class VecBase:
             (min2.val.z - max1.val.z) > TOL or (min1.val.z - max2.val.z) > TOL
         )
 
-    def as_tuple(self) -> Tuple[float, float, float]:
+    def as_tuple(self) -> typing.Tuple[float, float, float]:
         """Return the Vector as a tuple."""
         PyErr_WarnEx(DeprecationWarning, 'Vec_tuple is deprecated, use FrozenVec instead.', 1)
-        return _make_tuple(self.val.x, self.val.y, self.val.z)
+        return _make_tuple(round(self.val.x, ROUND_TO), round(self.val.y, ROUND_TO), round(self.val.z, ROUND_TO))
 
     def to_angle(self, double roll: float=0):
         """Convert a normal to a Source Engine angle.
@@ -2217,6 +2214,18 @@ cdef class Matrix:
         _mat_from_angle(rot.mat, &ang)
         return rot
 
+    @classmethod
+    def from_angstr(cls, val, double pitch=0.0, double yaw=0.0, double roll=0.0):
+        """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
+
+        This is equivalent to Matrix.from_angle(Angle.from_str(val, pitch, yaw, roll)),
+        except more efficient.
+        """
+        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef vec_t ang
+        _parse_vec_str(&ang, val, pitch, yaw, roll)
+        _mat_from_angle(rot.mat, &ang)
+        return rot
 
     @classmethod
     def axis_angle(cls, object axis, double angle) -> Matrix:
@@ -2287,6 +2296,10 @@ cdef class Matrix:
         else:
             raise KeyError(f'Invalid coordinate {x}, {y}' '!')
 
+    # TODO: This could just be set to None..
+    def __iter__(self):
+        raise TypeError("'Matrix' object is not iterable")
+
     def to_angle(self) -> Angle:
         """Return an Euler angle replicating this rotation."""
         cdef Angle ang = Angle.__new__(Angle)
@@ -2309,7 +2322,7 @@ cdef class Matrix:
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> 'Matrix':
+    ) -> Matrix:
         """Construct a matrix from at least two basis vectors.
 
         The third is computed, if not provided.
@@ -2880,7 +2893,7 @@ cdef class Angle(AngleBase):
         return AngleTransform.__new__(AngleTransform, self)
 
 
-def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
+def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, Vec, Vec]]:
     """Use the quickhull algorithm to construct a convex hull around the provided points."""
     cdef size_t v1, v2, v3, ind
     cdef vector[quickhull.Vector3[double]] values = vector[quickhull.Vector3[double]]()
@@ -2911,7 +2924,7 @@ def quickhull(vertexes: 'Iterable[Vec]') -> 'list[tuple[Vec, Vec, Vec]]':
 # This fixes all the methods too, though not in exceptions.
 
 from cpython.object cimport PyTypeObject
-if USE_TYPE_INTERNALS and 0:
+if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
@@ -2932,4 +2945,4 @@ except Exception:
 
 del cross_vec, cross_frozenvec
 # Drop references.
-Tuple = Iterator = Union = None
+typing = None

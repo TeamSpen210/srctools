@@ -3,6 +3,12 @@ Wrapper around logging to provide our own functionality.
 
 This adds the ability to log using str.format() instead of %.
 """
+from typing import (
+    Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple, Type,
+    Union, cast,
+)
+from io import StringIO
+from types import TracebackType
 import contextlib
 import contextvars
 import itertools
@@ -10,14 +16,11 @@ import logging
 import os
 import sys
 import traceback
-from io import StringIO
-from types import TracebackType
-from typing import (
-    Mapping, cast, Optional, Union, Any,
-    Dict, Tuple, List, Type, Callable, Generator, Iterable, TextIO,
-)
+
+from srctools import StringPath
 
 
+__all__ = ['LoggerAdapter', 'get_handler', 'get_logger', 'init_logging', 'context']
 # Only generic in stubs!
 CTX_STACK: 'contextvars.ContextVar[List[str]]' = contextvars.ContextVar('srctools_logger')
 
@@ -72,6 +75,11 @@ class LogMessage:
         #
         return '\n | '.join(lines[:]) + '\n |___\n'
 
+_SysExcInfoType = Union[
+    Tuple[Type[BaseException], BaseException, Optional[TracebackType]],
+    Tuple[None, None, None]
+]
+
 
 class LoggerAdapter(logging.LoggerAdapter):
     """Fix loggers to use str.format().
@@ -97,14 +105,14 @@ class LoggerAdapter(logging.LoggerAdapter):
             BaseException
         ]=None,
         stack_info: bool=False,
-        stacklevel: int = 0,
         extra: Optional[Mapping[str, object]] = None,
         **kwargs: Any,
-    ):
-        """This version of .log() is for str.format() compatibility.
+    ) -> None:
+        """This version of :external:py:meth:`~logging.Logger.log()` is for :external:py:meth:`str.format()` compatibility.
 
-        The message is wrapped in a LogMessage object, which is given the
-        args and kwargs.
+        The message is wrapped in a :py:class:`LogMessage` object, which is given the
+        ``args`` and ``kwargs``.
+        ``stacklevel`` is supported, but is silently ignored in Python 3.7.
         """
         if self.isEnabledFor(level):
             try:
@@ -116,17 +124,23 @@ class LoggerAdapter(logging.LoggerAdapter):
             new_extra['alias'] = self.alias
             new_extra['context'] = f' ({ctx})' if ctx else ''
 
+            # Pull these arguments out of kwargs, so they can be set..
+            log_args = {
+                'extra': new_extra,
+                'exc_info': exc_info,
+                'stack_info': stack_info,
+            }
+            # Not present in 3.7, silently discard.
+            if sys.version_info >= (3, 8) and 'stacklevel' in kwargs:
+                log_args['stacklevel'] = kwargs.pop('stacklevel')
+
             # noinspection PyProtectedMember
             self.logger._log(
                 level,
-                LogMessage(msg, args, kwargs),
+                LogMessage(str(msg), args, kwargs),
                 (),  # No positional arguments, we do the formatting through
                 # LogMessage..
-                extra=new_extra,
-                # Pull these arguments out of kwargs, so they can be set..
-                exc_info=exc_info,
-                stack_info=stack_info,
-                stacklevel=stacklevel,
+                **log_args,
             )
 
     def __getattr__(self, attr: str) -> Any:
@@ -301,7 +315,7 @@ class NewLogRecord(logging.LogRecord):
     """Allow passing an alias and context for log modules."""
     alias: Optional[str] = None
 
-    def getMessage(self):
+    def getMessage(self) -> str:
         """We have to hook here to change the value of .module.
 
         It's called just before the formatting call is made.
@@ -313,20 +327,21 @@ class NewLogRecord(logging.LogRecord):
 
 
 def init_logging(
-    filename: Union[str, os.PathLike]=None,
+    filename: StringPath=None,
     main_logger: str='',
     on_error: Callable[
-        [Type[BaseException], BaseException, TracebackType],
+        [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
     ]=None,
 ) -> logging.Logger:
-    """Setup the logger and logging handlers.
+    """Set up the logger and logging handlers.
 
-    If filename is set, all logs will be written to this file as well.
-    This also sets sys.except_hook, so uncaught exceptions are captured.
-    on_error should be a function to call when uncaught exceptions are thrown.
-    (taking type, value, traceback).
-    If the exception is a BaseException, the app will quit silently.
+    This also sets :py:func:`sys.excepthook`, so uncaught exceptions are captured.
+
+    :param filename: If this is set, all logs will be written to this file as well.
+    :param on_error: should be a function to call when uncaught exceptions are thrown, taking ``(type, value, traceback)``. \
+    If the exception is a :external:py:class:`BaseException`, the app will quit silently.
+    :param main_logger: Specify the name of the logger to produce under the `srctools` hierachy.
     """
     if logging.getLogRecordFactory() is not logging.LogRecord:
         raise ValueError('Unknown record factory: ', logging.getLogRecordFactory())
@@ -368,7 +383,7 @@ def init_logging(
         logger.addHandler(stdout_loghandler)
 
         if sys.stderr:
-            def ignore_warnings(record: logging.LogRecord):
+            def ignore_warnings(record: logging.LogRecord) -> bool:
                 """Filter out messages higher than WARNING.
 
                 Those are handled by stdError, and we don't want duplicates.
@@ -393,7 +408,7 @@ def init_logging(
     def except_handler(
         exc_type: Type[BaseException],
         exc_value: BaseException,
-        exc_tb: TracebackType,
+        exc_tb: Optional[TracebackType],
     ) -> None:
         """Log uncaught exceptions."""
         if not issubclass(exc_type, Exception):
@@ -422,9 +437,9 @@ def init_logging(
 def get_logger(name: str='', alias: str=None) -> logging.Logger:
     """Get the named logger object.
 
-    This puts the logger into the srctools namespace, and wraps it to
-    use str.format() instead of % formatting.
-    If set, alias is the name to show for the module.
+    This puts the logger into the ``srctools`` namespace, and wraps it to
+    use :external:py:meth:`str.format()` instead of ``%`` formatting.
+    If set, ``alias`` is the name to show for the module.
     """
     if name:
         log = logging.getLogger('srctools.' + name)
@@ -435,7 +450,7 @@ def get_logger(name: str='', alias: str=None) -> logging.Logger:
 
 @contextlib.contextmanager
 def context(name: str) -> Generator[str, None, None]:
-    """Allows specifying additional information for any logs contained in this block.
+    """Context manager to allow specifying additional information for any logs contained in this block.
 
     The specified string gets included in the log messages.
     """

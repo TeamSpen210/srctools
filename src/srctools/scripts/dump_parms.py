@@ -3,18 +3,19 @@
 Run with a list of paths pointing to the materialsystem/ folders in the SDK.
 This produces _shaderdb.py
 """
-import glob
-import ast
-import sys
-import collections
+from typing import Dict, List, Optional, Set
 from collections import defaultdict
-from typing import Union, Dict, Set
+import ast
+import collections
+import glob
+import sys
 
-import attr
+import attrs
+
 from srctools.vmt import VarType
 
 
-@attr.frozen
+@attrs.frozen
 class Var:
     """A shader var."""
     name: str
@@ -86,6 +87,7 @@ def process(filename: str, args: str) -> None:
     ast_tuple: ast.Tuple = ast_expr.body
     elements = ast_tuple.elts
 
+    ast_help: Optional[ast.expr]
     if len(elements) == 5:
         ast_name, ast_type, ast_default, ast_help, ast_flags = ast_tuple.elts
         flags = parse_ast_value(ast_flags)
@@ -122,21 +124,21 @@ def process(filename: str, args: str) -> None:
             # but we don't care about help etc.
             if var.default != other.default:
                 if isinstance(other.default, frozenset):
-                    var = attr.evolve(var, default=other.default | {var.default})
+                    var = attrs.evolve(var, default=other.default | {var.default})
                 else:
-                    var = attr.evolve(var, default=frozenset({var.default, other.default}))
+                    var = attrs.evolve(var, default=frozenset({var.default, other.default}))
 
                 if isinstance(other.filename, frozenset):
-                    var = attr.evolve(var, filename=other.filename | {var.filename})
+                    var = attrs.evolve(var, filename=other.filename | {var.filename})
                 else:
-                    var = attr.evolve(var, filename=frozenset({var.filename, other.filename}))
+                    var = attrs.evolve(var, filename=frozenset({var.filename, other.filename}))
         else:
             # Different types, major issue.
             CONFLICTS[name].add(var)
     VARS[name] = var
 
 
-def dump(folder):
+def dump(folder: str) -> None:
     """Process the materialsystem/ folder from a game repro."""
     for file in glob.iglob(folder + '/**/*'):
         if not file.endswith(('.h', '.cpp', '.c')): continue
@@ -187,7 +189,7 @@ def dump(folder):
                 type=VarType.FLAG,
                 default='0',
                 help='FLAG: sets bitfield.',
-                flags=0,
+                flags='0',
                 filename='shadersystem.cpp',
             )
 
@@ -200,9 +202,9 @@ def dump(folder):
                     CONFLICTS[var_name] |= {var, other_var}
 
 
-def main():
+def main(args: List[str]) -> None:
     """Run this script."""
-    for folder in sys.argv[1:]:
+    for folder in args:
         print("Reading from", folder)
         dump(folder)
 
@@ -235,10 +237,10 @@ def main():
             for var_type in VarType
         ])))
         for var_type in VarType:
-            for var in sorted(var_by_type[var_type]):
-                f.write('    DB[{!r}] = {}\n'.format(var, var_type.name))
+            for var_name in sorted(var_by_type[var_type]):
+                f.write('    DB[{!r}] = {}\n'.format(var_name, var_type.name))
             f.write('\n')
 
 
 if __name__ == '__main__':
-    main()
+    main(sys.argv[1:])

@@ -1,14 +1,23 @@
 """Implements support for collapsing instances."""
+from typing import Container, Dict, Iterable, List, Set, Tuple, Union
 from enum import Enum
 from pathlib import Path
-from typing import Union, Tuple, Dict, Set, Iterable, Container, List
-from srctools import Matrix, Vec, Angle, conv_float, Property
-from srctools.vmf import Entity, EntityFixup, FixupValue, VMF, Output, VisGroup
-from srctools.fgd import ValueTypes, FGD, EntityDef, EntityTypes
-from srctools.filesys import FileSystemChain, RawFileSystem, FileSystem
+
+import attrs
+
+from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
+from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
+from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Matrix, Vec
+from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
 
 
+__all__ = [
+    'FixupStyle',
+    'Instance', 'Manifest', 'Param', 'InstanceFile',
+    'get_inst_locs', 'collapse_all', 'collapse_one',
+]
 LOGGER = srctools.logger.get_logger(__name__)
 # Hidden variable to track the number of recursions.
 RECUR_COUNT_ATTR = '_inst_recur_count'
@@ -18,9 +27,9 @@ _UNKNOWN_KV: Set[Tuple[str, str]] = set()
 
 class FixupStyle(Enum):
     """The kind of fixup style to use."""
-    PREFIX = 0
-    SUFFIX = 1
-    NONE = 2
+    PREFIX = 0  #: Entities will be named :samp:`{inst_name}-{ent_name}`.
+    SUFFIX = 1  #: Entities will be named :samp:`{ent_name}-{inst_name}`.
+    NONE = 2  #: Entities will remain named :samp:`{ent_name}`.
 
 
 class Instance:
@@ -67,7 +76,7 @@ class Instance:
             name,
             filename,
             Vec.from_str(ent['origin']),
-            Matrix.from_angle(Angle.from_str(ent['angles'])),
+            Matrix.from_angstr(ent['angles']),
             fixup_style,
             ent.outputs,
             ent.fixup.copy_values(),
@@ -97,8 +106,10 @@ class Instance:
     ) -> str:
         """Transform this keyvalue to the new instance's location and name.
 
-        - classnames is a set of known entity classnames, used to avoid renaming
-        those.
+        :param vmf: The rest of the map.
+        :param classnames: This is a set of known entity classnames, used to avoid renaming those.
+        :param type: The kind of FGD value.
+        :param value: The value of the key.
         """
         # All three are absolute positions.
         if type is ValueTypes.VEC or type is ValueTypes.VEC_ORIGIN or type is ValueTypes.VEC_LINE:
@@ -166,7 +177,7 @@ class Manifest(Instance):
         self.is_toplevel = is_toplevel
 
     @classmethod
-    def parse(cls, tree: Property) -> List['Manifest']:
+    def parse(cls, tree: Keyvalues) -> List['Manifest']:
         """Parse a VMM file."""
         return [
             cls(
@@ -177,17 +188,12 @@ class Manifest(Instance):
         ]
 
 
+@attrs.define
 class Param:
     """Configuration for a specific fixup variable."""
-    def __init__(
-        self,
-        name: str,
-        type: ValueTypes=ValueTypes.STRING,
-        default: str='',
-    ) -> None:
-        self.name = name
-        self.type = type
-        self.default = default
+    name: str
+    type: ValueTypes = ValueTypes.STRING
+    default: str = ''
 
 
 class InstanceFile:
@@ -211,7 +217,7 @@ class InstanceFile:
         """Parse func_instance_params and io_proxies in the map."""
         for params_ent in self.vmf.by_class['func_instance_parms']:
             params_ent.remove()
-            for key, value in params_ent.keys.items():
+            for key, value in params_ent.items():
                 if not key.startswith('param'):
                     continue
                 # Don't bother parsing the index, it doesn't matter.
@@ -255,7 +261,7 @@ def get_inst_locs(map_filename: Path) -> FileSystemChain:
     """Given a map filename, find sdk_content and produce the lookup locations.
 
     The chained filesystem will first look relative to the map, then in
-    sdk_content/maps/ if that's a parent directory.
+    ``sdk_content/maps/`` if that's a parent directory.
     """
     fsys_rel = RawFileSystem(map_filename.parent)
     fsys = FileSystemChain(fsys_rel)
@@ -278,11 +284,11 @@ def collapse_one(
 
     The FGD is the data used to localise keyvalues. If none an internal database
     will be used.
-    The visgroup paramter controls how visgroups are handled:
-    * If false, visgroups are stripped.
-    * If true, the original visgroups will be kept
-    * If set to a specific visgroup, all ents and brushes will be added to it,
-        with any existing visgroups in the instance added as a child.
+    The visgroup parameter controls how visgroups are handled:
+
+    * If :external:py:data:`False`, visgroups are stripped.
+    * If :external:py:data:`True`, the original visgroups will be kept.
+    * If set to a specific visgroup, all ents and brushes will be added to it, with any existing visgroups in the instance added as a child.
     """
     origin = inst.pos
     orient = inst.orient
@@ -330,7 +336,7 @@ def collapse_one(
             if out.target.casefold() != folded_inst_name or out.inst_in is None:
                 continue
             try:
-                proxy_out = file.proxy_inputs[out.inst_in, out.input]  # type: ignore
+                proxy_out = file.proxy_inputs[out.inst_in, out.input]
             except KeyError:
                 # Not an error, could be another instance with our name.
                 continue
@@ -395,12 +401,12 @@ def collapse_one(
         # First extract a rotated angles value, handling the special "pitch" and "yaw" keys.
         angles = Angle.from_str(new_ent['angles'])
         if 'pitch' in new_ent:
-            angles.pitch = conv_float(new_ent['pitch'])
+            angles.pitch = srctools.conv_float(new_ent['pitch'])
         if 'yaw' in new_ent:
-            angles.yaw = conv_float(new_ent['yaw'])
+            angles.yaw = srctools.conv_float(new_ent['yaw'])
         angles @= orient
 
-        for key, value in new_ent.keys.items():
+        for key, value in new_ent.items():
             folded = key.casefold()
             value = inst.fixup.substitute(value, '')
             # Hardcode these critical keyvalues to always be these types.
@@ -441,7 +447,7 @@ def collapse_one(
                     _UNKNOWN_KV.add((classname, key))
                 continue
 
-            new_ent.keys[key] = inst.fixup_key(vmf, fgd, kv.type, value)
+            new_ent[key] = inst.fixup_key(vmf, fgd, kv.type, value)
 
         # Remap fixups on instance entities too.
         for key, value in new_ent.fixup.items():
@@ -468,14 +474,17 @@ def collapse_one(
 def collapse_all(
     vmf: VMF,
     fsys: FileSystem,
-    recur_limit=100,
-    fgd: FGD=None,
+    recur_limit: int = 100,
+    fgd: FGD = None,
 ) -> None:
-    """Searches for `func_instance`s in the map, then collapses them.
+    """Searches for ``func_instance`` in the map, then collapses them.
 
-    The filesystem is used to find the relevant instances.
-    The recursion limit indicates how many instances can be contained
-    in another - if it's exceeded they're left in the map.
+    :param vmf: The map to analyse.
+    :param fsys: The filesystem is used to find the relevant instances.
+    :param recur_limit: The recursion limit indicates how many instances can be contained in
+        another - if it's exceeded they're left in the map.
+    :param fgd: The FGD is used to determine how to handle keyvalues. If not provided, an internal
+        database from HammerAddons is used.
     """
     if fgd is None:
         fgd = FGD.engine_dbase()
@@ -497,7 +506,7 @@ def collapse_all(
             try:
                 file = cache[inst.filename]
             except KeyError:
-                props = fsys.read_prop(inst.filename)
+                props = fsys.read_kv1(inst.filename)
                 # except FileNotFoundError - fail.
                 file = cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
             collapse_one(vmf, inst, file, fgd)

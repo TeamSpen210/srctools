@@ -1,17 +1,16 @@
 """Parses SMD model/animation data."""
-import os
-import re
-import warnings
+from typing import Any, Dict, Iterable, Iterator, List, Optional, Set, Tuple, Union
+from typing_extensions import Protocol
 from collections import defaultdict
 from copy import deepcopy
 from operator import itemgetter
-
 import math
-from typing import (
-    Union, Optional, Any, Protocol, Tuple,
-    List, Dict, Set, Iterator, Iterable,
-)
-from srctools.math import Vec, Angle, Matrix, to_matrix
+import os
+import re
+import warnings
+
+from srctools.math import Angle, Matrix, Vec, to_matrix
+
 
 __all__ = [
     'Mesh', 'Triangle', 'Vertex', 'Bone', 'BoneFrame', 'ParseError',
@@ -106,8 +105,10 @@ class Vertex:
         self.tex_v = tex_v
 
     def __repr__(self) -> str:
-        return 'Vertex({!r}, {!r}, {}, {}, {})'.format(
-            self.pos, self.norm, self.tex_u, self.tex_v, self.links
+        return (
+            f'{self.__class__.__name__}('
+            f'{self.pos!r}, {self.norm!r}, '
+            f'{self.tex_u}, {self.tex_v}, {self.links})'
         )
 
     def copy(self) -> 'Vertex':
@@ -426,7 +427,7 @@ class Mesh:
         raise ParseError('end', 'No end to skeleton section!')
 
     @staticmethod
-    def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]):
+    def _parse_smd_tri(file_iter: Iterator[Tuple[int, bytes]], bones: Dict[int, Bone]) -> List[Triangle]:
         """Parse the 'triangles' section of SMDs."""
         tris: List[Triangle] = []
         # Temporary vertex, which we overwrite in the loop.

@@ -1,5 +1,8 @@
-"""Logic entities. Not much resources here."""
-from srctools._class_resources import *
+"""Logic entities. Not many resources here."""
+from ..packlist import PackList
+from ..vmf import Entity
+from . import *
+
 
 res('logic_achievement')
 res('logic_active_autosave')
@@ -10,9 +13,14 @@ res('logic_branch_listener')
 res('logic_case')
 res('logic_collision_pair')
 res('logic_console')
+res('logic_context_accessor')
+res('logic_convar')
 res('logic_compare')
 res('logic_coop_manager')
 res('logic_datadesc_accessor')
+res('logic_entity_position')
+res('logic_eventlistener')
+res('logic_eventlistener_itemequip')
 res('logic_format')
 res('logic_keyfield')
 res('logic_lineto')
@@ -27,7 +35,7 @@ res('logic_playerinfo')
 
 
 @cls_func
-def logic_playmovie(pack: PackList, ent: Entity):
+def logic_playmovie(pack: PackList, ent: Entity) -> None:
     """Mark the BIK movie as being used, though it can't be packed."""
     pack.pack_file('media/' + ent['MovieFilename'])
 
@@ -39,11 +47,14 @@ res('logic_relay')
 res('logic_relay_queue')
 res('logic_scene_list_manager')
 res('logic_script')
+res('logic_script_client')
 res('logic_sequence')
 res('logic_skill')
 res('logic_timescale')
 res('logic_timer')
 
+res('math_bits')
+res('math_clamp')
 res('math_counter')
 res('math_counter_advanced')
 res('math_generate')
@@ -52,4 +63,3 @@ res('math_mod')
 res('math_remap')
 res('math_vector')
 res('math_colorblend')
-

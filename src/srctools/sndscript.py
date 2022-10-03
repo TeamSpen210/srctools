@@ -1,15 +1,13 @@
 """Reads and writes Soundscripts."""
+from typing import IO, Callable, Dict, List, Optional, TextIO, Tuple, TypeVar, Union
 from enum import Enum
-from chunk import Chunk as WAVChunk
+import struct
 
-import attr
+import attrs
 
-from srctools import Property, conv_float
-from typing import (
-    Optional, Union, TypeVar, Callable,
-    List, Tuple, Dict,
-    TextIO, IO,
-)
+from srctools import conv_float
+from srctools.keyvalues import Keyvalues
+
 
 __all__ = [
     'SND_CHARS', 'Pitch', 'VOL_NORM', 'Channel', 'Level',
@@ -121,21 +119,22 @@ def split_float(
     The name is used for error handling.
     """
     if isinstance(val, list):
+        # TODO: This won't work once .value raises instead of returning the list.
         raise ValueError(f'Property block used for option in {name} sound!')
     if ',' in val:
         s_low, s_high = val.split(',')
         try:
-            low = enum(s_low.upper())
+            low = enum(s_low.strip().upper())
         except (LookupError, ValueError):
             low = conv_float(s_low, default)
         try:
-            high = enum(s_high.upper())
+            high = enum(s_high.strip().upper())
         except (LookupError, ValueError):
             high = conv_float(s_high, default)
         return low, high
     else:
         try:
-            out = enum(val.upper())
+            out = enum(val.strip().upper())
         except (LookupError, ValueError):
             out = conv_float(val, default)
         return out, out
@@ -147,7 +146,104 @@ def join_float(val: Tuple[Union[float, Enum], Union[float, Enum]]) -> str:
     if low == high:
         return str(low)
     else:
-        return f'{low!s},{high!s}'
+        return f'{low!s}, {high!s}'
+
+
+class _WAVChunk:
+    """To allow reading CUE points, we need a copy of the former chunk module.
+
+    This is copied from the Python Standard Library, 3.11.
+    We force little-endian, and to align to 2-byte boundaries.
+    """
+    def __init__(self, file: IO[bytes]) -> None:
+        self.closed = False
+        self.file = file
+        self.chunkname = file.read(4)
+        if len(self.chunkname) < 4:
+            raise EOFError
+        try:
+            [self.chunksize] = struct.unpack_from('<L', file.read(4))
+        except struct.error:
+            raise EOFError from None
+        self.size_read = 0
+        try:
+            self.offset = self.file.tell()
+        except (AttributeError, OSError):
+            self.seekable = False
+        else:
+            self.seekable = True
+
+    def close(self) -> None:
+        """Close this chunk, skipping to the next."""
+        if not self.closed:
+            try:
+                self.skip()
+            finally:
+                self.closed = True
+
+    def seek(self, pos: int, whence: int = 0) -> None:
+        """Seek to specified position into the chunk.
+        Default position is 0 (start of chunk).
+        If the file is not seekable, this will result in an error.
+        """
+
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if not self.seekable:
+            raise OSError("cannot seek")
+        if whence == 1:
+            pos = pos + self.size_read
+        elif whence == 2:
+            pos = pos + self.chunksize
+        if pos < 0 or pos > self.chunksize:
+            raise RuntimeError
+        self.file.seek(self.offset + pos, 0)
+        self.size_read = pos
+
+    def read(self, size: int = -1) -> bytes:
+        """Read at most size bytes from the chunk.
+        If size is omitted or negative, read until the end
+        of the chunk.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.size_read >= self.chunksize:
+            return b''
+        if size < 0:
+            size = self.chunksize - self.size_read
+        if size > self.chunksize - self.size_read:
+            size = self.chunksize - self.size_read
+        data = self.file.read(size)
+        self.size_read = self.size_read + len(data)
+        if self.size_read == self.chunksize and (self.chunksize & 1):
+            dummy = self.file.read(1)
+            self.size_read = self.size_read + len(dummy)
+        return data
+
+    def skip(self) -> None:
+        """Skip the rest of the chunk.
+        If you are not interested in the contents of the chunk,
+        this method should be called so that the file points to
+        the start of the next chunk.
+        """
+        if self.closed:
+            raise ValueError("I/O operation on closed file")
+        if self.seekable:
+            try:
+                n = self.chunksize - self.size_read
+                # maybe fix alignment
+                if self.chunksize & 1:
+                    n = n + 1
+                self.file.seek(n, 1)
+                self.size_read = self.size_read + n
+                return
+            except OSError:
+                pass
+        while self.size_read < self.chunksize:
+            n = min(8192, self.chunksize - self.size_read)
+            dummy = self.read(n)
+            if not dummy:
+                raise EOFError
 
 
 def wav_is_looped(file: IO[bytes]) -> bool:
@@ -155,35 +251,35 @@ def wav_is_looped(file: IO[bytes]) -> bool:
 
     This code is partially copied from wave.Wave_read.initfp().
     """
-    first = WAVChunk(file, bigendian=False)
-    if first.getname() != b'RIFF':
+    first = _WAVChunk(file)
+    if first.chunkname != b'RIFF':
         raise ValueError('File does not start with RIFF id.')
     if first.read(4) != b'WAVE':
         raise ValueError('Not a WAVE file.')
 
     while True:
         try:
-            chunk = WAVChunk(file, bigendian=False)
+            chunk = _WAVChunk(file)
         except EOFError:
             return False
-        if chunk.getname() == b'cue ':
+        if chunk.chunkname == b'cue ':
             return True
         chunk.skip()
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Sound:
     """Represents a single soundscript."""
     name: str
-    sounds: List[str] = attr.Factory(list)
+    sounds: List[str] = attrs.Factory(list)
     volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
     channel: Channel = Channel.DEFAULT
     level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
-    _stack_start: Optional[Property] = None
-    _stack_update: Optional[Property] = None
-    _stack_stop: Optional[Property] = None
+    _stack_start: Optional[Keyvalues] = None
+    _stack_update: Optional[Keyvalues] = None
+    _stack_stop: Optional[Keyvalues] = None
     force_v2: bool = False
 
     def __init__(
@@ -196,9 +292,9 @@ class Sound:
         pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
         # Operator stacks
-        stack_start: Optional[Property]=None,
-        stack_update: Optional[Property]=None,
-        stack_stop: Optional[Property]=None,
+        stack_start: Optional[Keyvalues]=None,
+        stack_update: Optional[Keyvalues]=None,
+        stack_stop: Optional[Keyvalues]=None,
         force_v2: bool=False,
     ) -> None:
         """Create a soundscript."""
@@ -227,44 +323,44 @@ class Sound:
         self._stack_stop = stack_stop
 
     @property
-    def stack_start(self) -> Property:
+    def stack_start(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_start is None:
-            self._stack_start = Property('', [])
+            self._stack_start = Keyvalues('', [])
         return self._stack_start
 
     @stack_start.setter
-    def stack_start(self, tree: Property) -> None:
+    def stack_start(self, tree: Keyvalues) -> None:
         """Change the start stack to another tree."""
         self._stack_start = tree
 
     @property
-    def stack_update(self) -> Property:
+    def stack_update(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_update is None:
-            self._stack_update = Property('', [])
+            self._stack_update = Keyvalues('', [])
         return self._stack_update
 
     @stack_update.setter
-    def stack_update(self, tree: Property) -> None:
+    def stack_update(self, tree: Keyvalues) -> None:
         """Change the update stack to another tree."""
         self._stack_update = tree
 
     @property
-    def stack_stop(self) -> Property:
+    def stack_stop(self) -> Keyvalues:
         """Initialise the stack if not already produced."""
         if self._stack_stop is None:
-            self._stack_stop = Property('', [])
+            self._stack_stop = Keyvalues('', [])
         return self._stack_stop
 
     @stack_stop.setter
-    def stack_stop(self, tree: Property) -> None:
+    def stack_stop(self, tree: Keyvalues) -> None:
         """Change the stop stack to another tree."""
         self._stack_stop = tree
 
     def __repr__(self) -> str:
         res = (
-            f'Sound({self.name!r}, {self.sounds}, volume={self.volume}, '
+            f'{self.__class__.__name__}({self.name!r}, {self.sounds}, volume={self.volume}, '
             f'channel={self.channel}, level={self.level}, pitch={self.pitch}'
         )
         if self.force_v2 or self._stack_start or self._stack_update or self._stack_stop:
@@ -278,7 +374,7 @@ class Sound:
         return res
 
     @classmethod
-    def parse(cls, file: Property) -> Dict[str, 'Sound']:
+    def parse(cls, file: Keyvalues) -> Dict[str, 'Sound']:
         """Parses a soundscript file.
 
         This returns a dict mapping casefolded names to Sounds.
@@ -341,7 +437,7 @@ class Sound:
                         'less than 2 in "{}"!'.format(snd_prop.real_name))
 
                 start_stack, update_stack, stop_stack = [
-                    Property(stack_name, [
+                    Keyvalues(stack_name, [
                         prop.copy()
                         for prop in
                         snd_prop.find_children('operator_stacks', stack_name)
@@ -366,7 +462,7 @@ class Sound:
             )
         return sounds
 
-    def export(self, file: TextIO):
+    def export(self, file: TextIO) -> None:
         """Write a sound to a file.
 
         Pass a file-like object open for text writing.

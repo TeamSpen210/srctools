@@ -1,13 +1,14 @@
 """Collapses the submaps of a manifest map into a single VMF."""
+from typing import List, Union
+from pathlib import Path
 import argparse
 import sys
-from pathlib import Path
-from typing import List, Union
 
-from srctools import FGD, Property, Vec, VMF
-from srctools.instancing import Manifest, InstanceFile, collapse_one
+from srctools.fgd import FGD
 from srctools.filesys import RawFileSystem
-from srctools.vmf import VisGroup
+from srctools.instancing import InstanceFile, Manifest, collapse_one
+from srctools.keyvalues import Keyvalues
+from srctools.vmf import VMF, VisGroup
 
 
 def main(args: List[str]) -> None:
@@ -49,7 +50,7 @@ def main(args: List[str]) -> None:
         fgd = FGD.engine_dbase()
 
     with source.open() as f:
-        submaps = Manifest.parse(Property.parse(f))
+        submaps = Manifest.parse(Keyvalues.parse(f))
     fsys = RawFileSystem(source.with_suffix(''))
     fsys.open_ref()
 
@@ -59,7 +60,7 @@ def main(args: List[str]) -> None:
         print(f'Collapsing "{submap.name}"...')
 
         with fsys[submap.filename].open_str() as f:
-            sub_file = InstanceFile(VMF.parse(Property.parse(f)))
+            sub_file = InstanceFile(VMF.parse(Keyvalues.parse(f)))
 
         visgroup: Union[bool, VisGroup]
         if submap.is_toplevel:

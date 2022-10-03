@@ -133,11 +133,12 @@ def test_conv_float():
             assert srctools.conv_float(string, default) is default
 
 
+# noinspection PyStatementEffect, PyCallingNonCallable
 def test_EmptyMapping():
     marker = object()
     
     # It should be possible to 'construct' an instance..
-    assert EmptyMapping() is EmptyMapping
+    assert EmptyMapping() is EmptyMapping  # type: ignore
 
     # Must be passable to dict()
     assert dict(EmptyMapping) == {}

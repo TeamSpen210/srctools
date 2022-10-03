@@ -1,10 +1,10 @@
 """For older engines, HLMV requires the actual folder path to exist in order to read VPKs.
 
 This generates those."""
+from typing import List
+from pathlib import Path
 import argparse
 import sys
-from pathlib import Path
-from typing import List
 
 from srctools.vpk import VPK
 

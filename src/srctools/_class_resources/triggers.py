@@ -1,5 +1,5 @@
 """Trigger entities."""
-from srctools._class_resources import *
+from . import *
 
 
 res('trigger_active_weapon_detect')
@@ -44,6 +44,7 @@ res('trigger_player_respawn_override')
 res('trigger_playermovement')
 res('trigger_playerteam')
 
+res('trigger_portal_button')
 res(
     'trigger_portal_cleanser',
     part('cleanser_scanline'),
@@ -69,6 +70,7 @@ res('trigger_stun')
 res('trigger_teleport')
 res('trigger_teleport_relative')
 res('trigger_timer_door')
+res('trigger_togglesave')
 res('trigger_tonemap')
 res('trigger_transition')
 res('trigger_upgrade_laser_sight')

@@ -1,38 +1,29 @@
 """Parse FGD files, used to describe Hammer entities."""
-from copy import deepcopy
+from typing import (
+    IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
+    Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
+    overload,
+)
+from typing_extensions import Final
 from collections import defaultdict
+from copy import deepcopy
 from enum import Enum
+from importlib_resources import files
 from pathlib import PurePosixPath
 from struct import Struct
-from functools import partial
-import itertools
 import io
+import itertools
 import math
 import operator
+import sys
 
-from typing import (
-    Generic, Optional, TYPE_CHECKING, Union, overload, cast, ClassVar, Any,
-    TypeVar, Callable, Type,
-    Dict, Tuple, List, Set, FrozenSet,
-    Mapping, Iterator, Iterable, Collection,
-    TextIO, Container, IO,
-)
+import attrs
 
-import attr
-
-import srctools
-from srctools.filesys import FileSystem, File
-from srctools.tokenizer import (
-    BaseTokenizer, Tokenizer, Token,
-    TokenSyntaxError, escape_text,
-)
 from srctools.binformat import struct_read
+from srctools.filesys import File, FileSystem
+from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
+import srctools
 
-try:
-    from importlib.resources import open_binary
-except ImportError:
-    # Backport module for before Python 3.7
-    from importlib_resources import open_binary  # type: ignore
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
@@ -54,16 +45,16 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-_fmt_8bit = Struct('>B')
-_fmt_16bit = Struct('>H')
-_fmt_32bit = Struct('>I')
+_fmt_8bit: Final = Struct('>B')
+_fmt_16bit: Final = Struct('>H')
+_fmt_32bit: Final = Struct('>I')
 _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
 _fmt_ent_header = Struct('<BBBBBB')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION = 5
+BIN_FORMAT_VERSION: Final = 5
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
@@ -345,7 +336,7 @@ VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
 ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
 
 
-def read_colon_list(tok: BaseTokenizer, had_colon=False) -> Tuple[List[str], Token]:
+def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
 
     The token found at the end is returned.
@@ -465,7 +456,7 @@ def validate_tags(
     })
 
 
-def match_tags(search: Container[str], tags: Iterable[str]):
+def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
     """Check if the search constraints satisfy tags.
 
     The search tags should be uppercased.
@@ -645,34 +636,9 @@ class UnknownHelper(Helper):
 
 
 HelperT = TypeVar('HelperT', bound=Helper)
-# Each helper type -> the class implementing them.
-# We fill this at the end of the module.
-HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 
 
-def _init_helper_impl() -> None:
-    """Import and register the helper implementations."""
-    # noinspection PyProtectedMember
-    from srctools import _fgd_helpers as helper_mod
-    for helper_type in vars(helper_mod).values():
-        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
-            if helper_type.TYPE is not None:
-                HELPER_IMPL[helper_type.TYPE] = helper_type
-
-    for helper in HelperTypes:
-        if helper not in HELPER_IMPL:
-            raise ValueError(
-                'Missing helper implementation '
-                'for {}!'.format(helper)
-            )
-
-_init_helper_impl()
-del _init_helper_impl
-# noinspection PyProtectedMember
-from srctools._fgd_helpers import *
-
-
-@attr.define(order=True, hash=True, eq=True)
+@attrs.define(order=True, hash=True, eq=True)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -681,14 +647,14 @@ class AutoVisgroup:
     of the parent. Note they're case-sensitive, and can include punctuation.
     """
     name: str
-    parent: str = attr.ib(hash=False, eq=False, order=False)
-    ents: Set[str] = attr.ib(factory=set, hash=False, eq=False, order=False)
+    parent: str = attrs.field(hash=False, eq=False, order=False)
+    ents: Set[str] = attrs.field(factory=set, hash=False, eq=False, order=False)
 
     def __repr__(self) -> str:
         return '<AutoVisgroup "{}">'.format(self.name)
 
 
-@attr.define
+@attrs.define
 class KeyValues:
     """Represents a generic keyvalue type.
 
@@ -740,9 +706,10 @@ class KeyValues:
         return KeyValues(
             self.name,
             self.type,
-            self.desc,
             self.disp_name,
             self.default,
+            self.desc,
+            # Always copy this.
             self.val_list.copy() if self.val_list else None,
             self.readonly,
             self.reportable,
@@ -778,8 +745,8 @@ class KeyValues:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
         if tags:
-            file.write('[' + ', '.join(tags) + ']')
-        file.write('({}) '.format(self.type.value))
+            file.write(f'[{", ".join(sorted(tags))}]')
+        file.write(f'({self.type.value}) ')
 
         if self.readonly:
             file.write('readonly ')
@@ -789,7 +756,7 @@ class KeyValues:
 
         if self.type is not ValueTypes.SPAWNFLAGS:
             # Spawnflags never use names!
-            file.write(': "{}"'.format(self.disp_name))
+            file.write(f': "{self.disp_name}"')
 
         default = self.default
         if not default and self.type is ValueTypes.BOOL:
@@ -816,13 +783,13 @@ class KeyValues:
             file.write(' =\n\t\t[\n')
             if self.type is ValueTypes.SPAWNFLAGS:
                 # Empty tuple handles a None value.
-                for index, name, default, tags in self.flags_list:
+                for index, name, flag_default, tags in self.flags_list:
                     file.write(f'\t\t{index}: ')
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, f'[{index}] ' + name.replace('\n', ' '), indent='\t\t')
-                    file.write(' : 1' if default else ' : 0')
+                    file.write(' : 1' if flag_default else ' : 0')
                     if tags:
-                        file.write(' [' + ', '.join(tags) + ']\n')
+                        file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
             elif self.type is ValueTypes.CHOICES:
@@ -837,7 +804,7 @@ class KeyValues:
                     # Newlines aren't functional here, just replace.
                     _write_longstring(file, name.replace('\n', ' '), indent='\t\t')
                     if tags:
-                        file.write(' [' + ', '.join(tags) + ']\n')
+                        file.write(f' [{", ".join(sorted(tags))}]\n')
                     else:
                         file.write('\n')
             else:
@@ -846,7 +813,7 @@ class KeyValues:
 
         file.write('\n')
 
-    def serialise(self, file, str_dict: BinStrDict):
+    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
         """Write to the binary file."""
         file.write(str_dict(self.name))
         file.write(str_dict(self.disp_name))
@@ -895,31 +862,32 @@ class KeyValues:
         readonly = value_ind & 128
         value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
-        val_list: Optional[List[tuple]] = None
+        val_list: Optional[List[tuple]]
 
         if value_type is ValueTypes.SPAWNFLAGS:
             default = ''  # No default for this type.
             [val_count] = struct_read(_fmt_8bit, file)
-            val_list = [()] * val_count
+            val_list = []
             for ind in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
                 [power] = struct_read(_fmt_8bit, file)
                 val_name = from_dict()
-                val_list[ind] = (
+                val_list.append((
                     1 << (power & 127),
                     val_name,
                     (power & 128) != 0,
                     tags,
-                )
+                ))
         else:
             default = from_dict()
-
             if value_type is ValueTypes.CHOICES:
                 [val_count] = struct_read(_fmt_16bit, file)
-                val_list = [()] * val_count
+                val_list = []
                 for ind in range(val_count):
                     tags = BinStrDict.read_tags(file, from_dict)
-                    val_list[ind] = (from_dict(), from_dict(), tags)
+                    val_list.append((from_dict(), from_dict(), tags))
+            else:
+                val_list = None
 
         return KeyValues(
             name=name,
@@ -931,22 +899,12 @@ class KeyValues:
         )
 
 
-@attr.define
+@attrs.define
 class IODef:
     """Represents an input or output for an entity."""
     name: str
-    type: ValueTypes
+    type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
     desc: str = ''
-
-    def __str__(self) -> str:
-        txt = '{}({!r}, {!r}'.format(
-            self.__class__.__name__,
-            self.name,
-            self.type,
-        )
-        if self.desc:
-            txt += ', ' + repr(self.desc)
-        return txt + ')'
 
     def copy(self) -> 'IODef':
         """Create a duplicate of this IODef."""
@@ -967,19 +925,16 @@ class IODef:
 
         io_type should be "input" or "output".
         """
-        file.write('\t{} {}'.format(
-            io_type,
-            self.name,
-        ))
+        file.write(f'\t{io_type} {self.name}')
 
         if tags:
-            file.write('[' + ', '.join(tags) + ']')
+            file.write(f'[{", ".join(sorted(tags))}]')
 
         # Special case, bool is "boolean" on values, "bool" on IO...
         if self.type is ValueTypes.BOOL:
             file.write('(bool)')
         else:
-            file.write('({})'.format(VALUE_TO_IO_DECAY[self.type].value))
+            file.write(f'({VALUE_TO_IO_DECAY[self.type].value})')
 
         if self.desc:
             file.write(' : ')
@@ -1019,17 +974,21 @@ class _EntityView(Generic[T]):
     def __repr__(self) -> str:
         return '{!r}.{}'.format(self._ent, self._disp_attr)
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """We're private, so we should be the only instance for a given Entity."""
         return other is self
 
-    def _maps(self, ent=None) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
+    def _maps(
+        self,
+        ent: Optional['EntityDef'] = None,
+    ) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
 
         yield getattr(ent, self._attr)
         for base in ent.bases:
+            assert isinstance(base, EntityDef)
             yield from self._maps(base)
 
     def __getitem__(self, name: Union[str, Tuple[str, Collection[str]]]) -> T:
@@ -1043,10 +1002,7 @@ class _EntityView(Generic[T]):
             name, search_tags = name
             search_tags = frozenset({t.upper() for t in search_tags})
         else:
-            raise TypeError(
-                'Expected str or (str, Iterable[str]), '
-                'got "{}"'.format(name),
-            )
+            raise TypeError(f'Expected str or (str, Iterable[str]), got "{name}"')
         name = name.casefold()
         for ent_map in self._maps():
             try:
@@ -1091,39 +1047,36 @@ class _EntityView(Generic[T]):
 del _EntityView.__slots__
 
 
-@attr.define(slots=False, eq=False)
+@attrs.define(slots=False, eq=False, repr=False)
 class EntityDef:
     """A definition for an entity."""
     type: EntityTypes
     classname: str = ''
 
     # These are (name) -> {tags} -> value dicts.
-    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attr.Factory(dict)
-    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
-    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attr.Factory(dict)
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.Factory(dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
 
     # Keyvalues have an order. If not present in here,
     # they appear at the end.
-    kv_order: List[str] = attr.Factory(list)
+    kv_order: List[str] = attrs.Factory(list)
 
     # Base type names - base()
-    bases: List[Union['EntityDef', str]] = attr.Factory(list)
-    helpers: List[Helper] = attr.Factory(list)
+    bases: List[Union['EntityDef', str]] = attrs.Factory(list)
+    helpers: List[Helper] = attrs.Factory(list)
     desc: str = ''
 
     # Views for accessing data among all the entities.
-    kv: _EntityView[KeyValues] = attr.ib(init=False, default=attr.Factory(
-        partial(_EntityView, attr_name='keyvalues', disp_name='kv'),
-        takes_self=True,
-    ))
-    inp: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
-        partial(_EntityView, attr_name='inputs', disp_name='inp'),
-        takes_self=True,
-    ))
-    out: _EntityView[IODef] = attr.ib(init=False, default=attr.Factory(
-        partial(_EntityView, attr_name='outputs', disp_name='out'),
-        takes_self=True,
-    ))
+    kv: _EntityView[KeyValues] = attrs.field(init=False)
+    inp: _EntityView[IODef] = attrs.field(init=False)
+    out: _EntityView[IODef] = attrs.field(init=False)
+
+    def __attrs_post_init__(self) -> None:
+        """Setup Entity views."""
+        self.kv = _EntityView(self, 'keyvalues', 'kv')
+        self.inp = _EntityView(self, 'inputs', 'inp')
+        self.out = _EntityView(self, 'outputs', 'out')
 
     @classmethod
     def parse(
@@ -1131,8 +1084,8 @@ class EntityDef:
         fgd: 'FGD',
         tok: BaseTokenizer,
         ent_type: EntityTypes,
-        eval_bases: bool=True,
-    ):
+        eval_bases: bool = True,
+    ) -> None:
         """Parse an entity definition."""
         entity = cls(ent_type)
 
@@ -1299,14 +1252,6 @@ class EntityDef:
                     except KeyError:
                         raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
 
-                if not val_typ.valid_for_io:
-                    raise tok.error(
-                        '"{}" value type is not valid for an input or '
-                        'output! Use "{}" instead.',
-                        val_typ.value,
-                        VALUE_TO_IO_DECAY[val_typ].value,
-                    )
-
                 # Read desc
                 io_vals, token = read_colon_list(tok)
 
@@ -1404,12 +1349,13 @@ class EntityDef:
                     elif default.casefold() == 'no':
                         default = '0'
 
+                # Read the choices in the [].  There's two kinds of tuples here, typing this
+                # doesn't work right.
+                val_list: Optional[List[Any]]
                 if val_typ.has_list:
                     if has_equal is not Token.EQUALS:
                         raise tok.error('No list for "{}" value type!', val_typ.name)
-                    # Read the choices in the [].  There's two kinds of tuples here, typing this
-                    # doesn't work right.
-                    val_list: Optional[List[Any]] = []
+                    val_list = []
                     tok.expect(Token.BRACK_OPEN)
                     for choices_token, choices_value in tok:
                         if choices_token is Token.NEWLINE:
@@ -1443,11 +1389,9 @@ class EntityDef:
                                 power = 0.5  # Force the following code to raise
                             if power != round(power):
                                 raise tok.error(
-                                    'SpawnFlags must be powers of two, '
-                                    'not {} (in {})!'.format(
-                                        spawnflag,
-                                        entity.classname,
-                                    )
+                                    'SpawnFlags must be powers of two, not {} (in {})!',
+                                    spawnflag,
+                                    entity.classname,
                                 ) from None
                             # Spawnflags can have a default, others may not.
                             if len(vals) == 2:
@@ -1494,9 +1438,9 @@ class EntityDef:
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
-            return '<Entity Base "{}">'.format(self.classname)
+            return f'<Entity Base "{self.classname}">'
         else:
-            return '<Entity {}>'.format(self.classname)
+            return f'<Entity {self.classname}>'
 
     def __deepcopy__(self, memodict: dict) -> 'EntityDef':
         """Handle copying ourselves, to eliminate lookups when not required."""
@@ -1606,9 +1550,7 @@ class EntityDef:
     def export(self, file: TextIO) -> None:
         """Write the entity out to a FGD file."""
         # Make it look pretty: BaseClass
-        file.write('@{} '.format(
-            self.type.value.title().replace('class', 'Class')
-        ))
+        file.write(f'@{self.type.value.title().replace("class", "Class")} ')
         if self.bases:
             file.write('base(')
             file.write(', '.join([
@@ -1625,9 +1567,9 @@ class EntityDef:
                 # Special case, no args.
                 file.write('\n\thalfgridsnap')
             elif isinstance(helper, UnknownHelper):
-                file.write('\n\t{}({})'.format(helper.name, ', '.join(args)))
+                file.write(f'\n\t{helper.name}({", ".join(args)})')
             elif helper.TYPE is not None:
-                file.write('\n\t{}({})'.format(helper.TYPE.value, ', '.join(args)))
+                file.write(f'\n\t{helper.TYPE.value}({", ".join(args)})')
             else:
                 raise TypeError(f'Helper {helper!r} has no TYPE attr?')
             if isinstance(helper, HelperExtOrderBy):
@@ -1635,7 +1577,7 @@ class EntityDef:
 
         if self.helpers:
             file.write('\n')  # Put the classname on the following line.
-        file.write('= {}'.format(self.classname))
+        file.write(f'= {self.classname}')
 
         if self.desc:
             file.write(': ')
@@ -1687,7 +1629,7 @@ class EntityDef:
             yield ent
             yield from ent.iter_bases(_done)
 
-    def serialise(self, file, str_dict: BinStrDict):
+    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
         """Write to the binary file."""
         file.write(_fmt_ent_header.pack(
             ENTITY_TYPE_INDEX[self.type],
@@ -1825,11 +1767,9 @@ class FGD:
     ) -> 'FGD':
         """Parse an FGD file.
 
-        Parameters:
-        * file: A filesys.File representing the file to read, or a file path.
-        * filesystem: The system to lookup files in. This is needed to
-          resolve file inclusions. If not passed, file must be a filesystem
-          File to obtain a matching filesystem.
+        :param file: A :py:class:filesystem.File` representing the file to read, or a file path.
+        :param filesystem: The system to lookup files in. This is needed to resolve file inclusions.
+            If not passed, file must be a :py:class:filesystem.File` to retrieve this automatically.
         """
         if filesystem is not None and not isinstance(file, File):
             if not file.endswith('.fgd'):
@@ -1842,9 +1782,7 @@ class FGD:
         elif isinstance(file, File):
             filesystem = file.sys
         else:
-            raise TypeError(
-                'String file path passed ({!r}), but no filesystem!'.format(file)
-            )
+            raise TypeError(f'String file path passed ({file!r}), but no filesystem!')
         assert filesystem is not None, (filesystem, file)
         fgd = cls()
         fgd.parse_file(filesystem, file)
@@ -1867,7 +1805,7 @@ class FGD:
                     continue
 
                 try:
-                    new_bases.append(self[base])  # type: ignore
+                    new_bases.append(self[base])
                 except KeyError:
                     raise ValueError(
                         'Unknown base ({}) for {}'.format(
@@ -1893,10 +1831,7 @@ class FGD:
                 ready = True
                 for base in ent.bases:
                     if isinstance(base, str):
-                        raise ValueError(
-                            'Unevaluated base: {} in {}!'.format(
-                                base, ent.classname,
-                            ))
+                        raise ValueError(f'Unevaluated base: {base} in {ent.classname}!')
                     if base not in done:
                         # Base not done yet, we need to defer this.
                         deferred.add(ent)
@@ -1919,10 +1854,9 @@ class FGD:
             # All the entities have a dependency on another, we failed to produce anything.
             if not batch:
                 raise ValueError(
-                    "Loop in bases! \n Problematic entities: \n{}".format([
-                        ent.classname
-                        for ent in deferred
-                    ]))
+                    f"Loop in bases! \n Problematic entities:\n"
+                    f"{[ent.classname for ent in deferred]}"
+                )
 
             todo = deferred.difference(done)
 
@@ -1942,12 +1876,7 @@ class FGD:
                     try:
                         base = self[base]
                     except KeyError:
-                        raise ValueError(
-                            'Unknown base ({}) for {}'.format(
-                                base,
-                                ent.classname,
-                            )
-                        ) from None
+                        raise ValueError(f'Unknown base ({base}) for {ent.classname}') from None
                 for name, base_kv_map in base.keyvalues.items():
                     ent_kv_map = ent.keyvalues.setdefault(name, {})
                     for tag, kv in base_kv_map.items():
@@ -1984,32 +1913,32 @@ class FGD:
     def export(self, file: TextIO) -> None: ...
     @overload
     def export(self) -> str: ...
-    def export(self, file=None):
+    def export(self, file: Optional[TextIO] = None) -> Optional[str]:
         """Write the FGD contents into a text file.
 
         If none are provided, the text will be returned.
         """
         if file is None:
-            file = io.StringIO()
-            ret_string = True
+            string_buf = io.StringIO()
+            file = string_buf
         else:
-            ret_string = False
+            string_buf = None
 
         if self.map_size_min != self.map_size_max:
-            file.write('@mapsize({}, {})\n\n'.format(self.map_size_min, self.map_size_max))
+            file.write(f'@mapsize({self.map_size_min}, {self.map_size_max})\n\n')
 
         if self.mat_exclusions:
             file.write('@MaterialExclusion\n\t[\n')
             for folder in sorted(self.mat_exclusions):
-                file.write('\t"{!s}"\n'.format(folder))
+                file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
         for tag in sorted(self.tagged_mat_exclusions):
             file.write(f'@MaterialExclusion({", ".join(sorted(tag))})\n\t[\n')
             for folder in sorted(self.tagged_mat_exclusions[tag]):
-                file.write('\t"{!s}"\n'.format(folder))
+                file.write(f'\t"{folder!s}"\n')
             file.write('\t]\n\n')
 
-        vis_by_parent: dict[str, set[AutoVisgroup]] = defaultdict(set)
+        vis_by_parent: Dict[str, Set[AutoVisgroup]] = defaultdict(set)
         # Record the proper casing as well.
         name_casing = {'auto': 'Auto'}
         for visgroup in list(self.auto_visgroups.values()):
@@ -2037,11 +1966,11 @@ class FGD:
                         deferred.add(parent)
                         continue
                 # Otherwise, the parent is done, so we can generate.
-                file.write('@AutoVisgroup = "{}"\n\t[\n'.format(name_casing[parent]))
+                file.write(f'@AutoVisgroup = "{name_casing[parent]}"\n\t[\n')
                 for visgroup in sorted(vis_by_parent[parent]):
-                    file.write('\t"{}"\n\t\t[\n'.format(visgroup.name))
+                    file.write(f'\t"{visgroup.name}"\n\t\t[\n')
                     for ent in sorted(visgroup.ents):
-                        file.write('\t\t"{}"\n'.format(ent))
+                        file.write(f'\t\t"{ent}"\n')
                     file.write('\t\t]\n')
                 file.write('\t]\n')
                 done.add(parent)
@@ -2051,10 +1980,10 @@ class FGD:
                 # a loop or something.
                 raise ValueError(
                     'Cannot export visgroups, '
-                    'loop present in names: {}'.format(','.join([
-                        '"{}" -> "{}"'.format(self.auto_visgroups[group].parent, group)
+                    'loop present in names: ' + ','.join([
+                        f'"{self.auto_visgroups[group].parent}" -> "{group}"'
                         for group in sorted(todo)
-                    ]))
+                    ])
                 )
             todo = deferred
 
@@ -2062,8 +1991,10 @@ class FGD:
             file.write('\n')
             ent_def.export(file)
 
-        if ret_string:
-            return file.getvalue()
+        if string_buf is not None:
+            return string_buf.getvalue()
+        else:
+            return None
 
     def parse_file(
         self,
@@ -2071,7 +2002,7 @@ class FGD:
         file: File,
         *,
         eval_bases: bool=True,
-        encoding='cp1252',
+        encoding: str = 'cp1252',
     ) -> None:
         """Parse one file (recursively if needed).
 
@@ -2209,8 +2140,12 @@ class FGD:
         global _ENGINE_FGD
         if _ENGINE_FGD is None:
             from lzma import LZMAFile
-            with open_binary(srctools, 'fgd.lzma') as comp, LZMAFile(comp) as f:
-                return cls.unserialise(f)
+
+            # On 3.8, importlib_resources doesn't have the right stubs.
+            comp: IO[bytes]
+            with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
+                with LZMAFile(comp) as f:
+                    _ENGINE_FGD = cls.unserialise(f)
         return deepcopy(_ENGINE_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
@@ -2218,7 +2153,7 @@ class FGD:
         try:
             return self.entities[classname.casefold()]
         except KeyError:
-            raise KeyError('No class "{}"!'.format(classname)) from None
+            raise KeyError(f'No class "{classname}"!') from None
 
     def __contains__(self, classname: object) -> bool:
         """Lookup entities by classname."""
@@ -2311,7 +2246,7 @@ class FGD:
         ] = struct_read(_fmt_header, file)
 
         if format_version != BIN_FORMAT_VERSION:
-            raise TypeError('Unknown format version "{}"!'.format(format_version))
+            raise TypeError(f'Unknown format version "{format_version}"!')
 
         from_dict = BinStrDict.unserialise(file)
 
@@ -2323,3 +2258,37 @@ class FGD:
         fgd.apply_bases()
 
         return fgd
+
+
+def _init_helper_impl() -> None:
+    """Import and register the helper implementations."""
+    # noinspection PyProtectedMember
+    from srctools import _fgd_helpers as helper_mod
+    for helper_type in vars(helper_mod).values():
+        if isinstance(helper_type, type) and issubclass(helper_type, Helper):
+            if helper_type.TYPE is not None:
+                HELPER_IMPL[helper_type.TYPE] = helper_type
+
+    for helper in HelperTypes:
+        if helper not in HELPER_IMPL:
+            raise ValueError(
+                f'Missing helper implementation for {helper}! : {HELPER_IMPL}'
+            )
+
+# Each helper type -> the class implementing them.
+HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
+
+# If we're importing, make sure _fgd_helpers is imported fresh. Otherwise, if the module is
+# reloaded it'll be using the old classes, breaking our registration.
+try:
+    del sys.modules['srctools._fgd_helpers']
+    # noinspection PyProtectedMember,PyUnresolvedReferences
+    del srctools._fgd_helpers
+except (KeyError, AttributeError):
+    pass
+
+_init_helper_impl()
+del _init_helper_impl
+# Once done, import all the classes.
+# noinspection PyProtectedMember
+from srctools._fgd_helpers import *

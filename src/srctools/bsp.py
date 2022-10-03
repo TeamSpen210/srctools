@@ -3,36 +3,35 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    overload, TypeVar, Any, Generic, Union, Optional, ClassVar, Type,
-    List, Iterator, BinaryIO, Tuple, Callable, Dict, Set, Hashable, Generator, cast,
+    IO, Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
+    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
-from io import BytesIO
 from enum import Enum, Flag
+from io import BytesIO
 from weakref import WeakKeyDictionary
 from zipfile import ZipFile
-import itertools
-import struct
-import inspect
 import contextlib
-import warnings
-import attr
+import inspect
+import itertools
 import os
+import struct
+import warnings
 
-from srctools import AtomicWriter, conv_int
-from srctools.math import Vec, Angle
-from srctools.filesys import FileSystem
-from srctools.vtf import VTF
-from srctools.vmt import Material
-from srctools.vmf import VMF, Entity, Output
-from srctools.tokenizer import escape_text
+from atomicwrites import atomic_write
+import attrs
+
+from srctools import StringPath, conv_int, logger
 from srctools.binformat import (
-    DeferredWrites,
-    struct_read,
-    read_array, write_array,
-    compress_lzma, decompress_lzma,
+    DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read, write_array,
 )
-from srctools.property_parser import Property
-from srctools.const import SurfFlags, BSPContents as BrushContents, add_unknown
+from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
+from srctools.filesys import FileSystem
+from srctools.keyvalues import Keyvalues
+from srctools.math import Angle, Vec
+from srctools.tokenizer import escape_text
+from srctools.vmf import VMF, Entity, Output
+from srctools.vmt import Material
+from srctools.vtf import VTF
 
 
 __all__ = [
@@ -46,18 +45,24 @@ __all__ = [
     'Brush', 'BrushSide', 'BrushContents',
 ]
 
-
+# Various constants, some exposed to allow handling unreleased formats.
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
+FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
+FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
+OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
+TEXINFO_IND_TYPE = 'h' # The type used to index into texinfo (i or h).
 
 T = TypeVar('T')
-KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers don't work for that.
+KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
 
 # Game lump IDs
 LMP_ID_STATIC_PROPS = b'sprp'
 LMP_ID_DETAIL_PROPS = b'dprp'
+
+LOGGER = logger.get_logger(__name__)
 
 
 class VERSIONS(Enum):
@@ -236,7 +241,8 @@ LUMP_REBUILD_ORDER: List[Union[bytes, BSP_LUMPS]] = [
     BSP_LUMPS.MODELS,  # Brushmodels reference their vis tree, faces, and the entity they're tied to.
     BSP_LUMPS.ENTITIES,  # References brushmodels, overlays, potentially many others.
     BSP_LUMPS.NODES,  # References planes, faces, visleafs.
-    BSP_LUMPS.LEAFS,  # References brushes, faces
+    BSP_LUMPS.LEAFS,  # References brushes, faces, leaf water info.
+    BSP_LUMPS.LEAFWATERDATA,  # References texinfo
 
     BSP_LUMPS.BRUSHES,  # also brushsides, references texinfo.
 
@@ -323,6 +329,12 @@ class StaticPropVersion(Enum):
         return self.name.startswith('V_LIGHTMAP')
 
 
+_STATIC_PROP_VERSIONS: Mapping[Tuple[int, int], StaticPropVersion] = {
+    (ver.version, ver.size): ver
+    for ver in StaticPropVersion
+}
+
+
 class StaticPropFlags(Flag):
     """Bitflags specified for static props."""
     NONE = 0
@@ -378,7 +390,7 @@ class DetailPropOrientation(Enum):
     SCREEN_ALIGNED_VERTICAL = 2
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False, repr=False)
 class Lump:
     """Represents a lump header in a BSP file.
 
@@ -393,7 +405,7 @@ class Lump:
         return f'<BSP Lump {self.type.name!r}, v{self.version}, {len(self.data)} bytes>'
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class GameLump:
     """Represents a game lump.
 
@@ -428,7 +440,7 @@ class GameLump:
         )
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class TexData:
     """Represents some additional infomation for textures.
 
@@ -453,7 +465,7 @@ class TexData:
         if mat_folded[-4] != '.':
             mat_fname += '.vmt'
 
-        with fsys, fsys[mat_fname].open_str() as tfile:
+        with fsys[mat_fname].open_str() as tfile:
             mat = Material.parse(tfile, mat_name)
             mat.apply_patches(fsys)
 
@@ -466,7 +478,7 @@ class TexData:
             tex_name += '.vtf'
 
         try:
-            with fsys, fsys[tex_name].open_bin() as bfile:
+            with fsys[tex_name].open_bin() as bfile:
                 vtf = VTF.read(bfile)
                 reflect = vtf.reflectivity.copy()
                 width, height = vtf.width, vtf.height
@@ -476,13 +488,12 @@ class TexData:
 
         try:
             reflect = Vec.from_str(mat['$reflectivity'])
-            print(reflect, repr(mat['$reflectivity']))
         except KeyError:
             pass
         return TexData(orig_mat, reflect, width, height)
 
 
-@attr.define(eq=True)
+@attrs.define(eq=True)
 class TexInfo:
     """Represents texture positioning / scaling info."""
     s_off: Vec
@@ -555,10 +566,10 @@ class TexInfo:
         self._info = data
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Plane:
     """A plane."""
-    def _normal_setattr(self, _: attr.Attribute, value: Vec) -> Vec:
+    def _normal_setattr(self, _: attrs.Attribute, value: Vec) -> Vec:
         """Recompute the plane type whenever the normal is changed."""
         value = Vec(value)
         self.type = PlaneType.from_normal(value)
@@ -568,14 +579,14 @@ class Plane:
         """Compute the plane type parameter if not provided."""
         return PlaneType.from_normal(self.normal)
 
-    normal: Vec = attr.ib(on_setattr=_normal_setattr)
-    dist: float = attr.ib(converter=float, validator=attr.validators.instance_of(float))
-    type: PlaneType = attr.Factory(_type_default, takes_self=True)
+    normal: Vec = attrs.field(on_setattr=_normal_setattr)
+    dist: float = attrs.field(converter=float, validator=attrs.validators.instance_of(float))
+    type: PlaneType = attrs.Factory(_type_default, takes_self=True)
 
     del _normal_setattr, _type_default
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Primitive:
     """A 'primitive' surface (AKA t-junction, waterverts).
 
@@ -652,7 +663,7 @@ class RevEdge(Edge):
         self.opposite.a = value
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Face:
     """A brush face definition."""
     plane: Plane
@@ -669,11 +680,12 @@ class Face:
     lightmap_size: Tuple[int, int]
     orig_face: Optional['Face']
     primitives: List[Primitive]
+    dynamic_shadows: bool
     smoothing_groups: int
     hammer_id: Optional[int]  # The original ID of the Hammer face.
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailProp:
     """A detail prop, automatically placed on surfaces.
 
@@ -693,13 +705,13 @@ class DetailProp:
             raise TypeError('Cannot instantiate base DetailProp directly, use subclasses!')
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropModel(DetailProp):
     """A MDL detail prop."""
     model: str
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropSprite(DetailProp):
     """A sprite-type detail prop."""
     sprite_scale: float
@@ -709,7 +721,7 @@ class DetailPropSprite(DetailProp):
     texcoord_lower_right: Tuple[float, float]
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class DetailPropShape(DetailPropSprite):
     """A shape-type detail prop, rendered as a triangle or cross shape."""
     is_cross: bool
@@ -717,7 +729,7 @@ class DetailPropShape(DetailPropSprite):
     shape_size: int
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Cubemap:
     """A env_cubemap positioned in the map.
 
@@ -735,40 +747,40 @@ class Cubemap:
         return 2**(self.size-1)
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Overlay:
     """An overlay embedded in the map."""
-    id: int = attr.ib(eq=True)
+    id: int = attrs.field(eq=True)
     origin: Vec
     normal: Vec
     texture: TexInfo
     face_count: int
-    faces: List[int] = attr.ib(factory=list, validator=attr.validators.deep_iterable(
-        attr.validators.instance_of(int),
-        attr.validators.instance_of(list),
+    faces: List[int] = attrs.field(factory=list, validator=attrs.validators.deep_iterable(
+        attrs.validators.instance_of(int),
+        attrs.validators.instance_of(list),
     ))
-    render_order: int = attr.ib(default=0, validator=attr.validators.in_(range(4)))
+    render_order: int = attrs.field(default=0, validator=attrs.validators.in_(range(4)))
     u_min: float = 0.0
     u_max: float = 1.0
     v_min: float = 0.0
     v_max: float = 1.0
     # Four corner handles of the overlay.
-    uv1: Vec = attr.ib(factory=lambda: Vec(-16, -16))
-    uv2: Vec = attr.ib(factory=lambda: Vec(-16, +16))
-    uv3: Vec = attr.ib(factory=lambda: Vec(+16, +16))
-    uv4: Vec = attr.ib(factory=lambda: Vec(+16, -16))
+    uv1: Vec = attrs.field(factory=lambda: Vec(-16, -16))
+    uv2: Vec = attrs.field(factory=lambda: Vec(-16, +16))
+    uv3: Vec = attrs.field(factory=lambda: Vec(+16, +16))
+    uv4: Vec = attrs.field(factory=lambda: Vec(+16, -16))
 
     fade_min_sq: float = -1.0
     fade_max_sq: float = 0.0
 
-    # If system exceeds these limits, the overlay is skipped.
-    min_cpu: int = -1
-    max_cpu: int = -1
-    min_gpu: int = -1
-    max_gpu: int = -1
+    # If system exceeds these limits, the overlay is skipped. Each is a single byte.
+    min_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_cpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    min_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
+    max_gpu: int = attrs.field(default=0, validator=attrs.validators.in_(range(255)))
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class BrushSide:
     """A side of the original brush geometry which the map is constructed from.
 
@@ -782,18 +794,18 @@ class BrushSide:
     _unknown_bevel_bits: int = 0
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class Brush:
     """A brush definition."""
     contents: BrushContents
     sides: List[BrushSide]
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class VisLeaf:
     """A leaf in the visleaf/BSP data.
 
-    The bounds is defined implicitly by the parent node planes.
+    The bounds are defined implicitly by the parent node planes.
     """
     contents: BrushContents
     cluster_id: int
@@ -805,13 +817,15 @@ class VisLeaf:
     brushes: List[Brush]
     water_id: int
     _ambient: bytes = bytes(24)
+    # This is LEAF_MIN_DIST_TO_WATER
+    min_water_dist: int = 65535
 
     def test_point(self, point: Vec) -> Optional['VisLeaf']:
         """Test the given point against us, returning ourself or None."""
         return self if point.in_bbox(self.mins, self.maxes) else None
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class VisTree:
     """A tree node in the visleaf/BSP data.
 
@@ -824,8 +838,8 @@ class VisTree:
     faces: List[Face]
     area_ind: int
     # Initialised empty, set during loading.
-    child_neg: Union['VisTree', VisLeaf] = attr.ib(default=None)
-    child_pos: Union['VisTree', VisLeaf] = attr.ib(default=None)
+    child_neg: Union['VisTree', VisLeaf] = attrs.field(default=None)
+    child_pos: Union['VisTree', VisLeaf] = attrs.field(default=None)
 
     @property
     def plane_norm(self) -> Vec:
@@ -871,7 +885,15 @@ class VisTree:
                     nodes.append(child)
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
+class LeafWaterInfo:
+    """Additional data about water volumes."""
+    surface_z: float
+    min_z: float
+    surface_texinfo: TexInfo
+
+
+@attrs.define(eq=False)
 class BModel:
     """A brush model definition, used for the world entity along with all other brush ents."""
     mins: Vec
@@ -882,11 +904,11 @@ class BModel:
 
     # If solid, the .phy file-like physics data.
     # This is a text section, and a list of blocks.
-    phys_keyvalues: Optional[Property] = None
+    phys_keyvalues: Optional[Keyvalues] = None
     _phys_solids: List[bytes] = []
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
@@ -901,16 +923,16 @@ class StaticProp:
     """
     model: str
     origin: Vec
-    angles: Angle = attr.ib(factory=Angle)
+    angles: Angle = attrs.field(factory=Angle)
     scaling: float = 1.0
-    visleafs: Set[VisLeaf] = attr.ib(factory=set)
+    visleafs: Set[VisLeaf] = attrs.field(factory=set)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
     min_fade: float = 0.0
     max_fade: float = 0.0
     # If not provided, uses origin.
-    lighting: Vec = attr.ib(default=attr.Factory(lambda prp: prp.origin.copy(), takes_self=True))
+    lighting: Vec = attrs.field(default=attrs.Factory(lambda prp: prp.origin.copy(), takes_self=True))
     fade_scale: float = -1.0
 
     min_dx_level: int = 0
@@ -920,7 +942,7 @@ class StaticProp:
     min_gpu_level: int = 0
     max_gpu_level: int = 0
 
-    tint: Vec = attr.ib(factory=lambda: Vec(255, 255, 255))
+    tint: Vec = attrs.field(factory=lambda: Vec(255, 255, 255))
     renderfx: int = 255
     disable_on_xbox: bool = False
 
@@ -1036,11 +1058,11 @@ class ParsedLump(Generic[T]):
         return f'<srctools.BSP.{self.__name__} member>'
 
     @overload
-    def __get__(self, instance: None, owner=None) -> 'ParsedLump[T]': ...
+    def __get__(self, instance: None, owner: Optional[type]=None) -> 'ParsedLump[T]': ...
     @overload
-    def __get__(self, instance: 'BSP', owner=None) -> T: ...
+    def __get__(self, instance: 'BSP', owner: Optional[type]=None) -> T: ...
 
-    def __get__(self, instance: Optional['BSP'], owner=None) -> Union['ParsedLump', T]:
+    def __get__(self, instance: Optional['BSP'], owner: Optional[type]=None) -> Union['ParsedLump', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
@@ -1053,9 +1075,11 @@ class ParsedLump(Generic[T]):
         result: T
         if isinstance(self.lump, bytes):  # Game lump
             gm_lump = instance.game_lumps[self.lump]
+            LOGGER.debug('Load game lump {} v{} ({} bytes)', self.lump, gm_lump.version, len(gm_lump.data))
             result = self._read(instance, gm_lump.version, gm_lump.data)
         else:
             data = instance.lumps[self.lump].data
+            LOGGER.debug('Load game lump {} ({} bytes)', self.lump, len(data))
             result = self._read(instance, data)
         if inspect.isgenerator(result):  # Convenience, yield to accumulate into a list.
             result = list(result)  # type: ignore
@@ -1094,7 +1118,7 @@ class BSP:
     ]] = {}
     version: Union[VERSIONS, int]
 
-    def __init__(self, filename: Union[str, os.PathLike], version: VERSIONS=None):
+    def __init__(self, filename: StringPath, version: VERSIONS=None):
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: Dict[BSP_LUMPS, Lump] = {}
@@ -1114,25 +1138,28 @@ class BSP:
 
         self.read()
 
+    # The first lump is the main one this reads/writes to, any additional are simpler lumps it
+    # reads and includes all the data for.
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
     textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
-    texinfo: ParsedLump[List['TexInfo']] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
-    cubemaps: ParsedLump[List['Cubemap']] = ParsedLump(BSP_LUMPS.CUBEMAPS)
-    overlays: ParsedLump[List['Overlay']] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
+    texinfo: ParsedLump[List[TexInfo]] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
+    cubemaps: ParsedLump[List[Cubemap]] = ParsedLump(BSP_LUMPS.CUBEMAPS)
+    overlays: ParsedLump[List[Overlay]] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
 
     bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
-    brushes: ParsedLump[List['Brush']] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    visleafs: ParsedLump[List['VisLeaf']] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES)
-    nodes: ParsedLump[List['VisTree']] = ParsedLump(BSP_LUMPS.NODES)
+    brushes: ParsedLump[List[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
+    visleafs: ParsedLump[List[VisLeaf]] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER)
+    water_leaf_info: ParsedLump[List[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
+    nodes: ParsedLump[List[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
 
     vertexes: ParsedLump[List[Vec]] = ParsedLump(BSP_LUMPS.VERTEXES)
     surfedges: ParsedLump[List[Edge]] = ParsedLump(BSP_LUMPS.SURFEDGES, BSP_LUMPS.EDGES)
-    planes: ParsedLump[List['Plane']] = ParsedLump(BSP_LUMPS.PLANES)
-    faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES)
-    orig_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
-    hdr_faces: ParsedLump[List['Face']] = ParsedLump(BSP_LUMPS.FACES_HDR)
-    primitives: ParsedLump[List['Primitive']] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
+    planes: ParsedLump[List[Plane]] = ParsedLump(BSP_LUMPS.PLANES)
+    faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES)
+    orig_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
+    hdr_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES_HDR)
+    primitives: ParsedLump[List[Primitive]] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
 
     # Game lumps
     props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
@@ -1252,7 +1279,7 @@ class BSP:
             # This is not valid any longer.
             game_lump.data = b''
 
-    def save(self, filename=None) -> None:
+    def save(self, filename: str = None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
         for lump_or_game in LUMP_REBUILD_ORDER:
@@ -1274,8 +1301,8 @@ class BSP:
                     self.lumps[lump_or_game].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        file: BinaryIO
-        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
+        file: IO[bytes]
+        with atomic_write(filename or self.filename, mode='wb', overwrite=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
             defer = DeferredWrites(file)
@@ -1479,15 +1506,15 @@ class BSP:
         manually or a filesystem provided for the VMT and VTFs to be read from.
         """
         if copy_from is not None:
-            s_off = copy_from.s_off
+            s_off = copy_from.s_off.copy()
             s_shift = copy_from.s_shift
-            t_off = copy_from.t_off
+            t_off = copy_from.t_off.copy()
             t_shift = copy_from.t_shift
-            lightmap_s_off = copy_from.lightmap_s_off
+            lightmap_s_off = copy_from.lightmap_s_off.copy()
             lightmap_s_shift = copy_from.lightmap_s_shift
-            lightmap_t_off = copy_from.lightmap_t_off
+            lightmap_t_off = copy_from.lightmap_t_off.copy()
             lightmap_t_shift = copy_from.lightmap_t_shift
-
+            flags = copy_from.flags
         try:
             data = self._texdata[mat.casefold()]
             search = True
@@ -1518,7 +1545,26 @@ class BSP:
         self.texinfo.append(new_texinfo)
         return new_texinfo
 
-    # Lump-specific commands:
+    def is_cordoned_heuristic(self) -> bool:
+        """Guess to see if the map uses cordons.
+
+        There's no definite flag, but we can guess based on the shape of the geometry. Cordoning
+        causes a brush almost the map size units to be created, then the cordon regions carved out
+        of it. So the overall map size will be very close to the max range.
+
+        This isn't certain, since users could manually create brushes this large, but that's not
+        too likely.
+        """
+        tree = self.nodes[0]
+        # Round to avoid precision issues. 32776 is the size in Desolation, which has a bigger
+        # map size.
+        return all(
+            round(abs(val)) in {16392, 32776}
+            for vec in [tree.mins, tree.maxes]
+            for val in vec
+        )
+
+    # Lump reading and writing code:
     def _lmp_read_planes(self, data: bytes) -> Iterator['Plane']:
         for x, y, z, dist, typ in struct.iter_unpack('<ffffi', data):
             yield Plane(Vec(x, y, z), dist, PlaneType(typ))
@@ -1649,7 +1695,10 @@ class BSP:
             prim_num,
             prim_first,
             smoothing_group,
-        ) in enumerate(struct.iter_unpack('<H??i4h4sif5iHHI', data)):
+        ) in enumerate(struct.iter_unpack(
+            f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
+            data,
+        )):
             # If orig faces is provided, that is the original face
             # we were created from. Additionally, it seems the original
             # face data has invalid texinfo, so copy ours on top of it.
@@ -1678,7 +1727,8 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                self.primitives[prim_first:prim_first + prim_num],
+                self.primitives[prim_first:prim_first + (prim_num & 0x7fff)],
+                not (prim_num & 0x8000),
                 smoothing_group,
                 hammer_id,
             )
@@ -1706,10 +1756,15 @@ class BSP:
                 texinfo = add_texinfo(face.texinfo)
             else:
                 texinfo = -1
+            prim_count = len(face.primitives)
+            if prim_count > 0x7fff:
+                raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
+            if not face.dynamic_shadows:
+                prim_count |= 0x8000
 
             # noinspection PyProtectedMember
             face_buf.write(struct.pack(
-                '<H??i4h4sif5iHHI',
+                f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
                 add_plane(face.plane),
                 face.same_dir_as_plane,
                 face.on_node,
@@ -1722,7 +1777,8 @@ class BSP:
                 face.area,
                 *face.lightmap_mins, *face.lightmap_size,
                 orig_ind,
-                len(face.primitives), add_prims(face.primitives),
+                prim_count,
+                add_prims(face.primitives),
                 face.smoothing_groups,
             ))
         if hammer_ids:
@@ -1745,7 +1801,7 @@ class BSP:
         sides = [
             BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
             for (plane_num, texinfo, dispinfo, bevel)
-            in struct.iter_unpack('<Hhhh', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            in struct.iter_unpack('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
         ]
         for first_side, side_count, contents in struct.iter_unpack('<iii', data):
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
@@ -1764,9 +1820,10 @@ class BSP:
                 add_sides(brush.sides), len(brush.sides),
                 brush.contents.value,
             ))
+
+        side_struct = struct.Struct('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH')
         for side in sides:
-            sides_buf.write(struct.pack(
-                '<Hhhh',
+            sides_buf.write(side_struct.pack(
                 add_plane(side.plane),
                 add_texinfo(side.texinfo),
                 side._dispinfo,
@@ -1775,20 +1832,33 @@ class BSP:
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
-    def _lmp_read_visleafs(self, data: bytes) -> Iterator['VisLeaf']:
+    def _lmp_read_water_leaf_info(self, data: bytes) -> Iterator[LeafWaterInfo]:
+        """Parse data associated with visleafs containing water."""
+        texinfo = self.texinfo
+        for surf_z, min_z, texinfo_ind in struct.iter_unpack('<ffH2x', data):
+            yield LeafWaterInfo(surf_z, min_z, texinfo[texinfo_ind])
+
+    def _lmp_write_water_leaf_info(self, data: List[LeafWaterInfo]) -> Iterator[bytes]:
+        """Write data associated with visleafs containing water."""
+        add_texinfo = _find_or_insert(self.texinfo)
+        for info in self.water_leaf_info:
+            yield struct.pack('<ffH2x', info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
+
+    def _lmp_read_visleafs(self, data: bytes) -> Iterator[VisLeaf]:
         """Parse the leafs of the visleaf/bsp tree."""
         # There's an indirection through these index arrays.
-        # starmap() to unpack the 1-tuple struct result, then index with that.
-        leaf_brushes = list(itertools.starmap(
+        leaf_brushes = list(map(
             self.brushes.__getitem__,
-            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
+            read_array('<H', self.lumps[BSP_LUMPS.LEAFBRUSHES].data),
         ))
-        leaf_faces = list(itertools.starmap(
+        leaf_faces = list(map(
             self.faces.__getitem__,
-            struct.iter_unpack('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
+            read_array('<H', self.lumps[BSP_LUMPS.LEAFFACES].data),
         ))
+        # Another lump which is just an array of ints - no point being separate.
+        dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
 
-        leaf_fmt = '<ihh6h4Hh'
+        leaf_fmt = FMT_LEAF_BASE
         has_ambient = False
         # Some extra ambient light data.
         if self.version <= 19:
@@ -1804,7 +1874,7 @@ class BSP:
             first_face, num_faces,
             first_brush, num_brushes,
             *water_ind_and_ambient
-        ) in struct.iter_unpack(leaf_fmt, data):
+        ), water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
             area = area_and_flags >> 7
             flags = area_and_flags & 0b1111111
             if has_ambient:
@@ -1819,11 +1889,11 @@ class BSP:
                 Vec(max_x, max_y, max_z),
                 leaf_faces[first_face:first_face+num_faces],
                 leaf_brushes[first_brush:first_brush+num_brushes],
-                water_ind, ambient,
+                water_ind, ambient, water_dist,
             )
 
     def _lmp_read_nodes(self, data: bytes) -> List['VisTree']:
-        """Parse the main visleaf/bsp trees."""
+        """Parse the main visleaf/bsp trees (dnode_t)."""
         # First parse all the nodes, then link them up.
         nodes: List[Tuple[VisTree, int, int]] = []
 
@@ -1832,7 +1902,7 @@ class BSP:
             min_x, min_y, min_z,
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
-        ) in struct.iter_unpack('<iii6hHHh2x', data):
+        ) in struct.iter_unpack(FMT_NODES, data):
             nodes.append((VisTree(
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
@@ -1873,7 +1943,7 @@ class BSP:
                 neg_ind = add_node(node.child_neg)
 
             buf.write(struct.pack(
-                '<iii6hHHh2x',
+                FMT_NODES,
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
@@ -1886,6 +1956,7 @@ class BSP:
         """Reconstruct the leafs of the visleaf/bsp tree."""
         leaf_faces: List[int] = []
         leaf_brushes: List[int] = []
+        min_water_dists: List[int] = []
 
         add_face = _find_or_insert(self.faces)
         add_brush = _find_or_insert(self.brushes)
@@ -1898,9 +1969,10 @@ class BSP:
             brush_ind = len(leaf_brushes)
             leaf_faces.extend(map(add_face, leaf.faces))
             leaf_brushes.extend(map(add_brush, leaf.brushes))
+            min_water_dists.append(leaf.min_water_dist)
 
             buf.write(struct.pack(
-                '<ihh6h4Hh',
+                FMT_LEAF_BASE,
                 leaf.contents.value, leaf.cluster_id,
                 (leaf.area << 7 | leaf.flags.value),
                 int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
@@ -1915,6 +1987,7 @@ class BSP:
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
+        self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data = write_array('<H', min_water_dists)
         return buf.getvalue()
 
     def read_texture_names(self) -> Iterator[str]:
@@ -2012,6 +2085,7 @@ class BSP:
                     '<3f5i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
                     find_or_add_texture(tdat.mat),
+                    # Second set is the 'view' width/height, always the same.
                     tdat.width, tdat.height, tdat.width, tdat.height,
                 ))
             texinfo_result.append(struct.pack(
@@ -2058,7 +2132,7 @@ class BSP:
                 for _ in range(solid_count)
             ]
             kvs = phys_buf.read(kv_size).rstrip(b'\x00').decode('ascii')
-            mdl.phys_keyvalues = Property.parse(
+            mdl.phys_keyvalues = Keyvalues.parse(
                 kvs,
                 f'bmodel[{mdl_ind}].keyvalues',
             )
@@ -2069,7 +2143,7 @@ class BSP:
         brush_ents[vmf.spawn] = bmodel_list[0]
         for ent in vmf.entities:
             if ent['model'].startswith('*'):
-                mdl_ind = int(ent.keys.pop('model')[1:])
+                mdl_ind = int(ent.pop('model')[1:])
                 brush_ents[ent] = bmodel_list[mdl_ind]
 
         return brush_ents
@@ -2168,14 +2242,16 @@ class BSP:
                 cube.size,
             )
 
-    def _lmp_read_overlays(self, data: bytes) -> Iterator['Overlay']:
+    def _lmp_read_overlays(self, data: bytes) -> Iterator[Overlay]:
         """Read the overlays lump."""
         # Use zip longest, so we handle cases where these newer auxiliary lumps
         # are empty.
         for block, fades, sys_levels in itertools.zip_longest(
             struct.iter_unpack(
-                '<ihH'  # id, texinfo, face-and-render-order
-                '64i'  # face array.
+                '<i'  # ID
+                # texinfo, face-and-render-order
+                f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}' 
+                f'{OVERLAY_FACE_COUNT}i'  # face array.
                 '4f'  # UV min/max
                 '18f',  # 4 handle points, origin, normal
                 data,
@@ -2189,17 +2265,17 @@ class BSP:
             over_id, texinfo, face_ro = block[:3]
             face_count = face_ro & ((1 << 14) - 1)
             render_order = face_ro >> 14
-            if face_count > 64:
-                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            if face_count > OVERLAY_FACE_COUNT:
+                raise ValueError(f'{face_ro} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             faces = list(block[3: 3 + face_count])
-            u_min, u_max, v_min, v_max = block[67:71]
-            uv1 = Vec(block[71:74])
-            uv2 = Vec(block[74:77])
-            uv3 = Vec(block[77:80])
-            uv4 = Vec(block[80:83])
-            origin = Vec(block[83:86])
-            normal = Vec(block[86:89])
-            assert len(block) == 89
+            u_min, u_max, v_min, v_max = block[-22:-18]
+            uv1 = Vec(block[-18:-15])
+            uv2 = Vec(block[-15:-12])
+            uv3 = Vec(block[-12:-9])
+            uv4 = Vec(block[-9:-6])
+            origin = Vec(block[-6:-3])
+            normal = Vec(block[-3:])
+            assert len(block) == 25 + OVERLAY_FACE_COUNT
 
             if fades is not None:
                 fade_min, fade_max = fades
@@ -2224,25 +2300,26 @@ class BSP:
                 min_gpu, max_gpu
             )
 
-    def _lmp_write_overlays(self, overlays: List['Overlay']) -> Iterator[bytes]:
+    def _lmp_write_overlays(self, overlays: List[Overlay]) -> Iterator[bytes]:
         """Write out all overlays."""
         add_texinfo = _find_or_insert(self.texinfo)
         fade_buf = BytesIO()
         levels_buf = BytesIO()
         for over in overlays:
             face_cnt = len(over.faces)
-            if face_cnt > 64:
-                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT (64)!')
+            if face_cnt > OVERLAY_FACE_COUNT:
+                raise ValueError(f'{over.faces} exceeds OVERLAY_BSP_FACE_COUNT ({OVERLAY_FACE_COUNT})!')
             fade_buf.write(struct.pack('<ff', over.fade_min_sq, over.fade_max_sq))
-            levels_buf.write(struct.pack('<BBBB', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
+            levels_buf.write(struct.pack('<4B', over.min_cpu, over.max_cpu, over.min_gpu, over.max_gpu))
             yield struct.pack(
-                '<ihH',
+                # texinfo, face-and-render-order
+                '<iiHxx' if TEXINFO_IND_TYPE == "i" else '<ihH',
                 over.id,
                 add_texinfo(over.texture),
                 (over.render_order << 14 | face_cnt),
             )
             # Build the array, then zero fill the remaining space.
-            yield struct.pack(f'<{face_cnt}i {4*(64-face_cnt)}x', *over.faces)
+            yield struct.pack(f'<{face_cnt}i {4*(OVERLAY_FACE_COUNT-face_cnt)}x', *over.faces)
             yield struct.pack('<4f', over.u_min, over.u_max, over.v_min, over.v_max)
             yield struct.pack(
                 '<18f',
@@ -2346,12 +2423,12 @@ class BSP:
             # successfully parse as numbers.
             if 27 in value:
                 # All outputs use the comma_sep, so we can ID them.
-                cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
                 if self.out_comma_sep is None:
                     self.out_comma_sep = False
             elif value.count(b',') == 4:
                 try:
-                    cur_ent.add_out(Output.parse(Property(decoded_key, decoded_value)))
+                    cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
                 except ValueError:
                     cur_ent[decoded_key] = decoded_value
                 if self.out_comma_sep is None:
@@ -2370,21 +2447,21 @@ class BSP:
         return self.write_ent_data(vmf, self.out_comma_sep, _show_dep=False)
 
     @staticmethod
-    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep=True) -> bytes:
+    def write_ent_data(vmf: VMF, use_comma_sep: Optional[bool]=None, *, _show_dep: bool = True) -> bytes:
         """Generate the entity data lump.
 
-        This accepts a VMF file like that returned from read_ent_data().
-        Brushes are ignored, so the VMF must use *xx model references.
-
-        use_comma_sep can be used to force using either commas, or 0x1D in I/O.
+        :deprecated: Read and write :py:attr:`BSP.ents` instead.
+        :param vmf: This accepts a VMF file like that returned from read_ent_data().
+            Brushes are ignored, so the VMF must use ``*xx`` model references.
+        :param use_comma_sep: This is used to force using either commas, or ``0x1D`` in I/O.
         """
         if _show_dep:
             warnings.warn('Modify BSP.ents instead', DeprecationWarning, stacklevel=2)
         out = BytesIO()
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
-            for key, value in ent.keys.items():
-                out.write('"{}" "{}"\n'.format(key, escape_text(value)).encode('ascii'))
+            for key, value in ent.items():
+                out.write(f'"{key}" "{escape_text(value)}"\n'.encode('ascii'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
@@ -2450,7 +2527,7 @@ class BSP:
             # Use the 'standard' version for the given version number.
             for vers in StaticPropVersion:
                 if vers.version == vers_num:
-                    self.version = vers
+                    self.static_prop_version = vers
             return
         struct_size = (len(data) - static_lump.tell()) / prop_count
 
@@ -2458,16 +2535,15 @@ class BSP:
         # Some numbers are reused, so add the size of the struct to guess the
         # version.
         try:
-            self.static_prop_version = version = StaticPropVersion((vers_num, struct_size))
-        except ValueError:
+            self.static_prop_version = version = _STATIC_PROP_VERSIONS[vers_num, struct_size]
+        except KeyError:
             raise ValueError(
                 "Don't know a static prop "
                 f"version={vers_num} with a size of {struct_size} bytes!"
-            )
-        VER = StaticPropVersion
+            ) from None
         # These two are the same, it just changed version numbers later.
         # It's more similar to V7 though.
-        if version is VER.V_LIGHTMAP_v10:
+        if version is StaticPropVersion.V_LIGHTMAP_v10:
             vers_num = 7
 
         for i in range(prop_count):

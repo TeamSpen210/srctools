@@ -1,9 +1,11 @@
 """All the weapon pickups.
 
 Weapons are unusual, they don't directly specify the models.
-Instead it's specified in the weapon script.
+Instead, it's specified in the weapon script.
+TODO: Parse weapon scripts!
 """
-from srctools._class_resources import *
+from . import *
+
 
 res('weapon_357')
 # res('weapon_adrenaline_spawn')
@@ -59,6 +61,12 @@ res('weapon_frag',
 # res('weapon_grenade_launcher_spawn')
 # res('weapon_healthshot')
 # res('weapon_hegrenade')
+res('weapon_hopwire',  # AKA the held form of Entropy Zero 2's Xen Grenades.
+    # This also precaches the recipe table, not easy to do here though.
+    sound('WeaponFrag.Throw'),
+    sound('WeaponFrag.Roll'),
+    includes='npc_grenade_hopwire',
+    )
 # res('weapon_hkp2000')
 # res('weapon_hunting_rifle_spawn')
 # res('weapon_incgrenade')

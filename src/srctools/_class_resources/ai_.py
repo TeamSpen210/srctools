@@ -1,5 +1,5 @@
 """ai_ entities."""
-from srctools._class_resources import *
+from . import res
 
 
 res('ai_ally_manager')
@@ -20,6 +20,7 @@ res('ai_goal_lead_weapon')
 res('ai_goal_operator')
 res('ai_goal_police')
 res('ai_goal_standoff')
+res('ai_monitor')
 res('ai_npc_eventresponsesystem')
 res('ai_hint')
 res('ai_relationship')

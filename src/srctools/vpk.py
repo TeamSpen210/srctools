@@ -1,17 +1,24 @@
 """Classes for reading and writing Valve's VPK format, version 1."""
-import os
-import struct
-import operator
+from typing import IO, Dict, Iterable, Iterator, List, Optional, Tuple, Type, Union
+from typing_extensions import Final
 from enum import Enum
 from types import TracebackType
-from typing import Tuple, List, Dict, Type, Union, Optional, Iterator, Iterable, IO
+import operator
+import os
+import struct
 
-import attr
-from srctools.binformat import checksum, EMPTY_CHECKSUM, struct_read
+import attrs
+
+from srctools.binformat import EMPTY_CHECKSUM, checksum, struct_read
 
 
-VPK_SIG = 0x55aa1234  # First byte of the file..
-DIR_ARCH_INDEX = 0x7fff  # File index used for the _dir file.
+__all__ = [
+    'VPK_SIG', 'DIR_ARCH_INDEX', 'OpenModes',
+    'script_write', 'get_arch_filename',
+    'FileInfo', 'VPK',
+]
+VPK_SIG: Final = 0x55aa1234  #: The first byte of VPK files.
+DIR_ARCH_INDEX: Final = 0x7fff  #: The file index used for the ``_dir`` file.
 FileName = Union[str, Tuple[str, str], Tuple[str, str, str]]
 
 
@@ -47,7 +54,7 @@ def iter_nullstr(file: IO[bytes]) -> Iterator[str]:
             else:
                 yield string
         elif char == b'':
-            raise Exception('Reached EOF without null-terminator in {!r}!'.format(bytes(chars)))
+            raise Exception(f'Reached EOF without null-terminator in {bytes(chars)!r}!')
         else:
             chars.extend(char)
 
@@ -61,7 +68,7 @@ def _write_nullstring(file: IO[bytes], string: str) -> None:
         file.write(b' \x00')
 
 
-def get_arch_filename(prefix='pak01', index: int=None):
+def get_arch_filename(prefix: str = 'pak01', index: Optional[int] = None) -> str:
     """Generate the name for a VPK file.
 
     Prefix is the name of the file, usually 'pak01'.
@@ -70,7 +77,7 @@ def get_arch_filename(prefix='pak01', index: int=None):
     if index is None:
         return prefix + '_dir.vpk'
     else:
-        return '{}_{:>03}.vpk'.format(prefix, index)
+        return f'{prefix}_{index:>03}.vpk'
 
 
 def _get_file_parts(value: FileName, relative_to: str='') -> Tuple[str, str, str]:
@@ -131,16 +138,16 @@ def _check_is_ascii(value: str) -> bool:
     return True
 
 
-@attr.define(eq=False)
+@attrs.define(eq=False)
 class FileInfo:
     """Represents a file stored inside a VPK.
 
     Do not call the constructor, it is only meant for VPK's use.
     """
     vpk: 'VPK'
-    dir: str = attr.ib(on_setattr=attr.setters.frozen)
-    _filename: str = attr.ib(on_setattr=attr.setters.frozen)
-    ext: str = attr.ib(on_setattr=attr.setters.frozen)
+    dir: str = attrs.field(on_setattr=attrs.setters.frozen)
+    _filename: str = attrs.field(on_setattr=attrs.setters.frozen)
+    ext: str = attrs.field(on_setattr=attrs.setters.frozen)
     crc: int
     arch_index: Optional[int]  # pack_01_000.vpk file to use, or None for _dir.
     offset: int  # Offset into the archive file, including directory data if in _dir
@@ -154,9 +161,7 @@ class FileInfo:
     name = filename
 
     def __repr__(self) -> str:
-        return '<VPK File: "{}">'.format(
-            _join_file_parts(self.dir, self._filename, self.ext),
-        )
+        return f'<VPK File: "{_join_file_parts(self.dir, self._filename, self.ext)}">'
 
     @property
     def size(self) -> int:
@@ -233,20 +238,39 @@ class FileInfo:
 class VPK:
     """Represents a VPK file set in a directory."""
     folder: str
+    """The directory the VPK is located in, used to find the numeric files."""
+
     file_prefix: str
+    """The VPK filename, without ``_dir.vpk``."""
 
     # fileinfo[extension][directory][filename]
     _fileinfo: Dict[str, Dict[str, Dict[str, FileInfo]]]
 
     mode: OpenModes
+    """How the file was opened.
+    
+    - Read mode, the file will not be modified and it must already exist.
+    - Write mode will create the directory if needed.
+    - Append mode will also create the directory, but not wipe the file.
+    """
+
     dir_limit: Optional[int]
+    """
+    The maximum amount of data for files saved to the dir file. 
+    
+    - :external:py:data:`None`: No limit.
+    - ``0``: Save all to a data file.
+    """
+
     footer_data: bytes
+    """The block of data after the header, which contains the file data for files stored in the ``_dir`` file, not numeric files."""
+
     version: int
-    header_len: int
+    """The VPK version, 1 or 2."""
 
     def __init__(
         self,
-        dir_file,
+        dir_file: Union[str, 'os.PathLike[str]'],
         *,
         mode: Union[OpenModes, str]='r',
         dir_data_limit: Optional[int]=1024,
@@ -254,21 +278,17 @@ class VPK:
     ) -> None:
         """Create a VPK file.
 
-        Parameters:
-            dir_file: The path to the directory file. This must end in '_dir.vpk'.
-            mode: Open in (r)ead, (w)rite or (a)ppend mode.
-               In read mode, the file will not be modified and it must exist.
-               Write mode will create the directory if needed.
-               Append mode will also create the directory, but not wipe the file.
-            dir_data_limit: The maximum amount of data for files saved to the dir file.
-               None = no limit, and 0=save all to a data file.
-            version: The desired version if the file is not read.
+        :param dir_file: The path to the directory file. This must end in  ``_dir.vpk``.
+        :param mode: The (r)ead, (w)rite or (a)ppend mode.
+        :param dir_data_limit: The maximum amount of data to save in the dir file.
+        :param version: The desired version if the file is not read.
         """
         if version not in (1, 2):
-            raise ValueError("Invalid version ({}) - must be 1 or 2!".format(version))
+            raise ValueError(f"Invalid version ({version}) - must be 1 or 2!")
 
         self.folder = self.file_prefix = ''
-        self.path = dir_file  # Sets the above correctly + checks.
+        # Calls the property which sets the above correctly and checks the type.
+        self.path = dir_file
 
         # fileinfo[extension][directory][filename]
         self._fileinfo = {}
@@ -279,7 +299,6 @@ class VPK:
         self.footer_data = b''
 
         self.version = version
-        self.header_len = 0
 
         self.load_dirfile()
 
@@ -289,12 +308,15 @@ class VPK:
             raise ValueError(f"VPK mode {self.mode.name} does not allow writing!")
 
     @property
-    def path(self) -> str:
-        """Return the location of the directory VPK file."""
+    def path(self) -> Union[str, 'os.PathLike[str]']:  # TODO: Incorrect, Mypy doesn't have 2-type properties.
+        """The filename of the directory VPK file.
+
+        This can be assigned to set :py:attr:`folder` and :py:attr:`file_prefix`.
+        """
         return os.path.join(self.folder, self.file_prefix + '_dir.vpk')
 
     @path.setter
-    def path(self, path: str) -> None:
+    def path(self, path: Union[str, 'os.PathLike[str]']) -> None:
         """Set the location and folder from the directory VPK file."""
         folder, filename = os.path.split(path)
 
@@ -305,10 +327,7 @@ class VPK:
         self.file_prefix = filename[:-8]
 
     def load_dirfile(self) -> None:
-        """Read in the directory file to get all filenames.
-
-        This erases all changes in the file.
-        """
+        """Read in the directory file to get all filenames. This erases all changes in the file."""
         if self.mode is OpenModes.WRITE:
             # Erase the directory file, we ignore current contents.
             open(self.path, 'wb').close()
@@ -333,7 +352,7 @@ class VPK:
                 raise ValueError('Bad VPK directory signature!')
 
             if version not in (1, 2):
-                raise ValueError("Bad VPK version {}!".format(self.version))
+                raise ValueError(f"Bad VPK version {self.version}!")
 
             self.version = version
 
@@ -345,7 +364,7 @@ class VPK:
                     sig_size,
                 ) = struct_read('<4I', dirfile)
 
-            self.header_len = dirfile.tell() + tree_length
+            header_len = dirfile.tell() + tree_length
 
             self._fileinfo.clear()
             entry = struct.Struct('<IHHIIH')
@@ -370,10 +389,10 @@ class VPK:
                             offset = 0
 
                         if end != 0xffff:
-                            raise Exception('"{}" has bad terminator! {}'.format(
-                                _join_file_parts(directory, file, ext),
-                                (crc, index_len, arch_ind, offset, arch_len, end),
-                            ))
+                            raise Exception(
+                                f'"{_join_file_parts(directory, file, ext)}" has bad terminator! '
+                                f'{(crc, index_len, arch_ind, offset, arch_len, end)}'
+                            )
                         dir_dict[file] = FileInfo(
                             self,
                             directory,
@@ -387,17 +406,14 @@ class VPK:
                         )
 
                 # 1 for the ending b'' section
-                if dirfile.tell() + 1 == self.header_len:
+                if dirfile.tell() + 1 == header_len:
                     dirfile.read(1)  # Skip null byte.
                     break
 
             self.footer_data = dirfile.read()
 
     def write_dirfile(self) -> None:
-        """Write the directory file with the changes.
-
-        This must be performed after writing to the VPK.
-        """
+        """Write the directory file with the changes. This must be performed after writing to the VPK."""
         self._check_writable()
 
         if self.version > 1:
@@ -413,8 +429,12 @@ class VPK:
             # Write in sorted order - not required, but this ensures multiple
             # saves are deterministic.
             for ext, folders in sorted(self._fileinfo.items(), key=key_getter):
+                if not folders:
+                    continue
                 _write_nullstring(file, ext)
                 for folder, files in sorted(folders.items(), key=key_getter):
+                    if not files:
+                        continue
                     _write_nullstring(file, folder)
                     for filename, info in sorted(files.items(), key=key_getter):
                         _write_nullstring(file, filename)
@@ -474,9 +494,8 @@ class VPK:
             return self._fileinfo[ext][path][filename]
         except KeyError:
             raise KeyError(
-                'No file "{}"!'.format(
-                    _join_file_parts(path, filename, ext)
-                )) from None
+                f'No file "{_join_file_parts(path, filename, ext)}"!'
+            ) from None
 
     def __delitem__(self, item: FileName) -> None:
         """Delete a file.
@@ -491,12 +510,19 @@ class VPK:
         path, filename, ext = _get_file_parts(item)
 
         try:
-            self._fileinfo[ext][path].pop(filename)
+            folders = self._fileinfo[ext]
+            files = folders[path]
+            files.pop(filename)
         except KeyError:
             raise KeyError(
-                'No file "{}"!'.format(
-                    _join_file_parts(path, filename, ext)
-                )) from None
+                f'No file "{_join_file_parts(path, filename, ext)}"!'
+            ) from None
+        if not files:
+            # Clear this folder.
+            folders.pop(path)
+            if not folders:
+                # Clear extension too.
+                self._fileinfo.pop(ext)
 
     def __iter__(self) -> Iterator[FileInfo]:
         """Yield all FileInfo objects."""
@@ -594,7 +620,7 @@ class VPK:
 
         if name in dir_infos:
             raise FileExistsError(
-                'Filename already exists! ({!r})'.format(_join_file_parts(path, name, ext))
+                f'Filename already exists! ({_join_file_parts(path, name, ext)!r})'
             )
 
         dir_infos[name] = info = FileInfo(

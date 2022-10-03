@@ -22,6 +22,10 @@ world
 	"id" "1"
 	"classname" "worldspawn"
 	"mapversion" "1"
+	editor
+	{
+		"color" "255 255 255"
+	}
 }
 entity
 {

@@ -1,15 +1,17 @@
 """Parses material files."""
 from typing import (
-    Iterable, TypeVar, Union, Dict, Callable, Optional, Iterator,
-    MutableMapping, Mapping, TextIO, overload
+    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO, Tuple,
+    TypeVar, Union, overload,
 )
-import sys
 from enum import Enum
+import sys
 
-import attr
+import attrs
 
-from srctools import FileSystem, Property, EmptyMapping
-from srctools.tokenizer import Token as Tok, Tokenizer as Tokenizer, BARE_DISALLOWED
+from srctools import EmptyMapping
+from srctools.filesys import FileSystem
+from srctools.keyvalues import Keyvalues
+from srctools.tokenizer import BARE_DISALLOWED, Token as Tok, Tokenizer as Tokenizer
 
 
 class VarType(Enum):
@@ -52,7 +54,7 @@ class VarType(Enum):
         return get_parm_type(name, cls.STR)
 
 
-@attr.define
+@attrs.define
 class Variable:
     """Allow storing the original case of the name."""
     name: str  # With correct case
@@ -67,7 +69,7 @@ _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 def get_parm_type(name: str) -> Optional[VarType]: ...
 @overload
 def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
-def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
+def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT, None]:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
     # noinspection PyProtectedMember
@@ -84,11 +86,7 @@ def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
     return _get_parm_type_real(name, default)
 
 
-@overload
-def _get_parm_type_real(name: str) -> Optional[VarType]: ...
-@overload
-def _get_parm_type_real(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
-def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]:
+def _get_parm_type_real(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
     """Retrieve the type a parameter has, or return the default."""
     try:
         return _SHADER_PARAM_TYPES[name.lstrip('$').casefold()]
@@ -99,22 +97,25 @@ def _get_parm_type_real(name: str, default: ArgT = None) -> Union[VarType, ArgT]
 class Material(MutableMapping[str, str]):
     """Represents a material.
 
-    Attributes:
-        shader: The name of the shader.
-        proxies: List of Material Proxies defined for the material.
-            Each is a tuple of the string name and a dict of keys-> values.
-            "Empty" proxies are removed.
-        blocks: Other sub-blocks inside the material definition. These are
-            usually fallbacks or other similar definitions.
-        This behaves as a mapping, storing the shader parameters.
+    This behaves as a mapping, storing the shader parameters.
     """
+    shader: str
+    """The name of the shader."""
+    proxies: List[Keyvalues]
+    """
+    List of Material Proxies defined for the material.
+    Each is a tuple of the string name and a dict of keys-> values.
+    "Empty" proxies are removed.
+    """
+    blocks: List[Keyvalues]
+    """Other sub-blocks inside the material definition. These are usually fallbacks or other similar definitions."""
 
     def __init__(
         self,
         shader: str,
         params: Mapping[str, str]=EmptyMapping,
-        blocks: Iterable[Property]=(),
-        proxies: Iterable[Property]=(),
+        blocks: Iterable[Keyvalues]=(),
+        proxies: Iterable[Keyvalues]=(),
     ) -> None:
         """Create a material."""
         self.shader = shader
@@ -126,10 +127,8 @@ class Material(MutableMapping[str, str]):
             self[key] = value
 
     @classmethod
-    def parse(cls, data: Iterable[str], filename: str=''):
-        """Parse a VMT from the file.
-
-        """
+    def parse(cls, data: Iterable[str], filename: str = '') -> 'Material':
+        """Parse a VMT from the file."""
         # Block escapes, so "files\test\tex" doesn't have a tab in it.
         tok = Tokenizer(data, filename, string_bracket=True, allow_escapes=False)
 
@@ -203,7 +202,7 @@ class Material(MutableMapping[str, str]):
         return mat
 
     @staticmethod
-    def _parse_proxies(tok: Tokenizer):
+    def _parse_proxies(tok: Tokenizer) -> Iterator[Tuple[str, Dict[str, str]]]:
         # Parse the proxy block.
 
         for token, proxy_name in tok.skipping_newlines():
@@ -212,23 +211,23 @@ class Material(MutableMapping[str, str]):
             elif token is not Tok.STRING:
                 raise tok.error(token)
 
-            opts = {}
+            opts: Dict[str, str] = {}
 
             tok.expect(Tok.BRACE_OPEN)  # Start of proxy values.
 
             # Looking for key-value parameters for a proxy
-            for token, param_name in tok.skipping_newlines():
-                if token is Tok.BRACE_CLOSE:
+            for par_tok, param_name in tok.skipping_newlines():
+                if par_tok is Tok.BRACE_CLOSE:
                     break
-                elif token is not Tok.STRING:
-                    raise tok.error(token)
+                elif par_tok is not Tok.STRING:
+                    raise tok.error(par_tok)
 
-                token, param_value = tok()
+                par_tok, param_value = tok()
 
-                if token is Tok.STRING:
+                if par_tok is Tok.STRING:
                     opts[param_name.casefold()] = param_value
                 else:
-                    raise tok.error(token)
+                    raise tok.error(par_tok)
             else:
                 raise tok.error('EOF while reading options for "{}" proxy', proxy_name)
             yield proxy_name, opts
@@ -236,9 +235,9 @@ class Material(MutableMapping[str, str]):
             raise tok.error('Proxy block not closed!')
 
     @staticmethod
-    def _parse_block(tok: Tokenizer, name: str) -> Property:
+    def _parse_block(tok: Tokenizer, name: str) -> Keyvalues:
         """Parse a block into a block of properties."""
-        prop = Property(name, [])
+        prop = Keyvalues(name, [])
 
         for token, param_name in tok:
             # End of our block
@@ -268,13 +267,13 @@ class Material(MutableMapping[str, str]):
                     pass
                 elif token is Tok.BRACE_CLOSE:
                     # End of us after single name.
-                    prop.append(Property(param_name, ''))
+                    prop.append(Keyvalues(param_name, ''))
                     break
                 else:
                     raise tok.error(token)
             else:
                 raise tok.error(token)
-            prop.append(Property(param_name, param_value))
+            prop.append(Keyvalues(param_name, param_value))
 
         raise tok.error('EOF without closed block!')
 
@@ -304,15 +303,14 @@ class Material(MutableMapping[str, str]):
         self,
         fsys: FileSystem,
         *,
-        limit=100,
-        parent_func: Callable[[str], None]=None,
+        limit: int = 100,
+        parent_func: Optional[Callable[[str], None]] = None,
     ) -> 'Material':
-        """If the file is a Patch shader expand to the full material.
+        """If the material is a `Patch <https://developer.valvesoftware.com/wiki/Patch>` shader expand to the full material.
 
-        This reads from the supplied filesystem as needed. If more than
-        limit files are parsed, a RecursionError is raised.
-        If parent_func is provided, it will be called with the filenames
-        of the VMTs which are looked up.
+        :param fsys: This reads from the supplied filesystem as required.
+        :param limit: If more than this many files are parsed, a RecursionError is raised.
+        :param parent_func: If this is provided, it will be called with the filenames of the VMTs which are looked up. This allows tracking which are used.
         """
         return self._apply_patch(fsys, 1, limit, parent_func)
 

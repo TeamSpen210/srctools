@@ -1,16 +1,13 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
-    List, Optional, Iterator, Union, Tuple, TYPE_CHECKING,
-    Collection, Iterable, ClassVar, TypeVar, Type,
+    TYPE_CHECKING, ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Type,
+    TypeVar, Union,
 )
 
-import attr
+import attrs
 
-from srctools import Vec, parse_vec_str
-from srctools.fgd import HelperTypes, UnknownHelper, Helper
-
-if TYPE_CHECKING:  # Circular import.
-    from srctools.fgd import EntityDef
+from srctools.fgd import EntityDef, Helper, HelperTypes
+from srctools.math import Vec, parse_vec_str
 
 
 __all__ = [
@@ -34,7 +31,7 @@ SpriteHelperT = TypeVar('SpriteHelperT', bound='HelperSprite')
 ModelHelperT = TypeVar('ModelHelperT', bound='HelperModel')
 
 
-@attr.define
+@attrs.define
 class _HelperOneOptional(Helper):
     """Utility base class for a helper with one optional parameter."""
     _DEFAULT: ClassVar[str] = ''
@@ -73,7 +70,7 @@ class HelperInherit(Helper):
     TYPE = HelperTypes.INHERIT
 
 
-@attr.define
+@attrs.define
 class HelperHalfGridSnap(Helper):
     """Helper implementation for halfgridsnap().
 
@@ -83,7 +80,7 @@ class HelperHalfGridSnap(Helper):
     TYPE: ClassVar[HelperTypes] = HelperTypes.HALF_GRID_SNAP
 
 
-@attr.define(init=False)
+@attrs.define(init=False)
 class HelperSize(Helper):
     """Helper implementation for size().
 
@@ -125,19 +122,19 @@ class HelperSize(Helper):
         ]
 
 
-@attr.define
+@attrs.define
 class HelperBBox(HelperSize):
     """Helper implementation for bbox()."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.BBOX
 
 
-@attr.define
+@attrs.define
 class HelperCatapult(Helper):
     """Helper implementation for catapult(), specific to Portal: Revolution."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_CATAPULT
 
 
-@attr.define
+@attrs.define
 class HelperRenderColor(Helper):
     """Helper implementation for color()."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.TINT
@@ -169,7 +166,7 @@ class HelperRenderColor(Helper):
         return ['{:g} {:g} {:g}'.format(self.r, self.g, self.b)]
 
 
-@attr.define
+@attrs.define
 class HelperSphere(Helper):
     """Helper implementation for sphere()."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.SPHERE
@@ -210,7 +207,7 @@ class HelperSphere(Helper):
         return [self.size_key]
 
 
-@attr.define
+@attrs.define
 class HelperLine(Helper):
     """Helper implementation for line().
 
@@ -266,7 +263,7 @@ class HelperLine(Helper):
         return args
 
 
-@attr.define
+@attrs.define
 class HelperFrustum(Helper):
     """Helper for env_projectedtexture visuals."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.FRUSTUM
@@ -321,11 +318,13 @@ class HelperFrustum(Helper):
         except ValueError:
             pass
 
-        try:
-            r, g, b = color.split()  # type: ignore
-            color = (float(r), float(g), float(b))
-        except ValueError:
-            pass
+        if isinstance(color, str):
+            try:
+                r, g, b = color.split()
+                color = (float(r), float(g), float(b))
+            except ValueError:
+                pass
+
 
         return cls(fov, nearz, farz, color, pitch)
 
@@ -350,7 +349,7 @@ class HelperFrustum(Helper):
         ]
 
 
-@attr.define
+@attrs.define
 class HelperCylinder(HelperLine):
     """Helper implementation for cylinder().
 
@@ -425,7 +424,7 @@ class HelperBrushSides(_HelperOneOptional):
     _DEFAULT = 'sides'
 
 
-@attr.define
+@attrs.define
 class HelperBoundingBox(Helper):
     """Displays bounding box between two keyvalues."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.BOUNDING_BOX_HELPER
@@ -460,7 +459,7 @@ class HelperOrientedBBox(HelperBoundingBox):
     TYPE: ClassVar[HelperTypes] = HelperTypes.ORIENTED_BBOX
 
 
-@attr.define
+@attrs.define
 class HelperSprite(Helper):
     """The sprite helper, for editor icons.
 
@@ -499,7 +498,7 @@ class HelperSprite(Helper):
         else:
             return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterator[str]:
+    def get_resources(self, entity: EntityDef) -> Iterator[str]:
         """iconsprite() uses a single material."""
         materials: Iterable[str]
         if self.mat is None:
@@ -526,7 +525,7 @@ class HelperEnvSprite(HelperSprite):
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_SPRITE
 
 
-@attr.define
+@attrs.define
 class HelperModel(Helper):
     """Helper which displays models.
 
@@ -563,8 +562,8 @@ class HelperModel(Helper):
         else:
             return []
 
-    def get_resources(self, entity: 'EntityDef') -> Iterable[str]:
-        """studio() uses a single material."""
+    def get_resources(self, entity: EntityDef) -> Iterable[str]:
+        """studio() uses a single model."""
         models: Iterable[str]
         if self.model is None:
             try:
@@ -625,7 +624,7 @@ class HelperLight(Helper):
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT
 
 
-@attr.define
+@attrs.define
 class HelperLightSpot(Helper):
     """Specialized helper for displaying spotlight previews."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT_CONE
@@ -674,7 +673,7 @@ class HelperLightSpot(Helper):
         return []
 
 
-@attr.define
+@attrs.define
 class HelperLightSpotBlackMesa(Helper):
     """A new helper for Black Mesa's new spot entity."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.ENT_LIGHT_CONE_BLACK_MESA
@@ -697,7 +696,7 @@ class HelperLightSpotBlackMesa(Helper):
         return [self.theta_kv, self.phi_kv, self.color_kv]
 
 
-@attr.define
+@attrs.define
 class HelperRope(Helper):
     """Specialized helper for displaying move_rope and keyframe_rope."""
 
@@ -743,13 +742,13 @@ class HelperWorldText(Helper):
 
 # Extensions to the FGD format.
 
-@attr.define
+@attrs.define
 class HelperExtAppliesTo(Helper):
     """Allows specifying "tags" to indicate an entity is only used in certain games."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_APPLIES_TO
     IS_EXTENSION: ClassVar[bool] = True
 
-    tags: List[str] = attr.Factory(list)
+    tags: List[str] = attrs.Factory(list)
 
     @classmethod
     def parse(cls, args: List[str]) -> 'HelperExtAppliesTo':
@@ -759,13 +758,13 @@ class HelperExtAppliesTo(Helper):
         return self.tags
 
 
-@attr.define
+@attrs.define
 class HelperExtOrderBy(Helper):
     """Reorder keyvalues. Args = names in order."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_ORDERBY
     IS_EXTENSION: ClassVar[bool] = True
 
-    order: List[str] = attr.Factory(list)
+    order: List[str] = attrs.Factory(list)
 
     @classmethod
     def parse(cls, args: List[str]) -> 'HelperExtOrderBy':
@@ -775,7 +774,7 @@ class HelperExtOrderBy(Helper):
         return self.order
 
 
-@attr.define
+@attrs.define
 class HelperExtAutoVisgroups(Helper):
     """Convenience for parsing, adds @AutoVisgroups to entities.
 
@@ -783,7 +782,7 @@ class HelperExtAutoVisgroups(Helper):
     TYPE: ClassVar[HelperTypes] = HelperTypes.EXT_AUTO_VISGROUP
     IS_EXTENSION: ClassVar[bool] = True
 
-    path: List[str] = attr.Factory(list)
+    path: List[str] = attrs.Factory(list)
 
     @classmethod
     def parse(cls: Type['HelperExtAutoVisgroups'], args: List[str]) -> 'HelperExtAutoVisgroups':

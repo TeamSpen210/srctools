@@ -1,14 +1,16 @@
+from typing import (
+    IO, TYPE_CHECKING, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
+    List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set, Tuple, Type, TypeVar,
+    Union, ValuesView, overload,
+)
+from typing_extensions import Final, Protocol, TypeAlias
+from collections import deque
+from types import TracebackType
 import itertools as _itertools
 import os as _os
 import sys as _sys
-from typing import (
-    Type, TypeVar, Union, Any, NoReturn, Optional, overload,
-    Mapping, MutableMapping, KeysView, ValuesView, ItemsView,
-    Sequence, List, Container, AbstractSet, Set,
-    Iterable, Iterator, Tuple, IO,
-)
-from types import TracebackType
-from collections import deque
+import warnings
+
 
 try:
     from ._version import __version__
@@ -23,7 +25,7 @@ __all__ = [
     'Vec', 'FrozenVec', 'parse_vec_str', 'lerp',
     'Angle', 'FrozenAngle', 'Matrix',
 
-    'NoKeyError', 'KeyValError', 'Property',
+    'NoKeyError', 'KeyValError', 'Keyvalues',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
 
     'clean_line', 'is_plain_text', 'blacklist', 'whitelist',
@@ -32,12 +34,17 @@ __all__ = [
 
     'FileSystem', 'FileSystemChain', 'get_filesystem',
 
-    'EmptyMapping', 'AtomicWriter',
+    'EmptyMapping', 'StringPath',
 
     'FGD', 'VPK',
     'VTF',
     'SurfaceProp', 'SurfChar',
     'GameID',
+
+    # Submodules:
+    'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
+    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues', 'run',
+    'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
 ]
 
 # import string
@@ -49,6 +56,8 @@ _FILE_CHARS = frozenset(
     '-_ .|'
 )
 ValT = TypeVar('ValT')
+# Pathlike can only be subscripted in 3.9+
+StringPath: TypeAlias = Union[str, '_os.PathLike[str]']
 
 
 def clean_line(line: str) -> str:
@@ -204,6 +213,17 @@ def conv_int(val: Union[int, float, str], default: Union[ValT, int] = 0) -> Unio
         return default
 
 
+class _SupportsKeysAndGetItem(Protocol):
+    """The parts of a mapping that is required for dict.update().
+
+    Since this is for EmptyMapping we don't care about the item type.
+    """
+    def keys(self) -> Iterable[Any]:
+        raise NotImplementedError
+    def __getitem__(self, __k: Any) -> Any:
+        raise NotImplementedError
+
+
 class _EmptyMapping(MutableMapping[Any, Any]):
     """A Mapping class which is always empty.
 
@@ -275,24 +295,24 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     @overload
     def setdefault(self, key: Any) -> None: ...
     @overload
-    def setdefault(self, key: Any, default: ValT=...) -> ValT: ...
+    def setdefault(self, key: Any, default: ValT) -> ValT: ...
     def setdefault(self, key: Any, default: ValT=None) -> Optional[ValT]:
         """setdefault() always returns the default item, but does not store it."""
         return default
 
     @overload
-    def update(self, __m: Mapping[Any, Any], **kwargs: Any) -> None: ...
+    def update(self, __m: _SupportsKeysAndGetItem, **kwargs: Any) -> None: ...
     @overload
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
     def update(self, **kwargs: Any) -> None: ...
-    def update(self, *args, **kargs: Any) -> None:
+    def update(self, *args: Any, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
         # Also consume args[0] if an iterator - this raises if args > 1.
         {}.update(*args, **kargs)
 
-    __marker: Any = object()
+    __marker: Final[Any] = object()
     @overload
     def pop(self, key: Any) -> NoReturn: ...
     @overload
@@ -327,25 +347,25 @@ class _EmptySetView(AbstractSet[Any]):
 
     # Set ops. A lot can share implementations.
 
-    def __ne__(self, other) -> bool:
+    def __ne__(self, other: object) -> bool:
         """All nonempty sets are non-equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) > 0
 
-    def __eq__(self, other) -> bool:
+    def __eq__(self, other: object) -> bool:
         """Only empty sets are equal."""
         if not isinstance(other, AbstractSet):
             return NotImplemented
         return len(other) == 0
 
-    def __le__(self, other) -> bool:
+    def __le__(self, other: object) -> bool:
         """We are <= to all sets."""
         if isinstance(other, AbstractSet):
             return True
         return NotImplemented
 
-    def __gt__(self, other) -> bool:
+    def __gt__(self, other: object) -> bool:
         """We are never > any set."""
         if isinstance(other, AbstractSet):
             return False
@@ -364,7 +384,7 @@ class _EmptySetView(AbstractSet[Any]):
         deque(other, 0)  # Consume all values.
         return set()
 
-    def isdisjoint(self, other) -> bool:
+    def isdisjoint(self, other: Iterable[Any]) -> bool:
         """This set is always disjoint."""
         iter(other)  # Check it's iterable.
         return True
@@ -417,7 +437,7 @@ class _EmptyValuesView(ValuesView[Any]):
         """Iteration produces no values."""
         return iter(())
 
-_set_hash = hash(frozenset())
+_set_hash: Final = hash(frozenset())
 EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()
 EmptyKeysView: KeysView[Any] = _EmptyKeysView(EmptyMapping)
 EmptyItemsView: ItemsView[Any, Any] = _EmptyItemsView(EmptyMapping)
@@ -425,7 +445,7 @@ EmptyValuesView: ValuesView[Any] = _EmptyValuesView(EmptyMapping)
 
 
 class AtomicWriter:
-    """Atomically overwrite a file.
+    """Atomically overwrite a file. Deprecated, use atomicwrites.AtomicWriter.
 
     Use as a context manager - the returned temporary file
     should be written to. When cleanly exiting, the file will be transferred.
@@ -434,10 +454,11 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
-    def __init__(self, filename: Union[_os.PathLike, str], is_bytes: bool=False, encoding: str='utf8') -> None:
+    def __init__(self, filename: StringPath, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
+        warnings.warn("Use atomicwrites instead.", DeprecationWarning, stacklevel=2)
         self.filename = _os.fspath(filename)
         self.dir = _os.path.dirname(filename)
         self.encoding = encoding
@@ -452,7 +473,7 @@ class AtomicWriter:
             self.temp.close()
             _os.remove(self.temp.name)
 
-        # Create folders if needed..
+        # Create folders if needed.
         if self.dir:
             _os.makedirs(self.dir, exist_ok=True)
 
@@ -467,7 +488,7 @@ class AtomicWriter:
             except FileExistsError:
                 pass
 
-    def __enter__(self):
+    def __enter__(self) -> IO:
         """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
         assert self.temp is not None
@@ -499,20 +520,35 @@ class AtomicWriter:
         return None  # Don't cancel the exception.
 
 
-# Import these, so people can reference 'srctools.Vec' instead of
-# 'srctools.math.Vec'.
+# Import these, so people can reference 'srctools.Vec' instead of 'srctools.math.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
+# This shouldn't be used in our modules, to ensure the order here doesn't matter.
+# isort: off
 from .math import (
     FrozenVec, Vec, Vec_tuple,
     parse_vec_str, lerp, Matrix,
     FrozenAngle, Angle,
 )
-from .property_parser import NoKeyError, KeyValError, Property
-from .filesys import FileSystem, FileSystemChain, get_filesystem
-from .vmf import VMF, Entity, Solid, Side, Output, UVAxis
-from .vpk import VPK
-from .fgd import FGD
-from .const import GameID
-from .surfaceprop import SurfaceProp, SurfChar
-from .vtf import VTF
+from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
+from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
+from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis
+from srctools.vpk import VPK
+from srctools.fgd import FGD
+from srctools.const import GameID
+from srctools.surfaceprop import SurfaceProp, SurfChar
+from srctools.vtf import VTF
+
+
+if TYPE_CHECKING:
+    Property = Keyvalues   #: :deprecated: Use srctools.Keyvalues.
+else:
+    def __getattr__(name: str) -> object:
+        if name == 'Property':
+            warnings.warn(
+                'srctools.Property is renamed to srctools.Keyvalues',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return Keyvalues
+        raise AttributeError(name)

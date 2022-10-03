@@ -1,9 +1,10 @@
 # cython: language_level=3, embedsignature=True, auto_pickle=False
 # cython: binding=True
 """Cython version of the Tokenizer class."""
-cimport cython
-from cpython.mem cimport PyMem_Malloc, PyMem_Realloc, PyMem_Free
+from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
 from libc.stdint cimport uint_fast8_t
+cimport cython
+
 
 cdef extern from *:
     ctypedef unsigned char uchar "unsigned char"  # Using it a lot, this causes it to not be a typedef at all.
@@ -14,12 +15,14 @@ cdef extern from *:
 cdef object os_fspath
 from os import fspath as os_fspath
 
+
 # Import the Token enum from the Python file, and cache references
 # to all the parts.
 # Also grab the exception object.
 
 cdef object Token, TokenSyntaxError
-from srctools.tokenizer import Token,  TokenSyntaxError
+from srctools.tokenizer import Token, TokenSyntaxError
+
 
 __all__ = ['BaseTokenizer', 'Tokenizer', 'IterTokenizer', 'escape_text']
 
@@ -35,23 +38,31 @@ cdef:
     object EOF = Token.EOF
     object NEWLINE = Token.NEWLINE
 
+    object COLON = Token.COLON
+    object EQUALS = Token.EQUALS
+    object PLUS = Token.PLUS
+    object COMMA = Token.COMMA
+
     object BRACE_OPEN = Token.BRACE_OPEN
     object BRACE_CLOSE = Token.BRACE_CLOSE
+
+    object BRACK_OPEN = Token.BRACK_OPEN
+    object BRACK_CLOSE = Token.BRACK_CLOSE
 
     # Reuse a single tuple for these, since the value is constant.
     tuple EOF_TUP = (Token.EOF, '')
     tuple NEWLINE_TUP = (Token.NEWLINE, '\n')
 
-    tuple COLON_TUP = (Token.COLON, ':')
-    tuple EQUALS_TUP = (Token.EQUALS, '=')
-    tuple PLUS_TUP = (Token.PLUS, '+')
-    tuple COMMA_TUP = (Token.COMMA, ',')
+    tuple COLON_TUP = (COLON, ':')
+    tuple EQUALS_TUP = (EQUALS, '=')
+    tuple PLUS_TUP = (PLUS, '+')
+    tuple COMMA_TUP = (COMMA, ',')
 
     tuple BRACE_OPEN_TUP = (BRACE_OPEN, '{')
     tuple BRACE_CLOSE_TUP = (BRACE_CLOSE, '}')
 
-    tuple BRACK_OPEN_TUP = (Token.BRACK_OPEN, '[')
-    tuple BRACK_CLOSE_TUP = (Token.BRACK_CLOSE, ']')
+    tuple BRACK_OPEN_TUP = (BRACK_OPEN, '[')
+    tuple BRACK_CLOSE_TUP = (BRACK_CLOSE, ']')
 
     uchar *EMPTY_BUF = b''  # Initial value, just so it's valid.
 
@@ -59,14 +70,29 @@ cdef:
 # Convert to tuple to only check the chars.
 DEF BARE_DISALLOWED = b'"\'{};,[]()\n\t '
 
-# Controls what syntax is allowed
-DEF FL_STRING_BRACKETS     = 1<<0
-DEF FL_ALLOW_ESCAPES       = 1<<1
-DEF FL_ALLOW_STAR_COMMENTS = 1<<2
-DEF FL_COLON_OPERATOR      = 1<<3
-# If set, the file_iter is a bound read() method.
-DEF FL_FILE_INPUT          = 1<<4
+# Pack flags into a bitfield.
+cdef extern from *:
+    """
+struct TokFlags {
+    unsigned char string_brackets: 1;
+    unsigned char allow_escapes: 1;
+    unsigned char colon_operator: 1;
+    unsigned char allow_star_comments: 1;
+    unsigned char file_input: 1;
+    unsigned char last_was_cr: 1;
+};
+    """
+    cdef struct TokFlags:
+        bint string_brackets
+        bint allow_escapes
+        bint colon_operator
+        bint allow_star_comments
+        # If set, the file_iter is a bound read() method.
+        bint file_input
+        # Records if the last character was a \r, so the next swallows \n.
+        bint last_was_cr
 
+# The number of characters to read from a file each time.
 DEF FILE_BUFFER = 1024
 DEF CHR_EOF = 0x03  # Indicate the end of the file.
 
@@ -87,7 +113,7 @@ cdef class BaseTokenizer:
     cdef object pushback_val
 
     cdef public int line_num
-    cdef uint_fast8_t flags
+    cdef TokFlags flags
 
     def __init__(self, filename, error):
         # Use os method to convert to string.
@@ -113,7 +139,14 @@ cdef class BaseTokenizer:
 
         self.pushback_tok = self.pushback_val = None
         self.line_num = 1
-        self.flags = 0
+        self.flags = {
+            'string_brackets': 0,
+            'allow_escapes': 0,
+            'colon_operator': 0,
+            'allow_star_comments': 0,
+            'file_input': 0,
+            'last_was_cr': 0,
+        }
 
     def __reduce__(self):
         """Disallow pickling Tokenizers.
@@ -169,11 +202,41 @@ cdef class BaseTokenizer:
         if type(message) is Token:  # We know no subclasses exist..
             if len(args) > 1:
                 raise TypeError(f'Token {message.name} passed with multiple values: {args}')
-            if len(args) == 1 and (message is STRING or message is PAREN_ARGS or message is PROP_FLAG or message is DIRECTIVE):
-                tok_val = <str?>args[0]
-                str_msg = f'Unexpected token {message.name}({tok_val})!'
+
+            tok_val = '' if len(args) == 0 else args[0]
+            if tok_val is None:
+                raise TypeError('Token value should not be None!')
+
+            if message is PROP_FLAG:
+                str_msg = f'Unexpected property flags = [{tok_val}]!'
+            elif message is PAREN_ARGS:
+                str_msg = f'Unexpected parentheses block = ({tok_val})!'
+            elif message is STRING:
+                str_msg = f'Unexpected string = "{tok_val}"!'
+            elif message is DIRECTIVE:
+                str_msg = f'Unexpected directive "#{tok_val}"!'
+            elif message is EOF:
+                str_msg = 'File ended unexpectedly!'
+            elif message is NEWLINE:
+                str_msg = 'Unexpected newline!'
+            elif message is BRACE_OPEN:
+                str_msg = 'Unexpected "{" character!'
+            elif message is BRACE_CLOSE:
+                str_msg = 'Unexpected "}" character!'
+            elif message is BRACK_OPEN:
+                str_msg = 'Unexpected "[" character!'
+            elif message is BRACK_CLOSE:
+                str_msg = 'Unexpected "]" character!'
+            elif message is COLON:
+                str_msg = 'Unexpected ":" character!'
+            elif message is EQUALS:
+                str_msg = 'Unexpected "=" character!'
+            elif message is PLUS:
+                str_msg = 'Unexpected "+" character!'
+            elif message is COMMA:
+                str_msg = 'Unexpected "," character!'
             else:
-                str_msg = f'Unexpected token {message.name}' '!'
+                raise RuntimeError(message)
         elif args:
             str_msg = message.format(*args)
         else:
@@ -360,15 +423,14 @@ cdef class Tokenizer(BaseTokenizer):
                 'or wrap in io.TextIOWrapper() to decode gradually.'
             )
 
-        cdef int flags = 0
-        if string_bracket:
-            flags |= FL_STRING_BRACKETS
-        if allow_escapes:
-            flags |= FL_ALLOW_ESCAPES
-        if allow_star_comments:
-            flags |= FL_ALLOW_STAR_COMMENTS
-        if colon_operator:
-            flags |= FL_COLON_OPERATOR
+        cdef TokFlags flags = {
+            'string_brackets': string_bracket,
+            'allow_escapes': allow_escapes,
+            'allow_star_comments': allow_star_comments,
+            'colon_operator': colon_operator,
+            'file_input': 0,
+            'last_was_cr': 0,
+        }
 
         # For direct strings, we can immediately assign that as our chunk,
         # and then set the iterable to indicate EOF after that.
@@ -389,7 +451,7 @@ cdef class Tokenizer(BaseTokenizer):
                 # This checks that it is indeed iterable.
                 self.chunk_iter = iter(data)
             else:
-                flags |= FL_FILE_INPUT
+                flags.file_input = True
 
         # We initially add one, so it'll be 0 next.
         self.char_index = -1
@@ -405,7 +467,7 @@ cdef class Tokenizer(BaseTokenizer):
                 filename = None
 
         BaseTokenizer.__init__(self, filename, error)
-        self.flags |= flags
+        self.flags = flags
 
         # We want to strip a UTF BOM from the start of the file, if it matches.
         # So pull off the first three characters, and if they don't match,
@@ -424,7 +486,7 @@ cdef class Tokenizer(BaseTokenizer):
 
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
-        return self.flags & FL_STRING_BRACKETS != 0
+        return self.flags.string_brackets
 
     @string_bracket.setter
     def string_bracket(self, bint value) -> None:
@@ -432,49 +494,37 @@ cdef class Tokenizer(BaseTokenizer):
 
         If disabled these are parsed as BRACK_OPEN, STRING, BRACK_CLOSE.
         """
-        if value:
-            self.flags |= FL_STRING_BRACKETS
-        else:
-            self.flags &= ~FL_STRING_BRACKETS
+        self.flags.string_brackets = value
 
     @property
     def allow_escapes(self) -> bool:
         """Check if backslash escapes will be parsed."""
-        return self.flags & FL_ALLOW_ESCAPES != 0
+        return self.flags.allow_escapes
 
     @allow_escapes.setter
     def allow_escapes(self, bint value) -> None:
         """Set if backslash escapes will be parsed."""
-        if value:
-            self.flags |= FL_ALLOW_ESCAPES
-        else:
-            self.flags &= ~FL_ALLOW_ESCAPES
+        self.flags.allow_escapes = value
 
     @property
     def allow_star_comments(self) -> bool:
         """Check if /**/ style comments will be enabled."""
-        return self.flags & FL_ALLOW_STAR_COMMENTS != 0
+        return self.flags.allow_star_comments
 
     @allow_star_comments.setter
     def allow_star_comments(self, bint value) -> None:
         """Set if /**/ style comments are enabled."""
-        if value:
-            self.flags |= FL_ALLOW_STAR_COMMENTS
-        else:
-            self.flags &= ~FL_ALLOW_STAR_COMMENTS
+        self.flags.allow_star_comments = value
 
     @property
     def colon_operator(self) -> bool:
         """Check if : characters are treated as a COLON token, or part of strings."""
-        return self.flags & FL_COLON_OPERATOR != 0
+        return self.flags.colon_operator
 
     @colon_operator.setter
     def colon_operator(self, bint value) -> None:
         """Set if : characters are treated as a COLON token, or part of strings."""
-        if value:
-            self.flags |= FL_COLON_OPERATOR
-        else:
-            self.flags &= ~FL_COLON_OPERATOR
+        self.flags.colon_operator = value
 
     cdef inline void buf_reset(self):
         """Reset the temporary buffer."""
@@ -523,7 +573,7 @@ cdef class Tokenizer(BaseTokenizer):
         if self.chunk_iter is None:
             return CHR_EOF
 
-        if self.flags & FL_FILE_INPUT:
+        if self.flags.file_input:
             self.cur_chunk = self.chunk_iter(FILE_BUFFER)
             self.char_index = 0
 
@@ -563,6 +613,10 @@ cdef class Tokenizer(BaseTokenizer):
                 self.chunk_buf = PyUnicode_AsUTF8AndSize(self.cur_chunk, &self.chunk_size)
                 return self.chunk_buf[0]
 
+    def _get_token(self):
+        """Compute the next token."""
+        return self.next_token()
+
     cdef next_token(self):
         """Return the next token, value pair - this is the C version."""
         cdef:
@@ -572,7 +626,9 @@ cdef class Tokenizer(BaseTokenizer):
             int start_line
             bint ascii_only
             uchar decode[5]
+            bint last_was_cr
 
+        # Implement pushback directly for efficiency.
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
             self.pushback_tok = self.pushback_val = None
@@ -580,6 +636,7 @@ cdef class Tokenizer(BaseTokenizer):
 
         while True:
             next_char = self._next_char()
+            # First try simple operators & EOF.
             if next_char == CHR_EOF:
                 return EOF_TUP
 
@@ -593,13 +650,23 @@ cdef class Tokenizer(BaseTokenizer):
                 return EQUALS_TUP
             elif next_char == b',':
                 return COMMA_TUP
-            # First try simple operators & EOF.
 
+            # Handle newlines, converting \r and \r\n to \n.
+            if next_char == b'\r':
+                self.line_num += 1
+                self.flags.last_was_cr = True
+                return NEWLINE_TUP
             elif next_char == b'\n':
+                # Consume the \n in \r\n.
+                if self.flags.last_was_cr:
+                    self.flags.last_was_cr = False
+                    continue
                 self.line_num += 1
                 return NEWLINE_TUP
+            else:
+                self.flags.last_was_cr = False
 
-            elif next_char in b' \t':
+            if next_char in b' \t':
                 # Ignore whitespace..
                 continue
 
@@ -608,7 +675,7 @@ cdef class Tokenizer(BaseTokenizer):
                 # The next must be another slash! (//)
                 next_char = self._next_char()
                 if next_char == b'*': # /* comment.
-                    if self.flags & FL_ALLOW_STAR_COMMENTS:
+                    if self.flags.allow_star_comments:
                         start_line = self.line_num
                         while True:
                             next_char = self._next_char()
@@ -651,7 +718,7 @@ cdef class Tokenizer(BaseTokenizer):
                     raise self._error(
                         'Single slash found, '
                         'instead of two for a comment (// or /* */)!'
-                        if self.flags & FL_ALLOW_STAR_COMMENTS else
+                        if self.flags.allow_star_comments else
                         'Single slash found, '
                         'instead of two for a comment (//)!'
                     )
@@ -659,15 +726,27 @@ cdef class Tokenizer(BaseTokenizer):
             # Strings
             elif next_char == b'"':
                 self.buf_reset()
+                last_was_cr = False
                 while True:
                     next_char = self._next_char()
                     if next_char == CHR_EOF:
                         raise self._error('Unterminated string!')
                     elif next_char == b'"':
                         return STRING, self.buf_get_text()
-                    elif next_char == b'\n':
+                    elif next_char == b'\r':
                         self.line_num += 1
-                    elif next_char == b'\\' and self.flags & FL_ALLOW_ESCAPES:
+                        last_was_cr = True
+                        self.buf_add_char(b'\n')
+                        continue
+                    elif next_char == b'\n':
+                        if last_was_cr:
+                            last_was_cr = False
+                            continue
+                        self.line_num += 1
+                    else:
+                        last_was_cr = False
+
+                    if next_char == b'\\' and self.flags.allow_escapes:
                         # Escape text
                         escape_char = self._next_char()
                         if escape_char == CHR_EOF:
@@ -693,7 +772,7 @@ cdef class Tokenizer(BaseTokenizer):
 
             elif next_char == b'[':
                 # FGDs use [] for grouping, Properties use it for flags.
-                if not self.flags & FL_STRING_BRACKETS:
+                if not self.flags.string_brackets:
                     return BRACK_OPEN_TUP
 
                 self.buf_reset()
@@ -713,7 +792,7 @@ cdef class Tokenizer(BaseTokenizer):
                     self.buf_add_char(next_char)
 
             elif next_char == b']':
-                if self.flags & FL_STRING_BRACKETS:
+                if self.flags.string_brackets:
                     # If string_bracket is set (using PROP_FLAG), this is a
                     # syntax error - we don't have an open one to close!
                     raise self._error('No open [] to close with "]"!')
@@ -752,7 +831,7 @@ cdef class Tokenizer(BaseTokenizer):
 
                     elif (
                         next_char in BARE_DISALLOWED or
-                        (next_char == b':' and self.flags & FL_COLON_OPERATOR)
+                        (next_char == b':' and self.flags.colon_operator)
                     ):
                         # We need to repeat this so we return the ending
                         # char next. If it's not allowed, that'll error on
@@ -777,7 +856,7 @@ cdef class Tokenizer(BaseTokenizer):
                             self.buf_add_char(next_char)
 
             else:  # These complex checks can't be in a switch, so we need to nest this.
-                if next_char == b':' and FL_COLON_OPERATOR & self.flags:
+                if next_char == b':' and self.flags.colon_operator:
                     return COLON_TUP
                 # Bare names
                 if next_char not in BARE_DISALLOWED:
@@ -792,7 +871,7 @@ cdef class Tokenizer(BaseTokenizer):
 
                         elif (
                             next_char in BARE_DISALLOWED or
-                            (next_char == b':' and FL_COLON_OPERATOR & self.flags)
+                            (next_char == b':' and self.flags.colon_operator)
                         ):  # We need to repeat this so we return the ending
                             # char next. If it's not allowed, that'll error on
                             # next call.
@@ -810,7 +889,7 @@ cdef class Tokenizer(BaseTokenizer):
                         self._next_char(),
                         0x00,
                     ]
-                    raise self._error(f'Unexpected character "{decode[:4].decode("utf8", "backslashreplace")}"' '!')
+                    raise self._error(f'Unexpected characters "{decode[:4].decode("utf8", "backslashreplace")}"' '!')
 
 
 cdef class IterTokenizer(BaseTokenizer):
@@ -826,11 +905,16 @@ cdef class IterTokenizer(BaseTokenizer):
 
     def __repr__(self):
         if self.error_type is TokenSyntaxError:
-            return f'IterTokenizer({self.source!r}, {self.filename!r})'
+            return f'{self.__class__.__name__}({self.source!r}, {self.filename!r})'
         else:
-            return f'IterTokenizer({self.source!r}, {self.filename!r}, {self.error_type!r})'
+            return f'{self.__class__.__name__}({self.source!r}, {self.filename!r}, {self.error_type!r})'
+
+    def _get_token(self):
+        """Compute the next token."""
+        return self.next_token()
 
     cdef next_token(self):
+        """Implement pushback directly for efficiency."""
         if self.pushback_tok is not None:
             output = self.pushback_tok, self.pushback_val
             self.pushback_tok = self.pushback_val = None
@@ -897,7 +981,7 @@ cdef class BlockIter:
         return f'<srctools.tokenizer.BaseTokenizer.block() at {id(self):X}>'
 
     def __init__(self, tok):
-        raise TypeError("Cannot create 'BlockIter' instances")
+        raise TypeError("Cannot create 'BlockIter' instances directly, use Tokenizer.block().")
 
     def __iter__(self):
         return self
@@ -1049,7 +1133,10 @@ cdef class _VPK_IterNullstr:
 
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.
+
 from cpython.object cimport PyTypeObject
+
+
 cdef extern from *:  # Cython flag indicating if PyTypeObject is safe to access.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 if USE_TYPE_INTERNALS:
