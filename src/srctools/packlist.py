@@ -4,7 +4,7 @@ from typing import (
     TypeVar, Union,
 )
 from collections import OrderedDict
-from enum import Enum, auto as auto_enum
+from enum import Enum
 from pathlib import Path
 from zipfile import ZipFile
 import io

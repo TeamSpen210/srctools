@@ -325,7 +325,10 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
                 [(tags, value)] = tag_map.items()
                 if not tags:
                     file.write(_fmt_8bit.pack(0))
-                    value.serialise(file, str_dict)
+                    if isinstance(value, KeyValues):
+                        kv_serialise(value, file, str_dict)
+                    else:
+                        iodef_serialise(value, file, str_dict)
                     continue
 
             file.write(_fmt_8bit.pack(len(tag_map)))
@@ -363,7 +366,7 @@ def ent_unserialise(
 
     count: int
     val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
-    func: Callable[[IO[bytes], BinStrDict], Union[KeyValues, IODef]]
+    unserialise_func: Callable[[IO[bytes], Callable[[], str]], Union[KeyValues, IODef]]
     for count, val_map, unserialise_func in [  # type: ignore
         (kv_count, ent.keyvalues, kv_unserialise),
         (inp_count, ent.inputs, iodef_unserialise),
