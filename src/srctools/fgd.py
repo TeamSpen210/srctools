@@ -428,28 +428,7 @@ class Resource:
     """
     filename: str
     type: FileType
-    tags: Mapping[str, bool] = srctools.EmptyMapping
-
-    @classmethod
-    def _parse(cls, res_type: FileType, tok: BaseTokenizer) -> 'Resource':
-        """Parse from an FGD file."""
-        filename = tok.expect(Token.STRING)
-        tags: dict[str, bool] = {}
-        token, tok_val = tok()
-        if token is Token.BRACK_OPEN:
-            # Tags.
-            for tag_tok, tag_val in tok:
-                if tag_tok is Token.BRACK_CLOSE:
-                    break
-                elif tag_tok is Token.STRING:
-                    if tag_val.startswith(('!', '-')):
-                        tags[tag_val[1:].casefold()] = False
-                    else:
-                        tags[tag_val.lstrip('+').casefold()] = True
-                elif tag_tok != Token.NEWLINE:
-                    raise tok.error(tag_tok, tag_val)
-        # Most will be empty, save memory by using the constant.
-        return Resource(filename, res_type, tags or srctools.EmptyMapping)
+    tags: FrozenSet[str]
 
 
 class Helper:
@@ -1206,28 +1185,6 @@ class EntityDef:
             if token is Token.NEWLINE:
                 continue
 
-            if token is Token.DIRECTIVE:  # @resource block, format extension
-                if token_value == 'resources':
-                    tok.expect(Token.BRACK_OPEN)
-                    # Append to existing, in case there's multiple blocks.
-                    resources: List[Resource] = list(entity.resources)
-                    for res_tok, res_tok_val in tok:
-                        if res_tok is Token.STRING:
-                            try:
-                                res_type = RESTYPE_BY_NAME[res_tok_val.casefold()]
-                            except KeyError:
-                                raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
-                            # noinspection PyProtectedMember
-                            resources.append(Resource._parse(res_type, tok))
-                        elif res_tok is Token.BRACK_CLOSE:
-                            break
-                    # Subtle: don't convert to tuple, then unify_fgd can check all ents have
-                    # these defined.
-                    entity.resources = resources
-                else:
-                    raise tok.error(token, token_value)
-                continue
-
             # IO - keyword at the start.
             if token is not Token.STRING:
                 raise tok.error(token, token_value)
@@ -1236,6 +1193,27 @@ class EntityDef:
             if io_type in ('input', 'output'):
                 # noinspection PyProtectedMember
                 IODef._parse(entity, io_type, tok)
+            elif io_type == '@resources':  # @resource block, format extension
+                tok.expect(Token.BRACK_OPEN, skip_newline=True)
+                # Append to existing, in case there's multiple blocks.
+                resources: List[Resource] = list(entity.resources)
+                for res_tok, res_tok_val in tok:
+                    if res_tok is Token.STRING:
+                        try:
+                            res_type = RESTYPE_BY_NAME[res_tok_val.casefold()]
+                        except KeyError:
+                            raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
+                        filename = tok.expect(Token.STRING)
+                        tags: FrozenSet[str] = frozenset()
+                        token, tok_val = tok()
+                        if token is Token.BRACK_OPEN:
+                            tags = read_tags(tok)
+                        resources.append(Resource(filename, res_type, tags))
+                    elif res_tok is Token.BRACK_CLOSE:
+                        break
+                # Subtle: don't convert to tuple, then unify_fgd can check all ents have
+                # these defined.
+                entity.resources = resources
             else:
                 # noinspection PyProtectedMember
                 KeyValues._parse(entity, io_type, tok)
@@ -1256,7 +1234,6 @@ class EntityDef:
         copy.helpers = deepcopy(self.helpers, memodict)
         copy.desc = self.desc
         copy.resources = self.resources
-        copy.resource_funcs = self.resource_funcs
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
