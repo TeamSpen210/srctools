@@ -784,18 +784,18 @@ class EntityDef:
     classname: str = ''
 
     # These are (name) -> {tags} -> value dicts.
-    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.Factory(dict)
-    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
-    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.field(kw_only=True, factory=dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
 
     # Keyvalues have an order. If not present in here,
     # they appear at the end.
-    kv_order: List[str] = attrs.Factory(list)
+    kv_order: List[str] = attrs.field(kw_only=True, factory=list)
 
     # Base type names - base()
-    bases: List[Union['EntityDef', str]] = attrs.Factory(list)
-    helpers: List[Helper] = attrs.Factory(list)
-    desc: str = ''
+    bases: List[Union['EntityDef', str]] = attrs.field(kw_only=True, factory=list)
+    helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
+    desc: str = attrs.field(default='', kw_only=True)
 
     # Views for accessing data among all the entities.
     kv: _EntityView[KeyValues] = attrs.field(init=False)
