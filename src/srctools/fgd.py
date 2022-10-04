@@ -177,6 +177,8 @@ VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 RESTYPE_BY_NAME = {
     'file': FileType.GENERIC,
+    'entity': FileType.ENTITY,
+    'func': FileType.ENTCLASS_FUNC,
     'sound': FileType.GAME_SOUND,
     'particle': FileType.PARTICLE,
     'vscript_squirrel': FileType.VSCRIPT_SQUIRREL,
@@ -421,12 +423,33 @@ def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
 class Resource:
     """Resources used by an entity, with filetype.
 
-    If the tags mapping is present, that indicates branch features that should/shoult not be
+    If the tags mapping is present, that indicates branch features that should/should not be
     present. Examples: 'episodic' (vs HL2), 'mapbase'.
     """
     filename: str
     type: FileType
     tags: Mapping[str, bool] = srctools.EmptyMapping
+
+    @classmethod
+    def _parse(cls, res_type: FileType, tok: BaseTokenizer) -> 'Resource':
+        """Parse from an FGD file."""
+        filename = tok.expect(Token.STRING)
+        tags: dict[str, bool] = {}
+        token, tok_val = tok()
+        if token is Token.BRACK_OPEN:
+            # Tags.
+            for tag_tok, tag_val in tok:
+                if tag_tok is Token.BRACK_CLOSE:
+                    break
+                elif tag_tok is Token.STRING:
+                    if tag_val.startswith(('!', '-')):
+                        tags[tag_val[1:].casefold()] = False
+                    else:
+                        tags[tag_val.lstrip('+').casefold()] = True
+                elif tag_tok != Token.NEWLINE:
+                    raise tok.error(tag_tok, tag_val)
+        # Most will be empty, save memory by using the constant.
+        return Resource(filename, res_type, tags or srctools.EmptyMapping)
 
 
 class Helper:
@@ -1028,8 +1051,6 @@ class EntityDef:
     out: _EntityView[IODef] = attrs.field(init=False)
 
     resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
-    # Names of additional functions registered in the packlist module.
-    resource_funcs: Sequence[str] = attrs.field(kw_only=True, default=())
 
     def __attrs_post_init__(self) -> None:
         """Setup Entity views."""
@@ -1185,6 +1206,28 @@ class EntityDef:
             if token is Token.NEWLINE:
                 continue
 
+            if token is Token.DIRECTIVE:  # @resource block, format extension
+                if token_value == 'resources':
+                    tok.expect(Token.BRACK_OPEN)
+                    # Append to existing, in case there's multiple blocks.
+                    resources: List[Resource] = list(entity.resources)
+                    for res_tok, res_tok_val in tok:
+                        if res_tok is Token.STRING:
+                            try:
+                                res_type = RESTYPE_BY_NAME[res_tok_val.casefold()]
+                            except KeyError:
+                                raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
+                            # noinspection PyProtectedMember
+                            resources.append(Resource._parse(res_type, tok))
+                        elif res_tok is Token.BRACK_CLOSE:
+                            break
+                    # Subtle: don't convert to tuple, then unify_fgd can check all ents have
+                    # these defined.
+                    entity.resources = resources
+                else:
+                    raise tok.error(token, token_value)
+                continue
+
             # IO - keyword at the start.
             if token is not Token.STRING:
                 raise tok.error(token, token_value)
@@ -1243,7 +1286,6 @@ class EntityDef:
             self.helpers,
             self.desc,
             self.resources,
-            self.resource_funcs,
         )
 
     def __setstate__(self, state: tuple) -> None:
@@ -1264,7 +1306,7 @@ class EntityDef:
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
         if resources:  # Backwards compat.
-            self.resources, self.resource_funcs = resources
+            [self.resources] = resources
 
     @overload
     def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...

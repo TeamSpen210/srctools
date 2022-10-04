@@ -40,7 +40,7 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
 
 class FileType(Enum):
     """Different kinds of files for Source, mainly to indicate resources to pack."""
-    GENERIC = auto_enum()  #: Other file types.
+    GENERIC = auto_enum()  #: Arbitrary file type.
     SOUNDSCRIPT = auto_enum()  #: Script file containing soundscripts.
 
     GAME_SOUND = auto_enum()  #: ``world.blah`` sound - lookup the soundscript, and raw files.
@@ -49,6 +49,12 @@ class FileType(Enum):
     PARTICLE_FILE = 'pcf'  #: A particle collection file.
 
     VSCRIPT_SQUIRREL = 'nut'  #: Squirrel VScript file.
+
+    #: Classname of another entity that this entity includes.
+    #: This is only permitted in the FGD file.
+    ENTITY = auto_enum()
+    #: Name of a function to call defined inside the packlist module.
+    ENTCLASS_FUNC = auto_enum()
 
     #: Material file.
     MATERIAL = 'vmt'

@@ -45,6 +45,7 @@ __all__ = [
     'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
 ]
 
+
 class FileMode(Enum):
     """Mode for files we may want to pack like soundscripts or particles."""
     UNKNOWN = 'unknown'  # Normal, we know about this file but it's not used.
@@ -421,6 +422,9 @@ class PackList:
         # Disallow tabs, to guard against cases where we incorrectly parse \t in file paths.
         if '\t' in filename:
             raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
+
+        if data_type is FileType.ENTCLASS_FUNC or data_type.ENTITY:
+            raise ValueError(f'File type "{data_type.name}" must not be packed directly!')
 
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
