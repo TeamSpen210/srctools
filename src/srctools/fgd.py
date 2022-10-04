@@ -16,6 +16,7 @@ import operator
 import sys
 
 import attrs
+from typing_extensions import Literal
 
 from srctools.filesys import File, FileSystem
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
@@ -498,7 +499,7 @@ class UnknownHelper(Helper):
 HelperT = TypeVar('HelperT', bound=Helper)
 
 
-@attrs.define(order=True, hash=True, eq=True)
+@attrs.define(order=True, hash=True, eq=True, repr=False)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -601,6 +602,158 @@ class KeyValues:
         else:
             yield self.default
 
+    @classmethod
+    def _parse(cls, entity: 'EntityDef', name: str, tok: BaseTokenizer) -> None:
+        """Parse a keyvalue out of an entity."""
+        is_readonly = show_in_report = had_colon = False
+        # Next is either the value type parens, or a tags brackets.
+        val_token, raw_value_type = tok()
+        if val_token is Token.BRACK_OPEN:
+            tags = read_tags(tok)
+            val_token, raw_value_type = tok()
+        else:
+            tags = frozenset()
+        if val_token is not Token.PAREN_ARGS:
+            raise tok.error(val_token)
+        raw_value_type = raw_value_type.strip()
+        if raw_value_type.startswith('*'):
+            # Old format for specifying 'reportable' flag.
+            show_in_report = True
+            raw_value_type = raw_value_type[1:]
+        try:
+            val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+        except KeyError:
+            raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+        # Look for the 'readonly' and 'report' flags, in that order.
+        next_token, key_flag = tok()
+        if next_token is Token.STRING and key_flag.casefold() == 'readonly':
+            is_readonly = True
+            # Fetch next in case it has both.
+            next_token, key_flag = tok()
+        if next_token is Token.STRING and key_flag.casefold() == 'report':
+            show_in_report = True
+            # Fetch for the rest of the checks.
+            next_token, key_flag = tok()
+        has_equal: Optional[Token] = None
+        kv_vals: Optional[List[str]] = None
+        if next_token is Token.COLON:
+            had_colon = True
+        elif next_token is Token.EQUALS:
+            # Special case - spawnflags doesn't have to have
+            # any info - skips straight to the end.
+            if val_typ is ValueTypes.SPAWNFLAGS:
+                kv_vals = []
+                has_equal = next_token
+        elif next_token is Token.NEWLINE:
+            kv_vals = []
+            has_equal = next_token
+        else:
+            raise tok.error(next_token)
+        if kv_vals is None:
+            kv_vals, has_equal = read_colon_list(tok, had_colon)
+        attr_len = len(kv_vals)
+        kv_desc = default = ''
+        if attr_len == 3:
+            disp_name, default, kv_desc = kv_vals
+        elif attr_len == 2:
+            disp_name, default = kv_vals
+        elif attr_len == 1:
+            [disp_name] = kv_vals
+        elif attr_len == 0:
+            disp_name = name
+        else:
+            raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
+        if val_typ is ValueTypes.BOOL:
+            # These are old aliases, change them to proper booleans.
+            if default.casefold() == 'yes':
+                default = '1'
+            elif default.casefold() == 'no':
+                default = '0'
+        # Read the choices in the [].  There's two kinds of tuples here, typing this
+        # doesn't work right.
+        val_list: Optional[List[Any]]
+        if val_typ.has_list:
+            if has_equal is not Token.EQUALS:
+                raise tok.error('No list for "{}" value type!', val_typ.name)
+            val_list = []
+            tok.expect(Token.BRACK_OPEN)
+            for choices_token, choices_value in tok:
+                if choices_token is Token.NEWLINE:
+                    continue
+                if choices_token is Token.BRACK_CLOSE:
+                    break
+                elif choices_token is not Token.STRING:
+                    raise tok.error(choices_token)
+                vals, end_token = read_colon_list(tok, had_colon=False)
+
+                if end_token is Token.BRACK_OPEN:
+                    val_tags = read_tags(tok)
+                else:
+                    val_tags = frozenset()
+
+                if val_typ is ValueTypes.SPAWNFLAGS:
+                    # The first value is an integer.
+                    try:
+                        spawnflag = int(choices_value)
+                    except ValueError:
+                        raise tok.error(
+                            'SpawnFlags must be integer values, '
+                            'not "{}" (in {})!'.format(
+                                choices_value,
+                                entity.classname,
+                            )
+                        ) from None
+                    try:
+                        power = math.log2(spawnflag)
+                    except ValueError:
+                        power = 0.5  # Force the following code to raise
+                    if power != round(power):
+                        raise tok.error(
+                            'SpawnFlags must be powers of two, not {} (in {})!',
+                            spawnflag,
+                            entity.classname,
+                        ) from None
+                    # Spawnflags can have a default, others may not.
+                    if len(vals) == 2:
+                        val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
+                    elif len(vals) == 1:
+                        val_list.append((spawnflag, vals[0], True, val_tags))
+                    elif len(vals) == 0:
+                        raise tok.error('Expected value for spawnflags, got none!')
+                    else:
+                        raise tok.error('Too many values!\n{}', vals)
+                else:  # Choices.
+                    if len(vals) == 1:
+                        val_list.append((choices_value, vals[0], val_tags))
+                    elif len(vals) == 0:
+                        raise tok.error('Expected value for choices, got none!')
+                    else:
+                        raise tok.error('Too many values!\n{}', vals)
+
+                # Handle ] at the end of a : : line.
+                if end_token is Token.BRACK_CLOSE:
+                    break
+            else:
+                raise tok.error(Token.EOF)
+        else:
+            val_list = None
+            if has_equal is Token.EQUALS:
+                raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
+        tags_map = entity.keyvalues.setdefault(name.casefold(), {})
+        if not tags_map:
+            # New, add to the ordering.
+            entity.kv_order.append(name.casefold())
+        tags_map[tags] = KeyValues(
+            name=name,
+            type=val_typ,
+            desc=kv_desc,
+            disp_name=disp_name,
+            default=default,
+            val_list=val_list,
+            readonly=is_readonly,
+            reportable=show_in_report,
+        )
+
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
@@ -689,6 +842,48 @@ class IODef:
 
     def __deepcopy__(self, memodict: dict) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
+
+    @classmethod
+    # TODO: io_type = Literal['input', 'output']
+    def _parse(cls, entity: 'EntityDef', io_type: str, tok: BaseTokenizer) -> None:
+        """Parse I/O definitions in an entity."""
+        name = tok.expect(Token.STRING)
+
+        # Next is either the value type parens, or a tags brackets.
+        val_token, raw_value_type = tok()
+        if val_token is Token.BRACK_OPEN:
+            tags = read_tags(tok)
+            val_token, raw_value_type = tok()
+        else:
+            tags = frozenset()
+
+        raw_value_type = raw_value_type.strip()
+        if raw_value_type == 'ehandle':
+            # This is a duplicate (deprecated) name, but only for I/O.
+            val_typ = ValueTypes.EHANDLE
+        else:
+            try:
+                val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+            except KeyError:
+                raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+
+        # Read desc
+        io_vals, token = read_colon_list(tok)
+
+        if token is token.EQUALS:
+            raise tok.error(token)
+
+        if io_vals:
+            try:
+                [io_desc] = io_vals
+            except ValueError:
+                raise tok.error('Too many values for IO definition!')
+        else:
+            io_desc = ''
+
+        # entity.inputs or entity.outputs
+        tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
+        tags_map[tags] = IODef(name, val_typ, io_desc)
 
     def export(
         self,
@@ -992,213 +1187,15 @@ class EntityDef:
 
             # IO - keyword at the start.
             if token is not Token.STRING:
-                raise tok.error(token)
+                raise tok.error(token, token_value)
 
             io_type = token_value.casefold()
             if io_type in ('input', 'output'):
-                name = tok.expect(Token.STRING)
-
-                # Next is either the value type parens, or a tags brackets.
-                val_token, raw_value_type = tok()
-                if val_token is Token.BRACK_OPEN:
-                    tags = read_tags(tok)
-                    val_token, raw_value_type = tok()
-                else:
-                    tags = frozenset()
-
-                raw_value_type = raw_value_type.strip()
-                if raw_value_type == 'ehandle':
-                    # This is a duplicate (deprecated) name, but only for I/O.
-                    val_typ = ValueTypes.EHANDLE
-                else:
-                    try:
-                        val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                    except KeyError:
-                        raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
-
-                # Read desc
-                io_vals, token = read_colon_list(tok)
-
-                if token is token.EQUALS:
-                    raise tok.error(token)
-
-                if io_vals:
-                    try:
-                        [io_desc] = io_vals
-                    except ValueError:
-                        raise tok.error('Too many values for IO definition!')
-                else:
-                    io_desc = ''
-
-                # entity.inputs or entity.outputs
-                tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
-                tags_map[tags] = IODef(name, val_typ, io_desc)
-
+                # noinspection PyProtectedMember
+                IODef._parse(entity, io_type, tok)
             else:
-                # Keyvalue
-                name = io_type
-                is_readonly = show_in_report = had_colon = False
-
-                # Next is either the value type parens, or a tags brackets.
-
-                val_token, raw_value_type = tok()
-                if val_token is Token.BRACK_OPEN:
-                    tags = read_tags(tok)
-                    val_token, raw_value_type = tok()
-                else:
-                    tags = frozenset()
-
-                if val_token is not Token.PAREN_ARGS:
-                    raise tok.error(val_token)
-
-                raw_value_type = raw_value_type.strip()
-                if raw_value_type.startswith('*'):
-                    # Old format for specifying 'reportable' flag.
-                    show_in_report = True
-                    raw_value_type = raw_value_type[1:]
-                try:
-                    val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                except KeyError:
-                    raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
-
-                # Look for the 'readonly' and 'report' flags, in that order.
-                next_token, key_flag = tok()
-                if next_token is Token.STRING and key_flag.casefold() == 'readonly':
-                    is_readonly = True
-                    # Fetch next in case it has both.
-                    next_token, key_flag = tok()
-
-                if next_token is Token.STRING and key_flag.casefold() == 'report':
-                    show_in_report = True
-                    # Fetch for the rest of the checks.
-                    next_token, key_flag = tok()
-
-                has_equal: Optional[Token] = None
-                kv_vals: Optional[List[str]] = None
-
-                if next_token is Token.COLON:
-                    had_colon = True
-                elif next_token is Token.EQUALS:
-                    # Special case - spawnflags doesn't have to have
-                    # any info - skips straight to the end.
-                    if val_typ is ValueTypes.SPAWNFLAGS:
-                        kv_vals = []
-                        has_equal = next_token
-                elif next_token is Token.NEWLINE:
-                    kv_vals = []
-                    has_equal = next_token
-                else:
-                    raise tok.error(next_token)
-
-                if kv_vals is None:
-                    kv_vals, has_equal = read_colon_list(tok, had_colon)
-                attr_len = len(kv_vals)
-
-                kv_desc = default = ''
-                if attr_len == 3:
-                    disp_name, default, kv_desc = kv_vals
-                elif attr_len == 2:
-                    disp_name, default = kv_vals
-                elif attr_len == 1:
-                    [disp_name] = kv_vals
-                elif attr_len == 0:
-                    disp_name = name
-                else:
-                    raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
-
-                if val_typ is ValueTypes.BOOL:
-                    # These are old aliases, change them to proper booleans.
-                    if default.casefold() == 'yes':
-                        default = '1'
-                    elif default.casefold() == 'no':
-                        default = '0'
-
-                # Read the choices in the [].  There's two kinds of tuples here, typing this
-                # doesn't work right.
-                val_list: Optional[List[Any]]
-                if val_typ.has_list:
-                    if has_equal is not Token.EQUALS:
-                        raise tok.error('No list for "{}" value type!', val_typ.name)
-                    val_list = []
-                    tok.expect(Token.BRACK_OPEN)
-                    for choices_token, choices_value in tok:
-                        if choices_token is Token.NEWLINE:
-                            continue
-                        if choices_token is Token.BRACK_CLOSE:
-                            break
-                        elif choices_token is not Token.STRING:
-                            raise tok.error(choices_token)
-                        vals, end_token = read_colon_list(tok, had_colon=False)
-
-                        if end_token is Token.BRACK_OPEN:
-                            val_tags = read_tags(tok)
-                        else:
-                            val_tags = frozenset()
-
-                        if val_typ is ValueTypes.SPAWNFLAGS:
-                            # The first value is an integer.
-                            try:
-                                spawnflag = int(choices_value)
-                            except ValueError:
-                                raise tok.error(
-                                    'SpawnFlags must be integer values, '
-                                    'not "{}" (in {})!'.format(
-                                        choices_value,
-                                        entity.classname,
-                                    )
-                                ) from None
-                            try:
-                                power = math.log2(spawnflag)
-                            except ValueError:
-                                power = 0.5  # Force the following code to raise
-                            if power != round(power):
-                                raise tok.error(
-                                    'SpawnFlags must be powers of two, not {} (in {})!',
-                                    spawnflag,
-                                    entity.classname,
-                                ) from None
-                            # Spawnflags can have a default, others may not.
-                            if len(vals) == 2:
-                                val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
-                            elif len(vals) == 1:
-                                val_list.append((spawnflag, vals[0], True, val_tags))
-                            elif len(vals) == 0:
-                                raise tok.error('Expected value for spawnflags, got none!')
-                            else:
-                                raise tok.error('Too many values!\n{}', vals)
-                        else:  # Choices.
-                            if len(vals) == 1:
-                                val_list.append((choices_value, vals[0], val_tags))
-                            elif len(vals) == 0:
-                                raise tok.error('Expected value for choices, got none!')
-                            else:
-                                raise tok.error('Too many values!\n{}', vals)
-
-                        # Handle ] at the end of a : : line.
-                        if end_token is Token.BRACK_CLOSE:
-                            break
-                    else:
-                        raise tok.error(Token.EOF)
-                else:
-                    val_list = None
-                    if has_equal is Token.EQUALS:
-                        raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
-
-                tags_map = entity.keyvalues.setdefault(name.casefold(), {})
-                if not tags_map:
-                    # New, add to the ordering.
-                    entity.kv_order.append(name.casefold())
-
-                tags_map[tags] = KeyValues(
-                    name=name,
-                    type=val_typ,
-                    desc=kv_desc,
-                    disp_name=disp_name,
-                    default=default,
-                    val_list=val_list,
-                    readonly=is_readonly,
-                    reportable=show_in_report,
-                )
+                # noinspection PyProtectedMember
+                KeyValues._parse(entity, io_type, tok)
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
