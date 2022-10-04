@@ -261,6 +261,9 @@ class HelperTypes(Enum):
     # current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
 
+    # Additionally, aliasof(base) is used to indicate this is an alternate classname for a
+    # single base.
+
     @property
     def extension(self) -> bool:
         """Is this an extension to the format?"""
@@ -1030,6 +1033,8 @@ class EntityDef:
     out: _EntityView[IODef] = attrs.field(init=False)
 
     resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
+    # If set, this should have 1 base, which this is simply an alternate classname for.
+    is_alias: bool = attrs.field(kw_only=True, default=False)
 
     def __attrs_post_init__(self) -> None:
         """Setup Entity views."""
@@ -1087,6 +1092,12 @@ class EntityDef:
                 # helper() produces [''], when we want []
                 if len(args) == 1 and args[0] == '':
                     args.clear()
+
+                if help_type_cust == 'aliasof':
+                    # Extension, indicate that it's an alias. The args are then treated like base()
+                    help_type_cust = None
+                    help_type = HelperTypes.INHERIT
+                    entity.is_alias = True
 
                 if help_type_cust is not None:
                     entity.helpers.append(UnknownHelper(help_type_cust, args))
