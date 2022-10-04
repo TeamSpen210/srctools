@@ -14,11 +14,11 @@ import re
 import shutil
 import warnings
 
-from atomicwrites import atomic_write
 import attrs
 
 from srctools import conv_bool
 from srctools.bsp import BSP
+from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
 from srctools.fgd import FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes
 from srctools.filesys import (
@@ -44,31 +44,6 @@ __all__ = [
     'unify_path',
     'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
 ]
-
-
-class FileType(Enum):
-    """Types of files we might pack."""
-    GENERIC = auto_enum()  # Other file types.
-    SOUNDSCRIPT = auto_enum()  # Should be added to the manifest
-
-    GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
-    PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
-
-    PARTICLE_FILE = 'pcf'  # Should be added to the manifest
-
-    VSCRIPT_SQUIRREL = 'nut'
-
-    # Implies packing referenced materials and textures.
-    MATERIAL = 'vmt'
-
-    TEXTURE = 'vtf'  # May want .hdr.vtf too.
-
-    CHOREO = 'vcd'  # Choreographed scenes.
-
-    # Requires lookup of vtx, vvd, phy files too - in the model data.
-    # also any skins used.
-    MODEL = 'mdl'
-
 
 class FileMode(Enum):
     """Mode for files we may want to pack like soundscripts or particles."""

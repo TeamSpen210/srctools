@@ -1,6 +1,6 @@
 """Various useful constants and enums."""
 from typing import Any, MutableMapping
-from enum import Enum, Flag
+from enum import Enum, Flag, auto as auto_enum
 import functools
 import operator
 import sys
@@ -8,7 +8,7 @@ import sys
 
 __all__ = [
     'add_unknown',
-    'GameID', 'SurfFlags', 'BSPContents',
+    'GameID', 'FileType', 'SurfFlags', 'BSPContents',
 ]
 
 
@@ -36,6 +36,29 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
             # We don't have to stick to var naming rules, so just name it
             # after the number. Intern so repeated calls share strings.
             ns[sys.intern(str(i))] = bit
+
+
+class FileType(Enum):
+    """Different kinds of files for Source, mainly to indicate resources to pack."""
+    GENERIC = auto_enum()  #: Other file types.
+    SOUNDSCRIPT = auto_enum()  #: Script file containing soundscripts.
+
+    GAME_SOUND = auto_enum()  #: ``world.blah`` sound - lookup the soundscript, and raw files.
+    PARTICLE = PARTICLE_SYSTEM = auto_enum()  #: The name of a particle system.
+
+    PARTICLE_FILE = 'pcf'  #: A particle collection file.
+
+    VSCRIPT_SQUIRREL = 'nut'  #: Squirrel VScript file.
+
+    #: Material file.
+    MATERIAL = 'vmt'
+
+    TEXTURE = 'vtf'  #: VTF texture, implicitly looks for ``.hdr.vtf`` too.
+
+    CHOREO = 'vcd'  # Choreographed scenes.
+
+    #: Source model, implies the ``vtx``, ``vvd``, ``phy`` files too.
+    MODEL = 'mdl'
 
 
 class GameID(Enum):
