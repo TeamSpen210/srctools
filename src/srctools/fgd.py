@@ -1,7 +1,7 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
     IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
-    Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
+    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
     overload,
 )
 from collections import defaultdict
@@ -19,6 +19,7 @@ import attrs
 
 from srctools.filesys import File, FileSystem
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
+from srctools.const import FileType
 import srctools
 
 
@@ -171,6 +172,24 @@ VALUE_TO_IO_DECAY[ValueTypes.ANGLES] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 # Only one color type present.
 VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
+
+
+RESTYPE_BY_NAME = {
+    'file': FileType.GENERIC,
+    'sound': FileType.GAME_SOUND,
+    'particle': FileType.PARTICLE,
+    'vscript_squirrel': FileType.VSCRIPT_SQUIRREL,
+    'material': FileType.MATERIAL,
+    'mat': FileType.MATERIAL,
+    'texture': FileType.TEXTURE,
+    'choreo': FileType.CHOREO,
+    'scene': FileType.CHOREO,
+    'model': FileType.MODEL,
+
+    'snd': FileType.GAME_SOUND,
+    'tex': FileType.TEXTURE,
+    'mdl': FileType.MODEL,
+}
 
 
 class EntityTypes(Enum):
@@ -396,6 +415,17 @@ def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
 
     return matched is not False
 
+
+@attrs.frozen
+class Resource:
+    """Resources used by an entity, with filetype.
+
+    If the tags mapping is present, that indicates branch features that should/shoult not be
+    present. Examples: 'episodic' (vs HL2), 'mapbase'.
+    """
+    filename: str
+    type: FileType
+    tags: Mapping[str, bool] = srctools.EmptyMapping
 
 
 class Helper:
@@ -802,6 +832,10 @@ class EntityDef:
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
 
+    resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
+    # Names of additional functions registered in the packlist module.
+    resource_funcs: Sequence[str] = attrs.field(kw_only=True, default=())
+
     def __attrs_post_init__(self) -> None:
         """Setup Entity views."""
         self.kv = _EntityView(self, 'keyvalues', 'kv')
@@ -1181,6 +1215,8 @@ class EntityDef:
         copy.bases = deepcopy(self.bases, memodict)
         copy.helpers = deepcopy(self.helpers, memodict)
         copy.desc = self.desc
+        copy.resources = self.resources
+        copy.resource_funcs = self.resource_funcs
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
@@ -1208,7 +1244,9 @@ class EntityDef:
             self.kv_order,
             self.bases,
             self.helpers,
-            self.desc
+            self.desc,
+            self.resources,
+            self.resource_funcs,
         )
 
     def __setstate__(self, state: tuple) -> None:
@@ -1222,11 +1260,14 @@ class EntityDef:
             self.kv_order,
             self.bases,
             self.helpers,
-            self.desc
+            self.desc,
+            *resources,
         ) = state
         self.kv = _EntityView(self, 'keyvalues', 'kv')
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
+        if resources:  # Backwards compat.
+            self.resources, self.resource_funcs = resources
 
     @overload
     def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
