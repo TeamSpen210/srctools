@@ -170,60 +170,11 @@ EZ_VARIANT_BLOOD: Final = 5
 
 # In alphabetical order:
 
-res('_ballplayertoucher')
-res('_firesmoke', *[
-    # env_fire_[tiny/small/medium/large][_smoke]
-    part('env_fire_' + name + smoke)
-    for name in ['tiny', 'small', 'medium', 'large']
-    for smoke in ['', '_smoke']
-])
-res('_plasma',
-    mat("materials/sprites/plasma1.vmt"),
-    mat("materials/sprites/fire_floor.vmt"),
-    )
-
 res('aiscripted_schedule')
 
-res('ambient_generic')  # Sound is a keyvalue
-res('ambient_music')
 res('apc_missile', includes='rpg_missile')  # Inherits from this.
 
-# The actual explosion itself.
-res('ar2explosion', mat("materials/particle/particle_noisesphere.vmt"))
-res('assault_assaultpoint')
-res('assault_rallypoint')
-
 res('base_boss')
-res('beam_spotlight',
-    mat('materials/sprites/light_glow03.vmt'),
-    mat('materials/sprites/glow_test02.vmt'),
-    )
-res('bullseye_strider_focus', includes='npc_bullseye')  # Unchanged subclass.
-
-res('challenge_mode_end_node',
-    # Assumed based on console logs.
-    mdl("models/props/stopwatch_finish_line.mdl"),
-    *[sound("glados.dlc1_leaderboard{:02}".format(i)) for i in range(1, 24)]
-    )
-res('concussiveblast',
-    mat('materials/sprites/lgtning.vmt'),
-    mat('materials/effects/blueflare1.vmt'),
-    mat("materials/particle/particle_smokegrenade.vmt"),
-    mat("materials/particle/particle_noisesphere.vmt"),
-    )
-res('combine_mine',
-    mdl('models/props_combine/combine_mine01.mdl'),
-    sound('NPC_CombineMine.Hop'),
-    sound('NPC_CombineMine.FlipOver'),
-    sound('NPC_CombineMine.TurnOn'),
-    sound('NPC_CombineMine.TurnOff'),
-    sound('NPC_CombineMine.OpenHooks'),
-    sound('NPC_CombineMine.CloseHooks'),
-    sound('NPC_CombineMine.ActiveLoop'),
-    mat('materials/sprites/glow01.vmt'),
-    aliases='bounce_bomb combine_bouncemine'
-    )
-
 
 @cls_func
 def color_correction(pack: PackList, ent: Entity) -> None:
@@ -236,15 +187,6 @@ def color_correction_volume(pack: PackList, ent: Entity) -> None:
     """Pack the color correction file for this too."""
     pack.pack_file(ent['filename'])
 
-
-res('commentary_auto')
-res('commentary_dummy')
-res('commentary_zombie_spawner')
-res('crane_tip', mdl('models/props_junk/cardboard_box001a.mdl'))  # Needs a physics object.
-res('crossbow_bolt',
-    mdl('models/crossbow_bolt.mdl'),
-    mat('materials/sprites/light_glow02_noz.vmt'),
-    )
 res('cycler')
 res('cycler_actor')
 res('cycler_blender')
@@ -267,15 +209,6 @@ res('gibshooter',
     mdl('models/germanygibs.mdl'),
     )
 res('grenade',
-    sound('BaseGrenade.Explode'),
-    # TODO: Entropy Zero only:
-    part("ExplosionCore"),
-    part("ExplosionEmbers"),
-    part("ExplosionFlash"),
-    )
-res('grenade_ar2',  # Actually the SMG's grenade.
-    mdl("models/Weapons/ar2_grenade.mdl"),
-    includes='grenade',
     )
 res('grenade_beam',
     mdl('Models/weapons/flare.mdl'),  # Not visible, but loaded.
@@ -300,40 +233,8 @@ res('grenade_pathfollower',
     sound('GrenadePathfollower.StopSounds'),
     includes='grenade',
     )
-res('grenade_spit',
-    mdl("models/spitball_large.mdl"),
-    mdl("models/spitball_medium.mdl"),
-    mdl("models/spitball_small.mdl"),
-    sound("GrenadeSpit.Hit"),
-    part("antlion_spit_player"),
-    part("antlion_spit"),
-    includes='grenade',
-    )
 
 res('hammer_updateignorelist')
-res('helicopter_chunk',  # Broken bits of npc_helicopter
-    mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
-    mdl("models/gibs/helicopter_brokenpiece_02.mdl"),
-    mdl("models/gibs/helicopter_brokenpiece_03.mdl"),
-    mdl("models/gibs/helicopter_brokenpiece_04_cockpit.mdl"),
-    mdl("models/gibs/helicopter_brokenpiece_05_tailfan.mdl"),
-    mdl("models/gibs/helicopter_brokenpiece_06_body.mdl"),
-    sound('BaseExplosionEffect.Sound'),
-    sound('NPC_AttackHelicopter.Crash'),
-    includes='env_smoketrail env_fire_trail ar2explosion'
-    )
-res('hunter_flechette',
-    mdl("models/weapons/hunter_flechette.mdl"),
-    mat("materials/sprites/light_glow02_noz.vmt"),
-    sound("NPC_Hunter.FlechetteNearmiss"),
-    sound("NPC_Hunter.FlechetteHitBody"),
-    sound("NPC_Hunter.FlechetteHitWorld"),
-    sound("NPC_Hunter.FlechettePreExplode"),
-    sound("NPC_Hunter.FlechetteExplode"),
-    part("hunter_flechette_trail_striderbuster"),
-    part("hunter_flechette_trail"),
-    part("hunter_projectile_explosion_1"),
-    )
 res('infodecal')
 res('info_apc_missile_hint')
 res('info_coop_spawn')
@@ -386,6 +287,14 @@ res('light_directional')
 res('light_dynamic')
 res('light_environment')
 res('light_spot')
+
+
+@cls_func
+def logic_playmovie(pack: PackList, ent: Entity) -> None:
+    """Mark the BIK movie as being used, though it can't be packed."""
+    pack.pack_file('media/' + ent['MovieFilename'])
+
+
 res('lookdoorthinker')
 
 res('material_modify_control')
@@ -431,22 +340,7 @@ res('path_corner_crash')
 res('path_track')
 
 res('phys_bone_follower')
-res('phys_ballsocket')
-res('phys_constraint')  # Constraints just have sound KVs.
-res('phys_constraintsystem')
-res('phys_convert')
-res('phys_hinge')
-res('phys_keepupright')
-res('phys_lengthconstraint')
-res('phys_magnet')
-res('phys_motor')  # model in KVs
-res('phys_pulleyconstraint')
-res('phys_ragdollconstraint')
-res('phys_ragdollmagnet')
-res('phys_slideconstraint')
-res('phys_spring')
-res('phys_thruster')
-res('phys_torque')
+
 
 res('physics_cannister')  # All in KVs.
 res('physics_entity_solver')
@@ -497,10 +391,6 @@ res('point_push')
 res('point_radiation_source')
 res('point_ragdollboogie', includes='env_ragdoll_boogie')
 res('point_servercommand')
-res('point_spotlight',
-    'materials/sprites/light_glow03.vmt',
-    'materials/sprites/glow_test02.vmt',
-)
 res('point_teleport')
 res('point_template')
 res('point_tesla', sound("sprites/physbeam.vmt"))  # Default material
@@ -526,15 +416,7 @@ res('rpg_missile',
     )
 
 res('scripted_sound')  # Sound via FGD.
-res('script_intro',
-    mat('materials/scripted/intro_screenspaceeffect.vmt'),
-    )
 res('simple_physics_brush')
-res('simple_physics_prop',
-    sound("Metal.SawbladeStick"),
-    sound("PropaneTank.Burst"),
-    includes='env_flare',  # TODO: Episodic only!
-    )
 
 res('sky_camera')
 
@@ -584,18 +466,6 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 
 res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
 res('test_proxytoggle')
-
-res('vortex_controller',  # EZ2 Xen Grendade suction controller.
-    mdl("models/weapons/w_xengrenade.mdl"),
-    sound('WeaponXenGrenade.Schlorp_Huge'),
-    sound('WeaponXenGrenade.Schlorp_Large'),
-    sound('WeaponXenGrenade.Schlorp_Medium'),
-    sound('WeaponXenGrenade.Schlorp_Small'),
-    sound('WeaponXenGrenade.Schlorp_Tiny'),
-
-    part('xenpc_spawn'),
-    mat('materials/sprites/rollermine_shock.vmt'),
-    )
 res('vort_charge_token', part('vortigaunt_charge_token'))
 
 
@@ -618,7 +488,7 @@ res('zombie_goo_puddle',
     )  # EZ2 point_hurt subclass.
 
 from srctools._class_resources import (
-    ai_, asw_, env_, filters, func_, item_, logic, npcs, props, triggers, weapons,
+    asw_, env_, func_, item_, npcs, props, triggers, weapons,
 )
 
 

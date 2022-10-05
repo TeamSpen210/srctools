@@ -5,68 +5,12 @@ from ..packlist import PackList
 from ..vmf import Entity
 from . import *
 
-
-res('env_airstrike_indoors')
-res('env_airstrike_outdoors')
-res('env_ambient_light')
-res('env_alyxemp',
-    mat('materials/effects/laser1.vmt'),
-    sound('AlyxEmp.Charge'),
-    sound('AlyxEmp.Discharge'),
-    sound('AlyxEmp.Stop'),
-    )
-res('env_ar2explosion', includes="ar2explosion")
-
-res('env_beam')
-res('env_beverage', mdl('models/can.mdl'))
-res('env_blood')
-res('env_bubbles', mat('materials/sprites/bubble.vmt'))
-
-
 @cls_func
 def env_break_shooter(pack: PackList, ent: Entity) -> None:
     """Special behaviour on the 'model' KV."""
     if conv_int(ent['modeltype']) == 1:  # MODELTYPE_MODEL
         pack.pack_file(ent['model'], FileType.MODEL)
     # Otherwise, a template name or a regular gib.
-
-
-res('env_citadel_energy_core',
-    mat('materials/effects/strider_muzzle.vmt'),
-    mat('materials/effects/combinemuzzle2.vmt'),
-    mat('materials/effects/combinemuzzle2_dark.vmt'),
-    )
-res('env_closecaption')
-res('env_credits',
-    'scripts/credits.txt',  # Script file with all the credits.
-    )
-res('env_detail_controller')
-res('env_dof_controller')
-res('env_dustpuff',
-    mat("materials/particle/particle_smokegrenade.vmt"),
-    mat("materials/particle/particle_noisesphere.vmt"),
-    )
-res('env_entity_dissolver', mat('materials/sprites/blueglow1.vmt'))
-res(
-    'env_entity_igniter',
-    sound('General.StopBurning'),
-    sound('General.BurningFlesh'),
-    sound('General.BurningObject'),
-    aliases='entityflame',
-)
-res('env_entity_maker')
-res('env_embers', mat('materials/particle/fire.vmt'))
-res('env_explosion', mat('materials/sprites/zerogxplode.vmt'))
-res('env_fade')
-res('env_fire_trail',
-    mat("materials/sprites/flamelet1.vmt"),
-    mat("materials/sprites/flamelet2.vmt"),
-    mat("materials/sprites/flamelet3.vmt"),
-    mat("materials/sprites/flamelet4.vmt"),
-    mat("materials/sprites/flamelet5.vmt"),
-    mat("materials/particle/particle_smokegrenade.vmt"),
-    mat("materials/particle/particle_noisesphere.vmt"),
-    )
 
 
 @cls_func
@@ -83,29 +27,6 @@ def env_fire(pack: PackList, ent: Entity) -> None:
             pack.pack_particle(f'env_fire_{name}{suffix}')
     elif fire_type == 1:  # Plasma
         pack_ent_class(pack, '_plasma')
-res('env_fire', sound('Fire.Plasma'))
-
-res('env_firesensor')
-res('env_firesource')
-res('env_flare',
-    mdl("models/weapons/flare.mdl"),
-    sound("Weapon_FlareGun.Burn"),
-    includes="_firesmoke",
-    )
-res('env_fire_trail',
-    mat('materials/sprites/flamelet1.vmt'),
-    mat('materials/sprites/flamelet2.vmt'),
-    mat('materials/sprites/flamelet3.vmt'),
-    mat('materials/sprites/flamelet4.vmt'),
-    mat('materials/sprites/flamelet5.vmt'),
-    mat('materials/particle/particle_smokegrenade.vmt'),
-    mat('materials/particle/particle_noisesphere.vmt'),
-    )
-res('env_funnel', mat('materials/sprites/flare6.vmt'))
-
-res('env_global')
-res('env_global_light')
-res('env_gunfire')
 
 
 @cls_func
@@ -135,87 +56,8 @@ def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
         pass
     else:
         pack_ent_class(pack, headcrab)
-res('env_headcrabcanister',
-    # All three could be used, depending on exactly where the ent is and other
-    # stuff we can't easily check.
-    mdl('models/props_combine/headcrabcannister01a.mdl'),
-    mdl('models/props_combine/headcrabcannister01b.mdl'),
-    mdl('models/props_combine/headcrabcannister01a_skybox.mdl'),
-    sound('HeadcrabCanister.AfterLanding'),
-    sound('HeadcrabCanister.Open'),
-    )
 
-
-res('env_laser')
-res('env_laserdot', mat('materials/sprites/redglow1.vmt'))
-res('env_lightglow', mat('materials/sprites/light_glow02_add_noz.vmt'))
-res('env_lightrail_endpoint',
-    mat('materials/effects/light_rail_endpoint.vmt'),
-    mat('materials/effects/strider_muzzle.vmt'),
-    mat('materials/effects/combinemuzzle2.vmt'),
-    mat('materials/effects/combinemuzzle2_dark.vmt'),
-    )
-res('env_message')  # Sound can use generic KV system
-res('env_microphone')
-res('env_movieexplosion', mat('materials/particle/particle_sphere.vmt'))
-res('env_muzzleflash',
-    mat('materials/effects/muzzleflash1.vmt'),
-    mat('materials/effects/muzzleflash2.vmt'),
-    mat('materials/effects/muzzleflash3.vmt'),
-    mat('materials/effects/muzzleflash4.vmt'),
-    )
-res('env_hudhint')
-res('env_particlelight')
-res('env_player_surface_trigger')
-res('env_player_viewfinder')
-res('env_physexplosion')
-res('env_physics_blocker')
-res('env_physimpact')
-res('env_physwire')
-
-res('env_portal_laser',
-    mdl('models/props/laser_emitter.mdl'),
-    sound('Flesh.LaserBurn'),
-    sound('Laser.BeamLoop'),
-    sound('Player.PainSmall'),
-    part('laser_start_glow'),
-    part('reflector_start_glow'),
-    )
-
-res('env_projectedtexture')  # Texture handled by generic FGD parsing.
 res('env_quadratic_beam')
-res('env_ragdoll_boogie', sound('RagdollBoogie.Zap'))
-res('env_rockettrail',
-    mat('materials/effects/muzzleflash1.vmt'),
-    mat('materials/effects/muzzleflash2.vmt'),
-    mat('materials/effects/muzzleflash3.vmt'),
-    mat('materials/effects/muzzleflash4.vmt'),
-    mat('materials/sprites/flamelet1.vmt'),
-    mat('materials/sprites/flamelet2.vmt'),
-    mat('materials/sprites/flamelet3.vmt'),
-    mat('materials/sprites/flamelet4.vmt'),
-    )
-res('env_rotorwash_emitter',
-    mat('materials/effects/splashwake3.vmt'),  # Water ripples
-    mat('materials/effects/splash1.vmt'),  # Over water
-    mat('materials/effects/splash2.vmt'),
-    mat("materials/particle/particle_smokegrenade.vmt"),  # Over ground
-    mat("materials/particle/particle_noisesphere.vmt"),
-    )
-
-
-@cls_func
-def env_rotorshooter(pack: PackList, ent: Entity) -> None:
-    """Inherits from env_shooter, so it just does that."""
-    env_shooter(pack, ent)
-
-
-res('env_screeneffect',
-    mat('materials/effects/stun.vmt'),
-    mat('materials/effects/introblur.vmt'),
-    )
-res('env_screenoverlay')
-res('env_shake')
 
 @cls_func
 def env_shooter(pack: PackList, ent: Entity) -> None:
@@ -227,7 +69,7 @@ def env_shooter(pack: PackList, ent: Entity) -> None:
             "Breakable.MatMetal",
             "Breakable.MatFlesh",
             "Breakable.MatConcrete",
-        )[conv_int(ent['spawnflags'])]
+        )[conv_int(ent['shootsounds'])]
         pack.pack_soundscript(snd_name)
     except IndexError:
         pass
@@ -238,31 +80,8 @@ def env_shooter(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file(ent['shootmodel'], FileType.MODEL)
 
-# TODO: env_soundscape, pack the scape and contents.
-res('env_soundscape_proxy')  # The env_soundscape this uses should do the precaching.
-
-res('env_spark',
-    mat('materials/sprites/glow01.vmt'),
-    mat('materials/effects/yellowflare.vmt'),
-    sound('DoSpark'),
-    )
-res('env_splash',
-    mat('materials/effects/splash2.vmt'),
-    mat('materials/effects/splashwake1.vmt'),
-    sound('Physics.WaterSplash'),
-    part('slime_splash_01'),
-    part('slime_splash_02'),
-    part('slime_splash_03'),
-    )
-res('env_sporeexplosion', mat('materials/particle/fire.vmt'))
-res('env_sprite', aliases='env_glow')
-res('env_spritetrail')
-res('env_sprite_clientside')
-res('env_sprite_oriented')
-res('env_smoketrail',
-    mat("materials/particle/particle_smokegrenade.vmt"),
-    mat("materials/particle/particle_noisesphere.vmt"),
-    )
+# Does the same.
+res('env_rotorshooter', func=env_shooter)
 
 
 @cls_func
@@ -284,13 +103,3 @@ def env_smokestack(pack: PackList, ent: Entity) -> None:
             pack.pack_file(fname)
         else:
             break
-res('env_smokestack', mat('materials/particle/SmokeStack.vmt'))
-res('env_starfield', mat('materials/effects/spark_noz.vmt'))
-
-res('env_steam',
-    mat('materials/particle/particle_smokegrenade.vmt'),
-    mat('materials/sprites/heatwave.vmt'),
-    )
-res('env_steamjet', includes='env_steam')
-res('env_sun', mat('materials/sprites/light_glow02_add_noz.vmt'))
-res('env_texturetoggle')

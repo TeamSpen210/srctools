@@ -14,13 +14,6 @@ def base_npc(pack: PackList, ent: Entity) -> None:
         pack_ent_class(pack, equipment)
 
 
-BASE_NPC = [
-    sound("AI_BaseNPC.SwishSound"),
-    sound("AI_BaseNPC.BodyDrop_Heavy"),
-    sound("AI_BaseNPC.BodyDrop_Light"),
-    sound("AI_BaseNPC.SentenceStop"),
-]
-
 BASE_COMBINE = [
     mdl('models/Weapons/w_grenade.mdl'),
     sound('NPC_Combine.GrenadeLaunch'),
@@ -30,38 +23,6 @@ BASE_COMBINE = [
     sound('NPC_Combine.Following'),
     sound('NPC_Combine.StopFollowing'),
 ]
-
-
-res('npc_advisor',
-    *BASE_NPC,
-    mdl("models/advisor.mdl"),
-    mat("materials/sprites/lgtning.vmt"),
-    mat("materials/sprites/greenglow1.vmt"),
-    sound("NPC_Advisor.Blast"),
-    sound("NPC_Advisor.Gib"),
-    sound("NPC_Advisor.Idle"),
-    sound("NPC_Advisor.Alert"),
-    sound("NPC_Advisor.Die"),
-    sound("NPC_Advisor.Pain"),
-    sound("NPC_Advisor.ObjectChargeUp"),
-    part("Advisor_Psychic_Beam"),
-    part("advisor_object_charge"),
-    )
-
-res('npc_aliencrow',  # Entropy Zero 2
-    *BASE_NPC,
-    mdl("models/aflock.mdl"),
-
-    sound("NPC_Boid.Hop"),
-    sound("NPC_Boid.Squawk"),
-    sound("NPC_Boid.Gib"),
-    sound("NPC_Boid.Idle"),
-    sound("NPC_Boid.Alert"),
-    sound("NPC_Boid.Die"),
-    sound("NPC_Boid.Pain"),
-    sound("NPC_Boid.Flat"),
-    aliases="npc_boid",
-    )
 
 
 @cls_func
@@ -129,22 +90,6 @@ res('npc_antlion',
         for size in ('small', 'medium', 'large')
     ],
 )
-
-res('npc_antlion_grub',
-    *BASE_NPC,
-    mdl("models/antlion_grub.mdl"),
-    mdl("models/antlion_grub_squashed.mdl"),
-    mat("materials/sprites/grubflare1.vmt"),
-    sound("NPC_Antlion_Grub.Idle"),
-    sound("NPC_Antlion_Grub.Alert"),
-    sound("NPC_Antlion_Grub.Stimulated"),
-    sound("NPC_Antlion_Grub.Die"),
-    sound("NPC_Antlion_Grub.Squish"),
-    part("GrubSquashBlood"),
-    part("GrubBlood"),
-    includes="item_grubnugget",
-    func=base_npc,
-    )
 
 
 @cls_func
@@ -215,20 +160,6 @@ def npc_antlion_template_maker(pack: PackList, ent: Entity) -> None:
     if conv_bool(ent['createspores']):
         pack_ent_class(pack, 'env_sporeexplosion')
 
-res('npc_alyx',
-    *BASE_NPC,
-    mdl('models/alyx_emptool_prop.mdl'),
-    sound('npc_alyx.die'),
-    sound('DoSpark'),
-    sound('npc_alyx.starthacking'),
-    sound('npc_alyx.donehacking'),
-    sound('npc_alyx.readytohack'),
-    sound('npc_alyx.interruptedhacking'),
-    sound('ep_01.al_dark_breathing01'),
-    sound('Weapon_CombineGuard.Special1'),
-    includes='env_alyxemp',
-    func=base_npc,
-    )
 res('npc_apcdriver', includes='npc_vehicledriver', func=base_npc)
 
 
@@ -270,7 +201,6 @@ res('npc_barnacle',
     includes='npc_barnacle_tongue_tip',
     func=base_npc,
     )
-res('npc_barnacle_tongue_tip', 'models/props_junk/rock001a.mdl')  # Random model it loads.
 res('npc_barney',
     *BASE_NPC,
     mdl("models/barney.mdl"),
@@ -282,9 +212,6 @@ res('npc_barney',
     choreo("scenes/Expressions/BarneyCombat.vcd"),
     func=base_npc,
     )
-res('npc_breen', *BASE_NPC, mdl("models/breen.mdl"))
-res('npc_bullseye', *BASE_NPC)
-
 
 @cls_func
 def npc_bullsquid(pack: PackList, ent: Entity) -> None:
@@ -447,21 +374,6 @@ res('npc_clonecop',
     func=base_npc,
     )
 
-res('npc_combine_camera',
-    *BASE_NPC,
-    mdl("models/combine_camera/combine_camera.mdl"),
-    mat("materials/sprites/glow1.vmt"),
-    mat("materials/sprites/light_glow03.vmt"),
-    sound("NPC_CombineCamera.Move"),
-    sound("NPC_CombineCamera.BecomeIdle"),
-    sound("NPC_CombineCamera.Active"),
-    sound("NPC_CombineCamera.Click"),
-    sound("NPC_CombineCamera.Ping"),
-    sound("NPC_CombineCamera.Angry"),
-    sound("NPC_CombineCamera.Die"),
-    func=base_npc,
-    )
-
 
 @cls_func
 def npc_combinedropship(pack: PackList, ent: Entity) -> None:
@@ -479,17 +391,6 @@ def npc_combinedropship(pack: PackList, ent: Entity) -> None:
     #  0 = Roller Hopper, does nothing
     #  2 = No cargo
 
-res('npc_combinedropship',
-    *BASE_NPC,
-    mdl("models/combine_dropship.mdl"),
-    sound("NPC_CombineDropship.RotorLoop"),
-    sound("NPC_CombineDropship.FireLoop"),
-    sound("NPC_CombineDropship.NearRotorLoop"),
-    sound("NPC_CombineDropship.OnGroundRotorLoop"),
-    sound("NPC_CombineDropship.DescendingWarningLoop"),
-    sound("NPC_CombineDropship.NearRotorLoop"),
-    )
-
 
 @cls_func
 def npc_combinegunship(pack: PackList, ent: Entity) -> None:
@@ -502,32 +403,6 @@ def npc_combinegunship(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file("models/gunship.mdl", FileType.MODEL)
 
-res('npc_combinegunship',
-    *BASE_NPC,
-    mat("materials/sprites/lgtning.vmt"),
-    mat("materials/effects/ar2ground2"),
-    mat("materials/effects/blueblackflash"),
-
-    sound("NPC_CombineGunship.SearchPing"),
-    sound("NPC_CombineGunship.PatrolPing"),
-    sound("NPC_Strider.Charge"),
-    sound("NPC_Strider.Shoot"),
-    sound("NPC_CombineGunship.SeeEnemy"),
-    sound("NPC_CombineGunship.CannonStartSound"),
-    sound("NPC_CombineGunship.Explode"),
-    sound("NPC_CombineGunship.Pain"),
-    sound("NPC_CombineGunship.CannonStopSound"),
-
-    sound("NPC_CombineGunship.DyingSound"),
-    sound("NPC_CombineGunship.CannonSound"),
-    sound("NPC_CombineGunship.RotorSound"),
-    sound("NPC_CombineGunship.ExhaustSound"),
-    sound("NPC_CombineGunship.RotorBlastSound"),
-
-    # TODO: These two are Episodic only.
-    mat("materials/sprites/physbeam.vmt"),
-    includes='env_citadel_energy_core',
-    )
 
 res('npc_combine_cannon',
     *BASE_NPC,
@@ -537,14 +412,7 @@ res('npc_combine_cannon',
     sound('NPC_Combine_Cannon.FireBullet'),
     func=base_npc,
     )
-res('npc_combine_s',
-    *BASE_NPC, *BASE_COMBINE,
-    mdl('models/combine_soldier.mdl'),
-    # TODO: Manhacks added by Mapbase.
-    # Entity precaches npc_handgrenade, but they actually spawn these.
-    includes='npc_handgrenade npc_manhack item_healthvial weapon_frag item_ammo_ar2_altfire',
-    func=base_npc,
-    )
+res('npc_combine_s', *BASE_COMBINE)
 res('npc_clawscanner',
     *BASE_NPC,
     mdl("models/shield_scanner.mdl"),
@@ -571,30 +439,6 @@ res('npc_clawscanner',
     includes="combine_mine",
     func=base_npc,
     )
-res('npc_cranedriver', includes='npc_vehicledriver', func=base_npc)
-res('npc_crow',
-    *BASE_NPC,
-    mdl("models/crow.mdl"),
-    sound("NPC_Crow.Hop"),
-    sound("NPC_Crow.Squawk"),
-    sound("NPC_Crow.Gib"),
-    sound("NPC_Crow.Idle"),
-    sound("NPC_Crow.Alert"),
-    sound("NPC_Crow.Die"),
-    sound("NPC_Crow.Pain"),
-    sound("NPC_Crow.Flap"),
-    func=base_npc,
-    )
-res('npc_dog',
-    *BASE_NPC,
-    mdl("models/dog.mdl"),
-    sound("Weapon_PhysCannon.Launch"),
-    mat("materials/sprites/orangelight1.vmt"),
-    mat("materials/sprites/physcannon_bluelight2.vmt"),
-    mat("materials/sprites/glow04_noz.vmt"),
-    func=base_npc,
-    )
-
 
 @cls_func
 def npc_egg(pack: PackList, ent: Entity) -> None:
@@ -608,212 +452,13 @@ res('npc_egg',
     sound('npc_bullsquid.egg_hatch'),
     part('bullsquid_egg_hatch'),
     )
-res('npc_eli', *BASE_NPC, mdl("models/eli.mdl"), func=base_npc)
-res('npc_enemyfinder', *BASE_NPC, mdl("models/player.mdl"), func=base_npc)
-res('npc_enemyfinder_combinecannon', includes='npc_enemyfinder', func=base_npc)
-res('npc_gman', *BASE_NPC, mdl('models/gman.mdl'), func=base_npc)
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
     includes='grenade',
     )
-res('npc_grenade_frag',
-    mdl("models/Weapons/w_grenade.mdl"),
-    mat('materials/sprites/redglow1.vmt'),
-    mat('materials/sprites/bluelaser1.vmt'),
-    sound("Grenade.Blip"),
-    includes='grenade',
-    )
-res('npc_grenade_hopwire',  #  A primed EZ2 Xen Grenade.
-    mdl('models/props_junk/metal_paintcan001b.mdl'),  # "Dense Ball Model"
-    sound('NPC_Strider.Charge'),
-    sound('NPC_Strider.Shoot'),
-    sound('WeaponXenGrenade.Explode'),
-    sound('WeaponXenGrenade.SpawnXenPC'),
-    sound('WeaponXenGrenade.Blip'),
-    sound('WeaponXenGrenade.Hop'),
-    includes='vortex_controller grenade',
-    )
 
-res('npc_fastzombie',
-    *BASE_NPC,
-    mdl("models/zombie/fast.mdl"),
-    # TODO - Episodic only:
-        mdl("models/zombie/Fast_torso.mdl"),
-        sound("NPC_FastZombie.CarEnter1"),
-        sound("NPC_FastZombie.CarEnter2"),
-        sound("NPC_FastZombie.CarEnter3"),
-        sound("NPC_FastZombie.CarEnter4"),
-        sound("NPC_FastZombie.CarScream"),
-    mdl("models/gibs/fast_zombie_torso.mdl"),
-    mdl("models/gibs/fast_zombie_legs.mdl"),
-    sound("NPC_FastZombie.LeapAttack"),
-    sound("NPC_FastZombie.FootstepRight"),
-    sound("NPC_FastZombie.FootstepLeft"),
-    sound("NPC_FastZombie.AttackHit"),
-    sound("NPC_FastZombie.AttackMiss"),
-    sound("NPC_FastZombie.LeapAttack"),
-    sound("NPC_FastZombie.Attack"),
-    sound("NPC_FastZombie.Idle"),
-    sound("NPC_FastZombie.AlertFar"),
-    sound("NPC_FastZombie.AlertNear"),
-    sound("NPC_FastZombie.GallopLeft"),
-    sound("NPC_FastZombie.GallopRight"),
-    sound("NPC_FastZombie.Scream"),
-    sound("NPC_FastZombie.RangeAttack"),
-    sound("NPC_FastZombie.Frenzy"),
-    sound("NPC_FastZombie.NoSound"),
-    sound("NPC_FastZombie.Die"),
-    sound("NPC_FastZombie.Gurgle"),
-    sound("NPC_FastZombie.Moan1"),
-    func=base_npc,
-    )
-# Actually an alias, but we don't want to swap these.
-res(
-    'npc_fastzombie_torso',
-    includes='npc_fastzombie',
-    func=base_npc,
-)
-
-res('npc_fisherman',
-    *BASE_NPC,
-    mdl("models/lostcoast/fisherman/fisherman.mdl"),
-    sound("NPC_Fisherman.FootstepLeft"),
-    sound("NPC_Fisherman.FootstepRight"),
-    sound("NPC_Fisherman.Die"),
-    choreo("scenes/Expressions/FishermanIdle.vcd"),
-    choreo("scenes/Expressions/FishermanAlert.vcd"),
-    choreo("scenes/Expressions/FishermanCombat.vcd"),
-    func=base_npc,
-    )
-
-res('npc_headcrab',
-    *BASE_NPC,
-    mdl('models/headcrabclassic.mdl'),
-    sound('NPC_HeadCrab.Gib'),
-    sound('NPC_HeadCrab.Idle'),
-    sound('NPC_HeadCrab.Alert'),
-    sound('NPC_HeadCrab.Pain'),
-    sound('NPC_HeadCrab.Die'),
-    sound('NPC_HeadCrab.Attack'),
-    sound('NPC_HeadCrab.Bite'),
-    sound('NPC_Headcrab.BurrowIn'),
-    sound('NPC_Headcrab.BurrowOut'),
-    func=base_npc,
-    )
-
-res('npc_headcrab_black',
-    *BASE_NPC,
-    mdl('models/headcrabblack.mdl'),
-
-    sound('NPC_BlackHeadcrab.Telegraph'),
-    sound('NPC_BlackHeadcrab.Attack'),
-    sound('NPC_BlackHeadcrab.Bite'),
-    sound('NPC_BlackHeadcrab.Threat'),
-    sound('NPC_BlackHeadcrab.Alert'),
-    sound('NPC_BlackHeadcrab.Idle'),
-    sound('NPC_BlackHeadcrab.Talk'),
-    sound('NPC_BlackHeadcrab.AlertVoice'),
-    sound('NPC_BlackHeadcrab.Pain'),
-    sound('NPC_BlackHeadcrab.Die'),
-    sound('NPC_BlackHeadcrab.Impact'),
-    sound('NPC_BlackHeadcrab.ImpactAngry'),
-    sound('NPC_BlackHeadcrab.FootstepWalk'),
-    sound('NPC_BlackHeadcrab.Footstep'),
-
-    sound('NPC_HeadCrab.Gib'),
-    sound('NPC_Headcrab.BurrowIn'),
-    sound('NPC_Headcrab.BurrowOut'),
-    aliases='npc_headcrab_poison',
-    func=base_npc,
-)
-
-res('npc_headcrab_fast',
-    *BASE_NPC,
-    mdl('models/headcrab.mdl'),
-    sound('NPC_FastHeadCrab.Idle'),
-    sound('NPC_FastHeadCrab.Alert'),
-    sound('NPC_FastHeadCrab.Pain'),
-    sound('NPC_FastHeadCrab.Die'),
-    sound('NPC_FastHeadCrab.Attack'),
-    sound('NPC_FastHeadCrab.Bite'),
-
-    sound('NPC_HeadCrab.Gib'),
-    sound('NPC_Headcrab.BurrowIn'),
-    sound('NPC_Headcrab.BurrowOut'),
-    func=base_npc,
-    )
-
-res('npc_heli_avoidbox')
-res('npc_heli_avoidsphere')
-res('npc_heli_nobomb')
-res('npc_helicopter',
-    *BASE_NPC,
-    mdl("models/combine_helicopter.mdl"),
-    mdl("models/combine_helicopter_broken.mdl"),
-    mat("materials/sprites/redglow1.vmt"),
-    includes='helicopter_chunk grenade_helicopter',
-    func=base_npc,
-    )
-res('npc_helicoptersensor')
 res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
-res('npc_hunter',
-    *BASE_NPC,
-    mdl("models/hunter.mdl"),
-
-    sound("NPC_Hunter.Idle"),
-    sound("NPC_Hunter.Scan"),
-    sound("NPC_Hunter.Alert"),
-    sound("NPC_Hunter.Pain"),
-    sound("NPC_Hunter.PreCharge"),
-    sound("NPC_Hunter.Angry"),
-    sound("NPC_Hunter.Death"),
-    sound("NPC_Hunter.FireMinigun"),
-    sound("NPC_Hunter.Footstep"),
-    sound("NPC_Hunter.BackFootstep"),
-    sound("NPC_Hunter.FlechetteVolleyWarn"),
-    sound("NPC_Hunter.FlechetteShoot"),
-    sound("NPC_Hunter.FlechetteShootLoop"),
-    sound("NPC_Hunter.FlankAnnounce"),
-    sound("NPC_Hunter.MeleeAnnounce"),
-    sound("NPC_Hunter.MeleeHit"),
-    sound("NPC_Hunter.TackleAnnounce"),
-    sound("NPC_Hunter.TackleHit"),
-    sound("NPC_Hunter.ChargeHitEnemy"),
-    sound("NPC_Hunter.ChargeHitWorld"),
-    sound("NPC_Hunter.FoundEnemy"),
-    sound("NPC_Hunter.FoundEnemyAck"),
-    sound("NPC_Hunter.DefendStrider"),
-    sound("NPC_Hunter.HitByVehicle"),
-
-    part("hunter_muzzle_flash"),
-    part("blood_impact_synth_01"),
-    part("blood_impact_synth_01_arc_parent"),
-    part("blood_spurt_synth_01"),
-    part("blood_drip_synth_01"),
-
-    choreo("scenes/npc/hunter/hunter_scan.vcd"),
-    choreo("scenes/npc/hunter/hunter_eyeclose.vcd"),
-    choreo("scenes/npc/hunter/hunter_roar.vcd"),
-    choreo("scenes/npc/hunter/hunter_pain.vcd"),
-    choreo("scenes/npc/hunter/hunter_eyedarts_top.vcd"),
-    choreo("scenes/npc/hunter/hunter_eyedarts_bottom.vcd"),
-
-    mat("materials/effects/water_highlight.vmt"),
-
-    includes="hunter_flechette sparktrail",
-    func=base_npc,
-    )
-# This uses a template so the hunter has to be already in the map and will be analysed.
-res('npc_hunter_maker', includes='npc_template_maker')
-
-res('npc_kleiner', *BASE_NPC, mdl('models/kleiner.mdl'), func=base_npc)
-res('npc_launcher',
-    *BASE_NPC,
-    mdl('models/player.mdl'),
-    includes='grenade_homer grenade_pathfollower',
-    func=base_npc,
-    )
 
 @cls_func
 def npc_maker(pack: PackList, ent: Entity) -> None:
@@ -823,35 +468,6 @@ def npc_maker(pack: PackList, ent: Entity) -> None:
     except ValueError:
         # Dependent on keyvalues.
         pass
-
-res('npc_magnusson', *BASE_NPC, mdl('models/magnusson.mdl'), func=base_npc)
-res('npc_manhack',
-    *BASE_NPC,
-    mdl("models/manhack.mdl"),
-    mat("materials/sprites/glow1.vmt"),
-
-    sound("NPC_Manhack.Die"),
-    sound("NPC_Manhack.Bat"),
-    sound("NPC_Manhack.Grind"),
-    sound("NPC_Manhack.Slice"),
-    sound("NPC_Manhack.EngineNoise"),
-    sound("NPC_Manhack.Unpack"),
-    sound("NPC_Manhack.ChargeAnnounce"),
-    sound("NPC_Manhack.ChargeEnd"),
-    sound("NPC_Manhack.Stunned"),
-    sound("NPC_Manhack.EngineSound1"),
-    sound("NPC_Manhack.EngineSound2"),
-    sound("NPC_Manhack.BladeSound"),
-    func=base_npc,
-    )
-res('npc_monk',
-    *BASE_NPC,
-    mdl("models/monk.mdl"),
-    sound("NPC_Citizen.FootstepLeft"),
-    sound("NPC_Citizen.FootstepRight"),
-    func=base_npc,
-    )
-res('npc_mossman', *BASE_NPC, mdl('models/mossman.mdl'), func=base_npc)
 
 
 @cls_func
@@ -872,28 +488,6 @@ res('npc_metropolice',
     # Entity precaches npc_handgrenade, but they actually spawn these.
     includes='npc_grenade_frag npc_manhack',
 )
-res('npc_missiledefense',
-    *BASE_NPC,
-    mdl('models/missile_defense.mdl'),
-    mdl('models/gibs/missile_defense_gibs.mdl'),
-    sound('NPC_MissileDefense.Attack'),
-    sound('NPC_MissileDefense.Reload'),
-    sound('NPC_MissileDefense.Turn'),
-    func=base_npc,
-    )
-
-res('npc_pigeon',
-    *BASE_NPC,
-    mdl("models/pigeon.mdl"),
-    sound("NPC_Pigeon.Idle"),
-
-    sound("NPC_Crow.Hop"),
-    sound("NPC_Crow.Squawk"),
-    sound("NPC_Crow.Gib"),
-    sound("NPC_Crow.Pain"),
-    sound("NPC_Crow.Die"),
-    func=base_npc,
-    )
 
 res('npc_rocket_turret',
     *BASE_NPC,
@@ -906,62 +500,6 @@ res('npc_rocket_turret',
     includes='rocket_turret_projectile',
     func=base_npc,
     )
-res('npc_rollermine',
-    *BASE_NPC,
-    mdl("models/roller.mdl"),
-    mdl("models/roller_spikes.mdl"),
-    mat("materials/sprites/bluelight1.vmt"),
-    mat("materials/effects/rollerglow.vmt"),
-    mat("materials/sprites/rollermine_shock.vmt"),
-    mat("materials/sprites/rollermine_shock_yellow.vmt"),
-
-    sound("NPC_RollerMine.Taunt"),
-    sound("NPC_RollerMine.OpenSpikes"),
-    sound("NPC_RollerMine.Warn"),
-    sound("NPC_RollerMine.Shock"),
-    sound("NPC_RollerMine.ExplodeChirp"),
-    sound("NPC_RollerMine.Chirp"),
-    sound("NPC_RollerMine.ChirpRespond"),
-    sound("NPC_RollerMine.ExplodeChirpRespond"),
-    sound("NPC_RollerMine.JoltVehicle"),
-    sound("NPC_RollerMine.Tossed"),
-    sound("NPC_RollerMine.Hurt"),
-    sound("NPC_RollerMine.Roll"),
-    sound("NPC_RollerMine.RollWithSpikes"),
-    sound("NPC_RollerMine.Ping"),
-    sound("NPC_RollerMine.Held"),
-    sound("NPC_RollerMine.Reprogram"),
-
-    # TODO: Episodic only
-    sound("RagdollBoogie.Zap"),
-    func=base_npc,
-    )
-res('npc_seagull',
-    *BASE_NPC,
-    mdl("models/seagull.mdl"),
-    sound("NPC_Seagull.Idle"),
-    sound("NPC_Seagull.Pain"),
-
-    sound("NPC_Crow.Hop"),
-    sound("NPC_Crow.Squawk"),
-    sound("NPC_Crow.Gib"),
-    sound("NPC_Crow.Flap"),
-    func=base_npc,
-    )
-
-res('npc_sniper',
-    mdl('models/combine_soldier.mdl'),
-    mat('materials/sprites/light_glow03.vmt'),
-    mat('materials/sprites/muzzleflash1.vmt'),
-    mat('materials/effects/bluelaser1.vmt'),
-    sound('NPC_Sniper.Die'),
-    sound('NPC_Sniper.TargetDestroyed'),
-    sound('NPC_Sniper.HearDange'),
-    sound('NPC_Sniper.FireBullet'),
-    sound('NPC_Sniper.Reload'),
-    sound('NPC_Sniper.SonicBoom'),
-    includes='sniperbullet',
-    )
 
 
 @cls_func
@@ -970,55 +508,6 @@ def npc_stalker(pack: PackList, ent: Entity) -> None:
     base_npc(pack, ent)
     if conv_bool(ent['bleed']):  # Mapbase
         pack.pack_particle('blood_impact_synth_01')
-
-
-res('npc_stalker',
-    *BASE_NPC,
-    mdl('models/stalker.mdl'),
-    mat('materials/sprites/laser.vmt'),
-    mat('materials/sprites/redglow1.vmt'),
-    mat('materials/sprites/orangeglow1.vmt'),
-    mat('materials/sprites/yellowglow1.vmt'),
-    sound('NPC_Stalker.BurnFlesh'),
-    sound('NPC_Stalker.BurnWall'),
-    sound('NPC_Stalker.FootstepLeft'),
-    sound('NPC_Stalker.FootstepRight'),
-    sound('NPC_Stalker.Hit'),
-    sound('NPC_Stalker.Ambient01'),
-    sound('NPC_Stalker.Scream'),
-    sound('NPC_Stalker.Pain'),
-    sound('NPC_Stalker.Die'),
-    )
-res('npc_strider',
-    *BASE_NPC,
-    mdl("models/combine_strider.mdl"),
-    sound("NPC_Strider.StriderBusterExplode"),
-    sound("explode_5"),
-    sound("NPC_Strider.Charge"),
-    sound("NPC_Strider.RagdollDetach"),
-    sound("NPC_Strider.Whoosh"),
-    sound("NPC_Strider.Creak"),
-    sound("NPC_Strider.Alert"),
-    sound("NPC_Strider.Pain"),
-    sound("NPC_Strider.Death"),
-    sound("NPC_Strider.FireMinigun"),
-    sound("NPC_Strider.Shoot"),
-    sound("NPC_Strider.OpenHatch"),
-    sound("NPC_Strider.Footstep"),
-    sound("NPC_Strider.Skewer"),
-    sound("NPC_Strider.Hunt"),
-    mat("materials/effects/water_highlight.vmt"),
-    mat("materials/sprites/physbeam.vmt"),
-    mat("materials/sprites/bluelaser1"),
-    mat("materials/effects/blueblacklargebeam"),
-    mat("materials/effects/strider_pinch_dudv"),
-    mat("materials/effects/blueblackflash"),
-    mat("materials/effects/strider_bulge_dudv"),
-    mat("materials/effects/strider_muzzle"),
-    mdl("models/chefhat.mdl"),  # For some reason...
-    includes="concussiveblast sparktrail",
-    func=base_npc,
-    )
 
 res('npc_template_maker')  # This specially precaches, but the ent must exist in the map already.
 res('npc_turret_ceiling',
@@ -1086,55 +575,6 @@ res('npc_turret_lab',
     sound('NPC_LabTurret.Die'),
     sound('NPC_FloorTurret.DryFire'),
     func=base_npc,
-    )
-
-res('npc_vehicledriver',
-    *BASE_NPC,
-    'models/roller_vehicledriver.mdl',
-    func=base_npc,
-    )
-res('npc_vortigaunt',
-    *BASE_NPC,
-    mdl('models/vortigaunt.mdl'),  # Only if not set.
-    mat('materials/sprites/lgtning.vmt'),
-    mat('materials/sprites/vortring1.vmt'),
-    mat('materials/sprites/light_glow02_add'),
-    # EP2 only...
-    mat('materials/effects/rollerglow.vmt'),
-    sound('NPC_Vortigaunt.SuitOn'),
-    sound('NPC_Vortigaunt.SuitCharge'),
-    sound('NPC_Vortigaunt.ZapPowerup'),
-    sound('NPC_Vortigaunt.ClawBeam'),
-    sound('NPC_Vortigaunt.StartHealLoop'),
-    sound('NPC_Vortigaunt.Swing'),
-    sound('NPC_Vortigaunt.StartShootLoop'),
-    sound('NPC_Vortigaunt.FootstepLeft'),
-    sound('NPC_Vortigaunt.FootstepRight'),
-    sound('NPC_Vortigaunt.DispelStart'),
-    sound('NPC_Vortigaunt.DispelImpact'),
-    sound('NPC_Vortigaunt.Explode'),
-
-    part('vortigaunt_beam'),
-    part('vortigaunt_beam_charge'),
-    part('vortigaunt_hand_glow'),
-    includes="vort_charge_token",
-    func=base_npc,
-    )
-
-res('npc_wilson',
-    *BASE_NPC,
-    mdl('models/will_e.mdl'),
-    mdl('models/will_e_damaged.mdl'),
-    mat('materials/sprites/glow1.vmt'),
-    sound('NPC_Wilson.Destruct'),
-    sound('NPC_Combine.WeaponBash'),
-    sound('RagdollBoogie.Zap'),
-    part('explosion_turret_break'),
-    choreo('scenes/npc/wilson/expression_idle.vcd'),
-    choreo('scenes/npc/wilson/expression_alert.vcd'),
-    choreo('scenes/npc/wilson/expression_combat.vcd'),
-    choreo('scenes/npc/wilson/expression_dead.vcd'),
-    choreo('scenes/npc/wilson/expression_scanning.vcd'),
     )
 
 
