@@ -48,8 +48,6 @@ def item_ammo_crate(pack: PackList, ent: Entity) -> None:
         elif mdl_mbase == 'slam.mdl':
             pack_ent_class(pack, 'weapon_slam')
 
-res('item_creature_crate', part('creaturecrate_stasisbreak'))  # EZ2
-
 
 @cls_func
 def item_item_crate(pack: PackList, ent: Entity) -> None:

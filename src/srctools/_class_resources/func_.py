@@ -134,11 +134,13 @@ def func_breakable_surf(pack: PackList, ent: Entity) -> None:
         # Unknown
         return
 
+    pack.pack_file(f'materials/effects/fleck_{mat_type}1.vmt')
+    pack.pack_file(f'materials/effects/fleck_{mat_type}2.vmt')
+
     for num in '123':
         for letter in 'abcd':
             pack.pack_file(
-                'materials/models/broken{0}/'
-                '{0}broken_0{1}{2}.vmt'.format(mat_type, num, letter),
+                f'materials/models/broken{mat_type}/{mat_type}broken_0{num}{letter}.vmt',
                 FileType.MATERIAL,
             )
 

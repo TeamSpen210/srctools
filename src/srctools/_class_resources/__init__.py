@@ -170,11 +170,8 @@ EZ_VARIANT_BLOOD: Final = 5
 
 # In alphabetical order:
 
-res('aiscripted_schedule')
-
-res('apc_missile', includes='rpg_missile')  # Inherits from this.
-
 res('base_boss')
+
 
 @cls_func
 def color_correction(pack: PackList, ent: Entity) -> None:
@@ -193,23 +190,8 @@ res('cycler_blender')
 res('cycler_flex')
 res('cycler_weapon')
 res('cycler_wreckage')
-res('ent_watery_leech', mdl("models/leech.mdl"))
 
-res('entity_blocker')
-res('event_queue_saveload_proxy')
-res('fish')
-res('floorturret_tipcontroller')
-
-res('game_ragdoll_manager')
-res('game_convar_mod')
-res('game_ui')
-res('gib')
-res('gibshooter',
-    mdl('models/gibs/hgibs.mdl'),
-    mdl('models/germanygibs.mdl'),
-    )
-res('grenade',
-    )
+res('grenade')
 res('grenade_beam',
     mdl('Models/weapons/flare.mdl'),  # Not visible, but loaded.
     mat('materials/sprites/laser.vmt'),
@@ -217,14 +199,6 @@ res('grenade_beam',
     includes='grenade',
     )
 res('grenade_beam_chaser')  # The back part of the glow following grenades.
-res('grenade_helicopter',  # Bomb dropped by npc_helicopter
-    mdl("models/combine_helicopter/helicopter_bomb01.mdl"),
-    sound("ReallyLoudSpark"),
-    sound("NPC_AttackHelicopterGrenade.Ping"),
-    sound("NPC_AttackHelicopterGrenade.PingCaptured"),
-    sound("NPC_AttackHelicopterGrenade.HardImpact"),
-    includes='grenade',
-    )
 res('grenade_homer',
     mat('materials/sprites/lgtning.vmt'),
     sound('GrenadeHomer.StopSounds'),
@@ -234,70 +208,12 @@ res('grenade_pathfollower',
     includes='grenade',
     )
 
-res('hammer_updateignorelist')
-res('infodecal')
-res('info_apc_missile_hint')
-res('info_coop_spawn')
-res('info_constraint_anchor')
-res('info_camera_link')
-res('info_darknessmode_lightsource')
-res('info_deathmatch_spawn')
-res('info_hint')
-res('info_ladder_dismount')
-res('info_landmark')
-res('info_lighting_relative')
-res('info_mass_center')
-res('info_node')
-res('info_node_hint')
-res('info_node_air')
-res('info_node_air_hint')
-res('info_node_climb')
-res('info_node_link')
-res('info_node_link_controller')
-res('info_node_link_filtered')
-res('info_node_link_logic')
-res('info_node_link_oneway')
-res('info_npc_spawn_destination')
-res('info_null')
-res('info_overlay_accessor')
-res('info_particle_system')  # Particle packed by FGD database.
-res('info_player_counterterrorist')
-res('info_player_deathmatch')
-res('info_player_marine')
-res('info_player_scientist')
-res('info_player_start')
-res('info_player_teamspawn')
-res('info_player_terrorist')
-res('info_projecteddecal')
-res('info_radar_target')
-res('info_radial_link_controller')
-res('info_remarkable')
-res('info_snipertarget')
-res('info_target')
-res('info_target_gunshipcrash')
-res('info_target_helicopter_crash')
-res('info_target_instructor_hint')
-res('info_teleport_destination')
-res('info_template_link_controller')
-res('info_landmark_entry')
-res('info_landmark_exit')
-res('keyframe_track')
-res('light')
-res('light_directional')
-res('light_dynamic')
-res('light_environment')
-res('light_spot')
-
 
 @cls_func
 def logic_playmovie(pack: PackList, ent: Entity) -> None:
     """Mark the BIK movie as being used, though it can't be packed."""
     pack.pack_file('media/' + ent['MovieFilename'])
 
-
-res('lookdoorthinker')
-
-res('material_modify_control')
 res('mortarshell',
     mat('materials/sprites/physbeam.vmt'),
     mat('materials/effects/ar2ground2.vmt'),
@@ -305,120 +221,26 @@ res('mortarshell',
     )
 
 
+def sprite_rope(pack: PackList, ent: Entity) -> None:
+    """Handles a legacy keyvalue for the material used on move_rope and keyframe_rope."""
+    if 'ropeshader' in ent:
+        old_shader_type = conv_int(ent['ropeshader'])
+        if old_shader_type == 0:
+            pack.pack_file('materials/cable/cable.vmt', FileType.MATERIAL)
+        elif old_shader_type == 1:
+            pack.pack_file('materials/cable/rope.vmt', FileType.MATERIAL)
+        else:
+            pack.pack_file('materials/cable/chain.vmt', FileType.MATERIAL)
+
+
 @cls_func
-def move_rope(pack: PackList, ent: Entity) -> None:
-    """Implement move_rope and keyframe_rope resources."""
-    old_shader_type = conv_int(ent['RopeShader'])
-    if old_shader_type == 0:
-        pack.pack_file('materials/cable/cable.vmt', FileType.MATERIAL)
-    elif old_shader_type == 1:
-        pack.pack_file('materials/cable/rope.vmt', FileType.MATERIAL)
-    else:
-        pack.pack_file('materials/cable/chain.vmt', FileType.MATERIAL)
-    pack.pack_file('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL)
+def point_entity_replace(pack: PackList, ent: Entity) -> None:
+    """In one specific mode, an entity is spawned by classname."""
+    if conv_int(ent['replacementtype']) == 1:
+        pack_ent_class(pack, ent['replacemententity'])
 
-# These classes are identical.
-CLASS_FUNCS['keyframe_rope'] = CLASS_FUNCS['move_rope']
-ALT_NAMES['keyframe_rope'] = 'move_rope'
-
-res('multisource')
-
-res('passtime_ball',
-    mdl('models/passtime/ball/passtime_ball_halloween.mdl'),
-    mdl('models/passtime/ball/passtime_ball.mdl'),
-    mat("materials/passtime/passtime_balltrail_red.vmt"),
-    mat("materials/passtime/passtime_balltrail_blu.vmt"),
-    mat("materials/passtime/passtime_balltrail_unassigned.vmt"),
-    sound('Passtime.BallSmack'),
-    sound('Passtime.BallGet'),
-    sound('Passtime.BallIdle'),
-    sound('Passtime.BallHoming'),
-    includes='_ballplayertoucher',
-)
-res('path_corner')
-res('path_corner_crash')
-res('path_track')
-
-res('phys_bone_follower')
-
-
-res('physics_cannister')  # All in KVs.
-res('physics_entity_solver')
-res('physics_npc_solver')
-
-res('player_loadsaved')
-res('player_speedmod')
-res('player_weaponstrip')
-
-res('point_advanced_finder')
-res('point_anglesensor')
-res('point_angularvelocitysensor')
-res('point_antlion_repellant')
-res('point_apc_controller')
-res('point_bonusmaps_accessor')
-res('point_broadcastclientcommand')
-res('point_bugbait')
-res('point_camera')
-res('point_clientcommand')
-res('point_combine_ball_launcher', includes='prop_combine_ball')
-res('point_commentary_node',
-    mdl('models/extras/info_speech.mdl'),
-    includes='point_commentary_viewpoint',
-    )
-res('point_commentary_viewpoint', mat('materials/sprites/redglow1.vmt'))
-res('point_copy_size')
-res('point_damageinfo')
-res('point_energy_ball_launcher',
-    includes='prop_energy_ball',
-    )
-res('point_entity_finder')
-res('point_entity_replace')
-res('point_event')
-res('point_flesh_effect_target')
-res('point_futbol_shooter',
-    sound('World.Wheatley.fire'),
-    includes='prop_exploding_futbol',
-    )
-res('point_gamestats_counter')
-res('point_message')
-res('point_message_localized')
-res('point_hurt')
-
-res('point_posecontroller')
-res('point_prop_use_target')
-res('point_proximity_sensor')
-res('point_push')
-res('point_radiation_source')
-res('point_ragdollboogie', includes='env_ragdoll_boogie')
-res('point_servercommand')
-res('point_teleport')
-res('point_template')
-res('point_tesla', sound("sprites/physbeam.vmt"))  # Default material
-res('point_velocitysensor')
-res('point_viewcontrol')
-res('point_viewcontrol_multiplayer')
-res('point_viewcontrol_node')
-res('point_viewcontrol_survivor')
-res('point_viewproxy')
-res('point_weaponstrip')
-
-res('raggib')
-res('rope_anchor', mat("materials/cable/cable.vmt"))
-res('rocket_turret_projectile',
-    mdl('models/props_bts/rocket.mdl'),
-    mat('materials/decals/scorchfade.vmt'),
-    sound('NPC_FloorTurret.RocketFlyLoop'),
-    )
-res('rpg_missile',
-    mdl("models/weapons/w_missile.mdl"),
-    mdl("models/weapons/w_missile_launch.mdl"),
-    mdl("models/weapons/w_missile_closed.mdl"),
-    )
-
-res('scripted_sound')  # Sound via FGD.
 res('simple_physics_brush')
 
-res('sky_camera')
 
 @cls_func
 def skybox_swapper(pack: PackList, ent: Entity) -> None:
@@ -426,32 +248,14 @@ def skybox_swapper(pack: PackList, ent: Entity) -> None:
     sky_name = ent['skyboxname']
     for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
         pack.pack_file(
-            'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
+            f'materials/skybox/{sky_name}{suffix}.vmt',
             FileType.MATERIAL,
         )
         pack.pack_file(
-            'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
+            f'materials/skybox/{sky_name}{suffix}_hdr.vmt',
             FileType.MATERIAL,
             optional=True,
         )
-
-res('sniperbullet')
-res('soundent')
-res('spraycan', sound("SprayCan.Paint"))
-res('sparktrail', sound('DoSpark'))
-res('spark_shower',
-    mat('materials/sprites/glow01.vmt'),
-    mat('materials/effects/yellowflare.vmt'),
-    )
-res('spotlight_end')
-res('squadinsignia', "models/chefhat.mdl")  # Yeah.
-res('squidspit',  # EZ2 "Plan B"/Gonome spit
-    'NPC_BigMomma.SpitTouch1',
-    'NPC_BigMomma.SpitHit1',
-    'NPC_BigMomma.SpitHit2',
-    'Zombie.AttackHit',
-    'Zombie.AttackMiss',
-    )
 
 
 @cls_func
@@ -464,28 +268,11 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
             pack.pack_file(f'materials/{icon}_locked.vmt', FileType.MATERIAL)
 
 
-res('test_effect', mat('materials/sprites/lgtning.vmt'), includes='env_beam')
-res('test_proxytoggle')
-res('vort_charge_token', part('vortigaunt_charge_token'))
-
-
 @cls_func
 def vgui_movie_display(pack: PackList, ent: Entity) -> None:
     """Mark the BIK movie as being used, though it can't be packed."""
     pack.pack_file(ent['MovieFilename'])
 
-
-res('vgui_screen',
-    'materials/engine/writez.vmt',
-    )
-res('waterbullet', mdl('models/weapons/w_bullet.mdl'))
-res('window_pane', mdl('models/brokenglass_piece.mdl'))
-
-
-res('zombie_goo_puddle',
-    part('glow_puddle'),
-    sound('NPC_BaseGlowbie.glow_puddle'),
-    )  # EZ2 point_hurt subclass.
 
 from srctools._class_resources import (
     asw_, env_, func_, item_, npcs, props, triggers, weapons,

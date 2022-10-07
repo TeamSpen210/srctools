@@ -41,7 +41,7 @@ def npc_antlion(pack: PackList, ent: Entity) -> None:
         pack.pack_particle("blood_impact_yellow_01")
 
         pack_ent_class(pack, 'grenade_spit')
-    else:
+    else:  # Regular antlion.
         if ez_variant == EZ_VARIANT_RAD:
             pack.pack_file("models/antlion_blue.mdl", FileType.MODEL)
             pack.pack_particle("blood_impact_blue_01")
@@ -55,41 +55,6 @@ def npc_antlion(pack: PackList, ent: Entity) -> None:
             pack.pack_file("models/antlion.mdl", FileType.MODEL)
             pack.pack_particle("blood_impact_antlion_01")
         pack.pack_particle("AntlionGib")
-res('npc_antlion',
-    *BASE_NPC,
-    sound("NPC_Antlion.RunOverByVehicle"),
-    sound("NPC_Antlion.MeleeAttack"),
-    sound("NPC_Antlion.Footstep"),
-    sound("NPC_Antlion.BurrowIn"),
-    sound("NPC_Antlion.BurrowOut"),
-    sound("NPC_Antlion.FootstepSoft"),
-    sound("NPC_Antlion.FootstepHeavy"),
-    sound("NPC_Antlion.MeleeAttackSingle"),
-    sound("NPC_Antlion.MeleeAttackDouble"),
-    sound("NPC_Antlion.Distracted"),
-    sound("NPC_Antlion.Idle"),
-    sound("NPC_Antlion.Pain"),
-    sound("NPC_Antlion.Land"),
-    sound("NPC_Antlion.WingsOpen"),
-    sound("NPC_Antlion.LoopingAgitated"),
-    sound("NPC_Antlion.Distracted"),
-
-    # TODO: These are Episodic only..
-    sound("NPC_Antlion.PoisonBurstScream"),
-    sound("NPC_Antlion.PoisonBurstScreamSubmerged"),
-    sound("NPC_Antlion.PoisonBurstExplode"),
-    sound("NPC_Antlion.MeleeAttack_Muffled"),
-    sound("NPC_Antlion.TrappedMetal"),
-    sound("NPC_Antlion.ZappedFlip"),
-    sound("NPC_Antlion.PoisonShoot"),
-    sound("NPC_Antlion.PoisonBall"),
-    # These aren't though.
-    *[
-        mdl("models/gibs/antlion_gib_{}_{}.mdl".format(size, i))
-        for i in ('1', '2', '3')
-        for size in ('small', 'medium', 'large')
-    ],
-)
 
 
 @cls_func
@@ -117,31 +82,6 @@ def npc_antlionguard(pack: PackList, ent: Entity) -> None:
             pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
     else:  # Regular HL2.
         pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
-res('npc_antlionguard',
-    *BASE_NPC,
-    mdl('NPC_AntlionGuard.Shove'),
-    mdl('NPC_AntlionGuard.HitHard'),
-    sound("NPC_AntlionGuard.Anger"),
-    sound("NPC_AntlionGuard.Roar"),
-    sound("NPC_AntlionGuard.Die"),
-    sound("NPC_AntlionGuard.GrowlHigh"),
-    sound("NPC_AntlionGuard.GrowlIdle"),
-    sound("NPC_AntlionGuard.BreathSound"),
-    sound("NPC_AntlionGuard.Confused"),
-    sound("NPC_AntlionGuard.Fallover"),
-    sound("NPC_AntlionGuard.FrustratedRoar"),
-    part('blood_antlionguard_injured_light'),
-    part('blood_antlionguard_injured_heavy'),
-    # TODO: Episodic only.
-    sound("NPC_AntlionGuard.NearStepLight"),
-    sound("NPC_AntlionGuard.NearStepHeavy"),
-    sound("NPC_AntlionGuard.FarStepLight"),
-    sound("NPC_AntlionGuard.FarStepHeavy"),
-    sound("NPC_AntlionGuard.BreatheLoop"),
-    sound("NPC_AntlionGuard.ShellCrack"),
-    sound("NPC_AntlionGuard.Pain_Roar"),
-    mat("materials/sprites/grubflare1.vmt"),
-    )
 
 
 @cls_func
@@ -178,40 +118,6 @@ def npc_arbeit_turret_floor(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file('models/props/turret_01.mdl', FileType.MODEL)
 
-res('npc_arbeit_turret_floor',
-    sound('NPC_ArbeitTurret.DryFire'),
-    includes='npc_turret_floor',
-    )
-
-res('npc_badcop', mdl('models/bad_cop.mdl'), includes='npc_clonecop', func=base_npc)
-res('npc_barnacle',
-    *BASE_NPC,
-    mdl('models/barnacle.mdl'),
-    mdl("models/gibs/hgibs.mdl"),
-    mdl("models/gibs/hgibs_scapula.mdl"),
-    mdl("models/gibs/hgibs_rib.mdl"),
-    mdl("models/gibs/hgibs_spine.mdl"),
-    sound("NPC_Barnacle.Digest"),
-    sound("NPC_Barnacle.BreakNeck"),
-    sound("NPC_Barnacle.Scream"),
-    sound("NPC_Barnacle.PullPant"),
-    sound("NPC_Barnacle.TongueStretch"),
-    sound("NPC_Barnacle.FinalBite"),
-    sound("NPC_Barnacle.Die"),
-    includes='npc_barnacle_tongue_tip',
-    func=base_npc,
-    )
-res('npc_barney',
-    *BASE_NPC,
-    mdl("models/barney.mdl"),
-    sound("NPC_Barney.FootstepLeft"),
-    sound("NPC_Barney.FootstepRight"),
-    sound("NPC_Barney.Die"),
-    choreo("scenes/Expressions/BarneyIdle.vcd"),
-    choreo("scenes/Expressions/BarneyAlert.vcd"),
-    choreo("scenes/Expressions/BarneyCombat.vcd"),
-    func=base_npc,
-    )
 
 @cls_func
 def npc_bullsquid(pack: PackList, ent: Entity) -> None:
@@ -235,41 +141,7 @@ def npc_bullsquid(pack: PackList, ent: Entity) -> None:
         pack.pack_particle('blood_impact_yellow_01')
 
 
-res('npc_bullsquid',  # This is the EZ2/HLS variant, TODO: resources for Black mesa version?
-    *BASE_NPC,
-    mat('materials/sprites/greenspit1.vmt'),
-    part('bullsquid_explode'),
-    sound('NPC_Bullsquid.Idle'),
-    sound('NPC_Bullsquid.Pain'),
-    sound('NPC_Bullsquid.Alert'),
-    sound('NPC_Bullsquid.Death'),
-    sound('NPC_Bullsquid.Attack1'),
-    sound('NPC_Bullsquid.FoundEnemy'),
-    sound('NPC_Bullsquid.Growl'),
-    sound('NPC_Bullsquid.TailWhi'),
-    sound('NPC_Bullsquid.Bite'),
-    sound('NPC_Bullsquid.Eat'),
-    sound('NPC_Babysquid.Idle'),
-    sound('NPC_Babysquid.Pain'),
-    sound('NPC_Babysquid.Alert'),
-    sound('NPC_Babysquid.Death'),
-    sound('NPC_Babysquid.Attack1'),
-    sound('NPC_Babysquid.FoundEnemy'),
-    sound('NPC_Babysquid.Growl'),
-    sound('NPC_Babysquid.TailWhip'),
-    sound('NPC_Babysquid.Bite'),
-    sound('NPC_Babysquid.Eat'),
-    sound('NPC_Antlion.PoisonShoot'),
-    sound('NPC_Antlion.PoisonBall'),
-    sound('NPC_Bullsquid.Explode'),
-    # The bullsquid might spawn an npc_egg, which then spawns bullsquid...
-    sound('npc_bullsquid.egg_alert'),
-    sound('npc_bullsquid.egg_hatch'),
-    part('bullsquid_egg_hatch'),
-    includes='grenade_spit',
-    )
 res('npc_cscanner',
-    *BASE_NPC,
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
     # In episodic, npc_clawscanner is now available to force that specifically.
     # TODO: Check the BSP name, pack shield in that case.
@@ -357,23 +229,6 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
     for head in CIT_HEADS:
         pack.pack_file(f'models/humans/{folder}/{head}', FileType.MODEL)
 
-res('npc_citizen',
-    *BASE_NPC,
-    sound("NPC_Citizen.FootstepLeft"),
-    sound("NPC_Citizen.FootstepRight"),
-    sound("NPC_Citizen.Die"),
-    )
-
-res('npc_clonecop',
-    *BASE_NPC,
-    mdl('models/clone_cop.mdl'),
-    part('blood_spurt_synth_01'),
-    part('blood_drip_synth_01'),
-    part('blood_impact_blue_01'),  # Radiation/temporal only, but not really important.
-    includes='item_ammo_ar2_altfire',
-    func=base_npc,
-    )
-
 
 @cls_func
 def npc_combinedropship(pack: PackList, ent: Entity) -> None:
@@ -405,7 +260,6 @@ def npc_combinegunship(pack: PackList, ent: Entity) -> None:
 
 
 res('npc_combine_cannon',
-    *BASE_NPC,
     mdl('models/combine_soldier.mdl'),
     mat('materials/effects/bluelaser1.vmt'),
     mat('materials/sprites/light_glow03.vmt'),
@@ -414,7 +268,6 @@ res('npc_combine_cannon',
     )
 res('npc_combine_s', *BASE_COMBINE)
 res('npc_clawscanner',
-    *BASE_NPC,
     mdl("models/shield_scanner.mdl"),
     mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
     mdl("models/gibs/Shield_Scanner_Gib2.mdl"),
@@ -440,18 +293,12 @@ res('npc_clawscanner',
     func=base_npc,
     )
 
+
 @cls_func
 def npc_egg(pack: PackList, ent: Entity) -> None:
     """These are EZ2 bullsquid eggs, which spawn a specific EZ variant."""
     pack_ent_class(pack, 'npc_bullsquid', ezvariant=ent['ezvariant'])
 
-res('npc_egg',
-    *BASE_NPC,
-    mdl('models/eggs/bullsquid_egg.mdl'),
-    sound('npc_bullsquid.egg_alert'),
-    sound('npc_bullsquid.egg_hatch'),
-    part('bullsquid_egg_hatch'),
-    )
 res('npc_grenade_bugbait',
     mdl("models/weapons/w_bugbait.mdl"),
     sound("GrenadeBugBait.Splat"),
@@ -459,6 +306,7 @@ res('npc_grenade_bugbait',
     )
 
 res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
+
 
 @cls_func
 def npc_maker(pack: PackList, ent: Entity) -> None:
@@ -480,7 +328,7 @@ def npc_metropolice(pack: PackList, ent: Entity) -> None:
         pack.pack_file("models/police.mdl", FileType.MODEL)
 
 res('npc_metropolice',
-    *BASE_NPC, *BASE_COMBINE,
+    *BASE_COMBINE,
     sound("NPC_Metropolice.Shove"),
     sound("NPC_MetroPolice.WaterSpeech"),
     sound("NPC_MetroPolice.HidingSpeech"),
@@ -488,94 +336,6 @@ res('npc_metropolice',
     # Entity precaches npc_handgrenade, but they actually spawn these.
     includes='npc_grenade_frag npc_manhack',
 )
-
-res('npc_rocket_turret',
-    *BASE_NPC,
-    mat('materials/effects/bluelaser1.vmt'),
-    mat('materials/sprites/light_glow03.vmt'),
-    mdl('models/props_bts/rocket_sentry.mdl'),
-    sound('NPC_RocketTurret.LockingBeep'),
-    sound('NPC_FloorTurret.LockedBeep'),
-    sound('NPC_FloorTurret.RocketFire'),
-    includes='rocket_turret_projectile',
-    func=base_npc,
-    )
-
-
-@cls_func
-def npc_stalker(pack: PackList, ent: Entity) -> None:
-    """Mapbase optionally allows blood particles."""
-    base_npc(pack, ent)
-    if conv_bool(ent['bleed']):  # Mapbase
-        pack.pack_particle('blood_impact_synth_01')
-
-res('npc_template_maker')  # This specially precaches, but the ent must exist in the map already.
-res('npc_turret_ceiling',
-    *BASE_NPC,
-    mdl('models/combine_turrets/ceiling_turret.mdl'),
-    mat('materials/sprites/glow1.vmt'),
-    sound('NPC_CeilingTurret.Active'),
-    sound('NPC_CeilingTurret.Alert'),
-    sound('NPC_CeilingTurret.Deploy'),
-    sound('NPC_CeilingTurret.Die'),
-    sound('NPC_CeilingTurret.Move'),
-    sound('NPC_CeilingTurret.Ping'),
-    sound('NPC_CeilingTurret.Retire'),
-    sound('NPC_CeilingTurret.ShotSounds'),
-    sound('NPC_FloorTurret.DryFire'),
-    func=base_npc,
-    )
-
-res('npc_turret_ground',
-    *BASE_NPC,
-    mdl('models/combine_turrets/ground_turret.mdl'),
-    mat('materials/effects/bluelaser2.vmt'),
-    sound('NPC_CeilingTurret.Deploy'),
-    sound('NPC_FloorTurret.ShotSounds'),
-    sound('NPC_FloorTurret.Die'),
-    sound('NPC_FloorTurret.Ping'),
-    sound('DoSpark'),
-    func=base_npc,
-    )
-
-res('npc_turret_floor',
-    *BASE_NPC,
-    mdl('models/combine_turrets/floor_turret.mdl'),
-    mdl('models/combine_turrets/citizen_turret.mdl'),
-    mat('materials/effects/laser1.vmt'),  # Citizen only
-    sound('NPC_FloorTurret.AlarmPing'),  # Citizen only
-    sound('NPC_Combine.WeaponBash'),
-    sound('NPC_FloorTurret.Activate'),
-    sound('NPC_FloorTurret.Alarm'),
-    sound('NPC_FloorTurret.Alert'),
-    sound('NPC_FloorTurret.Deploy'),
-    sound('NPC_FloorTurret.Destruct'),
-    sound('NPC_FloorTurret.Die'),
-    sound('NPC_FloorTurret.DryFire'),
-    sound('NPC_FloorTurret.Move'),
-    sound('NPC_FloorTurret.Ping'),
-    sound('NPC_FloorTurret.Retire'),
-    sound('NPC_FloorTurret.Retract'),
-    sound('NPC_FloorTurret.ShotSounds'),
-    part('explosion_turret_break'),
-    func=base_npc,
-    )
-
-res('npc_turret_lab',
-    *BASE_NPC,
-    mdl('models/props_lab/labturret_npc.mdl'),
-    mat('materials/sprites/glow1.vmt'),
-    sound('NPC_LabTurret.Retire'),
-    sound('NPC_LabTurret.Deploy'),
-    sound('NPC_LabTurret.Move'),
-    sound('NPC_LabTurret.Active'),
-    sound('NPC_LabTurret.Alert'),
-    sound('NPC_LabTurret.ShotSounds'),
-    sound('NPC_LabTurret.Ping'),
-    sound('NPC_LabTurret.Die'),
-    sound('NPC_FloorTurret.DryFire'),
-    func=base_npc,
-    )
 
 
 @cls_func
@@ -595,8 +355,8 @@ def npc_zassassin(pack: PackList, ent: Entity) -> None:
         else:
             pack.pack_file('models/gonome.mdl', FileType.MODEL)
 
+
 res('npc_zassassin',
-    *BASE_NPC,
     sound('Gonome.Idle'),
     sound('Gonome.Pain'),
     sound('Gonome.Alert'),
@@ -622,7 +382,6 @@ res('npc_zassassin',
     )
 
 res('npc_zombie',
-    *BASE_NPC,
     mdl("models/zombie/classic.mdl"),
     mdl("models/zombie/classic_torso.mdl"),
     mdl("models/zombie/classic_legs.mdl"),
@@ -647,7 +406,6 @@ res('npc_zombie',
 # Actually an alias, but we don't want to swap these.
 res('npc_zombie_torso', includes='npc_zombie', func=base_npc)
 res('npc_zombine',
-    *BASE_NPC,
     mdl("models/zombie/zombie_soldier.mdl"),
     sound("Zombie.FootstepRight"),
     sound("Zombie.FootstepLeft"),

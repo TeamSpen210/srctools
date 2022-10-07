@@ -57,7 +57,6 @@ def env_headcrabcanister(pack: PackList, ent: Entity) -> None:
     else:
         pack_ent_class(pack, headcrab)
 
-res('env_quadratic_beam')
 
 @cls_func
 def env_shooter(pack: PackList, ent: Entity) -> None:
