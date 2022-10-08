@@ -431,7 +431,7 @@ class Resource:
     """
     filename: str
     type: FileType
-    tags: FrozenSet[str]
+    tags: FrozenSet[str] = attrs.Factory(frozenset)
 
 
 class Helper:
@@ -1568,8 +1568,9 @@ class FGD:
         # We need to do a topological sort effectively, to ensure we do
         # parents before children.
         for ent in self.sorted_ents():
-            base_kv = []
-            keyvalue_names = set(ent.kv_order)
+            base_kv: List[str] = []
+            keyvalue_names: Set[str] = set(ent.kv_order)
+            parent_resources: List[Resource] = []
 
             for base in ent.bases:
                 if isinstance(base, str):
