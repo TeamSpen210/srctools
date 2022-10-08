@@ -168,6 +168,9 @@ EZ_VARIANT_ARBEIT: Final = 4
 EZ_VARIANT_BLOOD: Final = 5
 
 
+# TODO: We need to parse vehicle scripts.
+
+
 # In alphabetical order:
 
 res('base_boss')
@@ -275,7 +278,7 @@ def vgui_movie_display(pack: PackList, ent: Entity) -> None:
 
 
 from srctools._class_resources import (
-    asw_, env_, func_, item_, npcs, props, triggers, weapons,
+    asw_, env_, func_, item_, npcs, triggers, weapons,
 )
 
 
