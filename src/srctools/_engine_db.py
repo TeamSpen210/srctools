@@ -143,6 +143,7 @@ class BinStrDict:
 
     Each unique string is assigned a 2-byte index into the list.
     """
+    SEP = '\x1F'  # UNIT SEPARATOR
 
     def __init__(self) -> None:
         self._dict: Dict[str, int] = {}
@@ -169,26 +170,23 @@ class BinStrDict:
         """Convert this to a stream of bytes."""
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
+            assert self.SEP not in txt, repr(txt)
             inv_list[ind] = txt
 
-        file.write(_fmt_32bit.pack(len(inv_list)))
-        for txt in inv_list:
-            encoded = txt.encode('utf8')
-            file.write(_fmt_16bit.pack(len(encoded)))
-            file.write(encoded)
+        # Write it as one massive chunk.
+        data = self.SEP.join(inv_list).encode('utf8')
+        file.write(_fmt_32bit.pack(len(data)))
+        file.write(data)
 
-    @staticmethod
-    def unserialise(file: IO[bytes]) -> Callable[[], str]:
+    @classmethod
+    def unserialise(cls, file: IO[bytes]) -> Callable[[], str]:
         """Read the dictionary from a file.
 
         This returns a function which reads
         a string from a file at the current point.
         """
         [length] = _fmt_32bit.unpack(file.read(4))
-        inv_list = [''] * length
-        for ind in range(length):
-            [str_len] = _fmt_16bit.unpack(file.read(2))
-            inv_list[ind] = file.read(str_len).decode('utf8')
+        inv_list = file.read(length).decode('utf8').split(cls.SEP)
 
         def lookup() -> str:
             """Read the index from the file, and return the string it matches."""
