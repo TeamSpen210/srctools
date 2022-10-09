@@ -16,7 +16,6 @@ import operator
 import sys
 
 import attrs
-from typing_extensions import Literal
 
 from srctools.filesys import File, FileSystem
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
@@ -197,13 +196,18 @@ RESTYPE_BY_NAME = {
 
 class EntityTypes(Enum):
     """The kind of entity each definition is."""
-    BASE = 'baseclass'  # Not an entity, others inherit from this.
-    POINT = 'pointclass'  # Point entity
-    BRUSH = 'solidclass'  # Brush entity. Can't have 'model'
-    ROPES = 'keyframeclass'  # Used for move_rope etc
-    TRACK = 'moveclass'  # Used for path_track etc
-    FILTER = 'filterclass'  # Used for filters
-    NPC = 'npcclass'  # An NPC
+    BASE = 'baseclass'  #: Not an entity, others inherit from this.
+    POINT = 'pointclass'  #: Point entity
+    BRUSH = 'solidclass'  #: Brush entity. Can't have a ``model`` keyvalue.
+    ROPES = 'keyframeclass'  #: Used for ``move_rope`` etc
+    TRACK = 'moveclass'  #: Used for ``path_track`` etc
+    FILTER = 'filterclass'  #: Used for filters.
+    NPC = 'npcclass'  #: An NPC.
+
+    @property
+    def is_point(self) -> bool:
+        """Return whether this is a point entity."""
+        return self.value not in ['baseclass', 'solidclass']
 
 
 class HelperTypes(Enum):
@@ -215,26 +219,26 @@ class HelperTypes(Enum):
     HALF_GRID_SNAP = 'halfgridsnap'
 
     # Simple helpers
-    CUBE = 'size'  # Sets size of purple cube
-    BBOX = 'bbox'  # Sets bounding box of entity
+    CUBE = 'size'  #: Sets size of purple cube
+    BBOX = 'bbox'  #: Sets bounding box of entity
     TINT = 'color'
     SPHERE = 'sphere'
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
-    ORIGIN = 'origin'  # Adds circle at an absolute position.
-    VECLINE = 'vecline'  # Draws line to an absolute position.
-    BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
-    BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
-    # Draws the movement of a player-sized bounding box from A to B.
+    ORIGIN = 'origin'  #: Adds circle at an absolute position.
+    VECLINE = 'vecline'  #: Draws line to an absolute position.
+    BRUSH_SIDES = 'sidelist'  #: Highlights brush faces.
+    BOUNDING_BOX_HELPER = 'wirebox'  #: Displays bounding box from two keyvalues
+    #: Draws the movement of a player-sized bounding box from A to B.
     SWEPT_HULL = 'sweptplayerhull'
-    ORIENTED_BBOX = 'obb'  # Bounding box oriented to angles.
+    ORIENTED_BBOX = 'obb'  #: Bounding box oriented to angles.
 
     # Complex helpers using resources
     SPRITE = 'iconsprite'
     MODEL = 'studio'
     MODEL_PROP = 'studioprop'
-    MODEL_NEG_PITCH = 'lightprop'  # Uses separate pitch keyvalue
+    MODEL_NEG_PITCH = 'lightprop'  #: Uses separate pitch keyvalue
 
     # Specialty for certain ents
     ENT_SPRITE = 'sprite'
@@ -246,19 +250,20 @@ class HelperTypes(Enum):
     ENT_LIGHT_CONE = 'lightcone'
     ENT_ROPE = 'keyframe'
     ENT_TRACK = 'animator'
-    ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
-    ENT_WORLDTEXT = 'worldtext'  # Renders 3D text in-world.
-    ENT_CATAPULT = 'catapult'  # Renders trigger_catpault trajectors prediction
+    ENT_BREAKABLE_SURF = 'quadbounds'  #: Sets the 4 corners on save
+    ENT_WORLDTEXT = 'worldtext'  #: Renders 3D text in-world.
+    ENT_CATAPULT = 'catapult'  #: Renders trigger_catpault trajectors prediction
 
-    ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  # New helper added in Black Mesa
+    ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  #: New helper added in Black Mesa.
 
     # Format extensions.
 
-    # Indicates this entity is only available in the given games.
+    #: Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
-    EXT_ORDERBY = 'orderby'  # Reorder keyvalues. Args = names in order.
-    # Convenience only used in parsing, adds @AutoVisgroup parents for the
-    # current entity. 'Auto' is implied at the start.
+    EXT_ORDERBY = 'orderby'  #: Reorder keyvalues. Args = names in order.
+
+    #: Convenience only used in parsing, adds @AutoVisgroup parents for the
+    #: current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
 
     # Additionally, aliasof(base) is used to indicate this is an alternate classname for a
