@@ -5,7 +5,7 @@ The dump does not contain help descriptions to keep the data small.
 """
 from enum import IntFlag
 
-from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, Union
+from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional
 from typing_extensions import Final
 from struct import Struct
 import io
@@ -29,6 +29,7 @@ _fmt_ent_header = Struct('<BBBBBBB')
 
 # Version number for the format.
 BIN_FORMAT_VERSION: Final = 6
+TAG_EMPTY: Final = frozenset()  # This is a singleton.
 
 
 class EntFlags(IntFlag):
@@ -175,6 +176,8 @@ class BinStrDict:
 
         # Write it as one massive chunk.
         data = self.SEP.join(inv_list).encode('utf8')
+        print(f'Dict count: {len(self._dict):,} = {len(self._dict) / (1 << 16):%}')
+        print(f'Dict size: {len(data):,} bytes = {len(data) / (1 << 32):%}')
         file.write(_fmt_32bit.pack(len(data)))
         file.write(data)
 
@@ -292,14 +295,17 @@ def kv_unserialise(
         else:
             val_list = None
 
-    return KeyValues(
-        name=name,
-        type=value_type,
-        disp_name=disp_name,
-        default=default,
-        val_list=val_list,  # type: ignore
-        readonly=readonly,
-    )
+    # Bypass __init__, to speed up - we have a lot of these.
+    kv = KeyValues.__new__(KeyValues)
+    kv.name = name
+    kv.type = value_type
+    kv.disp_name = disp_name
+    kv.default = default
+    kv.desc = ''
+    kv.val_list = val_list
+    kv.readonly = readonly
+    kv.reportable = False
+    return kv
 
 
 def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrDict) -> None:
@@ -313,9 +319,13 @@ def iodef_unserialise(
     from_dict: Callable[[], str],
 ) -> IODef:
     """Recover an IODef from a binary file."""
-    name = from_dict()
+    # Bypass __init__, to speed up - we have a lot of these.
+    iodef = IODef.__new__(IODef)
+    iodef.name = from_dict()
     [value_type] = file.read(1)
-    return IODef(name, VALUE_TYPE_ORDER[value_type])
+    iodef.type = VALUE_TYPE_ORDER[value_type]
+    iodef.desc = ''
+    return iodef
 
 
 def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> None:
@@ -344,7 +354,7 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
             file.write(str_dict(base_ent.classname))
 
     for obj_type in self._iter_attrs():
-        for tag_map in obj_type.values():
+        for name, tag_map in obj_type.items():
             # We don't need to write the name, since that's stored
             # also in the kv/io object itself.
 
@@ -352,26 +362,16 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
                 # No need to add this one.
                 continue
 
-            # Special case - if there is one blank tag, write len=0
-            # and just the value.
-            # That saves 2 bytes.
+            # We only support untagged things.
             if len(tag_map) == 1:
                 [(tags, value)] = tag_map.items()
                 if not tags:
-                    file.write(_fmt_8bit.pack(0))
                     if isinstance(value, KeyValues):
                         kv_serialise(value, file, str_dict)
                     else:
                         iodef_serialise(value, file, str_dict)
                     continue
-
-            file.write(_fmt_8bit.pack(len(tag_map)))
-            for tags, value in tag_map.items():
-                BinStrDict.write_tags(file, str_dict, tags)
-                if isinstance(value, KeyValues):
-                    kv_serialise(value, file, str_dict)
-                else:
-                    iodef_serialise(value, file, str_dict)
+            raise ValueError(f'{self.classname}.{name} has tags: {list(tag_map)}')
 
     # Helpers are not added.
 
@@ -407,29 +407,16 @@ def ent_unserialise(
         # We temporarily store strings, then evaluate later on.
         ent.bases.append(from_dict())
 
-    count: int
-    val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
-    unserialise_func: Callable[[IO[bytes], Callable[[], str]], Union[KeyValues, IODef]]
-    for count, val_map, unserialise_func in [  # type: ignore
-        (kv_count, ent.keyvalues, kv_unserialise),
-        (inp_count, ent.inputs, iodef_unserialise),
-        (out_count, ent.outputs, iodef_unserialise),
-    ]:
-        for _ in range(count):
-            [tag_count] = file.read(1)
-            if tag_count == 0:
-                # Special case, a single untagged item.
-                obj = unserialise_func(file, from_dict)
-                val_map[obj.name] = {frozenset(): obj}
-            else:
-                # We know it's starting empty, and must have at least one tag.
-                tag = BinStrDict.read_tags(file, from_dict)
-                obj = unserialise_func(file, from_dict)
-                tag_map = val_map[obj.name] = {tag: obj}
-                for _ in range(tag_count - 1):
-                    tag = BinStrDict.read_tags(file, from_dict)
-                    obj = unserialise_func(file, from_dict)
-                    tag_map[tag] = obj
+    for _ in range(kv_count):
+        kv = kv_unserialise(file, from_dict)
+        ent.keyvalues[kv.name] = {TAG_EMPTY: kv}
+    for _ in range(inp_count):
+        iodef = iodef_unserialise(file, from_dict)
+        ent.inputs[iodef.name] = {TAG_EMPTY: iodef}
+    for _ in range(out_count):
+        iodef = iodef_unserialise(file, from_dict)
+        ent.outputs[iodef.name] = {TAG_EMPTY: iodef}
+
     if res_count:
         resources: list[Resource] = []
         for _ in range(res_count):
@@ -470,7 +457,6 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     # one after each other.
     dictionary.serialise(file)
     file.write(ent_data.getvalue())
-    # print('Dict size: ', format(dictionary.cur_index / (1 << 16), '%'))
 
 
 def unserialise(file: IO[bytes]) -> FGD:
