@@ -161,6 +161,7 @@ def pack_button_sound(pack: PackList, index: Union[int, str]) -> None:
 
 
 # Entropy Zero 2 variant constants.
+EZ_VARIANT_DEFAULT: Final = 0
 EZ_VARIANT_XEN: Final = 1
 EZ_VARIANT_RAD: Final = 2
 EZ_VARIANT_TEMPORAL: Final = 3
@@ -181,11 +182,6 @@ def color_correction(pack: PackList, ent: Entity) -> None:
     """Pack the color correction file."""
     pack.pack_file(ent['filename'])
 
-
-@cls_func
-def color_correction_volume(pack: PackList, ent: Entity) -> None:
-    """Pack the color correction file for this too."""
-    pack.pack_file(ent['filename'])
 
 res('cycler')
 res('cycler_actor')
@@ -209,18 +205,6 @@ res('grenade_homer',
 res('grenade_pathfollower',
     sound('GrenadePathfollower.StopSounds'),
     includes='grenade',
-    )
-
-
-@cls_func
-def logic_playmovie(pack: PackList, ent: Entity) -> None:
-    """Mark the BIK movie as being used, though it can't be packed."""
-    pack.pack_file('media/' + ent['MovieFilename'])
-
-res('mortarshell',
-    mat('materials/sprites/physbeam.vmt'),
-    mat('materials/effects/ar2ground2.vmt'),
-    sound('Weapon_Mortar.Impact'),
     )
 
 
@@ -271,14 +255,8 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
             pack.pack_file(f'materials/{icon}_locked.vmt', FileType.MATERIAL)
 
 
-@cls_func
-def vgui_movie_display(pack: PackList, ent: Entity) -> None:
-    """Mark the BIK movie as being used, though it can't be packed."""
-    pack.pack_file(ent['MovieFilename'])
-
-
 from srctools._class_resources import (
-    asw_, env_, func_, item_, npcs, triggers, weapons,
+    asw_, env_, func_, item_, npcs, weapons,
 )
 
 

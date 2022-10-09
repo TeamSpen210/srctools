@@ -79,9 +79,6 @@ def env_shooter(pack: PackList, ent: Entity) -> None:
     else:
         pack.pack_file(ent['shootmodel'], FileType.MODEL)
 
-# Does the same.
-res('env_rotorshooter', func=env_shooter)
-
 
 @cls_func
 def env_smokestack(pack: PackList, ent: Entity) -> None:
@@ -97,7 +94,7 @@ def env_smokestack(pack: PackList, ent: Entity) -> None:
 
     pack.pack_file(mat_base + '.vmt', FileType.MATERIAL)
     for i in itertools.count(1):
-        fname = '{}{}.vmt'.format(mat_base, i)
+        fname = f'{mat_base}{i}.vmt'
         if fname in pack.fsys:
             pack.pack_file(fname)
         else:

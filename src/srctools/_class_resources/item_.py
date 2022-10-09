@@ -80,3 +80,31 @@ def item_teamflag(pack: PackList, ent: Entity) -> None:
             pack.pack_file(value + '.vmt', FileType.MATERIAL)
             pack.pack_file(value + '_red.vmt', FileType.MATERIAL)
             pack.pack_file(value + '_blue.vmt', FileType.MATERIAL)
+
+
+ez_health_folders = [
+    # model folder, skin, sound folder
+    ('', 0, ''),  # Normal
+    ('xen/', 0, '_Xen'),
+    ('arbeit/', 1, '_Rad'),
+    ('temporal/', 0, '_Temporal'),
+    ('arbeit/', 0, '_Arbeit'),
+]
+
+
+def item_healthkit(pack: PackList, ent: Entity, kind: str='kit') -> None:
+    """Healthkits have multiple variants in EZ2."""
+    if 'ezvariant' not in ent:
+        return
+    variant = conv_int(ent['ezvariant'])
+    if variant == EZ_VARIANT_BLOOD:  # Causes a segfault.
+        ent['ezvariant'] = variant = EZ_VARIANT_DEFAULT
+    model, skin, snd = ez_health_folders[variant]
+
+    pack.pack_file(f'models/items/{model}health{kind}.mdl', FileType.MODEL, skinset={skin})
+    pack.pack_soundscript(f'Health{kind.title()}{snd}.Touch')
+
+
+def item_healthvial(pack: PackList, ent: Entity) -> None:
+    """Health vials also have multiple variants in EZ2."""
+    item_healthkit(pack, ent, 'vial')

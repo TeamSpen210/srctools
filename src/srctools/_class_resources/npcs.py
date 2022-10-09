@@ -312,7 +312,8 @@ res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
 def npc_maker(pack: PackList, ent: Entity) -> None:
     """We spawn the NPC automatically."""
     try:
-        pack_ent_class(pack, ent['npctype'])
+        # Pass this along, it should then pack that too.
+        pack_ent_class(pack, ent['npctype'], additionalequipment=ent['additionalequipment'])
     except ValueError:
         # Dependent on keyvalues.
         pass
