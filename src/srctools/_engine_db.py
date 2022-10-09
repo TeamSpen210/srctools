@@ -3,14 +3,16 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
+from enum import IntFlag
+
 from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, Union
 from typing_extensions import Final
 from struct import Struct
 import io
 import math
 
-from .binformat import struct_read
-from .fgd import FGD, EntityDef, EntityTypes, IODef, KeyValues, ValueTypes
+from .const import FileType
+from .fgd import FGD, EntityDef, EntityTypes, IODef, KeyValues, Resource, ValueTypes
 
 
 __all__ = [
@@ -22,11 +24,27 @@ _fmt_16bit: Final = Struct('>H')
 _fmt_32bit: Final = Struct('>I')
 _fmt_double = Struct('>d')
 _fmt_header = Struct('>BddI')
-_fmt_ent_header = Struct('<BBBBBB')
+_fmt_ent_header = Struct('<BBBBBBB')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION: Final = 5
+BIN_FORMAT_VERSION: Final = 6
+
+
+class EntFlags(IntFlag):
+    """Bit layout for the entity definition."""
+    # First 3 bits are the entity types.
+    TYPE_BASE = 0b000
+    TYPE_POINT = 0b001
+    TYPE_BRUSH = 0b010
+    TYPE_ROPES = 0b011
+    TYPE_TRACK = 0b100
+    TYPE_FILTER = 0b101
+    TYPE_NPC = 0b110
+
+    MASK_TYPE = 0b111
+
+    IS_ALIAS = 0b1000
 
 
 # Ordered list of value types, for encoding in the binary
@@ -83,28 +101,41 @@ VALUE_TYPE_ORDER = [
     ValueTypes.EXT_VEC_LOCAL,
 ]
 
-# Ditto for entity types.
-ENTITY_TYPE_ORDER = [
-    EntityTypes.BASE,
-    EntityTypes.POINT,
-    EntityTypes.BRUSH,
-    EntityTypes.ROPES,
-    EntityTypes.TRACK,
-    EntityTypes.FILTER,
-    EntityTypes.NPC,
+FILE_TYPE_ORDER = [
+    FileType.GENERIC,
+    FileType.SOUNDSCRIPT,
+    FileType.GAME_SOUND,
+    FileType.PARTICLE,
+    FileType.PARTICLE_FILE,
+    FileType.VSCRIPT_SQUIRREL,
+    FileType.ENTITY,
+    FileType.ENTCLASS_FUNC,
+    FileType.MATERIAL,
+    FileType.TEXTURE,
+    FileType.CHOREO,
+    FileType.MODEL,
 ]
+
+# Entity types -> bits used
+ENTITY_TYPE_2_FLAG: Dict[EntityTypes, EntFlags] = {
+    kind: EntFlags['TYPE_' + kind.name]
+    for kind in EntityTypes
+}
 
 assert set(VALUE_TYPE_ORDER) == set(ValueTypes), \
     "Missing values: " + repr(set(ValueTypes) - set(VALUE_TYPE_ORDER))
-assert set(ENTITY_TYPE_ORDER) == set(EntityTypes), \
-    "Missing values: " + repr(set(EntityTypes) - set(ENTITY_TYPE_ORDER))
+assert set(ENTITY_TYPE_2_FLAG) == set(EntityTypes), \
+    "Missing entity types: " + repr(set(EntityTypes) - set(ENTITY_TYPE_2_FLAG))
+assert set(FILE_TYPE_ORDER) == set(FileType), \
+    "Missing file types: " + repr(set(EntityTypes) - set(FILE_TYPE_ORDER))
 
 # Can only store this many in the bytes.
 assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
-assert len(ENTITY_TYPE_ORDER) < 255, "Too many entity types."
+assert len(FILE_TYPE_ORDER) < 127, "Too many file types."
 
 VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
-ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
+FILE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(FILE_TYPE_ORDER)}
+ENTITY_FLAG_2_TYPE = {flag: kind for (kind, flag) in ENTITY_TYPE_2_FLAG.items()}
 
 
 class BinStrDict:
@@ -153,7 +184,7 @@ class BinStrDict:
         This returns a function which reads
         a string from a file at the current point.
         """
-        [length] = struct_read(_fmt_32bit, file)
+        [length] = _fmt_32bit.unpack(file.read(4))
         inv_list = [''] * length
         for ind in range(length):
             [str_len] = _fmt_16bit.unpack(file.read(2))
@@ -232,7 +263,7 @@ def kv_unserialise(
     """Recover a KeyValue from a binary file."""
     name = from_dict()
     disp_name = from_dict()
-    [value_ind] = struct_read(_fmt_8bit, file)
+    [value_ind] = file.read(1)
     readonly = value_ind & 128
     value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
@@ -240,24 +271,24 @@ def kv_unserialise(
 
     if value_type is ValueTypes.SPAWNFLAGS:
         default = ''  # No default for this type.
-        [val_count] = struct_read(_fmt_8bit, file)
+        [val_count] = file.read(1)
         val_list = []
-        for ind in range(val_count):
+        for _ in range(val_count):
             tags = BinStrDict.read_tags(file, from_dict)
-            [power] = struct_read(_fmt_8bit, file)
+            [power] = file.read(1)
             val_name = from_dict()
             val_list.append((
-                1 << (power & 127),
+                1 << (power & 127),  # All flags are powers of 2.
                 val_name,
-                (power & 128) != 0,
+                (power & 128) != 0,  # Defaults to true/false.
                 tags,
             ))
     else:
         default = from_dict()
         if value_type is ValueTypes.CHOICES:
-            [val_count] = struct_read(_fmt_16bit, file)
+            [val_count] = _fmt_16bit.unpack(file.read(2))
             val_list = []
-            for ind in range(val_count):
+            for _ in range(val_count):
                 tags = BinStrDict.read_tags(file, from_dict)
                 val_list.append((from_dict(), from_dict(), tags))
         else:
@@ -285,18 +316,23 @@ def iodef_unserialise(
 ) -> IODef:
     """Recover an IODef from a binary file."""
     name = from_dict()
-    value_type = VALUE_TYPE_ORDER[struct_read(_fmt_8bit, file)[0]]
-    return IODef(name, value_type)
+    [value_type] = file.read(1)
+    return IODef(name, VALUE_TYPE_ORDER[value_type])
 
 
 def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> None:
     """Write an entity to the binary file."""
+    flags = ENTITY_TYPE_2_FLAG[self.type]
+    if self.is_alias:
+        flags |= EntFlags.IS_ALIAS
+
     file.write(_fmt_ent_header.pack(
-        ENTITY_TYPE_INDEX[self.type],
+        flags.value,
         len(self.bases),
         len(self.keyvalues),
         len(self.inputs),
         len(self.outputs),
+        len(self.resources),
         # Write the classname here, not using BinStrDict.
         # They're going to be unique, so there's no benefit.
         len(self.classname),
@@ -341,6 +377,14 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
 
     # Helpers are not added.
 
+    for res in self.resources:
+        if res.tags:  # Tags are fairly rare.
+            file.write(_fmt_8bit.pack(FILE_TYPE_INDEX[res.type] | 128))
+            str_dict.write_tags(file, str_dict, res.tags)
+        else:
+            file.write(_fmt_8bit.pack(FILE_TYPE_INDEX[res.type]))
+        file.write(str_dict(res.filename))
+
 
 def ent_unserialise(
     file: IO[bytes],
@@ -348,15 +392,16 @@ def ent_unserialise(
 ) -> EntityDef:
     """Read from the binary file."""
     [
-        type_ind,
+        flags,
         base_count,
         kv_count,
         inp_count,
         out_count,
+        res_count,
         clsname_length,
-    ] = struct_read(_fmt_ent_header, file)
+    ] = _fmt_ent_header.unpack(file.read(_fmt_ent_header.size))
 
-    ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
+    ent = EntityDef(ENTITY_FLAG_2_TYPE[flags & EntFlags.MASK_TYPE])
     ent.classname = file.read(clsname_length).decode('utf8')
     ent.desc = ''
 
@@ -373,7 +418,7 @@ def ent_unserialise(
         (out_count, ent.outputs, iodef_unserialise),
     ]:
         for _ in range(count):
-            [tag_count] = struct_read(_fmt_8bit, file)
+            [tag_count] = file.read(1)
             if tag_count == 0:
                 # Special case, a single untagged item.
                 obj = unserialise_func(file, from_dict)
@@ -387,6 +432,18 @@ def ent_unserialise(
                     tag = BinStrDict.read_tags(file, from_dict)
                     obj = unserialise_func(file, from_dict)
                     tag_map[tag] = obj
+    if res_count:
+        resources: list[Resource] = []
+        for _ in range(res_count):
+            [file_ind] = file.read(1)
+            file_type = FILE_TYPE_ORDER[file_ind & 127]
+            if file_ind & 128:  # Has tags.
+                tag = BinStrDict.read_tags(file, from_dict)
+            else:
+                tag = frozenset()
+            resources.append(Resource(from_dict(), file_type, tag))
+        ent.resources = resources
+
     return ent
 
 
@@ -431,7 +488,7 @@ def unserialise(file: IO[bytes]) -> FGD:
         fgd.map_size_min,
         fgd.map_size_max,
         ent_count,
-    ] = struct_read(_fmt_header, file)
+    ] = _fmt_header.unpack(file.read(_fmt_header.size))
 
     if format_version != BIN_FORMAT_VERSION:
         raise TypeError(f'Unknown format version "{format_version}"!')
