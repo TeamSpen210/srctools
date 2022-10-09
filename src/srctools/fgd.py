@@ -1607,8 +1607,13 @@ class FGD:
                             if tag not in ent_tags_map:
                                 ent_tags_map[tag] = io_def.copy()
 
+                parent_resources.extend(base.resources)
+
             ent.kv_order = base_kv + ent.kv_order
             ent.bases.clear()
+            if parent_resources:
+                parent_resources.extend(ent.resources)
+                ent.resources = parent_resources
 
     @overload
     def export(self, file: TextIO) -> None: ...
