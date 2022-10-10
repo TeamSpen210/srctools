@@ -4,7 +4,7 @@ from typing import (
     Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
     overload,
 )
-from collections import defaultdict
+from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
@@ -17,16 +17,17 @@ import sys
 
 import attrs
 
-from srctools.filesys import File, FileSystem
+from srctools.filesys import File, FileSystem, VirtualFileSystem
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
 from srctools.const import FileType
+from srctools.vmf import VMF, Entity
 import srctools
 
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
     'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
-    'match_tags', 'validate_tags', 'Resource',
+    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx',
 
     # From srctools._fgd_helpers
     'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
@@ -46,6 +47,7 @@ __all__ = [
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
+_fake_vmf = VMF(preserve_ids=False)
 
 
 class FGDParseError(TokenSyntaxError):
@@ -435,8 +437,62 @@ class Resource:
     present. Examples: 'episodic' (vs HL2), 'mapbase'.
     """
     filename: str
-    type: FileType
-    tags: FrozenSet[str] = attrs.Factory(frozenset)
+    type: FileType = FileType.GENERIC
+    tags: FrozenSet[str] = frozenset()
+
+
+@attrs.frozen(init=False)
+class ResourceCtx:
+    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
+    tags: FrozenSet[str]
+    fsys: FileSystem
+    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
+    mapname: str
+    get_entdef: Callable[[str], 'EntityDef']
+
+    # For use of get_resources() only.
+    _functions: Mapping[str, Callable[
+        ['ResourceCtx', Entity],
+        Iterator[Union[Resource, Entity]]
+    ]]
+
+    def __init__(
+        self,
+        tags: Iterable[str] = (),
+        fsys: FileSystem = VirtualFileSystem({}),
+        fgd: Union['FGD', Mapping[str, 'EntityDef'], Callable[[str], 'EntityDef']] = srctools.EmptyMapping,
+        mapname: str = '',
+        funcs: Mapping[str, Callable[
+            ['srctools.Entity', 'ResourceCtx'],
+            Iterator[Union[Resource, 'srctools.Entity']]
+        ]] = srctools.EmptyMapping,
+    ) -> None:
+        """
+        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
+        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
+        :param tags: Various string tags used to indicate what engine branch is being used. This \
+        allows handling Episodic differences, or enhancements by Mapbase.
+        :param fsys: A :py:class:`~srctools.FileSystem`
+        :param mapname:
+        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
+        accessed, if not present in this
+        """
+        from srctools._class_resources import CLASS_FUNCS
+        if funcs is srctools.EmptyMapping:
+            funcs = CLASS_FUNCS
+        else:
+            funcs = ChainMap(funcs, CLASS_FUNCS)
+
+        # Strip extension, and normalise folder separators.
+        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
+            mapname = mapname[:-4]
+        self.__attrs_init__(
+            frozenset(map(str.upper, tags)),
+            fsys,
+            mapname.replace('\\', '/'),
+            getattr(fgd, '__getitem__', fgd),
+            funcs,
+        )
 
 
 class Helper:
@@ -1316,6 +1372,76 @@ class EntityDef:
             for helper in self.helpers:
                 if helper.TYPE == typ.TYPE:
                     yield helper
+
+    def get_resources(
+        self,
+        ctx: ResourceCtx,
+        *,
+        ent: Optional[Entity],
+    ) -> Iterator[Tuple[FileType, str]]:
+        """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
+
+        :param ent: A specific entity to evaluate against. If not provided, functions will
+        silently be skipped.
+        :param ctx: Common information about the current map and game configuration. This is \
+        passed along to defined entclass functions, and is seperate, so it can be reused for many
+        calls to this function.
+        """
+
+        # We can recurse, use two lists to avoid actual recursive calls.
+        # Also track the checked classes, so we don't repeat ourselves.
+        classes_checked = {self.classname}
+        entities_checked: Set[FrozenSet[Tuple[str, str]]] = set()
+        todo_ents: List[Tuple[EntityDef, Optional[Entity]]] = [(self, ent)]
+        todo_res: List[Resource] = []
+        while todo_ents:
+            (ent_def, ent) = todo_ents.pop()
+            todo_res.extend(ent_def.resources)
+            while todo_res:
+                res = todo_res.pop()
+                if not match_tags(ctx.tags, res.tags):
+                    continue
+                if res.type is FileType.ENTITY:
+                    if res.filename not in classes_checked:
+                        try:
+                            sub_ent = ctx.get_entdef(res.filename)
+                        except LookupError:  # KeyError or IndexError
+                            continue
+                        classes_checked.add(res.filename)
+                        todo_ents.append((sub_ent, None))
+                elif res.type is FileType.ENTCLASS_FUNC:
+                    if ent is None:
+                        ent = _fake_vmf.create_ent(res.filename)
+                    ent_key = frozenset({
+                        (key, value) for key, value in
+                        ent.items()
+                        # Treat entities at different locations as the same.
+                        # Ignore IDs and names (almost always unique)
+                        if key not in {
+                            'origin', 'angles',
+                            'targetname', 'id', 'hammerid', 'nodeid',
+                        }
+                    })
+                    if ent_key in entities_checked:
+                        continue
+                    entities_checked.add(ent_key)
+                    try:
+                        # noinspection PyProtectedMember
+                        func = ctx._functions[res.filename]
+                    except LookupError:
+                        continue
+                    for sub_res in func(ctx, ent):
+                        if isinstance(sub_res, Entity):
+                            try:
+                                sub_ent = ctx.get_entdef(sub_res['classname'])
+                            except LookupError:  # KeyError or IndexError
+                                continue
+                            todo_ents.append((sub_ent, sub_res))
+                            continue
+                        else:
+                            todo_res.append(sub_res)
+                else:
+                    yield (res.type, res.filename)
 
     def _iter_attrs(self) -> Iterator[Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]]:
         """Iterate over both the keyvalues and I/O dicts.

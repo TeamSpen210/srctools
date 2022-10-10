@@ -29,7 +29,7 @@ _fmt_ent_header = Struct('<BBBBBBB')
 
 # Version number for the format.
 BIN_FORMAT_VERSION: Final = 6
-TAG_EMPTY: Final = frozenset()  # This is a singleton.
+TAG_EMPTY: Final[FrozenSet[str]] = frozenset()  # This is a singleton.
 
 
 class EntFlags(IntFlag):
@@ -128,7 +128,7 @@ assert set(VALUE_TYPE_ORDER) == set(ValueTypes), \
 assert set(ENTITY_TYPE_2_FLAG) == set(EntityTypes), \
     "Missing entity types: " + repr(set(EntityTypes) - set(ENTITY_TYPE_2_FLAG))
 assert set(FILE_TYPE_ORDER) == set(FileType), \
-    "Missing file types: " + repr(set(EntityTypes) - set(FILE_TYPE_ORDER))
+    "Missing file types: " + repr(set(FileType) - set(FILE_TYPE_ORDER))
 
 # Can only store this many in the bytes.
 assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
@@ -265,7 +265,7 @@ def kv_unserialise(
     name = from_dict()
     disp_name = from_dict()
     [value_ind] = file.read(1)
-    readonly = value_ind & 128
+    readonly = value_ind & 128 != 0
     value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
     val_list: Optional[List[tuple]]
@@ -302,7 +302,8 @@ def kv_unserialise(
     kv.disp_name = disp_name
     kv.default = default
     kv.desc = ''
-    kv.val_list = val_list
+    # We know this one matches the ent.
+    kv.val_list = val_list  # type: ignore
     kv.readonly = readonly
     kv.reportable = False
     return kv
@@ -418,7 +419,7 @@ def ent_unserialise(
         ent.outputs[iodef.name] = {TAG_EMPTY: iodef}
 
     if res_count:
-        resources: list[Resource] = []
+        resources: List[Resource] = []
         for _ in range(res_count):
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
