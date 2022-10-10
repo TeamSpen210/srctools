@@ -1,8 +1,6 @@
 """asw_ entities."""
 from . import *
 
-res('asw_ammo_railgun', mdl('models/swarm/ammo/ammorailgun.mdl'))  # Commented out
-
 
 @cls_func
 def asw_emitter(pack: PackList, ent: Entity) -> None:
@@ -87,12 +85,3 @@ def asw_spawner(pack: PackList, ent: Entity) -> None:
         pass
     else:
         pack_ent_class(pack, classname)
-
-res('asw_prop_jeep',
-    sound('PropJeep.AmmoClose'),
-    sound('PropJeep.FireCannon'),
-    sound('PropJeep.FireChargedCannon'),
-    sound('PropJeep.AmmoOpen'),
-    sound('Jeep.GaussCharge'),
-    mat('materials/sprites/laserbeam.vmt'),
-    )

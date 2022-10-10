@@ -14,17 +14,6 @@ def base_npc(pack: PackList, ent: Entity) -> None:
         pack_ent_class(pack, equipment)
 
 
-BASE_COMBINE = [
-    mdl('models/Weapons/w_grenade.mdl'),
-    sound('NPC_Combine.GrenadeLaunch'),
-    sound('NPC_Combine.WeaponBash'),
-    sound('Weapon_CombineGuard.Special1'),
-    # TODO: Entropy Zero only.
-    sound('NPC_Combine.Following'),
-    sound('NPC_Combine.StopFollowing'),
-]
-
-
 @cls_func
 def npc_antlion(pack: PackList, ent: Entity) -> None:
     """Antlions require different resources for the worker version."""
@@ -144,7 +133,7 @@ def npc_bullsquid(pack: PackList, ent: Entity) -> None:
 res('npc_cscanner',
     # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
     # In episodic, npc_clawscanner is now available to force that specifically.
-    # TODO: Check the BSP name, pack shield in that case.
+    # TODO: Check the BSP name, pack shield in that case. Put this in BaseScanner?
     mdl("models/combine_scanner.mdl"),
     mdl("models/gibs/scanner_gib01.mdl"),
     mdl("models/gibs/scanner_gib02.mdl"),
@@ -259,14 +248,6 @@ def npc_combinegunship(pack: PackList, ent: Entity) -> None:
         pack.pack_file("models/gunship.mdl", FileType.MODEL)
 
 
-res('npc_combine_cannon',
-    mdl('models/combine_soldier.mdl'),
-    mat('materials/effects/bluelaser1.vmt'),
-    mat('materials/sprites/light_glow03.vmt'),
-    sound('NPC_Combine_Cannon.FireBullet'),
-    func=base_npc,
-    )
-res('npc_combine_s', *BASE_COMBINE)
 res('npc_clawscanner',
     mdl("models/shield_scanner.mdl"),
     mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
@@ -300,9 +281,6 @@ def npc_egg(pack: PackList, ent: Entity) -> None:
     pack_ent_class(pack, 'npc_bullsquid', ezvariant=ent['ezvariant'])
 
 
-res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
-
-
 @cls_func
 def npc_maker(pack: PackList, ent: Entity) -> None:
     """We spawn the NPC automatically."""
@@ -317,27 +295,15 @@ def npc_maker(pack: PackList, ent: Entity) -> None:
 @cls_func
 def npc_metropolice(pack: PackList, ent: Entity) -> None:
     """If a spawnflag is set, a cheap model is used."""
-    base_npc(pack, ent)
     if conv_int(ent['spawnflags']) & 5:
         pack.pack_file("models/police_cheaple.mdl", FileType.MODEL)
     else:
         pack.pack_file("models/police.mdl", FileType.MODEL)
 
-res('npc_metropolice',
-    *BASE_COMBINE,
-    sound("NPC_Metropolice.Shove"),
-    sound("NPC_MetroPolice.WaterSpeech"),
-    sound("NPC_MetroPolice.HidingSpeech"),
-    # TODO: pack.pack_sentence_group("METROPOLICE"),
-    # Entity precaches npc_handgrenade, but they actually spawn these.
-    includes='npc_grenade_frag npc_manhack',
-)
-
 
 @cls_func
 def npc_zassassin(pack: PackList, ent: Entity) -> None:
     """Entropy Zero 2's "Plan B"/Gonome. """
-    base_npc(pack, ent)
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
         pack.pack_file('models/glownome.mdl', FileType.MODEL)
@@ -350,73 +316,3 @@ def npc_zassassin(pack: PackList, ent: Entity) -> None:
             pack.pack_file('models/xonome.mdl', FileType.MODEL)
         else:
             pack.pack_file('models/gonome.mdl', FileType.MODEL)
-
-
-res('npc_zassassin',
-    sound('Gonome.Idle'),
-    sound('Gonome.Pain'),
-    sound('Gonome.Alert'),
-    sound('Gonome.Die'),
-    sound('Gonome.Attack'),
-    sound('Gonome.Bite'),
-    sound('Gonome.Growl'),
-    sound('Gonome.FoundEnem'),
-    sound('Gonome.RetreatMod'),
-    sound('Gonome.BerserkMod'),
-    sound('Gonome.RunFootstepLeft'),
-    sound('Gonome.RunFootstepRight'),
-    sound('Gonome.FootstepLeft'),
-    sound('Gonome.FootstepRight'),
-    sound('Gonome.JumpLand'),
-    sound('Gonome.Eat'),
-    sound('Gonome.BeginSpawnCrab'),
-    sound('Gonome.EndSpawnCrab'),
-    part('glownome_explode'),
-    sound('npc_zassassin.kickburst'),
-    includes='squidspit',
-    aliases='monster_gonome',
-    )
-
-res('npc_zombie',
-    mdl("models/zombie/classic.mdl"),
-    mdl("models/zombie/classic_torso.mdl"),
-    mdl("models/zombie/classic_legs.mdl"),
-    sound("Zombie.FootstepRight"),
-    sound("Zombie.FootstepLeft"),
-    sound("Zombie.FootstepLeft"),
-    sound("Zombie.ScuffRight"),
-    sound("Zombie.ScuffLeft"),
-    sound("Zombie.AttackHit"),
-    sound("Zombie.AttackMiss"),
-    sound("Zombie.Pain"),
-    sound("Zombie.Die"),
-    sound("Zombie.Alert"),
-    sound("Zombie.Idle"),
-    sound("Zombie.Attack"),
-    sound("NPC_BaseZombie.Moan1"),
-    sound("NPC_BaseZombie.Moan2"),
-    sound("NPC_BaseZombie.Moan3"),
-    sound("NPC_BaseZombie.Moan4"),
-    func=base_npc,
-    )
-# Actually an alias, but we don't want to swap these.
-res('npc_zombie_torso', includes='npc_zombie', func=base_npc)
-res('npc_zombine',
-    mdl("models/zombie/zombie_soldier.mdl"),
-    sound("Zombie.FootstepRight"),
-    sound("Zombie.FootstepLeft"),
-    sound("Zombine.ScuffRight"),
-    sound("Zombine.ScuffLeft"),
-    sound("Zombie.AttackHit"),
-    sound("Zombie.AttackMiss"),
-    sound("Zombine.Pain"),
-    sound("Zombine.Die"),
-    sound("Zombine.Alert"),
-    sound("Zombine.Idle"),
-    sound("Zombine.ReadyGrenade"),
-    sound("ATV_engine_null"),
-    sound("Zombine.Charge"),
-    sound("Zombie.Attack"),
-    includes='npc_zombie',
-    func=base_npc,
-    )
