@@ -1408,7 +1408,8 @@ class EntityDef:
                         except LookupError:  # KeyError or IndexError
                             continue
                         classes_checked.add(res.filename)
-                        todo_ents.append((sub_ent, None))
+                        # For entity recursions, we pass the same ent down.
+                        todo_ents.append((sub_ent, ent))
                 elif res.type is FileType.ENTCLASS_FUNC:
                     if ent is None:
                         ent = _fake_vmf.create_ent(res.filename)
