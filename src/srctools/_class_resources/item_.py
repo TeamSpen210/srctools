@@ -3,12 +3,6 @@ from ..packlist import FileType, PackList
 from ..vmf import Entity
 from . import *
 
-res('item_flare_round', mdl('models/items/flare.mdl'))
-res('item_box_flare_rounds', mdl('models/items/boxflare.mdl'))
-
-res('item_rpg_round', aliases='item_ml_grenade')
-res('item_box_sniper_rounds', mdl('models/items/boxsniperrounds.mdl'))
-
 # Mapbase adds additional models here.
 # The second is the mapbase version, the first is Valve's.
 AMMO_BOX_MDLS = [

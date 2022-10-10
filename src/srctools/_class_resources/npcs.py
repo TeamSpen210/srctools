@@ -299,11 +299,6 @@ def npc_egg(pack: PackList, ent: Entity) -> None:
     """These are EZ2 bullsquid eggs, which spawn a specific EZ variant."""
     pack_ent_class(pack, 'npc_bullsquid', ezvariant=ent['ezvariant'])
 
-res('npc_grenade_bugbait',
-    mdl("models/weapons/w_bugbait.mdl"),
-    sound("GrenadeBugBait.Splat"),
-    includes='grenade',
-    )
 
 res('npc_handgrenade', mdl('models/weapons/w_grenade.mdl'))
 

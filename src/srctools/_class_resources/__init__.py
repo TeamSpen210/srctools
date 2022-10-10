@@ -183,29 +183,9 @@ def color_correction(pack: PackList, ent: Entity) -> None:
     pack.pack_file(ent['filename'])
 
 
-res('cycler')
-res('cycler_actor')
 res('cycler_blender')
 res('cycler_flex')
 res('cycler_weapon')
-res('cycler_wreckage')
-
-res('grenade')
-res('grenade_beam',
-    mdl('Models/weapons/flare.mdl'),  # Not visible, but loaded.
-    mat('materials/sprites/laser.vmt'),
-    sound("GrenadeBeam.HitSound"),
-    includes='grenade',
-    )
-res('grenade_beam_chaser')  # The back part of the glow following grenades.
-res('grenade_homer',
-    mat('materials/sprites/lgtning.vmt'),
-    sound('GrenadeHomer.StopSounds'),
-    )
-res('grenade_pathfollower',
-    sound('GrenadePathfollower.StopSounds'),
-    includes='grenade',
-    )
 
 
 def sprite_rope(pack: PackList, ent: Entity) -> None:
@@ -225,8 +205,6 @@ def point_entity_replace(pack: PackList, ent: Entity) -> None:
     """In one specific mode, an entity is spawned by classname."""
     if conv_int(ent['replacementtype']) == 1:
         pack_ent_class(pack, ent['replacemententity'])
-
-res('simple_physics_brush')
 
 
 @cls_func
@@ -258,7 +236,3 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
 from srctools._class_resources import (
     asw_, env_, func_, item_, npcs, weapons,
 )
-
-
-# Now all of these have been done, apply 'includes' commands.
-_process_includes()
