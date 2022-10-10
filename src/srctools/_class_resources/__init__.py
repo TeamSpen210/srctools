@@ -331,6 +331,9 @@ def team_control_point(pack: PackList, ent: Entity) -> None:
             pack.pack_file(f'materials/{icon}_locked.vmt', FileType.MATERIAL)
 
 
+# TODO: Weapons are unusual, they don't directly specify the models.
+# Instead, it's specified in the weapon script.
+
 from srctools._class_resources import (
-    asw_, func_, item_, npcs, weapons,
+    asw_, func_, item_, npcs,
 )
