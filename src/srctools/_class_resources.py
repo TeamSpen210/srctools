@@ -1,48 +1,20 @@
-"""For each entity class, specify hardcoded resources.
-
-Those are ones that don't simply appear in keyvalues.
-The only public values are CLASS_RESOURCES and ALT_NAMES, but those
-should be imported from packlist instead.
-"""
-from typing import Callable, Dict, Iterator, Mapping, Optional, Sequence, Tuple, TypeVar, Union
+"""This module defines functions which list resources for various entities with special functionality."""
+from typing import Callable, Dict, Iterator, Mapping, Sequence, TypeVar, Union
 from typing_extensions import Final, TypeAlias
 import itertools
 
-from .. import conv_bool, conv_int
-from ..packlist import FileType, PackList
-from ..fgd import ResourceCtx, Resource
-from ..vmf import VMF, Entity, ValidKVs
-
-
-#  For various entity classes, we know they require hardcoded files.
-# List them here - classname -> [(file, type), ...]
-# Additionally or instead you could have a function to call with the
-# entity to do class-specific behaviour, yielding files to pack.
+from . import conv_bool, conv_int
+from .packlist import FileType
+from .fgd import ResourceCtx, Resource
+from .vmf import VMF, Entity
 
 
 ResGen: TypeAlias = Iterator[Union[Resource, Entity]]
 ClassFunc: TypeAlias = Callable[[ResourceCtx, Entity], ResGen]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
+# Dummy VMF, we create entities from this to pass back to recursively get resources for.
 _blank_vmf = VMF(preserve_ids=False)
-
-
-def res(
-    cls: str,
-    *items: Union[str, Tuple[str, FileType]],
-    includes: str='',
-    aliases: str='',
-    func: Optional[ClassFunc] = None,
-) -> None:
-    """Add a class to class_resources, with each of the files it always uses.
-
-    :param cls: The classname to register.
-    :param includes: This adds the resources of the other ent to this one if we spawn another.
-    :param aliases: This indicates additional classnames which are identical to ours.
-    :param items: The items to pack.
-    :param func: A function to call to do special additional packing checks.
-    """
-    pass
 
 
 def cls_func(func: ClassFuncT) -> ClassFuncT:
