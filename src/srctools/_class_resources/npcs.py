@@ -126,31 +126,30 @@ def npc_bullsquid(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield Resource('blood_impact_yellow_01', FileType.PARTICLE_SYSTEM)
 
 
-res('npc_cscanner',
-    # In HL2, the claw scanner variant is chosen if the map starts with d3_c17.
-    # In episodic, npc_clawscanner is now available to force that specifically.
-    # TODO: Check the BSP name, pack shield in that case. Put this in BaseScanner?
-    mdl("models/combine_scanner.mdl"),
-    mdl("models/gibs/scanner_gib01.mdl"),
-    mdl("models/gibs/scanner_gib02.mdl"),
-    mdl("models/gibs/scanner_gib02.mdl"),
-    mdl("models/gibs/scanner_gib04.mdl"),
-    mdl("models/gibs/scanner_gib05.mdl"),
-    mat("material/sprites/light_glow03.vmt"),
-    sound("NPC_CScanner.Shoot"),
-    sound("NPC_CScanner.Alert"),
-    sound("NPC_CScanner.Die"),
-    sound("NPC_CScanner.Combat"),
-    sound("NPC_CScanner.Idle"),
-    sound("NPC_CScanner.Pain"),
-    sound("NPC_CScanner.TakePhoto"),
-    sound("NPC_CScanner.AttackFlash"),
-    sound("NPC_CScanner.DiveBombFlyby"),
-    sound("NPC_CScanner.DiveBomb"),
-    sound("NPC_CScanner.DeployMine"),
-    sound("NPC_CScanner.FlyLoop"),
-    func=base_npc,
-    )
+@cls_func
+def combine_scanner(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Detect the kind of scanner (city or shield/claw), then pick the right resources."""
+    if ent['classname'] == 'npc_clawscanner':  # Added in episodic, always the shield scanner.
+        is_shield = True
+    else:  # It checks the map name directly to determine this.
+        is_shield = ctx.mapname.lower().startswith('d3_c17')
+    if is_shield:
+        yield Resource("models/shield_scanner.mdl", FileType.MODEL)
+        for i in range(1, 7):
+            yield Resource(f"models/gibs/Shield_Scanner_Gib{i}.mdl", FileType.MODEL)
+        snd_prefix = 'NPC_SScanner.'
+    else:
+        yield Resource("models/combine_scanner.mdl", FileType.MODEL)
+        for i in range(1, 6):
+            yield Resource(f"models/gibs/scanner_gib{i:02}.mdl", FileType.MODEL)
+        snd_prefix = 'NPC_CScanner.'
+
+    for snd_name in [
+        "Shoot", "Alert", "Die", "Combat", "Idle", "Pain", "TakePhoto", "AttackFlash",
+        "DiveBombFlyby", "DiveBomb", "DeployMine", "FlyLoop",
+    ]:
+        yield Resource(snd_prefix + snd_name, FileType.GAME_SOUND)
+
 
 CIT_HEADS = [
     "male_01.mdl",
@@ -239,33 +238,6 @@ def npc_combinegunship(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield _blank_vmf.create_ent('helicopter_chunk')
     else:
         yield Resource("models/gunship.mdl", FileType.MODEL)
-
-
-res('npc_clawscanner',
-    mdl("models/shield_scanner.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib2.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib3.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib4.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib5.mdl"),
-    mdl("models/gibs/Shield_Scanner_Gib6.mdl"),
-    mat("material/sprites/light_glow03.vmt"),
-
-    sound("NPC_SScanner.Shoot"),
-    sound("NPC_SScanner.Alert"),
-    sound("NPC_SScanner.Die"),
-    sound("NPC_SScanner.Combat"),
-    sound("NPC_SScanner.Idle"),
-    sound("NPC_SScanner.Pain"),
-    sound("NPC_SScanner.TakePhoto"),
-    sound("NPC_SScanner.AttackFlash"),
-    sound("NPC_SScanner.DiveBombFlyby"),
-    sound("NPC_SScanner.DiveBomb"),
-    sound("NPC_SScanner.DeployMine"),
-    sound("NPC_SScanner.FlyLoop"),
-    includes="combine_mine",
-    func=base_npc,
-    )
 
 
 @cls_func
