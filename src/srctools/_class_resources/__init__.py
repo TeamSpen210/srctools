@@ -112,6 +112,58 @@ EZ_VARIANT_BLOOD: Final = 5
 
 # In alphabetical order:
 
+
+@cls_func
+def asw_emitter(pack: PackList, ent: Entity) -> None:
+    """Complicated thing, probably can't fully process here."""
+    template = ent['template']
+    if template and template != 'None':
+        yield Resource(f'resource/particletemplates/{template}.ptm')
+
+    # TODO: Read the following keys from the file:
+    # - "material"
+    # - "glowmaterial"
+    # - "collisionsound"
+    # - "collisiondecal"
+
+
+ASW_SPAWNER_ORDER = [
+    'asw_drone',
+    'asw_buzzer',
+    'asw_parasite',
+    'asw_shieldbug',
+    'asw_grub',
+    'asw_drone_jumper',
+    'asw_harvester',
+    'asw_parasite_defanged',
+    'asw_queen',
+    'asw_boomer',
+    'asw_ranger',
+    'asw_mortarbug',
+    'asw_shaman',
+]
+
+
+@cls_func
+def asw_spawner(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """The spawner spawns from an indexed list."""
+    try:
+        classname = ASW_SPAWNER_ORDER[int(ent['AlienClass'])]
+    except (IndexError, ValueError, TypeError):
+        return
+    spawner_flags = conv_int(ent['spawnflags'])
+    ent_flags = 1 << 2  # SF_NPC_FALL_TO_GROUND
+    if spawner_flags & 4:  # ASW_SF_NEVER_SLEEP
+        ent_flags |= 1 << 10  # SF_NPC_ALWAYSTHINK
+    if conv_bool(ent['longrange']):
+        ent_flags |= 1 << 8  # SF_NPC_LONG_RANGE
+    yield _blank_vmf.create_ent(
+        classname,
+        spawnflags=ent_flags,
+        startburrowed=ent['startburrowed'],
+    )
+
+
 res('base_boss')
 
 

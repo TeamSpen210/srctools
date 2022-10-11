@@ -2,19 +2,6 @@
 from . import *
 
 
-@cls_func
-def asw_emitter(pack: PackList, ent: Entity) -> None:
-    """Complicated thing, probably can't fully process here."""
-    template = ent['template']
-    if template and template != 'None':
-        pack.pack_file(f'resource/particletemplates/{template}.ptm')
-
-    # TODO: Read the following keys from the file:
-    # - "material"
-    # - "glowmaterial"
-    # - "collisionsound"
-    # - "collisiondecal"
-
 res('asw_emitter', mat('materials/effects/yellowflare.vmt'))
 
 res('asw_mission_objective')
@@ -57,31 +44,3 @@ res('asw_sentry_top_cannon', includes='asw_sentry_top')
 res('asw_sentry_top_flamer', includes='asw_sentry_top')
 res('asw_sentry_top_icer', includes='asw_sentry_top')
 res('asw_sentry_top_machinegun', includes='asw_sentry_top')
-
-
-SPAWNER_ORDER = [
-    'asw_drone',
-    'asw_buzzer',
-    'asw_parasite',
-    'asw_shieldbug',
-    'asw_grub',
-    'asw_drone_jumper',
-    'asw_harvester',
-    'asw_parasite_defanged',
-    'asw_queen',
-    'asw_boomer',
-    'asw_ranger',
-    'asw_mortarbug',
-    'asw_shaman',
-]
-
-
-@cls_func
-def asw_spawner(pack: PackList, ent: Entity) -> None:
-    """The spawner spawns from an indexed list."""
-    try:
-        classname = SPAWNER_ORDER[int(ent['AlienClass'])]
-    except (IndexError, ValueError, TypeError):
-        pass
-    else:
-        pack_ent_class(pack, classname)
