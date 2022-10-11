@@ -21,7 +21,7 @@ from ..vmf import VMF, Entity, ValidKVs
 
 
 ResGen: TypeAlias = Iterator[Union[Resource, Entity]]
-ClassFunc: TypeAlias = Callable[[Entity, 'ResourceCtx'], ResGen]
+ClassFunc: TypeAlias = Callable[[ResourceCtx, Entity], ResGen]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
 _blank_vmf = VMF(preserve_ids=False)
@@ -101,11 +101,8 @@ EZ_VARIANT_BLOOD: Final = 5
 # TODO: We need to parse vehicle scripts.
 
 
-# In alphabetical order:
-
-
 @cls_func
-def asw_emitter(pack: PackList, ent: Entity) -> None:
+def asw_emitter(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Complicated thing, probably can't fully process here."""
     template = ent['template']
     if template and template != 'None':
@@ -222,7 +219,6 @@ MATERIAL_GIB_TYPES: Final[Mapping[int, str]] = {
 
 # Classnames spawned by func_breakable.
 BREAKABLE_SPAWNS: Mapping[int, str] = {
-
     1: "item_battery",
     2: "item_healthkit",
     3: "item_ammo_pistol",
@@ -277,7 +273,31 @@ BREAKABLE_SPAWNS: Mapping[int, str] = {
     50: "item_ammo_box",
     51: "prop_soda",
 }
-# TODO: Mapbase, EZ2 etc additions?
+
+# A different set in HL1.
+BREAKABLE_SPAWNS_HL1: Mapping[int, str] = {
+    1: "item_battery",
+    2: "item_healthkit",
+    3: "weapon_glock",
+    4: "ammo_9mmclip",
+    5: "weapon_mp5",
+    6: "ammo_9mmAR",
+    7: "ammo_ARgrenades",
+    8: "weapon_shotgun",
+    9: "ammo_buckshot",
+    10: "weapon_crossbow",
+    11: "ammo_crossbow",
+    12: "weapon_357",
+    13: "ammo_357",
+    14: "weapon_rpg",
+    15: "ammo_rpgclip",
+    16: "ammo_gaussclip",
+    17: "weapon_handgrenade",
+    18: "weapon_tripmine",
+    19: "weapon_satchel",
+    20: "weapon_snark",
+    21: "weapon_hornetgun",
+}
 
 
 def base_plat_train(ctx: ResourceCtx, ent: Entity) -> ResGen:
@@ -309,12 +329,16 @@ def breakable_brush(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield Resource('MetalPanelChunks' if 'P2' in ctx.tags else 'WebGibs', FileType.BREAKABLE_CHUNK)
     else:
         yield Resource(MATERIAL_GIB_TYPES.get(mat_type, 'WoodChunks'), FileType.BREAKABLE_CHUNK)
-    try:
-        breakable_class = BREAKABLE_SPAWNS[conv_int(ent['spawnobject'])]
-    except (IndexError, TypeError, ValueError):
-        pass
-    else:
-        yield _blank_vmf.create(breakable_class)
+    object_ind = conv_int(ent['spawnobject'])
+    spawns = BREAKABLE_SPAWNS_HL1 if 'HLS' in ctx.tags else BREAKABLE_SPAWNS
+    # 27+ is Black Mesa exclusive.
+    if object_ind < 27 or 'MESA' in ctx.tags:
+        try:
+            breakable_class = spawns[object_ind]
+        except (IndexError, TypeError, ValueError):
+            pass
+        else:
+            yield _blank_vmf.create_ent(breakable_class)
 
 
 @cls_func
