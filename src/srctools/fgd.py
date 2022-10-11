@@ -482,7 +482,9 @@ class ResourceCtx:
         if funcs is srctools.EmptyMapping:
             funcs = CLASS_FUNCS
         else:
-            funcs = ChainMap(funcs, CLASS_FUNCS)
+            # ChainMap itself is mutable and so can't accept Mapping.
+            # We're immediately casting to Mapping, so it's not dangerous.
+            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
 
         # Strip extension, and normalise folder separators.
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
