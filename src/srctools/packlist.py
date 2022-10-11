@@ -1317,9 +1317,10 @@ def entclass_canonicalise(classname: str) -> str:
     if ent_def.is_alias:
         try:
             [base] = ent_def.bases
-            return base.classname
+            return base.classname if isinstance(base, EntityDef) else base
         except ValueError:
-            return classname
+            pass
+    return classname
 
 
 entclass_canonicalize = entclass_canonicalise  # America.
