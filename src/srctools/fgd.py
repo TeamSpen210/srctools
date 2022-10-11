@@ -463,8 +463,8 @@ class ResourceCtx:
         fgd: Union['FGD', Mapping[str, 'EntityDef'], Callable[[str], 'EntityDef']] = srctools.EmptyMapping,
         mapname: str = '',
         funcs: Mapping[str, Callable[
-            ['srctools.Entity', 'ResourceCtx'],
-            Iterator[Union[Resource, 'srctools.Entity']]
+            ['ResourceCtx', Entity],
+            Iterator[Union[Resource, Entity]]
         ]] = srctools.EmptyMapping,
     ) -> None:
         """
