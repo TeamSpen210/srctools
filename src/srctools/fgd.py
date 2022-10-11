@@ -1306,6 +1306,7 @@ class EntityDef:
         copy.helpers = deepcopy(self.helpers, memodict)
         copy.desc = self.desc
         copy.resources = self.resources
+        copy.is_alias = self.is_alias
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
@@ -1335,6 +1336,7 @@ class EntityDef:
             self.helpers,
             self.desc,
             self.resources,
+            self.is_alias,
         )
 
     def __setstate__(self, state: tuple) -> None:
@@ -1355,7 +1357,7 @@ class EntityDef:
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
         if resources:  # Backwards compat.
-            [self.resources] = resources
+            [self.resources, self.is_alias] = resources
 
     @overload
     def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
