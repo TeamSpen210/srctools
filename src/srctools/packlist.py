@@ -423,7 +423,7 @@ class PackList:
         if '\t' in filename:
             raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
 
-        if data_type is FileType.ENTCLASS_FUNC or data_type.ENTITY:
+        if data_type is FileType.ENTCLASS_FUNC or data_type is data_type.ENTITY:
             raise ValueError(f'File type "{data_type.name}" must not be packed directly!')
 
         if data_type is FileType.GAME_SOUND:
@@ -811,7 +811,13 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
-    def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
+    def pack_fgd(
+        self,
+        vmf: VMF,
+        fgd: FGD,
+        mapname: str='',
+        tags: Iterable[str]=(),
+    ) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
         # Don't show the same keyvalue warning twice, it's just noise.
         unknown_keys: Set[Tuple[str, str]] = set()
@@ -822,6 +828,13 @@ class PackList:
         except KeyError:
             LOGGER.warning('No CBaseEntity definition!')
             base_entity = EntityDef(EntityTypes.BASE)
+
+        res_ctx = ResourceCtx(
+            fgd=fgd,
+            fsys=self.fsys,
+            mapname=mapname,
+            tags=tags,
+        )
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
@@ -861,7 +874,7 @@ class PackList:
                     'origin', 'angles',
                     'skin',
                     'pitch',
-                    'skinset'
+                    'skinset',
                 ):
                     continue
                 elif key == 'model':
@@ -913,29 +926,9 @@ class PackList:
                 elif val_type is KVTypes.STR_PARTICLE:
                     self.pack_particle(value)
 
-        # Handle resources that's coded into different entities with our
-        # internal database.
-        # Delay import, since this is a fair bit of code and many don't need it.
-        from ._class_resources import CLASS_FUNCS, CLASS_RESOURCES
-
-        # Use compress() to skip classnames that have no ents.
-        for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
-            try:
-                res_list = CLASS_RESOURCES[classname]
-            except KeyError:
-                pass
-            else:
-                # Basic dependencies, if they're the same for any copy of this ent.
-                for file, filetype in res_list:
-                    self.pack_file(file, filetype)
-            try:
-                res_func = CLASS_FUNCS[classname]
-            except KeyError:
-                pass
-            else:
-                # Different stuff is packed based on keyvalues, so call a function.
-                for ent in vmf.by_class[classname]:
-                    res_func(self, ent)
+            # Handle resources that's coded into different entities with our internal database.
+            for file_type, filename in ent_class.get_resources(res_ctx, ent=ent):
+                self.pack_file(filename, file_type)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
