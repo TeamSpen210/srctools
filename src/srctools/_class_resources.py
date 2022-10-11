@@ -54,36 +54,6 @@ def cls_func(func: ClassFuncT) -> ClassFuncT:
     return func
 
 
-def mdl(path: str) -> Resource:
-    """Convienence function."""
-    return Resource(path, FileType.MODEL)
-
-
-def mat(path: str) -> Resource:
-    """Convienence function."""
-    return Resource(path, FileType.MATERIAL)
-
-
-def sound(path: str) -> Resource:
-    """Convienence function."""
-    return Resource(path, FileType.GAME_SOUND)
-
-
-def part(path: str) -> Resource:
-    """Convienence function."""
-    return Resource(path, FileType.PARTICLE)
-
-
-def choreo(path: str) -> Resource:
-    """Convienence function."""
-    return Resource(path, FileType.CHOREO)
-
-
-def pack_ent_class(pack: PackList, clsname: str, **keys: ValidKVs) -> None:
-    """Call to pack another entity class generically."""
-    raise NotImplementedError
-
-
 def button_sound(index: Union[int, str]) -> Resource:
     """Return the resource matching the hardcoded set of sounds in button ents."""
     return Resource(f'Buttons.snd{conv_int(index):d}', FileType.GAME_SOUND)
@@ -113,6 +83,19 @@ def asw_emitter(ctx: ResourceCtx, ent: Entity) -> ResGen:
     # - "glowmaterial"
     # - "collisionsound"
     # - "collisiondecal"
+
+
+@cls_func
+def asw_snow_volume(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Another clientside entity that spawns in emitters."""
+    # TODO: Dependencies of this...
+    snow_type = conv_int(ent['snowtype'])
+    if snow_type == 0:
+        yield Resource('resource/particletemplates/snow2.ptm')
+    else:
+        yield Resource('resource/particletemplates/snow3.ptm')
+        if snow_type == 1:
+            yield Resource('resource/particletemplates/snowclouds.ptm')
 
 
 ASW_SPAWNER_ORDER = [
@@ -152,9 +135,6 @@ def asw_spawner(ctx: ResourceCtx, ent: Entity) -> ResGen:
     )
 
 
-res('base_boss')
-
-
 def func_button_sounds(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the legacy sound indexes."""
     yield button_sound(ent['sounds'])
@@ -185,11 +165,6 @@ def momentary_rot_button(ctx: ResourceCtx, ent: Entity) -> ResGen:
 def color_correction(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the color correction file."""
     yield Resource(ent['filename'], FileType.GENERIC)
-
-
-res('cycler_blender')
-res('cycler_flex')
-res('cycler_weapon')
 
 
 # Index->sound lists for CBasePlatTrain in HL:Source.
@@ -364,13 +339,6 @@ def func_breakable_surf(ctx: ResourceCtx, ent: Entity) -> ResGen:
                 f'materials/models/broken{mat_type}/{mat_type}broken_0{num}{letter}.vmt',
                 FileType.MATERIAL,
             )
-
-res('func_plat',
-    sound('Plat.DefaultMoving'),
-    sound('Plat.DefaultArrive'),
-    func=base_plat_train,
-    )
-
 
 
 def sprite_rope(ctx: ResourceCtx, ent: Entity) -> ResGen:
@@ -892,5 +860,3 @@ def team_control_point(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
 # TODO: Weapons are unusual, they don't directly specify the models.
 # Instead, it's specified in the weapon script.
-
-from srctools._class_resources import asw_
