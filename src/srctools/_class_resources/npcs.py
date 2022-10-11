@@ -1,133 +1,129 @@
 """NPC entities."""
 from . import *
-
-
-def base_npc(pack: PackList, ent: Entity) -> None:
-    """Resources precached in CAI_BaseNPC."""
-    if conv_int(ent['ezvariant']) == EZ_VARIANT_TEMPORAL:
-        pack.pack_soundscript('NPC_TemporalHeadcrab.Vanish')
-        pack.pack_soundscript('NPC_TemporalHeadcrab.Appear')
-        pack.pack_particle('ShadowCrab_Vanish')
-        pack.pack_particle('ShadowCrab_Appear')
-    equipment = ent['additionalequipment']
-    if equipment not in ('', '0'):
-        pack_ent_class(pack, equipment)
+from . import _blank_vmf
 
 
 @cls_func
-def npc_antlion(pack: PackList, ent: Entity) -> None:
+def base_npc(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Resources precached in CAI_BaseNPC."""
+    if conv_int(ent['ezvariant']) == EZ_VARIANT_TEMPORAL:
+        yield Resource('NPC_TemporalHeadcrab.Vanish', FileType.GAME_SOUND)
+        yield Resource('NPC_TemporalHeadcrab.Appear', FileType.GAME_SOUND)
+        yield Resource('ShadowCrab_Vanish', FileType.PARTICLE_SYSTEM)
+        yield Resource('ShadowCrab_Appear', FileType.PARTICLE_SYSTEM)
+    equipment = ent['additionalequipment']
+    if equipment not in ('', '0'):
+        yield _blank_vmf.create_ent(equipment)
+
+
+@cls_func
+def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Antlions require different resources for the worker version."""
-    base_npc(pack, ent)
     ez_variant = conv_int(ent['ezvariant'])
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 18):  # Is worker?
         if ez_variant == EZ_VARIANT_BLOOD:
-            pack.pack_file("models/bloodlion_worker.mdl", FileType.MODEL)
+            yield Resource("models/bloodlion_worker.mdl", FileType.MODEL)
         else:
-            pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
-        pack.pack_particle("blood_impact_antlion_worker_01")
-        pack.pack_particle("antlion_gib_02")
-        pack.pack_particle("blood_impact_yellow_01")
+            yield Resource("models/antlion_worker.mdl", FileType.MODEL)
+        yield Resource("blood_impact_antlion_worker_01", FileType.PARTICLE_SYSTEM)
+        yield Resource("antlion_gib_02", FileType.PARTICLE_SYSTEM)
+        yield Resource("blood_impact_yellow_01", FileType.PARTICLE_SYSTEM)
 
-        pack_ent_class(pack, 'grenade_spit')
+        yield _blank_vmf.create_ent('grenade_spit')
     else:  # Regular antlion.
         if ez_variant == EZ_VARIANT_RAD:
-            pack.pack_file("models/antlion_blue.mdl", FileType.MODEL)
-            pack.pack_particle("blood_impact_blue_01")
+            yield Resource("models/antlion_blue.mdl", FileType.MODEL)
+            yield Resource("blood_impact_blue_01", FileType.PARTICLE_SYSTEM)
         elif ez_variant == EZ_VARIANT_XEN:
-            pack.pack_file("models/antlion_xen.mdl", FileType.MODEL)
-            pack.pack_particle("blood_impact_antlion_01")
+            yield Resource("models/antlion_xen.mdl", FileType.MODEL)
+            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
         elif ez_variant == EZ_VARIANT_BLOOD:
-            pack.pack_file("models/bloodlion.mdl", FileType.MODEL)
-            pack.pack_particle("blood_impact_antlion_01")
+            yield Resource("models/bloodlion.mdl", FileType.MODEL)
+            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
         else:
-            pack.pack_file("models/antlion.mdl", FileType.MODEL)
-            pack.pack_particle("blood_impact_antlion_01")
-        pack.pack_particle("AntlionGib")
+            yield Resource("models/antlion.mdl", FileType.MODEL)
+            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
+        yield Resource("AntlionGib", FileType.PARTICLE_SYSTEM)
 
 
 @cls_func
-def npc_antlionguard(pack: PackList, ent: Entity) -> None:
+def npc_antlionguard(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """In Entropy Zero, some alternate models are available."""
-    base_npc(pack, ent)
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 17):  # Inside Footsteps
-        pack.pack_soundscript("NPC_AntlionGuard.Inside.StepLight")
-        pack.pack_soundscript("NPC_AntlionGuard.Inside.StepHeavy")
+        yield Resource("NPC_AntlionGuard.Inside.StepLight", FileType.GAME_SOUND)
+        yield Resource("NPC_AntlionGuard.Inside.StepHeavy", FileType.GAME_SOUND)
     else:
-        pack.pack_soundscript("NPC_AntlionGuard.StepLight")
-        pack.pack_soundscript("NPC_AntlionGuard.StepHeavy")
+        yield Resource("NPC_AntlionGuard.StepLight", FileType.GAME_SOUND)
+        yield Resource("NPC_AntlionGuard.StepHeavy", FileType.GAME_SOUND)
     if 'ezvariant' in ent:  # Entropy Zero.
         variant = conv_int(ent['ezvaraiant'])
         if variant == EZ_VARIANT_XEN:
-            pack.pack_file("models/antlion_guard_xen.mdl", FileType.MODEL)
-            pack.pack_particle("xenpc_spawn")
+            yield Resource("models/antlion_guard_xen.mdl", FileType.MODEL)
+            yield Resource("xenpc_spawn", FileType.PARTICLE_SYSTEM)
         elif variant == EZ_VARIANT_RAD:
-            pack.pack_file("models/antlion_guard_blue.mdl", FileType.MODEL)
-            pack.pack_particle("blood_impact_blue_01")
+            yield Resource("models/antlion_guard_blue.mdl", FileType.MODEL)
+            yield Resource("blood_impact_blue_01", FileType.PARTICLE_SYSTEM)
         elif variant == EZ_VARIANT_BLOOD:
-            pack.pack_file("models/bloodlion_guard.mdl", FileType.MODEL)
+            yield Resource("models/bloodlion_guard.mdl", FileType.MODEL)
         else:
-            pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
+            yield Resource("models/antlion_guard.mdl", FileType.MODEL)
     else:  # Regular HL2.
-        pack.pack_file("models/antlion_guard.mdl", FileType.MODEL)
+        yield Resource("models/antlion_guard.mdl", FileType.MODEL)
 
 
 @cls_func
-def npc_antlion_template_maker(pack: PackList, ent: Entity) -> None:
+def npc_antlion_template_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Depending on KVs this may or may not spawn workers."""
     # There will be an antlion present in the map, as the template
     # NPC. So we don't need to add those resources.
     if conv_int(ent['workerspawnrate']) > 0:
         # It randomly spawns worker antlions, so load that resource set.
-        pack.pack_file("models/antlion_worker.mdl", FileType.MODEL)
-        pack.pack_file("blood_impact_antlion_worker_01", FileType.PARTICLE)
-        pack.pack_file("antlion_gib_02", FileType.PARTICLE)
-        pack.pack_file("blood_impact_yellow_01", FileType.PARTICLE)
+        yield Resource("models/antlion_worker.mdl", FileType.MODEL)
+        yield Resource("blood_impact_antlion_worker_01", FileType.PARTICLE)
+        yield Resource("antlion_gib_02", FileType.PARTICLE)
+        yield Resource("blood_impact_yellow_01", FileType.PARTICLE)
 
-        pack_ent_class(pack, 'grenade_spit')
+        yield _blank_vmf.create_ent('grenade_spit')
     if conv_bool(ent['createspores']):
-        pack_ent_class(pack, 'env_sporeexplosion')
-
-res('npc_apcdriver', includes='npc_vehicledriver', func=base_npc)
+        yield _blank_vmf.create_ent('env_sporeexplosion')
 
 
 @cls_func
-def npc_arbeit_turret_floor(pack: PackList, ent: Entity) -> None:
+def npc_arbeit_turret_floor(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Arbeit/Aperture turrets have EZ variants."""
-    base_npc(pack, ent)
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
-        pack.pack_file('models/props/glowturret_01.mdl', FileType.MODEL)
+        yield Resource('models/props/glowturret_01.mdl', FileType.MODEL)
     elif variant == EZ_VARIANT_ARBEIT:
-        pack.pack_file('models/props/camoturret_01.mdl', FileType.MODEL)
-        pack.pack_file('models/props/camoturret_02.mdl', FileType.MODEL)
+        yield Resource('models/props/camoturret_01.mdl', FileType.MODEL)
+        yield Resource('models/props/camoturret_02.mdl', FileType.MODEL)
     elif conv_int(ent['spawnflags']) & 0x200:  # Citizen Modified
-        pack.pack_file('models/props/hackedturret_01.mdl', FileType.MODEL)
+        yield Resource('models/props/hackedturret_01.mdl', FileType.MODEL)
     else:
-        pack.pack_file('models/props/turret_01.mdl', FileType.MODEL)
+        yield Resource('models/props/turret_01.mdl', FileType.MODEL)
 
 
 @cls_func
-def npc_bullsquid(pack: PackList, ent: Entity) -> None:
+def npc_bullsquid(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This has various EZ variants."""
-    base_npc(pack, ent)
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_XEN:
-        pack.pack_file('models/bullsquid_xen.mdl', FileType.MODEL)
-        pack.pack_file('models/babysquid_xen.mdl', FileType.MODEL)
-        pack.pack_file('models/bullsquid_egg_xen.mdl', FileType.MODEL)
-        pack.pack_particle('blood_impact_yellow_01')
+        yield Resource('models/bullsquid_xen.mdl', FileType.MODEL)
+        yield Resource('models/babysquid_xen.mdl', FileType.MODEL)
+        yield Resource('models/bullsquid_egg_xen.mdl', FileType.MODEL)
+        yield Resource('blood_impact_yellow_01', FileType.PARTICLE_SYSTEM)
     elif variant == EZ_VARIANT_RAD:
-        pack.pack_file('models/bullsquid_rad.mdl', FileType.MODEL)
-        pack.pack_file('models/babysquid_rad.mdl', FileType.MODEL)
-        pack.pack_file('models/bullsquid_egg_rad.mdl', FileType.MODEL)
-        pack.pack_particle('blood_impact_blue_01')
+        yield Resource('models/bullsquid_rad.mdl', FileType.MODEL)
+        yield Resource('models/babysquid_rad.mdl', FileType.MODEL)
+        yield Resource('models/bullsquid_egg_rad.mdl', FileType.MODEL)
+        yield Resource('blood_impact_blue_01', FileType.PARTICLE_SYSTEM)
     else:
-        pack.pack_file('models/bullsquid.mdl', FileType.MODEL)
-        pack.pack_file('models/babysquid.mdl', FileType.MODEL)
-        pack.pack_file('models/bullsquid_egg.mdl', FileType.MODEL)
-        pack.pack_particle('blood_impact_yellow_01')
+        yield Resource('models/bullsquid.mdl', FileType.MODEL)
+        yield Resource('models/babysquid.mdl', FileType.MODEL)
+        yield Resource('models/bullsquid_egg.mdl', FileType.MODEL)
+        yield Resource('blood_impact_yellow_01', FileType.PARTICLE_SYSTEM)
 
 
 res('npc_cscanner',
@@ -176,12 +172,11 @@ CIT_HEADS = [
 
 
 @cls_func
-def npc_citizen(pack: PackList, ent: Entity) -> None:
+def npc_citizen(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Cizizens have a complex set of precaching rules."""
-    base_npc(pack, ent)
     if ent['targetname'] == 'matt':
         # Special crowbar.
-        pack.pack_file("models/props_canal/mattpipe.mdl", FileType.MODEL)
+        yield Resource("models/props_canal/mattpipe.mdl", FileType.MODEL)
 
     cit_type = conv_int(ent['citizentype'])
 
@@ -195,10 +190,10 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         # { "c17",			CT_REBEL		},
         # { "citadel",		CT_DOWNTRODDEN	},
         for head in CIT_HEADS:
-            pack.pack_file('models/humans/group01/' + head, FileType.MODEL)
-            pack.pack_file('models/humans/group02/' + head, FileType.MODEL)
-            pack.pack_file('models/humans/group03/' + head, FileType.MODEL)
-            pack.pack_file('models/humans/group03m/' + head, FileType.MODEL)
+            yield Resource('models/humans/group01/' + head, FileType.MODEL)
+            yield Resource('models/humans/group02/' + head, FileType.MODEL)
+            yield Resource('models/humans/group03/' + head, FileType.MODEL)
+            yield Resource('models/humans/group03m/' + head, FileType.MODEL)
         return
     elif cit_type == 1:  # Downtrodden
         folder = 'group01'
@@ -208,7 +203,7 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         folder = 'group03'
         # The rebels have an additional set of models.
         for head in CIT_HEADS:
-            pack.pack_file('models/humans/group03m/' + head, FileType.MODEL)
+            yield Resource('models/humans/group03m/' + head, FileType.MODEL)
     elif cit_type == 4:  # Use model in KVs directly.
         return
     else:  # Invalid type?
@@ -216,20 +211,19 @@ def npc_citizen(pack: PackList, ent: Entity) -> None:
         return
 
     for head in CIT_HEADS:
-        pack.pack_file(f'models/humans/{folder}/{head}', FileType.MODEL)
+        yield Resource(f'models/humans/{folder}/{head}', FileType.MODEL)
 
 
 @cls_func
-def npc_combinedropship(pack: PackList, ent: Entity) -> None:
+def npc_combinedropship(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """The Combine Dropship may spawn with a variety of cargo types."""
-    base_npc(pack, ent)
     cargo_type = conv_int(ent['cratetype'])
     if cargo_type == -3:  # Spawns a prop_dynamic Jeep
-        pack.pack_file("models/buggy.mdl", FileType.MODEL)
+        yield Resource("models/buggy.mdl", FileType.MODEL)
     elif cargo_type == -1:  # Strider
-        pack_ent_class(pack, 'npc_strider')
+        yield _blank_vmf.create_ent('npc_strider')
     elif cargo_type == 1:  # Soldiers in a container.
-        pack_ent_class(pack, 'prop_dropship_container')
+        yield _blank_vmf.create_ent('prop_dropship_container')
     # Other valid values:
     # -2 = Grabs the APC specified in KVs - that'll load its own resources.
     #  0 = Roller Hopper, does nothing
@@ -237,15 +231,14 @@ def npc_combinedropship(pack: PackList, ent: Entity) -> None:
 
 
 @cls_func
-def npc_combinegunship(pack: PackList, ent: Entity) -> None:
+def npc_combinegunship(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This has the ability to spawn as the helicopter instead."""
-    base_npc(pack, ent)
     if conv_int(ent['spawnflags']) & (1 << 13):
-        pack.pack_file("models/combine_helicopter.mdl", FileType.MODEL)
-        pack.pack_file("models/combine_helicopter_broken.mdl", FileType.MODEL)
-        pack_ent_class(pack, 'helicopter_chunk')
+        yield Resource("models/combine_helicopter.mdl", FileType.MODEL)
+        yield Resource("models/combine_helicopter_broken.mdl", FileType.MODEL)
+        yield _blank_vmf.create_ent('helicopter_chunk')
     else:
-        pack.pack_file("models/gunship.mdl", FileType.MODEL)
+        yield Resource("models/gunship.mdl", FileType.MODEL)
 
 
 res('npc_clawscanner',
@@ -276,43 +269,39 @@ res('npc_clawscanner',
 
 
 @cls_func
-def npc_egg(pack: PackList, ent: Entity) -> None:
+def npc_egg(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """These are EZ2 bullsquid eggs, which spawn a specific EZ variant."""
-    pack_ent_class(pack, 'npc_bullsquid', ezvariant=ent['ezvariant'])
+    yield _blank_vmf.create_ent('npc_bullsquid', ezvariant=ent['ezvariant'])
 
 
 @cls_func
-def npc_maker(pack: PackList, ent: Entity) -> None:
+def npc_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """We spawn the NPC automatically."""
-    try:
-        # Pass this along, it should then pack that too.
-        pack_ent_class(pack, ent['npctype'], additionalequipment=ent['additionalequipment'])
-    except ValueError:
-        # Dependent on keyvalues.
-        pass
+    # Pass this along, it should then pack that too.
+    yield _blank_vmf.create_ent(ent['npctype'], additionalequipment=ent['additionalequipment'])
 
 
 @cls_func
-def npc_metropolice(pack: PackList, ent: Entity) -> None:
+def npc_metropolice(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """If a spawnflag is set, a cheap model is used."""
     if conv_int(ent['spawnflags']) & 5:
-        pack.pack_file("models/police_cheaple.mdl", FileType.MODEL)
+        yield Resource("models/police_cheaple.mdl", FileType.MODEL)
     else:
-        pack.pack_file("models/police.mdl", FileType.MODEL)
+        yield Resource("models/police.mdl", FileType.MODEL)
 
 
 @cls_func
-def npc_zassassin(pack: PackList, ent: Entity) -> None:
+def npc_zassassin(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Entropy Zero 2's "Plan B"/Gonome. """
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
-        pack.pack_file('models/glownome.mdl', FileType.MODEL)
-        pack.pack_particle('blood_impact_blue_01')
-        pack.pack_file('materials/cable/goocable.vmt', FileType.MATERIAL)
-        pack.pack_file('materials/sprites/glownomespit.vmt', FileType.MATERIAL)
+        yield Resource('models/glownome.mdl', FileType.MODEL)
+        yield Resource('blood_impact_blue_01', FileType.PARTICLE_SYSTEM)
+        yield Resource('materials/cable/goocable.vmt', FileType.MATERIAL)
+        yield Resource('materials/sprites/glownomespit.vmt', FileType.MATERIAL)
     else:
-        pack.pack_file('materials/sprites/gonomespit.vmt', FileType.MATERIAL)
+        yield Resource('materials/sprites/gonomespit.vmt', FileType.MATERIAL)
         if variant == EZ_VARIANT_XEN:
-            pack.pack_file('models/xonome.mdl', FileType.MODEL)
+            yield Resource('models/xonome.mdl', FileType.MODEL)
         else:
-            pack.pack_file('models/gonome.mdl', FileType.MODEL)
+            yield Resource('models/gonome.mdl', FileType.MODEL)
