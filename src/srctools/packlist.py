@@ -478,7 +478,19 @@ class PackList:
             data_type = FileType.MODEL
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
+            # Allow passing skinsets via filename. This isn't useful if read from entities,
+            # but is good for filenames in resource lists.
+            if '.mdl#' in filename:
+                filename, skinset_int = filename.rsplit('.mdl#', 1)
+                try:
+                    skinset = set(map(int, skinset_int.split(',')))
+                except (TypeError, ValueError):
+                    LOGGER.warning(
+                        'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
+                        filename, skinset_int,
+                    )
             filename = strip_extension(filename) + '.mdl'
+            LOGGER.error('Pack model: {} # {!r}', filename, skinset)
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
