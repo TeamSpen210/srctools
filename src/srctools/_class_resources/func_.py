@@ -145,29 +145,6 @@ def func_breakable_surf(pack: PackList, ent: Entity) -> None:
             )
 
 
-def func_button_sounds(pack: PackList, ent: Entity) -> None:
-    """Pack the legacy sound indexes."""
-    pack_button_sound(pack, ent['sounds'])
-    pack_button_sound(pack, ent['locked_sound'])
-    pack_button_sound(pack, ent['unlocked_sound'])
-    # TODO locked and unlocked sentences in HL1.
-    # locked_sentence -> ["NA", "ND", "NF", "NFIRE", "NCHEM", "NRAD", "NCON", "NH", "NG"]
-    # unlocked_sentence -> ["EA", "ED", "EF", "EFIRE", "ECHEM", "ERAD", "ECON", "EH"]
-
-
-@cls_func
-def func_button_timed(pack: PackList, ent: Entity) -> None:
-    """This only has one sound?"""
-    pack_button_sound(pack, ent['locked_sound'])
-
-
-@cls_func
-def momentary_rot_button(pack: PackList, ent: Entity) -> None:
-    """Inherits from func_button, but doesn't always use 'sounds'."""
-    if conv_int(ent['spawnflags']) & 1024:  # USE_ACTIVATES
-        pack_button_sound(pack, ent['sounds'])
-    pack_button_sound(pack, ent['locked_sound'])
-    pack_button_sound(pack, ent['unlocked_sound'])
 
 res('func_plat',
     sound('Plat.DefaultMoving'),

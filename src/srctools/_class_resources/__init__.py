@@ -167,6 +167,32 @@ def asw_spawner(ctx: ResourceCtx, ent: Entity) -> ResGen:
 res('base_boss')
 
 
+def func_button_sounds(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Pack the legacy sound indexes."""
+    yield button_sound(ent['sounds'])
+    yield button_sound(ent['locked_sound'])
+    yield button_sound(ent['unlocked_sound'])
+    # TODO locked and unlocked sentences in HL1.
+    # locked_sentence -> ["NA", "ND", "NF", "NFIRE", "NCHEM", "NRAD", "NCON", "NH", "NG"]
+    # unlocked_sentence -> ["EA", "ED", "EF", "EFIRE", "ECHEM", "ERAD", "ECON", "EH"]
+
+
+@cls_func
+def func_button_timed(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """This only has one sound?"""
+    yield button_sound(ent['locked_sound'])
+
+
+@cls_func
+def momentary_rot_button(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Inherits from func_button, but doesn't always use 'sounds'."""
+    if conv_int(ent['spawnflags']) & 1024:  # USE_ACTIVATES
+        yield button_sound(ent['sounds'])
+    yield button_sound(ent['locked_sound'])
+    yield button_sound(ent['unlocked_sound'])
+
+
+
 @cls_func
 def color_correction(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the color correction file."""
