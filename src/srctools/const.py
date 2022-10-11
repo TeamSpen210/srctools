@@ -56,6 +56,10 @@ class FileType(Enum):
     #: Name of a function to call defined inside the packlist module.
     ENTCLASS_FUNC = auto_enum()
 
+    #: Randomised generic chunk gibs.
+    #: This corresponds to ``g_PropDataSystem.GetRandomChunkModel()``.
+    BREAKABLE_CHUNK = auto_enum()
+
     #: Material file.
     MATERIAL = 'vmt'
 

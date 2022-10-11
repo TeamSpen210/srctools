@@ -193,6 +193,7 @@ RESTYPE_BY_NAME = {
     'snd': FileType.GAME_SOUND,
     'tex': FileType.TEXTURE,
     'mdl': FileType.MODEL,
+    'break_chunk': FileType.BREAKABLE_CHUNK,
 }
 
 

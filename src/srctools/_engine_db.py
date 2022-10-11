@@ -115,6 +115,7 @@ FILE_TYPE_ORDER = [
     FileType.TEXTURE,
     FileType.CHOREO,
     FileType.MODEL,
+    FileType.BREAKABLE_CHUNK,
 ]
 
 # Entity types -> bits used

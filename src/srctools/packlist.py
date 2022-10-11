@@ -435,6 +435,9 @@ class PackList:
         if data_type is FileType.CHOREO:
             # self.pack_choreo(filename)  # TODO: Choreo scene parsing
             return
+        if data_type is FileType.BREAKABLE_CHUNK:
+            self.pack_breakable_chunk(filename)
+            return  # Packs additional models.
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
