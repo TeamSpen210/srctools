@@ -20,7 +20,7 @@ from ..vmf import VMF, Entity, ValidKVs
 # entity to do class-specific behaviour, yielding files to pack.
 
 
-ResGen: TypeAlias = Iterator[Union[Resource], Entity]
+ResGen: TypeAlias = Iterator[Union[Resource, Entity]]
 ClassFunc: TypeAlias = Callable[[Entity, 'ResourceCtx'], ResGen]
 ClassFuncT = TypeVar('ClassFuncT', bound=ClassFunc)
 CLASS_FUNCS: Dict[str, ClassFunc] = {}
@@ -81,16 +81,7 @@ def choreo(path: str) -> Resource:
 
 def pack_ent_class(pack: PackList, clsname: str, **keys: ValidKVs) -> None:
     """Call to pack another entity class generically."""
-    reslist = CLASS_RESOURCES[clsname]
-    for fname, ftype in reslist:
-        pack.pack_file(fname, ftype)
-    try:
-        cls_function = CLASS_FUNCS[clsname]
-    except KeyError:
-        pass
-    else:
-        # Create a dummy entity so we can call.
-        cls_function(pack, Entity(_blank_vmf, keys={'classname': clsname, **keys}))
+    raise NotImplementedError
 
 
 def button_sound(index: Union[int, str]) -> Resource:
@@ -461,11 +452,108 @@ def env_smokestack(ctx: ResourceCtx, ent: Entity) -> ResGen:
     yield Resource(mat_base + '.vmt', FileType.MATERIAL)
     for i in itertools.count(1):
         fname = f'{mat_base}{i}.vmt'
-        if fname in pack.fsys:
+        if fname in ctx.fsys:
             yield Resource(fname, FileType.MATERIAL)
         else:
             break
 
+
+# Mapbase adds additional models here.
+# The first is Valve's, the second is the mapbase version.
+AMMO_BOX_MDLS = [
+    ("pistol.mdl", "pistol.mdl"),
+    ("smg1.mdl", "smg1.mdl"),
+    ("ar2.mdl", "ar2.mdl"),
+    ("rockets.mdl", "rockets.mdl"),
+    ("buckshot.mdl", "buckshot.mdl"),
+    ("grenade.mdl", "grenade.mdl"),
+    # Valve reused models for these three.
+    ("smg1.mdl", "357.mdl"),
+    ("smg1.mdl", "xbow.mdl"),
+    ("ar2.mdl",  "ar2alt.mdl"),
+
+    ("smg2.mdl", "smg2.mdl"),
+    # Two added by mapbase.
+    ("", "slam.mdl"),
+    ("", "empty.mdl"),
+]
+
+
+@cls_func
+def item_ammo_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Handle loading the specific ammo box type."""
+    try:
+        mdl_valve, mdl_mbase = AMMO_BOX_MDLS[int(ent['AmmoType'])]
+    except (IndexError, TypeError, ValueError):
+        return  # Invalid ammo type.
+    model = mdl_mbase if 'MAPBASE' in ctx.tags else mdl_valve
+    if model:
+        yield Resource('models/items/ammocrate_' + model, FileType.MODEL)
+
+    if model == 'grenade.mdl':
+        yield _blank_vmf.create_ent('weapon_frag')
+    elif model == 'slam.mdl':
+        yield _blank_vmf.create_ent('weapon_slam')
+
+
+@cls_func
+def item_item_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Item crates can spawn another arbitary entity."""
+    appearance = conv_int(ent['crateappearance'])
+    if appearance == 0:  # Default
+        yield Resource('models/items/item_item_crate.mdl', FileType.MODEL)
+    elif appearance == 1:  # Beacon
+        yield Resource('models/items/item_beacon_crate.mdl', FileType.MODEL)
+    # else: 2 = Mapbase custom model, that'll be packed automatically.
+    if conv_int(ent['cratetype']) == 0 and ent['itemclass']:  # "Specific Item"
+        spawned = _blank_vmf.create_ent(ent['itemclass'])
+        if 'ezvariant' in ent and 'ENTROPYZERO2' in ctx.tags:
+            spawned['ezvariant'] = ent['ezvariant']
+        yield spawned
+
+
+@cls_func
+def item_teamflag(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """This item has several special team-specific options."""
+    for kvalue, prefix in [
+        ('flag_icon', 'materials/vgui/'),
+        ('flag_trail', 'materials/effects/')
+    ]:
+        value = prefix + ent[kvalue]
+        if value != prefix:
+            yield Resource(value + '.vmt', FileType.MATERIAL)
+            yield Resource(value + '_red.vmt', FileType.MATERIAL)
+            yield Resource(value + '_blue.vmt', FileType.MATERIAL)
+
+
+EZ_HEALTH_FOLDERS = [
+    # model folder, skin, sound folder
+    ('', 0, ''),  # Normal
+    ('xen/', 0, '_Xen'),
+    ('arbeit/', 1, '_Rad'),
+    ('temporal/', 0, '_Temporal'),
+    ('arbeit/', 0, '_Arbeit'),
+]
+
+
+@cls_func
+def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str='kit') -> ResGen:
+    """Healthkits have multiple variants in EZ2."""
+    if 'ezvariant' not in ent:
+        return
+    variant = conv_int(ent['ezvariant'])
+    if variant == EZ_VARIANT_BLOOD:  # Causes a segfault.
+        ent['ezvariant'] = variant = EZ_VARIANT_DEFAULT
+    model, skin, snd = EZ_HEALTH_FOLDERS[variant]
+
+    yield Resource(f'models/items/{model}health{kind}.mdl#{skin}', FileType.MODEL)
+    yield Resource(f'Health{kind.title()}{snd}.Touch', FileType.GAME_SOUND)
+
+
+@cls_func
+def item_healthvial(ctx: ResourceCtx, ent: Entity) -> ResGen:
+    """Health vials also have multiple variants in EZ2."""
+    return item_healthkit(ctx, ent, 'vial')
 
 
 @cls_func
@@ -503,5 +591,5 @@ def team_control_point(ctx: ResourceCtx, ent: Entity) -> ResGen:
 # Instead, it's specified in the weapon script.
 
 from srctools._class_resources import (
-    asw_, item_, npcs,
+    asw_, npcs,
 )
