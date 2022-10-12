@@ -5,7 +5,7 @@ The dump does not contain help descriptions to keep the data small.
 """
 from enum import IntFlag
 
-from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional
+from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, Tuple
 from typing_extensions import Final
 from struct import Struct
 import io
@@ -236,7 +236,8 @@ def kv_serialise(self: KeyValues, file: IO[bytes], str_dict: BinStrDict) -> None
         file.write(_fmt_8bit.pack(len(self.flags_list)))
         # spawnflags go up to at least 1<<23.
         for mask, name, default, tags in self.flags_list:
-            BinStrDict.write_tags(file, str_dict, tags)
+            if tags:
+                raise ValueError('Cannot use tags!')
             # We can write 2^n instead of the full number,
             # since they're all powers of two.
             power = int(math.log2(mask))
@@ -250,12 +251,7 @@ def kv_serialise(self: KeyValues, file: IO[bytes], str_dict: BinStrDict) -> None
     file.write(str_dict(self.default or ''))
 
     if self.type is ValueTypes.CHOICES:
-        # Use two bytes, these can be large (soundscapes).
-        file.write(_fmt_16bit.pack(len(self.choices_list)))
-        for val, name, tags in self.choices_list:
-            BinStrDict.write_tags(file, str_dict, tags)
-            file.write(str_dict(val))
-            file.write(str_dict(name))
+        raise ValueError('CHOICES may not be used for keyvalues!')
 
 
 def kv_unserialise(
@@ -269,32 +265,24 @@ def kv_unserialise(
     readonly = value_ind & 128 != 0
     value_type = VALUE_TYPE_ORDER[value_ind & 127]
 
-    val_list: Optional[List[tuple]]
+    val_list: Optional[List[Tuple[int, str, bool, FrozenSet[str]]]]
 
     if value_type is ValueTypes.SPAWNFLAGS:
         default = ''  # No default for this type.
         [val_count] = file.read(1)
         val_list = []
         for _ in range(val_count):
-            tags = BinStrDict.read_tags(file, from_dict)
             [power] = file.read(1)
             val_name = from_dict()
             val_list.append((
                 1 << (power & 127),  # All flags are powers of 2.
                 val_name,
                 (power & 128) != 0,  # Defaults to true/false.
-                tags,
+                TAG_EMPTY,
             ))
     else:
         default = from_dict()
-        if value_type is ValueTypes.CHOICES:
-            [val_count] = _fmt_16bit.unpack(file.read(2))
-            val_list = []
-            for _ in range(val_count):
-                tags = BinStrDict.read_tags(file, from_dict)
-                val_list.append((from_dict(), from_dict(), tags))
-        else:
-            val_list = None
+        val_list = None
 
     # Bypass __init__, to speed up - we have a lot of these.
     kv = KeyValues.__new__(KeyValues)
@@ -303,8 +291,7 @@ def kv_unserialise(
     kv.disp_name = disp_name
     kv.default = default
     kv.desc = ''
-    # We know this one matches the ent.
-    kv.val_list = val_list  # type: ignore
+    kv.val_list = val_list
     kv.readonly = readonly
     kv.reportable = False
     return kv
