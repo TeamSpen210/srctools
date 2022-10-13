@@ -1280,7 +1280,7 @@ def _get_engine_fgd() -> FGD:
 def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
     """Fetch a list of resources this entity class is known to use in code.
 
-    :deprecated: Use :py:func:`FGD.engine_db()` then :py:func:`EntityDef.get_resources()`.
+    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
     warnings.warn(
         f'Using entclass_resources() is deprecated, access FGD.engine_db() and then '
@@ -1332,7 +1332,7 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
 
     If the specified classname is one, return a callable that packs it.
 
-    :deprecated: Use :py:func:`FGD.engine_db()` then :py:func:`EntityDef.get_resources()`.
+    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
     warnings.warn(
         f'Using entclass_packfunc() is deprecated, access FGD.engine_db() and then '

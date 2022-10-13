@@ -278,6 +278,21 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
+def _load_engine_db() -> None:
+    """Load our engine database."""
+    # It's pretty expensive to parse, so keep the original privately,
+    # returning a deep-copy.
+    global _ENGINE_FGD
+    if _ENGINE_FGD is None:
+        from lzma import LZMAFile
+        from ._engine_db import unserialise
+        comp: IO[bytes]
+        # On 3.8, importlib_resources doesn't have the right stubs.
+        with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
+            with LZMAFile(comp) as f:
+                _ENGINE_FGD = unserialise(f)
+
+
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
     """Read strings seperated by colons, up to the end of the line.
 
@@ -1293,6 +1308,18 @@ class EntityDef:
                 # noinspection PyProtectedMember
                 KeyValues._parse(entity, io_type, tok)
 
+    @classmethod
+    def engine_def(cls, classname: str) -> 'EntityDef':
+        """Return the specified entity from an internal copy of the Hammer Addons database.
+
+        This can be used to identify the kind of keys/inputs/outputs present on an entity, as well
+        as resources the entity requires/:external:cpp:func:`!Precache()`\\ es.
+
+        :raises KeyError: If the classname is not found in the database.
+        """
+        _load_engine_db()
+        return deepcopy(_ENGINE_FGD[classname])  # Or KeyError if not found.
+
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
             return f'<Entity Base "{self.classname}">'
@@ -1976,21 +2003,11 @@ class FGD:
     def engine_dbase(cls) -> 'FGD':
         """Load and return a database of entity keyvalues and I/O.
 
-        This can be used to identify the kind of keys present on an entity.
+        This can be used to identify the kind of keys present on an entity. If you only need
+        specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
+        all the entities.
         """
-        # It's pretty expensive to parse, so keep the original privately,
-        # returning a deep-copy.
-        global _ENGINE_FGD
-        if _ENGINE_FGD is None:
-            from lzma import LZMAFile
-
-            from ._engine_db import unserialise
-
-            # On 3.8, importlib_resources doesn't have the right stubs.
-            comp: IO[bytes]
-            with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
-                with LZMAFile(comp) as f:
-                    _ENGINE_FGD = unserialise(f)
+        _load_engine_db()
         return deepcopy(_ENGINE_FGD)
 
     def __getitem__(self, classname: str) -> EntityDef:
