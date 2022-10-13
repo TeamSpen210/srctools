@@ -2,7 +2,7 @@
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
-from libc.stdint cimport uint_fast8_t
+from libc.stdint cimport uint_fast8_t, uint16_t
 cimport cython
 
 
@@ -1130,6 +1130,27 @@ cdef class _VPK_IterNullstr:
                     self.chars = temp
                 self.chars[self.used] = (<const char *>data)[0]
                 self.used += 1
+
+
+# This is a replacement for _engine_db.make_lookup, it's called an extreme number of times
+# and can usefully be optimised.
+cdef class _EngineStringTable:
+    cdef object read_func
+    cdef list inv_list
+
+    def __init__(self, file, list inv_list):
+        self.read_func = file.read
+        self.inv_list = inv_list
+
+    @cython.optimize.unpack_method_calls(False)
+    @cython.wraparound(False)  # Unsigned integers.
+    def __call__(self):
+        cdef bytes byt = self.read_func(2)
+        cdef uchar *buf = byt
+        # Unpack an unsigned 16-bit integer.
+        cdef uint16_t offset = (buf[0] << 8) | buf[1]
+        return self.inv_list[offset]
+
 
 # Override the tokenizer's name to match the public one.
 # This fixes all the methods too, though not in exceptions.

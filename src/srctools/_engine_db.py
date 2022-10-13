@@ -140,6 +140,20 @@ FILE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(FILE_TYPE_ORDER)}
 ENTITY_FLAG_2_TYPE = {flag: kind for (kind, flag) in ENTITY_TYPE_2_FLAG.items()}
 
 
+def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
+    """Return a function that reads the index from the file, and returns the string it matches."""
+    def lookup() -> str:
+        [index] = _fmt_16bit.unpack(file.read(2))
+        return inv_list[index]
+    return lookup
+
+# This is called a huge number of times, replace with a Cythonized version.
+try:
+    from srctools._tokenizer import _EngineStringTable as make_lookup  # noqa
+except ImportError:
+    pass
+
+
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
 
@@ -191,13 +205,7 @@ class BinStrDict:
         """
         [length] = _fmt_32bit.unpack(file.read(4))
         inv_list = file.read(length).decode('utf8').split(cls.SEP)
-
-        def lookup() -> str:
-            """Read the index from the file, and return the string it matches."""
-            [index] = _fmt_16bit.unpack(file.read(2))
-            return inv_list[index]
-
-        return lookup
+        return make_lookup(file, inv_list)
 
     @staticmethod
     def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> FrozenSet[str]:
