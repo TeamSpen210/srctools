@@ -28,7 +28,10 @@ def cls_func(func: ClassFuncT) -> ClassFuncT:
 
 def button_sound(index: Union[int, str]) -> Resource:
     """Return the resource matching the hardcoded set of sounds in button ents."""
-    return Resource(f'Buttons.snd{conv_int(index):d}', FileType.GAME_SOUND)
+    if index:
+        return Resource(f'Buttons.snd{conv_int(index):d}', FileType.GAME_SOUND)
+    else:  # Not set, skip
+        return Resource('', FileType.GAME_SOUND)
 
 
 # Entropy Zero 2 variant constants.
@@ -107,6 +110,7 @@ def asw_spawner(ctx: ResourceCtx, ent: Entity) -> ResGen:
     )
 
 
+@cls_func
 def func_button_sounds(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the legacy sound indexes."""
     yield button_sound(ent['sounds'])
