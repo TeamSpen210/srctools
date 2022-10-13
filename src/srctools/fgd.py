@@ -1424,7 +1424,6 @@ class EntityDef:
             passed along to defined entclass functions, and is seperate, so it can be reused
             for many calls to this function.
         """
-
         # We can recurse, use two lists to avoid actual recursive calls.
         # Also track the checked classes, so we don't repeat ourselves.
         classes_checked = {self.classname}
@@ -1436,7 +1435,9 @@ class EntityDef:
             todo_res.extend(ent_def.resources)
             while todo_res:
                 res = todo_res.pop()
-                if not match_tags(ctx.tags, res.tags):
+                # Skip resources with bad tags, and also skip those with totally empty filenames.
+                # The latter is usually just an unset keyvalue, not important.
+                if not match_tags(ctx.tags, res.tags) or not res.filename:
                     continue
                 if res.type is FileType.ENTITY:
                     if res.filename not in classes_checked:
