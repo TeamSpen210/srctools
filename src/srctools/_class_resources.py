@@ -4,8 +4,8 @@ from typing_extensions import Final, TypeAlias
 import itertools
 
 from . import conv_bool, conv_int
+from .fgd import Resource, ResourceCtx
 from .packlist import FileType
-from .fgd import ResourceCtx, Resource
 from .vmf import VMF, Entity
 
 

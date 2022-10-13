@@ -2,7 +2,7 @@
 # cython: binding=True
 """Cython version of the Tokenizer class."""
 from cpython.mem cimport PyMem_Free, PyMem_Malloc, PyMem_Realloc
-from libc.stdint cimport uint_fast8_t, uint16_t
+from libc.stdint cimport uint16_t, uint_fast8_t
 cimport cython
 
 
