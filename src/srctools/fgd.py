@@ -1415,14 +1415,18 @@ class EntityDef:
         ctx: ResourceCtx,
         *,
         ent: Optional[Entity],
+        on_error: Union[BaseException, Callable[[str], object]] = lambda err: None,
     ) -> Iterator[Tuple[FileType, str]]:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 
         :param ent: A specific entity to evaluate against. If not provided, functions will
             silently be skipped.
-        :param ctx: Common information about the current map and game configuration. This is \
+        :param ctx: Common information about the current map and game configuration. This is
             passed along to defined entclass functions, and is seperate, so it can be reused
             for many calls to this function.
+        :param on_error: If provided, when functions or entities are missing this will be called
+            with the specific error, or instantiated and raised if it is an exception type. If not
+            set, lookups are ignored.
         """
         # We can recurse, use two lists to avoid actual recursive calls.
         # Also track the checked classes, so we don't repeat ourselves.
@@ -1444,13 +1448,16 @@ class EntityDef:
                         try:
                             sub_ent = ctx.get_entdef(res.filename)
                         except LookupError:  # KeyError or IndexError
+                            err = on_error(f'Missing entity definition: "{res.filename}"')
+                            if isinstance(err, BaseException):
+                                raise err from None
                             continue
                         classes_checked.add(res.filename)
                         # For entity recursions, we pass the same ent down.
                         todo_ents.append((sub_ent, ent))
                 elif res.type is FileType.ENTCLASS_FUNC:
                     if ent is None:
-                        ent = _fake_vmf.create_ent(res.filename)
+                        ent = _fake_vmf.create_ent(ent_def.classname)
                     ent_key = frozenset({
                         (key, value) for key, value in
                         ent.items()
@@ -1468,12 +1475,18 @@ class EntityDef:
                         # noinspection PyProtectedMember
                         func = ctx._functions[res.filename]
                     except LookupError:
+                        err = on_error(f'Missing function: "{res.filename}" in "{ent_def.classname}"')
+                        if isinstance(err, BaseException):
+                            raise err from None
                         continue
                     for sub_res in func(ctx, ent):
                         if isinstance(sub_res, Entity):
                             try:
                                 sub_ent = ctx.get_entdef(sub_res['classname'])
                             except LookupError:  # KeyError or IndexError
+                                err = on_error(f'Missing entity definition: "{res.filename}"')
+                                if isinstance(err, BaseException):
+                                    raise err from None
                                 continue
                             todo_ents.append((sub_ent, sub_res))
                             continue
