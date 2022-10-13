@@ -322,8 +322,7 @@ def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[s
             if ready_for_string:
                 raise tok.error(token)
             return strings, token
-    else:
-        raise tok.error(token)
+    raise tok.error(token)
 
 
 def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
@@ -413,7 +412,7 @@ def validate_tags(
     })
 
 
-def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
+def match_tags(search: Container[str], tags: Collection[str]) -> bool:
     """Check if the search constraints satisfy tags.
 
     The search tags should be uppercased.
@@ -1089,20 +1088,20 @@ del _EntityView.__slots__
 @attrs.define(slots=False, eq=False, repr=False)
 class EntityDef:
     """A definition for an entity."""
-    type: EntityTypes
-    classname: str = ''
+    type: EntityTypes  #: The kind of entity.
+    classname: str = ''  #: The classname of this entity, as originally typed.
 
-    # These are (name) -> {tags} -> value dicts.
+    # These are (name) -> {tags: value} dicts.
     keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.field(kw_only=True, factory=dict)
     inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
     outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
 
-    # Keyvalues have an order. If not present in here,
-    # they appear at the end.
+    #: Keyvalues have an order. If not present in here, they appear at the end.
     kv_order: List[str] = attrs.field(kw_only=True, factory=list)
 
-    # Base type names - base()
+    #: The parent entity classes defined using ``base()`` helpers.
     bases: List[Union['EntityDef', str]] = attrs.field(kw_only=True, factory=list)
+    #: All other helpers defined on the entity.
     helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
     desc: str = attrs.field(default='', kw_only=True)
 
@@ -1111,8 +1110,11 @@ class EntityDef:
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
 
+    #: A list of resources this entity may precache. Use :py:func:`get_resources()` to recursively
+    #: fetch sub-entity resources.
     resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
-    # If set, this should have 1 base, which this is simply an alternate classname for.
+    #: If set, the ``aliasof()`` helper was used. This entity should have 1 base, which this is
+    #: simply an alternate classname for.
     is_alias: bool = attrs.field(kw_only=True, default=False)
 
     def __attrs_post_init__(self) -> None:
@@ -1129,7 +1131,10 @@ class EntityDef:
         ent_type: EntityTypes,
         eval_bases: bool = True,
     ) -> None:
-        """Parse an entity definition."""
+        """Parse an entity definition from an FGD file.
+
+        The ``@PointClass`` etc keyword should already have been read, and is passed as ``ent_type``.
+        """
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
@@ -1414,10 +1419,10 @@ class EntityDef:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 
         :param ent: A specific entity to evaluate against. If not provided, functions will
-        silently be skipped.
+            silently be skipped.
         :param ctx: Common information about the current map and game configuration. This is \
-        passed along to defined entclass functions, and is seperate, so it can be reused for many
-        calls to this function.
+            passed along to defined entclass functions, and is seperate, so it can be reused
+            for many calls to this function.
         """
 
         # We can recurse, use two lists to avoid actual recursive calls.
@@ -1576,7 +1581,7 @@ class EntityDef:
                     out.export(file, 'output', tags)
         file.write('\t]\n')
 
-    def iter_bases(self, _done: Set['EntityDef']=None) -> Iterator['EntityDef']:
+    def iter_bases(self, _done: Optional[Set['EntityDef']] = None) -> Iterator['EntityDef']:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
@@ -1627,7 +1632,7 @@ class FGD:
     def parse(
         cls,
         file: Union[File, str],
-        filesystem: FileSystem=None,
+        filesystem: Optional[FileSystem] = None,
     ) -> 'FGD':
         """Parse an FGD file.
 
@@ -1639,8 +1644,7 @@ class FGD:
             if not file.endswith('.fgd'):
                 file += '.fgd'
             try:
-                with filesystem:
-                    file = filesystem[file]
+                file = filesystem[file]
             except KeyError:
                 raise FileNotFoundError(file)
         elif isinstance(file, File):
