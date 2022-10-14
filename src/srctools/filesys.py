@@ -18,7 +18,8 @@ See the :py:class:`srctools.game.Game` class for parsing ``gameinfo.txt`` files 
 To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)``.
 """
 from typing import (
-    Any, BinaryIO, Dict, Generic, Iterator, List, Optional, Set, TextIO, Tuple, Type, TypeVar,
+    Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type,
+    TypeVar,
     Union, cast,
 )
 from typing_extensions import Final
@@ -393,7 +394,7 @@ class VirtualFileSystem(FileSystem[str]):
     is called.
     """
 
-    def __init__(self, mapping: Dict[str, Union[str, bytes]], encoding: str = 'utf8') -> None:
+    def __init__(self, mapping: Mapping[str, Union[str, bytes]], encoding: str = 'utf8') -> None:
         super().__init__('<virtual>')
         self._mapping = {
             self._clean_path(filename): (filename, data)
