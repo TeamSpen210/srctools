@@ -1,5 +1,5 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Dict, Generator, Iterable
+from typing import Dict, Generator, Iterable, List, Set
 
 import pytest
 
@@ -187,7 +187,100 @@ def test_env_fire() -> None:
 # TODO: env_headcrabcanister
 # TODO: env_shooter
 # TODO: env_smokestack
-# TODO: item_ammo_crate
+
+ammo_crate_models_hl2 = {
+    0: "models/items/ammocrate_pistol.mdl",
+    1: "models/items/ammocrate_smg1.mdl",
+    2: "models/items/ammocrate_ar2.mdl",
+    3: "models/items/ammocrate_rockets.mdl",
+    4: "models/items/ammocrate_buckshot.mdl",
+    # 5: "models/items/ammocrate_grenade.mdl",
+    6: "models/items/ammocrate_smg1.mdl",
+    7: "models/items/ammocrate_smg1.mdl",
+    8: "models/items/ammocrate_ar2.mdl",
+    9: "models/items/ammocrate_smg2.mdl",
+}
+
+ammo_crate_models_mbase = {
+    0: "models/items/ammocrate_pistol.mdl",
+    1: "models/items/ammocrate_smg1.mdl",
+    2: "models/items/ammocrate_ar2.mdl",
+    3: "models/items/ammocrate_rockets.mdl",
+    4:"models/items/ammocrate_buckshot.mdl",
+    # 5: "models/items/ammocrate_grenade.mdl",
+    6: "models/items/ammocrate_357.mdl",
+    7: "models/items/ammocrate_xbow.mdl",
+    8: "models/items/ammocrate_ar2alt.mdl",
+    9: "models/items/ammocrate_smg2.mdl",
+    # 10: "models/items/ammocrate_slam.mdl",
+    11: "models/items/ammocrate_empty.mdl",
+}
+
+
+@pytest.mark.parametrize('ammo, tags', [
+    (ammo_crate_models_hl2, []),
+    (ammo_crate_models_mbase, ['mapbase']),
+], ids=['hl2', 'mapbase'])
+def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
+    """Test ammo crate models."""
+    for i, ammo_mdl in ammo.items():
+        check_entity(
+            Resource.snd('AmmoCrate.Open'),
+            Resource.snd('AmmoCrate.Close'),
+            Resource.mdl(ammo_mdl),
+            classname='item_ammo_crate',
+            ammotype=i,
+            tags__=tags,
+        )
+    # Grenades include the entity.
+    check_entity(
+        Resource.snd('AmmoCrate.Open'),
+        Resource.snd('AmmoCrate.Close'),
+        Resource.mdl('models/items/ammocrate_grenade.mdl'),
+        # npc_weapon_frag:
+        Resource.snd('WeaponFrag.Throw'),
+        Resource.snd('WeaponFrag.Roll'),
+        Resource.mdl("models/Weapons/w_grenade.mdl"),
+        Resource.mat("materials/sprites/redglow1.vmt"),
+        Resource.mat("materials/sprites/bluelaser1.vmt"),
+        Resource.snd("Grenade.Blip"),
+        Resource.snd("BaseGrenade.Explode"),
+        classname='item_ammo_crate',
+        ammotype=5,
+        tags__=tags,
+    )
+
+    # And Mapbase adds the SLAM which does the same:
+    check_entity(
+        Resource.snd('AmmoCrate.Open'),
+        Resource.snd('AmmoCrate.Close'),
+        Resource.mdl('models/items/ammocrate_slam.mdl'),
+        # weapon_slam:
+        Resource.snd("Weapon_SLAM.ThrowMode"),
+        Resource.snd("Weapon_SLAM.TripMineMode"),
+        Resource.snd("Weapon_SLAM.SatchelDetonate"),
+        Resource.snd("Weapon_SLAM.TripMineAttach"),
+        Resource.snd("Weapon_SLAM.SatchelThrow"),
+        Resource.snd("Weapon_SLAM.SatchelAttach"),
+        # npc_tripmine
+        Resource.mdl("models/Weapons/w_slam.mdl"),
+        Resource.snd("TripmineGrenade.Charge"),
+        Resource.snd("TripmineGrenade.PowerUp"),
+        Resource.snd("TripmineGrenade.StopSound"),
+        Resource.snd("TripmineGrenade.Activate"),
+        Resource.snd("TripmineGrenade.ShootRope"),
+        Resource.snd("TripmineGrenade.Hook"),
+        # npc_satchel
+        Resource.mdl("models/Weapons/w_slam.mdl"),
+        Resource.snd("SatchelCharge.Pickup"),
+        Resource.snd("SatchelCharge.Bounce"),
+        Resource.snd("SatchelCharge.Slide"),
+        classname='item_ammo_crate',
+        ammotype=10,
+        tags__=['mapbase'],
+    )
+
+
 # TODO: item_teamflag
 # TODO: item_healthkit
 # TODO: item_healthvial
