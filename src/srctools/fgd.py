@@ -456,22 +456,22 @@ class Resource:
     tags: FrozenSet[str] = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+    def mdl(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
         """Create a resource definition for a model."""
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod
-    def mat(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+    def mat(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
         """Create a resource definition for a material."""
         return cls(filename, FileType.MATERIAL, tags)
 
     @classmethod
-    def snd(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+    def snd(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
         """Create a resource definition for a soundscript."""
         return cls(filename, FileType.GAME_SOUND, tags)
 
     @classmethod
-    def part(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+    def part(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
@@ -1448,6 +1448,9 @@ class EntityDef:
             with the specific error, or instantiated and raised if it is an exception type. If not
             set, lookups are ignored.
         """
+        if not self.resources:
+            # Nothing to do, skip making the sets/lists below.
+            return
         # We can recurse, use two lists to avoid actual recursive calls.
         # Also track the checked classes, so we don't repeat ourselves.
         classes_checked = {self.classname}
