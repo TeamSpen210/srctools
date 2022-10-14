@@ -470,7 +470,6 @@ RES_ANT_REGULAR = [
     Resource.mdl("models/gibs/antlion_gib_small_3.mdl"),
 ]
 RES_ANT_WORKER = [
-    *RES_ANT_COMMON, *RES_ANT_EPISODIC,
     Resource.part("blood_impact_antlion_worker_01"),
     Resource.part("antlion_gib_02"),
     Resource.part("blood_impact_yellow_01"),
@@ -550,7 +549,7 @@ def test_npc_antlion_worker() -> None:
     """Antlions have the worker variant in episodic, and EZ2 adds a few more."""
     # Now, workers.
     check_entity(
-        *RES_ANT_WORKER,
+        *RES_ANT_COMMON, *RES_ANT_EPISODIC, *RES_ANT_WORKER,
         Resource.mdl("models/antlion_worker.mdl"),
         classname='npc_antlion',
         tags__=["hl2", "episodic"],
@@ -558,7 +557,7 @@ def test_npc_antlion_worker() -> None:
     )
     # EZ variant 0 doesn't change the antlion, adds some grenade resources though.
     check_entity(
-        *RES_ANT_WORKER,
+        *RES_ANT_COMMON, *RES_ANT_EPISODIC, *RES_ANT_WORKER,
         Resource.mdl("models/antlion_worker.mdl"),
         Resource.part("ExplosionCore"),  # Not actually used, but loaded via grenade base class.
         Resource.part("ExplosionEmbers"),
@@ -569,7 +568,7 @@ def test_npc_antlion_worker() -> None:
         ezvariant=0,
     )
     check_entity(
-        *RES_ANT_WORKER,
+        *RES_ANT_COMMON, *RES_ANT_EPISODIC, *RES_ANT_WORKER,
         Resource.mdl("models/bloodlion_worker.mdl"),
         Resource.part("ExplosionCore"),
         Resource.part("ExplosionEmbers"),
@@ -587,9 +586,45 @@ def test_npc_antlionguard() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_npc_antlion_template_maker() -> None:
-    raise NotImplementedError
+    """The template maker can force spawned antlions to be workers."""
+    check_entity(classname='npc_antlion_template_maker')
+    check_entity(  # Includes spore effects.
+        Resource.mat("materials/particle/fire.vmt"),
+        classname='npc_antlion_template_maker',
+        createspores='1',
+        tags__=["hl2", "episodic"],
+    )
+    # We need to include the additional worker resources.
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/antlion_worker.mdl"),
+        classname='npc_antlion_template_maker',
+        workerspawnrate=0.25,
+        tags__=["hl2", "episodic"],
+    )
+    # Both at once
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/antlion_worker.mdl"),
+        Resource.mat("materials/particle/fire.vmt"),
+        classname='npc_antlion_template_maker',
+        createspores='1',
+        workerspawnrate=0.25,
+        tags__=["hl2", "episodic"],
+    )
+    # In Entropy Zero, add in the bloodlion variant.
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/antlion_worker.mdl"),
+        Resource.mdl("models/bloodlion_worker.mdl"),
+        Resource.part("ExplosionCore"),   # EZ2 adds these extra particles too.
+        Resource.part("ExplosionEmbers"),
+        Resource.part("ExplosionFlash"),
+        classname='npc_antlion_template_maker',
+        workerspawnrate=0.25,
+        tags__=["hl2", "episodic", "entropyzero2"],
+    )
 
 
 # npc_turret_floor

@@ -3,7 +3,7 @@ from typing import Callable, Dict, Iterator, Mapping, Sequence, TypeVar, Union
 from typing_extensions import Final, TypeAlias
 import itertools
 
-from . import conv_bool, conv_int
+from . import conv_bool, conv_float, conv_int
 from .fgd import Resource, ResourceCtx
 from .packlist import FileType
 from .vmf import VMF, Entity
@@ -619,10 +619,9 @@ def npc_antlion_template_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Depending on KVs this may or may not spawn workers."""
     # There will be an antlion present in the map, as the template NPC. So we don't need to add
     # those resources.
-    if conv_int(ent['workerspawnrate']) > 0:
+    if conv_float(ent['workerspawnrate']) > 0.0:
         # It randomly spawns worker antlions, so load that resource set.
-        if 'entropyzero2' in ctx.tags:
-            yield Resource("models/bloodlion_worker.mdl", FileType.MODEL)
+        yield Resource.mdl("models/bloodlion_worker.mdl", frozenset(['entropyzero2']))
         yield Resource("models/antlion_worker.mdl", FileType.MODEL)
         yield from ANT_WORKER_RESOURCES
         yield _blank_vmf.create_ent('grenade_spit')
