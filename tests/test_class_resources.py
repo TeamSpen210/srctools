@@ -1,5 +1,6 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Dict, Generator, Iterable, List, Mapping, Set, Union
+from typing import Dict, Generator, Iterable, List, Mapping, Union
+from operator import itemgetter
 
 import pytest
 
@@ -7,7 +8,7 @@ from srctools import EmptyMapping
 from srctools.const import FileType
 from srctools.fgd import FGD, Resource, ResourceCtx
 from srctools.filesys import VirtualFileSystem
-from srctools.vmf import Entity, VMF, ValidKVs
+from srctools.vmf import VMF, Entity, ValidKVs
 
 
 fgd: FGD
@@ -42,7 +43,8 @@ def check_entity(
     )
     ent_def = fgd[classname]
     actual = set(ent_def.get_resources(ctx, ent=ent, on_error=LookupError))
-    assert actual == expected
+    # Sort each so that PyCharm shows diffs correctly.
+    assert sorted(actual, key=itemgetter(1)) == sorted(expected, key=itemgetter(1))
 
 
 def test_basic_ent() -> None:
