@@ -89,3 +89,36 @@ def test_func_button_timed() -> None:
         sounds=23,
         unlocked_sound=5,
     )
+
+
+# TODO: base_plat_train
+# TODO: func_breakable
+# TODO: func_breakable_surf
+# TODO: move_rope & keyframe_rope
+# TODO: env_break_shooter
+# TODO: env_fire
+# TODO: env_headcrabcanister
+# TODO: env_shooter
+# TODO: env_smokestack
+# TODO: item_ammo_crate
+# TODO: item_teamflag
+# TODO: item_healthkit
+# TODO: item_healthvial
+# TODO: NPCs
+# TODO: npc_antlion
+# TODO: npc_antlionguard
+# TODO: npc_antlion_template_maker
+# TODO: npc_arbeit_turret_floor
+# TODO: npc_bullsquid
+# TODO: npc_cscanner
+# TODO: npc_clawscanner
+# TODO: npc_citizen
+# TODO: npc_combinedropship
+# TODO: npc_combinegunship
+# TODO: npc_egg
+# TODO: npc_maker
+# TODO: npc_metropolice
+# TODO: npc_zassassin
+# TODO: point_entity_replace
+# TODO: skybox_swapper
+# TODO: team_control_point
