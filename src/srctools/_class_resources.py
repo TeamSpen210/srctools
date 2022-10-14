@@ -520,7 +520,11 @@ def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str='kit') -> ResGen:
         ent['ezvariant'] = variant = EZ_VARIANT_DEFAULT
     model, skin, snd = EZ_HEALTH_FOLDERS[variant]
 
-    yield Resource(f'models/items/{model}health{kind}.mdl#{skin}', FileType.MODEL)
+    if kind == 'vial' and model == '':
+        # Special case, the regular model is not in items.
+        yield Resource.mdl('models/healthvial.mdl#0')
+    else:
+        yield Resource(f'models/items/{model}health{kind}.mdl#{skin}', FileType.MODEL)
     yield Resource(f'Health{kind.title()}{snd}.Touch', FileType.GAME_SOUND)
 
 

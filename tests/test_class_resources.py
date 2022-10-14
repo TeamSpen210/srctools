@@ -312,14 +312,96 @@ def test_item_teamflag() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_item_healthkit() -> None:
-    raise NotImplementedError
+    """Entropy Zero 2 has several variants for this item."""
+    # Regular HL2.
+    check_entity(
+        Resource.snd('HealthKit.Touch'),
+        Resource.mdl('models/items/healthkit.mdl'),
+        classname='item_healthkit',
+        tags__=['hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthKit.Touch'),
+        Resource.mdl('models/items/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=0,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthKit_Xen.Touch'),
+        Resource.mdl('models/items/xen/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=1,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthKit_Rad.Touch'),
+        Resource.mdl('models/items/arbeit/healthkit.mdl#1'),
+        classname='item_healthkit',
+        ezvariant=2,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthKit_Temporal.Touch'),
+        Resource.mdl('models/items/temporal/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=3,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthKit_Arbeit.Touch'),
+        Resource.mdl('models/items/arbeit/healthkit.mdl#0'),
+        classname='item_healthkit',
+        ezvariant=4,
+        tags__=['entropyzero2', 'hl2'],
+    )
 
 
-@pytest.mark.xfail
 def test_item_healthvial() -> None:
-    raise NotImplementedError
+    """Entropy Zero 2 has several variants for this item."""
+    # Regular HL2.
+    check_entity(
+        Resource.snd('HealthVial.Touch'),
+        Resource.mdl('models/healthvial.mdl'),
+        classname='item_healthvial',
+        tags__=['hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthVial.Touch'),
+        Resource.mdl('models/healthvial.mdl#0'),
+        classname='item_healthvial',
+        ezvariant=0,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthVial_Xen.Touch'),
+        Resource.mdl('models/items/xen/healthvial.mdl#0'),
+        classname='item_healthvial',
+        ezvariant=1,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthVial_Rad.Touch'),
+        Resource.mdl('models/items/arbeit/healthvial.mdl#1'),
+        classname='item_healthvial',
+        ezvariant=2,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthVial_Temporal.Touch'),
+        Resource.mdl('models/items/temporal/healthvial.mdl#0'),
+        classname='item_healthvial',
+        ezvariant=3,
+        tags__=['entropyzero2', 'hl2'],
+    )
+    check_entity(
+        Resource.snd('HealthVial_Arbeit.Touch'),
+        Resource.mdl('models/items/arbeit/healthvial.mdl#0'),
+        classname='item_healthvial',
+        ezvariant=4,
+        tags__=['entropyzero2', 'hl2'],
+    )
 
 
 @pytest.mark.xfail
