@@ -1,10 +1,12 @@
 """Test the resource functions implemented for specific entities."""
-from typing import Dict, Generator, Iterable, List, Set
+from typing import Dict, Generator, Iterable, List, Mapping, Set, Union
 
 import pytest
 
+from srctools import EmptyMapping
 from srctools.const import FileType
 from srctools.fgd import FGD, Resource, ResourceCtx
+from srctools.filesys import VirtualFileSystem
 from srctools.vmf import Entity, VMF, ValidKVs
 
 
@@ -25,6 +27,7 @@ def check_entity(
     classname: str,
     mapname__: str = '',
     tags__: Iterable[str] = (),
+    filesys__: Mapping[str, Union[str, bytes]] = EmptyMapping,
     **keyvalues: ValidKVs,
 ) -> None:
     """Check this entity produces the specified resources."""
@@ -35,6 +38,7 @@ def check_entity(
         fgd=fgd,
         tags=tags__,
         mapname=mapname__,
+        fsys=VirtualFileSystem(filesys__),
     )
     ent_def = fgd[classname]
     actual = set(ent_def.get_resources(ctx, ent=ent, on_error=LookupError))
@@ -299,6 +303,36 @@ def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
 # TODO: npc_maker
 # TODO: npc_metropolice
 # TODO: npc_zassassin
-# TODO: point_entity_replace
-# TODO: skybox_swapper
+
+
+def test_point_entity_replace() -> None:
+    """This entity may spawn in another entity."""
+    check_entity(
+        classname='point_entity_replace',
+        replacementtype=0,   # Entity name, so not packed.
+        replacemententity='npc_strider',
+    )
+    check_entity(
+        Resource.mat("materials/sprites/light_glow02_add_noz.vmt"),
+        classname='point_entity_replace',
+        replacementtype=1,  # Classname
+        replacemententity='env_lightglow',
+    )
+
+
+def test_skybox_swapper() -> None:
+    """Skybox swapper packs the other sides of the skybox."""
+    check_entity(classname='skybox_swapper')
+    check_entity(
+        Resource.mat('materials/skybox/sky_purplert.vmt'),
+        Resource.mat('materials/skybox/sky_purplebk.vmt'),
+        Resource.mat('materials/skybox/sky_purplelf.vmt'),
+        Resource.mat('materials/skybox/sky_purpleft.vmt'),
+        Resource.mat('materials/skybox/sky_purpleup.vmt'),
+        Resource.mat('materials/skybox/sky_purpledn.vmt'),
+        classname='skybox_swapper',
+        skyboxname='sky_purple',
+    )
+
+
 # TODO: team_control_point
