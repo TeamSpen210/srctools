@@ -95,9 +95,20 @@ def test_func_button_timed() -> None:
     )
 
 
-# TODO: base_plat_train
-# TODO: func_breakable
-# TODO: func_breakable_surf
+
+@pytest.mark.xfail
+def test_base_plat_train() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_func_breakable() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_func_breakable_surf() -> None:
+    raise NotImplementedError
 
 
 @pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
@@ -188,9 +199,20 @@ def test_env_fire() -> None:
     )
 
 
-# TODO: env_headcrabcanister
-# TODO: env_shooter
-# TODO: env_smokestack
+@pytest.mark.xfail
+def test_env_headcrabcanister() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_env_shooter() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_env_smokestack() -> None:
+    raise NotImplementedError
+
 
 ammo_crate_models_hl2 = {
     0: "models/items/ammocrate_pistol.mdl",
@@ -285,24 +307,94 @@ def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
     )
 
 
-# TODO: item_teamflag
-# TODO: item_healthkit
-# TODO: item_healthvial
-# TODO: NPCs
-# TODO: npc_antlion
-# TODO: npc_antlionguard
-# TODO: npc_antlion_template_maker
-# TODO: npc_arbeit_turret_floor
-# TODO: npc_bullsquid
-# TODO: npc_cscanner
-# TODO: npc_clawscanner
-# TODO: npc_citizen
-# TODO: npc_combinedropship
-# TODO: npc_combinegunship
-# TODO: npc_egg
-# TODO: npc_maker
-# TODO: npc_metropolice
-# TODO: npc_zassassin
+@pytest.mark.xfail
+def test_item_teamflag() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_item_healthkit() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_item_healthvial() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_NPCs() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_antlion() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_antlionguard() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_antlion_template_maker() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_arbeit_turret_floor() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_bullsquid() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_cscanner() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_clawscanner() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_citizen() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_combinedropship() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_combinegunship() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_egg() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_maker() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_metropolice() -> None:
+    raise NotImplementedError
+
+
+@pytest.mark.xfail
+def test_npc_zassassin() -> None:
+    raise NotImplementedError
 
 
 def test_point_entity_replace() -> None:
@@ -335,4 +427,6 @@ def test_skybox_swapper() -> None:
     )
 
 
-# TODO: team_control_point
+@pytest.mark.xfail
+def test_team_control_point() -> None:
+    raise NotImplementedError
