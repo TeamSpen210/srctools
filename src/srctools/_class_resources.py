@@ -627,6 +627,7 @@ def npc_arbeit_turret_floor(ctx: ResourceCtx, ent: Entity) -> ResGen:
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
         yield Resource('models/props/glowturret_01.mdl', FileType.MODEL)
+        yield Resource("materials/cable/goocable.vmt", FileType.MATERIAL)
     elif variant == EZ_VARIANT_ARBEIT:
         yield Resource('models/props/camoturret_01.mdl', FileType.MODEL)
         yield Resource('models/props/camoturret_02.mdl', FileType.MODEL)

@@ -407,7 +407,7 @@ def test_item_healthvial() -> None:
 
 
 @pytest.mark.xfail
-def test_NPCs() -> None:
+def test_npcs() -> None:
     raise NotImplementedError
 
 
@@ -418,6 +418,7 @@ def test_npc_antlion() -> None:
 
 @pytest.mark.xfail
 def test_npc_antlionguard() -> None:
+    """Quite complicated, episodic specific sounds, and EZ2 has variants."""
     raise NotImplementedError
 
 
@@ -426,9 +427,79 @@ def test_npc_antlion_template_maker() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
+# npc_turret_floor
+TURRET_RES_EZ2 = [
+    Resource.snd("AI_BaseNPC.BodyDrop_Heavy"),
+    Resource.snd("AI_BaseNPC.BodyDrop_Light"),
+    Resource.snd("AI_BaseNPC.SentenceStop"),
+    Resource.snd("AI_BaseNPC.SwishSound"),
+    Resource.mdl("models/combine_turrets/citizen_turret.mdl"),
+    Resource.mdl("models/combine_turrets/floor_turret.mdl"),
+    Resource("MetalChunks", FileType.BREAKABLE_CHUNK),
+    Resource.mat("materials/effects/laser1.vmt"),
+    Resource.mat("materials/sprites/glow1.vmt"),
+    Resource.snd("NPC_FloorTurret.AlarmPing"),
+    Resource.snd("NPC_FloorTurret.Retire"),
+    Resource.snd("NPC_FloorTurret.Deploy"),
+    Resource.snd("NPC_FloorTurret.Move"),
+    Resource.snd("NPC_Combine.WeaponBash"),
+    Resource.snd("NPC_FloorTurret.Activate"),
+    Resource.snd("NPC_FloorTurret.Alert"),
+    Resource.snd("NPC_FloorTurret.ShotSounds"),
+    Resource.snd("NPC_FloorTurret.Die"),
+    Resource.snd("NPC_FloorTurret.Retract"),
+    Resource.snd("NPC_FloorTurret.Alarm"),
+    Resource.snd("NPC_FloorTurret.Ping"),
+    Resource.snd("NPC_FloorTurret.DryFire"),
+    Resource.snd("NPC_FloorTurret.Destruct"),
+    Resource.part("explosion_turret_break"),  # Episodic
+]
+
+
 def test_npc_arbeit_turret_floor() -> None:
-    raise NotImplementedError
+    check_entity(
+        *TURRET_RES_EZ2,
+        Resource.mdl("models/props/turret_01.mdl"),
+        Resource.snd("NPC_ArbeitTurret.DryFire"),
+        classname='npc_arbeit_turret_floor',
+        tags__=['hl2', 'episodic', 'entropyzero2'],  # Should always be present.
+    )
+
+    check_entity(
+        *TURRET_RES_EZ2,
+        Resource.mdl("models/props/turret_01.mdl"),
+        Resource.snd("NPC_ArbeitTurret.DryFire"),
+        classname='npc_arbeit_turret_floor',
+        ezvariant=0,  # Normal
+        tags__=['hl2', 'episodic', 'entropyzero2']
+    )
+    check_entity(
+        *TURRET_RES_EZ2,
+        Resource.mdl("models/props/hackedturret_01.mdl"),
+        Resource.snd("NPC_ArbeitTurret.DryFire"),
+        classname='npc_arbeit_turret_floor',
+        ezvariant=0,  # Normal
+        spawnflags=0x200 | 0x20,  # Citizen modified, auto active (unrelated)
+        tags__=['hl2', 'episodic', 'entropyzero2']
+    )
+    check_entity(
+        *TURRET_RES_EZ2,
+        Resource.mdl("models/props/glowturret_01.mdl"),
+        Resource.mat("materials/cable/goocable.vmt"),
+        Resource.snd("NPC_ArbeitTurret.DryFire"),
+        classname='npc_arbeit_turret_floor',
+        ezvariant=2,  # Radiation
+        tags__=['hl2', 'episodic', 'entropyzero2']
+    )
+    check_entity(
+        *TURRET_RES_EZ2,
+        Resource.mdl("models/props/camoturret_01.mdl"),
+        Resource.mdl("models/props/camoturret_02.mdl"),
+        Resource.snd("NPC_ArbeitTurret.DryFire"),
+        classname='npc_arbeit_turret_floor',
+        ezvariant=4,  # Arbeit
+        tags__=['hl2', 'episodic', 'entropyzero2']
+    )
 
 
 @pytest.mark.xfail
