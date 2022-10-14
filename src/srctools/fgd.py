@@ -455,6 +455,26 @@ class Resource:
     type: FileType = FileType.GENERIC
     tags: FrozenSet[str] = frozenset()
 
+    @classmethod
+    def mdl(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+        """Create a resource definition for a model."""
+        return cls(filename, FileType.MODEL, tags)
+
+    @classmethod
+    def mat(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+        """Create a resource definition for a material."""
+        return cls(filename, FileType.MATERIAL, tags)
+
+    @classmethod
+    def snd(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+        """Create a resource definition for a soundscript."""
+        return cls(filename, FileType.GAME_SOUND, tags)
+
+    @classmethod
+    def part(cls, filename: str, tags: FrozenSet[str] = frozenset) -> 'Resource':
+        """Create a resource definition for a particle system."""
+        return cls(filename, FileType.PARTICLE_SYSTEM, tags)
+
 
 @attrs.frozen(init=False)
 class ResourceCtx:
