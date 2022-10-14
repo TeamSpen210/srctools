@@ -1507,7 +1507,7 @@ class EntityDef:
                             try:
                                 sub_ent = ctx.get_entdef(sub_res['classname'])
                             except LookupError:  # KeyError or IndexError
-                                err = on_error(f'Missing entity definition: "{res.filename}"')
+                                err = on_error(f'Missing entity definition: "{sub_res["classname"]}"')
                                 if isinstance(err, BaseException):
                                     raise err from None
                                 continue
