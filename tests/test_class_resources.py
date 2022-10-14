@@ -911,9 +911,37 @@ def test_npc_egg() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_npc_maker() -> None:
-    raise NotImplementedError
+    """npc_maker spawns another NPC, potentially with equipment."""
+    check_entity(classname='npc_maker')  # No class, nothing happens.
+    check_entity(
+        *BASE_NPC,
+        Resource.mdl("models/eli.mdl"),
+        classname='npc_maker',
+        npctype='npc_eli',
+    )
+    check_entity(
+        *BASE_NPC,
+        Resource.mdl("models/eli.mdl"),
+        Resource.snd("Missile.Ignite"),
+        Resource.snd("Missile.Accelerate"),
+        Resource.mdl("models/weapons/w_missile.mdl"),
+        Resource.mdl("models/weapons/w_missile_launch.mdl"),
+        Resource.mdl("models/weapons/w_missile_closed.mdl"),
+        Resource.mat("materials/effects/laser1_noz.vmt"),
+        Resource.mat("materials/sprites/redglow1.vmt"),
+        Resource.mat("materials/effects/muzzleflash1.vmt"),
+        Resource.mat("materials/effects/muzzleflash2.vmt"),
+        Resource.mat("materials/effects/muzzleflash3.vmt"),
+        Resource.mat("materials/effects/muzzleflash4.vmt"),
+        Resource.mat("materials/sprites/flamelet1.vmt"),
+        Resource.mat("materials/sprites/flamelet2.vmt"),
+        Resource.mat("materials/sprites/flamelet3.vmt"),
+        Resource.mat("materials/sprites/flamelet4.vmt"),
+        classname='npc_maker',
+        npctype='npc_eli',
+        additionalequipment='weapon_rpg',
+    )
 
 
 @pytest.mark.xfail

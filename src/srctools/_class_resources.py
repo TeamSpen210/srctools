@@ -790,8 +790,13 @@ def npc_egg(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def npc_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """We spawn the NPC automatically."""
-    # Pass this along, it should then pack that too.
-    yield _blank_vmf.create_ent(ent['npctype'], additionalequipment=ent['additionalequipment'])
+    to_spawn = ent['npctype']
+    if to_spawn:
+        yield _blank_vmf.create_ent(
+            to_spawn,
+            # Pass this along, it should then pack that too.
+            additionalequipment=ent['additionalequipment'],
+        )
 
 
 @cls_func
