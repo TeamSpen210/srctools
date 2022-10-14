@@ -671,7 +671,7 @@ def combine_scanner(ctx: ResourceCtx, ent: Entity) -> ResGen:
         snd_prefix = 'NPC_SScanner.'
     else:
         yield Resource("models/combine_scanner.mdl", FileType.MODEL)
-        for i in range(1, 6):
+        for i in [1, 2, 4, 5]:  # No gib 3!
             yield Resource(f"models/gibs/scanner_gib{i:02}.mdl", FileType.MODEL)
         snd_prefix = 'NPC_CScanner.'
 

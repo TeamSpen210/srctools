@@ -436,14 +436,96 @@ def test_npc_bullsquid() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
+RES_COMBINE_MINE = [
+    Resource.mdl("models/props_combine/combine_mine01.mdl"),
+    Resource.snd("NPC_CombineMine.Hop"),
+    Resource.snd("NPC_CombineMine.FlipOver"),
+    Resource.snd("NPC_CombineMine.TurnOn"),
+    Resource.snd("NPC_CombineMine.TurnOff"),
+    Resource.snd("NPC_CombineMine.OpenHooks"),
+    Resource.snd("NPC_CombineMine.CloseHooks"),
+    Resource.snd("NPC_CombineMine.ActiveLoop"),
+    Resource.mat("materials/sprites/glow01.vmt"),
+]
+
+
+RES_SCANNER_CITY = [
+    Resource.mdl("models/combine_scanner.mdl"),
+    Resource.mdl("models/gibs/scanner_gib01.mdl"),
+    Resource.mdl("models/gibs/scanner_gib02.mdl"),
+    # Gib 3 does not exist!
+    Resource.mdl("models/gibs/scanner_gib04.mdl"),
+    Resource.mdl("models/gibs/scanner_gib05.mdl"),
+    Resource.mat("materials/sprites/light_glow03.vmt"),
+    Resource.mat("materials/sprites/glow_test02.vmt"),
+    Resource.snd("NPC_CScanner.Shoot"),
+    Resource.snd("NPC_CScanner.Alert"),
+    Resource.snd("NPC_CScanner.Die"),
+    Resource.snd("NPC_CScanner.Combat"),
+    Resource.snd("NPC_CScanner.Idle"),
+    Resource.snd("NPC_CScanner.Pain"),
+    Resource.snd("NPC_CScanner.TakePhoto"),
+    Resource.snd("NPC_CScanner.AttackFlash"),
+    Resource.snd("NPC_CScanner.DiveBombFlyby"),
+    Resource.snd("NPC_CScanner.DiveBomb"),
+    Resource.snd("NPC_CScanner.DeployMine"),
+    Resource.snd("NPC_CScanner.FlyLoop"),
+    *RES_COMBINE_MINE,
+    # Base NPC:
+    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
+    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
+    Resource.snd('AI_BaseNPC.SentenceStop'),
+    Resource.snd('AI_BaseNPC.SwishSound'),
+]
+
+RES_SCANNER_CLAW = [
+    Resource.mdl("models/shield_scanner.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib1.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib2.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib3.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib4.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib5.mdl"),
+    Resource.mdl("models/gibs/Shield_Scanner_Gib6.mdl"),
+    Resource.mat("materials/sprites/light_glow03.vmt"),
+    Resource.mat("materials/sprites/glow_test02.vmt"),
+    Resource.snd("NPC_SScanner.Shoot"),
+    Resource.snd("NPC_SScanner.Alert"),
+    Resource.snd("NPC_SScanner.Die"),
+    Resource.snd("NPC_SScanner.Combat"),
+    Resource.snd("NPC_SScanner.Idle"),
+    Resource.snd("NPC_SScanner.Pain"),
+    Resource.snd("NPC_SScanner.TakePhoto"),
+    Resource.snd("NPC_SScanner.AttackFlash"),
+    Resource.snd("NPC_SScanner.DiveBombFlyby"),
+    Resource.snd("NPC_SScanner.DiveBomb"),
+    Resource.snd("NPC_SScanner.DeployMine"),
+    Resource.snd("NPC_SScanner.FlyLoop"),
+    *RES_COMBINE_MINE,
+    # Base NPC:
+    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
+    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
+    Resource.snd('AI_BaseNPC.SentenceStop'),
+    Resource.snd('AI_BaseNPC.SwishSound'),
+]
+
+
 def test_npc_cscanner() -> None:
-    raise NotImplementedError
-
-
-@pytest.mark.xfail
-def test_npc_clawscanner() -> None:
-    raise NotImplementedError
+    """The city scanner becomes a claw scanner in certain maps."""
+    check_entity(
+        *RES_SCANNER_CITY,
+        classname='npc_cscanner',
+    )
+    check_entity(
+        *RES_SCANNER_CLAW,
+        classname='npc_cscanner',
+        mapname__='d3_c17_rebellion',
+    )
+    # This episodic classname always is the claw variant.
+    check_entity(
+        *RES_SCANNER_CLAW,
+        classname='npc_clawscanner',
+        tags__=['hl2', 'episodic'],
+    )
 
 
 @pytest.mark.xfail
