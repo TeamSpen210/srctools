@@ -286,7 +286,7 @@ def breakable_brush(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if object_ind < 27 or 'MESA' in ctx.tags:
         try:
             breakable_class = spawns[object_ind]
-        except (IndexError, TypeError, ValueError):
+        except (KeyError, TypeError, ValueError):
             pass
         else:
             yield _blank_vmf.create_ent(breakable_class)

@@ -102,14 +102,119 @@ def test_base_plat_train() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
-def test_func_breakable() -> None:
-    raise NotImplementedError
+# TODO: These should be based on the material...
+BREAKABLE = [
+    Resource.snd('Breakable.Ceiling'),
+    Resource.snd('Breakable.Computer'),
+    Resource.snd('Breakable.Concrete'),
+    Resource.snd('Breakable.Crate'),
+    Resource.snd('Breakable.Flesh'),
+    Resource.snd('Breakable.Glass'),
+    Resource.snd('Breakable.MatConcrete'),
+    Resource.snd('Breakable.MatFlesh'),
+    Resource.snd('Breakable.MatGlass'),
+    Resource.snd('Breakable.MatMetal'),
+    Resource.snd('Breakable.MatWood'),
+    Resource.snd('Breakable.Metal'),
+]
 
 
-@pytest.mark.xfail
+def test_func_breakable_materials() -> None:
+    """Test breakable chunk lookups for breakable brushes."""
+    check_entity(
+        *BREAKABLE,
+        Resource('WoodChunks', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=1,
+    )
+    check_entity(
+        *BREAKABLE,
+        # Not sure which is generated, so specify both.
+        Resource('ConcreteChunks', FileType.BREAKABLE_CHUNK),
+        Resource('CeilingTile', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=4,
+    )
+    check_entity(  # Changed in Portal 2.
+        *BREAKABLE,
+        Resource('WebGibs', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=9,
+    )
+    check_entity(  # Changed in Portal 2.
+        *BREAKABLE,
+        Resource('MetalPanelChunks', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=9,
+        tags__=['P2'],
+    )
+
+
+def test_func_breakable_spawns() -> None:
+    """Test the builtin spawn table for breakable brushes."""
+    check_entity(
+        *BREAKABLE,
+        Resource('WoodChunks', FileType.BREAKABLE_CHUNK),
+        Resource.snd('HealthKit.Touch'),
+        Resource.mdl('models/items/healthkit.mdl'),
+        classname='func_breakable',
+        material=1,
+        spawnobject=2,
+    )
+    check_entity(
+        *BREAKABLE,
+        Resource('WoodChunks', FileType.BREAKABLE_CHUNK),
+        classname='func_breakable',
+        material=1,
+        spawnobject=34,
+    )
+    # TODO: Mesa and HL1 resources, so we can check their spawn table.
+
+
 def test_func_breakable_surf() -> None:
-    raise NotImplementedError
+    check_entity(
+        *BREAKABLE,
+        Resource.mdl("models/brokenglass_piece.mdl"),
+        Resource.mat("materials/models/brokenglass/glassbroken_solid.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_01a.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_01b.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_01c.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_01d.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_02a.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_02b.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_02c.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_02d.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_03a.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_03b.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_03c.vmt"),
+        Resource.mat("materials/models/brokenglass/glassbroken_03d.vmt"),
+        Resource.mat("materials/effects/fleck_glass1.vmt"),
+        Resource.mat("materials/effects/fleck_glass2.vmt"),
+        classname='func_breakable_surf',
+        material=0,
+        surfacetype=0,
+    )
+    check_entity(
+        *BREAKABLE,
+        Resource.mdl("models/brokenglass_piece.mdl"),
+        Resource.mat("materials/models/brokentile/tilebroken_01a.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_01b.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_01c.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_01d.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_02a.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_02b.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_02c.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_02d.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_03a.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_03b.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_03c.vmt"),
+        Resource.mat("materials/models/brokentile/tilebroken_03d.vmt"),
+        Resource.mat("materials/effects/fleck_tile1.vmt"),
+        Resource.mat("materials/effects/fleck_tile2.vmt"),
+        classname='func_breakable_surf',
+        material=5,
+        surfacetype=1,
+    )
 
 
 @pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
