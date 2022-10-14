@@ -94,9 +94,96 @@ def test_func_button_timed() -> None:
 # TODO: base_plat_train
 # TODO: func_breakable
 # TODO: func_breakable_surf
-# TODO: move_rope & keyframe_rope
-# TODO: env_break_shooter
-# TODO: env_fire
+
+
+@pytest.mark.parametrize('cls', ['move_rope', 'keyframe_rope'])
+def test_sprite_ropes(cls: str) -> None:
+    """Test both sprite rope entities."""
+    check_entity(
+        Resource('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL),
+        Resource('materials/cable/cable.vmt', FileType.MATERIAL),
+        classname=cls,
+    )
+    check_entity(
+        Resource('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL),
+        # Custom is done via FGD.
+        classname=cls,
+        ropematerial='materials/something_custom.vmt',
+    )
+    check_entity(
+        Resource('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL),
+        Resource('materials/cable/cable.vmt', FileType.MATERIAL),
+        classname=cls,
+        ropeshader=0,
+    )
+    check_entity(
+        Resource('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL),
+        Resource('materials/cable/rope.vmt', FileType.MATERIAL),
+        classname=cls,
+        ropeshader=1,
+    )
+    check_entity(
+        Resource('materials/cable/rope_shadowdepth.vmt', FileType.MATERIAL),
+        Resource('materials/cable/chain.vmt', FileType.MATERIAL),
+        classname=cls,
+        ropeshader=2,
+    )
+
+
+def test_env_break_shooter() -> None:
+    """Test break shooter model."""
+    check_entity(
+        Resource('MetalChunks', FileType.BREAKABLE_CHUNK),
+        classname='env_break_shooter',
+        model='MetalChunks',
+        modeltype=0,
+    )
+    check_entity(
+        Resource('models/some_gib/gib1.mdl', FileType.MODEL),
+        classname='env_break_shooter',
+        model='models/some_gib/gib1.mdl',
+        modeltype=1,
+    )
+    check_entity(
+        classname='env_break_shooter',
+        model='some_template',
+        modeltype=2,
+    )
+
+
+def test_env_fire() -> None:
+    """Fires have a few different resource combos."""
+    check_entity(  # Plasma
+        Resource('Fire.Plasma', FileType.GAME_SOUND),
+        Resource("materials/sprites/plasma1.vmt", FileType.MATERIAL),  # These two from the _plasma ent.
+        Resource("materials/sprites/fire_floor.vmt", FileType.MATERIAL),
+        classname='env_fire',
+        firetype=1,
+    )
+    # Natural, smoking.
+    check_entity(
+        Resource('Fire.Plasma', FileType.GAME_SOUND),
+        Resource('env_fire_tiny_smoke', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_small_smoke', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_medium_smoke', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_large_smoke', FileType.PARTICLE_SYSTEM),
+        classname='env_fire',
+        firetype=0,
+        spawnflags=4,  # 2 = Smoking, 4 = start on (does nothing)
+    )
+    # Natural, smokeless
+    check_entity(
+        Resource('Fire.Plasma', FileType.GAME_SOUND),
+        Resource('env_fire_tiny', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_small', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_medium', FileType.PARTICLE_SYSTEM),
+        Resource('env_fire_large', FileType.PARTICLE_SYSTEM),
+        classname='env_fire',
+        firetype=0,
+        spawnflags=4 | 2,
+    )
+
+
 # TODO: env_headcrabcanister
 # TODO: env_shooter
 # TODO: env_smokestack

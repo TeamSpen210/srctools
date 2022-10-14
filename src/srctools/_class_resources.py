@@ -317,6 +317,7 @@ def func_breakable_surf(ctx: ResourceCtx, ent: Entity) -> ResGen:
             )
 
 
+@cls_func
 def sprite_rope(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Handles a legacy keyvalue for the material used on move_rope and keyframe_rope."""
     if 'ropeshader' in ent:
@@ -327,6 +328,8 @@ def sprite_rope(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource('materials/cable/rope.vmt', FileType.MATERIAL)
         else:
             yield Resource('materials/cable/chain.vmt', FileType.MATERIAL)
+    elif not ent['ropematerial']:  # If unset, default to this.
+        yield Resource('materials/cable/cable.vmt', FileType.MATERIAL)
 
 
 @cls_func
