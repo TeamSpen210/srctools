@@ -426,13 +426,18 @@ def test_npc_antlionguard() -> None:
 def test_npc_antlion_template_maker() -> None:
     raise NotImplementedError
 
+# Common base NPC sounds:
+BASE_NPC = [
+    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
+    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
+    Resource.snd('AI_BaseNPC.SentenceStop'),
+    Resource.snd('AI_BaseNPC.SwishSound'),
+]
+
 
 # npc_turret_floor
 TURRET_RES_EZ2 = [
-    Resource.snd("AI_BaseNPC.BodyDrop_Heavy"),
-    Resource.snd("AI_BaseNPC.BodyDrop_Light"),
-    Resource.snd("AI_BaseNPC.SentenceStop"),
-    Resource.snd("AI_BaseNPC.SwishSound"),
+    *BASE_NPC,
     Resource.mdl("models/combine_turrets/citizen_turret.mdl"),
     Resource.mdl("models/combine_turrets/floor_turret.mdl"),
     Resource("MetalChunks", FileType.BREAKABLE_CHUNK),
@@ -542,11 +547,7 @@ RES_SCANNER_CITY = [
     Resource.snd("NPC_CScanner.DeployMine"),
     Resource.snd("NPC_CScanner.FlyLoop"),
     *RES_COMBINE_MINE,
-    # Base NPC:
-    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
-    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
-    Resource.snd('AI_BaseNPC.SentenceStop'),
-    Resource.snd('AI_BaseNPC.SwishSound'),
+    *BASE_NPC,
 ]
 
 RES_SCANNER_CLAW = [
@@ -572,11 +573,7 @@ RES_SCANNER_CLAW = [
     Resource.snd("NPC_SScanner.DeployMine"),
     Resource.snd("NPC_SScanner.FlyLoop"),
     *RES_COMBINE_MINE,
-    # Base NPC:
-    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
-    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
-    Resource.snd('AI_BaseNPC.SentenceStop'),
-    Resource.snd('AI_BaseNPC.SwishSound'),
+    *BASE_NPC,
 ]
 
 
@@ -609,9 +606,74 @@ def test_npc_combinedropship() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_npc_combinegunship() -> None:
-    raise NotImplementedError
+    """The gunship can swap to a helicopter, like in Lost Coast."""
+    common = [
+        *BASE_NPC,
+        Resource("MetalChunks", FileType.BREAKABLE_CHUNK),
+        Resource.mat("materials/sprites/lgtning.vmt"),
+        Resource.mat("materials/effects/ar2ground2.vmt"),
+        Resource.mat("materials/effects/blueblackflash.vmt"),
+        Resource.snd("NPC_CombineGunship.SearchPing"),
+        Resource.snd("NPC_CombineGunship.PatrolPing"),
+        Resource.snd("NPC_Strider.Charge"),
+        Resource.snd("NPC_Strider.Shoot"),
+        Resource.snd("NPC_CombineGunship.SeeEnemy"),
+        Resource.snd("NPC_CombineGunship.CannonStartSound"),
+        Resource.snd("NPC_CombineGunship.Explode"),
+        Resource.snd("NPC_CombineGunship.Pain"),
+        Resource.snd("NPC_CombineGunship.CannonStopSound"),
+        Resource.snd("NPC_CombineGunship.DyingSound"),
+        Resource.snd("NPC_CombineGunship.CannonSound"),
+        Resource.snd("NPC_CombineGunship.RotorSound"),
+        Resource.snd("NPC_CombineGunship.ExhaustSound"),
+        Resource.snd("NPC_CombineGunship.RotorBlastSound"),
+    ]
+
+    check_entity(
+        *common,
+        Resource.mdl('models/gunship.mdl'),
+        classname='npc_combinegunship',
+        tags__=['hl2'],
+    )
+
+    # Episodic adds the citadel energy core.
+    check_entity(
+        *common,
+        Resource.mdl("models/gunship.mdl"),
+        Resource.mat("materials/sprites/physbeam.vmt"),
+        Resource.mat("materials/effects/strider_muzzle.vmt"),
+        Resource.mat("materials/effects/combinemuzzle2.vmt"),
+        Resource.mat("materials/effects/combinemuzzle2_dark.vmt"),
+        classname='npc_combinegunship',
+        tags__=['hl2', 'episodic'],
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/combine_helicopter.mdl"),
+        Resource.mdl("models/combine_helicopter_broken.mdl"),
+        # helicopter_chunk:
+        Resource.mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_02.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_03.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_04_cockpit.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_05_tailfan.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_06_body.mdl"),
+        Resource.snd("BaseExplosionEffect.Sound"),
+        Resource.snd("NPC_AttackHelicopter.Crash"),
+        # shared by env_smoketrail, env_fire_trail, ar2explosion
+        Resource.mat("materials/particle/particle_smokegrenade.vmt"),
+        Resource.mat("materials/particle/particle_noisesphere.vmt"),
+        # env_smoketrail:
+        Resource.mat("materials/sprites/flamelet1.vmt"),
+        Resource.mat("materials/sprites/flamelet2.vmt"),
+        Resource.mat("materials/sprites/flamelet3.vmt"),
+        Resource.mat("materials/sprites/flamelet4.vmt"),
+        Resource.mat("materials/sprites/flamelet5.vmt"),
+        classname='npc_combinegunship',
+        spawnflags=8192,
+        tags__=['hl2'],
+    )
 
 
 @pytest.mark.xfail
