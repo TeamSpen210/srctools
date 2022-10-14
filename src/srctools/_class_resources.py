@@ -817,14 +817,13 @@ def point_entity_replace(ctx: ResourceCtx, ent: Entity) -> ResGen:
 def skybox_swapper(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This needs to pack a skybox."""
     sky_name = ent['skyboxname']
+    if not sky_name:
+        return
     for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
         yield Resource(
             f'materials/skybox/{sky_name}{suffix}.vmt',
             FileType.MATERIAL,
         )
-        hdr_file = f'materials/skybox/{sky_name}{suffix}_hdr.vmt'
-        if hdr_file in ctx.fsys:
-            yield Resource(hdr_file, FileType.MATERIAL)
 
 
 @cls_func

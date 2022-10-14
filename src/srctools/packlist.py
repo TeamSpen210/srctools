@@ -953,11 +953,6 @@ class PackList:
                 'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
                 FileType.MATERIAL,
             )
-            self.pack_file(
-                'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
-                FileType.MATERIAL,
-                optional=True,
-            )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
 
         detail_script = vmf.spawn['detailvbsp']
