@@ -601,9 +601,82 @@ def test_npc_citizen() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_npc_combinedropship() -> None:
-    raise NotImplementedError
+    """The dropship can spawn with a variety of cargos."""
+    common = [
+        *BASE_NPC,
+        Resource.mdl("models/combine_dropship.mdl"),
+        Resource.snd("NPC_CombineDropship.RotorLoop"),
+        Resource.snd("NPC_CombineDropship.FireLoop"),
+        Resource.snd("NPC_CombineDropship.NearRotorLoop"),
+        Resource.snd("NPC_CombineDropship.OnGroundRotorLoop"),
+        Resource.snd("NPC_CombineDropship.DescendingWarningLoop"),
+        Resource.snd("NPC_CombineDropship.NearRotorLoop"),
+    ]
+    # 0 = no crate. 2 = roller hopper, adds nothing. -2 picks up an APC in the map, so no new resources.
+    for i in [0, 2, -2]:
+        check_entity(
+            *common,
+            classname='npc_combinedropship',
+            tags__=['hl2'],
+            cratetype=i,
+        )
+
+    check_entity(
+        *common,
+        Resource.mdl("models/combine_dropship_container.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_01.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_02.mdl"),
+        Resource.mdl("models/gibs/helicopter_brokenpiece_03.mdl"),
+        Resource.mdl("models/gibs/hgibs.mdl"),
+        classname='npc_combinedropship',
+        tags__=['hl2'],
+        cratetype=1,  # Soldier Crate
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/combine_strider.mdl"),
+        Resource.snd("NPC_Strider.StriderBusterExplode"),
+        Resource.snd("explode_5"),
+        Resource.snd("DoSpark"),
+        Resource.snd("NPC_Strider.Charge"),
+        Resource.snd("NPC_Strider.RagdollDetach"),
+        Resource.snd("NPC_Strider.Whoosh"),
+        Resource.snd("NPC_Strider.Creak"),
+        Resource.snd("NPC_Strider.Alert"),
+        Resource.snd("NPC_Strider.Pain"),
+        Resource.snd("NPC_Strider.Death"),
+        Resource.snd("NPC_Strider.FireMinigun"),
+        Resource.snd("NPC_Strider.Shoot"),
+        Resource.snd("NPC_Strider.OpenHatch"),
+        Resource.snd("NPC_Strider.Footstep"),
+        Resource.snd("NPC_Strider.Skewer"),
+        Resource.snd("NPC_Strider.Hunt"),
+        Resource.mat("materials/effects/water_highlight.vmt"),
+        Resource.mat("materials/sprites/physbeam.vmt"),
+        Resource.mat("materials/sprites/bluelaser1.vmt"),
+        Resource.mat("materials/effects/blueblacklargebeam.vmt"),
+        Resource.mat("materials/effects/strider_pinch_dudv.vmt"),
+        Resource.mat("materials/effects/blueblackflash.vmt"),
+        Resource.mat("materials/effects/strider_bulge_dudv.vmt"),
+        Resource.mat("materials/effects/strider_muzzle.vmt"),
+        Resource.mdl("models/chefhat.mdl"),
+        # Concussiveblast:
+        Resource.mat("materials/sprites/lgtning.vmt"),
+        Resource.mat("materials/effects/blueflare1.vmt"),
+        Resource.mat("materials/particle/particle_smokegrenade.vmt"),
+        Resource.mat("materials/particle/particle_noisesphere.vmt"),
+        classname='npc_combinedropship',
+        tags__=['hl2'],
+        cratetype=-1,  # Strider
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/buggy.mdl"),
+        classname='npc_combinedropship',
+        tags__=['hl2'],
+        cratetype=-3, # Jeep, just a visual prop.
+    )
 
 
 def test_npc_combinegunship() -> None:
