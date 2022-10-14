@@ -97,7 +97,6 @@ def test_func_button_timed() -> None:
     )
 
 
-
 @pytest.mark.xfail
 def test_base_plat_train() -> None:
     raise NotImplementedError
@@ -406,14 +405,180 @@ def test_item_healthvial() -> None:
     )
 
 
-@pytest.mark.xfail
+# Common base NPC sounds:
+BASE_NPC = [
+    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
+    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
+    Resource.snd('AI_BaseNPC.SentenceStop'),
+    Resource.snd('AI_BaseNPC.SwishSound'),
+]
+
+
 def test_npcs() -> None:
-    raise NotImplementedError
+    """All NPCs have the additionalequipment keyvalue, causing them to spawn with specific weapons."""
+    check_entity(
+        *BASE_NPC,
+        Resource.mdl("models/breen.mdl"),
+        classname='npc_breen',
+    )
+
+    check_entity(
+        *BASE_NPC,
+        Resource.mdl("models/breen.mdl"),
+        Resource.snd("Weapon_StunStick.Activate"),
+        Resource.snd("Weapon_StunStick.Deactivate"),
+        classname='npc_breen',
+        additionalequipment='weapon_stunstick',
+    )
 
 
-@pytest.mark.xfail
-def test_npc_antlion() -> None:
-    raise NotImplementedError
+RES_ANT_COMMON = [
+    *BASE_NPC,
+    Resource.snd("NPC_Antlion.RunOverByVehicle"),
+    Resource.snd("NPC_Antlion.MeleeAttack"),
+    Resource.snd("NPC_Antlion.Footstep"),
+    Resource.snd("NPC_Antlion.BurrowIn"),
+    Resource.snd("NPC_Antlion.BurrowOut"),
+    Resource.snd("NPC_Antlion.FootstepSoft"),
+    Resource.snd("NPC_Antlion.FootstepHeavy"),
+    Resource.snd("NPC_Antlion.MeleeAttackSingle"),
+    Resource.snd("NPC_Antlion.MeleeAttackDouble"),
+    Resource.snd("NPC_Antlion.Distracted"),
+    Resource.snd("NPC_Antlion.Idle"),
+    Resource.snd("NPC_Antlion.Pain"),
+    Resource.snd("NPC_Antlion.Land"),
+    Resource.snd("NPC_Antlion.WingsOpen"),
+    Resource.snd("NPC_Antlion.LoopingAgitated"),
+    Resource.snd("NPC_Antlion.Distracted"),
+]
+RES_ANT_EPISODIC = [
+    Resource.snd("NPC_Antlion.TrappedMetal"),
+    Resource.snd("NPC_Antlion.ZappedFlip"),
+    Resource.snd("NPC_Antlion.MeleeAttack_Muffled"),
+]
+RES_ANT_REGULAR = [
+    *RES_ANT_COMMON,
+    Resource.part("AntlionGib"),
+    Resource.mdl("models/gibs/antlion_gib_large_1.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_large_2.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_large_3.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_medium_1.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_medium_2.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_medium_3.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_small_1.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_small_2.mdl"),
+    Resource.mdl("models/gibs/antlion_gib_small_3.mdl"),
+]
+RES_ANT_WORKER = [
+    *RES_ANT_COMMON, *RES_ANT_EPISODIC,
+    Resource.part("blood_impact_antlion_worker_01"),
+    Resource.part("antlion_gib_02"),
+    Resource.part("blood_impact_yellow_01"),
+    Resource.snd("NPC_Antlion.PoisonBurstScream"),
+    Resource.snd("NPC_Antlion.PoisonBurstScreamSubmerged"),
+    Resource.snd("NPC_Antlion.PoisonBurstExplode"),
+    Resource.snd("NPC_Antlion.PoisonShoot"),
+    Resource.snd("NPC_Antlion.PoisonBall"),
+    # grenade_spit:
+    Resource.mdl("models/spitball_large.mdl"),
+    Resource.mdl("models/spitball_medium.mdl"),
+    Resource.mdl("models/spitball_small.mdl"),
+    Resource.snd("BaseGrenade.Explode"),
+    Resource.snd("GrenadeSpit.Hit"),
+    Resource.part("antlion_spit"),
+    Resource.part("antlion_spit_player"),
+]
+
+
+def test_npc_antlion_regular() -> None:
+    """Antlions have the worker variant in episodic, and EZ2 adds a few more."""
+    check_entity(  # Regular antlion.
+        *RES_ANT_REGULAR,
+        Resource.mdl("models/antlion.mdl"),
+        Resource.part('blood_impact_antlion_01'),
+        classname='npc_antlion',
+        tags__=["hl2"],
+        spawnflags=0,
+    )
+    check_entity(  # Episodic additions.
+        *RES_ANT_REGULAR, *RES_ANT_EPISODIC,
+        Resource.mdl("models/antlion.mdl"),
+        Resource.part('blood_impact_antlion_01'),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic"],
+        spawnflags=0,
+    )
+    check_entity(
+        *RES_ANT_REGULAR, *RES_ANT_EPISODIC,
+        Resource.mdl("models/antlion.mdl"),
+        Resource.part('blood_impact_antlion_01'),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=0,
+        ezvariant=0,  # Still normal.
+    )
+    check_entity(
+        *RES_ANT_REGULAR, *RES_ANT_EPISODIC,
+        Resource.mdl("models/antlion_xen.mdl"),
+        Resource.part('blood_impact_antlion_01'),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=0,
+        ezvariant=1,  # Xen
+    )
+    check_entity(
+        *RES_ANT_REGULAR, *RES_ANT_EPISODIC,
+        Resource.mdl("models/antlion_blue.mdl"),
+        Resource.part('blood_impact_blue_01'),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=0,
+        ezvariant=2,  # Radiation
+    )
+    check_entity(
+        *RES_ANT_REGULAR, *RES_ANT_EPISODIC,
+        Resource.mdl("models/bloodlion.mdl"),
+        Resource.part('blood_impact_antlion_01'),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=0,
+        ezvariant=5,  # Bloodlion
+    )
+
+
+def test_npc_antlion_worker() -> None:
+    """Antlions have the worker variant in episodic, and EZ2 adds a few more."""
+    # Now, workers.
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/antlion_worker.mdl"),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic"],
+        spawnflags=(1<<18) | 3,  # 3 = irrelevant.
+    )
+    # EZ variant 0 doesn't change the antlion, adds some grenade resources though.
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/antlion_worker.mdl"),
+        Resource.part("ExplosionCore"),  # Not actually used, but loaded via grenade base class.
+        Resource.part("ExplosionEmbers"),
+        Resource.part("ExplosionFlash"),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=(1<<18) | 3,
+        ezvariant=0,
+    )
+    check_entity(
+        *RES_ANT_WORKER,
+        Resource.mdl("models/bloodlion_worker.mdl"),
+        Resource.part("ExplosionCore"),
+        Resource.part("ExplosionEmbers"),
+        Resource.part("ExplosionFlash"),
+        classname='npc_antlion',
+        tags__=["hl2", "episodic", "entropyzero2"],
+        spawnflags=(1<<18) | 3,
+        ezvariant=5,  # Bloodlion
+    )
 
 
 @pytest.mark.xfail
@@ -425,14 +590,6 @@ def test_npc_antlionguard() -> None:
 @pytest.mark.xfail
 def test_npc_antlion_template_maker() -> None:
     raise NotImplementedError
-
-# Common base NPC sounds:
-BASE_NPC = [
-    Resource.snd('AI_BaseNPC.BodyDrop_Heavy'),
-    Resource.snd('AI_BaseNPC.BodyDrop_Light'),
-    Resource.snd('AI_BaseNPC.SentenceStop'),
-    Resource.snd('AI_BaseNPC.SwishSound'),
-]
 
 
 # npc_turret_floor

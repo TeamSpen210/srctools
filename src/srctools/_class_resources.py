@@ -547,6 +547,17 @@ def base_npc(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield _blank_vmf.create_ent(equipment)
 
 
+ANT_WORKER_RESOURCES = [
+    Resource("blood_impact_antlion_worker_01", FileType.PARTICLE_SYSTEM),
+    Resource("antlion_gib_02", FileType.PARTICLE_SYSTEM),
+    Resource("blood_impact_yellow_01", FileType.PARTICLE_SYSTEM),
+    Resource.snd("NPC_Antlion.PoisonBurstScream"),
+    Resource.snd("NPC_Antlion.PoisonBurstScreamSubmerged"),
+    Resource.snd("NPC_Antlion.PoisonBurstExplode"),
+    Resource.snd("NPC_Antlion.PoisonShoot"),
+    Resource.snd("NPC_Antlion.PoisonBall"),
+]
+
 @cls_func
 def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Antlions require different resources for the worker version."""
@@ -557,10 +568,7 @@ def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource("models/bloodlion_worker.mdl", FileType.MODEL)
         else:
             yield Resource("models/antlion_worker.mdl", FileType.MODEL)
-        yield Resource("blood_impact_antlion_worker_01", FileType.PARTICLE_SYSTEM)
-        yield Resource("antlion_gib_02", FileType.PARTICLE_SYSTEM)
-        yield Resource("blood_impact_yellow_01", FileType.PARTICLE_SYSTEM)
-
+        yield from ANT_WORKER_RESOURCES
         yield _blank_vmf.create_ent('grenade_spit')
     else:  # Regular antlion.
         if ez_variant == EZ_VARIANT_RAD:
@@ -576,6 +584,8 @@ def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:
             yield Resource("models/antlion.mdl", FileType.MODEL)
             yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
         yield Resource("AntlionGib", FileType.PARTICLE_SYSTEM)
+        for size, i in itertools.product(("small", "medium", "large"), (1, 2, 3)):
+            yield Resource.mdl(f"models/gibs/antlion_gib_{size}_{i}.mdl")
 
 
 @cls_func
@@ -607,15 +617,14 @@ def npc_antlionguard(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def npc_antlion_template_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Depending on KVs this may or may not spawn workers."""
-    # There will be an antlion present in the map, as the template
-    # NPC. So we don't need to add those resources.
+    # There will be an antlion present in the map, as the template NPC. So we don't need to add
+    # those resources.
     if conv_int(ent['workerspawnrate']) > 0:
         # It randomly spawns worker antlions, so load that resource set.
+        if 'entropyzero2' in ctx.tags:
+            yield Resource("models/bloodlion_worker.mdl", FileType.MODEL)
         yield Resource("models/antlion_worker.mdl", FileType.MODEL)
-        yield Resource("blood_impact_antlion_worker_01", FileType.PARTICLE)
-        yield Resource("antlion_gib_02", FileType.PARTICLE)
-        yield Resource("blood_impact_yellow_01", FileType.PARTICLE)
-
+        yield from ANT_WORKER_RESOURCES
         yield _blank_vmf.create_ent('grenade_spit')
     if conv_bool(ent['createspores']):
         yield _blank_vmf.create_ent('env_sporeexplosion')
