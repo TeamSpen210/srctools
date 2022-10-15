@@ -29,9 +29,9 @@ def cls_func(func: ClassFuncT) -> ClassFuncT:
 def button_sound(index: Union[int, str]) -> Resource:
     """Return the resource matching the hardcoded set of sounds in button ents."""
     if index:
-        return Resource(f'Buttons.snd{conv_int(index):d}', FileType.GAME_SOUND)
+        return Resource.snd(f'Buttons.snd{conv_int(index):d}')
     else:  # Not set, skip
-        return Resource('', FileType.GAME_SOUND)
+        return Resource.snd('')
 
 
 # Entropy Zero 2 variant constants.
@@ -259,14 +259,14 @@ def base_plat_train(ctx: ResourceCtx, ent: Entity) -> ResGen:
         except (IndexError, TypeError, ValueError):
             pass
         else:
-            yield Resource(sound, FileType.GAME_SOUND)
+            yield Resource.snd(sound)
     if 'stopsnd' in ent:
         try:
             sound = HL1_PLAT_STOP[int(ent['stopsnd'])]
         except (IndexError, TypeError, ValueError):
             pass
         else:
-            yield Resource(sound, FileType.GAME_SOUND)
+            yield Resource.snd(sound)
 
 
 @cls_func
@@ -301,19 +301,19 @@ def func_breakable_surf(ctx: ResourceCtx, ent: Entity) -> ResGen:
         mat_type = 'tile'
     elif surf_type == 0:  # Glass
         mat_type = 'glass'
-        yield Resource('materials/models/brokenglass/glassbroken_solid.vmt', FileType.MATERIAL)
+        yield Resource.mat('materials/models/brokenglass/glassbroken_solid.vmt')
     else:
         # Unknown
         return
 
-    yield Resource(f'materials/effects/fleck_{mat_type}1.vmt', FileType.MATERIAL)
-    yield Resource(f'materials/effects/fleck_{mat_type}2.vmt', FileType.MATERIAL)
+    yield Resource.mat(f'materials/effects/fleck_{mat_type}1.vmt')
+    yield Resource.mat(f'materials/effects/fleck_{mat_type}2.vmt')
 
     for num in '123':
         for letter in 'abcd':
-            yield Resource(
-                f'materials/models/broken{mat_type}/{mat_type}broken_0{num}{letter}.vmt',
-                FileType.MATERIAL,
+            yield Resource.mat(
+                f'materials/models/broken{mat_type}/'
+                f'{mat_type}broken_0{num}{letter}.vmt'
             )
 
 
@@ -323,13 +323,13 @@ def sprite_rope(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if 'ropeshader' in ent:
         old_shader_type = conv_int(ent['ropeshader'])
         if old_shader_type == 0:
-            yield Resource('materials/cable/cable.vmt', FileType.MATERIAL)
+            yield Resource.mat('materials/cable/cable.vmt')
         elif old_shader_type == 1:
-            yield Resource('materials/cable/rope.vmt', FileType.MATERIAL)
+            yield Resource.mat('materials/cable/rope.vmt')
         else:
-            yield Resource('materials/cable/chain.vmt', FileType.MATERIAL)
+            yield Resource.mat('materials/cable/chain.vmt')
     elif not ent['ropematerial']:  # If unset, default to this.
-        yield Resource('materials/cable/cable.vmt', FileType.MATERIAL)
+        yield Resource.mat('materials/cable/cable.vmt')
 
 
 @cls_func
@@ -339,7 +339,7 @@ def env_break_shooter(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if model_type == 0:  # MODELTYPE_BREAKABLECHUNKS
         yield Resource(ent['model'], FileType.BREAKABLE_CHUNK)
     elif model_type == 1:  # MODELTYPE_MODEL
-        yield Resource(ent['model'], FileType.MODEL)
+        yield Resource.mdl(ent['model'])
     # else: Template name, that does the resources.
 
 
@@ -354,7 +354,7 @@ def env_fire(ctx: ResourceCtx, ent: Entity) -> ResGen:
         else:
             suffix = '_smoke'  # env_fire_medium_smoke
         for name in ['tiny', 'small', 'medium', 'large']:
-            yield Resource(f'env_fire_{name}{suffix}', FileType.PARTICLE_SYSTEM)
+            yield Resource.part(f'env_fire_{name}{suffix}')
     elif fire_type == 1:  # Plasma
         yield _blank_vmf.create_ent('_plasma')
 
@@ -364,13 +364,13 @@ def env_headcrabcanister(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Check if it spawns in skybox or not, and precache the headcrab."""
     flags = conv_int(ent['spawnflags'])
     if flags & 0x1 == 0:  # !SF_NO_IMPACT_SOUND
-        yield Resource('HeadcrabCanister.Explosion', FileType.GAME_SOUND)
-        yield Resource('HeadcrabCanister.IncomingSound', FileType.GAME_SOUND)
-        yield Resource('HeadcrabCanister.SkyboxExplosion', FileType.GAME_SOUND)
+        yield Resource.snd('HeadcrabCanister.Explosion')
+        yield Resource.snd('HeadcrabCanister.IncomingSound')
+        yield Resource.snd('HeadcrabCanister.SkyboxExplosion')
     if flags & 0x2 == 0:  # !SF_NO_LAUNCH_SOUND
-        yield Resource('HeadcrabCanister.LaunchSound', FileType.GAME_SOUND)
+        yield Resource.snd('HeadcrabCanister.LaunchSound')
     if flags & 0x1000 == 0:  # !SF_START_IMPACTED, flying through the air.
-        yield Resource('materials/sprites/smoke.vmt', FileType.MATERIAL)
+        yield Resource.mat('materials/sprites/smoke.vmt')
         yield Resource.mdl("models/props_combine/headcrabcannister01a.mdl")
         yield Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl")
 
@@ -394,11 +394,11 @@ def env_headcrabcanister(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
 
 SHOOTER_SOUNDS = [
-    Resource("Breakable.MatGlass", FileType.GAME_SOUND),
-    Resource("Breakable.MatWood", FileType.GAME_SOUND),
-    Resource("Breakable.MatMetal", FileType.GAME_SOUND),
-    Resource("Breakable.MatFlesh", FileType.GAME_SOUND),
-    Resource("Breakable.MatConcrete", FileType.GAME_SOUND),
+    Resource.snd("Breakable.MatGlass"),
+    Resource.snd("Breakable.MatWood"),
+    Resource.snd("Breakable.MatMetal"),
+    Resource.snd("Breakable.MatFlesh"),
+    Resource.snd("Breakable.MatConcrete"),
 ]
 
 
@@ -412,9 +412,9 @@ def env_shooter(ctx: ResourceCtx, ent: Entity) -> ResGen:
 
     # Valve does this same check.
     if ent['shootmodel'].casefold().endswith('.vmt'):
-        yield Resource(ent['shootmodel'], FileType.MATERIAL)
+        yield Resource.mat(ent['shootmodel'])
     else:
-        yield Resource(ent['shootmodel'], FileType.MODEL)
+        yield Resource.mdl(ent['shootmodel'])
 
 
 @cls_func
@@ -429,12 +429,12 @@ def env_smokestack(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if not mat_base.startswith('materials/'):
         mat_base = 'materials/' + mat_base
 
-    yield Resource(mat_base + '.vmt', FileType.MATERIAL)
+    yield Resource.mat(mat_base + '.vmt')
     if 'EPISODIC' in ctx.tags:
         for i in range(1, 8):
             fname = f'{mat_base}{i}.vmt'
             if fname in ctx.fsys:
-                yield Resource(fname, FileType.MATERIAL)
+                yield Resource.mat(fname)
             else:
                 break
 
@@ -469,7 +469,7 @@ def item_ammo_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
         return  # Invalid ammo type.
     model = mdl_mbase if 'MAPBASE' in ctx.tags else mdl_valve
     if model:
-        yield Resource('models/items/ammocrate_' + model, FileType.MODEL)
+        yield Resource.mdl('models/items/ammocrate_' + model)
 
     if model == 'grenade.mdl':
         yield _blank_vmf.create_ent('weapon_frag')
@@ -482,9 +482,9 @@ def item_item_crate(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Item crates can spawn another arbitary entity."""
     appearance = conv_int(ent['crateappearance'])
     if appearance == 0:  # Default
-        yield Resource('models/items/item_item_crate.mdl', FileType.MODEL)
+        yield Resource.mdl('models/items/item_item_crate.mdl')
     elif appearance == 1:  # Beacon
-        yield Resource('models/items/item_beacon_crate.mdl', FileType.MODEL)
+        yield Resource.mdl('models/items/item_beacon_crate.mdl')
     # else: 2 = Mapbase custom model, that'll be packed automatically.
     if conv_int(ent['cratetype']) == 0 and ent['itemclass']:  # "Specific Item"
         spawned = _blank_vmf.create_ent(ent['itemclass'])
@@ -508,8 +508,8 @@ def item_teamflag(ctx: ResourceCtx, ent: Entity) -> ResGen:
                 folder = f'materials/{value[3:]}'
             else:
                 folder = prefix + value
-            yield Resource(folder + '_red.vmt', FileType.MATERIAL)
-            yield Resource(folder + '_blue.vmt', FileType.MATERIAL)
+            yield Resource.mat(folder + '_red.vmt')
+            yield Resource.mat(folder + '_blue.vmt')
 
 
 EZ_HEALTH_FOLDERS = [
@@ -536,8 +536,8 @@ def item_healthkit(ctx: ResourceCtx, ent: Entity, kind: str='kit') -> ResGen:
         # Special case, the regular model is not in items.
         yield Resource.mdl('models/healthvial.mdl#0')
     else:
-        yield Resource(f'models/items/{model}health{kind}.mdl#{skin}', FileType.MODEL)
-    yield Resource(f'Health{kind.title()}{snd}.Touch', FileType.GAME_SOUND)
+        yield Resource.mdl(f'models/items/{model}health{kind}.mdl#{skin}')
+    yield Resource.snd(f'Health{kind.title()}{snd}.Touch')
 
 
 @cls_func
@@ -550,19 +550,19 @@ def item_healthvial(ctx: ResourceCtx, ent: Entity) -> ResGen:
 def base_npc(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Resources precached in CAI_BaseNPC."""
     if conv_int(ent['ezvariant']) == EZ_VARIANT_TEMPORAL:
-        yield Resource('NPC_TemporalHeadcrab.Vanish', FileType.GAME_SOUND)
-        yield Resource('NPC_TemporalHeadcrab.Appear', FileType.GAME_SOUND)
-        yield Resource('ShadowCrab_Vanish', FileType.PARTICLE_SYSTEM)
-        yield Resource('ShadowCrab_Appear', FileType.PARTICLE_SYSTEM)
+        yield Resource.snd('NPC_TemporalHeadcrab.Vanish')
+        yield Resource.snd('NPC_TemporalHeadcrab.Appear')
+        yield Resource.snd('ShadowCrab_Vanish')
+        yield Resource.snd('ShadowCrab_Appear')
     equipment = ent['additionalequipment']
     if equipment not in ('', '0'):
         yield _blank_vmf.create_ent(equipment)
 
 
 ANT_WORKER_RESOURCES = [
-    Resource("blood_impact_antlion_worker_01", FileType.PARTICLE_SYSTEM),
-    Resource("antlion_gib_02", FileType.PARTICLE_SYSTEM),
-    Resource("blood_impact_yellow_01", FileType.PARTICLE_SYSTEM),
+    Resource.part("blood_impact_antlion_worker_01"),
+    Resource.part("antlion_gib_02"),
+    Resource.part("blood_impact_yellow_01"),
     Resource.snd("NPC_Antlion.PoisonBurstScream"),
     Resource.snd("NPC_Antlion.PoisonBurstScreamSubmerged"),
     Resource.snd("NPC_Antlion.PoisonBurstExplode"),
@@ -577,25 +577,25 @@ def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 18):  # Is worker?
         if ez_variant == EZ_VARIANT_BLOOD:
-            yield Resource("models/bloodlion_worker.mdl", FileType.MODEL)
+            yield Resource.mdl("models/bloodlion_worker.mdl")
         else:
-            yield Resource("models/antlion_worker.mdl", FileType.MODEL)
+            yield Resource.mdl("models/antlion_worker.mdl")
         yield from ANT_WORKER_RESOURCES
         yield _blank_vmf.create_ent('grenade_spit')
     else:  # Regular antlion.
         if ez_variant == EZ_VARIANT_RAD:
-            yield Resource("models/antlion_blue.mdl", FileType.MODEL)
-            yield Resource("blood_impact_blue_01", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/antlion_blue.mdl")
+            yield Resource.part("blood_impact_blue_01")
         elif ez_variant == EZ_VARIANT_XEN:
-            yield Resource("models/antlion_xen.mdl", FileType.MODEL)
-            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/antlion_xen.mdl")
+            yield Resource.part("blood_impact_antlion_01")
         elif ez_variant == EZ_VARIANT_BLOOD:
-            yield Resource("models/bloodlion.mdl", FileType.MODEL)
-            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/bloodlion.mdl")
+            yield Resource.part("blood_impact_antlion_01")
         else:
-            yield Resource("models/antlion.mdl", FileType.MODEL)
-            yield Resource("blood_impact_antlion_01", FileType.PARTICLE_SYSTEM)
-        yield Resource("AntlionGib", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/antlion.mdl")
+            yield Resource.part("blood_impact_antlion_01")
+        yield Resource.part("AntlionGib")
         for size, i in itertools.product(("small", "medium", "large"), (1, 2, 3)):
             yield Resource.mdl(f"models/gibs/antlion_gib_{size}_{i}.mdl")
 
@@ -605,25 +605,25 @@ def npc_antlionguard(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """In Entropy Zero, some alternate models are available."""
     spawnflags = conv_int(ent['spawnflags'])
     if spawnflags & (1 << 17):  # Inside Footsteps
-        yield Resource("NPC_AntlionGuard.Inside.StepLight", FileType.GAME_SOUND)
-        yield Resource("NPC_AntlionGuard.Inside.StepHeavy", FileType.GAME_SOUND)
+        yield Resource.snd("NPC_AntlionGuard.Inside.StepLight")
+        yield Resource.snd("NPC_AntlionGuard.Inside.StepHeavy")
     else:
-        yield Resource("NPC_AntlionGuard.StepLight", FileType.GAME_SOUND)
-        yield Resource("NPC_AntlionGuard.StepHeavy", FileType.GAME_SOUND)
+        yield Resource.snd("NPC_AntlionGuard.StepLight")
+        yield Resource.snd("NPC_AntlionGuard.StepHeavy")
     if 'ezvariant' in ent:  # Entropy Zero.
         variant = conv_int(ent['ezvaraiant'])
         if variant == EZ_VARIANT_XEN:
-            yield Resource("models/antlion_guard_xen.mdl", FileType.MODEL)
-            yield Resource("xenpc_spawn", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/antlion_guard_xen.mdl")
+            yield Resource.part("xenpc_spawn")
         elif variant == EZ_VARIANT_RAD:
-            yield Resource("models/antlion_guard_blue.mdl", FileType.MODEL)
-            yield Resource("blood_impact_blue_01", FileType.PARTICLE_SYSTEM)
+            yield Resource.mdl("models/antlion_guard_blue.mdl")
+            yield Resource.part("blood_impact_blue_01")
         elif variant == EZ_VARIANT_BLOOD:
-            yield Resource("models/bloodlion_guard.mdl", FileType.MODEL)
+            yield Resource.mdl("models/bloodlion_guard.mdl")
         else:
-            yield Resource("models/antlion_guard.mdl", FileType.MODEL)
+            yield Resource.mdl("models/antlion_guard.mdl")
     else:  # Regular HL2.
-        yield Resource("models/antlion_guard.mdl", FileType.MODEL)
+        yield Resource.mdl("models/antlion_guard.mdl")
 
 
 @cls_func
@@ -634,7 +634,7 @@ def npc_antlion_template_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if conv_float(ent['workerspawnrate']) > 0.0:
         # It randomly spawns worker antlions, so load that resource set.
         yield Resource.mdl("models/bloodlion_worker.mdl", frozenset(['entropyzero2']))
-        yield Resource("models/antlion_worker.mdl", FileType.MODEL)
+        yield Resource.mdl("models/antlion_worker.mdl")
         yield from ANT_WORKER_RESOURCES
         yield _blank_vmf.create_ent('grenade_spit')
     if conv_bool(ent['createspores']):
@@ -646,15 +646,15 @@ def npc_arbeit_turret_floor(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Arbeit/Aperture turrets have EZ variants."""
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
-        yield Resource('models/props/glowturret_01.mdl', FileType.MODEL)
-        yield Resource("materials/cable/goocable.vmt", FileType.MATERIAL)
+        yield Resource.mdl('models/props/glowturret_01.mdl')
+        yield Resource.mat("materials/cable/goocable.vmt")
     elif variant == EZ_VARIANT_ARBEIT:
-        yield Resource('models/props/camoturret_01.mdl', FileType.MODEL)
-        yield Resource('models/props/camoturret_02.mdl', FileType.MODEL)
+        yield Resource.mdl('models/props/camoturret_01.mdl')
+        yield Resource.mdl('models/props/camoturret_02.mdl')
     elif conv_int(ent['spawnflags']) & 0x200:  # Citizen Modified
-        yield Resource('models/props/hackedturret_01.mdl', FileType.MODEL)
+        yield Resource.mdl('models/props/hackedturret_01.mdl')
     else:
-        yield Resource('models/props/turret_01.mdl', FileType.MODEL)
+        yield Resource.mdl('models/props/turret_01.mdl')
 
 
 @cls_func
@@ -662,20 +662,20 @@ def npc_bullsquid(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This has various EZ variants."""
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_XEN:
-        yield Resource('models/bullsquid_xen.mdl', FileType.MODEL)
-        yield Resource('models/babysquid_xen.mdl', FileType.MODEL)
-        yield Resource('models/bullsquid_egg_xen.mdl', FileType.MODEL)
-        yield Resource('blood_impact_yellow_01', FileType.PARTICLE_SYSTEM)
+        yield Resource.mdl('models/bullsquid_xen.mdl')
+        yield Resource.mdl('models/babysquid_xen.mdl')
+        yield Resource.mdl('models/bullsquid_egg_xen.mdl')
+        yield Resource.part('blood_impact_yellow_01')
     elif variant == EZ_VARIANT_RAD:
-        yield Resource('models/bullsquid_rad.mdl', FileType.MODEL)
-        yield Resource('models/babysquid_rad.mdl', FileType.MODEL)
-        yield Resource('models/bullsquid_egg_rad.mdl', FileType.MODEL)
-        yield Resource('blood_impact_blue_01', FileType.PARTICLE_SYSTEM)
+        yield Resource.mdl('models/bullsquid_rad.mdl')
+        yield Resource.mdl('models/babysquid_rad.mdl')
+        yield Resource.mdl('models/bullsquid_egg_rad.mdl')
+        yield Resource.part('blood_impact_blue_01')
     else:
-        yield Resource('models/bullsquid.mdl', FileType.MODEL)
-        yield Resource('models/babysquid.mdl', FileType.MODEL)
-        yield Resource('models/bullsquid_egg.mdl', FileType.MODEL)
-        yield Resource('blood_impact_yellow_01', FileType.PARTICLE_SYSTEM)
+        yield Resource.mdl('models/bullsquid.mdl')
+        yield Resource.mdl('models/babysquid.mdl')
+        yield Resource.mdl('models/bullsquid_egg.mdl')
+        yield Resource.part('blood_impact_yellow_01')
 
 
 @cls_func
@@ -686,21 +686,21 @@ def combine_scanner(ctx: ResourceCtx, ent: Entity) -> ResGen:
     else:  # It checks the map name directly to determine this.
         is_shield = ctx.mapname.lower().startswith('d3_c17')
     if is_shield:
-        yield Resource("models/shield_scanner.mdl", FileType.MODEL)
+        yield Resource.mdl("models/shield_scanner.mdl")
         for i in range(1, 7):
-            yield Resource(f"models/gibs/Shield_Scanner_Gib{i}.mdl", FileType.MODEL)
+            yield Resource.mdl(f"models/gibs/Shield_Scanner_Gib{i}.mdl")
         snd_prefix = 'NPC_SScanner.'
     else:
-        yield Resource("models/combine_scanner.mdl", FileType.MODEL)
+        yield Resource.mdl("models/combine_scanner.mdl")
         for i in [1, 2, 4, 5]:  # No gib 3!
-            yield Resource(f"models/gibs/scanner_gib{i:02}.mdl", FileType.MODEL)
+            yield Resource.mdl(f"models/gibs/scanner_gib{i:02}.mdl")
         snd_prefix = 'NPC_CScanner.'
 
     for snd_name in [
         "Shoot", "Alert", "Die", "Combat", "Idle", "Pain", "TakePhoto", "AttackFlash",
         "DiveBombFlyby", "DiveBomb", "DeployMine", "FlyLoop",
     ]:
-        yield Resource(snd_prefix + snd_name, FileType.GAME_SOUND)
+        yield Resource.snd(snd_prefix + snd_name)
 
 
 CIT_HEADS = [
@@ -770,7 +770,7 @@ def npc_combinedropship(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """The Combine Dropship may spawn with a variety of cargo types."""
     cargo_type = conv_int(ent['cratetype'])
     if cargo_type == -3:  # Spawns a prop_dynamic Jeep
-        yield Resource("models/buggy.mdl", FileType.MODEL)
+        yield Resource.mdl("models/buggy.mdl")
     elif cargo_type == -1:  # Strider
         yield _blank_vmf.create_ent('npc_strider')
     elif cargo_type == 1:  # Soldiers in a container.
@@ -785,11 +785,11 @@ def npc_combinedropship(ctx: ResourceCtx, ent: Entity) -> ResGen:
 def npc_combinegunship(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """This has the ability to spawn as the helicopter instead."""
     if conv_int(ent['spawnflags']) & (1 << 13):
-        yield Resource("models/combine_helicopter.mdl", FileType.MODEL)
-        yield Resource("models/combine_helicopter_broken.mdl", FileType.MODEL)
+        yield Resource.mdl("models/combine_helicopter.mdl")
+        yield Resource.mdl("models/combine_helicopter_broken.mdl")
         yield _blank_vmf.create_ent('helicopter_chunk')
     else:
-        yield Resource("models/gunship.mdl", FileType.MODEL)
+        yield Resource.mdl("models/gunship.mdl")
 
 
 @cls_func
@@ -813,10 +813,10 @@ def npc_maker(ctx: ResourceCtx, ent: Entity) -> ResGen:
 @cls_func
 def npc_metropolice(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """If a spawnflag is set, a cheap model is used."""
-    if conv_int(ent['spawnflags']) & 5:
-        yield Resource("models/police_cheaple.mdl", FileType.MODEL)
+    if conv_int(ent['spawnflags']) & 16:
+        yield Resource.mdl("models/police_cheaple.mdl")
     else:
-        yield Resource("models/police.mdl", FileType.MODEL)
+        yield Resource.mdl("models/police.mdl")
 
 
 @cls_func
@@ -824,16 +824,16 @@ def npc_zassassin(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Entropy Zero 2's "Plan B"/Gonome. """
     variant = conv_int(ent['ezvariant'])
     if variant == EZ_VARIANT_RAD:
-        yield Resource('models/glownome.mdl', FileType.MODEL)
-        yield Resource('blood_impact_blue_01', FileType.PARTICLE_SYSTEM)
-        yield Resource('materials/cable/goocable.vmt', FileType.MATERIAL)
-        yield Resource('materials/sprites/glownomespit.vmt', FileType.MATERIAL)
+        yield Resource.mdl('models/glownome.mdl')
+        yield Resource.part('blood_impact_blue_01')
+        yield Resource.mat('materials/cable/goocable.vmt')
+        yield Resource.mat('materials/sprites/glownomespit.vmt')
     else:
-        yield Resource('materials/sprites/gonomespit.vmt', FileType.MATERIAL)
+        yield Resource.mat('materials/sprites/gonomespit.vmt')
         if variant == EZ_VARIANT_XEN:
-            yield Resource('models/xonome.mdl', FileType.MODEL)
+            yield Resource.mdl('models/xonome.mdl')
         else:
-            yield Resource('models/gonome.mdl', FileType.MODEL)
+            yield Resource.mdl('models/gonome.mdl')
 
 
 @cls_func
@@ -850,10 +850,7 @@ def skybox_swapper(ctx: ResourceCtx, ent: Entity) -> ResGen:
     if not sky_name:
         return
     for suffix in ['bk', 'dn', 'ft', 'lf', 'rt', 'up']:
-        yield Resource(
-            f'materials/skybox/{sky_name}{suffix}.vmt',
-            FileType.MATERIAL,
-        )
+        yield Resource.mat(f'materials/skybox/{sky_name}{suffix}.vmt')
 
 
 @cls_func
@@ -862,8 +859,8 @@ def team_control_point(ctx: ResourceCtx, ent: Entity) -> ResGen:
     for kvalue in ['team_icon_0', 'team_icon_1', 'team_icon_2']:
         icon = ent[kvalue]
         if icon:
-            yield Resource(f'materials/{icon}.vmt', FileType.MATERIAL)
-            yield Resource(f'materials/{icon}_locked.vmt', FileType.MATERIAL)
+            yield Resource.mat(f'materials/{icon}.vmt')
+            yield Resource.mat(f'materials/{icon}_locked.vmt')
 
 
 # TODO: Weapons are unusual, they don't directly specify the models.
