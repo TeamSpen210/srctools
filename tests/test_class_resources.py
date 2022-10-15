@@ -306,9 +306,165 @@ def test_env_fire() -> None:
     )
 
 
-@pytest.mark.xfail
 def test_env_headcrabcanister() -> None:
-    raise NotImplementedError
+    """Headcrab canisters use different resources depending on spawnflags."""
+    common = [
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+    ]
+    common_crab = [
+        *BASE_NPC,
+        Resource.snd("NPC_HeadCrab.Gib"),
+        Resource.snd("NPC_Headcrab.BurrowIn"),
+        Resource.snd("NPC_Headcrab.BurrowOut"),
+    ]
+    SF_NO_IMPACT_SOUND = 0x1
+    SF_NO_LAUNCH_SOUND = 0x2
+    SF_START_IMPACTED = 0x1000
+    SF_REMOVE_ON_IMPACT = 0x40000
+    SF_NO_IMPACT_EFFECTS = 0x80000
+    # Without START_IMPACTED, we have a smoke trail and fly through the air.
+    check_entity(
+        Resource.mdl("models/props_combine/headcrabcannister01a.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl"),
+        Resource.mat("materials/sprites/smoke.vmt"),
+        classname='env_headcrabcanister',
+        headcrabtype=0,
+        spawnflags=(
+            SF_NO_IMPACT_SOUND | SF_NO_LAUNCH_SOUND |
+            SF_NO_IMPACT_EFFECTS | SF_REMOVE_ON_IMPACT
+        ),
+    )
+    # Without remove on impact, we spawn headcrabs.
+    check_entity(
+        *common,
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+        Resource.snd("HeadcrabCanister.AfterLanding"),
+        Resource.snd("HeadcrabCanister.Open"),
+        # npc_headcrab
+        *common_crab,
+        Resource.mdl("models/headcrabclassic.mdl"),
+        Resource.snd("NPC_HeadCrab.Idle"),
+        Resource.snd("NPC_HeadCrab.Alert"),
+        Resource.snd("NPC_HeadCrab.Pain"),
+        Resource.snd("NPC_HeadCrab.Die"),
+        Resource.snd("NPC_HeadCrab.Attack"),
+        Resource.snd("NPC_HeadCrab.Bite"),
+        classname='env_headcrabcanister',
+        headcrabtype=0,  # Normal
+        spawnflags=(
+            SF_NO_IMPACT_SOUND | SF_NO_LAUNCH_SOUND |
+            SF_NO_IMPACT_EFFECTS | SF_START_IMPACTED
+        ),
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+        Resource.snd("HeadcrabCanister.AfterLanding"),
+        Resource.snd("HeadcrabCanister.Open"),
+        # npc_headcrab_fast
+        *common_crab,
+        Resource.mdl("models/headcrab.mdl"),
+        Resource.snd("NPC_FastHeadCrab.Idle"),
+        Resource.snd("NPC_FastHeadCrab.Alert"),
+        Resource.snd("NPC_FastHeadCrab.Pain"),
+        Resource.snd("NPC_FastHeadCrab.Die"),
+        Resource.snd("NPC_FastHeadCrab.Attack"),
+        Resource.snd("NPC_FastHeadCrab.Bite"),
+        classname='env_headcrabcanister',
+        headcrabtype=1,  # Fast
+        spawnflags=(
+            SF_NO_IMPACT_SOUND | SF_NO_LAUNCH_SOUND |
+            SF_NO_IMPACT_EFFECTS | SF_START_IMPACTED
+        ),
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+        Resource.snd("HeadcrabCanister.AfterLanding"),
+        Resource.snd("HeadcrabCanister.Open"),
+        # npc_headcrab_poison
+        *common_crab,
+        Resource.mdl("models/headcrabblack.mdl"),
+        Resource.snd("NPC_BlackHeadcrab.Telegraph"),
+        Resource.snd("NPC_BlackHeadcrab.Attack"),
+        Resource.snd("NPC_BlackHeadcrab.Bite"),
+        Resource.snd("NPC_BlackHeadcrab.Threat"),
+        Resource.snd("NPC_BlackHeadcrab.Alert"),
+        Resource.snd("NPC_BlackHeadcrab.Idle"),
+        Resource.snd("NPC_BlackHeadcrab.Talk"),
+        Resource.snd("NPC_BlackHeadcrab.AlertVoice"),
+        Resource.snd("NPC_BlackHeadcrab.Pain"),
+        Resource.snd("NPC_BlackHeadcrab.Die"),
+        Resource.snd("NPC_BlackHeadcrab.Impact"),
+        Resource.snd("NPC_BlackHeadcrab.ImpactAngry"),
+        Resource.snd("NPC_BlackHeadcrab.FootstepWalk"),
+        Resource.snd("NPC_BlackHeadcrab.Footstep"),
+        classname='env_headcrabcanister',
+        headcrabtype=2,  # Poison
+        spawnflags=(
+            SF_NO_IMPACT_SOUND | SF_NO_LAUNCH_SOUND |
+            SF_NO_IMPACT_EFFECTS | SF_START_IMPACTED
+        ),
+    )
+    # Without no_impact_sound, we play those.
+    check_entity(
+        Resource.mat("materials/sprites/smoke.vmt"),
+        Resource.mdl("models/props_combine/headcrabcannister01a.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl"),
+        Resource.snd("HeadcrabCanister.Explosion"),
+        Resource.snd("HeadcrabCanister.IncomingSound"),
+        Resource.snd("HeadcrabCanister.SkyboxExplosion"),
+        classname='env_headcrabcanister',
+        headcrabtype=0,  # Normal
+        spawnflags=SF_NO_LAUNCH_SOUND | SF_NO_IMPACT_EFFECTS | SF_REMOVE_ON_IMPACT,
+    )
+    # Without no_launch_sound, we play that.
+    check_entity(
+        Resource.mat("materials/sprites/smoke.vmt"),
+        Resource.mdl("models/props_combine/headcrabcannister01a.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl"),
+        Resource.snd("HeadcrabCanister.LaunchSound"),
+        classname='env_headcrabcanister',
+        headcrabtype=0,  # Normal
+        spawnflags=SF_NO_IMPACT_SOUND | SF_NO_IMPACT_EFFECTS | SF_REMOVE_ON_IMPACT,
+    )
+    # With impact effects, we spawn an ar2explosion.
+    check_entity(
+        Resource.mdl("models/props_combine/headcrabcannister01a.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl"),
+        Resource.mat("materials/sprites/smoke.vmt"),
+        Resource.mat("materials/particle/particle_noisesphere.vmt"),
+        Resource.snd("HeadcrabCanister.LaunchSound"),
+        classname='env_headcrabcanister',
+        headcrabtype=0,  # Normal
+        spawnflags=SF_NO_IMPACT_SOUND | SF_REMOVE_ON_IMPACT,
+    )
+    # Everything together.
+    check_entity(
+        Resource.mdl("models/props_combine/headcrabcannister01a.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl"),
+        Resource.mdl("models/props_combine/headcrabcannister01b.mdl"),
+        Resource.mat("materials/particle/particle_noisesphere.vmt"),
+        Resource.mat("materials/sprites/smoke.vmt"),
+        Resource.snd("HeadcrabCanister.LaunchSound"),
+        Resource.snd("HeadcrabCanister.Explosion"),
+        Resource.snd("HeadcrabCanister.IncomingSound"),
+        Resource.snd("HeadcrabCanister.SkyboxExplosion"),
+        Resource.snd("HeadcrabCanister.AfterLanding"),
+        Resource.snd("HeadcrabCanister.Open"),
+        # npc_headcrab_fast
+        *common_crab,
+        Resource.mdl("models/headcrab.mdl"),
+        Resource.snd("NPC_FastHeadCrab.Idle"),
+        Resource.snd("NPC_FastHeadCrab.Alert"),
+        Resource.snd("NPC_FastHeadCrab.Pain"),
+        Resource.snd("NPC_FastHeadCrab.Die"),
+        Resource.snd("NPC_FastHeadCrab.Attack"),
+        Resource.snd("NPC_FastHeadCrab.Bite"),
+        classname='env_headcrabcanister',
+        headcrabtype=1,  # Fast
+        spawnflags=0,
+    )
 
 
 @pytest.mark.xfail

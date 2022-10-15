@@ -369,22 +369,28 @@ def env_headcrabcanister(ctx: ResourceCtx, ent: Entity) -> ResGen:
         yield Resource('HeadcrabCanister.SkyboxExplosion', FileType.GAME_SOUND)
     if flags & 0x2 == 0:  # !SF_NO_LAUNCH_SOUND
         yield Resource('HeadcrabCanister.LaunchSound', FileType.GAME_SOUND)
-    if flags & 0x1000 == 0:  # !SF_START_IMPACTED
+    if flags & 0x1000 == 0:  # !SF_START_IMPACTED, flying through the air.
         yield Resource('materials/sprites/smoke.vmt', FileType.MATERIAL)
+        yield Resource.mdl("models/props_combine/headcrabcannister01a.mdl")
+        yield Resource.mdl("models/props_combine/headcrabcannister01a_skybox.mdl")
 
     if flags & 0x80000 == 0:  # !SF_NO_IMPACT_EFFECTS
-        yield Resource('particle/particle_noisesphere', FileType.MATERIAL)  # AR2 explosion
-    # Also precache the appropriate headcrab's resources.
-    try:
-        headcrab = (
-            'npc_headcrab',
-            'npc_headcrab_fast',
-            'npc_headcrab_poison',
-        )[conv_int(ent['HeadcrabType'])]
-    except IndexError:
-        pass
-    else:
-        yield _blank_vmf.create_ent(headcrab)
+        yield _blank_vmf.create_ent('ar2explosion')
+    if flags & 0x40000 == 0:  # if SF_REMOVE_ON_IMPACT, it'll never land or open.
+        yield Resource.mdl("models/props_combine/headcrabcannister01b.mdl")
+        yield Resource.snd("HeadcrabCanister.AfterLanding")
+        yield Resource.snd("HeadcrabCanister.Open")
+        # Also precache the appropriate headcrab's resources.
+        try:
+            headcrab = (
+                'npc_headcrab',
+                'npc_headcrab_fast',
+                'npc_headcrab_poison',
+            )[conv_int(ent['HeadcrabType'])]
+        except IndexError:
+            pass
+        else:
+            yield _blank_vmf.create_ent(headcrab)
 
 
 SHOOTER_SOUNDS = [
