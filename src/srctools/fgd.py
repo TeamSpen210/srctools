@@ -288,7 +288,7 @@ def _load_engine_db() -> 'FGD':
         from ._engine_db import unserialise
         comp: IO[bytes]
         # On 3.8, importlib_resources doesn't have the right stubs.
-        with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
+        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as comp:
             with LZMAFile(comp) as f:
                 _ENGINE_FGD = unserialise(f)
     return _ENGINE_FGD
