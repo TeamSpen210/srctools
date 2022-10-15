@@ -315,8 +315,8 @@ def test_kv_copy(func: Callable[[KeyValues], KeyValues]) -> None:
         reportable=False,
         val_list=[
             ('43', 'Fourty-Three', frozenset()),
-            ('44', 'Fourty-Four', frozenset()),
-            ('45', 'Fourty-Five', frozenset()),
+            ('44', 'Fourty-Four', frozenset(['a', 'b'])),
+            ('45', 'Fourty-Five', frozenset('-engine')),
         ]
     )
     duplicate = func(test_kv)

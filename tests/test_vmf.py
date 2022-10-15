@@ -1,4 +1,6 @@
 """Tests for the VMF library."""
+from typing import Any
+
 import pytest
 
 from srctools import Vec, Angle
@@ -191,7 +193,7 @@ def test_output_combine(first: Output, second: Output, expected: Output) -> None
     assert result.comma_sep == expected.comma_sep
 
 
-def test_regression(file_regression) -> None:
+def test_regression(file_regression: Any) -> None:
     """Generate a VMF to ensure code doesn't unintentionally alter output."""
     vmf = VMF()
     vmf.create_ent(

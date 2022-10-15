@@ -211,7 +211,7 @@ def test_equality(py_c_vec) -> None:
     """Test equality checks on Angles."""
     Vec, Angle, Matrix, parse_vec_str = py_c_vec
 
-    def test(p1, y1, r1, p2, y2, r2):
+    def test(p1: float, y1: float, r1: float, p2: float, y2: float, r2: float) -> None:
         """Check an Angle pair for incorrect comparisons."""
         ang1 = Angle(p1, y1, r1)
         ang2 = Angle(p2, y2, r2)

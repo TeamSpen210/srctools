@@ -1,9 +1,11 @@
+from typing import Any, Generator, Type, Union, List
 import itertools
 
 import pytest
 
 from srctools.keyvalues import Keyvalues, KeyValError, NoKeyError
-from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer
+# noinspection PyProtectedMember
+from srctools.tokenizer import Tokenizer, Cy_Tokenizer, Py_Tokenizer
 from srctools import keyvalues as kv_mod
 
 if Cy_Tokenizer is not None:
@@ -16,17 +18,17 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request):
+def py_c_token(request: Any) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions of Tokenizer."""
     orig_tok = kv_mod.Tokenizer
     try:
-        kv_mod.Tokenizer = request.param
+        setattr(kv_mod, 'Tokenizer', request.param)
         yield None
     finally:
-        kv_mod.Tokenizer = orig_tok
+        setattr(kv_mod, 'Tokenizer', orig_tok)
 
 
-def assert_tree(first, second, path='') -> None:
+def assert_tree(first: Keyvalues, second: Keyvalues, path: str = '') -> None:
     """Check that two keyvalues trees match exactly (including case)."""
     assert first.name == second.name, (first, second)
     assert first.real_name == second.real_name, (first, second)
@@ -88,8 +90,8 @@ def test_names() -> None:
     assert prop.name == 'second_test'
     assert prop.real_name == 'SECOND_test'
 
-    # It can also be set to None.
-    prop.name = None
+    # It can also be set to None (TODO: deprecated)
+    prop.name = None  # type: ignore
     assert prop.name is prop.real_name is None
 
 # If edited, update test_parse() and tokeniser check too!
@@ -226,7 +228,7 @@ parse_result = P(None, [
 del P
 
 
-def test_parse(py_c_token) -> None:
+def test_parse(py_c_token: Type[Tokenizer]) -> None:
     """Test parsing strings."""
     result = Keyvalues.parse(
         # iter() ensures sequence methods aren't used anywhere.
@@ -329,9 +331,9 @@ def test_build_exc() -> None:
     ]), prop)
 
 
-def test_parse_fails(py_c_token) -> None:
+def test_parse_fails(py_c_token: Type[Tokenizer]) -> None:
     """Test various forms of invalid syntax to ensure they indeed fail."""
-    def t(text):
+    def t(text: str) -> None:
         """Test a string to ensure it fails parsing."""
         try:
             result = Keyvalues.parse(text)
@@ -492,7 +494,7 @@ text with
     ''')
 
 
-def test_newline_strings(py_c_token) -> None:
+def test_newline_strings(py_c_token: Type[Tokenizer]) -> None:
     """Test that newlines are correctly blocked if the parameter is set."""
     with pytest.raises(KeyValError):
         Keyvalues.parse('"key\nmultiline" "value"')
@@ -509,7 +511,7 @@ def test_edit() -> None:
     """Check functionality of Keyvalues.edit()"""
     test_prop = Keyvalues('Name', 'Value')
 
-    def check(prop: Keyvalues, name, value):
+    def check(prop: Keyvalues, name: str, value: Union[str, List[str]]) -> None:
         """Check the property was edited, and has the given value."""
         nonlocal test_prop
         assert prop is test_prop
@@ -567,11 +569,11 @@ def test_blockfuncs_fail_on_leaf() -> None:
     with pytest.raises(ValueError):
         leaf['blah'] = 't'
     with pytest.raises(ValueError):
-        leaf[0] = 't'
+        leaf[0] = 't'  # type: ignore
     with pytest.raises(ValueError):
-        leaf[1:2] = 't'
+        leaf[1:2] = 't'  # type: ignore
     with pytest.raises(ValueError):
-        leaf['blah', ''] = 't'
+        leaf['blah', ''] = 't'  # type: ignore
 
     with pytest.raises(ValueError):
         leaf.int('blah')
