@@ -24,7 +24,7 @@ jobs:
           fetch-depth: 0
 
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.1.2
+        uses: pypa/cibuildwheel@v2.11.1
         env:
           # Ensure both 32-bit and 64-bit are built
           CIBW_ARCHS: auto
