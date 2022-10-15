@@ -316,9 +316,66 @@ def test_env_shooter() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
 def test_env_smokestack() -> None:
-    raise NotImplementedError
+    """Smokestacks have unique behaviour, loading resources in numeric order."""
+    sample = b'''UnlitGeneric
+    {
+    $basetexture white
+    }
+'''
+    keys_partial = [
+        'materials/sprites/some_smoky_mat.vmt',
+        'materials/sprites/some_smoky_mat1.vmt',
+        'materials/sprites/some_smoky_mat2.vmt',
+        'materials/sprites/some_smoky_mat4.vmt',
+        'materials/sprites/some_smoky_mat5.vmt',
+        'materials/sprites/some_smoky_mat6.vmt',
+        'materials/sprites/some_smoky_mat7.vmt',
+        'materials/sprites/some_smoky_mat8.vmt',
+        'materials/sprites/some_smoky_mat9.vmt',
+    ]
+    fsys_partial = dict.fromkeys(keys_partial, sample)
+    fsys_complete = dict.fromkeys([
+        *keys_partial,
+        'materials/sprites/some_smoky_mat3.vmt',
+    ], sample)
+    # In base HL2, this doesn't occur.
+    check_entity(
+        Resource.mat('materials/particle/SmokeStack.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat.vmt'),
+        classname='env_smokestack',
+        smokematerial='sprites/some_smoky_mat.vmt',
+        filesys__=fsys_complete,
+        tags__=['hl2'],
+    )
+
+    # In episodic, they're included up to 8 mats.
+    check_entity(
+        Resource.mat('materials/particle/SmokeStack.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat1.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat2.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat3.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat4.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat5.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat6.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat7.vmt'),
+        classname='env_smokestack',
+        smokematerial='sprites/some_smoky_mat.vmt',
+        filesys__=fsys_complete,
+        tags__=['hl2', 'episodic'],
+    )
+    # If one is missing, it stops.
+    check_entity(
+        Resource.mat('materials/particle/SmokeStack.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat1.vmt'),
+        Resource.mat('materials/sprites/some_smoky_mat2.vmt'),
+        classname='env_smokestack',
+        smokematerial='sprites/some_smoky_mat.vmt',
+        filesys__=fsys_partial,
+        tags__=['hl2', 'episodic'],
+    )
 
 
 ammo_crate_models_hl2 = {

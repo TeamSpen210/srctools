@@ -424,12 +424,13 @@ def env_smokestack(ctx: ResourceCtx, ent: Entity) -> ResGen:
         mat_base = 'materials/' + mat_base
 
     yield Resource(mat_base + '.vmt', FileType.MATERIAL)
-    for i in itertools.count(1):
-        fname = f'{mat_base}{i}.vmt'
-        if fname in ctx.fsys:
-            yield Resource(fname, FileType.MATERIAL)
-        else:
-            break
+    if 'EPISODIC' in ctx.tags:
+        for i in range(1, 8):
+            fname = f'{mat_base}{i}.vmt'
+            if fname in ctx.fsys:
+                yield Resource(fname, FileType.MATERIAL)
+            else:
+                break
 
 
 # Mapbase adds additional models here.
