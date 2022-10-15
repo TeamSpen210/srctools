@@ -767,6 +767,17 @@ def test_npcs() -> None:
         classname='npc_breen',
         additionalequipment='weapon_stunstick',
     )
+    # With Entropy Zero, there's temporal resources available on anything.
+    check_entity(
+        *BASE_NPC,
+        Resource.mdl("models/breen.mdl"),
+        Resource.snd('NPC_TemporalHeadcrab.Vanish'),
+        Resource.snd('NPC_TemporalHeadcrab.Appear'),
+        Resource.snd('ShadowCrab_Vanish'),
+        Resource.snd('ShadowCrab_Appear'),
+        classname='npc_breen',
+        ezvariant=3,
+    )
 
 
 RES_ANT_COMMON = [
