@@ -1108,9 +1108,65 @@ def test_npc_metropolice() -> None:
     raise NotImplementedError
 
 
-@pytest.mark.xfail
-def test_npc_zassassin() -> None:
-    raise NotImplementedError
+@pytest.mark.parametrize('classname', ['npc_zassassin', 'monster_gonome'])
+def test_npc_zassassin(classname: str) -> None:
+    """The Zassassin / Plan B has some variants."""
+    common = [
+        *BASE_NPC,
+        Resource.snd("Gonome.Idle"),
+        Resource.snd("Gonome.Pain"),
+        Resource.snd("Gonome.Alert"),
+        Resource.snd("Gonome.Die"),
+        Resource.snd("Gonome.Attack"),
+        Resource.snd("Gonome.Bite"),
+        Resource.snd("Gonome.Growl"),
+        Resource.snd("Gonome.FoundEnemy"),
+        Resource.snd("Gonome.RetreatMode"),
+        Resource.snd("Gonome.BerserkMode"),
+        Resource.snd("Gonome.RunFootstepLeft"),
+        Resource.snd("Gonome.RunFootstepRight"),
+        Resource.snd("Gonome.FootstepLeft"),
+        Resource.snd("Gonome.FootstepRight"),
+        Resource.snd("Gonome.JumpLand"),
+        Resource.snd("Gonome.Eat"),
+        Resource.snd("Gonome.BeginSpawnCrab"),
+        Resource.snd("Gonome.EndSpawnCrab"),
+        Resource.snd("npc_zassassin.kickburst"),
+        Resource.part("glownome_explode"),
+        # squidspit
+        Resource.snd("NPC_BigMomma.SpitTouch1"),
+        Resource.snd("NPC_BigMomma.SpitHit1"),
+        Resource.snd("NPC_BigMomma.SpitHit2"),
+        Resource.snd("Zombie.AttackHit"),
+        Resource.snd("Zombie.AttackMiss"),
+    ]
+
+    check_entity(
+        *common,
+        Resource.mdl("models/gonome.mdl"),
+        Resource.mat("materials/sprites/gonomespit.vmt"),
+        classname=classname,
+        ezvariant=0,  # Normal
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/xonome.mdl"),
+        Resource.mat("materials/sprites/gonomespit.vmt"),
+        classname=classname,
+        ezvariant=1,  # Xen
+        tags__=TAGS_EZ2,
+    )
+    check_entity(
+        *common,
+        Resource.mdl("models/glownome.mdl"),
+        Resource.mat("materials/sprites/glownomespit.vmt"),
+        Resource.mat("materials/cable/goocable.vmt"),
+        Resource.part("blood_impact_blue_01"),
+        classname=classname,
+        ezvariant=2,  # Radiation
+        tags__=TAGS_EZ2,
+    )
 
 
 def test_point_entity_replace() -> None:
