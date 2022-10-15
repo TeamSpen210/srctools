@@ -278,7 +278,7 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> None:
+def _load_engine_db() -> 'FGD':
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
@@ -291,6 +291,7 @@ def _load_engine_db() -> None:
         with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
             with LZMAFile(comp) as f:
                 _ENGINE_FGD = unserialise(f)
+    return _ENGINE_FGD
 
 
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
@@ -523,7 +524,7 @@ class ResourceCtx:
         # Strip extension, and normalise folder separators.
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
             mapname = mapname[:-4]
-        self.__attrs_init__(
+        self.__attrs_init__(  # type: ignore
             frozenset(map(str.upper, tags)),
             fsys,
             mapname.replace('\\', '/'),
@@ -1342,8 +1343,7 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        _load_engine_db()
-        return deepcopy(_ENGINE_FGD[classname])  # Or KeyError if not found.
+        return deepcopy(_load_engine_db()[classname])  # Or KeyError if not found.
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1435,7 +1435,7 @@ class EntityDef:
         ctx: ResourceCtx,
         *,
         ent: Optional[Entity],
-        on_error: Union[BaseException, Callable[[str], object]] = lambda err: None,
+        on_error: Callable[[str], object] = lambda err: None,
     ) -> Iterator[Tuple[FileType, str]]:
         """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
 
@@ -1445,8 +1445,9 @@ class EntityDef:
             passed along to defined entclass functions, and is seperate, so it can be reused
             for many calls to this function.
         :param on_error: If provided, when functions or entities are missing this will be called
-            with the specific error, or instantiated and raised if it is an exception type. If not
-            set, lookups are ignored.
+            with the specific error, and raised if it returns an exception type. If not
+            set, lookups are ignored. Most exceptions can be passed directly here to cause that to
+            be raised.
         """
         if not self.resources:
             # Nothing to do, skip making the sets/lists below.
@@ -2048,8 +2049,7 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        _load_engine_db()
-        return deepcopy(_ENGINE_FGD)
+        return deepcopy(_load_engine_db())
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""

@@ -3,7 +3,7 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
-from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, Tuple
+from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, TYPE_CHECKING, Tuple
 from typing_extensions import Final
 from enum import IntFlag
 from struct import Struct
@@ -142,15 +142,22 @@ ENTITY_FLAG_2_TYPE = {flag: kind for (kind, flag) in ENTITY_TYPE_2_FLAG.items()}
 def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
     """Return a function that reads the index from the file, and returns the string it matches."""
     def lookup() -> str:
+        """Perform the lookup."""
         [index] = _fmt_16bit.unpack(file.read(2))
         return inv_list[index]
     return lookup
 
+
+_py_make_lookup = _cy_make_lookup = make_lookup
+
 # This is called a huge number of times, replace with a Cythonized version.
-try:
-    from srctools._tokenizer import _EngineStringTable as make_lookup  # noqa
-except ImportError:
-    pass
+if not TYPE_CHECKING:
+    try:
+        from srctools._tokenizer import _EngineStringTable as make_lookup  # noqa
+    except ImportError:
+        pass
+    else:
+        _cy_make_lookup = make_lookup
 
 
 class BinStrDict:
