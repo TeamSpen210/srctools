@@ -3,8 +3,49 @@ from typing import Any
 
 import pytest
 
-from srctools import Vec, Angle
+from srctools import Keyvalues, Vec, Angle
 from srctools.vmf import Entity, VMF, Output
+
+
+def assert_output(
+    out: Output,
+    output: str,
+    target: str,
+    inp: str,
+    params: str = '',
+    delay: float = 0.0,
+    *,
+    times: int = -1,
+    inst_out: str = None,
+    inst_in: str = None,
+    comma_sep: bool = False,
+) -> None:
+    """Assert that the output matches the provided values."""
+    if out.output != output:
+        fail = 'output'
+    elif out.target != target:
+        fail = 'target'
+    elif out.input != inp:
+        fail = 'input'
+    elif out.params != params:
+        fail = 'params'
+    elif out.delay != pytest.approx(delay, abs=0.005):
+        fail = 'delay'
+    elif out.times != times:
+        fail = 'times'
+    elif out.inst_in != inst_in:
+        fail = 'inst_in'
+    elif out.inst_out != inst_out:
+        fail = 'inst_out'
+    elif out.comma_sep != comma_sep:
+        fail = 'comma_sep'
+    else:
+        return  # Success!
+    pytest.fail(
+        f'{out!r}.{fail} != Output(out={output!r}, targ={target!r}, in={inp!r}, '
+        f'params={params!r}, delay={delay!r}, times={times!r}, i_out={inst_out!r}, '
+        f'i_in={inst_in!r}, comma={comma_sep!r})'
+    )
 
 
 def test_fixup_basic() -> None:
@@ -191,6 +232,29 @@ def test_output_combine(first: Output, second: Output, expected: Output) -> None
     assert pytest.approx(result.delay) == expected.delay
     assert result.times == expected.times
     assert result.comma_sep == expected.comma_sep
+
+
+def test_output_parse() -> None:
+    """Test parsing various forms of syntax."""
+    # New separator is prioritised.
+    assert_output(
+        Output.parse(Keyvalues('OnOutput', 'the_target\x1bAnInput\x1bfunc(1,2,3)\x1b0.5\x1b5')),
+        'OnOutput', 'the_target', 'AnInput', 'func(1,2,3)', 0.5, times=5, comma_sep=False,
+    )
+    # Old comma separator
+    assert_output(
+        Output.parse(Keyvalues('OnOutput', 'the_target,AnInput,param,0.5,5')),
+        'OnOutput', 'the_target', 'AnInput', 'param', 0.5, times=5, comma_sep=True,
+    )
+    # Parsing of the instance parameters
+    assert_output(
+        Output.parse(Keyvalues(
+            'instance:out_rl;OnTrigger',
+            'the_target\x1binstance:thing;Ignite\x1bfunc(1,2,3)\x1b0.5\x1b5'
+        )),
+        'OnTrigger', 'the_target', 'Ignite', 'func(1,2,3)', 0.5, times=5, comma_sep=False,
+        inst_out='out_rl', inst_in='thing',
+    )
 
 
 def test_regression(file_regression: Any) -> None:
