@@ -493,11 +493,16 @@ def item_teamflag(ctx: ResourceCtx, ent: Entity) -> ResGen:
         ('flag_icon', 'materials/vgui/'),
         ('flag_trail', 'materials/effects/')
     ]:
-        value = prefix + ent[kvalue]
-        if value != prefix:
-            yield Resource(value + '.vmt', FileType.MATERIAL)
-            yield Resource(value + '_red.vmt', FileType.MATERIAL)
-            yield Resource(value + '_blue.vmt', FileType.MATERIAL)
+        value = ent[kvalue]
+        if value:
+            # Allow going up one directory - this is done by Valve in the icon.
+            # Going up two outside materials/ doesn't make any sense.
+            if value.startswith(('../', '..\\')):
+                folder = f'materials/{value[3:]}'
+            else:
+                folder = prefix + value
+            yield Resource(folder + '_red.vmt', FileType.MATERIAL)
+            yield Resource(folder + '_blue.vmt', FileType.MATERIAL)
 
 
 EZ_HEALTH_FOLDERS = [

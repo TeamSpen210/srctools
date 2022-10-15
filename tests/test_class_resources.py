@@ -413,9 +413,27 @@ def test_item_ammo_crate(ammo: Dict[int, str], tags: List[str]) -> None:
     )
 
 
-@pytest.mark.xfail
 def test_item_teamflag() -> None:
-    raise NotImplementedError
+    check_entity(classname='item_teamflag')
+    check_entity(
+        Resource.mat('materials/vgui/flags/my_flag_red.vmt'),
+        Resource.mat('materials/vgui/flags/my_flag_blue.vmt'),
+        Resource.mat('materials/effects/trail/the_trail_red.vmt'),
+        Resource.mat('materials/effects/trail/the_trail_blue.vmt'),
+        classname='item_teamflag',
+        flag_icon='flags/my_flag',
+        flag_trail='trail/the_trail',
+    )
+    # Test putting in parent folders.
+    check_entity(
+        Resource.mat('materials/not_vgui/my_flag_red.vmt'),
+        Resource.mat('materials/not_vgui/my_flag_blue.vmt'),
+        Resource.mat('materials/non_effects/the_trail_red.vmt'),
+        Resource.mat('materials/non_effects/the_trail_blue.vmt'),
+        classname='item_teamflag',
+        flag_icon='../not_vgui/my_flag',
+        flag_trail='../non_effects/the_trail',
+    )
 
 
 def test_item_healthkit() -> None:
