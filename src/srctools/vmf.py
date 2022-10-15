@@ -3074,10 +3074,18 @@ class Output:
             sep = True
             vals = prop.value.split(',')
 
-        try:
-            targ, inp, param, delay, times = vals
-        except ValueError as e:
-            raise ValueError(f'Bad output value: "{prop.value}"') from e
+        if sep and len(vals) > 5:
+            # Special case, more than 4 commas, recombine the commas in the params.
+            # Valve's code doesn't do this, but a mod could potentially edit VBSP & the game to
+            # then support commas in params in a backward-compatible way. Commas in any other field
+            # wouldn't be particularly useful.
+            targ, inp, *param_lst, delay, times = vals
+            param = ','.join(param_lst)
+        else:
+            try:
+                targ, inp, param, delay, times = vals
+            except ValueError as e:
+                raise ValueError(f'Bad output value: "{prop.value}"') from e
 
         inst_out, out = Output.parse_name(prop.real_name)
         inst_inp, inp = Output.parse_name(inp)

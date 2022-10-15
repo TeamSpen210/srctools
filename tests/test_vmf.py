@@ -246,6 +246,11 @@ def test_output_parse() -> None:
         Output.parse(Keyvalues('OnOutput', 'the_target,AnInput,param,0.5,5')),
         'OnOutput', 'the_target', 'AnInput', 'param', 0.5, times=5, comma_sep=True,
     )
+    # Extension feature, if extra commas appear, assume it's params.
+    assert_output(
+        Output.parse(Keyvalues('OnOutput', 'the_target,AnInput,func(4, 6),0.5,5')),
+        'OnOutput', 'the_target', 'AnInput', 'func(4, 6)', 0.5, times=5, comma_sep=True,
+    )
     # Parsing of the instance parameters
     assert_output(
         Output.parse(Keyvalues(
