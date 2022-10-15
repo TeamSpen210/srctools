@@ -12,6 +12,7 @@ from srctools.vmf import VMF, Entity, ValidKVs
 
 
 fgd: FGD
+TAGS_EZ2 = frozenset({"hl2", "episodic", "mapbase", "entropyzero2"})
 
 
 @pytest.fixture(scope='module', autouse=True)
@@ -450,35 +451,35 @@ def test_item_healthkit() -> None:
         Resource.mdl('models/items/healthkit.mdl#0'),
         classname='item_healthkit',
         ezvariant=0,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthKit_Xen.Touch'),
         Resource.mdl('models/items/xen/healthkit.mdl#0'),
         classname='item_healthkit',
         ezvariant=1,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthKit_Rad.Touch'),
         Resource.mdl('models/items/arbeit/healthkit.mdl#1'),
         classname='item_healthkit',
         ezvariant=2,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthKit_Temporal.Touch'),
         Resource.mdl('models/items/temporal/healthkit.mdl#0'),
         classname='item_healthkit',
         ezvariant=3,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthKit_Arbeit.Touch'),
         Resource.mdl('models/items/arbeit/healthkit.mdl#0'),
         classname='item_healthkit',
         ezvariant=4,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
 
 
@@ -496,35 +497,35 @@ def test_item_healthvial() -> None:
         Resource.mdl('models/healthvial.mdl#0'),
         classname='item_healthvial',
         ezvariant=0,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Xen.Touch'),
         Resource.mdl('models/items/xen/healthvial.mdl#0'),
         classname='item_healthvial',
         ezvariant=1,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Rad.Touch'),
         Resource.mdl('models/items/arbeit/healthvial.mdl#1'),
         classname='item_healthvial',
         ezvariant=2,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Temporal.Touch'),
         Resource.mdl('models/items/temporal/healthvial.mdl#0'),
         classname='item_healthvial',
         ezvariant=3,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
     check_entity(
         Resource.snd('HealthVial_Arbeit.Touch'),
         Resource.mdl('models/items/arbeit/healthvial.mdl#0'),
         classname='item_healthvial',
         ezvariant=4,
-        tags__=['entropyzero2', 'hl2'],
+        tags__=TAGS_EZ2,
     )
 
 
@@ -635,7 +636,7 @@ def test_npc_antlion_regular() -> None:
         Resource.mdl("models/antlion.mdl"),
         Resource.part('blood_impact_antlion_01'),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=0,
         ezvariant=0,  # Still normal.
     )
@@ -644,7 +645,7 @@ def test_npc_antlion_regular() -> None:
         Resource.mdl("models/antlion_xen.mdl"),
         Resource.part('blood_impact_antlion_01'),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=0,
         ezvariant=1,  # Xen
     )
@@ -653,7 +654,7 @@ def test_npc_antlion_regular() -> None:
         Resource.mdl("models/antlion_blue.mdl"),
         Resource.part('blood_impact_blue_01'),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=0,
         ezvariant=2,  # Radiation
     )
@@ -662,7 +663,7 @@ def test_npc_antlion_regular() -> None:
         Resource.mdl("models/bloodlion.mdl"),
         Resource.part('blood_impact_antlion_01'),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=0,
         ezvariant=5,  # Bloodlion
     )
@@ -686,7 +687,7 @@ def test_npc_antlion_worker() -> None:
         Resource.part("ExplosionEmbers"),
         Resource.part("ExplosionFlash"),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=(1<<18) | 3,
         ezvariant=0,
     )
@@ -697,7 +698,7 @@ def test_npc_antlion_worker() -> None:
         Resource.part("ExplosionEmbers"),
         Resource.part("ExplosionFlash"),
         classname='npc_antlion',
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
         spawnflags=(1<<18) | 3,
         ezvariant=5,  # Bloodlion
     )
@@ -746,7 +747,7 @@ def test_npc_antlion_template_maker() -> None:
         Resource.part("ExplosionFlash"),
         classname='npc_antlion_template_maker',
         workerspawnrate=0.25,
-        tags__=["hl2", "episodic", "entropyzero2"],
+        tags__=TAGS_EZ2,
     )
 
 
@@ -782,7 +783,7 @@ def test_npc_arbeit_turret_floor() -> None:
         Resource.mdl("models/props/turret_01.mdl"),
         Resource.snd("NPC_ArbeitTurret.DryFire"),
         classname='npc_arbeit_turret_floor',
-        tags__=['hl2', 'episodic', 'entropyzero2'],  # Should always be present.
+        tags__=TAGS_EZ2,  # Should always be present.
     )
 
     check_entity(
@@ -791,7 +792,7 @@ def test_npc_arbeit_turret_floor() -> None:
         Resource.snd("NPC_ArbeitTurret.DryFire"),
         classname='npc_arbeit_turret_floor',
         ezvariant=0,  # Normal
-        tags__=['hl2', 'episodic', 'entropyzero2']
+        tags__=TAGS_EZ2,
     )
     check_entity(
         *TURRET_RES_EZ2,
@@ -800,7 +801,7 @@ def test_npc_arbeit_turret_floor() -> None:
         classname='npc_arbeit_turret_floor',
         ezvariant=0,  # Normal
         spawnflags=0x200 | 0x20,  # Citizen modified, auto active (unrelated)
-        tags__=['hl2', 'episodic', 'entropyzero2']
+        tags__=TAGS_EZ2,
     )
     check_entity(
         *TURRET_RES_EZ2,
@@ -809,7 +810,7 @@ def test_npc_arbeit_turret_floor() -> None:
         Resource.snd("NPC_ArbeitTurret.DryFire"),
         classname='npc_arbeit_turret_floor',
         ezvariant=2,  # Radiation
-        tags__=['hl2', 'episodic', 'entropyzero2']
+        tags__=TAGS_EZ2,
     )
     check_entity(
         *TURRET_RES_EZ2,
@@ -818,7 +819,7 @@ def test_npc_arbeit_turret_floor() -> None:
         Resource.snd("NPC_ArbeitTurret.DryFire"),
         classname='npc_arbeit_turret_floor',
         ezvariant=4,  # Arbeit
-        tags__=['hl2', 'episodic', 'entropyzero2']
+        tags__=TAGS_EZ2,
     )
 
 
