@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from srctools import sndscript, Keyvalues
+from srctools import Keyvalues, sndscript
 
 
 def test_split() -> None:

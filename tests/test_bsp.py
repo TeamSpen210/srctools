@@ -1,7 +1,7 @@
 """Test the BSP parser's functionality."""
 import pytest
 
-from srctools.bsp import _find_or_insert, _find_or_extend
+from srctools.bsp import _find_or_extend, _find_or_insert
 
 
 @pytest.mark.parametrize('original, item, index', [

@@ -285,6 +285,7 @@ def _load_engine_db() -> 'FGD':
     global _ENGINE_FGD
     if _ENGINE_FGD is None:
         from lzma import LZMAFile
+
         from ._engine_db import unserialise
         comp: IO[bytes]
         # On 3.8, importlib_resources doesn't have the right stubs.

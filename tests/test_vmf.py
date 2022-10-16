@@ -3,8 +3,8 @@ from typing import Any
 
 import pytest
 
-from srctools import Keyvalues, Vec, Angle
-from srctools.vmf import Entity, VMF, Output
+from srctools import Angle, Keyvalues, Vec
+from srctools.vmf import VMF, Entity, Output
 
 
 def assert_output(

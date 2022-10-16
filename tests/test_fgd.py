@@ -6,8 +6,8 @@ import io
 import pytest
 
 from srctools import Vec
-from srctools.filesys import VirtualFileSystem
 from srctools.fgd import *
+from srctools.filesys import VirtualFileSystem
 
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])

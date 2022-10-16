@@ -1,12 +1,12 @@
 """Test rotations in srctools.vec."""
+from typing import List, NamedTuple
+from pathlib import Path
 import copy
 import pickle
-from pathlib import Path
-from typing import NamedTuple, List
-
-import pytest
 
 from helpers import *
+import pytest
+
 from srctools import Vec
 
 

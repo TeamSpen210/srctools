@@ -1,6 +1,8 @@
 """Generates VMFs for testing rotation values."""
-from srctools import VMF, Vec
 import os
+
+from srctools import VMF, Vec
+
 
 NUMS = [-1, 0, 1]
 VECS = [

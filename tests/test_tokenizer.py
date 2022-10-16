@@ -1,25 +1,20 @@
-from itertools import zip_longest, tee
-from typing import Any, Callable, Generator, Iterable, Iterator, Type, Tuple, Union
-
-import pytest
+from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Type, Union
+from itertools import tee, zip_longest
 import codecs
 import platform
 
 from pytest import raises
-
 from test_keyvalues import parse_test as prop_parse_test
+import pytest
+
 from srctools.keyvalues import KeyValError
 # noinspection PyProtectedMember
 from srctools.tokenizer import (
-    Token,
-    Tokenizer,
-    BaseTokenizer,
-    Cy_Tokenizer, Py_Tokenizer,
-    Cy_BaseTokenizer, Py_BaseTokenizer,
-    Cy_IterTokenizer, Py_IterTokenizer,
-    escape_text, _py_escape_text,
-    TokenSyntaxError, _OPERATOR_VALS as TOK_VALS,
+    _OPERATOR_VALS as TOK_VALS, BaseTokenizer, Cy_BaseTokenizer, Cy_IterTokenizer,
+    Cy_Tokenizer, Py_BaseTokenizer, Py_IterTokenizer, Py_Tokenizer, Token, Tokenizer,
+    TokenSyntaxError, _py_escape_text, escape_text,
 )
+
 
 T = Token
 IS_CPYTHON = platform.python_implementation() == 'CPython'

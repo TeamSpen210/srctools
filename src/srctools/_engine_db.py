@@ -3,7 +3,9 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
-from typing import IO, Callable, Collection, Dict, FrozenSet, List, Optional, TYPE_CHECKING, Tuple
+from typing import (
+    IO, TYPE_CHECKING, Callable, Collection, Dict, FrozenSet, List, Optional, Tuple,
+)
 from typing_extensions import Final
 from enum import IntFlag
 from struct import Struct

@@ -1,12 +1,13 @@
-from typing import Any, Generator, Type, Union, List
+from typing import Any, Generator, List, Type, Union
 import itertools
 
 import pytest
 
-from srctools.keyvalues import Keyvalues, KeyValError, NoKeyError
-# noinspection PyProtectedMember
-from srctools.tokenizer import Tokenizer, Cy_Tokenizer, Py_Tokenizer
 from srctools import keyvalues as kv_mod
+from srctools.keyvalues import KeyValError, Keyvalues, NoKeyError
+# noinspection PyProtectedMember
+from srctools.tokenizer import Cy_Tokenizer, Py_Tokenizer, Tokenizer
+
 
 if Cy_Tokenizer is not None:
     parms = [Cy_Tokenizer, Py_Tokenizer]

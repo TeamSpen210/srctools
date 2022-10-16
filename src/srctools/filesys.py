@@ -19,8 +19,7 @@ To mount a :py:class:`~srctools.bsp.BSP` file, use ``ZipFileSystem(bsp.pakfile)`
 """
 from typing import (
     Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type,
-    TypeVar,
-    Union, cast,
+    TypeVar, Union, cast,
 )
 from typing_extensions import Final
 from zipfile import ZipFile, ZipInfo

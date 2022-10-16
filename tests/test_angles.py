@@ -1,8 +1,9 @@
 import copy
 import pickle
 
-from srctools import Angle
 from helpers import *
+
+from srctools import Angle
 
 
 VALID_NUMS = [

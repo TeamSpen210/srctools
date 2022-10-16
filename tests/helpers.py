@@ -1,16 +1,16 @@
 """Helpers for performing tests."""
+from typing import Callable, Iterable, Iterator, Tuple, Type
 import itertools
-from typing import Type, Tuple, Callable, Iterable, Iterator
-
-from srctools.math import (
-    Py_Vec, Cy_Vec,
-    Py_Angle, Cy_Angle,
-    Py_Matrix, Cy_Matrix,
-    Py_parse_vec_str, Cy_parse_vec_str,
-)
-from srctools import math as vec_mod
-import pytest
 import math
+
+import pytest
+
+from srctools import math as vec_mod
+from srctools.math import (
+    Cy_Angle, Cy_Matrix, Cy_parse_vec_str, Cy_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str,
+    Py_Vec,
+)
+
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.
