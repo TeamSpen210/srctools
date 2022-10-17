@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
       with:
         submodules: true
     - name: Set up Python 3.10
-      uses: actions/setup-python@v2
+      uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     - name: Install dependencies
@@ -26,6 +26,10 @@ jobs:
         python -m pip install --upgrade pip setuptools wheel
         python -m pip install -r test-requirements.txt
         python -m pip install mypy flake8
+    - name: Show versions
+      run: |
+        mypy --version
+        flake8 --version
     - name: Build package
       run: |
         python -m pip install --editable .

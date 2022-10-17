@@ -8,7 +8,7 @@ import sys
 
 __all__ = [
     'add_unknown',
-    'GameID', 'SurfFlags', 'BSPContents',
+    'GameID', 'FileType', 'SurfFlags', 'BSPContents',
 ]
 
 
@@ -36,6 +36,43 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
             # We don't have to stick to var naming rules, so just name it
             # after the number. Intern so repeated calls share strings.
             ns[sys.intern(str(i))] = bit
+
+
+class FileType(Enum):
+    """Different kinds of files for Source, mainly to indicate resources to pack.
+
+    If this represents a specific file type, the value is the extension. Otherwise, it's an
+    arbitrary integer.
+    """
+    GENERIC = 0  #: Arbitrary file type.
+    SOUNDSCRIPT = 1  #: Script file containing soundscripts.
+
+    GAME_SOUND = 2  #: ``world.blah`` sound - lookup the soundscript, and raw files.
+    PARTICLE = PARTICLE_SYSTEM = 3  #: The name of a particle system.
+
+    PARTICLE_FILE = 'pcf'  #: A particle collection file.
+
+    VSCRIPT_SQUIRREL = 'nut'  #: Squirrel VScript file.
+
+    #: Classname of another entity that this entity includes.
+    #: This is only permitted in the FGD file.
+    ENTITY = 4
+    #: Name of a function to call defined inside the packlist module.
+    ENTCLASS_FUNC = 5
+
+    #: Randomised generic chunk gibs.
+    #: This corresponds to ``g_PropDataSystem.GetRandomChunkModel()``.
+    BREAKABLE_CHUNK = 6
+
+    #: Material file.
+    MATERIAL = 'vmt'
+
+    TEXTURE = 'vtf'  #: VTF texture, implicitly looks for ``.hdr.vtf`` too.
+
+    CHOREO = 'vcd'  #: Choreographed scenes.
+
+    #: Source model, implies the ``vtx``, ``vvd``, ``phy`` files too.
+    MODEL = 'mdl'
 
 
 class GameID(Enum):

@@ -1,16 +1,14 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
     IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
-    Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type, TypeVar, Union, cast,
-    overload,
+    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
+    cast, overload,
 )
-from typing_extensions import Final
-from collections import defaultdict
+from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
 from importlib_resources import files
 from pathlib import PurePosixPath
-from struct import Struct
 import io
 import itertools
 import math
@@ -19,16 +17,17 @@ import sys
 
 import attrs
 
-from srctools.binformat import struct_read
-from srctools.filesys import File, FileSystem
+from srctools.const import FileType
+from srctools.filesys import File, FileSystem, VirtualFileSystem
 from srctools.tokenizer import BaseTokenizer, Token, Tokenizer, TokenSyntaxError, escape_text
+from srctools.vmf import VMF, Entity
 import srctools
 
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
     'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
-    'match_tags', 'validate_tags',
+    'match_tags', 'validate_tags', 'Resource', 'ResourceCtx',
 
     # From srctools._fgd_helpers
     'HelperBBox', 'HelperBoundingBox', 'HelperBreakableSurf',
@@ -45,19 +44,10 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-_fmt_8bit: Final = Struct('>B')
-_fmt_16bit: Final = Struct('>H')
-_fmt_32bit: Final = Struct('>I')
-_fmt_double = Struct('>d')
-_fmt_header = Struct('>BddI')
-_fmt_ent_header = Struct('<BBBBBB')
-
-
-# Version number for the format.
-BIN_FORMAT_VERSION: Final = 5
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
+_fake_vmf = VMF(preserve_ids=False)
 
 
 class FGDParseError(TokenSyntaxError):
@@ -186,15 +176,41 @@ VALUE_TO_IO_DECAY[ValueTypes.EXT_ANGLES_LOCAL] = ValueTypes.VEC
 VALUE_TO_IO_DECAY[ValueTypes.COLOR_1] = ValueTypes.COLOR_255
 
 
+RESTYPE_BY_NAME = {
+    'file': FileType.GENERIC,
+    'entity': FileType.ENTITY,
+    'func': FileType.ENTCLASS_FUNC,
+    'sound': FileType.GAME_SOUND,
+    'particle': FileType.PARTICLE,
+    'vscript_squirrel': FileType.VSCRIPT_SQUIRREL,
+    'material': FileType.MATERIAL,
+    'mat': FileType.MATERIAL,
+    'texture': FileType.TEXTURE,
+    'choreo': FileType.CHOREO,
+    'scene': FileType.CHOREO,
+    'model': FileType.MODEL,
+
+    'snd': FileType.GAME_SOUND,
+    'tex': FileType.TEXTURE,
+    'mdl': FileType.MODEL,
+    'break_chunk': FileType.BREAKABLE_CHUNK,
+}
+
+
 class EntityTypes(Enum):
     """The kind of entity each definition is."""
-    BASE = 'baseclass'  # Not an entity, others inherit from this.
-    POINT = 'pointclass'  # Point entity
-    BRUSH = 'solidclass'  # Brush entity. Can't have 'model'
-    ROPES = 'keyframeclass'  # Used for move_rope etc
-    TRACK = 'moveclass'  # Used for path_track etc
-    FILTER = 'filterclass'  # Used for filters
-    NPC = 'npcclass'  # An NPC
+    BASE = 'baseclass'  #: Not an entity, others inherit from this.
+    POINT = 'pointclass'  #: Point entity
+    BRUSH = 'solidclass'  #: Brush entity. Can't have a ``model`` keyvalue.
+    ROPES = 'keyframeclass'  #: Used for ``move_rope`` etc
+    TRACK = 'moveclass'  #: Used for ``path_track`` etc
+    FILTER = 'filterclass'  #: Used for filters.
+    NPC = 'npcclass'  #: An NPC.
+
+    @property
+    def is_point(self) -> bool:
+        """Return whether this is a point entity."""
+        return self.value not in ['baseclass', 'solidclass']
 
 
 class HelperTypes(Enum):
@@ -206,26 +222,26 @@ class HelperTypes(Enum):
     HALF_GRID_SNAP = 'halfgridsnap'
 
     # Simple helpers
-    CUBE = 'size'  # Sets size of purple cube
-    BBOX = 'bbox'  # Sets bounding box of entity
+    CUBE = 'size'  #: Sets size of purple cube
+    BBOX = 'bbox'  #: Sets bounding box of entity
     TINT = 'color'
     SPHERE = 'sphere'
     LINE = 'line'
     FRUSTUM = 'frustum'
     CYLINDER = 'cylinder'
-    ORIGIN = 'origin'  # Adds circle at an absolute position.
-    VECLINE = 'vecline'  # Draws line to an absolute position.
-    BRUSH_SIDES = 'sidelist'  # Highlights brush faces.
-    BOUNDING_BOX_HELPER = 'wirebox'  # Displays bounding box from two keyvalues
-    # Draws the movement of a player-sized bounding box from A to B.
+    ORIGIN = 'origin'  #: Adds circle at an absolute position.
+    VECLINE = 'vecline'  #: Draws line to an absolute position.
+    BRUSH_SIDES = 'sidelist'  #: Highlights brush faces.
+    BOUNDING_BOX_HELPER = 'wirebox'  #: Displays bounding box from two keyvalues
+    #: Draws the movement of a player-sized bounding box from A to B.
     SWEPT_HULL = 'sweptplayerhull'
-    ORIENTED_BBOX = 'obb'  # Bounding box oriented to angles.
+    ORIENTED_BBOX = 'obb'  #: Bounding box oriented to angles.
 
     # Complex helpers using resources
     SPRITE = 'iconsprite'
     MODEL = 'studio'
     MODEL_PROP = 'studioprop'
-    MODEL_NEG_PITCH = 'lightprop'  # Uses separate pitch keyvalue
+    MODEL_NEG_PITCH = 'lightprop'  #: Uses separate pitch keyvalue
 
     # Specialty for certain ents
     ENT_SPRITE = 'sprite'
@@ -237,20 +253,24 @@ class HelperTypes(Enum):
     ENT_LIGHT_CONE = 'lightcone'
     ENT_ROPE = 'keyframe'
     ENT_TRACK = 'animator'
-    ENT_BREAKABLE_SURF = 'quadbounds'  # Sets the 4 corners on save
-    ENT_WORLDTEXT = 'worldtext'  # Renders 3D text in-world.
-    ENT_CATAPULT = 'catapult'  # Renders trigger_catpault trajectors prediction
+    ENT_BREAKABLE_SURF = 'quadbounds'  #: Sets the 4 corners on save
+    ENT_WORLDTEXT = 'worldtext'  #: Renders 3D text in-world.
+    ENT_CATAPULT = 'catapult'  #: Renders trigger_catpault trajectors prediction
 
-    ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  # New helper added in Black Mesa
+    ENT_LIGHT_CONE_BLACK_MESA = 'lightconenew'  #: New helper added in Black Mesa.
 
     # Format extensions.
 
-    # Indicates this entity is only available in the given games.
+    #: Indicates this entity is only available in the given games.
     EXT_APPLIES_TO = 'appliesto'
-    EXT_ORDERBY = 'orderby'  # Reorder keyvalues. Args = names in order.
-    # Convenience only used in parsing, adds @AutoVisgroup parents for the
-    # current entity. 'Auto' is implied at the start.
+    EXT_ORDERBY = 'orderby'  #: Reorder keyvalues. Args = names in order.
+
+    #: Convenience only used in parsing, adds @AutoVisgroup parents for the
+    #: current entity. 'Auto' is implied at the start.
     EXT_AUTO_VISGROUP = 'autovis'
+
+    # Additionally, aliasof(base) is used to indicate this is an alternate classname for a
+    # single base.
 
     @property
     def extension(self) -> bool:
@@ -258,82 +278,21 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-# Ordered list of value types, for encoding in the binary
-# format. All must be here, new ones should be added at the end.
-VALUE_TYPE_ORDER = [
-    ValueTypes.VOID,
-    ValueTypes.CHOICES,
-    ValueTypes.SPAWNFLAGS,
+def _load_engine_db() -> 'FGD':
+    """Load our engine database."""
+    # It's pretty expensive to parse, so keep the original privately,
+    # returning a deep-copy.
+    global _ENGINE_FGD
+    if _ENGINE_FGD is None:
+        from lzma import LZMAFile
 
-    ValueTypes.STRING,
-    ValueTypes.BOOL,
-    ValueTypes.INT,
-    ValueTypes.FLOAT,
-    ValueTypes.VEC,
-    ValueTypes.ANGLES,
-
-    ValueTypes.TARG_DEST,
-    ValueTypes.TARG_DEST_CLASS,
-    ValueTypes.TARG_SOURCE,
-    ValueTypes.TARG_NPC_CLASS,
-    ValueTypes.TARG_POINT_CLASS,
-    ValueTypes.TARG_FILTER_NAME,
-    ValueTypes.TARG_NODE_DEST,
-    ValueTypes.TARG_NODE_SOURCE,
-
-    # Strings, don't need fixups
-    ValueTypes.STR_SCENE,
-    ValueTypes.STR_SOUND,
-    ValueTypes.STR_PARTICLE,
-    ValueTypes.STR_SPRITE,
-    ValueTypes.STR_DECAL,
-    ValueTypes.STR_MATERIAL,
-    ValueTypes.STR_MODEL,
-    ValueTypes.STR_VSCRIPT,
-
-    ValueTypes.ANGLE_NEG_PITCH,
-    ValueTypes.VEC_LINE,
-    ValueTypes.VEC_ORIGIN,
-    ValueTypes.VEC_AXIS,
-    ValueTypes.COLOR_1,
-    ValueTypes.COLOR_255,
-    ValueTypes.SIDE_LIST,
-
-    ValueTypes.INST_FILE,
-    ValueTypes.INST_VAR_DEF,
-    ValueTypes.INST_VAR_REP,
-
-    ValueTypes.STR_VSCRIPT_SINGLE,
-    ValueTypes.ENT_HANDLE,
-    ValueTypes.EXT_STR_TEXTURE,
-    ValueTypes.EXT_ANGLE_PITCH,
-    ValueTypes.EXT_ANGLES_LOCAL,
-    ValueTypes.EXT_VEC_DIRECTION,
-    ValueTypes.EXT_VEC_LOCAL,
-]
-
-# Ditto for entity types.
-ENTITY_TYPE_ORDER = [
-    EntityTypes.BASE,
-    EntityTypes.POINT,
-    EntityTypes.BRUSH,
-    EntityTypes.ROPES,
-    EntityTypes.TRACK,
-    EntityTypes.FILTER,
-    EntityTypes.NPC,
-]
-
-assert set(VALUE_TYPE_ORDER) == set(ValueTypes), \
-    "Missing values: " + repr(set(ValueTypes) - set(VALUE_TYPE_ORDER))
-assert set(ENTITY_TYPE_ORDER) == set(EntityTypes), \
-    "Missing values: " + repr(set(EntityTypes) - set(ENTITY_TYPE_ORDER))
-
-# Can only store this many in the bytes.
-assert len(VALUE_TYPE_ORDER) < 127, "Too many values."
-assert len(ENTITY_TYPE_ORDER) < 255, "Too many entity types."
-
-VALUE_TYPE_INDEX = {val: ind for (ind, val) in enumerate(VALUE_TYPE_ORDER)}
-ENTITY_TYPE_INDEX = {ent: ind for (ind, ent) in enumerate(ENTITY_TYPE_ORDER)}
+        from ._engine_db import unserialise
+        comp: IO[bytes]
+        # On 3.8, importlib_resources doesn't have the right stubs.
+        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as comp:
+            with LZMAFile(comp) as f:
+                _ENGINE_FGD = unserialise(f)
+    return _ENGINE_FGD
 
 
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
@@ -365,8 +324,7 @@ def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[s
             if ready_for_string:
                 raise tok.error(token)
             return strings, token
-    else:
-        raise tok.error(token)
+    raise tok.error(token)
 
 
 def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
@@ -456,7 +414,7 @@ def validate_tags(
     })
 
 
-def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
+def match_tags(search: Container[str], tags: Collection[str]) -> bool:
     """Check if the search constraints satisfy tags.
 
     The search tags should be uppercased.
@@ -488,84 +446,92 @@ def match_tags(search: Container[str], tags: Iterable[str]) -> bool:
     return matched is not False
 
 
-class BinStrDict:
-    """Manages a "dictionary" for compressing repeated strings in the binary format.
+@attrs.frozen
+class Resource:
+    """Resources used by an entity, with filetype.
 
-    Each unique string is assigned a 2-byte index into the list.
+    If the tags mapping is present, that indicates branch features that should/should not be
+    present. Examples: 'episodic' (vs HL2), 'mapbase'.
     """
+    filename: str
+    type: FileType = FileType.GENERIC
+    tags: FrozenSet[str] = frozenset()
 
-    def __init__(self) -> None:
-        self._dict: Dict[str, int] = {}
-        self.cur_index = 0
+    @classmethod
+    def mdl(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+        """Create a resource definition for a model."""
+        return cls(filename, FileType.MODEL, tags)
 
-    def __call__(self, string: str) -> bytes:
-        """Get the index for a string.
+    @classmethod
+    def mat(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+        """Create a resource definition for a material."""
+        return cls(filename, FileType.MATERIAL, tags)
 
-        If not already present it is assigned one.
-        The result is the two bytes that represent the string.
-        """
-        try:
-            index = self._dict[string]
-        except KeyError:
-            index = self._dict[string] = self.cur_index
-            self.cur_index += 1
-            # Check it can actually fit.
-            if index > (1 << 16):
-                raise ValueError("Too many items in dictionary!")
+    @classmethod
+    def snd(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+        """Create a resource definition for a soundscript."""
+        return cls(filename, FileType.GAME_SOUND, tags)
 
-        return _fmt_16bit.pack(index)
+    @classmethod
+    def part(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+        """Create a resource definition for a particle system."""
+        return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
-    def serialise(self, file: IO[bytes]) -> None:
-        """Convert this to a stream of bytes."""
-        inv_list = [''] * len(self._dict)
-        for txt, ind in self._dict.items():
-            inv_list[ind] = txt
 
-        file.write(_fmt_32bit.pack(len(inv_list)))
-        for txt in inv_list:
-            encoded = txt.encode('utf8')
-            file.write(_fmt_16bit.pack(len(encoded)))
-            file.write(encoded)
+@attrs.frozen(init=False)
+class ResourceCtx:
+    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
+    tags: FrozenSet[str]
+    fsys: FileSystem
+    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
+    mapname: str
+    get_entdef: Callable[[str], 'EntityDef']
 
-    @staticmethod
-    def unserialise(file: IO[bytes]) -> Callable[[], str]:
-        """Read the dictionary from a file.
+    # For use of get_resources() only.
+    _functions: Mapping[str, Callable[
+        ['ResourceCtx', Entity],
+        Iterator[Union[Resource, Entity]]
+    ]]
 
-        This returns a function which reads
-        a string from a file at the current point.
-        """
-        [length] = struct_read(_fmt_32bit, file)
-        inv_list = [''] * length
-        for ind in range(length):
-            [str_len] = _fmt_16bit.unpack(file.read(2))
-            inv_list[ind] = file.read(str_len).decode('utf8')
-
-        def lookup() -> str:
-            """Read the index from the file, and return the string it matches."""
-            [index] = _fmt_16bit.unpack(file.read(2))
-            return inv_list[index]
-
-        return lookup
-
-    @staticmethod
-    def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> FrozenSet[str]:
-        """Pull tags from a BinStrDict."""
-        [size] = _fmt_8bit.unpack(file.read(1))
-        return frozenset({
-            from_dict()
-            for _ in range(size)
-        })
-
-    @staticmethod
-    def write_tags(
-        file: IO[bytes],
-        dic: 'BinStrDict',
-        tags: Collection[str],
+    def __init__(
+        self,
+        tags: Iterable[str] = (),
+        fsys: FileSystem = VirtualFileSystem({}),
+        fgd: Union['FGD', Mapping[str, 'EntityDef'], Callable[[str], 'EntityDef']] = srctools.EmptyMapping,
+        mapname: str = '',
+        funcs: Mapping[str, Callable[
+            ['ResourceCtx', Entity],
+            Iterator[Union[Resource, Entity]]
+        ]] = srctools.EmptyMapping,
     ) -> None:
-        """Write tags a file using the dictionary."""
-        file.write(_fmt_8bit.pack(len(tags)))
-        for tag in tags:
-            file.write(dic(tag))
+        """
+        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
+        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
+        :param tags: Various string tags used to indicate what engine branch is being used. This \
+        allows handling Episodic differences, or enhancements by Mapbase.
+        :param fsys: A :py:class:`~srctools.FileSystem`
+        :param mapname:
+        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
+        accessed, if not present in this
+        """
+        from srctools._class_resources import CLASS_FUNCS
+        if funcs is srctools.EmptyMapping:
+            funcs = CLASS_FUNCS
+        else:
+            # ChainMap itself is mutable and so can't accept Mapping.
+            # We're immediately casting to Mapping, so it's not dangerous.
+            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
+
+        # Strip extension, and normalise folder separators.
+        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
+            mapname = mapname[:-4]
+        self.__attrs_init__(  # type: ignore
+            frozenset(map(str.upper, tags)),
+            fsys,
+            mapname.replace('\\', '/'),
+            getattr(fgd, '__getitem__', fgd),
+            funcs,
+        )
 
 
 class Helper:
@@ -638,7 +604,7 @@ class UnknownHelper(Helper):
 HelperT = TypeVar('HelperT', bound=Helper)
 
 
-@attrs.define(order=True, hash=True, eq=True)
+@attrs.define(order=True, hash=True, eq=True, repr=False)
 class AutoVisgroup:
     """Represents one of the autovisgroup options that can be set.
 
@@ -741,6 +707,158 @@ class KeyValues:
         else:
             yield self.default
 
+    @classmethod
+    def _parse(cls, entity: 'EntityDef', name: str, tok: BaseTokenizer) -> None:
+        """Parse a keyvalue out of an entity."""
+        is_readonly = show_in_report = had_colon = False
+        # Next is either the value type parens, or a tags brackets.
+        val_token, raw_value_type = tok()
+        if val_token is Token.BRACK_OPEN:
+            tags = read_tags(tok)
+            val_token, raw_value_type = tok()
+        else:
+            tags = frozenset()
+        if val_token is not Token.PAREN_ARGS:
+            raise tok.error(val_token)
+        raw_value_type = raw_value_type.strip()
+        if raw_value_type.startswith('*'):
+            # Old format for specifying 'reportable' flag.
+            show_in_report = True
+            raw_value_type = raw_value_type[1:]
+        try:
+            val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+        except KeyError:
+            raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+        # Look for the 'readonly' and 'report' flags, in that order.
+        next_token, key_flag = tok()
+        if next_token is Token.STRING and key_flag.casefold() == 'readonly':
+            is_readonly = True
+            # Fetch next in case it has both.
+            next_token, key_flag = tok()
+        if next_token is Token.STRING and key_flag.casefold() == 'report':
+            show_in_report = True
+            # Fetch for the rest of the checks.
+            next_token, key_flag = tok()
+        has_equal: Optional[Token] = None
+        kv_vals: Optional[List[str]] = None
+        if next_token is Token.COLON:
+            had_colon = True
+        elif next_token is Token.EQUALS:
+            # Special case - spawnflags doesn't have to have
+            # any info - skips straight to the end.
+            if val_typ is ValueTypes.SPAWNFLAGS:
+                kv_vals = []
+                has_equal = next_token
+        elif next_token is Token.NEWLINE:
+            kv_vals = []
+            has_equal = next_token
+        else:
+            raise tok.error(next_token)
+        if kv_vals is None:
+            kv_vals, has_equal = read_colon_list(tok, had_colon)
+        attr_len = len(kv_vals)
+        kv_desc = default = ''
+        if attr_len == 3:
+            disp_name, default, kv_desc = kv_vals
+        elif attr_len == 2:
+            disp_name, default = kv_vals
+        elif attr_len == 1:
+            [disp_name] = kv_vals
+        elif attr_len == 0:
+            disp_name = name
+        else:
+            raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
+        if val_typ is ValueTypes.BOOL:
+            # These are old aliases, change them to proper booleans.
+            if default.casefold() == 'yes':
+                default = '1'
+            elif default.casefold() == 'no':
+                default = '0'
+        # Read the choices in the [].  There's two kinds of tuples here, typing this
+        # doesn't work right.
+        val_list: Optional[List[Any]]
+        if val_typ.has_list:
+            if has_equal is not Token.EQUALS:
+                raise tok.error('No list for "{}" value type!', val_typ.name)
+            val_list = []
+            tok.expect(Token.BRACK_OPEN)
+            for choices_token, choices_value in tok:
+                if choices_token is Token.NEWLINE:
+                    continue
+                if choices_token is Token.BRACK_CLOSE:
+                    break
+                elif choices_token is not Token.STRING:
+                    raise tok.error(choices_token)
+                vals, end_token = read_colon_list(tok, had_colon=False)
+
+                if end_token is Token.BRACK_OPEN:
+                    val_tags = read_tags(tok)
+                else:
+                    val_tags = frozenset()
+
+                if val_typ is ValueTypes.SPAWNFLAGS:
+                    # The first value is an integer.
+                    try:
+                        spawnflag = int(choices_value)
+                    except ValueError:
+                        raise tok.error(
+                            'SpawnFlags must be integer values, '
+                            'not "{}" (in {})!'.format(
+                                choices_value,
+                                entity.classname,
+                            )
+                        ) from None
+                    try:
+                        power = math.log2(spawnflag)
+                    except ValueError:
+                        power = 0.5  # Force the following code to raise
+                    if power != round(power):
+                        raise tok.error(
+                            'SpawnFlags must be powers of two, not {} (in {})!',
+                            spawnflag,
+                            entity.classname,
+                        ) from None
+                    # Spawnflags can have a default, others may not.
+                    if len(vals) == 2:
+                        val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
+                    elif len(vals) == 1:
+                        val_list.append((spawnflag, vals[0], True, val_tags))
+                    elif len(vals) == 0:
+                        raise tok.error('Expected value for spawnflags, got none!')
+                    else:
+                        raise tok.error('Too many values!\n{}', vals)
+                else:  # Choices.
+                    if len(vals) == 1:
+                        val_list.append((choices_value, vals[0], val_tags))
+                    elif len(vals) == 0:
+                        raise tok.error('Expected value for choices, got none!')
+                    else:
+                        raise tok.error('Too many values!\n{}', vals)
+
+                # Handle ] at the end of a : : line.
+                if end_token is Token.BRACK_CLOSE:
+                    break
+            else:
+                raise tok.error(Token.EOF)
+        else:
+            val_list = None
+            if has_equal is Token.EQUALS:
+                raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
+        tags_map = entity.keyvalues.setdefault(name.casefold(), {})
+        if not tags_map:
+            # New, add to the ordering.
+            entity.kv_order.append(name.casefold())
+        tags_map[tags] = KeyValues(
+            name=name,
+            type=val_typ,
+            desc=kv_desc,
+            disp_name=disp_name,
+            default=default,
+            val_list=val_list,
+            readonly=is_readonly,
+            reportable=show_in_report,
+        )
+
     def export(self, file: TextIO, tags: Collection[str]=()) -> None:
         """Write this back out to a FGD file."""
         file.write('\t' + self.name)
@@ -813,91 +931,6 @@ class KeyValues:
 
         file.write('\n')
 
-    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
-        """Write to the binary file."""
-        file.write(str_dict(self.name))
-        file.write(str_dict(self.disp_name))
-        value_type = VALUE_TYPE_INDEX[self.type]
-        # Use the high bit to store this inside here as well.
-        if self.readonly:
-            value_type |= 128
-        file.write(_fmt_8bit.pack(value_type))
-
-        # Spawnflags have integer names and defaults,
-        # choices has string values and no default.
-        if self.type is ValueTypes.SPAWNFLAGS:
-            file.write(_fmt_8bit.pack(len(self.flags_list)))
-            # spawnflags go up to at least 1<<23.
-            for mask, name, default, tags in self.flags_list:
-                BinStrDict.write_tags(file, str_dict, tags)
-                # We can write 2^n instead of the full number,
-                # since they're all powers of two.
-                power = int(math.log2(mask))
-                assert power < 128, "Spawnflags are too big for packing into a byte!"
-                if default:  # Pack the default as the MSB.
-                    power |= 128
-                file.write(_fmt_8bit.pack(power))
-                file.write(str_dict(name))
-            return  # Spawnflags doesn't need to write a default.
-
-        file.write(str_dict(self.default or ''))
-
-        if self.type is ValueTypes.CHOICES:
-            # Use two bytes, these can be large (soundscapes).
-            file.write(_fmt_16bit.pack(len(self.choices_list)))
-            for val, name, tags in self.choices_list:
-                BinStrDict.write_tags(file, str_dict, tags)
-                file.write(str_dict(val))
-                file.write(str_dict(name))
-
-    @staticmethod
-    def unserialise(
-        file: IO[bytes],
-        from_dict: Callable[[], str],
-    ) -> 'KeyValues':
-        """Recover a KeyValue from a binary file."""
-        name = from_dict()
-        disp_name = from_dict()
-        [value_ind] = struct_read(_fmt_8bit, file)
-        readonly = value_ind & 128
-        value_type = VALUE_TYPE_ORDER[value_ind & 127]
-
-        val_list: Optional[List[tuple]]
-
-        if value_type is ValueTypes.SPAWNFLAGS:
-            default = ''  # No default for this type.
-            [val_count] = struct_read(_fmt_8bit, file)
-            val_list = []
-            for ind in range(val_count):
-                tags = BinStrDict.read_tags(file, from_dict)
-                [power] = struct_read(_fmt_8bit, file)
-                val_name = from_dict()
-                val_list.append((
-                    1 << (power & 127),
-                    val_name,
-                    (power & 128) != 0,
-                    tags,
-                ))
-        else:
-            default = from_dict()
-            if value_type is ValueTypes.CHOICES:
-                [val_count] = struct_read(_fmt_16bit, file)
-                val_list = []
-                for ind in range(val_count):
-                    tags = BinStrDict.read_tags(file, from_dict)
-                    val_list.append((from_dict(), from_dict(), tags))
-            else:
-                val_list = None
-
-        return KeyValues(
-            name=name,
-            type=value_type,
-            disp_name=disp_name,
-            default=default,
-            val_list=val_list,  # type: ignore
-            readonly=readonly,
-        )
-
 
 @attrs.define
 class IODef:
@@ -914,6 +947,48 @@ class IODef:
 
     def __deepcopy__(self, memodict: dict) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
+
+    @classmethod
+    # TODO: io_type = Literal['input', 'output']
+    def _parse(cls, entity: 'EntityDef', io_type: str, tok: BaseTokenizer) -> None:
+        """Parse I/O definitions in an entity."""
+        name = tok.expect(Token.STRING)
+
+        # Next is either the value type parens, or a tags brackets.
+        val_token, raw_value_type = tok()
+        if val_token is Token.BRACK_OPEN:
+            tags = read_tags(tok)
+            val_token, raw_value_type = tok()
+        else:
+            tags = frozenset()
+
+        raw_value_type = raw_value_type.strip()
+        if raw_value_type == 'ehandle':
+            # This is a duplicate (deprecated) name, but only for I/O.
+            val_typ = ValueTypes.EHANDLE
+        else:
+            try:
+                val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
+            except KeyError:
+                raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
+
+        # Read desc
+        io_vals, token = read_colon_list(tok)
+
+        if token is token.EQUALS:
+            raise tok.error(token)
+
+        if io_vals:
+            try:
+                [io_desc] = io_vals
+            except ValueError:
+                raise tok.error('Too many values for IO definition!')
+        else:
+            io_desc = ''
+
+        # entity.inputs or entity.outputs
+        tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
+        tags_map[tags] = IODef(name, val_typ, io_desc)
 
     def export(
         self,
@@ -940,21 +1015,6 @@ class IODef:
             file.write(' : ')
             _write_longstring(file, self.desc, indent='\t')
         file.write('\n')
-
-    def serialise(self, file: IO[bytes], dic: BinStrDict) -> None:
-        """Write to the binary file."""
-        file.write(dic(self.name))
-        file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[self.type]))
-
-    @staticmethod
-    def unserialise(
-        file: IO[bytes],
-        from_dict: Callable[[], str],
-    ) -> 'IODef':
-        """Recover an IODef from a binary file."""
-        name = from_dict()
-        value_type = VALUE_TYPE_ORDER[struct_read(_fmt_8bit, file)[0]]
-        return IODef(name, value_type)
 
 
 class _EntityView(Generic[T]):
@@ -1050,27 +1110,34 @@ del _EntityView.__slots__
 @attrs.define(slots=False, eq=False, repr=False)
 class EntityDef:
     """A definition for an entity."""
-    type: EntityTypes
-    classname: str = ''
+    type: EntityTypes  #: The kind of entity.
+    classname: str = ''  #: The classname of this entity, as originally typed.
 
-    # These are (name) -> {tags} -> value dicts.
-    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.Factory(dict)
-    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
-    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.Factory(dict)
+    # These are (name) -> {tags: value} dicts.
+    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.field(kw_only=True, factory=dict)
+    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
+    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
 
-    # Keyvalues have an order. If not present in here,
-    # they appear at the end.
-    kv_order: List[str] = attrs.Factory(list)
+    #: Keyvalues have an order. If not present in here, they appear at the end.
+    kv_order: List[str] = attrs.field(kw_only=True, factory=list)
 
-    # Base type names - base()
-    bases: List[Union['EntityDef', str]] = attrs.Factory(list)
-    helpers: List[Helper] = attrs.Factory(list)
-    desc: str = ''
+    #: The parent entity classes defined using ``base()`` helpers.
+    bases: List[Union['EntityDef', str]] = attrs.field(kw_only=True, factory=list)
+    #: All other helpers defined on the entity.
+    helpers: List[Helper] = attrs.field(kw_only=True, factory=list)
+    desc: str = attrs.field(default='', kw_only=True)
 
     # Views for accessing data among all the entities.
     kv: _EntityView[KeyValues] = attrs.field(init=False)
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
+
+    #: A list of resources this entity may precache. Use :py:func:`get_resources()` to recursively
+    #: fetch sub-entity resources.
+    resources: Sequence[Resource] = attrs.field(kw_only=True, default=())
+    #: If set, the ``aliasof()`` helper was used. This entity should have 1 base, which this is
+    #: simply an alternate classname for.
+    is_alias: bool = attrs.field(kw_only=True, default=False)
 
     def __attrs_post_init__(self) -> None:
         """Setup Entity views."""
@@ -1086,7 +1153,10 @@ class EntityDef:
         ent_type: EntityTypes,
         eval_bases: bool = True,
     ) -> None:
-        """Parse an entity definition."""
+        """Parse an entity definition from an FGD file.
+
+        The ``@PointClass`` etc keyword should already have been read, and is passed as ``ent_type``.
+        """
         entity = cls(ent_type)
 
         # First parse the bases part - lots of name(args) sections until an '='.
@@ -1128,6 +1198,12 @@ class EntityDef:
                 # helper() produces [''], when we want []
                 if len(args) == 1 and args[0] == '':
                     args.clear()
+
+                if help_type_cust == 'aliasof':
+                    # Extension, indicate that it's an alias. The args are then treated like base()
+                    help_type_cust = None
+                    help_type = HelperTypes.INHERIT
+                    entity.is_alias = True
 
                 if help_type_cust is not None:
                     entity.helpers.append(UnknownHelper(help_type_cust, args))
@@ -1228,213 +1304,47 @@ class EntityDef:
 
             # IO - keyword at the start.
             if token is not Token.STRING:
-                raise tok.error(token)
+                raise tok.error(token, token_value)
 
             io_type = token_value.casefold()
             if io_type in ('input', 'output'):
-                name = tok.expect(Token.STRING)
-
-                # Next is either the value type parens, or a tags brackets.
-                val_token, raw_value_type = tok()
-                if val_token is Token.BRACK_OPEN:
-                    tags = read_tags(tok)
-                    val_token, raw_value_type = tok()
-                else:
-                    tags = frozenset()
-
-                raw_value_type = raw_value_type.strip()
-                if raw_value_type == 'ehandle':
-                    # This is a duplicate (deprecated) name, but only for I/O.
-                    val_typ = ValueTypes.EHANDLE
-                else:
-                    try:
-                        val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                    except KeyError:
-                        raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
-
-                # Read desc
-                io_vals, token = read_colon_list(tok)
-
-                if token is token.EQUALS:
-                    raise tok.error(token)
-
-                if io_vals:
-                    try:
-                        [io_desc] = io_vals
-                    except ValueError:
-                        raise tok.error('Too many values for IO definition!')
-                else:
-                    io_desc = ''
-
-                # entity.inputs or entity.outputs
-                tags_map = getattr(entity, io_type + 's').setdefault(name.casefold(), {})
-                tags_map[tags] = IODef(name, val_typ, io_desc)
-
+                # noinspection PyProtectedMember
+                IODef._parse(entity, io_type, tok)
+            elif io_type == '@resources':  # @resource block, format extension
+                tok.expect(Token.BRACK_OPEN, skip_newline=True)
+                # Append to existing, in case there's multiple blocks.
+                resources: List[Resource] = list(entity.resources)
+                for res_tok, res_tok_val in tok:
+                    if res_tok is Token.STRING:
+                        try:
+                            res_type = RESTYPE_BY_NAME[res_tok_val.casefold()]
+                        except KeyError:
+                            raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
+                        filename = tok.expect(Token.STRING)
+                        tags: FrozenSet[str] = frozenset()
+                        token, tok_val = tok()
+                        if token is Token.BRACK_OPEN:
+                            tags = read_tags(tok)
+                        resources.append(Resource(filename, res_type, tags))
+                    elif res_tok is Token.BRACK_CLOSE:
+                        break
+                # Subtle: don't convert to tuple, then unify_fgd can check all ents have
+                # these defined.
+                entity.resources = resources
             else:
-                # Keyvalue
-                name = io_type
-                is_readonly = show_in_report = had_colon = False
+                # noinspection PyProtectedMember
+                KeyValues._parse(entity, io_type, tok)
 
-                # Next is either the value type parens, or a tags brackets.
+    @classmethod
+    def engine_def(cls, classname: str) -> 'EntityDef':
+        """Return the specified entity from an internal copy of the Hammer Addons database.
 
-                val_token, raw_value_type = tok()
-                if val_token is Token.BRACK_OPEN:
-                    tags = read_tags(tok)
-                    val_token, raw_value_type = tok()
-                else:
-                    tags = frozenset()
+        This can be used to identify the kind of keys/inputs/outputs present on an entity, as well
+        as resources the entity requires/:external:cpp:func:`!Precache()`\\ es.
 
-                if val_token is not Token.PAREN_ARGS:
-                    raise tok.error(val_token)
-
-                raw_value_type = raw_value_type.strip()
-                if raw_value_type.startswith('*'):
-                    # Old format for specifying 'reportable' flag.
-                    show_in_report = True
-                    raw_value_type = raw_value_type[1:]
-                try:
-                    val_typ = VALUE_TYPE_LOOKUP[raw_value_type.casefold()]
-                except KeyError:
-                    raise tok.error('Unknown keyvalue type "{}"!', raw_value_type)
-
-                # Look for the 'readonly' and 'report' flags, in that order.
-                next_token, key_flag = tok()
-                if next_token is Token.STRING and key_flag.casefold() == 'readonly':
-                    is_readonly = True
-                    # Fetch next in case it has both.
-                    next_token, key_flag = tok()
-
-                if next_token is Token.STRING and key_flag.casefold() == 'report':
-                    show_in_report = True
-                    # Fetch for the rest of the checks.
-                    next_token, key_flag = tok()
-
-                has_equal: Optional[Token] = None
-                kv_vals: Optional[List[str]] = None
-
-                if next_token is Token.COLON:
-                    had_colon = True
-                elif next_token is Token.EQUALS:
-                    # Special case - spawnflags doesn't have to have
-                    # any info - skips straight to the end.
-                    if val_typ is ValueTypes.SPAWNFLAGS:
-                        kv_vals = []
-                        has_equal = next_token
-                elif next_token is Token.NEWLINE:
-                    kv_vals = []
-                    has_equal = next_token
-                else:
-                    raise tok.error(next_token)
-
-                if kv_vals is None:
-                    kv_vals, has_equal = read_colon_list(tok, had_colon)
-                attr_len = len(kv_vals)
-
-                kv_desc = default = ''
-                if attr_len == 3:
-                    disp_name, default, kv_desc = kv_vals
-                elif attr_len == 2:
-                    disp_name, default = kv_vals
-                elif attr_len == 1:
-                    [disp_name] = kv_vals
-                elif attr_len == 0:
-                    disp_name = name
-                else:
-                    raise tok.error('Too many attributes for keyvalue!\n{!r}', kv_vals)
-
-                if val_typ is ValueTypes.BOOL:
-                    # These are old aliases, change them to proper booleans.
-                    if default.casefold() == 'yes':
-                        default = '1'
-                    elif default.casefold() == 'no':
-                        default = '0'
-
-                # Read the choices in the [].  There's two kinds of tuples here, typing this
-                # doesn't work right.
-                val_list: Optional[List[Any]]
-                if val_typ.has_list:
-                    if has_equal is not Token.EQUALS:
-                        raise tok.error('No list for "{}" value type!', val_typ.name)
-                    val_list = []
-                    tok.expect(Token.BRACK_OPEN)
-                    for choices_token, choices_value in tok:
-                        if choices_token is Token.NEWLINE:
-                            continue
-                        if choices_token is Token.BRACK_CLOSE:
-                            break
-                        elif choices_token is not Token.STRING:
-                            raise tok.error(choices_token)
-                        vals, end_token = read_colon_list(tok, had_colon=False)
-
-                        if end_token is Token.BRACK_OPEN:
-                            val_tags = read_tags(tok)
-                        else:
-                            val_tags = frozenset()
-
-                        if val_typ is ValueTypes.SPAWNFLAGS:
-                            # The first value is an integer.
-                            try:
-                                spawnflag = int(choices_value)
-                            except ValueError:
-                                raise tok.error(
-                                    'SpawnFlags must be integer values, '
-                                    'not "{}" (in {})!'.format(
-                                        choices_value,
-                                        entity.classname,
-                                    )
-                                ) from None
-                            try:
-                                power = math.log2(spawnflag)
-                            except ValueError:
-                                power = 0.5  # Force the following code to raise
-                            if power != round(power):
-                                raise tok.error(
-                                    'SpawnFlags must be powers of two, not {} (in {})!',
-                                    spawnflag,
-                                    entity.classname,
-                                ) from None
-                            # Spawnflags can have a default, others may not.
-                            if len(vals) == 2:
-                                val_list.append((spawnflag, vals[0], vals[1].strip() == '1', val_tags))
-                            elif len(vals) == 1:
-                                val_list.append((spawnflag, vals[0], True, val_tags))
-                            elif len(vals) == 0:
-                                raise tok.error('Expected value for spawnflags, got none!')
-                            else:
-                                raise tok.error('Too many values!\n{}', vals)
-                        else:  # Choices.
-                            if len(vals) == 1:
-                                val_list.append((choices_value, vals[0], val_tags))
-                            elif len(vals) == 0:
-                                raise tok.error('Expected value for choices, got none!')
-                            else:
-                                raise tok.error('Too many values!\n{}', vals)
-
-                        # Handle ] at the end of a : : line.
-                        if end_token is Token.BRACK_CLOSE:
-                            break
-                    else:
-                        raise tok.error(Token.EOF)
-                else:
-                    val_list = None
-                    if has_equal is Token.EQUALS:
-                        raise tok.error('"{}" value types can\'t have lists!', val_typ.name)
-
-                tags_map = entity.keyvalues.setdefault(name.casefold(), {})
-                if not tags_map:
-                    # New, add to the ordering.
-                    entity.kv_order.append(name.casefold())
-
-                tags_map[tags] = KeyValues(
-                    name=name,
-                    type=val_typ,
-                    desc=kv_desc,
-                    disp_name=disp_name,
-                    default=default,
-                    val_list=val_list,
-                    readonly=is_readonly,
-                    reportable=show_in_report,
-                )
+        :raises KeyError: If the classname is not found in the database.
+        """
+        return deepcopy(_load_engine_db()[classname])  # Or KeyError if not found.
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1451,6 +1361,8 @@ class EntityDef:
         copy.bases = deepcopy(self.bases, memodict)
         copy.helpers = deepcopy(self.helpers, memodict)
         copy.desc = self.desc
+        copy.resources = self.resources
+        copy.is_alias = self.is_alias
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
@@ -1478,7 +1390,9 @@ class EntityDef:
             self.kv_order,
             self.bases,
             self.helpers,
-            self.desc
+            self.desc,
+            self.resources,
+            self.is_alias,
         )
 
     def __setstate__(self, state: tuple) -> None:
@@ -1492,11 +1406,14 @@ class EntityDef:
             self.kv_order,
             self.bases,
             self.helpers,
-            self.desc
+            self.desc,
+            *resources,
         ) = state
         self.kv = _EntityView(self, 'keyvalues', 'kv')
         self.inp = _EntityView(self, 'inputs', 'inp')
         self.out = _EntityView(self, 'outputs', 'out')
+        if resources:  # Backwards compat.
+            [self.resources, self.is_alias] = resources
 
     @overload
     def get_helpers(self, typ: Type[HelperT]) -> Iterator[HelperT]: ...
@@ -1513,6 +1430,95 @@ class EntityDef:
             for helper in self.helpers:
                 if helper.TYPE == typ.TYPE:
                     yield helper
+
+    def get_resources(
+        self,
+        ctx: ResourceCtx,
+        *,
+        ent: Optional[Entity],
+        on_error: Callable[[str], object] = lambda err: None,
+    ) -> Iterator[Tuple[FileType, str]]:
+        """Recursively fetch all the resources this entity may use, simulating ``Precache()``.
+
+        :param ent: A specific entity to evaluate against. If not provided, functions will
+            silently be skipped.
+        :param ctx: Common information about the current map and game configuration. This is
+            passed along to defined entclass functions, and is seperate, so it can be reused
+            for many calls to this function.
+        :param on_error: If provided, when functions or entities are missing this will be called
+            with the specific error, and raised if it returns an exception type. If not
+            set, lookups are ignored. Most exceptions can be passed directly here to cause that to
+            be raised.
+        """
+        if not self.resources:
+            # Nothing to do, skip making the sets/lists below.
+            return
+        # We can recurse, use two lists to avoid actual recursive calls.
+        # Also track the checked classes, so we don't repeat ourselves.
+        classes_checked = {self.classname}
+        entities_checked: Set[FrozenSet[Tuple[str, str]]] = set()
+        todo_ents: List[Tuple[EntityDef, Optional[Entity]]] = [(self, ent)]
+        todo_res: List[Resource] = []
+        while todo_ents:
+            (ent_def, ent) = todo_ents.pop()
+            todo_res.extend(ent_def.resources)
+            while todo_res:
+                res = todo_res.pop()
+                # Skip resources with bad tags, and also skip those with totally empty filenames.
+                # The latter is usually just an unset keyvalue, not important.
+                if not match_tags(ctx.tags, res.tags) or not res.filename:
+                    continue
+                if res.type is FileType.ENTITY:
+                    if res.filename not in classes_checked:
+                        try:
+                            sub_ent = ctx.get_entdef(res.filename)
+                        except LookupError:  # KeyError or IndexError
+                            err = on_error(f'Missing entity definition: "{res.filename}"')
+                            if isinstance(err, BaseException):
+                                raise err from None
+                            continue
+                        classes_checked.add(res.filename)
+                        # For entity recursions, we pass the same ent down.
+                        todo_ents.append((sub_ent, ent))
+                elif res.type is FileType.ENTCLASS_FUNC:
+                    if ent is None:
+                        ent = _fake_vmf.create_ent(ent_def.classname)
+                    ent_key = frozenset({
+                        (key, value) for key, value in
+                        ent.items()
+                        # Treat entities at different locations as the same.
+                        # Ignore IDs and names (almost always unique)
+                        if key not in {
+                            'origin', 'angles',
+                            'targetname', 'id', 'hammerid', 'nodeid',
+                        }
+                    })
+                    if ent_key in entities_checked:
+                        continue
+                    entities_checked.add(ent_key)
+                    try:
+                        # noinspection PyProtectedMember
+                        func = ctx._functions[res.filename]
+                    except LookupError:
+                        err = on_error(f'Missing function: "{res.filename}" in "{ent_def.classname}"')
+                        if isinstance(err, BaseException):
+                            raise err from None
+                        continue
+                    for sub_res in func(ctx, ent):
+                        if isinstance(sub_res, Entity):
+                            try:
+                                sub_ent = ctx.get_entdef(sub_res['classname'])
+                            except LookupError:  # KeyError or IndexError
+                                err = on_error(f'Missing entity definition: "{sub_res["classname"]}"')
+                                if isinstance(err, BaseException):
+                                    raise err from None
+                                continue
+                            todo_ents.append((sub_ent, sub_res))
+                            continue
+                        else:
+                            todo_res.append(sub_res)
+                else:
+                    yield (res.type, res.filename)
 
     def _iter_attrs(self) -> Iterator[Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]]:
         """Iterate over both the keyvalues and I/O dicts.
@@ -1614,7 +1620,7 @@ class EntityDef:
                     out.export(file, 'output', tags)
         file.write('\t]\n')
 
-    def iter_bases(self, _done: Set['EntityDef']=None) -> Iterator['EntityDef']:
+    def iter_bases(self, _done: Optional[Set['EntityDef']] = None) -> Iterator['EntityDef']:
         """Yield all base entities for this one.
 
         If an entity is repeated, it will only be yielded once.
@@ -1628,104 +1634,6 @@ class EntityDef:
             _done.add(ent)
             yield ent
             yield from ent.iter_bases(_done)
-
-    def serialise(self, file: IO[bytes], str_dict: BinStrDict) -> None:
-        """Write to the binary file."""
-        file.write(_fmt_ent_header.pack(
-            ENTITY_TYPE_INDEX[self.type],
-            len(self.bases),
-            len(self.keyvalues),
-            len(self.inputs),
-            len(self.outputs),
-            # Write the classname here, not using BinStrDict.
-            # They're going to be unique, so there's no benefit.
-            len(self.classname),
-        ))
-        file.write(self.classname.encode())
-
-        for base_ent in self.bases:
-            if isinstance(base_ent, str):
-                file.write(str_dict(base_ent))
-            else:
-                file.write(str_dict(base_ent.classname))
-
-        for obj_type in self._iter_attrs():
-            for tag_map in obj_type.values():
-                # We don't need to write the name, since that's stored
-                # also in the kv/io object itself.
-
-                if not tag_map:
-                    # No need to add this one.
-                    continue
-
-                # Special case - if there is one blank tag, write len=0
-                # and just the value.
-                # That saves 2 bytes.
-                if len(tag_map) == 1:
-                    [(tags, value)] = tag_map.items()
-                    if not tags:
-                        file.write(_fmt_8bit.pack(0))
-                        value.serialise(file, str_dict)
-                        continue
-
-                file.write(_fmt_8bit.pack(len(tag_map)))
-                for tags, value in tag_map.items():
-                    BinStrDict.write_tags(file, str_dict, tags)
-                    value.serialise(file, str_dict)
-
-        # Helpers are not added.
-
-    @staticmethod
-    def unserialise(
-        file: IO[bytes],
-        from_dict: Callable[[], str],
-    ) -> 'EntityDef':
-        """Read from the binary file."""
-        [
-            type_ind,
-            base_count,
-            kv_count,
-            inp_count,
-            out_count,
-            clsname_length,
-        ] = struct_read(_fmt_ent_header, file)
-
-        ent = EntityDef(ENTITY_TYPE_ORDER[type_ind])
-        ent.classname = file.read(clsname_length).decode('utf8')
-        ent.desc = ''
-
-        for _ in range(base_count):
-            # We temporarily store strings, then evaluate later on.
-            ent.bases.append(from_dict())
-
-        count: int
-        val_map: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]
-        cls: Type[Union[KeyValues, IODef]]
-        for count, val_map, cls in [  # type: ignore
-            (kv_count, ent.keyvalues, KeyValues),
-            (inp_count, ent.inputs, IODef),
-            (out_count, ent.outputs, IODef),
-        ]:
-            for _ in range(count):
-                [tag_count] = struct_read(_fmt_8bit, file)
-                if tag_count == 0:
-                    # Special case, a single untagged item.
-                    obj = cls.unserialise(file, from_dict)
-                    val_map[obj.name] = {frozenset(): obj}
-                else:
-
-                    # We know it's starting empty, and must have at least
-                    # one tag.
-
-                    tag = BinStrDict.read_tags(file, from_dict)
-                    obj = cls.unserialise(file, from_dict)
-                    tag_map = val_map[obj.name] = {tag: obj}
-                    for _ in range(tag_count - 1):
-                        tag = BinStrDict.read_tags(file, from_dict)
-                        obj = cls.unserialise(file, from_dict)
-                        tag_map[tag] = obj
-
-        return ent
 
 
 class FGD:
@@ -1763,7 +1671,7 @@ class FGD:
     def parse(
         cls,
         file: Union[File, str],
-        filesystem: FileSystem=None,
+        filesystem: Optional[FileSystem] = None,
     ) -> 'FGD':
         """Parse an FGD file.
 
@@ -1775,8 +1683,7 @@ class FGD:
             if not file.endswith('.fgd'):
                 file += '.fgd'
             try:
-                with filesystem:
-                    file = filesystem[file]
+                file = filesystem[file]
             except KeyError:
                 raise FileNotFoundError(file)
         elif isinstance(file, File):
@@ -1868,8 +1775,9 @@ class FGD:
         # We need to do a topological sort effectively, to ensure we do
         # parents before children.
         for ent in self.sorted_ents():
-            base_kv = []
-            keyvalue_names = set(ent.kv_order)
+            base_kv: List[str] = []
+            keyvalue_names: Set[str] = set(ent.kv_order)
+            parent_resources: List[Resource] = []
 
             for base in ent.bases:
                 if isinstance(base, str):
@@ -1906,8 +1814,13 @@ class FGD:
                             if tag not in ent_tags_map:
                                 ent_tags_map[tag] = io_def.copy()
 
+                parent_resources.extend(base.resources)
+
             ent.kv_order = base_kv + ent.kv_order
             ent.bases.clear()
+            if parent_resources:
+                parent_resources.extend(ent.resources)
+                ent.resources = parent_resources
 
     @overload
     def export(self, file: TextIO) -> None: ...
@@ -2133,20 +2046,11 @@ class FGD:
     def engine_dbase(cls) -> 'FGD':
         """Load and return a database of entity keyvalues and I/O.
 
-        This can be used to identify the kind of keys present on an entity.
+        This can be used to identify the kind of keys present on an entity. If you only need
+        specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
+        all the entities.
         """
-        # It's pretty expensive to parse, so keep the original privately,
-        # returning a deep-copy.
-        global _ENGINE_FGD
-        if _ENGINE_FGD is None:
-            from lzma import LZMAFile
-
-            # On 3.8, importlib_resources doesn't have the right stubs.
-            comp: IO[bytes]
-            with (files(srctools) / 'fgd.lzma').open('rb') as comp:  # type: ignore
-                with LZMAFile(comp) as f:
-                    _ENGINE_FGD = cls.unserialise(f)
-        return deepcopy(_ENGINE_FGD)
+        return deepcopy(_load_engine_db())
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
@@ -2195,69 +2099,6 @@ class FGD:
                     self.entities[poss_name] = base
                     break
             self._fix_missing_bases(base)
-
-    def serialise(self, file: IO[bytes]) -> None:
-        """Write the FGD into a compacted binary format.
-
-        This is only readable by this module, and does not contain
-        entity, keyvalue and IO help descriptions to keep the data small.
-        """
-        for ent in list(self):
-            self._fix_missing_bases(ent)
-
-        # The start of a file is a list of all used strings.
-        dictionary = BinStrDict()
-
-        # Start of file - format version, FGD min/max, number of entities.
-        file.write(b'FGD' + _fmt_header.pack(
-            BIN_FORMAT_VERSION,
-            self.map_size_min,
-            self.map_size_max,
-            len(self.entities),
-        ))
-
-        ent_data = io.BytesIO()
-        for ent in self.entities.values():
-            ent.serialise(ent_data, dictionary)
-
-        # The final file is the header, dictionary data, and all the entities
-        # one after each other.
-        dictionary.serialise(file)
-        file.write(ent_data.getvalue())
-        # print('Dict size: ', format(dictionary.cur_index / (1 << 16), '%'))
-
-    @classmethod
-    def unserialise(cls, file: IO[bytes]) -> 'FGD':
-        """Unpack data from FGD.serialise() to return the original data.
-
-        Help descriptions are not preserved, and are set to <BINARY>.
-        """
-
-        if file.read(3) != b'FGD':
-            raise ValueError('Not an FGD file!')
-
-        fgd = FGD()
-
-        [
-            format_version,
-            fgd.map_size_min,
-            fgd.map_size_max,
-            ent_count,
-        ] = struct_read(_fmt_header, file)
-
-        if format_version != BIN_FORMAT_VERSION:
-            raise TypeError(f'Unknown format version "{format_version}"!')
-
-        from_dict = BinStrDict.unserialise(file)
-
-        # Now there's ent_count entities after each other.
-        for _ in range(ent_count):
-            ent = EntityDef.unserialise(file, from_dict)
-            fgd.entities[ent.classname.casefold()] = ent
-
-        fgd.apply_bases()
-
-        return fgd
 
 
 def _init_helper_impl() -> None:

@@ -1,22 +1,20 @@
 """Test the datamodel exchange implementation."""
-import array
-
-import collections
-
+from typing import Set, cast
 from io import BytesIO
 from pathlib import Path
-from typing import cast, Set
 from uuid import UUID
+import array
+import collections
 
+from helpers import *
 import pytest
 
-from srctools import Matrix, Angle, Keyvalues
+from srctools import Angle, Keyvalues, Matrix
 from srctools.dmx import (
-    Element, Attribute, ValueType, Vec2, Vec3, Vec4, AngleTup, Color,
-    Quaternion, deduce_type, TYPE_CONVERT, Time,
+    TYPE_CONVERT, AngleTup, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec3,
+    Vec4, deduce_type,
 )
 from srctools.tokenizer import TokenSyntaxError
-from helpers import *
 
 
 def assert_tree(tree1: Element, tree2: Element) -> None:
@@ -926,7 +924,7 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
 
 def test_dmx_to_kv1_roundtrip() -> None:
     """Test we can smuggle KV1 trees in DMX elements."""
-    from test_keyvalues import parse_result, assert_tree as assert_prop
+    from test_keyvalues import assert_tree as assert_prop, parse_result
     elem = Element.from_kv1(parse_result)
     roundtrip = elem.to_kv1()
     assert_prop(roundtrip, parse_result)

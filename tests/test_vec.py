@@ -1,14 +1,16 @@
 """Test the Vector object."""
-import pickle
-import copy
-import operator as op
-import pytest
 from pathlib import Path
 from random import Random
+import copy
+import operator as op
+import pickle
 import inspect
 
 from helpers import *
-from srctools import Vec_tuple
+import pytest
+
+from srctools import Vec_tuple, math as vec_mod
+
 
 # Reuse these context managers.
 raises_typeerror = pytest.raises(TypeError)

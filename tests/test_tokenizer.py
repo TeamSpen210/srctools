@@ -1,24 +1,20 @@
-from itertools import zip_longest, tee
-from typing import Callable, Iterable, Iterator, Type, Tuple, Union
-
-import pytest
+from typing import Any, Callable, Generator, Iterable, Iterator, Tuple, Type, Union
+from itertools import tee, zip_longest
 import codecs
 import platform
 
 from pytest import raises
-
 from test_keyvalues import parse_test as prop_parse_test
+import pytest
+
 from srctools.keyvalues import KeyValError
+# noinspection PyProtectedMember
 from srctools.tokenizer import (
-    Token,
-    Tokenizer,
-    BaseTokenizer,
-    Cy_Tokenizer, Py_Tokenizer,
-    Cy_BaseTokenizer, Py_BaseTokenizer,
-    Cy_IterTokenizer, Py_IterTokenizer,
-    escape_text, _py_escape_text,
-    TokenSyntaxError, _OPERATOR_VALS as TOK_VALS,
+    _OPERATOR_VALS as TOK_VALS, BaseTokenizer, Cy_BaseTokenizer, Cy_IterTokenizer,
+    Cy_Tokenizer, Py_BaseTokenizer, Py_IterTokenizer, Py_Tokenizer, Token, Tokenizer,
+    TokenSyntaxError, _py_escape_text, escape_text,
 )
+
 
 T = Token
 IS_CPYTHON = platform.python_implementation() == 'CPython'
@@ -140,7 +136,7 @@ else:
 
 
 @pytest.fixture(params=parms, ids=ids)
-def py_c_token(request):
+def py_c_token(request: Any) -> Generator[Type[Tokenizer], None, None]:
     """Run the test twice, for the Python and C versions."""
     yield request.param
 
@@ -217,7 +213,7 @@ def test_prop_tokens(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(tok, prop_parse_tokens)
 
 
-def test_nonprop_tokens(py_c_token):
+def test_nonprop_tokens(py_c_token: Type[Tokenizer]) -> None:
     """Test the tokenizer returns the correct sequence of tokens for non-Property strings."""
     Tokenizer = py_c_token
 
@@ -237,7 +233,7 @@ def test_nonprop_tokens(py_c_token):
     check_tokens(tok, noprop_parse_tokens)
 
 
-def test_pushback(py_c_token):
+def test_pushback(py_c_token: Type[Tokenizer]) -> None:
     """Test pushing back tokens."""
     Tokenizer = py_c_token
     tok = Tokenizer(prop_parse_test, '', string_bracket=True)
@@ -271,7 +267,7 @@ def test_pushback(py_c_token):
     (Token.PLUS, '+'),
     (Token.COMMA, ','),
 ])
-def test_pushback_opvalues(py_c_token, token: Token, val: str) -> None:
+def test_pushback_opvalues(py_c_token: Type[Tokenizer], token: Token, val: str) -> None:
     """Test the operator tokens pushback the correct fixed value."""
     tok: Tokenizer = py_c_token(['test data'], string_bracket=False)
     tok.push_back(token, val)
@@ -287,7 +283,7 @@ def test_pushback_opvalues(py_c_token, token: Token, val: str) -> None:
     assert tok() == (token, val)
 
 
-def test_call_next(py_c_token) -> None:
+def test_call_next(py_c_token: Type[Tokenizer]) -> None:
     """Test that tok() functions, and it can be mixed with iteration."""
     tok: Tokenizer = py_c_token('''{ "test" } "test" { + } ''', 'file')
 
@@ -309,7 +305,7 @@ def test_call_next(py_c_token) -> None:
         next(it1)
 
 
-def test_star_comments(py_c_token):
+def test_star_comments(py_c_token: Type[Tokenizer]) -> None:
     """Test disallowing /* */ comments."""
     Tokenizer = py_c_token
 
@@ -468,7 +464,7 @@ def test_tok_filename(py_c_token: Type[Tokenizer]) -> None:
     ('allow_star_comments', False),
     ('colon_operator', False),
 ])
-def test_obj_config(py_c_token, parm: str, default: bool) -> None:
+def test_obj_config(py_c_token: Type[Tokenizer], parm: str, default: bool) -> None:
     """Test getting and setting configuration attributes."""
     Tokenizer = py_c_token
 
@@ -690,7 +686,7 @@ Error occurred on line 45, with file "a file".'''
 Error occurred on line 250.'''
 
 
-def test_tok_error(py_c_token) -> None:
+def test_tok_error(py_c_token: Type[Tokenizer]) -> None:
     """Test the tok.error() helper."""
     tok: Tokenizer = py_c_token(['test'], 'filename.py')
     tok.line_num = 45
@@ -751,6 +747,7 @@ def test_early_binary_arg(py_c_token: Type[Tokenizer]) -> None:
     """Test that passing bytes values is caught before looping."""
     with pytest.raises(TypeError):
         py_c_token(b'test')
+
 
 def test_block_iter(py_c_token: Type[Tokenizer]) -> None:
     """Test the Tokenizer.block() helper."""

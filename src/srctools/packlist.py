@@ -4,23 +4,24 @@ from typing import (
     TypeVar, Union,
 )
 from collections import OrderedDict
-from enum import Enum, auto as auto_enum
+from enum import Enum
 from pathlib import Path
 from zipfile import ZipFile
 import io
-import itertools
 import os
 import re
 import shutil
 import warnings
 
-from atomicwrites import atomic_write
 import attrs
 
 from srctools import conv_bool
 from srctools.bsp import BSP
+from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
-from srctools.fgd import FGD, EntityDef, EntityTypes, KeyValues, ValueTypes as KVTypes
+from srctools.fgd import (
+    FGD, EntityDef, EntityTypes, KeyValues, ResourceCtx, ValueTypes as KVTypes,
+)
 from srctools.filesys import (
     CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
@@ -44,30 +45,6 @@ __all__ = [
     'unify_path',
     'entclass_canonicalize', 'entclass_canonicalise', 'entclass_packfunc', 'entclass_resources', 'entclass_iter',
 ]
-
-
-class FileType(Enum):
-    """Types of files we might pack."""
-    GENERIC = auto_enum()  # Other file types.
-    SOUNDSCRIPT = auto_enum()  # Should be added to the manifest
-
-    GAME_SOUND = auto_enum()  # 'world.blah' sound - lookup the soundscript, and raw files.
-    PARTICLE = PARTICLE_SYSTEM = auto_enum()  # Particle system, implies finding the PCF.
-
-    PARTICLE_FILE = 'pcf'  # Should be added to the manifest
-
-    VSCRIPT_SQUIRREL = 'nut'
-
-    # Implies packing referenced materials and textures.
-    MATERIAL = 'vmt'
-
-    TEXTURE = 'vtf'  # May want .hdr.vtf too.
-
-    CHOREO = 'vcd'  # Choreographed scenes.
-
-    # Requires lookup of vtx, vvd, phy files too - in the model data.
-    # also any skins used.
-    MODEL = 'mdl'
 
 
 class FileMode(Enum):
@@ -447,6 +424,9 @@ class PackList:
         if '\t' in filename:
             raise ValueError(f'No tabs are allowed in filenames ({filename!r})')
 
+        if data_type is FileType.ENTCLASS_FUNC or data_type is data_type.ENTITY:
+            raise ValueError(f'File type "{data_type.name}" must not be packed directly!')
+
         if data_type is FileType.GAME_SOUND:
             self.pack_soundscript(filename)
             return  # This packs the soundscript and wav for us.
@@ -456,6 +436,9 @@ class PackList:
         if data_type is FileType.CHOREO:
             # self.pack_choreo(filename)  # TODO: Choreo scene parsing
             return
+        if data_type is FileType.BREAKABLE_CHUNK:
+            self.pack_breakable_chunk(filename)
+            return  # Packs additional models.
 
         # If soundscript data is provided, load it and force-include it.
         elif data_type is FileType.SOUNDSCRIPT and data:
@@ -496,7 +479,19 @@ class PackList:
             data_type = FileType.MODEL
             if not filename.startswith('models/'):
                 filename = 'models/' + filename
+            # Allow passing skinsets via filename. This isn't useful if read from entities,
+            # but is good for filenames in resource lists.
+            if '.mdl#' in filename:
+                filename, skinset_int = filename.rsplit('.mdl#', 1)
+                try:
+                    skinset = set(map(int, skinset_int.split(',')))
+                except (TypeError, ValueError):
+                    LOGGER.warning(
+                        'Invalid skinset for "{}.mdl": {} should be comma-separated skins!',
+                        filename, skinset_int,
+                    )
             filename = strip_extension(filename) + '.mdl'
+            LOGGER.error('Pack model: {} # {!r}', filename, skinset)
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
@@ -832,7 +827,13 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
-    def pack_fgd(self, vmf: VMF, fgd: FGD) -> None:
+    def pack_fgd(
+        self,
+        vmf: VMF,
+        fgd: FGD,
+        mapname: str='',
+        tags: Iterable[str]=(),
+    ) -> None:
         """Analyse the map to pack files. We use the FGD to easily handle this."""
         # Don't show the same keyvalue warning twice, it's just noise.
         unknown_keys: Set[Tuple[str, str]] = set()
@@ -843,6 +844,13 @@ class PackList:
         except KeyError:
             LOGGER.warning('No CBaseEntity definition!')
             base_entity = EntityDef(EntityTypes.BASE)
+
+        res_ctx = ResourceCtx(
+            fgd=fgd,
+            fsys=self.fsys,
+            mapname=mapname,
+            tags=tags,
+        )
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
@@ -882,7 +890,7 @@ class PackList:
                     'origin', 'angles',
                     'skin',
                     'pitch',
-                    'skinset'
+                    'skinset',
                 ):
                     continue
                 elif key == 'model':
@@ -934,29 +942,9 @@ class PackList:
                 elif val_type is KVTypes.STR_PARTICLE:
                     self.pack_particle(value)
 
-        # Handle resources that's coded into different entities with our
-        # internal database.
-        # Delay import, since this is a fair bit of code and many don't need it.
-        from ._class_resources import CLASS_FUNCS, CLASS_RESOURCES
-
-        # Use compress() to skip classnames that have no ents.
-        for classname in itertools.compress(vmf.by_class.keys(), vmf.by_class.values()):
-            try:
-                res_list = CLASS_RESOURCES[classname]
-            except KeyError:
-                pass
-            else:
-                # Basic dependencies, if they're the same for any copy of this ent.
-                for file, filetype in res_list:
-                    self.pack_file(file, filetype)
-            try:
-                res_func = CLASS_FUNCS[classname]
-            except KeyError:
-                pass
-            else:
-                # Different stuff is packed based on keyvalues, so call a function.
-                for ent in vmf.by_class[classname]:
-                    res_func(self, ent)
+            # Handle resources that's coded into different entities with our internal database.
+            for file_type, filename in ent_class.get_resources(res_ctx, ent=ent):
+                self.pack_file(filename, file_type)
 
         # Handle worldspawn here - this is fairly special.
         sky_name = vmf.spawn['skyname']
@@ -964,11 +952,6 @@ class PackList:
             self.pack_file(
                 'materials/skybox/{}{}.vmt'.format(sky_name, suffix),
                 FileType.MATERIAL,
-            )
-            self.pack_file(
-                'materials/skybox/{}{}_hdr.vmt'.format(sky_name, suffix),
-                FileType.MATERIAL,
-                optional=True,
             )
         self.pack_file(vmf.spawn['detailmaterial'], FileType.MATERIAL)
 
@@ -1278,20 +1261,35 @@ class PackList:
             self.pack_file(filename, param_type, optional=file.optional)
 
 
+_engine_fgd: Optional[FGD] = None
+
+
+def _get_engine_fgd() -> FGD:
+    """Fetch and cache the engine FGD database."""
+    global _engine_fgd
+    if _engine_fgd is None:
+        _engine_fgd = FGD.engine_dbase()
+    return _engine_fgd
+
+
 def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
     """Fetch a list of resources this entity class is known to use in code.
 
-    This allows those to be packed also.
+    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
-    from ._class_resources import ALT_NAMES, CLASS_RESOURCES
+    warnings.warn(
+        f'Using entclass_resources() is deprecated, access FGD.engine_db() and then '
+        f'EntityDef.get_resources() instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    fgd = _get_engine_fgd()
     try:
-        classname = ALT_NAMES[classname.casefold()]
-    except KeyError:
-        pass
-    try:
-        return CLASS_RESOURCES[classname.casefold()]
+        ent_def = fgd[classname]
     except KeyError:
         raise KeyError(classname) from None
+
+    for filetype, filename in ent_def.get_resources(ResourceCtx(fgd=fgd), ent=None):
+        yield (filename, filetype)
 
 
 def entclass_canonicalise(classname: str) -> str:
@@ -1299,9 +1297,26 @@ def entclass_canonicalise(classname: str) -> str:
 
     For example func_movelinear was originally momentary_door. This doesn't include names which
     have observably different behaviour, like prop_physics_override.
+
+    :deprecated: Use :py:func:`FGD.engine_db()`, then check if the entity is an alias.
     """
-    from ._class_resources import ALT_NAMES
-    return ALT_NAMES.get(classname.casefold(), classname)
+    warnings.warn(
+        f'Using entclass_packfun() is deprecated, access FGD.engine_db() and then '
+        f'EntityDef.get_resources() instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    fgd = _get_engine_fgd()
+    try:
+        ent_def = fgd[classname]
+    except KeyError:
+        return classname
+    if ent_def.is_alias:
+        try:
+            [base] = ent_def.bases
+            return base.classname if isinstance(base, EntityDef) else base
+        except ValueError:
+            pass
+    return classname
 
 
 entclass_canonicalize = entclass_canonicalise  # America.
@@ -1311,37 +1326,41 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
     """For some entities, they have unique packing behaviour depending on keyvalues.
 
     If the specified classname is one, return a callable that packs it.
+
+    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
-    from ._class_resources import ALT_NAMES, CLASS_FUNCS
+    warnings.warn(
+        f'Using entclass_packfunc() is deprecated, access FGD.engine_db() and then '
+        f'EntityDef.get_resources() instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    fgd = _get_engine_fgd()
     try:
-        classname = ALT_NAMES[classname.casefold()]
-    except KeyError:
-        pass
-    try:
-        return CLASS_FUNCS[classname.casefold()]
+        ent_def = fgd[classname]
     except KeyError:
         raise KeyError(classname) from None
 
+    def pack_shim(packlist: PackList, ent: Entity) -> None:
+        """Translate to old parameters."""
+        for filetype, filename in ent_def.get_resources(ResourceCtx(
+            fgd=fgd,
+            fsys=packlist.fsys,
+        ), ent=ent):
+            packlist.pack_file(filename, filetype)
+    return pack_shim
+
 
 def entclass_iter() -> Collection[str]:
-    """Yield all classnames with known behaviour."""
-    from ._class_resources import CLASS_RESOURCES
-    return CLASS_RESOURCES.keys()
+    """Yield all classnames with known behaviour.
 
-
-CLASS_RESOURCES: Dict[str, Iterable[Tuple[str, FileType]]]
-CLASS_FUNCS: Dict[str, Callable[[PackList, Entity], object]]
-ALT_NAMES: Dict[str, str]
-
-
-def __getattr__(name: str) -> dict:
-    """These were directly exposed, define the types and a getter to fetch them (with warning)."""
-    if name in {'CLASS_RESOURCES', 'CLASS_FUNCS', 'ALT_NAMES'}:
-        import warnings
-        warnings.warn(
-            f'Direct access to packlist.{name} is deprecated, use entclass_* functions.',
-            DeprecationWarning, stacklevel=2,
-        )
-        from . import _class_resources
-        return getattr(_class_resources, name)
-    raise AttributeError(name)
+    :deprecated: Use :py:func:`FGD.engine_db()` instead.
+    """
+    warnings.warn(
+        f'Using entclass_iter() is deprecated, access FGD.engine_db() instead.',
+        DeprecationWarning, stacklevel=2,
+    )
+    return [
+        ent.classname
+        for ent in _get_engine_fgd().entities.values()
+        if not isinstance(ent.resources, tuple)
+    ]

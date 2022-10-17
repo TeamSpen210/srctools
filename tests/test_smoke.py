@@ -1,7 +1,9 @@
 """Import all modules, to ensure at least imports work."""
-import pytest
-import importlib
 from pathlib import Path
+import importlib
+
+import pytest
+
 
 package_loc = Path(__file__, '..', '..', 'src', 'srctools')
 
@@ -24,7 +26,7 @@ def test_entclass_resources() -> None:
 
 def test_vmt_types() -> None:
     """Test the VMT types database can be loaded."""
-    from srctools.vmt import get_parm_type, VarType
+    from srctools.vmt import VarType, get_parm_type
     assert get_parm_type('$basetexture') is VarType.TEXTURE
 
 

@@ -1,4 +1,6 @@
 """Test functionality in srctools.__init__."""
+from typing import Any, Union
+
 import pytest
 
 from srctools import EmptyMapping
@@ -7,13 +9,13 @@ import srctools
 
 class FalseObject:
     """Test object which is always False."""
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return False
 
 
 class TrueObject:
     """Test object which is always True."""
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return True
 
 true_vals = [1, 1.0, True, 'test', [2], (-1, ), TrueObject(), object()]
@@ -63,7 +65,7 @@ def_vals = [
 ]
 
 
-def check_empty_iterable(obj, name, item: object='x'):
+def check_empty_iterable(obj: Any, name: str, item: object='x') -> None:
     """Check the given object is iterable, and is empty."""
     try:
         iterator = iter(obj)
@@ -77,7 +79,7 @@ def check_empty_iterable(obj, name, item: object='x'):
             next(iterator)
 
 
-def test_bool_as_int():
+def test_bool_as_int() -> None:
     """Test result of srctools.bool_as_int."""
     for val in true_vals:
         assert srctools.bool_as_int(val) == '1', repr(val)
@@ -85,25 +87,25 @@ def test_bool_as_int():
         assert srctools.bool_as_int(val) == '0', repr(val)
 
 
-def test_conv_int():
-    for string, result in ints:
-        assert srctools.conv_int(string) == result, string
+def test_conv_int() -> None:
+    for st_int, result in ints:
+        assert srctools.conv_int(st_int) == result, st_int
 
     # Check that float values fail
     marker = object()
-    for string, result in floats:
-        if isinstance(string, str):  # We don't want to check float-rounding
-            assert srctools.conv_int(string, marker) is marker, repr(string)
+    for st_float, result in floats:
+        if isinstance(st_float, str):  # We don't want to check float-rounding
+            assert srctools.conv_int(st_float, marker) is marker, repr(st_float)
 
     # Check non-integers return the default.
-    for string in non_ints:
-        assert srctools.conv_int(string) == 0
+    for st_obj in non_ints:
+        assert srctools.conv_int(st_obj) == 0
         for default in def_vals:
             # Check all default values pass through unchanged
-            assert srctools.conv_int(string, default) is default, repr(string)
+            assert srctools.conv_int(st_obj, default) is default, repr(st_obj)  # type: ignore
 
 
-def test_conv_bool():
+def test_conv_bool() -> None:
     """Test srctools.conv_bool()"""
     for val in true_strings:
         assert srctools.conv_bool(val)
@@ -119,7 +121,7 @@ def test_conv_bool():
         assert srctools.conv_bool(None, val) is val
 
 
-def test_conv_float():
+def test_conv_float() -> None:
     # Float should convert integers too
     for string, result in ints:
         assert srctools.conv_float(string) == float(result)
@@ -134,7 +136,7 @@ def test_conv_float():
 
 
 # noinspection PyStatementEffect, PyCallingNonCallable
-def test_EmptyMapping():
+def test_EmptyMapping() -> None:
     marker = object()
     
     # It should be possible to 'construct' an instance..
@@ -287,8 +289,8 @@ def test_EmptyMapping_set_ops(view) -> None:
     assert (view ^ full) == (full ^ view) == full
 
 
-def test_quote_escape():
-    """Test escaping various quotes"""
+def test_quote_escape() -> None:
+    """Test escaping various quotes."""
     assert srctools.escape_quote_split('abcdef') ==['abcdef']
     # No escapes, equivalent to str.split
     assert (

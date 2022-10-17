@@ -1,6 +1,9 @@
 """Helpers for performing tests."""
-import itertools
 from typing import Generator, Type, Tuple, Callable, Iterable, Iterator, TypeVar
+import itertools
+import pytest
+import math
+import builtins
 
 from srctools.math import (
     Py_Vec, Cy_Vec,
@@ -11,9 +14,7 @@ from srctools.math import (
     Py_parse_vec_str, Cy_parse_vec_str,
 )
 from srctools import math as vec_mod
-import pytest
-import math
-import builtins
+
 
 VALID_NUMS = [
     # 10e38 is the max single value, make sure we use double-precision.

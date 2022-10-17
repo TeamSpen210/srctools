@@ -6,7 +6,7 @@ import struct
 import attrs
 
 from srctools import conv_float
-from srctools.keyvalues import Keyvalues
+from srctools.keyvalues import Keyvalues, NoKeyError
 
 
 __all__ = [
@@ -106,21 +106,28 @@ EnumType = TypeVar('EnumType', bound=Enum)
 
 
 def split_float(
-    val: str,
+    kv: Keyvalues,
+    key: str,
     enum: Callable[[str], Union[float, EnumType]],
     default: Union[float, EnumType],
-    name: str,
 ) -> Tuple[Union[float, EnumType], Union[float, EnumType]]:
-    """Handle values which can be either single or a low, high pair of numbers.
+    """Handle values which can be a low, high pair of numbers or enum constants.
 
-    If single, low and high are the same.
-    enum is a Enum with values to match text constants, or a converter function
-    returning enums or raising ValueError, KeyError or IndexError.
-    The name is used for error handling.
+    A single number can be provided, producing the same value for low and high.
+
+    :param kv: The keyvalues block for the sound, which ``key`` is then accessed from.
+    :param key: The name of the keyvalue to look up inside ``kv``.
+    :param enum: This is either an Enum with values to match text constants, or a converter function
+        returning enums or raising ValueError, KeyError or IndexError.
+    :param default: If either value or the whole string is unparsable, this default is used.
     """
-    if isinstance(val, list):
-        # TODO: This won't work once .value raises instead of returning the list.
-        raise ValueError(f'Property block used for option in {name} sound!')
+    try:
+        leaf_kv = kv.find_key(key)
+    except NoKeyError:
+        return (default, default)
+    if leaf_kv.has_children():
+        raise ValueError(f'Keyvalues block used for "{key}" option in "{kv.real_name}" sound!')
+    val = leaf_kv.value
     if ',' in val:
         s_low, s_high = val.split(',')
         try:
@@ -267,7 +274,7 @@ def wav_is_looped(file: IO[bytes]) -> bool:
         chunk.skip()
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, init=False, repr=False)
 class Sound:
     """Represents a single soundscript."""
     name: str
@@ -382,31 +389,27 @@ class Sound:
         sounds = {}
         for snd_prop in file:
             volume = split_float(
-                snd_prop['volume', '1'],
+                snd_prop, 'volume',
                 VOLUME,
                 1.0,
-                snd_prop.real_name,
             )
             pitch = split_float(
-                snd_prop['pitch', '100'],
+                snd_prop, 'pitch',
                 Pitch.__getitem__,
                 100.0,
-                snd_prop.real_name,
             )
 
             if 'soundlevel' in snd_prop:
                 level = split_float(
-                    snd_prop['soundlevel'],
+                    snd_prop, 'soundlevel',
                     Level.__getitem__,
                     Level.SNDLVL_NORM,
-                    snd_prop.real_name,
                 )
             elif 'attenuation' in snd_prop:
                 atten_min, atten_max = split_float(
-                    snd_prop['attenuation'],
+                    snd_prop, 'attenuation',
                     ATTENUATION.__getitem__,
                     ATTENUATION['ATTN_IDLE'],
-                    snd_prop.real_name,
                 )
                 # Convert to a soundlevel.
                 # See source_sdk/public/soundflags.h:ATTN_TO_SNDLVL()
