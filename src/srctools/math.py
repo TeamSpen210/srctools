@@ -39,6 +39,7 @@ Tuple3 = Tuple[float, float, float]
 AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
+MatrixT = TypeVar('MatrixT', bound='MatrixBase')
 T1 = TypeVar('T1')
 T2 = TypeVar('T2')
 T3 = TypeVar('T3')
@@ -628,7 +629,7 @@ class VecBase:
         else:
             return type(self)(x1, y1, z1), type(self)(x2, y2, z2)
 
-    def __matmul__(self: VecT, other: Union['AngleBase', 'Matrix']) -> VecT:
+    def __matmul__(self: VecT, other: Union['AngleBase', 'MatrixBase']) -> VecT:
         """Rotate this vector by an angle or matrix."""
         if isinstance(other, Py_Matrix):
             mat = other
@@ -1472,6 +1473,7 @@ class Vec(VecBase, SupportsRound['Vec']):
         # noinspection PyProtectedMember
         mat._vec_rot(self)
 
+# Maps (1, 1) -> ._bb attributes, for getting/setting by XY coordinate.
 _IND_TO_SLOT = {
     (x, y): f'_{chr(ord("a")+x)}{chr(ord("a")+y)}'
     for x in (0, 1, 2)
@@ -1479,14 +1481,8 @@ _IND_TO_SLOT = {
 }
 
 
-@final
-class Matrix:
-    """Represents a rotation via a transformation matrix.
-
-    When performing multiple rotations, it is more efficient to create one of these instead of using
-    an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
-    depending on what rotation is desired.
-    """
+class MatrixBase:
+    """Common code for both matrix versions."""
     __slots__ = [
         '_aa', '_ab', '_ac',
         '_ba', '_bb', '_bc',
@@ -1499,8 +1495,22 @@ class Matrix:
         self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
         self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
 
+    @classmethod
+    def _from_raw(
+        cls: Type[MatrixT],
+        aa: float, ab: float, ac: float,
+        ba: float, bb: float, bc: float,
+        ca: float, cb: float, cc: float,
+    ) -> MatrixT:
+        """Construct from individual data values."""
+        self = cls.__new__(cls)
+        self._aa, self._ab, self._ac = aa, ab, ac
+        self._ba, self._bb, self._bc = ba, bb, bc
+        self._ca, self._cb, self._cc = ca, cb, cc
+        return self
+
     def __eq__(self, other: object) -> bool:
-        if isinstance(other, Py_Matrix):
+        if isinstance(other, MatrixBase):
             return (
                 self._aa == other._aa and self._ab == other._ab and self._ac == other._ac and
                 self._ba == other._ba and self._bb == other._bb and self._bc == other._bc and
@@ -1510,43 +1520,25 @@ class Matrix:
 
     def __repr__(self) -> str:
         return (
-            '<Matrix '
+            f'<{self.__class__.__name__} '
             f'{self._aa:.3} {self._ab:.3} {self._ac:.3}, '
             f'{self._ba:.3} {self._bb:.3} {self._bc:.3}, '
             f'{self._ca:.3} {self._cb:.3} {self._cc:.3}'
             '>'
         )
 
-    def copy(self) -> 'Matrix':
+    def copy(self: MatrixT) -> MatrixT:
         """Duplicate this matrix."""
-        rot = Py_Matrix.__new__(Py_Matrix)
-
-        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
-        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
-        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
-
-        return rot
-
-    def __reduce__(self) -> tuple:
-        """Pickling support.
-
-        This redirects to a global function, so C/Python versions
-        interoperate.
-        """
-        return (_mk_mat, (
-            self._aa, self._ab, self._ac,
-            self._ba, self._bb, self._bc,
-            self._ca, self._cb, self._cc
-        ))
+        raise NotImplementedError
 
     @classmethod
-    def from_pitch(cls: Type['Matrix'], pitch: float) -> 'Matrix':
+    def from_pitch(cls: Type[MatrixT], pitch: float) -> MatrixT:
         """Return the matrix representing a pitch rotation (Y axis)."""
         rad_pitch = math.radians(pitch)
         cos = math.cos(rad_pitch)
         sin = math.sin(rad_pitch)
 
-        rot: Matrix = cls.__new__(cls)
+        rot = cls.__new__(cls)
 
         rot._aa, rot._ab, rot._ac = cos, 0.0, -sin
         rot._ba, rot._bb, rot._bc = 0.0, 1.0, 0.0
@@ -1555,13 +1547,13 @@ class Matrix:
         return rot
 
     @classmethod
-    def from_yaw(cls: Type['Matrix'], yaw: float) -> 'Matrix':
+    def from_yaw(cls: Type[MatrixT], yaw: float) -> MatrixT:
         """Return the matrix representing a yaw rotation (Z axis)."""
         rad_yaw = math.radians(yaw)
         sin = math.sin(rad_yaw)
         cos = math.cos(rad_yaw)
 
-        rot: Matrix = cls.__new__(cls)
+        rot = cls.__new__(cls)
 
         rot._aa, rot._ab, rot._ac = cos, sin, 0.0
         rot._ba, rot._bb, rot._bc = -sin, cos, 0.0
@@ -1570,13 +1562,13 @@ class Matrix:
         return rot
 
     @classmethod
-    def from_roll(cls: Type['Matrix'], roll: float) -> 'Matrix':
+    def from_roll(cls: Type[MatrixT], roll: float) -> MatrixT:
         """Return the matrix representing a roll rotation (X axis)."""
         rad_roll = math.radians(roll)
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        rot: Matrix = cls.__new__(cls)
+        rot = cls.__new__(cls)
 
         rot._aa, rot._ab, rot._ac = 1.0, 0.0, 0.0
         rot._ba, rot._bb, rot._bc = 0.0, cos_r, sin_r
@@ -1586,17 +1578,17 @@ class Matrix:
 
     @classmethod
     @overload
-    def from_angle(cls, __angle: 'AngleBase') -> 'Matrix': ...
+    def from_angle(cls: Type[MatrixT], __angle: 'AngleBase') -> MatrixT: ...
     @classmethod
     @overload
-    def from_angle(cls, pitch: float, yaw: float, roll: float) -> 'Matrix': ...
+    def from_angle(cls: Type[MatrixT], pitch: float, yaw: float, roll: float) -> MatrixT: ...
     @classmethod
     def from_angle(
-        cls,
+        cls: Type[MatrixT],
         pitch: Union['AngleBase', float],
         yaw: Optional[float]=0.0,
         roll: Optional[float]=None,
-    ) -> 'Matrix':
+    ) -> MatrixT:
         """Return the rotation representing an Euler angle.
 
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
@@ -1619,7 +1611,7 @@ class Matrix:
         cos_r = math.cos(rad_roll)
         sin_r = math.sin(rad_roll)
 
-        rot = Py_Matrix.__new__(Py_Matrix)
+        rot = cls.__new__(cls)
 
         rot._aa = cos_p * cos_y
         rot._ab = cos_p * sin_y
@@ -1641,12 +1633,12 @@ class Matrix:
 
     @classmethod
     def from_angstr(
-        cls,
+        cls: Type[MatrixT],
         val: Union[str, 'Angle'],
         pitch: float = 0.0,
         yaw: float = 0.0,
         roll: float = 0.0,
-    ) -> 'Matrix':
+    ) -> MatrixT:
         """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
 
         This is equivalent to combining :py:func:`Matrix.from_angle()` and
@@ -1656,7 +1648,7 @@ class Matrix:
         return cls.from_angle(pitch, yaw, roll)
 
     @classmethod
-    def axis_angle(cls, axis: Union[Vec, Tuple3], angle: float) -> 'Matrix':
+    def axis_angle(cls: Type[MatrixT], axis: Union[Vec, Tuple3], angle: float) -> MatrixT:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         x, y, z = Vec(axis).norm()
         # Invert, so it matches the orientation of Angles().
@@ -1665,7 +1657,7 @@ class Matrix:
         icos = 1 - cos
         sin = math.sin(angle_rad)
 
-        mat = Py_Matrix.__new__(Py_Matrix)
+        mat = cls.__new__(cls)
 
         mat._aa = x*x * icos + cos
         mat._ab = x*y * icos - z*sin
@@ -1697,10 +1689,6 @@ class Matrix:
         """Retrieve an individual matrix value by x, y position (0-2)."""
         return getattr(self, _IND_TO_SLOT[item])
 
-    def __setitem__(self, item: Tuple[int, int], value: float) -> None:
-        """Set an individual matrix value by x, y position (0-2)."""
-        setattr(self, _IND_TO_SLOT[item], value)
-
     __iter__ = None
     """Iteration doesn't make much sense."""
 
@@ -1713,7 +1701,6 @@ class Matrix:
 
         Internal, modifies the specified angle even if frozen -ensure it's new!
         """
-
         # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
         for_x = self._aa
         for_y = self._ab
@@ -1737,9 +1724,10 @@ class Matrix:
             ang._roll = 0.0  # Can't produce.
         return ang
 
-    def transpose(self) -> 'Matrix':
+    def transpose(self: MatrixT) -> MatrixT:
         """Return the transpose of this matrix."""
-        rot = Py_Matrix.__new__(Py_Matrix)
+        cls: Type[MatrixT] = type(self)
+        rot = cls.__new__(cls)
 
         rot._aa, rot._ab, rot._ac = self._aa, self._ba, self._ca
         rot._ba, rot._bb, rot._bc = self._ab, self._bb, self._cb
@@ -1749,23 +1737,23 @@ class Matrix:
 
     @classmethod
     @overload
-    def from_basis(cls, *, x: VecBase, y: VecBase, z: VecBase) -> 'Matrix': ...
+    def from_basis(cls: Type[MatrixT], *, x: VecBase, y: VecBase, z: VecBase) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls, *, x: VecBase, y: VecBase) -> 'Matrix': ...
+    def from_basis(cls: Type[MatrixT], *, x: VecBase, y: VecBase) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls, *, y: VecBase, z: VecBase) -> 'Matrix': ...
+    def from_basis(cls: Type[MatrixT], *, y: VecBase, z: VecBase) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls, *, x: VecBase, z: VecBase) -> 'Matrix': ...
+    def from_basis(cls: Type[MatrixT], *, x: VecBase, z: VecBase) -> MatrixT: ...
     @classmethod
     def from_basis(
-        cls, *,
+        cls: Type[MatrixT], *,
         x: VecBase=None,
         y: VecBase=None,
         z: VecBase=None,
-    ) -> 'Matrix':
+    ) -> MatrixT:
         """Construct a matrix from at least two basis vectors.
 
         The third is computed, if not provided.
@@ -1778,61 +1766,13 @@ class Matrix:
             z = Vec.cross(x, y)
         if x is None or y is None or z is None:
             raise TypeError('At least two vectors must be provided!')
-        mat: Matrix = cls.__new__(cls)
+        mat = cls.__new__(cls)
         mat._aa, mat._ab, mat._ac = x.norm()
         mat._ba, mat._bb, mat._bc = y.norm()
         mat._ca, mat._cb, mat._cc = z.norm()
         return mat
 
-    def __matmul__(self, other: Union['Matrix', 'AngleBase']) -> 'Matrix':
-        if isinstance(other, Py_Matrix):
-            mat = self.copy()
-            mat._mat_mul(other)
-            return mat
-        elif isinstance(other, AngleBase):
-            mat = self.copy()
-            mat._mat_mul(Py_Matrix.from_angle(other))
-            return mat
-        else:
-            return NotImplemented
-
-    @overload
-    def __rmatmul__(self, other: FrozenVec) -> FrozenVec: ...
-    @overload
-    def __rmatmul__(self, other: 'Vec | Tuple3') -> 'Vec': ...
-    @overload
-    def __rmatmul__(self, other: 'Matrix') -> 'Matrix': ...
-    @overload
-    def __rmatmul__(self, other: AngleT) -> AngleT: ...
-
-    def __rmatmul__(self, other: 'VecBase | Tuple3 | Matrix | AngleBase') -> 'Vec | FrozenVec | Matrix | AngleBase':
-        if isinstance(other, Py_Vec) or isinstance(other, tuple):
-            result = Py_Vec(other)
-            self._vec_rot(result)
-            return result
-        elif isinstance(other, AngleBase):
-            mat = Py_Matrix.from_angle(other)
-            mat._mat_mul(self)
-            cls = type(other)
-            return mat._to_angle(cls.__new__(cls))
-        elif isinstance(other, Py_Matrix):
-            mat = other.copy()
-            mat._mat_mul(self)
-            return mat
-        else:
-            return NotImplemented
-
-    def __imatmul__(self, other: 'Matrix | AngleBase') -> 'Matrix':
-        if isinstance(other, Py_Matrix):
-            self._mat_mul(other)
-            return self
-        elif isinstance(other, AngleBase):
-            self._mat_mul(Py_Matrix.from_angle(other))
-            return self
-        else:
-            return NotImplemented
-
-    def _mat_mul(self, other: 'Matrix') -> None:
+    def _mat_mul(self, other: 'MatrixBase') -> None:
         """Rotate myself by the other matrix."""
         # We don't use each row after assigning to the set, so we can re-assign.
         # 3-tuple unpacking is optimised.
@@ -1862,6 +1802,152 @@ class Matrix:
         vec._x = (x * self._aa) + (y * self._ba) + (z * self._ca)
         vec._y = (x * self._ab) + (y * self._bb) + (z * self._cb)
         vec._z = (x * self._ac) + (y * self._bc) + (z * self._cc)
+
+    def __matmul__(self: MatrixT, other: 'MatrixBase | AngleBase') -> MatrixT:
+        if isinstance(other, MatrixBase):
+            mat = self.copy()
+            mat._mat_mul(other)
+            return mat
+        elif isinstance(other, AngleBase):
+            mat = self.copy()
+            mat._mat_mul(Py_Matrix.from_angle(other))
+            return mat
+        else:
+            return NotImplemented
+
+    @overload
+    def __rmatmul__(self, other: FrozenVec) -> FrozenVec: ...
+    @overload
+    def __rmatmul__(self, other: 'Vec | Tuple3') -> 'Vec': ...
+    @overload
+    def __rmatmul__(self, other: MatrixT) -> MatrixT: ...
+    @overload
+    def __rmatmul__(self, other: AngleT) -> AngleT: ...
+
+    def __rmatmul__(self, other: 'VecBase | Tuple3 | MatrixBase | AngleBase') -> 'Vec | FrozenVec | MatrixBase | AngleBase':
+        if isinstance(other, Py_Vec) or isinstance(other, tuple):
+            result = Py_Vec(other)
+            self._vec_rot(result)
+            return result
+        elif isinstance(other, AngleBase):
+            mat = Py_Matrix.from_angle(other)
+            mat._mat_mul(self)
+            cls = type(other)
+            return mat._to_angle(cls.__new__(cls))
+        elif isinstance(other, MatrixBase):
+            mat = other.copy()
+            mat._mat_mul(self)
+            return mat
+        else:
+            return NotImplemented
+
+
+@final
+class FrozenMatrix(MatrixBase):
+    """Represents an immutable rotation via a transformation matrix.
+
+    When performing multiple rotations, it is more efficient to create one of these instead of using
+    an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
+    depending on what rotation is desired.
+    """
+    def thaw(self) -> 'Matrix':
+        """Return a mutable copy of this matrix."""
+        rot = Py_Matrix.__new__(Py_Matrix)
+
+        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
+        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
+        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
+
+        return rot
+
+    def copy(self) -> 'FrozenMatrix':
+        """Frozen matrices are immutable."""
+        return self
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: dict={}) -> 'FrozenMatrix':
+        """Frozen matrices are immutable."""
+        return self
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return (_mk_fmat, (
+            self._aa, self._ab, self._ac,
+            self._ba, self._bb, self._bc,
+            self._ca, self._cb, self._cc
+        ))
+
+
+@final
+class Matrix(MatrixBase):
+    """Represents a rotation via a transformation matrix.
+
+    When performing multiple rotations, it is more efficient to create one of these instead of using
+    an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
+    depending on what rotation is desired.
+    """
+    def freeze(self) -> 'Matrix':
+        """Return a frozen copy of this matrix."""
+        rot = Py_FrozenMatrix.__new__(Py_FrozenMatrix)
+
+        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
+        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
+        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
+
+        return rot
+
+    def copy(self) -> 'Matrix':
+        """Duplicate this matrix."""
+        rot = Py_Matrix.__new__(Py_Matrix)
+
+        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
+        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
+        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
+
+        return rot
+
+    __copy__ = copy
+
+    def __deepcopy__(self, memodict: object=...) -> 'Matrix':
+        """Duplicate this matrix."""
+        rot = Py_Matrix.__new__(Py_Matrix)
+
+        rot._aa, rot._ab, rot._ac = self._aa, self._ab, self._ac
+        rot._ba, rot._bb, rot._bc = self._ba, self._bb, self._bc
+        rot._ca, rot._cb, rot._cc = self._ca, self._cb, self._cc
+
+        return rot
+
+    def __reduce__(self) -> tuple:
+        """Pickling support.
+
+        This redirects to a global function, so C/Python versions
+        interoperate.
+        """
+        return (_mk_mat, (
+            self._aa, self._ab, self._ac,
+            self._ba, self._bb, self._bc,
+            self._ca, self._cb, self._cc
+        ))
+
+    def __setitem__(self, item: Tuple[int, int], value: float) -> None:
+        """Set an individual matrix value by x, y position (0-2)."""
+        setattr(self, _IND_TO_SLOT[item], value)
+
+    def __imatmul__(self, other: 'MatrixBase | AngleBase') -> 'Matrix':
+        if isinstance(other, MatrixBase):
+            self._mat_mul(other)
+            return self
+        elif isinstance(other, AngleBase):
+            self._mat_mul(Py_Matrix.from_angle(other))
+            return self
+        else:
+            return NotImplemented
 
 
 # noinspection PyArgumentList
@@ -2119,11 +2205,11 @@ class AngleBase:
         return mat._to_angle(cls.__new__(cls))
 
     # noinspection PyProtectedMember
-    def __matmul__(self: AngleT, other: 'AngleBase | Matrix') -> AngleT:
+    def __matmul__(self: AngleT, other: 'AngleBase | MatrixBase') -> AngleT:
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             return other._rotate_angle(self, type(self))
-        elif isinstance(other, Py_Matrix):
+        elif isinstance(other, MatrixBase):
             mat = Py_Matrix.from_angle(self)
             mat._mat_mul(other)
             cls = type(self)
@@ -2136,11 +2222,11 @@ class AngleBase:
     @overload
     def __rmatmul__(self, other: Tuple3) -> 'Vec': ...
     @overload
-    def __rmatmul__(self, other: 'Vec') -> 'Vec': ...
+    def __rmatmul__(self, other: VecT) -> VecT: ...
 
-    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | Vec') -> 'Vec | AngleT':
+    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | Vec | FrozenVec') -> 'Vec | FrozenVec | AngleT':
         """Vec @ Angle rotates the first by the second."""
-        if isinstance(other, Py_Vec):
+        if isinstance(other, VecBase):
             return other @ Py_Matrix.from_angle(self)
         elif isinstance(other, tuple):
             x, y, z = other
@@ -2558,6 +2644,20 @@ def _mk_mat(
     return mat
 
 
+def _mk_fmat(
+    aa: float, ab: float, ac: float,
+    ba: float, bb: float, bc: float,
+    ca: float, cb: float, cc: float,
+) -> FrozenMatrix:
+    """Unpickle a FrozenMatrix object, maintaining compatibility with C versions.
+
+    Shortened name shrinks the data size.
+    """
+    # Need a backdoor to construct from raw values.
+    # noinspection PyProtectedMember
+    return FrozenMatrix._from_raw(aa, ab, ac, ba, bb, bc, ca, cb, cc)
+
+
 # Older name, keep alias for pickle compatibility
 _mk = _mk_vec
 
@@ -2573,6 +2673,7 @@ Cy_lerp = Py_lerp = lerp
 Cy_Angle = Py_Angle = Angle
 Cy_FrozenAngle = Py_FrozenAngle = FrozenAngle
 Cy_Matrix = Py_Matrix = Matrix
+Cy_FrozenMatrix = Py_FrozenMatrix = FrozenMatrix
 
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:
@@ -2586,7 +2687,7 @@ if not TYPE_CHECKING:
         for _name in [
             'Vec', 'FrozenVec',
             'Angle', 'FrozenAngle',
-            'Matrix',
+            'Matrix', 'FrozenMatrix',
             'parse_vec_str', 'to_matrix', 'lerp',
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)

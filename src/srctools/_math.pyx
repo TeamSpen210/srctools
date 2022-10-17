@@ -73,6 +73,13 @@ cdef inline AngleBase _angle(type typ, double pitch, double yaw, double roll):
     ang.val.z = roll
     return ang
 
+cdef inline MatrixBase _matrix(type typ):
+    """Make an unintialised Matrix."""
+    if typ is FrozenMatrix:
+        return <VecBase>FrozenMatrix.__new__(FrozenMatrix)
+    else:
+        return <MatrixBase>Matrix.__new__(Matrix)
+
 cdef object typing  # Keep private.
 import typing
 
@@ -80,13 +87,13 @@ import typing
 # Shared functions that we use to do unpickling.
 # It's defined in the Python module, so all versions
 # produce the same pickle value.
-cdef object unpickle_mvec, unpickle_fvec, unpickle_mang, unpickle_fang, unpickle_mat
+cdef object unpickle_mvec, unpickle_fvec, unpickle_mang, unpickle_fang, unpickle_mmat, unpickle_fmat
 
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
 from srctools.math import (
     Vec_tuple, _mk_ang as unpickle_mang, _mk_fang as unpickle_fang, _mk_fvec as unpickle_fvec,
-    _mk_mat as unpickle_mat, _mk_vec as unpickle_mvec,
+    _mk_mat as unpickle_mmat, _mk_fmat as unpickle_fmat, _mk_vec as unpickle_mvec,
 )
 
 
@@ -147,11 +154,22 @@ cdef AngleBase pick_ang_type(type left, type right):
     # Given the LHS and RHS types, determine the Vec to create.
     cdef bint frozen = False
     # We use the type of the left, falling back to the right
-    # if the left isn't a vector.
+    # if the left isn't a angle.
     if left is FrozenAngle or (right is FrozenAngle and left is not Angle):
         return <AngleBase>FrozenAngle.__new__(FrozenAngle)
     else:
         return <AngleBase>Angle.__new__(Angle)
+
+
+cdef MatrixBase pick_mat_type(type left, type right):
+    # Given the LHS and RHS types, determine the Matrix to create.
+    cdef bint frozen = False
+    # We use the type of the left, falling back to the right
+    # if the left isn't a matrix.
+    if left is FrozenMatrix or (right is FrozenMatrix and left is not Matrix):
+        return <MatrixBase>FrozenMatrix.__new__(FrozenMatrix)
+    else:
+        return <MatrixBase>Matrix.__new__(Matrix)
 
 cdef bint vec_check(obj):
     # Check if this is a vector instance.
@@ -160,6 +178,10 @@ cdef bint vec_check(obj):
 cdef bint angle_check(obj):
     # Check if this is an angle instance.
     return type(obj) is Angle or type(obj) is FrozenAngle
+
+cdef bint mat_check(obj):
+    # Check if this is a matrix instance.
+    return type(obj) is Matrix or type(obj) is FrozenMatrix
 
 
 cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1:
@@ -534,8 +556,8 @@ cdef bint _conv_matrix(mat_t result, object value) except True:
     cdef vec_t ang
     if value is None:
         _mat_identity(result)
-    elif isinstance(value, Matrix):
-        memcpy(result, (<Matrix>value).mat, sizeof(mat_t))
+    elif mat_check(value):
+        memcpy(result, (<MatrixBase>value).mat, sizeof(mat_t))
     elif angle_check(value):
         _mat_from_angle(result, &(<AngleBase>value).val)
     elif vec_check(value):
@@ -1386,11 +1408,11 @@ cdef class VecBase:
         else:
             return NotImplemented
 
-        if isinstance(second, Angle):
-            _mat_from_angle(temp, &(<Angle>second).val)
+        if angle_check(second):
+            _mat_from_angle(temp, &(<AngleBase>second).val)
             vec_rot(&res.val, temp)
-        elif isinstance(second, Matrix):
-            vec_rot(&res.val, (<Matrix>second).mat)
+        elif mat_check(second):
+            vec_rot(&res.val, (<MatrixBase>second).mat)
         else:
             return NotImplemented
 
@@ -1672,7 +1694,7 @@ cdef class FrozenVec(VecBase):
 
 
 @cython.final
-cdef class Vec:
+cdef class Vec(VecBase):
     """Mutable vector class. This has in-place operations for efficiency."""
     @property
     def x(self):
@@ -1838,7 +1860,7 @@ cdef class Vec:
 
         return self
 
-    def to_angle_roll(self, z_norm: Vec, stride: int=...) -> Angle:
+    def to_angle_roll(self, z_norm: Vec, stride: int=0) -> Angle:
         """Produce a Source Engine angle with roll.
 
         The z_normal should point in +z, and must be at right angles to this
@@ -1985,11 +2007,11 @@ cdef class Vec:
     def __imatmul__(self, other):
         """@= operation: rotate the vector by a matrix/angle."""
         cdef mat_t temp
-        if isinstance(other, Angle):
-            _mat_from_angle(temp, &(<Angle>other).val)
+        if angle_check(other):
+            _mat_from_angle(temp, &(<AngleBase>other).val)
             vec_rot(&self.val, temp)
-        elif isinstance(other, Matrix):
-            vec_rot(&self.val, (<Matrix>other).mat)
+        elif mat_check(other):
+            vec_rot(&self.val, (<MatrixBase>other).mat)
         else:
             return NotImplemented
         return self
@@ -2085,23 +2107,23 @@ cdef class Vec:
 
 
 @cython.freelist(16)
-@cython.final
-cdef class Matrix:
-    """Represents a matrix via a transformation matrix."""
+@cython.internal
+cdef class MatrixBase:
+    """Common code for both matrices."""
 
     def __init__(self) -> None:
         """Create a matrix set to the identity transform."""
         _mat_identity(self.mat)
 
     def __eq__(self, other: object) -> object:
-        if isinstance(other, Matrix):
+        if isinstance(other, MatrixBase):
             # We can just compare the memory buffers.
-            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) == 0
+            return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) == 0
         return NotImplemented
 
     def __ne__(self, other: object) -> object:
-        if isinstance(other, Matrix):
-            return memcmp(self.mat, (<Matrix>other).mat, sizeof(mat_t)) != 0
+        if isinstance(other, MatrixBase):
+            return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
 
     def __repr__(self) -> str:
@@ -2113,33 +2135,23 @@ cdef class Matrix:
             '>'
         )
 
-    def copy(self) -> Matrix:
-        """Duplicate this matrix."""
-        cdef Matrix copy = Matrix.__new__(Matrix)
-        memcpy(copy.mat, self.mat, sizeof(mat_t))
-        return copy
-
-    def __copy__(self) -> Matrix:
-        """Duplicate this matrix."""
-        cdef Matrix copy = Matrix.__new__(Matrix)
-        memcpy(copy.mat, self.mat, sizeof(mat_t))
-        return copy
-
-    def __deepcopy__(self, dict memodict=None) -> Matrix:
-        """Duplicate this matrix."""
-        cdef Matrix copy = Matrix.__new__(Matrix)
-        memcpy(copy.mat, self.mat, sizeof(mat_t))
-        return copy
-
-    def __reduce__(self) -> tuple:
-        return unpickle_mat, (
-            self.mat[0][0], self.mat[0][1], self.mat[0][2],
-            self.mat[1][0], self.mat[1][1], self.mat[1][2],
-            self.mat[2][0], self.mat[2][1], self.mat[2][2],
-        )
+    @classmethod
+    def _from_raw(
+        cls,
+        float aa, float ab, float ac,
+        float ba, float bb, float bc,
+        float ca, float cb, float cc,
+        /,  # Only called by us, no need for complex parsing.
+    ):
+        """Backdoor to construct from individual data values."""
+        cdef MatrixBase self = _matrix(cls)
+        self.mat[0] = aa, ab, ac
+        self.mat[1] = ba, bb, bc
+        self.mat[2] = ca, cb, cc
+        return self
 
     @classmethod
-    def from_pitch(cls, double pitch) -> Matrix:
+    def from_pitch(cls, double pitch):
         """Return the matrix representing a pitch rotation.
 
         This is a rotation around the Y axis.
@@ -2148,7 +2160,7 @@ cdef class Matrix:
         cdef double cos = math.cos(rad_pitch)
         cdef double sin = math.sin(rad_pitch)
 
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(cls)
 
         rot.mat[0] = cos, 0.0, -sin
         rot.mat[1] = 0.0, 1.0, 0.0
@@ -2157,7 +2169,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_yaw(cls, double yaw) -> Matrix:
+    def from_yaw(cls, double yaw):
         """Return the matrix representing a yaw rotation.
 
         """
@@ -2165,7 +2177,7 @@ cdef class Matrix:
         cdef double sin = math.sin(rad_yaw)
         cdef double cos = math.cos(rad_yaw)
 
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(cls)
 
         rot.mat[0] = cos, sin, 0.0
         rot.mat[1] = -sin, cos, 0.0
@@ -2174,7 +2186,7 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_roll(cls, double roll) -> Matrix:
+    def from_roll(cls, double roll):
         """Return the matrix representing a roll rotation.
 
         This is a rotation around the X axis.
@@ -2183,7 +2195,7 @@ cdef class Matrix:
         cdef double cos = math.cos(rad_roll)
         cdef double sin = math.sin(rad_roll)
 
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(cls)
 
         rot.mat[0] = [1.0, 0.0, 0.0]
         rot.mat[1] = [0.0, cos, sin]
@@ -2192,12 +2204,12 @@ cdef class Matrix:
         return rot
 
     @classmethod
-    def from_angle(cls, pitch, yaw=None, roll=None) -> Matrix:
+    def from_angle(cls, pitch, yaw=None, roll=None):
         """Return the rotation representing an Euler angle.
 
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
         """
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(cls)
         cdef vec_t ang
         if angle_check(pitch):
             ang = (<AngleBase>pitch).val
@@ -2217,14 +2229,14 @@ cdef class Matrix:
         This is equivalent to Matrix.from_angle(Angle.from_str(val, pitch, yaw, roll)),
         except more efficient.
         """
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(cls)
         cdef vec_t ang
         _parse_vec_str(&ang, val, pitch, yaw, roll)
         _mat_from_angle(rot.mat, &ang)
         return rot
 
     @classmethod
-    def axis_angle(cls, object axis, double angle) -> Matrix:
+    def axis_angle(cls, object axis, double angle) -> MatrixBase:
         """Compute the rotation matrix forming a rotation around an axis by a specific angle."""
         cdef vec_t vec_axis
         cdef double sin, cos, icos, x, y, z
@@ -2240,7 +2252,7 @@ cdef class Matrix:
         y = vec_axis.y
         z = vec_axis.z
 
-        cdef Matrix mat = Matrix.__new__(Matrix)
+        cdef MatrixBase mat = _matrix(cls)
 
         mat.mat[0][0] = x*x * icos + cos
         mat.mat[0][1] = x*y * icos - z*sin
@@ -2302,9 +2314,9 @@ cdef class Matrix:
         _mat_to_angle(&ang.val, self.mat)
         return ang
 
-    def transpose(self) -> Matrix:
+    def transpose(self):
         """Return the transpose of this matrix."""
-        cdef Matrix rot = Matrix.__new__(Matrix)
+        cdef MatrixBase rot = _matrix(type(self))
 
         rot.mat[0] = self.mat[0][0], self.mat[1][0], self.mat[2][0]
         rot.mat[1] = self.mat[0][1], self.mat[1][1], self.mat[2][1]
@@ -2318,12 +2330,12 @@ cdef class Matrix:
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> Matrix:
+    ):
         """Construct a matrix from at least two basis vectors.
 
         The third is computed, if not provided.
         """
-        cdef Matrix mat = Matrix.__new__(Matrix)
+        cdef MatrixBase mat = _matrix(cls)
         _mat_from_basis(mat.mat, x, y, z)
         return mat
 
@@ -2331,45 +2343,45 @@ cdef class Matrix:
         """Rotate two objects."""
         cdef mat_t temp, temp2
         cdef VecBase vec
-        cdef Matrix mat
+        cdef MatrixBase mat
         cdef AngleBase ang
-        if isinstance(first, Matrix):
-            mat = Matrix.__new__(Matrix)
-            memcpy(mat.mat, (<Matrix>first).mat, sizeof(mat_t))
-            if isinstance(second, Matrix):
-                mat_mul(mat.mat, (<Matrix>second).mat)
+        if mat_check(first):
+            mat = _matrix(first)
+            memcpy(mat.mat, (<MatrixBase>first).mat, sizeof(mat_t))
+            if mat_check(second):
+                mat_mul(mat.mat, (<MatrixBase>second).mat)
             elif angle_check(second):
                 _mat_from_angle(temp, &(<AngleBase>second).val)
                 mat_mul(mat.mat, temp)
             else:
                 return NotImplemented
             return mat
-        elif isinstance(second, Matrix):
+        elif mat_check(second):
             if isinstance(first, Vec):
                 vec = <VecBase>Vec.__new__(Vec)
                 memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
-                vec_rot(&vec.val, (<Matrix>second).mat)
+                vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, FrozenVec):
                 vec = <VecBase>FrozenVec.__new__(FrozenVec)
                 memcpy(&vec.val, &(<VecBase>first).val, sizeof(vec_t))
-                vec_rot(&vec.val, (<Matrix>second).mat)
+                vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, tuple):
                 vec = Vec.__new__(Vec)
                 vec.val.x, vec.val.y, vec.val.z = <tuple>first
-                vec_rot(&vec.val, (<Matrix>second).mat)
+                vec_rot(&vec.val, (<MatrixBase>second).mat)
                 return vec
             elif isinstance(first, Angle):
                 ang = Angle.__new__(Angle)
                 _mat_from_angle(temp, &(<AngleBase>first).val)
-                mat_mul(temp, (<Matrix>second).mat)
+                mat_mul(temp, (<MatrixBase>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
             elif isinstance(first, FrozenAngle):
                 ang = FrozenAngle.__new__(FrozenAngle)
                 _mat_from_angle(temp, &(<AngleBase>first).val)
-                mat_mul(temp, (<Matrix>second).mat)
+                mat_mul(temp, (<MatrixBase>second).mat)
                 _mat_to_angle(&ang.val, temp)
                 return ang
             else:
@@ -2377,13 +2389,79 @@ cdef class Matrix:
         else:
             raise SystemError('Neither are Matrices?')
 
+
+@cython.final
+cdef class FrozenMatrix(MatrixBase):
+    """Represents an immutable matrix via a transformation matrix."""
+
+    def thaw(self):
+        """Return a mutable copy of this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def copy(self) -> FrozenMatrix:
+        """Frozen matrices are immutable."""
+        return self
+
+    def __copy__(self) -> FrozenMatrix:
+        """Frozen matrices are immutable."""
+        return self
+
+    def __deepcopy__(self, dict memodict=None) -> FrozenMatrix:
+        """Frozen matrices are immutable."""
+        return self
+
+    def __reduce__(self) -> tuple:
+        return unpickle_fmat, (
+            self.mat[0][0], self.mat[0][1], self.mat[0][2],
+            self.mat[1][0], self.mat[1][1], self.mat[1][2],
+            self.mat[2][0], self.mat[2][1], self.mat[2][2],
+        )
+
+
+@cython.final
+cdef class Matrix(MatrixBase):
+    """Represents a mutable matrix via a transformation matrix."""
+
+    def freeze(self):
+        """Return a frozen copy of this matrix."""
+        cdef FrozenMatrix copy = FrozenMatrix.__new__(FrozenMatrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def copy(self) -> Matrix:
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(type(self))
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __copy__(self) -> Matrix:
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __deepcopy__(self, dict memodict=None) -> MatrixBase:
+        """Duplicate this matrix."""
+        cdef Matrix copy = Matrix.__new__(Matrix)
+        memcpy(copy.mat, self.mat, sizeof(mat_t))
+        return copy
+
+    def __reduce__(self) -> tuple:
+        return unpickle_mmat, (
+            self.mat[0][0], self.mat[0][1], self.mat[0][2],
+            self.mat[1][0], self.mat[1][1], self.mat[1][2],
+            self.mat[2][0], self.mat[2][1], self.mat[2][2],
+        )
+
     def __imatmul__(self, other):
         cdef mat_t temp
-        if isinstance(other, Matrix):
-            mat_mul(self.mat, (<Matrix>other).mat)
+        if mat_check(other):
+            mat_mul(self.mat, (<MatrixBase>other).mat)
             return self
-        elif isinstance(other, Angle):
-            _mat_from_angle(temp, &(<Angle>other).val)
+        elif angle_check(other):
+            _mat_from_angle(temp, &(<AngleBase>other).val)
             mat_mul(self.mat, temp)
             return self
         else:
@@ -2645,8 +2723,8 @@ cdef class AngleBase:
             if angle_check(second):
                 _mat_from_angle(temp2, &(<AngleBase>second).val)
                 mat_mul(temp1, temp2)
-            elif isinstance(second, Matrix):
-                mat_mul(temp1, (<Matrix>second).mat)
+            elif mat_check(second):
+                mat_mul(temp1, (<MatrixBase>second).mat)
             else:
                 return NotImplemented
             res = pick_ang_type(type(first), type(second))
@@ -2665,6 +2743,11 @@ cdef class AngleBase:
                 res = Matrix.__new__(Matrix)
                 memcpy((<Matrix>res).mat, (<Matrix>first).mat, sizeof(mat_t))
                 mat_mul((<Matrix>res).mat, temp2)
+                return res
+            if isinstance(first, FrozenMatrix):
+                res = FrozenMatrix.__new__(FrozenMatrix)
+                memcpy((<FrozenMatrix>res).mat, (<FrozenMatrix>first).mat, sizeof(mat_t))
+                mat_mul((<FrozenMatrix>res).mat, temp2)
                 return res
             elif isinstance(first, Vec):
                 res = Vec.__new__(Vec)
@@ -2709,7 +2792,7 @@ cdef class FrozenAngle(AngleBase):
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> 'FrozenAngle':
+    ) -> FrozenAngle:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2765,15 +2848,15 @@ cdef class Angle(AngleBase):
     Addition and subtraction modify values, matrix-multiplication with
     Vec, Angle or Matrix rotates (RHS rotating LHS).
     """
-    def copy(self) -> 'Angle':
+    def copy(self) -> Angle:
         """Create a duplicate of this angle."""
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 
-    def __copy__(self) -> 'Angle':
+    def __copy__(self) -> Angle:
         """Create a duplicate of this angle."""
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 
-    def __deepcopy__(self, dict memodict=None) -> 'Angle':
+    def __deepcopy__(self, dict memodict=None) -> Angle:
         """Create a duplicate of this angle."""
         return _angle_mut(self.val.x, self.val.y, self.val.z)
 
@@ -2820,7 +2903,7 @@ cdef class Angle(AngleBase):
         x: Vec=None,
         y: Vec=None,
         z: Vec=None,
-    ) -> 'Angle':
+    ) -> Angle:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2869,11 +2952,11 @@ cdef class Angle(AngleBase):
     def __imatmul__(self, second):
         cdef mat_t mat_self, temp2
         _mat_from_angle(mat_self, &(<Angle>self).val)
-        if isinstance(second, Angle):
-            _mat_from_angle(temp2, &(<Angle>second).val)
+        if angle_check(second):
+            _mat_from_angle(temp2, &(<AngleBase>second).val)
             mat_mul(mat_self, temp2)
-        elif isinstance(second, Matrix):
-            mat_mul(mat_self, (<Matrix>second).mat)
+        elif mat_check(second):
+            mat_mul(mat_self, (<MatrixBase>second).mat)
         else:
             return NotImplemented
         _mat_to_angle(&self.val, mat_self)
@@ -2928,6 +3011,7 @@ if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"
     (<PyTypeObject *>FrozenAngle).tp_name = b"srctools.math.FrozenAngle"
     (<PyTypeObject *>Matrix).tp_name = b"srctools.math.Matrix"
+    (<PyTypeObject *>FrozenMatrix).tp_name = b"srctools.math.FrozenMatrix"
     (<PyTypeObject *>VecIter).tp_name = b"srctools.math._Vec_or_Angle_iterator"
     (<PyTypeObject *>VecIterGrid).tp_name = b"srctools.math._Vec_grid_iterator"
     (<PyTypeObject *>VecIterLine).tp_name = b"srctools.math._Vec_line_iterator"

@@ -28,6 +28,7 @@ PyCVec = Tuple[Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix], Callable[..., Tupl
 T = TypeVar('T')
 VecClass = Type[vec_mod.VecBase]
 AngleClass = Type[vec_mod.AngleBase]
+MatrixClass = Type[vec_mod.MatrixBase]
 
 
 def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
@@ -136,7 +137,8 @@ def assert_rot(rot, exp_rot, msg=''):
 ATTRIBUTES = [
     'Vec', 'FrozenVec',
     'Angle', 'FrozenAngle',
-    'Matrix', 'parse_vec_str',
+    'Matrix', 'FrozenMatrix',
+    'parse_vec_str',
 ]
 if Py_Vec is Cy_Vec:
     parms = ['Python']
@@ -176,4 +178,10 @@ def frozen_thawed_vec(py_c_vec, request) -> VecClass:
 @pytest.fixture(params=['Angle', 'FrozenAngle'])
 def frozen_thawed_angle(py_c_vec, request) -> AngleClass:
     """Support testing both mutable and immutable angles."""
+    yield getattr(vec_mod, request.param)
+
+
+@pytest.fixture(params=['Matrix', 'FrozenMatrix'])
+def frozen_thawed_matrix(py_c_vec, request) -> MatrixClass:
+    """Support testing both mutable and immutable matrices."""
     yield getattr(vec_mod, request.param)

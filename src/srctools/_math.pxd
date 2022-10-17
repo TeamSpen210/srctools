@@ -34,9 +34,17 @@ cdef class Vec(VecBase):
 cdef class FrozenVec(VecBase):
     pass
 
-@cython.final
-cdef class Matrix:
+@cython.internal
+cdef class MatrixBase:
     cdef mat_t mat
+
+@cython.final
+cdef class Matrix(MatrixBase):
+    pass
+
+@cython.final
+cdef class FrozenMatrix(MatrixBase):
+    pass
 
 @cython.internal
 cdef class AngleBase:
