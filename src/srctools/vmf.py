@@ -2994,7 +2994,11 @@ class EntityGroup:
 
 
 class Output:
-    """An output from one entity pointing to another."""
+    """An output from one entity pointing to another.
+
+    When parsing, either the post-L4D ``0x1B`` character can be used, or the previous ``,``
+    delimiters can be used. For commas, extraneous ones will be treated as part of the parameters.
+    """
     __slots__ = [
         'output',
         'inst_out',
