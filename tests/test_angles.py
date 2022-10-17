@@ -1,8 +1,8 @@
 import copy
 import pickle
-import pytest
 
 from helpers import *
+import pytest
 
 from srctools import Angle
 

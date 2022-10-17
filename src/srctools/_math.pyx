@@ -85,12 +85,8 @@ cdef object unpickle_mvec, unpickle_fvec, unpickle_mang, unpickle_fang, unpickle
 # Grab the Vec_Tuple class for quick construction as well
 cdef object Vec_tuple
 from srctools.math import (
-    Vec_tuple,
-    _mk_vec as unpickle_mvec,
-    _mk_fvec as unpickle_fvec,
-    _mk_ang as unpickle_mang,
-    _mk_fang as unpickle_fang,
-    _mk_mat as unpickle_mat,
+    Vec_tuple, _mk_ang as unpickle_mang, _mk_fang as unpickle_fang, _mk_fvec as unpickle_fvec,
+    _mk_mat as unpickle_mat, _mk_vec as unpickle_mvec,
 )
 
 
@@ -2924,6 +2920,8 @@ def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, V
 # This fixes all the methods too, though not in exceptions.
 
 from cpython.object cimport PyTypeObject
+
+
 if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"

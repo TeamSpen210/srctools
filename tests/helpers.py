@@ -1,19 +1,16 @@
 """Helpers for performing tests."""
-from typing import Generator, Type, Tuple, Callable, Iterable, Iterator, TypeVar
-import itertools
-import pytest
-import math
+from typing import Callable, Generator, Iterable, Iterator, Tuple, Type, TypeVar
 import builtins
+import itertools
+import math
 
-from srctools.math import (
-    Py_Vec, Cy_Vec,
-    Py_FrozenVec, Cy_FrozenVec,
-    Py_Angle, Cy_Angle,
-    Py_FrozenAngle, Cy_FrozenAngle,
-    Py_Matrix, Cy_Matrix,
-    Py_parse_vec_str, Cy_parse_vec_str,
-)
+import pytest
+
 from srctools import math as vec_mod
+from srctools.math import (
+    Cy_Angle, Cy_FrozenAngle, Cy_FrozenVec, Cy_Matrix, Cy_parse_vec_str, Cy_Vec, Py_Angle,
+    Py_FrozenAngle, Py_FrozenVec, Py_Matrix, Py_parse_vec_str, Py_Vec,
+)
 
 
 VALID_NUMS = [

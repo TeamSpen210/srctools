@@ -2,9 +2,9 @@
 from pathlib import Path
 from random import Random
 import copy
+import inspect
 import operator as op
 import pickle
-import inspect
 
 from helpers import *
 import pytest
