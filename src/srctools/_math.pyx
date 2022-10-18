@@ -501,7 +501,7 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
         ang.z = 0.0  # Can't produce.
 
 
-cdef bint _mat_from_basis(mat_t mat, Vec x, Vec y, Vec z) except True:
+cdef bint _mat_from_basis(mat_t mat, VecBase x, VecBase y, VecBase z) except True:
     """Implement the shared parts of Matrix/Angle .from_basis()."""
     cdef vec_t res
 
@@ -577,6 +577,7 @@ def to_matrix(value) -> Matrix:
     _conv_matrix(result.mat, value)
     return result
 
+# These are functions, so that they can ba accessed both bound and unbound.
 def cross_frozenvec(left, right):
     """Return the cross product of both Vectors."""
     cdef vec_t a, b
@@ -2116,13 +2117,13 @@ cdef class MatrixBase:
         _mat_identity(self.mat)
 
     def __eq__(self, other: object) -> object:
-        if isinstance(other, MatrixBase):
+        if mat_check(other):
             # We can just compare the memory buffers.
             return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) == 0
         return NotImplemented
 
     def __ne__(self, other: object) -> object:
-        if isinstance(other, MatrixBase):
+        if mat_check(other):
             return memcmp(self.mat, (<MatrixBase>other).mat, sizeof(mat_t)) != 0
         return NotImplemented
 
@@ -2138,10 +2139,9 @@ cdef class MatrixBase:
     @classmethod
     def _from_raw(
         cls,
-        float aa, float ab, float ac,
-        float ba, float bb, float bc,
-        float ca, float cb, float cc,
-        /,  # Only called by us, no need for complex parsing.
+        double aa, double ab, double ac,
+        double ba, double bb, double bc,
+        double ca, double cb, double cc,
     ):
         """Backdoor to construct from individual data values."""
         cdef MatrixBase self = _matrix(cls)
@@ -2327,9 +2327,9 @@ cdef class MatrixBase:
     @classmethod
     def from_basis(
         cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
+        x: VecBase=None,
+        y: VecBase=None,
+        z: VecBase=None,
     ):
         """Construct a matrix from at least two basis vectors.
 
@@ -2346,7 +2346,7 @@ cdef class MatrixBase:
         cdef MatrixBase mat
         cdef AngleBase ang
         if mat_check(first):
-            mat = _matrix(first)
+            mat = _matrix(type(first))
             memcpy(mat.mat, (<MatrixBase>first).mat, sizeof(mat_t))
             if mat_check(second):
                 mat_mul(mat.mat, (<MatrixBase>second).mat)
@@ -2789,9 +2789,9 @@ cdef class FrozenAngle(AngleBase):
     @classmethod
     def from_basis(
         cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
+        x: VecBase=None,
+        y: VecBase=None,
+        z: VecBase=None,
     ) -> FrozenAngle:
         """Return the rotation which results in the specified local axes.
 
@@ -2900,9 +2900,9 @@ cdef class Angle(AngleBase):
     @classmethod
     def from_basis(
         cls, *,
-        x: Vec=None,
-        y: Vec=None,
-        z: Vec=None,
+        x: VecBase=None,
+        y: VecBase=None,
+        z: VecBase=None,
     ) -> Angle:
         """Return the rotation which results in the specified local axes.
 
@@ -3005,7 +3005,7 @@ def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, V
 from cpython.object cimport PyTypeObject
 
 
-if USE_TYPE_INTERNALS:
+if USE_TYPE_INTERNALS and 0:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"

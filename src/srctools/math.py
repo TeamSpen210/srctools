@@ -631,20 +631,20 @@ class VecBase:
 
     def __matmul__(self: VecT, other: Union['AngleBase', 'MatrixBase']) -> VecT:
         """Rotate this vector by an angle or matrix."""
-        if isinstance(other, Py_Matrix):
+        if isinstance(other, MatrixBase):
             mat = other
         elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
         else:
             return NotImplemented
-        res = type(self)(self.x, self.y, self.z)
+        res = type(self)(self._x, self._y, self._z)
         # noinspection PyProtectedMember
         mat._vec_rot(res)
         return res
 
     def __bool__(self) -> bool:
         """Vectors are True if any axis is non-zero."""
-        return self.x != 0 or self.y != 0 or self.z != 0
+        return self._x != 0 or self._y != 0 or self._z != 0
 
     def __eq__(self, other: object) -> bool:
         """Equality test.
@@ -1325,9 +1325,9 @@ class Vec(VecBase, SupportsRound['Vec']):
 
     del funcname, op, pretty
 
-    def __imatmul__(self, other: Union['AngleBase', 'Matrix']) -> 'Vec':
+    def __imatmul__(self, other: Union['AngleBase', 'MatrixBase']) -> 'Vec':
         """We need to define this, so it's in-place."""
-        if isinstance(other, Py_Matrix):
+        if isinstance(other, MatrixBase):
             mat = other
         elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
@@ -1520,7 +1520,7 @@ class MatrixBase:
 
     def __repr__(self) -> str:
         return (
-            f'<{self.__class__.__name__} '
+            f'<Py{self.__class__.__name__} '
             f'{self._aa:.3} {self._ab:.3} {self._ac:.3}, '
             f'{self._ba:.3} {self._bb:.3} {self._bc:.3}, '
             f'{self._ca:.3} {self._cb:.3} {self._cc:.3}'
@@ -1829,6 +1829,12 @@ class MatrixBase:
             result = Py_Vec(other)
             self._vec_rot(result)
             return result
+        elif isinstance(other, Py_FrozenVec):
+            # We need to actually copy this!
+            # noinspection PyProtectedMember
+            result = Py_FrozenVec(other._x, other._y, other._z)
+            self._vec_rot(result)
+            return result
         elif isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(other)
             mat._mat_mul(self)
@@ -1891,7 +1897,7 @@ class Matrix(MatrixBase):
     an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
     depending on what rotation is desired.
     """
-    def freeze(self) -> 'Matrix':
+    def freeze(self) -> FrozenMatrix:
         """Return a frozen copy of this matrix."""
         rot = Py_FrozenMatrix.__new__(Py_FrozenMatrix)
 

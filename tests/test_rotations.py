@@ -419,11 +419,11 @@ def test_matmul_direct(
     mat = Matrix.from_angle(ang)
     mat2 = Matrix.from_angle(ang2)
 
-    assert vec.__matmul__(mat) == mat.__rmatmul__(vec) == vec @ mat, vec @ mat
-    assert vec.__matmul__(ang) == ang.__rmatmul__(vec) == vec @ ang, vec @ ang
-    assert ang.__matmul__(ang2) == ang2.__rmatmul__(ang) == ang @ ang2, ang @ ang2
-    assert ang.__matmul__(mat) == mat.__rmatmul__(ang) == ang @ mat, ang @ mat
-    assert mat.__matmul__(mat2) == mat2.__rmatmul__(mat) == mat @ mat2, mat @ mat2
+    assert (vec.__matmul__(mat), mat.__rmatmul__(vec)) == (vec @ mat, vec @ mat)
+    assert (vec.__matmul__(ang), ang.__rmatmul__(vec)) == (vec @ ang, vec @ ang)
+    assert (ang.__matmul__(ang2), ang2.__rmatmul__(ang)) == (ang @ ang2, ang @ ang2)
+    assert (ang.__matmul__(mat), mat.__rmatmul__(ang)) == (ang @ mat, ang @ mat)
+    assert (mat.__matmul__(mat2), mat2.__rmatmul__(mat)) == (mat @ mat2, mat @ mat2)
 
 
 def test_inplace_rotation(py_c_vec: PyCVec) -> None:
@@ -652,14 +652,20 @@ def test_pickle(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     assert orig is not thaw
     assert orig == thaw
 
+    # Ensure we test the right frozen vs mutable class.
+    CyMatrix = getattr(vec_mod, 'Cy_' + Matrix.__name__)
+    PyMatrix = getattr(vec_mod, 'Py_' + Matrix.__name__)
+
     # Ensure both produce the same pickle - so they can be interchanged.
     # Copy over the floats, since calculations are going to be slightly different
     # due to optimisation etc. That's tested elsewhere to ensure accuracy, but
     # we need exact binary identity.
-    cy_mat = Cy_Matrix()
-    py_mat = Py_Matrix()
-    for x in (0, 1, 2):
-        for y in (0, 1, 2):
-            cy_mat[x, y] = py_mat[x, y] = orig[x, y]
+    data = [
+        orig[x, y]
+        for x in (0, 1, 2)
+        for y in (0, 1, 2)
+    ]
+    cy_mat = CyMatrix._from_raw(*data)
+    py_mat = PyMatrix._from_raw(*data)
 
-    assert pickle.dumps(cy_mat) == pickle.dumps(py_mat) == pick
+    assert pickle.dumps(cy_mat) == pickle.dumps(py_mat)
