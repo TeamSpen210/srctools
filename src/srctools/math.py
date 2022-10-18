@@ -1520,7 +1520,7 @@ class MatrixBase:
 
     def __repr__(self) -> str:
         return (
-            f'<Py{self.__class__.__name__} '
+            f'<{self.__class__.__name__} '
             f'{self._aa:.3} {self._ab:.3} {self._ac:.3}, '
             f'{self._ba:.3} {self._bb:.3} {self._bc:.3}, '
             f'{self._ca:.3} {self._cb:.3} {self._cc:.3}'
