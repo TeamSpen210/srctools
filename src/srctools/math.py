@@ -30,13 +30,16 @@ import warnings
 
 __all__ = [
     'parse_vec_str', 'to_matrix', 'lerp', 'quickhull',
-    'Vec', 'FrozenVec', 'Vec_tuple',
-    'Angle', 'FrozenAngle', 'Matrix',
+    'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec',
+    'Angle', 'FrozenAngle', 'AnyAngle',
+    'Matrix', 'FrozenMatrix', 'AnyMatrix',
 ]
 
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
+AnyAngle = Union['Angle', 'FrozenAngle']
+AnyMatrix = Union['Matrix', 'FrozenMatrix']
 VecT = TypeVar('VecT', bound='VecBase')
 AngleT = TypeVar('AngleT', bound='AngleBase')
 MatrixT = TypeVar('MatrixT', bound='MatrixBase')
@@ -97,16 +100,16 @@ def parse_vec_str(
         return x, y, z
 
 
-def to_matrix(value: Union['Angle', 'Matrix', 'Vec', Tuple3, None]) -> 'Matrix':
+def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix | FrozenMatrix':
     """Convert various values to a rotation matrix.
 
     :py:class:`Vec` will be treated as angles, and :external:py:data:`None` as the identity.
     """
     if value is None:
         return Py_Matrix()
-    elif isinstance(value, Matrix):
+    elif isinstance(value, Matrix) or isinstance(value, FrozenMatrix):
         return value
-    elif isinstance(value, Angle):
+    elif isinstance(value, AngleBase):
         return Matrix.from_angle(value)
     else:
         [p, y, r] = value
@@ -405,7 +408,7 @@ class VecBase:
     ) -> VecT: ...
 
     @classmethod
-    def with_axes(cls: Type[VecT], *args, **kwargs) -> VecT:
+    def with_axes(cls: Type[VecT], *args: Union[str, float, 'VecBase'], **kwargs: Union[str, float, 'VecBase']) -> VecT:
         """Create a Vector, given a number of axes and corresponding values.
 
         This is a convenience for doing the following::
@@ -971,7 +974,7 @@ class VecBase:
 
 
 @final
-class FrozenVec(VecBase, SupportsRound['FrozenVec']):
+class FrozenVec(VecBase, SupportsRound['FrozenVec']):  # type: ignore
     """Immutable vector class. This cannot be changed once created, but is hashable."""
     __slots__ = ()
 
@@ -1079,7 +1082,7 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict=None) -> 'FrozenVec':
+    def __deepcopy__(self, memodict: Optional[dict]=None) -> 'FrozenVec':
         """FrozenVec is immutable."""
         return self
 
@@ -1130,7 +1133,7 @@ VecBase.T = VecBase.top    = VecBase.z_pos = FrozenVec(z=+1)
 
 
 @final
-class Vec(VecBase, SupportsRound['Vec']):
+class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
     """A 3D Vector. This has most standard Vector functions.
 
     >>> Vec(1, 2, z=3)  # Positional or vec, defaults to 0.
@@ -1188,32 +1191,29 @@ class Vec(VecBase, SupportsRound['Vec']):
 
     @property
     def x(self) -> float:
-        """Return the X axis."""
+        """The X axis of the vector."""
         return self._x
 
     @x.setter
-    def x(self, value: float):
-        """Set the X axis."""
+    def x(self, value: float) -> None:
         self._x = float(value)
 
     @property
     def y(self) -> float:
-        """Return the Y axis."""
+        """The Y axis of the vector."""
         return self._y
 
     @y.setter
     def y(self, value: float) -> None:
-        """Set the Y axis."""
         self._y = float(value)
 
     @property
     def z(self) -> float:
-        """Return the Z axis."""
+        """The Z axis of the vector."""
         return self._z
 
     @z.setter
     def z(self, value: float) -> None:
-        """Set the Z axis."""
         self._z = float(value)
 
     @classmethod
@@ -1385,7 +1385,11 @@ class Vec(VecBase, SupportsRound['Vec']):
             self.z = round(self.z, 6)
         return self
 
-    def rotate_by_str(self, ang: str, pitch=0.0, yaw=0.0, roll=0.0, round_vals=True) -> 'Vec':
+    def rotate_by_str(
+        self, ang: str,
+        pitch: float=0.0, yaw: float=0.0, roll: float=0.0,
+        round_vals: bool=True,
+    ) -> 'Vec':
         """Rotate a vector, using a string instead of a vector.
 
         :deprecated: use `Vec(...) @ Angle.from_str(...)` instead.
@@ -1447,7 +1451,7 @@ class Vec(VecBase, SupportsRound['Vec']):
     def localise(
         self,
         origin: Union['Vec', Tuple3],
-        angles: Union['AngleBase', 'Matrix']=None,
+        angles: Union[AnyAngle, AnyMatrix]=None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
@@ -1825,6 +1829,8 @@ class MatrixBase:
     def __rmatmul__(self, other: AngleT) -> AngleT: ...
 
     def __rmatmul__(self, other: 'VecBase | Tuple3 | MatrixBase | AngleBase') -> 'Vec | FrozenVec | MatrixBase | AngleBase':
+        mat: MatrixBase
+        result: Union[Vec, FrozenVec]
         if isinstance(other, Py_Vec) or isinstance(other, tuple):
             result = Py_Vec(other)
             self._vec_rot(result)
@@ -1990,7 +1996,10 @@ class AngleBase:
         return self._roll
 
     @classmethod
-    def from_str(cls: Type[AngleT], val: Union[str, 'AngleBase'], pitch=0.0, yaw=0.0, roll=0.0) -> AngleT:
+    def from_str(
+        cls: Type[AngleT], val: Union[str, 'AngleBase'],
+        pitch: float=0.0, yaw: float=0.0, roll: float=0.0,
+    ) -> AngleT:
         """Convert a string in the form ``(4 6 -4)`` into an Angle.
 
         If the string is unparsable, the provided default values are used instead.
@@ -2006,22 +2015,22 @@ class AngleBase:
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: Vec, y: Vec, z: Vec) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecBase, y: VecBase, z: VecBase) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: Vec, y: Vec) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecBase, y: VecBase) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, y: Vec, z: Vec) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, y: VecBase, z: VecBase) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: Vec, z: Vec) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecBase, z: VecBase) -> AngleT: ...
 
     @classmethod
-    def from_basis(cls: Type[AngleT], **kwargs) -> AngleT:
+    def from_basis(cls: Type[AngleT], **kwargs: VecBase) -> AngleT:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2054,7 +2063,11 @@ class AngleBase:
         ...
 
     @classmethod
-    def with_axes(cls: Type[AngleT], *args, **kwargs) -> AngleT:
+    def with_axes(
+        cls: Type[AngleT],
+        *args: Union[str, float, 'AngleBase'],
+        **kwargs: Union[str, float, 'AngleBase'],
+    ) -> AngleT:
         """Create an Angle, given a number of axes and corresponding values.
 
         This is a convenience for doing the following:
@@ -2230,9 +2243,9 @@ class AngleBase:
     @overload
     def __rmatmul__(self, other: VecT) -> VecT: ...
 
-    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | Vec | FrozenVec') -> 'Vec | FrozenVec | AngleT':
+    def __rmatmul__(self: AngleT, other: 'AngleBase | AnyVec') -> 'Vec | FrozenVec | VecT | AngleT':
         """Vec @ Angle rotates the first by the second."""
-        if isinstance(other, VecBase):
+        if isinstance(other, (Vec, FrozenVec)):
             return other @ Py_Matrix.from_angle(self)
         elif isinstance(other, tuple):
             x, y, z = other
@@ -2544,7 +2557,7 @@ class Angle(AngleBase):
             raise KeyError('Invalid axis: {!r}'.format(ind))
 
     # noinspection PyProtectedMember
-    def __imatmul__(self, other: Union[AngleBase, Matrix]) -> 'Angle':
+    def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> 'Angle':
         """Angle @ Angle or Angle @ Matrix rotates the first by the second."""
         if isinstance(other, AngleBase):
             mat = Py_Matrix.from_angle(self)

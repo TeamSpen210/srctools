@@ -23,7 +23,7 @@ else:
 __all__ = [
     '__version__',
     'Vec', 'FrozenVec', 'parse_vec_str', 'lerp',
-    'Angle', 'FrozenAngle', 'Matrix',
+    'Angle', 'FrozenAngle', 'Matrix', 'FrozenMatrix',
 
     'NoKeyError', 'KeyValError', 'Keyvalues',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
@@ -527,7 +527,8 @@ class AtomicWriter:
 # isort: off
 from .math import (
     FrozenVec, Vec, Vec_tuple,
-    parse_vec_str, lerp, Matrix,
+    parse_vec_str, lerp,
+    FrozenMatrix, Matrix,
     FrozenAngle, Angle,
 )
 from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
