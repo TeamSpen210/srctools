@@ -1,14 +1,15 @@
 from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
+    TYPE_CHECKING, AbstractSet, Any, Container, ItemsView, Iterable, Iterator, KeysView,
     List, Mapping, MutableMapping, NoReturn, Optional, Sequence, Set, Tuple, Type, TypeVar,
-    Union, ValuesView, overload,
+    Union, ValuesView, overload, Generic,
 )
-from typing_extensions import Final, Protocol, TypeAlias
+from typing_extensions import Final, Literal, Protocol, TypeAlias
 from collections import deque
 from types import TracebackType
 import itertools as _itertools
 import os as _os
 import sys as _sys
+import io
 import warnings
 
 
@@ -442,10 +443,11 @@ EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()
 EmptyKeysView: KeysView[Any] = _EmptyKeysView(EmptyMapping)
 EmptyItemsView: ItemsView[Any, Any] = _EmptyItemsView(EmptyMapping)
 EmptyValuesView: ValuesView[Any] = _EmptyValuesView(EmptyMapping)
+IOKindT = TypeVar('IOKindT', io.BufferedWriter, io.TextIOWrapper)
 
 
-class AtomicWriter:
-    """Atomically overwrite a file. Deprecated, use atomicwrites.AtomicWriter.
+class AtomicWriter(Generic[IOKindT]):
+    """Atomically overwrite a file.
 
     Use as a context manager - the returned temporary file
     should be written to. When cleanly exiting, the file will be transferred.
@@ -454,17 +456,27 @@ class AtomicWriter:
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
+    @overload
+    def __init__(
+        self: 'AtomicWriter[io.BufferedWriter]', filename: StringPath,
+        is_bytes: Literal[True],
+    ) -> None: ...
+    @overload
+    def __init__(
+        self: 'AtomicWriter[io.TextIOWrapper]', filename: StringPath,
+        is_bytes: Literal[False]=False, encoding: str='utf8',
+    ) -> None: ...
+
     def __init__(self, filename: StringPath, is_bytes: bool=False, encoding: str='utf8') -> None:
         """Create an AtomicWriter.
         is_bytes sets text or bytes writing mode. The file is always writable.
         """
-        warnings.warn("Use atomicwrites instead.", DeprecationWarning, stacklevel=2)
         self.filename = _os.fspath(filename)
         self.dir = _os.path.dirname(filename)
         self.encoding = encoding
         self._temp_name: Optional[str] = None
         self.is_bytes = is_bytes
-        self.temp: Optional[IO] = None
+        self.temp: Optional[IOKindT] = None
 
     def make_tempfile(self) -> None:
         """Create the temporary file object."""
@@ -480,15 +492,15 @@ class AtomicWriter:
         for i in _itertools.count(start=1):
             self._temp_name = _os.path.join(self.dir, 'tmp_{}'.format(i))
             try:
-                if self.is_bytes:
-                    self.temp = open(self._temp_name, 'xb')
+                if self.is_bytes:  # type checkers can't narrow self from this!
+                    self.temp = open(self._temp_name, 'xb')  # type: ignore
                 else:
-                    self.temp = open(self._temp_name, 'xt', encoding=self.encoding)
+                    self.temp = open(self._temp_name, 'xt', encoding=self.encoding)  # type: ignore
                 break
             except FileExistsError:
                 pass
 
-    def __enter__(self) -> IO:
+    def __enter__(self) -> IOKindT:
         """Delegate to the underlying temporary file handler."""
         self.make_tempfile()
         assert self.temp is not None
@@ -500,7 +512,7 @@ class AtomicWriter:
         exc_value: BaseException,
         tback: TracebackType,
     ) -> None:
-        # Pass to tempfile, which also closes().
+        # Delegate down to close the file like normal.
         if self.temp is not None:
             self.temp.__exit__(exc_type, exc_value, tback)
             self.temp = None
