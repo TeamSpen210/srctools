@@ -1492,6 +1492,15 @@ class MatrixBase:
         '_ba', '_bb', '_bc',
         '_ca', '_cb', '_cc'
     ]
+    _aa: float
+    _ab: float
+    _ac: float
+    _ba: float
+    _bb: float
+    _bc: float
+    _ca: float
+    _cb: float
+    _cc: float
 
     def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
         pass
