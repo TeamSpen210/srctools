@@ -55,6 +55,16 @@ Repeated calculations, especially calculations involving rotation will inevitabl
 
 ------------
 
+.. autoclass:: MatrixBase
+	:members:
+	:special-members:
+
+
+.. autoclass:: FrozenMatrix
+	:members:
+	:special-members:
+
+
 .. autoclass:: Matrix
 	:members:
 	:special-members:
