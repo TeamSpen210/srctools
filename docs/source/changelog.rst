@@ -14,6 +14,7 @@ Dev branch
 * Added new :py:meth:`srctools.fgd.EntityDef.get_resources()` method, replacing ``fgd.entclass_*()``
   methods.
 * When parsing VMF outputs, assume extraneous commas are part of the parameter.
+* Build Python 3.11 wheels.
 
 -------------
 Version 2.3.5
