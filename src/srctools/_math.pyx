@@ -2111,10 +2111,16 @@ cdef class Vec(VecBase):
 @cython.internal
 cdef class MatrixBase:
     """Common code for both matrices."""
+    def __init__(self, MatrixBase matrix = None) -> None:
+        """Create a new matrix.
 
-    def __init__(self) -> None:
-        """Create a matrix set to the identity transform."""
-        _mat_identity(self.mat)
+        If an existing matrix is supplied, it will be copied. Otherwise, an identity matrix is
+        produced.
+        """
+        if matrix is not None:
+            memcpy(self.mat, matrix.mat, sizeof(mat_t))
+        else:
+            _mat_identity(self.mat)
 
     def __eq__(self, other: object) -> object:
         if mat_check(other):

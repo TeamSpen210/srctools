@@ -6,6 +6,34 @@ import copy
 from helpers import *
 
 
+def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
+    """Test constructing matrices."""
+    Matrix = frozen_thawed_matrix
+    mat = Matrix()
+    assert type(mat) is Matrix
+    for x, y in itertools.product(range(3), range(3)):
+        assert mat[x, y] == (1.0 if x == y else 0.0)
+
+    mat_mutable = vec_mod.Matrix.from_angle(34.0, 29.0, 86.0)
+    mat_frozen = vec_mod.FrozenMatrix.from_angle(34.0, 29.0, 86.0)
+    copy_mutable = Matrix(mat_mutable)
+    copy_frozen = Matrix(mat_frozen)
+
+    assert type(copy_mutable) is Matrix
+    assert type(copy_frozen) is Matrix
+
+    assert copy_mutable is not mat_mutable
+
+    for x, y in itertools.product(range(3), range(3)):
+        assert copy_mutable[x, y] == mat_mutable[x, y]
+        assert copy_frozen[x, y] == mat_frozen[x, y]
+
+    # FrozenMatrix should not make a copy.
+    # TODO: Cython doesn't let you override tp_new for this yet.
+    if Matrix is vec_mod.Py_FrozenMatrix:
+        assert mat_frozen is copy_frozen
+
+
 # noinspection PyArgumentList
 def test_bad_from_basis(
     py_c_vec: PyCVec,
@@ -34,6 +62,7 @@ def test_matrix_no_iteration(py_c_vec: PyCVec) -> None:
         iter(Matrix())
     with pytest.raises(TypeError):
         list(Matrix())
+
 
 def test_copy(py_c_vec: PyCVec) -> None:
     """Test copying Matrixes."""

@@ -1493,11 +1493,8 @@ class MatrixBase:
         '_ca', '_cb', '_cc'
     ]
 
-    def __init__(self) -> None:
-        """Create a matrix set to the identity transform."""
-        self._aa, self._ab, self._ac = 1.0, 0.0, 0.0
-        self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
-        self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
+    def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
+        pass
 
     @classmethod
     def _from_raw(
@@ -1862,6 +1859,28 @@ class FrozenMatrix(MatrixBase):
     an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
     depending on what rotation is desired.
     """
+    def __new__(cls, matrix: 'MatrixBase | None' = None) -> 'FrozenMatrix':
+        """Create a new matrix.
+
+        If an existing matrix is supplied, it will be copied. Otherwise, an identity matrix is
+        produced.
+        """
+        if isinstance(matrix, FrozenMatrix):
+            return matrix
+        self = super().__new__(cls)
+        if matrix is not None:
+            self._aa, self._ab, self._ac = matrix._aa, matrix._ab, matrix._ac
+            self._ba, self._bb, self._bc = matrix._ba, matrix._bb, matrix._bc
+            self._ca, self._cb, self._cc = matrix._ca, matrix._cb, matrix._cc
+        else:
+            self._aa, self._ab, self._ac = 1.0, 0.0, 0.0
+            self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
+            self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
+        return self
+
+    def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
+        """Initialisation has no effect."""
+
     def thaw(self) -> 'Matrix':
         """Return a mutable copy of this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
@@ -1903,6 +1922,22 @@ class Matrix(MatrixBase):
     an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
     depending on what rotation is desired.
     """
+    def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
+        """Create a new matrix.
+
+        If an existing matrix is supplied, it will be copied. Otherwise, an identity matrix is
+        produced.
+        """
+        if matrix is not None:
+            self._aa, self._ab, self._ac = matrix._aa, matrix._ab, matrix._ac
+            self._ba, self._bb, self._bc = matrix._ba, matrix._bb, matrix._bc
+            self._ca, self._cb, self._cc = matrix._ca, matrix._cb, matrix._cc
+        else:
+            self._aa, self._ab, self._ac = 1.0, 0.0, 0.0
+            self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
+            self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
+
+
     def freeze(self) -> FrozenMatrix:
         """Return a frozen copy of this matrix."""
         rot = Py_FrozenMatrix.__new__(Py_FrozenMatrix)
