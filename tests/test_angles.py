@@ -2,6 +2,7 @@ import copy
 import pickle
 
 from helpers import *
+import pytest
 
 from srctools import Angle
 
@@ -15,48 +16,75 @@ VALID_NUMS += [-x for x in VALID_NUMS]
 VALID_ZERONUMS = VALID_NUMS + [0, -0]
 
 
-def test_construction(py_c_vec):
-    """Check various parts of the constructor - Vec(), Vec.from_str()."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+def test_construction(frozen_thawed_angle: AngleClass) -> None:
+    """Check the Angle() constructor."""
+    Angle = frozen_thawed_angle
 
     for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
-        assert_ang(Angle(pit, yaw, rol), pit, yaw, rol)
-        assert_ang(Angle(pit, yaw), pit, yaw, 0)
-        assert_ang(Angle(pit), pit, 0, 0)
-        assert_ang(Angle(), 0, 0, 0)
+        assert_ang(Angle(pit, yaw, rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle(pit, yaw), pit, yaw, 0, type=Angle)
+        assert_ang(Angle(pit), pit, 0, 0, type=Angle)
+        assert_ang(Angle(), 0, 0, 0, type=Angle)
 
-        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol)
-        assert_ang(Angle([pit, yaw], roll=rol), pit, yaw, rol)
-        assert_ang(Angle([pit], yaw=yaw, roll=rol), pit, yaw, rol)
-        assert_ang(Angle([pit]), pit, 0, 0)
-        assert_ang(Angle([pit, yaw]), pit, yaw, 0)
-        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol)
+        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit, yaw], roll=rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit], yaw=yaw, roll=rol), pit, yaw, rol, type=Angle)
+        assert_ang(Angle([pit]), pit, 0, 0, type=Angle)
+        assert_ang(Angle([pit, yaw]), pit, yaw, 0, type=Angle)
+        assert_ang(Angle([pit, yaw, rol]), pit, yaw, rol, type=Angle)
 
+
+def test_copy(py_c_vec) -> None:
+    """Test calling Angle() on an existing vec merely copies."""
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
         # Test this does nothing (except copy).
         ang = Angle(pit, yaw, rol)
         ang2 = Angle(ang)
-        assert_ang(ang2, pit, yaw, rol)
+        assert_ang(ang2, pit, yaw, rol, type=Angle)
         assert ang is not ang2
 
         ang3 = Angle.copy(ang)
-        assert_ang(ang3, pit, yaw, rol)
+        assert_ang(ang3, pit, yaw, rol, type=Angle)
         assert ang is not ang3
 
-        # Test Angle.from_str()
-        assert_ang(Angle.from_str(f'{pit} {yaw} {rol}'), pit, yaw, rol)
-        assert_ang(Angle.from_str(f'<{pit} {yaw} {rol}>'), pit, yaw, rol)
-        assert_ang(Angle.from_str(f'{{{pit} {yaw} {rol}}}'), pit, yaw, rol)
-        assert_ang(Angle.from_str(f'({pit} {yaw} {rol})'), pit, yaw, rol)
-        assert_ang(Angle.from_str(f'[{pit} {yaw} {rol}]'), pit, yaw, rol)
+        # Test doing the same with FrozenVec does not copy.
+        fang = FrozenAngle(pit, yaw, rol)
+        fang2 = FrozenAngle(ang)
+        assert_ang(fang2, pit, yaw, rol, type=FrozenAngle)
+        assert fang2 is not ang
+
+        assert fang.copy() is fang
+
+        # Ensure this doesn't mistakenly return the existing one.
+        assert Angle(fang) is not fang
+        # FrozenAngle should not make a copy.
+        # TODO: Cython doesn't let you override tp_new for this yet.
+        if FrozenAngle is vec_mod.Py_FrozenAngle:
+            assert FrozenAngle(fang) is fang
+
+
+def test_from_str(frozen_thawed_angle: AngleClass) -> None:
+    """Test the functionality of Angle.from_str()."""
+    Angle = frozen_thawed_angle
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
+        assert_ang(Angle.from_str(f'{pit} {yaw} {rol}'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'<{pit} {yaw} {rol}>'), pit, yaw, rol, type=Angle)
+        # {x y z}
+        assert_ang(Angle.from_str(f'{{{pit} {yaw} {rol}}}'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'({pit} {yaw} {rol})'), pit, yaw, rol, type=Angle)
+        assert_ang(Angle.from_str(f'[{pit} {yaw} {rol}]'), pit, yaw, rol, type=Angle)
 
         # Test converting a converted Angle
         orig = Angle(pit, yaw, rol)
         new = Angle.from_str(Angle(pit, yaw, rol))
-        assert_ang(new, pit, yaw, rol)
+        assert_ang(new, pit, yaw, rol, type=Angle)
         assert orig is not new  # It must be a copy
 
-        # Check as_tuple() makes an equivalent tuple
-        tup = orig.as_tuple()
+        # Check as_tuple() makes an equivalent tuple - this is deprecated.
+        with pytest.deprecated_call():
+            tup = orig.as_tuple()
 
         # Flip to work arond the coercion.
         pit %= 360.0
@@ -83,22 +111,23 @@ def test_construction(py_c_vec):
         assert test_val == Angle.from_str('34.5 38.4 -23 -38', roll=val).roll
 
 
-def test_angle_stringification(py_c_vec):
+def test_angle_stringification(frozen_thawed_angle: AngleClass) -> None:
     """Test the various string methods."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    for x, y, z in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
-        v: Angle = Angle(x, y, z)
-        assert str(v) == f'{x:g} {y:g} {z:g}'
-        assert repr(v) == f'Angle({x:g}, {y:g}, {z:g})'
-        assert v.join() == f'{x:g}, {y:g}, {z:g}'
-        assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
-        assert format(v) == f'{x:g} {y:g} {z:g}'
-        assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
+    Angle = frozen_thawed_angle
+    name = 'FrozenAngle' if Angle is vec_mod.FrozenAngle else 'Angle'
+    for pitch, yaw, roll in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
+        v: Angle = Angle(pitch, yaw, roll)
+        assert str(v) == f'{pitch:g} {yaw:g} {roll:g}'
+        assert repr(v) == f'{name}({pitch:g}, {yaw:g}, {roll:g})'
+        assert v.join() == f'{pitch:g}, {yaw:g}, {roll:g}'
+        assert v.join(' : ') == f'{pitch:g} : {yaw:g} : {roll:g}'
+        assert format(v) == f'{pitch:g} {yaw:g} {roll:g}'
+        assert format(v, '.02f') == f'{pitch:.02f} {yaw:.02f} {roll:.02f}'
 
 
-def test_with_axes(py_c_vec):
+def test_with_axes(frozen_thawed_angle: AngleClass) -> None:
     """Test the with_axes() constructor."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = frozen_thawed_angle
 
     for axis, u, v in [
         ('pitch', 'yaw', 'roll'),
@@ -136,12 +165,35 @@ def test_with_axes(py_c_vec):
             assert getattr(ang, c) == z
 
 
+def test_thaw_freezing(py_c_vec):
+    """Test methods to convert between frozen <> mutable."""
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
+    # Other way around is not provided.
+    with pytest.raises(AttributeError):
+        Angle.thaw()
+    with pytest.raises(AttributeError):
+        FrozenAngle.freeze()
+
+    for p, y, r in iter_vec(VALID_ZERONUMS):
+        mut = Angle(p, y, r)
+        froze = mut.freeze()
+        thaw = froze.thaw()
+
+        assert_ang(mut, p, y, r, type=Angle)
+        assert_ang(froze, p, y, r, type=FrozenAngle)
+        assert_ang(thaw, p, y, r, type=Angle)
+        # Test calling it on a temporary, in case this is optimised.
+        assert_ang(Angle(p, y, r).freeze(), p, y, r, type=FrozenAngle)
+        assert_ang(FrozenAngle(p, y, r).thaw(), p, y, r, type=Angle)
+
+
 @pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
     ('pitch', 0, 'yaw', 'roll', 1, 2), ('yaw', 1, 'pitch', 'roll', 0, 2), ('roll', 2, 'pitch', 'yaw', 0, 1),
 ], ids=['pitch', 'yaw', 'roll'])
 def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax: int) -> None:
     """Test the pitch/yaw/roll attributes and item access."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = vec_mod.Angle
     ang = Angle()
     # Should be constant.
     assert len(ang) == 3
@@ -176,9 +228,9 @@ def test_attrs(py_c_vec, axis: str, index: int, u: str, v: str, u_ax: int, v_ax:
             check(x_read, oth_read)
 
 
-def test_iteration(py_c_vec: PyCVec):
+def test_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> None:
     """Test vector iteration."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = frozen_thawed_angle
     v = Angle(45.0, 50, 65)
     it = iter(v)
     assert iter(it) is iter(it)
@@ -192,9 +244,9 @@ def test_iteration(py_c_vec: PyCVec):
         next(it)
 
 
-def test_rev_iteration(py_c_vec: PyCVec):
+def test_rev_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> None:
     """Test reversed iteration."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = frozen_thawed_angle
     v = Angle(45.0, 50, 65)
     it = reversed(v)
     assert iter(it) is iter(it)
@@ -208,9 +260,9 @@ def test_rev_iteration(py_c_vec: PyCVec):
         next(it)
 
 
-def test_equality(py_c_vec) -> None:
+def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:
     """Test equality checks on Angles."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
+    Angle = frozen_thawed_angle
 
     def test(p1: float, y1: float, r1: float, p2: float, y2: float, r2: float) -> None:
         """Check an Angle pair for incorrect comparisons."""
@@ -247,10 +299,10 @@ def test_equality(py_c_vec) -> None:
         test(num, 0.0, 5.0 + num, num + 360.0, 0.0, num - 355.0)
 
 
-def test_copy_pickle(py_c_vec) -> None:
-    """Test pickling, unpickling and copying Angles."""
-    Vec, Angle, Matrix, parse_vec_str = py_c_vec
-    vec_mod.Angle = Angle
+def test_copy_mod(py_c_vec) -> None:
+    """Test copying Angles and FrozenAngles."""
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
 
     test_data = 38.0, 257.125, 0.0
 
@@ -273,6 +325,19 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig is not dcpy
     assert orig == dcpy
 
+    frozen = FrozenAngle(test_data)
+    # Copying FrozenAngle does nothing.
+    assert frozen is frozen.copy()
+    assert frozen is copy.copy(frozen)
+    assert frozen is copy.deepcopy(frozen)
+
+
+def test_pickle(frozen_thawed_angle: AngleClass) -> None:
+    """Test pickling and unpickling works."""
+    Angle = frozen_thawed_angle
+    test_data = 38.0, 257.125, 0.0
+
+    orig = Angle(test_data)
     pick = pickle.dumps(orig)
     thaw = pickle.loads(pick)
 
@@ -280,7 +345,7 @@ def test_copy_pickle(py_c_vec) -> None:
     assert orig == thaw
 
     # Ensure both produce the same pickle - so they can be interchanged.
-    cy_pick = pickle.dumps(Cy_Angle(test_data))
-    py_pick = pickle.dumps(Py_Angle(test_data))
+    cy_pick = pickle.dumps(getattr(vec_mod, 'Cy_' + Angle.__name__)(test_data))
+    py_pick = pickle.dumps(getattr(vec_mod, 'Py_' + Angle.__name__)(test_data))
 
     assert cy_pick == py_pick == pick

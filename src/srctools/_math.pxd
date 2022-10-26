@@ -22,14 +22,38 @@ cdef unsigned char conv_angles(vec_t *result, object ang) except False
 cdef void mat_mul(mat_t targ, mat_t rot)
 cdef void vec_rot(vec_t *vec, mat_t mat)
 
-@cython.final
-cdef class Vec:
+@cython.internal
+cdef class VecBase:
     cdef vec_t val
 
 @cython.final
-cdef class Matrix:
+cdef class Vec(VecBase):
+    pass
+
+@cython.final
+cdef class FrozenVec(VecBase):
+    pass
+
+@cython.internal
+cdef class MatrixBase:
     cdef mat_t mat
 
 @cython.final
-cdef class Angle:
+cdef class Matrix(MatrixBase):
+    pass
+
+@cython.final
+cdef class FrozenMatrix(MatrixBase):
+    pass
+
+@cython.internal
+cdef class AngleBase:
     cdef vec_t val
+
+@cython.final
+cdef class Angle(AngleBase):
+    pass
+
+@cython.final
+cdef class FrozenAngle(AngleBase):
+    pass

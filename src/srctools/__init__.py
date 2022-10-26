@@ -23,8 +23,8 @@ else:
 
 __all__ = [
     '__version__',
-    'Vec', 'Vec_tuple', 'parse_vec_str', 'lerp',
-    'Angle', 'Matrix',
+    'Vec', 'FrozenVec', 'parse_vec_str', 'lerp',
+    'Angle', 'FrozenAngle', 'Matrix', 'FrozenMatrix',
 
     'NoKeyError', 'KeyValError', 'Keyvalues',
     'VMF', 'Entity', 'Solid', 'Side', 'Output', 'UVAxis',
@@ -532,12 +532,17 @@ class AtomicWriter(Generic[IOKindT]):
         return None  # Don't cancel the exception.
 
 
-# Import these, so people can reference 'srctools.Vec' instead of 'srctools.vec.Vec'.
+# Import these, so people can reference 'srctools.Vec' instead of 'srctools.math.Vec'.
 # Should be done after other code, so everything's initialised.
 # Not all classes are imported, just most-used ones.
 # This shouldn't be used in our modules, to ensure the order here doesn't matter.
 # isort: off
-from srctools.math import Vec, Vec_tuple, parse_vec_str, lerp, Angle, Matrix
+from .math import (
+    FrozenVec, Vec, Vec_tuple,
+    parse_vec_str, lerp,
+    FrozenMatrix, Matrix,
+    FrozenAngle, Angle,
+)
 from srctools.keyvalues import NoKeyError, KeyValError, Keyvalues
 from srctools.filesys import FileSystem, FileSystemChain, get_filesystem
 from srctools.vmf import VMF, Entity, Solid, Side, Output, UVAxis

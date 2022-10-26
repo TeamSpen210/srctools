@@ -1,5 +1,6 @@
 """Helpers for performing tests."""
-from typing import Callable, Iterable, Iterator, Tuple, Type
+from typing import Callable, Generator, Iterable, Iterator, Tuple, Type, TypeVar
+import builtins
 import itertools
 import math
 
@@ -7,8 +8,8 @@ import pytest
 
 from srctools import math as vec_mod
 from srctools.math import (
-    Cy_Angle, Cy_Matrix, Cy_parse_vec_str, Cy_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str,
-    Py_Vec,
+    Cy_Angle, Cy_FrozenAngle, Cy_FrozenVec, Cy_Matrix, Cy_parse_vec_str, Cy_Vec, Py_Angle,
+    Py_FrozenAngle, Py_FrozenVec, Py_Matrix, Py_parse_vec_str, Py_Vec,
 )
 
 
@@ -24,9 +25,13 @@ VALID_ZERONUMS = VALID_NUMS + [0, -0]
 EPSILON = 1e-6
 
 PyCVec = Tuple[Type[Py_Vec], Type[Py_Angle], Type[Py_Matrix], Callable[..., Tuple[float, float, float]]]
+T = TypeVar('T')
+VecClass = Type[vec_mod.VecBase]
+AngleClass = Type[vec_mod.AngleBase]
+MatrixClass = Type[vec_mod.MatrixBase]
 
 
-def iter_vec(nums: Iterable[float]) -> Iterator[Tuple[float, float, float]]:
+def iter_vec(nums: Iterable[T]) -> Iterator[Tuple[T, T, T]]:
     for x in nums:
         for y in nums:
             for z in nums:
@@ -47,10 +52,14 @@ class ExactType:
         return type(self.value) is type(other) and self.value == other
 
 
-def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON):
+def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON, type=None):
     """Asserts that an Angle is equal to the provided angles."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
+
+    assert builtins.type(ang).__name__ in ('Angle', 'FrozenAngle'), ang
+    if type is not None:
+        assert builtins.type(ang) is type, f'{builtins.type(ang)} != {type}: {msg}'
 
     pitch %= 360
     yaw %= 360
@@ -82,12 +91,14 @@ def assert_ang(ang, pitch=0, yaw=0, roll=0, msg='', tol=EPSILON):
     pytest.fail(new_msg)
 
 
-def assert_vec(vec, x, y, z, msg='', tol=EPSILON):
+def assert_vec(vec, x, y, z, msg='', tol=EPSILON, type=None):
     """Asserts that Vec is equal to (x,y,z)."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    assert type(vec).__name__ == 'Vec'
+    assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec')
+    if type is not None:
+        assert builtins.type(vec) is type, f'{builtins.type(vec)} != {type}: {msg}'
 
     if not math.isclose(vec.x, x, abs_tol=tol):
         failed = 'x'
@@ -99,7 +110,7 @@ def assert_vec(vec, x, y, z, msg='', tol=EPSILON):
         # Success!
         return
 
-    new_msg = "{!r}.{} != ({}, {}, {})".format(vec, failed, x, y, z)
+    new_msg = f"{vec!r}.{failed} != ({x}, {y}, {z})"
     if msg:
         new_msg += ': ' + str(msg)
     pytest.fail(new_msg)
@@ -123,37 +134,31 @@ def assert_rot(rot, exp_rot, msg=''):
     pytest.fail(new_msg)
 
 
+ATTRIBUTES = [
+    'Vec', 'FrozenVec',
+    'Angle', 'FrozenAngle',
+    'Matrix', 'FrozenMatrix',
+    'parse_vec_str',
+]
 if Py_Vec is Cy_Vec:
-    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str)]
-    names = ['Python']
+    parms = ['Python']
     print('No _vec! ')
 else:
-    parms = [(Py_Vec, Py_Angle, Py_Matrix, Py_parse_vec_str),
-             (Cy_Vec, Cy_Angle, Cy_Matrix, Cy_parse_vec_str)]
-    names = ['Python', 'Cython']
+    parms = ['Python', 'Cython']
 
 
-@pytest.fixture(params=parms, ids=names)
-def py_c_vec(request):
+@pytest.fixture(params=parms)
+def py_c_vec(request) -> Generator[None, None, None]:
     """Run the test twice, for the Python and C versions."""
-    orig_vec = vec_mod.Vec
-    orig_Matrix = vec_mod.Matrix
-    orig_Angle = vec_mod.Angle
-    orig_parse = vec_mod.parse_vec_str
-
+    originals = [getattr(vec_mod, name) for name in ATTRIBUTES]
+    prefix = request.param[:2] + '_'  # Python -> Py_
     try:
-        (
-            vec_mod.Vec,
-            vec_mod.Matrix,
-            vec_mod.Angle,
-            vec_mod.parse_vec_str,
-        ) = request.param
-        yield request.param
+        for name in ATTRIBUTES:
+            setattr(vec_mod, name, getattr(vec_mod, prefix + name))
+        yield None
     finally:
-        vec_mod.Vec = orig_vec
-        vec_mod.Matrix = orig_Matrix
-        vec_mod.Angle = orig_Angle
-        vec_mod.parse_vec_str = orig_parse
+        for name, orig in zip(ATTRIBUTES, originals):
+            setattr(vec_mod, name, orig)
 
 
 def parameterize_cython(param: str, py_vers, cy_vers):
@@ -162,3 +167,21 @@ def parameterize_cython(param: str, py_vers, cy_vers):
         return pytest.mark.parametrize(param, [py_vers], ids=['Python'])
     else:
         return pytest.mark.parametrize(param, [py_vers, cy_vers], ids=['Python', 'Cython'])
+
+
+@pytest.fixture(params=['Vec', 'FrozenVec'])
+def frozen_thawed_vec(py_c_vec, request) -> VecClass:
+    """Support testing both mutable and immutable vectors."""
+    yield getattr(vec_mod, request.param)
+
+
+@pytest.fixture(params=['Angle', 'FrozenAngle'])
+def frozen_thawed_angle(py_c_vec, request) -> AngleClass:
+    """Support testing both mutable and immutable angles."""
+    yield getattr(vec_mod, request.param)
+
+
+@pytest.fixture(params=['Matrix', 'FrozenMatrix'])
+def frozen_thawed_matrix(py_c_vec, request) -> MatrixClass:
+    """Support testing both mutable and immutable matrices."""
+    yield getattr(vec_mod, request.param)

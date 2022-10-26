@@ -24,7 +24,7 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, Matrix, Vec, to_matrix
+from srctools.math import Angle, Matrix, Vec, to_matrix, AnyAngle, AnyMatrix
 import srctools
 
 
@@ -1324,7 +1324,7 @@ class Solid:
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: Vec, angles: Union[Angle, Matrix, None] = None) -> None:
+    def localise(self, origin: Vec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
         """Shift this brush by the given origin/angles."""
         angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
@@ -1466,7 +1466,7 @@ class UVAxis:
             self.scale,
         )
 
-    def localise(self, origin: Vec, angles: Union[Angle, Matrix]) -> 'UVAxis':
+    def localise(self, origin: Vec, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
         vec = self.vec() @ angles
 
@@ -1960,7 +1960,7 @@ class Side:
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Union[Matrix, Angle]=None) -> None:
+    def localise(self, origin: Vec, angles: Union[AnyMatrix, AnyAngle, None]=None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.

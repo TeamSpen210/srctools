@@ -22,6 +22,14 @@ Repeated calculations, especially calculations involving rotation will inevitabl
 
 ------------
 
+.. autoclass:: VecBase
+	:members:
+	:special-members:
+
+.. autoclass:: FrozenVec
+	:members:
+	:special-members:
+
 .. autoclass:: Vec
 	:members:
 	:special-members:
@@ -32,6 +40,14 @@ Repeated calculations, especially calculations involving rotation will inevitabl
 	:members:
 
 ------------
+
+.. autoclass:: AngleBase
+	:members:
+	:special-members:
+
+.. autoclass:: FrozenAngle
+	:members:
+	:special-members:
 
 .. autoclass:: Angle
 	:members:
