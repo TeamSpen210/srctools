@@ -14,6 +14,9 @@ Dev branch
 * Added new :py:meth:`srctools.fgd.EntityDef.get_resources()` method, replacing ``fgd.entclass_*()``
   methods.
 * When parsing VMF outputs, assume extraneous commas are part of the parameter.
+* Add :py:class:`!srctools.math.FrozenVec`, :py:class:`!srctools.math.FrozenAngle` and
+  :py:class:`!srctools.math.FrozenMatrix` - immutable versions of the existing classes. This is a
+  far better version of ``Vec_tuple``, which is now deprecated.
 * Build Python 3.11 wheels.
 
 -------------
