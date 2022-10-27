@@ -1887,9 +1887,6 @@ class FrozenMatrix(MatrixBase):
             self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
         return self
 
-    def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
-        """Initialisation has no effect."""
-
     def thaw(self) -> 'Matrix':
         """Return a mutable copy of this matrix."""
         rot = Py_Matrix.__new__(Py_Matrix)
@@ -1906,7 +1903,7 @@ class FrozenMatrix(MatrixBase):
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: dict={}) -> 'FrozenMatrix':
+    def __deepcopy__(self, memodict: object=...) -> 'FrozenMatrix':
         """Frozen matrices are immutable."""
         return self
 
@@ -1945,7 +1942,6 @@ class Matrix(MatrixBase):
             self._aa, self._ab, self._ac = 1.0, 0.0, 0.0
             self._ba, self._bb, self._bc = 0.0, 1.0, 0.0
             self._ca, self._cb, self._cc = 0.0, 0.0, 1.0
-
 
     def freeze(self) -> FrozenMatrix:
         """Return a frozen copy of this matrix."""
