@@ -51,7 +51,6 @@ HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
 FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
-FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
 OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
 TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
@@ -1937,7 +1936,10 @@ class BSP:
             min_x, min_y, min_z,
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
-        ) in struct.iter_unpack(FMT_NODES, data):
+        ) in struct.iter_unpack(
+            '<iii6iHHh2x' if self.is_vitamin else '<iii6hHHh2x',
+            data,
+        ):
             nodes.append((VisTree(
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
@@ -1978,7 +1980,7 @@ class BSP:
                 neg_ind = add_node(node.child_neg)
 
             buf.write(struct.pack(
-                FMT_NODES,
+                '<iii6iHHh2x' if self.is_vitamin else '<iii6hHHh2x',
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
