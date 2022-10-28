@@ -2072,17 +2072,24 @@ class BSP:
     def _lmp_read_texinfo(self, data: bytes) -> Iterator['TexInfo']:
         """Read the texture info lump, providing positioning information."""
         texdata_list = []
-        for (
-            ref_x, ref_y, ref_z, ind,
-            w, h, vw, vh,
-        ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
-            mat = self.textures[ind]
-            # The view width/height is unused stuff, identical to regular
-            # width/height.
-            assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
-            texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
-            texdata_list.append(texdata)
-            self._texdata[mat.casefold()] = texdata
+        # The view width/height is unused stuff, identical to regular
+        # width/height. VitaminSource elides this useless info.
+        if self.is_vitamin:
+            for ref_x, ref_y, ref_z, ind, w, h in struct.iter_unpack('<3f3i', self.lumps[BSP_LUMPS.TEXDATA].data):
+                mat = self.textures[ind]
+                texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+                texdata_list.append(texdata)
+                self._texdata[mat.casefold()] = texdata
+        else:
+            for (
+                ref_x, ref_y, ref_z, ind,
+                w, h, vw, vh,
+            ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
+                mat = self.textures[ind]
+                assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
+                texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+                texdata_list.append(texdata)
+                self._texdata[mat.casefold()] = texdata
         self.lumps[BSP_LUMPS.TEXDATA].data = b''
 
         for (
@@ -2119,12 +2126,14 @@ class BSP:
             except KeyError:
                 ind = texdata_ind[tdat] = len(texdata_list)
                 texdata_list.append(struct.pack(
-                    '<3f5i',
+                    '<3f3i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
                     find_or_add_texture(tdat.mat),
-                    # Second set is the 'view' width/height, always the same.
-                    tdat.width, tdat.height, tdat.width, tdat.height,
+                    tdat.width, tdat.height,
                 ))
+                # A second set of  'view' dimensions, which is always the same.
+                if not self.is_vitamin:
+                    texdata_list.append(struct.pack('<2i', tdat.width, tdat.height))
             texinfo_result.append(struct.pack(
                 '<16fii',
                 *info.s_off, info.s_shift,
