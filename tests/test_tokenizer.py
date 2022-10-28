@@ -426,6 +426,25 @@ def test_universal_newlines(py_c_token: Type[Tokenizer]) -> None:
     check_tokens(py_c_token(''.join(text)), tokens)
 
 
+def test_token_has_value() -> None:
+    """Check the result of the .has_value property."""
+    assert not Token.EOF.has_value
+    assert not Token.NEWLINE.has_value
+    assert not Token.BRACE_OPEN.has_value
+    assert not Token.BRACE_CLOSE.has_value
+    assert not Token.BRACK_OPEN.has_value
+    assert not Token.BRACK_CLOSE.has_value
+    assert not Token.COLON.has_value
+    assert not Token.EQUALS.has_value
+    assert not Token.PLUS.has_value
+    assert not Token.COMMA.has_value
+
+    assert Token.STRING.has_value
+    assert Token.PAREN_ARGS.has_value
+    assert Token.DIRECTIVE.has_value
+    assert Token.PROP_FLAG.has_value
+
+
 def test_constructor(py_c_token: Type[Tokenizer]) -> None:
     """Test various argument syntax for the tokenizer."""
     Tokenizer = py_c_token
