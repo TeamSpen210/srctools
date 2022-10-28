@@ -17,10 +17,9 @@ import os
 import struct
 import warnings
 
-from atomicwrites import atomic_write
 import attrs
 
-from srctools import StringPath, conv_int, logger
+from srctools import StringPath, AtomicWriter, conv_int, logger
 from srctools.binformat import (
     DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read, write_array,
 )
@@ -1301,8 +1300,7 @@ class BSP:
                     self.lumps[lump_or_game].data = lump_result
         game_lumps = list(self.game_lumps.values())  # Lock iteration order.
 
-        file: IO[bytes]
-        with atomic_write(filename or self.filename, mode='wb', overwrite=True) as file:
+        with AtomicWriter(filename or self.filename, is_bytes=True) as file:
             # Needed to allow writing out the header before we know the position
             # data will be.
             defer = DeferredWrites(file)

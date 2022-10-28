@@ -18,6 +18,7 @@ Dev branch
   :py:class:`!srctools.math.FrozenMatrix` - immutable versions of the existing classes. This is a
   far better version of ``Vec_tuple``, which is now deprecated.
 * Build Python 3.11 wheels.
+* Drop dependency on ``atomicwrites``, it is no longer being maintained.
 
 -------------
 Version 2.3.5
