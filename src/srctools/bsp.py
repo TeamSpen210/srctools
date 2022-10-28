@@ -1738,7 +1738,7 @@ class BSP:
                 texinfo = self.texinfo[texinfo_ind]
 
                 # All these values are unused.
-                side = 0
+                side = False
                 surf_fog_vol_id = 0
                 light_offset = 0
                 lightstyles = b'\0\0\0\0'
