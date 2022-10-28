@@ -9,6 +9,10 @@ Changelog
 Dev branch
 ----------
 
+-------------
+Version 2.3.6
+-------------
+
 * Add ability to specify resources used in entities to the FGD file, move internal class resource
   definitions to the Hammer Addons repository.
 * Added new :py:meth:`srctools.fgd.EntityDef.get_resources()` method, replacing ``fgd.entclass_*()``
