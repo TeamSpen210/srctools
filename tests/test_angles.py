@@ -4,8 +4,6 @@ import pickle
 from helpers import *
 import pytest
 
-from srctools import Angle
-
 
 VALID_NUMS = [
     # Make sure we use double-precision with the precise small value.
@@ -165,15 +163,15 @@ def test_with_axes(frozen_thawed_angle: AngleClass) -> None:
             assert getattr(ang, c) == z
 
 
-def test_thaw_freezing(py_c_vec):
+def test_thaw_freezing(py_c_vec: PyCVec) -> None:
     """Test methods to convert between frozen <> mutable."""
     Angle = vec_mod.Angle
     FrozenAngle = vec_mod.FrozenAngle
     # Other way around is not provided.
     with pytest.raises(AttributeError):
-        Angle.thaw()
+        Angle.thaw()  # noqa
     with pytest.raises(AttributeError):
-        FrozenAngle.freeze()
+        FrozenAngle.freeze()  # noqa
 
     for p, y, r in iter_vec(VALID_ZERONUMS):
         mut = Angle(p, y, r)
@@ -258,6 +256,72 @@ def test_rev_iteration(py_c_vec: PyCVec, frozen_thawed_angle: AngleClass) -> Non
         next(it)
     with pytest.raises(StopIteration):
         next(it)
+
+
+def test_multiply(frozen_thawed_angle: AngleClass):
+    """Test multiplying angles to scale them."""
+    Angle = frozen_thawed_angle
+
+    # Doesn't implement float(pit), and no other operators...
+    obj = object()
+    mutable = Angle is vec_mod.Angle
+
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
+        pit %= 360.0
+        yaw %= 360.0
+        rol %= 360.0
+        for num in VALID_ZERONUMS:
+            targ = Angle(pit, yaw, rol)
+            fpit, fyaw, frol = (
+                (num * pit) % 360.0,
+                (num * yaw) % 360.0,
+                (num * rol) % 360.0,
+            )
+            rpit, ryaw, rrol = (
+                (pit * num) % 360,
+                (yaw * num) % 360,
+                (rol * num) % 360,
+            )
+
+            # Check forward and reverse fails.
+            with pytest.raises(TypeError):
+                targ * obj  # noqa
+                pytest.fail('Angle * scalar succeeded.')
+            with pytest.raises(TypeError):
+                obj * targ  # noqa
+                pytest.fail('scalar * Angle succeeded.')
+            with pytest.raises(TypeError):
+                targ *= obj  # noqa
+                pytest.fail('Angle *= scalar succeeded.')
+
+            assert_ang(targ * num, rpit, ryaw, rrol)
+            assert_ang(num * targ, fpit, fyaw, frol)
+
+            # Ensure they haven't modified the original
+            assert_ang(targ, pit, yaw, rol)
+
+            res = targ
+            res *= num
+            assert_ang(
+                res,
+                rpit, ryaw, rrol,
+                f'Return value for ({pit} {yaw} {rol}) *= {num}',
+            )
+            # Check that the original was or wasn't modified.
+            if mutable:
+                assert targ is res
+                assert_ang(
+                    targ,
+                    rpit, ryaw, rrol,
+                    f'Original for ({pit} {yaw} {rol}) *= {num}',
+                )
+            else:
+                assert targ is not res
+                assert_ang(
+                    targ,
+                    pit, yaw, rol,
+                    f'Original for ({pit} {yaw} {rol}) *= {num}',
+                )
 
 
 def test_equality(py_c_vec, frozen_thawed_angle: AngleClass) -> None:

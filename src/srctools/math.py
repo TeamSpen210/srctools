@@ -1503,7 +1503,9 @@ class MatrixBase:
     _cc: float
 
     def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
-        pass
+        """MatrixBase cannot be instantiated."""
+        if type(self) is MatrixBase:
+            raise TypeError('MatrixBase cannot be instantiated.')
 
     @classmethod
     def _from_raw(
@@ -1596,7 +1598,7 @@ class MatrixBase:
     def from_angle(
         cls: Type[MatrixT],
         pitch: Union['AngleBase', float],
-        yaw: Optional[float]=0.0,
+        yaw: Optional[float]=None,
         roll: Optional[float]=None,
     ) -> MatrixT:
         """Return the rotation representing an Euler angle.
@@ -1604,6 +1606,8 @@ class MatrixBase:
         Either an Angle can be passed, or the raw pitch/yaw/roll angles.
         """
         if isinstance(pitch, AngleBase):
+            if yaw is not None or roll is not None:
+                raise TypeError('Matrix.from_angles() accepts a single Angle or 3 floats!')
             rad_pitch = math.radians(pitch.pitch)
             rad_yaw = math.radians(pitch.yaw)
             rad_roll = math.radians(pitch.roll)
@@ -2595,6 +2599,15 @@ class Angle(AngleBase):
             self._roll = float(val) % 360.0 % 360.0
         else:
             raise KeyError('Invalid axis: {!r}'.format(ind))
+
+    def __imul__(self, other: Union[int, float]) -> 'Angle':
+        """Angle *= float multiplies each value."""
+        if isinstance(other, (int, float)):
+            self._pitch = self._pitch * other % 360.0 % 360.0
+            self._yaw = self._yaw * other % 360.0 % 360.0
+            self._roll = self._roll * other % 360.0 % 360.0
+            return self
+        return NotImplemented
 
     # noinspection PyProtectedMember
     def __imatmul__(self, other: Union[AngleBase, MatrixBase]) -> 'Angle':

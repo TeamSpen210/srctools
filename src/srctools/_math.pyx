@@ -184,6 +184,7 @@ cdef bint mat_check(obj):
     return type(obj) is Matrix or type(obj) is FrozenMatrix
 
 
+# 1 = success, 0 = invalid, -1 = exception
 cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) except -1:
     cdef const char *buf
     cdef Py_ssize_t size, i
@@ -198,7 +199,7 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
         vec.x = (<AngleBase>value).val.x
         vec.y = (<AngleBase>value).val.y
         vec.z = (<AngleBase>value).val.z
-    else:
+    elif isinstance(value, str):
         buf = PyUnicode_AsUTF8AndSize(value, &size)
         # First, skip through whitespace, and stop after the first
         # <{[( delim, or when any other char is found.
@@ -243,6 +244,8 @@ cdef int _parse_vec_str(vec_t *vec, object value, double x, double y, double z) 
                 vec.y = y
                 vec.z = z
                 return 0
+    else:
+        return 0
     return 1
 
 # All the comparisons are similar, so we can use richcmp to
@@ -901,18 +904,18 @@ cdef class VecBase:
             else:
                 raise KeyError(f'Invalid axis {axis_obj!r}' '!')
             if axis == 'x':
-                if isinstance(axis_val, Vec):
-                    vec.val.x = (<Vec>axis_val).val.x
+                if vec_check(axis_val):
+                    vec.val.x = (<VecBase>axis_val).val.x
                 else:
                     vec.val.x = axis_val
             elif axis == 'y':
-                if isinstance(axis_val, Vec):
-                    vec.val.y = (<Vec>axis_val).val.y
+                if vec_check(axis_val):
+                    vec.val.y = (<VecBase>axis_val).val.y
                 else:
                     vec.val.y = axis_val
             elif axis == 'z':
-                if isinstance(axis_val, Vec):
-                    vec.val.z = (<Vec>axis_val).val.z
+                if vec_check(axis_val):
+                    vec.val.z = (<VecBase>axis_val).val.z
                 else:
                     vec.val.z = axis_val
             else:
@@ -2954,6 +2957,21 @@ cdef class Angle(AngleBase):
         Angles only support equality, since ordering is nonsensical.
         """
         return angle_compare(self, other, op)
+
+    def __imul__(self, other):
+        """*= operation.
+
+        Like the normal one except without duplication.
+        """
+        cdef double scalar
+        if isinstance(other, (int, float)):
+            scalar = other
+            self.val.x = norm_ang(self.val.x * scalar)
+            self.val.y = norm_ang(self.val.y * scalar)
+            self.val.z = norm_ang(self.val.z * scalar)
+            return self
+        else:
+            return NotImplemented
 
     def __imatmul__(self, second):
         cdef mat_t mat_self, temp2

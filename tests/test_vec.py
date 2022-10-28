@@ -10,6 +10,11 @@ from helpers import *
 import pytest
 
 from srctools import Vec_tuple, math as vec_mod
+try:
+    # noinspection PyProtectedMember
+    from srctools import _math as cy_math_mod
+except ImportError:
+    cy_math_mod = None
 
 
 # Reuse these context managers.
@@ -34,6 +39,13 @@ def test_matching_apis(cls: str) -> None:
     py_attrs = {name for name, _ in inspect.getmembers(py_type) if not name.startswith('_')}
     cy_attrs = {name for name, _ in inspect.getmembers(cy_type) if not name.startswith('_')}
     assert cy_attrs == py_attrs
+
+
+@pytest.mark.parametrize('cls', [vec_mod.AngleBase, vec_mod.VecBase, vec_mod.MatrixBase])
+def test_noconstruct_base(cls: type) -> None:
+    """Test the internal base classes cannot be instantiated."""
+    with pytest.raises(TypeError):
+        cls()
 
 
 @parameterize_cython('lerp_func', vec_mod.Py_lerp, vec_mod.Cy_lerp)
@@ -224,6 +236,7 @@ def test_parse_vec_passthrough(py_c_vec):
     obj1, obj2, obj3 = object(), object(), object()
     assert parse_vec_str('1 2 3', obj1, obj2, obj3) == (1, 2, 3)
     assert parse_vec_str('fail', obj1, obj2, obj3) == (obj1, obj2, obj3)
+    assert parse_vec_str(range, obj1, obj2, obj3) == (obj1, obj2, obj3)
 
 
 def test_with_axes(frozen_thawed_vec: VecClass):
@@ -237,6 +250,11 @@ def test_with_axes(frozen_thawed_vec: VecClass):
             assert vec[u] == 0
             assert vec[v] == 0
 
+            vec2 = Vec.with_axes(axis, vec)
+            assert vec2[axis] == num
+            assert vec2[u] == 0
+            assert vec2[v] == 0
+
     for a, b, c in iter_vec('xyz'):
         if a == b or b == c or a == c:
             continue
@@ -246,6 +264,12 @@ def test_with_axes(frozen_thawed_vec: VecClass):
             assert vec[a] == x, msg
             assert vec[b] == y, msg
             assert vec[c] == z, msg
+
+            vec2 = Vec.with_axes(a, vec, b, vec, c, vec)
+            msg = f'{vec2} = {a}={x}, {b}={y}, {c}={z}'
+            assert vec2[a] == x, msg
+            assert vec2[b] == y, msg
+            assert vec2[c] == z, msg
 
 
 def test_vec_stringification(frozen_thawed_vec: VecClass):

@@ -2,6 +2,7 @@
 import pickle
 
 import copy
+import pytest
 
 from helpers import *
 
@@ -34,6 +35,23 @@ def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass)
         assert mat_frozen is copy_frozen
 
 
+def test_as_matrix(py_c_vec: PyCVec) -> None:
+    """Test the as_matrix() method. """
+    Matrix = vec_mod.Matrix
+    FrozenMatrix = vec_mod.FrozenMatrix
+    Angle = vec_mod.Angle
+    FrozenAngle = vec_mod.FrozenAngle
+
+    assert_rot(vec_mod.to_matrix(None), Matrix())
+    ang = Angle(12, 34, -15)
+    rot = Matrix.from_angle(ang)
+    assert_rot(vec_mod.to_matrix(Matrix.from_angle(ang)), rot)
+    assert_rot(vec_mod.to_matrix(FrozenMatrix.from_angle(ang)), rot)
+    assert_rot(vec_mod.to_matrix(Angle(ang)), rot)
+    assert_rot(vec_mod.to_matrix(FrozenAngle(ang)), rot)
+    assert_rot(vec_mod.to_matrix((ang.pitch, ang.yaw, ang.roll)), rot)
+
+
 # noinspection PyArgumentList
 def test_bad_from_basis(
     py_c_vec: PyCVec,
@@ -62,6 +80,23 @@ def test_matrix_no_iteration(py_c_vec: PyCVec) -> None:
         iter(Matrix())
     with pytest.raises(TypeError):
         list(Matrix())
+
+
+def text_invalid_from_angle(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
+    """Test invalid parameters passed to Matrix.from_angle()."""
+    Matrix = frozen_thawed_matrix
+    with pytest.raises(TypeError):
+        Matrix.from_angle()
+    with pytest.raises(TypeError):
+        Matrix.from_angle(45.0)
+    with pytest.raises(TypeError):
+        Matrix.from_angle(45.0, 30.0)
+    with pytest.raises(TypeError):
+        Matrix.from_angle(roll=30.0)
+    with pytest.raises(TypeError):
+        Matrix.from_angle(yaw=30.0)
+    with pytest.raises(TypeError):
+        Matrix.from_angle(pitch=30.0, roll=12.5)
 
 
 def test_copy(py_c_vec: PyCVec) -> None:
@@ -99,6 +134,19 @@ def test_copy(py_c_vec: PyCVec) -> None:
     assert frozen is copy.deepcopy(frozen)
 
 
+def test_from_str(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
+    """Test the functionality of Matrix.from_angstr()."""
+    Matrix = frozen_thawed_matrix
+    for pit, yaw, rol in iter_vec(VALID_ZERONUMS):
+        rot = Matrix.from_angle(pit, yaw, rol)
+        assert_rot(Matrix.from_angstr(f'{pit} {yaw} {rol}'), rot)
+        assert_rot(Matrix.from_angstr(f'<{pit} {yaw} {rol}>'), rot)
+        # {x y z}
+        assert_rot(Matrix.from_angstr(f'{{{pit} {yaw} {rol}}}'), rot)
+        assert_rot(Matrix.from_angstr(f'({pit} {yaw} {rol})'), rot)
+        assert_rot(Matrix.from_angstr(f'[{pit} {yaw} {rol}]'), rot)
+
+
 def test_pickle(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     """Test pickling and unpickling matrices."""
     Matrix = frozen_thawed_matrix
@@ -129,3 +177,27 @@ def test_pickle(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:
     py_mat = PyMatrix._from_raw(*data)
 
     assert pickle.dumps(cy_mat) == pickle.dumps(py_mat)
+
+
+def test_thaw_freezing(py_c_vec: PyCVec) -> None:
+    """Test methods to convert between frozen <> mutable."""
+    Matrix = vec_mod.Matrix
+    FrozenMatrix = vec_mod.FrozenMatrix
+    Angle = vec_mod.Angle
+    # Other way around is not provided.
+    with pytest.raises(AttributeError):
+        Matrix.thaw()  # noqa
+    with pytest.raises(AttributeError):
+        FrozenMatrix.freeze()  # noqa
+
+    ang = Angle(12.5, 34.3, -15.8)
+    mut = Matrix.from_angle(ang)
+    froze = mut.freeze()
+    thaw = froze.thaw()
+
+    assert_rot(mut, Matrix.from_angle(ang), type=Matrix)
+    assert_rot(froze, Matrix.from_angle(ang), type=FrozenMatrix)
+    assert_rot(thaw, Matrix.from_angle(ang), type=Matrix)
+    # Test calling it on a temporary, in case this is optimised.
+    assert_rot(Matrix.from_angle(ang).freeze(), Matrix.from_angle(ang), type=FrozenMatrix)
+    assert_rot(FrozenMatrix.from_angle(ang).thaw(), Matrix.from_angle(ang), type=Matrix)

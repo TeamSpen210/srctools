@@ -96,7 +96,7 @@ def assert_vec(vec, x, y, z, msg='', tol=EPSILON, type=None):
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
 
-    assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec')
+    assert builtins.type(vec).__name__ in ('Vec', 'FrozenVec'), vec
     if type is not None:
         assert builtins.type(vec) is type, f'{builtins.type(vec)} != {type}: {msg}'
 
@@ -116,10 +116,14 @@ def assert_vec(vec, x, y, z, msg='', tol=EPSILON, type=None):
     pytest.fail(new_msg)
 
 
-def assert_rot(rot, exp_rot, msg=''):
+def assert_rot(rot, exp_rot, msg='', type=None):
     """Asserts that the two rotations are the same."""
     # Don't show in pytest tracebacks.
     __tracebackhide__ = True
+
+    assert builtins.type(rot).__name__ in ('Matrix', 'FrozenMatrix'), rot
+    if type is not None:
+        assert builtins.type(rot) is type, f'{builtins.type(rot)} != {type}: {msg}'
 
     for x, y in itertools.product(range(3), range(3)):
         if not math.isclose(rot[x, y], exp_rot[x, y], abs_tol=EPSILON):
@@ -138,7 +142,7 @@ ATTRIBUTES = [
     'Vec', 'FrozenVec',
     'Angle', 'FrozenAngle',
     'Matrix', 'FrozenMatrix',
-    'parse_vec_str',
+    'parse_vec_str', 'to_matrix',
 ]
 if Py_Vec is Cy_Vec:
     parms = ['Python']
