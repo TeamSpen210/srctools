@@ -46,6 +46,7 @@ __all__ = [
 
 # Various constants, some exposed to allow handling unreleased formats.
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
+VITAMIN_MAGIC = b'FART'  # Desolation's branch of Source.
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
@@ -102,7 +103,8 @@ class VERSIONS(Enum):
     DOTA2 = 22
     CONTAGION = 23
 
-    DESOLATION = 42
+    DESOLATION_OLD = 42  # Old version.
+    VITAMINSOURCE = 43  # Desolation's expanded map format.
 
     def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
@@ -1179,6 +1181,11 @@ class BSP:
     props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
     detail_props: ParsedLump[List['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
+    @property
+    def is_vitamin(self) -> bool:
+        """Vitaminsource has a lot of structure changes."""
+        return self.version is VERSIONS.VITAMINSOURCE
+
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
@@ -1189,7 +1196,8 @@ class BSP:
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
             magic_name, bsp_version = struct_read(HEADER_1, file)
-            assert magic_name == BSP_MAGIC, 'Not a BSP file!'
+            if magic_name != BSP_MAGIC and magic_name != VITAMIN_MAGIC:
+                raise ValueError('File is not a BSP file!')
 
             if self.version is None:
                 try:
@@ -1197,7 +1205,13 @@ class BSP:
                 except ValueError:
                     self.version = bsp_version
             else:
-                assert bsp_version == self.version, 'Different BSP version!'
+                if bsp_version != self.version:
+                    raise ValueError(
+                        f'Unexpected BSP version {self.version!r}, expected {bsp_version!r}!'
+                    )
+
+            if magic_name == VITAMIN_MAGIC and self.version is not VERSIONS.VITAMINSOURCE:
+                raise ValueError('VitaminSource uses a different version number.')
 
             lump_offsets = {}
 
@@ -1327,7 +1341,11 @@ class BSP:
             else:
                 version = self.version
 
-            file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
+            file.write(struct.pack(
+                HEADER_1,
+                VITAMIN_MAGIC if self.is_vitamin else BSP_MAGIC,
+                version,
+            ))
 
             # Write dummy values for the headers.
             for lump_name in BSP_LUMPS:
