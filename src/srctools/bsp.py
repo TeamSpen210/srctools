@@ -1890,11 +1890,18 @@ class BSP:
     def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
         """Parse brush definitions, along with the sides."""
         # The bevel param should be a bool, but randomly has other bits set?
-        sides = [
-            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
-            for (plane_num, texinfo, dispinfo, bevel)
-            in struct.iter_unpack('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
-        ]
+        if self.is_vitamin:
+            sides = [
+                BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bevel, extra)
+                for (plane_num, texinfo, dispinfo, bevel, extra)
+                in struct.iter_unpack('<IIhBB', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            ]
+        else:
+            sides = [
+                BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
+                for (plane_num, texinfo, dispinfo, bevel)
+                in struct.iter_unpack('<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            ]
         for first_side, side_count, contents in struct.iter_unpack('<iii', data):
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
 
@@ -1913,14 +1920,25 @@ class BSP:
                 brush.contents.value,
             ))
 
-        side_struct = struct.Struct('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH')
-        for side in sides:
-            sides_buf.write(side_struct.pack(
-                add_plane(side.plane),
-                add_texinfo(side.texinfo),
-                side._dispinfo,
-                side.is_bevel_plane | side._unknown_bevel_bits,
-            ))
+        if self.is_vitamin:
+            for side in sides:
+                side_struct = struct.Struct('<IIhBB')
+                sides_buf.write(side_struct.pack(
+                    add_plane(side.plane),
+                    add_texinfo(side.texinfo),
+                    side._dispinfo,
+                    side.is_bevel_plane,
+                    side._unknown_bevel_bits,
+                ))
+        else:
+            for side in sides:
+                side_struct = struct.Struct('<HhhH')
+                sides_buf.write(side_struct.pack(
+                    add_plane(side.plane),
+                    add_texinfo(side.texinfo),
+                    side._dispinfo,
+                    side.is_bevel_plane | side._unknown_bevel_bits,
+                ))
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
