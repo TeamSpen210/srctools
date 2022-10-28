@@ -50,7 +50,6 @@ VITAMIN_MAGIC = b'FART'  # Desolation's branch of Source.
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
-FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
 OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
 TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
@@ -1951,31 +1950,57 @@ class BSP:
         # Another lump which is just an array of ints - no point being separate.
         dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
 
-        leaf_fmt = FMT_LEAF_BASE
-        has_ambient = False
-        # Some extra ambient light data.
-        if self.version <= 19:
-            has_ambient = True
-            leaf_fmt += '24s'
-        leaf_fmt += '2x'
+        is_vitamin = self.is_vitamin
+        if is_vitamin:
+            leaf_fmt = '<ihh6I4HhB'
+            has_ambient = False
+        else:
+            leaf_fmt = '<ihh6h4Hh'
+            has_ambient = False
+            # Some extra ambient light data.
+            if self.version <= 19:
+                has_ambient = True
+                leaf_fmt += '24s'
+            leaf_fmt += '2x'
 
-        for (
-            contents,
-            cluster_ind, area_and_flags,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, num_faces,
-            first_brush, num_brushes,
-            *water_ind_and_ambient
-        ), water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
-            area = area_and_flags >> 7
-            flags = area_and_flags & 0b1111111
-            if has_ambient:
-                [water_ind, ambient] = water_ind_and_ambient
-            else:
-                [water_ind] = water_ind_and_ambient
-                # bytes(24), but can constant fold.
+        for leaf_data, water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
+            if is_vitamin:
+                # VitaminSource moves the flags into its own block.
+                (
+                    contents,
+                    cluster_ind, area,
+                    min_x, min_y, min_z,
+                    max_x, max_y, max_z,
+                    first_face, num_faces,
+                    first_brush, num_brushes,
+                    water_ind, flags,
+                ) = leaf_data
                 ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+            else:
+                if has_ambient:
+                    (
+                        contents,
+                        cluster_ind, area_and_flags,
+                        min_x, min_y, min_z,
+                        max_x, max_y, max_z,
+                        first_face, num_faces,
+                        first_brush, num_brushes,
+                        water_ind, ambient,
+                    ) = leaf_data
+                else:
+                    (
+                        contents,
+                        cluster_ind, area_and_flags,
+                        min_x, min_y, min_z,
+                        max_x, max_y, max_z,
+                        first_face, num_faces,
+                        first_brush, num_brushes,
+                        water_ind,
+                    ) = leaf_data
+                    # bytes(24), but can constant fold.
+                    ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+                area = area_and_flags >> 7
+                flags = area_and_flags & 0b1111111
             yield VisLeaf(
                 BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
                 Vec(min_x, min_y, min_z),
@@ -2058,6 +2083,7 @@ class BSP:
         add_brush = _find_or_insert(self.brushes)
 
         buf = BytesIO()
+        is_vitamin = self.is_vitamin
 
         for leaf in visleafs:
             # Do not deduplicate these, engine assumes they aren't when allocating memory.
@@ -2067,19 +2093,30 @@ class BSP:
             leaf_brushes.extend(map(add_brush, leaf.brushes))
             min_water_dists.append(leaf.min_water_dist)
 
-            buf.write(struct.pack(
-                FMT_LEAF_BASE,
-                leaf.contents.value, leaf.cluster_id,
-                (leaf.area << 7 | leaf.flags.value),
-                int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
-                int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
-                face_ind, len(leaf.faces),
-                brush_ind, len(leaf.brushes),
-                leaf.water_id,
-            ))
-            if self.version <= 19:
-                buf.write(leaf._ambient)
-            buf.write(b'\x00\x00')  # Padding.
+            if is_vitamin:
+                buf.write(struct.pack(
+                    '<ihh6I4HhB',
+                    leaf.contents.value, leaf.cluster_id, leaf.area,
+                    int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                    int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                    face_ind, len(leaf.faces),
+                    brush_ind, len(leaf.brushes),
+                    leaf.water_id, leaf.flags.value,
+                ))
+            else:
+                buf.write(struct.pack(
+                    '<ihh6h4Hh',
+                    leaf.contents.value, leaf.cluster_id,
+                    (leaf.area << 7 | leaf.flags.value),
+                    int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                    int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                    face_ind, len(leaf.faces),
+                    brush_ind, len(leaf.brushes),
+                    leaf.water_id,
+                ))
+                if self.version <= 19:
+                    buf.write(leaf._ambient)
+                buf.write(b'\x00\x00')  # Padding.
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
