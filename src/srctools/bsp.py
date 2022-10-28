@@ -684,6 +684,7 @@ class Face:
     dynamic_shadows: bool
     smoothing_groups: int
     hammer_id: Optional[int]  # The original ID of the Hammer face.
+    vitamin_flags: int  # VitaminSource flags.
 
 
 @attrs.define(eq=False)
@@ -1658,6 +1659,10 @@ class BSP:
 
     def _lmp_read_primitives(self, data: bytes) -> Iterator['Primitive']:
         """Parse the primitives lumps."""
+        if self.is_vitamin:
+            # VitaminSource no longer uses primitives.
+            return
+
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
         indices = read_array('<H', self.lumps[BSP_LUMPS.PRIMINDICES].data)
         # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
@@ -1678,6 +1683,10 @@ class BSP:
             )
 
     def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
+        if self.is_vitamin:
+            # VitaminSource no longer uses primitives.
+            return
+
         verts: List[bytes] = []
         indices: List[int] = []
 
@@ -1702,48 +1711,81 @@ class BSP:
         For the others, that is the parsed orig faces lump, which each face
         may reference.
         """
+        is_vitamin = self.is_vitamin
+
         # The non-original faces have the Hammer ID value, which is an array
         # in the same order. But some versions don't define it as anything...
         if _orig_faces is not None:
-            hammer_ids = read_array('H', self.lumps[BSP_LUMPS.FACEIDS].data)
+            hammer_ids = read_array('<H', self.lumps[BSP_LUMPS.FACEIDS].data)
         else:
             hammer_ids = []
 
-        for i, (
-            plane_num,
-            side,
-            on_node,
-            first_edge, num_edges,
-            texinfo_ind,
-            dispinfo,
-            surf_fog_vol_id,
-            lightstyles,
-            light_offset,
-            area,
-            lightmap_mins_x, lightmap_mins_y,
-            lightmap_size_x, lightmap_size_y,
-            orig_face_ind,
-            prim_num,
-            prim_first,
-            smoothing_group,
-        ) in enumerate(struct.iter_unpack(
-            f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
+        hammer_id: Optional[int]
+
+        for i, face_data in enumerate(struct.iter_unpack(
+            '<5i4iB' if self.is_vitamin else '<H??i4h4sif5iHHI',
             data,
         )):
-            # If orig faces is provided, that is the original face
-            # we were created from. Additionally, it seems the original
-            # face data has invalid texinfo, so copy ours on top of it.
-            hammer_id: Optional[int]
-            if _orig_faces is not None:
-                orig_face = _orig_faces[orig_face_ind]
-                orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
-                try:
-                    orig_face.hammer_id = hammer_id = hammer_ids[i]
-                except IndexError:
-                    hammer_id = None
-            else:
-                orig_face = texinfo = None
+            if is_vitamin:
+                (
+                    plane_num,
+                    texinfo_ind,
+                    dispinfo,
+                    first_edge, num_edges,
+                    lightmap_mins_x, lightmap_mins_y,
+                    lightmap_size_x, lightmap_size_y,
+                    vitamin_flags,
+                ) = face_data
+                texinfo = self.texinfo[texinfo_ind]
+
+                # All these values are unused.
+                side = 0
+                surf_fog_vol_id = 0
+                light_offset = 0
+                lightstyles = b'\0\0\0\0'
+                on_node = False
+                orig_face = None
+                area = 0
+                primitives = []
+                no_dynamic_shadows = False
+                smoothing_group = 0
                 hammer_id = None
+            else:
+                (
+                    plane_num,
+                    side,
+                    on_node,
+                    first_edge, num_edges,
+                    texinfo_ind,
+                    dispinfo,
+                    surf_fog_vol_id,
+                    lightstyles,
+                    light_offset,
+                    area,
+                    lightmap_mins_x, lightmap_mins_y,
+                    lightmap_size_x, lightmap_size_y,
+                    orig_face_ind,
+                    prim_num,
+                    prim_first,
+                    smoothing_group,
+                ) = face_data
+                primitives = self.primitives[prim_first:prim_first + (prim_num & 0x7fff)]
+                no_dynamic_shadows = not (prim_num & 0x8000)
+                vitamin_flags = 0
+
+                # If orig faces is provided, that is the original face
+                # we were created from. Additionally, it seems the original
+                # face data has invalid texinfo, so copy ours on top of it.
+                if _orig_faces is not None:
+                    orig_face = _orig_faces[orig_face_ind]
+                    orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
+                    try:
+                        orig_face.hammer_id = hammer_id = hammer_ids[i]
+                    except IndexError:
+                        hammer_id = None
+                else:
+                    orig_face = texinfo = None
+                    hammer_id = None
             yield Face(
                 self.planes[plane_num],
                 side, on_node,
@@ -1758,10 +1800,10 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                self.primitives[prim_first:prim_first + (prim_num & 0x7fff)],
-                not (prim_num & 0x8000),
+                primitives, no_dynamic_shadows,
                 smoothing_group,
                 hammer_id,
+                vitamin_flags,
             )
 
     def _lmp_write_orig_faces(
@@ -1780,43 +1822,60 @@ class BSP:
         add_prims = _find_or_extend(self.primitives)
         hammer_ids = []
 
-        for face in faces:
-            if face.orig_face is not None and get_orig_face is not None:
-                orig_ind = get_orig_face(face.orig_face)
-                hammer_ids.append(face.hammer_id or 0)  # Dummy value if not set.
-            else:
-                orig_ind = -1
-            if face.texinfo is not None:
-                texinfo = add_texinfo(face.texinfo)
-            else:
-                texinfo = -1
-            prim_count = len(face.primitives)
-            if prim_count > 0x7fff:
-                raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
-            if not face.dynamic_shadows:
-                prim_count |= 0x8000
+        if self.is_vitamin:
+            for face in faces:
+                if face.texinfo is not None:
+                    texinfo = add_texinfo(face.texinfo)
+                else:
+                    texinfo = -1
+                # noinspection PyProtectedMember
+                face_buf.write(struct.pack(
+                    '<5i4iB',
+                    add_plane(face.plane),
+                    texinfo,
+                    face._dispinfo_ind,
+                    add_edges(face.edges), len(face.edges),
+                    *face.lightmap_mins, *face.lightmap_size,
+                    face.vitamin_flags,
+                ))
+        else:
+            for face in faces:
+                if face.orig_face is not None and get_orig_face is not None:
+                    orig_ind = get_orig_face(face.orig_face)
+                    hammer_ids.append(face.hammer_id or 0)  # Dummy value if not set.
+                else:
+                    orig_ind = -1
+                if face.texinfo is not None:
+                    texinfo = add_texinfo(face.texinfo)
+                else:
+                    texinfo = -1
+                prim_count = len(face.primitives)
+                if prim_count > 0x7fff:
+                    raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
+                if not face.dynamic_shadows:
+                    prim_count |= 0x8000
 
-            # noinspection PyProtectedMember
-            face_buf.write(struct.pack(
-                f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
-                add_plane(face.plane),
-                face.same_dir_as_plane,
-                face.on_node,
-                add_edges(face.edges), len(face.edges),
-                texinfo,
-                face._dispinfo_ind,
-                face.surf_fog_volume_id,
-                face.light_styles,
-                face._lightmap_off,
-                face.area,
-                *face.lightmap_mins, *face.lightmap_size,
-                orig_ind,
-                prim_count,
-                add_prims(face.primitives),
-                face.smoothing_groups,
-            ))
-        if hammer_ids:
-            self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
+                # noinspection PyProtectedMember
+                face_buf.write(struct.pack(
+                    '<H??i4h4sif5iHHI',
+                    add_plane(face.plane),
+                    face.same_dir_as_plane,
+                    face.on_node,
+                    add_edges(face.edges), len(face.edges),
+                    texinfo,
+                    face._dispinfo_ind,
+                    face.surf_fog_volume_id,
+                    face.light_styles,
+                    face._lightmap_off,
+                    face.area,
+                    *face.lightmap_mins, *face.lightmap_size,
+                    orig_ind,
+                    prim_count,
+                    add_prims(face.primitives),
+                    face.smoothing_groups,
+                ))
+            if hammer_ids:
+                self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
         return face_buf.getvalue()
 
     def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
