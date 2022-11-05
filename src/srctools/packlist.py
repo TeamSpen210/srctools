@@ -491,7 +491,6 @@ class PackList:
                         filename, skinset_int,
                     )
             filename = strip_extension(filename) + '.mdl'
-            LOGGER.error('Pack model: {} # {!r}', filename, skinset)
             if skinset is None:
                 # It's dynamic, this overrides any previous specific skins.
                 self.skinsets[filename] = None
