@@ -1064,7 +1064,7 @@ class Element(Mapping[str, Attribute]):
     """
     _members: MutableMapping[str, Attribute]
 
-    def __init__(self, name: str, type: str, uuid: UUID=None) -> None:
+    def __init__(self, name: str, type: str, uuid: Optional[UUID] = None) -> None:
         self.name = name
         self.type = type
         self._members = {}
@@ -1923,7 +1923,7 @@ class StubElement(Element):
     This always has no members - attempting to add members will fail silently.
     """
     __slots__ = ['_type']
-    def __init__(self, typ: _StubType, uuid: UUID=None) -> None:
+    def __init__(self, typ: _StubType, uuid: Optional[UUID]) -> None:
         """Internal use only."""
         super().__init__('', typ, uuid)
         # This acts always empty, and can be fake-written to.
@@ -1931,7 +1931,7 @@ class StubElement(Element):
         self._type = typ  # Store redundantly so users trying to change this are ignored.
 
     @classmethod
-    def stub(cls, uuid: UUID = None) -> 'StubElement':
+    def stub(cls, uuid: Optional[UUID] = None) -> 'StubElement':
         """Create a stubbed element reference with the specified UUID."""
         return cls(_StubType.STUB, uuid)
 

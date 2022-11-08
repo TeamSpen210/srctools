@@ -588,6 +588,10 @@ class Keyvalues:
         else:
             return def_
 
+    @overload
+    def int(self, key: str) -> builtins.int: ...
+    @overload
+    def int(self, key: str, def_: T) -> Union[builtins.int, T]: ...
     def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
@@ -603,6 +607,10 @@ class Keyvalues:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
+    @overload
+    def float(self, key: str) -> builtins.float: ...
+    @overload
+    def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
     def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
@@ -618,6 +626,10 @@ class Keyvalues:
         except (NoKeyError, ValueError, TypeError):
             return def_
 
+    @overload
+    def bool(self, key: str) -> builtins.bool: ...
+    @overload
+    def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
     def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
 

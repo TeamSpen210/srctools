@@ -42,7 +42,7 @@ class Bone:
     def __copy__(self) -> 'Bone':
         return Bone(self.name, self.parent)
 
-    def __deepcopy__(self, memodict: dict=None) -> 'Bone':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'Bone':
         return Bone(self.name, deepcopy(self.parent, memodict))
 
     def __eq__(self, other: Any) -> bool:
@@ -79,7 +79,7 @@ class BoneFrame:
     def __copy__(self) -> 'BoneFrame':
         return BoneFrame(self.bone, self.position, self.rotation)
 
-    def __deepcopy__(self, memodict: dict=None) -> 'BoneFrame':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'BoneFrame':
         return BoneFrame(
             deepcopy(self.bone, memodict),
             self.position.copy(),
@@ -123,7 +123,7 @@ class Vertex:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: dict=None) -> 'Vertex':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'Vertex':
         return Vertex(
             self.pos.copy(),
             self.norm.copy(),
@@ -132,7 +132,7 @@ class Vertex:
             deepcopy(self.links, memodict),
         )
 
-    def with_pos(self, pos: Vec, norm: Vec=None) -> 'Vertex':
+    def with_pos(self, pos: Vec, norm: Optional[Vec] = None) -> 'Vertex':
         """Copy this vertex, changing the position."""
         if norm is None:
             norm = self.norm
@@ -196,7 +196,7 @@ class Triangle:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: dict=None) -> 'Triangle':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'Triangle':
         """Duplicate this triangle."""
         return Triangle(
             self.mat,
@@ -270,7 +270,7 @@ class Mesh:
     def __copy__(self) -> 'Mesh':
         return Mesh(self.bones, self.animation, self.triangles)
 
-    def __deepcopy__(self, memodict: dict=None) -> 'Mesh':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'Mesh':
         return Mesh(
             deepcopy(self.bones, memodict),
             deepcopy(self.animation, memodict),
@@ -573,8 +573,8 @@ class Mesh:
     def append_model(
         self,
         mdl: 'Mesh',
-        rotation: Union[Angle, Matrix, Vec, None]=None,
-        offset: Vec=None,
+        rotation: Union[Angle, Matrix, Vec, None] = None,
+        offset: Optional[Vec] = None,
         scale: float=1.0,
     ) -> None:
         """Append another model's geometry onto this one.

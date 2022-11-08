@@ -1,5 +1,5 @@
 """Implements support for collapsing instances."""
-from typing import Container, Dict, Iterable, List, Set, Tuple, Union
+from typing import Container, Dict, Iterable, List, Optional, Set, Tuple, Union
 from enum import Enum
 from pathlib import Path
 
@@ -40,8 +40,8 @@ class Instance:
         filename: str,
         pos: Vec, orient: Matrix,
         fixup_type: FixupStyle,
-        outputs: Iterable[Output]=(),
-        fixup: Iterable[FixupValue]=(),
+        outputs: Iterable[Output] = (),
+        fixup: Iterable[FixupValue] = (),
     ) -> None:
         self.name = name
         self.filename = filename
@@ -277,8 +277,8 @@ def collapse_one(
     vmf: VMF,
     inst: Instance,
     file: InstanceFile,
-    fgd: FGD=None,
-    visgroup: Union[bool, VisGroup]=False,
+    fgd: Optional[FGD] = None,
+    visgroup: Union[bool, VisGroup] = False,
 ) -> None:
     """Collapse a single instance into the map.
 
@@ -475,7 +475,7 @@ def collapse_all(
     vmf: VMF,
     fsys: FileSystem,
     recur_limit: int = 100,
-    fgd: FGD = None,
+    fgd: Optional[FGD] = None,
 ) -> None:
     """Searches for ``func_instance`` in the map, then collapses them.
 

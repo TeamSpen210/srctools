@@ -297,7 +297,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def setdefault(self, key: Any) -> None: ...
     @overload
     def setdefault(self, key: Any, default: ValT) -> ValT: ...
-    def setdefault(self, key: Any, default: ValT=None) -> Optional[ValT]:
+    def setdefault(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:
         """setdefault() always returns the default item, but does not store it."""
         return default
 

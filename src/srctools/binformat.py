@@ -2,7 +2,7 @@
 The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import IO, Collection, Dict, Hashable, List, Mapping, Tuple, Union
+from typing import IO, Collection, Dict, Hashable, List, Mapping, Optional, Tuple, Union
 from typing_extensions import Final
 from binascii import crc32
 from struct import Struct
@@ -60,7 +60,7 @@ def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
     return fmt.unpack(file.read(fmt.size))
 
 
-def read_nullstr(file: IO[bytes], pos: int=None, encoding: str = 'ascii') -> str:
+def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'ascii') -> str:
     """Read a null-terminated string from the file.
 
     If the position is ``0``, this will instead immediately return an empty string. Otherwise if set

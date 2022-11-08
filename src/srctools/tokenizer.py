@@ -267,7 +267,7 @@ class BaseTokenizer(abc.ABC):
             raise StopIteration
         return tok_and_val
 
-    def push_back(self, tok: Token, value: str=None) -> None:
+    def push_back(self, tok: Token, value: Optional[str] = None) -> None:
         """Return a token, so it will be reproduced when called again.
 
         Only one token can be pushed back at once.
@@ -381,7 +381,7 @@ class Tokenizer(BaseTokenizer):
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
-            filename = data.name  # type: ignore  # hasattr()
+            filename = data.name
 
         super().__init__(filename, error)
 

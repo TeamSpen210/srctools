@@ -560,24 +560,24 @@ class VecBase:
     # The numeric magic methods are defined via exec(), so we need stubs
     # to annotate them in a way a type-checker can understand.
     # These are immediately overwritten.
+    if TYPE_CHECKING:
+        def __add__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __radd__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
 
-    def __add__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
-    def __radd__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __sub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __rsub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
 
-    def __sub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
-    def __rsub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
+        def __mul__(self: VecT, other: float) -> 'Vec': ...
+        def __rmul__(self: VecT, other: float) -> 'Vec': ...
 
-    def __mul__(self: VecT, other: float) -> 'Vec': ...
-    def __rmul__(self: VecT, other: float) -> 'Vec': ...
+        def __truediv__(self: VecT, other: float) -> VecT: ...
+        def __rtruediv__(self: VecT, other: float) -> VecT: ...
 
-    def __truediv__(self: VecT, other: float) -> VecT: ...
-    def __rtruediv__(self: VecT, other: float) -> VecT: ...
+        def __floordiv__(self: VecT, other: float) -> VecT: ...
+        def __rfloordiv__(self: VecT, other: float) -> VecT: ...
 
-    def __floordiv__(self: VecT, other: float) -> VecT: ...
-    def __rfloordiv__(self: VecT, other: float) -> VecT: ...
-
-    def __mod__(self: VecT, other: float) -> VecT: ...
-    def __rmod__(self: VecT, other: float) -> VecT: ...
+        def __mod__(self: VecT, other: float) -> VecT: ...
+        def __rmod__(self: VecT, other: float) -> VecT: ...
 
     funcname = op = pretty = None
 
@@ -1037,9 +1037,9 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):  # type: ignore
         cls,
         axis1: str,
         val1: Union[float, VecBase],
-        axis2: str=None,
+        axis2: Optional[str] = None,
         val2: Union[float, VecBase]=0.0,
-        axis3: str=None,
+        axis3: Optional[str] = None,
         val3: Union[float, VecBase]=0.0,
     ) -> 'FrozenVec':
         """Create a Vector, given a number of axes and corresponding values.
@@ -1242,9 +1242,9 @@ class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
         cls,
         axis1: str,
         val1: Union[float, VecBase],
-        axis2: str=None,
+        axis2: Optional[str] = None,
         val2: Union[float, VecBase]=0.0,
-        axis3: str=None,
+        axis3: Optional[str] = None,
         val3: Union[float, VecBase]=0.0,
     ) -> 'Vec':
         """Create a Vector, given a number of axes and corresponding values.
@@ -1294,12 +1294,13 @@ class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
             self.x * other[1] - self.y * other[0],
         )
 
-    def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
-    def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
-    def __imul__(self, other: float) -> 'Vec': ...
-    def __itruediv__(self, other: float) -> 'Vec': ...
-    def __ifloordiv__(self, other: float) -> 'Vec': ...
-    def __imod__(self, other: float) -> 'Vec': ...
+    if TYPE_CHECKING:
+        def __iadd__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
+        def __isub__(self, other: Union['VecBase', Tuple3, int, float]) -> 'Vec': ...
+        def __imul__(self, other: float) -> 'Vec': ...
+        def __itruediv__(self, other: float) -> 'Vec': ...
+        def __ifloordiv__(self, other: float) -> 'Vec': ...
+        def __imod__(self, other: float) -> 'Vec': ...
 
     funcname = op = pretty = None
     # Use exec() to generate all the number magic methods. This reduces code
@@ -1451,7 +1452,7 @@ class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
     def localise(
         self,
         origin: Union['Vec', Tuple3],
-        angles: Union[AnyAngle, AnyMatrix]=None,
+        angles: Union[AnyAngle, AnyMatrix, None] = None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
 
@@ -1764,9 +1765,9 @@ class MatrixBase:
     @classmethod
     def from_basis(
         cls: Type[MatrixT], *,
-        x: VecBase=None,
-        y: VecBase=None,
-        z: VecBase=None,
+        x: Optional[VecBase] = None,
+        y: Optional[VecBase] = None,
+        z: Optional[VecBase] = None,
     ) -> MatrixT:
         """Construct a matrix from at least two basis vectors.
 
@@ -2361,9 +2362,9 @@ class FrozenAngle(AngleBase):
         cls,
         axis1: str,
         val1: Union[float, AngleBase],
-        axis2: str = None,
+        axis2: Optional[str] = None,
         val2: Union[float, AngleBase] = 0.0,
-        axis3: str = None,
+        axis3: Optional[str] = None,
         val3: Union[float, AngleBase] = 0.0,
     ) -> 'FrozenAngle':
         """Create an Angle, given a number of axes and corresponding values.
@@ -2556,9 +2557,9 @@ class Angle(AngleBase):
         cls,
         axis1: str,
         val1: Union[float, AngleBase],
-        axis2: str = None,
+        axis2: Optional[str] = None,
         val2: Union[float, AngleBase] = 0.0,
-        axis3: str = None,
+        axis3: Optional[str] = None,
         val3: Union[float, AngleBase] = 0.0,
     ) -> 'Angle':
         """Create an Angle, given a number of axes and corresponding values.

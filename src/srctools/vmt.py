@@ -69,7 +69,7 @@ _SHADER_PARAM_TYPES: Dict[str, VarType] = {}
 def get_parm_type(name: str) -> Optional[VarType]: ...
 @overload
 def get_parm_type(name: str, default: ArgT) -> Union[VarType, ArgT]: ...
-def get_parm_type(name: str, default: ArgT = None) -> Union[VarType, ArgT, None]:
+def get_parm_type(name: str, default: Optional[ArgT] = None) -> Union[VarType, ArgT, None]:
     """Retrieve the type a parameter has, or return the default."""
     # Import and load the parameters.
     # noinspection PyProtectedMember

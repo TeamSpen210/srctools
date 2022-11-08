@@ -1,6 +1,7 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    BinaryIO, Dict, Iterable, Iterator, List, Sequence as SequenceType, Tuple, Union, cast,
+    BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType, Tuple, Union,
+    cast,
 )
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -758,7 +759,7 @@ class Model:
             single_line=True,
         )
 
-    def iter_textures(self, skins: Iterable[int]=None) -> Iterator[str]:
+    def iter_textures(self, skins: Optional[Iterable[int]] = None) -> Iterator[str]:
         """Yield textures used by this model.
 
         Skins if given should be a set of skin indexes, which constrains the

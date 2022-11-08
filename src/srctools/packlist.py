@@ -395,8 +395,8 @@ class PackList:
         self,
         filename: str,
         data_type: FileType=FileType.GENERIC,
-        data: bytes=None,
-        skinset: Set[int]=None,
+        data: Optional[bytes] = None,
+        skinset: Optional[Set[int]] = None,
         optional: bool = False,
     ) -> None:
         """Queue the given file to be packed.

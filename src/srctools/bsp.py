@@ -543,8 +543,9 @@ class TexInfo:
     def set(
         self,
         bsp: 'BSP', mat: str,
-        reflectivity: Vec=None, width: int=0, height: int=0,
-        fsys: FileSystem=None,
+        reflectivity: Optional[Vec] = None,
+        width: int=0, height: int=0,
+        fsys: Optional[FileSystem] = None,
     ) -> None:
         """Set the material used for this texinfo.
 
@@ -1117,7 +1118,7 @@ class BSP:
     ]] = {}
     version: Union[VERSIONS, int]
 
-    def __init__(self, filename: StringPath, version: VERSIONS=None):
+    def __init__(self, filename: StringPath, version: Optional[VERSIONS] = None) -> None:
         self.filename = filename
         self.map_revision = -1  # The map's revision count
         self.lumps: Dict[BSP_LUMPS, Lump] = {}
@@ -1278,7 +1279,7 @@ class BSP:
             # This is not valid any longer.
             game_lump.data = b''
 
-    def save(self, filename: str = None) -> None:
+    def save(self, filename: Optional[str] = None) -> None:
         """Write the BSP back into the given file."""
         # First, go through lumps the user has accessed, and rebuild their data.
         for lump_or_game in LUMP_REBUILD_ORDER:
@@ -1488,9 +1489,10 @@ class BSP:
         lightmap_t_shift: float=-99999.0,
         flags: SurfFlags = SurfFlags.NONE,
         *,
-        copy_from: 'TexInfo' = None,
-        reflectivity: Vec=None, width: int=0, height: int=0,
-        fsys: FileSystem=None,
+        copy_from: Optional['TexInfo'] = None,
+        reflectivity: Optional[Vec] = None,
+        width: int=0, height: int=0,
+        fsys: Optional[FileSystem] = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
 
@@ -1662,7 +1664,7 @@ class BSP:
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
         self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
-    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: List['Face'] = None) -> Iterator['Face']:
+    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: Optional[List['Face']] = None) -> Iterator['Face']:
         """Read one of the faces arrays.
 
         For ORIG_FACES, _orig_faces is None and that entry is ignored.
@@ -1731,7 +1733,10 @@ class BSP:
                 hammer_id,
             )
 
-    def _lmp_write_orig_faces(self, faces: List['Face'], get_orig_face: Callable[['Face'], int]=None) -> bytes:
+    def _lmp_write_orig_faces(
+        self, faces: List['Face'],
+        get_orig_face: Optional[Callable[['Face'], int]] = None,
+    ) -> bytes:
         """Reconstruct one of the faces arrays.
 
         If this isn't the orig faces array, get_orig_face should be

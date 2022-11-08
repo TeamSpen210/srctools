@@ -85,7 +85,7 @@ class LoggerAdapter(logging.LoggerAdapter):
     """Fix loggers to use str.format().
 
     """
-    def __init__(self, logger: logging.Logger, alias: str=None) -> None:
+    def __init__(self, logger: logging.Logger, alias: Optional[str] = None) -> None:
         # Alias is a replacement module name for log messages.
         self.alias = alias
         self.logger = logger
@@ -278,15 +278,15 @@ class NullStream(TextIO):
     def flush(self) -> None:
         """Flushing does nothing."""
 
-    def read(self, size: int = None) -> str:
+    def read(self, size: Optional[int] = None) -> str:
         """We never have data."""
         return ''
 
-    def readline(self, limit: int=-1) -> str:
+    def readline(self, limit: int = -1) -> str:
         """We never have data."""
         return ''
 
-    def readlines(self, hint: int=-1) -> List[str]:
+    def readlines(self, hint: int = -1) -> List[str]:
         """We never have data."""
         return []
 
@@ -327,12 +327,12 @@ class NewLogRecord(logging.LogRecord):
 
 
 def init_logging(
-    filename: StringPath=None,
+    filename: Optional[StringPath] = None,
     main_logger: str='',
-    on_error: Callable[
+    on_error: Optional[Callable[
         [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
-    ]=None,
+    ]] = None,
 ) -> logging.Logger:
     """Set up the logger and logging handlers.
 
@@ -434,7 +434,7 @@ def init_logging(
         return cast(logging.Logger, LoggerAdapter(logger))
 
 
-def get_logger(name: str='', alias: str=None) -> logging.Logger:
+def get_logger(name: str='', alias: Optional[str] = None) -> logging.Logger:
     """Get the named logger object.
 
     This puts the logger into the ``srctools`` namespace, and wraps it to

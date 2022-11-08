@@ -258,17 +258,16 @@ def make_overlay(
     )
 
 
-def localise_overlay(over: 'Entity', origin: Vec, angles: Union[Angle, Matrix]=None) -> None:
+def localise_overlay(over: 'Entity', origin: Vec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
     """Rotate an overlay like what is done in instances."""
-    if angles is not None:
+    orient = to_matrix(angles)
+    if angles is not None:  # Skip if known to be identity matrix.
         for key in ('basisNormal', 'basisU', 'basisV'):
-            ang = Vec.from_str(over[key]) @ angles
+            ang = Vec.from_str(over[key]) @ orient
             over[key] = ang.join(' ')
-    else:
-        angles = Matrix()
 
     for key in ('basisOrigin', 'origin'):
-        ang = Vec.from_str(over[key]) @ angles
+        ang = Vec.from_str(over[key]) @ orient
         ang += origin
         over[key] = ang.join(' ')
 
@@ -366,9 +365,6 @@ class VMF:
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on', '0'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion', '0'))
 
-        if 'mapversion' in self.spawn:
-            # This is saved only in the main VMF object, delete the copy.
-            del self.spawn['mapversion']
         # The worldspawn entity should always be worldspawn.
         self.spawn['classname'] = 'worldspawn'
 
@@ -561,15 +557,26 @@ class VMF:
         return map_obj
 
     @overload
-    def export(self, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> str: ...
+    def export(
+        self, *,
+        inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
+    ) -> str: ...
     @overload
-    def export(self, dest_file: IO[str], *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> None: ...
-    def export(self, dest_file: IO[str]=None, *, inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True) -> Optional[str]:
+    def export(
+        self, dest_file: IO[str], *,
+        inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
+    ) -> None: ...
+    def export(
+        self,
+        dest_file: Optional[IO[str]] = None, *,
+        inc_version: bool = True,
+        minimal: bool = False,
+        disp_multiblend: bool = True,
+    ) -> Optional[str]:
         """Serialises the object's contents into a VMF file.
 
         - If no file is given the map will be returned as a string.
-        - By default, this will increment the map's version - set
-          inc_version to False to suppress this.
+        - By default, this will increment the map's version - disable inc_version to suppress this.
         - If minimal is True, several blocks will be skipped
           (Viewsettings, cameras, cordons and visgroups)
         - disp_multiblend controls whether displacements produce their multiblend
@@ -1114,9 +1121,9 @@ class VisGroup:
 
     def copy(
         self,
-        vmf: VMF=None,
-        group_mapping: MutableMapping[int, int]=EmptyMapping,
-        des_id: int=-1,
+        vmf: Optional[VMF] = None,
+        group_mapping: MutableMapping[int, int] = EmptyMapping,
+        des_id: int = -1,
     ) -> 'VisGroup':
         """Duplicate this visgroup and all children."""
         newgroup = VisGroup(
@@ -1159,10 +1166,10 @@ class Solid:
 
     def copy(
         self,
-        des_id: int=-1,
-        vmf_file: VMF=None,
-        side_mapping: MutableMapping[int, int]=EmptyMapping,
-        keep_vis: bool=True,
+        des_id: int = -1,
+        vmf_file: Optional[VMF] = None,
+        side_mapping: MutableMapping[int, int] = EmptyMapping,
+        keep_vis: bool = True,
     ) -> 'Solid':
         """Duplicate this brush."""
         sides = [
@@ -1306,7 +1313,7 @@ class Solid:
             bbox_min.min(side_min)
         return bbox_min, bbox_max
 
-    def get_origin(self, bbox_min: Vec=None, bbox_max: Vec=None) -> Vec:
+    def get_origin(self, bbox_min: Optional[Vec] = None, bbox_max: Optional[Vec] = None) -> Vec:
         """Calculates a vector representing the exact center of this brush."""
         if bbox_min is None or bbox_max is None:
             bbox_min, bbox_max = self.get_bbox()
@@ -1426,7 +1433,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __deepcopy__(self, memodict: object=None) -> 'UVAxis':
+    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1535,8 +1542,8 @@ class Side:
         smoothing: int=0,
         mat: str='tools/toolsnodraw',
         rotation: float=0,
-        uaxis: Optional[UVAxis]=None,
-        vaxis: Optional[UVAxis]=None,
+        uaxis: Optional[UVAxis] = None,
+        vaxis: Optional[UVAxis] = None,
         disp_power: int=0,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
@@ -1764,9 +1771,9 @@ class Side:
 
     def copy(
         self,
-        des_id: int=-1,
-        vmf_file: VMF=None,
-        side_mapping: MutableMapping[int, int]=EmptyMapping,
+        des_id: int = -1,
+        vmf_file: Optional[VMF] = None,
+        side_mapping: MutableMapping[int, int] = EmptyMapping,
     ) -> 'Side':
         """Duplicate this brush side.
 
@@ -1953,7 +1960,7 @@ class Side:
         self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
         self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Union[AnyMatrix, AnyAngle, None]=None) -> None:
+    def localise(self, origin: Vec, angles: Union[AnyMatrix, AnyAngle, None] = None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.
@@ -2055,9 +2062,9 @@ class Entity(MutableMapping[str, str]):
     """A representation of either a point or brush entity.
 
     Creation:
-    Entity(args) for a brand-new Entity
-    Entity.parse(property) if reading from a VMF file
-    ent.copy() to duplicate an existing entity
+    * Entity(args) for a brand-new Entity
+    * Entity.parse(property) if reading from a VMF file
+    * ent.copy() to duplicate an existing entity
 
     Supports [] operations to read and write keyvalues.
     To read instance $replace values operate on entity.fixup[]
@@ -2066,18 +2073,18 @@ class Entity(MutableMapping[str, str]):
     def __init__(
         self,
         vmf_file: VMF,
-        keys: Mapping[str, ValidKVs]=EmptyMapping,
-        fixup: Iterable['FixupValue']=(),
-        ent_id: int=-1,
-        outputs: List['Output']=None,
-        solids: List[Solid]=None,
-        hidden: bool=False,
-        groups: Iterable[int]=(),
-        vis_ids: Iterable[int]=(),
-        vis_shown: bool=True,
-        vis_auto_shown: bool=True,
-        logical_pos: str=None,
-        editor_color: Union[Vec, Tuple[int, int, int]]=(255, 255, 255),
+        keys: Mapping[str, ValidKVs] = EmptyMapping,
+        fixup: Iterable['FixupValue'] = (),
+        ent_id: int = -1,
+        outputs: Iterable['Output'] = (),
+        solids: Iterable[Solid] = (),
+        hidden: bool = False,
+        groups: Iterable[int] = (),
+        vis_ids: Iterable[int] = (),
+        vis_shown: bool = True,
+        vis_auto_shown: bool = True,
+        logical_pos: Optional[str] = None,
+        editor_color: Union[Vec, Tuple[int, int, int]] = (255, 255, 255),
         comments: str='',
     ) -> None:
         self.map = vmf_file
@@ -2087,8 +2094,8 @@ class Entity(MutableMapping[str, str]):
             keys.items()
         })
         self._fixup = EntityFixup(fixup) if fixup else None
-        self.outputs: List[Output] = outputs or []
-        self.solids: List[Solid] = solids or []
+        self.outputs: List[Output] = list(outputs)
+        self.solids: List[Solid] = list(solids)
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
         self.groups = set(groups)
@@ -2101,7 +2108,7 @@ class Entity(MutableMapping[str, str]):
         self.comments = comments
 
     @property
-    def keys(self) -> _KeyDict:  # type: ignore
+    def keys(self) -> _KeyDict:
         """Access the internal keyvalues dict.
 
         This use is deprecated, the entity is a MutableMapping. It can also be called to get
@@ -2134,10 +2141,10 @@ class Entity(MutableMapping[str, str]):
 
     def copy(
         self,
-        des_id: int=-1,
-        vmf_file: VMF=None,
-        side_mapping: MutableMapping[int, int]=EmptyMapping,
-        keep_vis: bool=True,
+        des_id: int = -1,
+        vmf_file: Optional[VMF] = None,
+        side_mapping: MutableMapping[int, int] = EmptyMapping,
+        keep_vis: bool = True,
     ) -> 'Entity':
         """Duplicate this entity entirely, including solids and outputs."""
         new_solids = [
@@ -2470,6 +2477,8 @@ class Entity(MutableMapping[str, str]):
             orig_val = self._keys.get(key)
             self._keys[key] = str_val
 
+        # TODO: if 'mapversion' is passed and self is self.map.spawn, update version there.
+
         # Update the by_class/target dicts with our new value
         if key_fold == 'classname':
             with suppress(KeyError):
@@ -2789,7 +2798,13 @@ class EntityFixup(MutableMapping[str, str]):
         )
         return f'{self.__class__.__name__}([{items}])'
 
-    def substitute(self, text: str, default: str=None, *, allow_invert: bool=False) -> str:
+    def substitute(
+        self,
+        text: str,
+        default: Optional[str] = None,
+        *,
+        allow_invert: bool = False,
+    ) -> str:
         """Substitute the fixup variables into the provided string.
 
         Variables are found based on the defined values, so constructions such as
@@ -2959,7 +2974,7 @@ class EntityGroup:
             editor_block.vec('color', 255, 255, 255),
         )
 
-    def copy(self, vmf: VMF=None) -> 'EntityGroup':
+    def copy(self, vmf: Optional[VMF] = None) -> 'EntityGroup':
         """Duplicate an entity group."""
         if vmf is None:
             vmf = self.vmf
@@ -3035,8 +3050,8 @@ class Output:
         *,
         times: int=-1,
         only_once: bool=False,
-        inst_out: str=None,
-        inst_in: str=None,
+        inst_out: Optional[str] = None,
+        inst_in: Optional[str] = None,
         comma_sep: bool=False,
     ) -> None:
         self.output = out

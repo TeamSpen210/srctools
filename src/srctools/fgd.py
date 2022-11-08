@@ -478,6 +478,9 @@ class Resource:
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
 
+_GetFGDFunc = Callable[[str], 'EntityDef']
+
+
 @attrs.frozen(init=False)
 class ResourceCtx:
     """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
@@ -497,7 +500,7 @@ class ResourceCtx:
         self,
         tags: Iterable[str] = (),
         fsys: FileSystem = VirtualFileSystem({}),
-        fgd: Union['FGD', Mapping[str, 'EntityDef'], Callable[[str], 'EntityDef']] = srctools.EmptyMapping,
+        fgd: Union['FGD', Mapping[str, 'EntityDef'], _GetFGDFunc] = srctools.EmptyMapping,
         mapname: str = '',
         funcs: Mapping[str, Callable[
             ['ResourceCtx', Entity],
@@ -525,11 +528,13 @@ class ResourceCtx:
         # Strip extension, and normalise folder separators.
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
             mapname = mapname[:-4]
-        self.__attrs_init__(  # type: ignore
+        self.__attrs_init__(
             frozenset(map(str.upper, tags)),
             fsys,
             mapname.replace('\\', '/'),
-            getattr(fgd, '__getitem__', fgd),
+            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
+            # it must already be callable.
+            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
             funcs,
         )
 

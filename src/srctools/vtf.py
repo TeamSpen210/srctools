@@ -26,7 +26,6 @@ from .math import Vec
 # if the user used them elsewhere.
 if TYPE_CHECKING:
     import tkinter
-
     from PIL.Image import Image as PIL_Image
 
 # A little dance to import both the Cython and Python versions,
@@ -469,7 +468,12 @@ class Frame:
             1,
         ).copy()
 
-    def to_tkinter(self, tk: 'tkinter.Misc' = None, *, bg: Optional[Tuple[int, int, int]]=None) -> 'tkinter.PhotoImage':
+    def to_tkinter(
+        self,
+        tk: 'tkinter.Misc | None' = None,
+        *,
+        bg: Optional[Tuple[int, int, int]] = None,
+    ) -> 'tkinter.PhotoImage':
         """Convert the given frame into a Tkinter PhotoImage.
 
         If bg is set, the image will be composited onto this background.
@@ -959,7 +963,7 @@ class VTF:
         self, *,
         frame: int = 0,
         depth: int = 0,
-        side: CubeSide = None,
+        side: Optional[CubeSide] = None,
         mipmap: int = 0,
     ) -> Frame:
         """Get a specific image frame.

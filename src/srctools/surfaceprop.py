@@ -117,37 +117,37 @@ class SurfaceProp:
     def __init__(
         self,
         name: str,
-        parent: 'SurfaceProp'=None,
+        parent: Optional['SurfaceProp'] = None,
         *,
-        density: float=None,
-        elasticity: float=None,
-        friction: float=None,
-        dampening: float=None,
-        thickness: float=None,
+        density: Optional[float] = None,
+        elasticity: Optional[float] = None,
+        friction: Optional[float] = None,
+        dampening: Optional[float] = None,
+        thickness: Optional[float] = None,
 
-        snd_stepleft: str=None,
-        snd_stepright: str=None,
-        snd_bulletimpact: str=None,
-        snd_scraperough: str=None,
-        snd_scrapesmooth: str=None,
-        snd_impacthard: str=None,
-        snd_impactsoft: str=None,
-        snd_strain: str=None,
-        snd_break: str=None,
-        snd_roll: str=None,
-        snd_shake: str=None,
+        snd_stepleft: Optional[str] = None,
+        snd_stepright: Optional[str] = None,
+        snd_bulletimpact: Optional[str] = None,
+        snd_scraperough: Optional[str] = None,
+        snd_scrapesmooth: Optional[str] = None,
+        snd_impacthard: Optional[str] = None,
+        snd_impactsoft: Optional[str] = None,
+        snd_strain: Optional[str] = None,
+        snd_break: Optional[str] = None,
+        snd_roll: Optional[str] = None,
+        snd_shake: Optional[str] = None,
 
-        audio_reflectivity: float=None,
-        audio_hardness_factor: float=None,
-        audio_roughness_factor: float=None,
-        scrape_rough_thres: float=None,
-        impact_hard_thres: float=None,
-        hard_velocity_thres: float=None,
+        audio_reflectivity: Optional[float] = None,
+        audio_hardness_factor: Optional[float] = None,
+        audio_roughness_factor: Optional[float] = None,
+        scrape_rough_thres: Optional[float] = None,
+        impact_hard_thres: Optional[float] = None,
+        hard_velocity_thres: Optional[float] = None,
 
-        gamemat: SurfChar=None,
-        jump_factor: float=None,
-        max_speed_factor: float=None,
-        climbable: bool=False,
+        gamemat: Optional[SurfChar] = None,
+        jump_factor: Optional[float] = None,
+        max_speed_factor: Optional[float] = None,
+        climbable: bool = False,
     ) -> None:
         """Create a surfaceprop definition.
 
@@ -230,7 +230,7 @@ class SurfaceProp:
     @staticmethod
     def parse_file(
         props: Keyvalues,
-        prev: Dict[str, 'SurfaceProp']=None,
+        prev: Optional[Dict[str, 'SurfaceProp']] = None,
     ) -> Dict[str, 'SurfaceProp']:
         """Parse surfaceproperties from a file.
 
@@ -297,7 +297,7 @@ class SurfaceProp:
         return prev
 
     @staticmethod
-    def parse_manifest(fsys: FileSystem, file: File=None) -> Dict[str, 'SurfaceProp']:
+    def parse_manifest(fsys: FileSystem, file: Optional[File] = None) -> Dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
 
         :file:`scripts/surfaceproperties_manifest.txt` will be used if a file is
