@@ -331,12 +331,6 @@ class VMF:
     def __init__(
         self,
         map_info: Mapping[str, str]=EmptyMapping,
-        spawn: 'Entity'=None,
-        entities: List['Entity']=None,
-        brushes: List['Solid']=None,
-        cameras: List['Camera']=None,
-        cordons: List['Cordon']=None,
-        vis_tree: List['VisGroup']=None,
         preserve_ids: bool=False,
     ):
         """Create a VMF.
@@ -359,16 +353,15 @@ class VMF:
         self.by_class: MutableMapping[str, CopySet[Entity]] = defaultdict(CopySet)
 
         self.entities: List[Entity] = []
-        self.add_ents(entities or [])  # We need to set the by_ dicts too.
-        self.brushes: List[Solid] = brushes or []
-        self.cameras: List[Camera] = cameras or []
-        self.cordons: List[Cordon] = cordons or []
-        self.vis_tree: List[VisGroup] = vis_tree or []
+        self.brushes: List[Solid] = []
+        self.cameras: List[Camera] = []
+        self.cordons: List[Cordon] = []
+        self.vis_tree: List[VisGroup] = []
         self.groups: Dict[int, EntityGroup] = {}
 
         # mapspawn entity, which is the entity world brushes are saved to.
-        self.spawn: Entity = spawn or Entity(self)
-        self.spawn.solids = self.brushes
+        self.spawn = Entity(self)
+        self.spawn.solids = self.brushes  # Shared list!
         self.is_prefab = srctools.conv_bool(map_info.get('prefab', '0'), False)
         self.cordon_enabled = srctools.conv_bool(map_info.get('cordons_on', '0'), False)
         self.map_ver = srctools.conv_int(map_info.get('mapversion', '0'))
