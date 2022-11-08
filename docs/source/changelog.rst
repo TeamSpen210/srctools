@@ -11,6 +11,8 @@ Dev branch
 
 * Removed some unusable constructor parameters from :py:class:`!srctools.vmf.VMF`, since they
   required passing in an object which requires the not-yet-constructed VMF as a parameter.
+* Replace ``on_error`` callback in :py:meth:`srctools.logger.init_logging()` with ``error``, which
+  now takes just an :external:py:class:`BaseException`.
 
 -------------
 Version 2.3.6
@@ -32,7 +34,7 @@ Version 2.3.5
 -------------
 
 * Expand on documentation, build into explicit docs files.
-* Fix :py:meth:`srctools.logging.LoggerAdapter.log` being invalid in Python 3.7.
+* Fix :py:meth:`!srctools.logging.LoggerAdapter.log` being invalid in Python 3.7.
 * Make :py:mod:`srctools.fgd` work when reloaded.
 * Remove blank ``srctools.choreo`` module.
 * Disable iterating on :py:class:`srctools.math.Matrix`, this is not useful.

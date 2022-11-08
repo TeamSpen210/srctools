@@ -5,7 +5,7 @@ This adds the ability to log using str.format() instead of %.
 """
 from typing import (
     Any, Callable, Dict, Generator, Iterable, List, Mapping, Optional, TextIO, Tuple, Type,
-    Union, cast,
+    Union, cast, overload,
 )
 from io import StringIO
 from types import TracebackType
@@ -325,7 +325,7 @@ class NewLogRecord(logging.LogRecord):
         # If this is one of our logs it {}-formats, otherwise it %-formats.
         return super().getMessage()
 
-
+@overload
 def init_logging(
     filename: Optional[StringPath] = None,
     main_logger: str='',
@@ -333,14 +333,35 @@ def init_logging(
         [Type[BaseException], BaseException, Optional[TracebackType]],
         None,
     ]] = None,
+) -> logging.Logger: ...
+@overload
+def init_logging(
+    filename: Optional[StringPath] = None,
+    main_logger: str='',
+    *,
+    error: Callable[[Exception], object],
+) -> logging.Logger: ...
+def init_logging(
+    filename: Optional[StringPath] = None,
+    main_logger: str='',
+    on_error: Optional[Callable[
+        [Type[BaseException], BaseException, Optional[TracebackType]],
+        None,
+    ]] = None,
+    *,
+    error: Optional[Callable[[Exception], object]] = None,
 ) -> logging.Logger:
     """Set up the logger and logging handlers.
 
     This also sets :py:func:`sys.excepthook`, so uncaught exceptions are captured.
 
+    If an unhandled :external:py:class:`BaseException` is raised, this will not log or call the
+    callback.
+
     :param filename: If this is set, all logs will be written to this file as well.
-    :param on_error: should be a function to call when uncaught exceptions are thrown, taking ``(type, value, traceback)``. \
-    If the exception is a :external:py:class:`BaseException`, the app will quit silently.
+    :param error: should be a function to call when uncaught exceptions are thrown.
+    :param on_error: Deprecated version of ``error`` with the old-style exception tuple \
+      representation from Python 3.10 and below.
     :param main_logger: Specify the name of the logger to produce under the `srctools` hierachy.
     """
     if logging.getLogRecordFactory() is not logging.LogRecord:
@@ -349,6 +370,14 @@ def init_logging(
 
     logger = logging.getLogger()
     logger.setLevel(logging.DEBUG)
+
+    if on_error is not None:
+        if error is not None:
+            raise TypeError('Cannot pass both on_error and error!')
+        def error(exc: Exception) -> None:
+            """Call the old error handler function."""
+            if on_error is not None:  # Mypy can't infer this is constant.
+                on_error(type(exc), exc, exc.__traceback__)
 
     # Put more info in the log file, since it's not onscreen.
     long_log_format = Formatter(
@@ -411,7 +440,7 @@ def init_logging(
         exc_tb: Optional[TracebackType],
     ) -> None:
         """Log uncaught exceptions."""
-        if not issubclass(exc_type, Exception):
+        if not isinstance(exc_value, Exception):
             # It's subclassing BaseException (KeyboardInterrupt, SystemExit),
             # so we should quit without messages.
             return
@@ -420,8 +449,8 @@ def init_logging(
             'Uncaught Exception:',
             exc_info=(exc_type, exc_value, exc_tb),
         )
-        if on_error is not None:
-            on_error(exc_type, exc_value, exc_tb)
+        if error is not None:
+            error(exc_value)
         # Call the original handler - that prints to the normal console.
         if old_except_handler is not sys.__excepthook__:
             old_except_handler(exc_type, exc_value, exc_tb)
