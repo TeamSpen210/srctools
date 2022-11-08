@@ -1,7 +1,9 @@
 """Parse surfaceproperties files, to determine surface physics.
 """
-from typing import Dict, Optional, TypeVar
+from typing import Dict, Optional, TYPE_CHECKING, TypeVar
 from enum import Enum
+
+import attrs
 
 from srctools.filesys import File, FileSystem
 from srctools.keyvalues import Keyvalues
@@ -81,149 +83,112 @@ def _attr_value(
         return default
 
 
+@attrs.define(init=False)
 class SurfaceProp:
     """A material surface type."""
+    name: str
+    density: float = 2000
+    elasticity: float = 0.25
+    friction: float = 0.8
+    dampening: float = 0.0
+    thickness: float = -1.0
 
-    __slots__ = [
-        'name',
-        'density',
-        'elasticity',
-        'friction',
-        'dampening',
-        'thickness',
-        'snd_stepleft',
-        'snd_stepright',
-        'snd_bulletimpact',
-        'snd_scraperough',
-        'snd_scrapesmooth',
-        'snd_impacthard',
-        'snd_impactsoft',
-        'snd_break',
-        'snd_strain',
-        'snd_roll',
-        'snd_shake',
-        'audio_reflectivity',
-        'audio_hardness_factor',
-        'audio_roughness_factor',
-        'scrape_rough_threshold',
-        'impact_hard_threshold',
-        'hard_velocity_threshold',
-        'gamematerial',
-        'jump_factor',
-        'max_speed_factor',
-        'climbable',
-    ]
+    snd_stepleft: str = "Default.StepLeft"
+    snd_stepright: str = "Default.StepRight"
+    snd_bulletimpact: str = "Default.BulletImpact"
+    snd_scraperough: str = "Default.ScrapeRough"
+    snd_scrapesmooth: str = "Default.ScrapeSmooth"
+    snd_impacthard: str = "Default.ImpactHard"
+    snd_impactsoft: str = "Default.ImpactSoft"
+    snd_break: str = ""
+    snd_strain: str = ""
+    snd_shake: str = ""
+    snd_roll: str = ""
 
-    def __init__(
-        self,
-        name: str,
-        parent: Optional['SurfaceProp'] = None,
-        *,
-        density: Optional[float] = None,
-        elasticity: Optional[float] = None,
-        friction: Optional[float] = None,
-        dampening: Optional[float] = None,
-        thickness: Optional[float] = None,
+    audio_reflectivity: float = 0.66
+    audio_hardness_factor: float = 1.0
+    audio_roughness_factor: float = 1.0
 
-        snd_stepleft: Optional[str] = None,
-        snd_stepright: Optional[str] = None,
-        snd_bulletimpact: Optional[str] = None,
-        snd_scraperough: Optional[str] = None,
-        snd_scrapesmooth: Optional[str] = None,
-        snd_impacthard: Optional[str] = None,
-        snd_impactsoft: Optional[str] = None,
-        snd_strain: Optional[str] = None,
-        snd_break: Optional[str] = None,
-        snd_roll: Optional[str] = None,
-        snd_shake: Optional[str] = None,
+    scrape_rough_threshold: float = 0.0
+    impact_hard_threshold: float = 0.5
+    hard_velocity_threshold: float = 0.0
 
-        audio_reflectivity: Optional[float] = None,
-        audio_hardness_factor: Optional[float] = None,
-        audio_roughness_factor: Optional[float] = None,
-        scrape_rough_thres: Optional[float] = None,
-        impact_hard_thres: Optional[float] = None,
-        hard_velocity_thres: Optional[float] = None,
+    gamematerial: SurfChar = SurfChar.CONCRETE
+    jump_factor: float = 1.0
+    max_speed_factor: float = 1.0
+    climbable: bool = False
 
-        gamemat: Optional[SurfChar] = None,
-        jump_factor: Optional[float] = None,
-        max_speed_factor: Optional[float] = None,
-        climbable: bool = False,
-    ) -> None:
-        """Create a surfaceprop definition.
+    if TYPE_CHECKING:
+        def __init__(
+            self,
+            name: str,
+            parent: Optional['SurfaceProp'] = None,
+            *,
+            density: Optional[float] = None,
+            elasticity: Optional[float] = None,
+            friction: Optional[float] = None,
+            dampening: Optional[float] = None,
+            thickness: Optional[float] = None,
 
-        If parent is passed, it will be used for any unset values.
-        """
-        self.name = name
+            snd_stepleft: Optional[str] = None,
+            snd_stepright: Optional[str] = None,
+            snd_bulletimpact: Optional[str] = None,
+            snd_scraperough: Optional[str] = None,
+            snd_scrapesmooth: Optional[str] = None,
+            snd_impacthard: Optional[str] = None,
+            snd_impactsoft: Optional[str] = None,
+            snd_strain: Optional[str] = None,
+            snd_break: Optional[str] = None,
+            snd_roll: Optional[str] = None,
+            snd_shake: Optional[str] = None,
 
-        self.density = _attr_value(parent, 'density', density, 2000)
-        self.elasticity = _attr_value(parent, 'elasticity', elasticity, 0.25)
-        self.friction = _attr_value(parent, 'friction', friction, 0.8)
-        self.dampening = _attr_value(parent, 'dampening', dampening, 0.0)
-        self.thickness = _attr_value(parent, 'thickness', thickness, -1.0)
+            audio_reflectivity: Optional[float] = None,
+            audio_hardness_factor: Optional[float] = None,
+            audio_roughness_factor: Optional[float] = None,
+            scrape_rough_threshold: Optional[float] = None,
+            impact_hard_threshold: Optional[float] = None,
+            hard_velocity_threshold: Optional[float] = None,
 
-        self.snd_stepleft = _attr_value(parent, 'snd_stepleft', snd_stepleft, "Default.StepLeft")
-        self.snd_stepright = _attr_value(parent, 'snd_stepright', snd_stepright, "Default.StepRight")
-        self.snd_bulletimpact = _attr_value(parent, 'snd_bulletimpact', snd_bulletimpact, "Default.BulletImpact")
-        self.snd_scraperough = _attr_value(parent, 'snd_scraperough', snd_scraperough, "Default.ScrapeRough")
-        self.snd_scrapesmooth = _attr_value(parent, 'snd_scrapesmooth', snd_scrapesmooth, "Default.ScrapeSmooth")
-        self.snd_impacthard = _attr_value(parent, 'snd_impacthard', snd_impacthard, "Default.ImpactHard")
-        self.snd_impactsoft = _attr_value(parent, 'snd_impactsoft', snd_impactsoft, "Default.ImpactSoft")
-        self.snd_break = _attr_value(parent, 'snd_break', snd_break, "")
-        self.snd_strain = _attr_value(parent, 'snd_strain', snd_strain, "")
-        self.snd_shake = _attr_value(parent, 'snd_shake', snd_shake, "")
-        self.snd_roll = _attr_value(parent, 'snd_roll', snd_roll, "")
+            gamematerial: Optional[SurfChar] = None,
+            jump_factor: Optional[float] = None,
+            max_speed_factor: Optional[float] = None,
+            climbable: bool = False,
+        ) -> None:
+            """Create a surfaceprop definition.
 
-        self.audio_reflectivity = _attr_value(parent, 'audio_reflectivity', audio_reflectivity, 0.66)
-        self.audio_hardness_factor = _attr_value(parent, 'audio_hardness_factor', audio_hardness_factor, 1.0)
-        self.audio_roughness_factor = _attr_value(parent, 'audio_roughness_factor', audio_roughness_factor, 1.0)
+            If parent is passed, it will be used for any unset values.
+            """
+    else:
+        def __init__(self, name: str, parent: Optional['SurfaceProp'] = None, **kwargs: object) -> None:
+            """Create a surfaceprop definition.
 
-        self.scrape_rough_threshold = _attr_value(parent, 'scrape_rough_threshold', scrape_rough_thres, 0.)
-        self.impact_hard_threshold = _attr_value(parent, 'impact_hard_threshold', impact_hard_thres, 0.5)
-        self.hard_velocity_threshold = _attr_value(parent, 'hard_velocity_threshold', hard_velocity_thres, 0)
-
-        self.gamematerial = _attr_value(parent, 'gamematerial', gamemat, SurfChar.CONCRETE)
-        self.jump_factor = _attr_value(parent, 'jump_factor', jump_factor, 1.0)
-        self.max_speed_factor = _attr_value(parent, 'max_speed_factor', max_speed_factor, 1.0)
-        self.climbable = _attr_value(parent, 'climbable', climbable, False)
-
-    def __repr__(self) -> str:
-        return f'<{self.__class__.__name__} "{self.name}", char={self.gamematerial.value}>'
+            If parent is passed, it will be used for any unset values.
+            """
+            self.name = name
+            for field in attrs.fields(type(self)):
+                field_name = field.name
+                if field_name == 'name':
+                    continue
+                value = kwargs.get(field_name)
+                if value is not None:
+                    if not isinstance(value, field.type):
+                        # Special case, int->float is fine, everything else is not.
+                        if field.type is float and isinstance(value, int):
+                            value = float(value)
+                        else:
+                            raise TypeError(f'{field_name} must be of type {field.type.__name__}, not {value!r}')
+                    setattr(self, field_name, value)
+                elif parent is not None:
+                    setattr(self, field_name, getattr(parent, field_name))
+                else:
+                    setattr(self, field_name, field.default)
 
     def copy(self) -> 'SurfaceProp':
         """Duplicate this surfaceprop."""
-        return SurfaceProp(
-            self.name,
-
-            density=self.density,
-            elasticity=self.elasticity,
-            friction=self.friction,
-            dampening=self.dampening,
-            thickness=self.thickness,
-
-            snd_stepleft=self.snd_stepleft,
-            snd_stepright=self.snd_stepright,
-            snd_bulletimpact=self.snd_bulletimpact,
-            snd_scraperough=self.snd_scraperough,
-            snd_scrapesmooth=self.snd_scrapesmooth,
-            snd_impacthard=self.snd_impacthard,
-            snd_impactsoft=self.snd_impactsoft,
-            snd_break=self.snd_break,
-            snd_strain=self.snd_strain,
-            snd_roll=self.snd_roll,
-            snd_shake=self.snd_shake,
-
-            audio_reflectivity=self.audio_reflectivity,
-            audio_hardness_factor=self.audio_hardness_factor,
-            audio_roughness_factor=self.audio_roughness_factor,
-            scrape_rough_thres=self.scrape_rough_threshold,
-            impact_hard_thres=self.impact_hard_threshold,
-            hard_velocity_thres=self.hard_velocity_threshold,
-
-            gamemat=self.gamematerial,
-            jump_factor=self.jump_factor,
-            max_speed_factor=self.max_speed_factor,
-            climbable=self.climbable,
-        )
+        copy = SurfaceProp.__new__(SurfaceProp)
+        for field in attrs.fields(SurfaceProp):
+            setattr(copy, field.name, getattr(self, field.name))
+        return copy
 
     __copy__ = copy
 
@@ -285,11 +250,11 @@ class SurfaceProp:
                 audio_reflectivity=prop.float('audioreflectivity', None),
                 audio_hardness_factor=prop.float('audiohardnessfactor', None),
                 audio_roughness_factor=prop.float('audioroughnessfactor', None),
-                scrape_rough_thres=prop.float('scrapeRoughThreshold', None),
-                impact_hard_thres=prop.float('impactHardThreshold', None),
-                hard_velocity_thres=prop.float('audioHardMinVelocity', None),
+                scrape_rough_threshold=prop.float('scrapeRoughThreshold', None),
+                impact_hard_threshold=prop.float('impactHardThreshold', None),
+                hard_velocity_threshold=prop.float('audioHardMinVelocity', None),
 
-                gamemat=game_mat,
+                gamematerial=game_mat,
                 jump_factor=prop.float('jump_factor', None),
                 climbable=prop.bool('climbable', False),
             )
