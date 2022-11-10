@@ -514,7 +514,7 @@ class VecBase:
             yield self + direction * pos
         yield cls(end)  # Directly yield - ensures no rounding errors.
 
-    def axis(self) -> str:
+    def axis(self) -> Literal['x', 'y', 'z']:
         """For an axis-aligned vector, return the axis it is on.
 
         :raises ValueError: If the vector is not on-axis.

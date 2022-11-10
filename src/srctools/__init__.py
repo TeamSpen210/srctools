@@ -151,7 +151,7 @@ def partition(coll: Sequence[ValT], size: int) -> Iterator[Sequence[ValT]]:
         yield coll[start:start + size]
 
 
-def bool_as_int(val: object) -> str:
+def bool_as_int(val: object) -> Literal['0', '1']:
     """Convert a True/False value into '1' or '0'.
 
     Valve uses these strings for True/False in editoritems and other
