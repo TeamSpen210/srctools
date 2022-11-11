@@ -485,7 +485,7 @@ _GetFGDFunc = Callable[[str], 'EntityDef']
 class ResourceCtx:
     """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
     tags: FrozenSet[str]
-    fsys: FileSystem
+    fsys: FileSystem[Any]
     #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
     mapname: str
     get_entdef: Callable[[str], 'EntityDef']
@@ -499,7 +499,7 @@ class ResourceCtx:
     def __init__(
         self,
         tags: Iterable[str] = (),
-        fsys: FileSystem = VirtualFileSystem({}),
+        fsys: FileSystem[Any] = VirtualFileSystem({}),
         fgd: Union['FGD', Mapping[str, 'EntityDef'], _GetFGDFunc] = srctools.EmptyMapping,
         mapname: str = '',
         funcs: Mapping[str, Callable[

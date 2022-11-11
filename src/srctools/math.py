@@ -19,7 +19,7 @@ but not vice-versa.
  - Matrix @ Matrix -> Matrix
 """
 from typing import (
-    TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, List, NamedTuple, Optional,
+    Callable, TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, List, Dict, NamedTuple, Optional,
     SupportsRound, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final, Literal, Protocol, final
@@ -164,7 +164,7 @@ if TYPE_CHECKING:
         @overload
         def __getitem__(self, item: Tuple[str, str]) -> str: ...
 
-        def __getitem__(self, item: Union[tuple, str]) -> Union[tuple, str]: ...
+        def __getitem__(self, item: Union[Tuple[str, str], str]) -> Union[Tuple[str, str], str]: ...
 else:
     globals()['_InvAxis'] = None
 
@@ -1082,7 +1082,7 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):  # type: ignore
         """FrozenVec is immutable."""
         return self
 
-    def __deepcopy__(self, memodict: Optional[dict]=None) -> 'FrozenVec':
+    def __deepcopy__(self, memodict: Optional[Dict[Any, Any]]=None) -> 'FrozenVec':
         """FrozenVec is immutable."""
         return self
 
@@ -1090,7 +1090,7 @@ class FrozenVec(VecBase, SupportsRound['FrozenVec']):  # type: ignore
         """Code required to reproduce this vector."""
         return f"FrozenVec({self.x:g}, {self.y:g}, {self.z:g})"
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -1338,7 +1338,7 @@ class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
         mat._vec_rot(self)
         return self
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'Vec'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -1479,10 +1479,14 @@ class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
         mat._vec_rot(self)
 
 # Maps (1, 1) -> ._bb attributes, for getting/setting by XY coordinate.
-_IND_TO_SLOT = {
-    (x, y): f'_{chr(ord("a")+x)}{chr(ord("a")+y)}'
-    for x in (0, 1, 2)
-    for y in (0, 1, 2)
+_IND_TO_SLOT: Dict[Tuple[int, int], Literal[
+    '_aa', '_ab', '_ac',
+    '_ba', '_bb', '_bc',
+    '_ca', '_cb', '_cc',
+]] = {
+    (0, 0): '_aa', (0, 1): '_ab', (0, 2): '_ac',
+    (1, 0): '_ba', (1, 1): '_bb', (1, 2): '_bc',
+    (2, 0): '_ca', (2, 1): '_cb', (2, 2): '_cc',
 }
 
 
@@ -1912,7 +1916,10 @@ class FrozenMatrix(MatrixBase):
         """Frozen matrices are immutable."""
         return self
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[
+        Callable[[float, float, float, float, float, float, float, float, float], 'FrozenMatrix'],
+        Tuple[float, float, float, float, float, float, float, float, float]
+    ]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -1980,7 +1987,10 @@ class Matrix(MatrixBase):
 
         return rot
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[
+        Callable[[float, float, float, float, float, float, float, float, float], 'Matrix'],
+        Tuple[float, float, float, float, float, float, float, float, float]
+    ]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -2387,7 +2397,7 @@ class FrozenAngle(AngleBase):
                 res[axis3] = val3[axis3] if isinstance(val3, AngleBase) else val3
         return Py_FrozenAngle(**res)
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenAngle'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions
@@ -2482,7 +2492,7 @@ class Angle(AngleBase):
 
     __copy__ = copy
 
-    def __reduce__(self) -> tuple:
+    def __reduce__(self) -> Tuple[Callable[[float, float, float], 'Angle'], Tuple3]:
         """Pickling support.
 
         This redirects to a global function, so C/Python versions

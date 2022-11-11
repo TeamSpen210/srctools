@@ -1,5 +1,6 @@
 """Functions for reading/writing VTF data."""
 from typing import TYPE_CHECKING, Callable, Dict, Iterable, List, Optional, Tuple
+from typing_extensions import TypeAlias
 import array
 
 
@@ -9,15 +10,15 @@ else:
     ImageFormats = 'ImageFormats'
     FilterMode = 'FilterMode'
 
-_SAVE: Dict[ImageFormats, Callable[[array.array, bytearray, int, int], None]] = {}
-_LOAD: Dict[ImageFormats, Callable[[array.array, bytes, int, int], None]] = {}
+Array: TypeAlias = 'array.array[int]'
+_SAVE: Dict[ImageFormats, Callable[[Array, bytearray, int, int], None]] = {}
+_LOAD: Dict[ImageFormats, Callable[[Array, bytes, int, int], None]] = {}
 
 
-def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+def ppm_convert(pixels: Array, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
     """Convert a frame into a PPM-format bytestring, for passing to tkinter.
 
-    If bg is set, this is the background we composite into. Otherwise we
-    just strip the alpha.
+    If bg is set, this is the background we composite into. Otherwise, we just strip the alpha.
     """
     header = b'P6 %i %i 255\n' % (width, height)
     img_off = len(header)
@@ -46,7 +47,7 @@ def ppm_convert(pixels: array.array, width: int, height: int, bg: Optional[Tuple
     return bytes(buffer)
 
 
-def alpha_flatten(pixels: array.array, buffer: bytearray, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
+def alpha_flatten(pixels: Array, buffer: bytearray, width: int, height: int, bg: Optional[Tuple[int, int, int]]) -> bytes:
     """Flatten the image down to RGB, by removing the alpha channel.
 
     If bg is set, this is the background we composite into. Otherwise we
@@ -112,7 +113,7 @@ def init(formats: Iterable[ImageFormats]) -> None:
             pass
 
 
-def load(fmt: ImageFormats, pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load(fmt: ImageFormats, pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load pixels from data in the given format."""
     try:
         func = _LOAD[fmt]
@@ -121,7 +122,7 @@ def load(fmt: ImageFormats, pixels: array.array, data: bytes, width: int, height
     func(pixels, data, width, height)
 
 
-def save(fmt: ImageFormats, pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save(fmt: ImageFormats, pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Save pixels from data in the given format."""
     try:
         func = _SAVE[fmt]
@@ -134,7 +135,7 @@ def scale_down(
     filt: FilterMode,
     src_width: int, src_height: int,
     width: int, height: int,
-    src: array.array, dest: array.array,
+    src: Array, dest: Array,
 ) -> None:
     """Scale down the image to this smaller size.
 
@@ -182,8 +183,8 @@ def scale_down(
 
 
 def saveload_rgba(mode: str) -> Tuple[
-    Callable[[array.array, bytes, int, int], None],
-    Callable[[array.array, bytearray, int, int], None],
+    Callable[[Array, bytes, int, int], None],
+    Callable[[Array, bytearray, int, int], None],
 ]:
     """Make the RGB save and load functions."""
     r_off = mode.index('r')
@@ -192,14 +193,14 @@ def saveload_rgba(mode: str) -> Tuple[
     try:
         a_off = mode.index('a')
     except ValueError:
-        def loader_rgba(pixels: array.array, data: bytes, width: int, height: int) -> None:
+        def loader_rgba(pixels: Array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[3 * offset + r_off]
                 pixels[4 * offset + 1] = data[3 * offset + g_off]
                 pixels[4 * offset + 2] = data[3 * offset + b_off]
                 pixels[4 * offset + 3] = 255
 
-        def saver_rgba(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgba(pixels: Array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
@@ -209,14 +210,14 @@ def saveload_rgba(mode: str) -> Tuple[
         saver_rgba.__name__ = 'save_' + mode
         return loader_rgba, saver_rgba
     else:
-        def loader_rgb(pixels: array.array, data: bytes, width: int, height: int) -> None:
+        def loader_rgb(pixels: Array, data: bytes, width: int, height: int) -> None:
             for offset in range(width * height):
                 pixels[4 * offset] = data[4 * offset + r_off]
                 pixels[4 * offset + 1] = data[4 * offset + g_off]
                 pixels[4 * offset + 2] = data[4 * offset + b_off]
                 pixels[4 * offset + 3] = data[4 * offset + a_off]
 
-        def saver_rgb(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+        def saver_rgb(pixels: Array, data: bytearray, width: int, height: int) -> None:
             for offset in range(width * height):
                 data[3 * offset + r_off] = pixels[4 * offset]
                 data[3 * offset + g_off] = pixels[4 * offset + 1]
@@ -244,7 +245,7 @@ load_uvlx8888, save_uvlx8888 = saveload_rgba('rgba')
 load_uvwq8888, save_uvwq8888 = saveload_rgba('rgba')
 
 
-def load_bgrx8888(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgrx8888(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Strange - skip byte."""
     for offset in range(width * height):
         pixels[4 * offset] = data[4 * offset + 2]
@@ -253,7 +254,7 @@ def load_bgrx8888(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset + 3] = 255
 
 
-def save_bgrx8888(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_bgrx8888(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Strange - skip byte."""
     for offset in range(width * height):
         data[4 * offset + 2] = pixels[4 * offset]
@@ -261,7 +262,7 @@ def save_bgrx8888(pixels: array.array, data: bytearray, width: int, height: int)
         data[4 * offset + 0] = pixels[4 * offset + 2]
 
 
-def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_rgb565(pixels: Array, data: bytes, width: int, height: int) -> None:
     """RGB format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         r, g, b = decomp565(data[2 * offset], data[2 * offset + 1])
@@ -272,7 +273,7 @@ def load_rgb565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
-def save_rgb565(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_rgb565(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """RGB format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         data[2*offset], data[2 * offset + 1] = compress565(
@@ -282,7 +283,7 @@ def save_rgb565(pixels: array.array, data: bytearray, width: int, height: int) -
         )
 
 
-def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgr565(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         b, g, r = decomp565(data[2 * offset], data[2 * offset + 1])
@@ -293,7 +294,7 @@ def load_bgr565(pixels: array.array, data: bytes, width: int, height: int) -> No
         pixels[4 * offset + 3] = 255
 
 
-def save_bgr565(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_bgr565(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """BGR format, packed into 2 bytes by dropping LSBs."""
     for offset in range(width * height):
         data[2*offset], data[2 * offset + 1] = compress565(
@@ -302,7 +303,7 @@ def save_bgr565(pixels: array.array, data: bytearray, width: int, height: int) -
             pixels[4 * offset],
         )
 
-def load_bgra4444(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgra4444(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -313,7 +314,7 @@ def load_bgra4444(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset+3] = (b & 0b11110000) | (b & 0b11110000) >> 4
 
 
-def save_bgra4444(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_bgra4444(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
         r = pixels[4 * offset]
@@ -325,7 +326,7 @@ def save_bgra4444(pixels: array.array, data: bytearray, width: int, height: int)
         data[2 * offset + 1] = (a & 0b11110000) | (r >> 4)
 
 
-def load_bgra5551(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgra5551(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGRA format, 5 bits per color plus 1 bit of alpha."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -336,7 +337,7 @@ def load_bgra5551(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset+3] = 255 if b & 0b10000000 else 0
 
 
-def load_bgrx5551(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgrx5551(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGR format, 5 bits per color, alpha ignored."""
     for offset in range(width * height):
         a = data[2 * offset]
@@ -347,14 +348,14 @@ def load_bgrx5551(pixels: array.array, data: bytes, width: int, height: int) -> 
         pixels[4 * offset+3] = 255
 
 
-def load_i8(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_i8(pixels: Array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B"""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[offset]
         pixels[4*offset+3] = 255
 
 
-def save_i8(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_i8(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Save in greyscale."""
     for offset in range(width * height):
         data[offset] = (
@@ -364,14 +365,14 @@ def save_i8(pixels: array.array, data: bytearray, width: int, height: int) -> No
         ) // 3
 
 
-def load_ia88(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_ia88(pixels: Array, data: bytes, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = data[2*offset]
         pixels[4*offset+3] = data[2*offset+1]
 
 
-def save_ia88(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_ia88(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """I8 format, R=G=B + A"""
     for offset in range(width * height):
         data[2 * offset] = (
@@ -384,20 +385,20 @@ def save_ia88(pixels: array.array, data: bytearray, width: int, height: int) -> 
 # ImageFormats.P8 is not implemented by Valve either.
 
 
-def load_a8(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_a8(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Single alpha bytes."""
     for offset in range(width * height):
         pixels[4*offset] = pixels[4*offset+1] = pixels[4*offset+2] = 0
         pixels[4*offset+3] = data[offset]
 
 
-def save_a8(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_a8(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """Single alpha bytes."""
     for offset in range(width * height):
         data[offset] = pixels[4 * offset + 3]
 
 
-def load_uv88(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_uv88(pixels: Array, data: bytes, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
     for offset in range(width * height):
         pixels[4*offset] = data[2*offset]
@@ -406,14 +407,14 @@ def load_uv88(pixels: array.array, data: bytes, width: int, height: int) -> None
         pixels[4*offset+3] = 255
 
 
-def save_uv88(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_uv88(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """UV-only, which is mapped to RG."""
     for offset in range(width * height):
         data[2*offset] = pixels[4*offset]
         data[2*offset+1] = pixels[4*offset+1]
 
 
-def load_rgb888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_rgb888_bluescreen(pixels: Array, data: bytes, width: int, height: int) -> None:
     """RGB format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -432,7 +433,7 @@ def load_rgb888_bluescreen(pixels: array.array, data: bytes, width: int, height:
             pixels[4 * offset + 3] = 255
 
 
-def save_rgb888_bluescreen(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_rgb888_bluescreen(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """RGB format, with 'bluescreen' mode for alpha.
 
     Transparent pixels are made blue.
@@ -448,7 +449,7 @@ def save_rgb888_bluescreen(pixels: array.array, data: bytearray, width: int, hei
             data[3 * offset + 2] = pixels[4 * offset + 2]
 
 
-def load_bgr888_bluescreen(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_bgr888_bluescreen(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGR format, with 'bluescreen' mode for alpha.
 
     Pure blue pixels are transparent.
@@ -467,7 +468,7 @@ def load_bgr888_bluescreen(pixels: array.array, data: bytes, width: int, height:
             pixels[4 * offset + 3] = 255
 
 
-def save_bgr888_bluescreen(pixels: array.array, data: bytearray, width: int, height: int) -> None:
+def save_bgr888_bluescreen(pixels: Array, data: bytearray, width: int, height: int) -> None:
     """BGR format, with 'bluescreen' mode for alpha.
 
     Transparent pixels are made blue.
@@ -483,18 +484,18 @@ def save_bgr888_bluescreen(pixels: array.array, data: bytearray, width: int, hei
             data[3 * offset] = pixels[4 * offset + 2]
 
 
-def load_dxt1(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_dxt1(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data."""
     load_dxt1_impl(pixels, data, width, height, (0, 0, 0, 0xFF))
 
 
-def load_dxt1_onebitalpha(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_dxt1_onebitalpha(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT1 data, with an additional 1 bit of alpha squeezed in."""
     load_dxt1_impl(pixels, data, width, height, (0, 0, 0, 0))
 
 
 def load_dxt1_impl(
-    pixels: array.array,
+    pixels: Array,
     data: bytes,
     width: int,
     height: int,
@@ -567,7 +568,7 @@ def load_dxt1_impl(
 
 
 def dxt_color_table(
-    pixels: array.array,
+    pixels: Array,
     data: bytes,
     table: List[Tuple[int, int, int, int]],
     block_off: int,
@@ -606,7 +607,7 @@ def dxt_color_table(
 
 
 def dxt_alpha_table(
-    pixels: array.array,
+    pixels: Array,
     data: bytes,
     block_off: int,
     block_wid: int,
@@ -651,7 +652,7 @@ def dxt_alpha_table(
         pixels[pos + layer] = alpha_table[(lookup >> (3 * i)) & 0b111]
 
 
-def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_dxt3(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT3 data."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -708,7 +709,7 @@ def load_dxt3(pixels: array.array, data: bytes, width: int, height: int) -> None
                 pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 
 
-def load_dxt5(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_dxt5(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load compressed DXT5 data."""
     if width < 4 or height < 4:
         # DXT format must be 4x4 at minimum. So just write black.
@@ -771,7 +772,7 @@ def load_dxt5(pixels: array.array, data: bytes, width: int, height: int) -> None
 #     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
 #     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
 
-def load_ati2n(pixels: array.array, data: bytes, width: int, height: int) -> None:
+def load_ati2n(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load 'ATI2N' format data, also known as BC5.
 
     This uses two copies of the DXT5 alpha block for data.

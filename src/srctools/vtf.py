@@ -319,8 +319,8 @@ class Frame:
         """Private constructor, creates a blank image of this size."""
         self.width = width
         self.height = height
-        self._data = None  # type: Optional[array]
-        self._fileinfo = None  # type: Optional[Tuple[IO[bytes], int, ImageFormats]]
+        self._data: Optional[array[int]] = None
+        self._fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]] = None
 
     def load(self) -> None:
         """If the image has not been loaded, load it from the file stream."""
@@ -358,13 +358,13 @@ class Frame:
     @overload
     def copy_from(
         self,
-        source: Union[bytes, bytearray, array, memoryview],
+        source: Union[bytes, bytearray, 'array[int]', memoryview],
         format: ImageFormats = ImageFormats.RGBA8888,
     ) -> None: ...
 
     def copy_from(
         self,
-        source: Union['Frame', bytes, bytearray, array, memoryview],
+        source: Union['Frame', bytes, bytearray, 'array[int]', memoryview],
         format: ImageFormats = ImageFormats.RGBA8888,
     ) -> None:
         """Overwrite this frame with other data.

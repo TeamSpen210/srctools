@@ -4,7 +4,7 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    IO, TYPE_CHECKING, AbstractSet, Dict, FrozenSet, ItemsView, Iterable, Iterator, KeysView,
+    Any, IO, TYPE_CHECKING, AbstractSet, Dict, FrozenSet, ItemsView, Iterable, Iterator, KeysView,
     List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar, Union,
     ValuesView, overload,
 )
@@ -1345,7 +1345,7 @@ class Vec4:
         return bool(self.x or self.y or self.z or self.w)
 
 
-def _list4_validator(_: object, attrib: attrs.Attribute, value: object) -> None:
+def _list4_validator(_: object, attrib: 'attrs.Attribute[List[Vec]]', value: object) -> None:
     """Validate the value is a list of 4 elements."""
     if not isinstance(value, list):
         raise TypeError(attrib.name + ' should be a list!')
@@ -1433,7 +1433,7 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'UVAxis':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'UVAxis':
         return UVAxis(
             x=self.x,
             y=self.y,
@@ -1442,10 +1442,10 @@ class UVAxis:
             scale=self.scale,
         )
 
-    def __getstate__(self) -> tuple:
+    def __getstate__(self) -> Tuple[float, float, float, float, float]:
         return (self.x, self.y, self.z, self.offset, self.scale)
 
-    def __setstate__(self, state: tuple) -> None:
+    def __setstate__(self, state: Tuple[float, float, float, float, float]) -> None:
         (self.x, self.y, self.z, self.offset, self.scale) = state
 
     def vec(self) -> Vec:
@@ -1530,7 +1530,7 @@ class Side:
     disp_pos: Optional[Vec]
     disp_elevation: float
     disp_flags: DispFlag
-    disp_allowed_vert: Optional[Array]
+    disp_allowed_vert: Optional['Array[int]']
     _disp_verts: Optional[List[DispVertex]]
 
     def __init__(
@@ -2663,7 +2663,7 @@ class EntityFixup(MutableMapping[str, str]):
         fix._fixup = self._fixup.copy()
         return fix
 
-    def __deepcopy__(self, memodict: Optional[dict] = None) -> 'EntityFixup':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'EntityFixup':
         fix = EntityFixup.__new__(EntityFixup)
         fix._matcher = self._matcher
         fix._fixup = self._fixup.copy()
@@ -3234,7 +3234,7 @@ class Output:
         else:
             return basic
 
-    def __setstate__(self, state: tuple) -> None:
+    def __setstate__(self, state: Tuple[Any, ...]) -> None:
         """Restore the pickled state."""
         (
             self.output,

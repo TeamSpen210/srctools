@@ -66,6 +66,7 @@ class SurfChar(Enum):
     SANDBARREL = '12'
 
 _InitArgT = TypeVar('_InitArgT', float, str, bool, SurfChar)
+T = TypeVar('T')
 
 
 def _attr_value(
@@ -262,7 +263,7 @@ class SurfaceProp:
         return prev
 
     @staticmethod
-    def parse_manifest(fsys: FileSystem, file: Optional[File] = None) -> Dict[str, 'SurfaceProp']:
+    def parse_manifest(fsys: FileSystem[T], file: Optional[File[FileSystem[T]]] = None) -> Dict[str, 'SurfaceProp']:
         """Load surfaceproperties from a manifest.
 
         :file:`scripts/surfaceproperties_manifest.txt` will be used if a file is

@@ -2,7 +2,7 @@
 The binformat module :mod:`binformat` contains functionality for handling binary formats, esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import IO, Collection, Dict, Hashable, List, Mapping, Optional, Tuple, Union
+from typing import Any, IO, Collection, Dict, Hashable, List, Mapping, Optional, Tuple, Union
 from typing_extensions import Final
 from binascii import crc32
 from struct import Struct
@@ -53,7 +53,7 @@ LZMA_FILT: Final = {
 }
 
 
-def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
+def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> Tuple[Any, ...]:
     """Read a structure from the file, automatically computing the required number of bytes."""
     if not isinstance(fmt, Struct):
         fmt = Struct(fmt)
@@ -63,8 +63,8 @@ def struct_read(fmt: Union[Struct, str], file: IO[bytes]) -> tuple:
 def read_nullstr(file: IO[bytes], pos: Optional[int] = None, encoding: str = 'ascii') -> str:
     """Read a null-terminated string from the file.
 
-    If the position is ``0``, this will instead immediately return an empty string. Otherwise if set
-    this will first seek to the location.
+    If the position is ``0``, this will instead immediately return an empty string. If set to any
+    other value this will first seek to the location.
     """
     if pos is not None:
         if pos == 0:

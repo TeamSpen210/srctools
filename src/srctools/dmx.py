@@ -308,7 +308,7 @@ def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
     )
 
 
-def _make_iter(val_type: ValueType, typ: Type[Value]) -> Callable:
+def _make_iter(val_type: ValueType, typ: Type[ValueT]) -> Callable[['Attribute[Any]'], Iterator[ValueT]]:
     """Build an iterator for the given value type."""
     def iterator(self: 'Attribute') -> Iterator[ValueT]:
         return self._iter_array(val_type)  # type: ignore
@@ -1042,7 +1042,7 @@ class Attribute(Generic[ValueT], _ValProps):
         return Attribute(self.name, self._typ, copy.deepcopy(self._value, memodict))
 
 
-class Element(Mapping[str, Attribute]):
+class Element(Mapping[str, Attribute[Any]]):
     """An element in a DMX tree.
 
     This is a mapping over `Attribute` objects, representing each key-value pair in the element.
@@ -1069,7 +1069,7 @@ class Element(Mapping[str, Attribute]):
     including recursively. This does not normally need to be set manually, since a random one 
     will be computed for each new element automatically.
     """
-    _members: MutableMapping[str, Attribute]
+    _members: MutableMapping[str, Attribute[Any]]
 
     def __init__(self, name: str, type: str, uuid: Optional[UUID] = None) -> None:
         self.name = name
@@ -1191,7 +1191,7 @@ class Element(Mapping[str, Attribute]):
             stringdb = None
 
         stubs: Dict[UUID, StubElement] = {}
-        attr: Attribute
+        attr: Attribute[Any]
 
         [element_count] = binformat.struct_read('<i', file)
         elements: List[Element] = []
@@ -1311,7 +1311,7 @@ class Element(Mapping[str, Attribute]):
 
         # Locations in arrays which are UUIDs (and need setting).
         # This is a (attr, index, uuid, line_num) tuple.
-        fixups: List[Tuple[Attribute, Optional[int], UUID, int]] = []
+        fixups: List[Tuple[Attribute[Any], Optional[int], UUID, int]] = []
         # Ensure these reuse the same objects.
         stubs: Dict[UUID, StubElement] = collections.defaultdict(StubElement.stub)
 
@@ -1847,18 +1847,18 @@ class Element(Mapping[str, Attribute]):
         """Return a view of the valid (casefolded) keys for this element."""
         return self._members.keys()
 
-    def values(self) -> ValuesView[Attribute]:
+    def values(self) -> ValuesView[Attribute[Any]]:
         """Return a view of the attributes for this element."""
         return self._members.values()
 
-    def __getitem__(self, name: str) -> Attribute:
+    def __getitem__(self, name: str) -> Attribute[Any]:
         return self._members[name.casefold()]
 
     def __delitem__(self, name: str) -> None:
         """Remove the specified attribute."""
         del self._members[name.casefold()]
 
-    def __setitem__(self, name: str, value: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> None:
+    def __setitem__(self, name: str, value: Union[Attribute[Any], ConvValue, Sequence[ConvValue]]) -> None:
         """Set a specific value, by deducing the type.
 
         This means this cannot produce certain types like Time. Use an
@@ -1876,7 +1876,7 @@ class Element(Mapping[str, Attribute]):
         """Remove all attributes from the element."""
         self._members.clear()
 
-    def pop(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute:
+    def pop(self, name: str, default: Union[Attribute[Any], ConvValue, Sequence[ConvValue]] = _UNSET) -> Attribute[Any]:
         """Remove the specified attribute and return it.
 
         If not found, an attribute is created from the default if specified,
@@ -1901,7 +1901,7 @@ class Element(Mapping[str, Attribute]):
         key, attr = self._members.popitem()
         return (attr.name, attr)
 
-    def setdefault(self, name: str, default: Union[Attribute, ConvValue, Sequence[ConvValue]]) -> Attribute:
+    def setdefault(self, name: str, default: Union[Attribute[Any], ConvValue, Sequence[ConvValue]]) -> Attribute[Any]:
         """Return the specified attribute name.
 
         If it does not exist, set it using the default and return that.

@@ -40,7 +40,7 @@ __all__ = [
     'VirtualFileSystem', 'FileSystemChain',
 ]
 
-FileSysT = TypeVar('FileSysT', bound='FileSystem')
+FileSysT = TypeVar('FileSysT', bound='FileSystem[Any]')
 CACHE_KEY_INVALID: Final = -1
 """This is returned from :py:meth:`FileSystem.cache_key()` to indicate no key could be computed."""
 
@@ -55,7 +55,7 @@ ZipFSysT = TypeVar('ZipFSysT', bound='ZipFileSystem')
 VPKFSysT = TypeVar('VPKFSysT', bound='VPKFileSystem')
 
 
-def get_filesystem(path: str) -> 'FileSystem':
+def get_filesystem(path: str) -> 'FileSystem[Any]':
     """Return a filesystem given a path.
 
     If the path is a directory this returns a RawFileSystem.
@@ -258,16 +258,16 @@ class FileSystem(Generic[_FileDataT]):
         return CACHE_KEY_INVALID
 
 
-class FileSystemChain(FileSystem[File[FileSystem]]):
+class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
     """Chains several filesystem into one prioritised whole.
 
     Each system can additionally be filtered to only allow access to files inside a subfolder. These
     will appear as if they are at the root level.
     """
 
-    def __init__(self, *systems: Union[FileSystem, Tuple[FileSystem, str]]) -> None:
+    def __init__(self, *systems: Union[FileSystem[Any], Tuple[FileSystem[Any], str]]) -> None:
         super().__init__('')
-        self.systems: List[Tuple[FileSystem, str]] = []
+        self.systems: List[Tuple[FileSystem[Any], str]] = []
         for sys in systems:
             if isinstance(sys, tuple):
                 self.add_sys(*sys)
@@ -289,7 +289,7 @@ class FileSystemChain(FileSystem[File[FileSystem]]):
         return hash(tuple(self.systems))
 
     @classmethod
-    def get_system(cls: Type[ChainFSysT], file: File[ChainFSysT]) -> FileSystem:
+    def get_system(cls: Type[ChainFSysT], file: File[ChainFSysT]) -> FileSystem[Any]:
         """Retrieve the system for a File, if it was produced from a FileSystemChain."""
         if not isinstance(file.sys, FileSystemChain):
             raise ValueError('File is not from a FileSystemChain..')
@@ -297,7 +297,7 @@ class FileSystemChain(FileSystem[File[FileSystem]]):
 
     def add_sys(
         self,
-        sys: FileSystem,
+        sys: FileSystem[Any],
         prefix: str='',
         *,
         priority: bool=False,

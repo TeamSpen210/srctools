@@ -1,6 +1,5 @@
 """Parse out all material proxies used in the given game."""
-from typing import DefaultDict, List
-from collections import Counter
+from typing import DefaultDict, List, Counter
 import argparse
 import sys
 import traceback
@@ -28,8 +27,8 @@ def main(args: List[str]) -> None:
         fsys = RawFileSystem(result.game)
 
     # Shader/proxy -> parameter -> use count
-    shader_params = DefaultDict[str, Counter](Counter)
-    shader_proxies = DefaultDict[str, Counter](Counter)
+    shader_params = DefaultDict[str, Counter[str]](Counter)
+    shader_proxies = DefaultDict[str, Counter[str]](Counter)
 
     with fsys:
         for file in fsys.walk_folder('materials/'):
