@@ -224,11 +224,17 @@ ValueT = TypeVar(
 # [from, to] -> conversion.
 # Implementation at the end of the file.
 # Use Any since we can't show the ValueType -> Value match to the type checker.
-TYPE_CONVERT: Dict[Tuple[ValueType, ValueType], Callable[[Value], Any]]
+ConvertMap: TypeAlias = Dict[Tuple[ValueType, ValueType], Callable[[Value], Any]]
+TYPE_CONVERT: ConvertMap
+
 # Take valid types, convert to the value.
-CONVERSIONS: Dict[ValueType, Callable[[object], Any]]
+ConversionMap: TypeAlias = Dict[ValueType, Callable[[object], Any]]
+CONVERSIONS: ConversionMap
+
 # And type -> size, excluding str/bytes.
-SIZES: Dict[ValueType, int]
+SizesMap: TypeAlias = Dict[ValueType, int]
+SIZES: SizesMap
+
 # Name used for keyvalues1 properties.
 NAME_KV1: Final = 'DmElement'
 # Additional name, to handle blocks with mixed properties or duplicate names.
@@ -244,10 +250,11 @@ def parse_vector(text: str, count: int) -> List[float]:
     return list(map(float, parts))
 
 
-def _get_converters() -> Tuple[dict, dict, dict]:
-    type_conv = {}
-    convert = {}
-    sizes = {}
+def _get_converters() -> Tuple[ConvertMap, ConversionMap, SizesMap]:
+    """Build the conversions maps."""
+    type_conv: ConvertMap = {}
+    convert: ConversionMap = {}
+    sizes: SizesMap = {}
     ns = globals()
 
     def unchanged(x: T) -> T:
