@@ -13,6 +13,8 @@ Dev branch
   required passing in an object which requires the not-yet-constructed VMF as a parameter.
 * Replace ``on_error`` callback in :py:meth:`srctools.logger.init_logging()` with ``error``, which
   now takes just an :external:py:class:`BaseException`.
+* Add :py:func:`srctools.run.send_engine_command()`, which executes console commands in a running
+  Source game.
 
 -------------
 Version 2.3.6

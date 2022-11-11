@@ -1,4 +1,4 @@
-"""Code for running VBSP and VRAD."""
+"""Code which handles executing and interfacing with game binaries."""
 from typing import IO, List
 import logging
 import os.path
@@ -9,7 +9,7 @@ import threading
 from srctools.logger import get_logger
 
 
-__all__ = ['run_compiler', 'get_compiler_name']
+__all__ = ['run_compiler', 'get_compiler_name', 'send_engine_command']
 
 
 def quote(txt: str) -> str:
@@ -17,6 +17,75 @@ def quote(txt: str) -> str:
     if ' ' in txt:
         return '"' + txt + '"'
     return txt
+
+
+WM_COPYDATA = 0x4A
+
+try:
+    import ctypes
+
+    _FindWindowW = ctypes.windll.user32.FindWindowW
+    _SendMessageW = ctypes.windll.user32.SendMessageW
+except (ImportError, AttributeError):
+    def _send_cmd(command: bytes, classname: str) -> None:
+        """Not available on this OS."""
+        raise OSError('Functions not available!')
+else:
+    _FindWindowW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
+    _FindWindowW.restype = ctypes.c_void_p  # HWND
+    is_64bit = sys.maxsize > 2**33
+    uint_ptr = ctypes.POINTER(ctypes.c_ulonglong if is_64bit else ctypes.c_uint)
+    ulong_ptr = ctypes.POINTER(ctypes.c_ulonglong if is_64bit else ctypes.c_ulong)
+    long_ptr = ctypes.POINTER(ctypes.c_longlong if is_64bit else ctypes.c_long)
+    _SendMessageW.argtypes = [
+        ctypes.c_void_p,  # HWND hWnd
+        ctypes.c_uint,  # Msg
+        uint_ptr,  # WPARAM wParam
+        long_ptr,  # LPARAM lParam
+    ]
+    _SendMessageW.restype = long_ptr
+
+    class CopyDataStruct(ctypes.Structure):
+        """Data to pass for WM_COPYDATA."""
+        _fields_ = [
+            ('dWData', ulong_ptr),
+            ('cbData', ctypes.c_uint32),
+            ('lpData', ctypes.c_void_p),
+        ]
+
+    def _send_cmd(command: bytes, classname: str) -> None:
+        """Send the command to a game."""
+        window: ctypes.c_void_p = _FindWindowW(classname, None)
+        if not window:
+            raise ctypes.WinError(descr='No window found!')
+        buf = ctypes.create_string_buffer(command)
+        data = CopyDataStruct(
+            dWData=ulong_ptr(),
+            cbData=len(command) + 1,
+            lpData=ctypes.cast(buf, ctypes.c_void_p),
+        )
+        if not _SendMessageW(window, WM_COPYDATA, uint_ptr(), ctypes.cast(ctypes.byref(data), long_ptr)):
+            raise ctypes.WinError(descr="Failed to send command.")
+
+
+def send_engine_command(command: bytes, *, classname: str = 'Valve001') -> None:
+    """Send a command to a Source Engine game, using the mechanism :option:`!-hijack` uses.
+
+    If a Source Engine game is currently running, the string will be executed as if it was typed
+    into the console.
+    This is only functional on Windows, since it uses the `WM_COPYDATA`_ mechanism.
+
+    .. _WM_COPYDATA: https://learn.microsoft.com/en-us/windows/win32/dataxchg/wm-copydata
+
+    :param command: The command to execute. For multiple commands use ``;`` as a separator.
+    :param classname: The classname of the window to look for. This should be ``Valve001``, but \
+        it is possible other branches may have changed this.
+    :raises LookupError: If the game could not be found.
+    :raises OSError: If this is not running on Windows.
+    :raises ValueError: If the command failed to execute.
+    """
+    _send_cmd(command, classname)
+
 
 
 def get_compiler_name(program: str) -> str:
