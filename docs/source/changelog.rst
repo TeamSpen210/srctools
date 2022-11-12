@@ -9,12 +9,18 @@ Changelog
 Dev branch
 ----------
 
-* Removed some unusable constructor parameters from :py:class:`!srctools.vmf.VMF`, since they
-  required passing in an object which requires the not-yet-constructed VMF as a parameter.
+* Removed some unusable constructor parameters from :py:class:`srctools.vmf.VMF`, since they
+  required passing in an object which requires the not-yet-constructed
+  :py:class:`~srctools.vmf.VMF` as a parameter.
 * Replace ``on_error`` callback in :py:meth:`srctools.logger.init_logging()` with ``error``, which
   now takes just an :external:py:class:`BaseException`.
+* :py:class:`~srctools.surfaceprops.SurfaceProp` has been rewritten to use ``attrs`` to simplify code.
 * Add :py:func:`srctools.run.send_engine_command()`, which executes console commands in a running
   Source game.
+* :py:class:`~srctools.math.Vec` and :py:class:`~srctools.math.FrozenVec` no longer inherits from
+  :external:py:class:`typing.SupportsRound`, since
+  `typeshed updated <https://github.com/python/typeshed/pull/9151>`_ the overloads for
+  :external:py:func:`round()` to permit zero-arg calls to return a non-:external:py:class:`int` type.
 
 -------------
 Version 2.3.6

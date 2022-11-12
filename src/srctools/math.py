@@ -20,7 +20,7 @@ but not vice-versa.
 """
 from typing import (
     Callable, TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, List, Dict, NamedTuple, Optional,
-    SupportsRound, Tuple, Type, TypeVar, Union, cast, overload,
+    Tuple, Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final, Literal, Protocol, final
 import contextlib
@@ -294,10 +294,6 @@ def __i{func}__(self, other: float):
         self.z {op}= other
         return self
 '''
-
-# Subclassing this causes isinstance() to become very slow, trying to check
-# for __round__ on everything. So at runtime swap it out to ensure it doesn't inherit.
-globals()['SupportsRound'] = {'Vec': object, 'FrozenVec': object}
 
 
 class VecBase:
@@ -795,12 +791,7 @@ class VecBase:
             out_min.z + (x_off * (out_max.z - out_min.z)) / diff,
         )
 
-    @overload
-    def __round__(self) -> Any: ...
-    @overload
-    def __round__(self: VecT, ndigits: int) -> VecT: ...  # noqa
-
-    def __round__(self: VecT, ndigits: int=0) -> Union['Vec', Any]:
+    def __round__(self: VecT, ndigits: int=0) -> VecT:
         """Performing :external:py:func:`round()` on a vector rounds each axis."""
         return type(self)(
             round(self.x, ndigits),
@@ -974,7 +965,7 @@ class VecBase:
 
 
 @final
-class FrozenVec(VecBase, SupportsRound['FrozenVec']):  # type: ignore
+class FrozenVec(VecBase):
     """Immutable vector class. This cannot be changed once created, but is hashable."""
     __slots__ = ()
 
@@ -1133,7 +1124,7 @@ VecBase.T = VecBase.top    = VecBase.z_pos = FrozenVec(z=+1)
 
 
 @final
-class Vec(VecBase, SupportsRound['Vec']):  # type: ignore
+class Vec(VecBase):
     """A 3D Vector. This has most standard Vector functions.
 
     >>> Vec(1, 2, z=3)  # Positional or vec, defaults to 0.
@@ -2761,7 +2752,6 @@ Cy_FrozenMatrix = Py_FrozenMatrix = FrozenMatrix
 # Do it this way, so static analysis ignores this.
 if not TYPE_CHECKING:
     _glob = globals()
-    del _glob['SupportsRound']
     try:
         from . import _math  # noqa
     except ImportError:
