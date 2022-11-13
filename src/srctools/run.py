@@ -88,7 +88,6 @@ def send_engine_command(command: bytes, *, classname: str = 'Valve001') -> None:
     _send_cmd(command, classname)
 
 
-
 def get_compiler_name(program: str) -> str:
     """Get the real executable name for VBSP or VRAD."""
     if 'darwin' in sys.platform:
@@ -144,7 +143,7 @@ def run_compiler(
         )
         thread_err = threading.Thread(
             target=_daemon,
-            args=(logger, logging.ERROR, log_name,  proc.stderr),
+            args=(logger, logging.ERROR, log_name, proc.stderr),
         )
         thread_out.daemon = thread_err.daemon = True  # These should be killed on shutdown.
         thread_err.start()

@@ -81,13 +81,13 @@ _BLANK_PIXEL = array('B', [0, 0, 0, 0xFF])
 def _mk_fmt(
     r: int = 0, g: int = 0, b: int = 0,
     a: int = 0, *,
-    l: int = 0, size: int = 0,
+    grey: int = 0, size: int = 0,
 ) -> Tuple[int, int, int, int, int, int]:
     """Helper function to construct ImageFormats."""
     global _mk_fmt_ind
-    if l:
-        r = g = b = l
-        size = l + a
+    if grey:
+        r = g = b = grey
+        size = grey + a
     if not size:
         size = r + g + b + a
     _mk_fmt_ind += 1
@@ -113,8 +113,8 @@ class ImageFormats(Enum):
     RGB888 = _mk_fmt(8, 8, 8, 0)
     BGR888 = _mk_fmt(8, 8, 8)
     RGB565 = _mk_fmt(5, 6, 5, 0)
-    I8 = _mk_fmt(a=0, l=8)
-    IA88 = _mk_fmt(a=8, l=8)
+    I8 = _mk_fmt(a=0, grey=8)
+    IA88 = _mk_fmt(a=8, grey=8)
     P8 = _mk_fmt()  # Using a palette somehow - was never implemented by Valve.
     A8 = _mk_fmt(a=8)
     # Blue = alpha channel too
@@ -304,13 +304,8 @@ class Frame:
 
     This is lazy, so it will only read from the file when actually used.
     """
+    __slots__ = ['width', 'height', '_data', '_fileinfo']
 
-    __slots__ = [
-        'width',
-        'height',
-        '_data',
-        '_fileinfo',
-    ]
     def __init__(
         self,
         width: int,

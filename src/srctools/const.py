@@ -19,8 +19,8 @@ def add_unknown(ns: MutableMapping[str, Any], long: bool = False) -> None:
     compatibility with unhandled games, ensuring extra bits are preserved when resaving.
     All existing bits will be skipped.
 
-    :param ns: The class namespace to add members to. This should be set to :external:func:`locals()`
-        or :external:func:`vars()`.
+    :param ns: The class namespace to add members to. This should be set to \
+        :external:func:`locals()` or :external:func:`vars()`.
     :param long: If set, extend to 64 bits, not 32 bits.
     """
 
@@ -92,7 +92,7 @@ class GameID(Enum):
     PORTAL = P1 = '400'
     HALF_LIFE_2_EPISODE_TWO = HL2_EP2 = '420'
     TEAM_FORTRESS_2 = TF2 = '440'
-    LEFT_4_DEAD = L4D= '500'
+    LEFT_4_DEAD = L4D = '500'
     DOTA_2 = DOTA2 = '570'
 
     PORTAL_2 = P2 = '620'
@@ -127,7 +127,10 @@ class GameID(Enum):
 
 
 class SurfFlags(Flag):
-    """The various `SURF_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L80-L97>`_ flags, indicating different attributes for faces."""
+    """The various `SURF_*`_ flags, indicating different attributes for faces.
+
+    .. _SURF_*: https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L80-L97
+    """
     NONE = 0
     LIGHT = 0x1
     """The face has lighting info."""
@@ -166,9 +169,11 @@ class SurfFlags(Flag):
 
 
 class BSPContents(Flag):
-    """The various `CONTENTS_ <https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L24-L76>`_ flags, indicating different collision types.
+    """The various `CONTENTS_*`_ flags, indicating different collision types.
 
     This is normally for brushes, but is also used on other things like models.
+
+    .. _CONTENTS_*: https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/public/bspflags.h#L24-L76
     """
     EMPTY = 0
     SOLID = 0x1

@@ -24,7 +24,7 @@ class SpecialCommand(Enum):
     RENAME_FILE = 259
 
 SPECIAL_NAMES = {
-    SpecialCommand.CHANGE_DIR: 'Change Directory', 
+    SpecialCommand.CHANGE_DIR: 'Change Directory',
     SpecialCommand.COPY_FILE: 'Copy File',
     SpecialCommand.DELETE_FILE: 'Delete File',
     SpecialCommand.RENAME_FILE: 'Rename File',
@@ -33,7 +33,7 @@ SPECIAL_NAMES = {
 
 def strip_cstring(data: bytes) -> str:
     """Strip strings to the first null, and convert to ascii.
-    
+
     The CmdSeq files appear to often have junk data in the unused
     sections after the null byte, where C code doesn't touch.
     """
@@ -68,7 +68,7 @@ class Command:
         self.ensure_file = ensure_file
         self.use_proc_win = use_proc_win
         self.no_wait = no_wait
-        
+
     @classmethod
     def parse(
         cls,
@@ -102,31 +102,31 @@ class Command:
             no_wait=bool(no_wait),
             enabled=bool(is_enabled),
         )
-        
+
     def __bool__(self) -> bool:
         return self.enabled
-        
+
     def __repr__(self) -> str:
         return repr(vars(self))
 
 
 def parse(file: IO[bytes]) -> Dict[str, List[Command]]:
     """Read a list of sequences from a file.
-    
+
     This returns a dict mapping names to a list of sequences.
     """
     header = file.read(len(SEQ_HEADER))
     if header != SEQ_HEADER:
         raise ValueError('Wrong header: ', header)
-        
+
     [version] = unpack('f', file.read(4))
-        
+
     # Read a command
     if version < 0.2:
         cmd_struct = ST_COMMAND_PRE_V2
     else:
         cmd_struct = ST_COMMAND
-        
+
     [seq_count] = unpack('I', file.read(4))
     sequences = OrderedDict()  # type: Dict[str, List[Command]]
     for _ in range(seq_count):
@@ -147,7 +147,7 @@ def write(sequences: Dict[str, Sequence[Command]], file: IO[bytes]) -> None:
     file.write(pack('f', 0.2))
 
     file.write(pack('I', len(sequences)))
-    
+
     for name, commands in sequences.items():
         file.write(pad_string(name, 128))
         file.write(pack('I', len(commands)))

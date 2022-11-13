@@ -1277,8 +1277,8 @@ def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
     :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
     warnings.warn(
-        f'Using entclass_resources() is deprecated, access FGD.engine_db() and then '
-        f'EntityDef.get_resources() instead.',
+        'Using entclass_resources() is deprecated, access FGD.engine_db() and then '
+        'EntityDef.get_resources() instead.',
         DeprecationWarning, stacklevel=2,
     )
     fgd = _get_engine_fgd()
@@ -1329,8 +1329,8 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
     :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
     """
     warnings.warn(
-        f'Using entclass_packfunc() is deprecated, access FGD.engine_db() and then '
-        f'EntityDef.get_resources() instead.',
+        'Using entclass_packfunc() is deprecated, access FGD.engine_db() and then '
+        'EntityDef.get_resources() instead.',
         DeprecationWarning, stacklevel=2,
     )
     fgd = _get_engine_fgd()
@@ -1355,7 +1355,7 @@ def entclass_iter() -> Collection[str]:
     :deprecated: Use :py:func:`FGD.engine_db()` instead.
     """
     warnings.warn(
-        f'Using entclass_iter() is deprecated, access FGD.engine_db() instead.',
+        'Using entclass_iter() is deprecated, access FGD.engine_db() instead.',
         DeprecationWarning, stacklevel=2,
     )
     return [

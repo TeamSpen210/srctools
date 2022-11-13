@@ -32,7 +32,7 @@ __all__ = [
     'CURRENT_HAMMER_BUILD', 'CURRENT_HAMMER_VERSION',
     'conv_kv', 'ValidKVs',
     'overlay_bounds', 'make_overlay', 'localise_overlay',
-    'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side',  'Entity', 'EntityGroup',
+    'VMF', 'Camera', 'Cordon', 'VisGroup', 'Solid', 'Side', 'Entity', 'EntityGroup',
     'DispFlag', 'TriangleTag',
     'PrismFace', 'UVAxis', 'EntityFixup', 'FixupValue',  # For typing, shouldn't be constructed.
     'Output', 'OUTPUT_SEP',
@@ -69,6 +69,7 @@ class DispFlag(Flag):
 
     SUBDIV = 8  # Is it subdivided?
     SUBDIV_COLL_ALL = SUBDIV | COLL_ALL  # Makes the repr nicer.
+
 
 # The VMF stores 2/4/8 if the displacement *doesn't* collide.
 # Bit 1 stores if the face has a bumpmap, set by VBSP.
@@ -331,7 +332,7 @@ class VMF:
         self,
         map_info: Mapping[str, str]=EmptyMapping,
         preserve_ids: bool=False,
-    ):
+    ) -> None:
         """Create a VMF.
 
         If preserve_ids is False (default), various IDs will be changed to ensure they are unique
@@ -376,20 +377,13 @@ class VMF:
             map_info.get('editorbuild', ''), CURRENT_HAMMER_BUILD)
 
         # Various Hammer settings
-        self.show_grid = srctools.conv_bool(
-            map_info.get('showgrid', '1'), True)
-        self.show_3d_grid = srctools.conv_bool(
-            map_info.get('show3dgrid', '0'), False)
-        self.snap_grid = srctools.conv_bool(
-            map_info.get('snaptogrid', '1'), True)
-        self.show_logic_grid = srctools.conv_bool(
-            map_info.get('showlogicalgrid', '0'), False)
-        self.grid_spacing = srctools.conv_int(
-            map_info.get('gridspacing', '64'), 64)
-        self.active_cam = srctools.conv_int(
-            map_info.get('active_cam', '-1'), -1)
-        self.quickhide_count = srctools.conv_int(
-            map_info.get('quickhide', '-1'), -1)
+        self.show_grid = srctools.conv_bool(map_info.get('showgrid', '1'), True)
+        self.show_3d_grid = srctools.conv_bool(map_info.get('show3dgrid', '0'), False)
+        self.snap_grid = srctools.conv_bool(map_info.get('snaptogrid', '1'), True)
+        self.show_logic_grid = srctools.conv_bool(map_info.get('showlogicalgrid', '0'), False)
+        self.grid_spacing = srctools.conv_int(map_info.get('gridspacing', '64'), 64)
+        self.active_cam = srctools.conv_int(map_info.get('active_cam', '-1'), -1)
+        self.quickhide_count = srctools.conv_int(map_info.get('quickhide', '-1'), -1)
 
     def add_brush(self, item: 'Solid') -> None:
         """Add a world brush to this map."""
@@ -510,7 +504,7 @@ class VMF:
             'bShow3DGrid': 'show3dgrid',
             'bShowLogicalGrid': 'showlogicalgrid',
             'nGridSpacing': 'gridspacing'
-            }
+        }
         for key in view_dict:
             map_info[view_dict[key]] = view_opt[key, '']
 
@@ -1338,6 +1332,7 @@ class Vec4:
     y: float = 0.0
     z: float = 0.0
     w: float = 0.0
+
     def __str__(self) -> str:
         return f'{self.x:g} {self.y:g} {self.z:g} {self.w:g}'
 
@@ -2020,11 +2015,7 @@ class Side:
          This is for use in texture randomisation.
          """
         warnings.warn('This is useless and will be removed.', DeprecationWarning)
-        return (
-            self.planes[0].join(' ') +
-            self.planes[1].join(' ') +
-            self.planes[2].join(' ')
-            )
+        return self.planes[0].join(' ') + self.planes[1].join(' ') +  self.planes[2].join(' ')
 
     def normal(self) -> Vec:
         """Compute the unit vector which extends perpendicular to the face.
@@ -2070,6 +2061,7 @@ class Entity(MutableMapping[str, str]):
     To read instance $replace values operate on entity.fixup[]
     """
     _fixup: Optional['EntityFixup']
+
     def __init__(
         self,
         vmf_file: VMF,

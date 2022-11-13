@@ -303,6 +303,7 @@ def save_bgr565(pixels: Array, data: bytearray, width: int, height: int) -> None
             pixels[4 * offset],
         )
 
+
 def load_bgra4444(pixels: Array, data: bytes, width: int, height: int) -> None:
     """BGRA format, only upper 4 bits. Bottom half is a copy of the top."""
     for offset in range(width * height):
@@ -702,7 +703,7 @@ def load_dxt3(pixels: Array, data: bytes, width: int, height: int) -> None:
             # Now add on the real alpha values.
             for off in range(8):
                 byte = data[block_off + off]
-                y, x = divmod(off*2, 4)
+                y, x = divmod(off * 2, 4)
                 pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
                 # Combine the values twice so we evenly cover the whole range.
                 pixels[pos + 3] = byte & 0b00001111 | (byte & 0b00001111) << 4
@@ -771,6 +772,7 @@ def load_dxt5(pixels: Array, data: bytes, width: int, height: int) -> None:
 #     pixels[offset + 1] = data[data_off+2] << 8 + data[data_off+3]
 #     pixels[offset + 2] = data[data_off+4] << 8 + data[data_off+5]
 #     pixels[offset + 3] = data[data_off+6] << 8 + data[data_off+7]
+
 
 def load_ati2n(pixels: Array, data: bytes, width: int, height: int) -> None:
     """Load 'ATI2N' format data, also known as BC5.

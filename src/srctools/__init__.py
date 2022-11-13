@@ -219,10 +219,8 @@ class _SupportsKeysAndGetItem(Protocol):
 
     Since this is for EmptyMapping we don't care about the item type.
     """
-    def keys(self) -> Iterable[Any]:
-        raise NotImplementedError
-    def __getitem__(self, __k: Any) -> Any:
-        raise NotImplementedError
+    def keys(self) -> Iterable[Any]: ...
+    def __getitem__(self, __k: Any) -> Any: ...
 
 
 class _EmptyMapping(MutableMapping[Any, Any]):
@@ -420,6 +418,7 @@ class _EmptyItemsView(_EmptySetView, ItemsView[Any, Any]):
 class _EmptyValuesView(ValuesView[Any]):
     """A Mapping.values() implementation that always acts empty. This is not a set."""
     __slots__ = ()
+
     def __repr__(self) -> str:
         return 'srctools.EmptyValuesView'
 
@@ -437,6 +436,7 @@ class _EmptyValuesView(ValuesView[Any]):
     def __iter__(self) -> Iterator[Any]:
         """Iteration produces no values."""
         return iter(())
+
 
 _set_hash: Final = hash(frozenset())
 EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()

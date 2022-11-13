@@ -3,7 +3,7 @@
 Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
-    IO, Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
+    Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
     Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from enum import Enum, Flag
@@ -52,7 +52,7 @@ HEADER_2 = '<i'  # Header section after the lumps.
 FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
 FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
 OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
-TEXINFO_IND_TYPE = 'h' # The type used to index into texinfo (i or h).
+TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
 T = TypeVar('T')
 KeyT = TypeVar('KeyT')  # Needs to be hashable, typecheckers currently don't handle that.
@@ -315,7 +315,7 @@ class StaticPropVersion(Enum):
     # Based on v6, adds lightmapped props.
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
-    V11_MESA  = (11, 76)  # Adds just rendercolor.
+    V11_MESA = (11, 76)  # Adds just rendercolor.
 
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
     UNKNOWN = (0, 0)  # Before prop is read.
@@ -949,7 +949,6 @@ class StaticProp:
     lightmap_x: int = 32
     lightmap_y: int = 32
 
-
     def __repr__(self) -> str:
         return '<Prop "{}#{}" @ {} rot {}>'.format(
             self.model,
@@ -1142,14 +1141,26 @@ class BSP:
     # reads and includes all the data for.
     pakfile: ParsedLump[ZipFile] = ParsedLump(BSP_LUMPS.PAKFILE)
     ents: ParsedLump[VMF] = ParsedLump(BSP_LUMPS.ENTITIES)
-    textures: ParsedLump[List[str]] = ParsedLump(BSP_LUMPS.TEXDATA_STRING_DATA, BSP_LUMPS.TEXDATA_STRING_TABLE)
+    textures: ParsedLump[List[str]] = ParsedLump(
+        BSP_LUMPS.TEXDATA_STRING_DATA,
+        BSP_LUMPS.TEXDATA_STRING_TABLE,
+    )
     texinfo: ParsedLump[List[TexInfo]] = ParsedLump(BSP_LUMPS.TEXINFO, BSP_LUMPS.TEXDATA)
     cubemaps: ParsedLump[List[Cubemap]] = ParsedLump(BSP_LUMPS.CUBEMAPS)
-    overlays: ParsedLump[List[Overlay]] = ParsedLump(BSP_LUMPS.OVERLAYS, BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS)
+    overlays: ParsedLump[List[Overlay]] = ParsedLump(
+        BSP_LUMPS.OVERLAYS,
+        BSP_LUMPS.OVERLAY_FADES, BSP_LUMPS.OVERLAY_SYSTEM_LEVELS,
+    )
 
-    bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(BSP_LUMPS.MODELS, BSP_LUMPS.PHYSCOLLIDE)
+    bmodels: ParsedLump['WeakKeyDictionary[Entity, BModel]'] = ParsedLump(
+        BSP_LUMPS.MODELS,
+        BSP_LUMPS.PHYSCOLLIDE,
+    )
     brushes: ParsedLump[List[Brush]] = ParsedLump(BSP_LUMPS.BRUSHES, BSP_LUMPS.BRUSHSIDES)
-    visleafs: ParsedLump[List[VisLeaf]] = ParsedLump(BSP_LUMPS.LEAFS, BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER)
+    visleafs: ParsedLump[List[VisLeaf]] = ParsedLump(
+        BSP_LUMPS.LEAFS,
+        BSP_LUMPS.LEAFFACES, BSP_LUMPS.LEAFBRUSHES, BSP_LUMPS.LEAFMINDISTTOWATER,
+    )
     water_leaf_info: ParsedLump[List[LeafWaterInfo]] = ParsedLump(BSP_LUMPS.LEAFWATERDATA)
     nodes: ParsedLump[List[VisTree]] = ParsedLump(BSP_LUMPS.NODES)
 
@@ -1159,7 +1170,10 @@ class BSP:
     faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES)
     orig_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.ORIGINALFACES)
     hdr_faces: ParsedLump[List[Face]] = ParsedLump(BSP_LUMPS.FACES_HDR)
-    primitives: ParsedLump[List[Primitive]] = ParsedLump(BSP_LUMPS.PRIMITIVES, BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS)
+    primitives: ParsedLump[List[Primitive]] = ParsedLump(
+        BSP_LUMPS.PRIMITIVES,
+        BSP_LUMPS.PRIMINDICES, BSP_LUMPS.PRIMVERTS,
+    )
 
     # Game lumps
     props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
@@ -2253,7 +2267,7 @@ class BSP:
             struct.iter_unpack(
                 '<i'  # ID
                 # texinfo, face-and-render-order
-                f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}' 
+                f'{"iHxx" if TEXINFO_IND_TYPE == "i" else "hH"}'
                 f'{OVERLAY_FACE_COUNT}i'  # face array.
                 '4f'  # UV min/max
                 '18f',  # 4 handle points, origin, normal
@@ -2605,7 +2619,7 @@ class BSP:
 
             if vers_num >= 11:
                 # Unknown data, though it's float-like.
-                unknown_1 = struct_read('<i', static_lump)
+                struct_read('<i', static_lump)
 
             if vers_num >= 10 and not version.is_lightmap:
                 # Extra flags, post-CSGO
