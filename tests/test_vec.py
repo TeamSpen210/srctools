@@ -10,6 +10,8 @@ from helpers import *
 import pytest
 
 from srctools import Vec_tuple, math as vec_mod
+
+
 try:
     # noinspection PyProtectedMember
     from srctools import _math as cy_math_mod

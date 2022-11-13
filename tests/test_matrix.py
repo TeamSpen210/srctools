@@ -1,10 +1,9 @@
 """Tests the Matrix/FrozenMatrix class in srctools.math."""
+import copy
 import pickle
 
-import copy
-import pytest
-
 from helpers import *
+import pytest
 
 
 def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:

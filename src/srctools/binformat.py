@@ -3,7 +3,7 @@ The binformat module :mod:`binformat` contains functionality for handling binary
 esentially expanding on :external:mod:`struct`'s functionality.
 
 """
-from typing import Any, IO, Collection, Dict, Hashable, List, Mapping, Optional, Tuple, Union
+from typing import IO, Any, Collection, Dict, Hashable, List, Mapping, Optional, Tuple, Union
 from typing_extensions import Final
 from binascii import crc32
 from struct import Struct

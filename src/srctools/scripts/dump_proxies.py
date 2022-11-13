@@ -1,5 +1,5 @@
 """Parse out all material proxies used in the given game."""
-from typing import DefaultDict, List, Counter
+from typing import Counter, DefaultDict, List
 import argparse
 import sys
 import traceback

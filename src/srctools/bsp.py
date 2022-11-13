@@ -19,7 +19,7 @@ import warnings
 
 import attrs
 
-from srctools import StringPath, AtomicWriter, conv_int, logger
+from srctools import AtomicWriter, StringPath, conv_int, logger
 from srctools.binformat import (
     DeferredWrites, compress_lzma, decompress_lzma, read_array, struct_read, write_array,
 )

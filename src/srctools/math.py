@@ -19,8 +19,8 @@ but not vice-versa.
  - Matrix @ Matrix -> Matrix
 """
 from typing import (
-    Callable, TYPE_CHECKING, Any, ClassVar, Iterable, Iterator, List, Dict, NamedTuple, Optional,
-    Tuple, Type, TypeVar, Union, cast, overload,
+    TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
+    Optional, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from typing_extensions import Final, Literal, Protocol, final
 import contextlib

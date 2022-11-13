@@ -1,6 +1,6 @@
 """Parse surfaceproperties files, to determine surface physics.
 """
-from typing import Dict, Optional, TYPE_CHECKING, TypeVar
+from typing import TYPE_CHECKING, Dict, Optional, TypeVar
 from enum import Enum
 
 import attrs

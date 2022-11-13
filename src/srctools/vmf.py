@@ -4,9 +4,9 @@ Wraps property_parser tree in a set of classes which smartly handle
 specifics of VMF files.
 """
 from typing import (
-    Any, IO, TYPE_CHECKING, AbstractSet, Dict, FrozenSet, ItemsView, Iterable, Iterator, KeysView,
-    List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar, Union,
-    ValuesView, overload,
+    IO, TYPE_CHECKING, AbstractSet, Any, Dict, FrozenSet, ItemsView, Iterable, Iterator,
+    KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar,
+    Union, ValuesView, overload,
 )
 from typing_extensions import Final
 from array import ArrayType as Array
@@ -24,7 +24,7 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, Matrix, Vec, to_matrix, AnyAngle, AnyMatrix
+from srctools.math import Angle, AnyAngle, AnyMatrix, Matrix, Vec, to_matrix
 import srctools
 
 

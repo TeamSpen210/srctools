@@ -26,6 +26,7 @@ from .math import Vec
 # if the user used them elsewhere.
 if TYPE_CHECKING:
     import tkinter
+
     from PIL.Image import Image as PIL_Image
 
 # A little dance to import both the Cython and Python versions,
