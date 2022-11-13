@@ -19,18 +19,12 @@ def quote(txt: str) -> str:
     return txt
 
 
-WM_COPYDATA = 0x4A
-
-try:
+if sys.platform == 'win32':
     import ctypes
 
     _FindWindowW = ctypes.windll.user32.FindWindowW
     _SendMessageW = ctypes.windll.user32.SendMessageW
-except (ImportError, AttributeError):
-    def _send_cmd(command: bytes, classname: str) -> None:
-        """Not available on this OS."""
-        raise OSError('Functions not available!')
-else:
+
     _FindWindowW.argtypes = [ctypes.c_wchar_p, ctypes.c_wchar_p]
     _FindWindowW.restype = ctypes.c_void_p  # HWND
     is_64bit = sys.maxsize > 2**33
@@ -44,6 +38,9 @@ else:
         long_ptr,  # LPARAM lParam
     ]
     _SendMessageW.restype = long_ptr
+
+    WM_COPYDATA = 0x4A
+    del is_64bit
 
     class CopyDataStruct(ctypes.Structure):
         """Data to pass for WM_COPYDATA."""
@@ -66,6 +63,10 @@ else:
         )
         if not _SendMessageW(window, WM_COPYDATA, uint_ptr(), ctypes.cast(ctypes.byref(data), long_ptr)):
             raise ctypes.WinError(descr="Failed to send command.")
+else:
+    def _send_cmd(command: bytes, classname: str) -> None:
+        """Not available on this OS."""
+        raise OSError('Functions not available!')
 
 
 def send_engine_command(command: bytes, *, classname: str = 'Valve001') -> None:
