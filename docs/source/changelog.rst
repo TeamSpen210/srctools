@@ -21,6 +21,7 @@ Dev branch
   :external:py:class:`typing.SupportsRound`, since
   `typeshed updated <https://github.com/python/typeshed/pull/9151>`_ the overloads for
   :external:py:func:`round()` to permit zero-arg calls to return a non-:external:py:class:`int` type.
+* Permit VMFs to accept frozen math classes directly as keyvalues.
 
 -------------
 Version 2.3.6

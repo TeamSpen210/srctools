@@ -24,7 +24,10 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, AnyAngle, AnyMatrix, Matrix, Vec, to_matrix
+from srctools.math import (
+    Angle, AnyAngle, AnyMatrix, AnyVec, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec,
+    to_matrix
+)
 import srctools
 
 
@@ -52,8 +55,14 @@ T = TypeVar('T')
 # Types we allow for setting keyvalues. These we can stringify into something
 # matching Valve's usual encoding.
 # Other types are just str()ed, which might produce a bad result.
-ValidKVs = Union[str, int, bool, float, Vec, Angle, Matrix]
-ValidKV_T = TypeVar('ValidKV_T', str, int, bool, float, Vec, Angle, Matrix)
+ValidKVs = Union[str, int, bool, float, AnyVec, AnyAngle, AnyMatrix]
+ValidKV_T = TypeVar(
+    'ValidKV_T',
+    str, int, bool, float,
+    Vec, FrozenVec,
+    Angle, FrozenAngle,
+    Matrix, FrozenMatrix,
+)
 
 
 class DispFlag(Flag):
@@ -106,7 +115,7 @@ def conv_kv(val: ValidKVs) -> str:
         return '1'
     elif val is False:
         return '0'
-    elif isinstance(val, Matrix):
+    elif isinstance(val, Matrix) or isinstance(val, FrozenMatrix):
         return str(val.to_angle())
     else:
         return str(val)
