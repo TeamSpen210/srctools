@@ -563,8 +563,8 @@ class VecBase:
         def __sub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
         def __rsub__(self: VecT, other: Union['VecBase', Tuple3, int, float]) -> VecT: ...
 
-        def __mul__(self: VecT, other: float) -> 'Vec': ...
-        def __rmul__(self: VecT, other: float) -> 'Vec': ...
+        def __mul__(self: VecT, other: float) -> VecT: ...
+        def __rmul__(self: VecT, other: float) -> VecT: ...
 
         def __truediv__(self: VecT, other: float) -> VecT: ...
         def __rtruediv__(self: VecT, other: float) -> VecT: ...
@@ -951,14 +951,14 @@ class VecBase:
             self.x * other[1] - self.y * other[0],
         )
 
-    def norm_mask(self, normal: 'Vec') -> 'Vec':
+    def norm_mask(self: VecT, normal: AnyVec) -> VecT:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
         If not axis-aligned, it will do the equivalent.
         """
         norm = normal.norm()
-        return norm * self.dot(norm)
+        return type(self)(norm * self.dot(norm))
 
     len = mag
     mag_sq = len_sq

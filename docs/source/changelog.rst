@@ -22,6 +22,8 @@ Dev branch
   `typeshed updated <https://github.com/python/typeshed/pull/9151>`_ the overloads for
   :external:py:func:`round()` to permit zero-arg calls to return a non-:external:py:class:`int` type.
 * Permit VMFs to accept frozen math classes directly as keyvalues.
+* Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
+  :py:class:`~srctools.math.FrozenVec`.
 
 -------------
 Version 2.3.6
