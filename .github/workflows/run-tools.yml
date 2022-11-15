@@ -42,7 +42,7 @@ jobs:
     # Test both ends of the version, to catch version changes.
     - name: MyPy version 3.7
       run: |
-        mypy --python-version 3.7 src/srctools/
+        mypy --python-version 3.7 src/srctools/ type_tests/
     - name: MyPy version 3.10
       run: |
-        mypy --python-version 3.10 src/srctools/
+        mypy --python-version 3.10 src/srctools/ type_tests/

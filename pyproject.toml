@@ -39,7 +39,7 @@ classifiers = [
 ]
 dependencies=[
 	"attrs >= 21.2.0",
-	"typing_extensions >= 4.1.0",
+	"typing_extensions >= 4.4.0",
 	"importlib_resources >= 5.8.0",
 ]
 [optional-dependencies]
