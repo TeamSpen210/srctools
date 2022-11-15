@@ -951,7 +951,7 @@ class VecBase:
             self.x * other[1] - self.y * other[0],
         )
 
-    def norm_mask(self: VecT, normal: AnyVec) -> VecT:
+    def norm_mask(self: VecT, normal: 'Vec | FrozenVec') -> VecT:
         """Subtract the components of this vector not in the direction of the normal.
 
         If the normal is axis-aligned, this will zero out the other axes.
