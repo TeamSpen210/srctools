@@ -3,7 +3,7 @@ requires = [
 	"setuptools >= 61",
 	"wheel >= 0.37.0",
 	"cython >= 0.29.30",
-	"versioningit >= 0.3.0"
+	"versioningit >= 2.1.0"
 	]
 build-backend = "setuptools.build_meta"
 
@@ -74,9 +74,9 @@ default-tag = "v0.0.0"
 rmprefix = "postcompiler_"  # For old tags
 
 [tool.versioningit.format]
-distance = "{version}.dev_{distance}+{rev}"
-dirty = "{version}+dirty_{build_date:%Y.%m.%d}"
-distance-dirty = "{version}.dev{distance}+{rev}.dirty_{build_date:%Y.%m.%d}"
+distance = "{base_version}.dev_{distance}+{rev}"
+dirty = "{base_version}+dirty_{build_date:%Y.%m.%d}"
+distance-dirty = "{base_version}.dev{distance}+{rev}.dirty.{build_date:%Y.%m.%d}"
 
 [tool.versioningit.write]
 method = "basic"
