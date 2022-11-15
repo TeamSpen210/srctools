@@ -439,7 +439,7 @@ class _EmptyValuesView(ValuesView[Any]):
 
 
 _set_hash: Final = hash(frozenset())
-EmptyMapping: MutableMapping[Any, Any] = _EmptyMapping()
+EmptyMapping: _EmptyMapping = _EmptyMapping()
 EmptyKeysView: KeysView[Any] = _EmptyKeysView(EmptyMapping)
 EmptyItemsView: ItemsView[Any, Any] = _EmptyItemsView(EmptyMapping)
 EmptyValuesView: ValuesView[Any] = _EmptyValuesView(EmptyMapping)
