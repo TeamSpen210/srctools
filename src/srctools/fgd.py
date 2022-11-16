@@ -980,7 +980,7 @@ class IODef:
         # Read desc
         io_vals, token = read_colon_list(tok)
 
-        if token is token.EQUALS:
+        if token is Token.EQUALS:
             raise tok.error(token)
 
         if io_vals:
@@ -1357,7 +1357,7 @@ class EntityDef:
         else:
             return f'<Entity {self.classname}>'
 
-    def __deepcopy__(self, memodict: dict) -> 'EntityDef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'EntityDef':
         """Handle copying ourselves, to eliminate lookups when not required."""
         copy = EntityDef.__new__(EntityDef)
         copy.type = self.type
