@@ -1,6 +1,6 @@
 """Parses material files."""
 from typing import (
-    Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO, Tuple,
+    Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO, Tuple,
     TypeVar, Union, overload,
 )
 from enum import Enum
@@ -263,8 +263,6 @@ class Material(MutableMapping[str, str]):
                 if token is Tok.BRACE_OPEN:
                     prop.append(Material._parse_block(tok, param_name))
                     continue
-                elif token is Tok.NEWLINE:
-                    pass
                 elif token is Tok.BRACE_CLOSE:
                     # End of us after single name.
                     prop.append(Keyvalues(param_name, ''))
@@ -301,7 +299,7 @@ class Material(MutableMapping[str, str]):
 
     def apply_patches(
         self,
-        fsys: FileSystem,
+        fsys: FileSystem[Any],
         *,
         limit: int = 100,
         parent_func: Optional[Callable[[str], None]] = None,
@@ -316,7 +314,7 @@ class Material(MutableMapping[str, str]):
 
     def _apply_patch(
         self,
-        fsys: FileSystem,
+        fsys: FileSystem[Any],
         count: int,
         limit: int,
         parent_func: Optional[Callable[[str], None]],

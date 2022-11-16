@@ -65,23 +65,7 @@ class SurfChar(Enum):
     #: CSGO
     SANDBARREL = '12'
 
-_InitArgT = TypeVar('_InitArgT', float, str, bool, SurfChar)
 T = TypeVar('T')
-
-
-def _attr_value(
-    parent: Optional['SurfaceProp'],
-    name: str,
-    arg: Optional[_InitArgT],
-    default: _InitArgT,
-) -> _InitArgT:
-    """Internal function for initialising."""
-    if arg is not None:
-        return arg
-    if parent:
-        return getattr(parent, name)
-    else:
-        return default
 
 
 @attrs.define(init=False)

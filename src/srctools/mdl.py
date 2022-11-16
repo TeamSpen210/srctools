@@ -1,7 +1,7 @@
 """Parses Source models, to extract metadata."""
 from typing import (
-    BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType, Tuple, Union,
-    cast,
+    BinaryIO, Dict, Iterable, Iterator, List, Optional, Sequence as SequenceType, Tuple, TypeVar,
+    Union, Any, cast,
 )
 from enum import Enum, Flag as FlagEnum
 from pathlib import PurePosixPath
@@ -32,6 +32,7 @@ MDL_EXTS: SequenceType[str] = [
     '.sw.vtx',
     '.vtx',
 ]
+FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 
 
 class Flags(FlagEnum):
@@ -313,7 +314,9 @@ class Model:
 
     This does not parse the animation or geometry data, only other metadata.
     """
-    def __init__(self, filesystem: FileSystem, file: File):
+    _sys: FileSystem[Any]
+    _file: File[Any]
+    def __init__(self, filesystem: FileSysT, file: File[FileSysT]) -> None:
         """Parse a model from a file."""
         self._file = file
         self._sys = filesystem
@@ -321,7 +324,7 @@ class Model:
         self.checksum = b'\0\0\0\0'
 
         self.phys_keyvalues = Keyvalues.root()
-        with self._file.open_bin() as f:
+        with file.open_bin() as f:
             self._load(f)
 
         path = PurePosixPath(file.path)

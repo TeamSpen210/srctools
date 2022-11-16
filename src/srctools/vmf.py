@@ -8,7 +8,7 @@ from typing import (
     KeysView, List, Mapping, Match, MutableMapping, Optional, Pattern, Set, Tuple, TypeVar,
     Union, ValuesView, overload,
 )
-from typing_extensions import Final
+from typing_extensions import Final, Literal, TypeAlias
 from array import ArrayType as Array
 from collections import defaultdict
 from contextlib import suppress
@@ -1501,6 +1501,9 @@ class UVAxis:
         return rep + ')'
 
 
+DispPower: TypeAlias = Literal[0, 1, 2, 3, 4]
+
+
 class Side:
     """A brush face."""
     __slots__ = [
@@ -1530,7 +1533,7 @@ class Side:
     uaxis: UVAxis
     vaxis: UVAxis
 
-    disp_power: int
+    disp_power: DispPower
     disp_pos: Optional[Vec]
     disp_elevation: float
     disp_flags: DispFlag
@@ -1548,7 +1551,7 @@ class Side:
         rotation: float=0,
         uaxis: Optional[UVAxis] = None,
         vaxis: Optional[UVAxis] = None,
-        disp_power: int=0,
+        disp_power: DispPower=0,
     ):
         """Planes must be a list of 3 Vecs or 3-tuples."""
         self.map = vmf_file
@@ -1623,7 +1626,10 @@ class Side:
 
         # Deal with displacements.
         disp_power = disp_tree.int('power', 4)
-        side.disp_power = disp_power
+        if disp_power in (0, 1, 2, 3, 4):
+            side.disp_power = disp_power  # type: ignore
+        else:
+            raise ValueError(f'Invalid displacement power {disp_power}!')
         side.disp_pos = disp_tree.vec('startposition')
         side.disp_elevation = disp_tree.float('elevation')
         disp_flag_ind = disp_tree.int('flags')

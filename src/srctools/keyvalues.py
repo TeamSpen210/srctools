@@ -752,16 +752,14 @@ class Keyvalues:
         """
         if isinstance(other, Keyvalues):
             return self._value == other._value
-        else:
-            return self._value == other  # Just compare values
+        return NotImplemented
 
     def __ne__(self, other: Any) -> builtins.bool:
         """Not-Equal To comparison. This ignores names.
         """
         if isinstance(other, Keyvalues):
             return self._value != other._value
-        else:
-            return self._value != other  # Just compare values
+        return NotImplemented
 
     def __len__(self) -> builtins.int:
         """Determine the number of child properties."""

@@ -1,7 +1,8 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
     IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
-    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
+    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar,
+    Union,
     cast, overload,
 )
 from collections import ChainMap, defaultdict
@@ -47,6 +48,7 @@ __all__ = [
 # Cached result of FGD.engine_dbase().
 _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
+FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 
 
@@ -688,7 +690,7 @@ class KeyValues:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: dict) -> 'KeyValues':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'KeyValues':
         return KeyValues(
             self.name,
             self.type,
@@ -950,7 +952,7 @@ class IODef:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: dict) -> 'IODef':
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'IODef':
         return IODef(self.name, self.type, self.desc)
 
     @classmethod
@@ -1384,7 +1386,7 @@ class EntityDef:
         copy.out = _EntityView(copy, 'outputs', 'out')
         return copy
 
-    def __getstate__(self) -> tuple:
+    def __getstate__(self) -> Tuple[object, ...]:
         """Don't include EntityView while pickling."""
         return (
             self.type,
@@ -1400,7 +1402,7 @@ class EntityDef:
             self.is_alias,
         )
 
-    def __setstate__(self, state: tuple) -> None:
+    def __setstate__(self, state: Tuple[Any, ...]) -> None:
         """We can regenerate EntityView from scratch."""
         (
             self.type,
@@ -1645,7 +1647,7 @@ class FGD:
     """A FGD set for a game. May be composed of several files."""
     # List of names we have already parsed.
     # We don't parse them again, to prevent infinite loops.
-    _parse_list: Set[File]
+    _parse_list: Set[File[Any]]
     # Entity definitions
     entities: Dict[str, EntityDef]
     # Maximum bounding box of map
@@ -1675,8 +1677,8 @@ class FGD:
     @classmethod
     def parse(
         cls,
-        file: Union[File, str],
-        filesystem: Optional[FileSystem] = None,
+        file: Union[File[Any], str],
+        filesystem: Optional[FileSystem[Any]] = None,
     ) -> 'FGD':
         """Parse an FGD file.
 
@@ -1916,8 +1918,8 @@ class FGD:
 
     def parse_file(
         self,
-        filesys: FileSystem,
-        file: File,
+        filesys: FileSysT,
+        file: File[FileSysT],
         *,
         eval_bases: bool=True,
         encoding: str = 'cp1252',
