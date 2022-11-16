@@ -2915,8 +2915,9 @@ class _EntityFixupValues(ValuesView[str]):
 
     def __contains__(self, item: object) -> bool:
         """Check if any fixup has the given value."""
+        val = conv_kv(item)  # type: ignore
         for fixup in self._mapping._fixup.values():
-            if item == fixup.value:
+            if fixup.value == val:
                 return True
         return False
 
@@ -2942,7 +2943,7 @@ class _EntityFixupItems(ItemsView[str, str]):
             if var and var[0] == '$':
                 var = var[1:]
             try:
-                return self._mapping._fixup[var.casefold()].value == value
+                return self._mapping._fixup[var.casefold()].value == conv_kv(value)
             except KeyError:
                 return False
         return False
