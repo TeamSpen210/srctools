@@ -22,7 +22,7 @@ from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
     Optional, Tuple, Type, TypeVar, Union, cast, overload,
 )
-from typing_extensions import Final, Literal, Protocol, final
+from typing_extensions import Final, Literal, Protocol, TypeGuard, final
 import contextlib
 import math
 import warnings
@@ -116,6 +116,18 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
         return Matrix.from_angle(p, y, r)
 
 
+def _check_tuple3(obj: object) -> TypeGuard[Tuple3]:
+    """Check this object is a 3-tuple of floats (or int)."""
+    if isinstance(obj, tuple) and len(obj) == 3:
+        x, y, z = obj
+        return (
+            (isinstance(x, float) or isinstance(x, int)) and
+            (isinstance(y, float) or isinstance(y, int)) and
+            (isinstance(z, float) or isinstance(z, int))
+        )
+    return False
+
+
 class Vec_tuple(NamedTuple):
     """An immutable tuple, useful for dictionary keys."""
     x: float
@@ -183,7 +195,7 @@ def __{func}__(self, other: Union['Vec', tuple, float]):
             self.z {op} other.z,
         )
     try:
-        if isinstance(other, tuple):
+        if _check_tuple3(other):
             x = self.x {op} other[0]
             y = self.y {op} other[1]
             z = self.z {op} other[2]
@@ -208,7 +220,7 @@ def __r{func}__(self, other: Union['VecBase', tuple, float]):
             other.z {op} self.z,
         )
     try:
-        if isinstance(other, tuple):
+        if _check_tuple3(other):
             x = other[0] {op} self.x
             y = other[1] {op} self.y
             z = other[2] {op} self.z
@@ -233,7 +245,7 @@ def __i{func}__(self, other: Union[VecBase, tuple, float]):
         self.x {op}= other.x
         self.y {op}= other.y
         self.z {op}= other.z
-    elif isinstance(other, tuple):
+    elif _check_tuple3(other):
         self.x {op}= other[0]
         self.y {op}= other[1]
         self.z {op}= other[2]
@@ -658,7 +670,7 @@ class VecBase:
                 abs(other.y - self.y) < 1e-6 and
                 abs(other.z - self.z) < 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 abs(self.x - other[0]) < 1e-6 and
                 abs(self.y - other[1]) < 1e-6 and
@@ -680,7 +692,7 @@ class VecBase:
                 abs(other.y - self.y) >= 1e-6 or
                 abs(other.z - self.z) >= 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 abs(self.x - other[0]) >= 1e-6 or
                 abs(self.y - other[1]) >= 1e-6 or
@@ -702,7 +714,7 @@ class VecBase:
                 (other.y - self.y) > 1e-6 and
                 (other.z - self.z) > 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 (other[0] - self.x) > 1e-6 and
                 (other[1] - self.y) > 1e-6 and
@@ -724,7 +736,7 @@ class VecBase:
                 (self.y - other.y) <= 1e-6 and
                 (self.z - other.z) <= 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 (self.x - other[0]) <= 1e-6 and
                 (self.y - other[1]) <= 1e-6 and
@@ -746,7 +758,7 @@ class VecBase:
                 (self.y - other.y) > 1e-6 and
                 (self.z - other.z) > 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 (self.x - other[0]) > 1e-6 and
                 (self.y - other[1]) > 1e-6 and
@@ -768,7 +780,7 @@ class VecBase:
                 (other.y - self.y) <= 1e-6 and
                 (other.z - self.z) <= 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             return (
                 (other[0] - self.x) <= 1e-6 and
                 (other[1] - self.y) <= 1e-6 and
@@ -2200,7 +2212,7 @@ class AngleBase:
                 abs(other._yaw - self._yaw) <= 1e-6 and
                 abs(other._roll - self._roll) <= 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             pit = other[0] % 360.0 % 360.0
             yaw = other[1] % 360.0 % 360.0
             rol = other[2] % 360.0 % 360.0
@@ -2225,7 +2237,7 @@ class AngleBase:
                 abs(other._yaw - self._yaw) > 1e-6 or
                 abs(other._roll - self._roll) > 1e-6
             )
-        elif isinstance(other, tuple) and len(other) == 3:
+        elif _check_tuple3(other):
             pit = other[0] % 360.0 % 360.0
             yaw = other[1] % 360.0 % 360.0
             rol = other[2] % 360.0 % 360.0
@@ -2294,8 +2306,7 @@ class AngleBase:
         if isinstance(other, (Vec, FrozenVec)):
             return other @ Py_Matrix.from_angle(self)
         elif isinstance(other, tuple):
-            x, y, z = other
-            return Vec(x, y, z) @ Py_Matrix.from_angle(self)
+            return Vec(other) @ Py_Matrix.from_angle(self)
         elif isinstance(other, AngleBase):
             # Should always be done by __matmul__!
             return self._rotate_angle(other, type(self))
