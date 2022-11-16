@@ -1703,18 +1703,19 @@ class BSP:
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
         self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
-    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: Optional[List['Face']] = None) -> Iterator['Face']:
+    def _read_faces_common(self, data: bytes, orig_faces: Optional[List['Face']]) -> Iterator['Face']:
         """Read one of the faces arrays.
 
         For ORIG_FACES, _orig_faces is None and that entry is ignored.
         For the others, that is the parsed orig faces lump, which each face
         may reference.
+        In VitaminSource, we only have the regular faces lump.
         """
         is_vitamin = self.is_vitamin
 
         # The non-original faces have the Hammer ID value, which is an array
         # in the same order. But some versions don't define it as anything...
-        if _orig_faces is not None:
+        if orig_faces is not None or is_vitamin:
             hammer_ids = read_array('<H', self.lumps[BSP_LUMPS.FACEIDS].data)
         else:
             hammer_ids = []
@@ -1775,8 +1776,8 @@ class BSP:
                 # If orig faces is provided, that is the original face
                 # we were created from. Additionally, it seems the original
                 # face data has invalid texinfo, so copy ours on top of it.
-                if _orig_faces is not None:
-                    orig_face = _orig_faces[orig_face_ind]
+                if orig_faces is not None:
+                    orig_face = orig_faces[orig_face_ind]
                     orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
                     try:
                         orig_face.hammer_id = hammer_id = hammer_ids[i]
@@ -1805,9 +1806,9 @@ class BSP:
                 vitamin_flags,
             )
 
-    def _lmp_write_orig_faces(
+    def _write_faces_common(
         self, faces: List['Face'],
-        get_orig_face: Optional[Callable[['Face'], int]] = None,
+        get_orig_face: Optional[Callable[['Face'], int]],
     ) -> bytes:
         """Reconstruct one of the faces arrays.
 
@@ -1877,15 +1878,47 @@ class BSP:
                 self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
         return face_buf.getvalue()
 
+    def _lmp_read_orig_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the unsplit faces lump."""
+        if self.is_vitamin:
+            return ()  # Unused
+        else:
+            return self._read_faces_common(data, None)
+
+    def _lmp_write_orig_faces(self, faces: List['Face']) -> bytes:
+        """Write the unsplit faces lump."""
+        if self.is_vitamin:
+            return b''  # Unused.
+        else:
+            return self._write_faces_common(faces, None)
+
     def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
         """Parse the main split faces lump."""
-        return self._lmp_read_orig_faces(data, self.orig_faces)
+        if self.is_vitamin:
+            return self._read_faces_common(data, None)  # No orig faces.
+        else:
+            return self._read_faces_common(data, self.orig_faces)
 
     def _lmp_write_faces(self, faces: List['Face']) -> bytes:
-        return self._lmp_write_orig_faces(faces, _find_or_insert(self.orig_faces))
+        """Write the main split faces lump."""
+        if self.is_vitamin:
+            return self._write_faces_common(faces, None)  # No orig faces.
+        else:
+            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
 
-    _lmp_read_hdr_faces = _lmp_read_faces
-    _lmp_write_hdr_faces = _lmp_write_faces
+    def _lmp_read_hdr_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the HDR-specific split faces lump."""
+        if self.is_vitamin:
+            return ()  # Unused
+        else:
+            return self._read_faces_common(data, self.orig_faces)
+
+    def _lmp_write_hdr_faces(self, faces: List['Face']) -> bytes:
+        """Write the HDR-specific split faces lump."""
+        if self.is_vitamin:
+            return b''  # Unused.
+        else:
+            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
 
     def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
         """Parse brush definitions, along with the sides."""
