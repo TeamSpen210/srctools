@@ -1346,7 +1346,7 @@ class Element(Mapping[str, Attribute[Any]]):
     def _parse_kv2_element(
         cls, tok: Tokenizer,
         id_to_elem: Dict[UUID, 'Element'],
-        fixups: List[Tuple[Attribute, Optional[int], UUID, int]],
+        fixups: List[Tuple[Attribute[Any], Optional[int], UUID, int]],
         stubs: Dict[UUID, 'StubElement'],
         name: str,
         typ_name: str,
@@ -1896,7 +1896,7 @@ class Element(Mapping[str, Attribute[Any]]):
         else:
             return attr
 
-    def popitem(self) -> Tuple[str, Attribute]:
+    def popitem(self) -> Tuple[str, Attribute[Any]]:
         """Remove and return a (name, attr) pair as a 2-tuple, or raise KeyError."""
         key, attr = self._members.popitem()
         return (attr.name, attr)

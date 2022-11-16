@@ -1,5 +1,5 @@
 """Implements support for collapsing instances."""
-from typing import Container, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import Any, Container, Dict, Iterable, List, Optional, Set, Tuple, Union
 from enum import Enum
 from pathlib import Path
 
@@ -136,8 +136,6 @@ class Instance:
                     sides.append(str(new_side))
             sides.sort()
             return ' '.join(sides)
-        elif type is ValueTypes.VEC_AXIS:
-            value = str(Vec.from_str(value) @ self.orient)
         elif type is ValueTypes.TARG_NODE_SOURCE or type is ValueTypes.TARG_NODE_DEST:
             # For each old ID always create a new ID.
             try:
@@ -151,9 +149,9 @@ class Instance:
                 value = str(new_id)
         elif type is ValueTypes.VEC_AXIS:
             # Two positions seperated by commas.
-            first, second = value.split(',')
-            first = Vec.from_str(first) @ self.orient + self.pos
-            second = Vec.from_str(second) @ self.orient + self.pos
+            first_str, second_str = value.split(',')
+            first = Vec.from_str(first_str) @ self.orient + self.pos
+            second = Vec.from_str(second_str) @ self.orient + self.pos
             value = f'{first}, {second}'
         # All others = no change required.
         return value
@@ -473,7 +471,7 @@ def collapse_one(
 
 def collapse_all(
     vmf: VMF,
-    fsys: FileSystem,
+    fsys: FileSystem[Any],
     recur_limit: int = 100,
     fgd: Optional[FGD] = None,
 ) -> None:

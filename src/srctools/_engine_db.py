@@ -145,6 +145,7 @@ def make_lookup(file: IO[bytes], inv_list: List[str]) -> Callable[[], str]:
     """Return a function that reads the index from the file, and returns the string it matches."""
     def lookup() -> str:
         """Perform the lookup."""
+        index: int
         [index] = _fmt_16bit.unpack(file.read(2))
         return inv_list[index]
     return lookup

@@ -1,5 +1,5 @@
 """Parse out all material proxies used in the given game."""
-from typing import Counter, DefaultDict, List
+from typing import Any, Counter, DefaultDict, List
 import argparse
 import sys
 import traceback
@@ -20,7 +20,7 @@ def main(args: List[str]) -> None:
     )
 
     result = parser.parse_args(args)
-    fsys: FileSystem
+    fsys: FileSystem[Any]
     try:
         fsys = Game(result.game).get_filesystem()
     except FileNotFoundError:

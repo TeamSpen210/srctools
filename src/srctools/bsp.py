@@ -453,7 +453,7 @@ class TexData:
     # always the same as regular width/height.
 
     @classmethod
-    def from_material(cls, fsys: FileSystem, mat_name: str) -> 'TexData':
+    def from_material(cls, fsys: FileSystem[Any], mat_name: str) -> 'TexData':
         """Given a filesystem, parse the specified material and compute the texture values."""
         orig_mat = mat_name
         mat_folded = mat_name.casefold()
@@ -536,7 +536,7 @@ class TexInfo:
         return self._info.width, self._info.height
 
     @overload
-    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem) -> None: ...
+    def set(self, bsp: 'BSP', mat: str, *, fsys: FileSystem[Any]) -> None: ...
     @overload
     def set(self, bsp: 'BSP', mat: str, reflectivity: Vec, width: int, height: int) -> None: ...
 
@@ -545,7 +545,7 @@ class TexInfo:
         bsp: 'BSP', mat: str,
         reflectivity: Optional[Vec] = None,
         width: int=0, height: int=0,
-        fsys: Optional[FileSystem] = None,
+        fsys: Optional[FileSystem[Any]] = None,
     ) -> None:
         """Set the material used for this texinfo.
 
@@ -569,7 +569,7 @@ class TexInfo:
 @attrs.define(eq=False)
 class Plane:
     """A plane."""
-    def _normal_setattr(self, _: attrs.Attribute, value: Vec) -> Vec:
+    def _normal_setattr(self, _: 'attrs.Attribute[Vec]', value: Vec) -> Vec:
         """Recompute the plane type whenever the normal is changed."""
         value = Vec(value)
         self.type = PlaneType.from_normal(value)
@@ -628,7 +628,7 @@ class Edge:
     def __repr__(self) -> str:
         return f'Edge({self.a!r}, {self.b!r})'
 
-    def key(self) -> tuple:
+    def key(self) -> Tuple[object, ...]:
         """A key to match the edge with."""
         a, b = self.a, self.b
         return (a.x, a.y, a.z, b.x, b.y, b.z)
@@ -744,7 +744,7 @@ class Cubemap:
         """Return the actual image size."""
         if self.size == 0:
             return 32
-        return 2**(self.size-1)
+        return 2 ** (self.size - 1)
 
 
 @attrs.define(eq=False)
@@ -1061,7 +1061,7 @@ class ParsedLump(Generic[T]):
     @overload
     def __get__(self, instance: 'BSP', owner: Optional[type]=None) -> T: ...
 
-    def __get__(self, instance: Optional['BSP'], owner: Optional[type]=None) -> Union['ParsedLump', T]:
+    def __get__(self, instance: Optional['BSP'], owner: Optional[type]=None) -> Union['ParsedLump[T]', T]:
         """Read the lump, then discard."""
         if instance is None:  # Accessed on the class.
             return self
@@ -1450,7 +1450,7 @@ class BSP:
         return lump.data
 
     @overload
-    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem) -> 'TexInfo':
+    def create_texinfo(self, mat: str, *, copy_from: 'TexInfo', fsys: FileSystem[Any]) -> 'TexInfo':
         """Copy from texinfo using filesystem."""
     @overload
     def create_texinfo(
@@ -1471,7 +1471,7 @@ class BSP:
         lightmap_t_off: Vec=Vec(),
         lightmap_t_shift: float=-99999.0,
         flags: SurfFlags = SurfFlags.NONE,
-        *, fsys: FileSystem,
+        *, fsys: FileSystem[Any],
     ) -> 'TexInfo':
         """Construct from filesystem."""
     @overload
@@ -1506,7 +1506,7 @@ class BSP:
         copy_from: Optional['TexInfo'] = None,
         reflectivity: Optional[Vec] = None,
         width: int=0, height: int=0,
-        fsys: Optional[FileSystem] = None,
+        fsys: Optional[FileSystem[Any]] = None,
     ) -> 'TexInfo':
         """Create or find a texinfo entry with the specified values.
 

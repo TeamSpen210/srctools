@@ -1,5 +1,5 @@
 """Parse particle system files."""
-from typing import IO, Dict, Iterable, List, Union, overload
+from typing import Any, IO, Dict, Iterable, List, Union, overload
 import copy
 
 import attrs
@@ -19,7 +19,7 @@ FORMAT_VERSION: int = 2
 
 class Operator:
     """A generic option in particles."""
-    def __init__(self, name: str, function: str, options: Dict[str, Attribute]) -> None:
+    def __init__(self, name: str, function: str, options: Dict[str, Attribute[Any]]) -> None:
         self.function = function
         self.name = name
         self.options = options
@@ -38,7 +38,7 @@ class Child:
 class Particle:
     """A particle system."""
     name: str
-    options: Dict[str, Attribute] = attrs.Factory(dict)
+    options: Dict[str, Attribute[Any]] = attrs.Factory(dict)
     renderers: List[Operator] = attrs.field(factory=list)
     operators: List[Operator] = attrs.field(factory=list)
     initializers: List[Operator] = attrs.field(factory=list)
