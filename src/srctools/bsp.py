@@ -1723,7 +1723,7 @@ class BSP:
         hammer_id: Optional[int]
 
         for i, face_data in enumerate(struct.iter_unpack(
-            '<5i4iB' if self.is_vitamin else '<H??i4h4sif5iHHI',
+            '<5i4iB3x' if self.is_vitamin else '<H??i4h4sif5iHHI',
             data,
         )):
             if is_vitamin:
@@ -1830,7 +1830,7 @@ class BSP:
                     texinfo = -1
                 # noinspection PyProtectedMember
                 face_buf.write(struct.pack(
-                    '<5i4iB',
+                    '<5i4iB3x',
                     add_plane(face.plane),
                     texinfo,
                     face._dispinfo_ind,
@@ -2003,7 +2003,7 @@ class BSP:
 
         is_vitamin = self.is_vitamin
         if is_vitamin:
-            leaf_fmt = '<ihh6I4HhB'
+            leaf_fmt = '<ihh6I4HhBx'
             has_ambient = False
         else:
             leaf_fmt = '<ihh6h4Hh'
@@ -2146,7 +2146,7 @@ class BSP:
 
             if is_vitamin:
                 buf.write(struct.pack(
-                    '<ihh6I4HhB',
+                    '<ihh6I4HhBx',
                     leaf.contents.value, leaf.cluster_id, leaf.area,
                     int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
                     int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
