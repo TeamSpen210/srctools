@@ -2260,18 +2260,20 @@ class BSP:
 
         texdata_list: List[bytes] = []
         texinfo_result: List[bytes] = []
+        next_ind = 0
 
         for info in texinfos:
             # noinspection PyProtectedMember
             tdat = info._info
             # Try and find an existing reference to this texdata.
-            # If not, the index is at the end of the list, where we write and
-            # insert it.
-            # That's then done again for the texture name itself.
+            # If not, put it at the end of the list. Since we're rebuilding it, we can just
+            # increment an index each time to track that. We can't use the list len because
+            # we append twice for non-Desolation games which have an extra bit of data.
             try:
                 ind = texdata_ind[tdat]
             except KeyError:
-                ind = texdata_ind[tdat] = len(texdata_list)
+                ind = texdata_ind[tdat] = next_ind
+                next_ind += 1
                 texdata_list.append(struct.pack(
                     '<3f3i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
