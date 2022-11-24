@@ -24,6 +24,7 @@ Dev branch
 * Permit VMFs to accept frozen math classes directly as keyvalues.
 * Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
   :py:class:`~srctools.math.FrozenVec`.
+* Parse errors in ``BSP.ents`` are more informative and verbose.
 
 -------------
 Version 2.3.6

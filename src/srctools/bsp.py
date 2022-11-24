@@ -2382,20 +2382,19 @@ class BSP:
         No brushes are read.
         """
         vmf = VMF()
-        cur_ent = None  # None when between brackets.
+        cur_ent: Optional[Entity] = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
 
         # This code performs the same thing as property_parser, but simpler
         # since there's no nesting, comments, or whitespace, except between
         # key and value. We also operate directly on the (ASCII) binary.
-        for line in ent_data.splitlines():
+        for lineno, line in enumerate(ent_data.splitlines(), 1):
             if line == b'{':
                 if cur_ent is not None:
                     raise ValueError(
-                        '2 levels of nesting after {} ents'.format(
-                            len(vmf.entities)
-                        )
+                        f'2 levels of nesting after {len(vmf.entities)} ents, on line {lineno}'
                     )
+                # The first entity updates worldspawn.
                 if not seen_spawn:
                     cur_ent = vmf.spawn
                     seen_spawn = True
@@ -2404,13 +2403,12 @@ class BSP:
                 continue
             elif line == b'}':
                 if cur_ent is None:
-                    raise ValueError(
-                        f'Too many closing brackets after'
-                        f' {len(vmf.entities)} ents!'
-                    )
+                    raise ValueError(f'Too many closing brackets after {len(vmf.entities)} ents!')
                 if cur_ent is vmf.spawn:
                     if cur_ent['classname'] != 'worldspawn':
-                        raise ValueError('No worldspawn entity!')
+                        raise ValueError(
+                            f'First entity must be worldspawn, not "{cur_ent["classname"]}"!'
+                        )
                 else:
                     # The spawn ent is stored in the attribute, not in the ent
                     # list.
@@ -2423,14 +2421,17 @@ class BSP:
                 return vmf
 
             if cur_ent is None:
-                raise ValueError("Keyvalue outside brackets!")
+                raise ValueError(f"Keyvalue outside brackets on line {lineno}!")
 
             # Line is of the form <"key" "val">, but handle escaped quotes
             # in the value. Valve's parser doesn't allow that, but we might
             # as well be better...
-            key, value = line.split(b'" "', 2)
-            decoded_key = key[1:].decode('ascii')
-            decoded_value = value[:-1].replace(br'\"', b'"').decode('ascii')
+            try:
+                key, value = line.split(b'" "', 1)
+                decoded_key = key[1:].decode('ascii')
+                decoded_value = value[:-1].replace(br'\"', b'"').decode('ascii')
+            except ValueError as exc:
+                raise ValueError(f'Failed to decode line {lineno}={line!r}') from exc
 
             # Now, we need to figure out if this is a keyvalue,
             # or connection.
@@ -2440,7 +2441,10 @@ class BSP:
             # successfully parse as numbers.
             if 27 in value:
                 # All outputs use the comma_sep, so we can ID them.
-                cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
+                try:
+                    cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
+                except ValueError as exc:
+                    raise ValueError(f'Failed to parse output in line {lineno}={line!r}') from exc
                 if self.out_comma_sep is None:
                     self.out_comma_sep = False
             elif value.count(b',') == 4:
