@@ -153,7 +153,7 @@ class Triangle:
         self.point2 = p2
         self.point3 = p3
 
-    def __iter__(self) -> Iterable[Vertex]:
+    def __iter__(self) -> Iterator[Vertex]:
         yield self.point1
         yield self.point2
         yield self.point3
