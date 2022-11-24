@@ -153,7 +153,7 @@ class Triangle:
         self.point2 = p2
         self.point3 = p3
 
-    def __iter__(self) -> Iterator[Vertex]:
+    def __iter__(self) -> Iterable[Vertex]:
         yield self.point1
         yield self.point2
         yield self.point3
@@ -276,6 +276,14 @@ class Mesh:
             deepcopy(self.animation, memodict),
             deepcopy(self.triangles, memodict),
         )
+
+    def root_bone(self) -> Bone:
+        """Return the root of our bone hierachy."""
+        for bone in self.bones.values():
+            if bone.parent is None:
+                return bone
+        else:
+            raise ValueError('No root bone?')
 
     @staticmethod
     def blank(root_name: str) -> 'Mesh':
@@ -587,14 +595,7 @@ class Mesh:
         if offset is None:
             offset = Vec()
 
-        for bone in self.bones.values():
-            if bone.parent is None:
-                root_bone = bone
-                break
-        else:
-            raise ValueError('No root bone?')
-
-        bone_link = [(root_bone, 1.0)]
+        bone_link = [(self.root_bone(), 1.0)]
         matrix = to_matrix(rotation)
 
         for orig_tri in mdl.triangles:
