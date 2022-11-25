@@ -111,7 +111,9 @@ class TriangleTag(Flag):
 
 def conv_kv(val: ValidKVs) -> str:
     """Convert a type into a string matching Valve's syntax."""
-    if val is True:
+    if isinstance(val, str):  # Early out for speed
+        return val
+    elif val is True:
         return '1'
     elif val is False:
         return '0'
