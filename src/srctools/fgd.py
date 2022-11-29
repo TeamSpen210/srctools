@@ -5,6 +5,7 @@ from typing import (
     Union,
     cast, overload,
 )
+from typing_extensions import TypeAlias
 from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
@@ -50,6 +51,8 @@ _ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
+# Collections of tags.
+TagsSet: TypeAlias = FrozenSet[str]
 
 
 class FGDParseError(TokenSyntaxError):
@@ -363,7 +366,7 @@ def _write_longstring(file: IO[str], text: str, *, indent: str) -> None:
     file.write((' +\n' + indent).join(sections))
 
 
-def read_tags(tok: BaseTokenizer) -> FrozenSet[str]:
+def read_tags(tok: BaseTokenizer) -> TagsSet:
     """Parse a set of tags from the file.
 
     The open bracket was just read.
@@ -397,7 +400,7 @@ def read_tags(tok: BaseTokenizer) -> FrozenSet[str]:
 def validate_tags(
     tags: Collection[str],
     error: Callable[[str], BaseException]=ValueError,
-) -> FrozenSet[str]:
+) -> TagsSet:
     """Check these tags have valid values.
 
     The error exception is raised if invalid.
@@ -457,25 +460,25 @@ class Resource:
     """
     filename: str
     type: FileType = FileType.GENERIC
-    tags: FrozenSet[str] = frozenset()
+    tags: TagsSet = frozenset()
 
     @classmethod
-    def mdl(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+    def mdl(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
         """Create a resource definition for a model."""
         return cls(filename, FileType.MODEL, tags)
 
     @classmethod
-    def mat(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+    def mat(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
         """Create a resource definition for a material."""
         return cls(filename, FileType.MATERIAL, tags)
 
     @classmethod
-    def snd(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+    def snd(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
         """Create a resource definition for a soundscript."""
         return cls(filename, FileType.GAME_SOUND, tags)
 
     @classmethod
-    def part(cls, filename: str, tags: FrozenSet[str] = frozenset()) -> 'Resource':
+    def part(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
@@ -486,7 +489,7 @@ _GetFGDFunc = Callable[[str], 'EntityDef']
 @attrs.frozen(init=False)
 class ResourceCtx:
     """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
-    tags: FrozenSet[str]
+    tags: TagsSet
     fsys: FileSystem[Any]
     #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
     mapname: str
@@ -642,14 +645,14 @@ class KeyValues:
     desc: str = ''
     val_list: Union[
         None,
-        List[Tuple[int, str, bool, FrozenSet[str]]],
-        List[Tuple[str, str, FrozenSet[str]]],
+        List[Tuple[int, str, bool, TagsSet]],
+        List[Tuple[str, str, TagsSet]],
     ] = None
     readonly: bool = False
     reportable: bool = False
 
     @property
-    def choices_list(self) -> List[Tuple[str, str, FrozenSet[str]]]:
+    def choices_list(self) -> List[Tuple[str, str, TagsSet]]:
         """Check that the keyvalues are CHOICES type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -657,12 +660,12 @@ class KeyValues:
         if self.type is not ValueTypes.CHOICES:
             raise TypeError
         if self.val_list is None:
-            lst: List[Tuple[str, str, FrozenSet[str]]] = []
+            lst: List[Tuple[str, str, TagsSet]] = []
             self.val_list = lst
         return cast(list, self.val_list)
 
     @property
-    def flags_list(self) -> List[Tuple[int, str, bool, FrozenSet[str]]]:
+    def flags_list(self) -> List[Tuple[int, str, bool, TagsSet]]:
         """Check that the keyvalues are SPAWNFLAGS type, and then return val_list.
 
         This isolates the type ambiguity of the attr.
@@ -670,7 +673,7 @@ class KeyValues:
         if self.type is not ValueTypes.SPAWNFLAGS:
             raise TypeError
         if self.val_list is None:
-            lst: List[Tuple[int, str, bool, FrozenSet[str]]] = []
+            lst: List[Tuple[int, str, bool, TagsSet]] = []
             self.val_list = lst
         return cast(list, self.val_list)
 
@@ -1048,7 +1051,7 @@ class _EntityView(Generic[T]):
     def _maps(
         self,
         ent: Optional['EntityDef'] = None,
-    ) -> Iterator[Mapping[str, Mapping[FrozenSet[str], T]]]:
+    ) -> Iterator[Mapping[str, Mapping[TagsSet, T]]]:
         """Yield all the mappings which we need to look through."""
         if ent is None:
             ent = self._ent
@@ -1121,9 +1124,9 @@ class EntityDef:
     classname: str = ''  #: The classname of this entity, as originally typed.
 
     # These are (name) -> {tags: value} dicts.
-    keyvalues: Dict[str, Dict[FrozenSet[str], KeyValues]] = attrs.field(kw_only=True, factory=dict)
-    inputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
-    outputs: Dict[str, Dict[FrozenSet[str], IODef]] = attrs.field(kw_only=True, factory=dict)
+    keyvalues: Dict[str, Dict[TagsSet, KeyValues]] = attrs.field(kw_only=True, factory=dict)
+    inputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
+    outputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
 
     #: Keyvalues have an order. If not present in here, they appear at the end.
     kv_order: List[str] = attrs.field(kw_only=True, factory=list)
@@ -1328,7 +1331,7 @@ class EntityDef:
                         except KeyError:
                             raise tok.error('Unknown resource type "{}"!', res_tok_val) from None
                         filename = tok.expect(Token.STRING)
-                        tags: FrozenSet[str] = frozenset()
+                        tags: TagsSet = frozenset()
                         token, tok_val = tok()
                         if token is Token.BRACK_OPEN:
                             tags = read_tags(tok)
@@ -1373,9 +1376,9 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]] = {}
+            coll: Dict[str, Dict[TagsSet, Union[KeyValues, IODef]]] = {}
             setattr(copy, val_key, coll)
-            tags_map: Dict[FrozenSet[str], Union[KeyValues, IODef]]
+            tags_map: Dict[TagsSet, Union[KeyValues, IODef]]
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
@@ -1527,14 +1530,14 @@ class EntityDef:
                 else:
                     yield (res.type, res.filename)
 
-    def _iter_attrs(self) -> Iterator[Dict[str, Dict[FrozenSet[str], Union[KeyValues, IODef]]]]:
+    def _iter_attrs(self) -> Iterator[Dict[str, Dict[TagsSet, Union[KeyValues, IODef]]]]:
         """Iterate over both the keyvalues and I/O dicts.
 
         This is used when we want to deal with both in the same way.
         """
         return iter([self.keyvalues, self.inputs, self.outputs])  # type: ignore
 
-    def strip_tags(self, tags: FrozenSet[str]) -> None:
+    def strip_tags(self, tags: TagsSet) -> None:
         """Strip all tags from this entity, blanking them.
 
         Only values matching the given tags will be kept.
@@ -1657,7 +1660,7 @@ class FGD:
     # Directories we have excluded.
     mat_exclusions: Set[PurePosixPath]
     # Additional dirs restricted to specific engines with tags.
-    tagged_mat_exclusions: Dict[FrozenSet[str], Set[PurePosixPath]]
+    tagged_mat_exclusions: Dict[TagsSet, Set[PurePosixPath]]
 
     # Automatic visgroups.
     # The way Valve implemented this is rather strange, so we need to match
@@ -1984,7 +1987,7 @@ class FGD:
                     # Material exclusion directories.
 
                     # Custom syntax: (tag1, tag2) after the header, then [.
-                    tags: Optional[FrozenSet[str]] = None
+                    tags: Optional[TagsSet] = None
                     for tok, tok_value in tokeniser.skipping_newlines():
                         if tok is Token.BRACK_OPEN:
                             break
