@@ -979,13 +979,17 @@ class PackList:
         *,
         whitelist: Iterable[FileSystem[Any]]=(),
         blacklist: Iterable[FileSystem[Any]]=(),
+        callback: Callable[[str], Optional[bool]]=lambda f: None,
         dump_loc: Optional[Path]=None,
         only_dump: bool=False,
         ignore_vpk: bool=True,
     ) -> None:
         """Pack all our files into the packfile in the BSP.
 
-        The filesys is used to find files to pack.
+        The filesystem is used to find files to pack.
+        First it is passed to the callback (if provided), which should return True/False to
+        determine if the file should be packed. If it returns None, then the whitelist/blacklist
+        is checked.
         Filesystems must be in the whitelist and not in the blacklist, if provided.
         If ignore_vpk is True, files in VPK won't be packed unless that system
         is in allow_filesys.
@@ -995,13 +999,15 @@ class PackList:
         # We need to rebuild the zipfile from scratch, so we can overwrite
         # old data if required.
 
-        # First retrieve the data.
+        # First retrieve existing files.
+        # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         packed_files: Dict[str, Tuple[str, bytes]] = {
             info.filename.casefold(): (info.filename, bsp.pakfile.read(info))
             for info in bsp.pakfile.infolist()
+            # None = no opinion, so keep.
+            if callback(info.filename.replace('\\', '/')) is not False
         }
 
-        # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
         all_systems: Set[FileSystem[Any]] = {
             sys for sys, _ in
             self.fsys.systems
@@ -1060,7 +1066,11 @@ class PackList:
                 LOGGER.debug('EXT:  {}', fname)
                 continue
 
-            if self.fsys.get_system(sys_file) in allowed:
+            should_pack = callback(sys_file.path)
+            if should_pack is None:
+                should_pack = self.fsys.get_system(sys_file) in allowed
+
+            if should_pack:
                 LOGGER.debug('ADD:  {}', fname)
                 with sys_file.open_bin() as f:
                     data = f.read()
@@ -1085,7 +1095,7 @@ class PackList:
 
         This requires parsing through many files.
         """
-        # Run though repeatedly, until all are analysed.
+        # Run through repeatedly, until all are analysed.
         todo = True
         while todo:
             todo = False

@@ -14,7 +14,7 @@ Dev branch
   :py:class:`~srctools.vmf.VMF` as a parameter.
 * Replace ``on_error`` callback in :py:meth:`srctools.logger.init_logging()` with ``error``, which
   now takes just an :external:py:class:`BaseException`.
-* :py:class:`~srctools.surfaceprops.SurfaceProp` has been rewritten to use ``attrs`` to simplify code.
+* :py:class:`~srctools.surfaceprop.SurfaceProp` has been rewritten to use ``attrs`` to simplify code.
 * Add :py:func:`srctools.run.send_engine_command()`, which executes console commands in a running
   Source game.
 * :py:class:`~srctools.math.Vec` and :py:class:`~srctools.math.FrozenVec` no longer inherits from
@@ -25,6 +25,7 @@ Dev branch
 * Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
   :py:class:`~srctools.math.FrozenVec`.
 * Parse errors in ``BSP.ents`` are more informative and verbose.
+* Add an additional callback parameter to :py:meth:`srctools.packlist.PackList.pack_into_zip()` to finely control which files are packed.
 
 -------------
 Version 2.3.6
