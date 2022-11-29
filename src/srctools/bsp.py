@@ -27,7 +27,7 @@ from srctools.const import BSPContents as BrushContents, SurfFlags, add_unknown
 from srctools.filesys import FileSystem
 from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, Vec
-from srctools.tokenizer import escape_text
+from srctools.tokenizer import Token, Tokenizer
 from srctools.vmf import VMF, Entity, Output
 from srctools.vmt import Material
 from srctools.vtf import VTF
@@ -2385,15 +2385,12 @@ class BSP:
         cur_ent: Optional[Entity] = None  # None when between brackets.
         seen_spawn = False  # The first entity is worldspawn.
 
-        # This code performs the same thing as property_parser, but simpler
-        # since there's no nesting, comments, or whitespace, except between
-        # key and value. We also operate directly on the (ASCII) binary.
-        for lineno, line in enumerate(ent_data.splitlines(), 1):
-            if line == b'{':
+        # We have to use the tokenizer to handle newlines inside quotes.
+        tok = Tokenizer(ent_data.decode('ascii'), allow_escapes=True)
+        for tok_typ, tok_value in tok:
+            if tok_typ is Token.BRACE_OPEN:
                 if cur_ent is not None:
-                    raise ValueError(
-                        f'2 levels of nesting after {len(vmf.entities)} ents, on line {lineno}'
-                    )
+                    raise tok.error('2 levels of nesting after {} ents', len(vmf.entities))
                 # The first entity updates worldspawn.
                 if not seen_spawn:
                     cur_ent = vmf.spawn
@@ -2401,62 +2398,66 @@ class BSP:
                 else:
                     cur_ent = Entity(vmf)
                 continue
-            elif line == b'}':
+            elif tok_typ is Token.BRACE_CLOSE:
                 if cur_ent is None:
-                    raise ValueError(f'Too many closing brackets after {len(vmf.entities)} ents!')
+                    raise tok.error('Too many closing brackets after {} ents!', len(vmf.entities))
                 if cur_ent is vmf.spawn:
                     if cur_ent['classname'] != 'worldspawn':
-                        raise ValueError(
-                            f'First entity must be worldspawn, not "{cur_ent["classname"]}"!'
-                        )
+                        raise tok.error('First entity must be worldspawn, not "{}"!', cur_ent["classname"])
                 else:
-                    # The spawn ent is stored in the attribute, not in the ent
-                    # list.
+                    # The spawn ent is stored in the attribute, not in the ent list.
                     vmf.add_ent(cur_ent)
                 cur_ent = None
                 continue
-            elif line == b'\x00':  # Null byte at end of lump.
+            elif tok_typ is Token.NEWLINE:
+                continue
+            elif tok_typ is Token.EOF:
                 if cur_ent is not None:
                     raise ValueError("Last entity didn't end!")
                 return vmf
+            elif tok_typ is not Token.STRING:
+                raise tok.error(tok_typ, tok_value)
+
+            # Null byte at end of lump.
+            if tok_value == '\x00':
+                tok.expect(Token.EOF)  # If in the middle, raise error.
+                if cur_ent is not None:
+                    raise ValueError("Last entity didn't end!")
+                break
 
             if cur_ent is None:
-                raise ValueError(f"Keyvalue outside brackets on line {lineno}!")
+                raise tok.error("Keyvalue outside brackets: {}({!r})", tok_typ, tok_value)
 
             # Line is of the form <"key" "val">, but handle escaped quotes
             # in the value. Valve's parser doesn't allow that, but we might
             # as well be better...
-            try:
-                key, value = line.split(b'" "', 1)
-                decoded_key = key[1:].decode('ascii')
-                decoded_value = value[:-1].replace(br'\"', b'"').decode('ascii')
-            except ValueError as exc:
-                raise ValueError(f'Failed to decode line {lineno}={line!r}') from exc
+            key = tok_value
+            value = tok.expect(Token.STRING)
 
             # Now, we need to figure out if this is a keyvalue,
             # or connection.
-            # If we're L4D+, this is easy - they use 0x1D as separator.
+            # If we're L4D+, this is easy - they use 0x1B as separator.
             # Before, it's a comma which is common in keyvalues.
             # Assume it's an output if it has exactly 4 commas, and the last two
             # successfully parse as numbers.
-            if 27 in value:
+            if '\x1B' in value:
                 # All outputs use the comma_sep, so we can ID them.
                 try:
-                    cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
+                    cur_ent.add_out(Output.parse(Keyvalues(key, value)))
                 except ValueError as exc:
-                    raise ValueError(f'Failed to parse output in line {lineno}={line!r}') from exc
+                    raise ValueError(f'Failed to parse output in {key!r} {value!r}') from exc
                 if self.out_comma_sep is None:
                     self.out_comma_sep = False
-            elif value.count(b',') == 4:
+            elif value.count(',') == 4:
                 try:
-                    cur_ent.add_out(Output.parse(Keyvalues(decoded_key, decoded_value)))
+                    cur_ent.add_out(Output.parse(Keyvalues(key, value)))
                 except ValueError:
-                    cur_ent[decoded_key] = decoded_value
+                    cur_ent[key] = value
                 if self.out_comma_sep is None:
                     self.out_comma_sep = True
             else:
                 # Normal keyvalue.
-                cur_ent[decoded_key] = decoded_value
+                cur_ent[key] = value
 
         # This keyvalue needs to be stored in the VMF object too.
         # The one in the entity is ignored.
@@ -2482,7 +2483,7 @@ class BSP:
         for ent in itertools.chain([vmf.spawn], vmf.entities):
             out.write(b'{\n')
             for key, value in ent.items():
-                out.write(f'"{key}" "{escape_text(value)}"\n'.encode('ascii'))
+                out.write(f'"{key}" "{value}"\n'.encode('ascii'))
             for output in ent.outputs:
                 if use_comma_sep is not None:
                     output.comma_sep = use_comma_sep
