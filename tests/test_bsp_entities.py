@@ -38,8 +38,7 @@ def test_read(datadir: Path) -> None:
     assert target in vmf.by_target['particle_targ_38']
 
     assert len(relay.outputs) == 2, relay.outputs
-    # Test both old comma format, and new ESC format. Parameter has exactly 4 commas, to test that
-    # the priority is the correct order.
+    # Test both old comma format, and new ESC format.
     assert relay.outputs[0].output == 'ontrigger'
     assert relay.outputs[0].target == 'the_target'
     assert relay.outputs[0].input == 'Skin'
@@ -51,6 +50,7 @@ def test_read(datadir: Path) -> None:
     assert relay.outputs[1].output == 'OnSpawn'
     assert relay.outputs[1].target == '!player'
     assert relay.outputs[1].input == 'RunScriptCode'
+    # Parameter has exactly 4 commas - ESC should be preferred over those.
     assert relay.outputs[1].params == 'Setup(45,32,28,96,false)'
     assert relay.outputs[1].delay == 2.5
     assert relay.outputs[1].comma_sep is False
