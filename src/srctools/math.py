@@ -20,9 +20,9 @@ but not vice-versa.
 """
 from typing import (
     TYPE_CHECKING, Any, Callable, ClassVar, Dict, Iterable, Iterator, List, NamedTuple,
-    Optional, Tuple, Type, TypeVar, Union, cast, overload,
+    Optional, Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import Final, Literal, Protocol, TypeGuard, final
+from typing_extensions import Final, Literal, Protocol, TypeGuard, final, overload
 import contextlib
 import math
 import warnings

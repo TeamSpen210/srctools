@@ -17,9 +17,9 @@ the file.
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, KeysView, List,
     Mapping, MutableMapping, NamedTuple, NewType, Optional, Sequence, Set, Tuple, Type,
-    TypeVar, Union, ValuesView, cast, overload,
+    TypeVar, Union, ValuesView, cast,
 )
-from typing_extensions import Final, Literal, TypeAlias
+from typing_extensions import Final, Literal, TypeAlias, overload
 from enum import Enum
 from struct import Struct, error as StructError, pack
 from uuid import UUID, uuid4 as get_uuid

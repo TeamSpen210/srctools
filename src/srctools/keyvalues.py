@@ -61,9 +61,9 @@ Handling `\\\\n`, `\\\\t`, `\\\\"`, and `\\\\\\\\` escape characters can be enab
 """
 from typing import (
     Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar,
-    Union, cast, overload,
+    Union, cast,
 )
-from typing_extensions import Final
+from typing_extensions import Final, overload
 import builtins  # Keyvalues.bool etc shadows these.
 import keyword
 import os
