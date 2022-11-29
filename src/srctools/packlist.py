@@ -1001,12 +1001,7 @@ class PackList:
 
         # First retrieve existing files.
         # The packed_files dict is a casefolded name -> (orig name, bytes) tuple.
-        packed_files: Dict[str, Tuple[str, bytes]] = {
-            info.filename.casefold(): (info.filename, bsp.pakfile.read(info))
-            for info in bsp.pakfile.infolist()
-            # None = no opinion, so keep.
-            if callback(info.filename.replace('\\', '/')) is not False
-        }
+        packed_files: Dict[str, Tuple[str, bytes]] = {}
 
         all_systems: Set[FileSystem[Any]] = {
             sys for sys, _ in
@@ -1038,6 +1033,14 @@ class PackList:
             shutil.rmtree(dump_loc, ignore_errors=True)
         else:
             only_dump = False  # Pointless to not dump to pakfile or folder.
+
+        # Test existing files against the callback, so we can remove them.
+        for info in bsp.pakfile.infolist():
+            # Explicitly compare because None = no opinion, so we want to keep then.
+            if callback(info.filename.replace('\\', '/')) is False:
+                LOGGER.debug('REMOVE: {}', info.filename)
+            else:
+                packed_files[info.filename.casefold()] = (info.filename, bsp.pakfile.read(info))
 
         for file in self._files.values():
             # Need to ensure / separators.
