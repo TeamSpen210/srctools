@@ -1,4 +1,5 @@
 """Test the Vector object."""
+from typing import Union
 from pathlib import Path
 from random import Random
 import copy
@@ -274,19 +275,69 @@ def test_with_axes(frozen_thawed_vec: VecClass):
             assert vec2[c] == z, msg
 
 
-def test_vec_stringification(frozen_thawed_vec: VecClass):
-    """Test the various string methods."""
-    Vec = frozen_thawed_vec
-    name = 'FrozenVec' if Vec is vec_mod.FrozenVec else 'Vec'
-    # Add on the edge case where '.0' needs to be kept.
-    for x, y, z in iter_vec(VALID_NUMS + [-210.048]):
-        v = Vec(x, y, z)
-        assert str(v) == f'{x:g} {y:g} {z:g}'
-        assert repr(v) == f'{name}({x:g}, {y:g}, {z:g})'
-        assert v.join() == f'{x:g}, {y:g}, {z:g}'
-        assert v.join(' : ') == f'{x:g} : {y:g} : {z:g}'
-        assert format(v) == f'{x:g} {y:g} {z:g}'
-        assert format(v, '.02f') == f'{x:.02f} {y:.02f} {z:.02f}'
+@pytest.mark.parametrize('clsname', ['Vec', 'FrozenVec', 'Angle', 'FrozenAngle'])
+def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
+    """Test string methods for both angles and vectors."""
+    cls: Union[VecClass, AngleClass] = getattr(vec_mod, clsname)
+    # Test:
+    # Zeros, float in each pos, rounding down to int, up to int, format with more decimal places,
+    # format with less.
+    obj = cls(0.0, 0.0, 0.0)
+    assert str(obj) == '0 0 0'
+    assert repr(obj) == f'{clsname}(0, 0, 0)'
+    assert obj.join(':') == '0:0:0'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 0.00% 0.00%'
+
+    # Test each axis individually, to ensure no mixups are made.
+    obj = cls(3.14, 0.0, 0.0)
+    assert str(obj) == '3.14 0 0'
+    assert repr(obj) == f'{clsname}(3.14, 0, 0)'
+    assert obj.join(':') == '3.14:0:0'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '314.00% 0.00% 0.00%'
+
+    obj = cls(0.0, 3.14, 0.0)
+    assert str(obj) == '0 3.14 0'
+    assert repr(obj) == f'{clsname}(0, 3.14, 0)'
+    assert obj.join(':') == '0:3.14:0'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 314.00% 0.00%'
+
+    obj = cls(0.0, 0.0, 3.14)
+    assert str(obj) == '0 0 3.14'
+    assert repr(obj) == f'{clsname}(0, 0, 3.14)'
+    assert obj.join(':') == '0:0:3.14'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 0.00% 314.00%'
+
+    # Now test a value that will round up both to zero and an integer.
+    # -0.001 rounds to 360.
+    if clsname.endswith('Angle'):
+        obj = cls(-0.00000012, 37.9999999, 162.99999999)
+        assert str(obj) == '360 38 163'
+        assert repr(obj) == f'{clsname}(360, 38, 163)'
+        assert obj.join(':') == '360:38:163'
+        assert format(obj) == str(obj)
+        assert format(obj, '.2%') == '36000.00% 3800.00% 16300.00%'
+        assert format(obj, '.7f') == '359.9999999 37.9999999 163'  # Enough precision to not round.
+    else:
+        obj = cls(-0.00000012, 37.9999999, 162.99999999)
+        assert str(obj) == '-0 38 163'
+        assert repr(obj) == f'{clsname}(-0, 38, 163)'
+        assert obj.join(':') == '-0:38:163'
+        assert format(obj) == str(obj)
+        assert format(obj, '.2%') == '-0.00% 3800.00% 16300.00%'
+        assert format(obj, '.7f') == '-0.0000001 37.9999999 163'
+
+    # And the same but rounding down.
+    obj = cls(0.0000000012, 36.000000001, 68.000000012)
+    assert str(obj) == '0 36 68'
+    assert repr(obj) == f'{clsname}(0, 36, 68)'
+    assert obj.join(':') == '0:36:68'
+    assert format(obj) == str(obj)
+    assert format(obj, '.2%') == '0.00% 3600.00% 6800.00%'
+    assert format(obj, '.9f') == '0.000000001 36.000000001 68.000000012'
 
 
 def test_unary_ops(frozen_thawed_vec: VecClass) -> None:

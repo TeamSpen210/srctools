@@ -109,20 +109,6 @@ def test_from_str(frozen_thawed_angle: AngleClass) -> None:
         assert test_val == Angle.from_str('34.5 38.4 -23 -38', roll=val).roll
 
 
-def test_angle_stringification(frozen_thawed_angle: AngleClass) -> None:
-    """Test the various string methods."""
-    Angle = frozen_thawed_angle
-    name = 'FrozenAngle' if Angle is vec_mod.FrozenAngle else 'Angle'
-    for pitch, yaw, roll in iter_vec([0, 33, 328.98, 210.048, 289.4987]):
-        v: Angle = Angle(pitch, yaw, roll)
-        assert str(v) == f'{pitch:g} {yaw:g} {roll:g}'
-        assert repr(v) == f'{name}({pitch:g}, {yaw:g}, {roll:g})'
-        assert v.join() == f'{pitch:g}, {yaw:g}, {roll:g}'
-        assert v.join(' : ') == f'{pitch:g} : {yaw:g} : {roll:g}'
-        assert format(v) == f'{pitch:g} {yaw:g} {roll:g}'
-        assert format(v, '.02f') == f'{pitch:.02f} {yaw:.02f} {roll:.02f}'
-
-
 def test_with_axes(frozen_thawed_angle: AngleClass) -> None:
     """Test the with_axes() constructor."""
     Angle = frozen_thawed_angle
