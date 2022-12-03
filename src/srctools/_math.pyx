@@ -145,14 +145,14 @@ cdef int trim_float(char *buf):
     """Strip a .0 from the end of a float."""
     cdef int size = len(buf)
     cdef int large = size
-    print(repr(buf[:large]), end='')
+    #print(repr(buf[:large]), end='')
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
         size -= 1
     if size > 1 and buf[size - 1] == b'.':
         buf[size - 1] = 0
         size -= 1
-    print(repr(buf[:large]))
+    #print(repr(buf[:large]))
 
 
 cdef char * _format_float(double x, int places) except NULL:
@@ -196,7 +196,7 @@ cdef str _join_triple(const vec_t *values, str joiner):
     cdef char *ybuf = NULL
     cdef char *zbuf = NULL
     cdef char *buf = NULL
-    cdef char *join_b = PyUnicode_AsUTF8AndSize(joiner, NULL)
+    cdef const char *join_b = PyUnicode_AsUTF8AndSize(joiner, NULL)
     try:
         xbuf = _format_float(values.x, 6)
         ybuf = _format_float(values.y, 6)
