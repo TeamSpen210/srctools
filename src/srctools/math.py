@@ -116,6 +116,14 @@ def to_matrix(value: Union['AnyAngle', 'AnyMatrix', 'AnyVec', None]) -> 'Matrix 
         return Matrix.from_angle(p, y, r)
 
 
+def format_float(x: float, places: int=6) -> str:
+    """Convert the specified float to a string, stripping off a .0 if it ends with that."""
+    result = f'{x:.{places}f}'
+    if '.' in result:
+        result = result.rstrip('0')
+    return result.rstrip('.')
+
+
 def _check_tuple3(obj: object) -> TypeGuard[Tuple3]:
     """Check this object is a 3-tuple of floats (or int)."""
     if isinstance(obj, tuple) and len(obj) == 3:
@@ -820,8 +828,7 @@ class VecBase:
 
         This strips off the ``.0`` if no decimal portion exists.
         """
-        # :g strips the .0 off of floats if it's an integer.
-        return f'{self.x:g}{delim}{self.y:g}{delim}{self.z:g}'
+        return f'{format_float(self.x)}{delim}{format_float(self.y)}{delim}{format_float(self.z)}'
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -829,16 +836,28 @@ class VecBase:
         This is the main format in Valve's file formats.
         This strips off the .0 if no decimal portion exists.
         """
-        return f"{self.x:g} {self.y:g} {self.z:g}"
+        return f'{format_float(self.x)} {format_float(self.y)} {format_float(self.z)}'
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted.
 
-        This returns each axis formated with the provided specification, joined by spaces.
+        This returns each axis formatted with the provided specification, joined by spaces.
         """
         if not format_spec:
-            format_spec = 'g'
-        return f"{self.x:{format_spec}} {self.y:{format_spec}} {self.z:{format_spec}}"
+            return str(self)
+
+        x = format(self.x, format_spec)
+        if '.' in x:
+            x = x.rstrip('0')
+
+        y = format(self.y, format_spec)
+        if '.' in y:
+            y = y.rstrip('0')
+
+        z = format(self.z, format_spec)
+        if '.' in z:
+            z = z.rstrip('0')
+        return f'{x.rstrip(".")} {y.rstrip(".")} {z.rstrip(".")}'
 
     def __iter__(self) -> Iterator[float]:
         """Iterating through the vector yields each axis in order."""
@@ -1091,7 +1110,7 @@ class FrozenVec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"FrozenVec({self.x:g}, {self.y:g}, {self.z:g})"
+        return f"FrozenVec({format_float(self.x)}, {format_float(self.y)}, {format_float(self.z)})"
 
     def __reduce__(self) -> Tuple[Callable[[float, float, float], 'FrozenVec'], Tuple3]:
         """Pickling support.
@@ -1272,7 +1291,7 @@ class Vec(VecBase):
 
     def __repr__(self) -> str:
         """Code required to reproduce this vector."""
-        return f"Vec({self.x:g}, {self.y:g}, {self.z:g})"
+        return f"Vec({format_float(self.x)}, {format_float(self.y)}, {format_float(self.z)})"
 
     def freeze(self) -> FrozenVec:
         """Return an immutable version of this vector."""
@@ -1709,7 +1728,7 @@ class MatrixBase:
 
     def __getitem__(self, item: Tuple[int, int]) -> float:
         """Retrieve an individual matrix value by x, y position (0-2)."""
-        return getattr(self, _IND_TO_SLOT[item])
+        return cast(float, getattr(self, _IND_TO_SLOT[item]))
 
     __iter__ = None
     """Iteration doesn't make much sense."""
@@ -1943,6 +1962,7 @@ class Matrix(MatrixBase):
     an ``Angle`` directly. To construct a rotation, use one of the several classmethods available
     depending on what rotation is desired.
     """
+    # noinspection PyMissingConstructor   # Does nothing.
     def __init__(self, matrix: 'MatrixBase | None' = None) -> None:
         """Create a new matrix.
 
@@ -2143,8 +2163,7 @@ class AngleBase:
 
         This strips off the .0 if no decimal portion exists.
         """
-        # :g strips the .0 off of floats if it's an integer.
-        return f'{self._pitch:g}{delim}{self._yaw:g}{delim}{self._roll:g}'
+        return f'{format_float(self._pitch)}{delim}{format_float(self._yaw)}{delim}{format_float(self._roll)}'
 
     def __str__(self) -> str:
         """Return the values, separated by spaces.
@@ -2153,13 +2172,25 @@ class AngleBase:
         vectors.
         This strips off the .0 if no decimal portion exists.
         """
-        return f"{self._pitch:g} {self._yaw:g} {self._roll:g}"
+        return f"{format_float(self._pitch)} {format_float(self._yaw)} {format_float(self._roll)}"
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
         if not format_spec:
-            format_spec = 'g'
-        return f"{self._pitch:{format_spec}} {self._yaw:{format_spec}} {self._roll:{format_spec}}"
+            return str(self)
+
+        pitch = format(self._pitch, format_spec)
+        if '.' in pitch:
+            pitch = pitch.rstrip('0')
+
+        yaw = format(self._yaw, format_spec)
+        if '.' in yaw:
+            yaw = yaw.rstrip('0')
+
+        roll = format(self._roll, format_spec)
+        if '.' in roll:
+            roll = roll.rstrip('0')
+        return f'{pitch.rstrip(".")} {yaw.rstrip(".")} {roll.rstrip(".")}'
 
     def as_tuple(self) -> Tuple[float, float, float]:
         """Return the Angle as a tuple."""
@@ -2428,7 +2459,7 @@ class FrozenAngle(AngleBase):
         return self
 
     def __repr__(self) -> str:
-        return f'FrozenAngle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+        return f"FrozenAngle({format_float(self._pitch)}, {format_float(self._yaw)}, {format_float(self._roll)})"
 
 
 @final
@@ -2538,7 +2569,7 @@ class Angle(AngleBase):
         self._roll = float(roll) % 360 % 360
 
     def __repr__(self) -> str:
-        return f'Angle({self._pitch:g}, {self._yaw:g}, {self._roll:g})'
+        return f'Angle({format_float(self._pitch)}, {format_float(self._yaw)}, {format_float(self._roll)})'
 
     @classmethod
     @overload
