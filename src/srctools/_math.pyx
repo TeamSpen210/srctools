@@ -141,25 +141,22 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef int trim_float(char *buf):
+cdef int trim_float(char *buf, Py_ssize_t size):
     """Strip a .0 from the end of a float."""
-    cdef int size = len(buf)
-    cdef int large = size
-    #print(repr(buf[:large]), end='')
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
         size -= 1
     if size > 1 and buf[size - 1] == b'.':
         buf[size - 1] = 0
         size -= 1
-    #print(repr(buf[:large]))
+    return size
 
 
 cdef char * _format_float(double x, int places) except NULL:
     """Convert the specified float to a string, stripping off a .0 if it ends with that."""
     cdef char *buf
     buf = PyOS_double_to_string(x, b'f', places, 0, NULL)
-    trim_float(buf)
+    trim_float(buf, len(buf))
     return buf
 
 
@@ -213,6 +210,54 @@ cdef str _join_triple(const vec_t *values, str joiner):
         PyMem_Free(xbuf)
         PyMem_Free(ybuf)
         PyMem_Free(zbuf)
+        PyMem_Free(buf)
+
+cdef _format_vec_wspec(const vec_t *values, str spec):
+    """Format a vector with the specified format spec."""
+    cdef str x_str, y_str, z_str
+    cdef const char *x_buf = NULL
+    cdef const char *y_buf = NULL
+    cdef const char *z_buf = NULL
+    cdef char *buf = NULL
+    cdef char *pos
+    cdef Py_ssize_t x_size, y_size, z_size, total
+
+    if not spec:
+        return _format_triple(b'%s %s %s', values)
+
+    x_str = format(values.x, spec)
+    x_buf = PyUnicode_AsUTF8AndSize(x_str, &x_size)
+
+    y_str = format(values.y, spec)
+    y_buf = PyUnicode_AsUTF8AndSize(y_str, &y_size)
+
+    z_str = format(values.z, spec)
+    z_buf = PyUnicode_AsUTF8AndSize(z_str, &z_size)
+
+    # Allocate enough for worst-case (no rounding)
+    buf = <char *>PyMem_Malloc(x_size + y_size + z_size + 3)
+    try:
+        # Pos = current position through the buffer.
+        # For each, copy in the number, then trim back excess zeros.
+        # We then overwrite that with the next part.
+        pos = buf
+        memcpy(pos, x_buf, x_size)
+        x_size = trim_float(pos, x_size)
+        pos += x_size + 1
+        pos[-1] = b' '
+
+        memcpy(pos, y_buf, y_size)
+        y_size = trim_float(pos, y_size)
+        pos += y_size + 1
+        pos[-1] = b' '
+
+        memcpy(pos, z_buf, z_size)
+        z_size = trim_float(pos, z_size)
+        pos += z_size
+        pos[0] = 0
+        # return repr(buf[:pos - buf])
+        return buf[:pos-buf].decode('utf8')
+    finally:
         PyMem_Free(buf)
 
 
@@ -1626,35 +1671,7 @@ cdef class VecBase:
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
-        cdef str x_str, y_str, z_str
-        cdef char *x_buf = NULL
-        cdef char *y_buf = NULL
-        cdef char *z_buf = NULL
-        cdef char *buf = NULL
-        cdef Py_ssize_t size, total
-
-        if not format_spec:
-            return _format_triple(b'%s %s %s', &self.val)
-        total = 4
-
-        x_str = format(self.val.x, format_spec)
-        x_buf = PyUnicode_AsUTF8AndSize(x_str, &size)
-        total += size
-
-        y_str = format(self.val.x, format_spec)
-        y_buf = PyUnicode_AsUTF8AndSize(y_str, &size)
-        total += size
-
-        z_str = format(self.val.x, format_spec)
-        z_buf = PyUnicode_AsUTF8AndSize(z_str, &size)
-        total += size
-
-        buf = <char *>PyMem_Malloc(total)
-        try:
-            snprintf(buf, total, b'%s %s %s', x_buf, y_buf, z_buf)
-            return buf[:total].decode('utf8')
-        finally:
-            PyMem_Free(buf)
+        return _format_vec_wspec(&self.val, format_spec)
 
     def __iter__(self) -> VecIter:
         cdef VecIter viter = VecIter.__new__(VecIter)
@@ -2728,35 +2745,7 @@ cdef class AngleBase:
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
-        cdef str x_str, y_str, z_str
-        cdef char *x_buf = NULL
-        cdef char *y_buf = NULL
-        cdef char *z_buf = NULL
-        cdef char *buf = NULL
-        cdef Py_ssize_t size, total
-
-        if not format_spec:
-            return _format_triple(b'%s %s %s', &self.val)
-        total = 4
-
-        x_str = format(self.val.x, format_spec)
-        x_buf = PyUnicode_AsUTF8AndSize(x_str, &size)
-        total += size
-
-        y_str = format(self.val.x, format_spec)
-        y_buf = PyUnicode_AsUTF8AndSize(y_str, &size)
-        total += size
-
-        z_str = format(self.val.x, format_spec)
-        z_buf = PyUnicode_AsUTF8AndSize(z_str, &size)
-        total += size
-
-        buf = <char *>PyMem_Malloc(total)
-        try:
-            snprintf(buf, total, b'%s %s %s', x_buf, y_buf, z_buf)
-            return buf[:total].decode('utf8')
-        finally:
-            PyMem_Free(buf)
+        return _format_vec_wspec(&self.val, format_spec)
 
     def as_tuple(self):
         """Return the Angle as a tuple."""
