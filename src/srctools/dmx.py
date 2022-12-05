@@ -35,14 +35,14 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, Matrix
+from srctools.math import Angle, FrozenAngle, Vec, FrozenVec, Matrix, FrozenMatrix
 from srctools.tokenizer import Token, Tokenizer
 
 
 __all__ = [
     'ValueType', 'NULL',
-    'STUB',   # Deprecated.
-    'Vec2', 'Vec3', 'Vec4', 'Quaternion', 'Color','AngleTup', 'Time',
+    'STUB', 'Vec3', 'AngleTup',  # Deprecated.
+    'Vec2', 'Vec4', 'Quaternion', 'Color', 'Time',
     'Attribute', 'Element', 'StubElement',
 ]
 
@@ -68,15 +68,15 @@ class ValueType(Enum):
     VEC2 = 'vector2'
     """A generic XY vector, represented by the :py:class:`Vec2` namedtuple. This can be converted from an iterable of 4 floats."""
     VEC3 = 'vector3'
-    """A generic XYZ vector, represented by the :py:class:`srctools.math.Vec` classs. This can be converted from an iterable of 3 floats. The vector will be copied on insertion/extraction to ensure immutability."""
+    """A generic XYZ vector, represented by :py:class:`srctools.math.FrozenVec` classs. This can be converted from an iterable of 3 floats."""
     VEC4 = 'vector4'
     """A generic XYZW vector, represented by the :py:class:`Vec4` namedtuple. This can be converted from an iterable of 4 floats."""
     ANGLE = 'qangle'
-    """An Euler angle, represented by the :py:class:`AngleTup` namedtuple. This can be converted from an iterable of 3 floats, :py:class:`srctools.math.Angle` or :py:class:`srctools.math.Matrix`."""
+    """An Euler angle, represented by :py:class:`srctools.math.FrozenAngle`. This can be converted from an iterable of 3 floats, :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenMatrix` or :py:class:`~srctools.math.Matrix`."""
     QUATERNION = 'quaternion'
     """A rotational quaternion, represented by the :py:class:`Quaternion` namedtuple. This can be converted from a 4-element iterable."""
     MATRIX = 'vmatrix'
-    """A translation :py:class:`srctools.math.Matrix`. Values are copied on insertion/extraction to keep immutability."""
+    """A translation :py:class:`~srctools.math.FrozenMatrix`. This can be converted from a :py:class:`~srctools.math.Angle`,  :py:class:`~srctools.math.FrozenAngle` or :py:class:`~srctools.math.Matrix`."""
 
 
 class _StubType(str, Enum):
@@ -125,16 +125,6 @@ class Vec2(NamedTuple):
         return f'({self[0]:.6g} {self[1]:.6g})'
 
 
-class Vec3(NamedTuple):
-    """A 3-dimensional vector."""
-    x: float
-    y: float
-    z: float
-
-    def __str__(self) -> str:
-        return f'({self[0]:.6g} {self[1]:.6g} {self[2]:.6g})'
-
-
 class Vec4(NamedTuple):
     """A 4-dimensional vector."""
     x: float
@@ -180,11 +170,8 @@ class Color:
         return f'{self.r} {self.g} {self.b} {self.a}'
 
 
-class AngleTup(NamedTuple):
-    """A pitch-yaw-roll angle."""
-    pitch: float
-    yaw: float
-    roll: float
+AngleTup = FrozenAngle  #: :deprecated: Use :py:class:`srctools.math.FrozenAngle`.
+Vec3 = FrozenVec  #: :deprecated: Use :py:class:`srctools.math.FrozenVec`.
 
 
 Time = NewType('Time', float)
@@ -192,32 +179,32 @@ _Element: TypeAlias = 'Element'  # Forward ref.
 Value: TypeAlias = Union[
     int, float, bool, str, bytes,
     Color, Time,
-    Vec2, Vec3, Vec4,
-    AngleTup,
+    Vec2, FrozenVec, Vec4,
+    FrozenAngle,
     Quaternion,
-    Matrix,
+    FrozenMatrix,
     _Element,
 ]
 ValueList = Union[
     List[int], List[float], List[bool], List[str], List[bytes],
     List[Color], List[Time],
-    List[Vec2], List[Vec3], List[Vec4],
-    List[AngleTup],
+    List[Vec2], List[FrozenVec], List[Vec4],
+    List[FrozenAngle],
     List[Quaternion],
-    List[Matrix],
+    List[FrozenMatrix],
     List[_Element],
 ]
 # Additional values we convert to valid types.
-ConvValue: TypeAlias = Value
+ConvValue: TypeAlias = Union[Value, Vec, Matrix, Angle]
 
 ValueT = TypeVar(
     'ValueT',
     int, float, bool, str, bytes,
     Color, Time,
-    Vec2, Vec3, Vec4,
-    AngleTup,
+    Vec2, FrozenVec, Vec4,
+    FrozenAngle,
     Quaternion,
-    Matrix,
+    FrozenMatrix,
     _Element,
 )
 
@@ -332,65 +319,79 @@ class _ValProps:
     # Treat these as properties
     if TYPE_CHECKING:
         @property
-        def val_int(self) -> int:  ...
+        def val_int(self) -> int: return 0
         @val_int.setter
         def val_int(self, value: Union[int, float]) -> None: ...
 
         val_float: float
 
         @property
-        def val_time(self) -> Time: ...
+        def val_time(self) -> Time: return Time(0.0)
         @val_time.setter
         def val_time(self, value: Union[float, Time]) -> None: ...
 
         @property
-        def val_bool(self) -> bool: ...
+        def val_bool(self) -> bool: return False
         @val_bool.setter
         def val_bool(self, value: object) -> None: ...
 
         @property
-        def val_vec2(self) -> Vec2: ...
+        def val_vec2(self) -> Vec2: return Vec2(0.0, 0.0)
         @val_vec2.setter
         def val_vec2(self, value: Union[Vec2, Tuple[float, float], Iterable[float]]) -> None: ...
 
         @property
-        def val_vec3(self) -> Vec3: ...
+        def val_vec3(self) -> FrozenVec: return FrozenVec()
         @val_vec3.setter
-        def val_vec3(self, value: Union[Vec3, Tuple[float, float, float], Iterable[float]]) -> None: ...
+        def val_vec3(self, value: Union[Vec, FrozenVec, Tuple[float, float, float], Iterable[float]]) -> None: ...
 
         @property
-        def val_vec4(self) -> Vec4: ...
+        def val_vec4(self) -> Vec4: return Vec4(0.0, 0.0, 0.0, 1.0)
         @val_vec4.setter
         def val_vec4(self, value: Union[Vec4, Tuple[float, float, float, float], Iterable[float]]) -> None: ...
 
         @property
-        def val_color(self) -> Color: ...
+        def val_color(self) -> Color: return Color(0, 0, 0)
         @val_color.setter
         def val_color(self, value: Union[Color, Tuple[int, int, int, int], Iterable[int]]) -> None: ...
 
         @property
-        def val_colour(self) -> Color: ...
+        def val_colour(self) -> Color: return Color(0, 0, 0)
         @val_colour.setter
         def val_colour(self, value: Union[Color, Tuple[int, int, int, int], Iterable[int]]) -> None: ...
 
         @property
-        def val_str(self) -> str: ...
+        def val_str(self) -> str: return ''
         @val_str.setter
         def val_str(self, value: object) -> None: ...
 
         @property
-        def val_string(self) -> str: ...
+        def val_string(self) -> str: return ''
         @val_string.setter
         def val_string(self, value: object) -> None: ...
 
-        val_angle: AngleTup
-        val_ang: AngleTup
+        @property
+        def val_ang(self) -> FrozenAngle: return FrozenAngle()
+        @val_ang.setter
+        def val_ang(self, value: Union[Angle, FrozenAngle, Tuple[float, float, float], Iterable[float]]) -> None: ...
+
+        @property
+        def val_angle(self) -> FrozenAngle: return FrozenAngle()
+        @val_angle.setter
+        def val_angle(self, value: Union[Angle, FrozenAngle, Tuple[float, float, float], Iterable[float]]) -> None: ...
 
         val_quat: Quaternion
         val_quaternion: Quaternion
 
-        val_mat: Matrix
-        val_matrix: Matrix
+        @property
+        def val_mat(self) -> FrozenMatrix: return FrozenMatrix()
+        @val_mat.setter
+        def val_mat(self, value: Union[Matrix, FrozenMatrix, Angle, FrozenAngle]) -> None: ...
+
+        @property
+        def val_matrix(self) -> FrozenMatrix: return FrozenMatrix()
+        @val_matrix.setter
+        def val_matrix(self, value: Union[Matrix, FrozenMatrix, Angle, FrozenAngle]) -> None: ...
 
         val_bytes: bytes
         val_bin: bytes
@@ -408,11 +409,11 @@ class _ValProps:
         val_bool = _make_val_prop(ValueType.BOOL, bool)
         val_colour = val_color = _make_val_prop(ValueType.COLOR, Color)
         val_vec2 = _make_val_prop(ValueType.VEC2, Vec2)
-        val_vec3 = _make_val_prop(ValueType.VEC3, Vec3)
+        val_vec3 = _make_val_prop(ValueType.VEC3, FrozenVec)
         val_vec4 = _make_val_prop(ValueType.VEC4, Vec4)
         val_quat = val_quaternion = _make_val_prop(ValueType.QUATERNION, Quaternion)
-        val_ang = val_angle = _make_val_prop(ValueType.ANGLE, AngleTup)
-        val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, Matrix)
+        val_ang = val_angle = _make_val_prop(ValueType.ANGLE, FrozenAngle)
+        val_mat = val_matrix = _make_val_prop(ValueType.MATRIX, FrozenMatrix)
         val_compound = val_elem = val = _make_val_prop(ValueType.ELEMENT, _Element)
 
 del _make_val_prop
@@ -482,15 +483,15 @@ class Attribute(Generic[ValueT], _ValProps):
     @overload
     def __init__(self: 'Attribute[Vec2]', name: str, val_type: Literal[ValueType.VEC2], value: Union[Vec2, List[Vec2]]) -> None: ...
     @overload
-    def __init__(self: 'Attribute[Vec3]', name: str, val_type: Literal[ValueType.VEC3], value: Union[Vec3, List[Vec3]]) -> None: ...
+    def __init__(self: 'Attribute[FrozenVec]', name: str, val_type: Literal[ValueType.VEC3], value: Union[FrozenVec, List[FrozenVec]]) -> None: ...
     @overload
     def __init__(self: 'Attribute[Vec4]', name: str, val_type: Literal[ValueType.VEC4], value: Union[Vec4, List[Vec4]]) -> None: ...
     @overload
-    def __init__(self: 'Attribute[AngleTup]', name: str, val_type: Literal[ValueType.ANGLE], value: Union[AngleTup, List[AngleTup]]) -> None: ...
+    def __init__(self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE], value: Union[AngleTup, List[AngleTup]]) -> None: ...
     @overload
     def __init__(self: 'Attribute[Quaternion]', name: str, val_type: Literal[ValueType.QUATERNION], value: Union[Quaternion, List[Quaternion]]) -> None: ...
     @overload
-    def __init__(self: 'Attribute[Matrix]', name: str, val_type: Literal[ValueType.MATRIX], value: Union[Matrix, List[Matrix]]) -> None: ...
+    def __init__(self: 'Attribute[FrozenMatrix]', name: str, val_type: Literal[ValueType.MATRIX], value: Union[FrozenMatrix, List[FrozenMatrix]]) -> None: ...
 
     @overload
     def __init__(self, name: str, val_type: ValueType, value: Union[ValueT, List[ValueT]]) -> None: ...
@@ -581,8 +582,8 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.VEC3],
-        values: Iterable[Vec2] = (),
-    ) -> 'Attribute[Vec3]': ...
+        values: Iterable[Union[FrozenVec, Vec, Iterable[float]]] = (),
+    ) -> 'Attribute[FrozenVec]': ...
     @classmethod
     @overload
     def array(
@@ -595,8 +596,8 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.ANGLE],
-        values: Iterable[Union[Matrix, Iterable[float]]] = (),
-    ) -> 'Attribute[AngleTup]': ...
+        values: Iterable[Union[Matrix, FrozenMatrix, Iterable[float]]] = (),
+    ) -> 'Attribute[FrozenAngle]': ...
     @classmethod
     @overload
     def array(
@@ -609,8 +610,8 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.MATRIX],
-        values: Iterable[Union[AngleTup, Angle, Matrix]] = (),
-    ) -> 'Attribute[Matrix]': ...
+        values: Iterable[Union[AngleTup, Angle, FrozenMatrix, Matrix]] = (),
+    ) -> 'Attribute[FrozenMatrix]': ...
 
     @classmethod
     @overload
@@ -677,7 +678,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def vec3(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[Vec3]': ...
+    def vec3(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenVec]': ...
     @classmethod
     @overload
     def vec3(
@@ -685,14 +686,14 @@ class Attribute(Generic[ValueT], _ValProps):
         x: builtins.float = 0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
-    ) -> 'Attribute[Vec3]': ...
+    ) -> 'Attribute[FrozenVec]': ...
     @classmethod
     def vec3(
         cls, name: str,
         x: Union[builtins.float, Iterable[builtins.float]]=0.0,
         y: builtins.float = 0.0,
         z: builtins.float = 0.0,
-    ) -> 'Attribute[Vec3]':
+    ) -> 'Attribute[FrozenVec]':
         """Create an attribute with a 3D vector."""
         if isinstance(x, (int, float)):
             x_ = float(x)
@@ -701,7 +702,7 @@ class Attribute(Generic[ValueT], _ValProps):
             x_ = float(next(it, 0.0))
             y = float(next(it, y))
             z = float(next(it, z))
-        return Attribute(name, ValueType.VEC3, Vec3(x_, y, z))
+        return Attribute(name, ValueType.VEC3, FrozenVec(x_, y, z))
 
     @classmethod
     @overload
@@ -858,7 +859,7 @@ class Attribute(Generic[ValueT], _ValProps):
         def iter_time(self) -> Iterator[Time]: ...
         def iter_bool(self) -> Iterator[builtins.bool]: ...
         def iter_vec2(self) -> Iterator[Vec2]: ...
-        def iter_vec3(self) -> Iterator[Vec3]: ...
+        def iter_vec3(self) -> Iterator[FrozenVec]: ...
         def iter_vec4(self) -> Iterator[Vec4]: ...
         def iter_color(self) -> Iterator[Color]: ...
         def iter_colour(self) -> Iterator[Color]: ...
@@ -866,14 +867,14 @@ class Attribute(Generic[ValueT], _ValProps):
         def iter_str(self) -> Iterator[str]: ...
         def iter_string(self) -> Iterator[str]: ...
 
-        def iter_angle(self) -> Iterator[AngleTup]: ...
-        def iter_ang(self) -> Iterator[AngleTup]: ...
+        def iter_angle(self) -> Iterator[FrozenAngle]: ...
+        def iter_ang(self) -> Iterator[FrozenAngle]: ...
 
         def iter_quat(self) -> Iterator[Quaternion]: ...
         def iter_quaternion(self) -> Iterator[Quaternion]: ...
 
-        def iter_mat(self) -> Iterator[Matrix]: ...
-        def iter_matrix(self) -> Iterator[Matrix]: ...
+        def iter_mat(self) -> Iterator[FrozenMatrix]: ...
+        def iter_matrix(self) -> Iterator[FrozenMatrix]: ...
 
         def iter_bytes(self) -> Iterator[bytes]: ...
         def iter_bin(self) -> Iterator[bytes]: ...
@@ -890,11 +891,11 @@ class Attribute(Generic[ValueT], _ValProps):
         iter_bool = _make_iter(ValueType.BOOL, builtins.bool)
         iter_colour = iter_color = _make_iter(ValueType.COLOR, Color)
         iter_vec2 = _make_iter(ValueType.VEC2, Vec2)
-        iter_vec3 = _make_iter(ValueType.VEC3, Vec3)
+        iter_vec3 = _make_iter(ValueType.VEC3, FrozenVec)
         iter_vec4 = _make_iter(ValueType.VEC4, Vec4)
         iter_quat = iter_quaternion = _make_iter(ValueType.QUATERNION, Quaternion)
-        iter_ang = iter_angle = _make_iter(ValueType.ANGLE, AngleTup)
-        iter_mat = iter_matrix = _make_iter(ValueType.MATRIX, Matrix)
+        iter_ang = iter_angle = _make_iter(ValueType.ANGLE, FrozenAngle)
+        iter_mat = iter_matrix = _make_iter(ValueType.MATRIX, FrozenMatrix)
         iter_compound = iter_elem = _make_iter(ValueType.ELEMENT, _Element)
 
     def _write_val(self, newtype: ValueType, value: Value) -> None:
@@ -1020,18 +1021,8 @@ class Attribute(Generic[ValueT], _ValProps):
 
     def __copy__(self) -> 'Attribute[ValueT]':
         """Duplicate this attribute shallowly, retaining references if this is an Element type."""
-        value: Union[ValueT, List[ValueT]]
-        # We must copy matrices, to make it behave immutably.
-        if self.is_array:
-            value = []
-            for subval in cast('List[ValueT]', self._value):
-                if isinstance(subval, Matrix):
-                    value.append(copy.copy(subval))
-                else:
-                    value.append(subval)
-            return Attribute(self.name, self._typ, value)
-        elif isinstance(self._value, Matrix):
-            return Attribute(self.name, self._typ, copy.copy(self._value))
+        if isinstance(self._value, list):
+            return Attribute(self.name, self._typ, self._value.copy())
         else:
             return Attribute(self.name, self._typ, self._value)
 
@@ -1959,7 +1950,9 @@ files. This always has no members.
 """
 
 _NUMBERS = {int, float, bool}
-_ANGLES = {Angle, AngleTup}
+_ANGLES = {Angle, FrozenAngle}
+_VEC3S = {Vec, FrozenVec}
+_MATRICES = {Matrix, FrozenMatrix}
 
 # Python types to their matching ValueType.
 TYPE_TO_VALTYPE: Dict[type, ValueType] = {
@@ -1973,11 +1966,11 @@ TYPE_TO_VALTYPE: Dict[type, ValueType] = {
     # Time: ValueType.TIME,
     Color: ValueType.COLOR,
     Vec2: ValueType.VEC2,
-    Vec3: ValueType.VEC3,
+    FrozenVec: ValueType.VEC3,
     Vec4: ValueType.VEC4,
-    AngleTup: ValueType.ANGLE,
+    FrozenAngle: ValueType.ANGLE,
     Quaternion: ValueType.QUATERNION,
-    Matrix: ValueType.MATRIX,
+    FrozenMatrix: ValueType.MATRIX,
 }
 
 
@@ -2009,16 +2002,25 @@ def deduce_type_array(value: Sequence[ConvValue]) -> Tuple[ValueType, ValueList]
             if bool in types:
                 return ValueType.BOOL, [bool(x) for x in num_values]
             raise AssertionError('No numbers?', value)
+        # Convert mixed mutable/immutable lists.
         elif types == _ANGLES:
-            return ValueType.ANGLE, [AngleTup._make(ang) for ang in cast('List[Union[Angle, AngleTup]]', value)]
+            return ValueType.ANGLE, [FrozenAngle(ang) for ang in cast('list[Angle | FrozenAngle]', value)]
+        elif types == _VEC3S:
+            return ValueType.VEC3, [FrozenVec(vec) for vec in cast('list[Vec | FrozenVec]', value)]
+        elif types == _MATRICES:
+            return ValueType.MATRIX, [FrozenMatrix(mat) for mat in cast('list[Matrix | FrozenMatrix]', value)]
         # Else, fall through and try iterables.
     else:
         [val_actual_type] = types
+        # Transparently freeze mutable classes.
         if val_actual_type is Matrix:
-            return ValueType.MATRIX, [mat.copy() for mat in cast('List[Matrix]', value)]
+            return ValueType.MATRIX, [mat.freeze() for mat in cast('list[Matrix]', value)]
         if val_actual_type is Angle:
-            return ValueType.ANGLE, [AngleTup._make(ang) for ang in cast('List[Angle]', value)]
+            return ValueType.ANGLE, [ang.freeze() for ang in cast('list[Angle]', value)]
+        if val_actual_type is Vec:
+            return ValueType.VEC3, [vec.freeze() for vec in cast('list[Vec]', value)]
         elif val_actual_type is Color:
+            # Special case, this must be int.
             return ValueType.COLOR, [
                 Color(int(r), int(g), int(b), int(a))
                 for r, g, b, a in cast('List[Color]', value)
@@ -2055,9 +2057,11 @@ def deduce_type_array(value: Sequence[ConvValue]) -> Tuple[ValueType, ValueList]
 def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
     """Convert a scalar value to an appropriate ValueType."""
     if isinstance(value, Matrix):
-        return ValueType.MATRIX, value.copy()
-    if isinstance(value, Angle):  # Mutable version of values we use.
-        return ValueType.ANGLE, AngleTup._make(value)
+        return ValueType.MATRIX, value.freeze()
+    if isinstance(value, Angle):
+        return ValueType.ANGLE, value.freeze()
+    if isinstance(value, Vec):
+        return ValueType.VEC3, value.freeze()
     try:
         # Match to one of the types directly.
         val_type = TYPE_TO_VALTYPE[type(value)]
@@ -2084,9 +2088,9 @@ _conv_string_to_integer = int
 _conv_string_to_time = float
 _conv_string_to_bool = lambda val: BOOL_LOOKUP[val.casefold()]
 _conv_string_to_vec2 = lambda text: Vec2._make(parse_vector(text, 2))
-_conv_string_to_vec3 = lambda text: Vec3._make(parse_vector(text, 3))
+_conv_string_to_vec3 = lambda text: FrozenVec(parse_vector(text, 3))
 _conv_string_to_vec4 = lambda text: Vec4._make(parse_vector(text, 4))
-_conv_string_to_angle = lambda text: AngleTup._make(parse_vector(text, 3))
+_conv_string_to_angle = lambda text: FrozenAngle(parse_vector(text, 3))
 _conv_string_to_quaternion = lambda text: Quaternion._make(parse_vector(text, 4))
 
 def _conv_string_to_color(text: str) -> Color:
@@ -2104,7 +2108,7 @@ _conv_integer_to_float = float
 _conv_integer_to_time = float
 _conv_integer_to_bool = bool
 _conv_integer_to_vec2 = lambda n: Vec2(n, n)
-_conv_integer_to_vec3 = lambda n: Vec3(n, n, n)
+_conv_integer_to_vec3 = lambda n: FrozenVec(n, n, n)
 _conv_integer_to_vec4 = lambda n: Vec4(n, n, n, n)
 
 
@@ -2125,7 +2129,7 @@ _conv_float_to_integer = int
 _conv_float_to_bool = bool
 _conv_float_to_time = float
 _conv_float_to_vec2 = lambda n: Vec2(n, n)
-_conv_float_to_vec3 = lambda n: Vec3(n, n, n)
+_conv_float_to_vec3 = lambda n: FrozenVec(n, n, n)
 _conv_float_to_vec4 = lambda n: Vec4(n, n, n, n)
 
 _conv_bool_to_integer = int
@@ -2139,7 +2143,7 @@ _conv_time_to_string = str
 
 _conv_vec2_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)}'
 _conv_vec2_to_bool = lambda v: bool(v.x or v.y)
-_conv_vec2_to_vec3 = lambda v: Vec3(v.x, v.y, 0.0)
+_conv_vec2_to_vec3 = lambda v: FrozenVec(v.x, v.y, 0.0)
 _conv_vec2_to_vec4 = lambda v: Vec4(v.x, v.y, 0.0, 0.0)
 
 _conv_vec3_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)}'
@@ -2151,19 +2155,19 @@ _conv_vec3_to_color = lambda v: Color(v.x, v.y, v.z)
 
 _conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
 _conv_vec4_to_bool = lambda v: bool(v.x or v.y or v.z or v.w)
-_conv_vec4_to_vec3 = lambda v: Vec3(v.x, v.y, v.z)
+_conv_vec4_to_vec3 = lambda v: FrozenVec(v.x, v.y, v.z)
 _conv_vec4_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec4_to_quaternion = lambda v: Quaternion(v.x, v.y, v.z, v.w)
 _conv_vec4_to_color = lambda v: Color(v.x, v.y, v.z, v.w)
 
-_conv_matrix_to_angle = lambda mat: AngleTup._make(mat.to_angle())
+_conv_matrix_to_angle = lambda mat: mat.to_angle().freeze()
 
 _conv_angle_to_string = lambda a: f'{_fmt_float(a.pitch)} {_fmt_float(a.yaw)} {_fmt_float(a.roll)}'
-_conv_angle_to_matrix = lambda ang: Matrix.from_angle(Angle(ang))
-_conv_angle_to_vec3 = lambda ang: Vec3(ang.pitch, ang.yaw, ang.roll)
+_conv_angle_to_matrix = lambda ang: FrozenMatrix.from_angle(ang)
+_conv_angle_to_vec3 = lambda ang: FrozenVec(ang.pitch, ang.yaw, ang.roll)
 
 _conv_color_to_string = lambda col: f'{col.r} {col.g} {col.b} {col.a}'
-_conv_color_to_vec3 = lambda col: Vec3(col.r, col.g, col.b)
+_conv_color_to_vec3 = lambda col: FrozenVec(col.r, col.g, col.b)
 _conv_color_to_vec4 = lambda col: Vec4(col.r, col.g, col.b, col.a)
 
 _conv_quaternion_to_string = lambda quat: f'{_fmt_float(quat.x)} {_fmt_float(quat.y)} {_fmt_float(quat.z)} {_fmt_float(quat.w)}'
@@ -2225,7 +2229,7 @@ def _conv_binary_to_time(byt: bytes) -> Time:
     return Time(num / 10000.0)
 
 _struct_matrix = Struct('<16f')
-def _conv_matrix_to_binary(mat: Matrix) -> bytes:
+def _conv_matrix_to_binary(mat: FrozenMatrix) -> bytes:
     """We only set the 3x3 part."""
     return _struct_matrix.pack(
         mat[0, 0], mat[0, 1], mat[0, 2], 0.0,
@@ -2233,26 +2237,26 @@ def _conv_matrix_to_binary(mat: Matrix) -> bytes:
         mat[2, 0], mat[2, 1], mat[2, 2], 0.0,
         0.0, 0.0, 0.0, 1.0,
     )
-def _conv_binary_to_matrix(byt: bytes) -> Matrix:
+def _conv_binary_to_matrix(byt: bytes) -> FrozenMatrix:
     """We only set the 3x3 part."""
     data = _struct_matrix.unpack(byt)
-    mat = Matrix()
+    mat = FrozenMatrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = data[0:3]
     mat[1, 0], mat[1, 1], mat[1, 2] = data[4:7]
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
     return mat
 
 
-def _conv_string_to_matrix(text: str) -> Matrix:
+def _conv_string_to_matrix(text: str) -> FrozenMatrix:
     data = parse_vector(text, 16)
-    mat = Matrix()
+    mat = FrozenMatrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = data[0:3]
     mat[1, 0], mat[1, 1], mat[1, 2] = data[4:7]
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
     return mat
 
 
-def _conv_matrix_to_string(mat: Matrix) -> str:
+def _conv_matrix_to_string(mat: FrozenMatrix) -> str:
     return (
         f'{mat[0, 0]} {mat[0, 1]} {mat[0, 2]} 0.0\n'
         f'{mat[1, 0]} {mat[1, 1]} {mat[1, 2]} 0.0\n'
@@ -2286,7 +2290,6 @@ def _converter_ntup(typ: Type[ValueT]) -> Callable[[Union[ValueT, Iterable[float
     return _convert
 
 _conv_vec2 = _converter_ntup(Vec2)
-_conv_vec3 = _converter_ntup(Vec3)
 _conv_vec4 = _converter_ntup(Vec4)
 _conv_quaternion = _converter_ntup(Quaternion)
 del _converter_ntup
@@ -2306,23 +2309,34 @@ def _conv_color(value: Union[Color, Iterable[int]]) -> Color:
     return Color(r, g, b, a)
 
 
-def _conv_angle(value: Union[Matrix, Iterable[float]]) -> AngleTup:
-    if isinstance(value, AngleTup):
+def _conv_vec3(value: Union[Vec, FrozenVec, Iterable[float]]) -> FrozenVec:
+    """Convert to a 3-vector."""
+    if isinstance(value, FrozenVec):
+        return value
+    else:
+        return FrozenVec(*value)
+
+
+def _conv_angle(value: Union[FrozenAngle, Angle, FrozenMatrix, Matrix, Iterable[float]]) -> FrozenAngle:
+    if isinstance(value, FrozenAngle):
+        return value
+    elif isinstance(value, Angle):
+        return value.freeze()
+    elif isinstance(value, Matrix) or isinstance(value, FrozenMatrix):
+        return value.to_angle().freeze()
+    else:
+        return FrozenAngle(*value)
+
+
+def _conv_matrix(value: Union[FrozenAngle, Angle, FrozenMatrix, Matrix]) -> FrozenMatrix:
+    if isinstance(value, FrozenMatrix):
         return value
     elif isinstance(value, Matrix):
-        return AngleTup._make(value.to_angle())
+        return value.freeze()
+    elif isinstance(value, Angle) or isinstance(value, FrozenAngle):
+        return FrozenMatrix.from_angle(value)
     else:
-        return AngleTup._make(value)
-
-
-def _conv_matrix(value: Union[AngleTup, Angle, Matrix]) -> Matrix:
-    if isinstance(value, AngleTup):
-        value = Matrix.from_angle(Angle(*value))
-    elif isinstance(value, Angle):
-        value = Matrix.from_angle(value)
-    elif not isinstance(value, Matrix):
         raise ValueError('Matrix attributes must be set to a matrix.')
-    return value.copy()
 
 
 def _conv_element(value: Element) -> Element:
