@@ -26,6 +26,7 @@ Dev branch
   :py:class:`~srctools.math.FrozenVec`.
 * Parse errors in ``BSP.ents`` are more informative and verbose.
 * Add an additional callback parameter to :py:meth:`srctools.packlist.PackList.pack_into_zip()` to finely control which files are packed.
+* Implement vector and angle stringification manually, to ensure ``.0`` prefixes are always removed.
 
 -------------
 Version 2.3.6
