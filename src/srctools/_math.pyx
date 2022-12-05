@@ -2741,7 +2741,7 @@ cdef class AngleBase:
         vectors.
         This strips off the .0 if no decimal portion exists.
         """
-        return f"{self.val.x:g} {self.val.y:g} {self.val.z:g}"
+        return _format_triple(b'%s %s %s', &self.val)
 
     def __format__(self, format_spec: str) -> str:
         """Control how the text is formatted."""
@@ -2757,7 +2757,7 @@ cdef class AngleBase:
 
         This strips off the .0 if no decimal portion exists.
         """
-        return f'{self.val.x:g}{delim}{self.val.y:g}{delim}{self.val.z:g}'
+        return _join_triple(&self.val, delim)
 
     def __len__(self) -> int:
         """The length of an Angle is always 3."""
