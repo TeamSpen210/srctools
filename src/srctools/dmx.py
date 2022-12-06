@@ -210,8 +210,8 @@ ValueT = TypeVar(
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
-# Use Any since we can't show the ValueType -> Value match to the type checker.
-ConvertMap: TypeAlias = Dict[Tuple[ValueType, ValueType], Callable[[Value], Any]]
+# Unfortunately we can't show the ValueType -> Value match to the type checker.
+ConvertMap: TypeAlias = Dict[Tuple[ValueType, ValueType], Callable[[Value], Value]]
 TYPE_CONVERT: ConvertMap
 
 # Take valid types, convert to the value.
@@ -615,10 +615,10 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def array(cls, name: str, val_type: ValueType) -> 'Attribute': ...
+    def array(cls, name: str, val_type: ValueType) -> 'Attribute[Any]': ...
 
     @classmethod
-    def array(cls, name: str, val_type: ValueType, values: Iterable[Any]=()) -> 'Attribute':
+    def array(cls, name: str, val_type: ValueType, values: Iterable[Any]=()) -> 'Attribute[Any]':
         """Create an attribute with an empty array of a specified type."""
         conv_func = CONVERSIONS[val_type]
         return Attribute(name, val_type, list(map(conv_func, values)))
@@ -2004,21 +2004,21 @@ def deduce_type_array(value: Sequence[ConvValue]) -> Tuple[ValueType, ValueList]
             raise AssertionError('No numbers?', value)
         # Convert mixed mutable/immutable lists.
         elif types == _ANGLES:
-            return ValueType.ANGLE, [FrozenAngle(ang) for ang in cast('list[Angle | FrozenAngle]', value)]
+            return ValueType.ANGLE, [FrozenAngle(ang) for ang in cast('List[Angle | FrozenAngle]', value)]
         elif types == _VEC3S:
-            return ValueType.VEC3, [FrozenVec(vec) for vec in cast('list[Vec | FrozenVec]', value)]
+            return ValueType.VEC3, [FrozenVec(vec) for vec in cast('List[Vec | FrozenVec]', value)]
         elif types == _MATRICES:
-            return ValueType.MATRIX, [FrozenMatrix(mat) for mat in cast('list[Matrix | FrozenMatrix]', value)]
+            return ValueType.MATRIX, [FrozenMatrix(mat) for mat in cast('List[Matrix | FrozenMatrix]', value)]
         # Else, fall through and try iterables.
     else:
         [val_actual_type] = types
         # Transparently freeze mutable classes.
         if val_actual_type is Matrix:
-            return ValueType.MATRIX, [mat.freeze() for mat in cast('list[Matrix]', value)]
+            return ValueType.MATRIX, [mat.freeze() for mat in cast('List[Matrix]', value)]
         if val_actual_type is Angle:
-            return ValueType.ANGLE, [ang.freeze() for ang in cast('list[Angle]', value)]
+            return ValueType.ANGLE, [ang.freeze() for ang in cast('List[Angle]', value)]
         if val_actual_type is Vec:
-            return ValueType.VEC3, [vec.freeze() for vec in cast('list[Vec]', value)]
+            return ValueType.VEC3, [vec.freeze() for vec in cast('List[Vec]', value)]
         elif val_actual_type is Color:
             # Special case, this must be int.
             return ValueType.COLOR, [
