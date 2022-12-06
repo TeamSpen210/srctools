@@ -9,9 +9,9 @@ import collections
 from helpers import *
 import pytest
 
-from srctools import Angle, Keyvalues, Matrix
+from srctools import Vec, FrozenVec, Angle, FrozenAngle, Matrix, FrozenMatrix, Keyvalues
 from srctools.dmx import (
-    TYPE_CONVERT, AngleTup, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec3,
+    TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2,
     Vec4, deduce_type,
 )
 from srctools.tokenizer import TokenSyntaxError
@@ -97,7 +97,7 @@ def test_attr_val_int() -> None:
     assert elem.val_time == ExactType(45.0)
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
-    assert elem.val_vec3 == Vec3(45.0, 45.0, 45.0)
+    assert elem.val_vec3 == ExactType(FrozenVec(45.0, 45.0, 45.0))
     assert elem.val_vec4 == Vec4(45.0, 45.0, 45.0, 45.0)
     assert elem.val_color == Color(45, 45, 45, 255)
     assert Attribute.int('min-clamp', -1).val_color == Color(0, 0, 0, 255)
@@ -119,7 +119,7 @@ def test_attr_array_int() -> None:
     assert list(elem.iter_time()) == [-123.0, 45.0]
 
     assert list(elem.iter_vec2()) == [Vec2(-123.0, -123.0), Vec2(45.0, 45.0)]
-    assert list(elem.iter_vec3()) == [Vec3(-123.0, -123.0, -123.0), Vec3(45.0, 45.0, 45.0)]
+    assert list(elem.iter_vec3()) == [ExactType(FrozenVec(-123.0, -123.0, -123.0)), FrozenVec(45.0, 45.0, 45.0)]
     assert list(elem.iter_vec4()) == [Vec4(-123.0, -123.0, -123.0, -123.0), Vec4(45.0, 45.0, 45.0, 45.0)]
     assert list(elem.iter_color()) == [Color(0, 0, 0, 255), Color(45, 45, 45, 255)]
 
@@ -139,7 +139,7 @@ def test_attr_val_float() -> None:
     assert elem.val_time == ExactType(32.25)
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
-    assert elem.val_vec3 == Vec3(32.25, 32.25, 32.25)
+    assert elem.val_vec3 == ExactType(FrozenVec(32.25, 32.25, 32.25))
     assert elem.val_vec4 == Vec4(32.25, 32.25, 32.25, 32.25)
 
     assert Attribute.float('Blah', 32.25).val_bool is True
@@ -159,7 +159,7 @@ def test_attr_array_float() -> None:
     assert list(elem.iter_time()) == [-32.25, 32.25]
 
     assert list(elem.iter_vec2()) == [Vec2(-32.25, -32.25), Vec2(32.25, 32.25)]
-    assert list(elem.iter_vec3()) == [Vec3(-32.25, -32.25, -32.25), Vec3(32.25, 32.25, 32.25)]
+    assert list(elem.iter_vec3()) == [ExactType(FrozenVec(-32.25, -32.25, -32.25)), FrozenVec(32.25, 32.25, 32.25)]
     assert list(elem.iter_vec4()) == [Vec4(-32.25, -32.25, -32.25, -32.25), Vec4(32.25, 32.25, 32.25, 32.25)]
 
     elem[0] = 32.25
@@ -193,8 +193,8 @@ def test_attr_val_str() -> None:
     assert Attribute.string('', 'faLse').val_bool is False
 
     assert Attribute.string('', '4.8 290').val_vec2 == Vec2(4.8, 290.0)
-    assert Attribute.string('', '4.8 -12.385 384').val_vec3 == Vec3(4.8, -12.385, 384)
-    assert Attribute.string('', '4.8 -12.385 284').val_ang == AngleTup(4.8, -12.385, 284)
+    assert Attribute.string('', '4.8 -12.385 384').val_vec3 == ExactType(FrozenVec(4.8, -12.385, 384))
+    assert Attribute.string('', '4.8 -12.385 284').val_ang == FrozenAngle(4.8, -12.385, 284)
 
 
 def test_attr_val_bool() -> None:
@@ -250,7 +250,7 @@ def test_attr_val_color() -> None:
     assert Attribute.color('RGB').val_color == ExactType(Color(0, 0, 0, 255))
 
     assert elem.val_str == '240 128 64 255'
-    assert elem.val_vec3 == ExactType(Vec3(240.0, 128.0, 64.0))
+    assert elem.val_vec3 == ExactType(FrozenVec(240.0, 128.0, 64.0))
     assert elem.val_vec4 == ExactType(Vec4(240.0, 128.0, 64.0, 255.0))
 
 
@@ -260,7 +260,7 @@ def test_attr_val_vector_2() -> None:
     assert elem.val_vec2 == Vec2(4.5, 38.2)
     assert elem.val_str == '4.5 38.2'
     assert Attribute.vec2('No zeros', 5.0, -2.0).val_str == '5 -2'
-    assert elem.val_vec3 == Vec3(4.5, 38.2, 0.0)
+    assert elem.val_vec3 == ExactType(FrozenVec(4.5, 38.2, 0.0))
     assert elem.val_vec4 == Vec4(4.5, 38.2, 0.0, 0.0)
 
     assert elem.val_bool is True
@@ -276,7 +276,7 @@ def test_attr_array_vector_2() -> None:
     elem.append(Vec2(5.0, -2.0))
     assert list(elem.iter_vec2()) == [Vec2(4.5, 38.2), Vec2(5.0, -2.0)]
     assert list(elem.iter_str()) == ['4.5 38.2', '5 -2']
-    assert list(elem.iter_vec3()) == [Vec3(4.5, 38.2, 0.0), Vec3(5.0, -2.0, 0.0)]
+    assert list(elem.iter_vec3()) == [ExactType(FrozenVec(4.5, 38.2, 0.0)), FrozenVec(5.0, -2.0, 0.0)]
     assert list(elem.iter_vec4()) == [Vec4(4.5, 38.2, 0.0, 0.0), Vec4(5.0, -2.0, 0.0, 0.0)]
 
     elem.append(Vec2(3.4, 0.0))
@@ -288,13 +288,13 @@ def test_attr_array_vector_2() -> None:
 def test_attr_val_vector_3() -> None:
     """Test 3d vector conversions."""
     elem = Attribute.vec3('3D', 4.5, -12.6, 38.2)
-    assert elem.val_vec3 == Vec3(4.5, -12.6, 38.2)
+    assert elem.val_vec3 == ExactType(FrozenVec(4.5, -12.6, 38.2))
     assert elem.val_str == '4.5 -12.6 38.2'
     assert Attribute.vec3('No zeros', 5.0, 15.0, -2.0).val_str == '5 15 -2'
     assert elem.val_vec2 == Vec2(4.5, -12.6)
     assert elem.val_vec4 == Vec4(4.5, -12.6, 38.2, 0.0)
     assert Attribute.vec3('RGB', 82, 96.4, 112).val_color == Color(82, 96, 112, 255)
-    assert elem.val_ang == AngleTup(4.5, -12.6, 38.2)
+    assert elem.val_ang == ExactType(FrozenAngle(4.5, -12.6, 38.2))
 
     assert elem.val_bool is True
     assert Attribute.vec3('True', 3.4, 0.0, 0.0).val_bool is True
@@ -341,7 +341,7 @@ def test_attr_append() -> None:
     assert len(arr) == 1
     assert arr[0].val_str == 'value'
 
-    arr.append(Vec3(1, 2, 3))
+    arr.append(FrozenVec(1, 2, 3))
     assert len(arr) == 2
     assert arr[0].val_str == 'value'
     assert arr[1].val_str == '1 2 3'
@@ -394,7 +394,7 @@ def test_attr_extend() -> None:
     (ValueType.BINARY, 'val_bin', b'\x34\xFF\x20\x3D', b'\x34\xFF\x20\x3D', '34 FF 20 3D'),
     (ValueType.TIME, 'val_time', 60.5, bytes.fromhex('48 3b 09 00'), '60.5'),
     (ValueType.VEC2, 'val_vec2', Vec2(36.5, -12.75), bytes.fromhex('00 00 12 42  00 00 4c c1'), '36.5 -12.75'),
-    (ValueType.VEC3, 'val_vec3', Vec3(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
+    (ValueType.VEC3, 'val_vec3', FrozenVec(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
     (ValueType.VEC4, 'val_vec4', Vec4(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
     (ValueType.QUATERNION, 'val_quat', Quaternion(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
     (
@@ -438,24 +438,27 @@ def test_binary_text_conversion(typ: ValueType, attr: str, value, binary: bytes,
      [Vec2(1.0, 2.0), Vec2(2.0, 3.0), Vec2(5.0, 8.0)],
      ),
     (ValueType.VEC3,
-     [Vec3(2.0, 3.0, 4.0), (1.0, 2, 3.0), range(3)],
-     [Vec3(2.0, 3.0, 4.0), Vec3(1.0, 2.0, 3.0), Vec3(0.0, 1.0, 2.0)]
+     [FrozenVec(2.0, 3.0, 4.0), Vec(4.5, 6.8, 9.2), (1.0, 2, 3.0), range(3)],
+     [FrozenVec(2.0, 3.0, 4.0), FrozenVec(4.5, 6.8, 9.2), FrozenVec(1.0, 2.0, 3.0), FrozenVec(0.0, 1.0, 2.0)]
      ),
     (ValueType.VEC4,
      [Vec4(5.0, 2.8, 9, 12), (4, 5, 28, 12.0), range(4, 8)],
      [Vec4(5.0, 2.8, 9.0, 12.0), Vec4(4.0, 5.0, 28.0, 12.0), Vec4(4.0, 5.0, 6.0, 7.0)],
      ),
     (ValueType.ANGLE,
-     [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), (90.0, 45.0, 0.0)],
-     [AngleTup(45.0, 20.0, 337.5), AngleTup(45.0, 0.0, 0.0), AngleTup(90.0, 45.0, 0.0)],
+     [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), Matrix.from_yaw(15.0), (90.0, 45.0, 0.0)],
+     [FrozenAngle(45.0, 20.0, 337.5), FrozenAngle(45.0, 0.0, 0.0),
+      FrozenAngle(0.0, 15.0, 0.0), FrozenAngle(90.0, 45.0, 0.0)],
      ),
     (ValueType.QUATERNION,
      [Quaternion(1.0, 2.0, 3.0, 4.0), (8.0, -3.0, 0.5, 12.8)],
      [Quaternion(1.0, 2.0, 3.0, 4.0), Quaternion(8.0, -3.0, 0.5, 12.8)],
      ),
     (ValueType.MATRIX,
-    [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), AngleTup(90.0, 45.0, 0.0)],
-    [Matrix.from_angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), Matrix.from_angle(90.0, 45.0, 0.0)],
+    [Angle(45.0, 20.0, -22.5), Matrix.from_pitch(45.0), FrozenMatrix.from_yaw(45.0),
+     FrozenAngle(90.0, 45.0, 0.0)],
+    [FrozenMatrix.from_angle(45.0, 20.0, -22.5), FrozenMatrix.from_pitch(45.0),
+     FrozenMatrix.from_yaw(45.0), FrozenMatrix.from_angle(90.0, 45.0, 0.0)],
      ),
 ], ids=[
     'int', 'float', 'bool', 'str', 'bytes', 'time', 'color',
@@ -469,7 +472,7 @@ def test_attr_array_constructor(typ: ValueType, iterable: list, expected: list) 
     assert len(attr) == len(expected)
     for i, (actual, expect) in enumerate(zip(attr._value, expected)):
         assert type(actual) is expected_type, repr(actual)
-        if expected_type is Matrix:  # Matrix comparisons are difficult.
+        if expected_type is FrozenMatrix:  # Matrix comparisons are difficult.
             actual = actual.to_angle()
             expect = expect.to_angle()
         assert actual == expect, f'attr[{i}]: {actual!r} != {expect!r}'
@@ -496,14 +499,15 @@ deduce_type_tests = [
     (b'test', ValueType.BIN, b'test'),
 
     (Color(25, 48, 255, 255), ValueType.COLOR, Color(25, 48, 255, 255)),
-    (Color(25.0, 48.2, 255.4, 255.9), ValueType.COLOR, Color(25, 48, 255, 255)),
+    (Color(25.0, 48.2, 255.4, 255.9), ValueType.COLOR, Color(25, 48, 255, 255)),  # type: ignore
 
     (Vec2(1, 4.0), ValueType.VEC2, Vec2(1.0, 4.0)),
-    (Vec3(1.8, 4.0, 8), ValueType.VEC3, Vec3(1.8, 4.0, 8.0)),
+    (Vec(1.8, 4.0, 8), ValueType.VEC3, FrozenVec(1.8, 4.0, 8.0)),
+    (FrozenVec(1.8, 4.0, 8), ValueType.VEC3, FrozenVec(1.8, 4.0, 8.0)),
     (Vec4(4, 8, 23, 29.8), ValueType.VEC4, Vec4(4.0, 8.0, 23.0, 29.8)),
 
-    (AngleTup(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
-    (Angle(45.0, 92.6, 23.0), ValueType.ANGLE, AngleTup(45.0, 92.6, 23.0)),
+    (FrozenAngle(45.0, 92.6, 23.0), ValueType.ANGLE, FrozenAngle(45.0, 92.6, 23.0)),
+    (Angle(45.0, 92.6, 23.0), ValueType.ANGLE, FrozenAngle(45.0, 92.6, 23.0)),
     (Quaternion(4, 8, 23, 29.8), ValueType.QUATERNION, Quaternion(4.0, 8.0, 23.0, 29.8)),
 ]
 
@@ -528,8 +532,9 @@ def test_deduce_type_basic(input, val_type, output) -> None:
     ([1, 4.0, False, True], ValueType.FLOAT, [1.0, 4.0, 0.0, 1.0]),
     ([1, 4, False, True], ValueType.INT, [1, 4, 0, 1]),
     ([False, True, True, False], ValueType.BOOL, [False, True, True, False]),
-    # Angle/AngleTup can be mixed.
-    ([Angle(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)], ValueType.ANGLE, [AngleTup(3.0, 4.0, 5.0), AngleTup(4.0, 3.0, 6.0)]),
+    # Frozen/mutable classes can be mixed.
+    ([Angle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)], ValueType.ANGLE, [FrozenAngle(3.0, 4.0, 5.0), FrozenAngle(4.0, 3.0, 6.0)]),
+    ([Vec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)], ValueType.VEC3, [FrozenVec(3.0, 4.0, 5.0), FrozenVec(4.0, 3.0, 6.0)]),
 
     # Tuples and other sequences work
     ((Vec2(4, 5), Vec2(6.0, 7.0)), ValueType.VEC2, [Vec2(4.0, 5.0), Vec2(6.0, 7.0)]),
@@ -575,7 +580,6 @@ def test_parse(datadir: Path, filename: str) -> None:
     with (datadir / f'{filename}.dmx').open('rb') as f:
         root, fmt_name, fmt_version = Element.parse(f)
     assert fmt_name == 'dmx'
-    assert fmt_version == 4
 
     verify_sample(root)
 
@@ -637,12 +641,12 @@ def verify_sample(root: Element) -> None:
     assert scalars['half'].val_color == Color(0, 0, 0, 128)
 
     assert scalars['vec2'].val_vec2 == Vec2(a(348.275), a(-389.935))
-    assert scalars['vec3'].val_vec3 == Vec3(a(128.25), a(-1048.5), a(16382.1902))
-    assert scalars['vec4'].val_vec4 == Vec4(a(128.25), a(-1048.5), a(16382.1902), a(-389.935))
+    assert scalars['vec3'].val_vec3 == FrozenVec(128.25, -1048.5, 182.125)
+    assert scalars['vec4'].val_vec4 == Vec4(128.25, -1048.5, 182.125, -81.5)
 
-    assert scalars['up'].val_ang == AngleTup(-90, 0, 0)
-    assert scalars['dn'].val_ang == AngleTup(90, 0, 0)
-    assert scalars['somedir'].val_ang == AngleTup(a(291), a(-48.9), a(45.0))
+    assert scalars['up'].val_ang == FrozenAngle(270, 0, 0)
+    assert scalars['dn'].val_ang == FrozenAngle(90, 0, 0)
+    assert scalars['somedir'].val_ang == FrozenAngle(291, 311.125, 45.0)
     assert scalars['quat'].val_quat == Quaternion(a(0.267261), a(0.534522), a(0.801784), 0.0)
 
     assert scalars['hex'].val_bin == (
@@ -696,9 +700,9 @@ def verify_sample(root: Element) -> None:
         for y in [-1, 0, 1]
     ]
     assert list(arrays['3ds']) == [
-        Vec3(a(34.0), a(-348.25), a(128.125)),
-        Vec3(0.0, 0.0, 0.0),
-        Vec3(a(0.9), a(0.8), a(0.5)),
+        FrozenVec(34.0, -348.25, 128.125),
+        FrozenVec(0.0, 0.0, 0.0),
+        FrozenVec(0.9, 0.8, 0.5),
     ]
     assert list(arrays['4dimensional']) == [
         Vec4(0.0, 0.0, 0.0, 0.0),
@@ -707,9 +711,9 @@ def verify_sample(root: Element) -> None:
         Vec4(-28.0, 380.0, -39.0, 39.0),
     ]
     assert list(arrays['directions']) == [
-        AngleTup(0, 0, 0), AngleTup(45, 0, 90),
-        AngleTup(0, 135, 180), AngleTup(45, 31, -39),
-        AngleTup(94, 165, 23),
+        FrozenAngle(0, 0, 0), FrozenAngle(45, 0, 90),
+        FrozenAngle(0, 135, 180), FrozenAngle(45, 31, 321),
+        FrozenAngle(94, 165, 23),
     ]
     assert len(arrays['quaternions']) == 2
     assert arrays['quaternions'][0].val_quat == Quaternion(a(0.267261), a(-0.801784), a(0.534522), 0.0)
@@ -819,7 +823,8 @@ def test_ext_roundtrip_unicode(version: str) -> None:
     explicit = export(root, version, 'format')
 
     # No flags, fails. UnicodeError from binary, TokenSyntaxError from text.
-    with pytest.raises((UnicodeError, TokenSyntaxError)):
+    exc: Tuple[Type[Exception], ...] = (UnicodeError, TokenSyntaxError)
+    with pytest.raises(exc):
         Element.parse(BytesIO(silent))
 
     # Format flag detected.
