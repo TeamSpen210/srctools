@@ -2240,20 +2240,20 @@ def _conv_matrix_to_binary(mat: FrozenMatrix) -> bytes:
 def _conv_binary_to_matrix(byt: bytes) -> FrozenMatrix:
     """We only set the 3x3 part."""
     data = _struct_matrix.unpack(byt)
-    mat = FrozenMatrix()
+    mat = Matrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = data[0:3]
     mat[1, 0], mat[1, 1], mat[1, 2] = data[4:7]
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
-    return mat
+    return mat.freeze()
 
 
 def _conv_string_to_matrix(text: str) -> FrozenMatrix:
     data = parse_vector(text, 16)
-    mat = FrozenMatrix()
+    mat = Matrix()
     mat[0, 0], mat[0, 1], mat[0, 2] = data[0:3]
     mat[1, 0], mat[1, 1], mat[1, 2] = data[4:7]
     mat[2, 0], mat[2, 1], mat[2, 2] = data[8:11]
-    return mat
+    return mat.freeze()
 
 
 def _conv_matrix_to_string(mat: FrozenMatrix) -> str:
