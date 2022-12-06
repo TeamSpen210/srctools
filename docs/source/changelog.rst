@@ -25,8 +25,12 @@ Dev branch
 * Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
   :py:class:`~srctools.math.FrozenVec`.
 * Parse errors in ``BSP.ents`` are more informative and verbose.
-* Add an additional callback parameter to :py:meth:`srctools.packlist.PackList.pack_into_zip()` to finely control which files are packed.
+* Add an additional callback parameter to :py:meth:`srctools.packlist.PackList.pack_into_zip()` to
+  finely control which files are packed.
 * Implement vector and angle stringification manually, to ensure ``.0`` prefixes are always removed.
+* Use :py:class:`~srctools.math.FrozenVec` and :py:class:`~srctools.math.FrozenAngle` in the
+  :py:class:`~srctools.dmx` module instead of :external:py:func:`~collections.namedtuple` subclasses.
+* Upgrade :py:class:`srctools.dmx.Time` to a full class instead of a :external:py:class:`typing.NewType`.
 
 -------------
 Version 2.3.6

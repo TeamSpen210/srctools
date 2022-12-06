@@ -16,7 +16,7 @@ the file.
 """
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, KeysView, List,
-    Mapping, MutableMapping, NamedTuple, NewType, Optional, Sequence, Set, Tuple, Type,
+    Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type,
     TypeVar, Union, ValuesView, cast,
 )
 from typing_extensions import Final, Literal, TypeAlias, overload
@@ -62,7 +62,7 @@ class ValueType(Enum):
     BINARY = BIN = VOID = 'binary'
     """A block of raw :external:py:class:`bytes` data. Any buffer object can be converted to this."""
     TIME = 'time'
-    """Time since the begining of a level, in seconds. This is represented by the :py:class:`Time` typing type, but at runtime is simply a :external:py:class:`float`."""
+    """Time since the begining of a level, in seconds. This is represented by the :py:class:`Time` type."""
     COLOR = COLOUR = 'color'
     """An RGBA 8-bit colour. This can be converted from a 3 or 4-tuple, or a space separated string. In either case alpha defaults to ``255`` if not specified."""
     VEC2 = 'vector2'
@@ -170,11 +170,33 @@ class Color:
         return f'{self.r} {self.g} {self.b} {self.a}'
 
 
+@attrs.frozen
+class Time:
+    """A relative timestamp."""
+    value: float = 0.0
+
+    def __add__(self, other: float) -> 'Time':
+        """Only floats can be added, times cannot."""
+        if isinstance(other, (int, float)):
+            return Time(self.value + other)
+        else:
+            return NotImplemented
+
+    def __sub__(self, other: 'Time') -> float:
+        if isinstance(other, Time):
+            return self.value - other.value
+        else:
+            return NotImplemented
+
+    def __float__(self) -> float:
+        """This can be coerced into a float."""
+        return self.value
+
+
 AngleTup = FrozenAngle  #: :deprecated: Use :py:class:`srctools.math.FrozenAngle`.
 Vec3 = FrozenVec  #: :deprecated: Use :py:class:`srctools.math.FrozenVec`.
 
 
-Time = NewType('Time', float)
 _Element: TypeAlias = 'Element'  # Forward ref.
 Value: TypeAlias = Union[
     int, float, bool, str, bytes,
@@ -638,7 +660,7 @@ class Attribute(Generic[ValueT], _ValProps):
         """Create an attribute with a 'time' value.
 
         This is effectively a float, and only available in binary v3+."""
-        return Attribute(name, ValueType.TIME, Time(value))
+        return Attribute(name, ValueType.TIME, CONVERSIONS[ValueType.TIME](value))
 
     @classmethod
     def bool(cls, name: str, value: Union[builtins.bool, List[builtins.bool]]) -> 'Attribute[builtins.bool]':
@@ -2085,8 +2107,8 @@ def deduce_type_single(value: ConvValue) -> Tuple[ValueType, Value]:
 
 _conv_string_to_float = float
 _conv_string_to_integer = int
-_conv_string_to_time = float
-_conv_string_to_bool = lambda val: BOOL_LOOKUP[val.casefold()]
+_conv_string_to_time = lambda text: Time(float(text))
+_conv_string_to_bool = lambda time: BOOL_LOOKUP[time.casefold()]
 _conv_string_to_vec2 = lambda text: Vec2._make(parse_vector(text, 2))
 _conv_string_to_vec3 = lambda text: FrozenVec(parse_vector(text, 3))
 _conv_string_to_vec4 = lambda text: Vec4._make(parse_vector(text, 4))
@@ -2105,7 +2127,7 @@ def _conv_string_to_color(text: str) -> Color:
 
 _conv_integer_to_string = str
 _conv_integer_to_float = float
-_conv_integer_to_time = float
+_conv_integer_to_time = lambda n: Time(float(n))
 _conv_integer_to_bool = bool
 _conv_integer_to_vec2 = lambda n: Vec2(n, n)
 _conv_integer_to_vec3 = lambda n: FrozenVec(n, n, n)
@@ -2127,7 +2149,7 @@ def _fmt_float(x: float) -> str:
 _conv_float_to_string = _fmt_float
 _conv_float_to_integer = int
 _conv_float_to_bool = bool
-_conv_float_to_time = float
+_conv_float_to_time = Time
 _conv_float_to_vec2 = lambda n: Vec2(n, n)
 _conv_float_to_vec3 = lambda n: FrozenVec(n, n, n)
 _conv_float_to_vec4 = lambda n: Vec4(n, n, n, n)
@@ -2136,10 +2158,10 @@ _conv_bool_to_integer = int
 _conv_bool_to_float = float
 _conv_bool_to_string = bool_as_int
 
-_conv_time_to_integer = int
-_conv_time_to_float = float
-_conv_time_to_bool = lambda t: t > 0
-_conv_time_to_string = str
+_conv_time_to_integer = lambda t: int(t.value)
+_conv_time_to_float = lambda t: t.value
+_conv_time_to_bool = lambda t: t.value > 0
+_conv_time_to_string = lambda t: str(t.value)
 
 _conv_vec2_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)}'
 _conv_vec2_to_bool = lambda v: bool(v.x or v.y)
@@ -2222,7 +2244,7 @@ _binconv_cls('vec4', '<4f', Vec4)
 _struct_time = Struct('<i')
 def _conv_time_to_binary(tim: Time) -> bytes:
     """Time is written as a fixed point integer."""
-    return _struct_time.pack(int(round(tim * 10000.0)))
+    return _struct_time.pack(int(round(tim.value * 10000.0)))
 
 def _conv_binary_to_time(byt: bytes) -> Time:
     [num] = _struct_time.unpack(byt)
@@ -2271,8 +2293,19 @@ _struct_element = Struct('<i')
 _conv_integer = int
 _conv_string = str
 _conv_float = float
-_conv_time = float
 _conv_bool = bool
+
+
+def _conv_time(value: Union[Time, float]) -> Time:
+    """We accept integers, floats and actual Time values."""
+    if isinstance(value, Time):
+        return value
+    elif isinstance(value, float):
+        return Time(value)
+    elif isinstance(value, int):
+        return Time(float(value))
+    else:
+        raise TypeError('Time requires a Time instance, float or integer.')
 
 
 def _conv_binary(value: Union[bytes, bytearray, memoryview]) -> bytes:

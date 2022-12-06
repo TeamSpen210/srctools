@@ -94,7 +94,7 @@ def test_attr_val_int() -> None:
     assert elem.val_int == ExactType(45)
     assert elem.val_str == '45'
     assert elem.val_float == ExactType(45.0)
-    assert elem.val_time == ExactType(45.0)
+    assert elem.val_time == ExactType(Time(45.0))
 
     assert elem.val_vec2 == Vec2(45.0, 45.0)
     assert elem.val_vec3 == ExactType(FrozenVec(45.0, 45.0, 45.0))
@@ -116,7 +116,7 @@ def test_attr_array_int() -> None:
     assert list(elem.iter_int()) == [-123, 45]
     assert list(elem.iter_str()) == ['-123', '45']
     assert list(elem.iter_float()) == [-123.0, 45.0]
-    assert list(elem.iter_time()) == [-123.0, 45.0]
+    assert list(elem.iter_time()) == [Time(-123.0), Time(45.0)]
 
     assert list(elem.iter_vec2()) == [Vec2(-123.0, -123.0), Vec2(45.0, 45.0)]
     assert list(elem.iter_vec3()) == [ExactType(FrozenVec(-123.0, -123.0, -123.0)), FrozenVec(45.0, 45.0, 45.0)]
@@ -136,7 +136,7 @@ def test_attr_val_float() -> None:
     assert Attribute.float('Name', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
     assert elem.val_float == ExactType(32.25)
-    assert elem.val_time == ExactType(32.25)
+    assert elem.val_time == ExactType(Time(32.25))
 
     assert elem.val_vec2 == Vec2(32.25, 32.25)
     assert elem.val_vec3 == ExactType(FrozenVec(32.25, 32.25, 32.25))
@@ -156,7 +156,7 @@ def test_attr_array_float() -> None:
     assert list(elem.iter_int()) == [-32, 32]
     assert list(elem.iter_str()) == ['-32.25', '32.25']
     assert list(elem.iter_float()) == [-32.25, 32.25]
-    assert list(elem.iter_time()) == [-32.25, 32.25]
+    assert list(elem.iter_time()) == [Time(-32.25), Time(32.25)]
 
     assert list(elem.iter_vec2()) == [Vec2(-32.25, -32.25), Vec2(32.25, 32.25)]
     assert list(elem.iter_vec3()) == [ExactType(FrozenVec(-32.25, -32.25, -32.25)), FrozenVec(32.25, 32.25, 32.25)]
@@ -235,7 +235,7 @@ def test_attr_val_time() -> None:
     assert Attribute.time('Time', -32.25).val_int == ExactType(-32)
     assert elem.val_str == '32.25'
     assert elem.val_float == ExactType(32.25)
-    assert elem.val_time == ExactType(32.25)
+    assert elem.val_time == ExactType(Time(32.25))
 
     assert Attribute.time('Blah', 32.25).val_bool is True
     assert Attribute.time('Blah', 0.0).val_bool is False
@@ -392,7 +392,7 @@ def test_attr_extend() -> None:
     (ValueType.COLOUR, 'val_color', Color(0, 0, 0, 255), bytes([0, 0, 0, 255]), '0 0 0 255'),
     (ValueType.COLOUR, 'val_color', Color(192, 64, 192, 32), bytes([192, 64, 192, 32]), '192 64 192 32'),
     (ValueType.BINARY, 'val_bin', b'\x34\xFF\x20\x3D', b'\x34\xFF\x20\x3D', '34 FF 20 3D'),
-    (ValueType.TIME, 'val_time', 60.5, bytes.fromhex('48 3b 09 00'), '60.5'),
+    (ValueType.TIME, 'val_time', Time(60.5), bytes.fromhex('48 3b 09 00'), '60.5'),
     (ValueType.VEC2, 'val_vec2', Vec2(36.5, -12.75), bytes.fromhex('00 00 12 42  00 00 4c c1'), '36.5 -12.75'),
     (ValueType.VEC3, 'val_vec3', FrozenVec(36.5, 0.125, -12.75), bytes.fromhex('00 00 12 42 00 00 00 3e 00 00 4c c1'), '36.5 0.125 -12.75'),
     (ValueType.VEC4, 'val_vec4', Vec4(384.0, 36.5, 0.125, -12.75), bytes.fromhex('00 00 c0 43 00 00 12 42 00 00 00 3e 00 00 4c c1'), '384 36.5 0.125 -12.75'),
