@@ -487,7 +487,7 @@ class Attribute(Generic[ValueT], _ValProps):
     @overload
     def __init__(self: 'Attribute[Vec4]', name: str, val_type: Literal[ValueType.VEC4], value: Union[Vec4, List[Vec4]]) -> None: ...
     @overload
-    def __init__(self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE], value: Union[AngleTup, List[AngleTup]]) -> None: ...
+    def __init__(self: 'Attribute[FrozenAngle]', name: str, val_type: Literal[ValueType.ANGLE], value: Union[FrozenAngle, List[FrozenAngle]]) -> None: ...
     @overload
     def __init__(self: 'Attribute[Quaternion]', name: str, val_type: Literal[ValueType.QUATERNION], value: Union[Quaternion, List[Quaternion]]) -> None: ...
     @overload
@@ -596,7 +596,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.ANGLE],
-        values: Iterable[Union[Matrix, FrozenMatrix, Iterable[float]]] = (),
+        values: Iterable[Union[Angle, FrozenAngle, Matrix, FrozenMatrix, Iterable[float]]] = (),
     ) -> 'Attribute[FrozenAngle]': ...
     @classmethod
     @overload
@@ -610,7 +610,7 @@ class Attribute(Generic[ValueT], _ValProps):
     def array(
         cls, name: str,
         val_type: Literal[ValueType.MATRIX],
-        values: Iterable[Union[AngleTup, Angle, FrozenMatrix, Matrix]] = (),
+        values: Iterable[Union[FrozenAngle, Angle, FrozenMatrix, Matrix]] = (),
     ) -> 'Attribute[FrozenMatrix]': ...
 
     @classmethod
@@ -768,7 +768,7 @@ class Attribute(Generic[ValueT], _ValProps):
 
     @classmethod
     @overload
-    def angle(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[AngleTup]': ...
+    def angle(cls, __name: str, __it: Iterable[builtins.float]) -> 'Attribute[FrozenAngle]': ...
     @classmethod
     @overload
     def angle(
@@ -776,13 +776,13 @@ class Attribute(Generic[ValueT], _ValProps):
         pitch: builtins.float = 0.0,
         yaw: builtins.float = 0.0,
         roll: builtins.float = 0.0,
-    ) -> 'Attribute[AngleTup]': ...
+    ) -> 'Attribute[FrozenAngle]': ...
     @classmethod
     def angle(
         cls, name: str,
         pitch: Union[builtins.float, Iterable[builtins.float]]=0.0,
         yaw: builtins.float = 0.0, roll: builtins.float = 0.0,
-    ) -> 'Attribute[AngleTup]':
+    ) -> 'Attribute[FrozenAngle]':
         """Create an attribute with an Euler angle."""
         if isinstance(pitch, (int, float)):
             pitch_ = float(pitch)
@@ -791,7 +791,7 @@ class Attribute(Generic[ValueT], _ValProps):
             pitch_ = float(next(it, 0.0))
             yaw = float(next(it, yaw))
             roll = float(next(it, roll))
-        return Attribute(name, ValueType.ANGLE, AngleTup(pitch_, yaw, roll))
+        return Attribute(name, ValueType.ANGLE, FrozenAngle(pitch_, yaw, roll))
 
     @classmethod
     @overload
@@ -2150,7 +2150,7 @@ _conv_vec3_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_flo
 _conv_vec3_to_bool = lambda v: bool(v.x or v.y or v.z)
 _conv_vec3_to_vec2 = lambda v: Vec2(v.x, v.y)
 _conv_vec3_to_vec4 = lambda v: Vec4(v.x, v.y, v.z, 0.0)
-_conv_vec3_to_angle = lambda v: AngleTup(v.x, v.y, v.z)
+_conv_vec3_to_angle = lambda v: FrozenAngle(v.x, v.y, v.z)
 _conv_vec3_to_color = lambda v: Color(v.x, v.y, v.z)
 
 _conv_vec4_to_string = lambda v: f'{_fmt_float(v.x)} {_fmt_float(v.y)} {_fmt_float(v.z)} {_fmt_float(v.w)}'
@@ -2212,11 +2212,11 @@ _binconv_basic('float', '<f')
 _binconv_basic('bool', '<?')
 
 _binconv_cls('color', '<4B', Color)
-_binconv_cls('angle', '<3f', AngleTup)
+_binconv_cls('angle', '<3f', FrozenAngle)
 _binconv_cls('quaternion', '<4f', Quaternion)
 
 _binconv_cls('vec2', '<2f', Vec2)
-_binconv_cls('vec3', '<3f', Vec3)
+_binconv_cls('vec3', '<3f', FrozenVec)
 _binconv_cls('vec4', '<4f', Vec4)
 
 _struct_time = Struct('<i')
