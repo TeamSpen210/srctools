@@ -36,10 +36,12 @@ cdef struct RGB:
     fastbyte b
 
 # Offsets for the colour channels.
-DEF R = 0
-DEF G = 1
-DEF B = 2
-DEF A = 3
+# TODO: Swap to constants when Cython supports that.
+cdef enum:
+    R = 0
+    G = 1
+    B = 2
+    A = 3
 
 # We specify all the arrays are C-contiguous, since we're the only one using
 # these functions directly.
@@ -52,7 +54,7 @@ def ppm_convert(const byte[::1] pixels, uint width, uint height, tuple bg or Non
     cdef Py_ssize_t off
     cdef Py_ssize_t size = 3 * width * height
 
-    DEF PPM_HEADER = b'P6 %u %u 255\n'
+    cdef const char * PPM_HEADER = b'P6 %u %u 255\n'
     cdef uint header_size = sprintf(NULL, PPM_HEADER, width, height)
     # Allocate an uninitialised bytes object, that we can write to it.
     # That's allowed as long as we don't give anyone else access.

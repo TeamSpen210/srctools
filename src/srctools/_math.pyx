@@ -109,13 +109,18 @@ cdef object tuple_new = tuple.__new__
 # For convenience, an iterator which immediately fails.
 cdef object EMPTY_ITER = iter(())
 
-
-DEF PI = 3.141592653589793238462643383279502884197
-# Multiply to convert.
-DEF rad_2_deg = 180.0 / PI
-DEF deg_2_rad = PI / 180.0
-DEF ROUND_TO = 6
-DEF TOL = 1e-6
+# TODO: Do this properly, once Cython lets constant globals work
+cdef extern from *:
+    """
+    const double PI = 3.141592653589793238462643383279502884197;
+    const double rad_2_deg = 180.0 / PI;
+    const double deg_2_rad = PI / 180.0;
+    const int ROUND_TO = 6;
+    const double TOL = 1e-6;
+    """
+    # For radian-degrees, multiply to convert.
+    const double PI, rad_2_deg, deg_2_rad, TOL
+    const int ROUND_TO
 
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"

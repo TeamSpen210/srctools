@@ -93,8 +93,9 @@ struct TokFlags {
         bint last_was_cr
 
 # The number of characters to read from a file each time.
-DEF FILE_BUFFER = 1024
-DEF CHR_EOF = 0x03  # Indicate the end of the file.
+cdef enum:
+    FILE_BUFFER = 1024
+    CHR_EOF = 0x03  # Indicate the end of the file.
 
 # noinspection PyMissingTypeHints
 cdef class BaseTokenizer:
