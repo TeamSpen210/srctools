@@ -661,7 +661,7 @@ class KeyValues:
         if self.val_list is None:
             lst: List[Tuple[str, str, TagsSet]] = []
             self.val_list = lst
-        return cast(list, self.val_list)
+        return cast('List[Tuple[str, str, TagsSet]]', self.val_list)
 
     @property
     def flags_list(self) -> List[Tuple[int, str, bool, TagsSet]]:
@@ -674,7 +674,7 @@ class KeyValues:
         if self.val_list is None:
             lst: List[Tuple[int, str, bool, TagsSet]] = []
             self.val_list = lst
-        return cast(list, self.val_list)
+        return cast('List[Tuple[int, str, bool, TagsSet]]', self.val_list)
 
     def copy(self) -> 'KeyValues':
         """Create a duplicate of this keyvalue."""

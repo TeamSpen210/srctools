@@ -317,9 +317,9 @@ def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
     )
 
 
-def _make_iter(val_type: ValueType, typ: Type[ValueT]) -> Callable[['Attribute[Any]'], Iterator[ValueT]]:
+def _make_iter(val_type: ValueType, typ: Type[ValueT]) -> Callable[['Attribute[ValueT]'], Iterator[ValueT]]:
     """Build an iterator for the given value type."""
-    def iterator(self: 'Attribute') -> Iterator[ValueT]:
+    def iterator(self: 'Attribute[ValueT]') -> Iterator[ValueT]:
         return self._iter_array(val_type)  # type: ignore
 
     iterator.__doc__ = f'Iterate over {val_type.name.lower()} values.'
@@ -445,7 +445,7 @@ del _make_val_prop
 # noinspection PyProtectedMember
 class AttrMember(_ValProps):
     """A proxy for individual indexes/keys, allowing having .val attributes."""
-    def __init__(self, owner: 'Attribute', index: int) -> None:
+    def __init__(self, owner: 'Attribute[Any]', index: int) -> None:
         """Internal use only."""
         self.owner = owner
         self.index = index

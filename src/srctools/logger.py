@@ -81,7 +81,7 @@ _SysExcInfoType = Union[
 ]
 
 
-class LoggerAdapter(logging.LoggerAdapter):
+class LoggerAdapter(logging.LoggerAdapter):  # type: ignore[type-arg]  # Only generic in stubs.
     """Fix loggers to use str.format().
 
     """

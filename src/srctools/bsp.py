@@ -744,7 +744,9 @@ class Cubemap:
         """Return the actual image size."""
         if self.size == 0:
             return 32
-        return 2 ** (self.size - 1)
+        res =  2 ** (self.size - 1)
+        assert isinstance(res, int), self.size
+        return res
 
 
 @attrs.define(eq=False)
@@ -908,7 +910,7 @@ class BModel:
     _phys_solids: List[bytes] = []
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, repr=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
 
@@ -931,8 +933,7 @@ class StaticProp:
     skin: int = 0
     min_fade: float = 0.0
     max_fade: float = 0.0
-    # If not provided, uses origin.
-    lighting: Vec = attrs.field(default=attrs.Factory(lambda prp: prp.origin.copy(), takes_self=True))
+    lighting: Vec = attrs.field()
     fade_scale: float = -1.0
 
     min_dx_level: int = 0
@@ -956,6 +957,12 @@ class StaticProp:
             self.origin,
             self.angles,
         )
+
+    # noinspection PyUnresolvedReferences
+    @lighting.default
+    def _lighting_default(self) -> Vec:
+        """If not provided, lighting defaults to the origin."""
+        return self.origin.copy()
 
 
 def identity(x: T) -> T:
@@ -1066,7 +1073,8 @@ class ParsedLump(Generic[T]):
         if instance is None:  # Accessed on the class.
             return self
         try:
-            return instance._parsed_lumps[self.lump]  # noqa
+            # noinspection PyProtectedMember
+            return cast(T, instance._parsed_lumps[self.lump])
         except KeyError:
             pass
         if self._read is None:
