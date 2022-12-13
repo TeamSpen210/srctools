@@ -6,7 +6,7 @@ from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
 from libc cimport math
-from libc.math cimport NAN, cos, llround, sin, tan
+from libc.math cimport NAN, M_PI, cos, llround, sin, tan
 from libc.stdint cimport uint_fast8_t
 from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
@@ -112,20 +112,24 @@ cdef object EMPTY_ITER = iter(())
 # TODO: Do this properly, once Cython lets constant globals work
 cdef extern from *:
     """
-    const double PI = 3.141592653589793238462643383279502884197;
-    const double rad_2_deg = 180.0 / PI;
-    const double deg_2_rad = PI / 180.0;
     const int ROUND_TO = 6;
     const double TOL = 1e-6;
     """
-    # For radian-degrees, multiply to convert.
-    const double PI, rad_2_deg, deg_2_rad, TOL
     const int ROUND_TO
+    const double TOL
 
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
     cdef bint USE_TYPE_INTERNALS "CYTHON_USE_TYPE_SLOTS"
 
-cdef inline object _make_tuple(x, y, z):
+cdef inline double deg_2_rad(double ang):
+    """Convert a degrees value to radians."""
+    return ang * (M_PI / 180.0)
+
+cdef inline double rad_2_deg(double ang):
+    """Convert a radians value to degrees."""
+    return ang * (180.0 / M_PI)
+
+cdef inline object _make_tuple(object x, object y, object z):
     # Fast-construct a Vec_tuple. We make a normal tuple (fast),
     # then assign the namedtuple type. The type is on the heap
     # so we need to incref it.
@@ -610,9 +614,9 @@ cdef inline void _vec_cross(vec_t *res, vec_t *a, vec_t *b):
 
 
 cdef void _mat_from_angle(mat_t res, vec_t *angle):
-    cdef double p = deg_2_rad * angle.x
-    cdef double y = deg_2_rad * angle.y
-    cdef double r = deg_2_rad * angle.z
+    cdef double p = deg_2_rad(angle.x)
+    cdef double y = deg_2_rad(angle.y)
+    cdef double r = deg_2_rad(angle.z)
 
     res[0][0] = cos(p) * cos(y)
     res[0][1] = cos(p) * sin(y)
@@ -631,13 +635,13 @@ cdef inline void _mat_to_angle(vec_t *ang, mat_t mat):
     # https://github.com/ValveSoftware/source-sdk-2013/blob/master/sp/src/mathlib/mathlib_base.cpp#L208
     cdef double horiz_dist = math.sqrt(mat[0][0]**2 + mat[0][1]**2)
     if horiz_dist > 0.001:
-        ang.x = norm_ang(rad_2_deg * math.atan2(-mat[0][2], horiz_dist))
-        ang.y = norm_ang(rad_2_deg * math.atan2(mat[0][1], mat[0][0]))
-        ang.z = norm_ang(rad_2_deg * math.atan2(mat[1][2], mat[2][2]))
+        ang.x = norm_ang(rad_2_deg(math.atan2(-mat[0][2], horiz_dist)))
+        ang.y = norm_ang(rad_2_deg(math.atan2(mat[0][1], mat[0][0])))
+        ang.z = norm_ang(rad_2_deg(math.atan2(mat[1][2], mat[2][2])))
     else:
         # Vertical, gimbal lock (yaw=roll)...
-        ang.x = norm_ang(rad_2_deg * math.atan2(-mat[0][2], horiz_dist))
-        ang.y = norm_ang(rad_2_deg * math.atan2(-mat[1][0], mat[1][1]))
+        ang.x = norm_ang(rad_2_deg(math.atan2(-mat[0][2], horiz_dist)))
+        ang.y = norm_ang(rad_2_deg(math.atan2(-mat[1][0], mat[1][1])))
         ang.z = 0.0  # Can't produce.
 
 
@@ -1307,8 +1311,8 @@ cdef class VecBase:
         cdef double horiz_dist = math.sqrt(self.val.x ** 2 + self.val.y ** 2)
 
         return _angle_mut(
-            norm_ang(rad_2_deg * math.atan2(-self.val.z, horiz_dist)),
-            norm_ang(math.atan2(self.val.y, self.val.x) * rad_2_deg),
+            norm_ang(rad_2_deg(math.atan2(-self.val.z, horiz_dist))),
+            norm_ang(rad_2_deg(math.atan2(self.val.y, self.val.x))),
             norm_ang(roll),
         )
 
@@ -2299,7 +2303,7 @@ cdef class MatrixBase:
 
         This is a rotation around the Y axis.
         """
-        cdef double rad_pitch = deg_2_rad * pitch
+        cdef double rad_pitch = deg_2_rad(pitch)
         cdef double cos = math.cos(rad_pitch)
         cdef double sin = math.sin(rad_pitch)
 
@@ -2316,7 +2320,7 @@ cdef class MatrixBase:
         """Return the matrix representing a yaw rotation.
 
         """
-        cdef double rad_yaw = deg_2_rad * yaw
+        cdef double rad_yaw = deg_2_rad(yaw)
         cdef double sin = math.sin(rad_yaw)
         cdef double cos = math.cos(rad_yaw)
 
@@ -2334,7 +2338,7 @@ cdef class MatrixBase:
 
         This is a rotation around the X axis.
         """
-        cdef double rad_roll = deg_2_rad * roll
+        cdef double rad_roll = deg_2_rad(roll)
         cdef double cos = math.cos(rad_roll)
         cdef double sin = math.sin(rad_roll)
 
@@ -2385,7 +2389,7 @@ cdef class MatrixBase:
         cdef double sin, cos, icos, x, y, z
         conv_vec(&vec_axis, axis, scalar=False)
         _vec_normalise(&vec_axis, &vec_axis)
-        angle *= -deg_2_rad
+        angle = deg_2_rad(-angle)
 
         cos = math.cos(angle)
         icos = 1 - cos
