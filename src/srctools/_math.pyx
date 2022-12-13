@@ -1,14 +1,14 @@
 # cython: language_level=3, auto_pickle=False, binding=True, c_api_binop_methods=True
 # """Optimised Vector object."""
+from cpython.conversion cimport PyOS_double_to_string
 from cpython.exc cimport PyErr_WarnEx
+from cpython.mem cimport PyMem_Free, PyMem_Malloc
 from cpython.object cimport Py_EQ, Py_GE, Py_GT, Py_LE, Py_LT, Py_NE, PyObject, PyTypeObject
 from cpython.ref cimport Py_INCREF
-from cpython.conversion cimport PyOS_double_to_string
-from cpython.mem cimport PyMem_Malloc, PyMem_Free
 from libc cimport math
 from libc.math cimport NAN, cos, llround, sin, tan
 from libc.stdint cimport uint_fast8_t
-from libc.stdio cimport sscanf, snprintf
+from libc.stdio cimport snprintf, sscanf
 from libc.string cimport memcmp, memcpy, memset
 from libcpp.vector cimport vector
 cimport cython.operator

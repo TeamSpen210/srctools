@@ -9,10 +9,10 @@ import collections
 from helpers import *
 import pytest
 
-from srctools import Vec, FrozenVec, Angle, FrozenAngle, Matrix, FrozenMatrix, Keyvalues
+from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
 from srctools.dmx import (
-    TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2,
-    Vec4, deduce_type,
+    TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec4,
+    deduce_type,
 )
 from srctools.tokenizer import TokenSyntaxError
 

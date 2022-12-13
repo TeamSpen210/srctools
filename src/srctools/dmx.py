@@ -16,8 +16,8 @@ the file.
 """
 from typing import (
     IO, TYPE_CHECKING, Any, Callable, Dict, Generic, Iterable, Iterator, KeysView, List,
-    Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type,
-    TypeVar, Union, ValuesView, cast,
+    Mapping, MutableMapping, NamedTuple, Optional, Sequence, Set, Tuple, Type, TypeVar, Union,
+    ValuesView, cast,
 )
 from typing_extensions import Final, Literal, TypeAlias, overload
 from enum import Enum
@@ -35,7 +35,7 @@ import attrs
 
 from srctools import BOOL_LOOKUP, EmptyMapping, binformat, bool_as_int
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, FrozenAngle, Vec, FrozenVec, Matrix, FrozenMatrix
+from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
 from srctools.tokenizer import Token, Tokenizer
 
 

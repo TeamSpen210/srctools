@@ -1,7 +1,7 @@
 """Parses material files."""
 from typing import (
-    Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO, Tuple,
-    TypeVar, Union, overload,
+    Any, Callable, Dict, Iterable, Iterator, List, Mapping, MutableMapping, Optional, TextIO,
+    Tuple, TypeVar, Union, overload,
 )
 from enum import Enum
 import sys

@@ -1,6 +1,5 @@
 """Test parsing and exporting entity lumps."""
 from pathlib import Path
-
 import unittest.mock
 
 from srctools.bsp import BSP

@@ -1,5 +1,5 @@
 """Parse particle system files."""
-from typing import Any, IO, Dict, Iterable, List, Union, overload
+from typing import IO, Any, Dict, Iterable, List, Union, overload
 import copy
 
 import attrs

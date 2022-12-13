@@ -1,8 +1,8 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
     IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
-    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar,
-    Union, cast,
+    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
+    cast,
 )
 from typing_extensions import TypeAlias, overload
 from collections import ChainMap, defaultdict
