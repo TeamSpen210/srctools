@@ -125,6 +125,8 @@ class File(Generic[FileSysT]):
 
 class FileSystem(Generic[_FileDataT]):
     """Base class for different systems defining the interface."""
+    path: str
+    _ref_count: int
     def __init__(self, path: StringPath) -> None:
         self.path = os.fspath(path)
         self._ref_count = 0
@@ -547,6 +549,8 @@ class RawFileSystem(FileSystem[str]):
 
 class ZipFileSystem(FileSystem[ZipInfo]):
     """Accesses files in a zip file."""
+    _no_close: bool
+    zip: ZipFile
     def __init__(self, path: StringPath, zipfile: Optional[ZipFile]=None) -> None:
         super().__init__(path)
 
@@ -623,11 +627,14 @@ class ZipFileSystem(FileSystem[ZipInfo]):
 
 class VPKFileSystem(FileSystem[VPKFile]):
     """Accesses files in a VPK file."""
+    vpk: VPK
+    _name_to_file: Dict[str, VPKFile]
+
     def __init__(self, path: StringPath) -> None:
         super().__init__(path)
         self.vpk = VPK(self.path)
         # Used to enforce case-insensitivity.
-        self._name_to_file: Dict[str, VPKFile] = {
+        self._name_to_file = {
             file.filename.replace('\\', '/').casefold(): file
             for file in self.vpk
         }

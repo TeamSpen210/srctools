@@ -339,6 +339,42 @@ class VMF:
     The dictionaries by_target and by_class allow quickly getting a set
     of entities with the given class or targetname.
     """
+    solid_id: IDMan
+    face_id: IDMan
+    ent_id: IDMan
+    group_id: IDMan
+    vis_id: IDMan
+    node_id: IDMan
+
+    # Allow quick searching for particular groups, without checking
+    # the whole map
+    by_target: MutableMapping[Optional[str], CopySet['Entity']]
+    by_class: MutableMapping[str, CopySet['Entity']]
+    entities: List['Entity']
+    brushes: List['Solid']
+    cameras: List['Camera']
+    cordons: List['Cordon']
+    vis_tree: List['VisGroup']
+    groups: Dict[int, 'EntityGroup']
+    spawn: 'Entity'
+
+    is_prefab: bool
+    cordon_enabled: bool
+    map_ver: int
+
+    format_ver: int
+    hammer_ver: int
+    hammer_build: int
+
+    # Various Hammer settings
+    show_grid: bool
+    show_3d_grid: bool
+    snap_grid: bool
+    show_logic_grid: bool
+    grid_spacing: int
+    active_cam: int
+    quickhide_count: int
+
     def __init__(
         self,
         map_info: Mapping[str, str]=EmptyMapping,
@@ -363,12 +399,12 @@ class VMF:
         self.by_target: MutableMapping[Optional[str], CopySet[Entity]] = defaultdict(CopySet)
         self.by_class: MutableMapping[str, CopySet[Entity]] = defaultdict(CopySet)
 
-        self.entities: List[Entity] = []
-        self.brushes: List[Solid] = []
-        self.cameras: List[Camera] = []
-        self.cordons: List[Cordon] = []
-        self.vis_tree: List[VisGroup] = []
-        self.groups: Dict[int, EntityGroup] = {}
+        self.entities = []
+        self.brushes = []
+        self.cameras = []
+        self.cordons = []
+        self.vis_tree = []
+        self.groups = {}
 
         # mapspawn entity, which is the entity world brushes are saved to.
         self.spawn = Entity(self)
@@ -1393,6 +1429,11 @@ class UVAxis:
         'scale',
         'offset',
     ]
+    x: float
+    y: float
+    z: float
+    scale: float
+    offset: float
 
     def __init__(
         self,
@@ -2078,6 +2119,18 @@ class Entity(MutableMapping[str, str]):
     To read instance $replace values operate on entity.fixup[]
     """
     _fixup: Optional['EntityFixup']
+    outputs: List['Output']
+    solids: List[Solid]
+    id: int
+    hidden: bool
+    groups: Set[int]
+
+    visgroup_ids: Set[int]
+    vis_shown: bool
+    vis_auto_shown: bool
+    editor_color: Vec
+    logical_pos: str
+    comments: str
 
     def __init__(
         self,
@@ -2103,8 +2156,8 @@ class Entity(MutableMapping[str, str]):
             keys.items()
         })
         self._fixup = EntityFixup(fixup) if fixup else None
-        self.outputs: List[Output] = list(outputs)
-        self.solids: List[Solid] = list(solids)
+        self.outputs = list(outputs)
+        self.solids = list(solids)
         self.id = vmf_file.ent_id.get_id(ent_id)
         self.hidden = hidden
         self.groups = set(groups)

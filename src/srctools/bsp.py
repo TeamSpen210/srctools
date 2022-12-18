@@ -4,7 +4,7 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
-    Optional, Set, Tuple, Type, TypeVar, Union, cast, overload,
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload,
 )
 from enum import Enum, Flag
 from io import BytesIO
@@ -1040,7 +1040,9 @@ class ParsedLump(Generic[T]):
 
     If the lump name is bytes, it's a game lump identifier.
     """
-
+    lump: Union[bytes, BSP_LUMPS]
+    to_clear: Sequence[Union[bytes, BSP_LUMPS]]
+    __name__: str
     def __init__(self, lump: Union[bytes, BSP_LUMPS], *extra: Union[bytes, BSP_LUMPS]) -> None:
         self.lump = lump
         self.to_clear = (lump, ) + extra

@@ -30,6 +30,10 @@ class LogMessage:
 
     The __str__() method performs the joining.
     """
+    fmt: str
+    args: Tuple[object, ...]
+    kwargs: Dict[str, object]
+    has_args: bool
     def __init__(
         self,
         fmt: str,

@@ -34,6 +34,20 @@ class FixupStyle(Enum):
 
 class Instance:
     """Represents an instance with all the values required to collapse it."""
+    name: str
+    filename: str
+    pos: Vec
+    orient: Matrix
+    fixup_type: FixupStyle
+    fixup: EntityFixup
+    recur_count: int
+    outputs: List[Output]
+
+    ent_ids: Dict[int, int]
+    face_ids: Dict[int, int]
+    brush_ids: Dict[int, int]
+    node_ids: Dict[int, int]
+    visgroup_ids: Dict[int, int]
     def __init__(
         self,
         name: str,
@@ -51,11 +65,11 @@ class Instance:
         self.fixup = EntityFixup(fixup)
         self.outputs = list(outputs)
         # After collapsing, this is the original -> new ID mapping.
-        self.ent_ids: Dict[int, int] = {}
-        self.face_ids: Dict[int, int] = {}
-        self.brush_ids: Dict[int, int] = {}
-        self.node_ids: Dict[int, int] = {}
-        self.visgroup_ids: Dict[int, int] = {}
+        self.ent_ids = {}
+        self.face_ids = {}
+        self.brush_ids = {}
+        self.node_ids = {}
+        self.visgroup_ids = {}
         # Keep track of recursive instances to handle loops.
         self.recur_count = 0
 
@@ -196,17 +210,22 @@ class Param:
 
 class InstanceFile:
     """Represents an instance VMF which has been parsed."""
+    vmf: VMF
+    params: Dict[str, Param]
+    #: Inputs into the instance. The key is the parts of the instance:name;input string.
+    proxy_inputs: Dict[Tuple[str, str], Output]
+    #: Outputs out of the instance. The key is the parts of the instance:name;output string.
+    #: The value is the ID of the entity to add the output to.
+    proxy_outputs: Dict[Tuple[str, str], Tuple[int, Output]]
+
+    #: If instructed to add in a proxy later, this is the local pos to place it.
+    proxy_pos: Vec
+
     def __init__(self, vmf: VMF) -> None:
         self.vmf = vmf
-        self.params: Dict[str, Param] = {}
-        # Inputs into the instance. The key is the parts of the instance:name;input string.
-        self.proxy_inputs: Dict[Tuple[str, str], Output] = {}
-        # Outputs out of the instance. The key is the parts of the instance:name;output string.
-        # The value is the ID of the entity to add the output to.
-        self.proxy_outputs: Dict[Tuple[str, str], Tuple[int, Output]] = {}
-
-        # If instructed to add in a proxy later, this is the local pos to place
-        # it.
+        self.params = {}
+        self.proxy_inputs = {}
+        self.proxy_outputs = {}
         self.proxy_pos = Vec()
 
         self.parse()

@@ -368,6 +368,13 @@ class Tokenizer(BaseTokenizer):
       a bare string.
     """
     chunk_iter: Iterator[str]
+    cur_chunk: str
+    char_index: int
+    string_bracket: bool
+    allow_escapes: bool
+    allow_star_comments: bool
+    colon_operator: bool
+    _last_was_cr: bool
 
     def __init__(
         self,

@@ -599,7 +599,7 @@ class Helper:
 
 class UnknownHelper(Helper):
     """Represents an unknown helper."""
-    TYPE = None
+    TYPE: ClassVar[Optional[HelperTypes]] = None
     def __init__(self, name: str, args: List[str]) -> None:
         """Unknown helpers have a name attribute."""
         self.name = name

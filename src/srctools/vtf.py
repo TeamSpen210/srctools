@@ -306,6 +306,10 @@ class Frame:
     This is lazy, so it will only read from the file when actually used.
     """
     __slots__ = ['width', 'height', '_data', '_fileinfo']
+    width: int
+    height: int
+    _data: Optional['array[int]']  # Only generic in stubs!
+    _fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]]
 
     def __init__(
         self,
@@ -315,8 +319,8 @@ class Frame:
         """Private constructor, creates a blank image of this size."""
         self.width = width
         self.height = height
-        self._data: Optional[array[int]] = None
-        self._fileinfo: Optional[Tuple[IO[bytes], int, ImageFormats]] = None
+        self._data = None
+        self._fileinfo = None
 
     def load(self) -> None:
         """If the image has not been loaded, load it from the file stream."""
@@ -530,6 +534,24 @@ class Frame:
 
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
+    width: int
+    height: int
+    depth: int
+    mipmap_count: int
+
+    version: Tuple[int, int]
+    reflectivity: Vec
+    bumpmap_scale: float
+    resources: Dict[Union[ResourceID, bytes], Resource]
+    sheet_info: Dict[int, 'SheetSequence']
+    flags: VTFFlags
+    frame_count: int
+    format: ImageFormats
+    low_format: ImageFormats
+
+    _frames: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
+    _low_res: Frame
+
     def __init__(
         self,
         width: int,
@@ -571,7 +593,7 @@ class VTF:
         self.version = version
         self.reflectivity = ref
         self.bumpmap_scale = bump_scale
-        self.resources = {}  # type: Dict[Union[ResourceID, bytes], Resource]
+        self.resources = {}
         self.sheet_info = dict(sheet_info)
         self.flags = flags
         self.frame_count = frames
@@ -579,12 +601,13 @@ class VTF:
         self.low_format = thumb_fmt
 
         # (frame, depth/cubemap, mipmap) -> frame
-        self._frames = {}  # type: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
+        self._frames = {}
         self._low_res = Frame(16, 16)
 
+        depth_iter: Iterable[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in flags:
             if version[1] == 5:
-                depth_iter = CUBES  # type: Iterable[Union[int, CubeSide]]
+                depth_iter = CUBES
             else:
                 depth_iter = CUBES_WITH_SPHERE
         else:

@@ -38,8 +38,8 @@ class VOLUME(Enum):
 VOL_NORM = VOLUME.VOL_NORM
 
 # Old compatibility values, replaced by soundlevel.
-ATTENUATION = {
-    'ATTN_NONE': 0,
+ATTENUATION: Dict[str, float] = {
+    'ATTN_NONE': 0.0,
     'ATTN_NORM': 0.8,
     'ATTN_IDLE': 2.0,
     'ATTN_STATIC': 1.25,

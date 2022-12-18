@@ -67,7 +67,7 @@ class HelperInherit(Helper):
     These specify the base classes for an entity def.
     This implementation isn't used, the EntityDef special-cases it.
     """
-    TYPE = HelperTypes.INHERIT
+    TYPE: ClassVar[HelperTypes] = HelperTypes.INHERIT
 
 
 @attrs.define

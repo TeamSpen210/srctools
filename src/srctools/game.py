@@ -16,6 +16,14 @@ GINFO: Final = 'gameinfo.txt'
 
 class Game:
     """Represents the data in GameInfo."""
+    path: Path
+    game_name: Optional[str]
+    app_id: Optional[str]
+    tools_id: Optional[str]
+    additional_content: Optional[str]
+    fgd_loc: Optional[str]
+    search_paths: List[Path]
+
     def __init__(self, path: Union[str, Path]):
         """Parse a game from a folder."""
         if isinstance(path, Path):
@@ -34,7 +42,7 @@ class Game:
         self.tools_id = fsystems['ToolsAppId', None]
         self.additional_content = fsystems['AdditionalContentId', None]
         self.fgd_loc = gameinfo['GameData', None]
-        self.search_paths: List[Path] = []
+        self.search_paths = []
 
         # Note: the behaviour of Source can be examined via the "path" command.
         for search_path in fsystems.find_children('SearchPaths'):
