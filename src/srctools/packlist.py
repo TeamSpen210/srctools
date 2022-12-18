@@ -1132,11 +1132,13 @@ class PackList:
         """Find any needed files for a model."""
         filename, ext = os.path.splitext(file.filename)
 
-        # Some of these are optional.
+        # Some of these are optional, so just skip. Do not re-pack the MDL itself, that's
+        # pointless and will also erase the skinset!
         for ext in MDL_EXTS:
-            component = filename + ext
-            if component in self.fsys:
-                self.pack_file(component)
+            if ext != '.mdl':
+                component = filename + ext
+                if component in self.fsys:
+                    self.pack_file(component)
 
         if file.data is not None:
             # We need to add that file onto the system, so it's loaded.
