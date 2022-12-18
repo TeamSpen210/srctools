@@ -595,31 +595,30 @@ class VecBase:
         def __mod__(self: VecT, other: float) -> VecT: ...
         def __rmod__(self: VecT, other: float) -> VecT: ...
 
-    funcname = op = pretty = None
-
+    _funcname = _op = _pretty = ''
     # Use exec() to generate all the number magic methods. This reduces code
     # duplication since they're all very similar.
 
-    for funcname, op in (('add', '+'), ('sub', '-')):
+    for _funcname, _op in (('add', '+'), ('sub', '-')):
         exec(
-            _VEC_ADDSUB_TEMP.format(func=funcname, op=op),
+            _VEC_ADDSUB_TEMP.format(func=_funcname, op=_op),
             globals(),
             locals(),
         )
 
-    for funcname, op, pretty in (
+    for _funcname, _op, _pretty in (
             ('mul', '*', 'multiply'),
             ('truediv', '/', 'divide'),
             ('floordiv', '//', 'floor-divide'),
             ('mod', '%', 'modulus'),
     ):
         exec(
-            _VEC_MULDIV_TEMP.format(func=funcname, op=op, pretty=pretty),
+            _VEC_MULDIV_TEMP.format(func=_funcname, op=_op, pretty=_pretty),
             globals(),
             locals(),
         )
 
-    del funcname, op, pretty
+    del _funcname, _op, _pretty
 
     # Divmod is entirely unique.
     def __divmod__(self: VecT, other: float) -> Tuple[VecT, VecT]:
@@ -1324,29 +1323,29 @@ class Vec(VecBase):
         def __ifloordiv__(self, other: float) -> 'Vec': ...
         def __imod__(self, other: float) -> 'Vec': ...
 
-    funcname = op = pretty = None
+    _funcname = _op = _pretty = ''
     # Use exec() to generate all the number magic methods. This reduces code
     # duplication since they're all very similar.
-    for funcname, op in (('add', '+'), ('sub', '-')):
+    for _funcname, _op in (('add', '+'), ('sub', '-')):
         exec(
-            _VEC_ADDSUB_INPLACE_TEMP.format(func=funcname, op=op),
+            _VEC_ADDSUB_INPLACE_TEMP.format(func=_funcname, op=_op),
             globals(),
             locals(),
         )
 
-    for funcname, op, pretty in (
+    for _funcname, _op, _pretty in (
             ('mul', '*', 'multiply'),
             ('truediv', '/', 'divide'),
             ('floordiv', '//', 'floor-divide'),
             ('mod', '%', 'modulus'),
     ):
         exec(
-            _VEC_MULDIV_INPLACE_TEMP.format(func=funcname, op=op, pretty=pretty),
+            _VEC_MULDIV_INPLACE_TEMP.format(func=_funcname, op=_op, pretty=_pretty),
             globals(),
             locals(),
         )
 
-    del funcname, op, pretty
+    del _funcname, _op, _pretty
 
     def __imatmul__(self, other: Union['AngleBase', 'MatrixBase']) -> 'Vec':
         """We need to define this, so it's in-place."""
@@ -1730,7 +1729,7 @@ class MatrixBase:
         """Retrieve an individual matrix value by x, y position (0-2)."""
         return cast(float, getattr(self, _IND_TO_SLOT[item]))
 
-    __iter__ = None
+    __iter__: None = None
     """Iteration doesn't make much sense."""
 
     def to_angle(self) -> 'Angle':
