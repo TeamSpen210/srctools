@@ -31,6 +31,7 @@ Dev branch
 * Use :py:class:`~srctools.math.FrozenVec` and :py:class:`~srctools.math.FrozenAngle` in the
   :py:class:`~srctools.dmx` module instead of :external:py:func:`~collections.namedtuple` subclasses.
 * Upgrade :py:class:`srctools.dmx.Time` to a full class instead of a :external:py:class:`typing.NewType`.
+* Fix packlist logic inadvertently discarding ``skinset`` keyvalue hints when packing models.
 
 -------------
 Version 2.3.6
