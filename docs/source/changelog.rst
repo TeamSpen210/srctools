@@ -32,6 +32,8 @@ Dev branch
   :py:class:`~srctools.dmx` module instead of :external:py:func:`~collections.namedtuple` subclasses.
 * Upgrade :py:class:`srctools.dmx.Time` to a full class instead of a :external:py:class:`typing.NewType`.
 * Fix packlist logic inadvertently discarding ``skinset`` keyvalue hints when packing models.
+* Change behaviour of DMX ``name`` and ``id`` attributes to match game logic. ``name`` is actually a
+  regular attribute, but the uuid has a unique type and so can coexist with an attribute of the same name.
 
 -------------
 Version 2.3.6

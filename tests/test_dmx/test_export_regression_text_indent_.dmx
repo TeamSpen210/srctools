@@ -8,6 +8,7 @@
 	{
 		"id" "elementid" "e1db21c6-d046-46ca-9452-25c667b70ede"
 		"name" "string" "ScalarValues"
+		"id" "binary" "5C 81 48 EE 76 78 46 1B B5 C5 F3 D0 E1 42 7C 01"
 		"neg_integer" "int" "-1230552801"
 		"pos_integer" "int" "296703200"
 		"neg_float" "float" "-16211.592773"
@@ -26,7 +27,7 @@
 		"dn" "qangle" "90 0 0"
 		"somedir" "qangle" "291 311.125 45"
 		"quat" "quaternion" "0.267261 0.534522 0.801784 0"
-		"hex" "binary" "92 26 D0 C7 12 EC 39 E9 D1 63 45 19 D1 BD 0F 4A 76 1C 6F 81 AF B5 78 5B 4B 9C 85 29 12 74 FF 26 CD 37 0E B1 73 18 FA 32 6D 22 EF F4 D8 B8 F9 D4 1E 6B"
+		"hex" "binary" "92 26 D0 C7 12 EC 39 E9 D1 63 45 19 D1 BD 0F 4A 76 1C 6F 81 AF B5 78 5B 4B 9C 85 29 12 74 FF 26 CD 37 0E B1 73 18 FA 32 6D 22 EF F4 D8 B8 F9 D4 1E 6B EE"
 	}
 	"arrays" "TypeHolder"
 	{

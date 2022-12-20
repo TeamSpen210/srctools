@@ -150,7 +150,7 @@ cdef inline double norm_ang(double val):
     return val
 
 
-cdef int trim_float(char *buf, Py_ssize_t size):
+cdef Py_ssize_t trim_float(char *buf, Py_ssize_t size):
     """Strip a .0 from the end of a float."""
     while size > 1 and buf[size - 1] == b'0':
         buf[size - 1] = 0
@@ -3165,7 +3165,7 @@ def quickhull(vertexes: typing.Iterable[Vec]) -> typing.List[typing.Tuple[Vec, V
 from cpython.object cimport PyTypeObject
 
 
-if USE_TYPE_INTERNALS and 0:
+if USE_TYPE_INTERNALS:
     (<PyTypeObject *>Vec).tp_name = b"srctools.math.Vec"
     (<PyTypeObject *>FrozenVec).tp_name = b"srctools.math.FrozenVec"
     (<PyTypeObject *>Angle).tp_name = b"srctools.math.Angle"

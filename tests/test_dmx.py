@@ -2,7 +2,7 @@
 from typing import Set, cast
 from io import BytesIO
 from pathlib import Path
-from uuid import UUID
+from uuid import UUID, uuid4
 import array
 import collections
 
@@ -568,6 +568,37 @@ def test_deduce_type_adv() -> None:
         print(deduce_type(range(0)))
 
 
+def test_special_attr_name() -> None:
+    """Test the special behaviour of the "name" attribute.
+
+    This just maps to a 'name' key.
+    """
+    elem = Element('MyName', 'DMElement')
+    assert elem.name == 'MyName'
+    assert 'name' in elem
+    assert elem['name'].type is ValueType.STRING
+    assert elem['name'].val_string == 'MyName'
+    elem['name'].val_color = Color(192, 128, 64)
+    assert elem.name == '192 128 64 255'
+    elem.name = 'Third'
+    assert elem['name'].val_string == 'Third'
+
+
+def test_special_attr_id() -> None:
+    """Test the special behaviour of the "id" attribute.
+
+    This attribute can co-exist with a key of the same name.
+    """
+    uuid_a = uuid4()
+    uuid_b = uuid4()
+    elem = Element('MyName', 'DMElement', uuid_a)
+    assert elem.uuid == uuid_a
+    assert 'id' not in elem
+    elem['id'] = uuid_b.bytes
+    assert elem.uuid == uuid_a
+    elem['id'].val_bytes == uuid_b.bytes
+
+
 # TODO: We need to find a sample of legacy binary, v1 and v3 to verify implementation
 @pytest.mark.parametrize('filename', [
     'keyvalues2',
@@ -592,8 +623,8 @@ def verify_sample(root: Element) -> None:
     assert root.name == 'Root_Name'
     assert root.type == 'DmeRootElement'
     assert root.uuid == UUID('b66a2ce3-d686-4dbf-85df-07c6b275bebb')
-    assert len(root) == 3
-    assert sorted(root.keys()) == ['arrays', 'recursive', 'scalars']
+    assert len(root) == 4, root
+    assert sorted(root.keys()) == ['arrays', 'name', 'recursive', 'scalars']
 
     # First, the recursive element tree.
     recur_attr = root['recursive']
@@ -601,7 +632,7 @@ def verify_sample(root: Element) -> None:
     recur = recur_attr.val_elem
     assert recur.name == 'Recurse1'
     assert recur.type == 'RecurseElement'
-    assert len(recur) == 2
+    assert len(recur) == 3, recur
     assert recur['leaf1'].name == 'Leaf1'
     assert recur['leaf2'].name == 'Leaf2'
 
@@ -624,12 +655,18 @@ def verify_sample(root: Element) -> None:
     assert scalars.uuid == UUID('e1db21c6-d046-46ca-9452-25c667b70ede')
     assert scalars.name == 'ScalarValues'
 
-    assert len(scalars) == 19
+    assert len(scalars) == 21
     assert scalars['neg_integer'].val_int == -1230552801
     assert scalars['pos_integer'].val_int == 296703200
 
     assert scalars['neg_float'].val_float == a(-16211.59325)
     assert scalars['pos_float'].val_float == a(22097.83875)
+
+    # The UUID has a unique type, and can coexist with a key of the same name.
+    assert scalars['id'].val_bytes == (
+        b'\x5c\x81\x48\xee\x76\x78\x46\x1b'
+        b'\xb5\xc5\xf3\xd0\xe1\x42\x7c\x01'
+    )
 
     assert scalars['truth'].val_bool is True
     assert scalars['falsity'].val_bool is False
@@ -650,9 +687,9 @@ def verify_sample(root: Element) -> None:
     assert scalars['quat'].val_quat == Quaternion(a(0.267261), a(0.534522), a(0.801784), 0.0)
 
     assert scalars['hex'].val_bin == (
-        b'\x92&\xd0\xc7\x12\xec9\xe9\xd1cE\x19\xd1\xbd\x0f'
-        b'Jv\x1co\x81\xaf\xb5x[K\x9c\x85)\x12t\xff&\xcd7'
-        b'\x0e\xb1s\x18\xfa2m"\xef\xf4\xd8\xb8\xf9\xd4\x1ek'
+        b'\x92\x26\xd0\xc7\x12\xec\x39\xe9\xd1\x63\x45\x19\xd1\xbd\x0f\x4a\x76'
+        b'\x1c\x6f\x81\xaf\xb5\x78\x5b\x4b\x9c\x85\x29\x12\x74\xff\x26\xcd\x37'
+        b'\x0e\xb1\x73\x18\xfa\x32\x6d\x22\xef\xf4\xd8\xb8\xf9\xd4\x1e\x6b\xee'
     )
 
     # And finally arrays.
@@ -660,7 +697,7 @@ def verify_sample(root: Element) -> None:
     assert arrays.type == 'TypeHolder'
     assert arrays.uuid == UUID('2b95889f-5041-436e-9350-813abcf504b0')
     assert arrays.name == 'ArrayValues'
-    assert len(arrays) == 11
+    assert len(arrays) == 12
 
     arr_int = arrays['integers']
     assert len(arr_int) == 5
@@ -924,7 +961,8 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
     assert e1.type == 'DmElementLeaf'
     assert e1['value'].val_str == 'result'
     assert e2.type == 'DmElement'
-    assert len(e2) == 0
+    assert len(e2) == 1
+    assert list(e2.keys()) == ['name']
 
 
 def test_dmx_to_kv1_roundtrip() -> None:

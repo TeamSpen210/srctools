@@ -1059,16 +1059,11 @@ class Element(Mapping[str, Attribute[Any]]):
     """An element in a DMX tree.
 
     This is a mapping over `Attribute` objects, representing each key-value pair in the element.
-    Other than the three special attributes `name`, `type` and `uuid`, keys are accessed by regular mapping methods, producing `Attribute` objects. As a
-    convenience, values or lists of values can be assigned directly to implicitly create the
-    Attribute.
+    Other than the three special attributes `name`, `type` and `uuid`, keys are accessed by regular
+    mapping methods, producing `Attribute` objects. As a convenience, values or lists of values can
+    be assigned directly to implicitly create the Attribute.
     """
-    __slots__ = ['type', 'name', 'uuid', '_members']
-    name: str
-    """
-    The name can be any string, but usually is some sort of item ID. For elements which are
-    children of another element, the name usually matches the key. 
-    """
+    __slots__ = ['type', 'uuid', '_members']
 
     type: str
     """
@@ -1085,9 +1080,8 @@ class Element(Mapping[str, Attribute[Any]]):
     _members: MutableMapping[str, Attribute[Any]]
 
     def __init__(self, name: str, type: str, uuid: Optional[UUID] = None) -> None:
-        self.name = name
+        self._members = {'name': Attribute('name', ValueType.STRING, name)}
         self.type = type
-        self._members = {}
         if uuid is None:
             self.uuid = get_uuid()
         else:
@@ -1102,6 +1096,28 @@ class Element(Mapping[str, Attribute[Any]]):
     def is_null(self) -> bool:
         """Check if this is a NULL element, found in binary DMXes."""
         return isinstance(self, StubElement) and self._type is _StubType.NULL
+
+    @property
+    def name(self) -> str:
+        """The name can be any string, but usually is some sort of item ID.
+
+        For elements which are children of another element, the name usually matches the key.
+        This is actually just a key with the name ``name``. If it is missing, ``""`` is returned.
+        """
+        try:
+            return self._members['name'].val_string
+        except KeyError:
+            return ''
+
+    @name.setter
+    def name(self, value: str) -> None:
+        try:
+            attr = self._members['name']
+        except KeyError:
+            self._members['name'] = Attribute('name', ValueType.STRING, value)
+        else:
+            attr._typ = ValueType.STRING
+            attr._value = str(value)
 
     @classmethod
     def parse(cls, file: IO[bytes], unicode: bool = False) -> Tuple['Element', str, int]:
@@ -1372,14 +1388,9 @@ class Element(Mapping[str, Attribute[Any]]):
             orig_typ_name = tok.expect(Token.STRING)
             typ_name = orig_typ_name.casefold()
 
-            # The UUID is a special element name/type combo.
-            if attr_name == 'id':
-                if typ_name != 'elementid':
-                    raise tok.error(
-                        'Element {} attribute must be "{}" type, not "{}"!',
-                        # Format literal strings, so we can reuse the string below.
-                        'id', 'elementid', typ_name,
-                    )
+            # The UUID is a special element name/type combo, if it doesn't match it's a regular
+            # attr.
+            if attr_name == 'id' and typ_name == 'elementid':
                 uuid_str = tok.expect(Token.STRING)
                 if elem.uuid is not _UNSET_UUID:
                     raise tok.error('Duplicate UUID definition!')
@@ -1549,6 +1560,9 @@ class Element(Mapping[str, Attribute[Any]]):
             if version >= 4:
                 used_strings.add(elem.name)
             for attr in elem.values():
+                if attr.name == 'name':
+                    # Has its own special slot.
+                    continue
                 if stringdb_ind is not None:
                     used_strings.add(attr.name)
                 if attr.type is ValueType.TIME and version < 3:
@@ -1587,8 +1601,13 @@ class Element(Mapping[str, Attribute[Any]]):
 
         # Now, write out all attributes.
         for elem in elements:
-            file.write(pack('<i', len(elem)))
+            attr_count = len(elem)
+            if 'name' in elem._members:
+                attr_count -= 1
+            file.write(pack('<i', attr_count))
             for attr in elem.values():
+                if attr.name == 'name':
+                    continue
                 if stringdb_ind is not None:
                     file.write(pack(stringdb_ind, string_to_ind[attr.name]))
                 else:
@@ -1718,6 +1737,8 @@ class Element(Mapping[str, Attribute[Any]]):
             file.write(b'%b"id" "elementid" "%b"\r\n' % (indent_child, str(self.uuid).encode('ascii')))
         file.write(b'%b"name" "string" "%b"\r\n' % (indent_child, self.name.encode(encoding)))
         for attr in self.values():
+            if attr.name == 'name':
+                continue
             file.write(b'%b"%b" ' % (
                 indent_child,
                 attr.name.encode(encoding),
@@ -1799,7 +1820,7 @@ class Element(Mapping[str, Attribute[Any]]):
                     no_inline = True
                 else:
                     leaf_names.add(child.name)
-        del leaf_names
+        del leaf_names  # Don't need this anymore, discard it.
         if has_block and has_leaf:
             no_inline = True
 
@@ -1835,6 +1856,8 @@ class Element(Mapping[str, Attribute[Any]]):
                 if attr.type != ValueType.ELEMENT or not attr.is_array:
                     raise ValueError('"subkeys" must be an Element array!')
                 subkeys = attr
+            elif attr.name == 'name':
+                continue
             else:
                 kv.append(Keyvalues(attr.name, attr.val_str))
         if subkeys is not None:
