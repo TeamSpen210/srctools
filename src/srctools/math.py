@@ -38,6 +38,7 @@ __all__ = [
 # Type aliases
 Tuple3 = Tuple[float, float, float]
 AnyVec = Union['VecBase', 'Vec_tuple', Tuple3]
+VecUnion = Union['Vec', 'FrozenVec']
 AnyAngle = Union['Angle', 'FrozenAngle']
 AnyMatrix = Union['Matrix', 'FrozenMatrix']
 VecT = TypeVar('VecT', bound='VecBase')
@@ -1426,7 +1427,7 @@ class Vec(VecBase):
             self.z = round(self.z, 6)
         return self
 
-    def to_angle_roll(self, z_norm: 'VecBase', stride: int=0) -> 'Angle':
+    def to_angle_roll(self, z_norm: VecUnion, stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
         :deprecated: Use :py:func:`Matrix.from_basis()` and then :py:func:`Matrix.to_angle()`. ``from_basis()`` can take any two direction pairs.
@@ -1777,22 +1778,22 @@ class MatrixBase:
 
     @classmethod
     @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecBase, y: VecBase, z: VecBase) -> MatrixT: ...
+    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecBase, y: VecBase) -> MatrixT: ...
+    def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls: Type[MatrixT], *, y: VecBase, z: VecBase) -> MatrixT: ...
+    def from_basis(cls: Type[MatrixT], *, y: VecUnion, z: VecUnion) -> MatrixT: ...
     @classmethod
     @overload
-    def from_basis(cls: Type[MatrixT], *, x: VecBase, z: VecBase) -> MatrixT: ...
+    def from_basis(cls: Type[MatrixT], *, x: VecUnion, z: VecUnion) -> MatrixT: ...
     @classmethod
     def from_basis(
         cls: Type[MatrixT], *,
-        x: Optional[VecBase] = None,
-        y: Optional[VecBase] = None,
-        z: Optional[VecBase] = None,
+        x: Optional[VecUnion] = None,
+        y: Optional[VecUnion] = None,
+        z: Optional[VecUnion] = None,
     ) -> MatrixT:
         """Construct a matrix from at least two basis vectors.
 
@@ -1866,7 +1867,7 @@ class MatrixBase:
 
     def __rmatmul__(self, other: 'VecBase | Tuple3 | MatrixBase | AngleBase') -> 'Vec | FrozenVec | MatrixBase | AngleBase':
         mat: MatrixBase
-        result: Union[Vec, FrozenVec]
+        result: VecUnion
         if isinstance(other, Py_Vec) or isinstance(other, tuple):
             result = Py_Vec(other)
             self._vec_rot(result)
@@ -2092,22 +2093,22 @@ class AngleBase:
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: VecBase, y: VecBase, z: VecBase) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: VecBase, y: VecBase) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecUnion, y: VecUnion) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, y: VecBase, z: VecBase) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, y: VecUnion, z: VecUnion) -> AngleT: ...
 
     @classmethod
     @overload
-    def from_basis(cls: Type[AngleT], *, x: VecBase, z: VecBase) -> AngleT: ...
+    def from_basis(cls: Type[AngleT], *, x: VecUnion, z: VecUnion) -> AngleT: ...
 
     @classmethod
-    def from_basis(cls: Type[AngleT], **kwargs: VecBase) -> AngleT:
+    def from_basis(cls: Type[AngleT], **kwargs: VecUnion) -> AngleT:
         """Return the rotation which results in the specified local axes.
 
         At least two must be specified, with the third computed if necessary.
@@ -2331,7 +2332,7 @@ class AngleBase:
     @overload
     def __rmatmul__(self, other: VecT) -> VecT: ...
 
-    def __rmatmul__(self: AngleT, other: 'AngleBase | AnyVec') -> 'Vec | FrozenVec | VecT | AngleT':
+    def __rmatmul__(self: AngleT, other: 'AngleBase | Tuple3 | VecT') -> 'Vec | FrozenVec | VecT | AngleT':
         """Vec @ Angle rotates the first by the second."""
         if isinstance(other, (Vec, FrozenVec)):
             return other @ Py_Matrix.from_angle(self)
