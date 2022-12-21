@@ -11,6 +11,7 @@ from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, Matrix, Vec
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools.logger
+import srctools
 
 
 __all__ = [

@@ -1042,10 +1042,12 @@ class Keyvalues:
             raise ValueError(f"{self!r} has no children!")
         folded_names = [name.casefold() for name in names]
         new_list = []
-        merge: Dict[str, Keyvalues] = {
+        # Optional only here because _folded_name may be None - it'll never actually be there.
+        merge: Dict[Optional[str], Keyvalues] = {
             name: Keyvalues(name, [])
             for name in folded_names
         }
+        assert None not in merge, 'Names cannot be none!'
 
         item: Keyvalues
         for item in self._value[:]:

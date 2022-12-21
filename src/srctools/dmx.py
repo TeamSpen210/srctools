@@ -1949,7 +1949,7 @@ class Element(Mapping[str, Attribute[Any]]):
             if not isinstance(default, Attribute):
                 typ, val = deduce_type(default)
                 conv = CONVERSIONS[typ]
-                new_def: Union[Value, List[Value]]
+                new_def: Union[Value, ValueList]
                 if isinstance(val, list):
                     new_def = list(map(conv, val))
                 else:
@@ -2339,7 +2339,7 @@ def _conv_binary(value: Union[bytes, bytearray, memoryview]) -> bytes:
 def _converter_ntup(typ: Type[ValueT]) -> Callable[[Union[ValueT, Iterable[float]]], ValueT]:
     """Common logic for named-tuple members."""
     def _convert(value: Union[ValueT, Iterable[float]]) -> ValueT:
-        if isinstance(value, typ):
+        if isinstance(value, typ):  # pyright: ignore
             return value
         else:
             return typ._make(value)  # type: ignore

@@ -15,7 +15,7 @@ import attrs
 from srctools.vmt import VarType
 
 
-@attrs.frozen
+@attrs.frozen(hash=True)
 class Var:
     """A shader var."""
     name: str

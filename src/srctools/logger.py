@@ -378,10 +378,12 @@ def init_logging(
     if on_error is not None:
         if error is not None:
             raise TypeError('Cannot pass both on_error and error!')
-        def error(exc: Exception) -> None:
+        def error_closure(exc: Exception) -> None:
             """Call the old error handler function."""
             if on_error is not None:  # Mypy can't infer this is constant.
                 on_error(type(exc), exc, exc.__traceback__)
+
+        error = error_closure
 
     # Put more info in the log file, since it's not onscreen.
     long_log_format = Formatter(

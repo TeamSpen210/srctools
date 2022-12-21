@@ -43,9 +43,9 @@ __all__ = [
     'GameID',
 
     # Submodules:
-    'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',
-    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues', 'run',
-    'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',
+    'binformat', 'bsp', 'cmdseq', 'const', 'dmx', 'fgd', 'filesys', 'game',  # pyright: ignore
+    'instancing', 'logger', 'math', 'mdl', 'packlist', 'particles', 'keyvalues', 'run',  # pyright: ignore
+    'smd', 'sndscript', 'surfaceprop', 'tokenizer', 'vmf', 'vmt', 'vpk', 'vtf',  # pyright: ignore
 ]
 
 # import string

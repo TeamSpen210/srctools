@@ -532,7 +532,7 @@ class ResourceCtx:
         # Strip extension, and normalise folder separators.
         if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
             mapname = mapname[:-4]
-        self.__attrs_init__(
+        self.__attrs_init__(  # pyright: ignore
             frozenset(map(str.upper, tags)),
             fsys,
             mapname.replace('\\', '/'),
@@ -2132,8 +2132,7 @@ HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
 # reloaded it'll be using the old classes, breaking our registration.
 try:
     del sys.modules['srctools._fgd_helpers']
-    # noinspection PyProtectedMember,PyUnresolvedReferences
-    del srctools._fgd_helpers
+    delattr(srctools, '_fgd_helpers')  # No static analysis of this.
 except (KeyError, AttributeError):
     pass
 

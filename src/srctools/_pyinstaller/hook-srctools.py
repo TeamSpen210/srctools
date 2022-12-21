@@ -4,7 +4,9 @@ import os
 from PyInstaller.utils.hooks import get_module_file_attribute  # type: ignore
 
 
-srctools_loc = os.path.dirname(get_module_file_attribute('srctools'))
+srctools_init = get_module_file_attribute('srctools')
+assert srctools_init is not None
+srctools_loc = os.path.dirname(srctools_init)
 
 datas = [
     # Add our FGD database.

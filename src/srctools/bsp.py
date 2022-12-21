@@ -910,6 +910,11 @@ class BModel:
     _phys_solids: List[bytes] = []
 
 
+def _staticprop_lighting_default(self: 'StaticProp') -> Vec:
+    """If not provided, lighting defaults to the origin."""
+    return self.origin.copy()
+
+
 @attrs.define(eq=False, repr=False)
 class StaticProp:
     """Represents a prop_static in the BSP.
@@ -933,7 +938,7 @@ class StaticProp:
     skin: int = 0
     min_fade: float = 0.0
     max_fade: float = 0.0
-    lighting: Vec = attrs.field()
+    lighting: Vec = attrs.Factory(_staticprop_lighting_default, takes_self=True)
     fade_scale: float = -1.0
 
     min_dx_level: int = 0
@@ -958,11 +963,8 @@ class StaticProp:
             self.angles,
         )
 
-    # noinspection PyUnresolvedReferences
-    @lighting.default
-    def _lighting_default(self) -> Vec:
-        """If not provided, lighting defaults to the origin."""
-        return self.origin.copy()
+
+del _staticprop_lighting_default
 
 
 def identity(x: T) -> T:

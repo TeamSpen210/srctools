@@ -521,7 +521,7 @@ class Frame:
         """
         self.load()
         assert self._data is not None
-        import wx
+        import wx  # pyright: ignore
 
         img = wx.Bitmap(self.width, self.height)
         # Bitmap memory layout isn't public, so we have to write to a temporary

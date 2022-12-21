@@ -388,7 +388,7 @@ class Tokenizer(BaseTokenizer):
     ) -> None:
         # If a file-like object, automatically use the configured name.
         if filename is None and hasattr(data, 'name'):
-            filename = data.name
+            filename = data.name  # pyright: ignore - Can't handle hasattr()
 
         super().__init__(filename, error)
 
@@ -719,6 +719,7 @@ try:
 except ImportError:
     pass
 else:
+    _name = ''
     for _name in ['Tokenizer', 'BaseTokenizer', 'IterTokenizer']:
         _glob[_name] = _glob['Cy_' + _name] = getattr(_tokenizer, _name)
     _glob['escape_text'] = _glob['cy_escape_text'] = _tokenizer.escape_text
