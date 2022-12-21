@@ -1124,7 +1124,7 @@ class FrozenVec(VecBase):
         """Hashing a frozen vec is the same as hashing the tuple form."""
         return hash((round(self._x, 6), round(self._y, 6), round(self._z, 6)))
 
-    def cross(self: VecT, other: AnyVec) -> 'FrozenVec':
+    def cross(self: VecUnion, other: AnyVec) -> 'FrozenVec':
         """Return the cross product of both Vectors.
 
         If this is called as a method (``a.cross(b)``), the result will have the
@@ -1303,7 +1303,7 @@ class Vec(VecBase):
 
     __copy__ = copy  # copy module support.
 
-    def cross(self: VecT, other: AnyVec) -> 'Vec':
+    def cross(self: VecUnion, other: AnyVec) -> 'Vec':
         """Return the cross product of both Vectors.
 
         If this is called as a method (``a.cross(b)``), the result will have the
