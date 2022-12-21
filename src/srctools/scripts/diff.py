@@ -77,6 +77,7 @@ def main(args: List[str]) -> None:
         diff.py ext file1 file2
         diff.py path old-file old-hex old-mode new-file new-hex new-mode
     ''')
+        return
 
     if path is None:
         path = fname1
