@@ -90,8 +90,9 @@ target/
 
 # Exclude Cython generated files.
 src/srctools/*.html
-src/srctools/*.c
-src/srctools/*.cpp
+src/srctools/_cy_vtf_readwrite.cpp
+src/srctools/_math.cpp
+src/srctools/_tokenizer.c
 
 # Version of the package
 _version.py

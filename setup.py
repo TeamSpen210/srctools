@@ -66,4 +66,16 @@ extensions = [
 if 'READTHEDOCS' in os.environ:
     setup()
 else:
-    setup(ext_modules=extensions)
+    setup(
+        # ext_modules=extensions,
+        hpy_ext_modules=[
+            Extension(
+                "srctools._hpy_tokenizer",
+                language='c',
+                optional=optional_ext,
+                sources=[
+                    "src/srctools/_hpy_tokenizer.c",
+                ],
+            ),
+        ]
+    )
