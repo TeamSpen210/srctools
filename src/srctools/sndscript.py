@@ -64,6 +64,9 @@ class Channel(Enum):
     #CHAN_USER_BASE+<number>
     #Custom channels can be defined here.
 
+    def __str__(self) -> str:
+        return self.value
+
 
 class Level(Enum):
     """Soundlevel constants - attenuation."""
@@ -280,7 +283,7 @@ class Sound:
     name: str
     sounds: List[str] = attrs.Factory(list)
     volume: Tuple[Union[float, VOLUME], Union[float, VOLUME]] = (VOL_NORM, VOL_NORM)
-    channel: Channel = Channel.DEFAULT
+    channel: Union[int, Channel] = Channel.DEFAULT
     level: Tuple[Union[float, Level], Union[float, Level]] = (Level.SNDLVL_NORM, Level.SNDLVL_NORM)
     pitch: Tuple[Union[float, Pitch], Union[float, Pitch]] = (Pitch.PITCH_NORM, Pitch.PITCH_NORM)
 
@@ -294,7 +297,7 @@ class Sound:
         name: str,
         sounds: List[str],
         volume: Union[Tuple[Union[float, VOLUME], Union[float, VOLUME]], float, VOLUME]=(VOL_NORM, VOL_NORM),
-        channel: Channel=Channel.DEFAULT,
+        channel: Union[int, Channel]=Channel.DEFAULT,
         level: Union[Tuple[Union[float, Level], Union[float, Level]], float, Level]=(Level.SNDLVL_NORM, Level.SNDLVL_NORM),
         pitch: Union[Tuple[Union[float, Pitch], Union[float, Pitch]], float, Pitch]=(Pitch.PITCH_NORM, Pitch.PITCH_NORM),
 
@@ -367,8 +370,8 @@ class Sound:
 
     def __repr__(self) -> str:
         res = (
-            f'{self.__class__.__name__}({self.name!r}, {self.sounds}, volume={self.volume}, '
-            f'channel={self.channel}, level={self.level}, pitch={self.pitch}'
+            f'{self.__class__.__name__}({self.name!r}, {self.sounds!r}, volume={self.volume!r}, '
+            f'channel={self.channel!r}, level={self.level!r}, pitch={self.pitch!r}'
         )
         if self.force_v2 or self._stack_start or self._stack_update or self._stack_stop:
             res += (
@@ -429,7 +432,12 @@ class Sound:
                     for subprop in prop:
                         wavs.append(subprop.value)
 
-            channel = Channel(snd_prop['channel', 'CHAN_AUTO'])
+            channel_str = snd_prop['channel', 'CHAN_AUTO'].upper()
+            channel: Union[int, Channel]
+            if channel_str.startswith('CHAN_'):
+                channel = Channel(channel_str)
+            else:
+                channel = int(channel_str)
 
             sound_version = snd_prop.int('soundentry_version', 1)
 
@@ -471,8 +479,8 @@ class Sound:
         Pass a file-like object open for text writing.
         """
         file.write(f'"{self.name}"\n\t{{\n')
-        file.write(f'\t' 'channel {self.channel.value}\n')
-        file.write('\t' 'soundlevel {join_float(self.level)}\n')
+        file.write(f'\tchannel {self.channel}\n')
+        file.write(f'\tsoundlevel {join_float(self.level)}\n')
 
         if self.volume != (1, 1):
             file.write(f'\tvolume {join_float(self.volume)}\n')
