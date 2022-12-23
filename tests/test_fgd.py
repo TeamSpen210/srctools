@@ -79,21 +79,21 @@ appliesto(tag1, tag2, !tag3)
         HelperExtAppliesTo(['tag1', 'tag2', '!tag3'])
     ]
 
-    assert ent.kv['keyvalue1', set()] == KeyValues(
+    assert ent.kv['keyvalue1', set()] == KVDef(
         'keyvalue1',
         ValueTypes.STRING,
         'Name',
         'default',
         'documentation',
     )
-    assert ent.kv['keyvalue1', {'tag'}] == KeyValues(
+    assert ent.kv['keyvalue1', {'tag'}] == KVDef(
         'keyvalue1',
         ValueTypes.BOOL,
         'Tagged Name',
         '0',
         '',
     )
-    assert ent.kv['keyvalue2'] == KeyValues(
+    assert ent.kv['keyvalue2'] == KVDef(
         'keyvalue2',
         ValueTypes.INT,
         'Hi',
@@ -101,7 +101,7 @@ appliesto(tag1, tag2, !tag3)
         '',
     )
 
-    assert ent.kv['spawnflags'] == KeyValues(
+    assert ent.kv['spawnflags'] == KVDef(
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
@@ -114,7 +114,7 @@ appliesto(tag1, tag2, !tag3)
         ],
     )
 
-    assert ent.kv['choicelist'] == KeyValues(
+    assert ent.kv['choicelist'] == KVDef(
         'choicelist',
         ValueTypes.CHOICES,
         'A Choice',
@@ -171,13 +171,13 @@ def test_export_regressions(file_regression) -> None:
         'angles': base_angles,
         'npc_test': ent,
     }
-    base_origin.keyvalues['origin'] = {frozenset(): KeyValues(
+    base_origin.keyvalues['origin'] = {frozenset(): KVDef(
         'origin',
         ValueTypes.VEC_ORIGIN,
         'Origin',
         '0 0 0',
     )}
-    base_angles.keyvalues['angles'] = {frozenset(): KeyValues(
+    base_angles.keyvalues['angles'] = {frozenset(): KVDef(
         'angles',
         ValueTypes.ANGLES,
         'Angles (Pitch Yaw Roll)',
@@ -191,7 +191,7 @@ def test_export_regressions(file_regression) -> None:
         HelperSize(Vec(-16, -16, -16), Vec(16, 16, 16)),
     ]
     ent.desc = 'Entity description, extending beyond 1000 characters: ' + ', '.join(map(str, range(500))) + '. Done!'
-    ent.keyvalues['test_kv'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_kv'] = {frozenset(): KVDef(
         'test_kv',
         ValueTypes.COLOR_255,
         'A test keyvalue',
@@ -200,7 +200,7 @@ def test_export_regressions(file_regression) -> None:
     )}
 
     # The two special types with value lists.
-    ent.keyvalues['spawnflags'] = {frozenset(): KeyValues(
+    ent.keyvalues['spawnflags'] = {frozenset(): KVDef(
         'spawnflags',
         ValueTypes.SPAWNFLAGS,
         'Flags',
@@ -213,7 +213,7 @@ def test_export_regressions(file_regression) -> None:
         ],
     )}
 
-    ent.keyvalues['multichoice'] = {frozenset(): KeyValues(
+    ent.keyvalues['multichoice'] = {frozenset(): KVDef(
         'multichoice',
         ValueTypes.CHOICES,
         'Multiple Choice',
@@ -226,37 +226,37 @@ def test_export_regressions(file_regression) -> None:
     )}
 
     # Test exporting with blank defaults and description.
-    ent.keyvalues['test_both'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_both'] = {frozenset(): KVDef(
         'test_both',
         ValueTypes.STRING,
         'Both default and desc',
         'defaulted',
         'A description',
     )}
-    ent.keyvalues['test_desc'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_desc'] = {frozenset(): KVDef(
         'test_desc',
         ValueTypes.STRING,
         'just desc',
         desc='A description',
     )}
-    ent.keyvalues['test_def'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_def'] = {frozenset(): KVDef(
         'test_def',
         ValueTypes.STRING,
         'Just default',
         default='defaulted',
     )}
-    ent.keyvalues['test_neither'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_neither'] = {frozenset(): KVDef(
         'test_neither',
         ValueTypes.STRING,
         'Neither',
     )}
     # Special case, boolean must supply default.
-    ent.keyvalues['test_bool_neither'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_bool_neither'] = {frozenset(): KVDef(
         'test_bool_neither',
         ValueTypes.BOOL,
         'Neither',
     )}
-    ent.keyvalues['test_bool_desc'] = {frozenset(): KeyValues(
+    ent.keyvalues['test_bool_desc'] = {frozenset(): KVDef(
         'test_bool_desc',
         ValueTypes.BOOL,
         'Neither',
@@ -282,11 +282,11 @@ def test_export_regressions(file_regression) -> None:
 
 
 @pytest.mark.parametrize('func', [
-    KeyValues.copy, copy.copy, copy.deepcopy,
+    KVDef.copy, copy.copy, copy.deepcopy,
 ], ids=['method', 'copy', 'deepcopy'])
-def test_kv_copy(func: Callable[[KeyValues], KeyValues]) -> None:
+def test_kv_copy(func: Callable[[KVDef], KVDef]) -> None:
     """Test copying of keyvalues objects."""
-    test_kv = KeyValues(
+    test_kv = KVDef(
         name='some_key',
         type=ValueTypes.TARG_DEST,
         disp_name='Some Key',
@@ -305,7 +305,7 @@ def test_kv_copy(func: Callable[[KeyValues], KeyValues]) -> None:
     assert not duplicate.readonly
     assert duplicate.reportable
 
-    test_kv = KeyValues(
+    test_kv = KVDef(
         name='another_key',
         type=ValueTypes.CHOICES,
         disp_name='Another Key',

@@ -2168,3 +2168,6 @@ else:
             )
             return KVDef
         raise AttributeError(name)
+
+    # Hide from static analysis, we want to enable this for * imports.
+    globals()['__all__'].insert(6, 'KeyValues')
