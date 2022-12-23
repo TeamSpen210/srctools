@@ -19,9 +19,7 @@ from srctools import conv_bool
 from srctools.bsp import BSP
 from srctools.const import FileType
 from srctools.dmx import Attribute, Element, ValueType
-from srctools.fgd import (
-    FGD, EntityDef, EntityTypes, KeyValues, ResourceCtx, ValueTypes as KVTypes,
-)
+from srctools.fgd import FGD, EntityDef, EntityTypes, ResourceCtx, ValueTypes as KVTypes
 from srctools.filesys import (
     CACHE_KEY_INVALID, File, FileSystem, FileSystemChain, VirtualFileSystem, VPKFileSystem,
 )
@@ -123,7 +121,7 @@ def strip_extension(filename: str) -> str:
     return filename[:dot_pos]
 
 
-@attrs.define(eq=False)
+@attrs.define(eq=False, repr=False)
 class PackFile:
     """Represents a single file we are packing.
 
@@ -142,13 +140,9 @@ class PackFile:
         return self.data is not None
 
     def __repr__(self) -> str:
-        text = '<{}{} Packfile "{}"'.format(
-            'virtual ' if self.virtual else '',
-            self.type.name,
-            self.filename,
-        )
+        text = f'<{"virtual " if self.virtual else ""}{self.type.name} Packfile "{self.filename}"'
         if self.data is not None:
-            text += ' with {} bytes data>'.format(len(self.data))
+            text += f' with {len(self.data)} bytes data>'
         else:
             text += '>'
         return text
@@ -900,7 +894,7 @@ class PackList:
                         self.pack_file(value, skinset=skinset)
                     continue
                 try:
-                    kv = ent_class.kv[key]  # type: KeyValues
+                    kv = ent_class.kv[key]
                     val_type = kv.type
                     default = kv.default
                 except KeyError:
@@ -1333,7 +1327,7 @@ def entclass_canonicalise(classname: str) -> str:
     return classname
 
 
-entclass_canonicalize = entclass_canonicalise  # America.
+entclass_canonicalize = entclass_canonicalise  # noqa  # America.
 
 
 def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
