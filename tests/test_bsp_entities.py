@@ -1,15 +1,8 @@
 """Test parsing and exporting entity lumps."""
 from pathlib import Path
-import unittest.mock
 
-from srctools.bsp import BSP
 from srctools.vmf import Entity
-
-
-def make_dummy() -> BSP:
-    """Create a totally empty BSP object, so lump functions can be called."""
-    with unittest.mock.patch('srctools.bsp.BSP.read'):
-        return BSP('<dummy>')
+from test_bsp import make_dummy
 
 
 def test_read(datadir: Path) -> None:

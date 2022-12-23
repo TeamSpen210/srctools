@@ -1,7 +1,25 @@
 """Test the BSP parser's functionality."""
+import unittest.mock
 import pytest
 
-from srctools.bsp import _find_or_extend, _find_or_insert
+from srctools.bsp import BSP, BSP_LUMPS, VERSIONS, Lump, GameLump, _find_or_extend, _find_or_insert
+
+
+def make_dummy() -> BSP:
+    """Create a totally empty BSP object, so lump functions can be called."""
+    with unittest.mock.patch('srctools.bsp.BSP.read'):
+        bsp = BSP('<dummy>')
+    # Set arbitary dummy values.
+    bsp.version = VERSIONS.HL2
+    bsp.lumps = {
+        lump: Lump(lump, 1)
+        for lump in BSP_LUMPS
+    }
+    bsp.game_lumps = {
+        lump: GameLump(lump, 0, 1)
+        for lump in [b'sprp', b'dprp']
+    }
+    return bsp
 
 
 @pytest.mark.parametrize('original, item, index', [
