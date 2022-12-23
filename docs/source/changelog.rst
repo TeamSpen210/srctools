@@ -34,6 +34,7 @@ Dev branch
 * Fix packlist logic inadvertently discarding ``skinset`` keyvalue hints when packing models.
 * Change behaviour of DMX ``name`` and ``id`` attributes to match game logic. ``name`` is actually a
   regular attribute, but the uuid has a unique type and so can coexist with an attribute of the same name.
+* Add support for Black Mesa's static prop format
 
 -------------
 Version 2.3.6

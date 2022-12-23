@@ -89,6 +89,7 @@ class VERSIONS(Enum):
     DARK_MESSIAH = 20
     VINDICTUS = 20
     THE_SHIP = 20
+    BLACK_MESA = 20
 
     BLOODY_GOOD_TIME = 20
     L4D2 = 21
@@ -296,10 +297,13 @@ class StaticPropVersion(Enum):
     use the same number but have various changes.
     Thanks to BSPSource for this information.
     We record the version in the file, and the size of the structure.
+
+    Name is set to prevent aliasing special variants that can't lookup.
     """
-    def __init__(self, ver: int, size: int) -> None:
+    def __init__(self, ver: int, size: int, name: str='') -> None:
         self.version = ver
         self.size = size
+        self.variant = name
 
     # V4 and V5 are used in original HL2 maps.
     V4 = (4, 56)
@@ -313,24 +317,31 @@ class StaticPropVersion(Enum):
 
     # Source 2013, also appears with version 7 but is identical.
     # Based on v6, adds lightmapped props.
+    # Despite the actual versions, more like v6.
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
-    V11_MESA = (11, 76)  # Adds just rendercolor.
+    V_LIGHTMAP_MESA = (11, 80, 'Mesa')  # Adds rendercolor to V10
 
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
-    UNKNOWN = (0, 0)  # Before prop is read.
+    UNKNOWN = (0, 0, 'unknown')  # Before prop is read.
     # All games should recognise this, so switch to this if set to unknown.
     DEFAULT = V5
 
     @property
     def is_lightmap(self) -> bool:
-        """Check if this is either lightmap version."""
+        """Check if this has lightmaps version."""
         return self.name.startswith('V_LIGHTMAP')
+
+    @property
+    def is_sdk_2013(self) -> bool:
+        """Check if this is either Source 2013 version, not including Mesa's modified one."""
+        return self.name.startswith('V_LIGHTMAP_v')
 
 
 _STATIC_PROP_VERSIONS: Mapping[Tuple[int, int], StaticPropVersion] = {
     (ver.version, ver.size): ver
     for ver in StaticPropVersion
+    if not ver.variant
 }
 
 
@@ -932,7 +943,7 @@ class StaticProp:
     origin: Vec
     angles: Angle = attrs.field(factory=Angle)
     scaling: float = 1.0
-    visleafs: Set[VisLeaf] = attrs.field(factory=set)
+    visleafs: Set[VisLeaf] = attrs.field(factory=set, repr=False)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
     skin: int = 0
@@ -956,12 +967,7 @@ class StaticProp:
     lightmap_y: int = 32
 
     def __repr__(self) -> str:
-        return '<Prop "{}#{}" @ {} rot {}>'.format(
-            self.model,
-            self.skin,
-            self.origin,
-            self.angles,
-        )
+        return f'<Prop "{self.model}#{self.skin}" @ {self.origin} rot {self.angles}>'
 
 
 del _staticprop_lighting_default
@@ -2559,26 +2565,38 @@ class BSP:
         if prop_count == 0:
             # No props, following code will divide by zero, also no point anyway.
             # Use the 'standard' version for the given version number.
-            for vers in StaticPropVersion:
-                if vers.version == vers_num:
-                    self.static_prop_version = vers
+            if self.static_prop_version is StaticPropVersion.UNKNOWN:
+                for vers in StaticPropVersion:
+                    if vers.version == vers_num:
+                        self.static_prop_version = vers
             return
         struct_size = (len(data) - static_lump.tell()) / prop_count
+        # print(f'Static prop: {prop_count} * {struct_size} bytes')
 
         # The prop data itself changes drastically, depending on version.
         # Some numbers are reused, so add the size of the struct to guess the
         # version.
-        try:
-            self.static_prop_version = version = _STATIC_PROP_VERSIONS[vers_num, struct_size]
-        except KeyError:
-            raise ValueError(
-                "Don't know a static prop "
-                f"version={vers_num} with a size of {struct_size} bytes!"
-            ) from None
-        # These two are the same, it just changed version numbers later.
-        # It's more similar to V7 though.
-        if version is StaticPropVersion.V_LIGHTMAP_v10:
+        if self.static_prop_version is StaticPropVersion.UNKNOWN:
+            try:
+                version = _STATIC_PROP_VERSIONS[vers_num, struct_size]
+            except KeyError:
+                raise ValueError(
+                    "Don't know a static prop "
+                    f"version={vers_num} with a size of {struct_size} bytes!"
+                ) from None
+            if version is StaticPropVersion.V11 and self.version is VERSIONS.BLACK_MESA:
+                # Black Mesa uses a different version.
+                version = StaticPropVersion.V_LIGHTMAP_MESA
+            self.static_prop_version = version
+        else:
+            # It was manually specified, believe whatever was passed.
+            version = self.static_prop_version
+
+        # The 2013 versions have versions 7, 10 and 11 (mesa). They're more similar to V7 though.
+        if version.is_lightmap:
             vers_num = 7
+
+        # print('Decoded version: ', version, vers_num)
 
         for i in range(prop_count):
             start = static_lump.tell()
@@ -2625,7 +2643,15 @@ class BSP:
                 min_cpu_level = max_cpu_level = 0
                 min_gpu_level = max_gpu_level = 0
 
-            if vers_num >= 7 and not version.is_lightmap:
+            if version.is_lightmap:
+                # Regular flags byte above is totally ignored!
+                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
+            else:
+                # FGD default.
+                lightmap_x = lightmap_y = 32
+
+            # The 2013 SDK doesn't have rendercolour, but Mesa does.
+            if vers_num >= 7 and not version.is_sdk_2013:
                 r, g, b, renderfx = struct_read('<BBBB', static_lump)
                 # Alpha isn't used.
                 tint = Vec(r, g, b)
@@ -2638,16 +2664,9 @@ class BSP:
                 # Unknown data, though it's float-like.
                 struct_read('<i', static_lump)
 
-            if vers_num >= 10 and not version.is_lightmap:
-                # Extra flags, post-CSGO
+            if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
+                # Extra flags, post-CSGO, also in Black Mesa.
                 flags |= struct_read('<I', static_lump)[0] << 8
-
-            if version.is_lightmap:
-                # Regular flags byte above is totally ignored!
-                [flags, lightmap_x, lightmap_y] = struct_read('<IHH', static_lump)
-            else:
-                # FGD default.
-                lightmap_x = lightmap_y = 32
 
             flags = StaticPropFlags(flags)
 
@@ -2767,7 +2786,14 @@ class BSP:
                     prop.max_gpu_level
                 ))
 
-            if vers_num >= 7 and not version.is_lightmap:
+            if version.is_lightmap:
+                prop_lump.write(struct.pack(
+                    '<IHH',
+                    prop.flags.value,
+                    prop.lightmap_x, prop.lightmap_y,
+                ))
+
+            if vers_num >= 7 and not version.is_sdk_2013:
                 prop_lump.write(struct.pack(
                     '<BBBB',
                     int(prop.tint.x),
@@ -2780,13 +2806,7 @@ class BSP:
                 # Unknown padding/data, though it's always zero.
                 prop_lump.write(b'\0\0\0\0')
 
-            if version.is_lightmap:
-                prop_lump.write(struct.pack(
-                    '<IHH',
-                    prop.flags.value,
-                    prop.lightmap_x, prop.lightmap_y,
-                ))
-            elif vers_num >= 10:
+            if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
             if vers_num >= 11:

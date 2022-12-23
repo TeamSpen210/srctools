@@ -7,7 +7,7 @@ prop_v4 = Struct(
     firstLeaf=type_u16,
     leafCount=type_u16,
     solid=type_u8,
-    flags=type_u8,
+    flags_byt=type_u8,
     skin=type_int,
     fademin=type_float,
     fademax=type_float,
@@ -65,7 +65,7 @@ prop_v9 = Struct(
 
 prop_v10 = Struct(
     base=prop_v6,
-    flags2=type_uint,
+    flags=type_uint,  # This replaces the single byte!
     lightmap=Struct(x=type_ushort, y=type_ushort),
 )
 
