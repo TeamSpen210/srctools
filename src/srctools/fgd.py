@@ -1,7 +1,8 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
     IO, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet, Generic, Iterable,
-    Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type, TypeVar, Union,
+    Iterator, List, Mapping, Optional, Sequence, Set, TYPE_CHECKING, TextIO, Tuple, Type, TypeVar,
+    Union,
     cast,
 )
 from typing_extensions import TypeAlias, overload
@@ -27,7 +28,7 @@ import srctools
 
 __all__ = [
     'ValueTypes', 'EntityTypes', 'HelperTypes',
-    'FGD', 'EntityDef', 'KeyValues', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
+    'FGD', 'EntityDef', 'KVDef', 'IODef', 'Helper', 'UnknownHelper', 'AutoVisgroup',
     'match_tags', 'validate_tags', 'Resource', 'ResourceCtx',
 
     # From srctools._fgd_helpers
@@ -629,11 +630,21 @@ class AutoVisgroup:
         return '<AutoVisgroup "{}">'.format(self.name)
 
 
-@attrs.define
-class KeyValues:
-    """Represents a generic keyvalue type.
+class EntAttribute:
+    """Common base class for IODef and KVDef."""
+    name: str
+    type: ValueTypes
+    desc: str
 
-    If the type is choices or spawnflags, val_list is required:
+    def __init__(self) -> None:
+        raise TypeError('EntAttribute is abstract, it cannot be instantiated!')
+
+
+@attrs.define
+class KVDef(EntAttribute):
+    """Represents a keyvalue that may be set on entities
+
+    If the type is choices or spawnflags, ``val_list`` is required:
     * For choices it's a list of (value, name, tags) tuples.
     * For spawnflags it's a list of (bitflag, name, default, tags) tuples.
     """
@@ -676,9 +687,9 @@ class KeyValues:
             self.val_list = lst
         return cast('List[Tuple[int, str, bool, TagsSet]]', self.val_list)
 
-    def copy(self) -> 'KeyValues':
+    def copy(self) -> 'KVDef':
         """Create a duplicate of this keyvalue."""
-        return KeyValues(
+        return KVDef(
             self.name,
             self.type,
             self.disp_name,
@@ -692,8 +703,8 @@ class KeyValues:
 
     __copy__ = copy
 
-    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'KeyValues':
-        return KeyValues(
+    def __deepcopy__(self, memodict: Optional[Dict[int, Any]] = None) -> 'KVDef':
+        return KVDef(
             self.name,
             self.type,
             self.disp_name,
@@ -857,7 +868,7 @@ class KeyValues:
         if not tags_map:
             # New, add to the ordering.
             entity.kv_order.append(name.casefold())
-        tags_map[tags] = KeyValues(
+        tags_map[tags] = KVDef(
             name=name,
             type=val_typ,
             desc=kv_desc,
@@ -942,7 +953,7 @@ class KeyValues:
 
 
 @attrs.define
-class IODef:
+class IODef(EntAttribute):
     """Represents an input or output for an entity."""
     name: str
     type: ValueTypes = ValueTypes.VOID  # Most IO has no parameter.
@@ -1123,7 +1134,7 @@ class EntityDef:
     classname: str = ''  #: The classname of this entity, as originally typed.
 
     # These are (name) -> {tags: value} dicts.
-    keyvalues: Dict[str, Dict[TagsSet, KeyValues]] = attrs.field(kw_only=True, factory=dict)
+    keyvalues: Dict[str, Dict[TagsSet, KVDef]] = attrs.field(kw_only=True, factory=dict)
     inputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
     outputs: Dict[str, Dict[TagsSet, IODef]] = attrs.field(kw_only=True, factory=dict)
 
@@ -1137,7 +1148,7 @@ class EntityDef:
     desc: str = attrs.field(default='', kw_only=True)
 
     # Views for accessing data among all the entities.
-    kv: _EntityView[KeyValues] = attrs.field(init=False)
+    kv: _EntityView[KVDef] = attrs.field(init=False)
     inp: _EntityView[IODef] = attrs.field(init=False)
     out: _EntityView[IODef] = attrs.field(init=False)
 
@@ -1342,7 +1353,7 @@ class EntityDef:
                 entity.resources = resources
             else:
                 # noinspection PyProtectedMember
-                KeyValues._parse(entity, io_type, tok)
+                KVDef._parse(entity, io_type, tok)
 
     @classmethod
     def engine_def(cls, classname: str) -> 'EntityDef':
@@ -1375,9 +1386,9 @@ class EntityDef:
 
         # Avoid copy for these, we know the tags-map is immutable.
         for val_key in ['keyvalues', 'inputs', 'outputs']:
-            coll: Dict[str, Dict[TagsSet, Union[KeyValues, IODef]]] = {}
+            coll: Dict[str, Dict[TagsSet, Union[KVDef, IODef]]] = {}
             setattr(copy, val_key, coll)
-            tags_map: Dict[TagsSet, Union[KeyValues, IODef]]
+            tags_map: Dict[TagsSet, Union[KVDef, IODef]]
             for key, tags_map in getattr(self, val_key).items():
                 coll[key] = {
                     key: value.copy()
@@ -1529,7 +1540,7 @@ class EntityDef:
                 else:
                     yield (res.type, res.filename)
 
-    def _iter_attrs(self) -> Iterator[Dict[str, Dict[TagsSet, Union[KeyValues, IODef]]]]:
+    def _iter_attrs(self) -> Iterator[Dict[str, Dict[TagsSet, EntAttribute]]]:
         """Iterate over both the keyvalues and I/O dicts.
 
         This is used when we want to deal with both in the same way.
@@ -1551,7 +1562,7 @@ class EntityDef:
                 ):
                     if match_tags(tags, key_tag):
                         category[key] = {frozenset(): value}
-                        if isinstance(value, KeyValues) and value.val_list:
+                        if isinstance(value, KVDef) and value.val_list:
                             # Filter the value list as well, then discard tags.
                             value.val_list = [  # type: ignore
                                 val[:-1] + (frozenset(), )
@@ -2141,3 +2152,19 @@ del _init_helper_impl
 # Once done, import all the classes.
 # noinspection PyProtectedMember
 from srctools._fgd_helpers import *
+
+
+if TYPE_CHECKING:
+    KeyValues = KVDef
+else:
+    def __getattr__(name: str) -> type:
+        """Deprecate this lookup."""
+        if name == 'KeyValues':
+            import warnings
+            warnings.warn(
+                'srctools.fgd.KeyValues is renamed to srctools.fgd.KVDef',
+                DeprecationWarning,
+                stacklevel=2,
+            )
+            return KVDef
+        raise AttributeError(name)

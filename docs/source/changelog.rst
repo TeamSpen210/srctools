@@ -12,6 +12,7 @@ Dev branch
 * Removed some unusable constructor parameters from :py:class:`srctools.vmf.VMF`, since they
   required passing in an object which requires the not-yet-constructed
   :py:class:`~srctools.vmf.VMF` as a parameter.
+* Renamed ``srctools.fgd.KeyValues`` to ``KVDef``, so it is not confused with KV1 trees.
 * Replace ``on_error`` callback in :py:meth:`srctools.logger.init_logging()` with ``error``, which
   now takes just an :external:py:class:`BaseException`.
 * :py:class:`~srctools.surfaceprop.SurfaceProp` has been rewritten to use ``attrs`` to simplify code.

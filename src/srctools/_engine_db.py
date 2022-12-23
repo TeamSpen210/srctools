@@ -13,7 +13,7 @@ import io
 import math
 
 from .const import FileType
-from .fgd import FGD, EntityDef, EntityTypes, IODef, KeyValues, Resource, ValueTypes
+from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
 __all__ = [
@@ -237,7 +237,7 @@ class BinStrDict:
             file.write(dic(tag))
 
 
-def kv_serialise(self: KeyValues, file: IO[bytes], str_dict: BinStrDict) -> None:
+def kv_serialise(self: KVDef, file: IO[bytes], str_dict: BinStrDict) -> None:
     """Write keyvalues to the binary file."""
     file.write(str_dict(self.name))
     file.write(str_dict(self.disp_name))
@@ -274,7 +274,7 @@ def kv_serialise(self: KeyValues, file: IO[bytes], str_dict: BinStrDict) -> None
 def kv_unserialise(
     file: IO[bytes],
     from_dict: Callable[[], str],
-) -> KeyValues:
+) -> KVDef:
     """Recover a KeyValue from a binary file."""
     name = from_dict()
     disp_name = from_dict()
@@ -302,7 +302,7 @@ def kv_unserialise(
         val_list = None
 
     # Bypass __init__, to speed up - we have a lot of these.
-    kv = KeyValues.__new__(KeyValues)
+    kv = KVDef.__new__(KVDef)
     kv.name = name
     kv.type = value_type
     kv.disp_name = disp_name
@@ -372,10 +372,12 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
             if len(tag_map) == 1:
                 [(tags, value)] = tag_map.items()
                 if not tags:
-                    if isinstance(value, KeyValues):
+                    if isinstance(value, KVDef):
                         kv_serialise(value, file, str_dict)
-                    else:
+                    elif isinstance(value, IODef):
                         iodef_serialise(value, file, str_dict)
+                    else:
+                        raise AssertionError(f'Unknown ent attribute: {value}')
                     continue
             raise ValueError(f'{self.classname}.{name} has tags: {list(tag_map)}')
 
