@@ -36,6 +36,8 @@ Dev branch
   regular attribute, but the uuid has a unique type and so can coexist with an attribute of the same name.
 * Add support for Black Mesa's static prop format.
 * Support integer values for soundscript channels, instead of just ``CHAN_`` constants.
+* Add a distinct exception (:py:class:`~srctools.fsys.RootEscapeError`) for when :file:`../` paths
+  go above the root of a filesystem.
 
 -------------
 Version 2.3.6

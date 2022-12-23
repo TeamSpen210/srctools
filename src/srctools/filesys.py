@@ -71,6 +71,21 @@ def get_filesystem(path: str) -> 'FileSystem[Any]':
     raise ValueError('Unrecognised filesystem for "{}"'.format(path))
 
 
+class RootEscapeError(ValueError):
+    """Raised when a path tries to refer to a file outside the root of a filesystem."""
+    root: str
+    path: str
+    def __init__(self, root: str, path: str) -> None:
+        """Raised when a path tries to refer to a file outside the root of a filesystem."""
+        super().__init__(root, path)
+        self.root = root
+        self.path = path
+
+    def __str__(self) -> str:
+        """Format a specific error."""
+        return f'Path "{self.path}" escaped "{self.root}"!'
+
+
 class File(Generic[FileSysT]):
     """Represents a file in a system. Should only be created by filesystems.."""
     sys: FileSysT
@@ -497,7 +512,7 @@ class RawFileSystem(FileSystem[str]):
         """Get the absolute path."""
         abs_path = os.path.abspath(os.path.join(self.path, path))
         if self.constrain_path and not abs_path.startswith(self.path):
-            raise ValueError('Path "{}" escaped "{}"!'.format(path, self.path))
+            raise RootEscapeError(self.path, path)
         return abs_path
 
     def walk_folder(self: RawFSysT, folder: str = '') -> Iterator[File[RawFSysT]]:
