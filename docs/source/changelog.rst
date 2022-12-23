@@ -9,6 +9,10 @@ Changelog
 Dev branch
 ----------
 
+-------------
+Version 2.3.7
+-------------
+
 * Removed some unusable constructor parameters from :py:class:`srctools.vmf.VMF`, since they
   required passing in an object which requires the not-yet-constructed
   :py:class:`~srctools.vmf.VMF` as a parameter.
