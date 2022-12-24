@@ -4,7 +4,6 @@ import codecs
 import platform
 
 from pytest import raises
-from test_keyvalues import parse_test as prop_parse_test
 import pytest
 
 from srctools.keyvalues import KeyValError
@@ -14,6 +13,7 @@ from srctools.tokenizer import (
     Cy_Tokenizer, Py_BaseTokenizer, Py_IterTokenizer, Py_Tokenizer, Token, Tokenizer,
     TokenSyntaxError, _py_escape_text, escape_text,
 )
+from test_keyvalues import parse_test as prop_parse_test
 
 
 T = Token

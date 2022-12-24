@@ -6,9 +6,9 @@ from uuid import UUID, uuid4
 import array
 import collections
 
-from helpers import *
 import pytest
 
+from helpers import *
 from srctools import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Keyvalues, Matrix, Vec
 from srctools.dmx import (
     TYPE_CONVERT, Attribute, Color, Element, Quaternion, Time, ValueType, Vec2, Vec4,

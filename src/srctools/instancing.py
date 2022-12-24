@@ -10,8 +10,8 @@ from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
 from srctools.keyvalues import Keyvalues
 from srctools.math import Angle, Matrix, Vec
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
-import srctools.logger
 import srctools
+import srctools.logger
 
 
 __all__ = [

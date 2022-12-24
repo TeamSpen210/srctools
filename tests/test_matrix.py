@@ -2,8 +2,9 @@
 import copy
 import pickle
 
-from helpers import *
 import pytest
+
+from helpers import *
 
 
 def test_matrix_constructor(py_c_vec: PyCVec, frozen_thawed_matrix: MatrixClass) -> None:

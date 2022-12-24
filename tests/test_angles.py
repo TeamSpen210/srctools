@@ -1,8 +1,9 @@
 import copy
 import pickle
 
-from helpers import *
 import pytest
+
+from helpers import *
 
 
 VALID_NUMS = [

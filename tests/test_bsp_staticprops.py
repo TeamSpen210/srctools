@@ -3,10 +3,8 @@ import pytest
 
 from srctools import Angle, Vec
 from srctools.bsp import (
-    StaticPropFlags, StaticPropVersion, StaticProp, VisLeaf, VisLeafFlags,
-    BrushContents,
+    BrushContents, StaticProp, StaticPropFlags, StaticPropVersion, VisLeaf, VisLeafFlags,
 )
-
 from test_bsp import make_dummy
 
 

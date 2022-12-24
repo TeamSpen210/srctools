@@ -7,9 +7,9 @@ import inspect
 import operator as op
 import pickle
 
-from helpers import *
 import pytest
 
+from helpers import *
 from srctools import Vec_tuple, math as vec_mod
 
 

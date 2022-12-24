@@ -1,8 +1,11 @@
 """Test the BSP parser's functionality."""
 import unittest.mock
+
 import pytest
 
-from srctools.bsp import BSP, BSP_LUMPS, VERSIONS, Lump, GameLump, _find_or_extend, _find_or_insert
+from srctools.bsp import (
+    BSP, BSP_LUMPS, VERSIONS, GameLump, Lump, _find_or_extend, _find_or_insert,
+)
 
 
 def make_dummy() -> BSP:
