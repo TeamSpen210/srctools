@@ -1899,7 +1899,7 @@ class BSP:
     def _lmp_read_orig_faces(self, data: bytes) -> Iterator['Face']:
         """Parse the unsplit faces lump."""
         if self.is_vitamin:
-            return ()  # Unused
+            return iter(())  # Unused
         else:
             return self._read_faces_common(data, None)
 
@@ -1927,7 +1927,7 @@ class BSP:
     def _lmp_read_hdr_faces(self, data: bytes) -> Iterator['Face']:
         """Parse the HDR-specific split faces lump."""
         if self.is_vitamin:
-            return ()  # Unused
+            return iter(())  # Unused
         else:
             return self._read_faces_common(data, self.orig_faces)
 
