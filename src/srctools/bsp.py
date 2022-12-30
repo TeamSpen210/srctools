@@ -46,11 +46,10 @@ __all__ = [
 
 # Various constants, some exposed to allow handling unreleased formats.
 BSP_MAGIC = b'VBSP'  # All BSP files start with this
+VITAMIN_MAGIC = b'FART'  # Desolation's branch of Source.
 HEADER_1 = '<4si'  # Header section before the lump list.
 HEADER_LUMP = '<4i'  # Header section for each lump.
 HEADER_2 = '<i'  # Header section after the lumps.
-FMT_LEAF_BASE = '<ihh6h4Hh'  # dleaf_t
-FMT_NODES = '<iii6hHHh2x'  # dnode_t / NODES lump format.
 OVERLAY_FACE_COUNT = 64  # Max number of overlay faces.
 TEXINFO_IND_TYPE = 'h'  # The type used to index into texinfo (i or h).
 
@@ -103,7 +102,8 @@ class VERSIONS(Enum):
     DOTA2 = 22
     CONTAGION = 23
 
-    DESOLATION = 42
+    DESOLATION_OLD = 42  # Old version.
+    VITAMINSOURCE = 43  # Desolation's expanded map format.
 
     def __eq__(self, other: object) -> bool:
         """Versions are equal to their integer value."""
@@ -136,26 +136,26 @@ class BSP_LUMPS(Enum):
     The values represent the order lumps appear in the index.
     Some indexes were reused, so they have aliases.
     """
-    ENTITIES = 0
-    PLANES = 1
-    TEXDATA = 2
-    VERTEXES = 3
+    ENTITIES = 0  #: self.ents
+    PLANES = 1  #: self.planes
+    TEXDATA = 2  # Inside self.texinfo
+    VERTEXES = 3  #: self.vertexes
     VISIBILITY = 4
-    NODES = 5
-    TEXINFO = 6
-    FACES = 7
+    NODES = 5  #: self.nodes
+    TEXINFO = 6  #: self.texinfo
+    FACES = 7  #: self.faces
     LIGHTING = 8
     OCCLUSION = 9
-    LEAFS = 10
+    LEAFS = 10  #: self.leafs
     FACEIDS = 11
-    EDGES = 12
-    SURFEDGES = 13
-    MODELS = 14
+    EDGES = 12  # Inside self.surfedges
+    SURFEDGES = 13  #: self.surfedges
+    MODELS = 14  #: self.bmodels
     WORLDLIGHTS = 15
-    LEAFFACES = 16
-    LEAFBRUSHES = 17
-    BRUSHES = 18
-    BRUSHSIDES = 19
+    LEAFFACES = 16  # Inside self.leafs
+    LEAFBRUSHES = 17  # Inside self.leafs
+    BRUSHES = 18  #: self.brushes
+    BRUSHSIDES = 19  # Inside self.brushes
     AREAS = 20
     AREAPORTALS = 21
 
@@ -176,26 +176,26 @@ class BSP_LUMPS(Enum):
     PROPTRIS = 25
 
     DISPINFO = 26
-    ORIGINALFACES = 27
+    ORIGINALFACES = 27  #: self.orig_faces
     PHYSDISP = 28
-    PHYSCOLLIDE = 29
+    PHYSCOLLIDE = 29  # Inside self.bmodels
     VERTNORMALS = 30
     VERTNORMALINDICES = 31
     DISP_LIGHTMAP_ALPHAS = 32
     DISP_VERTS = 33
     DISP_LIGHTMAP_SAMPLE_POSITIONS = 34
     GAME_LUMP = 35
-    LEAFWATERDATA = 36
-    PRIMITIVES = 37
-    PRIMVERTS = 38
-    PRIMINDICES = 39
-    PAKFILE = 40
+    LEAFWATERDATA = 36  #: self.water_leaf_info
+    PRIMITIVES = 37  #: self.primitives
+    PRIMVERTS = 38  # Inside self.primitives
+    PRIMINDICES = 39  # Inside self.primitives
+    PAKFILE = 40  #: self.pakfile
     CLIPPORTALVERTS = 41
-    CUBEMAPS = 42
-    TEXDATA_STRING_DATA = 43
-    TEXDATA_STRING_TABLE = 44
-    OVERLAYS = 45
-    LEAFMINDISTTOWATER = 46
+    CUBEMAPS = 42  #: self.cubemaps
+    TEXDATA_STRING_DATA = 43  # Inside self.textures
+    TEXDATA_STRING_TABLE = 44  #: self.textures
+    OVERLAYS = 45  #: self.overlays
+    LEAFMINDISTTOWATER = 46  # Inside self.leafs
     FACE_MACRO_TEXTURE_INFO = 47
     DISP_TRIS = 48
     PROP_BLOB = 49
@@ -213,7 +213,7 @@ class BSP_LUMPS(Enum):
     LEAF_AMBIENT_LIGHTING_HDR = 55
     LEAF_AMBIENT_LIGHTING = 56
     XZIPPAKFILE = 57
-    FACES_HDR = 58
+    FACES_HDR = 58  #: self.hdr_faces
     MAP_FLAGS = 59
     OVERLAY_FADES = 60
     OVERLAY_SYSTEM_LEVELS = 61
@@ -694,6 +694,7 @@ class Face:
     dynamic_shadows: bool
     smoothing_groups: int
     hammer_id: Optional[int]  # The original ID of the Hammer face.
+    vitamin_flags: int  # VitaminSource flags.
 
 
 @attrs.define(eq=False)
@@ -1197,6 +1198,11 @@ class BSP:
     props: ParsedLump[List['StaticProp']] = ParsedLump(LMP_ID_STATIC_PROPS)
     detail_props: ParsedLump[List['DetailProp']] = ParsedLump(LMP_ID_DETAIL_PROPS)
 
+    @property
+    def is_vitamin(self) -> bool:
+        """Vitaminsource has a lot of structure changes."""
+        return self.version is VERSIONS.VITAMINSOURCE
+
     def read(self) -> None:
         """Load all data."""
         self.lumps.clear()
@@ -1207,7 +1213,8 @@ class BSP:
         with open(self.filename, mode='br') as file:
             # BSP files start with 'VBSP', then a version number.
             magic_name, bsp_version = struct_read(HEADER_1, file)
-            assert magic_name == BSP_MAGIC, 'Not a BSP file!'
+            if magic_name != BSP_MAGIC and magic_name != VITAMIN_MAGIC:
+                raise ValueError('File is not a BSP file!')
 
             if self.version is None:
                 try:
@@ -1215,7 +1222,13 @@ class BSP:
                 except ValueError:
                     self.version = bsp_version
             else:
-                assert bsp_version == self.version, 'Different BSP version!'
+                if bsp_version != self.version:
+                    raise ValueError(
+                        f'Unexpected BSP version {self.version!r}, expected {bsp_version!r}!'
+                    )
+
+            if magic_name == VITAMIN_MAGIC and self.version is not VERSIONS.VITAMINSOURCE:
+                raise ValueError('VitaminSource uses a different version number.')
 
             lump_offsets = {}
 
@@ -1345,7 +1358,11 @@ class BSP:
             else:
                 version = self.version
 
-            file.write(struct.pack(HEADER_1, BSP_MAGIC, version))
+            file.write(struct.pack(
+                HEADER_1,
+                VITAMIN_MAGIC if self.is_vitamin else BSP_MAGIC,
+                version,
+            ))
 
             # Write dummy values for the headers.
             for lump_name in BSP_LUMPS:
@@ -1659,6 +1676,10 @@ class BSP:
 
     def _lmp_read_primitives(self, data: bytes) -> Iterator['Primitive']:
         """Parse the primitives lumps."""
+        if self.is_vitamin:
+            # VitaminSource no longer uses primitives.
+            return
+
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
         indices = read_array('<H', self.lumps[BSP_LUMPS.PRIMINDICES].data)
         # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
@@ -1679,6 +1700,10 @@ class BSP:
             )
 
     def _lmp_write_primitives(self, prims: List['Primitive']) -> Iterator[bytes]:
+        if self.is_vitamin:
+            # VitaminSource no longer uses primitives.
+            return
+
         verts: List[bytes] = []
         indices: List[int] = []
 
@@ -1696,55 +1721,89 @@ class BSP:
         self.lumps[BSP_LUMPS.PRIMINDICES].data = write_array('<H', indices)
         self.lumps[BSP_LUMPS.PRIMVERTS].data = b''.join(verts)
 
-    def _lmp_read_orig_faces(self, data: bytes, _orig_faces: Optional[List['Face']] = None) -> Iterator['Face']:
+    def _read_faces_common(self, data: bytes, orig_faces: Optional[List['Face']]) -> Iterator['Face']:
         """Read one of the faces arrays.
 
         For ORIG_FACES, _orig_faces is None and that entry is ignored.
         For the others, that is the parsed orig faces lump, which each face
         may reference.
+        In VitaminSource, we only have the regular faces lump.
         """
+        is_vitamin = self.is_vitamin
+
         # The non-original faces have the Hammer ID value, which is an array
         # in the same order. But some versions don't define it as anything...
-        if _orig_faces is not None:
-            hammer_ids = read_array('H', self.lumps[BSP_LUMPS.FACEIDS].data)
+        if orig_faces is not None or is_vitamin:
+            hammer_ids = read_array('<H', self.lumps[BSP_LUMPS.FACEIDS].data)
         else:
             hammer_ids = []
 
-        for i, (
-            plane_num,
-            side,
-            on_node,
-            first_edge, num_edges,
-            texinfo_ind,
-            dispinfo,
-            surf_fog_vol_id,
-            lightstyles,
-            light_offset,
-            area,
-            lightmap_mins_x, lightmap_mins_y,
-            lightmap_size_x, lightmap_size_y,
-            orig_face_ind,
-            prim_num,
-            prim_first,
-            smoothing_group,
-        ) in enumerate(struct.iter_unpack(
-            f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
+        hammer_id: Optional[int]
+
+        for i, face_data in enumerate(struct.iter_unpack(
+            '<5i4iB3x' if self.is_vitamin else '<H??i4h4sif5iHHI',
             data,
         )):
-            # If orig faces is provided, that is the original face
-            # we were created from. Additionally, it seems the original
-            # face data has invalid texinfo, so copy ours on top of it.
-            hammer_id: Optional[int]
-            if _orig_faces is not None:
-                orig_face = _orig_faces[orig_face_ind]
-                orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
-                try:
-                    orig_face.hammer_id = hammer_id = hammer_ids[i]
-                except IndexError:
-                    hammer_id = None
-            else:
-                orig_face = texinfo = None
+            if is_vitamin:
+                (
+                    plane_num,
+                    texinfo_ind,
+                    dispinfo,
+                    first_edge, num_edges,
+                    lightmap_mins_x, lightmap_mins_y,
+                    lightmap_size_x, lightmap_size_y,
+                    vitamin_flags,
+                ) = face_data
+                texinfo = self.texinfo[texinfo_ind]
+
+                # All these values are unused.
+                side = False
+                surf_fog_vol_id = 0
+                light_offset = 0
+                lightstyles = b'\0\0\0\0'
+                on_node = False
+                orig_face = None
+                area = 0
+                primitives = []
+                no_dynamic_shadows = False
+                smoothing_group = 0
                 hammer_id = None
+            else:
+                (
+                    plane_num,
+                    side,
+                    on_node,
+                    first_edge, num_edges,
+                    texinfo_ind,
+                    dispinfo,
+                    surf_fog_vol_id,
+                    lightstyles,
+                    light_offset,
+                    area,
+                    lightmap_mins_x, lightmap_mins_y,
+                    lightmap_size_x, lightmap_size_y,
+                    orig_face_ind,
+                    prim_num,
+                    prim_first,
+                    smoothing_group,
+                ) = face_data
+                primitives = self.primitives[prim_first:prim_first + (prim_num & 0x7fff)]
+                no_dynamic_shadows = not (prim_num & 0x8000)
+                vitamin_flags = 0
+
+                # If orig faces is provided, that is the original face
+                # we were created from. Additionally, it seems the original
+                # face data has invalid texinfo, so copy ours on top of it.
+                if orig_faces is not None:
+                    orig_face = orig_faces[orig_face_ind]
+                    orig_face.texinfo = texinfo = self.texinfo[texinfo_ind]
+                    try:
+                        orig_face.hammer_id = hammer_id = hammer_ids[i]
+                    except IndexError:
+                        hammer_id = None
+                else:
+                    orig_face = texinfo = None
+                    hammer_id = None
             yield Face(
                 self.planes[plane_num],
                 side, on_node,
@@ -1759,15 +1818,15 @@ class BSP:
                 (lightmap_mins_x, lightmap_mins_y),
                 (lightmap_size_x, lightmap_size_y),
                 orig_face,
-                self.primitives[prim_first:prim_first + (prim_num & 0x7fff)],
-                not (prim_num & 0x8000),
+                primitives, no_dynamic_shadows,
                 smoothing_group,
                 hammer_id,
+                vitamin_flags,
             )
 
-    def _lmp_write_orig_faces(
+    def _write_faces_common(
         self, faces: List['Face'],
-        get_orig_face: Optional[Callable[['Face'], int]] = None,
+        get_orig_face: Optional[Callable[['Face'], int]],
     ) -> bytes:
         """Reconstruct one of the faces arrays.
 
@@ -1781,63 +1840,119 @@ class BSP:
         add_prims = _find_or_extend(self.primitives)
         hammer_ids = []
 
-        for face in faces:
-            if face.orig_face is not None and get_orig_face is not None:
-                orig_ind = get_orig_face(face.orig_face)
-                hammer_ids.append(face.hammer_id or 0)  # Dummy value if not set.
-            else:
-                orig_ind = -1
-            if face.texinfo is not None:
-                texinfo = add_texinfo(face.texinfo)
-            else:
-                texinfo = -1
-            prim_count = len(face.primitives)
-            if prim_count > 0x7fff:
-                raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
-            if not face.dynamic_shadows:
-                prim_count |= 0x8000
+        if self.is_vitamin:
+            for face in faces:
+                if face.texinfo is not None:
+                    texinfo = add_texinfo(face.texinfo)
+                else:
+                    texinfo = -1
+                # noinspection PyProtectedMember
+                face_buf.write(struct.pack(
+                    '<5i4iB3x',
+                    add_plane(face.plane),
+                    texinfo,
+                    face._dispinfo_ind,
+                    add_edges(face.edges), len(face.edges),
+                    *face.lightmap_mins, *face.lightmap_size,
+                    face.vitamin_flags,
+                ))
+        else:
+            for face in faces:
+                if face.orig_face is not None and get_orig_face is not None:
+                    orig_ind = get_orig_face(face.orig_face)
+                    hammer_ids.append(face.hammer_id or 0)  # Dummy value if not set.
+                else:
+                    orig_ind = -1
+                if face.texinfo is not None:
+                    texinfo = add_texinfo(face.texinfo)
+                else:
+                    texinfo = -1
+                prim_count = len(face.primitives)
+                if prim_count > 0x7fff:
+                    raise ValueError(f'Too many primitives: {prim_count} in {orig_ind}')
+                if not face.dynamic_shadows:
+                    prim_count |= 0x8000
 
-            # noinspection PyProtectedMember
-            face_buf.write(struct.pack(
-                f'<H??ih{"xxi" if TEXINFO_IND_TYPE == "i" else "h"}hh4sif5iHHI',
-                add_plane(face.plane),
-                face.same_dir_as_plane,
-                face.on_node,
-                add_edges(face.edges), len(face.edges),
-                texinfo,
-                face._dispinfo_ind,
-                face.surf_fog_volume_id,
-                face.light_styles,
-                face._lightmap_off,
-                face.area,
-                *face.lightmap_mins, *face.lightmap_size,
-                orig_ind,
-                prim_count,
-                add_prims(face.primitives),
-                face.smoothing_groups,
-            ))
-        if hammer_ids:
-            self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
+                # noinspection PyProtectedMember
+                face_buf.write(struct.pack(
+                    '<H??i4h4sif5iHHI',
+                    add_plane(face.plane),
+                    face.same_dir_as_plane,
+                    face.on_node,
+                    add_edges(face.edges), len(face.edges),
+                    texinfo,
+                    face._dispinfo_ind,
+                    face.surf_fog_volume_id,
+                    face.light_styles,
+                    face._lightmap_off,
+                    face.area,
+                    *face.lightmap_mins, *face.lightmap_size,
+                    orig_ind,
+                    prim_count,
+                    add_prims(face.primitives),
+                    face.smoothing_groups,
+                ))
+            if hammer_ids:
+                self.lumps[BSP_LUMPS.FACEIDS].data = write_array('<H', hammer_ids)
         return face_buf.getvalue()
+
+    def _lmp_read_orig_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the unsplit faces lump."""
+        if self.is_vitamin:
+            return ()  # Unused
+        else:
+            return self._read_faces_common(data, None)
+
+    def _lmp_write_orig_faces(self, faces: List['Face']) -> bytes:
+        """Write the unsplit faces lump."""
+        if self.is_vitamin:
+            return b''  # Unused.
+        else:
+            return self._write_faces_common(faces, None)
 
     def _lmp_read_faces(self, data: bytes) -> Iterator['Face']:
         """Parse the main split faces lump."""
-        return self._lmp_read_orig_faces(data, self.orig_faces)
+        if self.is_vitamin:
+            return self._read_faces_common(data, None)  # No orig faces.
+        else:
+            return self._read_faces_common(data, self.orig_faces)
 
     def _lmp_write_faces(self, faces: List['Face']) -> bytes:
-        return self._lmp_write_orig_faces(faces, _find_or_insert(self.orig_faces))
+        """Write the main split faces lump."""
+        if self.is_vitamin:
+            return self._write_faces_common(faces, None)  # No orig faces.
+        else:
+            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
 
-    _lmp_read_hdr_faces = _lmp_read_faces
-    _lmp_write_hdr_faces = _lmp_write_faces
+    def _lmp_read_hdr_faces(self, data: bytes) -> Iterator['Face']:
+        """Parse the HDR-specific split faces lump."""
+        if self.is_vitamin:
+            return ()  # Unused
+        else:
+            return self._read_faces_common(data, self.orig_faces)
+
+    def _lmp_write_hdr_faces(self, faces: List['Face']) -> bytes:
+        """Write the HDR-specific split faces lump."""
+        if self.is_vitamin:
+            return b''  # Unused.
+        else:
+            return self._write_faces_common(faces, _find_or_insert(self.orig_faces))
 
     def _lmp_read_brushes(self, data: bytes) -> Iterator['Brush']:
         """Parse brush definitions, along with the sides."""
         # The bevel param should be a bool, but randomly has other bits set?
-        sides = [
-            BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
-            for (plane_num, texinfo, dispinfo, bevel)
-            in struct.iter_unpack('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
-        ]
+        if self.is_vitamin:
+            sides = [
+                BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bevel, extra)
+                for (plane_num, texinfo, dispinfo, bevel, extra)
+                in struct.iter_unpack('<IIhBB', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            ]
+        else:
+            sides = [
+                BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
+                for (plane_num, texinfo, dispinfo, bevel)
+                in struct.iter_unpack('<HhhH', self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+            ]
         for first_side, side_count, contents in struct.iter_unpack('<iii', data):
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
 
@@ -1856,14 +1971,25 @@ class BSP:
                 brush.contents.value,
             ))
 
-        side_struct = struct.Struct('<HxxihH' if TEXINFO_IND_TYPE == 'i' else '<HhhH')
-        for side in sides:
-            sides_buf.write(side_struct.pack(
-                add_plane(side.plane),
-                add_texinfo(side.texinfo),
-                side._dispinfo,
-                side.is_bevel_plane | side._unknown_bevel_bits,
-            ))
+        if self.is_vitamin:
+            for side in sides:
+                side_struct = struct.Struct('<IIhBB')
+                sides_buf.write(side_struct.pack(
+                    add_plane(side.plane),
+                    add_texinfo(side.texinfo),
+                    side._dispinfo,
+                    side.is_bevel_plane,
+                    side._unknown_bevel_bits,
+                ))
+        else:
+            for side in sides:
+                side_struct = struct.Struct('<HhhH')
+                sides_buf.write(side_struct.pack(
+                    add_plane(side.plane),
+                    add_texinfo(side.texinfo),
+                    side._dispinfo,
+                    side.is_bevel_plane | side._unknown_bevel_bits,
+                ))
         self.lumps[BSP_LUMPS.BRUSHSIDES].data = sides_buf.getvalue()
         return brush_buf.getvalue()
 
@@ -1893,31 +2019,57 @@ class BSP:
         # Another lump which is just an array of ints - no point being separate.
         dist_to_water = read_array('<H', self.lumps[BSP_LUMPS.LEAFMINDISTTOWATER].data)
 
-        leaf_fmt = FMT_LEAF_BASE
-        has_ambient = False
-        # Some extra ambient light data.
-        if self.version <= 19:
-            has_ambient = True
-            leaf_fmt += '24s'
-        leaf_fmt += '2x'
+        is_vitamin = self.is_vitamin
+        if is_vitamin:
+            leaf_fmt = '<ihh6I4HhBx'
+            has_ambient = False
+        else:
+            leaf_fmt = '<ihh6h4Hh'
+            has_ambient = False
+            # Some extra ambient light data.
+            if self.version <= 19:
+                has_ambient = True
+                leaf_fmt += '24s'
+            leaf_fmt += '2x'
 
-        for (
-            contents,
-            cluster_ind, area_and_flags,
-            min_x, min_y, min_z,
-            max_x, max_y, max_z,
-            first_face, num_faces,
-            first_brush, num_brushes,
-            *water_ind_and_ambient
-        ), water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
-            area = area_and_flags >> 7
-            flags = area_and_flags & 0b1111111
-            if has_ambient:
-                [water_ind, ambient] = water_ind_and_ambient
-            else:
-                [water_ind] = water_ind_and_ambient
-                # bytes(24), but can constant fold.
+        for leaf_data, water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
+            if is_vitamin:
+                # VitaminSource moves the flags into its own block.
+                (
+                    contents,
+                    cluster_ind, area,
+                    min_x, min_y, min_z,
+                    max_x, max_y, max_z,
+                    first_face, num_faces,
+                    first_brush, num_brushes,
+                    water_ind, flags,
+                ) = leaf_data
                 ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+            else:
+                if has_ambient:
+                    (
+                        contents,
+                        cluster_ind, area_and_flags,
+                        min_x, min_y, min_z,
+                        max_x, max_y, max_z,
+                        first_face, num_faces,
+                        first_brush, num_brushes,
+                        water_ind, ambient,
+                    ) = leaf_data
+                else:
+                    (
+                        contents,
+                        cluster_ind, area_and_flags,
+                        min_x, min_y, min_z,
+                        max_x, max_y, max_z,
+                        first_face, num_faces,
+                        first_brush, num_brushes,
+                        water_ind,
+                    ) = leaf_data
+                    # bytes(24), but can constant fold.
+                    ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
+                area = area_and_flags >> 7
+                flags = area_and_flags & 0b1111111
             yield VisLeaf(
                 BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
                 Vec(min_x, min_y, min_z),
@@ -1937,7 +2089,10 @@ class BSP:
             min_x, min_y, min_z,
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
-        ) in struct.iter_unpack(FMT_NODES, data):
+        ) in struct.iter_unpack(
+            '<iii6iHHh2x' if self.is_vitamin else '<iii6hHHh2x',
+            data,
+        ):
             nodes.append((VisTree(
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
@@ -1978,7 +2133,7 @@ class BSP:
                 neg_ind = add_node(node.child_neg)
 
             buf.write(struct.pack(
-                FMT_NODES,
+                '<iii6iHHh2x' if self.is_vitamin else '<iii6hHHh2x',
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
@@ -1997,6 +2152,7 @@ class BSP:
         add_brush = _find_or_insert(self.brushes)
 
         buf = BytesIO()
+        is_vitamin = self.is_vitamin
 
         for leaf in visleafs:
             # Do not deduplicate these, engine assumes they aren't when allocating memory.
@@ -2006,19 +2162,30 @@ class BSP:
             leaf_brushes.extend(map(add_brush, leaf.brushes))
             min_water_dists.append(leaf.min_water_dist)
 
-            buf.write(struct.pack(
-                FMT_LEAF_BASE,
-                leaf.contents.value, leaf.cluster_id,
-                (leaf.area << 7 | leaf.flags.value),
-                int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
-                int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
-                face_ind, len(leaf.faces),
-                brush_ind, len(leaf.brushes),
-                leaf.water_id,
-            ))
-            if self.version <= 19:
-                buf.write(leaf._ambient)
-            buf.write(b'\x00\x00')  # Padding.
+            if is_vitamin:
+                buf.write(struct.pack(
+                    '<ihh6I4HhBx',
+                    leaf.contents.value, leaf.cluster_id, leaf.area,
+                    int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                    int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                    face_ind, len(leaf.faces),
+                    brush_ind, len(leaf.brushes),
+                    leaf.water_id, leaf.flags.value,
+                ))
+            else:
+                buf.write(struct.pack(
+                    '<ihh6h4Hh',
+                    leaf.contents.value, leaf.cluster_id,
+                    (leaf.area << 7 | leaf.flags.value),
+                    int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
+                    int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
+                    face_ind, len(leaf.faces),
+                    brush_ind, len(leaf.brushes),
+                    leaf.water_id,
+                ))
+                if self.version <= 19:
+                    buf.write(leaf._ambient)
+                buf.write(b'\x00\x00')  # Padding.
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array('<H', leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array('<H', leaf_brushes)
@@ -2070,17 +2237,24 @@ class BSP:
     def _lmp_read_texinfo(self, data: bytes) -> Iterator['TexInfo']:
         """Read the texture info lump, providing positioning information."""
         texdata_list = []
-        for (
-            ref_x, ref_y, ref_z, ind,
-            w, h, vw, vh,
-        ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
-            mat = self.textures[ind]
-            # The view width/height is unused stuff, identical to regular
-            # width/height.
-            assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
-            texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
-            texdata_list.append(texdata)
-            self._texdata[mat.casefold()] = texdata
+        # The view width/height is unused stuff, identical to regular
+        # width/height. VitaminSource elides this useless info.
+        if self.is_vitamin:
+            for ref_x, ref_y, ref_z, ind, w, h in struct.iter_unpack('<3f3i', self.lumps[BSP_LUMPS.TEXDATA].data):
+                mat = self.textures[ind]
+                texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+                texdata_list.append(texdata)
+                self._texdata[mat.casefold()] = texdata
+        else:
+            for (
+                ref_x, ref_y, ref_z, ind,
+                w, h, vw, vh,
+            ) in struct.iter_unpack('<3f5i', self.lumps[BSP_LUMPS.TEXDATA].data):
+                mat = self.textures[ind]
+                assert vw == w and vh == h, f'{mat}: {w}x{h} != view {vw}x{vh}'
+                texdata = TexData(mat, Vec(ref_x, ref_y, ref_z), w, h)
+                texdata_list.append(texdata)
+                self._texdata[mat.casefold()] = texdata
         self.lumps[BSP_LUMPS.TEXDATA].data = b''
 
         for (
@@ -2104,25 +2278,29 @@ class BSP:
 
         texdata_list: List[bytes] = []
         texinfo_result: List[bytes] = []
+        next_ind = 0
 
         for info in texinfos:
             # noinspection PyProtectedMember
             tdat = info._info
             # Try and find an existing reference to this texdata.
-            # If not, the index is at the end of the list, where we write and
-            # insert it.
-            # That's then done again for the texture name itself.
+            # If not, put it at the end of the list. Since we're rebuilding it, we can just
+            # increment an index each time to track that. We can't use the list len because
+            # we append twice for non-Desolation games which have an extra bit of data.
             try:
                 ind = texdata_ind[tdat]
             except KeyError:
-                ind = texdata_ind[tdat] = len(texdata_list)
+                ind = texdata_ind[tdat] = next_ind
+                next_ind += 1
                 texdata_list.append(struct.pack(
-                    '<3f5i',
+                    '<3f3i',
                     tdat.reflectivity.x, tdat.reflectivity.y, tdat.reflectivity.z,
                     find_or_add_texture(tdat.mat),
-                    # Second set is the 'view' width/height, always the same.
-                    tdat.width, tdat.height, tdat.width, tdat.height,
+                    tdat.width, tdat.height,
                 ))
+                # A second set of  'view' dimensions, which is always the same.
+                if not self.is_vitamin:
+                    texdata_list.append(struct.pack('<2i', tdat.width, tdat.height))
             texinfo_result.append(struct.pack(
                 '<16fii',
                 *info.s_off, info.s_shift,
