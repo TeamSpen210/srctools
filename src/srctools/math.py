@@ -2437,6 +2437,10 @@ class FrozenAngle(AngleBase):
         interoperate.
         """
         return _mk_fang, (self._pitch, self._yaw, self._roll)
+
+    def __hash__(self) -> int:
+        """Hashing a frozen angle is the same as hashing the tuple form."""
+        return hash((round(self._pitch, 6), round(self._yaw, 6), round(self._roll, 6)))
     
     def thaw(self) -> 'Angle':
         """Return a mutable copy of this angle."""

@@ -173,6 +173,16 @@ def test_thaw_freezing(py_c_vec: PyCVec) -> None:
         assert_ang(FrozenAngle(p, y, r).thaw(), p, y, r, type=Angle)
 
 
+def test_angle_hash(py_c_vec: PyCVec) -> None:
+    """Test hashing frozen angles"""
+    FrozenAngle = vec_mod.FrozenAngle
+    for pitch, yaw, roll in iter_vec([0.0, 13, 25.8277, 128.474, 278.93]):
+        ang = FrozenAngle(pitch, yaw, roll)
+        expected = hash((round(pitch, 6), round(yaw, 6), round(roll, 6)))
+        assert hash(FrozenAngle(pitch, yaw, roll)) == expected
+        assert hash(FrozenAngle(pitch + 0.0000001, yaw + 0.0000001, roll + 0.0000001)) == expected
+
+
 @pytest.mark.parametrize('axis, index, u, v, u_ax, v_ax', [
     ('pitch', 0, 'yaw', 'roll', 1, 2), ('yaw', 1, 'pitch', 'roll', 0, 2), ('roll', 2, 'pitch', 'yaw', 0, 1),
 ], ids=['pitch', 'yaw', 'roll'])
