@@ -9,6 +9,9 @@ Changelog
 Dev branch
 ----------
 
+* Fix :module:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
+  bubbles up to the toplevel.
+
 -------------
 Version 2.3.7
 -------------

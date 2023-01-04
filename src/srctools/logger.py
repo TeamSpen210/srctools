@@ -353,7 +353,7 @@ def init_logging(
         None,
     ]] = None,
     *,
-    error: Optional[Callable[[Exception], object]] = None,
+    error: Optional[Callable[[BaseException], object]] = None,
 ) -> logging.Logger:
     """Set up the logger and logging handlers.
 
@@ -378,7 +378,7 @@ def init_logging(
     if on_error is not None:
         if error is not None:
             raise TypeError('Cannot pass both on_error and error!')
-        def error_closure(exc: Exception) -> None:
+        def error_closure(exc: BaseException) -> None:
             """Call the old error handler function."""
             if on_error is not None:  # Mypy can't infer this is constant.
                 on_error(type(exc), exc, exc.__traceback__)
@@ -446,9 +446,9 @@ def init_logging(
         exc_tb: Optional[TracebackType],
     ) -> None:
         """Log uncaught exceptions."""
-        if not isinstance(exc_value, Exception):
-            # It's subclassing BaseException (KeyboardInterrupt, SystemExit),
-            # so we should quit without messages.
+        if isinstance(exc_value, SystemExit):
+            # Suppress messages for this, it's not an error.
+            # We can't ignore BaseException, MultiError is one of those.
             return
 
         logger.error(
