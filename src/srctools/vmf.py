@@ -270,7 +270,7 @@ def make_overlay(
     )
 
 
-def localise_overlay(over: 'Entity', origin: Vec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
+def localise_overlay(over: 'Entity', origin: AnyVec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
     """Rotate an overlay like what is done in instances."""
     orient = to_matrix(angles)
     if angles is not None:  # Skip if known to be identity matrix.
@@ -1360,12 +1360,12 @@ class Solid:
             bbox_min, bbox_max = self.get_bbox()
         return (bbox_min + bbox_max) / 2
 
-    def translate(self, diff: Vec) -> None:
+    def translate(self, diff: AnyVec) -> None:
         """Move this solid by the specified vector."""
         for s in self.sides:
             s.translate(diff)
 
-    def localise(self, origin: Vec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
+    def localise(self, origin: AnyVec, angles: Union[AnyAngle, AnyMatrix, None] = None) -> None:
         """Shift this brush by the given origin/angles."""
         angles = to_matrix(angles)  # Only do this once.
         for s in self.sides:
@@ -1513,12 +1513,12 @@ class UVAxis:
             self.scale,
         )
 
-    def localise(self, origin: Vec, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
+    def localise(self, origin: AnyVec, angles: Union[AnyAngle, AnyMatrix]) -> 'UVAxis':
         """Rotate and translate the texture coordinates."""
         vec = self.vec() @ angles
 
         # Fix offset - see source-sdk: utils/vbsp/map.cpp line 2237
-        offset = self.offset - origin.dot(vec) / self.scale
+        offset = self.offset - vec.dot(origin) / self.scale
 
         return UVAxis(
             vec.x,
@@ -1998,7 +1998,7 @@ class Side:
         origin = (size_min + size_max) / 2
         return origin
 
-    def translate(self, diff: Vec) -> None:
+    def translate(self, diff: AnyVec) -> None:
         """Move this side by the specified vector.
 
         - A tuple can be passed in instead if desired.
@@ -2010,10 +2010,10 @@ class Side:
         v_axis = Vec(self.vaxis.x, self.vaxis.y, self.vaxis.z)
 
         # Fix offset - see 2013 SDK utils/vbsp/map.cpp:2237
-        self.uaxis.offset -= diff.dot(u_axis) / self.uaxis.scale
-        self.vaxis.offset -= diff.dot(v_axis) / self.vaxis.scale
+        self.uaxis.offset -= Vec.dot(u_axis, diff) / self.uaxis.scale
+        self.vaxis.offset -= Vec.dot(v_axis, diff) / self.vaxis.scale
 
-    def localise(self, origin: Vec, angles: Union[AnyMatrix, AnyAngle, None] = None) -> None:
+    def localise(self, origin: AnyVec, angles: Union[AnyMatrix, AnyAngle, None] = None) -> None:
         """Shift the face by the given origin and angles.
 
         This preserves texture offsets.

@@ -11,6 +11,7 @@ Dev branch
 
 * Fix :module:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
   bubbles up to the toplevel.
+* Tweak VMF ``localise()`` and ``translate()`` type hints to allow :py:class:`~srctools.math.FrozenVec` as the origin.
 
 -------------
 Version 2.3.7

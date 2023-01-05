@@ -1473,7 +1473,7 @@ class Vec(VecBase):
 
     def localise(
         self,
-        origin: Union['Vec', Tuple3],
+        origin: AnyVec,
         angles: Union[AnyAngle, AnyMatrix, None] = None,
     ) -> None:
         """Shift this point to be local to the given position and angles.
