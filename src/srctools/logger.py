@@ -343,7 +343,7 @@ def init_logging(
     filename: Optional[StringPath] = None,
     main_logger: str='',
     *,
-    error: Callable[[Exception], object],
+    error: Callable[[BaseException], object],
 ) -> logging.Logger: ...
 def init_logging(
     filename: Optional[StringPath] = None,
