@@ -1,7 +1,10 @@
 """Implements support for collapsing instances."""
-from typing import Any, Container, Dict, Iterable, List, Optional, Set, Tuple, Union
+from typing import (
+    Any, Container, Dict, Iterable, List, MutableMapping, Optional, Set, Tuple, Union,
+)
 from enum import Enum
 from pathlib import Path
+import warnings
 
 import attrs
 
@@ -126,7 +129,7 @@ class Instance:
         :param type: The kind of FGD value.
         :param value: The value of the key.
         """
-        # All three are absolute positions.
+        # All three of these types are absolute positions.
         if type is ValueTypes.VEC or type is ValueTypes.VEC_ORIGIN or type is ValueTypes.VEC_LINE:
             return str(Vec.from_str(value) @ self.orient + self.pos)
         elif type is ValueTypes.ANGLES:
@@ -134,7 +137,8 @@ class Instance:
         elif type.is_ent_name:  # Target destination etc.
             return self.fixup_name(value)
         elif type is ValueTypes.TARG_DEST_CLASS:
-            # Target destination, but also classnames which we don't want to change.
+            # Accepts both entity names and classnames - if this is a classname, pass it through
+            # unaltered.
             if value.casefold() not in classnames:
                 return self.fixup_name(value)
         elif type is ValueTypes.EXT_VEC_DIRECTION:
@@ -291,35 +295,45 @@ def get_inst_locs(map_filename: Path) -> FileSystemChain:
     return fsys
 
 
+def reset_keyvalue_warnings() -> None:
+    """If an unknown keyvalue is encountered during collapsing, a log message is produced only once.
+
+    This resets the internal tracker so the messages will be repeated again.
+    """
+    _UNKNOWN_KV.clear()
+
+
 def collapse_one(
     vmf: VMF,
     inst: Instance,
     file: InstanceFile,
-    fgd: Optional[FGD] = None,
+    *,
     visgroup: Union[bool, VisGroup] = False,
+    engine_cache: MutableMapping[str, EntityDef] = srctools.EmptyMapping,
+    fgd: Optional[FGD] = None,
 ) -> None:
     """Collapse a single instance into the map.
 
-    The FGD is the data used to localise keyvalues. If none an internal database
-    will be used.
     The visgroup parameter controls how visgroups are handled:
 
     * If :external:py:data:`False`, visgroups are stripped.
     * If :external:py:data:`True`, the original visgroups will be kept.
     * If set to a specific visgroup, all ents and brushes will be added to it, with any existing visgroups in the instance added as a child.
+
+    :param engine_cache: This is a dict used to cache parsed FGD data for remapping.
+        If multiple instances are being collapsed, create an empty dict and pass it in to every call
+        to allow reusing data.
+    :param fgd: :deprecated: old method of passing in a FGD database.
     """
     origin = inst.pos
     orient = inst.orient
     id_to_ent: Dict[int, Entity] = {}
 
-    if fgd is None:
-        fgd = FGD.engine_dbase()
-    # Contains all base-entity keyvalues, as a fallback.
-    try:
-        base_entity = fgd['_CBaseEntity_']
-    except KeyError:
-        LOGGER.warning('No CBaseEntity definition!')
-        base_entity = EntityDef(EntityTypes.BASE)
+    if fgd is not None:
+        warnings.warn(
+            'fgd parameter is deprecated, use engine_cache instead',
+            DeprecationWarning, stacklevel=2,
+        )
 
     if visgroup is not False:
         for old_group in file.vmf.vis_tree:
@@ -407,9 +421,18 @@ def collapse_one(
         # Find the FGD to use.
         classname = new_ent['classname']
         try:
-            ent_type = fgd[classname]
+            ent_type = engine_cache[classname]
         except KeyError:
-            ent_type = base_entity
+            try:
+                ent_type = EntityDef.engine_def(classname)
+            except KeyError:
+                # Contains all base-entity keyvalues, as a fallback.
+                try:
+                    ent_type = EntityDef.engine_def('_CBaseEntity_')
+                except KeyError:
+                    LOGGER.warning('No CBaseEntity definition!')
+                    ent_type = EntityDef(EntityTypes.BASE)
+            engine_cache[classname] = ent_type
 
         # Set a hidden attribute to keep track of recursive instancing.
         if classname.casefold() == 'func_instance':
@@ -501,7 +524,6 @@ def collapse_all(
     vmf: VMF,
     fsys: FileSystem[Any],
     recur_limit: int = 100,
-    fgd: Optional[FGD] = None,
 ) -> None:
     """Searches for ``func_instance`` in the map, then collapses them.
 
@@ -509,19 +531,15 @@ def collapse_all(
     :param fsys: The filesystem is used to find the relevant instances.
     :param recur_limit: The recursion limit indicates how many instances can be contained in
         another - if it's exceeded they're left in the map.
-    :param fgd: The FGD is used to determine how to handle keyvalues. If not provided, an internal
-        database from HammerAddons is used.
     """
-    if fgd is None:
-        fgd = FGD.engine_dbase()
-
     auto_inst_count = 0
+    fgd_cache: MutableMapping[str, EntityDef] = {}
+    file_cache: Dict[str, InstanceFile] = {}
 
-    cache: Dict[str, InstanceFile] = {}
     for _ in range(recur_limit):
         instances = list(vmf.by_class['func_instance'])
         if not instances:
-            break
+            return  # No more instances, success!
         for inst_ent in instances:
             inst = Instance.from_entity(inst_ent)
             inst_ent.remove()
@@ -530,11 +548,11 @@ def collapse_all(
                 auto_inst_count += 1
                 inst.name = f'InstanceAuto{auto_inst_count}'
             try:
-                file = cache[inst.filename]
+                file = file_cache[inst.filename]
             except KeyError:
                 props = fsys.read_kv1(inst.filename)
                 # except FileNotFoundError - fail.
-                file = cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
-            collapse_one(vmf, inst, file, fgd)
-    else:  # Exhausted the range
+                file = file_cache[inst.filename] = InstanceFile(VMF.parse(props, preserve_ids=True))
+            collapse_one(vmf, inst, file, engine_cache=fgd_cache)
+    else:  # Exhausted the range, we must have too much recursion in the instances.
         raise RecursionError('Loop in instances!')
