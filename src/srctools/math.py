@@ -2807,7 +2807,7 @@ if not TYPE_CHECKING:
             'Vec', 'FrozenVec',
             'Angle', 'FrozenAngle',
             'Matrix', 'FrozenMatrix',
-            'parse_vec_str', 'to_matrix', 'lerp',
+            'parse_vec_str', 'to_matrix', 'lerp', 'format_float',
         ]:
             _glob[_name] = _glob['Cy_' + _name] = getattr(_math, _name)
         del _glob, _name, _math
