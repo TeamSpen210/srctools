@@ -29,7 +29,7 @@ import warnings
 
 
 __all__ = [
-    'parse_vec_str', 'to_matrix', 'lerp', 'quickhull',
+    'parse_vec_str', 'to_matrix', 'lerp', 'quickhull', 'format_float',
     'Vec', 'FrozenVec', 'Vec_tuple', 'AnyVec',
     'Angle', 'FrozenAngle', 'AnyAngle',
     'Matrix', 'FrozenMatrix', 'AnyMatrix',
