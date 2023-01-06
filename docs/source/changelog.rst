@@ -13,6 +13,7 @@ Dev branch
   bubbles up to the toplevel.
 * Tweak VMF ``localise()`` and ``translate()`` type hints to allow :py:class:`~srctools.math.FrozenVec` as the origin.
 * Make movement and rotation of displacements work correctly.
+* Handle pitch keyvalues correctly when instancing, only rotating if it is a specific type.
 
 -------------
 Version 2.3.7

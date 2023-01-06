@@ -8,7 +8,7 @@ import attrs
 from srctools.fgd import FGD, EntityDef, EntityTypes, ValueTypes
 from srctools.filesys import FileSystem, FileSystemChain, RawFileSystem
 from srctools.keyvalues import Keyvalues
-from srctools.math import Angle, Matrix, Vec
+from srctools.math import Angle, Matrix, Vec, format_float
 from srctools.vmf import VMF, Entity, EntityFixup, FixupValue, Output, VisGroup
 import srctools
 import srctools.logger
@@ -434,11 +434,8 @@ def collapse_one(
             elif folded == 'angles':
                 new_ent['angles'] = str(angles)
                 continue
-            elif folded == 'pitch':
-                new_ent['pitch'] = str(angles.pitch)
-                continue
             elif folded == 'yaw':
-                new_ent['yaw'] = str(angles.yaw)
+                new_ent['yaw'] = format_float(angles.yaw)
                 continue
             elif folded in ('classname', 'hammerid', 'spawnflags', 'nodeid'):
                 continue
@@ -455,10 +452,21 @@ def collapse_one(
                 continue
             # This has specific interactions with angles, it needs to be the pitch KV.
             if kv.type is ValueTypes.ANGLE_NEG_PITCH:
-                if (classname, key) not in _UNKNOWN_KV:
+                if folded == 'pitch':
+                    new_ent['pitch'] = format_float(-angles.pitch)
+                elif (classname, key) not in _UNKNOWN_KV:
                     LOGGER.warning('angle_negative_pitch should only be applied to pitch, not {}.{}', classname, key)
                     _UNKNOWN_KV.add((classname, key))
                 continue
+            # Same, but not inverted.
+            elif kv.type is ValueTypes.EXT_ANGLE_PITCH:
+                if folded == 'pitch':
+                    new_ent['pitch'] = format_float(angles.pitch)
+                elif (classname, key) not in _UNKNOWN_KV:
+                    LOGGER.warning('angle_pitch should only be applied to pitch, not {}.{}', classname, key)
+                    _UNKNOWN_KV.add((classname, key))
+                continue
+            # Instance fixup commands shouldn't exist here.
             elif kv.type is ValueTypes.INST_VAR_REP:
                 if (classname, key) not in _UNKNOWN_KV:
                     LOGGER.warning('instance_variable should only be applied to replaceXX, not {}.{}', classname, key)
