@@ -1395,6 +1395,11 @@ def _list4_validator(_: object, attrib: 'attrs.Attribute[List[Vec]]', value: obj
         raise ValueError(attrib.name + ' must have 4 values!')
 
 
+def _alpha_validator(_: object, attrib: 'attrs.Attribute[float]', value: float) -> None:
+    if not isinstance(value, float) or value < 0.0 or value > 255.0:
+        raise TypeError(f'{attrib.name} should be a float from 0-255: {value}')
+
+
 @attrs.define(frozen=False)
 class DispVertex:
     """A vertex in dislacements."""
@@ -1405,7 +1410,7 @@ class DispVertex:
     distance: float = 0
     offset: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
     offset_norm: Vec = attrs.field(factory=Vec, validator=attrs.validators.instance_of(Vec))
-    alpha: float = 0.0  # 0-255
+    alpha: float = attrs.field(default=0.0, validator=_alpha_validator)
     # The pair of triangle tags for the quad in the +ve direction
     # from us. This means the last row/column's triangles are ignored.
     triangle_a: TriangleTag = TriangleTag.FLAT
