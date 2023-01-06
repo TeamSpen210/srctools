@@ -2026,6 +2026,8 @@ class Side:
         self.vaxis = self.vaxis.localise(origin, orient)
         if self.is_disp:
             assert self._disp_verts is not None
+            assert self.disp_pos is not None
+            self.disp_pos.localise(origin, orient)
             for vert in self._disp_verts:
                 vert.offset @= orient
                 vert.normal @= orient
