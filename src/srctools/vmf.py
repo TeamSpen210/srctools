@@ -1944,13 +1944,13 @@ class Side:
         """Write out one of the displacement vertex arrays."""
         assert self._disp_verts is not None
         f.write(f'{ind}\t\t{name}\n{ind}\t\t{{\n')
+        rows = [
+            str(getattr(vert, membr))
+            for vert in self._disp_verts
+        ]
         for y in range(size):
-            row = [
-                str(getattr(vert, membr))
-                for vert in self._disp_verts[size * y:size * (y+1)]
-            ]
-            f.write(f'{ind}\t\t"row{y}" "{" ".join(row)}"\n')
-        f.write(ind + '\t\t}\n')
+            f.write(f'{ind}\t\t"row{y}" "{" ".join(rows[size * y:size * (y+1)])}"\n')
+        f.write(f'{ind}\t\t}}\n')
 
     def __str__(self) -> str:
         """Dump a user-friendly representation of the side."""
@@ -3151,17 +3151,17 @@ class Output:
             sep = True
             vals = prop.value.split(',')
 
-        if sep and len(vals) > 5:
-            # Special case, more than 4 commas, recombine the commas in the params.
-            # Valve's code doesn't do this, but a mod could potentially edit VBSP & the game to
-            # then support commas in params in a backward-compatible way. Commas in any other field
-            # wouldn't be particularly useful.
-            targ, inp, *param_lst, delay, times = vals
-            param = ','.join(param_lst)
-        else:
-            try:
-                targ, inp, param, delay, times = vals
-            except ValueError as e:
+        try:
+            targ, inp, param, delay, times = vals
+        except ValueError as e:
+            if sep and len(vals) > 5:
+                # Special case, more than 4 commas, recombine the commas in the params.
+                # Valve's code doesn't do this, but a mod could potentially edit VBSP & the game to
+                # then support commas in params in a backward-compatible way. Commas in any other
+                # field wouldn't be particularly useful.
+                targ, inp, *param_lst, delay, times = vals
+                param = ','.join(param_lst)
+            else:
                 raise ValueError(f'Bad output value: "{prop.value}"') from e
 
         inst_out, out = Output.parse_name(prop.real_name)
