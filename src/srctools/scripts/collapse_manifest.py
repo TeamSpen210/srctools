@@ -4,7 +4,7 @@ from pathlib import Path
 import argparse
 import sys
 
-from srctools.fgd import FGD
+from srctools.fgd import EntityDef, FGD
 from srctools.filesys import RawFileSystem
 from srctools.instancing import InstanceFile, Manifest, collapse_one
 from srctools.keyvalues import Keyvalues
@@ -15,13 +15,6 @@ def main(args: List[str]) -> None:
     """Main script."""
     parser = argparse.ArgumentParser(description=__doc__)
 
-    parser.add_argument(
-        "-f", "--fgd",
-        help="Path to a FGD file to use to collapse instances. "
-             "If not set a builtin file will be used.",
-        type=str.casefold,
-        action='append',
-    )
     parser.add_argument(
         "inp",
         help="The manifest to collapse.",
@@ -40,21 +33,12 @@ def main(args: List[str]) -> None:
     else:
         dest = source.with_suffix('.vmf')
 
-    if result.fgd:
-        fgd = FGD()
-        fsys = RawFileSystem('.', constrain_path=False)
-        with fsys:
-            for path in result.fgd:
-                fgd.parse_file(fsys, fsys[path])
-    else:
-        fgd = FGD.engine_dbase()
-
     with source.open() as f:
         submaps = Manifest.parse(Keyvalues.parse(f))
     fsys = RawFileSystem(source.with_suffix(''))
-    fsys.open_ref()
 
     vmf = VMF()
+    engine_cache: dict[str, EntityDef] = {}
 
     for submap in submaps:
         print(f'Collapsing "{submap.name}"...')
@@ -64,11 +48,11 @@ def main(args: List[str]) -> None:
 
         visgroup: Union[bool, VisGroup]
         if submap.is_toplevel:
-            vmf.spawn.keys.update(sub_file.vmf.spawn.keys)
+            vmf.spawn.update(sub_file.vmf.spawn)
             visgroup = False
         else:
             visgroup = vmf.create_visgroup(submap.name)
-        collapse_one(vmf, submap, sub_file, fgd, visgroup)
+        collapse_one(vmf, submap, sub_file, visgroup=visgroup, engine_cache=engine_cache)
 
     print(f'Writing {dest}...')
     with dest.open('w') as f:
