@@ -1,12 +1,12 @@
 """Implements tools for manipulating geometry."""
 import collections
 import math
-from typing import Optional, Iterator, List, TypeVar, Dict, Tuple
+from typing import Optional, Iterator, List
 
 import attr
-from srctools import Vec, Angle, Matrix
+from srctools import Vec
 from srctools.smd import Vertex
-from srctools import vmf, smd
+from srctools import vmf
 
 
 @attr.define(eq=False)
@@ -23,9 +23,9 @@ class HalfEdge:
     """A half-edge data structure."""
     end_pos: Vertex
     face: Optional[Face]  # Attached face.
-    pair: 'HalfEdge'  # The opposite edge.
-    next: 'HalfEdge'  # Edge in front.
-    prev: 'HalfEdge'  # Edge behind us.
+    pair: 'HalfEdge'  # The opposite edge. ``self.pair.pair is self``
+    next: 'HalfEdge'  # Edge in front. ``self.next.pair.end_pos is self.end_pos``
+    prev: 'HalfEdge'  # Edge behind us. ``self.prev.end_pos is self.pair.end_pos``
 
     @property
     def start_pos(self) -> Vertex:
@@ -55,7 +55,7 @@ class HalfEdge:
             edge = edge.next.pair
 
 
-def from_brush(brush: vmf.Solid) -> List[HalfEdge]:
+def from_brush(brush: vmf.Solid) -> List[Face]:
     """Convert a VMF brush into a set of edges."""
     faces = {}
     for side in brush:
@@ -123,10 +123,11 @@ def from_brush(brush: vmf.Solid) -> List[HalfEdge]:
             try:
                 edge.pair = edges[vert, last_vert]
                 edge.pair.pair = edge
-            except KeyError:
+            except KeyError:  # Not constructed yet.
                 pass
             last_vert = vert
         for i, edge in enumerate(edge_loop):
             edge.next = edge_loop[(i + 1) % len(edge_loop)]
             edge.prev = edge_loop[(i - 1) % len(edge_loop)]
-    return list(edges.values())
+        face.first_edge = edge_loop[0]
+    return face_list
