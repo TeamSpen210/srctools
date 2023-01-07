@@ -1,10 +1,10 @@
 """Collapses the submaps of a manifest map into a single VMF."""
-from typing import List, Union
+from typing import Dict, List, Union
 from pathlib import Path
 import argparse
 import sys
 
-from srctools.fgd import EntityDef, FGD
+from srctools.fgd import EntityDef
 from srctools.filesys import RawFileSystem
 from srctools.instancing import InstanceFile, Manifest, collapse_one
 from srctools.keyvalues import Keyvalues
@@ -38,7 +38,7 @@ def main(args: List[str]) -> None:
     fsys = RawFileSystem(source.with_suffix(''))
 
     vmf = VMF()
-    engine_cache: dict[str, EntityDef] = {}
+    engine_cache: Dict[str, EntityDef] = {}
 
     for submap in submaps:
         print(f'Collapsing "{submap.name}"...')

@@ -1,6 +1,7 @@
 """Verify type definitions for math classes."""
 from typing_extensions import assert_type
-from srctools.math import FrozenMatrix, Matrix, Vec, FrozenVec, Angle, FrozenAngle
+
+from srctools.math import Angle, FrozenAngle, FrozenMatrix, FrozenVec, Matrix, Vec
 
 
 def test_addition() -> None:

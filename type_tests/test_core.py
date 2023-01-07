@@ -1,5 +1,5 @@
 """Test tricky type definitions in the package root."""
-from typing import Dict, Union, List
+from typing import Dict, List, Union
 from typing_extensions import assert_type
 from io import BufferedWriter, TextIOWrapper
 
