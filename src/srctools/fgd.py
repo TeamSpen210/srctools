@@ -1,8 +1,8 @@
 """Parse FGD files, used to describe Hammer entities."""
 from typing import (
-    IO, TYPE_CHECKING, Any, Callable, ClassVar, Collection, Container, Dict, FrozenSet,
-    Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set, TextIO, Tuple, Type,
-    TypeVar, Union, cast,
+    IO, TYPE_CHECKING, AbstractSet, Any, Callable, ClassVar, Collection, Container, Dict,
+    FrozenSet, Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set, TextIO,
+    Tuple, Type, TypeVar, Union, cast,
 )
 from typing_extensions import TypeAlias, overload
 from collections import ChainMap, defaultdict
@@ -1364,6 +1364,12 @@ class EntityDef:
         :raises KeyError: If the classname is not found in the database.
         """
         return deepcopy(_load_engine_db()[classname])  # Or KeyError if not found.
+
+    @classmethod
+    def engine_classes(cls) -> AbstractSet[str]:
+        """Return a set of known entity classnames, from the Hammer Addons database."""
+        # This is immutable, so we don't need to copy.
+        return _load_engine_db().entities.keys()
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:

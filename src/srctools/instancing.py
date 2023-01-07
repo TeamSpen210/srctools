@@ -496,7 +496,7 @@ def collapse_one(
                     _UNKNOWN_KV.add((classname, key))
                 continue
 
-            new_ent[key] = inst.fixup_key(vmf, fgd, kv.type, value)
+            new_ent[key] = inst.fixup_key(vmf, EntityDef.engine_classes(), kv.type, value)
 
         # Remap fixups on instance entities too.
         for key, value in new_ent.fixup.items():
