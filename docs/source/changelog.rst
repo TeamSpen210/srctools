@@ -5,9 +5,9 @@ Changelog
 	:local:
 	:backlinks: none
 
-----------
-Dev branch
-----------
+-------------
+Version 2.3.8
+-------------
 
 * Fix :module:`srctools.logger` discarding :external:py:class:`MultiError` (or its backport) if it
   bubbles up to the toplevel.
