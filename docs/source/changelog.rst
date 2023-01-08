@@ -16,6 +16,8 @@ Dev branch
 * Handle pitch keyvalues correctly when instancing, only rotating if it is a specific type.
 * Changed :py:func:`srctools.instancing.collapse_one()` to use the entclass database directly,
   deprecating the ``fgd`` parameter as a result.
+* Fix :py:attr:`BSP.surfedges <srctools.bsp.BSP.surfedges>` incorrectly using edge ``0``, which may
+  cause a single invisible triangle in maps.
 
 -------------
 Version 2.3.7
@@ -38,7 +40,7 @@ Version 2.3.7
 * Fix multiplying vectors and :py:meth:`~srctools.math.Vec.norm_mask()` not producing
   :py:class:`~srctools.math.FrozenVec`.
 * Parse errors in ``BSP.ents`` are more informative and verbose.
-* Add an additional callback parameter to :py:meth:`srctools.packlist.PackList.pack_into_zip()` to
+* Add an additional callback parameter to :py:meth:`PackList.pack_into_zip() <srctools.packlist.PackList.pack_into_zip()>` to
   finely control which files are packed.
 * Implement vector and angle stringification manually, to ensure ``.0`` prefixes are always removed.
 * Use :py:class:`~srctools.math.FrozenVec` and :py:class:`~srctools.math.FrozenAngle` in the

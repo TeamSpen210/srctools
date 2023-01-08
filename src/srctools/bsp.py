@@ -1026,12 +1026,19 @@ def _find_or_extend(item_list: List[T], key_func: Callable[[T], Hashable]=id) ->
             pass
         else:
             for i in indices:
-                if item_list[i:i + len(items)] == items:
+                if all(
+                    key_func(a) == key_func(b)
+                    for a, b in
+                    zip(items, itertools.islice(item_list, i, i + len(items)))
+                ):
                     return i
         # Not found, append to the end.
         i = len(item_list)
         item_list.extend(items)
-        assert item_list[i: i + len(items)] == items
+        assert all(
+            a is b for a, b in
+            zip(item_list[i: i + len(items)], items)
+        )
         # Update the index.
         for j, item2 in enumerate(items):
             by_index.setdefault(key_func(item2), []).append(i + j)
@@ -1635,13 +1642,13 @@ class BSP:
     def _lmp_write_vertexes(self, vertexes: List[Vec]) -> bytes:
         return b''.join([struct.pack('<fff', pos.x, pos.y, pos.z) for pos in vertexes])
 
-    def _lmp_read_surfedges(self, vertexes: bytes) -> Iterator[Edge]:
+    def _lmp_read_surfedges(self, edge_inds: bytes) -> Iterator[Edge]:
         verts: List[Vec] = self.vertexes
         edges = [
             Edge(verts[a], verts[b])
             for a, b in struct.iter_unpack('<HH', self.lumps[BSP_LUMPS.EDGES].data)
         ]
-        for [ind] in struct.iter_unpack('i', vertexes):
+        for [ind] in struct.iter_unpack('i', edge_inds):
             if ind < 0:  # If negative, the vertexes are reversed order.
                 yield edges[-ind].opposite
             else:
@@ -1652,7 +1659,15 @@ class BSP:
         edge_buf = BytesIO()
         surf_buf = BytesIO()
 
-        edges: List[Edge] = []
+        # The first edge is never actually used, since -0 = 0. Set it to be 0 0 0, adding that if
+        # not present.
+        try:
+            first_vert = self.vertexes[self.vertexes.index(Vec())]
+        except (IndexError, ValueError):
+            first_vert = Vec()
+            self.vertexes.append(first_vert)
+        edges: List[Edge] = [Edge(first_vert, first_vert)]
+
         # We cannot share vertexes or edges, it breaks VRAD!
         add_edge = _find_or_insert(edges)
         add_vert = _find_or_insert(self.vertexes)
