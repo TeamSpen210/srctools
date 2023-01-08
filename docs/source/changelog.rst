@@ -5,6 +5,10 @@ Changelog
 	:local:
 	:backlinks: none
 
+----------
+Dev branch
+----------
+
 -------------
 Version 2.3.8
 -------------
