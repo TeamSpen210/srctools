@@ -57,7 +57,7 @@ class Instance:
         name: str,
         filename: str,
         pos: Vec, orient: Matrix,
-        fixup_type: FixupStyle,
+        fixup_type: FixupStyle = FixupStyle.PREFIX,
         outputs: Iterable[Output] = (),
         fixup: Iterable[FixupValue] = (),
     ) -> None:
