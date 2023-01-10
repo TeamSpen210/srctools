@@ -174,6 +174,8 @@ class Instance:
             value = f'{first}, {second}'
         elif type is ValueTypes.ANGLE_NEG_PITCH or type is ValueTypes.EXT_ANGLE_PITCH:
             raise ValueError(f'"{type.name}" keyvalue type must be fixed up on the instance as a whole!')
+        elif type is ValueTypes.CHOICES:
+            raise ValueError('choices keyvalue type is not meaningful, it should be swapped with another type!')
         # All others = no change required.
         return value
 

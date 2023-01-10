@@ -41,6 +41,10 @@ def test_kv_unaffected(origin: FrozenVec, orient: FrozenMatrix) -> None:
     assert inst.fixup_key(vmf, [], ValueTypes.BOOL, '1') == '1'
     assert inst.fixup_key(vmf, [], ValueTypes.INT, '42') == '42'
     assert inst.fixup_key(vmf, [], ValueTypes.FLOAT, '-163.84') == '-163.84'
+    # Has no value, so should not be changed.
+    assert inst.fixup_key(vmf, [], ValueTypes.VOID, 'test') == 'test'
+    # Still an integer.
+    assert inst.fixup_key(vmf, [], ValueTypes.SPAWNFLAGS, '4097') == '4097'
     assert inst.fixup_key(vmf, [], ValueTypes.COLOR_1, '0.8 1.2 0.5') == '0.8 1.2 0.5'
     assert inst.fixup_key(vmf, [], ValueTypes.COLOR_1, '0.8 1.2 0.5 1.0') == '0.8 1.2 0.5 1.0'
     assert inst.fixup_key(vmf, [], ValueTypes.COLOR_255, '128 192 255') == '128 192 255'
@@ -90,14 +94,14 @@ def test_kv_sides() -> None:
 
     # Invalid ints and missing keys are ignored.
     assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '45 ardvark 6 12') == '12 68'
-    assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '85 86 45 45 12 34 34') == '12 68 92 93'
+    assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '85 86 45 45 12 34 34') == '12 68 68 92 93'
     # Empty string is fine.
     assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '') == ''
     assert inst.fixup_key(vmf, [], ValueTypes.SIDE_LIST, '86') == '93'
 
 
-def test_pitch_errors() -> None:
-    """Pitch keyvalues can't be fixed up individually."""
+def test_kv_errors() -> None:
+    """Pitch keyvalues can't be fixed up individually, and choices KVs are nonsensical."""
     inst = instancing.Instance('test_inst', '', Vec(), Matrix())
     vmf = VMF()
 
@@ -105,3 +109,124 @@ def test_pitch_errors() -> None:
         inst.fixup_key(vmf, [], ValueTypes.ANGLE_NEG_PITCH, '45')
     with pytest.raises(ValueError):
         inst.fixup_key(vmf, [], ValueTypes.EXT_ANGLE_PITCH, '45')
+    with pytest.raises(ValueError):
+        inst.fixup_key(vmf, [], ValueTypes.CHOICES, 'test')
+        
+        
+def test_fixup_names() -> None:
+    """Test name fixup logic."""
+    inst_prefix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.PREFIX)
+    inst_suffix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.SUFFIX)
+    inst_none = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.NONE)
+    assert inst_prefix.fixup_name('branch') == 'test_inst-branch'
+    assert inst_suffix.fixup_name('branch') == 'branch-test_inst'
+    assert inst_none.fixup_name('branch') == 'branch'
+    # For these, classnames do nothing.
+    assert inst_prefix.fixup_name('npc_headcrab') == 'test_inst-npc_headcrab'
+    assert inst_suffix.fixup_name('npc_headcrab') == 'npc_headcrab-test_inst'
+    assert inst_none.fixup_name('npc_headcrab') == 'npc_headcrab'
+    # * doesn't do anything even for suffix - Mapbase for instance supports this.
+    assert inst_prefix.fixup_name('fx_*') == 'test_inst-fx_*'
+    assert inst_suffix.fixup_name('fx_*') == 'fx_*-test_inst'
+    assert inst_none.fixup_name('fx_*') == 'fx_*'
+    # @ and ! names disable fixup.
+    assert inst_prefix.fixup_name('!self') == '!self'
+    assert inst_suffix.fixup_name('!self') == '!self'
+    assert inst_none.fixup_name('!self') == '!self'
+    assert inst_prefix.fixup_name('@autosave') == '@autosave'
+    assert inst_suffix.fixup_name('@autosave') == '@autosave'
+    assert inst_none.fixup_name('@autosave') == '@autosave'
+
+
+@pytest.mark.parametrize('kind', [
+    ValueTypes.TARG_DEST,
+    ValueTypes.TARG_SOURCE,
+    ValueTypes.TARG_NPC_CLASS,
+    ValueTypes.TARG_POINT_CLASS,
+    ValueTypes.TARG_FILTER_NAME,
+])
+def test_generic_name_fixups(kind: ValueTypes) -> None:
+    """Several name types behave identically."""
+    vmf = VMF()
+    inst_prefix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.PREFIX)
+    inst_suffix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.SUFFIX)
+    inst_none = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.NONE)
+    classnames = {
+        'info_node', 'func_detail', 'npc_headcrab',
+    }
+    assert inst_prefix.fixup_key(vmf, classnames, kind, 'branch') == 'test_inst-branch'
+    assert inst_suffix.fixup_key(vmf, classnames, kind, 'branch') == 'branch-test_inst'
+    assert inst_none.fixup_key(vmf, classnames, kind, 'branch') == 'branch'
+    # For these, classnames do nothing.
+    assert inst_prefix.fixup_key(vmf, classnames, kind, 'npc_headcrab') == 'test_inst-npc_headcrab'
+    assert inst_suffix.fixup_key(vmf, classnames, kind, 'npc_headcrab') == 'npc_headcrab-test_inst'
+    assert inst_none.fixup_key(vmf, classnames, kind, 'npc_headcrab') == 'npc_headcrab'
+    # * doesn't do anything even for suffix - Mapbase for instance supports this.
+    assert inst_prefix.fixup_key(vmf, classnames, kind, 'fx_*') == 'test_inst-fx_*'
+    assert inst_suffix.fixup_key(vmf, classnames, kind, 'fx_*') == 'fx_*-test_inst'
+    assert inst_none.fixup_key(vmf, classnames, kind, 'fx_*') == 'fx_*'
+    # @ and ! names disable fixup.
+    assert inst_prefix.fixup_key(vmf, classnames, kind, '!self') == '!self'
+    assert inst_suffix.fixup_key(vmf, classnames, kind, '!self') == '!self'
+    assert inst_none.fixup_key(vmf, classnames, kind, '!self') == '!self'
+    assert inst_prefix.fixup_key(vmf, classnames, kind, '@autosave') == '@autosave'
+    assert inst_suffix.fixup_key(vmf, classnames, kind, '@autosave') == '@autosave'
+    assert inst_none.fixup_key(vmf, classnames, kind, '@autosave') == '@autosave'
+
+
+def test_name_or_class_fixups() -> None:
+    """Test the targetname_or_class name type."""
+    vmf = VMF()
+    inst_prefix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.PREFIX)
+    inst_suffix = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.SUFFIX)
+    inst_none = instancing.Instance('test_inst', '', Vec(), Matrix(), fixup_type=instancing.FixupStyle.NONE)
+    classnames = {
+        'info_node', 'func_detail', 'npc_headcrab',
+    }
+    # Same as above.
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'test_inst-branch'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'branch-test_inst'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'branch'
+    # * doesn't do anything even for suffix - Mapbase for instance supports this.
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'fx_*') == 'test_inst-fx_*'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'fx_*') == 'fx_*-test_inst'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'fx_*') == 'fx_*'
+    # @ and ! names disable fixup.
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '!self') == '!self'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '!self') == '!self'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '!self') == '!self'
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '@autosave') == '@autosave'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '@autosave') == '@autosave'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '@autosave') == '@autosave'
+
+    # For classnames, if it matches no fixup occurs.
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_Headcrab') == 'npc_Headcrab'
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_hEAdcrab') == 'npc_hEAdcrab'
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS,'npc_headcRAb') == 'npc_headcRAb'
+
+
+@pytest.mark.parametrize(
+    'kind',
+    [ValueTypes.TARG_NODE_SOURCE, ValueTypes.TARG_NODE_DEST],
+    ids=['source', 'dest'],
+)
+def test_node_ids(kind: ValueTypes) -> None:
+    """Test node ID keyvalues, which pick new IDs."""
+    inst = instancing.Instance('test_inst', '', Vec(), Matrix())
+    vmf = VMF()
+    # Mark these IDs as in use.
+    vmf.node_id.get_id(1)
+    vmf.node_id.get_id(4)
+    cast(dict, inst.node_ids).update({
+        3: vmf.node_id.get_id(3),
+        72: vmf.node_id.get_id(128),
+        73: vmf.node_id.get_id(129),
+    })
+    assert inst.fixup_key(vmf, [], kind, '38') == '38'  # Free ID, keep it.
+    assert inst.fixup_key(vmf, [], kind, '3') == '3'  # Ref inside this instance.
+    assert inst.fixup_key(vmf, [], kind, '1') == '2'  # 1 in use, pick next.
+    assert inst.fixup_key(vmf, [], kind, '4') == '5'  # Pick another.
+    assert inst.fixup_key(vmf, [], kind, '1') == '2'  # This is now the ref.
+    # Even though this is claimed by our instance now, it wasn't in the instance vmf, so it needs a
+    # new ID.
+    assert inst.fixup_key(vmf, [], kind, '2') == '6'
