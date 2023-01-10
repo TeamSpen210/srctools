@@ -172,6 +172,8 @@ class Instance:
             first = Vec.from_str(first_str) @ self.orient + self.pos
             second = Vec.from_str(second_str) @ self.orient + self.pos
             value = f'{first}, {second}'
+        elif type is ValueTypes.ANGLE_NEG_PITCH or type is ValueTypes.EXT_ANGLE_PITCH:
+            raise ValueError(f'"{type.name}" keyvalue type must be fixed up on the instance as a whole!')
         # All others = no change required.
         return value
 
