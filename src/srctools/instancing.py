@@ -164,7 +164,7 @@ class Instance:
             try:
                 value = str(self.node_ids[old_id])
             except KeyError:
-                self.node_ids[old_id] = new_id = vmf.node_id.get_id()
+                self.node_ids[old_id] = new_id = vmf.node_id.get_id(old_id)
                 value = str(new_id)
         elif type is ValueTypes.VEC_AXIS:
             # Two positions seperated by commas.
