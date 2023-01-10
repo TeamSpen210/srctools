@@ -1663,7 +1663,7 @@ cdef class VecBase:
         )
 
 
-    def join(self, delim: str=' ') -> str:
+    def join(self, delim: str=', ') -> str:
         """Return a string with all numbers joined by the passed delimiter.
 
         This strips off the .0 if no decimal portion exists.

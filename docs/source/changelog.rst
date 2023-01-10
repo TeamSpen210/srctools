@@ -9,6 +9,9 @@ Changelog
 Dev branch
 ----------
 
+* Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
+  :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
+
 -------------
 Version 2.3.8
 -------------

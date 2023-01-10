@@ -285,6 +285,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     obj = cls(0.0, 0.0, 0.0)
     assert str(obj) == '0 0 0'
     assert repr(obj) == f'{clsname}(0, 0, 0)'
+    assert obj.join() == '0, 0, 0'
     assert obj.join(':') == '0:0:0'
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '0.00% 0.00% 0.00%'
@@ -293,6 +294,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     obj = cls(3.14, 0.0, 0.0)
     assert str(obj) == '3.14 0 0'
     assert repr(obj) == f'{clsname}(3.14, 0, 0)'
+    assert obj.join() == '3.14, 0, 0'
     assert obj.join(':') == '3.14:0:0'
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '314.00% 0.00% 0.00%'
@@ -300,6 +302,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     obj = cls(0.0, 3.14, 0.0)
     assert str(obj) == '0 3.14 0'
     assert repr(obj) == f'{clsname}(0, 3.14, 0)'
+    assert obj.join() == '0, 3.14, 0'
     assert obj.join(':') == '0:3.14:0'
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '0.00% 314.00% 0.00%'
@@ -307,6 +310,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     obj = cls(0.0, 0.0, 3.14)
     assert str(obj) == '0 0 3.14'
     assert repr(obj) == f'{clsname}(0, 0, 3.14)'
+    assert obj.join() == '0, 0, 3.14'
     assert obj.join(':') == '0:0:3.14'
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '0.00% 0.00% 314.00%'
@@ -317,6 +321,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
         obj = cls(-0.00000012, 37.9999999, 162.99999999)
         assert str(obj) == '360 38 163'
         assert repr(obj) == f'{clsname}(360, 38, 163)'
+        assert obj.join() == '360, 38, 163'
         assert obj.join(':') == '360:38:163'
         assert format(obj) == str(obj)
         assert format(obj, '.2%') == '36000.00% 3800.00% 16300.00%'
@@ -325,6 +330,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
         obj = cls(-0.00000012, 37.9999999, 162.99999999)
         assert str(obj) == '-0 38 163'
         assert repr(obj) == f'{clsname}(-0, 38, 163)'
+        assert obj.join() == '-0, 38, 163'
         assert obj.join(':') == '-0:38:163'
         assert format(obj) == str(obj)
         assert format(obj, '.2%') == '-0.00% 3800.00% 16300.00%'
@@ -334,6 +340,7 @@ def test_vec_ang_stringification(py_c_vec, clsname: str) -> None:
     obj = cls(0.0000000012, 36.000000001, 68.000000012)
     assert str(obj) == '0 36 68'
     assert repr(obj) == f'{clsname}(0, 36, 68)'
+    assert obj.join() == '0, 36, 68'
     assert obj.join(':') == '0:36:68'
     assert format(obj) == str(obj)
     assert format(obj, '.2%') == '0.00% 3600.00% 6800.00%'
