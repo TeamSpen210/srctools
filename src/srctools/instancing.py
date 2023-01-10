@@ -462,7 +462,7 @@ def collapse_one(
             elif folded == 'yaw':
                 new_ent['yaw'] = format_float(angles.yaw)
                 continue
-            elif folded in ('classname', 'hammerid', 'spawnflags', 'nodeid'):
+            elif folded in {'classname', 'hammerid', 'spawnflags'}:
                 continue
 
             try:
