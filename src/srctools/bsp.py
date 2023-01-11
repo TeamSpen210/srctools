@@ -1228,6 +1228,7 @@ class BSP:
                     self.version = VERSIONS(bsp_version)
                 except ValueError:
                     self.version = bsp_version
+                    LOGGER.warning(f'Unknown BSP Version \"{bsp_version}\"!')
             else:
                 if bsp_version != self.version:
                     raise ValueError(
