@@ -223,42 +223,43 @@ class BSP_LUMPS(Enum):
 
 # Container dictionary for lump layouts
 class LumpDataLayout(TypedDict):
-    FACE: str
-    FACEID: str
-    EDGE: str
-    PRIMITIVE: str
-    PRIMINDEX: str
-    NODE: str
-    LEAF: str
-    LEAFFACE: str
-    LEAFBRUSH: str
+    FACE: struct.Struct
+    FACEID: struct.Struct
+    EDGE: struct.Struct
+    PRIMITIVE: struct.Struct
+    PRIMINDEX: struct.Struct
+    NODE: struct.Struct
+    LEAF: struct.Struct
+    LEAFFACE: struct.Struct
+    LEAFBRUSH: struct.Struct
     LEAF_AREA_OFFSET: int
-    LEAFWATERDATA: str
-    BRUSHSIDE: str
-    STATICPROPLEAF: str
+    LEAFWATERDATA: struct.Struct
+    BRUSHSIDE: struct.Struct
+    STATICPROPLEAF: struct.Struct
 
 # Version specific lump data layout description
 class LUMP_VERSION_LAYOUT:
     
     STANDARD: LumpDataLayout = {
-        "FACE":             '<H??i4h4sif5iHHI',
-        "FACEID":           '<H',
-        "EDGE":             '<HH',
-        "PRIMITIVE":        '<HHHHH',
-        "PRIMINDEX":        '<H',
-        "NODE":             '<iii6hHHh2x',
-        "LEAF":             '<ihh6h4Hh2x', # Version 1
-        "LEAFFACE":         '<H',
-        "LEAFBRUSH":        '<H',
+        "FACE":             struct.Struct('<H??i4h4sif5iHHI'),
+        "FACEID":           struct.Struct('<H'),
+        "EDGE":             struct.Struct('<HH'),
+        "PRIMITIVE":        struct.Struct('<HHHHH'),
+        "PRIMINDEX":        struct.Struct('<H'),
+        "NODE":             struct.Struct('<iii6hHHh2x'),
+        "LEAF":             struct.Struct('<ihh6h4Hh2x'), # Version 1
+        "LEAFFACE":         struct.Struct('<H'),
+        "LEAFBRUSH":        struct.Struct('<H'),
         "LEAF_AREA_OFFSET": 7,
-        "LEAFWATERDATA":    '<ffH2x',
-        "BRUSHSIDE":        '<HhhH',
-        "STATICPROPLEAF":   '<H',
+        "LEAFWATERDATA":    struct.Struct('<ffH2x'),
+        "BRUSHSIDE":        struct.Struct('<HhhH'),
+        "STATICPROPLEAF":   struct.Struct('<H'),
     }
+    
     
     V19: LumpDataLayout = {
         **STANDARD,
-        "LEAF":             '<ihh6h4Hh24s2x', # Version 0
+        "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
     }
         
     INFRA: LumpDataLayout = {
@@ -268,33 +269,33 @@ class LUMP_VERSION_LAYOUT:
         # int first_ind, ind_count;
         # short vert_ind, vert_count;
         # Then the type is promoted to int for structure alignment.
-        "PRIMITIVE": '<IIIHH',
+        "PRIMITIVE": struct.Struct('<IIIHH'),
     }
         
     VITAMIN: LumpDataLayout = {
         **STANDARD,
-        "LEAF": '<ihh6I4HhBx',
-        "FACE": '<5i4iB3x',
-        "BRUSHSIDE": '<IIhBB',
-        "NODE": '<iii6iHHh2x',
+        "LEAF": struct.Struct('<ihh6I4HhBx'),
+        "FACE": struct.Struct('<5i4iB3x'),
+        "BRUSHSIDE": struct.Struct('<IIhBB'),
+        "NODE": struct.Struct('<iii6iHHh2x'),
     }
     
     # https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
     CHAOS: LumpDataLayout = {
         **STANDARD,
-        "FACE":             '<I??xx5i4sif5i3I',
-        "FACEID":           '<I',
-        "EDGE":             '<II',
-        "PRIMITIVE":        '<IIIII',
-        "PRIMINDEX":        '<I',
-        "NODE":             '<iii6fIIhxx',
-        "LEAF":             '<iii6f4Ii', # Version 2
-        "LEAFFACE":         '<I',
-        "LEAFBRUSH":        '<I',
+        "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
+        "FACEID":           struct.Struct('<I'),
+        "EDGE":             struct.Struct('<II'),
+        "PRIMITIVE":        struct.Struct('<IIIII'),
+        "PRIMINDEX":        struct.Struct('<I'),
+        "NODE":             struct.Struct('<iii6fIIhxx'),
+        "LEAF":             struct.Struct('<iii6f4Ii'), # Version 2
+        "LEAFFACE":         struct.Struct('<I'),
+        "LEAFBRUSH":        struct.Struct('<I'),
         "LEAF_AREA_OFFSET": 17,
-        "LEAFWATERDATA":    '<ffI',
-        "BRUSHSIDE":        '<IiiHxx',
-        "STATICPROPLEAF":   '<I',
+        "LEAFWATERDATA":    struct.Struct('<ffI'),
+        "BRUSHSIDE":        struct.Struct('<IiiHxx'),
+        "STATICPROPLEAF":   struct.Struct('<I'),
     }
 
 
@@ -1741,7 +1742,7 @@ class BSP:
         verts: List[Vec] = self.vertexes
         edges = [
             Edge(verts[a], verts[b])
-            for a, b in struct.iter_unpack(self.lump_layout['EDGE'], self.lumps[BSP_LUMPS.EDGES].data)
+            for a, b in self.lump_layout['EDGE'].iter_unpack(self.lumps[BSP_LUMPS.EDGES].data)
         ]
         for [ind] in struct.iter_unpack('i', edge_inds):
             if ind < 0:  # If negative, the vertexes are reversed order.
@@ -1779,7 +1780,7 @@ class BSP:
 
         for edge in edges:
             assert not isinstance(edge, RevEdge), edge
-            edge_buf.write(struct.pack(self.lump_layout['EDGE'], add_vert(edge.a), add_vert(edge.b)))
+            edge_buf.write(self.lump_layout['EDGE'].pack(add_vert(edge.a), add_vert(edge.b)))
 
         self.lumps[BSP_LUMPS.EDGES].data = edge_buf.getvalue()
         return surf_buf.getvalue()
@@ -1798,7 +1799,7 @@ class BSP:
             prim_type,
             first_ind, ind_count,
             first_vert, vert_count,
-        ) in struct.iter_unpack(fmt, data):
+        ) in fmt.iter_unpack(data):
             yield Primitive(
                 prim_type,
                 indices[first_ind: first_ind + ind_count],
@@ -1846,10 +1847,9 @@ class BSP:
 
         hammer_id: Optional[int]
 
-        for i, face_data in enumerate(struct.iter_unpack(
-            self.lump_layout['FACE'],
-            data,
-        )):
+        for i, face_data in enumerate(
+            self.lump_layout['FACE'].iter_unpack(data),
+        ):
             if is_vitamin:
                 (
                     plane_num,
@@ -1980,8 +1980,7 @@ class BSP:
                     prim_count |= 0x8000
 
                 # noinspection PyProtectedMember
-                face_buf.write(struct.pack(
-                    self.lump_layout['FACE'],
+                face_buf.write(self.lump_layout['FACE'].pack(
                     add_plane(face.plane),
                     face.same_dir_as_plane,
                     face.on_node,
@@ -2057,7 +2056,7 @@ class BSP:
             sides = [
                 BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bool(bevel & 1), bevel & ~1)
                 for (plane_num, texinfo, dispinfo, bevel)
-                in struct.iter_unpack(self.lump_layout['BRUSHSIDE'], self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+                in self.lump_layout['BRUSHSIDE'].iter_unpack(self.lumps[BSP_LUMPS.BRUSHSIDES].data)
             ]
         for first_side, side_count, contents in struct.iter_unpack('<iii', data):
             yield Brush(BrushContents(contents), sides[first_side:first_side+side_count])
@@ -2077,7 +2076,7 @@ class BSP:
                 brush.contents.value,
             ))
 
-        side_struct = struct.Struct(self.lump_layout['BRUSHSIDE'])
+        side_struct = self.lump_layout['BRUSHSIDE']
         if self.is_vitamin:
             for side in sides:
                 sides_buf.write(side_struct.pack(
@@ -2101,14 +2100,14 @@ class BSP:
     def _lmp_read_water_leaf_info(self, data: bytes) -> Iterator[LeafWaterInfo]:
         """Parse data associated with visleafs containing water."""
         texinfo = self.texinfo
-        for surf_z, min_z, texinfo_ind in struct.iter_unpack(self.lump_layout['LEAFWATERDATA'], data):
+        for surf_z, min_z, texinfo_ind in self.lump_layout['LEAFWATERDATA'].iter_unpack(data):
             yield LeafWaterInfo(surf_z, min_z, texinfo[texinfo_ind])
 
     def _lmp_write_water_leaf_info(self, data: List[LeafWaterInfo]) -> Iterator[bytes]:
         """Write data associated with visleafs containing water."""
         add_texinfo = _find_or_insert(self.texinfo)
         for info in self.water_leaf_info:
-            yield struct.pack(self.lump_layout['LEAFWATERDATA'], info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
+            yield self.lump_layout['LEAFWATERDATA'].pack(info.surface_z, info.min_z, add_texinfo(info.surface_texinfo))
 
     def _lmp_read_visleafs(self, data: bytes) -> Iterator[VisLeaf]:
         """Parse the leafs of the visleaf/bsp tree."""
@@ -2129,7 +2128,7 @@ class BSP:
         # Some extra ambient light data.
         has_ambient = not is_vitamin and self.version <= 19
         
-        for leaf_data, water_dist in zip(struct.iter_unpack(leaf_fmt, data), dist_to_water):
+        for leaf_data, water_dist in zip(leaf_fmt.iter_unpack(data), dist_to_water):
             if is_vitamin:
                 # VitaminSource moves the flags into its own block.
                 (
@@ -2186,10 +2185,7 @@ class BSP:
             min_x, min_y, min_z,
             max_x, max_y, max_z,
             first_face, face_count, area_ind,
-        ) in struct.iter_unpack(
-            self.lump_layout['NODE'],
-            data,
-        ):
+        ) in self.lump_layout['NODE'].iter_unpack(data):
             nodes.append((VisTree(
                 self.planes[plane_ind],
                 Vec(min_x, min_y, min_z),
@@ -2229,8 +2225,7 @@ class BSP:
             else:
                 neg_ind = add_node(node.child_neg)
 
-            buf.write(struct.pack(
-                self.lump_layout['NODE'],
+            buf.write(self.lump_layout['NODE'].pack(
                 add_plane(node.plane), neg_ind, pos_ind,
                 int(node.mins.x), int(node.mins.y), int(node.mins.z),
                 int(node.maxes.x), int(node.maxes.y), int(node.maxes.z),
@@ -2286,10 +2281,7 @@ class BSP:
                 if has_ambient:
                     leafdata = leafdata + (leaf._ambient,)
                     
-                buf.write(struct.pack(
-                    self.lump_layout['LEAF'],
-                    *leafdata
-                ))
+                buf.write(self.lump_layout['LEAF'].pack(*leafdata))
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array(self.lump_layout['LEAFFACE'], leaf_faces)
         self.lumps[BSP_LUMPS.LEAFBRUSHES].data = write_array(self.lump_layout['LEAFBRUSH'], leaf_brushes)
@@ -2839,7 +2831,7 @@ class BSP:
         [visleaf_count] = struct_read('<i', static_lump)
         visleaf_list = list(map(
             self.visleafs.__getitem__,
-            struct_read(self.lump_layout['STATICPROPLEAF'][1] * visleaf_count, static_lump),
+            struct_read(self.lump_layout['STATICPROPLEAF'].format[1] * visleaf_count, static_lump),
         ))
 
         [prop_count] = struct_read('<i', static_lump)
