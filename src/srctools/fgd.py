@@ -45,13 +45,14 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-# Cached result of FGD.engine_dbase().
-_ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
+
+# Cached engine DB parsing functions.
+_ENGINE_DB: Optional['_EngineDBProto'] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -282,21 +283,18 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> 'FGD':
+def _load_engine_db() -> '_EngineDBProto':
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
-    global _ENGINE_FGD
-    if _ENGINE_FGD is None:
-        from lzma import LZMAFile
-
+    global _ENGINE_DB
+    if _ENGINE_DB is None:
         from ._engine_db import unserialise
         comp: IO[bytes]
         # On 3.8, importlib_resources doesn't have the right stubs.
-        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as comp:
-            with LZMAFile(comp) as f:
-                _ENGINE_FGD = unserialise(f)
-    return _ENGINE_FGD
+        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
+            _ENGINE_DB = unserialise(f)
+    return _ENGINE_DB
 
 
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
@@ -1363,13 +1361,13 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        return deepcopy(_load_engine_db()[classname])  # Or KeyError if not found.
+        return deepcopy(_load_engine_db().get_ent(classname))  # Or KeyError if not found.
 
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         # This is immutable, so we don't need to copy.
-        return _load_engine_db().entities.keys()
+        return _load_engine_db().get_classnames()
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1750,7 +1748,7 @@ class FGD:
         """Yield all entities in sorted order.
 
         This ensures only all bases for an entity are yielded before the entity.
-        Otherwise entities are ordered in alphabetical order.
+        Otherwise, entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
         todo: Set[EntityDef] = set(self)
@@ -1792,7 +1790,7 @@ class FGD:
 
             todo = deferred.difference(done)
 
-    def collapse_bases(self) -> None:
+    def collapse_bases(self, ignore_aliases: bool = True) -> None:
         """Collapse all bases into the entities that use them.
 
         This operates in-place, and clears all the base attributes as a result.
@@ -2075,7 +2073,7 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        return deepcopy(_load_engine_db())
+        return _load_engine_db().get_fgd()
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
@@ -2140,6 +2138,22 @@ def _init_helper_impl() -> None:
             raise ValueError(
                 f'Missing helper implementation for {helper}! : {HELPER_IMPL}'
             )
+
+
+class _EngineDBProto:
+    """Unserialised database, which will be parsed progressively as required."""
+    def get_classnames(self) -> AbstractSet[str]:
+        """Get the classnames in the database."""
+        raise NotImplementedError
+
+    def get_ent(self, classname: str) -> EntityDef:
+        """Fetch the specified entity."""
+        raise NotImplementedError
+
+    def get_fgd(self) -> FGD:
+        """Parse all the blocks and make an FGD."""
+        raise NotImplementedError
+
 
 # Each helper type -> the class implementing them.
 HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
