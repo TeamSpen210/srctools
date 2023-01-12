@@ -476,6 +476,85 @@ def compute_ent_strings(ents: List[EntityDef]) -> Tuple[Mapping[EntityDef, Abstr
         ent_serialise(ent,dummy_file, record_strings)
         ent_to_size[ent] = dummy_file.tell()
     return ent_to_string, ent_to_size
+
+
+def build_blocks(
+    all_ents: List[EntityDef],
+    ent_to_string: Mapping[EntityDef, AbstractSet[str]],
+    ent_to_size: Mapping[EntityDef, int],
+    overlaps: Iterable[Tuple[EntityDef, EntityDef, int]],
+) -> List[Tuple[List[EntityDef], set[str]]]:
+    """Group entities into the blocks to use."""
+    class BuiltBlock:
+        """Used when serialising, the data."""
+        def __init__(self) -> None:
+            self.ents: List[EntityDef] = []
+            self.stringdb: Set[str] = set()
+            self.bytesize: int = 0
+
+        def add_ent(self, ent: EntityDef) -> None:
+            """Add an ent to the block."""
+            self.ents.append(ent)
+            self.stringdb |= ent_to_string[ent]
+            self.bytesize += ent_to_size[ent]
+            ent_to_block[ent] = self
+            todo.discard(ent)
+
+    ent_to_block: dict[EntityDef, BuiltBlock] = {}
+    overflow_block = BuiltBlock()
+    all_blocks: List[BuiltBlock] = [overflow_block]
+    todo = set(all_ents)
+
+    for ent1, ent2, overlap_size in overlaps:
+        ent1_block = ent_to_block.get(ent1)
+        ent2_block = ent_to_block.get(ent2)
+        if ent1_block is not None and ent2_block is not None:
+            # Already allocated both, see if merging would be good.
+            if ent1_block is not ent2_block and ent1_block.bytesize + ent2_block.bytesize <= MAX_BLOCK_SIZE:
+                small, large = ent1_block, ent2_block
+                if len(small.ents) > len(large.ents):
+                    large, small = small, large
+                all_blocks.remove(small)
+                for ent in small.ents:
+                    large.add_ent(ent)
+        elif ent1_block is not None:
+            if ent1_block.bytesize + ent_to_size[ent2] < MAX_BLOCK_SIZE:
+                ent1_block.add_ent(ent2)
+            else:
+                continue  # Hope it's added by another pair.
+        elif ent2_block is not None:
+            if ent2_block.bytesize + ent_to_size[ent1] < MAX_BLOCK_SIZE:
+                ent2_block.add_ent(ent1)
+            else:
+                continue  # Hope it's added by another pair.
+        else:
+            # Neither in a block, put both in a new block together.
+            all_blocks.append(block := BuiltBlock())
+            block.add_ent(ent1)
+            block.add_ent(ent2)
+    if not overflow_block.ents:
+        all_blocks.remove(overflow_block)
+
+    # Now, add every remaining ent to overflow blocks.
+    print(f'{len(todo)} ents in overflow blocks.')
+    for ent in todo:
+        overflow_block.add_ent(ent)
+        if overflow_block.bytesize >= MAX_BLOCK_SIZE:
+            all_blocks.append(overflow_block := BuiltBlock())
+
+    del ent_to_block, todo  # Not useful any more.
+    all_blocks.sort(key=lambda block: len(block.ents))
+
+    for block in all_blocks:
+        efficency = len(block.stringdb) / sum(map(len, map(ent_to_string.__getitem__, block.ents)))
+        print(f'{block.bytesize} bytes = {len(block.ents)} = {1/efficency:.02%}')
+    print(len(all_blocks), 'blocks')
+    return [
+        (block.ents, block.stringdb)
+        for block in all_blocks
+    ]
+
+
 def serialise(fgd: FGD, file: IO[bytes]) -> None:
     """Write the FGD into a compacted binary format.
 
@@ -500,6 +579,15 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
         (ent1, ent2, len(ent_to_string[ent1] & ent_to_string[ent2]))
         for ent1, ent2 in itertools.combinations(all_ents, 2)
     ]
+
+    print('Reordering...')
+    overlaps.sort(key=operator.itemgetter(2), reverse=True)
+
+    print('Building blocks...')
+    blocks = build_blocks(all_ents, ent_to_string, ent_to_size, overlaps)
+
+    # Finally, we can serialise the file.
+
     # Start of file - format version, FGD min/max, number of entities.
     file.write(b'FGD' + _fmt_header.pack(
         BIN_FORMAT_VERSION,
