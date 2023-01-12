@@ -260,7 +260,17 @@ class LUMP_VERSION_LAYOUT:
         **STANDARD,
         "LEAF":             '<ihh6h4Hh24s2x', # Version 0
     }
-    
+        
+    INFRA: LumpDataLayout = {
+        **STANDARD,
+        # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
+        # char type;
+        # int first_ind, ind_count;
+        # short vert_ind, vert_count;
+        # Then the type is promoted to int for structure alignment.
+        "PRIMITIVE": '<IIIHH',
+    }
+        
     VITAMIN: LumpDataLayout = {
         **STANDARD,
         "LEAF": '<ihh6I4HhBx',
@@ -1316,6 +1326,8 @@ class BSP:
             elif self.version is VERSIONS.VITAMINSOURCE:
                 # Change the expected structure for lumps to fit vitamin's rad new format
                 self.lump_layout = LUMP_VERSION_LAYOUT.VITAMIN
+            elif self.version is VERSIONS.INFRA:
+                self.lump_layout = LUMP_VERSION_LAYOUT.INFRA
             elif self.version <= 19:
                 self.lump_layout = LUMP_VERSION_LAYOUT.V19
         
@@ -1780,12 +1792,8 @@ class BSP:
 
         verts = list(map(Vec, struct.iter_unpack('<fff', self.lumps[BSP_LUMPS.PRIMVERTS].data)))
         indices = read_array(self.lump_layout['PRIMINDEX'], self.lumps[BSP_LUMPS.PRIMINDICES].data)
-        # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
-        # char type;
-        # int first_ind, ind_count;
-        # short vert_ind, vert_count;
-        # Then the type is promoted to int for structure alignment.
-        fmt = '<IIIHH' if self.version is VERSIONS.INFRA else self.lump_layout['PRIMITIVE']
+
+        fmt = self.lump_layout['PRIMITIVE']
         for (
             prim_type,
             first_ind, ind_count,
@@ -1805,7 +1813,7 @@ class BSP:
         verts: List[bytes] = []
         indices: List[int] = []
 
-        fmt = struct.Struct('<IIIHH' if self.version is VERSIONS.INFRA else self.lump_layout['PRIMITIVE'])
+        fmt = self.lump_layout['PRIMITIVE']
         for prim in prims:
             vert_loc = len(verts)
             index_loc = len(indices)
