@@ -3,15 +3,21 @@
 This lists keyvalue/io types and names available for every entity classname.
 The dump does not contain help descriptions to keep the data small.
 """
+import itertools
+import operator
 from typing import (
-    IO, TYPE_CHECKING, Callable, Collection, Dict, FrozenSet, List, Optional, Tuple,
+    AbstractSet, IO, Iterable, Mapping, Set, TYPE_CHECKING, Callable, Collection, Dict, FrozenSet,
+    List,
+    Optional,
+    Tuple,
 )
-from typing_extensions import Final
+from typing_extensions import Final, TypeAlias
 from enum import IntFlag
 from struct import Struct
 import io
 import math
 
+from .binformat import DeferredWrites
 from .const import FileType
 from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
@@ -29,8 +35,13 @@ _fmt_ent_header = Struct('<BBBBBBB')
 
 
 # Version number for the format.
-BIN_FORMAT_VERSION: Final = 6
+BIN_FORMAT_VERSION: Final = 7
 TAG_EMPTY: Final[FrozenSet[str]] = frozenset()  # This is a singleton.
+# Soft limit on the number of bytes for each block, needs tuning.
+MAX_BLOCK_SIZE: Final = 2048
+# When writing arrays of strings, it's much more efficient to read the whole thing, decode then
+# split by a character rather than read sizes individually.
+STRING_SEP: Final = '\x1F'  # UNIT SEPARATOR
 
 
 class EntFlags(IntFlag):
@@ -163,12 +174,14 @@ if not TYPE_CHECKING:
         _cy_make_lookup = make_lookup
 
 
+BinStrSerialise: TypeAlias = Callable[[str], bytes]
+
+
 class BinStrDict:
     """Manages a "dictionary" for compressing repeated strings in the binary format.
 
     Each unique string is assigned a 2-byte index into the list.
     """
-    SEP = '\x1F'  # UNIT SEPARATOR
 
     def __init__(self) -> None:
         self._dict: Dict[str, int] = {}
@@ -195,11 +208,11 @@ class BinStrDict:
         """Convert this to a stream of bytes."""
         inv_list = [''] * len(self._dict)
         for txt, ind in self._dict.items():
-            assert self.SEP not in txt, repr(txt)
+            assert STRING_SEP not in txt, repr(txt)
             inv_list[ind] = txt
 
         # Write it as one massive chunk.
-        data = self.SEP.join(inv_list).encode('utf8')
+        data = STRING_SEP.join(inv_list).encode('utf8')
         print(f'Dict count: {len(self._dict):,} = {len(self._dict) / (1 << 16):%}')
         print(f'Dict size: {len(data):,} bytes = {len(data) / (1 << 32):%}')
         file.write(_fmt_32bit.pack(len(data)))
@@ -228,7 +241,7 @@ class BinStrDict:
     @staticmethod
     def write_tags(
         file: IO[bytes],
-        dic: 'BinStrDict',
+        dic: 'BinStrSerialise',
         tags: Collection[str],
     ) -> None:
         """Write tags a file using the dictionary."""
@@ -237,7 +250,7 @@ class BinStrDict:
             file.write(dic(tag))
 
 
-def kv_serialise(self: KVDef, file: IO[bytes], str_dict: BinStrDict) -> None:
+def kv_serialise(self: KVDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write keyvalues to the binary file."""
     file.write(str_dict(self.name))
     file.write(str_dict(self.disp_name))
@@ -314,7 +327,7 @@ def kv_unserialise(
     return kv
 
 
-def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrDict) -> None:
+def iodef_serialise(iodef: IODef, file: IO[bytes], dic: BinStrSerialise) -> None:
     """Write an IO def the binary file."""
     file.write(dic(iodef.name))
     file.write(_fmt_8bit.pack(VALUE_TYPE_INDEX[iodef.type]))
@@ -334,7 +347,7 @@ def iodef_unserialise(
     return iodef
 
 
-def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> None:
+def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrSerialise) -> None:
     """Write an entity to the binary file."""
     flags = ENTITY_TYPE_2_FLAG[self.type]
     if self.is_alias:
@@ -386,7 +399,7 @@ def ent_serialise(self: EntityDef, file: IO[bytes], str_dict: BinStrDict) -> Non
     for res in self.resources:
         if res.tags:  # Tags are fairly rare.
             file.write(_fmt_8bit.pack(FILE_TYPE_INDEX[res.type] | 128))
-            str_dict.write_tags(file, str_dict, res.tags)
+            BinStrDict.write_tags(file, str_dict, res.tags)
         else:
             file.write(_fmt_8bit.pack(FILE_TYPE_INDEX[res.type]))
         file.write(str_dict(res.filename))
@@ -440,15 +453,53 @@ def ent_unserialise(
     return ent
 
 
+def compute_ent_strings(ents: List[EntityDef]) -> Tuple[Mapping[EntityDef, AbstractSet[str]], Mapping[EntityDef, int]]:
+    """Compute the strings each entity needs for unserialisation.
+
+    This is done by serialising to a dummy file, noting the strings written.
+    """
+    dummy_file = io.BytesIO()
+    ent_strings: set[str]
+    ent_to_string: dict[EntityDef, set[str]] = {}
+    ent_to_size: dict[EntityDef, int] = {}
+
+    def record_strings(string: str) -> bytes:
+        """Store the strings written for this entity."""
+        ent_strings.add(string)
+        return b'\x00\x00'
+
+    for ent in ents:
+        # We don't care about the contents, so just let it overwrite itself to save reallocating
+        # a new one each time.
+        dummy_file.seek(0)
+        ent_to_string[ent] = ent_strings = set()
+        ent_serialise(ent,dummy_file, record_strings)
+        ent_to_size[ent] = dummy_file.tell()
+    return ent_to_string, ent_to_size
 def serialise(fgd: FGD, file: IO[bytes]) -> None:
-    """Write the FGD into a compacted binary format."""
-    for ent in list(fgd):
-        # noinspection PyProtectedMember
-        fgd._fix_missing_bases(ent)
+    """Write the FGD into a compacted binary format.
 
-    # The start of a file is a list of all used strings.
-    dictionary = BinStrDict()
+    This is expected to be in engine format - _CBaseEntity_ is present, with all others based on it,
+    and no other base entities.
+    """
+    CBaseEntity = fgd.entities.pop('_cbaseentity_')
+    all_ents: List[EntityDef] = list(fgd)
 
+    for ent in all_ents:
+        try:
+            ent.bases.remove(CBaseEntity)
+        except IndexError:
+            pass
+
+    print('Computing string sizes...')
+    ent_to_string, ent_to_size = compute_ent_strings(all_ents)
+
+    # For every pair of entities (!), compute the number of overlapping ents.
+    print('Computing overlaps...')
+    overlaps = [
+        (ent1, ent2, len(ent_to_string[ent1] & ent_to_string[ent2]))
+        for ent1, ent2 in itertools.combinations(all_ents, 2)
+    ]
     # Start of file - format version, FGD min/max, number of entities.
     file.write(b'FGD' + _fmt_header.pack(
         BIN_FORMAT_VERSION,
