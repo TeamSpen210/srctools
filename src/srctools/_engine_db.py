@@ -304,7 +304,7 @@ class EngineDB(_EngineDBProto):
                     self._parse_block(i)
             self.fgd = FGD()
             for clsname, ent in self.ent_map.items():
-                assert isinstance(ent, EntityDef)
+                assert isinstance(ent, EntityDef), (clsname, ent)
                 self.fgd.entities[clsname] = ent
             self.fgd.apply_bases()
 
@@ -704,7 +704,7 @@ def unserialise(file: IO[bytes]) -> _EngineDBProto:
         [cls_size] = _fmt_16bit.unpack(file.read(2))
         classnames = lzma.decompress(file.read(cls_size)).decode('utf8').split(STRING_SEP)
         block_classnames.append(classnames)
-        ent_map.update(dict.fromkeys(classnames, block_id))
+        ent_map.update(dict.fromkeys(map(str.casefold, classnames), block_id))
         off, size = _fmt_block_pos.unpack(file.read(_fmt_block_pos.size))
         positions.append((classnames, off, size))
 
