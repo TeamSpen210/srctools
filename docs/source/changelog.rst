@@ -11,6 +11,7 @@ Dev branch
 
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
+* Added support for the [Chaos](https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/) BSP format (via [@ozxybox](https://github.com/ozxybox).
 
 -------------
 Version 2.3.8

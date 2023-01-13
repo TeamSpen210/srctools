@@ -258,6 +258,7 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
 
 
 LUMP_LAYOUT_V19: LumpDataLayout = {
+    # See https://github.com/python/mypy/issues/9408
     **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
     "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
 }
