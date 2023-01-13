@@ -1332,9 +1332,8 @@ class BSP:
                 self.lump_layout = LUMP_LAYOUT_INFRA
             elif self.version <= 19:
                 self.lump_layout = LUMP_LAYOUT_V19
-        
 
-            lump_offsets = {}
+            lump_offsets: Dict[BSP_LUMPS, Tuple[int, int, int]] = {}
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
@@ -1368,8 +1367,8 @@ class BSP:
 
             [lump_count] = struct.unpack_from('<i', game_lump.data)
             lump_offset = 4
-            gm_lump_offsets = {}
-            gm_lump_sizes = {}
+            gm_lump_offsets: Dict[bytes, Tuple[int, int]] = {}
+            gm_lump_sizes: Dict[bytes, int] = {}
             prev_game_lump = b''
             prev_lump_offset = 0
             for _ in range(lump_count):
@@ -2051,7 +2050,7 @@ class BSP:
             sides = [
                 BrushSide(self.planes[plane_num], self.texinfo[texinfo], dispinfo, bevel, extra)
                 for (plane_num, texinfo, dispinfo, bevel, extra)
-                in struct.iter_unpack(self.lump_layout['BRUSHSIDE'], self.lumps[BSP_LUMPS.BRUSHSIDES].data)
+                in self.lump_layout['BRUSHSIDE'].iter_unpack(self.lumps[BSP_LUMPS.BRUSHSIDES].data)
             ]
         else:
             sides = [
@@ -2166,7 +2165,7 @@ class BSP:
                     # bytes(24), but can constant fold.
                     ambient = b'\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0'
                 area = area_and_flags >> self.lump_layout['LEAF_AREA_OFFSET']
-                flags = area_and_flags & ( (1 << self.lump_layout['LEAF_AREA_OFFSET']) - 1 )
+                flags = area_and_flags & ((1 << self.lump_layout['LEAF_AREA_OFFSET']) - 1)
             yield VisLeaf(
                 BrushContents(contents), cluster_ind, area, VisLeafFlags(flags),
                 Vec(min_x, min_y, min_z),
@@ -2259,8 +2258,7 @@ class BSP:
             min_water_dists.append(leaf.min_water_dist)
 
             if is_vitamin:
-                buf.write(struct.pack(
-                    self.lump_layout['LEAF'],
+                buf.write(self.lump_layout['LEAF'].pack(
                     leaf.contents.value, leaf.cluster_id, leaf.area,
                     int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
                     int(leaf.maxes.x), int(leaf.maxes.y), int(leaf.maxes.z),
