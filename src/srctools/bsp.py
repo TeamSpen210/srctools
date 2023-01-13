@@ -4,8 +4,9 @@ Data from a read BSP is lazily parsed when each section is accessed.
 """
 from typing import (
     Any, Callable, ClassVar, Dict, Generator, Generic, Hashable, Iterator, List, Mapping,
-    Optional, Sequence, Set, Tuple, Type, TypedDict, TypeVar, Union, cast, overload
+    Optional, Sequence, Set, Tuple, Type, TypeVar, Union, cast, overload
 )
+from typing_extensions import TypedDict
 from enum import Enum, Flag
 from io import BytesIO
 from weakref import WeakKeyDictionary
