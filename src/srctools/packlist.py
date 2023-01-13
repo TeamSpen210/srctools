@@ -101,8 +101,8 @@ def load_fgd() -> FGD:
     """
     import warnings
     warnings.warn(
-        'Use FGD.engine_dbase() instead, '
-        'this has been moved there.',
+        'Use EntityDef.engine_def() instead if possible, or FGD.engine_dbase() '
+        'if all entities are required.',
         DeprecationWarning,
         stacklevel=2,
     )

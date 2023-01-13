@@ -5,15 +5,11 @@ import os
 import sys
 
 from srctools.bsp import BSP
-from srctools.fgd import FGD
 from srctools.filesys import FileSystemChain, RawFileSystem
 from srctools.game import Game
 from srctools.keyvalues import Keyvalues
 from srctools.packlist import PackList
 from srctools.vmf import VMF
-
-
-fgd = FGD.engine_dbase()
 
 
 def main(args: List[str]) -> None:
@@ -88,7 +84,7 @@ def main(args: List[str]) -> None:
             with file.open_str() as f:
                 vmf_props = Keyvalues.parse(f)
                 vmf = VMF.parse(vmf_props)
-            packlist.pack_fgd(vmf, fgd)
+            packlist.pack_from_ents(vmf)
             del vmf, vmf_props  # Hefty, don't want to keep.
         elif ext == '.bsp':
             child_sys = fsys.get_system(file)
@@ -96,7 +92,7 @@ def main(args: List[str]) -> None:
                 raise ValueError('Cannot inspect BSPs in VPKs!')
             bsp = BSP(os.path.join(child_sys.path, file.path))
             packlist.pack_from_bsp(bsp)
-            packlist.pack_fgd(bsp.ents, fgd)
+            packlist.pack_from_ents(bsp.ents)
             del bsp
         else:
             packlist.pack_file(file.path)

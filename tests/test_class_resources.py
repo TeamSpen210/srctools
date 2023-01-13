@@ -6,23 +6,13 @@ import pytest
 
 from srctools import EmptyMapping
 from srctools.const import FileType
-from srctools.fgd import FGD, Resource, ResourceCtx
+from srctools.fgd import EntityDef, Resource, ResourceCtx
 from srctools.filesys import VirtualFileSystem
-from srctools.vmf import VMF, Entity, ValidKVs
+from srctools.vmf import VMF, ValidKVs
 
 
-fgd: FGD
 TAGS_EZ2 = frozenset({"hl2", "episodic", "mapbase", "entropyzero2"})
 
-
-@pytest.fixture(scope='module', autouse=True)
-def fgd_db() -> Generator:
-    """Get the FGD database, cached for the module."""
-    global fgd
-    fgd = FGD.engine_dbase()
-    yield
-    del fgd  # Delete from memory
-    
 
 def check_entity(
     *resources: Resource,
@@ -37,12 +27,11 @@ def check_entity(
     ent = vmf.create_ent(classname, **keyvalues)
     expected = {(res.type, res.filename) for res in resources}
     ctx = ResourceCtx(
-        fgd=fgd,
         tags=tags__,
         mapname=mapname__,
         fsys=VirtualFileSystem(filesys__),
     )
-    ent_def = fgd[classname]
+    ent_def = EntityDef.engine_def(classname)
     actual = set(ent_def.get_resources(ctx, ent=ent, on_error=LookupError))
     # Sort each so that PyCharm shows diffs correctly.
     assert sorted(actual, key=itemgetter(1)) == sorted(expected, key=itemgetter(1))
