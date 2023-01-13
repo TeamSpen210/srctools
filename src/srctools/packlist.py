@@ -820,30 +820,34 @@ class PackList:
         for mat in bsp.textures:
             self.pack_file('materials/{}.vmt'.format(mat.lower()), FileType.MATERIAL)
 
-    def pack_fgd(
+    def pack_fgd(self, vmf: VMF, fgd: FGD, mapname: str='', tags: Iterable[str]=()) -> None:
+        warnings.warn(
+            "The provided FGD is no longer used, call pack_with_ents instead.",
+            DeprecationWarning, stacklevel=2,
+        )
+        self.pack_from_ents(vmf, mapname, tags)
+
+    def pack_from_ents(
         self,
         vmf: VMF,
-        fgd: FGD,
         mapname: str='',
         tags: Iterable[str]=(),
     ) -> None:
-        """Analyse the map to pack files. We use the FGD to easily handle this."""
+        """Analyse the map to pack files, using an internal database of keyvalues."""
         # Don't show the same keyvalue warning twice, it's just noise.
         unknown_keys: Set[Tuple[str, str]] = set()
 
         # Definitions for the common keyvalues on all entities.
-        try:
-            base_entity = fgd['_CBaseEntity_']
-        except KeyError:
-            LOGGER.warning('No CBaseEntity definition!')
-            base_entity = EntityDef(EntityTypes.BASE)
+        base_entity = EntityDef.engine_def('_CBaseEntity_')
 
         res_ctx = ResourceCtx(
-            fgd=fgd,
+            fgd=EntityDef.engine_def,
             fsys=self.fsys,
             mapname=mapname,
             tags=tags,
         )
+
+        cache: dict[str, EntityDef] = {}
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.
@@ -852,13 +856,16 @@ class PackList:
 
             classname = ent['classname']
             try:
-                ent_class = fgd[classname]
+                ent_class = cache[classname]
             except KeyError:
-                if (classname, '') not in unknown_keys:
-                    LOGGER.warning('Unknown class "{}"!', classname)
-                    unknown_keys.add((classname, ''))
-                # Fall back to generic keyvalues.
-                ent_class = base_entity
+                try:
+                    ent_class = cache[classname] = EntityDef.engine_def(classname)
+                except KeyError:
+                    if (classname, '') not in unknown_keys:
+                        LOGGER.warning('Unknown class "{}"!', classname)
+                        unknown_keys.add((classname, ''))
+                    # Fall back to generic keyvalues.
+                    ent_class = base_entity
 
             skinset: Optional[Set[int]]
             if ent['skinset'] != '':
