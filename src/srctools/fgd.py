@@ -480,67 +480,6 @@ class Resource:
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
 
 
-_GetFGDFunc = Callable[[str], 'EntityDef']
-
-
-@attrs.frozen(init=False)
-class ResourceCtx:
-    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
-    tags: TagsSet
-    fsys: FileSystem[Any]
-    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
-    mapname: str
-    get_entdef: Callable[[str], 'EntityDef']
-
-    # For use of get_resources() only.
-    _functions: Mapping[str, Callable[
-        ['ResourceCtx', Entity],
-        Iterator[Union[Resource, Entity]]
-    ]]
-
-    def __init__(
-        self,
-        tags: Iterable[str] = (),
-        fsys: FileSystem[Any] = VirtualFileSystem({}),
-        fgd: Union['FGD', Mapping[str, 'EntityDef'], _GetFGDFunc] = srctools.EmptyMapping,
-        mapname: str = '',
-        funcs: Mapping[str, Callable[
-            ['ResourceCtx', Entity],
-            Iterator[Union[Resource, Entity]]
-        ]] = srctools.EmptyMapping,
-    ) -> None:
-        """
-        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
-        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
-        :param tags: Various string tags used to indicate what engine branch is being used. This \
-        allows handling Episodic differences, or enhancements by Mapbase.
-        :param fsys: A :py:class:`~srctools.FileSystem`
-        :param mapname:
-        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
-        accessed, if not present in this
-        """
-        from srctools._class_resources import CLASS_FUNCS
-        if funcs is srctools.EmptyMapping:
-            funcs = CLASS_FUNCS
-        else:
-            # ChainMap itself is mutable and so can't accept Mapping.
-            # We're immediately casting to Mapping, so it's not dangerous.
-            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
-
-        # Strip extension, and normalise folder separators.
-        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
-            mapname = mapname[:-4]
-        self.__attrs_init__(  # pyright: ignore
-            frozenset(map(str.upper, tags)),
-            fsys,
-            mapname.replace('\\', '/'),
-            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
-            # it must already be callable.
-            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
-            funcs,
-        )
-
-
 class Helper:
     """Base class for representing helper() commands in the header of an entity.
 
@@ -1456,7 +1395,7 @@ class EntityDef:
 
     def get_resources(
         self,
-        ctx: ResourceCtx,
+        ctx: 'ResourceCtx',
         *,
         ent: Optional[Entity],
         on_error: Callable[[str], object] = lambda err: None,
@@ -2122,6 +2061,68 @@ class FGD:
                     self.entities[poss_name] = base
                     break
             self._fix_missing_bases(base)
+
+
+_GetFGDFunc: TypeAlias = Callable[[str], EntityDef]
+
+
+@attrs.frozen(init=False)
+class ResourceCtx:
+    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
+    tags: TagsSet
+    fsys: FileSystem[Any]
+    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
+    mapname: str
+    get_entdef: Callable[[str], 'EntityDef']
+
+    # For use of get_resources() only.
+    _functions: Mapping[str, Callable[
+        ['ResourceCtx', Entity],
+        Iterator[Union[Resource, Entity]]
+    ]]
+
+    def __init__(
+        self,
+        tags: Iterable[str] = (),
+        fsys: FileSystem[Any] = VirtualFileSystem({}),
+        fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
+        mapname: str = '',
+        funcs: Mapping[str, Callable[
+            ['ResourceCtx', Entity],
+            Iterator[Union[Resource, Entity]]
+        ]] = srctools.EmptyMapping,
+    ) -> None:
+        """
+        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
+        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
+        If unset the internal database will be used.
+        :param tags: Various string tags used to indicate what engine branch is being used. This \
+        allows handling Episodic differences, enhancements by Mapbase, and other things like that.
+        :param fsys: A :py:class:`~srctools.FileSystem`, used to read scripts and other files.
+        :param mapname: The name of the map, used to handle some entities that used this to pick variants.
+        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
+        accessed, if not present in this.
+        """
+        from srctools._class_resources import CLASS_FUNCS
+        if funcs is srctools.EmptyMapping:
+            funcs = CLASS_FUNCS
+        else:
+            # ChainMap itself is mutable and so can't accept Mapping.
+            # We're immediately casting to Mapping, so it's not dangerous.
+            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
+
+        # Strip extension, and normalise folder separators.
+        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
+            mapname = mapname[:-4]
+        self.__attrs_init__(  # pyright: ignore
+            frozenset(map(str.upper, tags)),
+            fsys,
+            mapname.replace('\\', '/'),
+            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
+            # it must already be callable.
+            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
+            funcs,
+        )
 
 
 def _init_helper_impl() -> None:
