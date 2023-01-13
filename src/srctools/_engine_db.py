@@ -284,6 +284,8 @@ class EngineDB(_EngineDBProto):
             self.ent_map[classname.casefold()] = ent = ent_unserialise(file, classname, from_dict)
             if ent.bases:
                 apply_bases.append(ent)
+            else:
+                ent.bases.append(cbase_entity)
         # We no longer need this, reset to an empty buffer.
         self.unparsed[index] = ((), b'')
         for ent in apply_bases:
@@ -292,6 +294,7 @@ class EngineDB(_EngineDBProto):
                 base if isinstance(base, EntityDef) else self.get_ent(base)
                 for base in ent.bases
             ]
+            ent.bases.append(cbase_entity)
 
     def get_fgd(self) -> FGD:
         """Parse all the blocks and make an FGD."""
