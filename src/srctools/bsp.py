@@ -239,7 +239,7 @@ class LumpDataLayout(TypedDict):
     BRUSHSIDE: struct.Struct
     STATICPROPLEAF: struct.Struct
 
-# Version specific lump data layout description.
+# Version specific lump data layout description
 LUMP_LAYOUT_STANDARD: LumpDataLayout = {
     "FACE":             struct.Struct('<H??i4h4sif5iHHI'),
     "FACEID":           struct.Struct('<H'),
@@ -258,12 +258,12 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
 
 
 LUMP_LAYOUT_V19: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,
+    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
     "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
 }
 
 LUMP_LAYOUT_INFRA: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,
+    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
     # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
     # char type;
     # int first_ind, ind_count;
@@ -273,7 +273,7 @@ LUMP_LAYOUT_INFRA: LumpDataLayout = {
 }
 
 LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,
+    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
     "LEAF": struct.Struct('<ihh6I4HhBx'),
     "FACE": struct.Struct('<5i4iB3x'),
     "BRUSHSIDE": struct.Struct('<IIhBB'),
@@ -282,7 +282,7 @@ LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
 
 # https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
 LUMP_LAYOUT_CHAOS: LumpDataLayout = {
-    **LUMP_LAYOUT_STANDARD,
+    **LUMP_LAYOUT_STANDARD,  # type: ignore[misc]
     "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
     "FACEID":           struct.Struct('<I'),
     "EDGE":             struct.Struct('<II'),
@@ -2267,7 +2267,7 @@ class BSP:
                     leaf.water_id, leaf.flags.value,
                 ))
             else:
-                leafdata = (
+                leafdata: Tuple[Union[int, bytes], ...] = (
                     leaf.contents.value, leaf.cluster_id,
                     (leaf.area << self.lump_layout['LEAF_AREA_OFFSET'] | leaf.flags.value),
                     int(leaf.mins.x), int(leaf.mins.y), int(leaf.mins.z),
