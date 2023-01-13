@@ -222,8 +222,9 @@ class BSP_LUMPS(Enum):
     PHYSLEVEL = 62
     DISP_MULTIBLEND = 63
 
-# Container dictionary for lump layouts
+
 class LumpDataLayout(TypedDict):
+    """Container dictionary for lump layouts."""
     FACE: struct.Struct
     FACEID: struct.Struct
     EDGE: struct.Struct
@@ -238,66 +239,64 @@ class LumpDataLayout(TypedDict):
     BRUSHSIDE: struct.Struct
     STATICPROPLEAF: struct.Struct
 
-# Version specific lump data layout description
-class LUMP_VERSION_LAYOUT:
-    
-    STANDARD: LumpDataLayout = {
-        "FACE":             struct.Struct('<H??i4h4sif5iHHI'),
-        "FACEID":           struct.Struct('<H'),
-        "EDGE":             struct.Struct('<HH'),
-        "PRIMITIVE":        struct.Struct('<HHHHH'),
-        "PRIMINDEX":        struct.Struct('<H'),
-        "NODE":             struct.Struct('<iii6hHHh2x'),
-        "LEAF":             struct.Struct('<ihh6h4Hh2x'), # Version 1
-        "LEAFFACE":         struct.Struct('<H'),
-        "LEAFBRUSH":        struct.Struct('<H'),
-        "LEAF_AREA_OFFSET": 7,
-        "LEAFWATERDATA":    struct.Struct('<ffH2x'),
-        "BRUSHSIDE":        struct.Struct('<HhhH'),
-        "STATICPROPLEAF":   struct.Struct('<H'),
-    }
-    
-    
-    V19: LumpDataLayout = {
-        **STANDARD,
-        "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
-    }
-        
-    INFRA: LumpDataLayout = {
-        **STANDARD,
-        # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
-        # char type;
-        # int first_ind, ind_count;
-        # short vert_ind, vert_count;
-        # Then the type is promoted to int for structure alignment.
-        "PRIMITIVE": struct.Struct('<IIIHH'),
-    }
-        
-    VITAMIN: LumpDataLayout = {
-        **STANDARD,
-        "LEAF": struct.Struct('<ihh6I4HhBx'),
-        "FACE": struct.Struct('<5i4iB3x'),
-        "BRUSHSIDE": struct.Struct('<IIhBB'),
-        "NODE": struct.Struct('<iii6iHHh2x'),
-    }
-    
-    # https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
-    CHAOS: LumpDataLayout = {
-        **STANDARD,
-        "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
-        "FACEID":           struct.Struct('<I'),
-        "EDGE":             struct.Struct('<II'),
-        "PRIMITIVE":        struct.Struct('<IIIII'),
-        "PRIMINDEX":        struct.Struct('<I'),
-        "NODE":             struct.Struct('<iii6fIIhxx'),
-        "LEAF":             struct.Struct('<iii6f4Ii'), # Version 2
-        "LEAFFACE":         struct.Struct('<I'),
-        "LEAFBRUSH":        struct.Struct('<I'),
-        "LEAF_AREA_OFFSET": 17,
-        "LEAFWATERDATA":    struct.Struct('<ffI'),
-        "BRUSHSIDE":        struct.Struct('<IiiHxx'),
-        "STATICPROPLEAF":   struct.Struct('<I'),
-    }
+# Version specific lump data layout description.
+LUMP_LAYOUT_STANDARD: LumpDataLayout = {
+    "FACE":             struct.Struct('<H??i4h4sif5iHHI'),
+    "FACEID":           struct.Struct('<H'),
+    "EDGE":             struct.Struct('<HH'),
+    "PRIMITIVE":        struct.Struct('<HHHHH'),
+    "PRIMINDEX":        struct.Struct('<H'),
+    "NODE":             struct.Struct('<iii6hHHh2x'),
+    "LEAF":             struct.Struct('<ihh6h4Hh2x'), # Version 1
+    "LEAFFACE":         struct.Struct('<H'),
+    "LEAFBRUSH":        struct.Struct('<H'),
+    "LEAF_AREA_OFFSET": 7,
+    "LEAFWATERDATA":    struct.Struct('<ffH2x'),
+    "BRUSHSIDE":        struct.Struct('<HhhH'),
+    "STATICPROPLEAF":   struct.Struct('<H'),
+}
+
+
+LUMP_LAYOUT_V19: LumpDataLayout = {
+    **LUMP_LAYOUT_STANDARD,
+    "LEAF":             struct.Struct('<ihh6h4Hh24s2x'), # Version 0
+}
+
+LUMP_LAYOUT_INFRA: LumpDataLayout = {
+    **LUMP_LAYOUT_STANDARD,
+    # INFRA seems to have a different lump. It's 16 bytes, it seems to be:
+    # char type;
+    # int first_ind, ind_count;
+    # short vert_ind, vert_count;
+    # Then the type is promoted to int for structure alignment.
+    "PRIMITIVE": struct.Struct('<IIIHH'),
+}
+
+LUMP_LAYOUT_VITAMIN: LumpDataLayout = {
+    **LUMP_LAYOUT_STANDARD,
+    "LEAF": struct.Struct('<ihh6I4HhBx'),
+    "FACE": struct.Struct('<5i4iB3x'),
+    "BRUSHSIDE": struct.Struct('<IIhBB'),
+    "NODE": struct.Struct('<iii6iHHh2x'),
+}
+
+# https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/
+LUMP_LAYOUT_CHAOS: LumpDataLayout = {
+    **LUMP_LAYOUT_STANDARD,
+    "FACE":             struct.Struct('<I??xx5i4sif5i3I'),
+    "FACEID":           struct.Struct('<I'),
+    "EDGE":             struct.Struct('<II'),
+    "PRIMITIVE":        struct.Struct('<IIIII'),
+    "PRIMINDEX":        struct.Struct('<I'),
+    "NODE":             struct.Struct('<iii6fIIhxx'),
+    "LEAF":             struct.Struct('<iii6f4Ii'), # Version 2
+    "LEAFFACE":         struct.Struct('<I'),
+    "LEAFBRUSH":        struct.Struct('<I'),
+    "LEAF_AREA_OFFSET": 17,
+    "LEAFWATERDATA":    struct.Struct('<ffI'),
+    "BRUSHSIDE":        struct.Struct('<IiiHxx'),
+    "STATICPROPLEAF":   struct.Struct('<I'),
+}
 
 
 LUMP_COUNT = max(lump.value for lump in BSP_LUMPS) + 1  # 64 normally
@@ -1223,6 +1222,7 @@ class BSP:
         Callable[['BSP', Any], Union[bytes, Generator[bytes, None, None]]]
     ]] = {}
     version: Union[VERSIONS, int]
+    lump_layout: LumpDataLayout
 
     def __init__(self, filename: StringPath, version: Optional[VERSIONS] = None) -> None:
         self.filename = filename
@@ -1243,7 +1243,7 @@ class BSP:
         self._texdata: Dict[str, TexData] = {}
         
         # lump_layout holds version specific struct formats for lumps
-        self.lump_layout = LUMP_VERSION_LAYOUT.STANDARD
+        self.lump_layout = LUMP_LAYOUT_STANDARD
         
         self.read()
 
@@ -1324,14 +1324,14 @@ class BSP:
 
             if self.version is VERSIONS.CHAOSSOURCE:
                 # Change the expected structure for lumps to fit chaos' increased limits
-                self.lump_layout = LUMP_VERSION_LAYOUT.CHAOS
+                self.lump_layout = LUMP_LAYOUT_CHAOS
             elif self.version is VERSIONS.VITAMINSOURCE:
                 # Change the expected structure for lumps to fit vitamin's rad new format
-                self.lump_layout = LUMP_VERSION_LAYOUT.VITAMIN
+                self.lump_layout = LUMP_LAYOUT_VITAMIN
             elif self.version is VERSIONS.INFRA:
-                self.lump_layout = LUMP_VERSION_LAYOUT.INFRA
+                self.lump_layout = LUMP_LAYOUT_INFRA
             elif self.version <= 19:
-                self.lump_layout = LUMP_VERSION_LAYOUT.V19
+                self.lump_layout = LUMP_LAYOUT_V19
         
 
             lump_offsets = {}
