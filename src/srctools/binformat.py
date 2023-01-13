@@ -112,12 +112,18 @@ def read_offset_array(file: IO[bytes], count: int, encoding: str = 'ascii') -> L
     return arr
 
 
-def read_array(fmt: str, data: bytes) -> List[int]:
+def read_array(fmt: Union[str, Struct], data: bytes) -> List[int]:
     """Read a buffer containing a stream of integers.
 
     The format string should be one of the integer format characters, optionally prefixed by an
      endianness indicator. As many integers as possible will then be read from the data.
     """
+    
+    if isinstance(fmt, Struct):
+        # Since `struct.Struct` does not support writing arrays, we'll have to rebuild `fmt`.
+        # Turn it back into its original format string so we can figure out what it held.
+        fmt = fmt.format
+        
     if len(fmt) == 2:
         endianness = fmt[0]
         fmt = fmt[1]
@@ -131,12 +137,18 @@ def read_array(fmt: str, data: bytes) -> List[int]:
     return list(Struct(endianness + fmt * count).unpack_from(data))
 
 
-def write_array(fmt: str, data: Collection[int]) -> bytes:
+def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
     """Build a packed array of integers.
 
     The format string should be one of the integer format characters, optionally prefixed by an
     endianness indicator. The integers in the data will then be packed into a bytes buffer and returned.
      """
+     
+    if isinstance(fmt, Struct):
+        # Since `struct.Struct` does not support writing arrays, we'll have to rebuild `fmt`.
+        # Turn it back into its original format string so we can figure out what it held.
+        fmt = fmt.format
+
     if len(fmt) == 2:
         endianness = fmt[0]
         fmt = fmt[1]
