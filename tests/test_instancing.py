@@ -3,7 +3,7 @@ from typing import cast
 
 import pytest
 
-from srctools import FrozenMatrix, Matrix, VMF, Vec, FrozenVec, Angle, instancing
+from srctools import VMF, Angle, FrozenMatrix, FrozenVec, Matrix, Vec, instancing
 from srctools.fgd import ValueTypes
 
 
