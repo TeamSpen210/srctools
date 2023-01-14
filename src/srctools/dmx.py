@@ -219,16 +219,7 @@ ValueList = Union[
 # Additional values we convert to valid types.
 ConvValue: TypeAlias = Union[Value, Vec, Matrix, Angle]
 
-ValueT = TypeVar(
-    'ValueT',
-    int, float, bool, str, bytes,
-    Color, Time,
-    Vec2, FrozenVec, Vec4,
-    FrozenAngle,
-    Quaternion,
-    FrozenMatrix,
-    _Element,
-)
+ValueT = TypeVar('ValueT', bound=Value)
 
 # [from, to] -> conversion.
 # Implementation at the end of the file.
@@ -293,14 +284,14 @@ def _get_converters() -> Tuple[ConvertMap, ConversionMap, SizesMap]:
     return type_conv, convert, sizes
 
 
-def _make_val_prop(val_type: ValueType, typ: Type[Value]) -> property:
+def _make_val_prop(val_type: ValueType, typ: Type[ValueT]) -> property:
     """Build the properties for each type."""
 
-    def setter(self: '_ValProps', value: ValueT) -> None:
+    def setter(self: '_ValProps', value: Value) -> None:
         self._write_val(val_type, value)
 
-    def getter(self: '_ValProps') -> ValueT:
-        return self._read_val(val_type)  # type: ignore
+    def getter(self: '_ValProps') -> Value:
+        return self._read_val(val_type)
 
     if val_type.name[0].casefold() in 'aeiou':
         desc = f'an {val_type.name.lower()}.'
@@ -1002,7 +993,7 @@ class Attribute(Generic[ValueT], _ValProps):
         holding the existing value.
         """
         if not isinstance(self._value, list):
-            self._value = cast('List[ValueT]', [self._value])
+            self._value = [self._value]
         [val_type, result] = deduce_type_single(value)
         if val_type is not self._typ:
             # Try converting.
@@ -1021,7 +1012,7 @@ class Attribute(Generic[ValueT], _ValProps):
         holding the existing value.
         """
         if not isinstance(self._value, list):
-            self._value = cast('List[ValueT]', [self._value])
+            self._value = [self._value]
         for value in values:
             [val_type, result] = deduce_type_single(value)
             if val_type is not self._typ:
