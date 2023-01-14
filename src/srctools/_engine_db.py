@@ -19,7 +19,7 @@ import operator
 
 from .binformat import DeferredWrites
 from .const import FileType
-from .fgd import _EngineDBProto  # noqa
+from .fgd import _EngineDBProto, _EntityView  # noqa
 from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
 
 
@@ -476,27 +476,40 @@ def ent_unserialise(
         res_count,
     ] = _fmt_ent_header.unpack(file.read(_fmt_ent_header.size))
 
-    ent = EntityDef(ENTITY_FLAG_2_TYPE[flags & EntFlags.MASK_TYPE])
+    ent = EntityDef.__new__(EntityDef)
+    ent.type = ENTITY_FLAG_2_TYPE[flags & EntFlags.MASK_TYPE]
     ent.classname = classname
     ent.desc = ''
     ent.is_alias = (EntFlags.IS_ALIAS & flags) != 0
+    # We need to manually initialise.
+    ent.kv_order = []
+    ent.helpers = []
+    ent.kv = _EntityView(ent, 'keyvalues', 'kv')
+    ent.inp = _EntityView(ent, 'inputs', 'inp')
+    ent.out = _EntityView(ent, 'outputs', 'out')
 
+    # We temporarily store strings, then evaluate later on.
+    ent.bases = []
     for _ in range(base_count):
-        # We temporarily store strings, then evaluate later on.
         ent.bases.append(from_dict())
 
+    ent.keyvalues = {}
     for _ in range(kv_count):
         kv = kv_unserialise(file, from_dict)
         ent.keyvalues[kv.name] = {TAG_EMPTY: kv}
+
+    ent.inputs = {}
     for _ in range(inp_count):
         iodef = iodef_unserialise(file, from_dict)
         ent.inputs[iodef.name] = {TAG_EMPTY: iodef}
+
+    ent.outputs = {}
     for _ in range(out_count):
         iodef = iodef_unserialise(file, from_dict)
         ent.outputs[iodef.name] = {TAG_EMPTY: iodef}
 
     if res_count:
-        resources: List[Resource] = []
+        ent.resources = []
         for _ in range(res_count):
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
@@ -504,8 +517,9 @@ def ent_unserialise(
                 tag = BinStrDict.read_tags(file, from_dict)
             else:
                 tag = frozenset()
-            resources.append(Resource(from_dict(), file_type, tag))
-        ent.resources = resources
+            ent.resources.append(Resource(from_dict(), file_type, tag))
+    else:  # If empty, store a tuple that can be shared.
+        ent.resources = ()
 
     return ent
 
