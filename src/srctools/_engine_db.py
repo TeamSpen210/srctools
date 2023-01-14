@@ -227,7 +227,7 @@ class BinStrDict:
     @staticmethod
     def read_tags(file: IO[bytes], from_dict: Callable[[], str]) -> FrozenSet[str]:
         """Pull tags from a BinStrDict."""
-        [size] = _fmt_8bit.unpack(file.read(1))
+        [size] = file.read(1)
         return frozenset({
             from_dict()
             for _ in range(size)
@@ -488,29 +488,35 @@ def ent_unserialise(
     ent.inp = _EntityView(ent, 'inputs', 'inp')
     ent.out = _EntityView(ent, 'outputs', 'out')
 
-    # We temporarily store strings, then evaluate later on.
+    # Use while loops instead of range() - often these are empty, and this code is hot, so avoid
+    # building range objects and iterators.
     ent.bases = []
-    for _ in range(base_count):
+    while base_count:
+        # We temporarily store strings, then evaluate later on.
         ent.bases.append(from_dict())
+        base_count -= 1
 
     ent.keyvalues = {}
-    for _ in range(kv_count):
+    while kv_count:
         kv = kv_unserialise(file, from_dict)
         ent.keyvalues[kv.name] = {TAG_EMPTY: kv}
+        kv_count -= 1
 
     ent.inputs = {}
-    for _ in range(inp_count):
+    while inp_count:
         iodef = iodef_unserialise(file, from_dict)
         ent.inputs[iodef.name] = {TAG_EMPTY: iodef}
+        inp_count -= 1
 
     ent.outputs = {}
-    for _ in range(out_count):
+    while out_count:
         iodef = iodef_unserialise(file, from_dict)
         ent.outputs[iodef.name] = {TAG_EMPTY: iodef}
+        out_count -= 1
 
     if res_count:
         ent.resources = []
-        for _ in range(res_count):
+        while res_count:
             [file_ind] = file.read(1)
             file_type = FILE_TYPE_ORDER[file_ind & 127]
             if file_ind & 128:  # Has tags.
@@ -518,6 +524,7 @@ def ent_unserialise(
             else:
                 tag = frozenset()
             ent.resources.append(Resource(from_dict(), file_type, tag))
+            res_count -= 1
     else:  # If empty, store a tuple that can be shared.
         ent.resources = ()
 
@@ -718,7 +725,8 @@ def unserialise(file: IO[bytes]) -> _EngineDBProto:
         [cls_size] = _fmt_16bit.unpack(file.read(2))
         classnames = lzma.decompress(file.read(cls_size)).decode('utf8').split(STRING_SEP)
         block_classnames.append(classnames)
-        ent_map.update(dict.fromkeys(map(str.casefold, classnames), block_id))
+        for name in classnames:
+            ent_map[name.casefold()] = block_id
         off, size = _fmt_block_pos.unpack(file.read(_fmt_block_pos.size))
         positions.append((classnames, off, size))
 
