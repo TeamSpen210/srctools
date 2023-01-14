@@ -12,6 +12,9 @@ Dev branch
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
 * Added support for the [Chaos](https://chaosinitiative.github.io/Wiki/docs/Reference/bsp-v25/) BSP format (via [@ozxybox](https://github.com/ozxybox).
+* Improve internal FGD database format to allow parsing entities as they are required. For best
+  efficiency, use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` instead of
+  :py:meth:`FGD.engine_dbase() <srctools.fgd.FGD.engine_dbase()>` if possible.
 
 -------------
 Version 2.3.8
