@@ -251,12 +251,18 @@ class Keyvalues:
     ) -> "Keyvalues":
         """Returns a Keyvalues tree parsed from given text.
 
-        :param file_contents: should be an iterable of strings or a single string. Alternatively, file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
-        :param filename: If set this should be the source of the text for debug purposes. If not supplied, ``file_contents.name`` will be used if present.
+        :param file_contents: should be an iterable of strings or a single string. Alternatively, \
+        file_contents may be an already created tokenizer. In this case ``allow_escapes`` is ignored.
+        :param filename: If set this should be the source of the text for debug purposes. If not \
+        supplied, ``file_contents.name`` will be used if present.
         :param flags: This should be a mapping for additional ``[flag]`` suffixes to accept.
         :param allow_escapes: This allows choosing if ``\\t`` or similar escapes are parsed.
-        :param single_line: If this is set, allow multiple properties to be on the same line. This means unterminated strings will be caught late (if at all), but it allows parsing some 'internal' data blocks.
-        :param newline_keys: This specifies if newline characters are allowed in keys. Keys are prohibited by default, since this is fairly useless, but if quote characters are mismatched it'll catch the mistake early.
+        :param single_line: If this is set, allow multiple properties to be on the same line. \
+        This means unterminated strings will be caught late (if at all), but it allows parsing \
+        some 'internal' data blocks.
+        :param newline_keys: This specifies if newline characters are allowed in keys. \
+        Keys are prohibited by default, since this is fairly useless, but if quote characters are \
+        mismatched it'll catch the mistake early.
         :param newline_values: This specifies if newline characters are allowed in string values.
         """
         # The block we are currently adding to.
@@ -517,6 +523,7 @@ class Keyvalues:
     def find_key(self, key: str, *, or_blank: bool) -> 'Keyvalues': ...
     @overload
     def find_key(self, key: str, def_: str=...) -> 'Keyvalues': ...
+
     def find_key(self, key: str, def_: str=_NO_KEY_FOUND, *, or_blank: bool=False) -> 'Keyvalues':
         """Obtain the child Keyvalue with a given name.
 
@@ -592,6 +599,7 @@ class Keyvalues:
     def int(self, key: str) -> builtins.int: ...
     @overload
     def int(self, key: str, def_: T) -> Union[builtins.int, T]: ...
+
     def int(self, key: str, def_: Union[builtins.int, T]=0) -> Union[builtins.int, T]:
         """Return the value of an integer key.
 
@@ -611,6 +619,7 @@ class Keyvalues:
     def float(self, key: str) -> builtins.float: ...
     @overload
     def float(self, key: str, def_: T) -> Union[builtins.float, T]: ...
+
     def float(self, key: str, def_: Union[builtins.float, T]=0.0) -> Union[builtins.float, T]:
         """Return the value of an integer key.
 
@@ -630,6 +639,7 @@ class Keyvalues:
     def bool(self, key: str) -> builtins.bool: ...
     @overload
     def bool(self, key: str, def_: T) -> Union[builtins.bool, T]: ...
+
     def bool(self, key: str, def_: Union[builtins.bool, T]=False) -> Union[builtins.bool, T]:
         """Return the value of an boolean key.
 
@@ -724,6 +734,7 @@ class Keyvalues:
     def as_array(self) -> List[str]: ...
     @overload
     def as_array(self, *, conv: Callable[[str], T]) -> List[T]: ...
+
     def as_array(self, *, conv: Callable[[str], T]=cast(Callable[[str], T], str)) -> Union[List[T], List[str]]:
         """Convert a keyvalue block into a list of values.
 

@@ -102,7 +102,7 @@ class VERSIONS(Enum):
     INFRA = 22
     DOTA2 = 22
     CONTAGION = 23
-    CHAOSSOURCE = 25 # Chaos' limit increased BSPs 
+    CHAOSSOURCE = 25  # Chaos' limit increased BSPs.
 
     DESOLATION_OLD = 42  # Old version.
     VITAMINSOURCE = 43  # Desolation's expanded map format.
@@ -239,6 +239,7 @@ class LumpDataLayout(TypedDict):
     BRUSHSIDE: struct.Struct
     STATICPROPLEAF: struct.Struct
 
+
 # Version specific lump data layout description
 LUMP_LAYOUT_STANDARD: LumpDataLayout = {
     "FACE":             struct.Struct('<H??i4h4sif5iHHI'),
@@ -247,7 +248,7 @@ LUMP_LAYOUT_STANDARD: LumpDataLayout = {
     "PRIMITIVE":        struct.Struct('<HHHHH'),
     "PRIMINDEX":        struct.Struct('<H'),
     "NODE":             struct.Struct('<iii6hHHh2x'),
-    "LEAF":             struct.Struct('<ihh6h4Hh2x'), # Version 1
+    "LEAF":             struct.Struct('<ihh6h4Hh2x'),  # Version 1
     "LEAFFACE":         struct.Struct('<H'),
     "LEAFBRUSH":        struct.Struct('<H'),
     "LEAF_AREA_OFFSET": 7,
@@ -290,7 +291,7 @@ LUMP_LAYOUT_CHAOS: LumpDataLayout = {
     "PRIMITIVE":        struct.Struct('<IIIII'),
     "PRIMINDEX":        struct.Struct('<I'),
     "NODE":             struct.Struct('<iii6fIIhxx'),
-    "LEAF":             struct.Struct('<iii6f4Ii'), # Version 2
+    "LEAF":             struct.Struct('<iii6f4Ii'),  # Version 2
     "LEAFFACE":         struct.Struct('<I'),
     "LEAFBRUSH":        struct.Struct('<I'),
     "LEAF_AREA_OFFSET": 17,
@@ -400,9 +401,9 @@ class StaticPropVersion(Enum):
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
     V_LIGHTMAP_MESA = (11, 80, 'Mesa')  # Adds rendercolor to V10
-    
-    V_CHAOS = (12, 80) # Changes the leaf list from uint16 to uint32 
-    
+
+    V_CHAOS = (12, 80)  # Changes the leaf list from uint16 to uint32
+
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
     UNKNOWN = (0, 0, 'unknown')  # Before prop is read.
     # All games should recognise this, so switch to this if set to unknown.
@@ -837,7 +838,7 @@ class Cubemap:
         """Return the actual image size."""
         if self.size == 0:
             return 32
-        res =  2 ** (self.size - 1)
+        res = 2 ** (self.size - 1)
         assert isinstance(res, int), self.size
         return res
 
@@ -1242,7 +1243,7 @@ class BSP:
         # don't interact directly, instead they use the create_texinfo / texinfo.set()
         # methods that create the data as required.
         self._texdata: Dict[str, TexData] = {}
-        
+
         # lump_layout holds version specific struct formats for lumps
         self.lump_layout = LUMP_LAYOUT_STANDARD
         
@@ -1377,7 +1378,7 @@ class BSP:
                 flags: int
                 glump_version: int
                 file_off: int
-                file_len: int
+                uncomp_size: int
                 (
                     game_lump_id,
                     flags,
@@ -1391,12 +1392,10 @@ class BSP:
 
                 gm_lump_offsets[game_lump_id] = file_off, uncomp_size
 
-                # Determine the size of the lump by comparing offsets.
-                # This is necessary for compressed lumps, but still works
-                # normally. To allow this BSPs have an extra dummy entry with
-                # this ID which should have an offset value, but it's also
-                # just zero so it's useless. Skip that and use the size of the
-                # lump itself.
+                # Determine the size of the lump by comparing offsets. This is necessary for
+                # compressed lumps, but still works normally. To allow this BSPs have an extra
+                # dummy entry with this ID which should have an offset value, but it's also just
+                # zero and therefore useless. Skip that and use the size of the lump itself.
                 if game_lump_id == b'\x00\x00\x00\x00':
                     continue
 
@@ -2128,7 +2127,7 @@ class BSP:
         leaf_fmt = self.lump_layout['LEAF']
         # Some extra ambient light data.
         has_ambient = not is_vitamin and self.version <= 19
-        
+
         for leaf_data, water_dist in zip(leaf_fmt.iter_unpack(data), dist_to_water):
             if is_vitamin:
                 # VitaminSource moves the flags into its own block.
@@ -2249,7 +2248,7 @@ class BSP:
 
         # Some extra ambient light data.
         has_ambient = self.version <= 19
-        
+
         for leaf in visleafs:
             # Do not deduplicate these, engine assumes they aren't when allocating memory.
             face_ind = len(leaf_faces)
@@ -2280,7 +2279,7 @@ class BSP:
                 # Older leaf lumps include some ambient light data at the end.
                 if has_ambient:
                     leafdata = leafdata + (leaf._ambient,)
-                    
+
                 buf.write(self.lump_layout['LEAF'].pack(*leafdata))
 
         self.lumps[BSP_LUMPS.LEAFFACES].data = write_array(self.lump_layout['LEAFFACE'], leaf_faces)

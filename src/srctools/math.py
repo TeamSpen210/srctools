@@ -2479,7 +2479,7 @@ class Angle(AngleBase):
     >>> Angle.from_str('(45 90 0)')  # Parse strings.
     Angle(45, 90, 0)
 
-    Addition and subtraction can be performed 
+    Addition and subtraction can be performed
     between angles, while division/multiplication must be between an angle and scalar (to scale).
 
     Like vectors, each axis can be accessed by getting/setting ``pitch``/``yaw`` and ``roll`` attributes.
@@ -2536,7 +2536,7 @@ class Angle(AngleBase):
         interoperate.
         """
         return _mk_ang, (self._pitch, self._yaw, self._roll)
-    
+
     def freeze(self) -> FrozenAngle:
         """Return an immutable copy of this angle."""
         ang = Py_FrozenAngle.__new__(Py_FrozenAngle)

@@ -263,7 +263,10 @@ class VPK:
     """
 
     footer_data: bytes
-    """The block of data after the header, which contains the file data for files stored in the ``_dir`` file, not numeric files."""
+    """
+    The block of data after the header, which contains the file data for files stored in the
+    ``_dir`` file, not numeric files.
+    """
 
     version: int
     """The VPK version, 1 or 2."""

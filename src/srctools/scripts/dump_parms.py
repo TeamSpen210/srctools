@@ -3,7 +3,7 @@
 Run with a list of paths pointing to the materialsystem/ folders in the SDK.
 This produces _shaderdb.py
 """
-from typing import Dict, List, Optional, Set
+from typing import Dict, FrozenSet, List, Optional, Set, Union
 from collections import defaultdict
 import ast
 import collections
@@ -23,7 +23,7 @@ class Var:
     default: object
     help: object
     flags: str
-    filename: str
+    filename: Union[str, FrozenSet[str]]
 
 
 VARS: Dict[str, Var] = {}
@@ -38,8 +38,8 @@ OVERRIDES: Dict[str, VarType] = {
     'color': VarType.COLOR,  # Randomly made vec3 in some shaders.
     'clearcolor': VarType.VEC3,  # Int and vec
     'noisescale': VarType.VEC4,  # Float and Vec4
-    'phongexponent': VarType.FLOAT, # Float and int.
-    # Defined as float in engine_post, but immediately casted to int.
+    'phongexponent': VarType.FLOAT,  # Float and int.
+    # Defined as float in engine_post, but immediately cast to int.
     'num_lookups': VarType.INT,
     'selfillumfresnelminmaxexp': VarType.VEC4,  # 3 or 4 values depending on shader.
     # 4 floats in Character shader, float in lightmappedgeneric
@@ -126,12 +126,12 @@ def process(filename: str, args: str) -> None:
                 if isinstance(other.default, frozenset):
                     var = attrs.evolve(var, default=other.default | {var.default})
                 else:
-                    var = attrs.evolve(var, default=frozenset({var.default, other.default}))
+                    var = attrs.evolve(var, default=frozenset({other.default, var.default}))
 
                 if isinstance(other.filename, frozenset):
-                    var = attrs.evolve(var, filename=other.filename | {var.filename})
+                    var = attrs.evolve(var, filename=other.filename | {filename})
                 else:
-                    var = attrs.evolve(var, filename=frozenset({var.filename, other.filename}))
+                    var = attrs.evolve(var, filename=frozenset({other.filename, filename}))
         else:
             # Different types, major issue.
             CONFLICTS[name].add(var)
@@ -141,7 +141,8 @@ def process(filename: str, args: str) -> None:
 def dump(folder: str) -> None:
     """Process the materialsystem/ folder from a game repro."""
     for file in glob.iglob(folder + '/**/*'):
-        if not file.endswith(('.h', '.cpp', '.c')): continue
+        if not file.endswith(('.h', '.cpp', '.c')):
+            continue
         with open(file, errors='ignore') as f:
             for line in f:
                 if line.strip() == 'BEGIN_SHADER_PARAMS':

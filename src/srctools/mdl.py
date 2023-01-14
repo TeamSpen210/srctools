@@ -61,7 +61,7 @@ class Flags(FlagEnum):
 
 class AnimEventTypes(FlagEnum):
     """Categories of animation events."""
-    NONE = 0
+    NONE      = 0
     SERVER    = 1 << 0
     SCRIPTED  = 1 << 1
     SHARED    = 1 << 2

@@ -563,6 +563,7 @@ def build_blocks(
     overlaps: Iterable[Tuple[EntityDef, EntityDef, int]],
 ) -> List[Tuple[List[EntityDef], Set[str]]]:
     """Group entities into the blocks to use."""
+
     class BuiltBlock:
         """Used when serialising, the data."""
         def __init__(self) -> None:
@@ -575,8 +576,9 @@ def build_blocks(
             self.ents.append(ent)
             self.stringdb |= ent_to_string[ent]
             self.bytesize += ent_to_size[ent]
-            ent_to_block[ent] = self
-            todo.discard(ent)
+            # Circular definitions here.
+            ent_to_block[ent] = self  # noqa: F821
+            todo.discard(ent)  # noqa: F821
 
     ent_to_block: Dict[EntityDef, BuiltBlock] = {}
     overflow_block = BuiltBlock()

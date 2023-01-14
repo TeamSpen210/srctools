@@ -4,3 +4,22 @@
 # used.
 exclude = .git,__pycache__,.tox,.eggs,*.egg,_class_resources,tests
 max-line-length=127
+extend-ignore =
+	# Allow spaces before operators for alignment
+	E221
+	# Allow 1*2 + 3 for spacing.
+	E226
+	# Allow no spaces arould default params.
+	E252
+	# Allow module level import later in the file.
+	E402
+	# Allow ... on same line as def
+	E704
+	# Allow *-imports.
+	F403
+	# name may be undefined, or defined from star imports: module
+	F405
+	# We want a blank line at end of file.
+	W391
+	# We want operators at the start of wrapped lines, not the end.
+	W503
