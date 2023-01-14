@@ -1276,55 +1276,36 @@ class PackList:
             self.pack_file(filename, param_type, optional=file.optional)
 
 
-_engine_fgd: Optional[FGD] = None
-
-
-def _get_engine_fgd() -> FGD:
-    """Fetch and cache the engine FGD database."""
-    global _engine_fgd
-    if _engine_fgd is None:
-        _engine_fgd = FGD.engine_dbase()
-    return _engine_fgd
-
-
 def entclass_resources(classname: str) -> Iterable[Tuple[str, FileType]]:
     """Fetch a list of resources this entity class is known to use in code.
 
-    :deprecated: Use :py:func:`EntityDef.engine_cls()` then :py:func:`EntityDef.get_resources()`.
+    :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` \
+    then :py:meth:`EntityDef.get_resources() <srctools.fgd.EntityDef.get_resources>`.
     """
     warnings.warn(
-        'Using entclass_resources() is deprecated, access FGD.engine_db() and then '
+        'Using entclass_resources() is deprecated, access EntityDef.engine_cls() and then '
         'EntityDef.get_resources() instead.',
         DeprecationWarning, stacklevel=2,
     )
-    fgd = _get_engine_fgd()
-    try:
-        ent_def = fgd[classname]
-    except KeyError:
-        raise KeyError(classname) from None
-
-    for filetype, filename in ent_def.get_resources(ResourceCtx(fgd=fgd), ent=None):
+    ent_def = EntityDef.engine_def(classname)
+    for filetype, filename in ent_def.get_resources(ResourceCtx(), ent=None):
         yield (filename, filetype)
 
 
 def entclass_canonicalise(classname: str) -> str:
     """Canonicalise classnames - some ents have old classnames for compatibility and the like.
 
-    For example func_movelinear was originally momentary_door. This doesn't include names which
-    have observably different behaviour, like prop_physics_override.
+    For example ``func_movelinear`` was originally ``momentary_door``. This doesn't include names
+    which have observably different behaviour, like ``prop_physics_override``.
 
-    :deprecated: Use :py:func:`FGD.engine_db()`, then check if the entity is an alias.
+    :deprecated: Use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>`, then \
+    check if the entity is an alias.
     """
     warnings.warn(
-        f'Using entclass_packfun() is deprecated, access FGD.engine_db() and then '
-        f'EntityDef.get_resources() instead.',
+        'Using entclass_canonicalise() is deprecated, access EntityDef.engine_def() instead.',
         DeprecationWarning, stacklevel=2,
     )
-    fgd = _get_engine_fgd()
-    try:
-        ent_def = fgd[classname]
-    except KeyError:
-        return classname
+    ent_def = EntityDef.engine_def(classname)
     if ent_def.is_alias:
         try:
             [base] = ent_def.bases
@@ -1349,16 +1330,11 @@ def entclass_packfunc(classname: str) -> Callable[[PackList, Entity], object]:
         'EntityDef.get_resources() instead.',
         DeprecationWarning, stacklevel=2,
     )
-    fgd = _get_engine_fgd()
-    try:
-        ent_def = fgd[classname]
-    except KeyError:
-        raise KeyError(classname) from None
+    ent_def = EntityDef.engine_def(classname)
 
     def pack_shim(packlist: PackList, ent: Entity) -> None:
         """Translate to old parameters."""
         for filetype, filename in ent_def.get_resources(ResourceCtx(
-            fgd=fgd,
             fsys=packlist.fsys,
         ), ent=ent):
             packlist.pack_file(filename, filetype)
@@ -1374,8 +1350,4 @@ def entclass_iter() -> Collection[str]:
         'Using entclass_iter() is deprecated, access FGD.engine_db() instead.',
         DeprecationWarning, stacklevel=2,
     )
-    return [
-        ent.classname
-        for ent in _get_engine_fgd().entities.values()
-        if not isinstance(ent.resources, tuple)
-    ]
+    return EntityDef.engine_classes()
