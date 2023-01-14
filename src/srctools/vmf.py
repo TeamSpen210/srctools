@@ -602,11 +602,13 @@ class VMF:
         self, *,
         inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
     ) -> str: ...
+
     @overload
     def export(
         self, dest_file: IO[str], *,
         inc_version: bool=True, minimal: bool=False, disp_multiblend: bool = True,
     ) -> None: ...
+
     def export(
         self,
         dest_file: Optional[IO[str]] = None, *,
@@ -2499,6 +2501,7 @@ class Entity(MutableMapping[str, str]):
     def __getitem__(self, key: str) -> str: ...
     @overload
     def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+
     def __getitem__(self, key: Union[str, Tuple[str, T]]) -> Union[str, T]:
         """Allow using [] syntax to search for keyvalues.
 
@@ -2776,8 +2779,10 @@ class EntityFixup(MutableMapping[str, str]):
 
     @overload
     def __getitem__(self, key: str) -> str: ...
+
     @overload
     def __getitem__(self, key: Tuple[str, T]) -> Union[str, T]: ...
+
     def __getitem__(self, key: Union[Tuple[str, T], str]) -> Union[str, T]:
         """Retrieve keys via fixup[key] or fixup[key, default].
 

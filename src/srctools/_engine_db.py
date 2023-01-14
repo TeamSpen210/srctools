@@ -197,7 +197,7 @@ class BinStrDict:
 
         The result is the two bytes that represent the string.
         """
-        return _fmt_16bit.pack( self._dict[string])
+        return _fmt_16bit.pack(self._dict[string])
 
     def serialise(self, file: IO[bytes]) -> None:
         """Convert this to a stream of bytes."""
@@ -734,7 +734,7 @@ def unserialise(file: IO[bytes]) -> _EngineDBProto:
 
     # Read CBaseEntity.
     from_dict = BinStrDict.unserialise(file)
-    ent_map['_cbaseentity_'] = ent_unserialise(file, '_CBaseEntity_',  from_dict)
+    ent_map['_cbaseentity_'] = ent_unserialise(file, '_CBaseEntity_', from_dict)
 
     for classnames, off, size in positions:
         file.seek(off)

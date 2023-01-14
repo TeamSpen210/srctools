@@ -118,12 +118,12 @@ def read_array(fmt: Union[str, Struct], data: bytes) -> List[int]:
     The format string should be one of the integer format characters, optionally prefixed by an
      endianness indicator. As many integers as possible will then be read from the data.
     """
-    
+
     if isinstance(fmt, Struct):
         # Since `struct.Struct` does not support writing arrays, we'll have to rebuild `fmt`.
         # Turn it back into its original format string so we can figure out what it held.
         fmt = fmt.format
-        
+
     if len(fmt) == 2:
         endianness = fmt[0]
         fmt = fmt[1]
@@ -143,7 +143,6 @@ def write_array(fmt: Union[str, Struct], data: Collection[int]) -> bytes:
     The format string should be one of the integer format characters, optionally prefixed by an
     endianness indicator. The integers in the data will then be packed into a bytes buffer and returned.
      """
-     
     if isinstance(fmt, Struct):
         # Since `struct.Struct` does not support writing arrays, we'll have to rebuild `fmt`.
         # Turn it back into its original format string so we can figure out what it held.

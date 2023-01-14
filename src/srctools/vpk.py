@@ -248,7 +248,7 @@ class VPK:
 
     mode: OpenModes
     """How the file was opened.
-    
+
     - Read mode, the file will not be modified and it must already exist.
     - Write mode will create the directory if needed.
     - Append mode will also create the directory, but not wipe the file.
@@ -256,8 +256,8 @@ class VPK:
 
     dir_limit: Optional[int]
     """
-    The maximum amount of data for files saved to the dir file. 
-    
+    The maximum amount of data for files saved to the dir file.
+
     - :external:py:data:`None`: No limit.
     - ``0``: Save all to a data file.
     """
@@ -724,8 +724,10 @@ def script_write(args: List[str]) -> None:
 
 # This function requires accumulating a character at a time, parsing the VPK
 # is very slow without a speedup.
+_Py_iter_nullstr = _Cy_iter_nullstr = iter_nullstr
 try:
-    from srctools._tokenizer import _VPK_IterNullstr as iter_nullstr  # type: ignore
+    from srctools._tokenizer import _VPK_IterNullstr as _Cy_iter_nullstr  # noqa
+    iter_nullstr = _Cy_iter_nullstr
 except ImportError:
     pass
 

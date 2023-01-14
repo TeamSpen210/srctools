@@ -704,8 +704,8 @@ def load_dxt3(pixels: Array, data: bytes, width: int, height: int) -> None:
             for off in range(8):
                 byte = data[block_off + off]
                 y, x = divmod(off * 2, 4)
-                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x  + x)
-                # Combine the values twice so we evenly cover the whole range.
+                pos = 16 * block_wid * (4 * block_y + y) + 4 * (4 * block_x + x)
+                # Combine the values twice, so we evenly cover the whole range.
                 pixels[pos + 3] = byte & 0b00001111 | (byte & 0b00001111) << 4
                 pixels[pos + 7] = byte & 0b11110000 | (byte & 0b11110000) >> 4
 

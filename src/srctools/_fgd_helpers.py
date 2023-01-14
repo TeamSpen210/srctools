@@ -1,7 +1,6 @@
 """Implemenations of specific code for each FGD helper type."""
 from typing import (
-    TYPE_CHECKING, ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Type,
-    TypeVar, Union,
+    ClassVar, Collection, Iterable, Iterator, List, Optional, Tuple, Type, TypeVar, Union,
 )
 
 import attrs
@@ -325,7 +324,6 @@ class HelperFrustum(Helper):
             except ValueError:
                 pass
 
-
         return cls(fov, nearz, farz, color, pitch)
 
     def export(self) -> List[str]:
@@ -596,7 +594,6 @@ class HelperModelProp(HelperModel):
 class HelperModelLight(HelperModel):
     """Special model helper, with inverted pitch."""
     TYPE: ClassVar[HelperTypes] = HelperTypes.MODEL_NEG_PITCH
-
 
 
 class HelperInstance(Helper):

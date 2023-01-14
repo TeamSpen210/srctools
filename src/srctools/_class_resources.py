@@ -136,7 +136,6 @@ def momentary_rot_button(ctx: ResourceCtx, ent: Entity) -> ResGen:
     yield button_sound(ent['unlocked_sound'])
 
 
-
 @cls_func
 def color_correction(ctx: ResourceCtx, ent: Entity) -> ResGen:
     """Pack the color correction file."""
@@ -451,7 +450,7 @@ AMMO_BOX_MDLS = [
     # Valve reused models for these three.
     ("smg1.mdl", "357.mdl"),
     ("smg1.mdl", "xbow.mdl"),
-    ("ar2.mdl",  "ar2alt.mdl"),
+    ("ar2.mdl", "ar2alt.mdl"),
 
     ("smg2.mdl", "smg2.mdl"),
     # Two added by mapbase.
@@ -569,6 +568,7 @@ ANT_WORKER_RESOURCES = [
     Resource.snd("NPC_Antlion.PoisonShoot"),
     Resource.snd("NPC_Antlion.PoisonBall"),
 ]
+
 
 @cls_func
 def npc_antlion(ctx: ResourceCtx, ent: Entity) -> ResGen:

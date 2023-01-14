@@ -21,6 +21,7 @@ if TYPE_CHECKING:
     )
 else:
     from srctools import math
+
     def __getattr__(name: str) -> object:
         if name in __all__:
             warnings.warn(

@@ -262,6 +262,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def get(self, key: Any) -> None: ...
     @overload
     def get(self, key: Any, default: ValT) -> ValT: ...
+
     def get(self, key: Any, default: Optional[ValT]=None) -> Optional[ValT]:
         """get() always returns the default item."""
         return default
@@ -295,6 +296,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def setdefault(self, key: Any) -> None: ...
     @overload
     def setdefault(self, key: Any, default: ValT) -> ValT: ...
+
     def setdefault(self, key: Any, default: Optional[ValT] = None) -> Optional[ValT]:
         """setdefault() always returns the default item, but does not store it."""
         return default
@@ -305,6 +307,7 @@ class _EmptyMapping(MutableMapping[Any, Any]):
     def update(self, __m: Iterable[Tuple[Any, Any]], **kwargs: Any) -> None: ...
     @overload
     def update(self, **kwargs: Any) -> None: ...
+
     def update(self, *args: Any, **kargs: Any) -> None:
         """Runs {}.update() on arguments."""
         # Check arguments are correct, and raise appropriately.
@@ -461,6 +464,7 @@ class AtomicWriter(Generic[IOKindT]):
         self: 'AtomicWriter[io.BufferedWriter]', filename: StringPath,
         is_bytes: Literal[True],
     ) -> None: ...
+
     @overload
     def __init__(
         self: 'AtomicWriter[io.TextIOWrapper]', filename: StringPath,

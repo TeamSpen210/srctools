@@ -355,6 +355,7 @@ class Frame:
 
     @overload
     def copy_from(self, source: 'Frame') -> None: ...
+
     @overload
     def copy_from(
         self,
@@ -378,7 +379,7 @@ class Frame:
             assert source._data is not None
             if self._data is None:  # Duplicate the other array
                 self._data = source._data[:]
-            else: # Copy the other array onto us
+            else:  # Copy the other array onto us
                 self._data[:] = source._data
         else:
             if self._data is None:
@@ -1094,7 +1095,7 @@ class SheetSequence:
             ))
             for i, (duration, tex_a, tex_b, tex_c, tex_d) in enumerate(seq.frames):
                 file.write(struct.pack('<f4f', duration, *tex_a))
-                if version == 1: # We have an additional 3 coords.
+                if version == 1:  # We have an additional 3 coords.
                     file.write(struct.pack('<4f', *tex_b))
                     file.write(struct.pack('<4f', *tex_c))
                     file.write(struct.pack('<4f', *tex_d))

@@ -290,7 +290,6 @@ def _load_engine_db() -> '_EngineDBProto':
     global _ENGINE_DB
     if _ENGINE_DB is None:
         from ._engine_db import unserialise
-        comp: IO[bytes]
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB = unserialise(f)
@@ -537,6 +536,7 @@ class Helper:
 class UnknownHelper(Helper):
     """Represents an unknown helper."""
     TYPE: ClassVar[Optional[HelperTypes]] = None
+
     def __init__(self, name: str, args: List[str]) -> None:
         """Unknown helpers have a name attribute."""
         self.name = name
