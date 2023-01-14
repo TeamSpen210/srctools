@@ -2111,7 +2111,7 @@ class Side:
 
 
 class _KeyDict(Dict[str, str]):
-    """Temporary class to allow the Entity.keys dict to be accessed directly, as well as call keys()."""
+    """Temporary class to allow the `Entity.keys` dict to be accessed directly, as well as call keys()."""
     def __call__(self) -> KeysView[str]:
         return self.keys()
 
@@ -2178,18 +2178,20 @@ class Entity(MutableMapping[str, str]):
         self.logical_pos = logical_pos or f'[0 {self.id}]'
         self.comments = comments
 
-    @property
-    def keys(self) -> _KeyDict:
-        """Access the internal keyvalues dict.
+    if TYPE_CHECKING:
+        # To type checkers, treat as a regular method.
+        def keys(self) -> KeysView[str]: ...
+    else:
+        @property
+        def keys(self) -> _KeyDict:
+            """Access the internal keyvalues dict.
 
-        This use is deprecated, the entity is a MutableMapping. It can also be called to get
-        a keys view, as with other mappings.
-        """
-        warnings.warn('This is private, use the entity as a mapping.', DeprecationWarning, stacklevel=2)
-        return self._keys
+            This use is deprecated, the entity is a MutableMapping. It can also be called to get
+            a keys view, as with other mappings.
+            """
+            warnings.warn('This is private, use the entity as a mapping.', DeprecationWarning, stacklevel=2)
+            return self._keys
 
-    if not TYPE_CHECKING:  # Show as readonly.
-        # noinspection PyDeprecation
         @keys.setter
         def keys(self, value: Dict[str, ValidKVs]) -> None:
             """Deprecated method to replace all keys."""
