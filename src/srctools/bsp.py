@@ -1336,6 +1336,10 @@ class BSP:
                 self.lump_layout = LUMP_LAYOUT_V19
 
             lump_offsets: Dict[BSP_LUMPS, Tuple[int, int, int]] = {}
+            offset: int
+            length: int
+            version: int
+            uncomp_size: int
 
             # Read the index describing each BSP lump.
             for index in range(LUMP_COUNT):
@@ -1378,7 +1382,6 @@ class BSP:
                 flags: int
                 glump_version: int
                 file_off: int
-                uncomp_size: int
                 (
                     game_lump_id,
                     flags,
