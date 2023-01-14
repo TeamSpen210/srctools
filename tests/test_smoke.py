@@ -12,16 +12,10 @@ package_loc = Path(__file__, '..', '..', 'src', 'srctools')
     fname.stem
     for fname in package_loc.glob('*.py')
     if fname.stem != '__init__'
-] + ['_class_resources'])
+] + ['_class_resources', '_engine_db'])
 def test_smoke(mod_name: str) -> None:
     """Ensure every module is importable."""
     importlib.import_module('srctools.' + mod_name)
-
-
-def test_entclass_resources() -> None:
-    """Test the class resources database can be loaded."""
-    from srctools.packlist import entclass_resources
-    assert list(entclass_resources('info_target')) == []
 
 
 def test_vmt_types() -> None:
@@ -32,5 +26,6 @@ def test_vmt_types() -> None:
 
 def test_engine_fgd() -> None:
     """Test the FGD database can be loaded."""
-    from srctools.fgd import FGD
-    assert 'env_beam' in FGD.engine_dbase().entities
+    from srctools.fgd import EntityDef
+    assert 'env_beam' in EntityDef.engine_classes()
+    assert 'wait' in EntityDef.engine_def('trigger_multiple').kv

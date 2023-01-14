@@ -45,13 +45,14 @@ __all__ = [
     'HelperExtAppliesTo', 'HelperExtAutoVisgroups', 'HelperExtOrderBy',
 ]
 
-# Cached result of FGD.engine_dbase().
-_ENGINE_FGD: Optional['FGD'] = None
 T = TypeVar('T')
 FileSysT = TypeVar('FileSysT', bound=FileSystem[Any])
 _fake_vmf = VMF(preserve_ids=False)
 # Collections of tags.
 TagsSet: TypeAlias = FrozenSet[str]
+
+# Cached engine DB parsing functions.
+_ENGINE_DB: Optional['_EngineDBProto'] = None
 
 
 class FGDParseError(TokenSyntaxError):
@@ -282,21 +283,18 @@ class HelperTypes(Enum):
         return self.name.startswith('EXT_')
 
 
-def _load_engine_db() -> 'FGD':
+def _load_engine_db() -> '_EngineDBProto':
     """Load our engine database."""
     # It's pretty expensive to parse, so keep the original privately,
     # returning a deep-copy.
-    global _ENGINE_FGD
-    if _ENGINE_FGD is None:
-        from lzma import LZMAFile
-
+    global _ENGINE_DB
+    if _ENGINE_DB is None:
         from ._engine_db import unserialise
         comp: IO[bytes]
         # On 3.8, importlib_resources doesn't have the right stubs.
-        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as comp:
-            with LZMAFile(comp) as f:
-                _ENGINE_FGD = unserialise(f)
-    return _ENGINE_FGD
+        with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
+            _ENGINE_DB = unserialise(f)
+    return _ENGINE_DB
 
 
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
@@ -480,67 +478,6 @@ class Resource:
     def part(cls, filename: str, tags: TagsSet = frozenset()) -> 'Resource':
         """Create a resource definition for a particle system."""
         return cls(filename, FileType.PARTICLE_SYSTEM, tags)
-
-
-_GetFGDFunc = Callable[[str], 'EntityDef']
-
-
-@attrs.frozen(init=False)
-class ResourceCtx:
-    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
-    tags: TagsSet
-    fsys: FileSystem[Any]
-    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
-    mapname: str
-    get_entdef: Callable[[str], 'EntityDef']
-
-    # For use of get_resources() only.
-    _functions: Mapping[str, Callable[
-        ['ResourceCtx', Entity],
-        Iterator[Union[Resource, Entity]]
-    ]]
-
-    def __init__(
-        self,
-        tags: Iterable[str] = (),
-        fsys: FileSystem[Any] = VirtualFileSystem({}),
-        fgd: Union['FGD', Mapping[str, 'EntityDef'], _GetFGDFunc] = srctools.EmptyMapping,
-        mapname: str = '',
-        funcs: Mapping[str, Callable[
-            ['ResourceCtx', Entity],
-            Iterator[Union[Resource, Entity]]
-        ]] = srctools.EmptyMapping,
-    ) -> None:
-        """
-        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
-        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
-        :param tags: Various string tags used to indicate what engine branch is being used. This \
-        allows handling Episodic differences, or enhancements by Mapbase.
-        :param fsys: A :py:class:`~srctools.FileSystem`
-        :param mapname:
-        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
-        accessed, if not present in this
-        """
-        from srctools._class_resources import CLASS_FUNCS
-        if funcs is srctools.EmptyMapping:
-            funcs = CLASS_FUNCS
-        else:
-            # ChainMap itself is mutable and so can't accept Mapping.
-            # We're immediately casting to Mapping, so it's not dangerous.
-            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
-
-        # Strip extension, and normalise folder separators.
-        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
-            mapname = mapname[:-4]
-        self.__attrs_init__(  # pyright: ignore
-            frozenset(map(str.upper, tags)),
-            fsys,
-            mapname.replace('\\', '/'),
-            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
-            # it must already be callable.
-            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
-            funcs,
-        )
 
 
 class Helper:
@@ -1363,13 +1300,13 @@ class EntityDef:
 
         :raises KeyError: If the classname is not found in the database.
         """
-        return deepcopy(_load_engine_db()[classname])  # Or KeyError if not found.
+        return deepcopy(_load_engine_db().get_ent(classname))  # Or KeyError if not found.
 
     @classmethod
     def engine_classes(cls) -> AbstractSet[str]:
         """Return a set of known entity classnames, from the Hammer Addons database."""
         # This is immutable, so we don't need to copy.
-        return _load_engine_db().entities.keys()
+        return _load_engine_db().get_classnames()
 
     def __repr__(self) -> str:
         if self.type is EntityTypes.BASE:
@@ -1458,7 +1395,7 @@ class EntityDef:
 
     def get_resources(
         self,
-        ctx: ResourceCtx,
+        ctx: 'ResourceCtx',
         *,
         ent: Optional[Entity],
         on_error: Callable[[str], object] = lambda err: None,
@@ -1750,7 +1687,7 @@ class FGD:
         """Yield all entities in sorted order.
 
         This ensures only all bases for an entity are yielded before the entity.
-        Otherwise entities are ordered in alphabetical order.
+        Otherwise, entities are ordered in alphabetical order.
         """
         # We need to do a topological sort.
         todo: Set[EntityDef] = set(self)
@@ -1792,7 +1729,7 @@ class FGD:
 
             todo = deferred.difference(done)
 
-    def collapse_bases(self) -> None:
+    def collapse_bases(self, ignore_aliases: bool = True) -> None:
         """Collapse all bases into the entities that use them.
 
         This operates in-place, and clears all the base attributes as a result.
@@ -2075,7 +2012,7 @@ class FGD:
         specific entities, use :py:func:`EntityDef.engine_def()` instead to avoid needing to fetch
         all the entities.
         """
-        return deepcopy(_load_engine_db())
+        return _load_engine_db().get_fgd()
 
     def __getitem__(self, classname: str) -> EntityDef:
         """Lookup entities by classname."""
@@ -2126,6 +2063,68 @@ class FGD:
             self._fix_missing_bases(base)
 
 
+_GetFGDFunc: TypeAlias = Callable[[str], EntityDef]
+
+
+@attrs.frozen(init=False)
+class ResourceCtx:
+    """Map information passed to :attr:`FileType.ENTCLASS_FUNC` functions."""
+    tags: TagsSet
+    fsys: FileSystem[Any]
+    #: The BSP/VMF map name, like what is passed to :command:`map` in-game.
+    mapname: str
+    get_entdef: Callable[[str], 'EntityDef']
+
+    # For use of get_resources() only.
+    _functions: Mapping[str, Callable[
+        ['ResourceCtx', Entity],
+        Iterator[Union[Resource, Entity]]
+    ]]
+
+    def __init__(
+        self,
+        tags: Iterable[str] = (),
+        fsys: FileSystem[Any] = VirtualFileSystem({}),
+        fgd: Union[FGD, Mapping[str, EntityDef], _GetFGDFunc] = EntityDef.engine_def,
+        mapname: str = '',
+        funcs: Mapping[str, Callable[
+            ['ResourceCtx', Entity],
+            Iterator[Union[Resource, Entity]]
+        ]] = srctools.EmptyMapping,
+    ) -> None:
+        """
+        :param fgd: Used to look up dependent entities. May either be the :py:class:`FGD` itself, \
+        an equivalent :external:term:`mapping`, or a callable returning the :py:class:`EntityDef`.
+        If unset the internal database will be used.
+        :param tags: Various string tags used to indicate what engine branch is being used. This \
+        allows handling Episodic differences, enhancements by Mapbase, and other things like that.
+        :param fsys: A :py:class:`~srctools.FileSystem`, used to read scripts and other files.
+        :param mapname: The name of the map, used to handle some entities that used this to pick variants.
+        :param funcs: Mapping of names to entclass functions to call. A builtin set of functions is
+        accessed, if not present in this.
+        """
+        from srctools._class_resources import CLASS_FUNCS
+        if funcs is srctools.EmptyMapping:
+            funcs = CLASS_FUNCS
+        else:
+            # ChainMap itself is mutable and so can't accept Mapping.
+            # We're immediately casting to Mapping, so it's not dangerous.
+            funcs = ChainMap(funcs, CLASS_FUNCS)  # type: ignore[arg-type]
+
+        # Strip extension, and normalise folder separators.
+        if mapname.casefold().endswith(('.bsp', '.vmf', '.vmm', '.vmx')):
+            mapname = mapname[:-4]
+        self.__attrs_init__(  # pyright: ignore
+            frozenset(map(str.upper, tags)),
+            fsys,
+            mapname.replace('\\', '/'),
+            # If this is an FGD or Mapping __getitem__ is the appropriate callable, otherwise
+            # it must already be callable.
+            getattr(fgd, '__getitem__', cast(_GetFGDFunc, fgd)),
+            funcs,
+        )
+
+
 def _init_helper_impl() -> None:
     """Import and register the helper implementations."""
     # noinspection PyProtectedMember
@@ -2140,6 +2139,22 @@ def _init_helper_impl() -> None:
             raise ValueError(
                 f'Missing helper implementation for {helper}! : {HELPER_IMPL}'
             )
+
+
+class _EngineDBProto:
+    """Unserialised database, which will be parsed progressively as required."""
+    def get_classnames(self) -> AbstractSet[str]:
+        """Get the classnames in the database."""
+        raise NotImplementedError
+
+    def get_ent(self, classname: str) -> EntityDef:
+        """Fetch the specified entity."""
+        raise NotImplementedError
+
+    def get_fgd(self) -> FGD:
+        """Parse all the blocks and make an FGD."""
+        raise NotImplementedError
+
 
 # Each helper type -> the class implementing them.
 HELPER_IMPL: Dict[HelperTypes, Type[Helper]] = {}
