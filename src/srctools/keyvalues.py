@@ -63,7 +63,7 @@ from typing import (
     Any, Callable, Dict, Iterable, Iterator, List, Mapping, Optional, Tuple, Type, TypeVar,
     Union, cast,
 )
-from typing_extensions import Final, overload
+from typing_extensions import Final, TypeAlias, overload
 import builtins  # Keyvalues.bool etc shadows these.
 import keyword
 import os
@@ -82,11 +82,7 @@ __all__ = ['KeyValError', 'NoKeyError', 'Keyvalues']
 _NO_KEY_FOUND = cast(str, object())
 
 _KV_Value = Union[List['Keyvalues'], str, Any]
-# We don't have recursive definitions, just go deep enough it should be fine.
-_As_Dict_Ret = Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
-               Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
-               Union[str, Dict[str, Union[str, Dict[str, Union[str, Dict[str,
-               Any]]]]]]]]]]]]]]]]]]
+_As_Dict_Ret: TypeAlias = Union[str, Dict[str, '_As_Dict_Ret']]
 
 T = TypeVar('T')
 
