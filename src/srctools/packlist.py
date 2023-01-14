@@ -847,7 +847,7 @@ class PackList:
             tags=tags,
         )
 
-        cache: dict[str, EntityDef] = {}
+        cache: Dict[str, EntityDef] = {}
 
         for ent in vmf.entities:
             # Allow opting out packing specific entities.

@@ -578,7 +578,7 @@ def build_blocks(
             ent_to_block[ent] = self
             todo.discard(ent)
 
-    ent_to_block: dict[EntityDef, BuiltBlock] = {}
+    ent_to_block: Dict[EntityDef, BuiltBlock] = {}
     overflow_block = BuiltBlock()
     all_blocks: List[BuiltBlock] = [overflow_block]
     todo = set(all_ents)
