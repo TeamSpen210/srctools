@@ -33,4 +33,4 @@ jobs:
         python -m pip install --editable .
     - name: Test with pytest
       run: |
-        pytest tests
+        python -Werror -m pytest tests

@@ -95,13 +95,6 @@ reportPropertyTypeMismatch = false
 pythonVersion = "3.8"
 strictParameterNoneValue = false
 
-[tool.pytest.ini_options]
-filterwarnings = [
-	# Any warnings in srctools = error.
-	"error:::srctools[.*]",
-	"error:::tests[.*]",  # Same for tests themselves.
-]
-
 [tool.mypy]
 warn_unused_ignores = true
 warn_redundant_casts = true

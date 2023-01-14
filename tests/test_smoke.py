@@ -11,7 +11,8 @@ package_loc = Path(__file__, '..', '..', 'src', 'srctools')
 @pytest.mark.parametrize('mod_name', [
     fname.stem
     for fname in package_loc.glob('*.py')
-    if fname.stem != '__init__'
+    # Don't import the package init or deprecated modules.
+    if fname.stem not in ['__init__', 'property_parser', 'vec']
 ] + ['_class_resources', '_engine_db'])
 def test_smoke(mod_name: str) -> None:
     """Ensure every module is importable."""

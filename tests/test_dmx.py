@@ -722,32 +722,32 @@ def verify_sample(root: Element) -> None:
 
     arr_bool = arrays['logical']
     assert len(arr_bool) == 8
-    assert list(arr_bool) == [
+    assert list(arr_bool.iter_bool()) == [
         False, False, True, False,
         False, True, True, True,
     ]
-    assert list(arrays['colors']) == [
+    assert list(arrays['colors'].iter_colour()) == [
         Color(255, 0, 0, 255),
         Color(0, 0, 255, 128),
         Color(0, 240, 0, 0),
     ]
-    assert list(arrays['2ds']) == [
+    assert list(arrays['2ds'].iter_vec2()) == [
         Vec2(x, y)
         for x in [-1, 0, 1]
         for y in [-1, 0, 1]
     ]
-    assert list(arrays['3ds']) == [
+    assert list(arrays['3ds'].iter_vec3()) == [
         FrozenVec(34.0, -348.25, 128.125),
         FrozenVec(0.0, 0.0, 0.0),
         FrozenVec(0.9, 0.8, 0.5),
     ]
-    assert list(arrays['4dimensional']) == [
+    assert list(arrays['4dimensional'].iter_vec4()) == [
         Vec4(0.0, 0.0, 0.0, 0.0),
         Vec4(0.0, 0.0, 0.0, 1.0),
         Vec4(0.0, 2.0, 0, 48.0),
         Vec4(-28.0, 380.0, -39.0, 39.0),
     ]
-    assert list(arrays['directions']) == [
+    assert list(arrays['directions'].iter_angle()) == [
         FrozenAngle(0, 0, 0), FrozenAngle(45, 0, 90),
         FrozenAngle(0, 135, 180), FrozenAngle(45, 31, 321),
         FrozenAngle(94, 165, 23),
@@ -757,7 +757,7 @@ def verify_sample(root: Element) -> None:
     assert arrays['quaternions'][1].val_quat == Quaternion(a(-0.534522), a(0.267261), 0.0, a(-0.801784))
 
     assert len(arrays['hexes']) == 3
-    assert list(arrays['hexes']) == [
+    assert list(arrays['hexes'].iter_bin()) == [
         bytes([0, 1, 2, 3, 4, 5]),
         bytes([0x1A, 0x1B, 0x1C, 0x1D, 0x1E, 0x1F]),
         b'\xFF\xEE\xDD\xCC\xBB\xAA',
@@ -905,7 +905,7 @@ def test_kv1_to_dmx() -> None:
 
     subkey: Attribute[Element] = elem1['subkeys']
     assert subkey.type is ValueType.ELEMENT and subkey.is_array
-    [child1, child2] = subkey
+    [child1, child2] = subkey.iter_elem()
     assert child1.type == 'DmElement'
     assert child1.name == 'child1'
     assert child1['key'].type is ValueType.STRING
@@ -929,7 +929,7 @@ def test_kv1_to_dmx_dupleafs() -> None:
     assert root.name == 'Root'
     subkeys: Attribute[Element] = root['subkeys']
     assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
-    [k1, k2, k3] = subkeys
+    [k1, k2, k3] = subkeys.iter_elem()
     assert k1.name == 'Key1'
     assert k1.type == 'DmElementLeaf'
     assert k1['value'].type is ValueType.STRING
@@ -957,7 +957,7 @@ def test_kv1_to_dmx_leaf_and_blocks() -> None:
     assert root.name == 'blah'
     subkeys: Attribute[Element] = root['subkeys']
     assert subkeys.type is ValueType.ELEMENT and subkeys.is_array
-    [e1, e2] = subkeys
+    [e1, e2] = subkeys.iter_elem()
     assert e1.type == 'DmElementLeaf'
     assert e1['value'].val_str == 'result'
     assert e2.type == 'DmElement'

@@ -563,6 +563,8 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
         """Check a Vec pair for addition and subtraction."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
+        vec_tup_1 = pytest.deprecated_call(Vec_tuple, x1, y1, z1)
+        vec_tup_2 = pytest.deprecated_call(Vec_tuple, x2, y2, z2)
 
         # These are direct methods, so no inheritence and iop to deal with.
 
@@ -579,6 +581,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
         # Ensure they haven't modified the originals
         assert_vec(vec1, x1, y1, z1, type=Vec)
         assert_vec(vec2, x2, y2, z2, type=Vec)
+
 
         # Addition and subtraction
         for op_name, op_func, op_ifunc in operators:
@@ -598,7 +601,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
             assert_vec(vec2, x2, y2, z2)
 
             assert_vec(
-                op_func(vec1, Vec_tuple(x2, y2, z2)),
+                op_func(vec1, vec_tup_2),
                 *result,
                 type=Vec,
                 msg=f'Vec({x1} {y1} {z1}) {op_name} Vec_tuple({x2} {y2} {z2})'
@@ -606,7 +609,7 @@ def test_vec_to_vec(frozen_thawed_vec: VecClass):
             assert_vec(vec1, x1, y1, z1)
 
             assert_vec(
-                op_func(Vec_tuple(x1, y1, z1), vec2),
+                op_func(vec_tup_1, vec2),
                 *result,
                 type=Vec,
                 msg=f'Vec_tuple({x1} {y1} {z1}) {op_name} Vec({x2} {y2} {z2})'
@@ -778,9 +781,10 @@ def test_vector_mult_fail(frozen_thawed_vec, name, func):
                 pytest.fail(msg)
 
 
-def test_order(frozen_thawed_vec):
+def test_order(py_c_vec):
     """Test ordering operations (>, <, <=, >=, ==)."""
-    Vec = frozen_thawed_vec
+    Vec = vec_mod.Vec
+    FrozenVec = vec_mod.FrozenVec
 
     comp_ops = [op.eq, op.le, op.lt, op.ge, op.gt, op.ne]
 
@@ -788,6 +792,9 @@ def test_order(frozen_thawed_vec):
         """Check a Vec pair for incorrect comparisons."""
         vec1 = Vec(x1, y1, z1)
         vec2 = Vec(x2, y2, z2)
+        fvec1 = FrozenVec(x1, y1, z1)
+        fvec2 = FrozenVec(x2, y2, z2)
+        vec2_tup = pytest.deprecated_call(Vec_tuple, x2, y2, z2)
         for op_func in comp_ops:
             if op_func is op.ne:
                 # special-case - != uses or, not and
@@ -795,14 +802,17 @@ def test_order(frozen_thawed_vec):
             else:
                 corr_result = op_func(x1, x2) and op_func(y1, y2) and op_func(z1, z2)
             comp = (
-                'Incorrect {{}} comparison for '
-                '({} {} {}) {} ({} {} {})'.format(
-                    x1, y1, z1, op_func.__name__, x2, y2, z2
-                )
+                f'Incorrect {op_func.__name__} comparison for '
+                f'{{}}({x1} {y1} {z1}) {op_func.__name__} {{}}({x2} {y2} {z2})'
             )
-            assert corr_result == op_func(vec1, vec2), comp.format('Vec')
-            assert corr_result == op_func(vec1, Vec_tuple(x2, y2, z2)), comp.format('Vec_tuple')
-            assert corr_result == op_func(vec1, (x2, y2, z2)), comp.format('tuple')
+            assert corr_result == op_func(vec1, vec2), comp.format('Vec', 'Vec')
+            assert corr_result == op_func(fvec1, vec2), comp.format('FrozenVec', 'Vec')
+            assert corr_result == op_func(fvec1, vec2), comp.format('Vec', 'FrozenVec')
+            assert corr_result == op_func(fvec1, fvec2), comp.format('FrozenVec', 'FrozenVec')
+            assert corr_result == op_func(vec1, vec2_tup), comp.format('Vec', 'Vec_tuple')
+            assert corr_result == op_func(fvec1, vec2_tup), comp.format('FrozenVec', 'Vec_tuple')
+            assert corr_result == op_func(vec1, (x2, y2, z2)), comp.format('Vec', 'tuple')
+            assert corr_result == op_func(fvec1, (x2, y2, z2)), comp.format('FrozenVec', 'tuple')
 
     for num in VALID_ZERONUMS:
         for num2 in VALID_ZERONUMS:
@@ -1364,8 +1374,10 @@ def test_vmf_rotation(datadir: Path, py_c_vec: PyCVec):
         assert_vec(Vec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=Vec)
         assert_vec(FrozenVec(local_vec) @ angles, x, y, z, msg, tol=1e-3, type=FrozenVec)
         # Since these two are deprecated, FrozenVec doesn't have them.
-        assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3, type=Vec)
-        assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3, type=Vec)
+        with pytest.deprecated_call(match=r'vec @ Angle\.from_str()'):
+            assert_vec(Vec(local_vec).rotate_by_str(angle_str), x, y, z, msg, tol=1e-3, type=Vec)
+        with pytest.deprecated_call(match='vec @ Angle'):
+            assert_vec(Vec(local_vec).rotate(*angles), x, y, z, msg, tol=1e-3, type=Vec)
 
 
 def test_cross_product_axes(frozen_thawed_vec: VecClass):

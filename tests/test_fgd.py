@@ -6,9 +6,10 @@ import io
 import pytest
 
 from srctools import Vec
-from srctools.fgd import *
 from srctools.filesys import VirtualFileSystem
 
+with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
+    from srctools.fgd import *
 
 @pytest.mark.parametrize('name1', ['alpha', 'beta', 'gamma'])
 @pytest.mark.parametrize('name2', ['alpha', 'beta', 'gamma'])
@@ -63,8 +64,7 @@ appliesto(tag1, tag2, !tag3)
         ]
 """})
     fgd = FGD()
-    with fsys:
-        fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
+    fgd.parse_file(fsys, fsys['test.fgd'], eval_bases=False)
     ent = fgd['Some_ENtity']
     assert ent.type is EntityTypes.POINT
     assert ent.classname == 'some_entity'

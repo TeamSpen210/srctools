@@ -31,14 +31,21 @@ def py_c_token(request: Any) -> Generator[None, None, None]:
 
 def assert_tree(first: Keyvalues, second: Keyvalues, path: str = '') -> None:
     """Check that two keyvalues trees match exactly (including case)."""
-    assert first.name == second.name, (first, second)
-    assert first.real_name == second.real_name, (first, second)
+    if first.is_root():
+        path = (path + '.<root>') if path else '<root>'
+        assert second.is_root(), (first, second)
+    else:
+        assert not second.is_root(), (first, second)
+        path = f'{path}.{first.real_name}' if path else first.real_name
+        assert first.name == second.name, (first, second)
+        assert first.real_name == second.real_name, (first, second)
+
     assert first.has_children() == second.has_children(), (first, second)
     if first.has_children():
         for child1, child2 in itertools.zip_longest(first, second):
-            assert child1 is not None, f'None != {path}.{first.real_name}.{child2.name}'
-            assert child2 is not None, f'{path}.{first.real_name}.{child1.name} != None'
-            assert_tree(child1, child2, f'{path}.{first.real_name}')
+            assert child1 is not None, f'None != {path}.{child2.name}'
+            assert child2 is not None, f'{path}.{child1.name} != None'
+            assert_tree(child1, child2, path)
     else:
         assert first.value == second.value, (first, second)
 
@@ -51,7 +58,8 @@ def test_docstring() -> None:
 
 def test_constructor() -> None:
     """Test the constructor for Keyvalues objects."""
-    Keyvalues(None, [])
+    with pytest.deprecated_call(match='Root properties'):
+        Keyvalues(None, [])
     Keyvalues('Test', 'value with spaces and ""')
     block = Keyvalues('Test_block', [
         Keyvalues('Test', 'value\0'),
@@ -91,9 +99,11 @@ def test_names() -> None:
     assert prop.name == 'second_test'
     assert prop.real_name == 'SECOND_test'
 
-    # It can also be set to None (TODO: deprecated)
-    prop.name = None  # type: ignore
-    assert prop.name is prop.real_name is None
+    # It can also be set to None - deprecated
+    with pytest.deprecated_call(match='[r|R]oot [p|P]ropert[y|ies]'):
+        prop.name = None  # type: ignore
+    with pytest.deprecated_call(match='[r|R]oot [p|P]ropert[y|ies]'):
+        assert prop.name is prop.real_name is None
 
 # If edited, update test_parse() and tokeniser check too!
 parse_test = '''
@@ -181,7 +191,7 @@ text"
 '''
 
 P = Keyvalues
-parse_result = P(None, [
+parse_result = Keyvalues.root(
     P('Root1', [
         P("Key", "Value"),
         P("Extra", "Spaces"),
@@ -201,7 +211,7 @@ parse_result = P(None, [
           ),
         # Note, invalid = unchanged.
         P('Escapes', '\t \n \\d'),
-        P('Oneliner', [Keyvalues('name', 'value')]),
+        P('Oneliner', [P('name', 'value')]),
     ]),
     P('CommentChecks', [
         P('after ', 'value'),
@@ -225,7 +235,7 @@ parse_result = P(None, [
             P('key', 'value2'),
         ]),
     ]),
-])
+)
 del P
 
 
@@ -258,7 +268,7 @@ def test_parse(py_c_token: Type[Tokenizer]) -> None:
 
 def test_build() -> None:
     """Test the .build() constructor."""
-    prop = Keyvalues(None, [])
+    prop = Keyvalues.root()
 
     with prop.build() as b:
         with b.Root1:
