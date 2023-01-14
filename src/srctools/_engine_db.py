@@ -537,9 +537,9 @@ def compute_ent_strings(ents: Iterable[EntityDef]) -> Tuple[Mapping[EntityDef, A
     This is done by serialising to a dummy file, noting the strings written.
     """
     dummy_file = io.BytesIO()
-    ent_strings: set[str]
-    ent_to_string: dict[EntityDef, set[str]] = {}
-    ent_to_size: dict[EntityDef, int] = {}
+    ent_strings: Set[str]
+    ent_to_string: Dict[EntityDef, Set[str]] = {}
+    ent_to_size: Dict[EntityDef, int] = {}
 
     def record_strings(string: str) -> bytes:
         """Store the strings written for this entity."""
@@ -561,7 +561,7 @@ def build_blocks(
     ent_to_string: Mapping[EntityDef, AbstractSet[str]],
     ent_to_size: Mapping[EntityDef, int],
     overlaps: Iterable[Tuple[EntityDef, EntityDef, int]],
-) -> List[Tuple[List[EntityDef], set[str]]]:
+) -> List[Tuple[List[EntityDef], Set[str]]]:
     """Group entities into the blocks to use."""
     class BuiltBlock:
         """Used when serialising, the data."""
@@ -607,7 +607,8 @@ def build_blocks(
                 continue  # Hope it's added by another pair.
         else:
             # Neither in a block, put both in a new block together.
-            all_blocks.append(block := BuiltBlock())
+            block = BuiltBlock()
+            all_blocks.append(block)
             block.add_ent(ent1)
             block.add_ent(ent2)
     if not overflow_block.ents:
@@ -618,7 +619,8 @@ def build_blocks(
     for ent in list(todo):
         overflow_block.add_ent(ent)
         if overflow_block.bytesize >= MAX_BLOCK_SIZE:
-            all_blocks.append(overflow_block := BuiltBlock())
+            overflow_block = BuiltBlock()
+            all_blocks.append(overflow_block)
 
     del ent_to_block, todo  # Not useful any more.
     all_blocks.sort(key=lambda block: len(block.ents))
@@ -641,7 +643,7 @@ def serialise(fgd: FGD, file: IO[bytes]) -> None:
     """
     CBaseEntity = fgd.entities.pop('_cbaseentity_')
     all_ents: List[EntityDef] = list(fgd)
-    no_base_ent: set[EntityDef] = set()
+    no_base_ent: Set[EntityDef] = set()
 
     for ent in all_ents:
         try:
