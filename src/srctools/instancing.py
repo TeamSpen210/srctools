@@ -104,7 +104,7 @@ class Instance:
 
     def fixup_name(self, name: str) -> str:
         """Apply the name fixup rules to this name."""
-        if name.startswith(('@', '!')):
+        if not name or name.startswith(('@', '!')):
             return name
         if self.fixup_type is FixupStyle.NONE:
             return name

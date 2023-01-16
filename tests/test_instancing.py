@@ -154,6 +154,11 @@ def test_generic_name_fixups(kind: ValueTypes) -> None:
     classnames = {
         'info_node', 'func_detail', 'npc_headcrab',
     }
+    # Blank names are unchanged.
+    assert inst_prefix.fixup_key(vmf, classnames, kind, '') == ''
+    assert inst_suffix.fixup_key(vmf, classnames, kind, '') == ''
+    assert inst_none.fixup_key(vmf, classnames, kind, '') == ''
+    # Regular names.
     assert inst_prefix.fixup_key(vmf, classnames, kind, 'branch') == 'test_inst-branch'
     assert inst_suffix.fixup_key(vmf, classnames, kind, 'branch') == 'branch-test_inst'
     assert inst_none.fixup_key(vmf, classnames, kind, 'branch') == 'branch'
@@ -183,10 +188,14 @@ def test_name_or_class_fixups() -> None:
     classnames = {
         'info_node', 'func_detail', 'npc_headcrab',
     }
-    # Same as above.
+    # Same as above:
+    assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '') == ''
+    assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '') == ''
+    assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, '') == ''
     assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'test_inst-branch'
     assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'branch-test_inst'
     assert inst_none.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'branch') == 'branch'
+
     # * doesn't do anything even for suffix - Mapbase for instance supports this.
     assert inst_prefix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'fx_*') == 'test_inst-fx_*'
     assert inst_suffix.fixup_key(vmf, classnames, ValueTypes.TARG_DEST_CLASS, 'fx_*') == 'fx_*-test_inst'
