@@ -3,7 +3,8 @@ from typing import cast
 
 import pytest
 
-from srctools import VMF, Angle, FrozenMatrix, FrozenVec, Matrix, Vec, instancing
+from srctools import VMF, instancing
+from srctools.math import Angle, FrozenMatrix, FrozenVec, Matrix, Vec, format_float
 from srctools.fgd import ValueTypes
 
 
@@ -239,3 +240,27 @@ def test_node_ids(kind: ValueTypes) -> None:
     # Even though this is claimed by our instance now, it wasn't in the instance vmf, so it needs a
     # new ID.
     assert inst.fixup_key(vmf, [], kind, '2') == '6'
+
+
+@pytest.mark.parametrize('orient', MAT_ORDER, ids=MAT_ORDER_ID)
+def test_negative_pitch(orient: Matrix) -> None:
+    """Test the inverted pitch keyvalue on light entities."""
+    inst_vmf = VMF()
+    inst_vmf.create_ent(
+        'light_spot',
+        origin=Vec(32, -68, 128),
+        angles=Angle(12.0, 35.0, 0.0),
+        pitch=-45.0,
+    )
+    inst = instancing.Instance('test_inst', '', Vec(128, 512, -1024), orient)
+    vmf = VMF()
+    instancing.collapse_one(vmf, inst,instancing.InstanceFile(inst_vmf))
+    expected = Angle(45.0, 35.0, 0.0) @ orient
+
+    [light] = vmf.by_class['light_spot']
+    assert light['origin'] == str(Vec(32, -68, 128) @ orient + Vec(128, 512, -1024))
+    assert light['angles'] == str(expected)
+    assert light['pitch'] == format_float(-expected.pitch)
+
+
+# TODO: No entities with examples of angle_pitch to run tests on.

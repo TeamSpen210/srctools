@@ -302,7 +302,7 @@ def get_inst_locs(map_filename: Path) -> FileSystemChain:
 def reset_keyvalue_warnings() -> None:
     """If an unknown keyvalue is encountered during collapsing, a log message is produced only once.
 
-    This resets the internal tracker so the messages will be repeated again.
+    This resets the internal tracker so the messages will be repeated.
     """
     _UNKNOWN_KV.clear()
 
@@ -447,6 +447,13 @@ def collapse_one(
         angles = Angle.from_str(new_ent['angles'])
         if 'pitch' in new_ent:
             angles.pitch = srctools.conv_float(new_ent['pitch'])
+            try:
+                kv = ent_type.kv['pitch']
+            except KeyError:
+                pass
+            else:
+                if kv.type is ValueTypes.ANGLE_NEG_PITCH:
+                    angles.pitch = -angles.pitch
         if 'yaw' in new_ent:
             angles.yaw = srctools.conv_float(new_ent['yaw'])
         angles @= orient
