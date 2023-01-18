@@ -256,6 +256,17 @@ class EngineDB(_EngineDBProto):
         """Get the classnames in the database."""
         return self.ent_map.keys()
 
+    def stats(self) -> str:
+        """Return statistics for this database."""
+        parsed_block = self.unparsed.count(((), b''))
+        parsed_ents: int = sum(not isinstance(x, int) for x in self.ent_map.values())
+        block_count = len(self.unparsed)
+        ent_count = len(self.ent_map)
+        return (
+            f'blocks: {parsed_block}/{block_count} = {parsed_block / block_count:.02%}, ' 
+            f'entities: {parsed_ents}/{ent_count} = {parsed_ents / ent_count:.02%}'
+        )
+
     def get_ent(self, classname: str) -> EntityDef:
         """Fetch the specified entity."""
         ent_info = self.ent_map[classname.casefold()]  # Or KeyError if not present.

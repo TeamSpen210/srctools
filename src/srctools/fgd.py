@@ -4,7 +4,7 @@ from typing import (
     FrozenSet, Generic, Iterable, Iterator, List, Mapping, Optional, Sequence, Set, TextIO,
     Tuple, Type, TypeVar, Union, cast,
 )
-from typing_extensions import TypeAlias, overload
+from typing_extensions import Protocol, TypeAlias, overload
 from collections import ChainMap, defaultdict
 from copy import deepcopy
 from enum import Enum
@@ -294,6 +294,14 @@ def _load_engine_db() -> '_EngineDBProto':
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB = unserialise(f)
     return _ENGINE_DB
+
+
+def _engine_db_stats() -> str:
+    """Return information about how much of the engine database has been parsed."""
+    if _ENGINE_DB is None:
+        return '<not loaded>'
+    else:
+        return _ENGINE_DB.stats()
 
 
 def read_colon_list(tok: BaseTokenizer, had_colon: bool = False) -> Tuple[List[str], Token]:
@@ -2141,7 +2149,7 @@ def _init_helper_impl() -> None:
             )
 
 
-class _EngineDBProto:
+class _EngineDBProto(Protocol):
     """Unserialised database, which will be parsed progressively as required."""
     def get_classnames(self) -> AbstractSet[str]:
         """Get the classnames in the database."""
@@ -2153,6 +2161,10 @@ class _EngineDBProto:
 
     def get_fgd(self) -> FGD:
         """Parse all the blocks and make an FGD."""
+        raise NotImplementedError
+
+    def stats(self) -> str:
+        """Return usage statistics for the database."""
         raise NotImplementedError
 
 
