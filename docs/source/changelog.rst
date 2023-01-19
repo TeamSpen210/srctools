@@ -5,9 +5,9 @@ Changelog
 	:local:
 	:backlinks: none
 
-----------
-Dev branch
-----------
+-------------
+Version 2.3.9
+-------------
 
 * Fix Cython version of :py:meth:`Vec.join() <srctools.math.VecBase.join>` using a default of
   :samp:`{x} {y} {z}`, not :samp:`{x}, {y}, {z}`.
@@ -15,6 +15,7 @@ Dev branch
 * Improve internal FGD database format to allow parsing entities as they are required. For best
   efficiency, use :py:meth:`EntityDef.engine_def() <srctools.fgd.EntityDef.engine_def>` instead of
   :py:meth:`FGD.engine_dbase() <srctools.fgd.FGD.engine_dbase()>` if possible.
+* Fix a few bugs with instance collapsing.
 
 -------------
 Version 2.3.8
