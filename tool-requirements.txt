@@ -1,0 +1,4 @@
+# Static analysis test requirements.
+-r test-requirements.txt
+mypy == 0.991
+flake8 == 6.0.0
