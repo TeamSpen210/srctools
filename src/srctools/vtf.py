@@ -111,6 +111,16 @@ class ImageFormats(Enum):
         self.size = size
         self.ind = ind
 
+        # Cache the format repr, since it's a little complicated to construct.
+        # If sections aren't used, don't include them.
+        repr_list = [f'<ImageFormats[{ind:02}] {self._name_}:']
+        if r or g or b:
+            repr_list.append(f' r={r}, g={g}, b={b},')
+        if a:
+            repr_list.append(f' a={a},')
+        repr_list.append(f' size={size}>')
+        self._repr = ''.join(repr_list)
+
     RGBA8888 = _mk_fmt(8, 8, 8, 8)
     ABGR8888 = _mk_fmt(8, 8, 8, 8)
     RGB888 = _mk_fmt(8, 8, 8, 0)
@@ -148,13 +158,7 @@ class ImageFormats(Enum):
 
     def __repr__(self) -> str:
         """Exclude RGB or A sizes if zero."""
-        res = [f'<ImageFormats[{self.ind:02}] {self._name_}:']
-        if self.r or self.g or self.b:
-            res.append(f'r={self.r}, g={self.g}, b={self.b},')
-        if self.a:
-            res.append(f'a={self.a},')
-        res.append(f'size={self.size}>')
-        return ' '.join(res)
+        return self._repr
 
     @property
     def is_compressed(self) -> bool:
