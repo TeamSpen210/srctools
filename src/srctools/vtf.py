@@ -381,6 +381,7 @@ class Frame:
                 self._data = source._data[:]
             else:  # Copy the other array onto us
                 self._data[:] = source._data
+            self._fileinfo = None
         else:
             if self._data is None:
                 self._data = _BLANK_PIXEL * (self.width * self.height)
@@ -399,6 +400,7 @@ class Frame:
                     f"got {len(view)} bytes!"
                 )
             _format_funcs.load(format, self._data, view, self.width, self.height)
+            self._fileinfo = None
 
     def rescale_from(self, larger: 'Frame', filter: FilterMode=FilterMode.BILINEAR) -> None:
         """Regenerate this image from the next mipmap.
