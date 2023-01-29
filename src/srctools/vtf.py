@@ -353,6 +353,12 @@ class Frame:
         """
         self._data = self._fileinfo = None
 
+    def fill(self, r: int = 0, g: int = 0, b: int = 0, a: int = 255) -> None:
+        """Fill the frame with the specified colour."""
+        colour = array('B', [r, g, b, a])
+        self._data = colour * (self.width * self.height)
+        self._fileinfo = None
+
     @overload
     def copy_from(self, source: 'Frame') -> None: ...
 

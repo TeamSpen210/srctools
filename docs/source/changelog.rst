@@ -11,6 +11,7 @@ Version (dev)
 
 * Fix :py:meth:`srctools.vtf.Frame.copy_from()` not clearing cached unparsed file data. If the VTF
   was parsed from a file, this could case changes to be overwritten with the original data.
+* Add :py:meth:`srctools.vtf.Frame.fill()`, for filling a frame with a constant colour.
 
 -------------
 Version 2.3.9
