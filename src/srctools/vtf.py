@@ -17,6 +17,8 @@ import struct
 import types
 import warnings
 
+import attrs
+
 from . import EmptyMapping, binformat
 from .const import add_unknown
 from .math import Vec
@@ -1010,7 +1012,23 @@ class VTF:
         return self._frames[frame, depth_side, mipmap]
 
 
-TexCoord = namedtuple('TexCoord', ['left', 'top', 'right', 'bottom'])
+@attrs.frozen
+class TexCoord:
+    """Sub-frame used for particle textures."""
+    left: float
+    top: float
+    right: float
+    bottom: float
+
+    @classmethod
+    def from_binary(cls, buffer: bytes, offset: int) -> 'TexCoord':
+        """Parse from the SheetSequence resource data."""
+        data = struct.unpack_from('<4f', buffer, offset)
+        return cls(*data)
+
+    def to_binary(self) -> bytes:
+        """Return the bytes form for the texture coordinate."""
+        return struct.pack('<4f', self.left, self.top, self.right, self.bottom)
 
 
 class SheetSequence:
@@ -1037,14 +1055,14 @@ class SheetSequence:
         offset = 8
 
         if version > 1:
-            raise ValueError('Unknown version {}!'.format(version))
+            raise ValueError(f'Unknown version {version}!')
 
         sequences: Dict[int, SheetSequence] = {}
         if sequence_count > SheetSequence.MAX_COUNT:
-            raise ValueError('Cannot have more than {} sequences ({})!'.format(
-                SheetSequence.MAX_COUNT,
-                sequence_count
-            ))
+            raise ValueError(
+                f'Cannot have more than {SheetSequence.MAX_COUNT} '
+                f'sequences ({sequence_count})!'
+            )
 
         for _ in range(sequence_count):
             (
@@ -1055,9 +1073,9 @@ class SheetSequence:
             ) = struct.unpack_from('<Ixxx?If', data, offset)
             offset += 16
             if not (0 <= seq_num < SheetSequence.MAX_COUNT):
-                raise ValueError('Invalid sequence number {}!'.format(seq_num))
+                raise ValueError(f'Invalid sequence number {seq_num}!')
             if seq_num in sequences:
-                raise ValueError('Duplicate sequence number {}!'.format(seq_num))
+                raise ValueError(f'Duplicate sequence number {seq_num}!')
 
             frames: List[Tuple[float, TexCoord, TexCoord, TexCoord, TexCoord]] = []
 
@@ -1067,16 +1085,16 @@ class SheetSequence:
 
                 if version == 0:
                     # Only one in the file, repeated 4 times.
-                    tex_coord = TexCoord._make(struct.unpack_from('<4f', data, offset))
+                    tex_coord = TexCoord.from_binary(data, offset)
                     frames.append((duration, tex_coord, tex_coord, tex_coord, tex_coord))
                     offset += 16
                 else:
                     frames.append((
                         duration,
-                        TexCoord._make(struct.unpack_from('<4f', data, offset)),
-                        TexCoord._make(struct.unpack_from('<4f', data, offset + 16)),
-                        TexCoord._make(struct.unpack_from('<4f', data, offset + 32)),
-                        TexCoord._make(struct.unpack_from('<4f', data, offset + 48)),
+                        TexCoord.from_binary(data, offset),
+                        TexCoord.from_binary(data, offset + 16),
+                        TexCoord.from_binary(data, offset + 32),
+                        TexCoord.from_binary(data, offset + 48),
                     ))
                     offset += 64
 
@@ -1102,10 +1120,11 @@ class SheetSequence:
                 seq.duration,
             ))
             for i, (duration, tex_a, tex_b, tex_c, tex_d) in enumerate(seq.frames):
-                file.write(struct.pack('<f4f', duration, *tex_a))
+                file.write(struct.pack('<f', duration))
+                file.write(tex_a.to_binary())
                 if version == 1:  # We have an additional 3 coords.
-                    file.write(struct.pack('<4f', *tex_b))
-                    file.write(struct.pack('<4f', *tex_c))
-                    file.write(struct.pack('<4f', *tex_d))
+                    file.write(tex_b.to_binary())
+                    file.write(tex_c.to_binary())
+                    file.write(tex_d.to_binary())
 
         return file.getvalue()
