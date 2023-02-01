@@ -1020,7 +1020,7 @@ class StaticProp:
     v7+ allows model tinting, and renderfx.
     v9+ allows disabling on XBox 360.
     v10+ adds 4 unknown bytes (float?), and an expanded flags section.
-    v11+ adds uniform scaling and removes XBox disabling.
+    v11+ adds uniform scaling.
     """
     model: str
     origin: Vec
@@ -2937,9 +2937,10 @@ class BSP:
                 tint = Vec(255, 255, 255)
                 renderfx = 255
 
-            if vers_num >= 11:
-                # Unknown data, though it's float-like.
-                struct_read('<i', static_lump)
+            disable_on_xbox = False
+            if vers_num >= 9 and not version.is_lightmap:
+                # The single boolean byte also produces 3 pad bytes.
+                [disable_on_xbox] = struct_read('<?xxx', static_lump)
 
             if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 # Extra flags, post-CSGO, also in Black Mesa.
@@ -2948,14 +2949,8 @@ class BSP:
             flags = StaticPropFlags(flags)
 
             scaling = 1.0
-            disable_on_xbox = False
-
             if vers_num >= 11:
-                # XBox support was removed. Instead this is the scaling factor.
                 [scaling] = struct_read("<f", static_lump)
-            elif vers_num >= 9:
-                # The single boolean byte also produces 3 pad bytes.
-                [disable_on_xbox] = struct_read('<?xxx', static_lump)
 
             real_size = static_lump.tell() - start
             if struct_size != real_size:
@@ -3079,18 +3074,15 @@ class BSP:
                     prop.renderfx,
                 ))
 
-            if vers_num >= 11:
-                # Unknown padding/data, though it's always zero.
-                prop_lump.write(b'\0\0\0\0')
+            if vers_num >= 9 and not version.is_lightmap:
+                # The 1-byte bool gets expanded to the full 4-byte size.
+                prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
             if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
             if vers_num >= 11:
                 prop_lump.write(struct.pack('<f', prop.scaling))
-            elif vers_num >= 9:
-                # The 1-byte bool gets expanded to the full 4-byte size.
-                prop_lump.write(struct.pack('<?xxx', prop.disable_on_xbox))
 
             real_size = prop_lump.tell() - start
             if version.size != real_size:
