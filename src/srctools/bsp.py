@@ -401,9 +401,10 @@ class StaticPropVersion(Enum):
     V_LIGHTMAP_v7 = (7, 72)
     V_LIGHTMAP_v10 = (10, 72)
     V_LIGHTMAP_MESA = (11, 80, 'Mesa')  # Adds rendercolor to V10
-
-    V_CHAOS = (12, 80)  # Changes the leaf list from uint16 to uint32
-
+    
+    V_CHAOS_V12 = (12, 80)  # Changes the leaf list from uint16 to uint32 
+    V_CHAOS_V13 = (13, 88)  # Changes scale from one float to three for non-uniform scaling
+    
     # V6_WNAME = (5, 188)  # adds targetname, used by The Ship and Bloody Good Time.
     UNKNOWN = (0, 0, 'unknown')  # Before prop is read.
     # All games should recognise this, so switch to this if set to unknown.
@@ -1025,7 +1026,7 @@ class StaticProp:
     model: str
     origin: Vec
     angles: Angle = attrs.field(factory=Angle)
-    scaling: float = 1.0
+    scaling: Union[Vec, float] = attrs.field(factory=lambda: Vec(1.0, 1.0, 1.0))
     visleafs: Set[VisLeaf] = attrs.field(factory=set, repr=False)
     solidity: int = 6
     flags: StaticPropFlags = StaticPropFlags.NONE
@@ -2820,7 +2821,7 @@ class BSP:
 
     def _lmp_read_props(self, vers_num: int, data: bytes) -> Iterator['StaticProp']:
         # The version of the static prop format - different features.
-        if vers_num > 12:
+        if vers_num > 13:
             raise ValueError(f'Unknown version ({vers_num})!')
         if vers_num < 4:
             # Predates HL2, no game produces these.
@@ -2948,10 +2949,15 @@ class BSP:
 
             flags = StaticPropFlags(flags)
 
-            scaling = 1.0
-            if vers_num >= 11:
-                [scaling] = struct_read("<f", static_lump)
-
+            scaling = Vec(1.0, 1.0, 1.0)
+            if version is StaticPropVersion.V_CHAOS_V13:
+                # Three floats for non-uniform scaling
+                [scaling.x, scaling.y, scaling.z] = struct_read("<fff", static_lump)
+            elif vers_num >= 11:
+                # One float for uniform scaling
+                [scaling.x] = struct_read("<f", static_lump)
+                scaling.z = scaling.y = scaling.x
+                
             real_size = static_lump.tell() - start
             if struct_size != real_size:
                 raise ValueError(f'Expected {struct_size} for {version}, got {real_size}!')
@@ -3081,8 +3087,21 @@ class BSP:
             if vers_num >= 10 or version is StaticPropVersion.V_LIGHTMAP_MESA:
                 prop_lump.write(struct.pack('<I', prop.flags.value_sec))
 
-            if vers_num >= 11:
-                prop_lump.write(struct.pack('<f', prop.scaling))
+            if version is StaticPropVersion.V_CHAOS_V13:
+                # Three floats for non-uniform scaling
+                scaling_3 = prop.scaling if isinstance(prop.scaling, Vec) else Vec(prop.scaling, prop.scaling, prop.scaling)
+
+                prop_lump.write(struct.pack(
+                    '<fff',
+                    scaling_3.x,
+                    scaling_3.y,
+                    scaling_3.z,
+                ))
+            elif vers_num >= 11:
+                # One float for uniform scaling
+                scaling_1 = prop.scaling.x if isinstance(prop.scaling, Vec) else prop.scaling
+
+                prop_lump.write(struct.pack('<f', scaling_1))
 
             real_size = prop_lump.tell() - start
             if version.size != real_size:
