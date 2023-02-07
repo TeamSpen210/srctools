@@ -67,7 +67,7 @@ cdef:
     uchar *EMPTY_BUF = b''  # Initial value, just so it's valid.
 
 # Characters not allowed for bare names on a line.
-# Convert to tuple to only check the chars.
+# TODO: Make this an actual constant value, but that won't do the switch optimisation.
 DEF BARE_DISALLOWED = b'"\'{};,[]()\n\t '
 
 # Pack flags into a bitfield.

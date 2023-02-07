@@ -109,13 +109,10 @@ cdef object tuple_new = tuple.__new__
 # For convenience, an iterator which immediately fails.
 cdef object EMPTY_ITER = iter(())
 
+cdef object ROUND_TO = 6  # No point being const int, only used as an object.
 # TODO: Do this properly, once Cython lets constant globals work
 cdef extern from *:
-    """
-    const int ROUND_TO = 6;
-    const double TOL = 1e-6;
-    """
-    const int ROUND_TO
+    """const double TOL = 1e-6;"""
     const double TOL
 
 cdef extern from *:  # Allow ourselves to access one of the feature flag macros.
