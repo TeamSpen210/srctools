@@ -75,6 +75,7 @@ html_css_files = [
 sys.path.append(str(Path(__file__).parent))
 from enum_class import EnumDocumenter, EnumMemberDocumenter
 from html_gen import SrctoolsHTMLTranslator
+from missing_refs import on_missing_reference, identify_typevars
 
 
 def setup(app: Sphinx) -> None:
@@ -82,3 +83,4 @@ def setup(app: Sphinx) -> None:
     app.add_autodocumenter(EnumDocumenter)
     app.add_autodocumenter(EnumMemberDocumenter)
     app.set_translator('html', SrctoolsHTMLTranslator)
+    app.connect('missing-reference', on_missing_reference, -10)
