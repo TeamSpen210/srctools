@@ -1,4 +1,4 @@
 # Static analysis test requirements.
--r test-requirements.txt
+types-Pillow~=8.3.0
 mypy == 0.991
 flake8 == 6.0.0
