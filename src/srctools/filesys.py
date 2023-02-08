@@ -21,7 +21,7 @@ from typing import (
     Any, BinaryIO, Dict, Generic, Iterator, List, Mapping, Optional, Set, TextIO, Tuple, Type,
     TypeVar, Union, cast,
 )
-from typing_extensions import Final
+from typing_extensions import Final, Self
 from zipfile import ZipFile, ZipInfo
 import io
 import os
@@ -34,7 +34,9 @@ from srctools.vpk import VPK, FileInfo as VPKFile
 
 
 __all__ = [
-    'File', 'FileSystem', 'get_filesystem', 'CACHE_KEY_INVALID',
+    'File', 'FileSystem',
+    'get_filesystem',
+    'CACHE_KEY_INVALID', 'RootEscapeError',
 
     'RawFileSystem', 'VPKFileSystem', 'ZipFileSystem',
     'VirtualFileSystem', 'FileSystemChain',
@@ -46,13 +48,6 @@ CACHE_KEY_INVALID: Final = -1
 
 # This is the type of File._data. It should only be used by subclasses.
 _FileDataT = TypeVar('_FileDataT')
-
-# TODO: Once Mypy supports typing.Self, these can all be replaced.
-ChainFSysT = TypeVar('ChainFSysT', bound='FileSystemChain')
-VirtualFSysT = TypeVar('VirtualFSysT', bound='VirtualFileSystem')
-RawFSysT = TypeVar('RawFSysT', bound='RawFileSystem')
-ZipFSysT = TypeVar('ZipFSysT', bound='ZipFileSystem')
-VPKFSysT = TypeVar('VPKFSysT', bound='VPKFileSystem')
 
 
 def get_filesystem(path: str) -> 'FileSystem[Any]':
@@ -306,7 +301,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
         return hash(tuple(self.systems))
 
     @classmethod
-    def get_system(cls: Type[ChainFSysT], file: File[ChainFSysT]) -> FileSystem[Any]:
+    def get_system(cls, file: File[Self]) -> FileSystem[Any]:
         """Retrieve the system for a File, if it was produced from a FileSystemChain."""
         if not isinstance(file.sys, FileSystemChain):
             raise ValueError('File is not from a FileSystemChain..')
@@ -330,7 +325,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
         else:
             self.systems.append((sys, prefix))
 
-    def _get_file(self: ChainFSysT, name: str) -> File[ChainFSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         """Search for a file on each filesystem in turn."""
         for sys, prefix in self.systems:
             full_name = os.path.join(prefix, name).replace('\\', '/')
@@ -343,7 +338,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return File(self, full_name, file_info)
         raise FileNotFoundError(name)
 
-    def open_str(self: ChainFSysT, name: Union[str, File[ChainFSysT]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -352,7 +347,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return self._get_data(name).open_str(encoding)
         return self._get_file(name).open_str(encoding)
 
-    def open_bin(self: ChainFSysT, name: Union[str, File[ChainFSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -361,7 +356,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             return self._get_data(name).open_bin()
         return self._get_file(name).open_bin()
 
-    def walk_folder(self: ChainFSysT, folder: str = '') -> Iterator[File[ChainFSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Walk folders, not repeating files.
 
         This requires temporarily storing the visited paths, to prevent revisiting them. If repeated
@@ -375,7 +370,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
             done.add(folded)
             yield file
 
-    def walk_folder_repeat(self: ChainFSysT, folder: str='') -> Iterator[File[ChainFSysT]]:
+    def walk_folder_repeat(self, folder: str='') -> Iterator[File[Self]]:
         """Walk folders, but allow repeating files.
 
         If a file is contained in multiple systems, it will be yielded for each. The first is the
@@ -391,7 +386,7 @@ class FileSystemChain(FileSystem[File[FileSystem[Any]]]):
                     file,
                 )
 
-    def _get_cache_key(self: ChainFSysT, file: File[ChainFSysT]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:
         """Return the last modified time of this file.
 
         If individual timestamps are not stored, the modification time of the
@@ -431,13 +426,13 @@ class VirtualFileSystem(FileSystem[str]):
         return hash(self.bytes_encoding) ^ hash(tuple(self._mapping.values()))
 
     @classmethod
-    def _clean_path(cls: Type[VirtualFSysT], path: Union[str, File[VirtualFSysT]]) -> str:
+    def _clean_path(cls, path: Union[str, File[Self]]) -> str:
         """Convert paths to one representation."""
         if isinstance(path, File):
             path = path.path
         return os.path.normpath(path).replace('\\', '/').casefold()
 
-    def open_bin(self: VirtualFSysT, name: Union[str, File[VirtualFSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Return a bytes buffer for a 'file'."""
         try:
             filename, data = self._mapping[self._clean_path(name)]
@@ -448,8 +443,8 @@ class VirtualFileSystem(FileSystem[str]):
         return io.BytesIO(data)
 
     def open_str(
-        self: VirtualFSysT,
-        name: Union[str, File[VirtualFSysT]],
+        self,
+        name: Union[str, File[Self]],
         encoding: str = 'utf8',
     ) -> TextIO:
         """Return a string buffer for a 'file'.
@@ -473,7 +468,7 @@ class VirtualFileSystem(FileSystem[str]):
             # No encoding is needed obviously.
             return io.StringIO(data, newline=None)
 
-    def walk_folder(self: VirtualFSysT, folder: str = '') -> Iterator[File[VirtualFSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Return all files that are 'subfolders' of the provided folder."""
         folder = self._clean_path(folder)
 
@@ -484,7 +479,7 @@ class VirtualFileSystem(FileSystem[str]):
     def _file_exists(self, name: str) -> bool:
         return self._clean_path(name) in self._mapping
 
-    def _get_file(self: VirtualFSysT, name: str) -> File[VirtualFSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         """Access the specified file."""
         try:
             filename, data = self._mapping[self._clean_path(name)]
@@ -515,7 +510,7 @@ class RawFileSystem(FileSystem[str]):
             raise RootEscapeError(self.path, path)
         return abs_path
 
-    def walk_folder(self: RawFSysT, folder: str = '') -> Iterator[File[RawFSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Yield files in a folder."""
         path = self._resolve_path(folder)
         for dirpath, dirnames, filenames in os.walk(path):
@@ -526,7 +521,7 @@ class RawFileSystem(FileSystem[str]):
                 ).replace('\\', '/')
                 yield File(self, rel_path, rel_path)
 
-    def open_str(self: RawFSysT, name: Union[str, File[RawFSysT]], encoding: str = 'utf8') -> TextIO:
+    def open_str(self, name: Union[str, File[Self]], encoding: str = 'utf8') -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -535,7 +530,7 @@ class RawFileSystem(FileSystem[str]):
             name = self._get_data(name)
         return open(self._resolve_path(name), mode='rt', encoding=encoding)
 
-    def open_bin(self: RawFSysT, name: Union[str, File[RawFSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         This should be closed when done.
@@ -548,13 +543,13 @@ class RawFileSystem(FileSystem[str]):
         # We don't need this, but it should match other filesystems.
         return os.path.isfile(self._resolve_path(name))
 
-    def _get_file(self: RawFSysT, name: str) -> File[RawFSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         if os.path.isfile(self._resolve_path(name)):
             name = name.replace('\\', '/')
             return File(self, name, name)
         raise FileNotFoundError(name)
 
-    def _get_cache_key(self: RawFSysT, file: File[RawFSysT]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:
         """Our cache key is the last modification time."""
         try:
             return os.stat(self._resolve_path(file.path)).st_mtime_ns
@@ -585,7 +580,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             if not info.filename.endswith('/')
         }
 
-    def walk_folder(self: ZipFSysT, folder: str = '') -> Iterator[File[ZipFSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Yield files in a folder."""
         # \\ is not allowed in zips.
         folder = folder.replace('\\', '/').casefold()
@@ -593,7 +588,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
             if filename.startswith(folder):
                 yield File(self, fileinfo.filename, fileinfo)
 
-    def open_bin(self: ZipFSysT, name: Union[str, File[ZipFSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError.
 
         The filesystem needs to be open while accessing this.
@@ -613,8 +608,8 @@ class ZipFileSystem(FileSystem[ZipInfo]):
         return cast(BinaryIO, self.zip.open(info))
 
     def open_str(
-        self: ZipFSysT,
-        name: Union[str, File[ZipFSysT]],
+        self,
+        name: Union[str, File[Self]],
         encoding: str = 'utf8',
     ) -> io.TextIOWrapper:
         """Open a file in unicode mode or raise FileNotFoundError.
@@ -624,7 +619,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
         # Zips only open in binary, so just open that, then wrap to decode.
         return io.TextIOWrapper(self.open_bin(name), encoding)
 
-    def _get_file(self: ZipFSysT, name: str) -> File[ZipFSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         name = name.replace('\\', '/')
         try:
             info = self._name_to_info[name.casefold()]
@@ -635,7 +630,7 @@ class ZipFileSystem(FileSystem[ZipInfo]):
     def _file_exists(self, name: str) -> bool:
         return name.replace('\\', '/').casefold() in self._name_to_info
 
-    def _get_cache_key(self: ZipFSysT, file: File[ZipFSysT]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:
         """Return the CRC of the VPK file."""
         return self._get_data(file).CRC
 
@@ -657,7 +652,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
     def _file_exists(self, name: str) -> bool:
         return name.casefold().replace('\\', '/') in self._name_to_file
 
-    def _get_file(self: VPKFSysT, name: str) -> File[VPKFSysT]:
+    def _get_file(self, name: str) -> File[Self]:
         key = name.casefold().replace('\\', '/')
         try:
             file = self._name_to_file[key]
@@ -665,7 +660,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             raise FileNotFoundError(name) from None
         return File(self, key, file)
 
-    def walk_folder(self: VPKFSysT, folder: str = '') -> Iterator[File[VPKFSysT]]:
+    def walk_folder(self, folder: str = '') -> Iterator[File[Self]]:
         """Yield files in a folder."""
         # All VPK files use forward slashes.
         folder = folder.replace('\\', '/')
@@ -673,7 +668,7 @@ class VPKFileSystem(FileSystem[VPKFile]):
             if file.dir.startswith(folder):
                 yield File(self, file.filename, file)
 
-    def open_bin(self: VPKFSysT, name: Union[str, File[VPKFSysT]]) -> BinaryIO:
+    def open_bin(self, name: Union[str, File[Self]]) -> BinaryIO:
         """Open a file in bytes mode or raise FileNotFoundError."""
         # Extract our VPK info directly.
         if isinstance(name, File):
@@ -686,8 +681,8 @@ class VPKFileSystem(FileSystem[VPKFile]):
         return io.BytesIO(file.read())
 
     def open_str(
-        self: VPKFSysT,
-        name: Union[str, File[VPKFSysT]],
+        self,
+        name: Union[str, File[Self]],
         encoding: str = 'utf8',
     ) -> TextIO:
         """Open a file in unicode mode or raise FileNotFoundError."""
@@ -703,6 +698,6 @@ class VPKFileSystem(FileSystem[VPKFile]):
         # wrap that to decode and clean up universal newlines.
         return io.TextIOWrapper(io.BytesIO(file.read()), encoding)
 
-    def _get_cache_key(self: VPKFSysT, file: File[VPKFSysT]) -> int:
+    def _get_cache_key(self, file: File[Self]) -> int:
         """Return the CRC of the VPK file."""
         return self._get_data(file).crc
