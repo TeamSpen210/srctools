@@ -1,7 +1,7 @@
-"""This module implements three classes for representing vectors, Euler angles and rotation matrices, 
-following Valve conventions. `Vec` represents an XYZ position and `Angle` represents a pitch-yaw-roll 
-angle (in degrees). `Matrix` represents a rotation also, but in a format that can be manipulated 
-properly. `Angle` will automatically compute a matrix when required, but it is more efficient to 
+"""This module implements three classes for representing vectors, Euler angles and rotation matrices,
+following Valve conventions. `Vec` represents an XYZ position and `Angle` represents a pitch-yaw-roll
+angle (in degrees). `Matrix` represents a rotation also, but in a format that can be manipulated
+properly. `Angle` will automatically compute a matrix when required, but it is more efficient to
 perform repeated operations on a matrix.
 
 These classes will be replaced by Cython-optimized versions where possible, which are interchangable
@@ -68,7 +68,8 @@ def parse_vec_str(
     are simply ignored.
 
     If the 'string' is already a :py:class:`VecBase` or :py:class:`AngleBase`, this will be passed through.
-    If you do want a specific class, use :py:meth:`Vec.from_str`, :py:meth:`Angle.from_str` or :py:meth:`Matrix.from_angstr`.
+    If you do want a specific class, use :py:meth:`VecBase.from_str`, :py:meth:`VecBase.from_str`
+    or :py:meth:`MatrixBase.from_angstr`.
     """
     if isinstance(val, str):
         pass  # Fast path to skip the below code.
@@ -1430,7 +1431,9 @@ class Vec(VecBase):
     def to_angle_roll(self, z_norm: VecUnion, stride: int=0) -> 'Angle':
         """Produce a Source Engine angle with roll.
 
-        :deprecated: Use :py:func:`Matrix.from_basis()` and then :py:func:`Matrix.to_angle()`. ``from_basis()`` can take any two direction pairs.
+        :deprecated: Use :py:func:`MatrixBase.from_basis()` and then \
+        :py:func:`MatrixBase.to_angle()`. :py:func:`from_basis() <MatrixBase.from_basis()>` can \
+        take any two direction pairs.
         :param z_norm: This must be at right angles to this vector. The resulting angle's ``+z``
             axis will point in this direction.
         :param stride: is no longer used, it defined the roll angles to try.
@@ -1441,7 +1444,9 @@ class Vec(VecBase):
     def rotation_around(self, rot: float=90) -> 'Angle':
         """For an axis-aligned normal, return the angles which rotate around it.
 
-        :deprecated: Use :py:func:`Matrix.axis_angle()` and then :py:func:`Matrix.to_angle()`. :py:func:`~Matrix.axis_angle()` works for any arbitary axis.
+        :deprecated: Use :py:func:`MatrixBase.axis_angle()` and then \
+        :py:func:`MatrixBase.to_angle()`. :py:func:`~MatrixBase.axis_angle()` works for any \
+        arbitary axis.
         """
         warnings.warn('Use Matrix.axis_angle().to_angle()', DeprecationWarning)
         if self.x and not self.y and not self.z:
@@ -1499,6 +1504,7 @@ class Vec(VecBase):
         yield mat
         # noinspection PyProtectedMember
         mat._vec_rot(self)
+
 
 # Maps (1, 1) -> ._bb attributes, for getting/setting by XY coordinate.
 _IND_TO_SLOT: Dict[Tuple[int, int], Literal[
@@ -1682,8 +1688,8 @@ class MatrixBase:
     ) -> MatrixT:
         """Parse a string of the form "pitch yaw roll", then convert to a Matrix.
 
-        This is equivalent to combining :py:func:`Matrix.from_angle()` and
-        :py:func:`Angle.from_str`, except more efficient.
+        This is equivalent to combining :py:func:`MatrixBase.from_angle()` and
+        :py:func:`AngleBase.from_str`, except more efficient.
         """
         pitch, yaw, roll = Py_parse_vec_str(val, pitch, yaw, roll)
         return cls.from_angle(pitch, yaw, roll)
@@ -1779,15 +1785,19 @@ class MatrixBase:
     @classmethod
     @overload
     def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion, z: VecUnion) -> MatrixT: ...
+
     @classmethod
     @overload
     def from_basis(cls: Type[MatrixT], *, x: VecUnion, y: VecUnion) -> MatrixT: ...
+
     @classmethod
     @overload
     def from_basis(cls: Type[MatrixT], *, y: VecUnion, z: VecUnion) -> MatrixT: ...
+
     @classmethod
     @overload
     def from_basis(cls: Type[MatrixT], *, x: VecUnion, z: VecUnion) -> MatrixT: ...
+
     @classmethod
     def from_basis(
         cls: Type[MatrixT], *,
@@ -2385,6 +2395,7 @@ class FrozenAngle(AngleBase):
     @classmethod
     @overload
     def with_axes(cls, axis1: str, val1: Union[float, AngleBase]) -> 'FrozenAngle': ...
+
     @classmethod
     @overload
     def with_axes(
@@ -2392,6 +2403,7 @@ class FrozenAngle(AngleBase):
         axis1: str, val1: Union[float, AngleBase],
         axis2: str, val2: Union[float, AngleBase],
     ) -> 'FrozenAngle': ...
+
     @classmethod
     @overload
     def with_axes(
@@ -2400,6 +2412,7 @@ class FrozenAngle(AngleBase):
         axis2: str, val2: Union[float, AngleBase],
         axis3: str, val3: Union[float, AngleBase],
     ) -> 'FrozenAngle': ...
+
     @classmethod
     def with_axes(
         cls,
@@ -2441,7 +2454,7 @@ class FrozenAngle(AngleBase):
     def __hash__(self) -> int:
         """Hashing a frozen angle is the same as hashing the tuple form."""
         return hash((round(self._pitch, 6), round(self._yaw, 6), round(self._roll, 6)))
-    
+
     def thaw(self) -> 'Angle':
         """Return a mutable copy of this angle."""
         ang = Py_Angle.__new__(Py_Angle)

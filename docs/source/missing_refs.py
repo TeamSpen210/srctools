@@ -1,6 +1,6 @@
 """Handle missing references in documentation.."""
 import re
-from typing import Iterator, Optional, Set, Tuple, TypeVar
+from typing import Iterator, Optional, Tuple
 
 from pathlib import Path
 

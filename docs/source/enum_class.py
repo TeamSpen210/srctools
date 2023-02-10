@@ -1,12 +1,11 @@
 """Implements a documenter for Enum classes."""
 from collections import defaultdict
 
-from typing import Any, Dict, List, Optional, Tuple, Type
+from typing import Any, Dict, List, Tuple, Type
 from dataclasses import dataclass
 import enum
 import functools
 
-from docutils.statemachine import StringList
 from sphinx.ext.autodoc import ClassDocumenter, AttributeDocumenter, ObjectMembers, bool_option
 
 
@@ -62,7 +61,7 @@ class EnumDocumenter(ClassDocumenter):
         info.should_hex = self.options.hex
 
         for member in info.canonical:  # Keep in order.
-            if member.name.isdigit() and isinstance(member.value, int): ## and str(member.value) == member.name:
+            if member.name.isdigit() and isinstance(member.value, int):
                 # add_unknown() pseudo-flags, skip.
                 continue
             results.append((member.name, member, True))
@@ -110,7 +109,7 @@ class EnumMemberDocumenter(AttributeDocumenter):
         if aliases:
             self.add_line(
                 ('*Aliases:* ' if len(aliases) > 1 else '*Alias:* ')
-                +  ', '.join([f'``{name}``' for name in aliases]),
+                + ', '.join([f'``{name}``' for name in aliases]),
                 sourcename,
             )
             self.add_line('', sourcename)

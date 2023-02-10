@@ -31,7 +31,7 @@ __all__ = [
 
 
 class TokenSyntaxError(Exception):
-    """An error that occurred when parsing a file. 
+    """An error that occurred when parsing a file.
 
     Normally this is created via :py:func:`BaseTokenizer.error()` which formats text into the error
     and includes the filename/line number from the tokenizer.
@@ -41,9 +41,9 @@ class TokenSyntaxError(Exception):
     mess: str
     """The error message that occurred."""
     file: Optional[StringPath]
-    """The filename of the file being parsed, or None if not known."""
+    """The filename of the file being parsed, or ``None`` if not known."""
     line_num: Optional[int]
-    """The line where the error occurred, or None if not applicable (EOF, for instance)."""
+    """The line where the error occurred, or ``None`` if not applicable (EOF, for instance)."""
 
     def __init__(
         self,
@@ -89,9 +89,9 @@ class TokenSyntaxError(Exception):
 
 class Token(Enum):
     """A token type produced by the tokenizer."""
-    EOF = 0  #: Ran out of text.
+    EOF = 0  #: Produced indefinitely after the end of the file is reached.
     STRING = 1  #: Quoted or unquoted text.
-    NEWLINE = 2  #: ``\n``
+    NEWLINE = 2  #: Produced at the end of every line.
     PAREN_ARGS = 3  #: Parenthesised ``(data)``.
     DIRECTIVE = 4  #: ``#name`` (automatically casefolded).
 
@@ -201,11 +201,13 @@ class BaseTokenizer(abc.ABC):
     def error(self, message: Union[str, Token], *args: object) -> TokenSyntaxError:
         """Raise a syntax error exception.
 
-        This returns the TokenSyntaxError instance, with
+        This returns the :py:class:`TokenSyntaxError` instance, with
         line number and filename attributes filled in.
-        The message can be a Token and the value to produce a wrong token error,
-        or a string which will be `{}-formatted <https://docs.python.org/3/library/string.html#formatstrings>`_ with the positional args
+        The message can be a :py:class:`Token` with the associated string value to produce a
+        wrong token error, or a string which will be `{}-formatted`_ with the positional args
         if they are present.
+
+        .. _{}-formatted: https://docs.python.org/3/library/string.html#formatstrings
         """
         if isinstance(message, Token):
             if len(args) > 1:
@@ -272,7 +274,7 @@ class BaseTokenizer(abc.ABC):
 
         Only one token can be pushed back at once.
         The value is required for :py:const:`Token.STRING`, :py:const:`~Token.PAREN_ARGS` and \
-        :py:const:`~Token.PROP_FLAGS`, but ignored for other token types.
+        :py:const:`~Token.PROP_FLAG`, but ignored for other token types.
         """
         if self._pushback is not None:
             raise ValueError('Token already pushed back!')

@@ -2,8 +2,6 @@
 
 This ensures public things are all listed.
 """
-import pprint
-
 from typing import Iterator
 import posixpath
 import importlib
@@ -100,6 +98,7 @@ def main() -> int:
         print('Count:', len(missing), file=sys.stderr)
         return 1
     return 0
+
 
 if __name__ == '__main__':
     sys.exit(main())

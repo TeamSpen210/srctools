@@ -263,7 +263,7 @@ class EngineDB(_EngineDBProto):
         block_count = len(self.unparsed)
         ent_count = len(self.ent_map)
         return (
-            f'blocks: {parsed_block}/{block_count} = {parsed_block / block_count:.02%}, ' 
+            f'blocks: {parsed_block}/{block_count} = {parsed_block / block_count:.02%}, '
             f'entities: {parsed_ents}/{ent_count} = {parsed_ents / ent_count:.02%}'
         )
 

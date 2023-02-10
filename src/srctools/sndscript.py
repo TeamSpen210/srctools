@@ -35,6 +35,7 @@ class VOLUME(Enum):
     def __str__(self) -> str:
         return self.name
 
+
 VOL_NORM = VOLUME.VOL_NORM
 
 # Old compatibility values, replaced by soundlevel.
@@ -61,8 +62,8 @@ class Channel(Enum):
     BACKGROUND = "CHAN_STATIC"
     PLAYER_VOICE = "CHAN_VOICE_BASE"
 
-    #CHAN_USER_BASE+<number>
-    #Custom channels can be defined here.
+    #  CHAN_USER_BASE+<number>
+    #  Custom channels can be defined here.
 
     def __str__(self) -> str:
         return self.value

@@ -65,6 +65,7 @@ class SurfChar(Enum):
     #: CSGO
     SANDBARREL = '12'
 
+
 T = TypeVar('T')
 
 

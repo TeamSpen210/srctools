@@ -23,3 +23,5 @@ extend-ignore =
 	W391
 	# We want operators at the start of wrapped lines, not the end.
 	W503
+	# No complexity counts.
+	C901
