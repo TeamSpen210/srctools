@@ -13,13 +13,15 @@ import sys as _sys
 import warnings
 
 
-try:
-    from ._version import __version__
-except ImportError:
-    __version__ = '<unknown>'
-else:
-    # Discard the now-useless module. Use globals so static analysis ignores this.
-    del _sys.modules[globals().pop('_version').__name__]
+__version__: str
+if not TYPE_CHECKING:
+    try:
+        from ._version import __version__
+    except ImportError:
+        __version__ = '<unknown>'
+    else:
+        # Discard the now-useless module. Use globals so static analysis ignores this.
+        del _sys.modules[globals().pop('_version').__name__]
 
 __all__ = [
     '__version__',
