@@ -95,3 +95,6 @@ src/srctools/*.cpp
 
 # Version of the package
 _version.py
+
+# Generated from pyproject.toml
+pyproject-deps.txt
