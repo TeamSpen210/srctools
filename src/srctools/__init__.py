@@ -514,9 +514,9 @@ class AtomicWriter(Generic[IOKindT]):
 
     def __exit__(
         self,
-        exc_type: Type[BaseException],
-        exc_value: BaseException,
-        tback: TracebackType,
+        exc_type: Optional[Type[BaseException]],
+        exc_value: Optional[BaseException],
+        tback: Optional[TracebackType],
     ) -> None:
         # Delegate down to close the file like normal.
         if self.temp is not None:
