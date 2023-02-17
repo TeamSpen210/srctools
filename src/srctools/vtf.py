@@ -4,11 +4,10 @@ After this is imported, the imghdr module can recoginise
 VTF images (returning 'source_vtf').
 """
 from typing import (
-    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, List, Mapping, Optional, Sequence,
-    Tuple, Type, Union, overload,
+    IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
+    Sequence, Tuple, Type, Union, overload,
 )
 from array import array
-from collections import namedtuple
 from enum import Enum, Flag
 from io import BytesIO
 import itertools
@@ -285,8 +284,31 @@ class FilterMode(Enum):
     BILINEAR = AVERAGE = 4  # Average the four pixels
 
 
-Resource = namedtuple('Resource', 'flags data')
-Pixel = namedtuple('Pixel', 'r g b a')
+@attrs.define
+class Resource:
+    """An arbitary resource contained in a VTF file.
+
+    This can either be a 32-bit unsigned integer (stored right in the header), or a block of
+    binary data.
+    """
+    flags: int
+    data: Union[bytes, int]
+
+
+@attrs.frozen
+class Pixel:
+    """Data structure to hold colour data retrieved from a frame."""
+    r: int
+    g: int
+    b: int
+    a: int
+
+    def __iter__(self) -> Iterable[int]:
+        yield self.r
+        yield self.g
+        yield self.b
+        yield self.a
+
 
 _HEADER = struct.Struct(
     '<'    # Align
@@ -731,18 +753,20 @@ class VTF:
                         pass  # Custom.
                     vtf.resources[res_id] = Resource(res_flags, data)
 
-            for res_id, (res_flags, data) in vtf.resources.items():
-                if not res_flags & 0x02:
+            for res_id, resource in vtf.resources.items():
+                if not resource.flags & 0x02:
                     # There's actual data elsewhere in the file.
-                    file.seek(data)
+                    offset = resource.data
+                    assert isinstance(offset, int)
+                    file.seek(offset)
                     [size] = struct.unpack('I', file.read(4))
-                    res_data = file.read(size)
-                    vtf.resources[res_id] = Resource(res_flags, res_data)
+                    resource.data = file.read(size)
 
             if ResourceID.PARTICLE_SHEET in vtf.resources:
-                vtf.sheet_info = SheetSequence.from_resource(
-                    vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
-                )
+                sheet_data = vtf.resources.pop(ResourceID.PARTICLE_SHEET).data
+                if isinstance(sheet_data, int):
+                    raise ValueError(f'Integer for particle data? {sheet_data!r}')
+                vtf.sheet_info = SheetSequence.from_resource(sheet_data)
 
         else:
             low_res_offset = header_size
