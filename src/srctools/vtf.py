@@ -1,7 +1,9 @@
-"""Reads VTF image data into a PIL object.
+"""Reads and writes Valve's texture format, VTF.
 
-After this is imported, the imghdr module can recoginise
-VTF images (returning 'source_vtf').
+This is designed to be used with the `Python Imaging Library`_ to do the editing of pixels or
+saving/loading standard image files.
+
+.. _`Python Imaging Library`: https://pillow.readthedocs.io/en/stable/
 """
 from typing import (
     IO, TYPE_CHECKING, Any, Collection, Dict, Iterable, Iterator, List, Mapping, Optional,
@@ -255,33 +257,35 @@ class VTFFlags(Flag):
 
 
 class ResourceID(bytes, Enum):
-    """For VTF format 7.3+, there is an extensible resource system."""
-    # The two data parts in earlier versions.
-    LOW_RES = b'\x01\0\0'  # The low-res thumbnail.
-    HIGH_RES = b'\x30\0\0'  # The main image.
+    """For VTF format 7.3+, there is an extensible resource system.
 
-    # Used for particle spritesheets, decoded into .sheet_info
+    These are the IDs defined by Valve, but any 4-byte ID may be used.
+    """
+    LOW_RES = b'\x01\0\0'  #: The low-res thumbnail. This is in a fixed position in earlier versions.
+    HIGH_RES = b'\x30\0\0'  # The main image. This is in a fixed position in earlier versions.
+
+    #: Used for particle spritesheets, decoded into .sheet_info
     PARTICLE_SHEET = b'\x10\0\0'
-    # Cyclic Redundancy Checksum.
+    #: Cyclic Redundancy Checksum.
     CRC = b'CRC'
 
-    # Allows forcing specific mipmaps to be used for 'medium' shader settings.
+    #: Allows forcing specific mipmaps to be used for 'medium' shader settings.
     LOD_SETTINGS = b'LOD'
 
-    # 4 extra bytes of bitflags.
+    #: 4 extra bytes of bitflags.
     EXTRA_FLAGS = b'TSO'
 
-    # Block of keyvalues data.
+    #: Block of keyvalues data.
     KEYVALUES = b'KVD'
 
 
 class FilterMode(Enum):
     """The algorithm to use for generating mipmaps."""
-    NEAREST = UPPER_LEFT = 0  # Just use the upper-left pixel.
-    UPPER_RIGHT = 1  # Just use the upper-right pixel.
-    LOWER_LEFT = 2  # Just use the lower-left pixel.
-    LOWER_RIGHT = 3  # Just use the lower-right pixel.
-    BILINEAR = AVERAGE = 4  # Average the four pixels
+    NEAREST = UPPER_LEFT = 0  #: Just use the upper-left pixel.
+    UPPER_RIGHT = 1  #: Just use the upper-right pixel.
+    LOWER_LEFT = 2  #: Just use the lower-left pixel.
+    LOWER_RIGHT = 3  #: Just use the lower-right pixel.
+    BILINEAR = AVERAGE = 4  #: Average the four pixels together.
 
 
 @attrs.define
@@ -303,7 +307,7 @@ class Pixel:
     b: int
     a: int
 
-    def __iter__(self) -> Iterable[int]:
+    def __iter__(self) -> Iterator[int]:
         yield self.r
         yield self.g
         yield self.b
@@ -464,12 +468,12 @@ class Frame:
         if x > self.width or y > self.height:
             raise IndexError(item)
         off = x * self.width + y
-        return Pixel._make(self._data[off: off + 4])
+        return Pixel(*self._data[off: off + 4])
 
     def __setitem__(
         self,
         item: Tuple[int, int],
-        data: Tuple[int, int, int, int],
+        data: Union[Pixel, Tuple[int, int, int, int]],
     ) -> None:
         """Set an individual pixel."""
         self.load()
@@ -571,19 +575,30 @@ class Frame:
 
 class VTF:
     """Valve Texture Format files, used in the Source Engine."""
-    width: int
-    height: int
+    width: int  #: The width of the texture. This must be a power of two, but does not need to match the height.
+    height: int  #: The height of the texture. This must be a power of two, but does not need to match the width.
+    #: The "depth" of the texture, used to produce a volumetric texture that has data for a space.
+    #: This is mutually exclusive with :py:attr:`VTFFlags.ENVMAP` - it must be 1 for cubemaps.
     depth: int
-    mipmap_count: int
+    mipmap_count: int  #: The total number of mipmaps in the image.
 
+    #: The version number of the file. Supported versions vary from ``(7, 2) - (7, 5)``.
     version: Tuple[int, int]
+    #: An average of the colors in the texture, used to tint light bounced off surfaces.
     reflectivity: Vec
     bumpmap_scale: float
+    #: In version 7.3+, arbitrary resources may be stored in a VTF. :py:class:`ResourceID` are
+    #: defined by Valve, but any 4-byte ID may be used.
     resources: Dict[Union[ResourceID, bytes], Resource]
+    #: Textures used for particle system sprites may have this resource, defining subareas to
+    #: randomly pick from when rendering.
     sheet_info: Dict[int, 'SheetSequence']
-    flags: VTFFlags
-    frame_count: int
-    format: ImageFormats
+    flags: VTFFlags  #: Bitflags specifying behaviours and how the texture was compiled.
+    frame_count: int  #: The number of frames, greater than one for an animated texture.
+    first_frame_index: int  #: This field appears unused.
+    format: ImageFormats  #: The image format to use for the main image.
+    #: The image format to use for a small thumbnail, usually ≤ 16×16.
+    #: This is usually :py:attr:`DXT1 <srctools.vtf.ImageFormats.DXT1>`.
     low_format: ImageFormats
 
     _frames: Dict[Tuple[int, Union[CubeSide, int], int], Frame]
@@ -603,25 +618,22 @@ class VTF:
         thumb_fmt: ImageFormats=ImageFormats.DXT1,
         depth: int=1,
     ):
-        """Load a VTF file."""
+        """Create a blank VTF file."""
         if not ((7, 2) <= version <= (7, 5)):
-            raise ValueError('Version must be between 7.2 and 7.5')
+            raise ValueError(f'Version must be between 7.2 and 7.5! ({version!r})')
         if not math.log2(width).is_integer():
-            raise ValueError("Width must be a power of 2!")
+            raise ValueError(f"Width must be a power of 2! ({width!r}x{height!r})")
         if not math.log2(height).is_integer():
-            raise ValueError("Height must be a power of 2!")
+            raise ValueError("Height must be a power of 2! ({width!r}x{height!r})")
         if frames < 1:
-            raise ValueError("Invalid frame count!")
+            raise ValueError(f"Invalid frame count, must be positive! ({frames!r})")
 
         # If it's a cubemap, depth must be 1.
         if VTFFlags.ENVMAP in flags:
             if depth != 1:
-                raise ValueError(
-                    "Cubemaps must have a depth "
-                    "of 1, not {!r}".format(depth)
-                )
+                raise ValueError(f"Cubemaps must have a depth of 1, not {depth!r}")
         elif depth < 1:
-            raise ValueError("Depth must be positive!")
+            raise ValueError(f"Depth must be positive! ({depth!r})")
 
         self.width = width
         self.height = height
@@ -676,10 +688,7 @@ class VTF:
 
         if version_major != 7 or not (0 <= version_minor <= 5):
             raise ValueError(
-                "VTF version {}.{} is not "
-                "between 7.0-7.5!".format(
-                    version_major, version_minor,
-                )
+                f"VTF version {version_major}.{version_minor} is not between 7.0-7.5!"
             )
 
         vtf = cls.__new__(cls)
