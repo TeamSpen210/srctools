@@ -875,7 +875,7 @@ class VTF:
                     file.write(struct.pack('<I', len(res.data)))
                     file.write(res.data)
             if self.sheet_info:
-                particle_data = SheetSequence.make_data(self.sheet_info)
+                particle_data = SheetSequence.make_data(self.sheet_info, sheet_seq_version)
                 deferred.set_data('particle', file.tell())
                 file.write(struct.pack('<I', len(particle_data)))
                 file.write(particle_data)
