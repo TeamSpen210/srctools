@@ -634,6 +634,7 @@ class VTF:
         self.sheet_info = dict(sheet_info)
         self.flags = flags
         self.frame_count = frames
+        self.first_frame_index = 0  # Appears almost unused.
         self.format = fmt
         self.low_format = thumb_fmt
 
@@ -706,6 +707,7 @@ class VTF:
         vtf.width = width
         vtf.height = height
         vtf.frame_count = frame_count
+        vtf.first_frame_index = first_frame_index
         vtf.mipmap_count = mipmap_count
         vtf.flags = VTFFlags(flags)
         vtf.reflectivity = Vec(ref_r, ref_g, ref_b)
@@ -786,7 +788,7 @@ class VTF:
             vtf._low_res._fileinfo = (file, low_res_offset, low_fmt)
 
         # If cubemaps are present, we iterate that for depth.
-        # Otherwise it's the depth value.
+        # Otherwise, it's the depth value.
         depth_iter: Iterable[Union[int, CubeSide]]
         if VTFFlags.ENVMAP in vtf.flags:
             # For version 7.5, the spheremap is skipped.
@@ -848,7 +850,7 @@ class VTF:
             self.height,
             self.flags.value,
             self.frame_count,
-            0,  # Todo: First frame index?
+            self.first_frame_index,
             *self.reflectivity,
             self.bumpmap_scale,
             self.format.bin_value(asw_or_later),
