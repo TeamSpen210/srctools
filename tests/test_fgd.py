@@ -8,6 +8,7 @@ import pytest
 from srctools import Vec
 from srctools.filesys import VirtualFileSystem
 
+
 with pytest.deprecated_call(match=r'srctools\.fgd\.KeyValues is renamed to srctools\.fgd\.KVDef'):
     from srctools.fgd import *
 

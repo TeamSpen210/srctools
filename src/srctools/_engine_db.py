@@ -19,8 +19,10 @@ import operator
 
 from .binformat import DeferredWrites
 from .const import FileType
-from .fgd import _EngineDBProto, _EntityView  # noqa
 from .fgd import FGD, EntityDef, EntityTypes, IODef, KVDef, Resource, ValueTypes
+
+
+from .fgd import _EngineDBProto, _EntityView  # isort: split # noqa
 
 
 __all__ = [

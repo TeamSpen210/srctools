@@ -129,6 +129,8 @@ class IDMan(AbstractSet[int]):
     This implements some of MutableSet, but the adding methods cannot
     be used since the ID may need to change to ensure uniqueness.
     """
+    _used: Set[int]
+    search_pos: int
     def __init__(self, existing: Iterable[int] = ()):
         """Initialise the ID manager."""
         super().__init__()

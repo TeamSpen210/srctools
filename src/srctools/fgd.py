@@ -290,6 +290,7 @@ def _load_engine_db() -> '_EngineDBProto':
     global _ENGINE_DB
     if _ENGINE_DB is None:
         from ._engine_db import unserialise
+
         # On 3.8, importlib_resources doesn't have the right stubs.
         with cast(Any, files(srctools) / 'fgd.lzma').open('rb') as f:
             _ENGINE_DB = unserialise(f)

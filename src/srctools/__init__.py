@@ -461,6 +461,13 @@ class AtomicWriter(Generic[IOKindT]):
     This is not reentrant, but can be repeated - starting the context manager
     clears the file.
     """
+    filename: str
+    dir: str
+    encoding: str
+    _temp_name: Optional[str]
+    is_bytes: bool
+    temp: Optional[IOKindT]
+
     @overload
     def __init__(
         self: 'AtomicWriter[io.BufferedWriter]', filename: StringPath,
@@ -480,9 +487,9 @@ class AtomicWriter(Generic[IOKindT]):
         self.filename = _os.fspath(filename)
         self.dir = _os.path.dirname(filename)
         self.encoding = encoding
-        self._temp_name: Optional[str] = None
+        self._temp_name = None
         self.is_bytes = is_bytes
-        self.temp: Optional[IOKindT] = None
+        self.temp = None
 
     def make_tempfile(self) -> None:
         """Create the temporary file object."""

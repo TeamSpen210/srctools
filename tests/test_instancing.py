@@ -4,8 +4,8 @@ from typing import cast
 import pytest
 
 from srctools import VMF, instancing
-from srctools.math import Angle, FrozenMatrix, FrozenVec, Matrix, Vec, format_float
 from srctools.fgd import ValueTypes
+from srctools.math import Angle, FrozenMatrix, FrozenVec, Matrix, Vec, format_float
 
 
 MAT_CCW = FrozenMatrix.from_yaw(270)
